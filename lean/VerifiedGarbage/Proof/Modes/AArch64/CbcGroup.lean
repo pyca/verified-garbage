@@ -1,15 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.AArch64.Group
-public import VerifiedGarbage.Proof.Modes.AArch64.Unchain
+import VerifiedGarbage.Proof.Modes.AArch64.Unchain
 public import VerifiedGarbage.Proof.Modes.Cbc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Modes.AArch64.Cbc
+public import VerifiedGarbage.Proof.Modes.AArch64.Setup
 import VerifiedGarbage.Proof.Modes.AArch64.Xor
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Modes.AArch64.Copy
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # CBC on AArch64, for any core: the entry and one group of decryption

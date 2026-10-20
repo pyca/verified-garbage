@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
-public import Mathlib.Tactic.SplitIfs
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # GHASH with PCLMULQDQ: the bits of `H · x⁻¹`

@@ -1,15 +1,13 @@
 module
 
-public import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Calls
-public import VerifiedGarbage.Proof.Hmac.Generic.Common
-public import VerifiedGarbage.Proof.Pbkdf2.AArch64.IterateCT
 public import VerifiedGarbage.Spec.Mgf1
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Pbkdf2.AArch64.Iterate
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Hmac.Generic.Common
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: the hash function
@@ -59,6 +57,11 @@ structure HashOK (H : Hash) where
   sizes : Sizes H.P H.D H.W
   L : 0 < H.P.L ∧ H.P.L ≤ 16
   W : H.W ≤ 256
+  /-- HMAC's outer block has room for `padW`'s 16-byte stores: from the
+  first multiple of 16 after the digest, 16 bytes before its end. -/
+  hPad : 16 * (H.D / 16 + 1) + 16 ≤ H.P.B
+  /-- The length field, whose zeros `padW` stores, is 8 or 16 bytes. -/
+  L816 : H.P.L = 8 ∨ H.P.L = 16
 
 namespace HashOK
 
@@ -105,13 +108,42 @@ theorem iterOk : Pbkdf2.AArch64.HashOk H.P H.D H.W hH.SH hH.md hH.iv where
   link := ⟨hH.hB, hH.hS, hH.hD, fun m p x h => (hH.repr m p x).1 h, hH.hash, hH.sizes.DN,
     by have := hH.sizes.pad; have := hH.sizes.NL; omega⟩
 
+/-- `copyW` writes no SIMD register. -/
+theorem copyW_keepsV (wide : Bool) (src : Reg) (so : Nat) (dst : Reg) (d n : Nat) :
+    (Hash.copyW wide src so dst d n).all keepsV = true := by
+  have h2 : ∀ (c : Prop) [Decidable c] (a b : List Instr), a.all keepsV = true → b.all keepsV = true →
+      (if c then a else b).all keepsV = true := fun c _ a b ha hb => by
+    split
+    · exact ha
+    · exact hb
+  unfold Hash.copyW
+  refine h2 _ _ _ ?_ ?_
+  · simp only [List.all_append, List.all_flatMap, Hash.cp128]
+    refine Bool.and_eq_true_iff.mpr ⟨List.all_eq_true.mpr fun k _ => ?_,
+      Bool.and_eq_true_iff.mpr ⟨h2 _ _ _ rfl rfl, h2 _ _ _ rfl rfl⟩⟩
+    exact Bool.and_eq_true_iff.mpr ⟨h2 _ _ _ rfl rfl, h2 _ _ _ rfl rfl⟩
+  · simp [Hash.copy32, Impl.Pbkdf2.AArch64.cp32, keepsV, vdstOf]
+
 include hH in
 /-- The pieces of HMAC's `finalize` after the inner digest write no SIMD
 register. -/
 theorem finMid_keepsV : H.finMid.all keepsV = true := by
-  have hp := Pbkdf2.AArch64.padLen_keepsV (D := H.D) hH.shape
-  simp only [Hash.finMid, List.all_append, hp, Bool.and_true]
-  simp [Hash.copy32, Impl.Pbkdf2.AArch64.cp32, Impl.MdStream.AArch64.mov, keepsV, vdstOf]
+  have hl := hH.shape.lenKeepsV
+  have hw : H.padW.all keepsV = true := by
+    simp only [Hash.padW, List.all_append, List.all_cons, hl, Bool.and_true]
+    refine Bool.and_eq_true_iff.mpr ⟨Bool.and_eq_true_iff.mpr ⟨Bool.and_eq_true_iff.mpr ⟨?_, ?_⟩, ?_⟩, rfl⟩
+    · split
+      · rfl
+      · simp [Impl.Pbkdf2.AArch64.padFrom, keepsV, vdstOf]
+    · simp [keepsV, vdstOf]
+    · split <;> rfl
+  have hsel : H.padSel.all keepsV = true := by
+    unfold Hash.padSel
+    split
+    · exact hw
+    · exact Pbkdf2.AArch64.padLen_keepsV hH.shape
+  simp only [Hash.finMid, List.all_append, copyW_keepsV, hsel, Bool.and_true, Bool.true_and]
+  simp [Impl.MdStream.AArch64.mov, keepsV, vdstOf]
 
 include hH in
 theorem cmp_keepsV : (instrs (Impl.MdStream.AArch64.compressAt H.compN H.compC)).all keepsV = true := by
@@ -125,8 +157,9 @@ include hH in
 theorem finOut_keepsV : H.finOut.all keepsV = true := by
   have ho := hH.shape.outKeepsV
   by_cases hDN : H.D < H.P.N <;>
-  simp only [Hash.finOut, hDN, ↓reduceIte, List.all_append, List.all_cons, ho, Bool.and_true, Bool.true_and] <;>
-  simp [Hash.copy32, Impl.Pbkdf2.AArch64.cp32, Impl.Pbkdf2.Md.AArch64.Stream.restore,
+  simp only [Hash.finOut, hDN, ↓reduceIte, List.all_append, List.all_cons, ho, copyW_keepsV, Bool.and_true,
+    Bool.true_and] <;>
+  simp [Impl.Pbkdf2.Md.AArch64.Stream.restore,
     Impl.Pbkdf2.Md.AArch64.Stream.saved, Impl.MdStream.AArch64.mov, keepsV, vdstOf]
 
 include hH in

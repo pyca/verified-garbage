@@ -4,19 +4,19 @@
 //!
 //! The block cipher work and the chaining are verified assembly:
 //! `vg_sm4_expand_key` (contract `VG.Spec.Sm4.expandKeyContract`) writes the
-//! key schedule, and `vg_sm4_cbc_encrypt` and `vg_sm4_cbc_decrypt`
-//! (`VG.Spec.Sm4.cbcEncryptContract`, `cbcDecryptContract`) replace each
-//! block with its CBC encryption or decryption from the chaining value at
-//! `iv`, in constant time: their timing depends on none of the key, the
-//! chaining value and the data. Both are the modes' generic CBC over SM4's
+//! key schedule, and `vg_sm4_cbc_encrypt_chained` and
+//! `vg_sm4_cbc_decrypt_chained` (`VG.Spec.Sm4.cbcEncryptChainedContract`,
+//! `cbcDecryptChainedContract`) replace each block with its CBC encryption
+//! or decryption from the chaining value at `iv`, and the chaining value with
+//! the one to continue from (the last ciphertext block), in constant time:
+//! their timing depends on none of the key, the chaining value and the data. Both are the modes' generic CBC over SM4's
 //! bitsliced ECB code. On x86-64 and AArch64, decryption transforms sixteen
 //! blocks at a time, and encryption, in which each block needs the one
 //! before, one block at a time (in a batch of sixteen, so about sixteen
 //! times ECB's cost). On x86, both take one block at a time, in a batch of
 //! eight (about eight times ECB's cost). On ARMv7, both call the verified ECB
 //! function once per block (a batch of eight, so about eight times ECB's
-//! cost). This module checks the lengths, holds the key schedule and keeps
-//! the chaining value to continue from: the last ciphertext block.
+//! cost). This module checks the lengths and holds the key schedule.
 
 #![cfg(any(
     target_arch = "x86",
@@ -26,7 +26,7 @@
 ))]
 
 use crate::arch::sm4::vg_sm4_expand_key;
-use crate::arch::sm4_cbc::{vg_sm4_cbc_decrypt, vg_sm4_cbc_encrypt};
+use crate::arch::sm4_cbc::{vg_sm4_cbc_decrypt_chained, vg_sm4_cbc_encrypt_chained};
 use crate::zeroize::zeroize;
 
 /// Why an SM4-CBC operation failed.
@@ -34,6 +34,12 @@ use crate::zeroize::zeroize;
 pub enum Error {
     /// The input length is not a multiple of 16 bytes.
     IncompleteBlock,
+}
+
+crate::error::impl_error! {
+    Error {
+        IncompleteBlock => "SM4-CBC input is not a whole number of blocks",
+    }
 }
 
 /// An expanded SM4 key for CBC encryption and decryption.
@@ -69,20 +75,17 @@ impl Sm4Cbc {
             return Err(Error::IncompleteBlock);
         }
         // SAFETY: the buffer holds `len / 16` whole blocks, and it, the
-        // chaining value and the schedule are separate valid objects of the
-        // sizes of the signature, none of them on the callee's stack. The
-        // function zeroes its working space on its own stack before
-        // returning.
+        // chaining value (which the function reads and replaces) and the
+        // schedule are separate valid objects of the sizes of the signature,
+        // none of them on the callee's stack. The function zeroes its
+        // working space on its own stack before returning.
         unsafe {
-            vg_sm4_cbc_encrypt(
+            vg_sm4_cbc_encrypt_chained(
                 &self.schedule,
                 iv,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 16,
             );
-        }
-        if let Some(last) = buffer.rchunks_exact(16).next() {
-            iv.copy_from_slice(last);
         }
         Ok(())
     }
@@ -96,20 +99,15 @@ impl Sm4Cbc {
         if !buffer.len().is_multiple_of(16) {
             return Err(Error::IncompleteBlock);
         }
-        let mut next = *iv;
-        if let Some(last) = buffer.rchunks_exact(16).next() {
-            next.copy_from_slice(last);
-        }
         // SAFETY: as in `encrypt`.
         unsafe {
-            vg_sm4_cbc_decrypt(
+            vg_sm4_cbc_decrypt_chained(
                 &self.schedule,
                 iv,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 16,
             );
         }
-        *iv = next;
         Ok(())
     }
 }

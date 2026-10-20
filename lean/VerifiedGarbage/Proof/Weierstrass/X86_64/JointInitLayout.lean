@@ -1,18 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointGenerator
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTable
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheBuild
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.CombLay
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableState
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-! The table and cache initialization writes are separate from both scalar streams. -/
 

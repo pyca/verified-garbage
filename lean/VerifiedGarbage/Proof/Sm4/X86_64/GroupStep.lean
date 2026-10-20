@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.Group
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Sm4.X86_64.Keys
+import VerifiedGarbage.Proof.Sm4.X86_64.Crypt16
+import VerifiedGarbage.Proof.Sm4.Layout
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
 
 /-!
 # One group of blocks of SM4 ECB on x86-64

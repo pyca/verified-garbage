@@ -1,14 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.Core
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Camellia.Layout
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Camellia.Common
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The head and tail of eight blocks of bitsliced Camellia on AArch64
@@ -213,7 +210,7 @@ theorem lin_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCt
     {m : Nat} (hk : AtEntry s (s₀.gpr sb) m) (hm34 : m + 2 ≤ 34) {is : List Instr} {G : Nat → Nat → List Nat}
     (hchk : check (lanes 64 12) layerCfg (linExt 24) is bothEnv
       (linPostG 12 (qOuts G) [] (maskSlots ++ bothIns.map (·.1)) bothEnv) = true)
-    (hall : (layerKeep.all fun r => is.all fun i => dstOf i != some r) = true) :
+    (hall : (layerKeep.all fun r => is.all fun i => !clobbers i r) = true) :
     ∃ s', runBlock isa is s = some s' ∧ Ctx s₀ s' ∧ s'.gpr kp = s.gpr kp ∧
       s'.gpr .x0 = s.gpr .x0 ∧ (∀ j < 8, ∀ p < 64, (Qs s' j).getLsbD p = xorBits (bothW s) (G j p)) ∧
       (∀ j < 16, slotW s' (d1Slot + j) = slotW s (d1Slot + j)) ∧ (∀ k < 16, dataW s' k = dataW s k) ∧
@@ -299,7 +296,7 @@ theorem whiten_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : Ke
       (∀ j < 8, ∀ p < 64, (slotW s' (d2Slot + j)).getLsbD p =
         ((slotW s (d2Slot + j)).getLsbD p ^^ (keyW s (8 + j)).getLsbD p)) := by
   obtain ⟨s', h', ho, hso, hkp, rd', wr', o', f'⟩ := both_ok hp hc hk hm34 whiten_check
-  have hall : (layerKeep.all fun r => whiten.all fun i => dstOf i != some r) = true := by decide +kernel
+  have hall : (layerKeep.all fun r => whiten.all fun i => !clobbers i r) = true := by decide +kernel
   have hkeep : ∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r := fun r hr =>
     o' r (List.all_eq_true.mp hall r (not_layerWrites r hr))
   refine ⟨s', h', hc.step rd' wr' (fun r hr _ _ => hkeep r hr) f' (fun kv hkv => ?_), hkeep _ (by decide),

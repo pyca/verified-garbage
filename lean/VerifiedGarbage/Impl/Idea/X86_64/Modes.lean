@@ -1,17 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Idea.X86_64
-public import VerifiedGarbage.Impl.Modes.X86_64.Cbc
-public import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
-public import VerifiedGarbage.Impl.Modes.X86_64.Fb
+public import VerifiedGarbage.Impl.Modes.X86_64.CbcChained
 
 /-!
 # IDEA-CBC, -OFB and -CFB64 on x86-64
 
-`cbcEncrypt`, `cbcDecrypt`, `ofb`, `cfbEncrypt` and `cfbDecrypt`
+`cbcEncryptChained`, `cbcDecryptChained`, `ofb`, `cfbEncrypt` and `cfbDecrypt`
 (schedule = rdi, iv = rsi, data = rdx, n = rcx, scratch = r8): the modes'
-generic CBC, OFB and CFB (`Impl/Modes/X86_64/Cbc.lean`, `CbcEnc.lean`,
-`Fb.lean`) over the block code of `vg_idea_ecb` (`cryptBlock`), one 8-byte
+generic CBC that updates the chaining value, OFB and CFB
+(`Impl/Modes/X86_64/CbcChained.lean`, `Fb.lean`) over the block code of `vg_idea_ecb` (`cryptBlock`), one 8-byte
 block at a time, with the working space in the scratch buffer, which the
 artifact allocates on the stack. IDEA decrypts with the same code under the
 decryption subkeys, so one core serves every function.
@@ -52,11 +50,11 @@ def modeCore : Impl.Modes.X86_64.Core where
 /-- The registers of the arguments. -/
 def modeRegs : Impl.Modes.X86_64.CtrRegs := ⟨.rsi, .rdx, .rcx, .r8⟩
 
-/-- `vg_idea_cbc_encrypt`. -/
-def cbcEncrypt : Prog isa := modeCore.cbcEncrypt modeRegs
+/-- `vg_idea_cbc_encrypt_chained`. -/
+def cbcEncryptChained : Prog isa := modeCore.cbcEncryptChained modeRegs
 
-/-- `vg_idea_cbc_decrypt`. -/
-def cbcDecrypt : Prog isa := modeCore.cbcDecrypt modeRegs
+/-- `vg_idea_cbc_decrypt_chained`. -/
+def cbcDecryptChained : Prog isa := modeCore.cbcDecryptChained modeRegs
 
 /-- `vg_idea_ofb`. -/
 def ofb : Prog isa := modeCore.fb .ofb modeRegs

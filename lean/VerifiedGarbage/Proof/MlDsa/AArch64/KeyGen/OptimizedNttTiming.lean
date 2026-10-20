@@ -1,22 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedNtt
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedNtt
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedFinish
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedTimingBase
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedNtt
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSqueezeApart
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestPack
 
 @[expose] public section
 

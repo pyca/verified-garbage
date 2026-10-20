@@ -1,13 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCtx
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKeyCore
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyChecks
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyReduce
 
 /-!
 # `vg_rsa_check_key` on x86-64: the pieces in the checks' context
@@ -115,5 +111,9 @@ theorem reduceXRK (h : KCtx s t B Z w minv N) :
     (by omega)) fun _ ⟨_, hv, ha, hk⟩ => ⟨h.arr ha (by decide) (by decide) (by decide) hk, hv, ha⟩
 
 end
+
+theorem wsa {a b : List (Prog isa)} (ha : a ≠ []) (hb : b ≠ []) {s : State} {Q : State → Prop}
+    (h : WP isa (seqs a) s fun t => WP isa (seqs b) t Q) : WP isa (seqs (a ++ b)) s Q :=
+  wp_seqs_append ha hb h
 
 end VG.Proof.Rsa.X86_64.Key

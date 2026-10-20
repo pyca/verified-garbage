@@ -212,24 +212,69 @@ def driver (mods : List String) (gens : List (List String × List String) := [])
   "end VG.Emit\n\n" ++
   "def main (args : List String) : IO UInt32 := VG.Emit.run VG.Emit.all args\n"
 
+/-- The target directory a registration, generic or variant module's path
+names: `X86_64` for `VerifiedGarbage.Artifacts.Sha3.X86_64`,
+`VerifiedGarbage.Generic.Sha256Compress.X86_64.Pbkdf2` and
+`VerifiedGarbage.Variants.Sha256Compress.X86_64.ShaNi`. -/
+def targetDirOf (mod : String) : Option String :=
+  match mod.splitOn "." with
+  | ["VerifiedGarbage", "Artifacts", _, t] => some t
+  | "VerifiedGarbage" :: d :: rest =>
+    if (d == "Generic" || d == "Variants") && rest.length ≥ 3 then rest[rest.length - 2]?
+    else none
+  | _ => none
+
+/-- The registration modules `mods`, generic modules `gens` and variant
+modules `vars` (as `driver` takes them) of each target directory
+(`targetDirOf`), in order of its name; fails on a module without one.
+`Emit.lean` runs a driver for each (a *part*): where they are split only
+decides how much each process does, as `finish` checks that no target's
+artifacts are in two parts. -/
+def parts (mods : List String) (gens : List (List String × List String))
+    (vars : List (String × List String)) :
+    Except String (List (String × List String × List (List String × List String) ×
+      List (String × List String))) := do
+  let dirOf (m : String) : Except String String :=
+    match targetDirOf m with
+    | some t => pure t
+    | none => throw s!"{m} names no target directory"
+  let mut dirs : List String := []
+  for m in mods ++ gens.flatMap (·.2) ++ vars.flatMap (·.2) do
+    let t ← dirOf m
+    unless dirs.contains t do dirs := dirs ++ [t]
+  dirs.mergeSort (· ≤ ·) |>.mapM fun t => do
+    let ms ← mods.filterM fun m => return (← dirOf m) == t
+    let gs ← gens.filterMapM fun (is, gs) => do
+      let gs ← gs.filterM fun g => return (← dirOf g) == t
+      return if gs.isEmpty then none else some (is, gs)
+    let vs ← vars.filterMapM fun (i, vs) => do
+      let vs ← vs.filterM fun v => return (← dirOf v) == t
+      return if vs.isEmpty then none else some (i, vs)
+    return (t, ms, gs, vs)
+
 def usage : String := "usage: lake env lean --run Emit.lean [--check] [DIR]"
 
-/-- Writes the files generated from `as` under the directory in `args` (by
-default `../src/asm`), deleting any other `.rs` file there; or, if `args`
-starts with `--check`, writes nothing and fails if the files on disk differ
-from what would be generated. -/
-def run (as : List Artifact) (args : List String) : IO UInt32 := do
+/-- `[--check] [--part FILE] [DIR]`: whether to check rather than write, the
+file a part writes its targets to, and the directory (by default
+`../src/asm`). -/
+def parseArgs (args : List String) : Option (Bool × Option String × FilePath) :=
   let (check, rest) := match args with
     | "--check" :: rest => (true, rest)
     | rest => (false, rest)
-  let dir : FilePath ← match rest with
-    | [] => pure "../src/asm"
-    | [d] => pure d
-    | _ => do IO.eprintln usage; return 2
-  let files ← match Rust.files as with
-    | .ok files => pure files
-    | .error e => do IO.eprintln e; return 1
-  let expected := files.map (·.1)
+  let (part, rest) := match rest with
+    | "--part" :: f :: rest => (some f, rest)
+    | rest => (none, rest)
+  match rest with
+  | [] => some (check, part, "../src/asm")
+  | [d] => some (check, part, d)
+  | _ => none
+
+/-- Writes `files` (paths relative to `dir` and their contents) under `dir`,
+deleting any other `.rs` file under the directories `under` (relative to
+`dir`, `""` for all of it) but those of `others`; or, if `check`, writes
+nothing and fails if the files on disk differ from `files`. -/
+def sync (dir : FilePath) (check : Bool) (files : List (String × String))
+    (under others : List String) : IO Bool := do
   let mut ok := true
   unless check do IO.FS.createDirAll dir
   for (name, text) in files do
@@ -244,18 +289,68 @@ def run (as : List Artifact) (args : List String) : IO UInt32 := do
     else
       IO.FS.writeFile path text
       IO.println s!"wrote {path}"
-  -- Any other `.rs` file under the directory would be unverified code.
-  let expectedPaths := expected.map fun (n : String) => (dir / n).normalize
-  if ← dir.pathExists then
-    for path in ← dir.walkDir do
-      if path.extension == some "rs" && !expectedPaths.contains path.normalize then
+  -- Any other `.rs` file there would be unverified code.
+  let expectedPaths := files.map fun (n, _) => (dir / n).normalize
+  let otherDirs := others.map fun (o : String) => (dir / o).normalize.toString ++ "/"
+  for u in under do
+    let d := if u.isEmpty then dir else dir / u
+    unless ← d.pathExists do continue
+    for path in ← d.walkDir do
+      if path.extension == some "rs" && !expectedPaths.contains path.normalize &&
+          !otherDirs.any (path.normalize.toString.startsWith ·) then
         if check then
           IO.eprintln s!"{path} is not generated from any artifact"
           ok := false
         else
           IO.FS.removeFile path
           IO.println s!"removed stale {path}"
+  return ok
+
+/-- Writes the files generated from `as` under the directory in `args` (by
+default `../src/asm`), deleting any other `.rs` file there; or, if `args`
+starts with `--check`, writes nothing and fails if the files on disk differ
+from what would be generated.
+
+With `--part FILE`, `as` are the artifacts of a part (`parts`): only the
+files of their targets, `<target>/…`, are written or checked, and the
+other `.rs` files under their directories; then `FILE` gets their targets,
+for `finish`, which checks the root module and the rest of the
+directory. -/
+def run (as : List Artifact) (args : List String) : IO UInt32 := do
+  let some (check, part, dir) := parseArgs args | do IO.eprintln usage; return 2
+  let files ← match Rust.files as with
+    | .ok files => pure files
+    | .error e => do IO.eprintln e; return 1
+  let targets := Rust.targetsOf as
+  let ok ← match part with
+    | none => sync dir check files [""] []
+    | some _ =>
+      let ts := targets.map (·.1)
+      sync dir check (files.filter fun (n, _) => ts.any (n.startsWith <| · ++ "/")) ts []
   if !ok then
+    IO.eprintln "run `lake build && lake env lean --run Emit.lean` in lean/ and commit the result"
+    return 1
+  if let some f := part then
+    IO.FS.writeFile f (String.join (targets.map fun (t, c) => s!"{t}\t{c}\n"))
+  return 0
+
+/-- A target of two of the parts whose targets are `targets`, if any. -/
+def inTwoParts (targets : List (List (String × String))) : Option String :=
+  let names := targets.flatMap (·.map (·.1))
+  names.find? fun t => (names.filter (· == t)).length > 1
+
+/-- After `run` succeeded on every part, given the targets each wrote: no
+target is in two parts (so each part generated all of its targets' files,
+from all of their artifacts), the root module `mod.rs` is that of all the
+targets (`Rust.rootFile`), and no other `.rs` file is outside their
+directories. Writes or checks, as `run`. -/
+def finish (targets : List (List (String × String))) (args : List String) : IO UInt32 := do
+  let some (check, _, dir) := parseArgs args | do IO.eprintln usage; return 2
+  if let some t := inTwoParts targets then
+    IO.eprintln s!"the artifacts of the target {t} are in two parts"
+    return 1
+  let all := targets.flatten
+  unless ← sync dir check [("mod.rs", Rust.rootFile all)] [""] (all.map (·.1)) do
     IO.eprintln "run `lake build && lake env lean --run Emit.lean` in lean/ and commit the result"
     return 1
   return 0

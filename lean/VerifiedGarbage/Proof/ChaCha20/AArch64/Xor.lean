@@ -1,30 +1,17 @@
 module
 
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
-import VerifiedGarbage.Proof.ChaCha20.Spec
-import VerifiedGarbage.Impl.ChaCha20.AArch64
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.ChaCha20.Contract
 public import VerifiedGarbage.Proof.ChaCha20.Keystream
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Impl.ChaCha20.AArch64.Xor
-public import Mathlib.Tactic.Conv
-public import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
-public import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Offset
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Variant
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.ChaCha20.AArch64.XorContract
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorContract
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 
@@ -702,7 +689,7 @@ are saved and restored). -/
 def untouched : List Reg := [.x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28]
 
 theorem untouched_ok (v : BlockImpl) : ∀ r ∈ untouched,
-    ∀ i ∈ instrs (Impl.ChaCha20.AArch64.Xor.xorWith v.callee), dstOf i ≠ some r := v.xorKeeps
+    ∀ i ∈ instrs (Impl.ChaCha20.AArch64.Xor.xorWith v.callee), clobbers i r = false := v.xorKeeps
 
 theorem correct (v : BlockImpl) {s₀ : State} (hp : XPre s₀) :
     ∃ t s', Exec isa (Impl.ChaCha20.AArch64.Xor.xorWith v.callee) s₀ t s' ∧ abiPreserved s₀ s' ∧

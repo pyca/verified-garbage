@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherSeal
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
+import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 public import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
+import VerifiedGarbage.Proof.AesSiv.X86_64.Verified
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+import VerifiedGarbage.Proof.AesGcm.ScratchGather
 
 /-! # Prepared-context Gather contracts -/
 
@@ -74,12 +73,15 @@ theorem gatherPrepared_implies : (Proof.AesGcm.sealGatherX86_64M CtxMode.prepare
     (Proof.AesGcm.sealGatherPreparedScratchContract X86_64.abi 4888) :=
   ⟨fun _ h => gatherPrePrepared_of h, fun _ _ _ h => gatherPostPrepared_of h, fun _ _ _ _ h => gatherPubPrepared_of h, gatherSatPrepared_pre⟩
 
+/-- `vg_aes_gcm_seal_gather_prepared`'s code: a TLS record's text sealed by
+`Sp` from the entry (`withFront long`), and the others by `sealGather`. -/
 theorem sealGatherPrepared_core (Sh : ShortFn CtxMode.prepared) (I : InitFn) (A : AadFn)
-    (T : ToFn CtxMode.prepared) (F : FinFn) :
-    Verified X86_64.target (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn)
+    (T : ToFn CtxMode.prepared) (F : FinFn) (Sp : SplitFn CtxMode.prepared) (long : Bool) :
+    Verified X86_64.target
+      (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn))
       (Proof.AesGcm.sealGatherPreparedScratchContract X86_64.abi 4888) :=
-  Verified.of_correct (k := Proof.AesGcm.sealGatherX86_64M CtxMode.prepared) (sealGather_correct Sh I A T F)
-    (sealGather_ct Sh I A T F) gatherPrepared_implies
+  Verified.of_correct (k := Proof.AesGcm.sealGatherX86_64M CtxMode.prepared)
+    (withFront_correct Sh I A T F Sp long) (withFront_ct Sh I A T F Sp long) gatherPrepared_implies
 
 theorem gatherFrameSatPrepared_pre : ∃ s, (Spec.Gcm.sealGatherPreparedContract X86_64.abi 5128).pre s := by
   refine ⟨gatherFrameSatP, ?_⟩
@@ -94,15 +96,17 @@ theorem gatherFrameSatPrepared_pre : ∃ s, (Spec.Gcm.sealGatherPreparedContract
     | exact preparedPowersRepr_of_zero fun _ hi => by simp only [ctx_low hi, ite_false]
 
 theorem sealGatherPrepared_framed (Sh : ShortFn CtxMode.prepared) (I : InitFn)
-    (A : AadFn) (T : ToFn CtxMode.prepared) (F : FinFn) :
+    (A : AadFn) (T : ToFn CtxMode.prepared) (F : FinFn) (Sp : SplitFn CtxMode.prepared) (long : Bool) :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratch 240 5 (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn))
+      (Impl.StackScratch.X86_64.withStackArgScratch 240 5
+        (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn)))
       (Spec.Gcm.sealGatherPreparedContract X86_64.abi 5128) :=
   X86_64.Verified.stackArgScratchL (sig := Spec.Gcm.sealGatherPreparedSig) (nm := "scratch") (e := .u64)
     (n := 23) (pre := Spec.Gcm.sealGatherPreparedPre X86_64.abi.ptrBits)
     (post := Spec.Gcm.sealGatherPost X86_64.abi.ptrBits) (wa := true) (stack := 4888) (bytes := 240)
-    (sealGatherPrepared_core Sh I A T F) (by decide) (by decide) (by decide) (sealGather_spAll Sh I A T F)
-    (sealGather_xdepth Sh I A T F) (Proof.AesGcm.sealGatherPreparedPre_local _)
-    (Proof.AesGcm.sealGatherPrecomputedPost_local _) gatherFrameSatPrepared_pre
+    (sealGatherPrepared_core Sh I A T F Sp long) (by decide) (by decide) (by decide)
+    (withFront_spAll Sh I A T F Sp long) (withFront_xdepth Sh I A T F Sp long)
+    (Proof.AesGcm.sealGatherPreparedPre_local _) (Proof.AesGcm.sealGatherPrecomputedPost_local _)
+    gatherFrameSatPrepared_pre
 
 end VG.Proof.AesGcm.X86_64.Gather

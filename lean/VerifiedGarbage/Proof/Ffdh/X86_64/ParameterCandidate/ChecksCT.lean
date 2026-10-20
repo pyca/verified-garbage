@@ -1,17 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Sieve
-meta import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Sieve
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Residue
-meta import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Residue
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Sieve
+meta import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Residue
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMs
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH parameter candidates on x86-64: timing of the sieve and congruences -/
 

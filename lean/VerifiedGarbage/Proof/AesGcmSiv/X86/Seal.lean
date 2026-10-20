@@ -1,10 +1,12 @@
 module
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Entry
+public import VerifiedGarbage.Proof.GcmSiv.Words
 
-public import VerifiedGarbage.Proof.AesGcmSiv.X86.TagIO
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcmSiv.X86.TagIO
+import VerifiedGarbage.Proof.AesGcmSiv.X86.Crypt
+import VerifiedGarbage.Proof.AesGcmSiv.X86.Polyval
+import VerifiedGarbage.Proof.AesGcmSiv.X86.Keys
+import VerifiedGarbage.Proof.AesGcm.X86.Top
 
 /-!
 # AES-GCM-SIV on x86: `vg_aes_gcm_siv_seal` (correctness)

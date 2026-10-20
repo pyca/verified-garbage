@@ -1,11 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.MlKem.Mem16
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Reject
-import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-! # Save and reload rejection continuation cursors -/
 
@@ -14,9 +15,11 @@ import all Init.Data.Vector.Basic
 namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
-def checkpoint (p aP : Addr) (L : List Zq) (m : Mem) : Prop :=
-  m.readW p 64=coeffAddr aP L.length ∧
+def checkpointW (w16 : Bool) (p aP : Addr) (L : List Zq) (m : Mem) : Prop :=
+  m.readW p 64=cAddr w16 aP L.length ∧
     (m.readW (p+8) 64).toNat=256-L.length
+
+abbrev checkpoint := checkpointW false
 
 theorem load_checkpoint (s : State) {slot : Nat} (ho : slot+8<32768) (ha : slot%8=0)
     (h0 : InRegions (s.rd++s.wr) (s.gpr .x19+BitVec.ofNat 64 slot) 8)

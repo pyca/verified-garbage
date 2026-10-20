@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorVariant
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.ApplyCT
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ChaCha20 (RFC 8439) on AArch64: `vg_chacha20_xor` and `vg_chacha20_apply`
@@ -26,24 +24,18 @@ which `ofSig` checks against the contract.
 namespace VG.Generic.ChaCha20Xor.AArch64.ChaCha20
 
 def artifacts (v : Proof.ChaCha20.AArch64.XorImpl) : List Artifact := [
-  { Spec.ChaCha20.xorApi with
-    name := Spec.ChaCha20.xorApi.name ++ v.callee.suffix
-    target := AArch64.target
-    doc := Spec.ChaCha20.xorApi.doc (notes := v.notes)
+  Spec.ChaCha20.xorApi.artifact AArch64.target {
+    suffix := v.callee.suffix
+    notes := v.notes
     code := v.callee.code
-    contract := Spec.ChaCha20.xorContract AArch64.abi
     verified := v.verified
-    features := v.features
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.ChaCha20.applyApi with
-    name := Spec.ChaCha20.applyApi.name ++ v.callee.suffix
-    target := AArch64.target
-    doc := Spec.ChaCha20.applyApi.doc (notes := ["This implementation XORs the whole blocks with `" ++
-      v.callee.name ++ "`."])
+    features := v.features },
+  Spec.ChaCha20.applyApi.artifact AArch64.target {
+    suffix := v.callee.suffix
+    notes := ["This implementation XORs the whole blocks with `" ++
+      v.callee.name ++ "`."]
     code := Impl.ChaCha20.AArch64.Stream.apply v.callee
-    contract := Spec.ChaCha20.applyContract AArch64.abi 0
     verified := Proof.ChaCha20.AArch64.Stream.apply_verified v
-    features := v.features
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    features := v.features }]
 
 end VG.Generic.ChaCha20Xor.AArch64.ChaCha20

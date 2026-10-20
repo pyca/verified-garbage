@@ -2,16 +2,16 @@ module
 
 public import VerifiedGarbage.Impl.AesGcm.AArch64
 public import VerifiedGarbage.Proof.Aes.AArch64.Variant
-public import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
-public import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
 public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Proof.Cmac.Frame
-public import VerifiedGarbage.Proof.Gcm.Stream
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on AArch64: the functions called
@@ -34,6 +34,34 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom ctr32 aesWith)
 open VG.Proof.Aes.AArch64 (Ctr32Impl)
 
+/-- An implementation of `vg_ghash_prepared` on AArch64, which reads the
+powers of `H` from a prepared context. -/
+structure GhashPreparedImpl where
+  fn : Fn
+  noFrames : fn.code.noFrames = true
+  ok : ∀ s, Proof.Gcm.ghashPreparedAArch64.pre s →
+    ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ Proof.Gcm.ghashPreparedAArch64.post s s'
+  ct : ConstantTime isa Proof.Gcm.ghashPreparedAArch64.pre Proof.Gcm.ghashPreparedAArch64.pub fn.code
+  keepsV : fn.code.allInstrs keepsV = true
+
+/-- An implementation of `vg_ghash_with_powers` on AArch64. -/
+structure GhashWithImpl where
+  fn : Fn
+  noFrames : fn.code.noFrames = true
+  ok : ∀ s, Proof.Gcm.ghashWithAArch64.pre s →
+    ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ Proof.Gcm.ghashWithAArch64.post s s'
+  ct : ConstantTime isa Proof.Gcm.ghashWithAArch64.pre Proof.Gcm.ghashWithAArch64.pub fn.code
+  keepsV : fn.code.allInstrs keepsV = true
+
+/-- An implementation of `vg_ghash_store_powers` on AArch64. -/
+structure GhashStoreImpl where
+  fn : Fn
+  noFrames : fn.code.noFrames = true
+  ok : ∀ s, Proof.Gcm.ghashStoreAArch64.pre s →
+    ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ Proof.Gcm.ghashStoreAArch64.post s s'
+  ct : ConstantTime isa Proof.Gcm.ghashStoreAArch64.pre Proof.Gcm.ghashStoreAArch64.pub fn.code
+  keepsV : fn.code.allInstrs keepsV = true
+
 /-- An implementation of `vg_ghash` on AArch64. -/
 structure GhashImpl where
   fn : Fn
@@ -44,6 +72,18 @@ structure GhashImpl where
   keepsV : fn.code.allInstrs keepsV = true
   suffix : String
   features : List String
+  /-- Whether its CPUs have PMULL, which `seal`'s path for TLS records
+  (`Impl/AesGcm/AArch64/Fast.lean`) runs inline. -/
+  pmull : Bool := false
+  /-- Its `vg_ghash_prepared`, if it has one, which `vg_aes_gcm_seal_prepared`
+  calls on the path for TLS records. -/
+  prepared : Option GhashPreparedImpl := none
+  /-- Its `vg_ghash_with_powers`, if it has one, which the `*_with_powers`
+  functions call on the path for TLS records. -/
+  withPowers : Option GhashWithImpl := none
+  /-- Its `vg_ghash_store_powers`, if it has one, which the `*_store_powers`
+  functions call on the path for TLS records. -/
+  storePowers : Option GhashStoreImpl := none
 
 /-- An implementation of `vg_aes_expand_key_scratch` on AArch64. -/
 structure KeyImpl where
@@ -135,13 +175,14 @@ structure GhCall (s : State) (H Y D S : Addr) (n : Nat) : Prop where
   reads : Covers ([⟨H, 16⟩, ⟨D, 16 * n⟩] ++ [⟨Y, 16⟩, ⟨S, 256⟩]) (s.rd ++ s.wr)
   writes : Covers [⟨Y, 16⟩, ⟨S, 256⟩] s.wr
 
-/-- What a call of `vg_ghash` leaves. -/
-structure GhPost (s : State) (H Y D S : Addr) (n : Nat) (s' : State) : Prop where
+/-- What a call of `vg_ghash` leaves, and of a GHASH that also writes the
+regions `ex` (`vg_ghash_store_powers`). -/
+structure GhPost (s : State) (H Y D S : Addr) (n : Nat) (s' : State) (ex : List Region := []) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
   saved : ∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r
-  frame : Frame [⟨Y, 16⟩, ⟨S, 256⟩] s.mem s'.mem
+  frame : Frame (⟨Y, 16⟩ :: ⟨S, 256⟩ :: ex) s.mem s'.mem
   out : blockAt s'.mem Y = ghashFrom (blockAt s.mem H) (blockAt s.mem Y) (blocksAt s.mem D n)
 
 theorem GhCall.pre {s : State} {H Y D S : Addr} {n : Nat} (h : GhCall s H Y D S n) :
@@ -174,6 +215,62 @@ theorem gh_rel (g : GhashImpl) {P : State → State → Prop}
   refine ⟨h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes⟩
   simp only [Proof.Gcm.ghashAArch64, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
     callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, callEntry_x4,
+    h₁.x0, h₁.x1, h₁.x2, h₁.x3, h₁.x4, h₂.x0, h₂.x1, h₂.x2, h₂.x3, h₂.x4, hsp]
+  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
+
+/-! ## `vg_ghash_prepared` -/
+
+/-- What a call of `vg_ghash_prepared` needs beyond `GhCall` with the hash
+subkey at `Ctx + 240`: the 144 bytes from there readable, apart from the
+accumulator and the working space, and the eight prepared powers at `Ctx`. -/
+structure GhPCall (s : State) (Ctx Y S : Addr) : Prop where
+  reads : Covers [⟨Ctx + BitVec.ofNat 64 240, 144⟩] (s.rd ++ s.wr)
+  hy : (⟨Ctx + BitVec.ofNat 64 240, 144⟩ : Region).Disjoint ⟨Y, 16⟩
+  hs : (⟨Ctx + BitVec.ofNat 64 240, 144⟩ : Region).Disjoint ⟨S, 256⟩
+  repr : Spec.Gcm.PreparedPowers8Repr s.mem Ctx
+
+section
+variable {s : State} {Ctx Y D S : Addr} {n : Nat} (h : GhCall s (Ctx + BitVec.ofNat 64 240) Y D S n)
+  (p : GhPCall s Ctx Y S)
+include h p
+
+theorem GhPCall.pre : Proof.Gcm.ghashPreparedAArch64.pre (s.callEntry.withRegions
+    [⟨Ctx + BitVec.ofNat 64 240, 144⟩, ⟨D, 16 * n⟩] [⟨Y, 16⟩, ⟨S, 256⟩]) := by
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega)
+  have e : Ctx + BitVec.ofNat 64 240 - 240 = Ctx := BitVec.add_sub_cancel _ _
+  simp only [Proof.Gcm.ghashPreparedAArch64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
+    State.withRegions_mem, State.callEntry_mem, callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3,
+    callEntry_x4, h.x0, h.x1, h.x2, h.x3, h.x4, hn, e]
+  exact ⟨trivial, trivial, p.hy, p.hs, h.yd, h.ys, h.ds, p.repr⟩
+
+theorem GhPCall.covers : Covers ([⟨Ctx + BitVec.ofNat 64 240, 144⟩, ⟨D, 16 * n⟩] ++ [⟨Y, 16⟩, ⟨S, 256⟩])
+    (s.rd ++ s.wr) :=
+  Covers.cons p.reads ((Covers.of_mem fun _ hr => List.mem_cons_of_mem _ hr).trans h.reads)
+
+theorem gp_call (g : GhashPreparedImpl) :
+    WP isa (.call g.fn.name g.fn.code) s (GhPost s (Ctx + BitVec.ofNat 64 240) Y D S n) := by
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega)
+  refine WP.call (k := Proof.Gcm.ghashPreparedAArch64) g.ok (rd := [⟨Ctx + BitVec.ofNat 64 240, 144⟩, ⟨D, 16 * n⟩])
+    (wr := [⟨Y, 16⟩, ⟨S, 256⟩]) (GhPCall.pre h p) (GhPCall.covers h p) h.writes ?_ g.noFrames
+  intro s' hrd hwr hsp hf hsaved _ hpost
+  refine ⟨hrd, hwr, hsp, hsaved, hf, ?_⟩
+  simp only [Proof.Gcm.ghashPreparedAArch64, Proof.Gcm.ghashAArch64, State.withRegions_gpr, State.withRegions_mem,
+    State.callEntry_mem, callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, h.x0, h.x1, h.x2, h.x3, hn] at hpost
+  exact hpost
+
+end
+
+theorem gp_rel (g : GhashPreparedImpl) {σ₁ σ₂ : State} {Ctx Y D S : Addr} {n : Nat}
+    (h₁ : GhCall σ₁ (Ctx + BitVec.ofNat 64 240) Y D S n) (p₁ : GhPCall σ₁ Ctx Y S)
+    (h₂ : GhCall σ₂ (Ctx + BitVec.ofNat 64 240) Y D S n) (p₂ : GhPCall σ₂ Ctx Y S) (hsp : σ₁.sp = σ₂.sp) :
+    RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) (.call g.fn.name g.fn.code) fun _ _ => True := by
+  refine RelCT.call g.ok g.ct [⟨Ctx + BitVec.ofNat 64 240, 144⟩, ⟨D, 16 * n⟩] [⟨Y, 16⟩, ⟨S, 256⟩]
+    fun a b hab => ?_
+  obtain ⟨rfl, rfl⟩ := hab
+  refine ⟨GhPCall.pre h₁ p₁, GhPCall.pre h₂ p₂, ?_, GhPCall.covers h₁ p₁, h₁.writes, GhPCall.covers h₂ p₂,
+    h₂.writes⟩
+  simp only [Proof.Gcm.ghashPreparedAArch64, Proof.Gcm.ghashAArch64, State.withRegions_gpr, State.withRegions_sp,
+    State.callEntry_sp, callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, callEntry_x4,
     h₁.x0, h₁.x1, h₁.x2, h₁.x3, h₁.x4, h₂.x0, h₂.x1, h₂.x2, h₂.x3, h₂.x4, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
 
@@ -315,6 +412,11 @@ structure GcmImpl where
   ctr : Ctr32Impl
   key : KeyImpl
   gh : GhashImpl
+  /-- Whether `seal` and `open` take the records of TLS with the loops that
+  interleave counter mode and GHASH eight blocks at a time
+  (`Impl/AesGcm/AArch64/Stitch.lean`), which need PMULL (`gh.pmull`) and
+  `FEAT_SHA3` (`eor3`). -/
+  stitch : Bool := false
 
 namespace GcmImpl
 
@@ -324,9 +426,10 @@ def callees : Callees := ⟨⟨v.ctr.callee.name, v.ctr.callee.code⟩, v.key.fn
 
 /-- What the names of the AES-GCM functions end with: once if both
 implementations have the same suffix (`_aes`, for the one feature they
-need). -/
+need), then `_sha3` with the interleaved loops (`stitch`). -/
 def suffix : String :=
-  if v.gh.suffix = v.ctr.suffix then v.ctr.suffix else v.ctr.suffix ++ v.gh.suffix
+  (if v.gh.suffix = v.ctr.suffix then v.ctr.suffix else v.ctr.suffix ++ v.gh.suffix) ++
+    if v.stitch then "_sha3" else ""
 
 
 end GcmImpl
@@ -346,5 +449,7 @@ structure GcmVariant where
   ctr : Ctr32Impl
   key : KeyImpl
   gh : GhashName
+  /-- `GcmImpl.stitch`. -/
+  stitch : Bool := false
 
 end VG.Proof.AesGcm.AArch64

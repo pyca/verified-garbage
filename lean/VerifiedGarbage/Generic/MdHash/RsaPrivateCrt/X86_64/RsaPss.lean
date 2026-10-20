@@ -2,14 +2,64 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.TCB.Emit
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCt
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignCt
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCtx
+public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignVerified
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCt
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
 import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+public import VerifiedGarbage.Proof.Framework.Cold
+public import VerifiedGarbage.Proof.Framework.EntryBranch
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+public import VerifiedGarbage.Proof.Hmac.AnyKey
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.AnyKeyEntry
+public import VerifiedGarbage.Proof.Pbkdf2.Scratch
+public import VerifiedGarbage.Proof.RsaPss.SignCases
+public import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltBack
+public import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltCT
+public import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltCopy
+public import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirectCT
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBack
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBackCT
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignFail
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBody
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCorrect
+public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
+import VerifiedGarbage.Proof.Bignum.CrtMath
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
+import VerifiedGarbage.Proof.Framework.Cold
+import VerifiedGarbage.Proof.Framework.EntryBranch
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+import VerifiedGarbage.Proof.Hmac.AnyKey
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.AnyKeyEntry
+import VerifiedGarbage.Proof.Pbkdf2.Scratch
+import VerifiedGarbage.Proof.RsaPss.SignCases
+import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltBack
+import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltCT
+import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltCopy
+import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirectCT
+import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBack
+import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBackCT
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignFail
+import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBody
+import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCorrect
+import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 
 /-!
 # RSASSA-PSS signing on x86-64
@@ -35,17 +85,14 @@ open VG.Proof.RsaPkcs1Enc.X86_64 (privOf)
 open VG.Proof.RsaPss.X86_64 (signStack sign_verified sign_spAll)
 
 def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (c : Proof.Rsa.X86_64.CrtImpl) : List Artifact := [
-  { Spec.RsaPss.signApi v.mgf.G v.mgf.G with
-    name := Emit.qualifiedName (Spec.RsaPss.signApi v.mgf.G v.mgf.G).name
-      [(v.mgf.G.rust, v.suffix), ("crt", c.suffix)]
-    target := X86_64.target
-    doc := (Spec.RsaPss.signApi v.mgf.G v.mgf.G).doc (notes := ["This implementation builds EMSA-PSS's \
+  (Spec.RsaPss.signApi v.mgf.G v.mgf.G).artifact X86_64.target {
+    suffix := Emit.qualifiedName "" [(v.mgf.G.rust, v.suffix), ("crt", c.suffix)]
+    notes := ["This implementation builds EMSA-PSS's \
       encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is \
       masked with MGF1, and the encoding is signed with `" ++ (privOf c).name ++ "`, which checks \
       the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch \
-      or an address."])
+      or an address."]
     code := Impl.RsaPss.X86_64.sign v.H (privOf c).name (privOf c).code
-    contract := Spec.RsaPss.signContract v.mgf.G v.mgf.G X86_64.abi signStack
     stack := signStack
     verified := sign_verified (hct := (privOf c).ct)
       (hdC := (privOf c).depth) (hH := v.ok) (K := v.K) (lk := v.mgf) (hc := v.pss)

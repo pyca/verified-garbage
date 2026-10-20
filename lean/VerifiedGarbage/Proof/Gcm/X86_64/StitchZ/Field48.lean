@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Gcm.Poly
+import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Gh
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Interleaved counter mode and GHASH with AVX-512: 48 blocks in the field

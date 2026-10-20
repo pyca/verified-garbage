@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Ffdh
-public import VerifiedGarbage.Proof.RsaKeyGen.Table
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.RsaKeyGen.Primes
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Impl.RsaKeyGen.Primes
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH parameter candidates: RSA's table gives exactly the specified sieve -/

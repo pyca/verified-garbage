@@ -1,20 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
 public import VerifiedGarbage.Proof.MlKem.Mem
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.MlKem.Poly
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # ML-KEM on AArch64: what the proofs share
@@ -64,7 +58,7 @@ tactic_template "mlkem_implies " "[" ls:Lean.Parser.Tactic.simpLemma,* "]" " [" 
 
 /-- No instruction of `c` (without calls) writes a callee-saved register. -/
 theorem preserved_of {c : Prog isa} (h : c.allInstrs (keeps (RegSet.ofList preserved)) = true) :
-    ∀ r ∈ preserved, ∀ i ∈ instrs c, dstOf i ≠ some r := by
+    ∀ r ∈ preserved, ∀ i ∈ instrs c, clobbers i r = false := by
   intro r hr i hi
   have := List.all_eq_true.mp (List.all_eq_true.mp (instrs_keeps h) i hi) r hr
   simpa using this

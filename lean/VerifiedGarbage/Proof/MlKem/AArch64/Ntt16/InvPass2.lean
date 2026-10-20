@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.InvRows
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Pass1
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Gs
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Pass2
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lane
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ML-KEM's 16-bit inverse NTT on AArch64: pass 2
@@ -230,25 +235,26 @@ theorem LI2.read {s₀ : State} (hp : Pre s₀) {mB : Mem} {c : Nat} {s : State}
 section
 variable {rest : List Instr} {Q : State → Prop}
 
-/-- The eight rows of chunk `c` from `scratch`. -/
-theorem i2_loads {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 4) {s : State} (st : St s₀ s)
-    (hx2 : s.gpr .x2 = sP s₀ + BitVec.ofNat 64 (16 * c))
-    (hscr : ∀ r < 8, Rep (s.mem.read (sP s₀ + BitVec.ofNat 64 (64 * r + 16 * c)) 16)
-      (fun e => (nttInvL 4 (P₀ s₀))[32 * r + 8 * c + e]!) (2 * 3329))
+/-- The eight rows of chunk `c` of the polynomial `P` after pass 1, in a buffer at `sP`. -/
+theorem i2_loadsOf {P : Poly} {sP : Addr} {c : Nat} {s : State}
+    (hx2 : s.gpr .x2 = sP + BitVec.ofNat 64 (16 * c))
+    (hin : ∀ r < 8, InRegions (s.rd ++ s.wr) (sP + BitVec.ofNat 64 (64 * r + 16 * c)) 16)
+    (hscr : ∀ r < 8, Rep (s.mem.read (sP + BitVec.ofNat 64 (64 * r + 16 * c)) 16)
+      (fun e => (nttInvL 4 P)[32 * r + 8 * c + e]!) (2 * 3329))
     (k : ∀ s', VChg bfRegs s s' →
-      RowsI (P₀ s₀) c (List.replicate 8 4) (List.replicate 8 (2 * 3329)) 8 s' →
+      RowsI P c (List.replicate 8 4) (List.replicate 8 (2 * 3329)) 8 s' →
       WP isa (.block rest) s' Q) :
     WP isa (.block (((List.range 8).map fun r => .ldrq (row r) .x2 (64 * r)) ++ rest)) s Q := by
   rw [List.map_eq_flatMap, WP.block_append_iff]
   refine WP.mono (wp_range_flatMap (M := isa)
     (fun n w => VChg bfRegs s w ∧ ∀ r < n, Rep (w.v (row r))
-      (fun e => (nttInvL 4 (P₀ s₀))[32 * r + 8 * c + e]!) (2 * 3329))
+      (fun e => (nttInvL 4 P)[32 * r + 8 * c + e]!) (2 * 3329))
     (fun r w hr ⟨cw, hw⟩ => ?_) 8 (Nat.le_refl _) s
     ⟨VChg.refl _ _, fun r hr => absurd hr (Nat.not_lt_zero r)⟩)
     fun s' ⟨c', h'⟩ => k s' c' fun r hr => by
       rw [getD_rep_lt hr, getD_rep_lt hr]; exact h' r hr
-  refine wp_ldrq (a := sP s₀ + BitVec.ofNat 64 (64 * r + 16 * c)) (by omega)
-    (by rw [cw.gpr, hx2, ptr_add]; congr 2; omega) (inS' hp (st.vchg cw) (by omega))
+  refine wp_ldrq (a := sP + BitVec.ofNat 64 (64 * r + 16 * c)) (by omega)
+    (by rw [cw.gpr, hx2, ptr_add]; congr 2; omega) (by rw [cw.rd, cw.wr]; exact hin r hr)
     fun w₁ h₁ => wp_nil ⟨(cw.trans h₁.chg).mono fun x hx => ?_, fun r' hr' => ?_⟩
   · simp only [List.mem_append, List.mem_singleton] at hx
     rcases hx with hx | rfl
@@ -259,6 +265,17 @@ theorem i2_loads {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 4) {s : Stat
       rw [h₁.v, cw.mem]; exact hscr r' hr
     · rw [h₁.get _ (fun h => e (row_inj r' (by omega) r hr h))]
       exact hw r' (by omega)
+
+/-- The eight rows of chunk `c` from `scratch`. -/
+theorem i2_loads {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 4) {s : State} (st : St s₀ s)
+    (hx2 : s.gpr .x2 = sP s₀ + BitVec.ofNat 64 (16 * c))
+    (hscr : ∀ r < 8, Rep (s.mem.read (sP s₀ + BitVec.ofNat 64 (64 * r + 16 * c)) 16)
+      (fun e => (nttInvL 4 (P₀ s₀))[32 * r + 8 * c + e]!) (2 * 3329))
+    (k : ∀ s', VChg bfRegs s s' →
+      RowsI (P₀ s₀) c (List.replicate 8 4) (List.replicate 8 (2 * 3329)) 8 s' →
+      WP isa (.block rest) s' Q) :
+    WP isa (.block (((List.range 8).map fun r => .ldrq (row r) .x2 (64 * r)) ++ rest)) s Q := by
+  exact i2_loadsOf hx2 (fun r _ => inS' hp st (by omega)) hscr k
 
 /-- Each row reduced to less than `q` in absolute value. -/
 theorem rowsI_reduce {P : Poly} {c : Nat} {lay bnd : List Nat} {s : State} (h : RowsI P c lay bnd 8 s)
@@ -304,77 +321,95 @@ end
 /-- The registers pass 2's arithmetic changes. -/
 abbrev p2Regs : List VReg := [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v22, .v23]
 
+/-- The last three layers of the inverse on the rows of chunk `c` (`invPass2Arith`). -/
+theorem ip2_arith {rest : List Instr} {Q : State → Prop} {P : Poly} {c : Nat} (hc : c < 4) {s₁ : State}
+    (R₁ : RowsI P c (List.replicate 8 4) (List.replicate 8 (2 * 3329)) 8 s₁)
+    (hz : ∀ k < 8, vhalf (s₁.v .v18) k = BitVec.ofNat 16 (izc k))
+    (ht : ∀ k < 8, vhalf (s₁.v .v19) k = BitVec.ofNat 16 (tw (izc k)))
+    (hq : Cst (s₁.v .v31) fun _ => 3329) (h10 : Cst (s₁.v .v30) fun _ => 10)
+    (kk : ∀ s₁₁, VChg p2Regs s₁ s₁₁ →
+      (∀ r < 8, Rep (s₁₁.v (row r)) (fun e => (nttInvL 7 P)[32 * r + 8 * c + e]!) (2 * 3329)) →
+      Cst (s₁₁.v .v22) (fun _ => 3303) → Cst (s₁₁.v .v23) (fun _ => tw 3303) →
+      WP isa (.block rest) s₁₁ Q) :
+    WP isa (.block (invPass2Arith ++ rest)) s₁ Q := by
+  simp only [invPass2Arith, List.append_assoc]
+  have C₁ : VChg p2Regs s₁ s₁ := VChg.refl _ _
+  refine rowsI_gsRows hc (k := 0) (K := 7) (by decide) [(0, 1)] (lay' := [5, 5, 4, 4, 4, 4, 4, 4])
+    (bnd' := [13316, 3329, 6658, 6658, 6658, 6658, 6658, 6658]) (by decide) rfl R₁
+    (by rw [C₁.v .v18 (by decide), hz 0 (by decide)]; rfl)
+    (by rw [C₁.v .v19 (by decide), ht 0 (by decide)]; rfl)
+    (by rw [C₁.v .v31 (by decide)]; exact hq) fun s₂ c₂ R₂ => ?_
+  have C₂ : VChg p2Regs s₁ s₂ := (C₁.trans c₂).mono (by decide)
+  refine rowsI_gsRows hc (k := 1) (K := 6) (by decide) [(2, 3)] (lay' := [5, 5, 5, 5, 4, 4, 4, 4])
+    (bnd' := [13316, 3329, 13316, 3329, 6658, 6658, 6658, 6658]) (by decide) rfl R₂
+    (by rw [C₂.v .v18 (by decide), hz 1 (by decide)]; rfl)
+    (by rw [C₂.v .v19 (by decide), ht 1 (by decide)]; rfl)
+    (by rw [C₂.v .v31 (by decide)]; exact hq) fun s₃ c₃ R₃ => ?_
+  have C₃ : VChg p2Regs s₁ s₃ := (C₂.trans c₃).mono (by decide)
+  refine rowsI_gsRows hc (k := 2) (K := 5) (by decide) [(4, 5)] (lay' := [5, 5, 5, 5, 5, 5, 4, 4])
+    (bnd' := [13316, 3329, 13316, 3329, 13316, 3329, 6658, 6658]) (by decide) rfl R₃
+    (by rw [C₃.v .v18 (by decide), hz 2 (by decide)]; rfl)
+    (by rw [C₃.v .v19 (by decide), ht 2 (by decide)]; rfl)
+    (by rw [C₃.v .v31 (by decide)]; exact hq) fun s₄ c₄ R₄ => ?_
+  have C₄ : VChg p2Regs s₁ s₄ := (C₃.trans c₄).mono (by decide)
+  refine rowsI_gsRows hc (k := 3) (K := 4) (by decide) [(6, 7)] (lay' := [5, 5, 5, 5, 5, 5, 5, 5])
+    (bnd' := [13316, 3329, 13316, 3329, 13316, 3329, 13316, 3329]) (by decide) rfl R₄
+    (by rw [C₄.v .v18 (by decide), hz 3 (by decide)]; rfl)
+    (by rw [C₄.v .v19 (by decide), ht 3 (by decide)]; rfl)
+    (by rw [C₄.v .v31 (by decide)]; exact hq) fun s₅ c₅ R₅ => ?_
+  have C₅ : VChg p2Regs s₁ s₅ := (C₄.trans c₅).mono (by decide)
+  refine rowsI_gsRows hc (k := 4) (K := 3) (by decide) [(0, 2), (1, 3)]
+    (lay' := [6, 6, 6, 6, 5, 5, 5, 5])
+    (bnd' := [26632, 6658, 3329, 3329, 13316, 3329, 13316, 3329]) (by decide) rfl R₅
+    (by rw [C₅.v .v18 (by decide), hz 4 (by decide)]; rfl)
+    (by rw [C₅.v .v19 (by decide), ht 4 (by decide)]; rfl)
+    (by rw [C₅.v .v31 (by decide)]; exact hq) fun s₆ c₆ R₆ => ?_
+  have C₆ : VChg p2Regs s₁ s₆ := (C₅.trans c₆).mono (by decide)
+  refine rowsI_gsRows hc (k := 5) (K := 2) (by decide) [(4, 6), (5, 7)]
+    (lay' := [6, 6, 6, 6, 6, 6, 6, 6])
+    (bnd' := [26632, 6658, 3329, 3329, 26632, 6658, 3329, 3329]) (by decide) rfl R₆
+    (by rw [C₆.v .v18 (by decide), hz 5 (by decide)]; rfl)
+    (by rw [C₆.v .v19 (by decide), ht 5 (by decide)]; rfl)
+    (by rw [C₆.v .v31 (by decide)]; exact hq) fun s₇ c₇ R₇ => ?_
+  have C₇ : VChg p2Regs s₁ s₇ := (C₆.trans c₇).mono (by decide)
+  refine rowsI_reduce R₇ (by decide) (by rw [C₇.v .v30 (by decide)]; exact h10)
+    (by rw [C₇.v .v31 (by decide)]; exact hq) fun s₈ c₈ R₈ => ?_
+  have C₈ : VChg p2Regs s₁ s₈ := (C₇.trans c₈).mono (by decide)
+  refine rowsI_gsRows hc (k := 6) (K := 1) (by decide) [(0, 4), (1, 5), (2, 6), (3, 7)]
+    (lay' := [7, 7, 7, 7, 7, 7, 7, 7])
+    (bnd' := [6658, 6658, 6658, 6658, 3329, 3329, 3329, 3329]) (by decide) rfl R₈
+    (by rw [C₈.v .v18 (by decide), hz 6 (by decide)]; rfl)
+    (by rw [C₈.v .v19 (by decide), ht 6 (by decide)]; rfl)
+    (by rw [C₈.v .v31 (by decide)]; exact hq) fun s₉ c₉ R₉ => ?_
+  have C₉ : VChg p2Regs s₁ s₉ := (C₈.trans c₉).mono (by decide)
+  refine wp_vop (eval_dupE (by decide)) fun s₁₀ h₁₀ => wp_vop (eval_dupE (by decide)) fun s₁₁ h₁₁ => ?_
+  have C₁₁ : VChg p2Regs s₁ s₁₁ := ((C₉.trans h₁₀.chg).trans h₁₁.chg).mono (by decide)
+  have hL : ∀ r < 8, [7, 7, 7, 7, 7, 7, 7, 7].getD r 0 = 7 ∧
+      [6658, 6658, 6658, 6658, 3329, 3329, 3329, 3329].getD r 0 ≤ 2 * 3329 := by decide
+  refine kk s₁₁ C₁₁ (fun r hr => ?_)
+    (fun e he => by rw [h₁₁.get .v22, h₁₀.v, vhalf_ofVHalves _ he, C₉.v .v18 (by decide), hz 7 (by decide)]; rfl)
+    (fun e he => by rw [h₁₁.v, vhalf_ofVHalves _ he, h₁₀.get .v19, C₉.v .v19 (by decide), ht 7 (by decide)]; rfl)
+  have nr := row_ne hr
+  rw [h₁₁.get _ nr.2.2.2.1, h₁₀.get _ nr.2.2.1]
+  have := R₉ r hr
+  rw [(hL r hr).1] at this
+  exact this.mono (hL r hr).2
+
 theorem ip2_body {s₀ : State} (hp : Pre s₀) {mB : Mem} {c : Nat} (hc : c < 4) {sb : State}
     (h : LI2 s₀ mB c sb) :
     WP isa (.block invPass2Body) sb fun s' => LI2 s₀ mB (c + 1) s' ∧ ((s'.gpr .x5).toNat ≠ 0 ↔ c + 1 ≠ 4) := by
   simp only [invPass2Body, List.append_assoc]
   refine i2_loads hp hc h.st h.x2 (fun r hr => by rw [h.read hp (by omega)]; exact h.scr r hr c hc)
     fun s₁ c₁ R₁ => ?_
-  have C₁ : VChg p2Regs sb s₁ := c₁.mono (by decide)
-  refine rowsI_gsRows hc (k := 0) (K := 7) (by decide) [(0, 1)] (lay' := [5, 5, 4, 4, 4, 4, 4, 4])
-    (bnd' := [13316, 3329, 6658, 6658, 6658, 6658, 6658, 6658]) (by decide) rfl R₁
-    (by rw [C₁.v .v18 (by decide), h.z 0 (by decide)]; rfl)
-    (by rw [C₁.v .v19 (by decide), h.t 0 (by decide)]; rfl)
-    (by rw [C₁.v .v31 (by decide)]; exact h.q) fun s₂ c₂ R₂ => ?_
-  have C₂ : VChg p2Regs sb s₂ := (C₁.trans c₂).mono (by decide)
-  refine rowsI_gsRows hc (k := 1) (K := 6) (by decide) [(2, 3)] (lay' := [5, 5, 5, 5, 4, 4, 4, 4])
-    (bnd' := [13316, 3329, 13316, 3329, 6658, 6658, 6658, 6658]) (by decide) rfl R₂
-    (by rw [C₂.v .v18 (by decide), h.z 1 (by decide)]; rfl)
-    (by rw [C₂.v .v19 (by decide), h.t 1 (by decide)]; rfl)
-    (by rw [C₂.v .v31 (by decide)]; exact h.q) fun s₃ c₃ R₃ => ?_
-  have C₃ : VChg p2Regs sb s₃ := (C₂.trans c₃).mono (by decide)
-  refine rowsI_gsRows hc (k := 2) (K := 5) (by decide) [(4, 5)] (lay' := [5, 5, 5, 5, 5, 5, 4, 4])
-    (bnd' := [13316, 3329, 13316, 3329, 13316, 3329, 6658, 6658]) (by decide) rfl R₃
-    (by rw [C₃.v .v18 (by decide), h.z 2 (by decide)]; rfl)
-    (by rw [C₃.v .v19 (by decide), h.t 2 (by decide)]; rfl)
-    (by rw [C₃.v .v31 (by decide)]; exact h.q) fun s₄ c₄ R₄ => ?_
-  have C₄ : VChg p2Regs sb s₄ := (C₃.trans c₄).mono (by decide)
-  refine rowsI_gsRows hc (k := 3) (K := 4) (by decide) [(6, 7)] (lay' := [5, 5, 5, 5, 5, 5, 5, 5])
-    (bnd' := [13316, 3329, 13316, 3329, 13316, 3329, 13316, 3329]) (by decide) rfl R₄
-    (by rw [C₄.v .v18 (by decide), h.z 3 (by decide)]; rfl)
-    (by rw [C₄.v .v19 (by decide), h.t 3 (by decide)]; rfl)
-    (by rw [C₄.v .v31 (by decide)]; exact h.q) fun s₅ c₅ R₅ => ?_
-  have C₅ : VChg p2Regs sb s₅ := (C₄.trans c₅).mono (by decide)
-  refine rowsI_gsRows hc (k := 4) (K := 3) (by decide) [(0, 2), (1, 3)]
-    (lay' := [6, 6, 6, 6, 5, 5, 5, 5])
-    (bnd' := [26632, 6658, 3329, 3329, 13316, 3329, 13316, 3329]) (by decide) rfl R₅
-    (by rw [C₅.v .v18 (by decide), h.z 4 (by decide)]; rfl)
-    (by rw [C₅.v .v19 (by decide), h.t 4 (by decide)]; rfl)
-    (by rw [C₅.v .v31 (by decide)]; exact h.q) fun s₆ c₆ R₆ => ?_
-  have C₆ : VChg p2Regs sb s₆ := (C₅.trans c₆).mono (by decide)
-  refine rowsI_gsRows hc (k := 5) (K := 2) (by decide) [(4, 6), (5, 7)]
-    (lay' := [6, 6, 6, 6, 6, 6, 6, 6])
-    (bnd' := [26632, 6658, 3329, 3329, 26632, 6658, 3329, 3329]) (by decide) rfl R₆
-    (by rw [C₆.v .v18 (by decide), h.z 5 (by decide)]; rfl)
-    (by rw [C₆.v .v19 (by decide), h.t 5 (by decide)]; rfl)
-    (by rw [C₆.v .v31 (by decide)]; exact h.q) fun s₇ c₇ R₇ => ?_
-  have C₇ : VChg p2Regs sb s₇ := (C₆.trans c₇).mono (by decide)
-  refine rowsI_reduce R₇ (by decide) (by rw [C₇.v .v30 (by decide)]; exact h.c10)
-    (by rw [C₇.v .v31 (by decide)]; exact h.q) fun s₈ c₈ R₈ => ?_
-  have C₈ : VChg p2Regs sb s₈ := (C₇.trans c₈).mono (by decide)
-  refine rowsI_gsRows hc (k := 6) (K := 1) (by decide) [(0, 4), (1, 5), (2, 6), (3, 7)]
-    (lay' := [7, 7, 7, 7, 7, 7, 7, 7])
-    (bnd' := [6658, 6658, 6658, 6658, 3329, 3329, 3329, 3329]) (by decide) rfl R₈
-    (by rw [C₈.v .v18 (by decide), h.z 6 (by decide)]; rfl)
-    (by rw [C₈.v .v19 (by decide), h.t 6 (by decide)]; rfl)
-    (by rw [C₈.v .v31 (by decide)]; exact h.q) fun s₉ c₉ R₉ => ?_
-  have C₉ : VChg p2Regs sb s₉ := (C₈.trans c₉).mono (by decide)
-  refine wp_vop (eval_dupE (by decide)) fun s₁₀ h₁₀ => wp_vop (eval_dupE (by decide)) fun s₁₁ h₁₁ => ?_
-  have C₁₁ : VChg p2Regs sb s₁₁ := ((C₉.trans h₁₀.chg).trans h₁₁.chg).mono (by decide)
+  refine ip2_arith hc R₁ (fun k hk => by rw [c₁.get .v18]; exact h.z k hk)
+    (fun k hk => by rw [c₁.get .v19]; exact h.t k hk) (by rw [c₁.get .v31]; exact h.q)
+    (by rw [c₁.get .v30]; exact h.c10) fun s₁₁ C' rows z22 t23 => ?_
+  have C₁₁ : VChg p2Regs sb s₁₁ := ((c₁.mono (rs' := p2Regs) (by decide)).trans C').mono (by decide)
   have st₁₁ : St s₀ s₁₁ := h.st.vchg C₁₁
-  have hL : ∀ r < 8, [7, 7, 7, 7, 7, 7, 7, 7].getD r 0 = 7 ∧
-      [6658, 6658, 6658, 6658, 3329, 3329, 3329, 3329].getD r 0 ≤ 2 * 3329 := by decide
   refine scale_rows hp hc st₁₁ (by rw [C₁₁.gpr]; exact h.x3)
-    (X := fun i => (nttInvL 7 (P₀ s₀))[i]!) (fun r hr => ?_)
-    (fun e he => by rw [h₁₁.get .v22, h₁₀.v, vhalf_ofVHalves _ he, C₉.v .v18 (by decide), h.z 7 (by decide)]; rfl)
-    (fun e he => by rw [h₁₁.v, vhalf_ofVHalves _ he, h₁₀.get .v19, C₉.v .v19 (by decide), h.t 7 (by decide)]; rfl)
+    (X := fun i => (nttInvL 7 (P₀ s₀))[i]!) rows z22 t23
     (by rw [C₁₁.v .v31 (by decide)]; exact h.q) (by rw [C₁₁.v .v29 (by decide)]; exact h.c0)
     (by rw [C₁₁.mem]; exact h.out) fun w g₁ stw vw fr co => ?_
-  · have nr := row_ne hr
-    rw [h₁₁.get _ nr.2.2.2.1, h₁₀.get _ nr.2.2.1]
-    have := R₉ r hr
-    rw [(hL r hr).1] at this
-    exact this.mono (hL r hr).2
   refine WP.mono (WP.keepV (Q := fun w' => Keep [.x2, .x3, .x5] w w' ∧ w'.mem = w.mem ∧
       w'.gpr .x2 = w.gpr .x2 + BitVec.ofNat 64 16 ∧ w'.gpr .x3 = w.gpr .x3 + BitVec.ofNat 64 32 ∧
       w'.gpr .x5 = w.gpr .x5 - BitVec.ofNat 64 1)

@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyInvariant
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Lazy
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyBase
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Table
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyLay21
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyLay
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyButterfly
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

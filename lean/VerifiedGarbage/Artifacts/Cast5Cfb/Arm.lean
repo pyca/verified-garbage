@@ -1,10 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.Arm.ModesVerified
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # CAST5-CFB64 artifacts on baseline ARMv7 -/
 
@@ -18,23 +15,17 @@ def note : String :=
   "calling the verified `vg_cast5_ecb_encrypt` (which scans the S-boxes in the static `VG_CAST5_S1234`, so no secret is an address) on the chaining value with the number of rounds and, as its stack argument, the end of a 312-byte working space on the stack (the mode's 56 bytes, then the 256 the ECB function works in), zeroed on return."
 
 def artifacts : List Artifact := [
-  { Spec.Cast5.cfbEncryptApi with
-    target := Arm.target
-    doc := Spec.Cast5.cfbEncryptApi.doc (notes := [note])
+  Spec.Cast5.cfbEncryptApi.artifact Arm.target {
+    notes := [note]
     consts := Impl.Cast5.ecbConsts
     code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.cfbEncrypt
-    contract := Spec.Cast5.cfbEncryptContract (Arm.abi.withConsts Impl.Cast5.ecbConsts) 336
     stack := 336
-    verified := Proof.Cast5.Arm.cfbEncrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Cast5.cfbDecryptApi with
-    target := Arm.target
-    doc := Spec.Cast5.cfbDecryptApi.doc (notes := [note])
+    verified := Proof.Cast5.Arm.cfbEncrypt_framed },
+  Spec.Cast5.cfbDecryptApi.artifact Arm.target {
+    notes := [note]
     consts := Impl.Cast5.ecbConsts
     code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.cfbDecrypt
-    contract := Spec.Cast5.cfbDecryptContract (Arm.abi.withConsts Impl.Cast5.ecbConsts) 336
     stack := 336
-    verified := Proof.Cast5.Arm.cfbDecrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Cast5.Arm.cfbDecrypt_framed }]
 
 end VG.Artifacts.Cast5Cfb.Arm

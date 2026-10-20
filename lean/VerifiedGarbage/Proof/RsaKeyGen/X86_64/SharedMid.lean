@@ -1,13 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedWitness
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedFrame
-public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.SharedCandidate
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCall
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # RSA's prepared witness and a generic shared round -/
 
@@ -48,7 +43,7 @@ private theorem witness_exp (w : Nat) : ∀ r ∈ witnessRanges w, r.1 + r.2 ≤
   rcases hr with (rfl | rfl | rfl) | (rfl | rfl | rfl)
   all_goals simp only [slot, hdrBytes, aX, aAcc, aTmp, aXm, aE, kUsed, kU, sFn]; omega_arith
 
-theorem sharedMid_ok (M : Mont) (R : Kernel) {s : State} {B : Addr} {Z w c bm : Nat} {mi : BitVec 64} {sp : Addr}
+theorem sharedMid_ok (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : MmCalls M mm) (R : Kernel) {s : State} {B : Addr} {Z w c bm : Nat} {mi : BitVec 64} {sp : Addr}
     (hd : MrDims B Z w) (hZ : slot w 28 ≤ Z) (henv : SharedEnv B Z sp s)
     (hc : MrCtx s B Z w mi c bm) (he : ECtx s.mem B w c)
     (hR2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c) (hc1 : 1 < c)
@@ -59,7 +54,7 @@ theorem sharedMid_ok (M : Mont) (R : Kernel) {s : State} {B : Addr} {Z w c bm : 
     (hlen : used + 8 * w ≤ r.length)
     {i uni ch : Nat} (hI : word s.mem B (8 * kI) = BitVec.ofNat 64 i)
     (hN : word s.mem B (8 * kUni) = BitVec.ofNat 64 uni) (hC : word s.mem B (8 * kChecks) = BitVec.ofNat 64 ch) :
-    WP isa (seqs ((mrWitness ++ [M.mm aXm aX aR2]) ++ [R.run])) s fun t =>
+    WP isa (seqs ((mrWitness ++ [mm aXm aX aR2]) ++ [R.run])) s fun t =>
       (∃ bm', MrCtx t B Z w mi c bm') ∧ ECtx t.mem B w c ∧
       word t.mem B (8 * kFlag) = mask (passOf c w used r) ∧
       word t.mem B (8 * kI) = BitVec.ofNat 64 i ∧ word t.mem B (8 * kUni) = BitVec.ofNat 64 uni ∧
@@ -74,9 +69,12 @@ theorem sharedMid_ok (M : Mont) (R : Kernel) {s : State} {B : Addr} {Z w c bm : 
   have hn := hc.good.scr.nowrap
   have hz := hd.z
   refine wp_seqs_append (by simp [mrWitness]) (by simp) ?_
-  refine WP.mono (sharedWitness_ok M hd hc hR2 ho hc1 hb hR hU hK hsrc hlen) ?_
+  refine WP.mono (sharedWitness_call_ok M hmc henv hd hc hR2 ho hc1 hb hR hU hK hsrc hlen) ?_
   rintro u ⟨hcu, hx, hr2, hu, hus, hfrm, hk⟩
-  have heu : ECtx u.mem B w c := he.of_frm hfrm (fun r hr => Or.inr (witness_exp w r hr)) (by have := aE_fits hd; omega_arith)
+  have heu : ECtx u.mem B w c :=
+    ⟨by rw [SharedFrame.array hfrm henv (fun r hr => Or.inr (witness_exp w r hr)) (by have := aE_fits hd; omega_arith) hn]; exact he.e,
+      by rw [SharedFrame.word hfrm henv (fun r hr => Or.inr (by have := witness_exp w r hr; omega_arith))
+        (by have := aE_fits hd; omega_arith) hn]; exact he.l⟩
   have hx' : wv u.mem B (slot w aXm) w = (wtOf c w used r).1 % c * 2 ^ (64 * w) % c := by
     simpa only [wtOf, Nat.mod_mul_mod] using hx
   have henu := henv.kept hk (by decide)
@@ -87,7 +85,7 @@ theorem sharedMid_ok (M : Mont) (R : Kernel) {s : State} {B : Addr} {Z w c bm : 
     rw [henu.rsp] at hfr
     exact hfr
   have hfm : SharedFrame B sp (sharedMidRanges w) s.mem t.mem :=
-    (hfrm.work.mono (fun r hr => List.mem_append_left _ hr)).trans
+    (hfrm.mono (fun r hr => List.mem_append_left _ hr)).trans
       (hfr.mono (fun r hr => List.mem_append_right _ hr))
   refine ⟨hct, het, ?_, ?_, ?_, ?_, ?_, ?_, ?_, hfm, (hk.trans kt).mono (by decide)⟩
   · simpa only [Spec.MillerRabin.round, passOf] using hf

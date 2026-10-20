@@ -25,96 +25,96 @@ pub(crate) const VG_AES_XTS_ENCRYPT_AES_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_xts_encrypt_aes(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        ".arch_extension aes",
-        "str x19, [x5, #2064]",
-        "str x20, [x5, #2072]",
-        "str x21, [x5, #2080]",
-        "str x22, [x5, #2088]",
-        "str x23, [x5, #2096]",
-        "str x30, [x5, #2104]",
-        "str x24, [x5, #2112]",
-        "add x19, x0, #0",
-        "add x20, x1, #0",
-        "add x21, x2, #0",
-        "add x22, x3, #0",
-        "add x23, x4, #0",
-        "add x24, x5, #0",
-        "cbz x23, 20f",
-        "ldr x9, [x21, #0]",
-        "str x9, [x24, #2048]",
-        "ldr x9, [x21, #8]",
-        "str x9, [x24, #2056]",
-        "add x14, x22, #0",
-        "add x15, x23, #0",
-        "22:",
-        "ldr x9, [x22, #0]",
-        "ldr x10, [x21, #0]",
-        "eor x9, x9, x10",
-        "str x9, [x22, #0]",
-        "ldr x9, [x22, #8]",
-        "ldr x10, [x21, #8]",
-        "eor x9, x9, x10",
-        "str x9, [x22, #8]",
-        "ldr x9, [x21, #0]",
-        "ldr x10, [x21, #8]",
-        "adds x9, x9, x9",
-        "adcs x10, x10, x10",
-        "movz x11, #135, lsl #0",
-        "movz x12, #0, lsl #0",
-        "csel x11, x11, x12, hs",
-        "eor x9, x9, x11",
-        "str x9, [x21, #0]",
-        "str x10, [x21, #8]",
-        "add x22, x22, #16",
-        "sub x23, x23, #1",
-        "cbnz x23, 22b",
-        "add x22, x14, #0",
-        "add x23, x15, #0",
-        "ldr x9, [x24, #2048]",
-        "str x9, [x21, #0]",
-        "ldr x9, [x24, #2056]",
-        "str x9, [x21, #8]",
-        "add x0, x19, #0",
-        "add x1, x20, #0",
-        "add x2, x22, #0",
-        "add x3, x23, #0",
-        "add x4, x24, #0",
-        "bl {vg_aes_encrypt_blocks_aes}",
-        "23:",
-        "ldr x9, [x22, #0]",
-        "ldr x10, [x21, #0]",
-        "eor x9, x9, x10",
-        "str x9, [x22, #0]",
-        "ldr x9, [x22, #8]",
-        "ldr x10, [x21, #8]",
-        "eor x9, x9, x10",
-        "str x9, [x22, #8]",
-        "ldr x9, [x21, #0]",
-        "ldr x10, [x21, #8]",
-        "adds x9, x9, x9",
-        "adcs x10, x10, x10",
-        "movz x11, #135, lsl #0",
-        "movz x12, #0, lsl #0",
-        "csel x11, x11, x12, hs",
-        "eor x9, x9, x11",
-        "str x9, [x21, #0]",
-        "str x10, [x21, #8]",
-        "add x22, x22, #16",
-        "sub x23, x23, #1",
-        "cbnz x23, 23b",
-        "b 21f",
-        "20:",
-        "21:",
-        "ldr x19, [x24, #2064]",
-        "ldr x20, [x24, #2072]",
-        "ldr x21, [x24, #2080]",
-        "ldr x22, [x24, #2088]",
-        "ldr x23, [x24, #2096]",
-        "ldr x30, [x24, #2104]",
-        "ldr x24, [x24, #2112]",
-        "ret",
-        ".arch_extension noaes",
-        ".p2align 6",
+        r".arch_extension aes
+str x19, [x5, #2064]
+str x20, [x5, #2072]
+str x21, [x5, #2080]
+str x22, [x5, #2088]
+str x23, [x5, #2096]
+str x30, [x5, #2104]
+str x24, [x5, #2112]
+add x19, x0, #0
+add x20, x1, #0
+add x21, x2, #0
+add x22, x3, #0
+add x23, x4, #0
+add x24, x5, #0
+cbz x23, 20f
+ldr x9, [x21, #0]
+str x9, [x24, #2048]
+ldr x9, [x21, #8]
+str x9, [x24, #2056]
+add x14, x22, #0
+add x15, x23, #0
+22:
+ldr x9, [x22, #0]
+ldr x10, [x21, #0]
+eor x9, x9, x10
+str x9, [x22, #0]
+ldr x9, [x22, #8]
+ldr x10, [x21, #8]
+eor x9, x9, x10
+str x9, [x22, #8]
+ldr x9, [x21, #0]
+ldr x10, [x21, #8]
+adds x9, x9, x9
+adcs x10, x10, x10
+movz x11, #135, lsl #0
+movz x12, #0, lsl #0
+csel x11, x11, x12, hs
+eor x9, x9, x11
+str x9, [x21, #0]
+str x10, [x21, #8]
+add x22, x22, #16
+sub x23, x23, #1
+cbnz x23, 22b
+add x22, x14, #0
+add x23, x15, #0
+ldr x9, [x24, #2048]
+str x9, [x21, #0]
+ldr x9, [x24, #2056]
+str x9, [x21, #8]
+add x0, x19, #0
+add x1, x20, #0
+add x2, x22, #0
+add x3, x23, #0
+add x4, x24, #0
+bl {vg_aes_encrypt_blocks_aes}
+23:
+ldr x9, [x22, #0]
+ldr x10, [x21, #0]
+eor x9, x9, x10
+str x9, [x22, #0]
+ldr x9, [x22, #8]
+ldr x10, [x21, #8]
+eor x9, x9, x10
+str x9, [x22, #8]
+ldr x9, [x21, #0]
+ldr x10, [x21, #8]
+adds x9, x9, x9
+adcs x10, x10, x10
+movz x11, #135, lsl #0
+movz x12, #0, lsl #0
+csel x11, x11, x12, hs
+eor x9, x9, x11
+str x9, [x21, #0]
+str x10, [x21, #8]
+add x22, x22, #16
+sub x23, x23, #1
+cbnz x23, 23b
+b 21f
+20:
+21:
+ldr x19, [x24, #2064]
+ldr x20, [x24, #2072]
+ldr x21, [x24, #2080]
+ldr x22, [x24, #2088]
+ldr x23, [x24, #2096]
+ldr x30, [x24, #2104]
+ldr x24, [x24, #2112]
+ret
+.arch_extension noaes
+.p2align 6",
         vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes,
     )
 }
@@ -142,97 +142,331 @@ pub(crate) const VG_AES_XTS_DECRYPT_AES_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_xts_decrypt_aes(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        ".arch_extension aes",
-        "str x19, [x5, #2064]",
-        "str x20, [x5, #2072]",
-        "str x21, [x5, #2080]",
-        "str x22, [x5, #2088]",
-        "str x23, [x5, #2096]",
-        "str x30, [x5, #2104]",
-        "str x24, [x5, #2112]",
-        "add x19, x0, #0",
-        "add x20, x1, #0",
-        "add x21, x2, #0",
-        "add x22, x3, #0",
-        "add x23, x4, #0",
-        "add x24, x5, #0",
-        "cbz x23, 20f",
-        "ldr x9, [x21, #0]",
-        "str x9, [x24, #2048]",
-        "ldr x9, [x21, #8]",
-        "str x9, [x24, #2056]",
-        "add x14, x22, #0",
-        "add x15, x23, #0",
-        "22:",
-        "ldr x9, [x22, #0]",
-        "ldr x10, [x21, #0]",
-        "eor x9, x9, x10",
-        "str x9, [x22, #0]",
-        "ldr x9, [x22, #8]",
-        "ldr x10, [x21, #8]",
-        "eor x9, x9, x10",
-        "str x9, [x22, #8]",
-        "ldr x9, [x21, #0]",
-        "ldr x10, [x21, #8]",
-        "adds x9, x9, x9",
-        "adcs x10, x10, x10",
-        "movz x11, #135, lsl #0",
-        "movz x12, #0, lsl #0",
-        "csel x11, x11, x12, hs",
-        "eor x9, x9, x11",
-        "str x9, [x21, #0]",
-        "str x10, [x21, #8]",
-        "add x22, x22, #16",
-        "sub x23, x23, #1",
-        "cbnz x23, 22b",
-        "add x22, x14, #0",
-        "add x23, x15, #0",
-        "ldr x9, [x24, #2048]",
-        "str x9, [x21, #0]",
-        "ldr x9, [x24, #2056]",
-        "str x9, [x21, #8]",
-        "add x0, x19, #0",
-        "add x1, x20, #0",
-        "add x2, x22, #0",
-        "add x3, x23, #0",
-        "add x4, x24, #0",
-        "bl {vg_aes_decrypt_blocks_aes}",
-        "23:",
-        "ldr x9, [x22, #0]",
-        "ldr x10, [x21, #0]",
-        "eor x9, x9, x10",
-        "str x9, [x22, #0]",
-        "ldr x9, [x22, #8]",
-        "ldr x10, [x21, #8]",
-        "eor x9, x9, x10",
-        "str x9, [x22, #8]",
-        "ldr x9, [x21, #0]",
-        "ldr x10, [x21, #8]",
-        "adds x9, x9, x9",
-        "adcs x10, x10, x10",
-        "movz x11, #135, lsl #0",
-        "movz x12, #0, lsl #0",
-        "csel x11, x11, x12, hs",
-        "eor x9, x9, x11",
-        "str x9, [x21, #0]",
-        "str x10, [x21, #8]",
-        "add x22, x22, #16",
-        "sub x23, x23, #1",
-        "cbnz x23, 23b",
-        "b 21f",
-        "20:",
-        "21:",
-        "ldr x19, [x24, #2064]",
-        "ldr x20, [x24, #2072]",
-        "ldr x21, [x24, #2080]",
-        "ldr x22, [x24, #2088]",
-        "ldr x23, [x24, #2096]",
-        "ldr x30, [x24, #2104]",
-        "ldr x24, [x24, #2112]",
-        "ret",
-        ".arch_extension noaes",
-        ".p2align 6",
+        r".arch_extension aes
+str x19, [x5, #2064]
+str x20, [x5, #2072]
+str x21, [x5, #2080]
+str x22, [x5, #2088]
+str x23, [x5, #2096]
+str x30, [x5, #2104]
+str x24, [x5, #2112]
+add x19, x0, #0
+add x20, x1, #0
+add x21, x2, #0
+add x22, x3, #0
+add x23, x4, #0
+add x24, x5, #0
+cbz x23, 20f
+ldr x9, [x21, #0]
+str x9, [x24, #2048]
+ldr x9, [x21, #8]
+str x9, [x24, #2056]
+add x14, x22, #0
+add x15, x23, #0
+22:
+ldr x9, [x22, #0]
+ldr x10, [x21, #0]
+eor x9, x9, x10
+str x9, [x22, #0]
+ldr x9, [x22, #8]
+ldr x10, [x21, #8]
+eor x9, x9, x10
+str x9, [x22, #8]
+ldr x9, [x21, #0]
+ldr x10, [x21, #8]
+adds x9, x9, x9
+adcs x10, x10, x10
+movz x11, #135, lsl #0
+movz x12, #0, lsl #0
+csel x11, x11, x12, hs
+eor x9, x9, x11
+str x9, [x21, #0]
+str x10, [x21, #8]
+add x22, x22, #16
+sub x23, x23, #1
+cbnz x23, 22b
+add x22, x14, #0
+add x23, x15, #0
+ldr x9, [x24, #2048]
+str x9, [x21, #0]
+ldr x9, [x24, #2056]
+str x9, [x21, #8]
+add x0, x19, #0
+add x1, x20, #0
+add x2, x22, #0
+add x3, x23, #0
+add x4, x24, #0
+bl {vg_aes_decrypt_blocks_aes}
+23:
+ldr x9, [x22, #0]
+ldr x10, [x21, #0]
+eor x9, x9, x10
+str x9, [x22, #0]
+ldr x9, [x22, #8]
+ldr x10, [x21, #8]
+eor x9, x9, x10
+str x9, [x22, #8]
+ldr x9, [x21, #0]
+ldr x10, [x21, #8]
+adds x9, x9, x9
+adcs x10, x10, x10
+movz x11, #135, lsl #0
+movz x12, #0, lsl #0
+csel x11, x11, x12, hs
+eor x9, x9, x11
+str x9, [x21, #0]
+str x10, [x21, #8]
+add x22, x22, #16
+sub x23, x23, #1
+cbnz x23, 23b
+b 21f
+20:
+21:
+ldr x19, [x24, #2064]
+ldr x20, [x24, #2072]
+ldr x21, [x24, #2080]
+ldr x22, [x24, #2088]
+ldr x23, [x24, #2096]
+ldr x30, [x24, #2104]
+ldr x24, [x24, #2112]
+ret
+.arch_extension noaes
+.p2align 6",
         vg_aes_decrypt_blocks_aes = sym super::aes::vg_aes_decrypt_blocks_aes,
+    )
+}
+
+/// The CPU features `vg_aes_xts_encrypt_unit_aes` requires (`Artifact.features`).
+pub(crate) const VG_AES_XTS_ENCRYPT_UNIT_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+
+/// XTS-AES encryption (IEEE Std 1619-2007 §5.3.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their encryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `P₀ … Pₘ₋₁` and `b` bytes `Pₘ` after them, each `Pⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Cⱼ = AES-enc(Key1, Pⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Cₘ` the first `b` bytes of `CC`, the encryption of `Pₘ₋₁` with `Tₘ₋₁`, and `Cₘ₋₁` the encryption with `Tₘ` of `Pₘ` followed by the other `16 - b` bytes of `CC`. `AES-enc(Key1, ·)` and `AES-enc(Key2, ·)` are AES (FIPS 197) with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Xts.aesEncryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// This implementation enciphers the tweak value and the data with `vg_aes_xts_encrypt_aes` (the tweak value as one block from a zero tweak), and steals ciphertext by swapping bytes of the last two blocks in place.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `tweak_schedule` must be valid for reads of 240 bytes.
+/// * `i` must be valid for reads of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2432 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `len` must be at least 16 and at most `16 << 20` (2²⁰ blocks).
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule` or `i` (distinct Rust objects never do).
+/// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_xts_encrypt_unit_aes(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    core::arch::naked_asm!(
+        r".arch_extension aes
+str x19, [x6, #2208]
+str x20, [x6, #2216]
+str x21, [x6, #2224]
+str x22, [x6, #2232]
+str x23, [x6, #2240]
+str x30, [x6, #2248]
+str x24, [x6, #2256]
+add x24, x6, #0
+add x19, x0, #0
+add x20, x2, #0
+add x23, x4, #0
+add x22, x5, #0
+ldr x9, [x3, #0]
+str x9, [x24, #2176]
+ldr x9, [x3, #8]
+str x9, [x24, #2184]
+movz x9, #0, lsl #0
+str x9, [x24, #2192]
+str x9, [x24, #2200]
+add x0, x1, #0
+add x1, x20, #0
+add x2, x24, #2192
+add x3, x24, #2176
+movz x4, #1, lsl #0
+add x5, x24, #0
+bl {vg_aes_xts_encrypt_aes}
+add x0, x19, #0
+add x1, x20, #0
+add x2, x24, #2176
+add x3, x23, #0
+lsr x4, x22, #4
+add x5, x24, #0
+bl {vg_aes_xts_encrypt_aes}
+lsr x9, x22, #4
+lsl x9, x9, #4
+sub x10, x22, x9
+cbz x10, 20f
+add x11, x23, x9
+sub x11, x11, #16
+22:
+ldrb w13, [x11, #0]
+ldrb w14, [x11, #16]
+strb w14, [x11, #0]
+strb w13, [x11, #16]
+add x11, x11, #1
+sub x10, x10, #1
+cbnz x10, 22b
+add x3, x23, x9
+sub x3, x3, #16
+add x0, x19, #0
+add x1, x20, #0
+add x2, x24, #2176
+movz x4, #1, lsl #0
+add x5, x24, #0
+bl {vg_aes_xts_encrypt_aes}
+b 21f
+20:
+21:
+ldr x19, [x24, #2208]
+ldr x20, [x24, #2216]
+ldr x21, [x24, #2224]
+ldr x22, [x24, #2232]
+ldr x23, [x24, #2240]
+ldr x30, [x24, #2248]
+ldr x24, [x24, #2256]
+ret
+.arch_extension noaes
+.p2align 6",
+        vg_aes_xts_encrypt_aes = sym super::aes_xts::vg_aes_xts_encrypt_aes,
+    )
+}
+
+/// The CPU features `vg_aes_xts_decrypt_unit_aes` requires (`Artifact.features`).
+pub(crate) const VG_AES_XTS_DECRYPT_UNIT_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+
+/// XTS-AES decryption (IEEE Std 1619-2007 §5.4.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their decryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `C₀ … Cₘ₋₁` and `b` bytes `Cₘ` after them, each `Cⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Pₘ` the first `b` bytes of `PP`, the decryption of `Cₘ₋₁` with `Tₘ`, and `Pₘ₋₁` the decryption with `Tₘ₋₁` of `Cₘ` followed by the other `16 - b` bytes of `PP`. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) and `AES-enc(Key2, ·)` AES, with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Xts.aesDecryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// This implementation enciphers the tweak value with `vg_aes_xts_encrypt_aes` (as one block from a zero tweak), deciphers the data with `vg_aes_xts_decrypt_aes`, and steals ciphertext by swapping bytes of the last two blocks in place.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `tweak_schedule` must be valid for reads of 240 bytes.
+/// * `i` must be valid for reads of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2432 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `len` must be at least 16 and at most `16 << 20` (2²⁰ blocks).
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule` or `i` (distinct Rust objects never do).
+/// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_xts_decrypt_unit_aes(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    core::arch::naked_asm!(
+        r".arch_extension aes
+str x19, [x6, #2208]
+str x20, [x6, #2216]
+str x21, [x6, #2224]
+str x22, [x6, #2232]
+str x23, [x6, #2240]
+str x30, [x6, #2248]
+str x24, [x6, #2256]
+add x24, x6, #0
+add x19, x0, #0
+add x20, x2, #0
+add x23, x4, #0
+add x22, x5, #0
+ldr x9, [x3, #0]
+str x9, [x24, #2176]
+ldr x9, [x3, #8]
+str x9, [x24, #2184]
+movz x9, #0, lsl #0
+str x9, [x24, #2192]
+str x9, [x24, #2200]
+add x0, x1, #0
+add x1, x20, #0
+add x2, x24, #2192
+add x3, x24, #2176
+movz x4, #1, lsl #0
+add x5, x24, #0
+bl {vg_aes_xts_encrypt_aes}
+lsr x9, x22, #4
+lsl x9, x9, #4
+sub x10, x22, x9
+cbz x10, 20f
+add x0, x19, #0
+add x1, x20, #0
+add x2, x24, #2176
+add x3, x23, #0
+lsr x4, x22, #4
+add x5, x24, #0
+sub x4, x4, #1
+bl {vg_aes_xts_decrypt_aes}
+add x21, x24, #2192
+ldr x9, [x24, #2176]
+str x9, [x24, #2192]
+ldr x9, [x24, #2184]
+str x9, [x24, #2200]
+ldr x9, [x21, #0]
+ldr x10, [x21, #8]
+adds x9, x9, x9
+adcs x10, x10, x10
+movz x11, #135, lsl #0
+movz x12, #0, lsl #0
+csel x11, x11, x12, hs
+eor x9, x9, x11
+str x9, [x21, #0]
+str x10, [x21, #8]
+lsr x9, x22, #4
+lsl x9, x9, #4
+sub x10, x22, x9
+add x3, x23, x9
+sub x3, x3, #16
+add x0, x19, #0
+add x1, x20, #0
+add x2, x24, #2192
+movz x4, #1, lsl #0
+add x5, x24, #0
+bl {vg_aes_xts_decrypt_aes}
+lsr x9, x22, #4
+lsl x9, x9, #4
+sub x10, x22, x9
+add x11, x23, x9
+sub x11, x11, #16
+22:
+ldrb w13, [x11, #0]
+ldrb w14, [x11, #16]
+strb w14, [x11, #0]
+strb w13, [x11, #16]
+add x11, x11, #1
+sub x10, x10, #1
+cbnz x10, 22b
+add x3, x23, x9
+sub x3, x3, #16
+add x0, x19, #0
+add x1, x20, #0
+add x2, x24, #2176
+movz x4, #1, lsl #0
+add x5, x24, #0
+bl {vg_aes_xts_decrypt_aes}
+b 21f
+20:
+add x0, x19, #0
+add x1, x20, #0
+add x2, x24, #2176
+add x3, x23, #0
+lsr x4, x22, #4
+add x5, x24, #0
+bl {vg_aes_xts_decrypt_aes}
+21:
+ldr x19, [x24, #2208]
+ldr x20, [x24, #2216]
+ldr x21, [x24, #2224]
+ldr x22, [x24, #2232]
+ldr x23, [x24, #2240]
+ldr x30, [x24, #2248]
+ldr x24, [x24, #2256]
+ret
+.arch_extension noaes
+.p2align 6",
+        vg_aes_xts_encrypt_aes = sym super::aes_xts::vg_aes_xts_encrypt_aes,
+        vg_aes_xts_decrypt_aes = sym super::aes_xts::vg_aes_xts_decrypt_aes,
     )
 }
 
@@ -255,94 +489,94 @@ pub(crate) unsafe extern "C" fn vg_aes_xts_decrypt_aes(schedule: *const [u8; 240
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_xts_encrypt(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "str x19, [x5, #2064]",
-        "str x20, [x5, #2072]",
-        "str x21, [x5, #2080]",
-        "str x22, [x5, #2088]",
-        "str x23, [x5, #2096]",
-        "str x30, [x5, #2104]",
-        "str x24, [x5, #2112]",
-        "add x19, x0, #0",
-        "add x20, x1, #0",
-        "add x21, x2, #0",
-        "add x22, x3, #0",
-        "add x23, x4, #0",
-        "add x24, x5, #0",
-        "cbz x23, 20f",
-        "ldr x9, [x21, #0]",
-        "str x9, [x24, #2048]",
-        "ldr x9, [x21, #8]",
-        "str x9, [x24, #2056]",
-        "add x14, x22, #0",
-        "add x15, x23, #0",
-        "22:",
-        "ldr x9, [x22, #0]",
-        "ldr x10, [x21, #0]",
-        "eor x9, x9, x10",
-        "str x9, [x22, #0]",
-        "ldr x9, [x22, #8]",
-        "ldr x10, [x21, #8]",
-        "eor x9, x9, x10",
-        "str x9, [x22, #8]",
-        "ldr x9, [x21, #0]",
-        "ldr x10, [x21, #8]",
-        "adds x9, x9, x9",
-        "adcs x10, x10, x10",
-        "movz x11, #135, lsl #0",
-        "movz x12, #0, lsl #0",
-        "csel x11, x11, x12, hs",
-        "eor x9, x9, x11",
-        "str x9, [x21, #0]",
-        "str x10, [x21, #8]",
-        "add x22, x22, #16",
-        "sub x23, x23, #1",
-        "cbnz x23, 22b",
-        "add x22, x14, #0",
-        "add x23, x15, #0",
-        "ldr x9, [x24, #2048]",
-        "str x9, [x21, #0]",
-        "ldr x9, [x24, #2056]",
-        "str x9, [x21, #8]",
-        "add x0, x19, #0",
-        "add x1, x20, #0",
-        "add x2, x22, #0",
-        "add x3, x23, #0",
-        "add x4, x24, #0",
-        "bl {vg_aes_encrypt_blocks}",
-        "23:",
-        "ldr x9, [x22, #0]",
-        "ldr x10, [x21, #0]",
-        "eor x9, x9, x10",
-        "str x9, [x22, #0]",
-        "ldr x9, [x22, #8]",
-        "ldr x10, [x21, #8]",
-        "eor x9, x9, x10",
-        "str x9, [x22, #8]",
-        "ldr x9, [x21, #0]",
-        "ldr x10, [x21, #8]",
-        "adds x9, x9, x9",
-        "adcs x10, x10, x10",
-        "movz x11, #135, lsl #0",
-        "movz x12, #0, lsl #0",
-        "csel x11, x11, x12, hs",
-        "eor x9, x9, x11",
-        "str x9, [x21, #0]",
-        "str x10, [x21, #8]",
-        "add x22, x22, #16",
-        "sub x23, x23, #1",
-        "cbnz x23, 23b",
-        "b 21f",
-        "20:",
-        "21:",
-        "ldr x19, [x24, #2064]",
-        "ldr x20, [x24, #2072]",
-        "ldr x21, [x24, #2080]",
-        "ldr x22, [x24, #2088]",
-        "ldr x23, [x24, #2096]",
-        "ldr x30, [x24, #2104]",
-        "ldr x24, [x24, #2112]",
-        "ret",
-        ".p2align 6",
+        r"str x19, [x5, #2064]
+str x20, [x5, #2072]
+str x21, [x5, #2080]
+str x22, [x5, #2088]
+str x23, [x5, #2096]
+str x30, [x5, #2104]
+str x24, [x5, #2112]
+add x19, x0, #0
+add x20, x1, #0
+add x21, x2, #0
+add x22, x3, #0
+add x23, x4, #0
+add x24, x5, #0
+cbz x23, 20f
+ldr x9, [x21, #0]
+str x9, [x24, #2048]
+ldr x9, [x21, #8]
+str x9, [x24, #2056]
+add x14, x22, #0
+add x15, x23, #0
+22:
+ldr x9, [x22, #0]
+ldr x10, [x21, #0]
+eor x9, x9, x10
+str x9, [x22, #0]
+ldr x9, [x22, #8]
+ldr x10, [x21, #8]
+eor x9, x9, x10
+str x9, [x22, #8]
+ldr x9, [x21, #0]
+ldr x10, [x21, #8]
+adds x9, x9, x9
+adcs x10, x10, x10
+movz x11, #135, lsl #0
+movz x12, #0, lsl #0
+csel x11, x11, x12, hs
+eor x9, x9, x11
+str x9, [x21, #0]
+str x10, [x21, #8]
+add x22, x22, #16
+sub x23, x23, #1
+cbnz x23, 22b
+add x22, x14, #0
+add x23, x15, #0
+ldr x9, [x24, #2048]
+str x9, [x21, #0]
+ldr x9, [x24, #2056]
+str x9, [x21, #8]
+add x0, x19, #0
+add x1, x20, #0
+add x2, x22, #0
+add x3, x23, #0
+add x4, x24, #0
+bl {vg_aes_encrypt_blocks}
+23:
+ldr x9, [x22, #0]
+ldr x10, [x21, #0]
+eor x9, x9, x10
+str x9, [x22, #0]
+ldr x9, [x22, #8]
+ldr x10, [x21, #8]
+eor x9, x9, x10
+str x9, [x22, #8]
+ldr x9, [x21, #0]
+ldr x10, [x21, #8]
+adds x9, x9, x9
+adcs x10, x10, x10
+movz x11, #135, lsl #0
+movz x12, #0, lsl #0
+csel x11, x11, x12, hs
+eor x9, x9, x11
+str x9, [x21, #0]
+str x10, [x21, #8]
+add x22, x22, #16
+sub x23, x23, #1
+cbnz x23, 23b
+b 21f
+20:
+21:
+ldr x19, [x24, #2064]
+ldr x20, [x24, #2072]
+ldr x21, [x24, #2080]
+ldr x22, [x24, #2088]
+ldr x23, [x24, #2096]
+ldr x30, [x24, #2104]
+ldr x24, [x24, #2112]
+ret
+.p2align 6",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
@@ -366,94 +600,316 @@ pub(crate) unsafe extern "C" fn vg_aes_xts_encrypt(schedule: *const [u8; 240], r
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_xts_decrypt(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "str x19, [x5, #2064]",
-        "str x20, [x5, #2072]",
-        "str x21, [x5, #2080]",
-        "str x22, [x5, #2088]",
-        "str x23, [x5, #2096]",
-        "str x30, [x5, #2104]",
-        "str x24, [x5, #2112]",
-        "add x19, x0, #0",
-        "add x20, x1, #0",
-        "add x21, x2, #0",
-        "add x22, x3, #0",
-        "add x23, x4, #0",
-        "add x24, x5, #0",
-        "cbz x23, 20f",
-        "ldr x9, [x21, #0]",
-        "str x9, [x24, #2048]",
-        "ldr x9, [x21, #8]",
-        "str x9, [x24, #2056]",
-        "add x14, x22, #0",
-        "add x15, x23, #0",
-        "22:",
-        "ldr x9, [x22, #0]",
-        "ldr x10, [x21, #0]",
-        "eor x9, x9, x10",
-        "str x9, [x22, #0]",
-        "ldr x9, [x22, #8]",
-        "ldr x10, [x21, #8]",
-        "eor x9, x9, x10",
-        "str x9, [x22, #8]",
-        "ldr x9, [x21, #0]",
-        "ldr x10, [x21, #8]",
-        "adds x9, x9, x9",
-        "adcs x10, x10, x10",
-        "movz x11, #135, lsl #0",
-        "movz x12, #0, lsl #0",
-        "csel x11, x11, x12, hs",
-        "eor x9, x9, x11",
-        "str x9, [x21, #0]",
-        "str x10, [x21, #8]",
-        "add x22, x22, #16",
-        "sub x23, x23, #1",
-        "cbnz x23, 22b",
-        "add x22, x14, #0",
-        "add x23, x15, #0",
-        "ldr x9, [x24, #2048]",
-        "str x9, [x21, #0]",
-        "ldr x9, [x24, #2056]",
-        "str x9, [x21, #8]",
-        "add x0, x19, #0",
-        "add x1, x20, #0",
-        "add x2, x22, #0",
-        "add x3, x23, #0",
-        "add x4, x24, #0",
-        "bl {vg_aes_decrypt_blocks}",
-        "23:",
-        "ldr x9, [x22, #0]",
-        "ldr x10, [x21, #0]",
-        "eor x9, x9, x10",
-        "str x9, [x22, #0]",
-        "ldr x9, [x22, #8]",
-        "ldr x10, [x21, #8]",
-        "eor x9, x9, x10",
-        "str x9, [x22, #8]",
-        "ldr x9, [x21, #0]",
-        "ldr x10, [x21, #8]",
-        "adds x9, x9, x9",
-        "adcs x10, x10, x10",
-        "movz x11, #135, lsl #0",
-        "movz x12, #0, lsl #0",
-        "csel x11, x11, x12, hs",
-        "eor x9, x9, x11",
-        "str x9, [x21, #0]",
-        "str x10, [x21, #8]",
-        "add x22, x22, #16",
-        "sub x23, x23, #1",
-        "cbnz x23, 23b",
-        "b 21f",
-        "20:",
-        "21:",
-        "ldr x19, [x24, #2064]",
-        "ldr x20, [x24, #2072]",
-        "ldr x21, [x24, #2080]",
-        "ldr x22, [x24, #2088]",
-        "ldr x23, [x24, #2096]",
-        "ldr x30, [x24, #2104]",
-        "ldr x24, [x24, #2112]",
-        "ret",
-        ".p2align 6",
+        r"str x19, [x5, #2064]
+str x20, [x5, #2072]
+str x21, [x5, #2080]
+str x22, [x5, #2088]
+str x23, [x5, #2096]
+str x30, [x5, #2104]
+str x24, [x5, #2112]
+add x19, x0, #0
+add x20, x1, #0
+add x21, x2, #0
+add x22, x3, #0
+add x23, x4, #0
+add x24, x5, #0
+cbz x23, 20f
+ldr x9, [x21, #0]
+str x9, [x24, #2048]
+ldr x9, [x21, #8]
+str x9, [x24, #2056]
+add x14, x22, #0
+add x15, x23, #0
+22:
+ldr x9, [x22, #0]
+ldr x10, [x21, #0]
+eor x9, x9, x10
+str x9, [x22, #0]
+ldr x9, [x22, #8]
+ldr x10, [x21, #8]
+eor x9, x9, x10
+str x9, [x22, #8]
+ldr x9, [x21, #0]
+ldr x10, [x21, #8]
+adds x9, x9, x9
+adcs x10, x10, x10
+movz x11, #135, lsl #0
+movz x12, #0, lsl #0
+csel x11, x11, x12, hs
+eor x9, x9, x11
+str x9, [x21, #0]
+str x10, [x21, #8]
+add x22, x22, #16
+sub x23, x23, #1
+cbnz x23, 22b
+add x22, x14, #0
+add x23, x15, #0
+ldr x9, [x24, #2048]
+str x9, [x21, #0]
+ldr x9, [x24, #2056]
+str x9, [x21, #8]
+add x0, x19, #0
+add x1, x20, #0
+add x2, x22, #0
+add x3, x23, #0
+add x4, x24, #0
+bl {vg_aes_decrypt_blocks}
+23:
+ldr x9, [x22, #0]
+ldr x10, [x21, #0]
+eor x9, x9, x10
+str x9, [x22, #0]
+ldr x9, [x22, #8]
+ldr x10, [x21, #8]
+eor x9, x9, x10
+str x9, [x22, #8]
+ldr x9, [x21, #0]
+ldr x10, [x21, #8]
+adds x9, x9, x9
+adcs x10, x10, x10
+movz x11, #135, lsl #0
+movz x12, #0, lsl #0
+csel x11, x11, x12, hs
+eor x9, x9, x11
+str x9, [x21, #0]
+str x10, [x21, #8]
+add x22, x22, #16
+sub x23, x23, #1
+cbnz x23, 23b
+b 21f
+20:
+21:
+ldr x19, [x24, #2064]
+ldr x20, [x24, #2072]
+ldr x21, [x24, #2080]
+ldr x22, [x24, #2088]
+ldr x23, [x24, #2096]
+ldr x30, [x24, #2104]
+ldr x24, [x24, #2112]
+ret
+.p2align 6",
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
+    )
+}
+
+/// XTS-AES encryption (IEEE Std 1619-2007 §5.3.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their encryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `P₀ … Pₘ₋₁` and `b` bytes `Pₘ` after them, each `Pⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Cⱼ = AES-enc(Key1, Pⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Cₘ` the first `b` bytes of `CC`, the encryption of `Pₘ₋₁` with `Tₘ₋₁`, and `Cₘ₋₁` the encryption with `Tₘ` of `Pₘ` followed by the other `16 - b` bytes of `CC`. `AES-enc(Key1, ·)` and `AES-enc(Key2, ·)` are AES (FIPS 197) with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Xts.aesEncryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// This implementation enciphers the tweak value and the data with `vg_aes_xts_encrypt` (the tweak value as one block from a zero tweak), and steals ciphertext by swapping bytes of the last two blocks in place.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `tweak_schedule` must be valid for reads of 240 bytes.
+/// * `i` must be valid for reads of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2432 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `len` must be at least 16 and at most `16 << 20` (2²⁰ blocks).
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule` or `i` (distinct Rust objects never do).
+/// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_xts_encrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    core::arch::naked_asm!(
+        r"str x19, [x6, #2208]
+str x20, [x6, #2216]
+str x21, [x6, #2224]
+str x22, [x6, #2232]
+str x23, [x6, #2240]
+str x30, [x6, #2248]
+str x24, [x6, #2256]
+add x24, x6, #0
+add x19, x0, #0
+add x20, x2, #0
+add x23, x4, #0
+add x22, x5, #0
+ldr x9, [x3, #0]
+str x9, [x24, #2176]
+ldr x9, [x3, #8]
+str x9, [x24, #2184]
+movz x9, #0, lsl #0
+str x9, [x24, #2192]
+str x9, [x24, #2200]
+add x0, x1, #0
+add x1, x20, #0
+add x2, x24, #2192
+add x3, x24, #2176
+movz x4, #1, lsl #0
+add x5, x24, #0
+bl {vg_aes_xts_encrypt}
+add x0, x19, #0
+add x1, x20, #0
+add x2, x24, #2176
+add x3, x23, #0
+lsr x4, x22, #4
+add x5, x24, #0
+bl {vg_aes_xts_encrypt}
+lsr x9, x22, #4
+lsl x9, x9, #4
+sub x10, x22, x9
+cbz x10, 20f
+add x11, x23, x9
+sub x11, x11, #16
+22:
+ldrb w13, [x11, #0]
+ldrb w14, [x11, #16]
+strb w14, [x11, #0]
+strb w13, [x11, #16]
+add x11, x11, #1
+sub x10, x10, #1
+cbnz x10, 22b
+add x3, x23, x9
+sub x3, x3, #16
+add x0, x19, #0
+add x1, x20, #0
+add x2, x24, #2176
+movz x4, #1, lsl #0
+add x5, x24, #0
+bl {vg_aes_xts_encrypt}
+b 21f
+20:
+21:
+ldr x19, [x24, #2208]
+ldr x20, [x24, #2216]
+ldr x21, [x24, #2224]
+ldr x22, [x24, #2232]
+ldr x23, [x24, #2240]
+ldr x30, [x24, #2248]
+ldr x24, [x24, #2256]
+ret
+.p2align 6",
+        vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt,
+    )
+}
+
+/// XTS-AES decryption (IEEE Std 1619-2007 §5.4.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their decryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `C₀ … Cₘ₋₁` and `b` bytes `Cₘ` after them, each `Cⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Pₘ` the first `b` bytes of `PP`, the decryption of `Cₘ₋₁` with `Tₘ`, and `Pₘ₋₁` the decryption with `Tₘ₋₁` of `Cₘ` followed by the other `16 - b` bytes of `PP`. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) and `AES-enc(Key2, ·)` AES, with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Xts.aesDecryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// This implementation enciphers the tweak value with `vg_aes_xts_encrypt` (as one block from a zero tweak), deciphers the data with `vg_aes_xts_decrypt`, and steals ciphertext by swapping bytes of the last two blocks in place.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `tweak_schedule` must be valid for reads of 240 bytes.
+/// * `i` must be valid for reads of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2432 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `len` must be at least 16 and at most `16 << 20` (2²⁰ blocks).
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule` or `i` (distinct Rust objects never do).
+/// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_xts_decrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    core::arch::naked_asm!(
+        r"str x19, [x6, #2208]
+str x20, [x6, #2216]
+str x21, [x6, #2224]
+str x22, [x6, #2232]
+str x23, [x6, #2240]
+str x30, [x6, #2248]
+str x24, [x6, #2256]
+add x24, x6, #0
+add x19, x0, #0
+add x20, x2, #0
+add x23, x4, #0
+add x22, x5, #0
+ldr x9, [x3, #0]
+str x9, [x24, #2176]
+ldr x9, [x3, #8]
+str x9, [x24, #2184]
+movz x9, #0, lsl #0
+str x9, [x24, #2192]
+str x9, [x24, #2200]
+add x0, x1, #0
+add x1, x20, #0
+add x2, x24, #2192
+add x3, x24, #2176
+movz x4, #1, lsl #0
+add x5, x24, #0
+bl {vg_aes_xts_encrypt}
+lsr x9, x22, #4
+lsl x9, x9, #4
+sub x10, x22, x9
+cbz x10, 20f
+add x0, x19, #0
+add x1, x20, #0
+add x2, x24, #2176
+add x3, x23, #0
+lsr x4, x22, #4
+add x5, x24, #0
+sub x4, x4, #1
+bl {vg_aes_xts_decrypt}
+add x21, x24, #2192
+ldr x9, [x24, #2176]
+str x9, [x24, #2192]
+ldr x9, [x24, #2184]
+str x9, [x24, #2200]
+ldr x9, [x21, #0]
+ldr x10, [x21, #8]
+adds x9, x9, x9
+adcs x10, x10, x10
+movz x11, #135, lsl #0
+movz x12, #0, lsl #0
+csel x11, x11, x12, hs
+eor x9, x9, x11
+str x9, [x21, #0]
+str x10, [x21, #8]
+lsr x9, x22, #4
+lsl x9, x9, #4
+sub x10, x22, x9
+add x3, x23, x9
+sub x3, x3, #16
+add x0, x19, #0
+add x1, x20, #0
+add x2, x24, #2192
+movz x4, #1, lsl #0
+add x5, x24, #0
+bl {vg_aes_xts_decrypt}
+lsr x9, x22, #4
+lsl x9, x9, #4
+sub x10, x22, x9
+add x11, x23, x9
+sub x11, x11, #16
+22:
+ldrb w13, [x11, #0]
+ldrb w14, [x11, #16]
+strb w14, [x11, #0]
+strb w13, [x11, #16]
+add x11, x11, #1
+sub x10, x10, #1
+cbnz x10, 22b
+add x3, x23, x9
+sub x3, x3, #16
+add x0, x19, #0
+add x1, x20, #0
+add x2, x24, #2176
+movz x4, #1, lsl #0
+add x5, x24, #0
+bl {vg_aes_xts_decrypt}
+b 21f
+20:
+add x0, x19, #0
+add x1, x20, #0
+add x2, x24, #2176
+add x3, x23, #0
+lsr x4, x22, #4
+add x5, x24, #0
+bl {vg_aes_xts_decrypt}
+21:
+ldr x19, [x24, #2208]
+ldr x20, [x24, #2216]
+ldr x21, [x24, #2224]
+ldr x22, [x24, #2232]
+ldr x23, [x24, #2240]
+ldr x30, [x24, #2248]
+ldr x24, [x24, #2256]
+ret
+.p2align 6",
+        vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt,
+        vg_aes_xts_decrypt = sym super::aes_xts::vg_aes_xts_decrypt,
     )
 }

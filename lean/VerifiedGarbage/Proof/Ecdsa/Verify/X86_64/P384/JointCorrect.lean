@@ -2,21 +2,13 @@ module
 
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointChecks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.LitShare
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
 import VerifiedGarbage.Proof.P384.X86_64.JointFrame
-import VerifiedGarbage.Spec.EcKey.Generic
+import VerifiedGarbage.Proof.P384.X86_64.JointLayout
 
 /-! Baseline and ADX joint verification over P-384 satisfy the functional specification. -/
 
@@ -34,7 +26,7 @@ variable (hL : Law Spec.P384.curve)
 include hL hT hI
 
 theorem jointVerify_p384_ok {s : State} (hp : VPre p384v s) :
-    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384v publicJoint (Joint.jacDouble publicJoint.K)).inline s
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384v publicJoint (jointDouble publicJoint.K)).inline s
       fun t => (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p384v s t := by
   have hc := p384v_ok hI
   refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_
@@ -45,7 +37,7 @@ theorem jointVerify_p384_ok {s : State} (hp : VPre p384v s) :
 
 theorem jointVerify_p384_adx_ok {s : State} (hp : VPre p384vx s) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384vx publicJointAdx
-      (Joint.jacDouble publicJointAdx.K)).inline s
+      (jointDoubleAdx publicJointAdx.K)).inline s
       fun t => (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p384vx s t := by
   have hc := p384vx_ok hI
   refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_

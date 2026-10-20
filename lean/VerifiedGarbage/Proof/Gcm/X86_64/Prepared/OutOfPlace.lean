@@ -1,12 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZR
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Loop
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.LoopP
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Loop
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop48
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Prepared GHASH contexts for out-of-place encryption -/
 

@@ -1,10 +1,8 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Probe
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Scalar
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The public rejection-count branch selects a proved vector or scalar step -/
 
@@ -15,13 +13,13 @@ open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
 def choosePrefix : List Instr := [.subImm .x .x6 .x4 8,.lsr .x .x6 .x6 63]
 
-theorem choosePrefix_ok {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : Addr}
-    {s₀ s : State} (h : Scalar.Inv initial N B bP aP s₀ t s) (hc : Constants s) :
+theorem choosePrefix_ok {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : Addr}
+    {s₀ s : State} (h : Scalar.InvW w16 initial N B bP aP s₀ t s) (hc : Constants s) :
     WP isa (.block choosePrefix) s fun u =>
-      Scalar.Inv initial N B bP aP s₀ t u ∧ Constants u ∧
+      Scalar.InvW w16 initial N B bP aP s₀ t u ∧ Constants u ∧
         ((u.gpr .x6 == 0)=true ↔ 8≤(u.gpr .x4).toNat) := by
   have hw : WP isa (.block choosePrefix) s fun u =>
-      Scalar.Inv initial N B bP aP s₀ t u ∧
+      Scalar.InvW w16 initial N B bP aP s₀ t u ∧
         ((u.gpr .x6 == 0)=true ↔ 8≤(u.gpr .x4).toNat) := by
     refine wp_subImm (by decide) fun a ha ea => wp_lsr (by decide) fun u hu eu => wp_nil ?_
     have hk := (ha.keep.trans hu.keep).mono (rs' := [.x6]) (by decide)

@@ -1,11 +1,16 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Cbd16
+public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Base
+public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Lanes
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Input
-meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Input
+import VerifiedGarbage.Proof.Rc4.AArch64.Rows
+import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Stores
+import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Prepare
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # Eight sixteen-byte CBD2 iterations -/
 

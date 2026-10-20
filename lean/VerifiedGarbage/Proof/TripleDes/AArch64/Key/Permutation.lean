@@ -1,11 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Permutation
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.TripleDes.AArch64.Permutation
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 
@@ -17,7 +16,7 @@ open VG VG.AArch64 VG.Impl.TripleDes.AArch64
     ∃ s', runBlock isa (permuteCode Spec.TripleDes.pc1 64 .x5 .x4 .x6 .x7) s = some s' ∧
       s'.gpr .x5 = (Spec.TripleDes.permute Spec.TripleDes.pc1 (s.gpr .x4)).setWidth 64 ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
-      (∀ r, ((instrs keyPermutation1.lit).all fun op => dstOf op != some r) = true →
+      (∀ r, ((instrs keyPermutation1.lit).all fun op => !clobbers op r) = true →
         s'.gpr r = s.gpr r) := by
   obtain ⟨s', run, word, rd, wr, sp, mem, regs⟩ :=
     fixedPermutation_ok Spec.TripleDes.pc1 (by decide) (by decide) (by decide)
@@ -32,7 +31,7 @@ theorem pc2_ok (s : State) :
     ∃ s', runBlock isa (permuteCode Spec.TripleDes.pc2 56 .x5 .x4 .x6 .x7) s = some s' ∧
       s'.gpr .x5 = (Spec.TripleDes.permute Spec.TripleDes.pc2 ((s.gpr .x4).setWidth 56)).setWidth 64 ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
-      (∀ r, ((instrs keyPermutation2.lit).all fun op => dstOf op != some r) = true →
+      (∀ r, ((instrs keyPermutation2.lit).all fun op => !clobbers op r) = true →
         s'.gpr r = s.gpr r) := by
   obtain ⟨s', run, word, rd, wr, sp, mem, regs⟩ :=
     fixedPermutation_ok Spec.TripleDes.pc2 (by decide) (by decide) (by decide)

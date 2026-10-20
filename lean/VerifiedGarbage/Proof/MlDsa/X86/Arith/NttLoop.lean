@@ -1,12 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Bfly
+public import VerifiedGarbage.Proof.MlKem.X86.Leaf
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Table
-public import VerifiedGarbage.Spec.MlDsa.Poly
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on x86 (32-bit): the layers of the NTT and its inverse

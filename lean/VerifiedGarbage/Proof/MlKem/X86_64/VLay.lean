@@ -2,14 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMem
 public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-public import VerifiedGarbage.Proof.Framework.AddrArith
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.MlKem.Mem
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # ML-KEM on x86-64: the layers of the NTT and its inverse with `len ≥ 8`
@@ -29,10 +26,7 @@ open VG VG.X86_64 VG.Impl.MlKem.X86_64
 open VG.Spec.MlKem
 
 /-- Runs a block of general-purpose and SSE instructions. -/
-syntax "vrunm" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| vrunm) => `(tactic| vrunm [])
-  | `(tactic| vrunm [$ls,*]) => `(tactic| plain_simp_names (
+tactic_template "vrunm" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                        apply WP.of_runBlock
                        set_option linter.unusedSimpArgs false in
                        simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
@@ -45,24 +39,27 @@ macro_rules
                          ite_false, reduceCtorEq, BitVec.sub_self, sx1, sx16, true_and, and_true, List.cons_append,
                          List.nil_append, xb, xmov, $ls,*]))
 
+tactic_template "vrunm" : tactic => `(tactic| vrunm [])
+
 /-- The code `bf` of eight butterflies does what `op` does to each pair of
 words of `xmm0` and `xmm1`, with the zetas in `xmm13`, leaving the results
 in `xmm0` and `xmm3`. -/
-def VBflyOk (bf : List Instr) (op : Zq → Zq → Zq → Zq × Zq) : Prop :=
-  ∀ s : State, VConsts s → ∀ x y ζ : Nat → Zq, Lanes (s.xmm .xmm0) x → Lanes (s.xmm .xmm1) y →
+def VBflyOk {α : Type} (R : BitVec 16 → α → Prop) (bf : List Instr) (op : α → α → Zq → α × α) : Prop :=
+  ∀ s : State, VConsts s → ∀ (x y : Nat → α) (ζ : Nat → Zq), LanesR R (s.xmm .xmm0) x → LanesR R (s.xmm .xmm1) y →
     ZLanes (s.xmm .xmm13) ζ →
-    WP isa (.block bf) s fun s' => Lanes (s'.xmm .xmm0) (fun i => (op (x i) (y i) (ζ i)).1) ∧
-      Lanes (s'.xmm .xmm3) (fun i => (op (x i) (y i) (ζ i)).2) ∧ XOnly [.xmm1, .xmm2, .xmm0, .xmm3] s s'
+    WP isa (.block bf) s fun s' => LanesR R (s'.xmm .xmm0) (fun i => (op (x i) (y i) (ζ i)).1) ∧
+      LanesR R (s'.xmm .xmm3) (fun i => (op (x i) (y i) (ζ i)).2) ∧ XOnly [.xmm1, .xmm2, .xmm0, .xmm3] s s'
 
-theorem vbfly_spec : VBflyOk vbfly (fun x y z => (x + z * y, x - z * y)) :=
+theorem vbfly_spec : VBflyOk canW vbfly (fun x y z => (x + z * y, x - z * y)) :=
   fun _ hc _ _ _ hx hy hz => vbfly_ok hc hx hy hz
 
-theorem vibfly_spec : VBflyOk vibfly (fun x y z => (x + y, z * (y - x))) :=
+theorem vibfly_spec : VBflyOk canW vibfly (fun x y z => (x + y, z * (y - x))) :=
   fun _ hc _ _ _ hx hy hz => vibfly_ok hc hx hy hz
 
 /-- The first `t` butterflies of a block of the specification do `op` to
 `(j, j + len)`. -/
-structure BlkOk (blk : Poly → Nat → Nat → Nat → Nat → Poly) (op : Zq → Zq → Zq → Zq × Zq) : Prop where
+structure BlkOk {α : Type} [Inhabited α] (blk : Vector α n → Nat → Nat → Nat → Nat → Vector α n)
+    (op : α → α → Zq → α × α) : Prop where
   zero : ∀ f len k st, blk f len k st 0 = f
   add : ∀ f len k st t t', blk f len k st (t + t') = blk (blk f len k st t) len k (st + t) t'
   get : ∀ f len k st t, 0 < len → t ≤ len → st + len + t ≤ n → ∀ i < n,
@@ -108,7 +105,7 @@ structure GOnly (rs : List Reg) (s s' : State) : Prop where
   mxcsr : s'.mxcsr = s.mxcsr
 
 /-- `GOnly` of a chain of `setReg` and `setFlags`. -/
-macro "gonly" : tactic => `(tactic| plain_simp_names exact ⟨⟨fun r hr => by
+tactic_template "gonly" : tactic => `(tactic| exact ⟨⟨fun r hr => by
                    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
                    simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr, ite_false], rfl, rfl⟩, rfl, rfl, rfl⟩)
 
@@ -131,8 +128,8 @@ theorem wp_rcxLoop {body : List Instr} {N : Nat} (hN : 0 < N) (hN' : N < 2 ^ 31)
 
 /-- The first `b` blocks of the layer with `len`, block `c` with the zeta
 `zeta (zi c)`. -/
-def layF (blk : Poly → Nat → Nat → Nat → Nat → Poly) (F : Poly) (len : Nat) (zi : Nat → Nat) (b : Nat) :
-    Poly :=
+def layF {α : Type} (blk : Vector α n → Nat → Nat → Nat → Nat → Vector α n) (F : Vector α n) (len : Nat)
+    (zi : Nat → Nat) (b : Nat) : Vector α n :=
   (List.range b).foldl (fun f c => blk f len (zi c) (2 * len * c) len) F
 
 /-- The facts a block keeps. -/
@@ -148,8 +145,8 @@ theorem BInv.trans {sP : Addr} {s₁ s₂ s₃ : State} (h₁ : BInv sP s₁ s�
 /-! ## Eight butterflies -/
 
 section
-variable {bf : List Instr} {op : Zq → Zq → Zq → Zq × Zq} (hbf : VBflyOk bf op)
-  {blk : Poly → Nat → Nat → Nat → Nat → Poly} (hblk : BlkOk blk op)
+variable {α : Type} [Inhabited α] {R : BitVec 16 → α → Prop} {bf : List Instr} {op : α → α → Zq → α × α}
+  (hbf : VBflyOk R bf op) {blk : Vector α n → Nat → Nat → Nat → Nat → Vector α n} (hblk : BlkOk blk op)
 include hbf hblk
 
 /-- The body of the loop over the vectors of a block. -/
@@ -159,11 +156,11 @@ abbrev vbody (bf : List Instr) (len : Nat) : List Instr :=
     ([.alu .sub .rcx (.imm 1)] : List Instr)
 
 theorem vstep {Sp : Addr} {len st u k : Nat} (hl : 0 < len) (hs : st + 2 * len ≤ 256) (hu : 8 * u + 8 ≤ len)
-    {G : Poly} {s : State} (hc : VConsts s) (hz : ZLanes (s.xmm .xmm13) (fun _ => zeta k))
-    (hdx : s.gpr .rdx = wAddr Sp (st + 8 * u)) (hS : S16 s.mem Sp (blk G len k st (8 * u)))
+    {G : Vector α n} {s : State} (hc : VConsts s) (hz : ZLanes (s.xmm .xmm13) (fun _ => zeta k))
+    (hdx : s.gpr .rdx = wAddr Sp (st + 8 * u)) (hS : S16R R s.mem Sp (blk G len k st (8 * u)))
     (hin : ∀ j, j + 8 ≤ 256 → InRegions s.wr (wAddr Sp j) 16) :
     WP isa (.block (vbody bf len)) s fun s' =>
-      S16 s'.mem Sp (blk G len k st (8 * (u + 1))) ∧ s'.gpr .rdx = wAddr Sp (st + 8 * (u + 1)) ∧
+      S16R R s'.mem Sp (blk G len k st (8 * (u + 1))) ∧ s'.gpr .rdx = wAddr Sp (st + 8 * (u + 1)) ∧
         Frame [sR Sp] s.mem s'.mem ∧ VConsts s' ∧ s'.xmm .xmm13 = s.xmm .xmm13 ∧ Keep [.rdx, .rcx] s s' ∧
         s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) ∧ s'.mxcsr = s.mxcsr := by
   have j0 : st + 8 * u + 8 ≤ 256 := by omega
@@ -178,8 +175,8 @@ theorem vstep {Sp : Addr} {len st u k : Nat} (hl : 0 < len) (hs : st + 2 * len �
   rw [vbody, List.append_assoc, List.append_assoc, WP.block_append_iff]
   vrunm [hdx, a1, r0, r1]
   rw [WP.block_append_iff]
-  have hx := lanes_load hS j0
-  have hy := lanes_load hS j1
+  have hx := lanes_loadR hS j0
+  have hy := lanes_loadR hS j1
   refine WP.mono (hbf _ ((hc.setXmm (by decide) (by decide) _).setXmm (by decide) (by decide) _)
     (fun e => (blk G len k st (8 * u))[st + 8 * u + e]!) (fun e => (blk G len k st (8 * u))[st + 8 * u + len + e]!)
     (fun _ => zeta k) (by rw [xmm_setXmm, xmm_setXmm]; exact hx) (by rw [xmm_setXmm]; exact hy)
@@ -193,7 +190,7 @@ theorem vstep {Sp : Addr} {len st u k : Nat} (hl : 0 < len) (hs : st + 2 * len �
   have z2 : s2.xmm .xmm13 = s.xmm .xmm13 := by rw [o2.xmm _ (by decide), xmm_setXmm, xmm_setXmm]; rfl
   vrunm [g2, m2, e2.1, e2.2, hdx, a1, w0, w1, x2]
   refine ⟨?_, ?_, ?_, ⟨c2.q, c2.qinv⟩, z2, ⟨fun r hr => ?_, rfl, rfl⟩⟩
-  · refine s16_write2 hS j0 j1 (by omega) l0 l3 fun i hi => ?_
+  · refine s16_write2R hS j0 j1 (by omega) l0 l3 fun i hi => ?_
     rw [show 8 * (u + 1) = 8 * u + 8 by omega, hblk.add, hblk.get _ _ _ _ _ hl (by omega)
       (by rw [n_eq]; omega) _ (by rw [n_eq]; exact hi)]
     by_cases c1 : st + 8 * u ≤ i ∧ i < st + 8 * u + 8
@@ -213,10 +210,10 @@ theorem vstep {Sp : Addr} {len st u k : Nat} (hl : 0 < len) (hs : st + 2 * len �
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr.1, hr.2, ite_false]
 
 theorem vblock_ok {sP : Addr} {len st kz : Nat} (h8 : 8 ≤ len) (hl8 : len % 8 = 0) (hl : len ≤ 128)
-    (hs : st + 2 * len ≤ 256) (hkz : kz < 128) (dz : BitVec 32) {G : Poly} {s : State} (hc : VConsts s)
-    (hdx : s.gpr .rdx = wAddr (spW sP) st) (h8r : s.gpr .r8 = wAddr sP kz) (hS : S16 s.mem (spW sP) G)
+    (hs : st + 2 * len ≤ 256) (hkz : kz < 128) (dz : BitVec 32) {G : Vector α n} {s : State} (hc : VConsts s)
+    (hdx : s.gpr .rdx = wAddr (spW sP) st) (h8r : s.gpr .r8 = wAddr sP kz) (hS : S16R R s.mem (spW sP) G)
     (hT : T16 s.mem sP) (hw : pR sP ∈ s.wr) :
-    WP isa (vblk bf len dz) s fun s' => S16 s'.mem (spW sP) (blk G len kz st len) ∧
+    WP isa (vblk bf len dz) s fun s' => S16R R s'.mem (spW sP) (blk G len kz st len) ∧
       s'.gpr .rdx = wAddr (spW sP) (st + 2 * len) ∧ s'.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz ∧
       s'.gpr .rax = s.gpr .rax - 1 ∧ s'.zf = some (s.gpr .rax - 1 == 0) ∧ BInv sP s s' := by
   -- the zeta
@@ -236,7 +233,7 @@ theorem vblock_ok {sP : Addr} {len st kz : Nat} (h8 : 8 ≤ len) (hl8 : len % 8 
   have hw2 : pR sP ∈ s2.wr := by rw [o2.keep.2.2, o1.wr]; exact hw
   have m2 : s2.mem = s.mem := by rw [o2.mem, o1.mem]
   refine WP.seq (WP.mono (wp_rcxLoop (N := len / 8) (by omega) (by omega)
-    (fun u w => S16 w.mem (spW sP) (blk G len kz st (8 * u)) ∧ w.gpr .rdx = wAddr (spW sP) (st + 8 * u) ∧
+    (fun u w => S16R R w.mem (spW sP) (blk G len kz st (8 * u)) ∧ w.gpr .rdx = wAddr (spW sP) (st + 8 * u) ∧
       VConsts w ∧ w.xmm .xmm13 = s2.xmm .xmm13 ∧ Keep [.rcx, .rdx] s2 w ∧ Frame [sR (spW sP)] s2.mem w.mem ∧
       w.mxcsr = s2.mxcsr)
     (fun w o hc => ⟨by rw [hblk.zero, o.mem, m2]; exact hS, by rw [o.keep.gpr (by decide), dx2]; rfl,
@@ -267,9 +264,9 @@ theorem vblock_ok {sP : Addr} {len st kz : Nat} (h8 : 8 ≤ len) (hl8 : len % 8 
 theorem vlay_ok {sP : Addr} {len k : Nat} (hlen : len ∈ [8, 16, 32, 64, 128]) (dz : BitVec 32)
     (zi : Nat → Nat) (hz0 : zi 0 = k) (hzi : ∀ c < 128 / len, zi c < 128)
     (hstep : ∀ c < 128 / len, wAddr sP (zi c) + BitVec.signExtend 64 dz = wAddr sP (zi (c + 1)))
-    {F : Poly} {s : State} (hc : VConsts s) (hsi : s.gpr .rsi = sP) (hS : S16 s.mem (spW sP) F)
+    {F : Vector α n} {s : State} (hc : VConsts s) (hsi : s.gpr .rsi = sP) (hS : S16R R s.mem (spW sP) F)
     (hT : T16 s.mem sP) (hw : pR sP ∈ s.wr) :
-    WP isa (vlay bf len k dz) s fun s' => S16 s'.mem (spW sP) (layF blk F len zi (128 / len)) ∧
+    WP isa (vlay bf len k dz) s fun s' => S16R R s'.mem (spW sP) (layF blk F len zi (128 / len)) ∧
       BInv sP s s' := by
   have hl : 8 ≤ len ∧ len % 8 = 0 ∧ len ≤ 128 ∧ 2 * len * (128 / len) = 256 ∧ 0 < 128 / len ∧
       128 / len ≤ 16 := by
@@ -288,7 +285,7 @@ theorem vlay_ok {sP : Addr} {len k : Nat} (hlen : len ∈ [8, 16, 32, 64, 128]) 
       omega) fun w ⟨hdx, h8r, hax, o⟩ => ?_)
   have hw' : pR sP ∈ w.wr := by rw [o.keep.2.2]; exact hw
   refine WP.mono (wp_countdown (cnt := .rax) (N := 128 / len) (by omega) hpos
-    (fun c u => S16 u.mem (spW sP) (layF blk F len zi c) ∧ u.gpr .rdx = wAddr (spW sP) (2 * len * c) ∧
+    (fun c u => S16R R u.mem (spW sP) (layF blk F len zi c) ∧ u.gpr .rdx = wAddr (spW sP) (2 * len * c) ∧
       u.gpr .r8 = wAddr sP (zi c) ∧ BInv sP w u ∧ T16 u.mem sP)
     (fun c hc u ⟨hS', hdx', h8', hb', hT'⟩ _ => ?_) (fun u h => h)
     ⟨by rw [o.mem]; exact hS, by rw [hdx, wAddr, Nat.mul_zero, Nat.mul_zero, add_ofNat_zero],

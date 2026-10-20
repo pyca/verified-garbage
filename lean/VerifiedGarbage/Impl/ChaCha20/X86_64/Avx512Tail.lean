@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
-import VerifiedGarbage.Impl.ChaCha20.X86_64.XorBuf
 
 /-!
 # ChaCha20 keystream XOR with AVX-512: the last bytes
@@ -19,6 +18,11 @@ two computations of eight or four blocks:
   (`XorBuf.xorBuf`);
 * otherwise, if some remain, four blocks are computed into `buf[0, 256)`,
   and as many of their bytes as remain XORed into the data.
+
+`part3`, which `vg_chacha20_xor_avx512` runs for 513 to 768 bytes in place
+of `tail`, computes twelve blocks in three sets: the first eight XORed into
+the next 512 bytes, the other four stored to `buf[0, 256)` and the rest of
+the data XORed from there.
 
 The states are kept one per 128-bit lane, four to a set of four `zmm`
 registers (`zmm0 … zmm3`, and `zmm4 … zmm7` for the second four): row `r`
@@ -171,6 +175,76 @@ def xor64 (x : XReg) (off : Nat) : List Instr :=
 def xor256 (a b c d : XReg) (off : Nat) : List Instr :=
   xor64 a off ++ xor64 b (off + 64) ++ xor64 c (off + 128) ++ xor64 d (off + 192)
 
+/-! ## Twelve blocks
+
+For 513 to 768 bytes left after the sixteen-block loop: a third set in
+`zmm8 … zmm11`, interleaved with the other two. Its lane increments, `8, 9,
+10, 11`, are stored to `buf[0, 64)` when the twelve blocks start, since the
+loop's saves use `buf[0, 128)`. -/
+
+/-- Where the lane increments of the third set are in `buf`. -/
+def inc3Off : Nat := 0
+def inc3Q : List (BitVec 64) := [8, 0, 9, 0, 10, 0, 11, 0]
+
+/-- `half` on the three sets, interleaved. -/
+def half3 (r₁ r₂ : BitVec 8) : List Instr :=
+  [z .vpaddd .xmm0 .xmm0 .xmm1, z .vpaddd .xmm4 .xmm4 .xmm5, z .vpaddd .xmm8 .xmm8 .xmm9,
+   z .vpxord .xmm3 .xmm3 .xmm0, z .vpxord .xmm7 .xmm7 .xmm4, z .vpxord .xmm11 .xmm11 .xmm8,
+   .zop (.vprold .xmm3 .xmm3 r₁), .zop (.vprold .xmm7 .xmm7 r₁), .zop (.vprold .xmm11 .xmm11 r₁),
+   z .vpaddd .xmm2 .xmm2 .xmm3, z .vpaddd .xmm6 .xmm6 .xmm7, z .vpaddd .xmm10 .xmm10 .xmm11,
+   z .vpxord .xmm1 .xmm1 .xmm2, z .vpxord .xmm5 .xmm5 .xmm6, z .vpxord .xmm9 .xmm9 .xmm10,
+   .zop (.vprold .xmm1 .xmm1 r₂), .zop (.vprold .xmm5 .xmm5 r₂), .zop (.vprold .xmm9 .xmm9 r₂)]
+
+/-- `rot` on the three sets. -/
+def rot3 (o₁ o₂ o₃ : BitVec 8) : List Instr :=
+  rot .xmm1 .xmm2 .xmm3 o₁ o₂ o₃ ++ rot .xmm5 .xmm6 .xmm7 o₁ o₂ o₃ ++ rot .xmm9 .xmm10 .xmm11 o₁ o₂ o₃
+
+def doubleRound3 : List Instr :=
+  half3 16 12 ++ half3 8 7 ++ rot3 0x39 0x4e 0x93 ++ half3 16 12 ++ half3 8 7 ++ rot3 0x93 0x4e 0x39
+
+def rounds3 : Nat → Prog isa
+  | 0 => .block []
+  | n + 1 => .seq (rounds3 n) (.block doubleRound3)
+
+/-- The rows into the three sets, with their lane increments (through
+`zmm12 … zmm14`). -/
+def setup3 : List Instr :=
+  [.vbroadcasti32x4 .xmm0 (at_ .rdi 0), .vbroadcasti32x4 .xmm1 (at_ .rdi 16),
+   .vbroadcasti32x4 .xmm2 (at_ .rdi 32), .vbroadcasti32x4 .xmm3 (at_ .rdi 48),
+   z .vporq .xmm4 .xmm0 .xmm0, z .vporq .xmm5 .xmm1 .xmm1, z .vporq .xmm6 .xmm2 .xmm2,
+   z .vporq .xmm8 .xmm0 .xmm0, z .vporq .xmm9 .xmm1 .xmm1, z .vporq .xmm10 .xmm2 .xmm2,
+   .vmovdqu32Load .xmm12 (at_ .r9 incOff), .vmovdqu32Load .xmm13 (at_ .r9 inc2Off),
+   .vmovdqu32Load .xmm14 (at_ .r9 inc3Off),
+   z .vpaddd .xmm7 .xmm3 .xmm13, z .vpaddd .xmm11 .xmm3 .xmm14, z .vpaddd .xmm3 .xmm3 .xmm12]
+
+/-- XOR the 64 bytes in `x` into the data at `rsi + off`, through `zmm12`. -/
+def xor64T (x : XReg) (off : Nat) : List Instr :=
+  [.vmovdqu32Load .xmm12 (at_ .rsi off), z .vpxord .xmm12 .xmm12 x, .vmovdqu32Store (at_ .rsi off) .xmm12]
+
+/-- The four blocks `a, b, c, d` XORed into the data at `rsi + off`, through
+`zmm12`. -/
+def xor256T (a b c d : XReg) (off : Nat) : List Instr :=
+  xor64T a off ++ xor64T b (off + 64) ++ xor64T c (off + 128) ++ xor64T d (off + 192)
+
+/-- The rounds' result plus the input states (through `zmm12 … zmm15`); the
+first two sets' blocks gathered and XORed into the next 512 bytes of data,
+the third's into `buf[0, 256)`. -/
+def finish3 : List Instr :=
+  ([.vbroadcasti32x4 .xmm12 (at_ .rdi 0), .vbroadcasti32x4 .xmm13 (at_ .rdi 16),
+   .vbroadcasti32x4 .xmm14 (at_ .rdi 32), .vbroadcasti32x4 .xmm15 (at_ .rdi 48),
+   z .vpaddd .xmm0 .xmm0 .xmm12, z .vpaddd .xmm1 .xmm1 .xmm13, z .vpaddd .xmm2 .xmm2 .xmm14,
+   z .vpaddd .xmm4 .xmm4 .xmm12, z .vpaddd .xmm5 .xmm5 .xmm13, z .vpaddd .xmm6 .xmm6 .xmm14,
+   z .vpaddd .xmm8 .xmm8 .xmm12, z .vpaddd .xmm9 .xmm9 .xmm13, z .vpaddd .xmm10 .xmm10 .xmm14,
+   .vmovdqu32Load .xmm12 (at_ .r9 incOff), z .vpaddd .xmm12 .xmm12 .xmm15,
+   z .vpaddd .xmm3 .xmm3 .xmm12,
+   .vmovdqu32Load .xmm13 (at_ .r9 inc2Off), z .vpaddd .xmm13 .xmm13 .xmm15,
+   z .vpaddd .xmm7 .xmm7 .xmm13,
+   .vmovdqu32Load .xmm14 (at_ .r9 inc3Off), z .vpaddd .xmm14 .xmm14 .xmm15,
+   z .vpaddd .xmm11 .xmm11 .xmm14] : List Instr) ++
+  gather .xmm0 .xmm1 .xmm2 .xmm3 .xmm12 .xmm13 .xmm14 .xmm15 ++ xor256T .xmm0 .xmm1 .xmm2 .xmm3 0 ++
+  gather .xmm4 .xmm5 .xmm6 .xmm7 .xmm12 .xmm13 .xmm14 .xmm15 ++ xor256T .xmm4 .xmm5 .xmm6 .xmm7 256 ++
+  gather .xmm8 .xmm9 .xmm10 .xmm11 .xmm12 .xmm13 .xmm14 .xmm15 ++ store .xmm8 .xmm9 .xmm10 .xmm11
+
 /-! ## The tail -/
 
 /-- XOR the `rdx` bytes of keystream in `buf` into the data. -/
@@ -191,6 +265,12 @@ def part : Prog isa :=
   .seq (.block setup2) (.seq (rounds2 10) (.seq (.block (finish2 ++
     xor256 .xmm0 .xmm1 .xmm2 .xmm3 0 ++ store .xmm4 .xmm5 .xmm6 .xmm7 ++
     ([.alu .add .rsi (.imm 256), .alu .sub .rdx (.imm 256)] : List Instr))) fromBuf))
+
+/-- 513 to 768 bytes: twelve blocks, the first eight into the next 512 bytes
+of data, the others into `buf` and the rest of the data from there. -/
+def part3 : Prog isa :=
+  .seq (.block (Avx2.storeQ inc3Off inc3Q ++ setup3)) (.seq (rounds3 10) (.seq (.block (finish3 ++
+    ([.alu .add .rsi (.imm 512), .alu .sub .rdx (.imm 512)] : List Instr))) fromBuf))
 
 /-- At most 256 bytes: four blocks into `buf`, and the data from there. -/
 def last : Prog isa :=

@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.AesCbc.Arm.Loop
-import VerifiedGarbage.Proof.CmacAes.Arm.Words
 public import VerifiedGarbage.Proof.AesOcb.Arm.Callee
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesCbc.Mem32
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CBC on ARMv7: one block

@@ -1,10 +1,11 @@
 module
 
-import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.InverseVerified
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # P-521's inversions modulo `p` and `n` on AArch64
@@ -32,26 +33,14 @@ def note (mod : String) : String :=
   form, by word-by-word Montgomery multiplication with `mul` and `umulh`, its temporary area at \
   bytes 4024 to 4095; nothing depends on the numbers but through masks and `csel`."
 
-def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P521.curve) : List Artifact := [
-  { C.invPApi with
-    target := AArch64.target
-    doc := C.invPApi.doc (notes := [note "p"])
+def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P521.curve) : List Artifact := [
+  C.invPApi.artifact AArch64.target {
+    notes := [note "p"]
     code := p521.invFn p521.pPowI
-    contract := C.invPContract AArch64.abi
-    ofSig := by exact (⟨_, _, _, by
-      unfold Spec.Weierstrass.Inverse.Curve.invPContract Spec.Weierstrass.Inverse.Curve.invContract
-      rfl⟩)
-    verified := p_verified h.inv
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { C.invNApi with
-    target := AArch64.target
-    doc := C.invNApi.doc (notes := [note "n"])
+    verified := p_verified h.inv },
+  C.invNApi.artifact AArch64.target {
+    notes := [note "n"]
     code := p521.invFn p521.nPowI
-    contract := C.invNContract AArch64.abi
-    ofSig := by exact (⟨_, _, _, by
-      unfold Spec.Weierstrass.Inverse.Curve.invNContract Spec.Weierstrass.Inverse.Curve.invContract
-      rfl⟩)
-    verified := n_verified h.inv
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := n_verified h.inv }]
 
 end VG.Generic.P521.AArch64.InverseP521

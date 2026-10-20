@@ -1,17 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightFinish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightTile
+public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightRaw
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightInternal
 
 @[expose] public section

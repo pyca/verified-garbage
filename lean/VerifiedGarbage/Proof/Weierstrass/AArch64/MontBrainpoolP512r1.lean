@@ -1,21 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontVerified
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontVerified
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontContract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontVerified
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
-public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontContract
 meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.Mont.Read
-import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Mont.Read
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Ecdsa.Generic
-meta import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Shared BrainpoolP512r1 Montgomery multiplication on AArch64 -/
 

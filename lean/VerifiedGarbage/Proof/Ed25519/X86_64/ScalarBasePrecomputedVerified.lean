@@ -1,20 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseCT
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.ConstMem
-public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedCT
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedCT
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseMain
 import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
 import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
-import VerifiedGarbage.Proof.Ed25519.Recode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! The precomputed variant satisfies the same reviewed ABI contract, with 8 bytes of stack for
 its call of `vg_gf25519_r64_invert`: correct and constant time as its code with the inversion

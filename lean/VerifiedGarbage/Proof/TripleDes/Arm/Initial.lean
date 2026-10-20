@@ -1,12 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.TripleDes.Arm.Lit
 
-public import VerifiedGarbage.Proof.TripleDes.Arm.Permutation
-public import VerifiedGarbage.Proof.TripleDes.Core
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.TripleDes.Arm.Permutation
+import VerifiedGarbage.Proof.TripleDes.Core
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 
@@ -18,7 +18,7 @@ theorem initial_raw_ok (s : State) :
       s'.gpr .r11 = (Spec.TripleDes.permute Spec.TripleDes.ip (s.gpr .r4 ++ s.gpr .r5)).setWidth 32 ∧
       s'.gpr .r10 = ((Spec.TripleDes.permute Spec.TripleDes.ip (s.gpr .r4 ++ s.gpr .r5)) >>> 32).setWidth 32 ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
-      (∀ r, ((instrs initialPermutation.lit).all fun op => dstOf op != some r) = true →
+      (∀ r, ((instrs initialPermutation.lit).all fun op => !clobbers op r) = true →
         s'.gpr r = s.gpr r) := by
   obtain ⟨s', run, lo, hi, rd, wr, sp, mem, regs⟩ :=
     fixedPermutation_ok Spec.TripleDes.ip (by decide) 32 32
@@ -36,7 +36,7 @@ theorem final_raw_ok (s : State) :
       s'.gpr .r5 = (Spec.TripleDes.permute Spec.TripleDes.fp (s.gpr .r10 ++ s.gpr .r11)).setWidth 32 ∧
       s'.gpr .r4 = ((Spec.TripleDes.permute Spec.TripleDes.fp (s.gpr .r10 ++ s.gpr .r11)) >>> 32).setWidth 32 ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
-      (∀ r, ((instrs finalPermutation.lit).all fun op => dstOf op != some r) = true →
+      (∀ r, ((instrs finalPermutation.lit).all fun op => !clobbers op r) = true →
         s'.gpr r = s.gpr r) := by
   obtain ⟨s', run, lo, hi, rd, wr, sp, mem, regs⟩ :=
     fixedPermutation_ok Spec.TripleDes.fp (by decide) 32 32

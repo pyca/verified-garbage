@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Sha3
-public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Keccak-f[1600] on four interleaved states, as a function
@@ -32,30 +31,5 @@ namespace VG.Spec.Sha3
 `u64` at index `4 i + k`. -/
 def stateX4At (m : Mem) (p : Addr) (k : Nat) : State :=
   Vector.ofFn fun i => m.readW (p + BitVec.ofNat 64 (8 * (4 * i.val + k))) 64
-
-/-- `vg_keccak_f1600_x4(states: *mut [u64; 100], scratch: *mut [u64; 196])`.
-`scratch` is working space. -/
-def permuteX4Sig : Sig where
-  params := [("states", .array true .u64 100), ("scratch", .array true .u64 196)]
-
-/-- Applies Keccak-f[1600] to each of the four states interleaved at
-`states`. The states are secret. -/
-def permuteX4Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  permuteX4Sig.contract A (post := fun states _scratch m m' _ =>
-    ∀ k < 4, stateX4At m' states k = keccakF (stateX4At m states k))
-    (stack := stack)
-
-/-- `vg_keccak_f1600_x4` on every target. -/
-def permuteX4Api : Api where
-  module := "sha3"
-  name := "vg_keccak_f1600_x4"
-  sig := permuteX4Sig
-  contracts := some fun A stack => permuteX4Contract A stack
-  summary := "The permutation Keccak-f[1600] (FIPS 202 §3.4) on four states at once: applies \
-    it to each of the four states interleaved in `*states`, lane `x + 5y` of state `k` (0 to \
-    3) at index `4(x + 5y) + k`.\n\n\
-    Contract: `VG.Spec.Sha3.permuteX4Contract`. Constant time: only the pointers may affect \
-    timing, not the states."
-  safety := ["The contents of `scratch` on return are unspecified."]
 
 end VG.Spec.Sha3

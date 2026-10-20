@@ -1,13 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Label
+import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Label
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSAES-OAEP on AArch64: the label's hash in constant time

@@ -1,13 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
+public import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
+import VerifiedGarbage.Proof.Gcm.SealGather
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
+meta import VerifiedGarbage.Proof.Gcm.SealGather
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: gathering the slices

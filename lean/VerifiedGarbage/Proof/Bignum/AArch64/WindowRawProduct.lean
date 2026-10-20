@@ -2,18 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawTriangle
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRaw
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSave
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareRaw
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowSetup
+import VerifiedGarbage.Proof.Bignum.AArch64.WideZero
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowRaw

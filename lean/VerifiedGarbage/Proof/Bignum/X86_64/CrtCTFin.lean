@@ -1,15 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTMain
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Order.Defs.PartialOrder
+meta import Mathlib.Order.Defs.PartialOrder
+import Mathlib.Data.Int.ModEq
+import Mathlib.Tactic.Set
+meta import Mathlib.Data.Int.ModEq
+meta import Mathlib.Tactic.Set
 
 /-!
 # RSA with the CRT on x86-64: the result in constant time

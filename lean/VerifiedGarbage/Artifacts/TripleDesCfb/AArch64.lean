@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.FbVerified
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Triple DES-CFB64 artifacts on baseline AArch64 -/
 
@@ -16,21 +16,15 @@ def note : String :=
   space once per call. The mode is the generic CFB of `Impl/Modes/AArch64/`."
 
 def artifacts : List Artifact := [
-  { Spec.TripleDes.cfbEncryptApi with
-    target := AArch64.target
-    doc := Spec.TripleDes.cfbEncryptApi.doc (notes := [note])
+  Spec.TripleDes.cfbEncryptApi.artifact AArch64.target {
+    notes := [note]
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 Impl.TripleDes.AArch64.cfbEncrypt
-    contract := Spec.TripleDes.cfbEncryptContract AArch64.abi 1008
     stack := 1008
-    verified := Proof.TripleDes.AArch64.cfbEncrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.TripleDes.cfbDecryptApi with
-    target := AArch64.target
-    doc := Spec.TripleDes.cfbDecryptApi.doc (notes := [note])
+    verified := Proof.TripleDes.AArch64.cfbEncrypt_framed },
+  Spec.TripleDes.cfbDecryptApi.artifact AArch64.target {
+    notes := [note]
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 Impl.TripleDes.AArch64.cfbDecrypt
-    contract := Spec.TripleDes.cfbDecryptContract AArch64.abi 1008
     stack := 1008
-    verified := Proof.TripleDes.AArch64.cfbDecrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.TripleDes.AArch64.cfbDecrypt_framed }]
 
 end VG.Artifacts.TripleDesCfb.AArch64

@@ -1,17 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.JointWindows
-meta import VerifiedGarbage.Proof.Dsa.AArch64.JointWindows
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Dsa.Joint
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
+import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.JointWindows
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 meta import VerifiedGarbage.Proof.Dsa.Joint
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant time of a joint exponentiation window
 

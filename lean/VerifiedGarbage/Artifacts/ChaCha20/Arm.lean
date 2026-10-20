@@ -1,12 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.ChaCha20.Arm.Xor
-public import VerifiedGarbage.Impl.ChaCha20.Arm.Xor
-import VerifiedGarbage.Proof.ChaCha20.Arm.Lit
-import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Init
 public import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.ApplyCT
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Init
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # The ChaCha20 block function (RFC 8439) on ARMv7 -/
 
@@ -15,40 +11,21 @@ import Mathlib.Tactic.SplitIfs
 namespace VG.Artifacts.ChaCha20.Arm
 
 def artifacts : List Artifact := [
-  { Spec.ChaCha20.blockApi with
-    target := Arm.target
-    doc := Spec.ChaCha20.blockApi.doc
+  Spec.ChaCha20.blockApi.artifact Arm.target {
     code := Impl.ChaCha20.Arm.block
-    contract := Spec.ChaCha20.blockContract Arm.abi
-    verified := Proof.ChaCha20.Arm.block_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.ChaCha20.xorApi with
-    target := Arm.target
-    doc := Spec.ChaCha20.xorApi.doc (notes := ["Calls `vg_chacha20_block` for each 64 bytes."])
+    verified := Proof.ChaCha20.Arm.block_verified },
+  Spec.ChaCha20.xorApi.artifact Arm.target {
+    notes := ["Calls `vg_chacha20_block` for each 64 bytes."]
     code := Impl.ChaCha20.Arm.Xor.xor
-    contract := Spec.ChaCha20.xorContract Arm.abi
-    verified := Proof.ChaCha20.Arm.Xor.xor_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.ChaCha20.initApi with
-    target := Arm.target
-    doc := Spec.ChaCha20.initApi.doc
+    verified := Proof.ChaCha20.Arm.Xor.xor_verified },
+  Spec.ChaCha20.initApi.artifact Arm.target {
     code := Impl.ChaCha20.Arm.Stream.init
-    contract := Spec.ChaCha20.initContract Arm.abi
-    verified := Proof.ChaCha20.Arm.Stream.init_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.ChaCha20.setNonceApi with
-    target := Arm.target
-    doc := Spec.ChaCha20.setNonceApi.doc
+    verified := Proof.ChaCha20.Arm.Stream.init_verified },
+  Spec.ChaCha20.setNonceApi.artifact Arm.target {
     code := Impl.ChaCha20.Arm.Stream.setNonce
-    contract := Spec.ChaCha20.setNonceContract Arm.abi
-    verified := Proof.ChaCha20.Arm.Stream.setNonce_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.ChaCha20.applyApi with
-    target := Arm.target
-    doc := Spec.ChaCha20.applyApi.doc
+    verified := Proof.ChaCha20.Arm.Stream.setNonce_verified },
+  Spec.ChaCha20.applyApi.artifact Arm.target {
     code := Impl.ChaCha20.Arm.Stream.apply
-    contract := Spec.ChaCha20.applyContract Arm.abi 0
-    verified := Proof.ChaCha20.Arm.Stream.apply_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.ChaCha20.Arm.Stream.apply_verified }]
 
 end VG.Artifacts.ChaCha20.Arm

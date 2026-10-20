@@ -1,31 +1,27 @@
 module
 
 import VerifiedGarbage.Proof.CmacAes.Stream.X86.Init
-meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Init
 import VerifiedGarbage.Proof.CmacAes.Stream.X86.AbsorbCorrect
-meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.AbsorbCorrect
 import VerifiedGarbage.Proof.CmacAes.Stream.X86.Finish
-meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Finish
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Cmac.Contract
-meta import VerifiedGarbage.Spec.Cmac.Contract
-public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Absorb
-meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Absorb
+import VerifiedGarbage.Proof.CmacAes.Stream.X86.Absorb
 public import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
-meta import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.AbsorbBlocks
+import VerifiedGarbage.Proof.CmacAes.X86.Verified
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Init
+meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.AbsorbCorrect
+meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Finish
+meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Absorb
+meta import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
+meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.AbsorbBlocks
+meta import VerifiedGarbage.Proof.CmacAes.X86.Verified
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Aes.KeyExp
-meta import VerifiedGarbage.Proof.Aes.SboxSpec
-meta import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Proof.Framework.X86.Straight
-meta import VerifiedGarbage.Proof.Framework.X86.Straight
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

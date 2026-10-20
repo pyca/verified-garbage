@@ -4,11 +4,6 @@ public import VerifiedGarbage.Spec.MillerRabin
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Bignum.AArch64.MontFnVerified
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Shared Miller–Rabin round: the callable contract on AArch64 -/
 

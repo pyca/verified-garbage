@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorWord
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorClear
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
+import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Resolve the workspace addresses and public block count for SIMD selection. -/
 

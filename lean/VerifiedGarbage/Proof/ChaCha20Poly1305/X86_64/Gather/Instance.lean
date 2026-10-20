@@ -1,12 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.By
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.By
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Callee
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Verified
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: the instances

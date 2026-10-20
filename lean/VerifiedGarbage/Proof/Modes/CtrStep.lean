@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Modes.Ctr
 public import VerifiedGarbage.Proof.Modes.Steps
-public import VerifiedGarbage.Proof.AesCtr.Spec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesCtr.Spec
+import Std.Data.DTreeMap.Internal.Balancing
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The operations of CTR meet the existing CTR specification -/
 

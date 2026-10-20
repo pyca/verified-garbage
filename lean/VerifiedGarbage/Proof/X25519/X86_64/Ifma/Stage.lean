@@ -1,10 +1,10 @@
 module
+public import VerifiedGarbage.Impl.X25519.X86_64.Ifma
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Bound
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Carry
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: the stages' operands
@@ -47,7 +47,7 @@ theorem s1a_nat (E : Env) : ∀ j < 5, ∀ l < 4, (s1a.reg j).nat E l = s1aNat E
 def s1aB : Bnds :=
   ⟨fun i => if i < 5 then 2 ^ 61 - 1 else 2 ^ 64 - 1, fun _ => 2 ^ 64 - 1,
     fun d => if d = KB0 then 2 ^ 62 - 38912 else if d = KB1 then 2 ^ 62 - 2048 else 2 ^ 64 - 1,
-    fun d => if d = KB0 then 2 ^ 62 - 38912 else if d = KB1 then 2 ^ 62 - 2048 else 0⟩
+    fun d => if d = KB0 then 2 ^ 62 - 38912 else if d = KB1 then 2 ^ 62 - 2048 else 0, fun _ => 2 ^ 64 - 1⟩
 
 theorem s1a_ok : ∀ j < 5, ∀ l < 4, (s1a.reg j).ok s1aB l = true ∧ (s1a.reg j).bnd s1aB l < 2 ^ 63 := by
   decide +kernel
@@ -58,11 +58,9 @@ theorem s1a_st : s1a.st = [] := by decide +kernel
 def s1b : Sym := symOf stage1b
 
 theorem s1b_regs : ∀ j < 5, s1b.reg (5 + j) = .perm (.reg j) (ord 0 1 0 1).toNat := by decide +kernel
-theorem s1b_st : s1b.st = [(OPL + 128, .perm (.reg 4) (ord 0 1 3 2).toNat),
-    (OPL + 96, .perm (.reg 3) (ord 0 1 3 2).toNat), (OPL + 64, .perm (.reg 2) (ord 0 1 3 2).toNat),
-    (OPL + 32, .perm (.reg 1) (ord 0 1 3 2).toNat), (OPL, .perm (.reg 0) (ord 0 1 3 2).toNat)] := by
-  decide +kernel
-theorem s1b_keep : ∀ r < 16, (r < 5 ∨ 11 ≤ r) → s1b.reg r = .reg r := by decide +kernel
+theorem s1b_hregs : ∀ j < 5, s1b.hreg j = .perm (.reg j) (ord 0 1 3 2).toNat := by decide +kernel
+theorem s1b_st : s1b.st = [] := by decide +kernel
+theorem s1b_keep : ∀ r < 16, (r < 5 ∨ 10 ≤ r) → s1b.reg r = .reg r := by decide +kernel
 
 /-! ## Stage 2 -/
 
@@ -93,7 +91,7 @@ def s2aB : Bnds :=
   ⟨fun i => if i < 5 then 2 ^ 61 - 1 else 2 ^ 64 - 1, fun _ => 2 ^ 64 - 1,
     fun d => if d = KB0 then 2 ^ 62 - 38912 else if d = KB1 then 2 ^ 62 - 2048
       else if KA24 ≤ d ∧ d < KA24 + 160 ∧ d % 32 = 0 then 2 ^ 52 - 1 else 2 ^ 64 - 1,
-    fun d => if d = KB0 then 2 ^ 62 - 38912 else if d = KB1 then 2 ^ 62 - 2048 else 0⟩
+    fun d => if d = KB0 then 2 ^ 62 - 38912 else if d = KB1 then 2 ^ 62 - 2048 else 0, fun _ => 2 ^ 64 - 1⟩
 
 theorem s2a_ok : ∀ j < 5, ∀ l < 4, (s2a.reg (5 + j)).ok s2aB l = true ∧
     (s2a.reg (5 + j)).bnd s2aB l < 2 ^ 63 ∧ (s2a.reg j).ok s2aB l = true ∧
@@ -108,6 +106,7 @@ def s2b : Sym := symOf stage2b
 theorem s2b_regs : ∀ j < 5, s2b.reg (5 + j) = .reg j := by decide +kernel
 theorem s2b_st : s2b.st = [(OPV + 128, .reg 9), (OPV + 96, .reg 8), (OPV + 64, .reg 7),
     (OPV + 32, .reg 6), (OPV, .reg 5)] := by decide +kernel
+theorem s2b_hregs : ∀ j < 5, s2b.hreg j = .reg (5 + j) := by decide +kernel
 theorem s2b_keep : ∀ r < 16, (r < 5 ∨ 10 ≤ r) → s2b.reg r = .reg r := by decide +kernel
 
 /-! ## Stage 3 -/
@@ -137,7 +136,7 @@ below `2⁵²`. -/
 def s3aB : Bnds :=
   ⟨fun i => if i < 5 then 2 ^ 61 - 1 else 2 ^ 64 - 1, fun _ => 2 ^ 64 - 1,
     fun d => if ((OPV ≤ d ∧ d < OPV + 160) ∨ (KX1 ≤ d ∧ d < KX1 + 160)) ∧ d % 32 = 0 then 2 ^ 52 - 1 else 2 ^ 64 - 1,
-    fun _ => 0⟩
+    fun _ => 0, fun _ => 2 ^ 64 - 1⟩
 
 theorem s3a_ok : ∀ j < 5, ∀ l < 4, (s3a.reg (5 + j)).ok s3aB l = true ∧
     (s3a.reg (5 + j)).bnd s3aB l < 2 ^ 63 ∧ (s3a.reg j).ok s3aB l = true ∧
@@ -149,8 +148,8 @@ theorem s3a_st : s3a.st = [] := by decide +kernel
 
 def s3b : Sym := symOf stage3b
 
-theorem s3b_st : s3b.st = [(OPG + 128, .reg 4), (OPG + 96, .reg 3), (OPG + 64, .reg 2),
-    (OPG + 32, .reg 1), (OPG, .reg 0)] := by decide +kernel
+theorem s3b_hregs : ∀ j < 5, s3b.hreg j = .reg j := by decide +kernel
+theorem s3b_st : s3b.st = [] := by decide +kernel
 theorem s3b_keep : ∀ r < 16, s3b.reg r = .reg r := by decide +kernel
 
 end VG.Proof.X25519.X86_64.Ifma

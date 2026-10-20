@@ -1,18 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointChecks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointContract
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86_64
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
+import VerifiedGarbage.Proof.P521.X86_64.JointLayout
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 
 /-! Whole-function timing of P-521's joint verification follows the public-input contract. -/
 

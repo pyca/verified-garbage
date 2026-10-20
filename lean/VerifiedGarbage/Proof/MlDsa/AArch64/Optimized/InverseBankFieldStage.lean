@@ -4,14 +4,11 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseStage
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldGroups
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseArithmetic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

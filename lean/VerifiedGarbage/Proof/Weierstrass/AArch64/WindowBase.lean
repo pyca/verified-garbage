@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.Weierstrass.WinLay
 public import VerifiedGarbage.Proof.Weierstrass.Window
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
@@ -21,6 +17,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 public import VerifiedGarbage.Proof.Weierstrass.Pow
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # The window method on AArch64: what its proofs share
@@ -119,6 +116,14 @@ def TblOk (K : WinCfg) (C : Curve) (base : Addr) (P : Point C) (m : Nat) (s : St
   ∀ j, 1 ≤ j → j ≤ m →
     (∀ x ∈ [(K.tblPt j).x, (K.tblPt j).y, (K.tblPt j).z], wordsVal s.mem base x K.M.n < C.p) ∧
     Rep C (tmv C K.M.n base s (K.tblPt j).x) (tmv C K.M.n base s (K.tblPt j).y)
+      (tmv C K.M.n base s (K.tblPt j).z) (mul j P)
+
+/-- Entries `[1 … m]P` of the table, each a representative by `Rp`. -/
+def TblOkR (K : WinCfg) (C : Curve) (base : Addr) (Rp : Fe C → Fe C → Fe C → Point C → Prop)
+    (P : Point C) (m : Nat) (s : State) : Prop :=
+  ∀ j, 1 ≤ j → j ≤ m →
+    (∀ x ∈ [(K.tblPt j).x, (K.tblPt j).y, (K.tblPt j).z], wordsVal s.mem base x K.M.n < C.p) ∧
+    Rp (tmv C K.M.n base s (K.tblPt j).x) (tmv C K.M.n base s (K.tblPt j).y)
       (tmv C K.M.n base s (K.tblPt j).z) (mul j P)
 
 /-! ## The loop -/

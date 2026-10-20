@@ -1,20 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.ReducePointers
+public import VerifiedGarbage.Proof.Argon2.Matrix
 import VerifiedGarbage.Proof.Argon2.AArch64.BlockAddress
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillIterations
-import VerifiedGarbage.Proof.Argon2.FinalReduction
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
-import VerifiedGarbage.Impl.MdStream.AArch64
 import VerifiedGarbage.Proof.Argon2.AArch64.Carry
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
+public import VerifiedGarbage.Proof.Argon2.AArch64.Memory
+import VerifiedGarbage.Proof.Argon2.AArch64.Compress
+import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceCount
 
 /-! The last-lane address calculation preserves all callee-saved registers. -/
 

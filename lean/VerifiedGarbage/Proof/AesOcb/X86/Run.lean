@@ -1,15 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.X86.Env
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.Aes.X86.VariantProof
+public import VerifiedGarbage.Proof.AesGcm.X86.CT
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.Cmac.Block
-public import VerifiedGarbage.Proof.Gcm.Be64
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.AesOcb.X86
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 
 /-!
 # AES-OCB on x86: running straight-line blocks

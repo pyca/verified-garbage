@@ -4,13 +4,10 @@ public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Step
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Absorb
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
 public import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: the setup

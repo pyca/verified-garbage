@@ -1,11 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInit
+import VerifiedGarbage.Proof.Dsa.AArch64.ReduceLoop
+import VerifiedGarbage.Proof.Dsa.AArch64.ReduceSetup
 
 /-! # Complete streaming modular reduction for DSA -/
 

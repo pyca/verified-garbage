@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.AesCcm.Arm.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-CCM (NIST SP 800-38C) on ARMv7
@@ -31,22 +31,16 @@ def callNote : String :=
   "This implementation computes the CBC-MAC with `vg_cmac_aes_update`, and encrypts with `vg_aes_ctr32`."
 
 def artifacts : List Artifact := [
-  { Spec.Ccm.sealApi with
-    target := Arm.target
-    doc := Spec.Ccm.sealApi.doc (notes := [callNote])
+  Spec.Ccm.sealApi.artifact Arm.target {
+    notes := [callNote]
     code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesCcm.Arm.«seal»
-    contract := Spec.Ccm.sealContract Arm.abi 2608
     stack := 2608
-    verified := seal_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Ccm.openApi with
-    target := Arm.target
-    doc := Spec.Ccm.openApi.doc (notes := [callNote,
-      "It compares the tags and overwrites the data with zeros without a branch on the result."])
+    verified := seal_framed },
+  Spec.Ccm.openApi.artifact Arm.target {
+    notes := [callNote,
+      "It compares the tags and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesCcm.Arm.«open»
-    contract := Spec.Ccm.openContract Arm.abi 2608
     stack := 2608
-    verified := open_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := open_framed }]
 
 end VG.Artifacts.AesCcm.Arm

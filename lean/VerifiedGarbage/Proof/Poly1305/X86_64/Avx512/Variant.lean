@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_poly1305_blocks_avx512` as an implementation of `vg_poly1305_blocks`

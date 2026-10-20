@@ -2,22 +2,98 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
 meta import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
-public import VerifiedGarbage.Proof.MlKem.X86_64.Dot
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Dot
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragKM
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragKM
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragS4
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS4
 public import VerifiedGarbage.Proof.MlKem.X86_64.Prfs
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Prfs
 public import VerifiedGarbage.Impl.MlKem.X86_64.KeyGen
 meta import VerifiedGarbage.Impl.MlKem.X86_64.KeyGen
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.Bignum.Layout
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86_64.Words
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.MlKem.PolyW
+import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
+import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
+import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
+import VerifiedGarbage.Proof.MlKem.X86_64.FragC
+import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
+import VerifiedGarbage.Proof.MlKem.X86_64.FragEM
+import VerifiedGarbage.Proof.MlKem.X86_64.FragL
+import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
+import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Verified
+import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
+import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay42
+import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
+import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
+meta import VerifiedGarbage.Proof.Bignum.Layout
+meta import VerifiedGarbage.Proof.Bignum.Math
+meta import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Words
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+meta import VerifiedGarbage.Proof.Framework.CallLay
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Framework.X86_64.Words
+meta import VerifiedGarbage.Proof.MlKem.PolyW
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
+meta import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragC
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragEM
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragL
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
+meta import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Verified
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+meta import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay42
+meta import VerifiedGarbage.Proof.Sha3.Arith
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
+meta import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
 
 /-!
 # ML-KEM on x86-64: key generation, its contract, layout, checks and entry
@@ -126,21 +202,27 @@ def prfsKChk : Bool :=
     (List.range (L.k * L.k)).all (fun e => keepB (kgB L) (prfsW (2 * L.k) L.oPR L.lPW) (pS (L.pA + e)) 1024)
 
 /-- What `se N` writes. -/
-abbrev seW (N : Nat) : List (Ptr × Nat) := [(pS N, 1024)] ++ [(pS N, 1024), (sc oSS, 1024)]
+abbrev seW (N : Nat) : List (Ptr × Nat) := [(pS N, 1024)]
 
 def seChk (N : Nat) : Bool :=
-  twoChk (kgB L) (kgW L) (prfO L N) 128 (pS N) 1024 && ipChk (kgB L) (kgW L) (pS N) && restChk L N 0 0 (seW N)
+  twoChk (kgB L) (kgW L) (prfO L N) 128 (pS N) 1024 && restChk L N 0 0 (seW N)
 
-/-- What `row i` writes. -/
-abbrev rowW (i : Nat) : List (Ptr × Nat) := dotW L.k ++ [(pS 15, 1024)] ++ [((.r12, 384 * i), 384)]
+/-- What `vg_mlkem*_keygen_mul` writes. -/
+abbrev kmW : List (Ptr × Nat) := [(pS L.pU, 1024 * L.k), (pS 0, 1024 * L.k), (pS L.pZ, 4096)]
 
-def rowChk (i : Nat) : Bool :=
-  dotChk (kgB L) (kgW L) (fun j => L.aS i j) pS L.k && accChk (kgB L) (kgW L) (pS 15) (pS (L.k + i)) &&
-    keepB (kgB L) (dotW L.k) (pS (L.k + i)) 1024 && twoChk (kgB L) (kgW L) (pS 15) 1024 (.r12, 384 * i) 384 &&
-    restChk L (2 * L.k) i 0 (rowW L i)
+/-- After `vg_mlkem*_keygen_mul`: what a piece writing `ws` keeps, with `r`
+rows of `ek` and `e` of `dk` written. -/
+def restTChk (r e : Nat) (ws : List (Ptr × Nat)) : Bool :=
+  kcChk L ws && keepB (kgB L) ws (sc oG) 32 && (List.range L.k).all (fun j => keepB (kgB L) ws (pS j) 1024) &&
+    (List.range L.k).all (fun i => keepB (kgB L) ws (pS (L.pU + i)) 1024) &&
+    (List.range r).all (fun i => keepB (kgB L) ws (.r12, 384 * i) 384) &&
+    (List.range e).all (fun j => keepB (kgB L) ws (.r13, 384 * j) 384)
+
+def encTChk (i : Nat) : Bool :=
+  twoChk (kgB L) (kgW L) (pS (L.pU + i)) 1024 (.r12, 384 * i) 384 && restTChk L i 0 [((.r12, 384 * i), 384)]
 
 def encSChk (j : Nat) : Bool :=
-  twoChk (kgB L) (kgW L) (pS j) 1024 (.r13, 384 * j) 384 && restChk L (2 * L.k) L.k j [((.r13, 384 * j), 384)]
+  twoChk (kgB L) (kgW L) (pS j) 1024 (.r13, 384 * j) 384 && restTChk L L.k j [((.r13, 384 * j), 384)]
 
 /-- The writes of `fin`. -/
 abbrev finW₁ : List (Ptr × Nat) := [((.r12, 384 * L.k), 32)]
@@ -165,8 +247,10 @@ open VG.Impl.MlKem.X86_64.KeyGen
 
 variable (L : Kem)
 
-/-- What every piece of key generation needs of the layout, evaluated for each parameter set. -/
-structure KgWf : Prop extends KemWf L where
+/-- What the pieces of key generation that do not depend on how it stores
+its polynomials need of the layout (`G(d ‖ k)`, the keys' last pieces and
+the end), evaluated for each parameter set. -/
+structure KgWfB : Prop extends KemWf L where
   scr : 888 ≤ L.scr ∧ L.scr < 2 ^ 32
   small : ∀ b ∈ kgB L, b.2 < 2 ^ 32
   -- `G(d ‖ k)`
@@ -178,22 +262,13 @@ structure KgWf : Prop extends KemWf L where
   gCK : kcChk L [(sc oSB, 32)] = true
   gG : keepB (kgB L) [(sc oSB, 32)] (sc oG) 32 = true
   gS : keepB (kgB L) [(sc oSB, 32)] sigP 32 = true
-  -- the matrix
-  kq : ∀ q < L.k * L.k / 4, kqChk L (4 * q) = true
-  kb : ∀ e < L.k * L.k, 4 * (L.k * L.k / 4) ≤ e → kbChk L e = true
   flag : kcChk L [] = true
   flagG : keepB (kgB L) [] (sc oG) 32 = true
   flagS : keepB (kgB L) [] sigP 32 = true
   flagB : keepB (kgB L) [] (sc oSB) 32 = true
-  flagA : ∀ e < L.k * L.k, keepB (kgB L) [] (pS (L.pA + e)) 1024 = true
-  -- the keys
-  prfs : prfsKChk L = true
-  se : ∀ N < 2 * L.k, seChk L N = true
-  row : ∀ i < L.k, rowChk L i = true
-  encS : ∀ j < L.k, encSChk L j = true
   f₁ : copyChk (kgB L) (kgW L) (.r12, 384 * L.k) (sc oG) 32 = true
   f₁K : kcChk L (finW₁ L) = true
-  f₁E : ∀ i < L.k, keepB (kgB L) (finW₁ L) (.r12, 384 * i) 384 = true
+  f₁E : keepB (kgB L) (finW₁ L) (.r12, 0) (384 * L.k) = true
   f₂ : copyChk (kgB L) (kgW L) (.r13, 384 * L.k) (.r12, 0) L.ekLen = true
   f₂K : kcChk L (finW₂ L) = true
   f₂E : keepB (kgB L) (finW₂ L) (.r12, 0) L.ekLen = true
@@ -203,7 +278,7 @@ structure KgWf : Prop extends KemWf L where
   f₄ : copyChk (kgB L) (kgW L) (.r13, 384 * L.k + L.ekLen + 32) (.rbp, 32) 32 = true
   f₄K : kcChk L (finW₄ L) = true
   f₄E : keepB (kgB L) (finW₄ L) (.r12, 0) L.ekLen = true
-  dkS : ∀ j < L.k, keepB (kgB L) (finW₁ L ++ finW₂ L ++ finW₃ L ++ finW₄ L) (.r13, 384 * j) 384 = true
+  dkS : keepB (kgB L) (finW₁ L ++ finW₂ L ++ finW₃ L ++ finW₄ L) (.r13, 0) (384 * L.k) = true
   dkE : keepB (kgB L) (finW₃ L ++ finW₄ L) (.r13, 384 * L.k) L.ekLen = true
   dkH : keepB (kgB L) (finW₄ L) (.r13, 384 * L.k + L.ekLen) 32 = true
   -- the end
@@ -218,8 +293,26 @@ structure KgWf : Prop extends KemWf L where
   finT₄ : ∃ h, (taint.check (X86_64.Taint.ofRegs [.rbx, .rbp, .r12, .r13])
     (copy (.r13, 384 * L.k + L.ekLen + 32) (.rbp, 32) 32) h).isSome = true
 
+/-- What every piece of key generation with polynomials of `u32`s needs of
+the layout, evaluated for each parameter set. -/
+structure KgWf : Prop extends KgWfB L where
+  -- the matrix
+  kq : ∀ q < L.k * L.k / 4, kqChk L (4 * q) = true
+  kb : ∀ e < L.k * L.k, 4 * (L.k * L.k / 4) ≤ e → kbChk L e = true
+  flagA : ∀ e < L.k * L.k, keepB (kgB L) [] (pS (L.pA + e)) 1024 = true
+  -- the keys
+  prfs : prfsKChk L = true
+  se : ∀ N < 2 * L.k, seChk L N = true
+  km : kmChk (kgB L) (kgW L) L.k (pS L.pU) (pS 0) (pS L.pA) (pS L.k) (pS L.pZ) = true
+  kmK : kcChk L (kmW L) = true
+  kmG : keepB (kgB L) (kmW L) (sc oG) 32 = true
+  encT : ∀ i < L.k, encTChk L i = true
+  encS : ∀ j < L.k, encSChk L j = true
+
+instance : CoeOut (KgWf L) (KgWfB L) := ⟨KgWf.toKgWfB⟩
+
 section
-variable {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ)
+variable {L : Kem} (W : KgWfB L) {σ : State} (hp : (keyGenK L).pre σ)
 include W hp
 
 theorem kgLay {s : State} (h : Top kgM σ s) : Lay kgR (kgW L) s := by
@@ -257,7 +350,7 @@ structure KC (σ s : State) : Prop where
   z : bytesAt s.mem (pa s (.rbp, 32)) 32 = kgZ σ
 
 section
-variable {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ)
+variable {L : Kem} (W : KgWfB L) {σ : State} (hp : (keyGenK L).pre σ)
 include W hp
 
 theorem KC.lay {s : State} (h : KC σ s) : Lay kgR (kgW L) s := kgLay W hp h.top
@@ -275,7 +368,7 @@ theorem pro_eq : pro = [.store (at_ .rcx 840) .rbx, .store (at_ .rcx 848) .rbp, 
     .store (at_ .rcx 864) .r13, .store (at_ .rcx 872) .r14, .store (at_ .rcx 880) .r15, .mov .rbx (.reg .rcx),
     .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rdx), .mov32 .r15 (.imm 1)] := rfl
 
-theorem pro_ok {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) :
+theorem pro_ok {L : Kem} (W : KgWfB L) {σ : State} (hp : (keyGenK L).pre σ) :
     WP isa (.block pro) σ fun s => KC σ s ∧ s.gpr .r15 = 1 := by
   have hp' := hp
   obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, r1, r2, r3, r4, k1, k2, k3, k4, n1, n2, n3, n4⟩ := hp'
@@ -324,6 +417,7 @@ macro_rules
   | `(tactic| kem_wf) =>
     `(tactic| constructor <;> first | exact ⟨_, by taint_decide⟩ | taint_decide | decide +kernel)
   | `(tactic| kem_wf $w) =>
-    `(tactic| constructor <;> first | exact $w | exact ⟨_, by taint_decide⟩ | taint_decide | decide +kernel)
+    `(tactic| constructor <;> first | exact $w | exact ⟨_, by taint_decide⟩ | taint_decide | decide +kernel |
+      kem_wf $w)
 
 end VG.Proof.MlKem.X86_64

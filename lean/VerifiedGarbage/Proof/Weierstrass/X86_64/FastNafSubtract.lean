@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafSubtract
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Signed-digit subtraction shares the same x86-64 implementation at both widths, for scalars of
 four words (five registers), six words (seven registers) and nine words (ten registers). -/

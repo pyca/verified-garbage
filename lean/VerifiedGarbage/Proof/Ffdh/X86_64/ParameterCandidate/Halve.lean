@@ -1,12 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Shape
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.HalveOctets
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.HalveByte
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.HalveByte
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH parameter candidates on x86-64: in-place byte halving -/
 

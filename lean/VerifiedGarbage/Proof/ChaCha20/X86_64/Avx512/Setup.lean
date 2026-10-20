@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Sym
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Finish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.ChaCha20.Keystream
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Finish
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # ChaCha20 on x86-64 with AVX-512: the sixteen input states

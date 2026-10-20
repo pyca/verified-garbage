@@ -3,14 +3,11 @@ module
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
 public import VerifiedGarbage.Proof.X448.BaseAdd
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Const
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 public import VerifiedGarbage.Proof.X448.Edwards.Ladder
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # X448 of the base point on AArch64: what the additions' proofs share

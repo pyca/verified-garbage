@@ -1,34 +1,39 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.Contract
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-public import VerifiedGarbage.Proof.Framework.LitShare
-meta import VerifiedGarbage.Proof.Framework.LitShare
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.Lit
+public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP384r1.X86_64
+import VerifiedGarbage.Proof.Framework.LitShare
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Lit
+import VerifiedGarbage.Proof.Weierstrass.WinLay
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.Lit
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP384r1.X86_64
+meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Lit
+meta import VerifiedGarbage.Proof.Weierstrass.WinLay
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # ECDSA verification over brainpoolP384r1 on x86-64: `Verified`

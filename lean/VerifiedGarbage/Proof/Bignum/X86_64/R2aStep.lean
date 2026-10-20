@@ -1,16 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2aD3
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.R2aD3
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Impl.Bignum.X86_64.R2Adx
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wDiv
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
+import VerifiedGarbage.Proof.Bignum.X86_64.R2aSub
+import VerifiedGarbage.Proof.Bignum.X86_64.R2wAdd
 
 /-!
 # `R² mod m` by word steps with ADX: a step

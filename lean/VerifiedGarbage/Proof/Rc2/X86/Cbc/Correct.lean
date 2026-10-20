@@ -1,14 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Rc2.CbcMemory
+import VerifiedGarbage.Proof.Rc2.X86.Cbc.Loop
+import VerifiedGarbage.Proof.Rc2.X86.KeyIO
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Rc2.X86.Lit
 
 /-! # Verified RC2-CBC encryption and decryption -/
 

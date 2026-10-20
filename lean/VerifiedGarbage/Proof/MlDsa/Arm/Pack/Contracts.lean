@@ -1,16 +1,13 @@
 module
 
-public import VerifiedGarbage.Spec.MlDsa.Poly
-public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Loop
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Encode
+public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.MlKem.Arm.Common
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA on 32-bit ARM: the contracts of the encodings, for the proofs

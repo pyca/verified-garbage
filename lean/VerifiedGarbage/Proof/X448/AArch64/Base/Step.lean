@@ -1,13 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.Base.Negate
-public import VerifiedGarbage.Proof.X448.AArch64.Base.AddEnv
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X448.AArch64.Base.Negate
+import VerifiedGarbage.Proof.X448.AArch64.Base.AddEnv
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Bounds
+import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sqr
+public import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Select
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.X448.AArch64.Base.Const
+import VerifiedGarbage.Proof.X448.BaseAdd
 
 /-!
 # X448 of the base point on AArch64: one step of the comb

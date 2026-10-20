@@ -1,15 +1,10 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.AArch64.SignCached
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
-public import VerifiedGarbage.Proof.Ed25519.Bytes
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CombTbl
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! Merged from `Proof.Ed25519.AArch64.SignCached.Layout`. -/
 

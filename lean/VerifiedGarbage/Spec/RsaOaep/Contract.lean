@@ -36,7 +36,8 @@ whether the decoding is valid, where the message starts and its length:
 only the returned value says whether decryption succeeded, and the message
 and its length are its output.
 
-`scratch` is working space of at least `RsaPss.scratchWords n_len` `u64`s,
+`scratch` is working space of at least `RsaPss.publicScratchWords n_len`
+`u64`s when encrypting and `RsaPss.scratchWords n_len` when decrypting,
 whose contents on return are unspecified. `stack` is the number of bytes
 below the stack pointer that an implementation's calls and frames use. The
 functions may overwrite their arguments passed in memory, where the calling
@@ -49,7 +50,7 @@ namespace VG.Spec.RsaOaep
 
 open Mgf1 (Hash)
 open Rsa (bytesAt lenValid written exponentDoc Outcome)
-open RsaPss (scratchWords scratchSafety)
+open RsaPss (scratchWords scratchSafety publicScratchWords publicScratchSafety)
 
 variable (H G : Hash)
 
@@ -74,7 +75,7 @@ def encryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (pre := fun _out outLen _n nLen _e eLen _label _labelLen _msg _msgLen _seed _scratch
         scratchLen _ =>
       lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ 1 ≤ eLen.toNat ∧
-        eLen.toNat ≤ nLen.toNat ∧ scratchWords nLen.toNat ≤ scratchLen.toNat)
+        eLen.toNat ≤ nLen.toNat ∧ publicScratchWords nLen.toNat ≤ scratchLen.toNat)
     (post := fun out _outLen n nLen e eLen label labelLen msg msgLen seed _scratch _scratchLen
         m m' r =>
       written m' out nLen.toNat r
@@ -85,14 +86,9 @@ def encryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
         _scratchLen m =>
       (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat))
 
-/-- `vg_rsa_oaep_<H>_mgf1_<G>_encrypt` on every target. -/
-def encryptApi : Api where
-  module := s!"rsa_oaep_{H.rust}_mgf1_{G.rust}"
-  name := s!"vg_rsa_oaep_{H.rust}_mgf1_{G.rust}_encrypt"
-  sig := encryptSig H
-  writeArgs := true
-  contracts := some fun A stack => encryptContract H G A stack
-  summary := s!"RSAES-OAEP encryption (RFC 8017 §7.1.1) with {H.name} and MGF1 with {G.name}. \
+/-- The summary of `encrypt` in the documentation of the functions built on it. -/
+def encryptSummary : String :=
+  s!"RSAES-OAEP encryption (RFC 8017 §7.1.1) with {H.name} and MGF1 with {G.name}. \
     With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, \
     its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant \
     first), writes the encryption of the message `msg` with the label `label` and the \
@@ -103,8 +99,11 @@ def encryptApi : Api where
     `VG.Spec.Mgf1.{G.lean}`. Constant time but for the public key: timing may depend on the \
     pointers, the lengths and the contents of `n` and `e`, not on the message, the label or \
     the seed."
-  safety := ["`n_len` must be in 64..=1024.", "`out_len` must be `n_len`.",
-    "`e_len` must be in 1..=`n_len`."] ++ scratchSafety
+
+/-- The `# Safety` items of `encrypt` but for what the signature gives. -/
+def encryptSafety : List String :=
+  ["`n_len` must be in 64..=1024.", "`out_len` must be `n_len`.",
+    "`e_len` must be in 1..=`n_len`."] ++ publicScratchSafety
 
 /-! ## `vg_rsa_oaep_<H>_mgf1_<G>_decrypt` -/
 

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, AArch64: the contract
@@ -27,6 +23,20 @@ open VG VG.AArch64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (ctxCiph ctxH encryptWith gathered gatheredLen)
 
+/-- The key context the function reads and passes to the call of
+`vg_aes_gcm_seal`: its length, at least the 256 bytes of the AES key schedule
+and the hash subkey, and what it holds beyond them, which depends only on
+its bytes. -/
+structure CtxSpec where
+  len : Nat
+  le : 256 ≤ len
+  inv : Mem → Addr → Prop
+  congr : ∀ {m m' : Mem} {p : Addr}, (∀ i < len, m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) →
+    inv m p → inv m' p
+
+/-- The key context of `vg_aes_gcm_seal`: its 256 bytes. -/
+abbrev CtxSpec.plain : CtxSpec := ⟨256, Nat.le_refl _, fun _ _ => True, fun _ h => h⟩
+
 section
 variable (s : State)
 
@@ -42,10 +52,9 @@ abbrev Dst : Addr := stackArg s 0
 abbrev L : Nat := (stackArg s 1).toNat
 abbrev Tg : Addr := stackArg s 2
 
-/-- The regions: the key context, the nonce, the additional data, the
+/-- The regions: the nonce, the additional data, the
 descriptors, the slices they list, the output, the tag, the stack arguments
 and the stack below the stack pointer. -/
-abbrev kR : Region := ⟨K s, 256⟩
 abbrev nR : Region := ⟨Nn s, NL s⟩
 abbrev aR : Region := ⟨Ad s, AL s⟩
 abbrev dsR : Region := ⟨Src s, Cnt s * 16⟩
@@ -61,18 +70,21 @@ abbrev pt (i : Nat) : List Byte := gathered 64 s.mem (Src s) i
 
 end
 
-/-- What the code of `vg_aes_gcm_seal_gather` needs. -/
-def gatherPre (s : State) : Prop :=
-  s.rd = [kR s, nR s, aR s, dsR s] ++ lsR s ++ [argR s] ∧ s.wr = [dR s, tgR s] ∧
-    (kR s).Disjoint (dR s) ∧ (kR s).Disjoint (tgR s) ∧ (nR s).Disjoint (dR s) ∧
+/-- The key context. -/
+abbrev kR (C : CtxSpec) (s : State) : Region := ⟨K s, C.len⟩
+
+/-- What the code of `vg_aes_gcm_seal_gather` needs, of the regions. -/
+def gatherPre (C : CtxSpec) (s : State) : Prop :=
+  s.rd = [kR C s, nR s, aR s, dsR s] ++ lsR s ++ [argR s] ∧ s.wr = [dR s, tgR s] ∧
+    (kR C s).Disjoint (dR s) ∧ (kR C s).Disjoint (tgR s) ∧ (nR s).Disjoint (dR s) ∧
     (nR s).Disjoint (tgR s) ∧ (aR s).Disjoint (dR s) ∧ (aR s).Disjoint (tgR s) ∧
     (dsR s).Disjoint (dR s) ∧ (dsR s).Disjoint (tgR s) ∧
     (∀ r ∈ lsR s, r.Disjoint (dR s) ∧ r.Disjoint (tgR s)) ∧
     (dR s).Disjoint (tgR s) ∧ (dR s).Disjoint (argR s) ∧ (tgR s).Disjoint (argR s) ∧
-    (stkR s).Disjoint (kR s) ∧ (stkR s).Disjoint (nR s) ∧ (stkR s).Disjoint (aR s) ∧
+    (stkR s).Disjoint (kR C s) ∧ (stkR s).Disjoint (nR s) ∧ (stkR s).Disjoint (aR s) ∧
     (stkR s).Disjoint (dsR s) ∧ (∀ r ∈ lsR s, (stkR s).Disjoint r) ∧ (stkR s).Disjoint (argR s) ∧
     (stkR s).Disjoint (dR s) ∧ (stkR s).Disjoint (tgR s) ∧
-    (K s).toNat + 256 ≤ 2 ^ 64 ∧ (Nn s).toNat + NL s ≤ 2 ^ 64 ∧ (Ad s).toNat + AL s ≤ 2 ^ 64 ∧
+    (K s).toNat + C.len ≤ 2 ^ 64 ∧ (Nn s).toNat + NL s ≤ 2 ^ 64 ∧ (Ad s).toNat + AL s ≤ 2 ^ 64 ∧
     (Src s).toNat + Cnt s * 16 ≤ 2 ^ 64 ∧ (∀ r ∈ lsR s, r.base.toNat + r.len ≤ 2 ^ 64) ∧
     (Dst s).toNat + L s ≤ 2 ^ 64 ∧ (Tg s).toNat + 16 ≤ 2 ^ 64 ∧
     2592 ≤ s.sp.toNat ∧ s.sp.toNat + 24 ≤ 2 ^ 64 ∧
@@ -92,9 +104,9 @@ def gatherPost (s s' : State) : Prop :=
       (pt s (Cnt s)) (bytesAt s.mem (Ad s) (AL s)) =
     (bytesAt s'.mem (Dst s) (L s), bytesAt s'.mem (Tg s) 16)
 
-/-- `vg_aes_gcm_seal_gather`. -/
-def gatherAArch64 : Contract isa where
-  pre := gatherPre
+/-- `vg_aes_gcm_seal_gather`, with the key context `C`. -/
+def gatherAArch64 (C : CtxSpec) : Contract isa where
+  pre s := gatherPre C s ∧ C.inv s.mem (K s)
   post := gatherPost
   pub := gatherPub
 

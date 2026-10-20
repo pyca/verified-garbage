@@ -3,9 +3,14 @@ module
 public import VerifiedGarbage.Proof.Ed25519.AArch64.DivstepSound
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Verified
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Impl.Mont.Mod
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section
 
@@ -15,16 +20,12 @@ def artifacts (h : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
   match h.sha512 with
   | none => []
   | some v => [
-  { Spec.Ed25519.signCachedApi with
-    name := Spec.Ed25519.signCachedApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Ed25519.signCachedApi.doc
+  Spec.Ed25519.signCachedApi.artifact AArch64.target {
+    suffix := v.suffix
     code := Impl.Ed25519.AArch64.SignCached.code v.code v.suffix
     consts := Impl.Ed25519.AArch64.combConsts
-    contract := Spec.Ed25519.signCachedContract (AArch64.abi.withConsts Impl.Ed25519.AArch64.combConsts) 352
     stack := 352
     verified := Proof.Ed25519.AArch64.SignCached.signCached_verified v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features }]
 
 end VG.Generic.MdHash.AArch64.Ed25519SignCached

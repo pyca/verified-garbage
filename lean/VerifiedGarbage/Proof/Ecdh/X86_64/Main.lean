@@ -3,15 +3,17 @@ module
 import VerifiedGarbage.Proof.Ecdh.X86_64.Check
 public import VerifiedGarbage.Proof.Ecdh.X86_64.MulOk
 public import VerifiedGarbage.Proof.Ecdh.Exchange
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Validate
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
+import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Middle
+import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
+import VerifiedGarbage.Proof.EcKey.PublicKey
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # ECDH on x86-64: the result, and the whole function

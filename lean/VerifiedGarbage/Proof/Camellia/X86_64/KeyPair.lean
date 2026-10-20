@@ -1,14 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.X86_64.KeyStore
 public import VerifiedGarbage.Proof.Camellia.X86_64.KeyChecks2
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Camellia.Common
+public import VerifiedGarbage.Proof.Camellia.X86_64.Core
 import VerifiedGarbage.Proof.Camellia.X86_64.Group
+import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # A pair of rounds of the key schedule on x86-64

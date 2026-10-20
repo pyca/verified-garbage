@@ -1,10 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Weierstrass.Law
 
-public import VerifiedGarbage.Proof.Weierstrass.Window5
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Weierstrass.Comb
 
 /-! Sparse signed five-bit recoding of a public 256-bit scalar. -/
 

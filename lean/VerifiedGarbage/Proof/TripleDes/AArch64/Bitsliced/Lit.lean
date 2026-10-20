@@ -1,13 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Bitsliced
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Impl.TripleDes.AArch64.Bitsliced
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 @[expose] public section
 

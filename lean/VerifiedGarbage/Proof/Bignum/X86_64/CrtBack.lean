@@ -2,12 +2,19 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFront
 public import VerifiedGarbage.Proof.Bignum.CrtResult
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFix
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.CrtMath
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Data.Nat.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSA with the CRT on x86-64: from the checks to the result

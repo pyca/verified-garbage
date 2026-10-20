@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.X86.FbVerified
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Blowfish-CFB artifacts on baseline x86 (32-bit) -/
 
@@ -16,21 +17,15 @@ def note : String :=
   `Impl/Modes/X86/`, over Blowfish's ECB block."
 
 def artifacts : List Artifact := [
-  { Spec.Blowfish.cfbEncryptApi with
-    target := X86.target
-    doc := Spec.Blowfish.cfbEncryptApi.doc (notes := [note])
+  Spec.Blowfish.cfbEncryptApi.artifact X86.target {
+    notes := [note]
     code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbEncrypt
-    contract := Spec.Blowfish.cfbEncryptContract X86.abi 112
     stack := 112
-    verified := Proof.Blowfish.X86.Fb.cfbEncrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Blowfish.cfbDecryptApi with
-    target := X86.target
-    doc := Spec.Blowfish.cfbDecryptApi.doc (notes := [note])
+    verified := Proof.Blowfish.X86.Fb.cfbEncrypt_framed },
+  Spec.Blowfish.cfbDecryptApi.artifact X86.target {
+    notes := [note]
     code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbDecrypt
-    contract := Spec.Blowfish.cfbDecryptContract X86.abi 112
     stack := 112
-    verified := Proof.Blowfish.X86.Fb.cfbDecrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Blowfish.X86.Fb.cfbDecrypt_framed }]
 
 end VG.Artifacts.BlowfishCfb.X86

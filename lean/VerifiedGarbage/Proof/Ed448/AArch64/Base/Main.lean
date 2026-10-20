@@ -1,15 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
+import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
 import VerifiedGarbage.Proof.Ed448.AArch64.Base.Setup
-public import VerifiedGarbage.Proof.Ed448.AArch64.Base.Encode
-public import VerifiedGarbage.Proof.Ed448.AArch64.CombBase
-public import VerifiedGarbage.Proof.Ed448.Group.Projective
+import VerifiedGarbage.Proof.Ed448.AArch64.Base.Encode
+import VerifiedGarbage.Proof.Ed448.AArch64.CombBase
 public import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Lit
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Tactic.NormNum.Prime
+import VerifiedGarbage.Proof.X448.AArch64.Main
+import VerifiedGarbage.Proof.Ed448.Scalar
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Ed448 base-point multiplication on AArch64: the whole function

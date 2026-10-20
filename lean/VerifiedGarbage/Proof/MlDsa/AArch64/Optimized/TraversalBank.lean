@@ -1,17 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterRun
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalSlice
 public import VerifiedGarbage.Proof.MlDsa.Arith.Pairs
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Taint
 
 @[expose] public section
 

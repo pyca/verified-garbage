@@ -28,7 +28,7 @@ Two kinds of functions are implemented in assembly; their contracts are in
   `decryptWith`), and the same over a message given in pieces ("Streaming"
   below).
 
-The tag lengths GCM supports (§5.2.1.2) are `tagLenOk`. The limits on the
+The supported tag lengths, extending §5.2.1.2, are `tagLenOk`. The limits on the
 other lengths (§5.2.1.1, `supported`) concern a whole message, which a
 streaming caller gives in pieces; the caller checks them.
 -/
@@ -211,10 +211,10 @@ theorem decrypt_eq (ciph : Block → Block) (t : Nat) (iv c a tag : List Byte) :
       if !supported iv.length c.length a.length || tag.length ≠ t then none
       else decryptWith ciph (ciph 0) t iv c a tag := rfl
 
-/-- §5.2.1.2: whether GCM supports a tag of `t` bytes: 128, 120, 112, 104 or
-96 bits, or, "for certain applications", 64 or 32 bits (whose use Appendix C
-restricts further). -/
-def tagLenOk (t : Nat) : Bool := t == 4 || t == 8 || (12 ≤ t && t ≤ 16)
+/-- Whether the implementation supports a tag of `t` bytes: 4 through 16.
+This extends §5.2.1.2, which permits only 4, 8, 12, 13, 14, 15 and 16.
+The authentication check still compares exactly the first `t` bytes. -/
+def tagLenOk (t : Nat) : Bool := 4 ≤ t && t ≤ 16
 
 /-! ## AES-GCM -/
 

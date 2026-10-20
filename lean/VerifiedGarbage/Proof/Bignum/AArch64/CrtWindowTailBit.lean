@@ -1,13 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowDigit
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowTail
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! One tail bit extends a bounded pending digit. -/
 

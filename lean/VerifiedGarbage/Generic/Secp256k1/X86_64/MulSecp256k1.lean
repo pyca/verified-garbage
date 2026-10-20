@@ -1,17 +1,11 @@
 module
 
-import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.MulVerified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.MulLit
-import VerifiedGarbage.Spec.EcKey.Generic
-import VerifiedGarbage.Spec.Weierstrass.PointOps
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # secp256k1's point multiplication on x86-64
@@ -41,12 +35,9 @@ def note : String :=
   subtraction; nothing depends on `k` or `Q` but through masks."
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.Secp256k1.curve) : List Artifact :=
-  [{ C.mulApi with
-      target := X86_64.target
-      doc := C.mulApi.doc (notes := [note])
+  [C.mulApi.artifact X86_64.target {
+      notes := [note]
       code := secp256k1.mulFn
-      contract := C.mulContract X86_64.abi
-      verified := mul_verified h.law h.inv
-      spSafe := Code.all_of_allInstrs (show mulCode.allInstrs _ = true by lit_decide) }]
+      verified := mul_verified h.law h.inv }]
 
 end VG.Generic.Secp256k1.X86_64.MulSecp256k1

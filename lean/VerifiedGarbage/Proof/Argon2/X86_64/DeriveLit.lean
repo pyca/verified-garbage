@@ -1,27 +1,26 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.X86_64.Derive
-meta import VerifiedGarbage.Impl.Argon2.X86_64.Derive
-import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressLit
-meta import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressLit
-import VerifiedGarbage.Proof.Argon2.X86_64.FillPointersLit
-meta import VerifiedGarbage.Proof.Argon2.X86_64.FillPointersLit
-import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderLit
-meta import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderLit
 import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlockLit
-meta import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlockLit
 import VerifiedGarbage.Proof.Argon2.X86_64.ReduceBlockLit
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderLit
+import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressLit
+import VerifiedGarbage.Proof.Argon2.X86_64.FillPointersLit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Impl.Argon2.X86_64.Derive
+meta import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlockLit
 meta import VerifiedGarbage.Proof.Argon2.X86_64.ReduceBlockLit
-public import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderLit
+meta import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressLit
+meta import VerifiedGarbage.Proof.Argon2.X86_64.FillPointersLit
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Impl.Argon2.X86_64.ReferenceMap
-meta import VerifiedGarbage.Impl.Argon2.X86_64.ReferenceMap
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.X86_64.ReferenceMapLit`. -/
 

@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Aes.Arm.Encrypt
+import VerifiedGarbage.Proof.Aes.Arm.Encrypt
 public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
-public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Aes.Arm.Ctr32
+public import VerifiedGarbage.Proof.Aes.Arm.Linear
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Bitslicing the round keys, on ARMv7
@@ -49,10 +49,10 @@ theorem frame_nil {m m' : Mem} {a : Addr} (h : Frame [⟨a, 4 * 0⟩] m m') : m'
 /-- The registers `ortho` (and the loads of a round key) may write. -/
 def orthoWrites : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r10, .r11]
 
-theorem ortho_writes : ∀ r, r ∉ orthoWrites → (ortho.all fun i => dstOf i != some r) = true := by
+theorem ortho_writes : ∀ r, r ∉ orthoWrites → (ortho.all fun i => !clobbers i r) = true := by
   intro r; cases r <;> decide +kernel
 
-theorem keyLoad_writes : ∀ r, r ∉ orthoWrites → (keyLoad.all fun i => dstOf i != some r) = true := by
+theorem keyLoad_writes : ∀ r, r ∉ orthoWrites → (keyLoad.all fun i => !clobbers i r) = true := by
   intro r; cases r <;> decide +kernel
 
 /-- `ortho`, wherever `sb` points. -/
@@ -151,8 +151,8 @@ theorem keyStore_ok {s : State} {b : BitVec 32} {len off : Nat}
     exact h
   · funext r
     exact p.other r (by
-      have : (keyStore.all fun i => dstOf i != some r) = true := by
-        simp [keyStore, dstOf]
+      have : (keyStore.all fun i => !clobbers i r) = true := by
+        simp [keyStore, clobbers, dstOf]
       simp [this])
 
 /-! ## Stepping back -/

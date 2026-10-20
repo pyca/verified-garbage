@@ -1,19 +1,25 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseLCT
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseOCT
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseOCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseOCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseACT
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseACT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.MlKem.Arm.Prf
-meta import VerifiedGarbage.Proof.MlKem.Arm.Prf
 import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseKCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseCCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseLCT
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseOCT
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseACT
 meta import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseKCT
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseCCT
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA signing on ARMv7: constant time

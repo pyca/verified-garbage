@@ -1,15 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Regs
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Common
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.X25519.X86.Column
 public import VerifiedGarbage.Proof.Sha256.X86.Lit
 
 /-!
@@ -87,8 +80,12 @@ abbrev k : Nat := 2 * P.R.E.n - (if P.R.E.C.len = 28 then 1 else 0)
 abbrev Q : Nat := P.R.E.C.len
 
 /-- The 32-bit words at the frame's top: the digest for `core` and the
-candidate, if two `V`s make a candidate. -/
-abbrev e : Nat := Impl.Ecdsa.Rfc6979.X86.extra P.R.wide
+candidate, if two `V`s make a candidate, or `h`, for 64-byte scalars. -/
+abbrev e : Nat := Impl.Ecdsa.Rfc6979.X86.extra P.R.wide P.R.hHigh
+
+/-- Where `h` is, from the stack's lowest byte: in the frame below the
+count, or at its top for 64-byte scalars. -/
+abbrev hB : Nat := if P.R.hHigh then 272 else 204
 
 /-- The sizes, as the proofs use them. -/
 theorem sizes : P.F.H.S ≤ 192 ∧ P.ok.Wi * 8 ≤ 1872 ∧ P.ok.Wf * 8 ≤ 1872 ∧ P.ok.hH.Wb ≤ 1872 ∧
@@ -107,22 +104,29 @@ theorem sizes : P.F.H.S ≤ 192 ∧ P.ok.Wi * 8 ≤ 1872 ∧ P.ok.Wf * 8 ≤ 187
     · have := P.R.sizesW hW; rw [hW] at hQ; simp only [ite_true] at hQ
       show P.R.E.C.len ≤ _; omega
   refine ⟨P.hS, P.hWi, P.hWf, by omega, ?_, ?_, ?_, ?_, ?_, hS0, P.R.n3, P.R.n9, (by have := P.R.len_words; have := P.R.n3; simp only [k]; split <;> omega), (by simp only [k, w]; omega), hw.1, hQD, hw.2.2,
-    hw.2.1, by simp only [e, Impl.Ecdsa.Rfc6979.X86.extra]; split <;> omega⟩ <;>
+    hw.2.1, by simp only [e, Impl.Ecdsa.Rfc6979.X86.extra]; split <;> (try split) <;> omega⟩ <;>
     rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> simp only [h, h'] <;> omega
 
-/-- Unless `wide`, the scalars fill at most twelve 32-bit words and are no
+/-- Unless `wide`, the scalars fill at most sixteen 32-bit words and are no
 longer than the digest. -/
-theorem sizesA (h : P.R.wide = false) : P.Q = 4 * P.k ∧ P.k ≤ 12 ∧ P.Q ≤ P.F.H.D := by
+theorem sizesA (h : P.R.wide = false) : P.Q = 4 * P.k ∧ P.k ≤ 16 ∧ P.Q ≤ P.F.H.D := by
   have hQ := P.hQ
   have := P.R.sizesA h
   rw [h] at hQ
   simp only [Bool.false_eq_true, ite_false] at hQ
-  rcases this.1 with h' | h' | h' <;> simp only [Q, k] <;> split <;> omega
+  rcases this.1 with h' | h' | h' | h' <;> simp only [Q, k] <;> split <;> omega
 
 /-- The possible byte lengths of a single-candidate scalar. -/
-theorem lengthsA (h : P.R.wide = false) : P.Q = 24 ∨ P.Q = 32 ∨ P.Q = 48 ∨ P.Q = 28 := by
+theorem lengthsA (h : P.R.wide = false) : P.Q = 24 ∨ P.Q = 32 ∨ P.Q = 48 ∨ P.Q = 64 ∨ P.Q = 28 := by
   have := P.R.sizesA h
   simp only [Q]
+  omega
+
+/-- `h` fits its place: 48 bytes below the count, or, for 64-byte scalars
+(in 8 64-bit words), the 64 at the frame's top. -/
+theorem hFits (h : P.R.wide = false) : (P.w = 8 → P.Q = 64) ∧ (P.w ≠ 8 → P.Q ≤ 48) := by
+  have := P.R.sizesA h
+  simp only [Q, w]
   omega
 
 /-- If `wide`, P-521's sizes and SHA-512's. -/
@@ -154,9 +158,49 @@ def cfgOf (P : RfcHash) : Cfg where
   len := P.R.E.C.len
   wide := P.R.wide
   sh := P.R.sh
+  hHigh := P.R.hHigh
   n := P.R.E.C.n
   tries := P.I.tries
   coreN := P.R.coreN
   coreC := P.R.coreC
+
+/-- Unless two `V`s make a candidate, `h` is at the frame's top just for
+64-byte scalars. -/
+theorem hHigh_q (P : RfcHash) (hw : P.R.wide = false) : P.R.hHigh = decide (P.Q = 64) := by
+  have hF := P.hFits hw
+  rw [P.R.hHigh_eq]
+  by_cases h8 : P.R.E.n = 8
+  · simp only [h8, decide_true, show P.Q = 64 from hF.1 h8]
+  · have := hF.2 h8
+    simp only [h8, decide_false, show P.Q ≠ 64 by omega]
+
+/-- `h`'s place in the frame: `hB` less the 76 bytes below the frame. -/
+theorem fHo_eq (P : RfcHash) : (cfgOf P).fHo = P.hB - 76 := by
+  cases h : P.R.hHigh <;> simp [Cfg.fHo, cfgOf, RfcHash.hB, h, fX, fH]
+
+/-- If two `V`s make a candidate, `h` is not at the frame's top. -/
+theorem hHigh_wide (P : RfcHash) (hw : P.R.wide = true) : P.R.hHigh = false := by
+  have hh := P.R.hHigh_eq
+  simp only [show P.R.E.n = 9 from (P.R.sizesW hw).1, Nat.reduceEqDiff, decide_false] at hh
+  exact hh
+
+/-- If two `V`s make a candidate, `h`'s place is the one below the count,
+which the code does not use. -/
+theorem fHo_wide (P : RfcHash) (hw : P.R.wide = true) : (cfgOf P).fHo = 128 := by
+  simp only [Cfg.fHo, cfgOf, hHigh_wide P hw, Bool.false_eq_true, ite_false, fH]
+
+/-- `h`'s place in the frame, unless two `V`s make a candidate: at its top
+for 64-byte scalars. -/
+theorem fHo_q (P : RfcHash) (hw : P.R.wide = false) : (cfgOf P).fHo = if P.Q = 64 then 196 else 128 := by
+  have hh := P.R.hHigh_eq
+  have hF := P.hFits hw
+  rw [fHo_eq]
+  by_cases h8 : P.R.E.n = 8
+  · have hq := hF.1 h8
+    simp only [h8, decide_true] at hh
+    simp only [RfcHash.hB, hh, ite_true, show P.Q = 64 from hq]
+  · have hq := hF.2 h8
+    simp only [h8, decide_false] at hh
+    simp only [RfcHash.hB, hh, Bool.false_eq_true, ite_false, show P.Q ≠ 64 by omega]
 
 end VG.Proof.Ecdsa.Rfc6979.X86

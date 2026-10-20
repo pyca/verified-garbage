@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallResult
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Setting the link register at call entry leaves the signing inputs unchanged. -/

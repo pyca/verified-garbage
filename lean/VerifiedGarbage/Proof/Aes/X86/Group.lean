@@ -1,12 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Aes.X86.Keys
 public import VerifiedGarbage.Proof.Aes.Blocks
-public import Mathlib.Tactic.SplitIfs
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Aes.X86.Encrypt
 
 /-!
 # One group of counter-mode blocks on x86 (32-bit)

@@ -1,10 +1,8 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8BatchCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # Public stream prefixes determine the rejection loop's cursors -/
 
@@ -29,9 +27,9 @@ theorem candidates_eq {s u : State} (h2 : s.gpr .x2=u.gpr .x2)
     rwa [←h2] at hh
   rw [hr]
 
-theorem inv_public {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : Addr}
-    {s₀ u₀ s u : State} (hs : Scalar.Inv initial N B bP aP s₀ t s)
-    (hu : Scalar.Inv initial N B bP aP u₀ t u) (hsp : s₀.sp=u₀.sp) :
+theorem inv_public {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : Addr}
+    {s₀ u₀ s u : State} (hs : Scalar.InvW w16 initial N B bP aP s₀ t s)
+    (hu : Scalar.InvW w16 initial N B bP aP u₀ t u) (hsp : s₀.sp=u₀.sp) :
     s.sp=u.sp ∧ ∀r∈[Reg.x2,.x3,.x4,.x5,.x9,.x10],s.gpr r=u.gpr r := by
   refine ⟨hs.acc.sp.trans (hsp.trans hu.acc.sp.symm),?_⟩
   intro r hr
@@ -44,9 +42,9 @@ theorem inv_public {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : A
   · exact BitVec.eq_of_toNat_eq (hs.acc.x9.trans hu.acc.x9.symm)
   · exact BitVec.eq_of_toNat_eq (hs.x10.trans hu.x10.symm)
 
-theorem inv_candidates {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : Addr}
-    {s₀ u₀ s u : State} (ps : Env N B bP aP s₀) (pu : Env N B bP aP u₀)
-    (hs : Scalar.Inv initial N B bP aP s₀ t s) (hu : Scalar.Inv initial N B bP aP u₀ t u)
+theorem inv_candidates {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : Addr}
+    {s₀ u₀ s u : State} (ps : EnvW w16 N B bP aP s₀) (pu : EnvW w16 N B bP aP u₀)
+    (hs : Scalar.InvW w16 initial N B bP aP s₀ t s) (hu : Scalar.InvW w16 initial N B bP aP u₀ t u)
     (ht : t+4≤N) : candidatesAt s=candidatesAt u := by
   apply candidates_eq (by rw [hs.x2,hu.x2])
   intro i hi

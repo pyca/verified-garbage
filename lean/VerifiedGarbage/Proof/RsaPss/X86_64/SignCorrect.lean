@@ -1,14 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
-public import VerifiedGarbage.Proof.RsaPss.SignCases
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.RsaPss.SignCases
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Params
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignFail
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import Mathlib.Tactic.Set
 
 /-!
 # RSASSA-PSS signing on x86-64: correctness

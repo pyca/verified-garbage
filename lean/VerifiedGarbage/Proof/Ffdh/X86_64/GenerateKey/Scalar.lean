@@ -1,11 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Scan
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Finish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Finish
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.CutInputs
+public import Mathlib.Tactic.TermCongr
+import Mathlib.Data.Int.ModEq
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # FFDH on x86-64: the complete scalar-sampling stage -/
 

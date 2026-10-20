@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Weierstrass.Point
-public import VerifiedGarbage.Spec.P521
 
 /-!
 # Point doubling and addition for `a = -3` in a curve's working space, as functions
@@ -385,17 +384,6 @@ def addAffineContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
       C.Result C.pAt (jacAddAffine P.1 P.2.1 P.2.2 Q.1 Q.2.1 Q.2.2) ws m m')
     (stack := stack) (leak := some fun ws m => C.reads false ws m)
 
-/-- `proj_add_affine`: `O = P + Q`, `Q` with `Z = 1` (its `Z` is not read). -/
-def projAddAffineContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
-  sig.contract A
-    (pre := fun ws m => C.ModOk ws m ∧ C.Below (C.pointAt m ws C.pAt) ∧
-      C.CoordBelow ws m C.qAt ∧ C.CoordBelow ws m (C.qAt + 8 * C.k) ∧ C.CoordBelow ws m C.bAt)
-    (post := fun ws m m' _ =>
-      let P := C.pt ws m C.pAt
-      C.Result C.oAt (rcbAddAffine (C.el ws m C.bAt) P.1 P.2.1 P.2.2 (C.el ws m C.qAt)
-        (C.el ws m (C.qAt + 8 * C.k))) ws m m')
-    (stack := stack)
-
 /-- `proj_add`: `O = P + Q`. -/
 def projAddContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
   sig.contract A
@@ -425,8 +413,8 @@ def common : String :=
     of `ws`: `P` at {C.ptDoc C.pAt}, `Q` at {C.ptDoc C.qAt}. The function reads `p` at byte \
     {C.modAt}. The function's own working space is {C.ownDoc}; every other byte of `ws` but \
     the result's keeps its value.\n\n\
-    Contract: `doubleContract`, `addCachedContract`, `addAffineContract`, \
-    `projAddAffineContract` or `projAddContract` of `VG.Spec.Weierstrass.PointOps.Curve`."
+    Contract: `doubleContract`, `addCachedContract`, `addAffineContract` \
+    or `projAddContract` of `VG.Spec.Weierstrass.PointOps.Curve`."
 
 /-- The `# Safety` items but for what the signature gives, after `reads`,
 the numbers the function reads besides `p`. -/
@@ -475,18 +463,6 @@ def addAffineApi : Api where
     handled; `Q`'s `Z` is read only to copy `Q` when `P` is the point at infinity). " ++
     C.common ++ " " ++ leakDoc
   safety := C.safety "the coordinates of `P` and `Q`"
-
-/-- `vg_<curve>_proj_add_affine` on every target. -/
-def projAddAffineApi : Api where
-  module := C.module
-  name := C.fn "proj_add_affine"
-  sig := sig
-  contracts := some fun A stack => C.projAddAffineContract A stack
-  summary := s!"The complete sum `O = P + Q` of points on {C.desc} in projective coordinates, \
-    `Q`'s `Z` 1 and not read (Renes, Costello and Batina's Algorithm 5, for `a = -3`), into `O` \
-    at {C.ptDoc C.oAt}, with the curve's `b`, in Montgomery's form, read at byte {C.bAt}. " ++
-    C.common ++ " Constant time: only the pointer may affect timing."
-  safety := C.safety s!"the coordinates of `P`, `Q`'s `X` and `Y` and the number at byte {C.bAt}"
 
 /-- `vg_<curve>_proj_add` on every target. -/
 def projAddApi : Api where

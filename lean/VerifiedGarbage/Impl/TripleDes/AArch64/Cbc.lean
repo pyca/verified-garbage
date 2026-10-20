@@ -1,15 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Block
-public import VerifiedGarbage.Impl.Modes.AArch64.Cbc
-public import VerifiedGarbage.Impl.Modes.AArch64.CbcEnc
+public import VerifiedGarbage.Impl.Modes.AArch64.CbcChained
 
 /-!
 # Triple DES-CBC on AArch64
 
-`cbcEncrypt` and `cbcDecrypt` (schedule = x0, iv = x1, data = x2, n = x3,
-scratch = x4): the modes' generic CBC (`Impl/Modes/AArch64/Cbc.lean`,
-`CbcEnc.lean`) over calls of the scalar block function
+`cbcEncryptChained` and `cbcDecryptChained` (schedule = x0, iv = x1,
+data = x2, n = x3, scratch = x4): the modes' generic CBC that updates the
+chaining value (`Impl/Modes/AArch64/CbcChained.lean`) over calls of the scalar block function
 (`vg_triple_des_encrypt_block` or `vg_triple_des_decrypt_block`), one 8-byte
 block at a time, with the working space in the scratch buffer, which the
 artifact allocates on the stack.
@@ -22,7 +21,9 @@ buffer's address (`sb`, which the block function overwrites) from `x2`,
 which no instruction of the block function writes, and the return address
 (`x30`, which the call overwrites) from `x26`. The call keeps `x23`, `x24`
 and `x26` (callee-saved, and saved by the modes for their caller), which
-carry the data's address, the blocks left and the return address.
+carry the data's address, the blocks left and the return address, and
+`x25`, where encryption keeps the IV's address, which the block function
+never writes.
 -/
 
 @[expose] public section
@@ -65,10 +66,10 @@ def dirCore (d : Direction) : Impl.Modes.AArch64.Core where
   dataReg := .x23
   leftReg := .x24
 
-/-- `vg_triple_des_cbc_encrypt`. -/
-def cbcEncrypt : Prog isa := (dirCore .encrypt).cbcEncrypt ⟨.x1, .x2, .x3, .x4⟩
+/-- `vg_triple_des_cbc_encrypt_chained`. -/
+def cbcEncryptChained : Prog isa := (dirCore .encrypt).cbcEncryptChained ⟨.x1, .x2, .x3, .x4⟩ .x25
 
-/-- `vg_triple_des_cbc_decrypt`. -/
-def cbcDecrypt : Prog isa := (dirCore .decrypt).cbcDecrypt ⟨.x1, .x2, .x3, .x4⟩
+/-- `vg_triple_des_cbc_decrypt_chained`. -/
+def cbcDecryptChained : Prog isa := (dirCore .decrypt).cbcDecryptChained ⟨.x1, .x2, .x3, .x4⟩
 
 end VG.Impl.TripleDes.AArch64

@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.Memory
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Rc4.Memory
+import VerifiedGarbage.Proof.Framework.InstancePriority
+public import VerifiedGarbage.TCB.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # RC4: scanning the table a doubleword at a time

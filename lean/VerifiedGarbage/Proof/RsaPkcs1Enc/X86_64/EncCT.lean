@@ -1,19 +1,17 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCall
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCall
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
-public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on x86-64: constant time

@@ -1,13 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.MlKem.Poly
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-KEM on x86-64: the contracts the proofs are written against
@@ -143,10 +140,8 @@ theorem reduced_zero (p : Addr) : Reduced (fun _ => 0) p := fun _ _ => by
 
 /-- `sig_implies`, whose satisfiability witness may need `Reduced` of the
 memory of zeros. -/
-syntax "mlkem_implies " "[" Lean.Parser.Tactic.simpLemma,* "]" " [" Lean.Parser.Tactic.simpLemma,* "]"
-  " using " term : tactic
-macro_rules
-  | `(tactic| mlkem_implies [$ls,*] [$ws,*] using $w) => `(tactic| plain_simp_names exact
+tactic_template "mlkem_implies " "[" ls:Lean.Parser.Tactic.simpLemma,* "]" " [" ws:Lean.Parser.Tactic.simpLemma,* "]"
+  " using " w:term : tactic => `(tactic| exact
                        { pre := by sig_implies_pre [$ls,*]
                          post := by sig_implies_post [$ls,*]
                          pub := by sig_implies_pub [$ls,*]

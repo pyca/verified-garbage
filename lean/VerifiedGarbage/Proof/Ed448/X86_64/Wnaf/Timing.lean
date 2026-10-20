@@ -1,15 +1,47 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
-meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Timing
-meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Timing
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Loop
+public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.ReadDigit
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Recode
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Init
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Add
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Coords
+import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Ed448.X86_64.PointSums
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Timing
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Loop
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.ReadDigit
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Recode
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Init
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Add
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Coords
+meta import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Ed448.X86_64.PointSums
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import Mathlib.FieldTheory.Finite.Basic
+import Mathlib.Tactic.NormNum.Prime
+import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.X448.X86_64.Lit
+meta import Mathlib.FieldTheory.Finite.Basic
+meta import Mathlib.Tactic.NormNum.Prime
+meta import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.X448.X86_64.Lit
 
 /-! Sparse control flow depends only on the public verification scalars. -/
 

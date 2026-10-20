@@ -4,13 +4,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256DR
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256ED
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Spec.Ecdsa.Generic
 
 @[expose] public section
 

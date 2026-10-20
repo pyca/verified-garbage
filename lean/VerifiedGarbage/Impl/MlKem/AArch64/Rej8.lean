@@ -55,21 +55,22 @@ def accept : List Instr :=
  .vop (.mulH .mul .v1 .v1 .v20)]
 
 /-- Sum the lane weights, then compact according to the low-byte mask. -/
-def compact : List Instr :=
+def compact (w16 : Bool := false) : List Instr :=
  [.vop (.ext .v2 .v1 .v1 8),.vop (.add .h8 .v1 .v1 .v2),
  .vop (.ext .v2 .v1 .v1 4),.vop (.add .h8 .v1 .v1 .v2),
  .vop (.ext .v2 .v1 .v1 2),.vop (.add .h8 .v1 .v1 .v2),.umov .w .x6 .v1 0,
  .movz .x .x7 255 0,.logic .and .x .x7 .x6 .x7,.lsl .x .x7 .x7 4,.add .x .x7 .x16 .x7,
- .ldrq .v2 .x7 0,.vop (.tbl .v0 .v0 .v2),.vop (.perm .zip1 .h8 .v1 .v0 .v21),
- .vop (.perm .zip2 .h8 .v2 .v0 .v21),.strq .v1 .x3 0,.strq .v2 .x3 16,
- .lsr .x .x6 .x6 8,.movz .x .x7 15 0,.logic .and .x .x6 .x6 .x7,
- .sub .x .x4 .x4 .x6,.lsl .x .x6 .x6 2,.add .x .x3 .x3 .x6,
+ .ldrq .v2 .x7 0,.vop (.tbl .v0 .v0 .v2)] ++
+ (if w16 then [.strq .v0 .x3 0] else [.vop (.perm .zip1 .h8 .v1 .v0 .v21),
+ .vop (.perm .zip2 .h8 .v2 .v0 .v21),.strq .v1 .x3 0,.strq .v2 .x3 16]) ++
+ [.lsr .x .x6 .x6 8,.movz .x .x7 15 0,.logic .and .x .x6 .x6 .x7,
+ .sub .x .x4 .x4 .x6,.lsl .x .x6 .x6 (if w16 then 1 else 2),.add .x .x3 .x3 .x6,
  .addImm .x .x2 .x2 12,.subImm .x .x5 .x5 4]
 
-def rejEight : List Instr := parse ++ accept ++ compact
-def rejLoop : Prog isa :=
+def rejEight (w16 : Bool := false) : List Instr := parse ++ accept ++ compact w16
+def rejLoop (w16 : Bool := false) : Prog isa :=
  .seq (.loop (.seq (.block [.subImm .x .x6 .x4 8,.lsr .x .x6 .x6 63])
-  (.ite (.zero .x .x6) (.block rejEight) (.seq (seqs [sampleBody,sampleBody,sampleBody,sampleBody])
+  (.ite (.zero .x .x6) (.block (rejEight w16)) (.seq (seqs [sampleBody w16,sampleBody w16,sampleBody w16,sampleBody w16])
    (.ite (.zero .x .x4) (.block [.movz .x .x5 0 0]) (.block []))))) (.nonzero .x .x5))
  (.seq (.ite (.zero .x .x4) (.block []) (.block [.movz .x .x13 0 0,.str .w .x13 .x3 0]))
  (.block [.subImm .x .x0 .x4 1,.lsr .x .x0 .x0 63]))

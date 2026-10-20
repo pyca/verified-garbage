@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.AArch64.CbcVerified
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SEED-CBC artifacts on baseline AArch64 -/
 
@@ -18,21 +18,15 @@ def note : String :=
   generic CBC of `Impl/Modes/AArch64/`."
 
 def artifacts : List Artifact := [
-  { Spec.Seed.cbcEncryptApi with
-    target := AArch64.target
-    doc := Spec.Seed.cbcEncryptApi.doc (notes := [note])
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x4 182 Impl.Seed.AArch64.cbcEncrypt
-    contract := Spec.Seed.cbcEncryptContract AArch64.abi 1456
+  Spec.Seed.cbcEncryptChainedApi.artifact AArch64.target {
+    notes := [note, "The IV's address is kept in `x25`, which the core keeps in `v31`, and after the last block the core's buffer, the last ciphertext block, goes back to the IV."]
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x4 182 Impl.Seed.AArch64.cbcEncryptChained
     stack := 1456
-    verified := Proof.Seed.AArch64.cbcEncrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Seed.cbcDecryptApi with
-    target := AArch64.target
-    doc := Spec.Seed.cbcDecryptApi.doc (notes := [note])
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x4 182 Impl.Seed.AArch64.cbcDecrypt
-    contract := Spec.Seed.cbcDecryptContract AArch64.abi 1456
+    verified := Proof.Seed.AArch64.cbcEncryptChained_framed },
+  Spec.Seed.cbcDecryptChainedApi.artifact AArch64.target {
+    notes := [note, "The last ciphertext block is copied to the IV before any block is decrypted."]
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x4 182 Impl.Seed.AArch64.cbcDecryptChained
     stack := 1456
-    verified := Proof.Seed.AArch64.cbcDecrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Seed.AArch64.cbcDecryptChained_framed }]
 
 end VG.Artifacts.SeedCbc.AArch64

@@ -1,19 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Rc4.X86.Contract
+import VerifiedGarbage.Proof.Rc4.X86.Apply
+public import VerifiedGarbage.Proof.Rc4.X86.ApplyLoop
+import VerifiedGarbage.Proof.Rc4.X86.Lit
+import VerifiedGarbage.Proof.Rc4.X86.Lookup
 meta import VerifiedGarbage.Proof.Rc4.X86.Contract
-public import VerifiedGarbage.Proof.Rc4.X86.Lit
-meta import VerifiedGarbage.Proof.Rc4.X86.Lit
-public import VerifiedGarbage.Proof.Rc4.X86.Apply
 meta import VerifiedGarbage.Proof.Rc4.X86.Apply
-public import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Proof.Framework.RelCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Rc4.X86.ApplyLoop
+meta import VerifiedGarbage.Proof.Rc4.X86.Lit
+meta import VerifiedGarbage.Proof.Rc4.X86.Lookup
 
 /-! # RC4 on x86 (32-bit): constant time
 

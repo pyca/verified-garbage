@@ -1,11 +1,8 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableLayout
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableConstants
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableConstants
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 @[expose] public section
 

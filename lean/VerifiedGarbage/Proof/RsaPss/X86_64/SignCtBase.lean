@@ -1,14 +1,10 @@
 module
-
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignVerified
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignFixed
-public import VerifiedGarbage.Proof.RsaPss.X86_64.MgfCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Params
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
+public import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
+
 
 /-!
 # RSASSA-PSS signing on x86-64: two runs

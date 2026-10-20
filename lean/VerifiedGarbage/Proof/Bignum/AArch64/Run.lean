@@ -1,19 +1,18 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Impl.Bignum.AArch64
-public import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Impl.Bignum.AArch64.Core
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Multiword arithmetic on AArch64: running blocks
@@ -215,10 +214,7 @@ end
 
 /-- `brun`: symbolic execution of a block by `simp` (see the module doc),
 with extra lemmas (the block's accesses, …). -/
-syntax "brun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| brun) => `(tactic| brun [])
-  | `(tactic| brun [$ls,*]) => `(tactic| plain_simp_names (
+tactic_template "brun" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                        apply WP.of_runBlock
                        set_option linter.unusedSimpArgs false in
                        simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil,
@@ -233,13 +229,14 @@ macro_rules
                          exists_eq_left', ite_true, ite_false, reduceCtorEq, true_and, and_true, List.cons_append,
                          List.nil_append, $ls,*]))
 
+/-- `brun []`. -/
+tactic_template "brun" : tactic => `(tactic| brun [])
+
 /-! ## What a block keeps -/
 
 /-- Whether every instruction of `c` writes, if any register, one of `rs`. -/
 def writesOnly (rs : List Reg) (c : Prog isa) : Bool :=
-  c.allInstrs fun i => match dstOf i with
-    | none => true
-    | some d => rs.contains d
+  c.allInstrs fun i => (dsts i).all rs.contains
 
 /-- A register that no instruction writes keeps its value (code without calls). -/
 theorem WP.keep {c : Prog isa} {s : State} {Q : State → Prop} (rs : List Reg) (h : WP isa c s Q)
@@ -251,11 +248,7 @@ theorem WP.keep {c : Prog isa} {s : State} {Q : State → Prop} (rs : List Reg) 
     (Exec.rdwr he).2.1, (Exec.rdwr he).2.2, Exec.preservedV he hv⟩⟩
   unfold writesOnly at hc
   rw [Code.allInstrs_eq, List.all_eq_true] at hc
-  have := hc i hi
-  intro e
-  rw [e] at this
-  simp only [List.contains_iff_mem] at this
-  exact hr (by simpa using this)
+  exact clobbers_eq_false_of_all (hc i hi) (by simpa using hr)
 
 /-! ## Loops -/
 

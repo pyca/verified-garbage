@@ -1,29 +1,45 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
-meta import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
-public import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
-meta import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
-public import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
-meta import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
-import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
-meta import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
-import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
-meta import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
 public import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
-meta import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
+public import VerifiedGarbage.Proof.MlKem.X86_64.Narrow
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Narrow
+import VerifiedGarbage.Proof.MlKem1024.X86_64.Calls
 public import VerifiedGarbage.Spec.MlKem.Contract1024
-meta import VerifiedGarbage.Spec.MlKem.Contract1024
 public import VerifiedGarbage.Spec.MlKem.EncapsH
+public import VerifiedGarbage.Proof.MlKem.X86_64.EkFusedCT16
+public import VerifiedGarbage.Proof.MlKem.X86_64.Dc16Dec
+public import VerifiedGarbage.Proof.MlKem.X86_64.EcTop16
+import VerifiedGarbage.Proof.MlKem.X86_64.EkTop
+import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
+import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
+import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeOk
+import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16
+meta import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
+meta import VerifiedGarbage.Proof.MlKem1024.X86_64.Calls
+meta import VerifiedGarbage.Spec.MlKem.Contract1024
 meta import VerifiedGarbage.Spec.MlKem.EncapsH
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-meta import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFusedCT16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Dc16Dec
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EcTop16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EkTop
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
+import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
+public import VerifiedGarbage.Proof.MlKem.X86_64.DjFusedCT16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DjFrag16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DjFused16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DjFusedCT16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
+import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeOk
+public import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
+meta import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeOk
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16
 
 /-!
 # ML-KEM-1024 on x86-64: `vg_mlkem1024_keygen`, `vg_mlkem1024_encaps_h` and `vg_mlkem1024_decaps`
@@ -31,8 +47,9 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 The proofs for any parameter set (`Proof/MlKem/X86_64/KgTop.lean`,
 `EcTop.lean`, `DcTop.lean`) for ML-KEM-1024 (`kem1024`): its layout passes
 their checks, evaluated here, it calls `vg_mlkem1024_compress_encode` and
-`vg_mlkem1024_decode_decompress` for its widths, and the shared contracts
-imply the contracts the proofs are written against.
+`vg_mlkem1024_decode_decompress` for its widths (or their AVX2
+implementations, with the codecs `Codecs.avx2` of its other primitives), and
+the shared contracts imply the contracts the proofs are written against.
 -/
 
 @[expose] public section
@@ -48,9 +65,59 @@ theorem kemWf1024 : KemWf kem1024 := by kem_wf
 theorem kgWf1024 : KeyGen.KgWf kem1024 := by kem_wf kemWf1024
 theorem ecWf1024 : Encaps.EcWf kem1024 := by kem_wf kemWf1024
 theorem dcWf1024 : Decaps.DcWf kem1024 := by kem_wf kemWf1024
+theorem kpke1024 : KpkeOk kem1024w.L := KpkeOk.k1024
+/-- What the functions with 16-bit polynomials write of `scratch`: its first
+37376 bytes (`kem1024w`'s K-PKE working space ends there). -/
+abbrev scr16 : Nat := 37376
 
-/-- The compressions it calls. -/
-theorem calls1024 : KemCalls kem1024 Spec.MlKem1024.compressWidths Spec.MlKem1024.compressWidths := ⟨ceImpl1024, ddImpl1024, by decide, by decide⟩
+theorem kemWf1024n : KemWf (narrowL kem1024 scr16) := by kem_wf
+theorem kg16Wf1024 : KeyGen16.Kg16Wf (narrowK kem1024w scr16) := by kem_wf kemWf1024n
+theorem ec16Wf1024 : Encaps16.Ec16Wf (narrowK kem1024w scr16) := by kem_wf kemWf1024n
+theorem dc16Wf1024 : Decaps16.Dc16Wf (narrowK kem1024w scr16) := by kem_wf kemWf1024n
+theorem ekWf1024 : Ek.EkWf kem1024 := by kem_wf ecWf1024
+
+theorem ek16FWf1024 : EkF16.Ek16FWf (narrowK kem1024w scr16) := by kem_wf ec16Wf1024.toEcWfB
+theorem ek16HWf1024 : EkF16.Ek16HWf (narrowK kem1024w scr16) := by kem_wf ek16FWf1024
+theorem djFWf1024 : DjF16.DjFWf (narrowK kem1024w scr16) := by kem_wf dc16Wf1024
+theorem djHWf1024 : DjF16.DjHWf (narrowK kem1024w scr16) := by kem_wf djFWf1024
+
+/-- The taint checks of the pieces of the decapsulation hashing `z ‖ c` in the fragments. -/
+theorem djtWf1024 : DjF16.DjTWf (narrowK kem1024w scr16) where
+  rbpIn := by decide
+  zT := ⟨_, by taint_decide⟩
+  jT := by
+    intro i hi
+    have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by rw [show Encaps.nb (narrowK kem1024w scr16).L = 4 by decide] at hi; omega
+    rcases this with rfl | rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+  kT := ⟨_, by taint_decide⟩
+  ij := by decide +kernel
+
+/-- The taint checks of the fused encapsulation's pieces, with 16-bit polynomials. -/
+theorem ekt16Wf1024 : EkF16.EkT16Wf (narrowK kem1024w scr16) where
+  rT := ⟨_, by taint_decide⟩
+  zT := ⟨_, by taint_decide⟩
+  hT := by
+    intro i hi
+    have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by rw [show Encaps.nb (narrowK kem1024w scr16).L = 4 by decide] at hi; omega
+    rcases this with rfl | rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+  hcT := ⟨_, by taint_decide⟩
+  ij := by decide +kernel
+
+theorem ce1024_ctl : ∀ cs : Codecs, ctlOk (ce1024 cs) = true
+  | .base => by decide +kernel
+  | .avx2 => by decide +kernel
+
+theorem dd1024_ctl : ∀ cs : Codecs, ctlOk (dd1024 cs) = true
+  | .base => by decide +kernel
+  | .avx2 => by decide +kernel
+
+theorem ce1024_sp : ∀ cs : Codecs, (ce1024 cs).all (fun i => !isa.writesSp i) = true
+  | .base => Code.all_of_allInstrs (by decide +kernel)
+  | .avx2 => Code.all_of_allInstrs (by decide +kernel)
+
+theorem dd1024_sp : ∀ cs : Codecs, (dd1024 cs).all (fun i => !isa.writesSp i) = true
+  | .base => Code.all_of_allInstrs (by decide +kernel)
+  | .avx2 => Code.all_of_allInstrs (by decide +kernel)
 
 /-- States satisfying the shared contracts' preconditions. -/
 def keyGen1024Sat : State where
@@ -75,9 +142,8 @@ def decaps1024Sat : State where
   rd := [⟨0x1000, 3168⟩, ⟨0x2000, 1568⟩]
   wr := [⟨0x3000, 32⟩, ⟨0x10000, 49152⟩]
 
-theorem keyGen1024_verified (v : Sample4Impl) :
-    Verified X86_64.target (kemKeyGen kem1024 v.callee) (Spec.MlKem1024.keyGenContract X86_64.abi 32) :=
-  Verified.of_correct (kemKeyGen_correct v kgWf1024 (by s4_ctl v)) (kemKeyGen_ct v kgWf1024)
+/-- The shared contract of `keyGen1024`, from the contract its proofs are written against. -/
+theorem keyGenImp1024 : (keyGenK kem1024).Implies (Spec.MlKem1024.keyGenContract X86_64.abi 32) :=
     { pre := by sig_implies_pre [Spec.MlKem1024.keyGenContract, Spec.MlKem1024.keyGenSig, keyGenK, X86_64.abi, VG.X86_64.argRegs, kem1024, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem1024]
       post := by sig_implies_post [Spec.MlKem1024.keyGenContract, Spec.MlKem1024.keyGenSig, keyGenK, X86_64.abi, VG.X86_64.argRegs, kem1024, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem1024]
       pub := by
@@ -88,10 +154,14 @@ theorem keyGen1024_verified (v : Sample4Impl) :
       sat := by sig_implies_sat [Spec.MlKem1024.keyGenContract, Spec.MlKem1024.keyGenSig, keyGenK, X86_64.abi, VG.X86_64.argRegs, kem1024, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem1024] [keyGen1024Sat]
         using keyGen1024Sat }
 
-theorem encapsH1024_verified (v : Sample4Impl) :
-    Verified X86_64.target (kemEncapsH kem1024 v.callee) (Spec.MlKem1024.encapsHContract X86_64.abi 32) :=
-  Verified.of_correct (kemEncapsH_correct v ecWf1024 calls1024 (by s4_ctl v))
-    (kemEncapsH_ct v ecWf1024 calls1024)
+theorem keyGen1024_verified (v : Sample4Impl) :
+    Verified X86_64.target (keyGen1024 v.callee) (Spec.MlKem1024.keyGenContract X86_64.abi 32) :=
+  keyGenSel_verified (n := scr16) (by decide) kpke1024 v kg16Wf1024 kgWf1024 keyGenImp1024
+    (fun _ c S => by s16_ctl v c S kpke1024)
+    (by s4_ctl v; all_goals first | exact ce1024_ctl _ | exact dd1024_ctl _)
+
+/-- The shared contract of `encapsH1024`, from the contract its proofs are written against. -/
+theorem encapsHImp1024 : (encapsK kem1024).Implies (Spec.MlKem1024.encapsHContract X86_64.abi 32) :=
     { pre := by sig_implies_pre [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, encapsK, X86_64.abi, VG.X86_64.argRegs, kem1024, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem1024]
       post := by sig_implies_post [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, encapsK, X86_64.abi, VG.X86_64.argRegs, kem1024, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem1024]
       pub := by
@@ -109,9 +179,35 @@ theorem encapsH1024_verified (v : Sample4Impl) :
           | decide
           | exact Region.disjoint_of_sep (by decide) }
 
-theorem decaps1024_verified (v : Sample4Impl) :
-    Verified X86_64.target (kemDecaps kem1024 v.callee) (Spec.MlKem1024.decapsContract X86_64.abi 32) :=
-  Verified.of_correct (kemDecaps_correct v dcWf1024 calls1024 (by s4_ctl v)) (kemDecaps_ct v dcWf1024 calls1024)
+theorem encapsH1024_verified (v : Sample4Impl) :
+    Verified X86_64.target (encapsH1024 v.callee) (Spec.MlKem1024.encapsHContract X86_64.abi 32) :=
+  encapsHSel_verified (n := scr16) (by decide) kpke1024 v ec16Wf1024 ecWf1024 calls1024 encapsHImp1024
+    (fun _ c S => by s16_ctl v c S kpke1024)
+    (by s4_ctl v; all_goals first | exact ce1024_ctl _ | exact dd1024_ctl _)
+
+theorem encaps1024_ctl (v : Sample4Impl) : ctlOk (kemEncaps kem1024 v.callee) = true := by
+  s4_ctl v
+  all_goals first | exact ce1024_ctl _ | exact dd1024_ctl _
+
+/-- The shared contract of `encaps1024`, from the contract its proofs are written against. -/
+theorem encapsImp1024 : (encK kem1024).Implies (Spec.MlKem1024.encapsContract X86_64.abi 32) :=
+    { pre := by sig_implies_pre [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, encK, X86_64.abi, VG.X86_64.argRegs, kem1024, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem1024]
+      post := by sig_implies_post [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, encK, X86_64.abi, VG.X86_64.argRegs, kem1024, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem1024]
+      pub := by
+        intro s₁ s₂ _ _ h
+        sig_pub [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, encK, X86_64.abi, VG.X86_64.argRegs] at h
+        obtain ⟨hsp, hb, hdi, hsi, hdx, hcx, h8⟩ := h
+        exact ⟨hdi, hsi, hdx, hcx, h8, hsp, map_toNat_inj hb⟩
+      sat := by sig_implies_sat [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, encK, X86_64.abi, VG.X86_64.argRegs, kem1024, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem1024] [encapsSat]
+        using encapsSat 1568 1568 49152 }
+
+theorem encaps1024_verified (v : Sample4Impl) :
+    Verified X86_64.target (encaps1024 v.callee) (Spec.MlKem1024.encapsContract X86_64.abi 32) :=
+  encapsSel_verified (n := scr16) (by decide) kpke1024 v ek16HWf1024 ekt16Wf1024 ekWf1024 calls1024 encapsImp1024
+    (fun _ c b S B => by ek16_ctl v c b S B kpke1024) (encaps1024_ctl v)
+
+/-- The shared contract of `decaps1024`, from the contract its proofs are written against. -/
+theorem decapsImp1024 : (decapsK kem1024).Implies (Spec.MlKem1024.decapsContract X86_64.abi 32) :=
     { pre := by sig_implies_pre [Spec.MlKem1024.decapsContract, Spec.MlKem1024.decapsSig, decapsK, X86_64.abi, VG.X86_64.argRegs, kem1024, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem1024]
       post := by sig_implies_post [Spec.MlKem1024.decapsContract, Spec.MlKem1024.decapsSig, decapsK, X86_64.abi, VG.X86_64.argRegs, kem1024, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem1024]
       pub := by
@@ -121,5 +217,11 @@ theorem decaps1024_verified (v : Sample4Impl) :
         exact ⟨hdi, hsi, hdx, hcx, hsp, map_toNat_inj hb⟩
       sat := by sig_implies_sat [Spec.MlKem1024.decapsContract, Spec.MlKem1024.decapsSig, decapsK, X86_64.abi, VG.X86_64.argRegs, kem1024, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem1024] [decaps1024Sat]
         using decaps1024Sat }
+
+theorem decaps1024_verified (v : Sample4Impl) :
+    Verified X86_64.target (decaps1024 v.callee) (Spec.MlKem1024.decapsContract X86_64.abi 32) :=
+  decapsSel_verified (n := scr16) (by decide) kpke1024 v djHWf1024 djtWf1024 dcWf1024 calls1024 decapsImp1024
+    (fun _ c b S B => by ek16_ctl v c b S B kpke1024)
+    (by s4_ctl v; all_goals first | exact ce1024_ctl _ | exact dd1024_ctl _)
 
 end VG.Proof.MlKem1024.X86_64

@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Blake2.Spec
-public import VerifiedGarbage.Proof.Framework.Mem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Blake2.Spec
+public import VerifiedGarbage.Spec.Blake2
+import VerifiedGarbage.Proof.Framework.Mem
+import Batteries.Tactic.Init
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Streaming BLAKE2: target-independent lemmas

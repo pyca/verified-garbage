@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Stack
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Core
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Entering the fixed frame preserves the prepared workspace -/
 

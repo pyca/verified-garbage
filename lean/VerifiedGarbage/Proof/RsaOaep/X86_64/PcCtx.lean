@@ -1,18 +1,8 @@
 module
 
 public import VerifiedGarbage.Spec.RsaOaep.Precomputed
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCT
-public import VerifiedGarbage.Impl.RsaOaep.X86_64.Precomputed
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCall
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
 
 @[expose] public section
 
@@ -57,7 +47,7 @@ theorem pre_of {H G : Spec.Mgf1.Hash} {s : State}
   refine ⟨⟨sp1, by omega, ?_, hwr, dOn, dOe, dOl, dOm, dOsd, dOs, dOa.sub_right ha, dns, des, dls, dms, dsds,
     dsa.sub_right ha, dRo, dRn, dRe, dRl, dRm, dRsd, dRs, dRa.sub_right ha, dKo, dKn, dKe, dKl, dKm, dKsd, dKs,
     dKa.sub_right ha, wO, wN, wE, wL, wM, wSd, wS, k1, k2, hsi, L1, L2,
-    by unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hsl; omega⟩,
+    by unfold Spec.RsaPss.publicScratchWords Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords at hsl; omega⟩,
     sp3, ?_, ?_, dOa.symm, dsa.symm, dKa.symm, dOq.symm, dsq.symm, dKq.symm, wQ, pl⟩
   · rw [hrd]
     apply Covers.of_sub

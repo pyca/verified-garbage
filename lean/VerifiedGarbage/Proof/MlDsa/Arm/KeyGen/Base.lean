@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.Arm.KeyGen.Frag
 public import VerifiedGarbage.Proof.MlKem.Arm.HashCT
-import VerifiedGarbage.Proof.MlKem.Arm.CallF
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlKem.Arm.CallF
+public import VerifiedGarbage.Proof.MlKem.Arm.Prims
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA on 32-bit ARM: the primitives, and calling them

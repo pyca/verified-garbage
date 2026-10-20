@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Context
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Context
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.FrameCT
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallStack
 import VerifiedGarbage.Proof.MillerRabin.X86_64.StageContext
 import VerifiedGarbage.Proof.MillerRabin.X86_64.StackPrepared
 import VerifiedGarbage.Proof.MillerRabin.X86_64.StackRegions
@@ -9,10 +12,8 @@ import VerifiedGarbage.Proof.MillerRabin.Representation
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MillerRabin.X86_64.StackContext
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Stage
 
 /-! # The callable's public inputs supply the framed body's context -/
 
@@ -30,8 +31,14 @@ def inputPub (s : State) : BodyPub :=
     [⟨s.gpr .rsp - 112#64, 8⟩, ⟨s.gpr .rsp - 104#64, 104⟩,
       ⟨s.gpr .rdi, (s.gpr .rsi).toNat * 8⟩], s.gpr .rsp - 112#64⟩
 
-theorem stage_frame_ok {s : State} (h : roundPre s) :
-    WP isa (.block stage) s (FramePre (inputPub s)) := by
+/-- `FramePre`, and what the framed body's Montgomery calls need: the
+workspace apart from the frames, and every buffer apart from the calls'
+return address. -/
+def FramePreC (p : BodyPub) (s : State) : Prop :=
+  FramePre p s ∧ Region.Disjoint ⟨p.B, p.Z⟩ ⟨p.sp, 112⟩ ∧ Clear (hole p.sp) (entered s)
+
+theorem stage_frame_call_ok {s : State} (h : roundPre s) :
+    WP isa (.block stage) s (FramePreC (inputPub s)) := by
   obtain ⟨hdim, bm, hc, he, ho, h3, hx⟩ := initial_ctx h
   obtain ⟨hrd, hwr, hn, hs, hret, hstack, hL, hP⟩ := h
   let B := s.gpr .rdi
@@ -67,10 +74,19 @@ theorem stage_frame_ok {s : State} (h : roundPre s) :
     rw [entered_wr, hk.2.2, hwr, hsp]
     rfl
   have hkw := entered_kw (hk.2.2.trans hwr) hz hn hdt
-  refine ⟨⟨?_, ?_, hdim, _, c, bm, b, hce, hee, ho, h3, hxe⟩, hw⟩
+  have hcl := entered_clear (hk.2.1.trans hrd) (hk.2.2.trans hwr) hdt
+  rw [entered_rsp, hsp] at hcl
+  refine ⟨⟨⟨?_, ?_, hdim, _, c, bm, b, hce, hee, ho, h3, hxe⟩, hw⟩, ?_, hcl⟩
   · rw [entered_rsp, hsp]
     rfl
   · rw [hw] at hkw
     exact hkw
+  · show Region.Disjoint ⟨B, Z⟩ ⟨s.gpr .rsp - 112#64, 112⟩
+    rw [← hsp]
+    exact hd.symm
+
+theorem stage_frame_ok {s : State} (h : roundPre s) :
+    WP isa (.block stage) s (FramePre (inputPub s)) :=
+  WP.mono (stage_frame_call_ok h) fun _ h => h.1
 
 end VG.Proof.MillerRabin.X86_64

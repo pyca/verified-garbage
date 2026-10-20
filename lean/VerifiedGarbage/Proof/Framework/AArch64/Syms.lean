@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # AArch64: the addresses of statics never change
@@ -17,7 +17,17 @@ same addresses as before it.
 namespace VG.AArch64
 
 theorem exec_syms {i : Instr} {s s' : State} (h : exec i s = some s') : s'.syms = s.syms := by
-  cases i <;> simp only [exec] at h <;> (repeat' split at h) <;>
+  cases i
+  case ldp =>
+    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
+    simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    obtain ⟨_, -, _, -, rfl⟩ := h; rfl
+  case stp =>
+    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
+    simp only [Option.bind_eq_some_iff, State.store] at h
+    obtain ⟨_, h₁, h₂⟩ := h
+    split at h₁ <;> cases h₁; split at h₂ <;> cases h₂; rfl
+  all_goals simp only [exec] at h <;> (repeat' split at h) <;>
     simp_all [State.write, State.addWithCarry, State.store, State.setV, Option.bind_eq_some_iff,
       Option.map_eq_some_iff] <;> (try subst h) <;> (try rfl) <;>
     (obtain ⟨_, _, _, _, rfl⟩ := h; rfl)

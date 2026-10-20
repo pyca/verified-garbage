@@ -4,14 +4,8 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.JointPowerCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointPowerCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeadCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.CallHeadCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Dsa.AArch64.JointPower
-import VerifiedGarbage.Spec.Dsa.SignVerify
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointPower
-meta import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Constant-time binding, execution and storage of a joint call -/
 

@@ -1,7 +1,33 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Poly1305.Stream
+import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateCall
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Poly1305.Stream
+public import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateCall
 
 /-!
 # Streaming Poly1305 (RFC 8439 §2.5) on x86-64
@@ -30,16 +56,14 @@ def note (v : BlocksImpl) : String :=
     "`, and saves its caller's callee-saved registers in its working space."
 
 def artifacts (v : BlocksImpl) : List Artifact := [
-  { Spec.Poly1305.updateApi with
-    name := Spec.Poly1305.updateApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Poly1305.updateApi.doc (notes := [note v])
+  Spec.Poly1305.updateApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackScratch 136 .r8
       (Impl.Poly1305.X86_64.update v.name v.code)
-    contract := Spec.Poly1305.updateContract X86_64.abi 160
     stack := 160
     verified := Proof.Poly1305.X86_64.update_framed v
-    spSafe := X86_64.withStackScratch_spSafe (by decide) (Proof.Poly1305.X86_64.update_spSafe v)
+    spSafe := X86_64.withStackScratch_spSafe_of (Proof.Poly1305.X86_64.update_spSafe v)
     features := v.features }]
 
 end VG.Generic.Poly1305Blocks.X86_64.Poly1305

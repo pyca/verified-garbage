@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AArch64: straight-line bitwise AdvSIMD code, doubleword lane by doubleword lane
@@ -464,7 +465,7 @@ theorem run (hD : ∀ q < 2, D.Sound (R q)) {is : List Instr} {e e' : Env α} {s
     (hok : Ok c s) (hrel : Rel R c e s) (h : eval D c is e = some e') :
     ∃ s', runBlock isa is s = some s' ∧
       Post R c e' s s' (fun r => (is.all fun i => vdstOf i != some r) = false)
-        (fun r => (is.all fun i => dstOf i != some r) = false) := by
+        (fun r => (is.all fun i => !clobbers i r) = false) := by
   induction is generalizing e s with
   | nil =>
     cases h
@@ -478,8 +479,8 @@ theorem run (hD : ∀ q < 2, D.Sound (R q)) {is : List Instr} {e e' : Env α} {s
     refine ⟨s', by rw [runBlock_cons, hs₁, runStep_some]; exact hs', p.rel, p.ok,
       p.base.trans p₁.base, fun r hr => ?_, p.carry.trans p₁.carry, p.sp.trans p₁.sp, p.rd.trans p₁.rd,
       p.wr.trans p₁.wr, fun r hr => ?_, ?_⟩
-    · simp only [List.all_cons, Bool.and_eq_false_iff, bne_eq_false_iff_eq, not_or] at hr
-      exact (p.gpr r hr.2).trans (p₁.gpr r hr.1)
+    · simp only [List.all_cons, Bool.and_eq_false_iff, Bool.not_eq_false', not_or] at hr
+      exact (p.gpr r hr.2).trans (p₁.gpr r fun h => hr.1 (clobbers_of_dstOf h))
     · simp only [List.all_cons, Bool.and_eq_false_iff, bne_eq_false_iff_eq, not_or] at hr
       exact (p.other r hr.2).trans (p₁.other r hr.1)
     · refine p₁.frame.trans ?_

@@ -1,15 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EcBase
+import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EcBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-meta import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: encapsulation
@@ -36,10 +34,9 @@ open VG.Impl.MlKem.X86_64.EncapsH
 
 /-! ## The outputs and the exit -/
 
-variable {L : Kem} (W : EcWf L)
-
 /-- The end of `K-PKE.Encrypt`. -/
-abbrev EncO (σ s : State) : Prop := Enc.EOut L (ecC W σ) (.r14, 0) (ecEk L σ) (ecMs σ) (ecG L σ).2 s
+abbrev EncO {L : Kem} (W : EcWf L) (σ s : State) : Prop :=
+  Enc.EOut L (ecC W.toEcWfB σ) (.r14, 0) (ecEk L σ) (ecMs σ) (ecG L σ).2 s
 
 /-- At the end: `r15` as `allOk`, `K` in `key`, and the ciphertext in `ct` if `r15` is 1. -/
 structure ECEnd (L : Kem) (σ s : State) : Prop where
@@ -50,23 +47,24 @@ structure ECEnd (L : Kem) (σ s : State) : Prop where
     bytesAt s.mem (pa s (.r13, 0)) L.ctLen = KPke.ct L.p (aHat (Enc.rhoE L (ecEk L σ))) (ecEk L σ) (ecMs σ)
       (ecG L σ).2
 
-include W
-
-theorem out_ok {σ : State} {s : State} (h : EncO W σ s) : WP isa (out L) s (ECEnd L σ) := by
+theorem out_ok {L : Kem} (W : EcWf L) {σ : State} {s : State} (h : EncO W σ s) : WP isa (out L) s (ECEnd L σ) := by
   have hp := h.out.1
-  have L₀ := h.out.2.ec.lay W hp
+  have L₀ := h.out.2.ec.lay W.toEcWfB hp
   unfold out
   refine WP.seq (WP.mono (copy_okL L₀ (dst := (.r12, 0)) (src := sc oG) (n := 32) (by decide) W.o₁)
     fun s₁ ⟨hP₁, hb₁⟩ => ?_)
-  have k₁ := h.out.2.ec.step W hp hP₁.b W.o₁K
-  have L₁ := k₁.lay W hp
+  have k₁ := h.out.2.ec.step W.toEcWfB hp hP₁.b W.o₁K
+  have L₁ := k₁.lay W.toEcWfB hp
   refine WP.mono (copy_okL L₁ (dst := (.r13, 0)) (src := sc L.oCT) (n := L.ctLen) (show Reg.rbx ≠ .rdi by decide) W.o₂)
     fun s₂ ⟨hP₂, hb₂⟩ => ?_
-  have k₂ := k₁.step W hp hP₂.b W.o₂K
+  have k₂ := k₁.step W.toEcWfB hp hP₂.b W.o₂K
   refine ⟨k₂, ?_, ?_, fun ho => ?_⟩
   · rw [hP₂.cs .r15 (by decide), hP₁.cs .r15 (by decide)]; exact h.r15
   · rw [L₁.keepBytes hP₂.b W.o₂G, hP₁.pa (by decide), hb₁]; exact h.out.2.k
   · rw [hP₂.pa (by decide), hb₂, L₀.keepBytes hP₁.b W.o₁C]; exact h.ct ho
+
+variable {L : Kem} (W : EcWfB L)
+include W
 
 theorem ECEnd.hin {σ s : State} (hp : (encapsK L).pre σ) (h : ECEnd L σ s) :
     ∀ k < 6, InRegions (s.rd ++ s.wr) (pa s (sc (oSV + 8 * k))) 8 := fun k hk =>
@@ -139,13 +137,13 @@ open Encaps in
 theorem kemEncapsH_correct (v : Sample4Impl) {L : Kem} (W : EcWf L) {wc wd : List Nat}
     (K : KemCalls L wc wd) (hctl : ctlOk (kemEncapsH L v.callee) = true) (σ : State) (hp : (encapsK L).pre σ) :
     ∃ t s', Exec isa (kemEncapsH L v.callee) σ t s' ∧ abiPreserved σ s' ∧ (encapsK L).post σ s' := by
-  obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (pro_ok W hp) fun s₁ h₁ =>
-    WP.seq (WP.mono (hCopy_ok W hp h₁) fun s₂ ⟨h₂, hH, h15⟩ =>
-      WP.seq (WP.mono (hashes_ok W hp h₂ hH h15) fun s₃ h₃ =>
-        WP.seq (WP.mono (Enc.encrypt_ok v K W.toKemWf (C := ecC W σ) W.enc h₃.1 h₃.2) fun s₄ h₄ =>
+  obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (pro_ok W.toEcWfB hp) fun s₁ h₁ =>
+    WP.seq (WP.mono (hCopy_ok W.toEcWfB hp h₁) fun s₂ ⟨h₂, hH, h15⟩ =>
+      WP.seq (WP.mono (hashes_ok W.toEcWfB hp h₂ hH h15) fun s₃ h₃ =>
+        WP.seq (WP.mono (Enc.encrypt_ok v K W.toKemWf (C := ecC W.toEcWfB σ) W.enc h₃.1 h₃.2) fun s₄ h₄ =>
           WP.seq (WP.mono (out_ok W h₄) fun s₅ h₅ =>
-            WP.mono (topEpi_ok h₅.ec.top (h₅.hin W hp)) fun s₆ ⟨hr, hg, hm⟩ =>
-              (⟨hg, post_of W h₅ hr hm⟩ : gprPreserved σ s₆ ∧ (encapsK L).post σ s₆))))))
+            WP.mono (topEpi_ok h₅.ec.top (h₅.hin W.toEcWfB hp)) fun s₆ ⟨hr, hg, hm⟩ =>
+              (⟨hg, post_of W.toEcWfB h₅ hr hm⟩ : gprPreserved σ s₆ ∧ (encapsK L).post σ s₆))))))
   exact ⟨t, s', he, abiPreserved_of_ctl hctl he hF.1, hF.2⟩
 
 /-! ## Constant time -/
@@ -154,7 +152,7 @@ namespace Encaps
 
 open VG.Impl.MlKem.X86_64.EncapsH
 
-variable {L : Kem} (W : EcWf L)
+variable {L : Kem} (W : EcWfB L)
 
 abbrev R (L : Kem) (I : State → State → Prop) : State → State → Prop := Rel2 (encapsK L).pre (encapsK L).pub I
 
@@ -213,32 +211,34 @@ theorem hashes_tr :
   rel2_of (hashes_trL W) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ec_lrel W p₁ p₂ pub h₁.1 h₂.1
 
 omit W in
-theorem EIn.any {W : EcWf L} {σ : State} {E : Ptr} {ek m r : List Byte} {s : State}
+theorem EIn.any {W : EcWfB L} {σ : State} {E : Ptr} {ek m r : List Byte} {s : State}
     (h : Enc.EIn L (ecC W σ) E ek m r s) : Enc.EIn L (ecCA W) E ek m r s :=
   ⟨⟨σ, h.out⟩, h.ek, h.m, h.r⟩
 
-theorem encrypt_tr (v : Sample4Impl) {wc wd : List Nat} (K : KemCalls L wc wd) :
-    RelCT isa (R L (EncI W)) (encrypt L v.callee (.r14, 0)) fun _ _ => True := by
+omit W in
+theorem encrypt_tr {L : Kem} (W : EcWf L) (v : Sample4Impl) {wc wd : List Nat} (K : KemCalls L wc wd) :
+    RelCT isa (R L (EncI W.toEcWfB)) (encrypt L v.callee (.r14, 0)) fun _ _ => True := by
   obtain ⟨_, rhoT⟩ := W.rhoT
-  refine RelCT.mono (RelCT.exists_ (P := fun ρ x y => LRel (ecR L) (ecW L) x y ∧ Enc.EIρ L (ecCA W) (.r14, 0) ρ x ∧
-      Enc.EIρ L (ecCA W) (.r14, 0) ρ y) (Q := fun _ _ => True) fun ρ =>
-      RelCT.mono (Enc.encrypt_tr v K W.toKemWf (C := ecCA W) W.enc rhoT (ρ := ρ)) (fun _ _ h => h)
+  refine RelCT.mono (RelCT.exists_ (P := fun ρ x y => LRel (ecR L) (ecW L) x y ∧ Enc.EIρ L (ecCA W.toEcWfB) (.r14, 0) ρ x ∧
+      Enc.EIρ L (ecCA W.toEcWfB) (.r14, 0) ρ y) (Q := fun _ _ => True) fun ρ =>
+      RelCT.mono (Enc.encrypt_tr v K W.toKemWf (C := ecCA W.toEcWfB) W.enc rhoT (ρ := ρ)) (fun _ _ h => h)
         fun _ _ _ => trivial) ?_ fun _ _ _ => trivial
   rintro x y ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩
-  have i₁ : Enc.EIρ L (ecCA W) (.r14, 0) (Enc.rhoE L (ecEk L σ₁)) x := ⟨_, _, _, rfl, EIn.any h₁.1, h₁.2⟩
-  have i₂ : Enc.EIρ L (ecCA W) (.r14, 0) (Enc.rhoE L (ecEk L σ₁)) y :=
+  have i₁ : Enc.EIρ L (ecCA W.toEcWfB) (.r14, 0) (Enc.rhoE L (ecEk L σ₁)) x := ⟨_, _, _, rfl, EIn.any h₁.1, h₁.2⟩
+  have i₂ : Enc.EIρ L (ecCA W.toEcWfB) (.r14, 0) (Enc.rhoE L (ecEk L σ₁)) y :=
     ⟨_, _, _, (rho_pub pub).symm, EIn.any h₂.1, h₂.2⟩
-  exact ⟨Enc.rhoE L (ecEk L σ₁), ec_lrel W p₁ p₂ pub h₁.1.out.2.ec h₂.1.out.2.ec, i₁, i₂⟩
+  exact ⟨Enc.rhoE L (ecEk L σ₁), ec_lrel W.toEcWfB p₁ p₂ pub h₁.1.out.2.ec h₂.1.out.2.ec, i₁, i₂⟩
 
-theorem out_tr : RelCT isa (R L (EncO W)) (out L) fun _ _ => True := by
+omit W in
+theorem out_tr {L : Kem} (W : EcWf L) : RelCT isa (R L (EncO W)) (out L) fun _ _ => True := by
   refine rel2_of (Q := LRel (ecR L) (ecW L)) ?_ fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
-    ec_lrel W p₁ p₂ pub h₁.out.2.ec h₂.out.2.ec
+    ec_lrel W.toEcWfB p₁ p₂ pub h₁.out.2.ec h₂.out.2.ec
   unfold out
   obtain ⟨_, oT₁⟩ := W.oT₁
   obtain ⟨_, oT₂⟩ := W.oT₂
-  exact RelCT.seq (LRel.step (ecB_bases L) (trL W oT₁) fun x Lx =>
+  exact RelCT.seq (LRel.step (ecB_bases L) (trL W.toEcWfB oT₁) fun x Lx =>
       WP.mono (copy_okL Lx (dst := (.r12, 0)) (src := sc oG) (n := 32) (by decide) W.o₁)
-        fun _ h => ⟨_, h.1⟩) (trL W oT₂)
+        fun _ h => ⟨_, h.1⟩) (trL W.toEcWfB oT₂)
 
 omit W in
 theorem epi_tr : RelCT isa (R L (ECEnd L)) (.block topEpi) fun _ _ => True :=
@@ -254,12 +254,12 @@ theorem kemEncapsH_ct (v : Sample4Impl) {L : Kem} (W : EcWf L) {wc wd : List Nat
     (K : KemCalls L wc wd) : ConstantTime isa (encapsK L).pre (encapsK L).pub (kemEncapsH L v.callee) := by
   refine relStart (Q := fun _ _ => True) ?_
   unfold kemEncapsH
-  refine RelCT.seq (relInv (I' := ProOut L) (fun σ s hp hs => by subst hs; exact pro_ok W hp) pro_tr) ?_
+  refine RelCT.seq (relInv (I' := ProOut L) (fun σ s hp hs => by subst hs; exact pro_ok W.toEcWfB hp) pro_tr) ?_
   refine RelCT.seq (relInv (I' := fun σ s => EC L σ s ∧ bytesAt s.mem (pa s (sc oH)) 32 = H (ecEk L σ) ∧
-    s.gpr .r15 = 1) (fun σ s hp hs => hCopy_ok W hp hs) hCopy_tr) ?_
-  refine RelCT.seq (relInv (I' := EncI W) (fun σ s hp hs => hashes_ok W hp hs.1 hs.2.1 hs.2.2)
-    (hashes_tr W)) ?_
-  refine RelCT.seq (relInv (I' := EncO W) (fun σ s _ hs => Enc.encrypt_ok v K W.toKemWf (C := ecC W σ) W.enc hs.1 hs.2)
+    s.gpr .r15 = 1) (fun σ s hp hs => hCopy_ok W.toEcWfB hp hs) hCopy_tr) ?_
+  refine RelCT.seq (relInv (I' := EncI W.toEcWfB) (fun σ s hp hs => hashes_ok W.toEcWfB hp hs.1 hs.2.1 hs.2.2)
+    (hashes_tr W.toEcWfB)) ?_
+  refine RelCT.seq (relInv (I' := EncO W) (fun σ s _ hs => Enc.encrypt_ok v K W.toKemWf (C := ecC W.toEcWfB σ) W.enc hs.1 hs.2)
     (encrypt_tr W v K)) ?_
   refine RelCT.seq (relInv (I' := ECEnd L) (fun σ s _ hs => out_ok W hs) (out_tr W)) ?_
   exact RelCT.mono epi_tr (fun _ _ h => h) fun _ _ _ => trivial

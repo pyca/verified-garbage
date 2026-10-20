@@ -1,16 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.ScalarCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ChecksCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.PowCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
-public meta import VerifiedGarbage.Impl.Ffdh.X86_64.CheckPrivate
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Start
+public import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.ScalarCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Start
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH exchange on x86-64: public stages for the timing proof -/
 

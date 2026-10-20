@@ -1,20 +1,10 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedLoop
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecks
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedCall
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedVerified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedVerified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedVerified
 
 @[expose] public section
 

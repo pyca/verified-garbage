@@ -1,10 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareWide
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRow
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! Long carry chains and exact tails for cross-product rows. -/
 
@@ -139,4 +138,8 @@ theorem generalRow_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
     rw [hm, ku.gpr (by decide), hcx] at hv
     simpa using hv
   · have ho := hi.out; rw [hm] at ho; exact ho
+
+theorem generalRow_rowOk : AdxSquare.RowOk AdxSquareWide.generalRow :=
+  ⟨fun hs h8 h9 hbp _ hw hZ hZb sb => generalRow_ok hs h8 h9 hbp hw hZ hZb sb⟩
+
 end VG.Proof.Bignum.X86_64.AdxSquareWide

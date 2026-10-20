@@ -1,14 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecOut
 public import VerifiedGarbage.Proof.RsaOaep.Decode
 public import VerifiedGarbage.Spec.RsaOaep.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLoops
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Label
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
+import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSAES-OAEP decryption on AArch64: the decoding

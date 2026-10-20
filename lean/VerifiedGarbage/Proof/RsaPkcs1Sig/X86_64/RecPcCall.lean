@@ -2,13 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecPcCtx
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.RecoverPrecomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCall
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
 
 /-!
 # `vg_rsa_pkcs1_recover_precomputed` on x86-64: the call
@@ -129,7 +131,8 @@ theorem call_pre {s t : State} (hp : PPreR s) (h : J1 s t) :
   refine ⟨by omega, rfl, rfl, hp.preStack.symm.sub_left sM, hp.dKe.sub_left sM, dKg.sub_left sM,
     hp.dKs.sub_left sM, dMA, hp.preScr, hp.des, dgs, (hp.dKs.sub_left sA).symm, dRM,
     hp.preStack.symm.sub_left sR, hp.dKe.sub_left sR, dKg.sub_left sR, hp.dKs.sub_left sR, dRA, wM,
-    hp.preWrap, hp.wE, wG, hp.wS, ⟨hk1, hk2⟩, hp.preLen, trivial, hp.L1, hp.L2, hp.hsl⟩
+    hp.preWrap, hp.wE, wG, hp.wS, ⟨hk1, hk2⟩, hp.preLen, trivial, hp.L1, hp.L2,
+    hp.hsl⟩
 
 theorem call_covers {s t : State} (hp : PPreR s) (hsig : stackArg s 2 = s.gpr .rcx) (he : Env s t) :
     Covers (callRd s ++ pubWr s) (t.rd ++ t.wr) ∧ Covers (pubWr s) t.wr := by

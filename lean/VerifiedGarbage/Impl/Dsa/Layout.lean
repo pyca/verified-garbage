@@ -33,6 +33,11 @@ def t : Nat := 14944
 def t2 : Nat := 15328
 def usedBytes : Nat := 15712
 
+/-- Key derivation's public value, just past the signer's layout: its
+checks read y as they read a caller's input, which lies outside it. It
+ends by 16384 bytes for p_len = 128, and the minimum scratch grows with p. -/
+def derivedY : Nat := usedBytes
+
 /-- Slots of the outer header used to call an arithmetic routine. -/
 def arg : Nat := 16
 def argLen : Nat := 17

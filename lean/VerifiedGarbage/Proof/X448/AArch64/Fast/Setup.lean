@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.X448.AArch64.Fast.Inv
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Setup
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.VSave
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Curve448.AArch64.Legacy
 public import VerifiedGarbage.Proof.X448.AArch64.Counters
@@ -16,6 +12,70 @@ public import VerifiedGarbage.Proof.X448.AArch64.FreezePrep
 public import VerifiedGarbage.Proof.X448.AArch64.Output
 public import VerifiedGarbage.Proof.X448.AArch64.Select
 public import VerifiedGarbage.Proof.X448.Encoding
+import VerifiedGarbage.Proof.Curve448.AArch64.AccumSquareBody
+import VerifiedGarbage.Proof.Curve448.AArch64.AddEval
+import VerifiedGarbage.Proof.Curve448.AArch64.Bounds
+import VerifiedGarbage.Proof.Curve448.AArch64.Collect
+import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Butterfly
+import VerifiedGarbage.Proof.Curve448.AArch64.Fast.ColEnd
+import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sqr
+import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Arith
+import VerifiedGarbage.Proof.Curve448.AArch64.Normalize
+import VerifiedGarbage.Proof.Curve448.AArch64.Product
+import VerifiedGarbage.Proof.Curve448.AArch64.Stage
+import VerifiedGarbage.Proof.Curve448.AArch64.SymmetricColumn
+import VerifiedGarbage.Proof.Ed448.Scalar
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.BitByte
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X448.AArch64.AddSub
+import VerifiedGarbage.Proof.X448.AArch64.BitStep
+import VerifiedGarbage.Proof.X448.AArch64.BitWrite
+import VerifiedGarbage.Proof.X448.AArch64.Bits
+import VerifiedGarbage.Proof.X448.AArch64.Carry
+import VerifiedGarbage.Proof.X448.AArch64.Columns
+import VerifiedGarbage.Proof.X448.AArch64.Copy
+import VerifiedGarbage.Proof.X448.AArch64.Decode
+import VerifiedGarbage.Proof.X448.AArch64.DecodeAll
+import VerifiedGarbage.Proof.X448.AArch64.DecodeStore
+import VerifiedGarbage.Proof.X448.AArch64.Finish
+import VerifiedGarbage.Proof.X448.AArch64.Init
+import VerifiedGarbage.Proof.X448.AArch64.Initial
+import VerifiedGarbage.Proof.X448.AArch64.Iter
+import VerifiedGarbage.Proof.X448.AArch64.Normalize
+import VerifiedGarbage.Proof.X448.AArch64.PointwiseFused
+import VerifiedGarbage.Proof.X448.AArch64.Row
+import VerifiedGarbage.Proof.X448.AArch64.Small
+import VerifiedGarbage.Proof.X448.AArch64.Step
+import VerifiedGarbage.Proof.X448.AArch64.Weak.BitStep
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.X448.Wide.AccumSquareBody
+import VerifiedGarbage.Proof.X448.Wide.AddCoefficient
+import VerifiedGarbage.Proof.X448.Wide.CoefficientIO
+import VerifiedGarbage.Proof.X448.Wide.Columns
+import VerifiedGarbage.Proof.X448.Wide.Fold
+import VerifiedGarbage.Proof.X448.Wide.LoadCached
+import VerifiedGarbage.Proof.X448.Wide.Mul
+import VerifiedGarbage.Proof.X448.Wide.Normalize
+import VerifiedGarbage.Proof.X448.Wide.Pack
+import VerifiedGarbage.Proof.X448.Wide.Pass
+import VerifiedGarbage.Proof.X448.Wide.PassInit
+import VerifiedGarbage.Proof.X448.Wide.Reduce
+import VerifiedGarbage.Proof.X448.Wide.SymmetricColumn
+import VerifiedGarbage.Proof.X448.Wide.TailMul
+import VerifiedGarbage.Proof.X448.Wide.TailSquare
+import VerifiedGarbage.Proof.X448.Wide.TailStep
+import VerifiedGarbage.Proof.X448.Wide.Term
+import VerifiedGarbage.Proof.X448.Wide.UnpackRegs
 
 /-!
 # X448 on AArch64: setup, saving `x21`–`x28` and `v8`–`v15`

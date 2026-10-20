@@ -1,15 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
+import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
 public import VerifiedGarbage.Impl.EcKey.Arm
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 import VerifiedGarbage.Proof.Weierstrass.Arm.BytesLen
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Elliptic curve public keys on 32-bit ARM: the result

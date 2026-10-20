@@ -1,11 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.Divstep.Tc32Words
 public import VerifiedGarbage.Proof.Divstep.Alg32Def
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Algebra.Ring.Divisibility.Basic
+import Mathlib.Tactic.NormNum.OfScientific
+import Mathlib.Tactic.NormNum.DivMod
+import Mathlib.Tactic.NormNum.Abs
+import Mathlib.Data.Rat.Cast.Order
+import Mathlib.Tactic.Linarith.Frontend
+import Mathlib.Data.Finset.Attr
 
 /-! # One-word signed Montgomery reduction -/
 

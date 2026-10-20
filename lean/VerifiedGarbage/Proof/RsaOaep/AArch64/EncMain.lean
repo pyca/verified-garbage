@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEntry
 public import VerifiedGarbage.Proof.RsaOaep.Encode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncLay
+import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEm
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
+import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RSAES-OAEP encryption on AArch64: `EM`

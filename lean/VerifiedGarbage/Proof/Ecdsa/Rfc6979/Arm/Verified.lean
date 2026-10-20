@@ -1,12 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.CT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Weierstrass.Layout
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.CT
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: `Verified`
@@ -31,15 +28,16 @@ theorem sign_arm (s : State) (h : (rfcArm P.I (240 + 4 * P.e)).pre s) :
 
 /-- The notes on the implementation, for the documentation of the function
 with HMAC's `init` `hiN`, the streaming `update` `updN` and HMAC's
-`finalize` `hfN`, for scalars of `q` bytes signed by `core`. -/
-def signNotes (hiN updN hfN : String) (q : Nat) (core : String) : String :=
+`finalize` `hfN`, for scalars of `q` bytes signed by `core`, in a frame of
+`frame` bytes. -/
+def signNotes (hiN updN hfN : String) (q : Nat) (core : String) (frame : Nat := 216) : String :=
   "Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost " ++
   toString q ++ " bytes, and each HMAC with `" ++ hiN ++ "`, `" ++ updN ++ "` and `" ++ hfN ++ "`, \
   using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, \
   the leftmost " ++ toString q ++ " bytes of `V`, is tried with `" ++ core ++ "`, which uses all of \
   `scratch`; whether to try another is computed without branches from its result and the count of \
   candidates left, so the code branches only on that. `K`, `V`, `h` and our caller's registers are kept \
-  in a 216-byte frame, whose secrets are cleared before it is freed; the calls use the 24 bytes below it."
+  in a " ++ toString frame ++ "-byte frame, whose secrets are cleared before it is freed; the calls use the 24 bytes below it."
 
 /-- The notes of an instance whose scalars are longer than the hash
 (`wide`): `q` bytes of `nb` bits, from a `D`-byte hash. -/

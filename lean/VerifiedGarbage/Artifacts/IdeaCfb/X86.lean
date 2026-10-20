@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.X86.FbVerified
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Idea.X86.ModesLit
 
 /-! # IDEA-CFB artifacts on baseline x86 (32-bit) -/
 
@@ -15,21 +20,15 @@ def note : String :=
   over IDEA's ECB block."
 
 def artifacts : List Artifact := [
-  { Spec.Idea.cfbEncryptApi with
-    target := X86.target
-    doc := Spec.Idea.cfbEncryptApi.doc (notes := [note])
+  Spec.Idea.cfbEncryptApi.artifact X86.target {
+    notes := [note]
     code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.cfbEncrypt
-    contract := Spec.Idea.cfbEncryptContract X86.abi 208
     stack := 208
-    verified := Proof.Idea.X86.Fb.cfbEncrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Idea.cfbDecryptApi with
-    target := X86.target
-    doc := Spec.Idea.cfbDecryptApi.doc (notes := [note])
+    verified := Proof.Idea.X86.Fb.cfbEncrypt_framed },
+  Spec.Idea.cfbDecryptApi.artifact X86.target {
+    notes := [note]
     code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.cfbDecrypt
-    contract := Spec.Idea.cfbDecryptContract X86.abi 208
     stack := 208
-    verified := Proof.Idea.X86.Fb.cfbDecrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Idea.X86.Fb.cfbDecrypt_framed }]
 
 end VG.Artifacts.IdeaCfb.X86

@@ -1,15 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Scan
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ScanRawCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
-meta import VerifiedGarbage.Impl.Ffdh.X86_64.GenerateKey
+public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Bound
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ScanCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.ScanRawCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Scan
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Bound
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ScanCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ScanRawCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH on x86-64: bound selection depends only on the public domain -/
 

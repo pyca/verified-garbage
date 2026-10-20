@@ -1,15 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.X86.Setup
-import VerifiedGarbage.Proof.AesCcm.Bytes
-import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.AesOcb.X86.Setup
+public import VerifiedGarbage.Proof.AesGcm.X86.Loops
 import VerifiedGarbage.Proof.Ocb.Bytes
 public import VerifiedGarbage.Proof.Ocb.Nonce
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
+public import VerifiedGarbage.Proof.AesOcb.X86.Env
+public import VerifiedGarbage.Proof.Cmac.Block32
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.AesCcm.BytesAt
+import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-OCB on x86: the block `Nonce` (`nonceBlock`)

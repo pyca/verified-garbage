@@ -1,13 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
-public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.RecoverPrecomputed
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverFrame
 
 /-!
 # `vg_rsa_pkcs1_recover_precomputed` on x86-64: the precondition
@@ -61,7 +55,7 @@ theorem pre_of {s : State}
   have ha : Region.Sub ⟨stackArgAddr s 0, 40⟩ ⟨stackArgAddr s 0, 56⟩ := Region.sub_prefix (by decide)
   refine ⟨⟨sp1, by omega, ?_, hwr, dOn, dOe, dOg, dOs, dOa.sub_right ha, dns, des, dgs, dsa.sub_right ha, dRo,
     dRs, dKo, dKn, dKe, dKg, dKs, dKa.sub_right ha, wO, wN, wE, wG, wS, k1, k2, L1, L2, hash,
-    by unfold Spec.Rsa.scratchWords at hsl; omega⟩,
+    hsl⟩,
     sp3, ?_, ?_, dOa.symm, dsa.symm, dKa.symm, dOq.symm, dsq.symm, dKq.symm, wQ, pl⟩
   · rw [hrd]
     apply Covers.of_sub

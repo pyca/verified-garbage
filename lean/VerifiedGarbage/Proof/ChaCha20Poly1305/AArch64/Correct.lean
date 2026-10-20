@@ -1,42 +1,66 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stages
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Parts
-public import VerifiedGarbage.Proof.Framework.ContractPost
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Proof.Framework.ContractPost
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Body
 import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Backends
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Save
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Xor
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Lit
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xor
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Lit
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Xor
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Lit
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Xor
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Lit
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Bulk
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Finalize
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
-public import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Backends
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Counter
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Rounds
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Save
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Tail
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Check
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Last
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.SaveGP
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Xor
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Feed
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rotate
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.RoundLoop
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Transpose
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xor
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.CachedAdd
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Chunk
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Finish
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Save
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Tail
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Xor
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Chunk
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Xor
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Bulk
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Poly1305.AArch64.Init
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.AddS
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Finalize
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
+import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.Poly1305.Stream
+import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 
 @[expose] public section
 
@@ -141,7 +165,7 @@ structure MainO (s₀ s : State) : Prop where
 /-- The address of `tag`, loaded from the context into `r`. -/
 theorem tagPtr_ok {r : Reg} {s₀ s : State} (hp : APre e s₀) (hx21 : s.gpr .x21 = cx s₀)
     (hsv : Saved s₀ s.mem) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
-    (hk : ([Instr.ldr .x r .x21 624].all fun i => preserved.all fun r' => dstOf i != some r') = true) :
+    (hk : ([Instr.ldr .x r .x21 624].all fun i => preserved.all fun r' => !clobbers i r') = true) :
     WP isa (.block [.ldr .x r .x21 624]) s fun s' => s'.gpr r = tp s₀ ∧ Kept [] s s' := by
   have hs : s.mem.readW (off (cx s₀) 624) 64 = tp s₀ := hsv (.x6, 624) (by decide)
   have h : WP isa (.block [.ldr .x r .x21 624]) s fun s' =>
@@ -164,7 +188,7 @@ theorem ftptrs_ok (s : State) :
         by rw [u₃.other _ (by decide), u₂.gpr]; rfl,
         by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)],
         by rw [u₃.rd, u₂.rd, u₁.rd], by rw [u₃.wr, u₂.wr, u₁.wr], by rw [u₃.mem, u₂.mem, u₁.mem]⟩
-  exact WP.mono (WP.kept h (by simp [dstOf, preserved]))
+  exact WP.mono (WP.kept h (by simp [clobbers, dstOf, preserved]))
     fun s' ⟨⟨h0, h1, h2, hrd, hwr, hm⟩, hg, hsp⟩ =>
       ⟨h0, h1, h2, Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _)⟩
 

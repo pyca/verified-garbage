@@ -1,15 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecMain
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCallee
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.Framework.AArch64.Spill
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncLay
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
 
 /-!
 # RSAES-OAEP decryption on AArch64: where everything is

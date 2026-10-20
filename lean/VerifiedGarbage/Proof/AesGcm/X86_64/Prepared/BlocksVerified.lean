@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.CT
 
 /-! # Whole-block functions with prepared contexts -/
 

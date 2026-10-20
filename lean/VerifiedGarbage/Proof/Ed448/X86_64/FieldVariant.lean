@@ -1,17 +1,31 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
-meta import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
-public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Verified
-meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Verified
+public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Verified
 import VerifiedGarbage.Proof.X448.X86_64.Adx.Sqr
-meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Sqr
 import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.X448.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Verified
+meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Sqr
 meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
+meta import VerifiedGarbage.Proof.X448.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-! The field backends implement the same point programs and public contracts. -/
 

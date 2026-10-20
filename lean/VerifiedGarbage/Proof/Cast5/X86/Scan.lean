@@ -3,18 +3,14 @@ module
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Cast5.X86.Run
-public import VerifiedGarbage.Proof.Cast5.Table
-public import VerifiedGarbage.Proof.Framework.X86.Sse
-public import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Cast5.X86.Run
+import VerifiedGarbage.Proof.Cast5.Table
 public import VerifiedGarbage.Proof.Framework.X86.SseLanes
 public import VerifiedGarbage.Proof.Framework.X86.SymFrame
-public import VerifiedGarbage.Proof.Framework.CallLay
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.Framework.ReadHalves
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Cast5.X86
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # CAST5 on 32-bit x86: the scan of a table

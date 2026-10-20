@@ -1,14 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.Arm.Recover
-import VerifiedGarbage.Proof.Ed25519.Arm.Power
 import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
 public import VerifiedGarbage.Proof.Ed25519.Recover
 public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-! Merged from `Proof.Ed25519.Arm.RecoverCandidate`. -/

@@ -1,13 +1,13 @@
 module
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+meta import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
-meta import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSASSA-PSS signing on x86-64: the taint checks of the pieces that do not

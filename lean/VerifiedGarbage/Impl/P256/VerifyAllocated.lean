@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.P256.VerifySparse
-public import VerifiedGarbage.Impl.P256.VerifyRegisters
 public import VerifiedGarbage.Impl.P256.VerifyAllocatedCode
+public import VerifiedGarbage.Impl.P256.VerifyArithmetic
 
 /-! Scalar-register field programs for public P-256 verification. -/
 
@@ -20,7 +20,6 @@ def keep (k : Kind) (off : Nat) : Bool :=
   if k == .doubleRR then VerifyDouble.R.x ≤ off && off < VerifyDouble.R.z+32 else true
 
 def code : Kind → List Instr
-  | .doubleRR => VerifyAllocatedCode.doubleRR
   | .mixedHead => VerifyAllocatedCode.mixedHead
   | .mixedTail => VerifyAllocatedCode.mixedTail
   | .jacTail => VerifyAllocatedCode.jacTail

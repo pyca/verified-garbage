@@ -1,13 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.VectorLower
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lower
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
 
 @[expose] public section
 
@@ -62,9 +65,9 @@ theorem vector_step_ok (op : ScalarOp) (hg : Good op) (f : File) (s : VG.AArch64
   | _ =>
     obtain ⟨s', hs, hregs, hm, hrd, hwr, hsp, hv⟩ :=
       reg_lower_ok _ hg (by intro k r h; cases h) (by intro r k h; cases h) f s hr.regs
-    refine ⟨s', hs, ⟨hregs, ?_⟩, hm, hrd, hwr, hsp, fun v _ _ _ h29 => hv v h29⟩
+    refine ⟨s', hs, ⟨hregs, ?_⟩, hm, hrd, hwr, hsp, fun v _ _ _ _ => congrFun hv v⟩
     · intro k hk
-      rw [hv (slotV k) (by unfold slotV tempSlotV; split <;> decide)]
+      rw [hv]
       exact hr.slots k hk
 
 private theorem block_append (xs ys : List Instr) (s : VG.AArch64.State) :

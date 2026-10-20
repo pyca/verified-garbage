@@ -5,10 +5,8 @@ public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerEntry
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Prepared
 
 /-! # Call the complete shared round with its verified stack frame -/
 
@@ -19,13 +17,6 @@ namespace VG.Proof.MillerRabin.X86_64.Caller
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.RsaKeyGen.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Impl.RsaKeyGen.X86_64.Candidate
-
-private theorem no_mx_load (v : RoundImpl) : ∀ i ∈ instrs v.code, loadsMxcsr i = false := by
-  have h := v.mxSafe
-  rw [Code.allInstrs_eq] at h
-  intro i hi
-  have := List.all_eq_true.mp h i hi
-  simpa only [Bool.not_eq_true'] using this
 
 theorem round_call_ok (v : RoundImpl) {s : State} {B : Addr} {Z w c bm b : Nat} {mi : BitVec 64}
     (hc : MrCtx s B Z w mi c bm) (he : ECtx s.mem B w c) (hd : MrDims B Z w)
@@ -55,7 +46,7 @@ theorem round_call_ok (v : RoundImpl) {s : State} {B : Addr} {Z w c bm b : Nat} 
       omega_arith) hr.disjoint]
     exact hx
   obtain ⟨hcov, hwr⟩ := narrow_covers hc.good.scr hZ
-  refine WP.call_sp_mx (s := s) (c := v.code) (rd := []) (wr := [⟨B, 8 * callWords w⟩]) (k := roundContract) (round_correct v.mont (no_mx_load v))
+  refine WP.call_sp_mx (s := s) (c := v.code) (rd := []) (wr := [⟨B, 8 * callWords w⟩]) (k := roundContract) v.correct
     (SpSafe.of_all v.spSafe) (by omega_arith)
     (narrow_pre hc he hd hZ hr hsi ho h3 hxlt) hcov hwr ?_
   rintro t hrd hwt hcs hf _ ⟨u, hmu, hgu, hp⟩ hmx

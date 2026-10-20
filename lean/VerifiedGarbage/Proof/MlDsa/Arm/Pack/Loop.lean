@@ -3,11 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Stream
 public import VerifiedGarbage.Proof.MlDsa.Pack.Bits
 public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.Arm.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # ML-DSA on 32-bit ARM: the loops over the groups
@@ -83,7 +81,7 @@ abbrev unpackRegs : List Reg := [.r0, .r1, .r2, .r3, .r4, .r12]
 theorem movN_ok (r : Reg) (N : Nat) (hN : encodable (BitVec.ofNat 32 N) = true) (s : State) :
     WP isa (.block [.mov r (.imm (BitVec.ofNat 32 N))]) s fun s' =>
       (s'.gpr r = BitVec.ofNat 32 N ∧ s'.mem = s.mem) ∧ Keep [r] s s' := by
-  refine WP.keep _ ?_ (by simp [writesOnly, dstOf])
+  refine WP.keep _ ?_ (by simp [writesOnly, dsts, dstOf])
   run_block [hN, and_true]
 
 /-! ## Packing -/

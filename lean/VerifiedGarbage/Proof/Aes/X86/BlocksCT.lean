@@ -1,15 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Aes.X86.Blocks
+public import VerifiedGarbage.Proof.Aes.X86.BlocksContract
 
-public import VerifiedGarbage.Proof.Aes.X86.Blocks
+import VerifiedGarbage.Proof.Aes.X86.Blocks
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Aes.X86.Blocks
+meta import VerifiedGarbage.Proof.Aes.X86.BlocksContract
 meta import VerifiedGarbage.Proof.Aes.X86.Blocks
-public import VerifiedGarbage.Spec.Aes.Contract
-meta import VerifiedGarbage.Spec.Aes.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86.Spill
-meta import VerifiedGarbage.Proof.Framework.X86.Spill
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES on whole blocks on x86 (32-bit): constant time, and `Verified`

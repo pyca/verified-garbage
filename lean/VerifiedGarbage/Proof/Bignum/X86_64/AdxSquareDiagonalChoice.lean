@@ -1,14 +1,9 @@
 module
 
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareGroupedWord
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonal
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalLoop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! ## AdxSquareGroupedCarry -/
 

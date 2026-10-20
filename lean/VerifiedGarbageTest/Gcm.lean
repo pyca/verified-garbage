@@ -25,6 +25,11 @@ namespace VG.Test.Gcm
 
 open Lean Elab Command Test.Aes
 
+-- The implementation accepts every byte length from 4 through 16,
+-- including the six lengths extending SP 800-38D §5.2.1.2.
+#guard ((List.range 18).filter Spec.Gcm.tagLenOk) =
+  [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+
 /-- Whether a record is in a section with `PTlen = 408` and `AADlen = 720`
 and a tag length in `tagLens`. -/
 def selected (tagLens : List String) (r : Record) : Bool :=

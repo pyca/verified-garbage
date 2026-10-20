@@ -2,16 +2,17 @@ module
 
 public import Mathlib.Data.List.Dedup
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.GcmSiv.Contract
 import VerifiedGarbage.Proof.GcmSiv.Polyval
 public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
-public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import Aesop.BuiltinRules
+public import VerifiedGarbage.Impl.AesGcmSiv.X86_64
+public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Env
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 
 /-!
 # AES-GCM-SIV on x86-64: `Verified`

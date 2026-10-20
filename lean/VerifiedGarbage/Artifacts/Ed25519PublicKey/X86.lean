@@ -1,24 +1,26 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Verified
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.Rc2
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section
 
 namespace VG.Artifacts.Ed25519PublicKey.X86
 
 def artifacts : List Artifact := [
-  { Spec.Ed25519.publicKeyApi with
-    target := X86.target
-    doc := Spec.Ed25519.publicKeyApi.doc (notes := ["Includes SHA-512 of the seed, RFC 8032 pruning, \
-      and base-point multiplication. The temporary seed hash and scalar are cleared before returning."])
+  Spec.Ed25519.publicKeyApi.artifact X86.target {
+    notes := ["Includes SHA-512 of the seed, RFC 8032 pruning, \
+      and base-point multiplication. The temporary seed hash and scalar are cleared before returning."]
     consts := Impl.Ed25519.X86.combConsts
     code := Impl.Ed25519.X86.PublicKey.publicKey
-    contract := Spec.Ed25519.publicKeyContract (X86.abi.withConsts Impl.Ed25519.X86.combConsts) 280
     stack := 280
-    verified := Proof.Ed25519.X86.PublicKey.publicKey_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Ed25519.X86.PublicKey.publicKey_verified }]
 
 end VG.Artifacts.Ed25519PublicKey.X86

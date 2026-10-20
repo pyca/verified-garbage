@@ -1,18 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedCTRound
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedCTRound
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedMain
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMr
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrRound
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedCTRound
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedMain
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant time of RSA witness policy with a shared prepared round -/
 

@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Blake2.X86.Blake2s
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Blake2.X86.LitS
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # BLAKE2s (RFC 7693) on x86 -/
 
@@ -12,51 +11,19 @@ import VerifiedGarbage.Proof.Sha512.Word64
 namespace VG.Artifacts.Blake2s.X86
 
 def artifacts : List Artifact := [
-  { Spec.Blake2.compressSApi with
-    target := X86.target
-    doc := Spec.Blake2.compressSApi.doc
+  Spec.Blake2.compressSApi.artifact X86.target {
     code := Impl.Blake2.X86.CompressS.compress
-    contract := Spec.Blake2.compressSContract X86.abi
-    verified := Proof.Blake2.X86.S.compress_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Blake2.initSApi with
-    target := X86.target
-    doc := Spec.Blake2.initSApi.doc
+    verified := Proof.Blake2.X86.S.compress_verified },
+  Spec.Blake2.initSApi.artifact X86.target {
     code := Impl.Blake2.X86.Stream.init Spec.Blake2.s
-    contract := Spec.Blake2.initSContract X86.abi
-    verified := Proof.Blake2.X86.S.init_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Blake2.updateSApi with
-    target := X86.target
-    doc := Spec.Blake2.updateSApi.doc
+    verified := Proof.Blake2.X86.S.init_verified },
+  Spec.Blake2.updateSApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch 604 5 (Impl.Blake2.X86.Stream.update 32 "vg_blake2s_compress" Impl.Blake2.X86.CompressS.compress)
-    contract := Spec.Blake2.updateSContract X86.abi (32 + 604)
     stack := 32 + 604
-    verified := Proof.Blake2.X86.S.update_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Blake2.finalizeSApi with
-    target := X86.target
-    doc := Spec.Blake2.finalizeSApi.doc
+    verified := Proof.Blake2.X86.S.update_framed },
+  Spec.Blake2.finalizeSApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch 600 4 (Impl.Blake2.X86.Stream.finalize 32 "vg_blake2s_compress" Impl.Blake2.X86.CompressS.compress)
-    contract := Spec.Blake2.finalizeSContract X86.abi (32 + 600)
     stack := 32 + 600
-    verified := Proof.Blake2.X86.S.finalize_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Blake2.updateSScratchApi with
-    target := X86.target
-    doc := Spec.Blake2.updateSScratchApi.doc
-    code := Impl.Blake2.X86.Stream.update 32 "vg_blake2s_compress" Impl.Blake2.X86.CompressS.compress
-    contract := Spec.Blake2.updateSScratchContract X86.abi 32
-    stack := 32
-    verified := Proof.Blake2.X86.S.update_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Blake2.finalizeSScratchApi with
-    target := X86.target
-    doc := Spec.Blake2.finalizeSScratchApi.doc
-    code := Impl.Blake2.X86.Stream.finalize 32 "vg_blake2s_compress" Impl.Blake2.X86.CompressS.compress
-    contract := Spec.Blake2.finalizeSScratchContract X86.abi 32
-    stack := 32
-    verified := Proof.Blake2.X86.S.finalize_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Blake2.X86.S.finalize_framed }]
 
 end VG.Artifacts.Blake2s.X86

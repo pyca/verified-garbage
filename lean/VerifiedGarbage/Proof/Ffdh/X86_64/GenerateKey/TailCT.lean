@@ -1,13 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Data
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Work
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.PublicOutputCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.TailCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.PublicOutputCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.TailCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.TailCT
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.GenerateKey
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 
 /-! # FFDH on x86-64: successful scalar attempts use the shared exponentiation timing proof -/
 

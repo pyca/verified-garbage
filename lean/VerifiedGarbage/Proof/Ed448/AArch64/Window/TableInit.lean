@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
-public import VerifiedGarbage.Proof.Curve448.AArch64.Copy
-public import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Curve448.AArch64.Copy
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.X448.AArch64.Base.Const
+public import VerifiedGarbage.Impl.Curve448.AArch64
+public import VerifiedGarbage.Proof.X448.AArch64.Mul
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # Ed448 verification on AArch64: the table's first entries

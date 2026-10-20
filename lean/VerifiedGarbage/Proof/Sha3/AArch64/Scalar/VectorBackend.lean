@@ -1,27 +1,31 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Unrolled
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Unrolled
-public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
-meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
-import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlKem
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlKem
-import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlDsa
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlDsa
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.IntervalCases
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
+import Mathlib.Tactic.NormNum.OfScientific
+import Mathlib.Tactic.NormNum.DivMod
+import Mathlib.Tactic.NormNum.Abs
+import Mathlib.Data.Rat.Cast.Order
+import Mathlib.Tactic.NormNum.Pow
+import Mathlib.Data.Finset.Attr
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.TCB.Axioms
-meta import Mathlib.Tactic.IntervalCases
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Variant
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Unrolled
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
+meta import Mathlib.Tactic.NormNum.OfScientific
+meta import Mathlib.Tactic.NormNum.DivMod
+meta import Mathlib.Tactic.NormNum.Abs
+meta import Mathlib.Data.Rat.Cast.Order
+meta import Mathlib.Tactic.NormNum.Pow
+meta import Mathlib.Data.Finset.Attr
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.TCB.Axioms
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
 
 @[expose] public section
 
@@ -189,6 +193,7 @@ def backend : Permutation where
   features := []
   ok := VG.Proof.Sha3.AArch64.Scalar.unrolled_permute_correct
   noFrames := VG.Proof.Sha3.AArch64.Scalar.unrolled_permute_noFrames
+  callerSums := callerSums
   absorbOverrideOk := by intro code h; cases h
   absorbOverrideDepth := by intro code h; cases h
   absorbTaint := absorbTaint

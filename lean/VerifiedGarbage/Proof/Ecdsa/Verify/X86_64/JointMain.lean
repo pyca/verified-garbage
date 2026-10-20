@@ -1,14 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPoints
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTail
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTail
 
 /-! End-to-end correctness of public Jacobian joint verification. -/
 

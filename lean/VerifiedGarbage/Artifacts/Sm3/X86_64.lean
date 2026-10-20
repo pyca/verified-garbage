@@ -1,11 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Sm3.X86_64.Shared
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sm3.X86_64.Lit
 
 /-! # SM3 (GB/T 32905-2016) on x86-64 -/
 
@@ -14,35 +11,19 @@ import VerifiedGarbage.Proof.MdStream.Spec
 namespace VG.Artifacts.Sm3.X86_64
 
 def artifacts : List Artifact := [
-  { Spec.Sm3.compressApi with
-    target := X86_64.target
-    doc := Spec.Sm3.compressApi.doc
+  Spec.Sm3.compressApi.artifact X86_64.target {
     code := Impl.Sm3.X86_64.compress
-    contract := Spec.Sm3.compressContract X86_64.abi
-    verified := Proof.Sm3.X86_64.Shared.compress
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sm3.initApi with
-    target := X86_64.target
-    doc := Spec.Sm3.initApi.doc
+    verified := Proof.Sm3.X86_64.Shared.compress },
+  Spec.Sm3.initApi.artifact X86_64.target {
     code := Impl.Sm3.X86_64.Stream.init
-    contract := Spec.Sm3.initContract X86_64.abi
-    verified := Proof.Sm3.X86_64.Shared.init
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sm3.updateApi with
-    target := X86_64.target
-    doc := Spec.Sm3.updateApi.doc
+    verified := Proof.Sm3.X86_64.Shared.init },
+  Spec.Sm3.updateApi.artifact X86_64.target {
     code := Impl.StackScratch.X86_64.withStackScratch 168 .r8 Impl.Sm3.X86_64.Stream.update
-    contract := Spec.Sm3.updateContract X86_64.abi (8 + 168)
     stack := 8 + 168
-    verified := Proof.Sm3.X86_64.Shared.update
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sm3.finalizeApi with
-    target := X86_64.target
-    doc := Spec.Sm3.finalizeApi.doc
+    verified := Proof.Sm3.X86_64.Shared.update },
+  Spec.Sm3.finalizeApi.artifact X86_64.target {
     code := Impl.StackScratch.X86_64.withStackScratch 168 .rcx Impl.Sm3.X86_64.Stream.finalize
-    contract := Spec.Sm3.finalizeContract X86_64.abi (8 + 168)
     stack := 8 + 168
-    verified := Proof.Sm3.X86_64.Shared.finalize
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Sm3.X86_64.Shared.finalize }]
 
 end VG.Artifacts.Sm3.X86_64

@@ -1,15 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Sse
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
 public import VerifiedGarbage.Proof.Gcm.X86_64.Rev
-public import VerifiedGarbage.Spec.Gcm
-public import VerifiedGarbage.TCB.X86_64.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # GHASH with PCLMULQDQ: what the instruction groups compute, as bits
@@ -151,12 +150,54 @@ theorem ldrev_ok (x : XReg) (b : Reg) (d : Nat) (s : State) (hx : x ≠ .xmm0)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [hr, ite_false]
 
-/-- A 128-bit constant into `x`. -/
-theorem const_ok (x : XReg) (c : BitVec 128) (s : State) (hx : x ≠ .xmm12) :
+/-- Each of `consts` is the two words of `constsTable` at its index. -/
+theorem consts_words {c : BitVec 128} (hc : c ∈ Impl.Gcm.X86_64.Pclmul.consts) :
+    Impl.Gcm.X86_64.Pclmul.constsTable.getD (2 * Impl.Gcm.X86_64.Pclmul.consts.idxOf c + 1) 0 ++
+      Impl.Gcm.X86_64.Pclmul.constsTable.getD (2 * Impl.Gcm.X86_64.Pclmul.consts.idxOf c) 0 = c := by
+  simp only [Impl.Gcm.X86_64.Pclmul.consts, List.mem_cons, List.not_mem_nil, or_false] at hc
+  rcases hc with rfl | rfl | rfl <;> decide
+
+theorem consts_idx {c : BitVec 128} (hc : c ∈ Impl.Gcm.X86_64.Pclmul.consts) :
+    Impl.Gcm.X86_64.Pclmul.consts.idxOf c < 3 :=
+  List.idxOf_lt_length_of_mem hc
+
+/-- A 128-bit constant, one of `consts`, into `x`. -/
+theorem const_ok (x : XReg) (c : BitVec 128) (s : State) (_hx : x ≠ .xmm12)
+    (hc : c ∈ Impl.Gcm.X86_64.Pclmul.consts := by decide) :
     WP isa (.block (Impl.Gcm.X86_64.Pclmul.const x c)) s fun s' =>
       s'.xmm x = c ∧ Only [x, .xmm12] s s' := by
+  have hi := consts_idx hc
+  let t : State := s.setReg .rax (s.syms Impl.Gcm.X86_64.Pclmul.constsName)
+  have hrax : t.gpr .rax = t.syms Impl.Gcm.X86_64.Pclmul.constsName := by
+    simp only [t, RegUpd.gpr_setReg_self]; rfl
+  have hoff : (t.ea (at_ .rax (16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c))) - t.gpr (at_ .rax (16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c))).base).toNat = 16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) := by
+    rw [ea_at, show (at_ .rax (16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c))).base = .rax from rfl, Offset.add_sub_cancel_left, BitVec.ofInt_natCast,
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  have hb : t.gpr (at_ .rax (16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c))).base = t.syms Impl.Gcm.X86_64.Pclmul.constsName := hrax
+  rw [hb] at hoff
+  have hlen : Impl.Gcm.X86_64.Pclmul.constsTable.length = 6 := by decide
+  have hx8 : exec (.movdquTbl x (at_ .rax (16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c))) Impl.Gcm.X86_64.Pclmul.constsName
+      Impl.Gcm.X86_64.Pclmul.constsTable) t =
+      some (t.setXmm x (Impl.Gcm.X86_64.Pclmul.constsTable.getD (16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) / 8 + 1) 0 ++
+        Impl.Gcm.X86_64.Pclmul.constsTable.getD (16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) / 8) 0)) := by
+    simp only [exec, hoff, hb, hlen, show 16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) % 8 = 0 by omega, show 16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) / 8 + 2 ≤ 6 by omega,
+      and_self, ite_true, Nat.add_zero]
+  rw [show 16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) / 8 = 2 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) by omega, consts_words hc] at hx8
+  show WP isa (.block [.leaSym .rax Impl.Gcm.X86_64.Pclmul.constsName, .movdquTbl x
+      (at_ .rax (16 * Impl.Gcm.X86_64.Pclmul.consts.idxOf c)) Impl.Gcm.X86_64.Pclmul.constsName
+      Impl.Gcm.X86_64.Pclmul.constsTable]) s _
+  refine WP.block_cons_iff.mpr ⟨t, rfl, WP.block_cons_iff.mpr ⟨_, hx8, WP.block_nil (M := isa) ?_⟩⟩
+  refine ⟨RegUpd.xmm_setXmm_self _ _ _, fun r hr => ?_, rfl, rfl, rfl, fun r hr => ?_⟩
+  · simp only [t, RegUpd.gpr_setXmm, RegUpd.gpr_setReg_of_ne _ _ hr]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [t, RegUpd.xmm_setXmm_of_ne _ _ hr.1, RegUpd.xmm_setReg]
+
+/-- A 128-bit constant into `x`, from immediates. -/
+theorem constImm_ok (x : XReg) (c : BitVec 128) (s : State) (hx : x ≠ .xmm12) :
+    WP isa (.block (Impl.Gcm.X86_64.Pclmul.constImm x c)) s fun s' =>
+      s'.xmm x = c ∧ Only [x, .xmm12] s s' := by
   apply WP.of_runBlock
-  simp only [Impl.Gcm.X86_64.Pclmul.const]
+  simp only [Impl.Gcm.X86_64.Pclmul.constImm]
   simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
     isa, State.setXmm, State.setReg, hx, movq_const, Option.some.injEq,
     exists_eq_left']

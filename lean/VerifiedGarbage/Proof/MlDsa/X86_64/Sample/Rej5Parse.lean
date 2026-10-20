@@ -2,11 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Parse
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt5
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

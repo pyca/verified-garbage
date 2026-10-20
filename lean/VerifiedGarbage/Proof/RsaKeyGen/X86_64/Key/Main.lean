@@ -1,14 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Entry
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
-public import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.DOdd
+import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
 import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Crt
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.DPart
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Lcm
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Front
+import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
+import VerifiedGarbage.Spec.RsaKeyGen
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ## Out -/
 

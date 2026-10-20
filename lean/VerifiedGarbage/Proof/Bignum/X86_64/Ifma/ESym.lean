@@ -1,12 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
-public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # Straight-line `EVEX.256` code, lane by lane
@@ -19,8 +14,9 @@ in the quadwords, general-purpose registers and memory before it, and
 `run_ok` proves the machine agrees. Besides the instructions of a
 step of the multiplication (`vpxorq` of a register with itself, `vpaddq`,
 `vpsrlq`, `vmovq` from `rax` and from a register, `vpbroadcastq`, `valignq`
-and the memory form of `vpmadd52luq` and `vpmadd52huq`), it runs loads of
-`rax` from memory (`AmmSym.G`).
+and the memory form of `vpmadd52luq` and `vpmadd52huq`) and of the table's
+reading (`vpandq`, `vporq`, and `vpternlogq` with `0xF8`, `a ||| (b &&& c)`),
+it runs loads of `rax` from memory (`AmmSym.G`).
 -/
 
 @[expose] public section
@@ -151,6 +147,30 @@ theorem qword256_madd (h : Bool) (dv av v : BitVec 256) {k : Nat} (hk : k < 4) :
     simp only [Nat.reduceDiv, Nat.reduceMul, Nat.reduceMod, lane_app0, lane_app1] <;>
     exact qword_madd52 _ _ _ _ (by decide)
 
+/-- `vpternlogq` with `0xF8`: `a ||| (b &&& c)`. -/
+theorem ternlogF8 (a b c : BitVec 128) : ternlog a b c 0xF8 = a ||| (b &&& c) := by
+  simp only [ternlog, List.range, List.range.loop, List.foldl, show (0xF8 : BitVec 8).getLsbD 0 = false from rfl,
+    show (0xF8 : BitVec 8).getLsbD 1 = false from rfl, show (0xF8 : BitVec 8).getLsbD 2 = false from rfl,
+    show (0xF8 : BitVec 8).getLsbD 3 = true from rfl, show (0xF8 : BitVec 8).getLsbD 4 = true from rfl,
+    show (0xF8 : BitVec 8).getLsbD 5 = true from rfl, show (0xF8 : BitVec 8).getLsbD 6 = true from rfl,
+    show (0xF8 : BitVec 8).getLsbD 7 = true from rfl, Nat.testBit, Nat.reduceShiftRight, Nat.reduceAnd,
+    Nat.reduceBNe, Bool.false_eq_true, ↓reduceIte]
+  apply BitVec.eq_of_getLsbD_eq; intro j hj
+  simp only [BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not,
+    show (0 : BitVec 128).getLsbD j = false from BitVec.getLsbD_zero, hj, decide_true, Bool.true_and]
+  generalize a.getLsbD j = x; generalize b.getLsbD j = y; generalize c.getLsbD j = z
+  revert x y z; decide
+
+theorem qword256_ternF8 (dv av bv : BitVec 256) {k : Nat} (hk : k < 4) :
+    qword256 (ternlog (lane256 dv 1) (lane256 av 1) (lane256 bv 1) 0xF8 ++
+      ternlog (lane256 dv 0) (lane256 av 0) (lane256 bv 0) 0xF8) k =
+      qword256 dv k ||| (qword256 av k &&& qword256 bv k) := by
+  rw [qword256_eq, ← qword_lane256 dv, ← qword_lane256 av, ← qword_lane256 bv]
+  simp only [lane256]
+  rcases VG.X86_64.cases4 hk with rfl | rfl | rfl | rfl <;>
+    simp only [Nat.reduceDiv, Nat.reduceMul, Nat.reduceMod, lane_app0, lane_app1, ternlogF8, qword_or,
+      qword_and]
+
 /-! ## Terms -/
 
 /-- A quadword of a vector register, in terms of the start. -/
@@ -215,6 +235,8 @@ def ESym.eop (σ : ESym) : EOp → Option ESym
   | .vmovq d r => if r = .rax then some (σ.set d (.lane0 σ.rax)) else none
   | .vmovqx d a => some (σ.set d (.low (σ.reg (vi a))))
   | .valignq d a b n => if n.toNat < 4 then some (σ.set d (.align (σ.reg (vi a)) (σ.reg (vi b)) n.toNat)) else none
+  | .vpternlogq d a b n =>
+    if n = 0xF8 then some (σ.set d (.or (σ.reg (vi d)) (.and (σ.reg (vi a)) (σ.reg (vi b))))) else none
   | _ => none
 
 /-- One instruction, with `lim b` the bytes readable from each base `b`
@@ -364,6 +386,16 @@ theorem sstep_ok {lim : Reg → Nat} {s₀ : State} (hc : Ctx lim s₀) {σ σ' 
         split
         · rw [hR b _ (by omega)]; rfl
         · rw [hR a _ (by omega)]; rfl
+      · cases e
+    · rename_i d a b n
+      split at e
+      · rename_i hn
+        cases e
+        subst hn
+        refine h.set fun k hk => ?_
+        rw [qword256_ternF8 _ _ _ hk]
+        simp only [T.eval]
+        rw [← qv, ← qv, ← qv, hR d k hk, hR a k hk, hR b k hk]
       · cases e
     · cases e
   · rename_i m

@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
-import VerifiedGarbage.Spec.MlKem.Contract
-import VerifiedGarbage.TCB.X86.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Spec.MlKem.Contract
+import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha256.X86.Lit
+import VerifiedGarbage.Proof.Sha3.X86.Lit
 
 /-!
 # ML-KEM-768 on x86 (32-bit): `vg_mlkem768_check_ek`

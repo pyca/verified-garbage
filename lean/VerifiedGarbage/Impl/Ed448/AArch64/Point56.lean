@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.X448.AArch64.Base
-import VerifiedGarbage.Impl.X448.AArch64.Field56
 public import VerifiedGarbage.Spec.Ed448.Point56
 
 /-!

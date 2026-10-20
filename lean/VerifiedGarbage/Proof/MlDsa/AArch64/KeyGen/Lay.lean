@@ -1,28 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
-public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.MlDsa.DecideAt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Base
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallPack
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-public import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-public import VerifiedGarbage.Proof.MlKem.AArch64.Common
-public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Top
+public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.KeyGen
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+public import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # ML-DSA key generation on AArch64: parameters and buffers
@@ -178,10 +166,7 @@ theorem sepB_kg {p : Params} {r r' : Reg} (h : r ≠ r') (hr : r ∈ [Reg.x25, .
 
 /-- Unfolds the checks of pointers into the layout into arithmetic, then
 `omega` (in each case of `η`). -/
-syntax "lay" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| lay) => `(tactic| lay [])
-  | `(tactic| lay [$ls,*]) => `(tactic| plain_simp_names (
+tactic_template "lay" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                        set_option linter.unusedSimpArgs false in
                        simp (config := { decide := true }) only [VG.Proof.MlDsa.AArch64.keepB,
                          VG.Proof.MlDsa.AArch64.sepB_same, VG.Proof.MlDsa.AArch64.KeyGen.sepB_kg,
@@ -198,13 +183,13 @@ macro_rules
                          VG.Impl.MlDsa.AArch64.KeyGen.oSS, VG.Impl.MlDsa.AArch64.KeyGen.SV, VG.Impl.MlDsa.AArch64.KeyGen.oT0, $ls,*]
                        and_intros <;> omega_arith))
 
+tactic_template "lay" : tactic => `(tactic| lay [])
+
 /-- A check about the layout that mentions no variable but the parameter set and
 bounded indices, decided for each parameter set (`decide_at`): cheaper than
 `lay`, which unfolds it into arithmetic on the parameters for `omega`, unless
 there are many indices to try. -/
-syntax "layd" : tactic
-macro_rules
-  | `(tactic| layd) => `(tactic| (
+tactic_template "layd" : tactic => `(tactic| (
       have hmem := (‹VG.Proof.MlDsa.AArch64.KeyGen.PFacts _›).mem; decide_at hmem))
 
 end VG.Proof.MlDsa.AArch64.KeyGen

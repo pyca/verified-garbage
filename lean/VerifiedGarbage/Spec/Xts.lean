@@ -25,7 +25,8 @@ The functions implemented in assembly encrypt or decrypt whole blocks with
 continue from (`next`): XTS of the first `k + 1` blocks is XTS of the first
 `k`, followed by the block with the next tweak. Their contracts are in
 `Spec/Xts/Contract.lean`; computing `T` and ciphertext stealing are the
-caller's.
+caller's. The contracts there of the functions on a whole data unit are
+`aesXtsEncrypt` and `aesXtsDecrypt` themselves.
 -/
 
 @[expose] public section

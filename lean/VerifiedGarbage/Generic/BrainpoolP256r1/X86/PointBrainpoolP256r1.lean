@@ -1,11 +1,85 @@
 module
 
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
-public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Proof.Weierstrass.X86.PointBrainpoolP256r1
+import VerifiedGarbage.Proof.Weierstrass.X86.PointBrainpoolP256r1
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.BrainpoolP256r1
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P192
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P224
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P256
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P384
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointBrainpoolP256r1
+import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.NativeTaint
+public import VerifiedGarbage.Proof.Framework.NativeTaintCore
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Mmx
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Mont.X86.Csub
+public import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Mont.X86.P256Red
+public import VerifiedGarbage.Proof.Mont.X86.RedRow
+public import VerifiedGarbage.Proof.Mont.X86.Row
+public import VerifiedGarbage.Proof.Mont.X86.SparseShift
+public import VerifiedGarbage.Proof.Mont.X86.SparseStep
+public import VerifiedGarbage.Proof.Mont.X86.Step
+public import VerifiedGarbage.Proof.Rc2.Memory32
+public import VerifiedGarbage.Proof.Weierstrass.InvToM
+public import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareArithmetic
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareRed
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointCurves
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointVerified
+public import VerifiedGarbage.Proof.X25519.Field
+public import VerifiedGarbage.Proof.X25519.X86.Arith
+public import VerifiedGarbage.Proof.X25519.X86.Fold
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.NativeTaint
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Mont.X86.Csub
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Mont.X86.P256Red
+import VerifiedGarbage.Proof.Mont.X86.RedRow
+import VerifiedGarbage.Proof.Mont.X86.Row
+import VerifiedGarbage.Proof.Mont.X86.SparseShift
+import VerifiedGarbage.Proof.Mont.X86.SparseStep
+import VerifiedGarbage.Proof.Mont.X86.Step
+import VerifiedGarbage.Proof.Rc2.Memory32
+import VerifiedGarbage.Proof.Weierstrass.InvToM
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
+import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
+import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
+import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
+import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareArithmetic
+import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareRed
+import VerifiedGarbage.Proof.Weierstrass.X86.PointCurves
+import VerifiedGarbage.Proof.Weierstrass.X86.PointVerified
+import VerifiedGarbage.Proof.X25519.Field
+import VerifiedGarbage.Proof.X25519.X86.Arith
+import VerifiedGarbage.Proof.X25519.X86.Fold
 
 /-!
 # brainpoolP256r1's point addition and doubling on x86 (32-bit)
@@ -31,21 +105,15 @@ def notes : List String := ["The function saves `ebx` in its own working space, 
   `eax`, `ecx` and `edx` (and `ebx`, which it restores)."]
 
 def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.BrainpoolP256r1.curve) : List Artifact := [
-  { Spec.Weierstrass.Point.brainpoolp256r1.addApi with
-    target := X86.target
-    doc := Spec.Weierstrass.Point.brainpoolp256r1.addApi.doc (notes := notes)
+  Spec.Weierstrass.Point.brainpoolp256r1.addApi.artifact X86.target {
+    notes := notes
     code := Impl.Weierstrass.X86.Point.pointAdd Spec.Weierstrass.Point.brainpoolp256r1
-    contract := Spec.Weierstrass.Point.brainpoolp256r1.addContract X86.abi 20
     stack := 20
-    verified := brainpoolp256r1_add_verified (fermat_of_law h.law)
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Weierstrass.Point.brainpoolp256r1.doubleApi with
-    target := X86.target
-    doc := Spec.Weierstrass.Point.brainpoolp256r1.doubleApi.doc (notes := notes)
+    verified := brainpoolp256r1_add_verified (fermat_of_law h.law) },
+  Spec.Weierstrass.Point.brainpoolp256r1.doubleApi.artifact X86.target {
+    notes := notes
     code := Impl.Weierstrass.X86.Point.pointDouble Spec.Weierstrass.Point.brainpoolp256r1
-    contract := Spec.Weierstrass.Point.brainpoolp256r1.doubleContract X86.abi 20
     stack := 20
-    verified := brainpoolp256r1_double_verified (fermat_of_law h.law)
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := brainpoolp256r1_double_verified (fermat_of_law h.law) }]
 
 end VG.Generic.BrainpoolP256r1.X86.PointBrainpoolP256r1

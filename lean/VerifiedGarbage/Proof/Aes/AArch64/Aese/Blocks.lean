@@ -1,16 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
-meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Dec
-meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Dec
 public import VerifiedGarbage.Proof.Aes.AArch64.Blocks
-public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
+meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Dec
 meta import VerifiedGarbage.Proof.Aes.AArch64.Blocks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES on whole blocks with the Armv8 Cryptographic Extension
@@ -524,7 +531,7 @@ theorem bcorrect (B : BlockFn) {setup : List Instr} {s₀ : State} (hp : BPre s�
 theorem blocks_correct (B : BlockFn) {setup : List Instr}
     (hs : ∀ s₀, BPre s₀ → WP isa (.block setup) s₀ fun s =>
       BInv B s₀ 0 0 s ∧ s.gpr .x13 = BitVec.ofNat 64 (bnb s₀ / 8))
-    (hg : (blocks setup B.f).allInstrs (fun i => preserved.all fun r => dstOf i != some r) = true)
+    (hg : (blocks setup B.f).allInstrs (fun i => preserved.all fun r => !clobbers i r) = true)
     (hnc : (blocks setup B.f).noCalls = true) (hv : (blocks setup B.f).allInstrs keepsV = true)
     (s : State) (hp : (Proof.Aes.blocksAArch64 B.F).pre s) :
     ∃ t s', Exec isa (blocks setup B.f) s t s' ∧ abiPreserved s s' ∧

@@ -1,30 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
-import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Contract
 import VerifiedGarbage.Proof.P384.Prime
-meta import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+import VerifiedGarbage.Proof.P384.Point
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Contract
 meta import VerifiedGarbage.Proof.P384.Prime
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+meta import VerifiedGarbage.Proof.P384.Point
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 
 /-!
 # ECDSA over P-384 on x86-64 with BMI2 and ADX: `Verified`

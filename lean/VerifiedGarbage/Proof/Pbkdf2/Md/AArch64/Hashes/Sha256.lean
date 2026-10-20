@@ -1,29 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+public import VerifiedGarbage.Proof.Sha256.AArch64.OneShot
+public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
 meta import VerifiedGarbage.Proof.Sha256.AArch64.Shared
-public import VerifiedGarbage.Proof.Sha256.AArch64.Variant
-meta import VerifiedGarbage.Proof.Sha256.AArch64.Variant
-import VerifiedGarbage.Proof.Sha256.Md
-meta import VerifiedGarbage.Proof.Sha256.Md
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-meta import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
-import VerifiedGarbage.Proof.Sha512.Word64
+meta import VerifiedGarbage.Proof.Sha256.AArch64.OneShot
 meta import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
-meta import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
 
 /-!
 # SHA-256 on AArch64, as a Merkle–Damgård hash function
@@ -82,6 +74,10 @@ theorem coreOK : CoreOK coreH := by
     hfin := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
     fitI := ?_
     fitF := ?_ }
+  taint_decide_all
+
+theorem anyOK : Any.AnyOK coreH := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
   taint_decide_all
 
 /-- The representation moves with the state's bytes. -/
@@ -168,6 +164,8 @@ def ok : HashOK (hash v) where
     by simp only [hash] <;> decide, by simp only [hash] <;> decide⟩
   L := by simp only [hash] <;> decide
   W := by simp only [hash] <;> decide
+  hPad := by simp only [hash] <;> decide
+  L816 := by simp only [hash] <;> decide
 
 theorem satI : ∃ s, (Spec.Hmac.sha256I.initScratchContract AArch64.abi 16).pre s := by
   inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.sha256I, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
@@ -181,6 +179,10 @@ theorem satT : ∃ s, (Spec.Hmac.sha256I.iterateContract AArch64.abi).pre s := b
   inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Hmac.sha256I, Spec.Pbkdf2.iterateContract,
     Spec.Pbkdf2.iterateSig, Spec.Hmac.sha256S, Spec.Hmac.sha256, AArch64.abi, AArch64.argRegs]
     using Pbkdf2.AArch64.iterSat 96 32 104
+
+theorem satA : ∃ s, (Any.anyScratchContract Spec.Hmac.sha256I.S Spec.Hmac.sha256I.initAnyKeyScratch).pre s := by
+  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha256I, Spec.Hmac.initScratchSig,
+    Spec.Hmac.initPost, Spec.Hmac.sha256S, Spec.Hmac.sha256, AArch64.abi, AArch64.argRegs] using initSat 96 200
 
 theorem satP : ∃ s, (Spec.Hmac.sha256I.pbkdf2ScratchContract AArch64.abi 16).pre s := by
   inst_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha256I,
@@ -221,6 +223,13 @@ def stream : List StreamFn := [
     contract := Spec.Sha256.finalizeScratchContract AArch64.abi 16
     stack := 16
     verified := Proof.Sha256.AArch64.Shared.finalizeScratch_of v.finalize_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { api := Spec.Sha256.digest256Api
+    code := Proof.Sha256.AArch64.oneShotWith Impl.Sha256.AArch64.Stream.out256 Spec.Sha256.H0 v.name v.code
+    contract := Spec.Sha256.digestContract AArch64.abi 32 Spec.Sha256.hash Proof.Sha256.AArch64.OneShot.stack
+    stack := Proof.Sha256.AArch64.OneShot.stack
+    verified := (v.oneShot_verified (by decide) Proof.Sha256.AArch64.Stream.shape.toD v.oneShot256).of_implies
+        (Proof.Sha256.AArch64.OneShot.implies (by decide) Proof.Sha256.AArch64.OneShot.hash_take)
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 /-- RSASSA-PSS's taint checks of the pieces that depend on the hash function. -/
@@ -231,9 +240,14 @@ theorem pss_sha256 : Proof.RsaPss.AArch64.PssChecks coreH.P 32 := by
 /-- Every construction follows the registered compression backend. -/
 def variant : MdHash :=
   { MdHash.of (ok v) coreOK ⟨Spec.Mgf1.sha256, by simp [mdHashes], fun _ => rfl, rfl⟩ pss_sha256 rfl rfl satI satF satT satP (by decide)
+    anyOK satA (by decide) Proof.Hmac.sha256_local
+    (by
+      unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by
       unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by decide)
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))

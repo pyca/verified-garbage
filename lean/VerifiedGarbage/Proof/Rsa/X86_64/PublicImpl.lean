@@ -1,14 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-public import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 
 /-! # A precomputed public operation for verified RSA callers -/
 
@@ -28,7 +22,6 @@ structure PublicImpl where
   nosp : NoSp code
   depth : code.depth = 0
   spSafe : code.all (fun i => !isa.writesSp i) = true
-  mxSafe : code.allInstrs (fun i => !loadsMxcsr i) = true
   suffix : String
   features : List String
 

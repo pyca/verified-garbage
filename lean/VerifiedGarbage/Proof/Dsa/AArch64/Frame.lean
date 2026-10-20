@@ -2,15 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Product
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
 public import VerifiedGarbage.Proof.Bignum.CrtExp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+import Mathlib.Tactic.Push
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Framing the DSA child workspaces -/
 

@@ -1,10 +1,11 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.SealBody
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.X86_64.SealBody
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinish
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_seal`

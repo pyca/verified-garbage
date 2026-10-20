@@ -3,13 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # ML-KEM on AArch64: vectors
@@ -368,7 +364,7 @@ end
 
 /-- Whether an instruction writes a vector register. -/
 def writesV : Instr → Bool
-  | .vop _ | .ldrq .. => true
+  | .vop _ | .ldrq .. | .ldrqTbl .. => true
   | _ => false
 
 theorem exec_v {i : Instr} (hi : writesV i = false) {s s' : State} (h : exec i s = some s') :

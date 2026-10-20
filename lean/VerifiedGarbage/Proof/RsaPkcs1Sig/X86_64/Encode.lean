@@ -3,12 +3,8 @@ module
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Encode
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.Rsa.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # EMSA-PKCS1-v1_5 encoding on x86-64: correctness

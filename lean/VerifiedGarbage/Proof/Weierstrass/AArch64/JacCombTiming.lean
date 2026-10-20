@@ -1,18 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacFinishTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombSum
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacFinishTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacComb
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 @[expose] public section
 

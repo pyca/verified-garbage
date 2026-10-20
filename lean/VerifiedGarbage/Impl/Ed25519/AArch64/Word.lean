@@ -89,13 +89,16 @@ def rowFirst (a b0 b1 b2 b3 t0 t1 t2 t3 t4 : Reg) : List Instr :=
     .umulh .x2 a b0, .umulh .x8 a b1, .umulh .x9 a b2, .umulh .x16 a b3,
     .adds .x t1 t1 .x2, .adcs .x t2 t2 .x8, .adcs .x t3 t3 .x9, .adcs .x t4 .x16 .x10]
 
-/-- The eight-word product of the field elements at `a` and `b`, with x10 = 0. -/
-def mulWide (a b : Nat) : List Instr :=
-  loads b .x12 .x13 .x14 .x15 ++
-    [ld .x3 a] ++ rowFirst .x3 .x12 .x13 .x14 .x15 .x4 .x5 .x6 .x7 .x21 ++
+/-- The eight-word product of the field element at `a` and the words x12–x15,
+with x10 = 0. -/
+def mulRows (a : Nat) : List Instr :=
+  [ld .x3 a] ++ rowFirst .x3 .x12 .x13 .x14 .x15 .x4 .x5 .x6 .x7 .x21 ++
     [ld .x3 (a + 8)] ++ rowAcc .x3 .x12 .x13 .x14 .x15 .x5 .x6 .x7 .x21 .x22 ++
     [ld .x3 (a + 16)] ++ rowAcc .x3 .x12 .x13 .x14 .x15 .x6 .x7 .x21 .x22 .x23 ++
     [ld .x3 (a + 24)] ++ rowAcc .x3 .x12 .x13 .x14 .x15 .x7 .x21 .x22 .x23 .x24
+
+/-- The eight-word product of the field elements at `a` and `b`, with x10 = 0. -/
+def mulWide (a b : Nat) : List Instr := loads b .x12 .x13 .x14 .x15 ++ mulRows a
 
 /-- The products `aᵢ aⱼ` (`i < j`) of the words x12–x15, at their word
 `i + j` of x4–x7, x21–x24 less one: into x5–x7, x21–x23, with x10 = 0. -/
@@ -126,16 +129,45 @@ def sqrDiag : List Instr :=
 def sqrWide (a : Nat) : List Instr :=
   loads a .x12 .x13 .x14 .x15 ++ sqrCross ++ sqrDouble ++ sqrDiag
 
+/-- 38 times the high half x21–x24 of a product, with x11 = 38 and x10 = 0:
+the low halves added to x4–x7 in one carry chain (its carry into x20), the
+high halves of the last two products added to x7 and x20, and those of the
+first two left in x2 and x8, for `fold255` to add. -/
+def reduceLo : List Instr :=
+  [.mul .x .x2 .x11 .x21, .adds .x .x4 .x4 .x2, .mul .x .x8 .x11 .x22, .adcs .x .x5 .x5 .x8,
+    .mul .x .x9 .x11 .x23, .adcs .x .x6 .x6 .x9, .mul .x .x16 .x11 .x24, .adcs .x .x7 .x7 .x16,
+    .adcs .x .x20 .x10 .x10,
+    .umulh .x2 .x11 .x21, .umulh .x8 .x11 .x22, .umulh .x9 .x11 .x23, .umulh .x16 .x11 .x24,
+    .adds .x .x7 .x7 .x9, .adcs .x .x20 .x20 .x16]
+
+/-- Fold the bits of x4–x7, x20 from bit 255 up into the low bits, times 19
+(`2²⁵⁵ = 19` modulo p), in the carry chain that also adds x2 and x8 one and
+two words up; x10 = 0. Bit 255 goes out of `x7 + x7` into the carry, which
+`x20 + x20` takes in. The result is below `2²⁵⁵ + 2¹³⁵`. -/
+def fold255 : List Instr :=
+  [.adds .x .x16 .x7 .x7, .adc .x .x9 .x20 .x20, .lsr .x .x7 .x16 1, .movz .w .x11 19 0,
+    .mul .x .x9 .x9 .x11, .adds .x .x4 .x4 .x9, .adcs .x .x5 .x5 .x2, .adcs .x .x6 .x6 .x8,
+    .adcs .x .x7 .x7 .x10]
+
 /-- Reduce the eight words x4–x7, x21–x24 modulo p into x4–x7, with x10 = 0:
-add 38 times the high half to the low half, then fold the carry word. -/
+add 38 times the high half to the low half, then fold the bits from 255 up. -/
 def reduceWide : List Instr :=
-  [.movz .w .x11 38 0] ++ rowAcc .x11 .x21 .x22 .x23 .x24 .x4 .x5 .x6 .x7 .x20 ++ fold
+  [.movz .w .x11 38 0] ++ reduceLo ++ fold255
 
 def fieldMul (o a b : Nat) : List Instr :=
   [.movz .w .x10 0 0] ++ mulWide a b ++ reduceWide ++ store4 o
 
 def fieldSqr (o a : Nat) : List Instr :=
   [.movz .w .x10 0 0] ++ sqrWide a ++ reduceWide ++ store4 o
+
+/-- x4–x7 into x12–x15. -/
+def movB : List Instr := [mov .x12 .x4, mov .x13 .x5, mov .x14 .x6, mov .x15 .x7]
+
+/-- `[o] := [a] · [b]²`: the square of `[b]` goes from the registers it is reduced
+into straight to the product's operand registers, without a store and a load
+between them. -/
+def fieldSqrMul (o a b : Nat) : List Instr :=
+  [.movz .w .x10 0 0] ++ sqrWide b ++ reduceWide ++ movB ++ mulRows a ++ reduceWide ++ store4 o
 
 def fieldAddWords (a b : Nat) : List Instr :=
   [ld .x4 a, ld .x9 b, .adds .x .x4 .x4 .x9,
@@ -164,6 +196,25 @@ def borrow38 : List Instr :=
 def fieldSub (o a b : Nat) : List Instr :=
   [.movz .w .x10 0 0, .movz .w .x11 38 0] ++ fieldSubWords a b ++ borrow38 ++
     [.sub .x .x4 .x4 .x8] ++ store4 o
+
+/-- x8 (0 or 38) into x4–x7 with x10 = 0, once: when `fieldAddWords`' operands
+sum below `2²⁵⁷ − 38`, nothing carries out of it. -/
+def carry38Once : List Instr :=
+  [.adds .x .x4 .x4 .x8, .adcs .x .x5 .x5 .x10, .adcs .x .x6 .x6 .x10, .adcs .x .x7 .x7 .x10]
+
+/-- `[o] := [a] + [b]` with one fold of the carry, for operands that sum below
+`2²⁵⁷ − 38` (the stored sum is below `2²⁵⁶`, not necessarily reduced). -/
+def fieldAdd1 (o a b : Nat) : List Instr :=
+  [.movz .w .x10 0 0, .movz .w .x11 38 0] ++ fieldAddWords a b ++ carry38Once ++ store4 o
+
+/-- x8 (0 or 38) out of x4–x7 with x10 = 0, once: when `fieldSubWords`'
+subtrahend is below `2²⁵⁶ − 38`, nothing borrows out of it. -/
+def borrow38Once : List Instr :=
+  [.subs .x .x4 .x4 .x8, .sbcs .x .x5 .x5 .x10, .sbcs .x .x6 .x6 .x10, .sbcs .x .x7 .x7 .x10]
+
+/-- `[o] := [a] − [b]` with one fold of the borrow, for `[b]` below `2²⁵⁶ − 38`. -/
+def fieldSub1 (o a b : Nat) : List Instr :=
+  [.movz .w .x10 0 0, .movz .w .x11 38 0] ++ fieldSubWords a b ++ borrow38Once ++ store4 o
 
 def low63 : BitVec 64 := 0x7fffffffffffffff
 

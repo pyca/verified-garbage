@@ -1,11 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Seed.AArch64.ExpandKey
+public import VerifiedGarbage.Proof.Framework.Block
 
-public import VerifiedGarbage.Proof.Seed.AArch64.KeyRounds
 import VerifiedGarbage.Proof.Seed.Memory
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Seed.AArch64.KeyRound
+import VerifiedGarbage.Proof.Seed.AArch64.Steps
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Seed.SboxLit
+import VerifiedGarbage.Proof.Framework.AArch64.Straight
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Loading the key on AArch64

@@ -1,12 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.Loops
+import VerifiedGarbage.Proof.AesGcm.Arm.Loops
 public import VerifiedGarbage.Impl.AesGcm.Arm.SealGather
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Spec.Aes
 import VerifiedGarbage.Proof.Cmac.Stream
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, ARMv7: copying a slice
@@ -158,7 +168,7 @@ theorem and3 {n : Nat} (hn : n < 2 ^ 32) : BitVec.ofNat 32 n &&& BitVec.ofNat 32
 
 /-- A run keeps a register no instruction of the code writes. -/
 theorem WP.keepGpr {c : Prog isa} {s : State} {Q : State → Prop} {r : Reg} (h : WP isa c s Q)
-    (hc : ∀ i ∈ instrs c, dstOf i ≠ some r) (hn : c.noCalls = true) :
+    (hc : ∀ i ∈ instrs c, clobbers i r = false) (hn : c.noCalls = true) :
     WP isa c s fun s' => Q s' ∧ s'.gpr r = s.gpr r := by
   obtain ⟨t, s', he, hq⟩ := h
   exact ⟨t, s', he, hq, Exec.gpr hc he (.inl hn)⟩

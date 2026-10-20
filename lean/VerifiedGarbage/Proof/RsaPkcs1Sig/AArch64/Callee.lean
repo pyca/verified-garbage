@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 public import VerifiedGarbage.Proof.Framework.Sig
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # The RSA operations the signatures call, on AArch64
@@ -115,7 +113,7 @@ structure PubOk (K : Nat) (t : State) : Prop where
   h7 : (t.gpr .x7).toNat = (t.gpr .x3).toNat
   he1 : 1 ≤ (t.gpr .x5).toNat
   he2 : (t.gpr .x5).toNat ≤ (t.gpr .x3).toNat
-  hs : Spec.Rsa.scratchWords (t.gpr .x3).toNat ≤ (stackArg t 1).toNat
+  hs : Spec.Rsa.publicScratchWords (t.gpr .x3).toNat ≤ (stackArg t 1).toNat
 
 theorem PubOk.pre {K : Nat} {t : State} (hK : 0 < K) (h : PubOk K t) :
     (Spec.Rsa.publicCheckedContract abi K).pre (t.callEntry.withRegions (pubRd t) (pubWr t)) := by
@@ -197,7 +195,7 @@ structure PdOk (K : Nat) (t : State) : Prop where
   h7 : (t.gpr .x7).toNat = (t.gpr .x1).toNat
   he1 : 1 ≤ (t.gpr .x5).toNat
   he2 : (t.gpr .x5).toNat ≤ (t.gpr .x1).toNat
-  hs : Spec.Rsa.scratchWords (t.gpr .x1).toNat ≤ (stackArg t 1).toNat
+  hs : Spec.Rsa.publicScratchWords (t.gpr .x1).toNat ≤ (stackArg t 1).toNat
 
 theorem PdOk.pre {K : Nat} {t : State} (hK : 0 < K) (h : PdOk K t) :
     (Spec.Rsa.publicPrecomputedCheckedContract abi K).pre (t.callEntry.withRegions (pdRd t) (pubWr t)) := by

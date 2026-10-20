@@ -2,13 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Body
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Impl.Mont.Mod
+public import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.AArch64.VerifyMessage.CTCommon`. -/
 

@@ -1,17 +1,28 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
+public import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinishCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinishCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTag
+import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTag
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Impl.AesGcm.X86_64
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_verify` is constant time
@@ -178,7 +189,7 @@ theorem streamVerify_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.AesGcm.s
         fun r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h.2.1.2.1, h.2.2.2.1]⟩) ⟨_, by taint_decide⟩)
     (fun _ _ h => h.2) hK hK
   refine RelCT.seq a (rel_ite_e (fun _ _ h => (h.1.2 rfl).2.1) ?_ ?_)
-  · -- A length §5.2.1.2 does not allow (`rax` is 0).
+  · -- A length `tagLenOk` does not allow (`rax` is 0).
     exact (rel_env (by decide) (fun _ _ h => ⟨h.1.2.1.1.1.1.1, h.1.2.2.1.1.1.1⟩)
       (rel_taint [.r13, .r14, .r15, .rsp] (fun _ _ h => env_agree h.1.2.1.1.1.1.1 h.1.2.2.1.1.1.1)
         ⟨_, by taint_decide⟩)).mono (fun _ _ h => h) fun _ _ h => h.2
@@ -186,7 +197,7 @@ theorem streamVerify_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.AesGcm.s
     swap
     · exact RelCT.of_false fun _ _ h => by have := h.1.2.1.2.symm.trans h.2; simp [hok] at this
     have hb : 1 ≤ t ∧ t ≤ 16 := by
-      simp only [Spec.Gcm.tagLenOk, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true, decide_eq_true_eq] at hok
+      simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at hok
       omega
     have hc : ∀ s, VerT (Ctx := Ctx) (St := St) (W := W) (SP := SP) R (s₀.gpr .rcx) (s₀.gpr .r8) t Tp s →
         WP isa (.seq recv (.seq (finTag v.callees 0) (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO))]) (cmp 0)))) s

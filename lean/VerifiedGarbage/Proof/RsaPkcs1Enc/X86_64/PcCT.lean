@@ -1,19 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcContract
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcContract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCT
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcCall
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcContract
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCT
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcCall
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSAES-PKCS1-v1_5 encryption with a precomputed public key on x86-64: constant time

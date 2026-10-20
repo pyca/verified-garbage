@@ -1,29 +1,35 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Args
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Args
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
 import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCall
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Args
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCall
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
-meta import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
 
 /-! Merged from `Proof.Ed25519.X86_64.VerifyMessage.Body`. -/
 

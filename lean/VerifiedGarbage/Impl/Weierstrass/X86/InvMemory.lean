@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Impl.Mont.X86
+public import VerifiedGarbage.Spec.Weierstrass
 
-public import VerifiedGarbage.Impl.Weierstrass.X86.Inv
 
 /-! # Multiword helpers for the 32-bit divstep matrix updates -/
 

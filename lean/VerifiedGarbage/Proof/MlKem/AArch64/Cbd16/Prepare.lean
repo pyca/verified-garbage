@@ -3,10 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Lanes
 public import VerifiedGarbage.Impl.MlKem.AArch64.Cbd16
 meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-! # The CBD2 byte arithmetic instruction block -/
 

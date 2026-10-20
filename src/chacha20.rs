@@ -449,8 +449,8 @@ mod tests {
     /// Bulk vector stores handle unaligned slices, preserve their surrounding
     /// bytes, and agree with scalar code at the four-block/tail boundary,
     /// around the AVX2 tail's pass of six blocks (257 to 384 bytes), the AVX2
-    /// last pass of eight blocks (385 to 511 bytes) and the last pass of
-    /// sixteen blocks (513 to 1023 bytes).
+    /// last pass of eight blocks (385 to 511 bytes), and the AVX-512 last
+    /// pass of twelve blocks (513 to 768 bytes) or sixteen (769 to 1023).
     #[test]
     fn bulk_boundaries() {
         for len in [
@@ -476,71 +476,6 @@ mod tests {
                     c.apply_keystream(&mut fragmented[offset + 1..offset + len]);
                     assert_eq!(fragmented, expected);
                 }
-            }
-        }
-    }
-
-    /// `vg_chacha20_xor_split_avx512` XORs the keystream into the first
-    /// `src_len` bytes of `src` and the bytes of `dst` after them, writing to
-    /// `dst` and nothing around it, as the scalar keystream does into their
-    /// concatenation: for lengths around its passes (whole, last of 513 to
-    /// 1023 bytes, and fewer), and `src_len` around blocks and passes.
-    #[cfg(target_arch = "x86_64")]
-    #[test]
-    fn xor_split() {
-        use crate::arch::chacha20::{
-            VG_CHACHA20_XOR_SPLIT_AVX512_FEATURES, vg_chacha20_xor_split_avx512,
-        };
-        use alloc::vec::Vec;
-        if !detected().contains(VG_CHACHA20_XOR_SPLIT_AVX512_FEATURES) {
-            return;
-        }
-        let key = key();
-        let n = nonce(7, &[9; 12]);
-        let word = |b: &[u8], i: usize| {
-            u32::from_le_bytes([b[4 * i], b[4 * i + 1], b[4 * i + 2], b[4 * i + 3]])
-        };
-        let state0: [u32; 16] = core::array::from_fn(|i| match i {
-            0..4 => [0x6170_7865, 0x3320_646e, 0x7962_2d32, 0x6b20_6574][i],
-            4..12 => word(&key, i - 4),
-            _ => word(&n, i - 12),
-        });
-        for len in [
-            0usize, 1, 63, 64, 65, 256, 300, 511, 512, 513, 960, 961, 1023, 1024, 1025, 1088, 1500,
-            1536, 1537, 2047, 2048, 2049, 3000, 16385,
-        ] {
-            let mut lens = Vec::from([
-                0, 1, 63, 64, 65, 128, 512, 1023, 1024, 1025, 1088, 2047, 2048,
-            ]);
-            lens.extend([
-                len / 2,
-                len.saturating_sub(65),
-                len.saturating_sub(64),
-                len.saturating_sub(1),
-                len,
-            ]);
-            for src_len in lens.into_iter().filter(|&s| s <= len) {
-                let src: Vec<u8> = (0..src_len).map(|i| (i * 7 + 3) as u8).collect();
-                let init: Vec<u8> = (0..len + 32).map(|i| (i * 13 + 5) as u8).collect();
-                let mut expected = init.clone();
-                expected[16..16 + src_len].copy_from_slice(&src);
-                let mut scalar = ChaCha20::new(&key, &n);
-                scalar.backend = Backend::Scalar;
-                scalar.apply_keystream(&mut expected[16..16 + len]);
-                let mut dst = init;
-                let mut state = state0;
-                let mut buf = [0u32; 80];
-                let (s, d) = (src.as_ptr(), dst[16..].as_mut_ptr());
-                // SAFETY: `state` and `buf` are valid for reads and writes of
-                // 64 and 320 bytes, `s` for reads of `src_len` and `d` for
-                // reads and writes of `len ≥ src_len`; they are distinct
-                // objects, so they do not overlap each other or the stack, and
-                // do not wrap around the end of the address space. The CPU has
-                // the features the function needs. (One line: newer rustc
-                // counts the closing line of a call spread over several on its
-                // own, which only AVX-512 runners execute.)
-                unsafe { vg_chacha20_xor_split_avx512(&mut state, s, src_len, d, len, &mut buf) };
-                assert_eq!(dst, expected, "len {len}, src_len {src_len}");
             }
         }
     }

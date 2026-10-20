@@ -1,29 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.Arm.Block
-meta import VerifiedGarbage.Proof.ChaCha20.Arm.Block
 public import VerifiedGarbage.Proof.ChaCha20.Keystream
-meta import VerifiedGarbage.Proof.ChaCha20.Keystream
-public import VerifiedGarbage.Proof.Framework.Arm.Call
-meta import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.MdStream.Arm.Common
-meta import VerifiedGarbage.Proof.MdStream.Arm.Common
 public import VerifiedGarbage.Impl.ChaCha20.Arm.Xor
-meta import VerifiedGarbage.Impl.ChaCha20.Arm.Xor
-public import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.ChaCha20.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.ChaCha20.Arm.Block
+meta import VerifiedGarbage.Proof.ChaCha20.Keystream
+meta import VerifiedGarbage.Proof.Framework.Arm.Call
+meta import VerifiedGarbage.Proof.MdStream.Arm.Common
+meta import VerifiedGarbage.Impl.ChaCha20.Arm.Xor
+meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.ChaCha20.Arm.Lit
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ChaCha20 keystream XOR on ARMv7
@@ -339,8 +339,8 @@ theorem prologue_ok {s₀ : State} (hp : XPre s₀) :
 
 /-! ## Calling the block function -/
 
-theorem block_keeps_r1 : ∀ i ∈ instrs Impl.ChaCha20.Arm.block, dstOf i ≠ some .r1 := by
-  have : ((instrs Impl.ChaCha20.Arm.block).all fun i => dstOf i != some .r1) = true := by
+theorem block_keeps_r1 : ∀ i ∈ instrs Impl.ChaCha20.Arm.block, clobbers i .r1 = false := by
+  have : ((instrs Impl.ChaCha20.Arm.block).all fun i => !clobbers i .r1) = true := by
     rw [← Code.allInstrs_eq]; lit_decide
   intro i hi
   simpa using List.all_eq_true.mp this i hi

@@ -1,19 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 public import VerifiedGarbage.Impl.Ed25519.Arm.Verify
-meta import VerifiedGarbage.Impl.Ed25519.Arm.Verify
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
+public import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
-meta import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
-public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Impl.Ed25519.Arm.Verify
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 
 /-! Checked code literals for verifier composition. -/
 

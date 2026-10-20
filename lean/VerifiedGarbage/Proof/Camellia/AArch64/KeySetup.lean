@@ -1,15 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.KaKb
-import VerifiedGarbage.Proof.Camellia.AArch64.KeyContract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Modes.AArch64.Ctr
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Camellia.AArch64.KeyChecks2
+public import VerifiedGarbage.Proof.Camellia.AArch64.Prologue
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Camellia.AArch64.KeyPair
+import VerifiedGarbage.Proof.Camellia.AArch64.KeyStore
+import VerifiedGarbage.Proof.Camellia.AArch64.Keys
+import VerifiedGarbage.Proof.Camellia.AArch64.Crypt8
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The Camellia key schedule on AArch64: its parts
@@ -57,7 +58,7 @@ theorem ldAt_ok (s : State) (d r : Reg) {k : Nat} (hk : k % 8 = 0 ∧ k < 32768)
 /-! ## The table of `Sigma1 … Sigma6` -/
 
 theorem sigmaStores_dst :
-    (sigmas.all fun x => (sigmaStores x).all fun i => dstOf i == some t0 || dstOf i == none) = true := by
+    (sigmas.all fun x => (sigmaStores x).all fun i => (dsts i).all (· == t0)) = true := by
   decide +kernel
 
 /-- The stores of `sigmaOne x`: the planes of `x` to the entry at `kp`. -/
@@ -75,10 +76,9 @@ theorem sigmaStores_ok {x : BitVec 64} (hx : x ∈ sigmas) (s : State) {r : Regi
       simp [linEnvG] at h
   obtain ⟨s', hs', p⟩ := run lanes_sound hok hrel he
   have hdst := List.all_eq_true.mp sigmaStores_dst x hx
-  have hall : ∀ r, r ≠ t0 → ((sigmaStores x).all fun i => dstOf i != some r) = true := fun r hr => by
-    simp only [List.all_eq_true, Bool.or_eq_true, beq_iff_eq] at hdst ⊢
-    intro i hi
-    rcases hdst i hi with h | h <;> simp [h, Ne.symm hr]
+  have hall : ∀ r, r ≠ t0 → ((sigmaStores x).all fun i => !clobbers i r) = true := fun r hr => by
+    refine List.all_eq_true.mpr fun i hi => ?_
+    simpa using clobbers_eq_false_of_all (List.all_eq_true.mp hdst i hi) (by simpa using hr)
   refine ⟨s', hs', fun j hj => ?_, ?_, fun r hr => p.other r (by simp [hall r hr]), p.rd, p.wr⟩
   · have h := List.all_eq_true.mp hpost j (List.mem_range.mpr hj)
     simp only [beq_iff_eq] at h

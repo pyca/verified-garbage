@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.AArch64.FbVerified
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SEED-OFB artifacts on baseline AArch64 -/
 
@@ -17,13 +17,10 @@ def note : String :=
   per call. The mode is the generic OFB of `Impl/Modes/AArch64/`."
 
 def artifacts : List Artifact := [
-  { Spec.Seed.ofbApi with
-    target := AArch64.target
-    doc := Spec.Seed.ofbApi.doc (notes := [note])
+  Spec.Seed.ofbApi.artifact AArch64.target {
+    notes := [note]
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x4 182 Impl.Seed.AArch64.ofb
-    contract := Spec.Seed.ofbContract AArch64.abi 1456
     stack := 1456
-    verified := Proof.Seed.AArch64.ofb_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Seed.AArch64.ofb_framed }]
 
 end VG.Artifacts.SeedOfb.AArch64

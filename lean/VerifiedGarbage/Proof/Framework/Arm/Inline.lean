@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Inline
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.TCB.Arm.Target
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Inlining verified code (ARMv7)
@@ -38,11 +38,60 @@ def State.withRegions (s : State) (rd wr : List Region) : State := { s with rd :
     stackArgAddr (s.withRegions rd wr) i = stackArgAddr s i := rfl
 
 /-- The register an instruction writes, if any (a frame's pop writes its
-register). -/
+register); for `umaal`, which writes two (`dsts`), the low one. -/
 def dstOf : Instr → Option Reg
   | .mov d _ | .dp _ d _ _ | .adds d _ _ | .adc d _ _ | .subs d _ _ | .movw d _ | .movt d _ | .rev d _
-  | .addSp d _ | .mul d _ _ | .ldr d _ _ | .ldrb d _ _ | .ldrSp d _ | .pop d _ | .adrSym d _ => some d
+  | .addSp d _ | .mul d _ _ | .mla d _ _ _ | .ldr d _ _ | .ldrb d _ _ | .ldrSp d _ | .pop d _ | .adrSym d _
+  | .umaal d _ _ _ => some d
   | .cmp .. | .str .. | .strb .. | .push _ | .alloc _ | .free _ => none
+
+/-- The registers instruction `i` writes. -/
+def dsts (i : Instr) : List Reg :=
+  match i with
+  | .umaal lo hi _ _ => [lo, hi]
+  | _ => (dstOf i).toList
+
+/-- Whether instruction `i` writes the register `r`, one of `dsts i`. The
+lemmas about the registers code keeps are stated with it, not with `dstOf`,
+which names only an instruction's single destination. -/
+def clobbers (i : Instr) (r : Reg) : Bool :=
+  match i with
+  | .umaal lo hi _ _ => r == lo || r == hi
+  | _ => dstOf i == some r
+
+theorem clobbers_iff {i : Instr} {r : Reg} : clobbers i r = true ↔ r ∈ dsts i := by
+  unfold clobbers dsts
+  split
+  · simp
+  cases dstOf i with
+  | none => simp
+  | some d =>
+    simp only [Option.toList_some, List.mem_singleton]
+    exact ⟨fun h => (Option.some.inj (eq_of_beq h)).symm, fun h => h ▸ beq_self_eq_true _⟩
+
+theorem clobbers_eq_false {i : Instr} {r : Reg} (h : r ∉ dsts i) : clobbers i r = false := by
+  cases hc : clobbers i r
+  · rfl
+  · exact absurd (clobbers_iff.mp hc) h
+
+/-- No register of `dsts i` is one of which `p` is false, so `i` does not write one. -/
+theorem clobbers_eq_false_of_all {i : Instr} {r : Reg} {p : Reg → Bool} (h : (dsts i).all p = true)
+    (hr : p r = false) : clobbers i r = false :=
+  clobbers_eq_false fun hm => by simp [List.all_eq_true.mp h r hm] at hr
+
+theorem clobbers_eq_false_of_contains {i : Instr} {r : Reg} {rs : List Reg}
+    (h : (dsts i).all rs.contains = true) (hr : r ∉ rs) : clobbers i r = false :=
+  clobbers_eq_false_of_all h (by simpa using hr)
+
+theorem clobbers_of_dstOf {i : Instr} {r : Reg} (h : dstOf i = some r) : clobbers i r = true :=
+  clobbers_iff.mpr (by
+    unfold dsts
+    split
+    · simp [dstOf] at h; simp [h]
+    · simp [h])
+
+theorem dstOf_ne_of_clobbers {i : Instr} {r : Reg} (h : clobbers i r = false) : dstOf i ≠ some r :=
+  fun e => by simp [clobbers_of_dstOf e] at h
 
 section
 variable {s s' : State} {rd wr : List Region}
@@ -93,6 +142,11 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     simp only [hi, ite_true, Option.some.injEq] at h ⊢
     subst h; rfl
   | push _ | pop _ _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
+  | umaal lo hi n m =>
+    simp only [exec] at h ⊢
+    split at h <;> [cases h; rename_i hne]
+    simp only [hne, ite_false, Option.some.injEq] at h ⊢
+    subst h; rfl
   | _ =>
     simp only [exec, op2_withRegions, Option.map_eq_some_iff] at h ⊢
     first
@@ -114,6 +168,11 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     subst h
     obtain ⟨r, hr, hc⟩ := hi
     exact ⟨rfl, rfl, rfl, (Frame.refl _ _).writeW hr _ hc⟩
+  | umaal lo hi n m =>
+    simp only [exec] at h
+    split at h <;> [cases h; skip]
+    simp only [Option.some.injEq] at h
+    subst h; exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
   | _ =>
     simp only [exec, State.load32, State.load8, Option.map_eq_some_iff] at h
     (repeat' split at h) <;>
@@ -123,21 +182,29 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     | (obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩)
     | (cases h)
 
-theorem exec_gpr {i : Instr} {r : Reg} (hi : dstOf i ≠ some r) (h : exec i s = some s') :
+theorem exec_gpr {i : Instr} {r : Reg} (hi : clobbers i r = false) (h : exec i s = some s') :
     s'.gpr r = s.gpr r := by
   have hs : ∀ (t : State) (d : Reg) (v : BitVec 32), d ≠ r → (t.setReg d v).gpr r = t.gpr r :=
     fun t d v hd => by simp [State.setReg, Ne.symm hd]
-  cases i <;>
-  simp only [exec, State.load32, State.load8, State.store32, State.store8, Option.map_eq_some_iff] at h <;>
-  (repeat' split at h) <;>
-  (try simp only [Option.some.injEq, reduceCtorEq] at h) <;>
-  first
-  | (subst h; first | rfl | (exact hs _ _ _ fun e => hi (by simp [dstOf, e])))
-  | (obtain ⟨_, _, rfl⟩ := h
-     first
-     | rfl
-     | (exact hs _ _ _ fun e => hi (by simp [dstOf, e])))
-  | (cases h)
+  cases i
+  case umaal lo hi' n m =>
+    simp only [clobbers, Bool.or_eq_false_iff, beq_eq_false_iff_ne] at hi
+    simp only [exec] at h
+    split at h <;> [cases h; skip]
+    simp only [Option.some.injEq] at h; subst h
+    rw [hs _ _ _ (Ne.symm hi.2), hs _ _ _ (Ne.symm hi.1)]
+  all_goals
+    replace hi := dstOf_ne_of_clobbers hi
+    simp only [exec, State.load32, State.load8, State.store32, State.store8, Option.map_eq_some_iff] at h <;>
+    (repeat' split at h) <;>
+    (try simp only [Option.some.injEq, reduceCtorEq] at h) <;>
+    first
+    | (subst h; first | rfl | (exact hs _ _ _ fun e => hi (by simp [dstOf, e])))
+    | (obtain ⟨_, _, rfl⟩ := h
+       first
+       | rfl
+       | (exact hs _ _ _ fun e => hi (by simp [dstOf, e])))
+    | (cases h)
 
 theorem eval_withRegions (c : Cond) (s : State) (rd wr : List Region) :
     eval c (s.withRegions rd wr) = eval c s := by
@@ -260,13 +327,13 @@ theorem Exec.widen {c : Prog isa} {s s' : State} {t : List Leak} {rd wr : List R
     Exec isa c (s.withRegions rd wr) t (s'.withRegions rd wr) :=
   regionModel.widen h hc hw
 
-theorem execBlock_gpr {is : List Instr} {r : Reg} (hc : ∀ i ∈ is, dstOf i ≠ some r)
+theorem execBlock_gpr {is : List Instr} {r : Reg} (hc : ∀ i ∈ is, clobbers i r = false)
     {s s' : State} {t : List Leak} (h : execBlock isa is s = some (s', t)) : s'.gpr r = s.gpr r :=
   execBlock_keep (fun s : State => s.gpr r) exec_gpr hc h
 
 /-- A register that no instruction writes keeps its value, unless it is
 one of `linkRegs` and the code calls a function. -/
-theorem Exec.gpr {c : Prog isa} {r : Reg} (hc : ∀ i ∈ instrs c, dstOf i ≠ some r)
+theorem Exec.gpr {c : Prog isa} {r : Reg} (hc : ∀ i ∈ instrs c, clobbers i r = false)
     {s s' : State} {t : List Leak} (h : Exec isa c s t s')
     (hn : c.noCalls = true ∨ r ∉ linkRegs :=
       by first | exact .inr (by decide) | exact .inl (by decide +kernel)) :
@@ -274,13 +341,13 @@ theorem Exec.gpr {c : Prog isa} {r : Reg} (hc : ∀ i ∈ instrs c, dstOf i ≠ 
   refine Exec.keep (fun s : State => s.gpr r) exec_gpr (fun hj hp hq hb => ?_) hc
     (hn.imp id fun hl _ _ _ _ hc hr hb => ?_) h
   · obtain ⟨-, -, -, hg, -⟩ := push_eq hp
-    rw [(pop_eq hq).2.2.2.1 r hj, hb, hg]
+    rw [(pop_eq hq).2.2.2.1 r (dstOf_ne_of_clobbers hj), hb, hg]
   · rw [ret_eq hr, hb, (call_eq hc).2.2.2.2 r hl]
 
 /-- A register that no instruction writes keeps its value, as a
 postcondition. -/
 theorem WP.gpr {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) {r : Reg}
-    (hc : ∀ i ∈ instrs c, dstOf i ≠ some r)
+    (hc : ∀ i ∈ instrs c, clobbers i r = false)
     (hn : c.noCalls = true ∨ r ∉ linkRegs :=
       by first | exact .inr (by decide) | exact .inl (by decide +kernel)) :
     WP isa c s fun s' => Q s' ∧ s'.gpr r = s.gpr r := by
@@ -298,7 +365,7 @@ theorem WP.inline {c : Prog isa} {k : Contract isa}
     {s : State} {rd wr : List Region} (hpre : k.pre (s.withRegions rd wr))
     (hc : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr) {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → abiPreserved s s' → Frame wr s.mem s'.mem →
-      (∀ r, (∀ i ∈ instrs c, dstOf i ≠ some r) → s'.gpr r = s.gpr r) →
+      (∀ r, (∀ i ∈ instrs c, clobbers i r = false) → s'.gpr r = s.gpr r) →
       k.post (s.withRegions rd wr) (s'.withRegions rd wr) → Q s')
     (hn : c.noCalls = true := by decide +kernel) : WP isa c s Q :=
   regionModel.wp_narrow (hv _ hpre) hc hw (Code.noFrames_of_noCalls hn) (.inl hn)
@@ -312,7 +379,7 @@ theorem WP.inlineCalls {c : Prog isa} {k : Contract isa}
     {s : State} {rd wr : List Region} (hpre : k.pre (s.withRegions rd wr))
     (hc : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr) {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → abiPreserved s s' → Frame wr s.mem s'.mem →
-      (∀ r, (∀ i ∈ instrs c, dstOf i ≠ some r) → r ∉ linkRegs → s'.gpr r = s.gpr r) →
+      (∀ r, (∀ i ∈ instrs c, clobbers i r = false) → r ∉ linkRegs → s'.gpr r = s.gpr r) →
       k.post (s.withRegions rd wr) (s'.withRegions rd wr) → Q s')
     (hn : c.noFrames = true := by decide +kernel) : WP isa c s Q :=
   regionModel.wp_narrow (hv _ hpre) hc hw hn (.inr callsKeepMem)

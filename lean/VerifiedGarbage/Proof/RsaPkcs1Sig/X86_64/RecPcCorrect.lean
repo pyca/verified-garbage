@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecPcTail
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecPcCall
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 
 /-!
 # `vg_rsa_pkcs1_recover_precomputed` on x86-64: correctness

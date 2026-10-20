@@ -3,12 +3,10 @@ module
 public import VerifiedGarbage.Impl.Pbkdf2.Whole.Arm
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Calls
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
-public import VerifiedGarbage.Proof.Hmac.Generic.Common
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: the functions it calls, and its parts

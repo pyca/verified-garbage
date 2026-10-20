@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.BodyCT
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Stack
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Constant time through both saved frames -/
 

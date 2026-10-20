@@ -1,16 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcColumns
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcColumns
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcSetup
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcBlock
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcStart
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcFinish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 
 @[expose] public section
 

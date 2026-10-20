@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Idea.X86
 public import VerifiedGarbage.Impl.Modes.X86.Seq
+public import VerifiedGarbage.Impl.Modes.CbcChained
 
 /-!
 # IDEA's core for the modes on x86 (32-bit)
@@ -68,10 +69,10 @@ def modeCore : Modes.X86.Core where
   G := 1
   bw := 2
 
-/-- `vg_idea_cbc_encrypt`, with its scratch buffer as the fifth argument. -/
-def cbcEncrypt : Prog isa := modeCore.seq (Modes.Mode.cbcEnc 2)
-/-- `vg_idea_cbc_decrypt`. -/
-def cbcDecrypt : Prog isa := modeCore.seq (Modes.Mode.cbcDec 2)
+/-- `vg_idea_cbc_encrypt_chained`, with its scratch buffer as the fifth argument. -/
+def cbcEncryptChained : Prog isa := modeCore.seq (Modes.Mode.cbcEncChained 2)
+/-- `vg_idea_cbc_decrypt_chained`. -/
+def cbcDecryptChained : Prog isa := modeCore.seq (Modes.Mode.cbcDecChained 2)
 /-- `vg_idea_ofb`. -/
 def ofb : Prog isa := modeCore.seq (Modes.Mode.ofb 2)
 /-- `vg_idea_cfb64_encrypt`. -/

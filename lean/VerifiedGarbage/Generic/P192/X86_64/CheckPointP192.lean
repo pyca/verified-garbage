@@ -1,16 +1,10 @@
 module
 
-import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.Ecdh.X86_64.P192.CheckVerified
-import VerifiedGarbage.Proof.Framework.LitShare
-import VerifiedGarbage.Proof.Framework.TaintMap
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-import VerifiedGarbage.Spec.EcKey.Generic
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # P-192's check of a public point on x86-64
@@ -38,15 +32,11 @@ def note (adx : Bool) : String :=
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P192.curve) : List Artifact :=
   [false].map fun adx =>
-    { C.checkApi with
-      name := C.checkApi.name ++ (if adx then "_adx" else "")
-      target := X86_64.target
-      doc := C.checkApi.doc (notes := [note adx])
+    C.checkApi.artifact X86_64.target {
+      suffix := (if adx then "_adx" else "")
+      notes := [note adx]
       code := code adx
-      contract := C.checkContract X86_64.abi
-      ofSig := by exact (⟨_, _, _, by unfold Spec.Weierstrass.CheckPoint.Curve.checkContract; rfl⟩)
       verified := verified h.inv adx
-      spSafe := by cases adx <;> exact Code.all_of_allInstrs (by lit_decide)
       features := if adx then ["bmi2", "adx"] else [] }
 
 end VG.Generic.P192.X86_64.CheckPointP192

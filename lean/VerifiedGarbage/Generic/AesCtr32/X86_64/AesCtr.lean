@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.AesCtr.X86_64.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-CTR (NIST SP 800-38A §6.5) on x86-64
@@ -22,13 +22,11 @@ namespace VG.Generic.AesCtr32.X86_64.AesCtr
 open VG.Proof.AesCtr.X86_64
 
 def artifacts (v : Proof.Aes.X86_64.Ctr32Impl) : List Artifact := [
-  { Spec.Ctr.aesApi with
-    name := Spec.Ctr.aesApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Ctr.aesApi.doc (notes := ["This implementation enciphers the counter blocks with `" ++
-      v.callee.name ++ "`, as many at once as its 32-bit counter allows."])
+  Spec.Ctr.aesApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := ["This implementation enciphers the counter blocks with `" ++
+      v.callee.name ++ "`, as many at once as its 32-bit counter allows."]
     code := Impl.AesCtr.X86_64.crypt v.callee
-    contract := Spec.Ctr.aesContract X86_64.abi 8
     stack := 8
     verified := crypt_verified v
     spSafe := crypt_spSafe v

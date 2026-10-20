@@ -1,10 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.X86_64.Compress
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
 public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Compress
-public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Lit
-public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Lit
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
+public import VerifiedGarbage.Proof.Argon2.X86_64.Compress
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Lit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # Argon2 compression on x86-64
@@ -18,33 +19,21 @@ come from the reviewed specification; the code and proof are untrusted.
 namespace VG.Artifacts.Argon2.X86_64
 
 def artifacts : List Artifact := [
-  { Spec.Argon2.compressApi with
-    target := X86_64.target
-    doc := Spec.Argon2.compressApi.doc
+  Spec.Argon2.compressApi.artifact X86_64.target {
     code := Impl.Argon2.X86_64.compress
-    contract := Spec.Argon2.compressContract X86_64.abi
     stack := 0
-    verified := Proof.Argon2.X86_64.compress_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Argon2.compressApi with
-    name := Spec.Argon2.compressApi.name ++ "_avx2"
-    target := X86_64.target
-    doc := Spec.Argon2.compressApi.doc
+    verified := Proof.Argon2.X86_64.compress_verified },
+  Spec.Argon2.compressApi.artifact X86_64.target {
+    suffix := "_avx2"
     code := Impl.Argon2.X86_64.Avx2.compress
-    contract := Spec.Argon2.compressContract X86_64.abi
     stack := 0
     verified := Proof.Argon2.X86_64.Avx2.compress_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx2"] },
-  { Spec.Argon2.compressApi with
-    name := Spec.Argon2.compressApi.name ++ "_avx512"
-    target := X86_64.target
-    doc := Spec.Argon2.compressApi.doc
+  Spec.Argon2.compressApi.artifact X86_64.target {
+    suffix := "_avx512"
     code := Impl.Argon2.X86_64.Avx512.compress
-    contract := Spec.Argon2.compressContract X86_64.abi
     stack := 0
     verified := Proof.Argon2.X86_64.Avx512.compress_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx512f"] }]
 
 end VG.Artifacts.Argon2.X86_64

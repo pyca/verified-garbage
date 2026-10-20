@@ -1,16 +1,17 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCache
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableIO
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Weierstrass.CombLay
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+public import VerifiedGarbage.Proof.Mont.X86_64.Csub
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableIO
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCopy
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectPass
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! Cache lookup addresses and exact copies of both cached field elements. -/
 

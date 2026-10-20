@@ -1,15 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Proof.X25519.X86_64.Step
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.X25519.Field
+import VerifiedGarbage.Proof.X25519.X86_64.Step
+public import Lean.Elab.Tactic.Basic
+public import Init.Data.BitVec.Basic
 
 /-!
 # X25519 on x86-64, inversion by divsteps: running blocks

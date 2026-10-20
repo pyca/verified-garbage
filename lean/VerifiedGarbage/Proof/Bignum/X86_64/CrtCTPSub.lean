@@ -1,13 +1,35 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Order.RelClasses
+import Mathlib.Data.Nat.Basic
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Push
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+meta import Mathlib.Algebra.Group.Nat.Defs
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Data.Nat.Basic
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import Mathlib.Tactic.Attr.Core
+meta import Mathlib.Tactic.Push
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSA with the CRT on x86-64: constant time, the steps of `p`'s phase

@@ -2,19 +2,21 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedKernel
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntry
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecPre
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowRun
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecPre
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowPair
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRawField
 public import VerifiedGarbage.Spec.MlDsa.PairedResponse
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedConsts
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSource
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## `PairedLowKernel` -/
 

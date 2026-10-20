@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Sha256
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-256 with HMAC-SHA-256 on ARMv7
@@ -25,15 +25,12 @@ open VG.Proof.Ecdsa.Rfc6979.Arm (cfgOf signNotes)
 open VG.Proof.Ecdsa.Rfc6979.Arm.Sha256 (pack sign_verified)
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := [
-  { Spec.Ecdsa.Rfc6979.P256Sha256.signApi with
-    target := Arm.target
-    doc := Spec.Ecdsa.Rfc6979.P256Sha256.signApi.doc (notes := [signNotes
+  Spec.Ecdsa.Rfc6979.P256Sha256.signApi.artifact Arm.target {
+    notes := [signNotes
       Proof.Pbkdf2.Whole.Arm.sha256F.hiN Proof.Pbkdf2.Whole.Arm.sha256F.H.updN
-      Proof.Pbkdf2.Whole.Arm.sha256F.hfN 32 Spec.Ecdsa.P256.signApi.name])
+      Proof.Pbkdf2.Whole.Arm.sha256F.hfN 32 Spec.Ecdsa.P256.signApi.name]
     code := (cfgOf (pack h.law)).sign
-    contract := Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract Arm.abi 240
     stack := 240
-    verified := sign_verified h.law
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := sign_verified h.law }]
 
 end VG.Generic.P256.Arm.EcdsaP256Sha256

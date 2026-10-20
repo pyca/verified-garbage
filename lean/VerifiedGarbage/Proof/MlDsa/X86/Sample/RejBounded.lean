@@ -1,25 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
-meta import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
+import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
 public import VerifiedGarbage.Proof.MlDsa.Sample.HalfByteVal
-meta import VerifiedGarbage.Proof.MlDsa.Sample.HalfByteVal
 public import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejBounded
-meta import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejBounded
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.Sponge
 import VerifiedGarbage.Proof.MlKem.X86.Common
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
+meta import VerifiedGarbage.Proof.MlDsa.Sample.HalfByteVal
+meta import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejBounded
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sample.Sponge
 meta import VerifiedGarbage.Proof.MlKem.X86.Common
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_rej_bounded_poly`

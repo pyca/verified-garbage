@@ -1,27 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-public import VerifiedGarbage.Proof.Md5.AArch64.Shared
-meta import VerifiedGarbage.Proof.Md5.AArch64.Shared
-import VerifiedGarbage.Proof.Md5.Md
-meta import VerifiedGarbage.Proof.Md5.Md
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-meta import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Md5.AArch64.Stream.Md
-import VerifiedGarbage.Proof.Sha512.Word64
+public import VerifiedGarbage.Proof.Md5.AArch64.Stream.Init
+public import VerifiedGarbage.Spec.Md5.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Md5.AArch64.Stream.Md
-meta import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Md5.AArch64.Stream.Init
+meta import VerifiedGarbage.Spec.Md5.Contract
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # MD5 on AArch64, as a Merkle–Damgård hash function
@@ -78,6 +72,10 @@ theorem coreOK : CoreOK coreH := by
     hfin := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
     fitI := ?_
     fitF := ?_ }
+  taint_decide_all
+
+theorem anyOK : Any.AnyOK coreH := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
   taint_decide_all
 
 /-- The streaming functions, verified against the contracts HMAC's proofs
@@ -137,6 +135,8 @@ def ok : HashOK hash where
     by decide, by decide, by decide, by decide⟩
   L := by decide
   W := by decide
+  hPad := by decide
+  L816 := by decide
 
 theorem satI : ∃ s, (Spec.Hmac.md5I.initScratchContract AArch64.abi 16).pre s := by
   inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.md5I, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
@@ -150,6 +150,10 @@ theorem satT : ∃ s, (Spec.Hmac.md5I.iterateContract AArch64.abi).pre s := by
   inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Hmac.md5I, Spec.Pbkdf2.iterateContract,
     Spec.Pbkdf2.iterateSig, Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi, AArch64.argRegs]
     using Pbkdf2.AArch64.iterSat 80 16 48
+
+theorem satA : ∃ s, (Any.anyScratchContract Spec.Hmac.md5I.S Spec.Hmac.md5I.initAnyKeyScratch).pre s := by
+  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.md5I, Spec.Hmac.initScratchSig,
+    Spec.Hmac.initPost, Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi, AArch64.argRegs] using initSat 80 128
 
 theorem satP : ∃ s, (Spec.Hmac.md5I.pbkdf2ScratchContract AArch64.abi 16).pre s := by
   inst_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.md5I,
@@ -169,9 +173,14 @@ theorem pss_md5 : Proof.RsaPss.AArch64.PssChecks coreH.P 16 := by
 
 /-- MD5 with its compression function. -/
 def variant : MdHash := MdHash.of ok coreOK ⟨Spec.Mgf1.md5, by simp [mdHashes], fun _ => rfl, rfl⟩ pss_md5 rfl rfl satI satF satT satP (by decide)
+    anyOK satA (by decide) Proof.Hmac.md5_local
+    (by
+      unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by
       unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by decide)
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))

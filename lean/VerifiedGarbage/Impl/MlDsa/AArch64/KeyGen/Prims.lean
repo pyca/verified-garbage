@@ -3,15 +3,14 @@ module
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Mul
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.AddSub
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Round.Round
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSelected
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BallDispatch
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Encode
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Hint
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedSecrets
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.AddSub
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenRound
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenPack
 
 /-!
 # ML-DSA on AArch64: key generation and verification with this library's primitives
@@ -33,17 +32,17 @@ def primsWith (c : Impl.Sha3.AArch64.Callee) : Prims where
   invNtt := Arith.Neon.nttInv
   mul := Arith.mul
   mulAdd := Arith.mulAdd
-  add := Arith.add
-  sub := Arith.sub
+  add := Optimized.AddSub.code false
+  sub := Optimized.AddSub.code true
   rejNtt := Sample.rejNTTWith c
   rej4 := Optimized.ResidentRej.selected c.pairedSha3
   rejBounded := Sample.rejBoundedWith c
   ball := Optimized.Ball.selected c
-  power2Round := Round.power2Round
+  power2Round := Optimized.KeygenRound.power2Round
   useHint := Round.useHint
   normLt := Round.normLt
-  simpleBitPack := Pack.simpleBitPack
-  bitPack := Pack.bitPack
+  simpleBitPack := Optimized.KeygenPack.simple
+  bitPack := Optimized.KeygenPack.signed
   bitUnpack := Pack.bitUnpack
   unpackT1 := Pack.unpackT1
   hintUnpack := Pack.hintBitUnpack

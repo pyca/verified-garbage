@@ -1,11 +1,12 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.X86.Dbl
 
-public import VerifiedGarbage.Proof.AesOcb.X86.Blk
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesOcb.X86.Blk
 import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-OCB on x86: `L_{ntz(i)}` (`lNtz`)

@@ -7,7 +7,7 @@ from unittest import mock
 import cpu_tests
 
 CI = Path(__file__).resolve().parent
-WORKFLOW = CI.parent / ".github/workflows/ci.yml"
+MATRIX = CI / "rust_matrix.toml"
 
 GROUPS = {
     "aes_gcm": {"lib": ["aes_gcm"], "tests": ["wycheproof::aes_gcm"]},
@@ -84,14 +84,18 @@ class CheckTests(unittest.TestCase):
 
 
 class LintTests(unittest.TestCase):
-    def test_the_workflow_names_only_groups(self):
-        self.assertEqual(cpu_tests.lint(WORKFLOW.read_text()), [])
+    def test_the_matrix_names_only_groups(self):
+        self.assertEqual(cpu_tests.lint(MATRIX.read_text()), [])
 
     def test_an_unknown_group_or_a_bad_path_is_an_error(self):
-        text = WORKFLOW.read_text().replace(" | aes_gcm cpu\n", " | aes_gcm cpu aes_gcmm\n", 1)
+        text = MATRIX.read_text().replace(" | aes_gcm cpu\n", " | aes_gcm cpu aes_gcmm\n", 1)
         self.assertEqual(cpu_tests.lint(text), ["aes_gcmm: not a group of ci/cpu_tests.py"])
         with mock.patch.dict(cpu_tests.GROUPS, {"x": {"lib": ["a::"], "tests": []}}):
-            self.assertIn("group x: lib path 'a::' is not a path", cpu_tests.lint(WORKFLOW.read_text()))
+            self.assertIn("group x: lib path 'a::' is not a path", cpu_tests.lint(MATRIX.read_text()))
+
+    def test_a_repeated_value_of_vg_cpu_features_is_an_error(self):
+        text = MATRIX.read_text().replace("\nnone | all\n", "\nnone | all\nnone | cpu\n", 1)
+        self.assertEqual(cpu_tests.lint(text), ["native: VG_CPU_FEATURES=none twice"])
 
 
 if __name__ == "__main__":

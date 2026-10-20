@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Blake2.Arm.Blake2b
-import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Proof.Blake2.Arm.CompressB
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # BLAKE2b (RFC 7693) on ARMv7 -/
 
@@ -11,51 +11,27 @@ import VerifiedGarbage.Spec.Rc2
 namespace VG.Artifacts.Blake2b.Arm
 
 def artifacts : List Artifact := [
-  { Spec.Blake2.compressBApi with
-    target := Arm.target
-    doc := Spec.Blake2.compressBApi.doc
+  Spec.Blake2.compressBApi.artifact Arm.target {
     code := Impl.Blake2.Arm.B.compress
-    contract := Spec.Blake2.compressBContract Arm.abi
-    verified := Proof.Blake2.ArmB.compress_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Blake2.initBApi with
-    target := Arm.target
-    doc := Spec.Blake2.initBApi.doc
+    verified := Proof.Blake2.ArmB.compress_verified },
+  Spec.Blake2.initBApi.artifact Arm.target {
     code := Impl.Blake2.Arm.Stream.init Spec.Blake2.b
-    contract := Spec.Blake2.initBContract Arm.abi
-    verified := Proof.Blake2.ArmB.initB_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Blake2.updateBApi with
-    target := Arm.target
-    doc := Spec.Blake2.updateBApi.doc
+    verified := Proof.Blake2.ArmB.initB_verified },
+  Spec.Blake2.updateBApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 592 2 (Impl.Blake2.Arm.Stream.update (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress)
-    contract := Spec.Blake2.updateBContract Arm.abi (16 + 592)
     stack := 16 + 592
-    verified := Proof.Blake2.ArmB.updateB_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Blake2.finalizeBApi with
-    target := Arm.target
-    doc := Spec.Blake2.finalizeBApi.doc
+    verified := Proof.Blake2.ArmB.updateB_framed },
+  Spec.Blake2.finalizeBApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 592 1 (Impl.Blake2.Arm.Stream.finalize (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress)
-    contract := Spec.Blake2.finalizeBContract Arm.abi (16 + 592)
     stack := 16 + 592
-    verified := Proof.Blake2.ArmB.finalizeB_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Blake2.updateBScratchApi with
-    target := Arm.target
-    doc := Spec.Blake2.updateBScratchApi.doc
+    verified := Proof.Blake2.ArmB.finalizeB_framed },
+  Spec.Blake2.updateBScratchApi.artifact Arm.target {
     code := Impl.Blake2.Arm.Stream.update (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress
-    contract := Spec.Blake2.updateBScratchContract Arm.abi 16
     stack := 16
-    verified := Proof.Blake2.ArmB.updateB_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Blake2.finalizeBScratchApi with
-    target := Arm.target
-    doc := Spec.Blake2.finalizeBScratchApi.doc
+    verified := Proof.Blake2.ArmB.updateB_verified },
+  Spec.Blake2.finalizeBScratchApi.artifact Arm.target {
     code := Impl.Blake2.Arm.Stream.finalize (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress
-    contract := Spec.Blake2.finalizeBScratchContract Arm.abi 16
     stack := 16
-    verified := Proof.Blake2.ArmB.finalizeB_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Blake2.ArmB.finalizeB_verified }]
 
 end VG.Artifacts.Blake2b.Arm

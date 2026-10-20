@@ -1,19 +1,25 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.X86_64.Wrap
-meta import VerifiedGarbage.Impl.Argon2.X86_64.Wrap
 import VerifiedGarbage.Proof.Argon2.Reference
-meta import VerifiedGarbage.Proof.Argon2.Reference
 public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
-meta import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Argon2.X86_64.Wrap
+meta import VerifiedGarbage.Proof.Argon2.Reference
+meta import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Masked subtraction agrees with wrapping the reference column -/
 

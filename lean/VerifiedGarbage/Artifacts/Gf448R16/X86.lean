@@ -1,12 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Impl.X448.X86
 public import VerifiedGarbage.Proof.X448.X86.FnVerified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.X448.X86.FnLit
-import VerifiedGarbage.Impl.X25519.X86
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.X448.X86.FnLit
 
 /-! # Arithmetic in curve448's field, in radix `2^16`, on x86 (32-bit) -/
 
@@ -25,36 +21,21 @@ def notes : List String := ["Uses baseline integer instructions. The function sa
   into limbs 0 and 14, twice, and carrying again."]
 
 def artifacts : List Artifact := [
-  { mulApi with
-    target := X86.target
-    doc := mulApi.doc (notes := notes)
+  mulApi.artifact X86.target {
+    notes := notes
     code := mulFn
-    contract := mulContract X86.abi
-    verified := mulFn_verified
-    ofSig := by unfold mulContract binContract; exact ⟨_, _, _, rfl⟩
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { addApi with
-    target := X86.target
-    doc := addApi.doc (notes := notes)
+    verified := mulFn_verified },
+  addApi.artifact X86.target {
+    notes := notes
     code := addFn
-    contract := addContract X86.abi
-    verified := addFn_verified
-    ofSig := by unfold addContract binContract; exact ⟨_, _, _, rfl⟩
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { subApi with
-    target := X86.target
-    doc := subApi.doc (notes := notes)
+    verified := addFn_verified },
+  subApi.artifact X86.target {
+    notes := notes
     code := subFn
-    contract := subContract X86.abi
-    verified := subFn_verified
-    ofSig := by unfold subContract binContract; exact ⟨_, _, _, rfl⟩
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { mulA24Api with
-    target := X86.target
-    doc := mulA24Api.doc (notes := notes)
+    verified := subFn_verified },
+  mulA24Api.artifact X86.target {
+    notes := notes
     code := mulA24Fn
-    contract := mulA24Contract X86.abi
-    verified := mulA24Fn_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := mulA24Fn_verified }]
 
 end VG.Artifacts.Gf448R16.X86

@@ -1,65 +1,31 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.InitialBodyState
-meta import VerifiedGarbage.Proof.Argon2.AArch64.InitialBodyState
 import VerifiedGarbage.Proof.Argon2.References
-meta import VerifiedGarbage.Proof.Argon2.References
-import VerifiedGarbage.Proof.Argon2.AArch64.InitialBody
-meta import VerifiedGarbage.Proof.Argon2.AArch64.InitialBody
-import VerifiedGarbage.Proof.Argon2.AArch64.InitFill
-meta import VerifiedGarbage.Proof.Argon2.AArch64.InitFill
-import VerifiedGarbage.Proof.Argon2.AArch64.FillFinish
-meta import VerifiedGarbage.Proof.Argon2.AArch64.FillFinish
-import VerifiedGarbage.Proof.Argon2.AArch64.FillIterations
-meta import VerifiedGarbage.Proof.Argon2.AArch64.FillIterations
-public import VerifiedGarbage.Proof.Argon2.IterationsIndices
-meta import VerifiedGarbage.Proof.Argon2.IterationsIndices
-import VerifiedGarbage.Proof.Argon2.AArch64.FillIterationsBody
-meta import VerifiedGarbage.Proof.Argon2.AArch64.FillIterationsBody
-import VerifiedGarbage.Proof.Argon2.AArch64.FillIteration
-meta import VerifiedGarbage.Proof.Argon2.AArch64.FillIteration
-import VerifiedGarbage.Proof.Argon2.AArch64.FillSlices
-meta import VerifiedGarbage.Proof.Argon2.AArch64.FillSlices
-import VerifiedGarbage.Proof.Argon2.SlicesIndices
-meta import VerifiedGarbage.Proof.Argon2.SlicesIndices
-import VerifiedGarbage.Proof.Argon2.AArch64.FillSlicesBody
-meta import VerifiedGarbage.Proof.Argon2.AArch64.FillSlicesBody
-import VerifiedGarbage.Proof.Argon2.AArch64.FillSlice
-meta import VerifiedGarbage.Proof.Argon2.AArch64.FillSlice
-import VerifiedGarbage.Proof.Argon2.AArch64.FillLanes
-meta import VerifiedGarbage.Proof.Argon2.AArch64.FillLanes
-public import VerifiedGarbage.Proof.Argon2.LanesIndices
-meta import VerifiedGarbage.Proof.Argon2.LanesIndices
-import VerifiedGarbage.Proof.Argon2.AArch64.FillLanesBody
-meta import VerifiedGarbage.Proof.Argon2.AArch64.FillLanesBody
+import VerifiedGarbage.Proof.Argon2.IterationsIndices
 public import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupCT
-meta import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupCT
-import VerifiedGarbage.Proof.Argon2.AArch64.FinishReady
-meta import VerifiedGarbage.Proof.Argon2.AArch64.FinishReady
-public import VerifiedGarbage.Impl.Argon2.AArch64.Finish
-meta import VerifiedGarbage.Impl.Argon2.AArch64.Finish
-import VerifiedGarbage.Proof.Argon2.AArch64.FinalOutputReady
-meta import VerifiedGarbage.Proof.Argon2.AArch64.FinalOutputReady
-import VerifiedGarbage.Proof.Argon2.AArch64.FinalCall
-meta import VerifiedGarbage.Proof.Argon2.AArch64.FinalCall
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Argon2.AArch64.Initial
-meta import VerifiedGarbage.Proof.Argon2.AArch64.Initial
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.FixedCT
-meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.FixedCT
 import VerifiedGarbage.Proof.Argon2.AArch64.InitialLit
-meta import VerifiedGarbage.Proof.Argon2.AArch64.InitialLit
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Verified
+import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetup
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Correct
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
+meta import VerifiedGarbage.Proof.Argon2.AArch64.InitialBodyState
+meta import VerifiedGarbage.Proof.Argon2.References
+meta import VerifiedGarbage.Proof.Argon2.IterationsIndices
+meta import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupCT
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Argon2.AArch64.InitialLit
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Verified
+meta import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetup
+meta import VerifiedGarbage.Proof.Argon2.Dimensions
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Correct
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Argon2.AArch64.InitialCTState`. -/
 

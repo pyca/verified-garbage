@@ -1,12 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Spec
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Sel
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the regions as numbers
@@ -109,13 +103,13 @@ theorem amm2_ok (hl : LayOk l) {s : State} {B : Addr} {o a b : Nat} {M k : Nat �
   rw [ar.mv p hp] at v e
   exact ⟨⟨lt, v⟩, e⟩
 
-/-- `ammCore` on good numbers, `r8`, `r9`, `r11` at `a`, `b`, `o`. -/
+/-- The layout's multiplication on good numbers, `r8`, `r9`, `r11` at `a`, `b`, `o`. -/
 theorem ammCore2_ok (hl : LayOk l) {s : State} {B : Addr} {o a b : Nat} {M k : Nat → Nat}
     (hB : s.gpr .rbx = B) (h8 : s.gpr .r8 = off B a) (h9 : s.gpr .r9 = off B b) (h11 : s.gpr .r11 = off B o)
     (hs : Scr s B (2 * l.D)) (ar : Ar l s.mem B M k)
     (ho : o + l.NB ≤ l.D) (ho' : l.oY ≤ o) (ha : a + l.NB ≤ l.D) (hb : b + l.NB ≤ l.D)
     (ga : ∀ p < 2, Good l s.mem B M a p) (gb : ∀ p < 2, Good l s.mem B M b p) :
-    WP isa (ammCore l) s fun s' =>
+    WP isa (ammMul l) s fun s' =>
       (∀ p < 2, Good l s'.mem B M o p ∧
         val52 l s'.mem B (l.D * p + o) * 2 ^ (52 * l.S) % M p =
           val52 l s.mem B (l.D * p + a) * val52 l s.mem B (l.D * p + b) % M p) ∧

@@ -2,16 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivPc
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Rsa.Scratch
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivCrt
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # `vg_rsa_private_checked` on x86-64: the call of `vg_rsa_public_precomputed_checked`
@@ -158,7 +154,8 @@ theorem pd_pre {s t : State} (hp : PreF s) (he : Env s t)
   refine ⟨by omega, rfl, rfl, dOut sP, ?_, dOut sM, ?_, dOut sA, hp.dKs.sub_left sP, hp.des,
     hp.dKs.sub_left sM, (hp.dKs.sub_left sA).symm, ?_, dRP, hp.dKe.sub_left sR, dRM, hp.dKs.sub_left sR, dRA,
     ?_, wFr (by unfold oPre frameBytes; omega), hp.wE, wFr (by unfold oM frameBytes; omega), hp.wS,
-    ⟨hp.k1, hp.k2⟩, trivial, trivial, hp.L1, hp.L2, hp.hsl⟩
+    ⟨hp.k1, hp.k2⟩, trivial, trivial, hp.L1, hp.L2,
+    VG.Proof.Rsa.publicScratch_le ⟨hp.k1, hp.k2⟩ hp.hsl⟩
   · rw [← hsi']; exact hp.dOe
   · rw [← hsi']; exact hp.dOs
   · rw [← hsi']; exact (hp.dKo.sub_left sR)

@@ -1,10 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.Arm.Crypt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesGcm.Arm.Fn
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-CCM on ARMv7: the arguments, and what the pieces write

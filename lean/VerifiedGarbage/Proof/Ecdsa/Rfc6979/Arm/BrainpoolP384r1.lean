@@ -1,19 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
 public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Verified
-public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Lit
-public import VerifiedGarbage.Proof.Framework.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: brainpoolP384r1
@@ -42,7 +42,7 @@ def brainpoolp384r1 (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) : RfcCurve
   inst := Spec.Ecdsa.BrainpoolP384r1.inst
   curve := rfl
   wide := false
-  sizes := ⟨.inr (.inr rfl), .inl rfl, brainpoolp384r1_nBits, by decide +kernel⟩
+  sizes := ⟨.inr (.inr (.inl rfl)), .inl rfl, brainpoolp384r1_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 48 - Spec.Ecdsa.nBits Spec.BrainpoolP384r1.curve = 0; rw [brainpoolp384r1_nBits]

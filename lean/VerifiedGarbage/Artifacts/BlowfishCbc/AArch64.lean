@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.AArch64.CbcVerified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Blowfish-CBC artifacts on baseline AArch64 -/
 
@@ -19,21 +18,15 @@ def note : String :=
   `Impl/Modes/AArch64/`."
 
 def artifacts : List Artifact := [
-  { Spec.Blowfish.cbcEncryptApi with
-    target := AArch64.target
-    doc := Spec.Blowfish.cbcEncryptApi.doc (notes := [note])
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 224 .x4 28 Impl.Blowfish.AArch64.cbcEncrypt
-    contract := Spec.Blowfish.cbcEncryptContract AArch64.abi 224
+  Spec.Blowfish.cbcEncryptChainedApi.artifact AArch64.target {
+    notes := [note, "The IV's address is kept in `x25`, which the core keeps, and after the last block the core's buffer, the last ciphertext block, goes back to the IV."]
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 224 .x4 28 Impl.Blowfish.AArch64.cbcEncryptChained
     stack := 224
-    verified := Proof.Blowfish.AArch64.cbcEncrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Blowfish.cbcDecryptApi with
-    target := AArch64.target
-    doc := Spec.Blowfish.cbcDecryptApi.doc (notes := [note])
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 224 .x4 28 Impl.Blowfish.AArch64.cbcDecrypt
-    contract := Spec.Blowfish.cbcDecryptContract AArch64.abi 224
+    verified := Proof.Blowfish.AArch64.cbcEncryptChained_framed },
+  Spec.Blowfish.cbcDecryptChainedApi.artifact AArch64.target {
+    notes := [note, "The last ciphertext block is copied to the IV before any block is decrypted."]
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 224 .x4 28 Impl.Blowfish.AArch64.cbcDecryptChained
     stack := 224
-    verified := Proof.Blowfish.AArch64.cbcDecrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Blowfish.AArch64.cbcDecryptChained_framed }]
 
 end VG.Artifacts.BlowfishCbc.AArch64

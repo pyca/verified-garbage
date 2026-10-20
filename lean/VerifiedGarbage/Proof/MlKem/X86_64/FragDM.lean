@@ -1,15 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragL
+import VerifiedGarbage.Proof.MlKem.X86_64.FragL
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragOf
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # ML-KEM on x86-64: the call of `vg_mlkem*_decrypt_mul`

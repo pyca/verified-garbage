@@ -1,22 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
+import VerifiedGarbage.Proof.Dsa.X86_64.Load
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Frame
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Spec.Dsa
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Load
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant time of setup, load and complete DSA exponentiation -/
 

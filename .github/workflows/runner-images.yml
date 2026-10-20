@@ -32,7 +32,9 @@ jobs:
           # (actions/runner-images#14790); drop it once the runner has Docker
           # 29.4.3 or later.
           - {tag: "verified-garbage-runner:i686", platform: "linux/386", os: ubuntu-26.04, run-options: "--security-opt seccomp=unconfined"}
-          - {tag: "verified-garbage-runner:armv7l", platform: "linux/arm/v7", os: ubuntu-26.04-arm}
+          # For ARMv7's and Thumb's tests, on any ARM64 host, and ARMv7's
+          # benchmarks, on one with AArch32.
+          - {tag: "verified-garbage-runner:armv7-cross", platform: "linux/arm64", os: ubuntu-26.04-arm}
     name: ${{ matrix.image.tag }}
     runs-on: ${{ matrix.image.os }}
     timeout-minutes: 20
@@ -106,6 +108,13 @@ jobs:
               for target in $(rustup target list --installed); do
                 cargo run -q --target "$target"
               done
+              # The 32-bit Arm targets under QEMU too, which ci/arm32-run
+              # chooses only on a host without AArch32.
+              if command -v arm32-run; then
+                for target in armv7-unknown-linux-gnueabihf thumbv7neon-unknown-linux-gnueabihf; do
+                  qemu-arm "target/$target/debug/hello"
+                done
+              fi
               rustup component remove cargo clippy llvm-tools rustc rust-std rustfmt
             '
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2

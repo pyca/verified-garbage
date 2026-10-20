@@ -1,19 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
+public import VerifiedGarbage.Impl.Ed25519.X86.PointMul
+public import VerifiedGarbage.Proof.Ed25519.X86.AccumulateStep
 import VerifiedGarbage.Proof.Ed25519.X86.PointPowersLoop
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointPowersLoop
-public import VerifiedGarbage.Proof.Ed25519.X86.PointMulCounter
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointMulCounter
 import VerifiedGarbage.Proof.Ed25519.X86.PointMul
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
+meta import VerifiedGarbage.Impl.Ed25519.X86.PointMul
+meta import VerifiedGarbage.Proof.Ed25519.X86.AccumulateStep
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointPowersLoop
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointMul
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Ed25519.X86.PointCTBatch`. -/
 

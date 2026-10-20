@@ -1,11 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.P384Sha384
-import VerifiedGarbage.Proof.Sha256.X86.Shared
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-384 with HMAC-SHA-384 on x86 (32-bit)
@@ -28,13 +24,11 @@ open VG.Proof.Ecdsa.Rfc6979.X86 (cfgOf sign_spSafe signNotes)
 open VG.Proof.Ecdsa.Rfc6979.X86.P384Sha384 (pack sign_verified)
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := [
-  { Spec.Ecdsa.Rfc6979.P384Sha384.signApi with
-    target := X86.target
-    doc := Spec.Ecdsa.Rfc6979.P384Sha384.signApi.doc (notes := [signNotes
+  Spec.Ecdsa.Rfc6979.P384Sha384.signApi.artifact X86.target {
+    notes := [signNotes
       Proof.Pbkdf2.Whole.X86.sha384F.hiN Proof.Pbkdf2.Whole.X86.sha384F.H.updN
-      Proof.Pbkdf2.Whole.X86.sha384F.hfN 48 Spec.Ecdsa.P384.signApi.name])
+      Proof.Pbkdf2.Whole.X86.sha384F.hfN 48 Spec.Ecdsa.P384.signApi.name]
     code := (cfgOf (pack h.law)).sign
-    contract := Spec.Ecdsa.Rfc6979.P384Sha384.inst.signContract X86.abi 272
     stack := 272
     verified := sign_verified h.law
     spSafe := sign_spSafe (pack h.law) }]

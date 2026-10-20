@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.Arm.FbVerified
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # IDEA-OFB artifacts on baseline ARMv7 -/
 
@@ -12,14 +13,10 @@ import VerifiedGarbage.Impl.Aes.Arm.Alloc
 namespace VG.Artifacts.IdeaOfb.Arm
 
 def artifacts : List Artifact := [
-  { Spec.Idea.ofbApi with
-    target := Arm.target
-    doc := Spec.Idea.ofbApi.doc
-      (notes := ["Baseline ARMv7: the generic OFB of `Impl/Modes/Arm/`, one block at a time (each output block is the cipher of the one before), calling the verified `vg_idea_ecb` on the chaining value in a 56-byte working space on the stack, zeroed on return."])
+  Spec.Idea.ofbApi.artifact Arm.target {
+    notes := ["Baseline ARMv7: the generic OFB of `Impl/Modes/Arm/`, one block at a time (each output block is the cipher of the one before), calling the verified `vg_idea_ecb` on the chaining value in a 56-byte working space on the stack, zeroed on return."]
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.ofb
-    contract := Spec.Idea.ofbContract Arm.abi 96
     stack := 96
-    verified := Proof.Idea.Arm.ofb_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Idea.Arm.ofb_framed }]
 
 end VG.Artifacts.IdeaOfb.Arm

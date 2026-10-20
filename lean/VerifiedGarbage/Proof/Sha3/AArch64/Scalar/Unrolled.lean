@@ -1,29 +1,38 @@
 module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Unrolled
-meta import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Unrolled
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Control
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Control
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Round
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Round
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Wrap
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Wrap
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.ScheduleFacts
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.ScheduleFacts
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.ScheduleFacts
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorCoreExec
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorCoreExec
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
-meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import Std.Tactic.BVDecide.Normalize.Prop
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Unrolled
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Control
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Round
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Wrap
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.ScheduleFacts
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorCoreExec
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import Std.Tactic.BVDecide.Normalize.Prop
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.TCB.Axioms
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
-meta import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+import Mathlib.Tactic.ToExpr
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import Mathlib.Tactic.ToExpr
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-!
 # The unrolled scalar permutation: correctness

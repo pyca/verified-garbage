@@ -1,13 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
-meta import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
+import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Block
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
+meta import VerifiedGarbage.Impl.TripleDes.AArch64.Block
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-!
 # Summaries of the block functions' calls

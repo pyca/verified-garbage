@@ -10,12 +10,16 @@ public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.AArch64.Simd
 public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 public import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # CAST5 on AArch64: running blocks
@@ -167,9 +171,7 @@ macro "crun" : tactic => `(tactic| crun [])
 
 /-- Whether every instruction of `c` writes, if any register, one of `rs`. -/
 def writesOnly (rs : List Reg) (c : Prog isa) : Bool :=
-  c.allInstrs fun i => match dstOf i with
-    | none => true
-    | some d => rs.contains d
+  c.allInstrs fun i => (dsts i).all rs.contains
 
 /-- A register that no instruction writes keeps its value (code without calls). -/
 theorem WP.keep {c : Prog isa} {s : State} {Q : State → Prop} (rs : List Reg) (h : WP isa c s Q)
@@ -181,11 +183,7 @@ theorem WP.keep {c : Prog isa} {s : State} {Q : State → Prop} (rs : List Reg) 
     (Exec.rdwr he).2.1, (Exec.rdwr he).2.2, Exec.preservedV he hv⟩⟩
   unfold writesOnly at hc
   rw [Code.allInstrs_eq, List.all_eq_true] at hc
-  have := hc i hi
-  intro e
-  rw [e] at this
-  simp only [List.contains_iff_mem] at this
-  exact hr (by simpa using this)
+  exact clobbers_eq_false_of_all (hc i hi) (by simpa using hr)
 
 /-! ## Loops -/
 

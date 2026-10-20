@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomClear
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Wipe the nonce and publish the consumed-byte count and return status. -/
 @[expose] public section

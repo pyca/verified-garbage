@@ -1,0 +1,5 @@
+name = "RFC 7919 negotiated finite-field Diffie-Hellman groups"
+directories = ["rfc7919"]
+url = "https://www.rfc-editor.org/rfc/rfc7919.txt"
+sha256 = "e7ffd3d8109670aa48d218964ceccf82cc6d2fd36132403c89589434bf8a4d72"
+retrieved = 2026-10-20

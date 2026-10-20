@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.X86.FbVerified
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Seed.X86.FbLit
 
 /-! # SEED-OFB artifacts on baseline x86 (32-bit) -/
 
@@ -16,13 +18,10 @@ def note : String :=
   The mode is the generic OFB of `Impl/Modes/X86/`, over SEED's ECB core."
 
 def artifacts : List Artifact := [
-  { Spec.Seed.ofbApi with
-    target := X86.target
-    doc := Spec.Seed.ofbApi.doc (notes := [note])
+  Spec.Seed.ofbApi.artifact X86.target {
+    notes := [note]
     code := Impl.StackScratch.X86.withStackScratchWiped 888 4 216 Impl.Seed.X86.ofb
-    contract := Spec.Seed.ofbContract X86.abi 888
     stack := 888
-    verified := Proof.Seed.X86.Fb.ofb_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Seed.X86.Fb.ofb_framed }]
 
 end VG.Artifacts.SeedOfb.X86

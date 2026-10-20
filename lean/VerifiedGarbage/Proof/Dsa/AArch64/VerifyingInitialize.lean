@@ -1,13 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingShape
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingOperands
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Dsa.AArch64.InitializedLayout
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyBody
+import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingOperands
+import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceReady
 
 /-! # Establishing all verifying operands after public domain acceptance -/
 

@@ -1,12 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.InitCore
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.InitCore
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Saved
+public import VerifiedGarbage.Impl.MlKem.AArch64.Noise
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.State
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 
 /-! # Paired-noise prologue, including the register record -/
 @[expose] public section

@@ -8,10 +8,6 @@ public import Mathlib.Algebra.Group.Basic
 public import Mathlib.Tactic.LinearCombination
 public import Mathlib.Tactic.FieldSimp
 public import Mathlib.Tactic.Ring
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The group law of a complete Edwards curve with `a = 1`

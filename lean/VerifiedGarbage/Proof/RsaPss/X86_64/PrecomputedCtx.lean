@@ -1,13 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaPss.Precomputed
-public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCorrect
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFrame
 
 @[expose] public section
 
@@ -55,7 +49,7 @@ theorem pre_of {s : State}
   refine ⟨⟨sp1, by omega, ?_, hwr, dns, des, dds, dgs, dsa.sub_right ha,
     dRn, dRe, dRd, dRg, dRs, dRa.sub_right ha,
     dKn, dKe, dKd, dKg, dKs, dKa.sub_right ha, wN, wE, wD, wG, wS, k1, k2, L1, L2, hsg,
-    by unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hsl; omega⟩,
+    by unfold Spec.RsaPss.publicScratchWords Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords at hsl; omega⟩,
     ?_, dsa.symm, dKa.symm, ?_, dsp.symm, dKp.symm, wP, pl⟩
   · rw [hrd]
     apply Covers.of_sub

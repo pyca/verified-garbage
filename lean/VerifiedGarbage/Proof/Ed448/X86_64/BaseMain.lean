@@ -3,13 +3,22 @@ module
 import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 import VerifiedGarbage.Proof.Ed448.X86_64.CombLoop
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseBits
-public import VerifiedGarbage.Proof.Ed448.X86_64.BaseEncode
-public import VerifiedGarbage.Proof.X448.X86_64.Main
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseEncode
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.X448.X86_64.InvCall
+public import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMain
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarIO
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
+import VerifiedGarbage.Proof.X448.X86_64.Inv
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.X448.X86_64.Lit
 
 /-!
 # Ed448 base-point multiplication on x86-64: the whole function

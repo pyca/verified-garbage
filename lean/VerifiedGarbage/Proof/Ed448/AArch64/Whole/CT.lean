@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
 
 /-!
 # Ed448's complete operations on AArch64: constant time in the frame's body

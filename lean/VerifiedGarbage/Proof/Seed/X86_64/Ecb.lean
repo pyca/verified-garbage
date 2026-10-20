@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.X86_64.Setup
+import VerifiedGarbage.Proof.Seed.X86_64.Setup
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Seed.X86_64.Batch
 import VerifiedGarbage.Proof.Seed.Memory
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # The function on x86-64

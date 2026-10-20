@@ -1,11 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
+import VerifiedGarbage.Proof.Mont.X86_64.Ops
 
 /-! # Shared arithmetic in ECDSA's outer phases -/
 

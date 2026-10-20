@@ -2,12 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Loop
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Save
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

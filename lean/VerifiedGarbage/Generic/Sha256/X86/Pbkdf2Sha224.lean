@@ -1,10 +1,25 @@
 module
 
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha224
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha224
 import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha224
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
+public import VerifiedGarbage.Proof.Hmac.Generic.Implies
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFin
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
+public import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFin
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
+import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
 
 /-!
 # PBKDF2-HMAC-SHA-224 (RFC 8018) on x86, for every x86 SHA-256 backend: the iteration and the whole derivation
@@ -30,29 +45,21 @@ working space (`Proof.Pbkdf2.Whole.X86.pbkFramed`).
 namespace VG.Generic.Sha256.X86.Pbkdf2Sha224
 
 def artifacts (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
-  { Spec.Hmac.sha224I.iterateApi with
-    name := Spec.Hmac.sha224I.iterateApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Hmac.sha224I.iterateApi.doc
+  Spec.Hmac.sha224I.iterateApi.artifact X86.target {
+    suffix := v.suffix
     code := v.M224.iterate
-    contract := Spec.Hmac.sha224I.iterateContract X86.abi 48
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩)
     stack := 48
     verified := v.iterate224
     spSafe := v.iter224Sp
     features := v.features },
-  { Spec.Hmac.sha224I.pbkdf2Api with
-    name := Spec.Hmac.sha224I.pbkdf2Api.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Hmac.sha224I.pbkdf2Api.doc
+  Spec.Hmac.sha224I.pbkdf2Api.artifact X86.target {
+    suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha224I) 7 v.F224.pbkdf2
-    contract := Spec.Hmac.sha224I.pbkdf2Contract X86.abi (76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha224I)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩)
     stack := 76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha224I
-    verified := Proof.Pbkdf2.Whole.X86.pbkFramed (Proof.Pbkdf2.Whole.X86.sha224_verified v) (by decide)
-      (Proof.Pbkdf2.Whole.X86.noEsp_of_all v.pbkdf2_224Sp) (Proof.Pbkdf2.Whole.X86.sha224_stack v)
+    verified := Proof.Pbkdf2.Whole.X86.pbkFramed (Proof.Pbkdf2.Whole.X86.sha224_verified v)
       Proof.Pbkdf2.Whole.X86.sha224_pbkFrameSat
-    spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe (by decide) v.pbkdf2_224Sp
+      (Proof.Pbkdf2.Whole.X86.noEsp_of_all v.pbkdf2_224Sp) (Proof.Pbkdf2.Whole.X86.sha224_stack v)
+    spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.pbkdf2_224Sp
     features := v.features }]
 
 end VG.Generic.Sha256.X86.Pbkdf2Sha224

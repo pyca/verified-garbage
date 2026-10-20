@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.RsaPkcs1Enc
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # RSAES-PKCS1-v1_5 with implicit rejection: the contracts, on every target
@@ -36,8 +35,9 @@ encoded message `EM` and the alternative message `AM` whichever it returns
 secrets (whether the padding string has a zero octet; whether the
 ciphertext is below `n`, the key is consistent and RSADP passes its check).
 
-`scratch` is working space of at least `16 n_len + 32` `u64`s, whose contents on
-return are unspecified. `stack` is the number of bytes below the stack
+`scratch` is working space of at least `8 ⌈n_len / 8⌉ + 48` `u64`s
+(`Rsa.publicScratchWords`, the public-key operation's) when encrypting and
+`16 n_len + 32` when decrypting, whose contents on return are unspecified. `stack` is the number of bytes below the stack
 pointer that an implementation's calls and frames use. The functions may
 overwrite their arguments passed in memory, where the calling convention
 allows it (`writeArgs`).
@@ -47,7 +47,8 @@ allows it (`writeArgs`).
 
 namespace VG.Spec.RsaPkcs1Enc
 
-open Rsa (bytesAt wordsAt lenValid scratchWords written scratchSafety exponentDoc Outcome)
+open Rsa (bytesAt wordsAt lenValid scratchWords publicScratchWords written scratchSafety
+  publicScratchSafety exponentDoc Outcome)
 
 /-! ## `vg_rsa_pkcs1_encrypt` -/
 
@@ -69,7 +70,7 @@ def encryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (pre := fun _out outLen _n nLen _e eLen _msg msgLen _ps psLen _scratch scratchLen _ =>
       lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ 1 ≤ eLen.toNat ∧
         eLen.toNat ≤ nLen.toNat ∧ msgLen.toNat + 11 ≤ nLen.toNat ∧
-        psLen.toNat = nLen.toNat - msgLen.toNat - 3 ∧ scratchWords nLen.toNat ≤ scratchLen.toNat)
+        psLen.toNat = nLen.toNat - msgLen.toNat - 3 ∧ publicScratchWords nLen.toNat ≤ scratchLen.toNat)
     (post := fun out _outLen n nLen e eLen msg msgLen ps psLen _scratch _scratchLen m m' r =>
       written m' out nLen.toNat r
         (encrypt (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m msg msgLen.toNat)
@@ -78,13 +79,9 @@ def encryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (leak := some fun _out _outLen n nLen e eLen _msg _msgLen _ps _psLen _scratch _scratchLen m =>
       (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat))
 
-def encryptApi : Api where
-  module := "rsa_pkcs1_enc"
-  name := "vg_rsa_pkcs1_encrypt"
-  sig := encryptSig
-  writeArgs := true
-  contracts := some fun A stack => encryptContract A stack
-  summary := s!"RSAES-PKCS1-v1_5 encryption: RSAES-PKCS1-V1_5-ENCRYPT (RFC 8017 §7.2.1), with \
+/-- The summary of `encrypt` in the documentation of the functions built on it. -/
+def encryptSummary : String :=
+  s!"RSAES-PKCS1-v1_5 encryption: RSAES-PKCS1-V1_5-ENCRYPT (RFC 8017 §7.2.1), with \
     the padding string given by the caller. With the modulus `n` (`n_len` bytes, most \
     significant first, odd, from 512 to 8192 bits, its first byte not zero) and \
     {exponentDoc}, encrypts the encoded message \
@@ -96,9 +93,12 @@ def encryptApi : Api where
     Contract: `VG.Spec.RsaPkcs1Enc.encryptContract`. Constant time but for the public key: \
     timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on \
     the message or the padding string."
-  safety := ["`n_len` must be in 64..=1024.", "`out_len` must be `n_len`.",
+
+/-- The `# Safety` items of `encrypt` but for what the signature gives. -/
+def encryptSafety : List String :=
+  ["`n_len` must be in 64..=1024.", "`out_len` must be `n_len`.",
     "`e_len` must be in 1..=`n_len`.", "`msg_len + 11` must be at most `n_len`.",
-    "`ps_len` must be `n_len - msg_len - 3`."] ++ scratchSafety
+    "`ps_len` must be `n_len - msg_len - 3`."] ++ publicScratchSafety
 
 /-! ## `vg_rsa_pkcs1_decrypt` -/
 

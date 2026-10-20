@@ -1,14 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.X86_64.Group
-public import VerifiedGarbage.Proof.Modes.X86_64.Unchain
+import VerifiedGarbage.Proof.Modes.X86_64.Unchain
 public import VerifiedGarbage.Proof.Modes.Cbc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Modes.X86_64.Cbc
+public import VerifiedGarbage.Proof.Modes.X86_64.Setup
+import VerifiedGarbage.Proof.Modes.X86_64.Copy
+import VerifiedGarbage.Proof.Modes.X86_64.Steps
+import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # CBC on x86-64, for any core: the entry and one group of decryption
@@ -68,7 +71,7 @@ structure CInv (cs : BlockSpec c) (s₀ : State) (B D : Addr) (n : Nat) (k : cs.
   chain : ∀ u < 8 * c.bw, s.mem (chainAddr c B + BitVec.ofNat 64 u) =
     (cbcPrev (8 * c.bw) s₀.mem D iv (c.G * g)).getD u 0
   data : DInv (8 * c.bw) s₀.mem s.mem D n (c.G * g) (cbcOut (8 * c.bw) (cs.cipher k) s₀.mem D iv)
-  frame : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] s₀.mem s.mem
+  frame : Frame ([⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] ++ stkList c (s₀.gpr .rsp)) s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
@@ -79,7 +82,7 @@ structure CDone (cs : BlockSpec c) (s₀ : State) (B D : Addr) (n : Nat) (k : cs
   rsp : s.gpr .rsp = s₀.gpr .rsp
   saved : ∀ i < 6, s.mem.readW (wordAddr B (c.slots + i)) 64 = s₀.mem.readW (wordAddr B (c.slots + i)) 64
   data : DInv (8 * c.bw) s₀.mem s.mem D n n (cbcOut (8 * c.bw) (cs.cipher k) s₀.mem D iv)
-  frame : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] s₀.mem s.mem
+  frame : Frame ([⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] ++ stkList c (s₀.gpr .rsp)) s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
@@ -177,6 +180,8 @@ theorem cbcDecGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} 
   -- Decrypted.
   refine WP.seq (WP.mono (cs.crypt_wp base₃ ⟨by rw [wr₃']; exact hwS, hfit⟩ ready₃)
     fun s₄ ⟨base₄, rsp₄, dr₄, lr₄, ready₄, f₄, ks₄, rd₄, wr₄⟩ => ?_)
+  rw [show s₃.gpr .rsp = s₀.gpr .rsp by
+    rw [keep₃ _ (by decide) (by decide) (by decide) (by decide) (by decide), hi.rsp]] at f₄
   have left₄ : s₄.gpr c.leftReg = BitVec.ofNat 64 v := by
     rw [lr₄, keep₃ _ la lb lc lbp l10, hi.leftR]
   have data₄ : s₄.gpr c.dataReg = A := by rw [dr₄, keep₃ _ da db dc dbp d10, hi.dataR]
@@ -227,18 +232,19 @@ theorem cbcDecGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} 
       exact keep₈ r h1 h2 h3 h4 h5 h6 h7
   -- The bytes, through the steps.
   have hn64 : 8 * c.bw * n ≤ 2 ^ 64 := by omega_using [hfitD]
-  have outCore : ∀ {R : Region}, Region.Disjoint R (coreRegion c B) → R.len ≤ 2 ^ 64 →
-      ∀ i < R.len, s₄.mem (R.base + BitVec.ofNat 64 i) = s₃.mem (R.base + BitVec.ofNat 64 i) := fun hd hl i hi =>
-    f₄.bytes (R := _) (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hd) hl hi
+  have outCore : ∀ {R : Region}, Region.Disjoint R (coreRegion c B) → (∃ w ∈ s₀.wr, Region.Sub R w) →
+      R.len ≤ 2 ^ 64 →
+      ∀ i < R.len, s₄.mem (R.base + BitVec.ofNat 64 i) = s₃.mem (R.base + BitVec.ofNat 64 i) := fun hd hw hl i hi =>
+    f₄.bytes (R := _) (hp.stk.coreFrame_disj hd hw) hl hi
   have outT : ∀ {R : Region}, Region.Disjoint R ⟨T, 8 * c.bw * cc⟩ → R.len ≤ 2 ^ 64 →
       ∀ i < R.len, s₃.mem (R.base + BitVec.ofNat 64 i) = s.mem (R.base + BitVec.ofNat 64 i) := fun hd hl i hi =>
     f₃.bytes (R := _) (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hd) hl hi
   -- The data before the unchaining: as on entry.
   have dat₄ : ∀ i < 8 * c.bw * n, s₄.mem (D + BitVec.ofNat 64 i) = s.mem (D + BitVec.ofNat 64 i) := fun i hin => by
-    rw [outCore (R := ⟨D, 8 * c.bw * n⟩) (dDS subCore) hn64 i hin,
+    rw [outCore (R := ⟨D, 8 * c.bw * n⟩) (dDS subCore) ⟨_, hp.dat, fun _ h => h⟩ hn64 i hin,
       outT (R := ⟨D, 8 * c.bw * n⟩) (dDS subT) hn64 i hin]
   have chain₄ : ∀ u < 8 * c.bw, s₄.mem (H + BitVec.ofNat 64 u) = s.mem (H + BitVec.ofNat 64 u) := fun u hu => by
-    rw [outCore (R := ⟨H, 8 * c.bw⟩) dHcore (show 8 * c.bw ≤ 2 ^ 64 by omega_using [hkc, hcc1, hn64]) u hu, outT (R := ⟨H, 8 * c.bw⟩) dTH.symm (show 8 * c.bw ≤ 2 ^ 64 by omega_using [hkc, hcc1, hn64]) u hu]
+    rw [outCore (R := ⟨H, 8 * c.bw⟩) dHcore ⟨_, hp.scr.wr, subH⟩ (show 8 * c.bw ≤ 2 ^ 64 by omega_using [hkc, hcc1, hn64]) u hu, outT (R := ⟨H, 8 * c.bw⟩) dTH.symm (show 8 * c.bw ≤ 2 ^ 64 by omega_using [hkc, hcc1, hn64]) u hu]
   have dat0 : ∀ i, 8 * c.bw * (c.G * g) ≤ i → i < 8 * c.bw * n →
       s.mem (D + BitVec.ofNat 64 i) = s₀.mem (D + BitVec.ofNat 64 i) :=
     fun i h1 h2 => by rw [hi.data i h2, ite_eq_right (by omega_using [h1])]
@@ -325,18 +331,17 @@ theorem cbcDecGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} 
       s₀.mem.readW (wordAddr B (c.slots + i)) 64 := fun i hi6 => by
     rw [m₈, ← hi.saved i hi6]
     refine (f₇.readW (Region.contains_self _ _) (wS _ (by omega_using []) (by omega_using [hi6])) (by decide)).trans ?_
-    refine (f₄.readW (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact VG.Offset.disjoint_base B (by omega_using []) (by omega_using [hsm, hroom, hi6])) (by decide)).trans ?_
+    refine (f₄.readW (Region.contains_self _ _) (hp.stk.coreFrame_disj
+      (VG.Offset.disjoint_base B (by omega_using []) (by omega_using [hsm, hroom, hi6]))
+      ⟨_, hp.scr.wr, VG.Offset.sub_base B (by simp only [Core.ctrSlots]; omega_using [hsm, hroom, hi6])⟩) (by decide)).trans ?_
     exact f₃.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact VG.Offset.disjoint B (.inr (by omega_using [hbuf, hbwcc, hbG])) (by omega_using [hsm, hroom, hi6]) (by omega_using [hsm, hroom, hbuf, hbwcc, hbG])) (by decide)
-  have fr : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] s₀.mem s₈.mem := by
+  have fr : Frame ([⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] ++ stkList c (s₀.gpr .rsp)) s₀.mem s₈.mem := by
     rw [m₈]
     refine hi.frame.trans (((f₃.sub fun r hr => ⟨⟨B, 8 * c.ctrSlots⟩, List.mem_cons_self, by
       simp only [List.mem_singleton] at hr; subst hr; exact subT⟩).trans
-      (f₄.sub fun r hr => ⟨⟨B, 8 * c.ctrSlots⟩, List.mem_cons_self, by
-        simp only [List.mem_singleton] at hr; subst hr; exact subCore⟩)).trans (f₇.sub fun r hr => ?_))
+      (f₄.sub (coreFrame_sub ⟨⟨B, 8 * c.ctrSlots⟩, List.mem_cons_self, subCore⟩))).trans (f₇.sub fun r hr => ?_))
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self, subT⟩

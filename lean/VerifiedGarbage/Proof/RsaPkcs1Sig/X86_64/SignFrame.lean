@@ -2,14 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCtx
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Sign
-public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-public import VerifiedGarbage.Proof.Framework.X86_64.Call
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-!
 # `vg_rsa_pkcs1_sign` on x86-64: the frame

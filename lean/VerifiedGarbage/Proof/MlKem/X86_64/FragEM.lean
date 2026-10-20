@@ -1,14 +1,10 @@
 module
+public import VerifiedGarbage.Impl.MlKem.X86_64.Kem
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragOf
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlKem.X86_64.FragL
 
 /-!
 # ML-KEM on x86-64: the call of `vg_mlkem*_encrypt_mul`
@@ -88,7 +84,7 @@ theorem emPre {k : Nat} {u a t y z : Ptr} {st s1 : State} (H : EncMulH k u a t y
     (encMulK k).pre (s1.callEntry.withRegions [vR (pa st a) (k * k), vR (pa st t) k, vR (pa st y) k]
       [vR (pa st u) (k + 1), cR (pa st z)]) := by
   have hsp : s1.gpr .rsp = st.gpr .rsp := k1.gpr (by decide)
-  simp only [encMulK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem,
+  simp only [encMulK, encMulKA, encMulKG, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem,
     ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp), ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.rdx ≠ .rsp), ce_gpr' s1 (by decide : Reg.rcx ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.r8 ≠ .rsp), hv.1, hv.2.1, hv.2.2.1, hv.2.2.2.1, hv.2.2.2.2]
@@ -114,7 +110,7 @@ theorem encMulAt_ok {u a t y z : Ptr} (ha : NA a) (ht : NA t) (hy : NA y) (hz : 
   refine WP.mono (glueCall_ok hC.ok hC.nosp (by rw [hC.depth]; decide) (emGlue_ok u a t y z H.off ha ht hy hz st)
     (fun s1 hv hm k => emPre H hv hm k) H.c H.wc) fun s' ⟨hpost, s1, hV, hm, k, s₂, hm₂, _, hq⟩ => ⟨hpost, ?_⟩
   have hsp : s1.gpr .rsp = st.gpr .rsp := k.gpr (by decide)
-  simp only [encMulK, State.withRegions_gpr, State.withRegions_mem, ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp),
+  simp only [encMulK, encMulKA, encMulKG, State.withRegions_gpr, State.withRegions_mem, ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp), ce_gpr' s1 (by decide : Reg.rdx ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.rcx ≠ .rsp), hV.1, hV.2.1, hV.2.2.1, hV.2.2.2.1, hm₂,
     ce_matAt s1 (by rw [hsp]; exact H.kA), ce_vecAt s1 (by rw [hsp]; exact H.kT),
@@ -136,7 +132,7 @@ theorem encMulAt_tr {u a t y z : Ptr} (ha : NA a) (ht : NA t) (hy : NA y) (hz : 
       refine ⟨_, _, _, _, emPre hx hv1 hm1 k1, emPre hy' hv2 hm2 k2, ?_, by rw [k1.2.1, k1.2.2]; exact hx.c,
         by rw [k1.2.2]; exact hx.wc, by rw [k2.2.1, k2.2.2]; exact hy'.c, by rw [k2.2.2]; exact hy'.wc,
         by rw [k1.gpr (by decide), k2.gpr (by decide), e6]⟩
-      simp only [encMulK, State.withRegions_gpr, State.callEntry_rsp, ce_gpr' _ (by decide : Reg.rdi ≠ .rsp),
+      simp only [encMulK, encMulKA, encMulKG, State.withRegions_gpr, State.callEntry_rsp, ce_gpr' _ (by decide : Reg.rdi ≠ .rsp),
         ce_gpr' _ (by decide : Reg.rsi ≠ .rsp), ce_gpr' _ (by decide : Reg.rdx ≠ .rsp),
         ce_gpr' _ (by decide : Reg.rcx ≠ .rsp), ce_gpr' _ (by decide : Reg.r8 ≠ .rsp), hv1.1, hv1.2.1, hv1.2.2.1,
         hv1.2.2.2.1, hv1.2.2.2.2, hv2.1, hv2.2.1, hv2.2.2.1, hv2.2.2.2.1, hv2.2.2.2.2, pa, e1, e2, e3, e4, e5,

@@ -4,14 +4,12 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
 public import VerifiedGarbage.Proof.AesGcm.ScratchP
 import VerifiedGarbage.Proof.AesGcm.X86_64.InitPCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
-import VerifiedGarbage.Proof.AesGcm.X86_64.Open
 import VerifiedGarbage.Proof.AesGcm.X86_64.OpenCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamCryptCT
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamRun
 
 /-!
 # AES-GCM on x86-64, for a key context of either kind

@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Impl.AesGcm.X86_64.StreamTo
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealGather
 
 /-!
@@ -34,6 +33,14 @@ whole blocks after it in a second pass of the blocks loop, or, below `ts`,
 pay more in calls than the copy costs. The streaming functions' calls cost
 more than the copy saves below `t`, and more than the few bytes copied after
 a first slice holding all the whole blocks.
+
+`vg_aes_gcm_seal_gather_prepared` first tests, from the arguments where the
+caller put them, whether the text is a TLS record's (a 12-byte nonce, at most
+16 bytes of additional data, one or two slices, the second ending at most 16
+bytes after the first's whole blocks: `frontTest`), and if so copies the
+second slice to the output after the first and seals the text by one call of
+`vg_aes_gcm_seal_split_prepared` from the first slice where it is
+(`frontFast`), before anything else (`withFront`).
 
 Otherwise it runs the streaming functions on a state of its own, in `work`: it starts
 the message with the nonce, absorbs the additional data, and, if there is
@@ -321,6 +328,85 @@ def copySplit (splitFn : Fn) : Prog isa :=
 from its first slice by `splitFn`, as `selTest ts` chooses. -/
 def copyShort (ts : Nat) (sealFn splitFn : Fn) : Prog isa :=
   .seq (selTest ts) (.ite .b (copySeal sealFn) (copySplit splitFn))
+
+/-! ## A TLS record's text, before the entry -/
+
+/-- From the entry: `CF` if the text is shorter than `t` bytes. -/
+def frontLen (t : Nat) : List Instr := [.mov .rax (.mem (at_ .rsp 32)), .alu .cmp .rax (imm t)]
+
+/-- `r11` nonzero unless the nonce is 12 bytes long, the additional data at
+most 16 and there are one or two slices (`r11` starts at `nonce_len - 12`,
+and each test leaves it as it was or makes it nonzero); `CF` unless there
+are one or two. -/
+def frontArgs : List Instr :=
+  [.mov .r11 (.reg .rcx), .alu .sub .r11 (imm 12), .alu .cmp .r9 (imm 17), .cmov .ae .r11 (.reg .r9),
+    .mov .rax (.mem (at_ .rsp 16)), .alu .sub .rax (imm 1), .alu .cmp .rax (imm 2), .cmov .ae .r11 (.reg .rax)]
+
+/-- With one or two slices, `r11` made nonzero unless at most 16 bytes of
+text follow the whole blocks of the first slice (of length `a`, in `r10`),
+and the first slice is at least 256 bytes long if the text is (and always,
+if `long`). -/
+def frontSlice (long : Bool) : List Instr :=
+  [.mov .r10 (.mem (at_ .rsp 8)), .mov .r10 (.mem (at_ .r10 8)),
+    .mov .rax (.reg .r10), .shift .shr .rax 4, .shift .shl .rax 4, .alu .add .rax (imm 16),
+    .alu .cmp .rax (.mem (at_ .rsp 32)), .cmov .ae .rax (.reg .r11), .alu .or .r11 (.reg .rax),
+    .mov .rax (.mem (at_ .rsp 32))] ++ (if long then [.alu .or .rax (imm 256)] else []) ++
+  [.shift .shr .rax 8, .alu .cmp .r10 (imm 256), .cmov .ae .rax (.reg .r11), .alu .or .r11 (.reg .rax)]
+
+/-- The tests of `frontArgs` and `frontSlice long`; `ZF` if all pass. -/
+def frontCore (long : Bool) : Prog isa :=
+  .seq (.block frontArgs)
+    (.seq (.ite .ae (.block []) (.block (frontSlice long))) (.block [.alu .test .r11 (.reg .r11)]))
+
+/-- From the entry, with the arguments where the caller put them: `ZF` if the
+text is a TLS record's (a 12-byte nonce, at most 16 bytes of additional
+data, and one or two slices, the second ending at most 16 bytes after the
+first's whole blocks; `frontSlice long`), which `vg_aes_gcm_seal_split`
+seals fastest from its first slice. Only `rax`, `r10` and `r11` change; on
+512-bit registers (`long`) a text shorter than 256 bytes leaves after the
+first comparison. -/
+def frontTest (long : Bool) : Prog isa :=
+  if long then .seq (.block (frontLen 256)) (.ite .b (.block []) (frontCore long)) else frontCore long
+
+/-- `ctx` and `rounds` kept in `work` (where `splitCtx` reads them), the first
+descriptor in `r10`, and `ZF` if there is one slice. -/
+def fastEntry : List Instr :=
+  [.mov .r11 (.mem (at_ .rsp 48)), .mov .r10 (.mem (at_ .rsp 8)), .mov .rax (.mem (at_ .rsp 16)),
+    .store (at_ .r11 gCtx) .rdi, .store (at_ .r11 gRounds) .rsi, .alu .cmp .rax (imm 1)]
+
+/-- The second slice's length into `rcx`, `ZF` if it is empty. -/
+def fastLen2 : List Instr := [.mov .rcx (.mem (at_ .r10 24)), .alu .test .rcx (.reg .rcx)]
+
+/-- The second slice in `rsi`, the output after the first in `rdi`, and
+`r10 = 0`, for a copy one byte at a time (`copy1Body`). -/
+def fastCopy : List Instr :=
+  [.mov .rsi (.mem (at_ .r10 16)), .mov .rdi (.mem (at_ .rsp 24)), .alu .add .rdi (.mem (at_ .r10 8)),
+    .mov32 .r10 (imm 0)]
+
+/-- The arguments of `vg_aes_gcm_seal_split(ctx, rounds, nonce, 12, aad,
+aad_len, src, src_len, dst, len, tag)` but `ctx` and `rounds`, with `tag`,
+`len`, `dst`, `src_len` and `src` (the first slice) in `rax`, `r10`, `r11`,
+`rdi` and `rsi`, to be pushed. -/
+def fastArgs : List Instr :=
+  [.mov32 .rcx (imm 12), .mov .r10 (.mem (at_ .rsp 8)), .mov .rsi (.mem (at_ .r10 0)), .mov .rdi (.mem (at_ .r10 8)),
+    .mov .rax (.mem (at_ .rsp 40)), .mov .r10 (.mem (at_ .rsp 32)), .mov .r11 (.mem (at_ .rsp 24))]
+
+/-- A TLS record's text: the second slice, if any, copied to the output after
+the first, and the text encrypted by `splitFn` (`vg_aes_gcm_seal_split`)
+from the first slice where it is and the rest at the output, with `src`,
+`src_len`, `dst`, `len` and `tag` passed on the stack. -/
+def frontFast (splitFn : Fn) : Prog isa :=
+  .seq (.block fastEntry)
+    (.seq (.ite .e (.block [])
+        (.seq (.block fastLen2) (.ite .e (.block []) (.seq (.block fastCopy) (.loop (.block copy1Body) .ne)))))
+      (.seq (.block fastArgs)
+        (.frame (.push [.rax, .r10, .r11, .rdi, .rsi]) (.seq (.block splitCtx) (.call splitFn.name splitFn.code))
+          (.pop .rax 5))))
+
+/-- `frontFast splitFn` if `frontTest long` sets `ZF`, and otherwise `rest`
+(`sealGather`). -/
+def withFront (long : Bool) (splitFn : Fn) (rest : Prog isa) : Prog isa :=
+  .seq (frontTest long) (.ite .e (frontFast splitFn) rest)
 
 /-! ## A longer text: the streaming functions -/
 

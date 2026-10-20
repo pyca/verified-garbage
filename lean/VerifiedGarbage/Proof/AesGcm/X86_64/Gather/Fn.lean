@@ -1,14 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CallTo
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CallTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SealCall
+public import VerifiedGarbage.Proof.Gcm.SealGather
 import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Steps
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Run
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Calls
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.Gcm.Ctr
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: correctness
@@ -335,10 +342,10 @@ theorem sealGatherG_wp {q : Nat} {quick fast test short : Prog isa} {go : Bool}
     (hfast : L s < q → ∀ st, E2 s st → st.gpr .r11 = W s → WP isa fast st (Done s))
     (htest : ∀ st, E2 s st → WP isa test st fun st' => E2 s st' ∧ st'.gpr .r11 = W s ∧ st'.cf = some go)
     (hshort : go = true → ∀ st, E2 s st → st.gpr .r11 = W s → WP isa short st (Done s))
-    (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn) :
-    WP isa (sealGather quick fast test short I.fn A.fn T.fn F.fn) s (Done s) := by
+    (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn) {st : State} (hs : Same s st) :
+    WP isa (sealGather quick fast test short I.fn A.fn T.fn F.fn) st (Done s) := by
   unfold sealGather gatherRest
-  refine WP.seq (WP.mono (entry1_ok hp) fun _ h₁ => WP.seq (WP.mono (w_entry2 hp h₁) fun _ h₂ =>
+  refine WP.seq (WP.mono (entry1_ok hp hs) fun _ h₁ => WP.seq (WP.mono (w_entry2 hp h₁) fun _ h₂ =>
     WP.seq (WP.mono (hquick _ h₂) fun σ ⟨E₀, r₀, c₀⟩ => ?_)))
   refine WP.ite (decide (L s < q)) (by simp only [eval, c₀]) (fun e => hfast (by simpa using e) σ E₀ r₀)
     (fun _ => WP.seq (WP.mono (htest _ E₀) fun st ⟨E, r11, cf⟩ => ?_))

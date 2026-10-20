@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.X448.AArch64.Base
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Phases
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
 public import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Bounds

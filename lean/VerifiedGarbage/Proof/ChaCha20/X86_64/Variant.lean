@@ -1,15 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512VL
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Callee
 public import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Implementations of `vg_chacha20_xor` on x86-64

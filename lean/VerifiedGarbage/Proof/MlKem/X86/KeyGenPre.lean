@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86.TopLocal
-public import VerifiedGarbage.Proof.MlKem.X86.TopKem
-public import VerifiedGarbage.Proof.MlKem.X86.Extra
-public import VerifiedGarbage.Impl.MlKem.X86.KeyGen
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.X86.TopKem
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.MlKem.KPke
+public import VerifiedGarbage.Proof.Sha256.X86.Lit
+public import VerifiedGarbage.Proof.Sha3.X86.Lit
+public import VerifiedGarbage.Proof.MlKem.X86.Top
+public import VerifiedGarbage.Impl.MlKem.X86.Kem
 
 /-!
 # ML-KEM on x86 (32-bit): the setting of key generation
@@ -48,7 +48,7 @@ theorem addr0 (s₀ : State) (i : Nat) : Buf.addr s₀ ⟨i, 0, 32⟩ = (arg s�
   simp only [Buf.addr, Buf.ptr, BitVec.add_zero]
 
 /-- A taint check of code with `scratch` at `(Y L).sc`, through `esi`. -/
-macro "yk_taint" : tactic => `(tactic| plain_simp_names ((try simp only [show ∀ L, (Y L).sc = 3 from fun _ => rfl]); (try simp only
+tactic_template "yk_taint" : tactic => `(tactic| ((try simp only [show ∀ L, (Y L).sc = 3 from fun _ => rfl]); (try simp only
                    [ptrTo, reduceIte, Nat.reduceEqDiff, List.cons_append, List.nil_append]); taint_rfl))
 
 end VG.Proof.MlKem.X86.KeyGen

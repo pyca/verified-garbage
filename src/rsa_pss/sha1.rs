@@ -6,7 +6,7 @@
 //! of the RSA operation.
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64"),
+    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
     feature = "alloc"
 ))]
 
@@ -18,14 +18,18 @@ use crate::arch::rsa_pss_sha1_mgf1_sha1::{
     VG_RSA_PSS_SHA1_MGF1_SHA1_SIGN_SHA1_SHANI_CRT_IFMA_FEATURES,
     VG_RSA_PSS_SHA1_MGF1_SHA1_SIGN_SHA1_SHANI_FEATURES,
     VG_RSA_PSS_SHA1_MGF1_SHA1_VERIFY_PRECOMPUTED_RSA_ADX_FEATURES,
+    VG_RSA_PSS_SHA1_MGF1_SHA1_VERIFY_PRECOMPUTED_RSA_IFMA_FEATURES,
     VG_RSA_PSS_SHA1_MGF1_SHA1_VERIFY_PRECOMPUTED_SHA1_SHANI_FEATURES,
     VG_RSA_PSS_SHA1_MGF1_SHA1_VERIFY_PRECOMPUTED_SHA1_SHANI_RSA_ADX_FEATURES,
+    VG_RSA_PSS_SHA1_MGF1_SHA1_VERIFY_PRECOMPUTED_SHA1_SHANI_RSA_IFMA_FEATURES,
     vg_rsa_pss_sha1_mgf1_sha1_sign_crt_adx, vg_rsa_pss_sha1_mgf1_sha1_sign_crt_ifma,
     vg_rsa_pss_sha1_mgf1_sha1_sign_sha1_shani, vg_rsa_pss_sha1_mgf1_sha1_sign_sha1_shani_crt_adx,
     vg_rsa_pss_sha1_mgf1_sha1_sign_sha1_shani_crt_ifma,
     vg_rsa_pss_sha1_mgf1_sha1_verify_precomputed_rsa_adx,
+    vg_rsa_pss_sha1_mgf1_sha1_verify_precomputed_rsa_ifma,
     vg_rsa_pss_sha1_mgf1_sha1_verify_precomputed_sha1_shani,
     vg_rsa_pss_sha1_mgf1_sha1_verify_precomputed_sha1_shani_rsa_adx,
+    vg_rsa_pss_sha1_mgf1_sha1_verify_precomputed_sha1_shani_rsa_ifma,
 };
 #[cfg(target_arch = "aarch64")]
 use crate::arch::rsa_pss_sha1_mgf1_sha1::{
@@ -33,6 +37,19 @@ use crate::arch::rsa_pss_sha1_mgf1_sha1::{
     VG_RSA_PSS_SHA1_MGF1_SHA1_VERIFY_PRECOMPUTED_SHA1_SHA2_FEATURES,
     vg_rsa_pss_sha1_mgf1_sha1_sign_sha1_sha2,
     vg_rsa_pss_sha1_mgf1_sha1_verify_precomputed_sha1_sha2,
+};
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+use crate::arch::rsa_pss_sha1_mgf1_sha1::{
+    VG_RSA_PSS_SHA1_MGF1_SHA1_SIGN_UMAAL_FEATURES, vg_rsa_pss_sha1_mgf1_sha1_sign_umaal,
 };
 use crate::arch::rsa_pss_sha1_mgf1_sha1::{
     vg_rsa_pss_sha1_mgf1_sha1_sign, vg_rsa_pss_sha1_mgf1_sha1_verify_precomputed,
@@ -44,14 +61,17 @@ super::pss_hash!(20, Sha1Backend {
         verify: vg_rsa_pss_sha1_mgf1_sha1_verify_precomputed [],
         sign: vg_rsa_pss_sha1_mgf1_sha1_sign [],
         verify_adx: vg_rsa_pss_sha1_mgf1_sha1_verify_precomputed_rsa_adx [VG_RSA_PSS_SHA1_MGF1_SHA1_VERIFY_PRECOMPUTED_RSA_ADX_FEATURES],
+        verify_ifma: vg_rsa_pss_sha1_mgf1_sha1_verify_precomputed_rsa_ifma [VG_RSA_PSS_SHA1_MGF1_SHA1_VERIFY_PRECOMPUTED_RSA_IFMA_FEATURES],
         adx: vg_rsa_pss_sha1_mgf1_sha1_sign_crt_adx [VG_RSA_PSS_SHA1_MGF1_SHA1_SIGN_CRT_ADX_FEATURES],
         ifma: vg_rsa_pss_sha1_mgf1_sha1_sign_crt_ifma [VG_RSA_PSS_SHA1_MGF1_SHA1_SIGN_CRT_IFMA_FEATURES],
+        umaal: vg_rsa_pss_sha1_mgf1_sha1_sign_umaal [VG_RSA_PSS_SHA1_MGF1_SHA1_SIGN_UMAAL_FEATURES],
     },
     #[cfg(target_arch = "x86_64")]
     ShaNi => {
         verify: vg_rsa_pss_sha1_mgf1_sha1_verify_precomputed_sha1_shani [VG_RSA_PSS_SHA1_MGF1_SHA1_VERIFY_PRECOMPUTED_SHA1_SHANI_FEATURES],
         sign: vg_rsa_pss_sha1_mgf1_sha1_sign_sha1_shani [VG_RSA_PSS_SHA1_MGF1_SHA1_SIGN_SHA1_SHANI_FEATURES],
         verify_adx: vg_rsa_pss_sha1_mgf1_sha1_verify_precomputed_sha1_shani_rsa_adx [VG_RSA_PSS_SHA1_MGF1_SHA1_VERIFY_PRECOMPUTED_SHA1_SHANI_RSA_ADX_FEATURES],
+        verify_ifma: vg_rsa_pss_sha1_mgf1_sha1_verify_precomputed_sha1_shani_rsa_ifma [VG_RSA_PSS_SHA1_MGF1_SHA1_VERIFY_PRECOMPUTED_SHA1_SHANI_RSA_IFMA_FEATURES],
         adx: vg_rsa_pss_sha1_mgf1_sha1_sign_sha1_shani_crt_adx [VG_RSA_PSS_SHA1_MGF1_SHA1_SIGN_SHA1_SHANI_CRT_ADX_FEATURES],
         ifma: vg_rsa_pss_sha1_mgf1_sha1_sign_sha1_shani_crt_ifma [VG_RSA_PSS_SHA1_MGF1_SHA1_SIGN_SHA1_SHANI_CRT_IFMA_FEATURES],
     },

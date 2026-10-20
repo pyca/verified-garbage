@@ -1,15 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
-meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-! # The interleaved loops on 512-bit registers, as literals
 
@@ -29,5 +30,6 @@ materialize_code Impl.Gcm.X86_64.StitchZH.decR
 materialize_code Impl.Gcm.X86_64.StitchZTo.enc
 materialize_code Impl.Gcm.X86_64.StitchZTo.encP
 materialize_code Impl.Gcm.X86_64.StitchZHTo.encR
+materialize_code Impl.Gcm.X86_64.StitchZHTo.encN
 
 end VG

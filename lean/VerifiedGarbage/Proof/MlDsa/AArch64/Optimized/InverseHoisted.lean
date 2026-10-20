@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseScale
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalRoots
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Loads
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseLocalTable
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRoots
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! ## From `InverseInitConst.lean` -/
 

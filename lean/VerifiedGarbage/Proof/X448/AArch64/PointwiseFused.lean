@@ -1,14 +1,13 @@
 module
+public import VerifiedGarbage.Proof.X448.AArch64.Mul
 
 import VerifiedGarbage.Proof.X448.AArch64.PointwiseCarry
 import VerifiedGarbage.Proof.X448.AArch64.PointwiseFinish
-public import VerifiedGarbage.Proof.X448.AArch64.Columns
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Batteries.Logic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X448.AArch64.Carry
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Untrusted: fuse a pointwise coefficient with its first carry step. -/
 

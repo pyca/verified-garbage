@@ -2,11 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.ConstantTime
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.TripleDes.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 @[expose] public section
 

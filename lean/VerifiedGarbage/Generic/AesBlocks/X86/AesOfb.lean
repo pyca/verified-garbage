@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.AesOfb.X86.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-OFB (NIST SP 800-38A §6.4) on x86
@@ -22,13 +22,11 @@ namespace VG.Generic.AesBlocks.X86.AesOfb
 open VG.Proof.AesOfb.X86
 
 def artifacts (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
-  { Spec.Ofb.aesApi with
-    name := Spec.Ofb.aesApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Ofb.aesApi.doc (notes := ["This implementation enciphers one block at a time with `" ++
-      v.enc.name ++ "`."])
+  Spec.Ofb.aesApi.artifact X86.target {
+    suffix := v.suffix
+    notes := ["This implementation enciphers one block at a time with `" ++
+      v.enc.name ++ "`."]
     code := Impl.AesOfb.X86.crypt v.enc
-    contract := Spec.Ofb.aesContract X86.abi 24
     stack := 24
     verified := crypt_verified v
     spSafe := crypt_spSafe v

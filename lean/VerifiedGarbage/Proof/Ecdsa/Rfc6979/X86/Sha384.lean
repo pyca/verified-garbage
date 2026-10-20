@@ -1,18 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.CombContract
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.CombContract
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.P256
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha384
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Sha256.X86.Shared
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 
 /-!
 # Deterministic ECDSA over P-256 with HMAC-SHA-384 on x86 (32-bit)

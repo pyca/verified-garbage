@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnBase
+public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64.Base
 
 /-! # The baseline shared Miller–Rabin round -/
 
@@ -11,13 +10,6 @@ namespace VG.Variants.MillerRabin.X86_64.Base
 
 open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
 
-def variant : RoundImpl where
-  mont := Mont.fnBase
-  mxSafe := by decide +kernel
-  spSafe := by decide +kernel
-  depth := by decide +kernel
-  arithSafe := by intro o a b; rfl
-  suffix := ""
-  features := []
+def variant : RoundImpl := Proof.Variants.MillerRabin.X86_64.Base.variant
 
 end VG.Variants.MillerRabin.X86_64.Base

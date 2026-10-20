@@ -1,16 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotLoad
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Pro
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFrame
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MontDot
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lanes
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! ## From `MontDotTerms.lean` -/
 

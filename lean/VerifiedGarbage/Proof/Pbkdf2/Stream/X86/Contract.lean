@@ -1,12 +1,9 @@
 module
 
-public import VerifiedGarbage.Spec.Pbkdf2.Generic
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Spec.Hmac.Generic
+public import VerifiedGarbage.Spec.Pbkdf2
 
 /-!
 # HMAC and PBKDF2-HMAC over any streaming hash function: the x86 contracts

@@ -1,10 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.WindowSparse
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightTile
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparseHoles
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparseHoles
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowSparse

@@ -30,7 +30,7 @@ def product (p : Params) : Prog isa :=
     [(.x0,.ptr (tm2P p)),(.x1,.ptr (cP p)),(.x2,.ptr (tmP p))]
 
 def subtract (p : Params) : Prog isa :=
-  callAt "vg_mldsa_verify_sub" (AddSub.code true) [(.x0,.ptr (wP p)),(.x1,.ptr (tm2P p))]
+  callAt "vg_mldsa_sub" (AddSub.code true) [(.x0,.ptr (wP p)),(.x1,.ptr (tm2P p))]
 
 def hintPack (p : Params) (r : Nat) : Prog isa :=
   callAt (if p.γ₂=261888 then "vg_mldsa_usehint_pack4" else "vg_mldsa_usehint_pack6") UseHintPack.prog

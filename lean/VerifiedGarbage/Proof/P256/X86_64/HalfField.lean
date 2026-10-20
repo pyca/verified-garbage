@@ -1,16 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.P256.X86_64.HalfMemory
+import VerifiedGarbage.Proof.P256.X86_64.HalfMemory
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.P256.X86_64.Half
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! The modular halving block acts as division by two on Montgomery field slots. -/
 

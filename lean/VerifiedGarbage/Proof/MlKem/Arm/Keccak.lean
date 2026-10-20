@@ -1,16 +1,16 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.Arm.Reduce
-public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
-public import VerifiedGarbage.Proof.MlKem.KPke
 public import VerifiedGarbage.Impl.MlKem.Arm.Sample
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Sha3.Arm.Permute
+import VerifiedGarbage.Proof.MlKem.Arm.Common
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM on 32-bit ARM: calling the SHA-3 sponge

@@ -1,12 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Mgf1.Basic
+public import VerifiedGarbage.Spec.RsaPss
 
-public import VerifiedGarbage.Proof.RsaPss.SignCases
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.RsaPss.SignCases
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.RsaPss.Params
+import VerifiedGarbage.Proof.RsaPss.Encoding
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # RSASSA-PSS verification, byte by byte

@@ -1,20 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Callee
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Encrypt
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Bswap
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.RsaPkcs1Enc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on AArch64: where everything is
@@ -62,7 +60,7 @@ def encK (P : Nat) : Contract isa where
       1 ≤ (s.gpr .x5).toNat ∧ (s.gpr .x5).toNat ≤ (s.gpr .x3).toNat ∧
       (s.gpr .x7).toNat + 11 ≤ (s.gpr .x3).toNat ∧
       (stackArg s 1).toNat = (s.gpr .x3).toNat - (s.gpr .x7).toNat - 3 ∧
-      Spec.Rsa.scratchWords (s.gpr .x3).toNat ≤ (stackArg s 3).toNat
+      Spec.Rsa.publicScratchWords (s.gpr .x3).toNat ≤ (stackArg s 3).toNat
   post s s' :=
     Spec.Rsa.written s'.mem (s.gpr .x0) (s.gpr .x3).toNat ((s'.gpr .x0).setWidth 32)
       (Spec.RsaPkcs1Enc.encrypt (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)
@@ -158,7 +156,7 @@ structure Ok : Prop where
   elk : L.el.toNat ≤ L.k.toNat
   mlk : L.ml.toNat + 11 ≤ L.k.toNat
   plk : L.pl.toNat = L.k.toNat - L.ml.toNat - 3
-  slk : Spec.Rsa.scratchWords L.k.toNat ≤ L.sl.toNat
+  slk : Spec.Rsa.publicScratchWords L.k.toNat ≤ L.sl.toNat
   al32 : 32 ≤ L.al
   al64 : L.al ≤ 64
   nQa : L.Q.toNat + 1088 + L.al ≤ 2 ^ 64

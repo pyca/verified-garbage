@@ -1,12 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Execution
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceReady
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Dsa.Layout
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Relating independently initialized workspaces without assuming scratch equality -/
 

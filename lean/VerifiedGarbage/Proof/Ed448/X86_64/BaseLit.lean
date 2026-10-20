@@ -1,19 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Proof.X448.X86_64.Lit
-meta import VerifiedGarbage.Proof.X448.X86_64.Lit
 public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
-meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
 public import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
-meta import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.X448.X86_64.Lit
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
+meta import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # Ed448 base-point multiplication on x86-64: the code as literals

@@ -1,12 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lane
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: a step on the machine
@@ -30,19 +25,31 @@ open VG.Proof.Bignum.X86_64.AmmSym (ops Ctx Keeps ofNat_add64)
 
 variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 
+theorem AmmOk.bounds (hl : AmmOk l) : 2 ≤ l.R ∧ l.R ≤ 20 := by
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+
+/-- The vector registers: the lanes' roles, each lane's `b` and `u`, the zero
+register and the temporary, of the 32. -/
+theorem AmmOk.regs (hl : AmmOk l) : 1 ≤ l.nl ∧ l.nl * l.R + 2 * l.nl + 1 < 32 := by
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+
+/-- The steps: `S / R` blocks, then `S % R` more, at most `4 R`. -/
+theorem AmmOk.steps (hl : AmmOk l) :
+    1 ≤ l.S / l.R ∧ l.S / l.R ≤ 4 ∧ 2 ≤ l.S ∧ l.S ≤ l.L ∧ l.R * (l.S / l.R) + l.S % l.R = l.S ∧
+      l.S % l.R < l.R := by
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+
 theorem LayOk.bounds (hl : LayOk l) : 2 ≤ l.R ∧ l.R ≤ 10 := by
   rcases hl with rfl | rfl | rfl <;> decide
 
-/-- The steps: `S / R` blocks, then `S % R` more, at most `4 R`. -/
 theorem LayOk.steps (hl : LayOk l) :
     1 ≤ l.S / l.R ∧ l.S / l.R ≤ 4 ∧ 2 ≤ l.S ∧ l.S ≤ l.L ∧ l.R * (l.S / l.R) + l.S % l.R = l.S ∧
-      l.S % l.R < l.R := by
-  rcases hl with rfl | rfl | rfl <;> decide
+      l.S % l.R < l.R := hl.amm.steps
 
-theorem regOf_lt {p k i : Nat} (hp : p < 2) (hR : 2 ≤ l.R) : regOf l p k i < 2 * l.R := by
+theorem regOf_lt {p k i : Nat} (hp : p < l.nl) (hR : 2 ≤ l.R) : regOf l p k i < l.nl * l.R := by
   have := Nat.mod_lt (k + i) (show 0 < l.R by omega)
-  have := Nat.mul_le_mul_left l.R (show p ≤ 1 by omega)
-  unfold regOf; omega
+  have := Nat.mul_le_mul_left l.R (show p + 1 ≤ l.nl by omega)
+  unfold regOf; rw [Nat.mul_comm l.nl]; rw [Nat.mul_add, Nat.mul_one] at this; omega
 
 theorem regOf_div {p k i : Nat} (hR : 2 ≤ l.R) : regOf l p k i / l.R = p := by
   unfold regOf
@@ -60,7 +67,7 @@ theorem mod_role {R kk y : Nat} (hk : kk < R) (hy : y < R) : ((kk + y) % R + R -
       rw [Nat.mod_eq_sub_mod (a := kk + y) (b := R) (by omega), Nat.mod_eq_of_lt (by omega)]
     rw [e, show kk + y - R + R - y = kk by omega, Nat.mod_eq_of_lt hk]
 
-theorem expReg_regOf {p kk i : Nat} (hp : p < 2) (hR : 2 ≤ l.R) (hk : kk < l.R) :
+theorem expReg_regOf {p kk i : Nat} (hp : p < l.nl) (hR : 2 ≤ l.R) (hk : kk < l.R) :
     expReg l i (regOf l p kk (i + 1)) = hT l p kk i := by
   have hr := regOf_lt (k := kk) (i := i + 1) hp hR
   simp only [expReg, hr, ite_true, regOf_div hR]
@@ -70,23 +77,26 @@ theorem expReg_regOf {p kk i : Nat} (hp : p < 2) (hR : 2 ≤ l.R) (hk : kk < l.R
   exact mod_role hk (Nat.mod_lt _ (by omega))
 
 theorem expReg_zN (i : Nat) : expReg l i (zN l) = .reg (zN l) := by
-  simp only [expReg, zN, tN, show ¬ 2 * l.R + 4 < 2 * l.R by omega, show 2 * l.R + 4 ≠ 2 * l.R by omega,
-    show 2 * l.R + 4 ≠ 2 * l.R + 1 by omega, show 2 * l.R + 4 ≠ 2 * l.R + 2 by omega,
-    show 2 * l.R + 4 ≠ 2 * l.R + 3 by omega, show 2 * l.R + 4 ≠ 2 * l.R + 5 by omega, ite_false]
+  simp only [expReg, zN, tN, show ¬ l.nl * l.R + 2 * l.nl < l.nl * l.R by omega,
+    show ¬ l.nl * l.R + 2 * l.nl < l.nl * l.R + l.nl by omega,
+    show ¬ l.nl * l.R + 2 * l.nl < l.nl * l.R + 2 * l.nl by omega,
+    show l.nl * l.R + 2 * l.nl ≠ l.nl * l.R + 2 * l.nl + 1 by omega, ite_false]
 
-theorem ammStep_ok (hl : LayOk l) {s : State} {i : Nat} (hi : i < l.R) {L a m : Nat → Nat → Nat}
+theorem ammStep_ok (hl : AmmOk l) {s : State} {i : Nat} (hi : i < l.R) {L a m : Nat → Nat → Nat}
     {k b : Nat → Nat} (h : StepIn l s i L a m k b) (hc : Ctx (lim l) s) :
     WP isa (.block (ammStep l i)) s fun s' =>
-      (∀ p < 2, ∀ kk < l.R, ∀ t < 4, qv s' (vreg (regOf l p kk (i + 1))) t =
+      (∀ p < l.nl, ∀ kk < l.R, ∀ t < 4, qv s' (vreg (regOf l p kk (i + 1))) t =
         BitVec.ofNat 64 (Amm52N.step l.L (ops a m k p) (L p) (b p) (kk + l.R * t))) ∧
       (∀ t < 4, qv s' (vreg (zN l)) t = 0) ∧ Keeps s s' := by
   obtain ⟨hR, hR10⟩ := hl.bounds
+  obtain ⟨hn1, hrg⟩ := hl.regs
   obtain ⟨σ, e, hσ⟩ := run_ammStep hl hi
   refine WP.mono (run_ok hc (SRel.init s) e) fun s' hs => ⟨fun p hp kk hk t ht => ?_, fun t ht => ?_, ?_⟩
   · have hr := regOf_lt (k := kk) (i := i + 1) hp hR
-    rw [hs.reg _ t ht, vi_vreg _ (by omega), hσ _ (by omega), expReg_regOf hp hR hk]
+    rw [hs.reg _ t ht, vi_vreg _ (by omega_using [hr, hrg]), hσ _ (by omega_using [hr, hrg]), expReg_regOf hp hR hk]
     exact hT_eval h hR hp hk ht
-  · rw [hs.reg _ t ht, vi_vreg _ (by simp only [zN]; omega), hσ _ (by simp only [zN]; omega), expReg_zN]
+  · rw [hs.reg _ t ht, vi_vreg _ (by simp only [zN]; omega_using [hrg]), hσ _ (by simp only [zN]; omega_using [hrg]),
+      expReg_zN]
     exact h.z t ht
   · exact ⟨fun r hr => hs.gpr hr, hs.mem, hs.rd, hs.wr, hs.mxcsr, hs.flags⟩
 
@@ -96,19 +106,19 @@ theorem ammStep_ok (hl : LayOk l) {s : State} {i : Nat} (hi : i < l.R) {L a m : 
 operand `a` at `r8`, the modulus and `k₀` at `r10`, the second operand `bl`
 at `r9` (each prime's at `D` further), all readable. -/
 structure Env (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ : State) (a m : Nat → Nat → Nat) (k : Nat → Nat) (bl : Nat → Nat → Nat) : Prop where
-  ina : ∀ p < 2, ∀ kk < l.R, ∀ t < 4,
+  ina : ∀ p < l.nl, ∀ kk < l.R, ∀ t < 4,
     s₀.mem.readW (s₀.gpr .r8 + BitVec.ofNat 64 (l.D * p + 32 * kk + 8 * t)) 64 = BitVec.ofNat 64 (a p (kk + l.R * t))
-  inm : ∀ p < 2, ∀ kk < l.R, ∀ t < 4,
+  inm : ∀ p < l.nl, ∀ kk < l.R, ∀ t < 4,
     s₀.mem.readW (s₀.gpr .r10 + BitVec.ofNat 64 (l.D * p + oM + 32 * kk + 8 * t)) 64 =
       BitVec.ofNat 64 (m p (kk + l.R * t))
-  ink : ∀ p < 2, ∀ t < 4,
+  ink : ∀ p < l.nl, ∀ t < 4,
     s₀.mem.readW (s₀.gpr .r10 + BitVec.ofNat 64 (l.D * p + l.oK0 + 8 * t)) 64 = BitVec.ofNat 64 (k p)
-  inb : ∀ p < 2, ∀ j < l.L,
+  inb : ∀ p < l.nl, ∀ j < l.L,
     s₀.mem.readW (s₀.gpr .r9 + BitVec.ofNat 64 (l.D * p + l.off j)) 64 = BitVec.ofNat 64 (bl p j)
-  alt : ∀ p < 2, ∀ j < l.L, a p j < 2 ^ 52
-  mlt : ∀ p < 2, ∀ j < l.L, m p j < 2 ^ 52
-  klt : ∀ p < 2, k p < 2 ^ 52
-  blt : ∀ p < 2, ∀ j < l.L, bl p j < 2 ^ 52
+  alt : ∀ p < l.nl, ∀ j < l.L, a p j < 2 ^ 52
+  mlt : ∀ p < l.nl, ∀ j < l.L, m p j < 2 ^ 52
+  klt : ∀ p < l.nl, k p < 2 ^ 52
+  blt : ∀ p < l.nl, ∀ j < l.L, bl p j < 2 ^ 52
   rd8 : ∀ d n, 0 < n → d + n ≤ lim l .r8 → InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .r8 + BitVec.ofNat 64 d) n
   rd9 : ∀ d n, 0 < n → d + n ≤ lim l .r9 + 24 → InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .r9 + BitVec.ofNat 64 d) n
   rd10 : ∀ d n, 0 < n → d + n ≤ lim l .r10 → InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .r10 + BitVec.ofNat 64 d) n
@@ -117,11 +127,11 @@ structure Env (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ : State) (a m : Nat →
 def lm (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (a m : Nat → Nat → Nat) (k : Nat → Nat) (bl : Nat → Nat → Nat) (p n : Nat) : Nat → Nat :=
   Amm52N.steps l.L (ops a m k p) (bl p) n fun _ => 0
 
-theorem lm_lt (hR : l.R ≤ 10) {a m : Nat → Nat → Nat} {k : Nat → Nat} {bl : Nat → Nat → Nat} {p n j : Nat}
-    (hn : n ≤ l.L) (hj : j < l.L) : lm l a m k bl p n j < 2 ^ 62 := by
+theorem lm_lt (hR : l.R ≤ 20) {a m : Nat → Nat → Nat} {k : Nat → Nat} {bl : Nat → Nat → Nat} {p n j : Nat}
+    (hn : n ≤ l.L) (hj : j < l.L) : lm l a m k bl p n j < 2 ^ 63 := by
   have := Amm52N.steps_lt (o := ops a m k p) (b := bl p) (L := fun _ => 0) (by simp only [Lay.L]; omega)
     (fun _ _ => by decide) n hn j hj
-  have : (n + 1) * 2 ^ 56 ≤ 41 * 2 ^ 56 := Nat.mul_le_mul_right _ (by simp only [Lay.L] at hn; omega)
+  have : (n + 1) * 2 ^ 56 ≤ 81 * 2 ^ 56 := Nat.mul_le_mul_right _ (by simp only [Lay.L] at hn; omega)
   unfold lm
   omega
 
@@ -129,7 +139,7 @@ theorem lm_lt (hR : l.R ≤ 10) {a m : Nat → Nat → Nat} {k : Nat → Nat} {b
 `R blk + i` steps, `r9` at the block's limbs, the zero register zero. -/
 structure InBlk (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ s : State) (a m : Nat → Nat → Nat) (k : Nat → Nat) (bl : Nat → Nat → Nat)
     (blk i : Nat) : Prop where
-  lanes : ∀ p < 2, ∀ kk < l.R, ∀ t < 4,
+  lanes : ∀ p < l.nl, ∀ kk < l.R, ∀ t < 4,
     qv s (vreg (regOf l p kk i)) t = BitVec.ofNat 64 (lm l a m k bl p (l.R * blk + i) (kk + l.R * t))
   z : ∀ t < 4, qv s (vreg (zN l)) t = 0
   r8 : s.gpr .r8 = s₀.gpr .r8
@@ -147,7 +157,7 @@ theorem off_blk (hR : 2 ≤ l.R) {blk i : Nat} (hi : i < l.R) : l.off (l.R * blk
   rw [Nat.add_comm (l.R * blk), Nat.add_mul_mod_self_left, Nat.add_mul_div_left _ _ (by omega),
     Nat.mod_eq_of_lt hi, Nat.div_eq_of_lt hi, Nat.zero_add]
 
-theorem InBlk.stepIn (hl : LayOk l) {s₀ s : State} {a m : Nat → Nat → Nat} {k : Nat → Nat}
+theorem InBlk.stepIn (hl : AmmOk l) {s₀ s : State} {a m : Nat → Nat → Nat} {k : Nat → Nat}
     {bl : Nat → Nat → Nat} {blk i : Nat} (hb : l.R * blk + i < l.S) (hi : i < l.R) (e : Env l s₀ a m k bl)
     (h : InBlk l s₀ s a m k bl blk i) :
     StepIn l s i (fun p => lm l a m k bl p (l.R * blk + i)) a m k (fun p => bl p (l.R * blk + i)) ∧
@@ -175,7 +185,7 @@ theorem InBlk.stepIn (hl : LayOk l) {s₀ s : State} {a m : Nat → Nat → Nat}
     · rw [lim_other b8 b9 b10] at hdn
       omega
 
-theorem steps_chain (hl : LayOk l) {s₀ : State} {a m : Nat → Nat → Nat} {k : Nat → Nat}
+theorem steps_chain (hl : AmmOk l) {s₀ : State} {a m : Nat → Nat → Nat} {k : Nat → Nat}
     {bl : Nat → Nat → Nat} {blk : Nat} (e : Env l s₀ a m k bl) :
     ∀ i ≤ l.R, l.R * blk + i ≤ l.S → ∀ s, InBlk l s₀ s a m k bl blk 0 →
       WP isa (.block ((List.range i).flatMap (ammStep l))) s fun s' =>
@@ -203,7 +213,7 @@ theorem regOf_R (p kk : Nat) : regOf l p kk l.R = regOf l p kk 0 := by
   unfold regOf; rw [Nat.add_mod_right, Nat.add_zero]
 
 /-- A block: `R` steps, `r9` to the next block's limbs, the count down. -/
-theorem ammBlock_ok (hl : LayOk l) {s₀ s : State} {a m : Nat → Nat → Nat} {k : Nat → Nat}
+theorem ammBlock_ok (hl : AmmOk l) {s₀ s : State} {a m : Nat → Nat → Nat} {k : Nat → Nat}
     {bl : Nat → Nat → Nat} {blk : Nat} (hb : blk < l.S / l.R) (e : Env l s₀ a m k bl)
     (h : InBlk l s₀ s a m k bl blk 0) (hcx : s.gpr .rcx = BitVec.ofNat 64 (l.S / l.R - blk)) :
     WP isa (.block (ammBlock l)) s fun s' =>

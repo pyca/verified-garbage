@@ -1,10 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Rc2.X86_64.Block
-import VerifiedGarbage.Proof.Rc2.X86_64.Key
-import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Verified
 public import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Frame
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Verified
+public import VerifiedGarbage.Proof.Rc2.X86_64.Key
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
 
 /-! # RC2 artifacts on baseline x86-64 -/
 
@@ -13,82 +13,45 @@ import VerifiedGarbage.Proof.Framework.Omega
 namespace VG.Artifacts.Rc2.X86_64
 
 def artifacts : List Artifact := [
-  { Spec.Rc2.cbcInitApi with
-    target := X86_64.target
-    doc := Spec.Rc2.cbcInitApi.doc
-      (notes := ["Baseline x86-64: checks the lengths, copies the IV and calls the verified RC2 key expansion."])
+  Spec.Rc2.cbcInitApi.artifact X86_64.target {
+    notes := ["Baseline x86-64: checks the lengths, copies the IV and calls the verified RC2 key expansion."]
     code := Impl.StackScratch.X86_64.withStackArgScratchWiped 592 0 72 Impl.Rc2.X86_64.Stream.init
-    contract := Spec.Rc2.cbcInitContract X86_64.abi 600
     stack := 600
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Rc2.cbcInitContract; rfl⟩)
-    verified := Proof.Rc2.X86_64.Stream.init_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Rc2.cbcEncryptUpdateApi with
-    target := X86_64.target
-    doc := Spec.Rc2.cbcEncryptUpdateApi.doc
-      (notes := ["Baseline x86-64: copies the pending and new bytes a byte at a time, then calls the verified RC2-CBC encryption on the complete blocks."])
+    verified := Proof.Rc2.X86_64.Stream.init_framed },
+  Spec.Rc2.cbcEncryptUpdateApi.artifact X86_64.target {
+    notes := ["Baseline x86-64: copies the pending and new bytes a byte at a time, then calls the verified RC2-CBC encryption on the complete blocks."]
     code := Impl.StackScratch.X86_64.withStackArgScratchWiped 592 0 72 Impl.Rc2.X86_64.Stream.encryptUpdate
-    contract := Spec.Rc2.cbcEncryptUpdateContract X86_64.abi 608
     stack := 608
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Rc2.cbcEncryptUpdateContract Spec.Rc2.cbcUpdateContract; rfl⟩)
-    verified := Proof.Rc2.X86_64.Stream.encryptUpdate_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Rc2.cbcDecryptUpdateApi with
-    target := X86_64.target
-    doc := Spec.Rc2.cbcDecryptUpdateApi.doc
-      (notes := ["Baseline x86-64: copies the pending and new bytes a byte at a time, then calls the verified RC2-CBC decryption on the complete blocks."])
+    verified := Proof.Rc2.X86_64.Stream.encryptUpdate_framed },
+  Spec.Rc2.cbcDecryptUpdateApi.artifact X86_64.target {
+    notes := ["Baseline x86-64: copies the pending and new bytes a byte at a time, then calls the verified RC2-CBC decryption on the complete blocks."]
     code := Impl.StackScratch.X86_64.withStackArgScratchWiped 592 0 72 Impl.Rc2.X86_64.Stream.decryptUpdate
-    contract := Spec.Rc2.cbcDecryptUpdateContract X86_64.abi 608
     stack := 608
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Rc2.cbcDecryptUpdateContract Spec.Rc2.cbcUpdateContract; rfl⟩)
-    verified := Proof.Rc2.X86_64.Stream.decryptUpdate_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Rc2.cbcEncryptApi with
-    target := X86_64.target
-    doc := Spec.Rc2.cbcEncryptApi.doc
-      (notes := ["Baseline x86-64, calling the verified RC2 block primitive."])
+    verified := Proof.Rc2.X86_64.Stream.decryptUpdate_framed },
+  Spec.Rc2.cbcEncryptApi.artifact X86_64.target {
+    notes := ["Baseline x86-64, calling the verified RC2 block primitive."]
     code := Impl.Rc2.X86_64.Cbc.encrypt
-    contract := Spec.Rc2.cbcEncryptContract X86_64.abi 8
     stack := 8
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Rc2.cbcEncryptContract Spec.Rc2.cbcContract; rfl⟩)
-    verified := Proof.Rc2.X86_64.Cbc.encrypt_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Rc2.cbcDecryptApi with
-    target := X86_64.target
-    doc := Spec.Rc2.cbcDecryptApi.doc
-      (notes := ["Baseline x86-64, preserving the input ciphertext for the next IV."])
+    verified := Proof.Rc2.X86_64.Cbc.encrypt_verified },
+  Spec.Rc2.cbcDecryptApi.artifact X86_64.target {
+    notes := ["Baseline x86-64, preserving the input ciphertext for the next IV."]
     code := Impl.Rc2.X86_64.Cbc.decrypt
-    contract := Spec.Rc2.cbcDecryptContract X86_64.abi 8
     stack := 8
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Rc2.cbcDecryptContract Spec.Rc2.cbcContract; rfl⟩)
-    verified := Proof.Rc2.X86_64.Cbc.decrypt_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Rc2.expandKeyApi with
-    target := X86_64.target
-    doc := Spec.Rc2.expandKeyApi.doc
-      (notes := ["Baseline x86-64 SSE2. PITABLE selection scans all 256 candidates in a fixed order, eight candidates per vector."])
+    verified := Proof.Rc2.X86_64.Cbc.decrypt_verified },
+  Spec.Rc2.expandKeyApi.artifact X86_64.target {
+    notes := ["Baseline x86-64 SSE2. PITABLE selection scans all 256 candidates in a fixed order, eight candidates per vector."]
     code := Impl.Rc2.X86_64.expandKey
-    contract := Spec.Rc2.expandKeyContract X86_64.abi
     stack := 0
-    verified := Proof.Rc2.X86_64.key_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Rc2.encryptBlockApi with
-    target := X86_64.target
-    doc := Spec.Rc2.encryptBlockApi.doc
-      (notes := ["Baseline x86-64 SSE2. Mashing scans all 64 schedule words in a fixed order, eight words per vector."])
+    verified := Proof.Rc2.X86_64.key_verified },
+  Spec.Rc2.encryptBlockApi.artifact X86_64.target {
+    notes := ["Baseline x86-64 SSE2. Mashing scans all 64 schedule words in a fixed order, eight words per vector."]
     code := Impl.Rc2.X86_64.encryptBlock
-    contract := Spec.Rc2.encryptBlockContract X86_64.abi
     stack := 0
-    verified := Proof.Rc2.X86_64.encrypt_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Rc2.decryptBlockApi with
-    target := X86_64.target
-    doc := Spec.Rc2.decryptBlockApi.doc
-      (notes := ["Baseline x86-64 SSE2. Reverse mashing scans all 64 schedule words in a fixed order, eight words per vector."])
+    verified := Proof.Rc2.X86_64.encrypt_verified },
+  Spec.Rc2.decryptBlockApi.artifact X86_64.target {
+    notes := ["Baseline x86-64 SSE2. Reverse mashing scans all 64 schedule words in a fixed order, eight words per vector."]
     code := Impl.Rc2.X86_64.decryptBlock
-    contract := Spec.Rc2.decryptBlockContract X86_64.abi
     stack := 0
-    verified := Proof.Rc2.X86_64.decrypt_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Rc2.X86_64.decrypt_verified }]
 
 end VG.Artifacts.Rc2.X86_64

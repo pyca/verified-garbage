@@ -1,25 +1,29 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Layout
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
+import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
 public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Args
 public import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddVerified
+public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseCallee
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
 import VerifiedGarbage.Proof.Ed25519.Signing
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Proof.Ed25519.Recode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
-import VerifiedGarbage.Spec.EcKey.Generic
-import VerifiedGarbage.Spec.Ecdsa.Generic
+import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
 
 /-! Merged from `Proof.Ed25519.X86_64.SignCached.Prune`. -/
 

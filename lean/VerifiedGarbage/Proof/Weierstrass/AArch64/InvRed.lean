@@ -1,11 +1,18 @@
 module
+public import VerifiedGarbage.Proof.Divstep.Alg
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
+public import VerifiedGarbage.Proof.Weierstrass.InvMask
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvWords
-public import VerifiedGarbage.Proof.Divstep.Tc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvWords
+import VerifiedGarbage.Proof.Divstep.Tc
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Mont.AArch64.Csub
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Inversion by divsteps on AArch64: the reduction of the coefficients
@@ -342,7 +349,7 @@ theorem mredC_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   have hn := hs.nowrap
   have hP : wordsVal s.mem base M.mo M.n = p := hM.val
   have hmo := hM.mo
-  simp only [mredC, List.append_assoc]
+  simp only [mredC, normC, List.append_assoc]
   -- `x16 = k`, `[t]` sign-extended.
   rw [WP.block_append_iff]
   refine WP.mono (mredHead_ok hs h12 ht ht8) fun s₁ ⟨x₁, e₁, k₁, O₁⟩ => ?_

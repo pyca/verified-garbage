@@ -1,13 +1,17 @@
 module
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrSq
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrSelW
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrSelW
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrBit
+import VerifiedGarbage.Proof.RsaKeyGen.MrMont
+import VerifiedGarbage.Proof.Rsa.Ranges
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.CrtExp
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # A candidate on AArch64: one window of Miller–Rabin's exponentiation
@@ -329,7 +333,6 @@ theorem mrWin_ok (M : Mont) {s : State} {B : Addr} {Z w c bm b y : Nat} {P : Boo
   have hz : (!decide (V >>> 60 = 0)) = !decide (d = 0) := by
     rw [← hd']
     congr 1
-    exact decide_eq_decide.mpr ⟨fun h => by rw [h]; rfl, fun h => BitVec.eq_of_toNat_eq (by rw [h]; rfl)⟩
   have hw1 : (wWin c b d (y, P)).1 = s4.1 * Spec.Rsa.powMod b d c % c := by simp only [wWin, hs4]
   have hw2 : (wWin c b d (y, P)).2 = (if !decide (d = 0) then
       decide (s4.1 * Spec.Rsa.powMod b d c % c = 1) || decide (s4.1 * Spec.Rsa.powMod b d c % c = c - 1)

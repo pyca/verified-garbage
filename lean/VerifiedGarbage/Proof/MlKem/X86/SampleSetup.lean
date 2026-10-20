@@ -1,33 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.Keccak
-meta import VerifiedGarbage.Proof.MlKem.X86.Keccak
 public import VerifiedGarbage.Proof.MlKem.X86.Leaf
-meta import VerifiedGarbage.Proof.MlKem.X86.Leaf
-import VerifiedGarbage.Proof.MlKem.KPke
-meta import VerifiedGarbage.Proof.MlKem.KPke
 public import VerifiedGarbage.Impl.MlKem.X86.Sample
-meta import VerifiedGarbage.Impl.MlKem.X86.Sample
-import VerifiedGarbage.Spec.MlKem.Poly
-meta import VerifiedGarbage.Spec.MlKem.Poly
-public import VerifiedGarbage.TCB.X86.Target
-meta import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Framework.Sig
-meta import VerifiedGarbage.Proof.Framework.Sig
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.MlKem.Mem
-meta import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.MlKem.X86.Common
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
+import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.MlKem.X86.Keccak
+meta import VerifiedGarbage.Proof.MlKem.X86.Leaf
+meta import VerifiedGarbage.Impl.MlKem.X86.Sample
+meta import VerifiedGarbage.Proof.MlKem.Mem
 meta import VerifiedGarbage.Proof.MlKem.X86.Common
+meta import Init.Data.Nat.Bitwise.Basic
+meta import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-KEM on x86 (32-bit): the SHAKE128 output of `vg_mlkem_sample_ntt`

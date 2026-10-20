@@ -2,17 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
 public import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragBase
+public import VerifiedGarbage.Proof.MlKem.X86_64.SampleNtt
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
-import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
+import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncodeAvx2
+import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 
 /-!
 # ML-KEM-768 on x86-64: the calls of the polynomial primitives
@@ -76,9 +71,7 @@ theorem covers_nil_wr {rs : List Region} {s : State} (h : Covers rs s.wr) : Cove
 
 /-! ## The callees' stack -/
 
-theorem ntt_nosp : NoSp Impl.MlKem.X86_64.ntt := nosp_of (by decide +kernel)
 theorem nttInv_nosp : NoSp Impl.MlKem.X86_64.nttInv := nosp_of (by decide +kernel)
-theorem mul_nosp : NoSp multiplyNTTs := nosp_of (by decide +kernel)
 theorem add_nosp : NoSp Impl.MlKem.X86_64.add := nosp_of (by decide +kernel)
 theorem sub_nosp : NoSp Impl.MlKem.X86_64.sub := nosp_of (by decide +kernel)
 theorem cbd2_nosp : NoSp cbd2 := nosp_of (by decide +kernel)
@@ -86,11 +79,10 @@ theorem encode12_nosp : NoSp encode12 := nosp_of (by decide +kernel)
 theorem decode12_nosp : NoSp decode12 := nosp_of (by decide +kernel)
 theorem ce_nosp : NoSp compressEncode := nosp_of (by decide +kernel)
 theorem dd_nosp : NoSp decodeDecompress := nosp_of (by decide +kernel)
-theorem sample_nosp : NoSp sampleNTT := nosp_of (by decide +kernel)
+theorem sampleW_nosp (w16 : Bool) : NoSp (sampleNTTW w16) := by cases w16 <;> exact nosp_of (by decide +kernel)
+theorem sample_nosp : NoSp sampleNTT := sampleW_nosp false
 
-theorem ntt_depth : Impl.MlKem.X86_64.ntt.depth = 0 := by decide +kernel
 theorem nttInv_depth : Impl.MlKem.X86_64.nttInv.depth = 0 := by decide +kernel
-theorem mul_depth : multiplyNTTs.depth = 0 := by decide +kernel
 theorem add_depth : Impl.MlKem.X86_64.add.depth = 0 := by decide +kernel
 theorem sub_depth : Impl.MlKem.X86_64.sub.depth = 0 := by decide +kernel
 theorem cbd2_depth : cbd2.depth = 0 := by decide +kernel
@@ -98,7 +90,8 @@ theorem encode12_depth : encode12.depth = 0 := by decide +kernel
 theorem decode12_depth : decode12.depth = 0 := by decide +kernel
 theorem ce_depth : compressEncode.depth = 0 := by decide +kernel
 theorem dd_depth : decodeDecompress.depth = 0 := by decide +kernel
-theorem sample_depth : sampleNTT.depth = 2 := by decide +kernel
+theorem sampleW_depth (w16 : Bool) : (sampleNTTW w16).depth = 2 := by cases w16 <;> decide +kernel
+theorem sample_depth : sampleNTT.depth = 2 := sampleW_depth false
 
 /-! ## `NTT` and `NTT⁻¹` in place -/
 
@@ -220,84 +213,8 @@ theorem accAt_tr {t : Poly → Poly → Poly} {n : String} {c : Prog isa}
         k2.gpr (r := .rsp) (by decide), e3, and_self]
 
 
-/-! ## `MultiplyNTTs` -/
-
-/-- What a call of `vg_mlkem_multiply_ntts` writing `h` from `f`, `g` needs. -/
-structure MulH (h f g : Ptr) (s : State) : Prop where
-  off : h.2 < 2 ^ 31 ∧ f.2 < 2 ^ 31 ∧ g.2 < 2 ^ 31
-  redF : Reduced s.mem (pa s f)
-  redG : Reduced s.mem (pa s g)
-  hf : (pR (pa s h)).Disjoint (pR (pa s f))
-  hg : (pR (pa s h)).Disjoint (pR (pa s g))
-  hz : (pR (pa s h)).Disjoint (pR (pa s (sc oSS)))
-  fz : (pR (pa s f)).Disjoint (pR (pa s (sc oSS)))
-  gz : (pR (pa s g)).Disjoint (pR (pa s (sc oSS)))
-  kH : (below (s.gpr .rsp) 32).Disjoint (pR (pa s h))
-  kF : (below (s.gpr .rsp) 32).Disjoint (pR (pa s f))
-  kG : (below (s.gpr .rsp) 32).Disjoint (pR (pa s g))
-  kZ : (below (s.gpr .rsp) 32).Disjoint (pR (pa s (sc oSS)))
-  c : Covers ([pR (pa s f), pR (pa s g)] ++ [pR (pa s h), pR (pa s (sc oSS))]) (s.rd ++ s.wr)
-  w : Covers [pR (pa s h), pR (pa s (sc oSS))] s.wr
-
 /-- The bases of the arguments are not argument registers. -/
 abbrev NA (p : Ptr) : Prop := p.1 ∉ argRegs
-
-theorem mulGlue_ok (h f g : Ptr) (ho : h.2 < 2 ^ 31 ∧ f.2 < 2 ^ 31 ∧ g.2 < 2 ^ 31) (hf : NA f) (hg : NA g)
-    (s : State) :
-    WP isa (.block (lea .rdi h ++ lea .rsi f ++ lea .rdx g ++ lea .rcx (sc oSS))) s fun s1 =>
-      ((s1.gpr .rdi = pa s h ∧ s1.gpr .rsi = pa s f ∧ s1.gpr .rdx = pa s g ∧ s1.gpr .rcx = pa s (sc oSS)) ∧
-        s1.mem = s.mem) ∧ Keep argRegs s s1 := by
-  have f1 : f.1 ≠ .rdi := fun e => hf (by rw [e]; decide)
-  have g1 : g.1 ≠ .rdi := fun e => hg (by rw [e]; decide)
-  have g2 : g.1 ≠ .rsi := fun e => hg (by rw [e]; decide)
-  refine WP.keep _ ?_ (by rfl)
-  unfold lea
-  xrun [sx_ofNat ho.1, sx_ofNat ho.2.1, sx_ofNat ho.2.2, sx_ofNat (show oSS < 2 ^ 31 by decide), f1, g1, g2,
-    List.cons_append, List.nil_append]
-
-theorem mulPre {h f g : Ptr} {s s1 : State} (H : MulH h f g s)
-    (hv : s1.gpr .rdi = pa s h ∧ s1.gpr .rsi = pa s f ∧ s1.gpr .rdx = pa s g ∧ s1.gpr .rcx = pa s (sc oSS))
-    (hm : s1.mem = s.mem) (k : Keep argRegs s s1) :
-    mulK.pre (s1.callEntry.withRegions [pR (pa s f), pR (pa s g)] [pR (pa s h), pR (pa s (sc oSS))]) := by
-  have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
-  simp only [mulK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem,
-    ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp), ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp),
-    ce_gpr' s1 (by decide : Reg.rdx ≠ .rsp), ce_gpr' s1 (by decide : Reg.rcx ≠ .rsp), hv.1, hv.2.1, hv.2.2.1, hv.2.2.2]
-  refine ⟨trivial, trivial, H.hf, H.hg, H.hz, H.fz, H.gz, ret_disj s1 (by rw [hsp]; exact H.kH),
-    ret_disj s1 (by rw [hsp]; exact H.kF), ret_disj s1 (by rw [hsp]; exact H.kG),
-    ret_disj s1 (by rw [hsp]; exact H.kZ), ?_, ?_⟩
-  · rw [ce_reduced s1 (by rw [hsp]; exact H.kF), hm]; exact H.redF
-  · rw [ce_reduced s1 (by rw [hsp]; exact H.kG), hm]; exact H.redG
-
-theorem mulAt_ok {A : Arith} (hA : ArithOk A) {h f g : Ptr} (hf : NA f) (hg : NA g) {s : State}
-    (H : MulH h f g s) :
-    WP isa (mulAt A h f g) s fun s' => Post s s' [pR (pa s h), pR (pa s (sc oSS))] ∧
-      PolyIs s'.mem (pa s h) (multiplyNTTs (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g))) := by
-  refine WP.mono (glueCall_ok hA.mul.ok hA.mul.nosp (by rw [hA.mul.depth]; decide) (mulGlue_ok h f g H.off hf hg s)
-    (fun s1 hv hm k => mulPre H hv hm k) H.c H.w) fun s' ⟨hpost, s1, hV, hm, k, s₂, hm₂, _, hq⟩ => ⟨hpost, ?_⟩
-  have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
-  simp only [mulK, State.withRegions_gpr, State.withRegions_mem, ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp),
-    ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp), ce_gpr' s1 (by decide : Reg.rdx ≠ .rsp), hV.1, hV.2.1, hV.2.2.1, hm₂,
-    ce_polyAt s1 (by rw [hsp]; exact H.kF), ce_polyAt s1 (by rw [hsp]; exact H.kG), hm] at hq
-  exact hq
-
-theorem mulAt_tr {A : Arith} (hA : ArithOk A) {h f g : Ptr} (hf : NA f) (hg : NA g) :
-    RelCT isa (fun x y => MulH h f g x ∧ MulH h f g y ∧ x.gpr h.1 = y.gpr h.1 ∧ x.gpr f.1 = y.gpr f.1 ∧
-      x.gpr g.1 = y.gpr g.1 ∧ x.gpr .rbx = y.gpr .rbx ∧ x.gpr .rsp = y.gpr .rsp) (mulAt A h f g) fun _ _ => True :=
-  glueCall_tr hA.mul.ok hA.mul.ct (V := fun x x1 => ((x1.gpr .rdi = pa x h ∧ x1.gpr .rsi = pa x f ∧
-      x1.gpr .rdx = pa x g ∧ x1.gpr .rcx = pa x (sc oSS)) ∧ x1.mem = x.mem) ∧ Keep argRegs x x1)
-    (block_nomem_tr (nomem_append (nomem_append (nomem_append (lea_nomem _ _) (lea_nomem _ _)) (lea_nomem _ _))
-      (lea_nomem _ _)))
-    (fun x y ⟨hx, hy, _⟩ => ⟨mulGlue_ok h f g hx.off hf hg x, mulGlue_ok h f g hy.off hf hg y⟩)
-    fun x y x1 y1 ⟨hx, hy, e1, e2, e3, e4, e5⟩ ⟨⟨hv1, hm1⟩, k1⟩ ⟨⟨hv2, hm2⟩, k2⟩ => by
-      refine ⟨_, _, _, _, mulPre hx hv1 hm1 k1, mulPre hy hv2 hm2 k2, ?_, by rw [k1.2.1, k1.2.2]; exact hx.c,
-        by rw [k1.2.2]; exact hx.w, by rw [k2.2.1, k2.2.2]; exact hy.c, by rw [k2.2.2]; exact hy.w,
-        by rw [k1.gpr (by decide), k2.gpr (by decide), e5]⟩
-      simp only [mulK, State.withRegions_gpr, State.callEntry_rsp, ce_gpr' _ (by decide : Reg.rdi ≠ .rsp),
-        ce_gpr' _ (by decide : Reg.rsi ≠ .rsp), ce_gpr' _ (by decide : Reg.rdx ≠ .rsp),
-        ce_gpr' _ (by decide : Reg.rcx ≠ .rsp), hv1.1, hv1.2.1, hv1.2.2.1, hv1.2.2.2, hv2.1, hv2.2.1, hv2.2.2.1,
-        hv2.2.2.2, pa, e1, e2, e3, e4, k1.gpr (r := .rsp) (by decide), k2.gpr (r := .rsp) (by decide), e5, and_self]
-
 
 /-! ## Two-pointer calls: `SamplePolyCBD₂`, `ByteEncode₁₂`, `ByteDecode₁₂` -/
 
@@ -355,11 +272,12 @@ theorem encPre {p q : Ptr} {s s1 : State} (h : TwoH p q 1024 384 s) (hr : Reduce
   refine ⟨trivial, trivial, h.d, ret_disj s1 (by rw [hsp]; exact h.kP), ret_disj s1 (by rw [hsp]; exact h.kQ), ?_⟩
   rw [ce_reduced s1 (by rw [hsp]; exact h.kP), hm]; exact hr
 
-theorem enc12At_ok {p q : Ptr} (hq : NA q) {s : State} (h : TwoH p q 1024 384 s) (hr : Reduced s.mem (pa s p)) :
-    WP isa (enc12At p q) s fun s' => Post s s' [⟨pa s q, 384⟩] ∧
+theorem enc12At_ok {A : Arith} (hA : ArithOk A) {p q : Ptr} (hq : NA q) {s : State} (h : TwoH p q 1024 384 s)
+    (hr : Reduced s.mem (pa s p)) :
+    WP isa (enc12At A p q) s fun s' => Post s s' [⟨pa s q, 384⟩] ∧
       bytesAt s'.mem (pa s q) 384 = encode12 (polyAt s.mem (pa s p)) := by
   have hq1 : q.1 ≠ .rdi := fun e => hq (by rw [e]; decide)
-  refine WP.mono (glueCall_ok encode12_correct encode12_nosp (by rw [encode12_depth]; decide)
+  refine WP.mono (glueCall_ok hA.enc12.ok hA.enc12.nosp (by rw [hA.enc12.depth]; decide)
     (accGlue_ok p q h.off.1 h.off.2 hq1 s) (fun s1 hv hm k => encPre h hr hv hm k) h.c h.w)
     fun s' ⟨hpost, s1, hV, hm, k, s₂, hm₂, _, hq⟩ => ⟨hpost, ?_⟩
   have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
@@ -367,12 +285,12 @@ theorem enc12At_ok {p q : Ptr} (hq : NA q) {s : State} (h : TwoH p q 1024 384 s)
     ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp), hV.1, hV.2, hm₂, ce_polyAt s1 (by rw [hsp]; exact h.kP), hm] at hq
   exact hq
 
-theorem enc12At_tr {p q : Ptr} (hq : NA q) :
+theorem enc12At_tr {A : Arith} (hA : ArithOk A) {p q : Ptr} (hq : NA q) :
     RelCT isa (fun x y => (TwoH p q 1024 384 x ∧ Reduced x.mem (pa x p)) ∧ (TwoH p q 1024 384 y ∧
       Reduced y.mem (pa y p)) ∧ x.gpr p.1 = y.gpr p.1 ∧ x.gpr q.1 = y.gpr q.1 ∧ x.gpr .rsp = y.gpr .rsp)
-      (enc12At p q) fun _ _ => True := by
+      (enc12At A p q) fun _ _ => True := by
   have hq1 : q.1 ≠ .rdi := fun e => hq (by rw [e]; decide)
-  exact glueCall_tr encode12_correct encode12_ct (V := fun x x1 => ((x1.gpr .rdi = pa x p ∧ x1.gpr .rsi = pa x q) ∧
+  exact glueCall_tr hA.enc12.ok hA.enc12.ct (V := fun x x1 => ((x1.gpr .rdi = pa x p ∧ x1.gpr .rsi = pa x q) ∧
       x1.mem = x.mem) ∧ Keep argRegs x x1)
     (block_nomem_tr (nomem_append (lea_nomem _ _) (lea_nomem _ _)))
     (fun x y ⟨hx, hy, _⟩ => ⟨accGlue_ok p q hx.1.off.1 hx.1.off.2 hq1 x, accGlue_ok p q hy.1.off.1 hy.1.off.2 hq1 y⟩)
@@ -602,6 +520,31 @@ theorem ceImpl : CEImpl "vg_mlkem_compress_encode" compressEncode compressWidths
 
 theorem ddImpl : DDImpl "vg_mlkem_decode_decompress" decodeDecompress compressWidths :=
   ⟨fun _ => widths_lt, decodeDecompress_correct, decodeDecompress_ct, dd_nosp, dd_depth⟩
+
+/-- The implementations of `vg_mlkem_compress_encode` and `vg_mlkem_decode_decompress`. -/
+theorem Codecs.ceI : ∀ cs : Codecs, CEImpl cs.ceN cs.ce compressWidths
+  | .base => ceImpl
+  | .avx2 => ⟨fun _ => widths_lt, CEY.correct, compressEncodeY_ct, nosp_of (by decide +kernel), by decide +kernel⟩
+
+theorem Codecs.ddI : ∀ cs : Codecs, DDImpl cs.ddN cs.dd compressWidths
+  | .base => ddImpl
+  | .avx2 => ⟨fun _ => widths_lt, DDY.correct, decodeDecompressY_ct, nosp_of (by decide +kernel), by decide +kernel⟩
+
+theorem Codecs.ce_ctl : ∀ cs : Codecs, ctlOk cs.ce = true
+  | .base => by decide +kernel
+  | .avx2 => by decide +kernel
+
+theorem Codecs.dd_ctl : ∀ cs : Codecs, ctlOk cs.dd = true
+  | .base => by decide +kernel
+  | .avx2 => by decide +kernel
+
+theorem Codecs.ce_sp : ∀ cs : Codecs, cs.ce.all (fun i => !isa.writesSp i) = true
+  | .base => Code.all_of_allInstrs (by decide +kernel)
+  | .avx2 => Code.all_of_allInstrs (by decide +kernel)
+
+theorem Codecs.dd_sp : ∀ cs : Codecs, cs.dd.all (fun i => !isa.writesSp i) = true
+  | .base => Code.all_of_allInstrs (by decide +kernel)
+  | .avx2 => Code.all_of_allInstrs (by decide +kernel)
 
 /-! ## `SampleNTT` -/
 

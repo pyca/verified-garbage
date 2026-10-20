@@ -4,12 +4,8 @@ public import VerifiedGarbage.Proof.P256.EcdhDouble.Raw
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
 import VerifiedGarbage.Proof.Weierstrass.JacInplace
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.Booth
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
 
 @[expose] public section
 
@@ -19,14 +15,10 @@ open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstra
 open VG.Impl.P256.VerifyArithmetic Spec.Weierstrass
 open EcdhJac (C K M Sl layout aligned live ro work)
 
-theorem result_unch {F : Type _} [Lean.Grind.CommRing F] (E : Nat→F) {x : Nat}
-    (hx : x∉writes) : result E x=E x := by
-  simp only [writes,List.mem_cons,List.not_mem_nil,or_false,not_or] at hx
-  simp [result,ops1,ops2,ops3,ops4,runOps,FOp.run,
-    hx.1,hx.2.1,hx.2.2.1,hx.2.2.2.1,hx.2.2.2.2.1,hx.2.2.2.2.2.1,
-    hx.2.2.2.2.2.2.1,hx.2.2.2.2.2.2.2.1,hx.2.2.2.2.2.2.2.2]
-
-theorem result_live {F : Type _} [Lean.Grind.CommRing F] (E : Nat→F) :
+/-- On any live slots holding `R` or untouched by the doubling, the raw result
+is the doubling's field program. -/
+theorem result_of {F : Type _} [Lean.Grind.CommRing F] (E : Nat→F) {live : List Nat}
+    (h : ∀x∈live,x∈[512,544,576] ∨ (x∉writes ∧ ∀op∈operations .doubleRR,op.out≠x)) :
     ∀x∈live,result E x=runOps (operations .doubleRR) E x := by
   have e := (result_xyz E).trans (values_eq (E 512) (E 544) (E 576))
   have d := dblJMul_inplace_run (S:=K.S) (p:=K.R) (by decide +kernel) E
@@ -34,17 +26,19 @@ theorem result_live {F : Type _} [Lean.Grind.CommRing F] (E : Nat→F) :
     runOps (operations .doubleRR) E 576)=dblJF (E 512) (E 544) (E 576) at d
   have ex := e.trans d.symm
   intro x hx
-  change x∈[512,544,576]++ro at hx
-  rcases List.mem_append.mp hx with hx|hx
+  rcases h x hx with hx|⟨hw,ho⟩
   · simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with rfl|rfl|rfl
     · exact congrArg Prod.fst ex
     · exact congrArg (fun p => p.2.1) ex
     · exact congrArg (fun p => p.2.2) ex
-  · rw [result_unch E ((show ∀x∈ro,x∉writes by decide +kernel) x hx)]
+  · rw [result_unch E hw]
     symm
-    apply runOps_of_not_out
-    exact (show ∀x∈ro,∀op∈operations .doubleRR,op.out≠x by decide +kernel) x hx
+    exact runOps_of_not_out _ _ ho
+
+theorem result_live {F : Type _} [Lean.Grind.CommRing F] (E : Nat→F) :
+    ∀x∈live,result E x=runOps (operations .doubleRR) E x :=
+  result_of E (by decide +kernel)
 
  theorem field_ok
     (h129 : LinearCorrect (Impl.P256.Linear.linear129 960 928 960) 960 928 960 12 9)
@@ -54,7 +48,8 @@ theorem result_live {F : Type _} [Lean.Grind.CommRing F] (E : Nat→F) :
     WP isa Impl.P256.EcdhDouble.program s fun t =>
       AllocatedFrame allocatedRegs base work s t ∧
       Inv M base 8192 C.p Sl live (runOps (operations .doubleRR) E) t := by
-  refine WP.mono (Certificate.refine hi.scr (raw_ok h129 h38 hm hi))
+  refine WP.mono (Certificate.refine hi.scr (raw_ok layout aligned (by decide +kernel) h129 h38 hm
+    (by decide +kernel) hi))
     fun t ⟨u,⟨_,hu⟩,ho,hk⟩ => ?_
   have hs := hk.scr allocatedRegs_x0 hi.scr
   have ht := hi.mod.unch hk.unch

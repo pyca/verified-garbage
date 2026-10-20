@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.AesCfb8.Arm.Steps
+import VerifiedGarbage.Proof.AesCfb8.Arm.Steps
 public import VerifiedGarbage.Proof.AesCbc.Arm.Body
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.AesCfb8.Arm
+public import VerifiedGarbage.Proof.AesCfb8.Arm.Loop
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CFB8 on ARMv7: one byte

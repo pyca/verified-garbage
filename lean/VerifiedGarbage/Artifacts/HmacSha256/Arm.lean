@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha256
-public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Frame
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeySha256
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # HMAC-SHA-256 (RFC 2104) on ARMv7
@@ -19,9 +18,18 @@ compression function (`vg_sha256_compress`), on a block laid out at fixed
 offsets in `scratch`. It pushes 8 bytes of stack (the stack arguments of
 `finalize`); `stack` is that of the shared contract, 16 bytes.
 
-`init` and `finalize` keep their working space in a frame of their own
-(`Proof/Pbkdf2/Md/Arm/Frame.lean`); `init_scratch` and `finalize_scratch`, the
-same code with it as an argument, are what PBKDF2's code calls.
+`init` takes a key of any length (`initAnyKeyApi`), and chooses on entry by
+its public length (`Proof/Pbkdf2/Whole/Arm/AnyKeyEntry.lean`): a key of at
+most a block goes straight to `init_scratch`, the code above with its working
+space as an argument, in a frame of its own holding its working space
+(`Proof/Pbkdf2/Md/Arm/Frame.lean`); a longer key is first hashed with
+SHA-256's verified streaming functions into its working space, as
+PBKDF2's `pbkdf2` hashes a long password (`Impl/Pbkdf2/Md/AnyKey/Arm.lean`),
+and `init_scratch` is called with its digest, in a larger frame of its own,
+which it wipes before returning (`Proof/Pbkdf2/Whole/Arm/AnyKeyCT.lean`);
+`stack` is that of the larger. `finalize` keeps its working space in a frame
+of its own too (`Proof/Pbkdf2/Md/Arm/Frame.lean`). `init_scratch` and
+`finalize_scratch` are what PBKDF2's code calls.
 -/
 
 @[expose] public section
@@ -29,47 +37,22 @@ same code with it as an argument, are what PBKDF2's code calls.
 namespace VG.Artifacts.HmacSha256.Arm
 
 def artifacts : List Artifact := [
-  { Spec.Hmac.sha256I.initApi with
-    target := Arm.target
-    doc := Spec.Hmac.sha256I.initApi.doc
-    code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha256I) 0 Proof.Pbkdf2.Md.Arm.sha256Md.hmacInit
-    contract := Spec.Hmac.sha256I.initContract Arm.abi (16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha256I)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩)
-    writeArgs := true
-    stack := 16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha256I
-    verified := Proof.Pbkdf2.Md.Arm.initFramed Proof.Pbkdf2.Md.Arm.Instances.sha256_init (by decide)
-      Proof.Pbkdf2.Md.Arm.sha256_initFrameSat
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Hmac.sha256I.finalizeApi with
-    target := Arm.target
-    doc := Spec.Hmac.sha256I.finalizeApi.doc
+  Spec.Hmac.sha256I.initAnyKeyApi.artifact Arm.target {
+    code := Proof.Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha256I Proof.Pbkdf2.Md.Arm.sha256Md.hmacInit Proof.Pbkdf2.Whole.Arm.sha256F
+    stack := 24 + Proof.Pbkdf2.Whole.Arm.Any.anyFrame Spec.Hmac.sha256I
+    verified := Proof.Pbkdf2.Whole.Arm.Any.sha256_initF },
+  Spec.Hmac.sha256I.finalizeApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha256I) 1 Proof.Pbkdf2.Md.Arm.sha256Md.hmacFin
-    contract := Spec.Hmac.sha256I.finalizeContract Arm.abi (16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha256I)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩)
-    writeArgs := true
     stack := 16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha256I
-    verified := Proof.Pbkdf2.Md.Arm.finFramed Proof.Pbkdf2.Md.Arm.Instances.sha256_finalize (by decide)
-      Proof.Hmac.sha256_local (by decide) Proof.Pbkdf2.Md.Arm.sha256_finFrameSat
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Hmac.sha256I.initScratchApi with
-    target := Arm.target
-    doc := Spec.Hmac.sha256I.initScratchApi.doc
+    verified := Proof.Pbkdf2.Md.Arm.finFramed Proof.Pbkdf2.Md.Arm.Instances.sha256_finalize
+      Proof.Hmac.sha256_local Proof.Pbkdf2.Md.Arm.sha256_finFrameSat },
+  Spec.Hmac.sha256I.initScratchApi.artifact Arm.target {
     code := Proof.Pbkdf2.Md.Arm.sha256Md.hmacInit
-    contract := Spec.Hmac.sha256I.initScratchContract Arm.abi 16
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩)
-    writeArgs := true
     stack := 16
-    verified := Proof.Pbkdf2.Md.Arm.Instances.sha256_init
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Hmac.sha256I.finalizeScratchApi with
-    target := Arm.target
-    doc := Spec.Hmac.sha256I.finalizeScratchApi.doc
+    verified := Proof.Pbkdf2.Md.Arm.Instances.sha256_init },
+  Spec.Hmac.sha256I.finalizeScratchApi.artifact Arm.target {
     code := Proof.Pbkdf2.Md.Arm.sha256Md.hmacFin
-    contract := Spec.Hmac.sha256I.finalizeScratchContract Arm.abi 16
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩)
-    writeArgs := true
     stack := 16
-    verified := Proof.Pbkdf2.Md.Arm.Instances.sha256_finalize
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Pbkdf2.Md.Arm.Instances.sha256_finalize }]
 
 end VG.Artifacts.HmacSha256.Arm

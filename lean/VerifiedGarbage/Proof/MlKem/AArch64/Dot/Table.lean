@@ -1,12 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Result
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.Readonly
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Words
-public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Core
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Words
+import VerifiedGarbage.Proof.MlKem.AArch64.Barrett
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Dot

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.JacAdd
 public import VerifiedGarbage.Proof.Weierstrass.Jac
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 @[expose] public section
 

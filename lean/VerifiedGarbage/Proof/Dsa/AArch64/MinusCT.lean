@@ -1,19 +1,31 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.FinishCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.MinusHead
+public import VerifiedGarbage.Proof.Dsa.AArch64.MinusStep
+public import VerifiedGarbage.Proof.Dsa.AArch64.Product
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Minus
-public import VerifiedGarbage.Proof.Dsa.AArch64.CTBlocks
-meta import VerifiedGarbage.Proof.Dsa.AArch64.CTBlocks
+import VerifiedGarbage.Proof.Dsa.AArch64.Minus
+import VerifiedGarbage.Proof.Dsa.AArch64.CTBlocks
+import VerifiedGarbage.Proof.Dsa.AArch64.CallFinishCT
+import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.FinishCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.MinusHead
+meta import VerifiedGarbage.Proof.Dsa.AArch64.MinusStep
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Product
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Minus
-public import VerifiedGarbage.Proof.Dsa.AArch64.CallFinishCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.CTBlocks
 meta import VerifiedGarbage.Proof.Dsa.AArch64.CallFinishCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
-meta import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Timing of modulus-minus constants used in DSA validation -/
 

@@ -1,11 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 public import VerifiedGarbage.Proof.Bignum.Square
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 
 /-! The complete diagonal-addition loop for an ADX square. -/
 
@@ -39,17 +36,17 @@ structure DiagInv (s₀ : State) (B : Addr) (Z A eb : Nat) (i : Nat) (t : State)
   val : wv t.mem B A (2 * i) + 2 ^ (128 * i) * (t.gpr .r15).toNat =
     2 * wv s₀.mem B A (2 * i) + diagonalValue s₀.mem B eb i
 
-theorem diagStep_ok {s₀ t : State} {B : Addr} {Z A eb w i : Nat}
+theorem diagStep_ok {core : List Instr} (hc : CoreOk core) {s₀ t : State} {B : Addr} {Z A eb w i : Nat}
     (h8 : s₀.gpr .r8 = off B A) (h9 : s₀.gpr .r9 = off B eb)
     (h10 : s₀.gpr .r10 = BitVec.ofNat 64 w) (hw : w < 2 ^ 60) (hi : i < w)
     (hA : A + 16 * w ≤ Z) (hb : eb + 8 * w ≤ Z)
     (sb : eb + 8 * w ≤ A ∨ A + 16 * w ≤ eb)
     (hI : DiagInv s₀ B Z A eb i t) :
-    WP isa AdxSquare.diagonalStep t fun t' =>
+    WP isa (AdxSquare.diagonalStepWith core) t fun t' =>
       t'.zf = some (decide (i + 1 = w)) ∧ DiagInv s₀ B Z A eb (i + 1) t' := by
   have hn := hI.scr.nowrap
   have kp := hI.keep
-  refine WP.mono (diagonalStep_ok hI.scr ((kp.gpr (by decide)).trans h8)
+  refine WP.mono (diagonalStepWith_ok hc hI.scr ((kp.gpr (by decide)).trans h8)
     ((kp.gpr (by decide)).trans h9) hI.rbp hI.r14 ((kp.gpr (by decide)).trans h10)
     hi hw (by omega) (by omega)) fun t' ⟨hv, ho, hbp, h14, hz, kt⟩ => ⟨hz, ?_⟩
   have rT : wv t.mem B (A + 16 * i) 2 = wv s₀.mem B (A + 16 * i) 2 := hI.out.wv (by omega) (by omega)
@@ -67,17 +64,17 @@ theorem diagStep_ok {s₀ t : State} {B : Addr} {Z A eb w i : Nat}
 
 /-- The doubled cross products plus the diagonal, with the final carry
 accounted for explicitly. -/
-theorem diagonal_ok {s : State} {B : Addr} {Z A eb w : Nat} (hs : Scr s B Z)
+theorem diagonalWith_ok {core : List Instr} (hc : CoreOk core) {s : State} {B : Addr} {Z A eb w : Nat} (hs : Scr s B Z)
     (h8 : s.gpr .r8 = off B A) (h9 : s.gpr .r9 = off B eb)
     (h10 : s.gpr .r10 = BitVec.ofNat 64 w) (hw0 : 0 < w) (hw : w < 2 ^ 60)
     (hA : A + 16 * w ≤ Z) (hb : eb + 8 * w ≤ Z)
     (sb : eb + 8 * w ≤ A ∨ A + 16 * w ≤ eb) :
-    WP isa AdxSquare.diagonal s fun t =>
+    WP isa (AdxSquare.diagonalWith core) s fun t =>
       wv t.mem B A (2 * w) + 2 ^ (128 * w) * (t.gpr .r15).toNat =
         2 * wv s.mem B A (2 * w) + diagonalValue s.mem B eb w ∧
       Outside B A (16 * w) s.mem t.mem ∧
       Keep [.rdx, .r11, .r12, .rsi, .rbx, .rax, .rcx, .r15, .rbp, .r14] s t := by
-  unfold AdxSquare.diagonal
+  unfold AdxSquare.diagonalWith
   have init : WP isa (.block [.mov32 .r15 (.imm 0), .mov32 .rbp (.imm 0), .mov32 .r14 (.imm 0)]) s fun t =>
       t.gpr .r15 = 0 ∧ t.gpr .rbp = 0 ∧ t.gpr .r14 = 0 ∧ t.mem = s.mem ∧ Keep [.r15, .rbp, .r14] s t := by
     refine WP.mono (WP.keep [.r15, .rbp, .r14] (Q := fun t =>
@@ -88,7 +85,7 @@ theorem diagonal_ok {s : State} {B : Addr} {Z A eb w : Nat} (hs : Scr s B Z)
     ⟨hs.congr k₁.2.2, Keep.refl _ _, hbp, h14, Outside.refl _ _ _ _, by
       simp [wv, h15, diagonalValue, Square.diagonal]⟩
   refine WP.mono (wp_upto (a := 0) hw0 (DiagInv s₁ B Z A eb)
-    (fun i _ hi t h => diagStep_ok ((k₁.gpr (by decide)).trans h8) ((k₁.gpr (by decide)).trans h9)
+    (fun i _ hi t h => diagStep_ok hc ((k₁.gpr (by decide)).trans h8) ((k₁.gpr (by decide)).trans h9)
       ((k₁.gpr (by decide)).trans h10) hw hi hA hb sb h) (fun _ h => h) hI)
     fun t h => ⟨?_, ?_, (k₁.trans h.keep).mono (by decide)⟩
   · have hv := h.val
@@ -97,5 +94,17 @@ theorem diagonal_ok {s : State} {B : Addr} {Z A eb w : Nat} (hs : Scr s B Z)
   · have ho := h.out
     rw [hm] at ho
     exact ho
+
+theorem diagonal_ok {s : State} {B : Addr} {Z A eb w : Nat} (hs : Scr s B Z)
+    (h8 : s.gpr .r8 = off B A) (h9 : s.gpr .r9 = off B eb)
+    (h10 : s.gpr .r10 = BitVec.ofNat 64 w) (hw0 : 0 < w) (hw : w < 2 ^ 60)
+    (hA : A + 16 * w ≤ Z) (hb : eb + 8 * w ≤ Z)
+    (sb : eb + 8 * w ≤ A ∨ A + 16 * w ≤ eb) :
+    WP isa AdxSquare.diagonal s fun t =>
+      wv t.mem B A (2 * w) + 2 ^ (128 * w) * (t.gpr .r15).toNat =
+        2 * wv s.mem B A (2 * w) + diagonalValue s.mem B eb w ∧
+      Outside B A (16 * w) s.mem t.mem ∧
+      Keep [.rdx, .r11, .r12, .rsi, .rbx, .rax, .rcx, .r15, .rbp, .r14] s t :=
+  diagonalWith_ok diagonalCore_coreOk hs h8 h9 h10 hw0 hw hA hb sb
 
 end VG.Proof.Bignum.X86_64.AdxSquare

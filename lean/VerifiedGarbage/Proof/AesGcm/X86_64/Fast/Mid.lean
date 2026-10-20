@@ -4,12 +4,10 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Aad
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Cond
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Run
-public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Main
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Base
 
 /-!
 # AES-GCM `seal_split`'s path for TLS records: after the entry
@@ -37,11 +35,16 @@ open VG.Proof.AesGcm.X86_64.Short (ShortFacts KsOk CondKeep IsH1 condS_of)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (blockAt ctxH)
 
-theorem fastCond_mx : (Impl.AesGcm.X86_64.Fast.cond : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by
-  decide +kernel
-theorem fastCond_spSafe : (Impl.AesGcm.X86_64.Fast.cond : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true := by
-  decide +kernel
-theorem fastCond_xdepth : (Impl.AesGcm.X86_64.Fast.cond : Prog isa).x86_64Depth = 0 := by decide +kernel
+variable {any : Bool}
+
+theorem fastCond_mx (any : Bool) :
+    (Impl.AesGcm.X86_64.Fast.cond any : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by
+  cases any <;> decide +kernel
+theorem fastCond_spSafe (any : Bool) :
+    (Impl.AesGcm.X86_64.Fast.cond any : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true := by
+  cases any <;> decide +kernel
+theorem fastCond_xdepth (any : Bool) : (Impl.AesGcm.X86_64.Fast.cond any : Prog isa).x86_64Depth = 0 := by
+  cases any <;> decide +kernel
 theorem fastAad_mx : (Impl.AesGcm.X86_64.Fast.aad : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by
   decide +kernel
 theorem fastAad_spSafe : (Impl.AesGcm.X86_64.Fast.aad : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true := by
@@ -98,7 +101,7 @@ kept. -/
 theorem condE_ok {k : Nat} {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {nl al n : Nat}
     (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (E : OneEntry s₀ Ctx W SP A D n s₁)
     (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al) :
-    WP isa Impl.AesGcm.X86_64.Fast.cond s₁ fun s₂ => s₂.zf = some (decide ¬IsFast nl al n) ∧
+    WP isa (Impl.AesGcm.X86_64.Fast.cond any) s₁ fun s₂ => s₂.zf = some (decide ¬IsFast nl al n any) ∧
       OneEntry s₀ Ctx W SP A D n s₂ ∧ CondKeep s₁ s₂ := by
   have hlt := C.data.ok.lt
   refine WP.mono (cond_ok (condS_of E hnl hal) (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _)
@@ -112,18 +115,19 @@ theorem condE_ok {k : Nat} {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {nl al n
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) K.rd K.wr (by rw [K.mem]; exact Frame.refl _ _)
 
 /-- `sel`: this path for the inputs it takes, `other` for the rest. -/
-theorem sel_ok (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) (T : BlkToFn CtxMode.prepared)
+theorem sel_ok (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) {pre : Prog isa}
+    {qf : Nat → Nat → Nat} (hpre : PreOk CtxMode.prepared pre qf)
     {ks : Prog isa} (hks : KsOk ks) {fin : Prog isa} (hfin : FinOk CtxMode.prepared fin) {other : Prog isa}
     (ho : MidOk CtxMode.prepared other) :
-    MidOk CtxMode.prepared (Impl.AesGcm.X86_64.Fast.sel (v.withBlk B) T.fn ks fin other) := by
+    MidOk CtxMode.prepared (Impl.AesGcm.X86_64.Fast.sel (v.withBlk B) pre ks fin other any) := by
   intro s₀ s₁ Ctx W SP Np A D S T' nl al n sl C X kM E hNp hnl hal
   unfold Impl.AesGcm.X86_64.Fast.sel
   refine WP.seq (WP.mono (condE_ok C.toOneCtx E.toOneEntry hnl hal) fun s₂ ⟨hz, E₂, K⟩ => ?_)
   have S₂ : SEntry s₀ Ctx W SP A D S n sl s₂ := ⟨E₂, by rw [K.mem]; exact E.src, by rw [K.mem]; exact E.slen⟩
-  refine WP.ite (decide ¬IsFast nl al n) (eval_e hz) (fun _ => ho C X kM S₂ hNp hnl hal) fun h => ?_
-  obtain ⟨h12, h17, -⟩ : IsFast nl al n := Decidable.not_not.mp (of_decide_eq_false h)
+  refine WP.ite (decide ¬IsFast nl al n any) (eval_e hz) (fun _ => ho C X kM S₂ hNp hnl hal) fun h => ?_
+  obtain ⟨h12, h17, -⟩ : IsFast nl al n any := Decidable.not_not.mp (of_decide_eq_false h)
   subst h12
-  exact splitRun_of_midB T (fbody_ok hF hks B hfin) C X kM S₂ hal
+  exact splitRun_of_pre hpre (fbody_ok hF hks B hfin) C X kM S₂ hal
     (aad_mid hF C.toOneCtx X S₂.toOneEntry hNp hnl hal (by omega))
 
 end VG.Proof.AesGcm.X86_64.Fast

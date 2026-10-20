@@ -1,15 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCtx
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Order.Basic
+import Mathlib.Data.Nat.Basic
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
 
 /-!
 # RSAES-OAEP encryption on x86-64: the precondition by name, and the frame
@@ -80,12 +79,12 @@ structure EPre (s : State) : Prop where
   hsi : (s.gpr .rsi).toNat = (s.gpr .rcx).toNat
   L1 : 1 ≤ (s.gpr .r9).toNat
   L2 : (s.gpr .r9).toNat ≤ (s.gpr .rcx).toNat
-  hsl : 16 * (s.gpr .rcx).toNat + 32 + 1024 ≤ (stackArg s 6).toNat
+  hsl : 8 * (((s.gpr .rcx).toNat + 7) / 8) + 48 + 1024 ≤ (stackArg s 6).toNat
 
 theorem EPre.of {s : State} (h : (encK H G).pre s) : EPre H s := by
   simp only [encK] at h
   obtain ⟨sp1, sp2, hrd, hwr, d_out_n, d_out_e, d_out_lb, d_out_ms, d_out_sd, d_out_scr, d_out_args, d_n_scr, d_e_scr, d_lb_scr, d_ms_scr, d_sd_scr, d_scr_args, d_ret_out, d_ret_n, d_ret_e, d_ret_lb, d_ret_ms, d_ret_sd, d_ret_scr, d_ret_args, d_stk_out, d_stk_n, d_stk_e, d_stk_lb, d_stk_ms, d_stk_sd, d_stk_scr, d_stk_args, wO, wN, wE, wL, wM, wSd, wS, ⟨k1, k2⟩, hsi, L1, L2, hsl⟩ := h
-  exact ⟨sp1, sp2, by rw [hrd]; exact Covers.refl _, hwr, d_out_n, d_out_e, d_out_lb, d_out_ms, d_out_sd, d_out_scr, d_out_args, d_n_scr, d_e_scr, d_lb_scr, d_ms_scr, d_sd_scr, d_scr_args, d_ret_out, d_ret_n, d_ret_e, d_ret_lb, d_ret_ms, d_ret_sd, d_ret_scr, d_ret_args, d_stk_out, d_stk_n, d_stk_e, d_stk_lb, d_stk_ms, d_stk_sd, d_stk_scr, d_stk_args, wO, wN, wE, wL, wM, wSd, wS, k1, k2, hsi, L1, L2, by unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hsl; omega⟩
+  exact ⟨sp1, sp2, by rw [hrd]; exact Covers.refl _, hwr, d_out_n, d_out_e, d_out_lb, d_out_ms, d_out_sd, d_out_scr, d_out_args, d_n_scr, d_e_scr, d_lb_scr, d_ms_scr, d_sd_scr, d_scr_args, d_ret_out, d_ret_n, d_ret_e, d_ret_lb, d_ret_ms, d_ret_sd, d_ret_scr, d_ret_args, d_stk_out, d_stk_n, d_stk_e, d_stk_lb, d_stk_ms, d_stk_sd, d_stk_scr, d_stk_args, wO, wN, wE, wL, wM, wSd, wS, k1, k2, hsi, L1, L2, by unfold Spec.RsaPss.publicScratchWords Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords at hsl; omega⟩
 
 /-- A read-only buffer of the caller is readable. -/
 theorem EPre.rd_in {H : Spec.Mgf1.Hash} {s t : State} (hp : EPre H s) (hrd : t.rd = s.rd) {r : Region} (hr : r ∈ rdL H s) {a : Addr}

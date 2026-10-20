@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.CbcVerified
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Triple DES-CBC artifacts on baseline AArch64 -/
 
@@ -17,21 +17,15 @@ def note : String :=
   `Impl/Modes/AArch64/`."
 
 def artifacts : List Artifact := [
-  { Spec.TripleDes.cbcEncryptApi with
-    target := AArch64.target
-    doc := Spec.TripleDes.cbcEncryptApi.doc (notes := [note])
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 Impl.TripleDes.AArch64.cbcEncrypt
-    contract := Spec.TripleDes.cbcEncryptContract AArch64.abi 1008
+  Spec.TripleDes.cbcEncryptChainedApi.artifact AArch64.target {
+    notes := [note, "The IV's address is kept in `x25`, which the core keeps, and after the last block the core's buffer, the last ciphertext block, goes back to the IV."]
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 Impl.TripleDes.AArch64.cbcEncryptChained
     stack := 1008
-    verified := Proof.TripleDes.AArch64.cbcEncrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.TripleDes.cbcDecryptApi with
-    target := AArch64.target
-    doc := Spec.TripleDes.cbcDecryptApi.doc (notes := [note])
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 Impl.TripleDes.AArch64.cbcDecrypt
-    contract := Spec.TripleDes.cbcDecryptContract AArch64.abi 1008
+    verified := Proof.TripleDes.AArch64.cbcEncryptChained_framed },
+  Spec.TripleDes.cbcDecryptChainedApi.artifact AArch64.target {
+    notes := [note, "The last ciphertext block is copied to the IV before any block is decrypted."]
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 Impl.TripleDes.AArch64.cbcDecryptChained
     stack := 1008
-    verified := Proof.TripleDes.AArch64.cbcDecrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.TripleDes.AArch64.cbcDecryptChained_framed }]
 
 end VG.Artifacts.TripleDesCbc.AArch64

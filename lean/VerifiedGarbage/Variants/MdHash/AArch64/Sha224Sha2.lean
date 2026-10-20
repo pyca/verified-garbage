@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha224
 public import VerifiedGarbage.Proof.Sha256.AArch64.Sha2Backend
-import VerifiedGarbage.Proof.Sha512.Word64
 
 /-!
 # SHA-224 on AArch64 with the SHA-256 instructions

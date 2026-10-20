@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PbkCalls
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -103,8 +99,12 @@ abbrev w : Nat := P.R.E.n
 abbrev Q : Nat := P.R.E.C.len
 
 /-- The words above the frame's pointers: the digest for `core` and the
-candidate, if two `V`s make a candidate. -/
-abbrev e : Nat := if P.R.wide then 18 else 0
+candidate, if two `V`s make a candidate, or `h`, for 64-byte scalars. -/
+abbrev e : Nat := if P.R.wide then 18 else if P.R.hHigh then 8 else 0
+
+/-- Where `h` is, from the stack's lowest byte: in the frame below its
+pointers, or above them for 64-byte scalars. -/
+abbrev hB : Nat := if P.R.hHigh then 240 else 152
 
 /-- The sizes, as the proofs use them. -/
 theorem sizes : P.H.S ≤ 192 ∧ P.H.P.N + P.H.P.B ≤ 192 ∧ 8 * P.H.W ≤ 1872 ∧ P.ok.stream.Wb ≤ 1872 ∧
@@ -121,22 +121,28 @@ theorem sizes : P.H.S ≤ 192 ∧ P.H.P.N + P.H.P.B ≤ 192 ∧ 8 * P.H.W ≤ 18
     · have := P.R.sizesW hW; rw [hW] at hQ; simp only [ite_true] at hQ
       show P.R.E.C.len ≤ _; omega
   refine ⟨P.hS, P.hS, P.hW, P.hWb, P.hS, rfl, ?_, ?_, ?_, by omega, ?_, P.R.n4, P.R.n9, hw.1, hQD, hw.2.2, hw.2.1,
-    by simp only [e]; split <;> omega⟩ <;>
+    by simp only [e]; split <;> (try split) <;> omega⟩ <;>
     rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> simp only [h, h'] <;> omega
 
-/-- Unless `wide`, the scalars are `8 w` bytes (or 24 or 28 in 4 words), at most 6
+/-- Unless `wide`, the scalars are `8 w` bytes (or 24 or 28 in 4 words), at most 8
 words, and no longer than the digest. -/
-theorem sizesA (h : P.R.wide = false) : (P.Q = 8 * P.w ∨ P.w = 4 ∧ (P.Q = 28 ∨ P.Q = 24)) ∧ P.w ≤ 6 ∧ P.Q ≤ P.H.D := by
+theorem sizesA (h : P.R.wide = false) : (P.Q = 8 * P.w ∨ P.w = 4 ∧ (P.Q = 28 ∨ P.Q = 24)) ∧ P.w ≤ 8 ∧ P.Q ≤ P.H.D := by
   have hQ := P.hQ
   have := P.R.sizesA h
   rw [h] at hQ
   simp only [Bool.false_eq_true, ite_false] at hQ
-  rcases this.1 with h' | h' <;> simp only [Q, w] <;> omega
+  rcases this.1 with h' | h' | h' <;> simp only [Q, w] <;> omega
 
-/-- Unless `wide`, the scalars are 32, 48 or 28 bytes. -/
-theorem sizesQ (h : P.R.wide = false) : P.Q = 32 ∨ P.Q = 48 ∨ P.Q = 28 ∨ P.Q = 24 := by
+/-- Unless `wide`, the scalars are 32, 48, 64 or 28 bytes. -/
+theorem sizesQ (h : P.R.wide = false) : P.Q = 32 ∨ P.Q = 48 ∨ P.Q = 64 ∨ P.Q = 28 ∨ P.Q = 24 := by
   have := P.R.sizesA h
-  rcases this.1 with hn | hn <;> simp only [Q] <;> omega
+  rcases this.1 with hn | hn | hn <;> simp only [Q] <;> omega
+
+/-- `h` fits its place: 48 bytes below the frame's pointers, or, for 64-byte
+scalars (in 8 words), the 64 above them. -/
+theorem hFits (h : P.R.wide = false) : (P.w = 8 → P.Q = 64) ∧ (P.w ≠ 8 → P.Q ≤ 48) := by
+  have := P.R.sizesA h
+  rcases this.1 with hn | hn | hn <;> simp only [Q, w] <;> omega
 
 /-- If `wide`, P-521's sizes and SHA-512's. -/
 theorem sizesW (h : P.R.wide = true) : P.w = 9 ∧ P.Q = 66 ∧ P.H.D = 64 ∧ P.H.P.B = 128 := by
@@ -167,9 +173,31 @@ def cfgOf (P : RfcHash) : Cfg where
   len := P.R.E.C.len
   wide := P.R.wide
   sh := P.R.sh
+  hHigh := P.R.hHigh
   n := P.R.E.C.n
   tries := P.I.tries
   coreN := P.R.coreN
   coreC := P.R.coreC
+
+/-- Unless two `V`s make a candidate, `h` is above the frame's pointers just
+for 64-byte scalars. -/
+theorem hHigh_q (P : RfcHash) (hw : P.R.wide = false) : P.R.hHigh = decide (P.Q = 64) := by
+  have hF := P.hFits hw
+  rw [P.R.hHigh_eq]
+  by_cases h8 : P.R.E.n = 8
+  · simp only [h8, decide_true, show P.Q = 64 from hF.1 h8]
+  · have := hF.2 h8
+    simp only [h8, decide_false, show P.Q ≠ 64 by omega]
+
+/-- `h`'s place in the frame, from `rsp`: `hB` less the 24 bytes below the frame. -/
+theorem fHo_eq (P : RfcHash) : (cfgOf P).fHo = P.hB - 24 := by
+  cases h : P.R.hHigh <;> simp [Cfg.fHo, cfgOf, RfcHash.hB, h, fX, fH]
+
+/-- If two `V`s make a candidate, `h`'s place is the one below the pointers,
+which the code does not use. -/
+theorem fHo_wide (P : RfcHash) (hw : P.R.wide = true) : (cfgOf P).fHo = 128 := by
+  have hh := P.R.hHigh_eq
+  simp only [show P.R.E.n = 9 from (P.R.sizesW hw).1, Nat.reduceEqDiff, decide_false] at hh
+  simp only [Cfg.fHo, cfgOf, hh, Bool.false_eq_true, ite_false, fH]
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

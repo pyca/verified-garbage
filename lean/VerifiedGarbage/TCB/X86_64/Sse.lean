@@ -21,6 +21,7 @@ inductive XBinOp
   | pshufb | sha256msg1 | sha256msg2 | sha1msg1 | sha1msg2 | sha1nexte
   | pand | pandn | paddq | psubq | pmuludq
   | paddw | psubw | psubd | pmullw | pmulhw | packssdw | punpcklwd | punpckhwd
+  | pmaddwd | pmulhrsw | pcmpgtw | packsswb
   | aesenc | aesenclast | aesdec | aesdeclast | aesimc
   | pcmpeqd
   deriving DecidableEq, Repr
@@ -42,6 +43,8 @@ inductive XOp
   | pshufd (dst src : XReg) (order : BitVec 8)
   /-- `palignr xmm1, xmm2, imm8` -/
   | palignr (dst src : XReg) (shift : BitVec 8)
+  /-- `pblendw xmm1, xmm2, imm8` (`66 0F 3A 0E /r ib`, SSE4_1) -/
+  | pblendw (dst src : XReg) (sel : BitVec 8)
   /-- `sha256rnds2 xmm1, xmm2, xmm0` (`xmm0` is implicit in the encoding) -/
   | sha256rnds2 (dst src : XReg)
   /-- `sha1rnds4 xmm1, xmm2, imm8` -/
@@ -84,6 +87,12 @@ doubleword as a signed word, `7FFFH` if it is greater than 32767 and `8000H`
 if it is less than -32768. -/
 def satSignedWord (x : BitVec 32) : BitVec 16 :=
   if 32767 < x.toInt then 0x7fff else if x.toInt < -32768 then 0x8000 else x.setWidth 16
+
+/-- SDM Vol. 2, "PACKSSWB", `SaturateSignedWordToSignedByte`: the word as a
+signed byte, `7FH` if it is greater than 127 and `80H` if it is less than
+-128. -/
+def satSignedByte (x : BitVec 16) : BitVec 8 :=
+  if 127 < x.toInt then 0x7f else if x.toInt < -128 then 0x80 else x.setWidth 8
 
 /-- Byte `i` of `x`: bits `8i+7:8i`. -/
 def byte (x : BitVec 128) (i : Nat) : BitVec 8 := x.extractLsb' (8 * i) 8
@@ -244,6 +253,19 @@ the XOR, over the bits `j` of `a` that are 1, of `b` shifted left by `j`. -/
 def clmul (a b : BitVec 64) : BitVec 128 :=
   (List.range 64).foldl (fun acc j => if a.getLsbD j then acc ^^^ (b.setWidth 128 <<< j) else acc) 0
 
+/-- SDM Vol. 2, "PMULHRSW", for one word: `temp[31:0] := INT32 ((a * b) >> 14) + 1;
+result := temp[16:1]`, with the signed 32-bit product (`mulWordsSigned`, which no
+pair of words overflows) shifted arithmetically. -/
+def mulhrs (a b : BitVec 16) : BitVec 16 :=
+  ((mulWordsSigned a b).sshiftRight 14 + 1).extractLsb' 1 16
+
+/-- SDM Vol. 2, "PBLENDW" (128-bit legacy SSE version): `IF (imm8[i] = 1) THEN
+DEST[16i+15:16i] := SRC[16i+15:16i] ELSE DEST[16i+15:16i] := DEST[16i+15:16i]` for
+each word `i`; VPBLENDW applies it to each lane with the same `imm8` (`SRC1` in place
+of the destination). -/
+def blendWords (a b : BitVec 128) (imm : BitVec 8) : BitVec 128 :=
+  ofWords fun i => if imm.getLsbD i then word b i else word a i
+
 /-- The result of `op dst, src`, given the old values `a` of `dst` and `b` of
 `src`. SDM Vol. 2 (128-bit legacy SSE forms, which leave the destination's
 bits above 127 unmodified; no flags are affected):
@@ -294,11 +316,29 @@ bits above 127 unmodified; no flags are affected):
   `DEST[15:0] := TEMP0[15:0]`, … `DEST[127:112] := TEMP7[15:0]`.
 * PMULHW: the same products; `DEST[15:0] := TEMP0[31:16]`, …
   `DEST[127:112] := TEMP7[31:16]`.
+* PMADDWD: `DEST[31:0] := (DEST[15:0] * SRC[15:0]) + (DEST[31:16] *
+  SRC[31:16])`, … `DEST[127:96] := (DEST[111:96] * SRC[111:96]) +
+  (DEST[127:112] * SRC[127:112])` (signed products, see `mulWordsSigned`;
+  the sum wraps: the one sum that overflows, of four `8000H` words, is
+  `80000000H`).
+* PMULHRSW (SSSE3): `temp0[31:0] := INT32 ((DEST[15:0] * SRC[15:0]) >> 14) + 1`,
+  … `temp7[31:0] := INT32 ((DEST[127:112] * SRC[127:112]) >> 14) + 1`;
+  `DEST[15:0] := temp0[16:1]`, … `DEST[127:112] := temp7[16:1]` (signed
+  products, see `mulWordsSigned`; `>>` an arithmetic shift of the 32-bit
+  product: see `mulhrs`).
+* PCMPGTW (`COMPARE_WORDS_GREATER`): `IF DEST[15:0] > SRC[15:0] THEN
+  DEST[15:0] := FFFFH ELSE DEST[15:0] := 0`, and likewise for words 1–7
+  (a signed comparison).
 * PACKSSDW: `DEST[15:0] := SaturateSignedDwordToSignedWord (DEST[31:0])`,
   … `DEST[63:48] := SaturateSignedDwordToSignedWord (DEST[127:96])`;
   `DEST[79:64] := SaturateSignedDwordToSignedWord (SRC[31:0])`, …
   `DEST[127:112] := SaturateSignedDwordToSignedWord (SRC[127:96])` (see
   `satSignedWord`).
+* PACKSSWB: `DEST[7:0] := SaturateSignedWordToSignedByte (DEST[15:0])`, …
+  `DEST[63:56] := SaturateSignedWordToSignedByte (DEST[127:112])`;
+  `DEST[71:64] := SaturateSignedWordToSignedByte (SRC[15:0])`, …
+  `DEST[127:120] := SaturateSignedWordToSignedByte (SRC[127:112])` (see
+  `satSignedByte`).
 * PUNPCKLWD (`INTERLEAVE_WORDS`): `DEST[15:0] := SRC1[15:0]; DEST[31:16] :=
   SRC2[15:0]; DEST[47:32] := SRC1[31:16]; DEST[63:48] := SRC2[31:16];
   DEST[79:64] := SRC1[47:32]; DEST[95:80] := SRC2[47:32]; DEST[111:96] :=
@@ -357,8 +397,17 @@ def XBinOp.eval : XBinOp → BitVec 128 → BitVec 128 → BitVec 128
       (dword a 3 - dword b 3)
   | .pmullw, a, b => ofWords fun i => (mulWordsSigned (word a i) (word b i)).extractLsb' 0 16
   | .pmulhw, a, b => ofWords fun i => (mulWordsSigned (word a i) (word b i)).extractLsb' 16 16
+  | .pmaddwd, a, b =>
+    let m (i : Nat) : BitVec 32 :=
+      mulWordsSigned (word a (2 * i)) (word b (2 * i)) +
+        mulWordsSigned (word a (2 * i + 1)) (word b (2 * i + 1))
+    ofDwords (m 0) (m 1) (m 2) (m 3)
+  | .pmulhrsw, a, b => ofWords fun i => mulhrs (word a i) (word b i)
+  | .pcmpgtw, a, b => ofWords fun i => if (word b i).slt (word a i) then 0xFFFF else 0
   | .packssdw, a, b =>
     ofWords fun i => if i < 4 then satSignedWord (dword a i) else satSignedWord (dword b (i - 4))
+  | .packsswb, a, b =>
+    ofBytes fun i => if i < 8 then satSignedByte (word a i) else satSignedByte (word b (i - 8))
   | .punpcklwd, a, b => ofWords fun i => if i % 2 = 0 then word a (i / 2) else word b (i / 2)
   | .punpckhwd, a, b =>
     ofWords fun i => if i % 2 = 0 then word a (4 + i / 2) else word b (4 + i / 2)
@@ -533,6 +582,7 @@ def XOp.exec : XOp → State → State
   | .shift op d n, s => s.setXmm d (op.eval (s.xmm d) n)
   | .pshufd d r o, s => s.setXmm d (shufDwords (s.xmm r) o)
   | .palignr d r n, s => s.setXmm d (alignRight (s.xmm d) (s.xmm r) n)
+  | .pblendw d r n, s => s.setXmm d (blendWords (s.xmm d) (s.xmm r) n)
   | .sha256rnds2 d r, s => s.setXmm d (sha256Rnds2 (s.xmm d) (s.xmm r) (s.xmm .xmm0))
   | .sha1rnds4 d r n, s => s.setXmm d (sha1Rnds4 (s.xmm d) (s.xmm r) n)
   | .movq d r, s => s.setXmm d ((0 : BitVec 64) ++ s.gpr r)

@@ -1,12 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.AArch64.Core
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sm4.Layout
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
 
 /-!
 # The transposes, and sixteen blocks of bitsliced SM4 on AArch64
@@ -80,7 +77,7 @@ theorem toBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀
     (fun kv hkv => ⟨by have := mask_lt hkv; simp only [bsCfg, tableSlot_eq]; omega, hc.masks kv hkv⟩)
     (fun j hj => by simp [bsCfg] at hj)
   simp only [bsCfg] at hb' hso hkp
-  have hall : (layerKeep.all fun r => toBs.all fun i => dstOf i != some r) = true := by
+  have hall : (layerKeep.all fun r => toBs.all fun i => !clobbers i r) = true := by
     decide +kernel
   have hkeep : ∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r := fun r hr =>
     o' r (List.all_eq_true.mp hall r (not_layerWrites r hr))
@@ -117,7 +114,7 @@ theorem fromBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s�
     (fun kv hkv => ⟨by have := mask_lt hkv; simp only [bsCfg, tableSlot_eq]; omega, hc.masks kv hkv⟩)
     (fun j hj => by simp [bsCfg] at hj)
   simp only [bsCfg] at hb' hso hkp
-  have hall : (layerKeep.all fun r => fromBs.all fun i => dstOf i != some r) = true := by
+  have hall : (layerKeep.all fun r => fromBs.all fun i => !clobbers i r) = true := by
     decide +kernel
   have hkeep : ∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r := fun r hr =>
     o' r (List.all_eq_true.mp hall r (not_layerWrites r hr))

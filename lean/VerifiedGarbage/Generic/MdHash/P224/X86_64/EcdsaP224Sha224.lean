@@ -1,16 +1,11 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.P224.Comb7
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P224Sha224
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Verified
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-224 with HMAC-SHA-224 on x86-64
@@ -42,16 +37,12 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (h : Proof.Weierstrass.X86_64.
   match v.sha224 with
   | none => []
   | some c => [
-    { Spec.Ecdsa.Rfc6979.P224Sha224.signApi with
-      name := Spec.Ecdsa.Rfc6979.P224Sha224.signApi.name ++ c.suffix
-      target := X86_64.target
-      doc := Spec.Ecdsa.Rfc6979.P224Sha224.signApi.doc
-        (notes := [signNotes (cfgOf (pack h.law (Proof.P224.combOk7 h.law) h.inv c)).H 28
-          Spec.Ecdsa.P224.signApi.name])
+    Spec.Ecdsa.Rfc6979.P224Sha224.signApi.artifact X86_64.target {
+      suffix := c.suffix
+      notes := [signNotes (cfgOf (pack h.law (Proof.P224.combOk7 h.law) h.inv c)).H 28
+          Spec.Ecdsa.P224.signApi.name]
       code := (cfgOf (pack h.law (Proof.P224.combOk7 h.law) h.inv c)).sign
       consts := Impl.Ecdsa.X86_64.p224.combConsts
-      contract := Spec.Ecdsa.Rfc6979.P224Sha224.inst.signContract
-        (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p224.combConsts) 240
       stack := 240
       verified := sign_verified h.law (Proof.P224.combOk7 h.law) h.inv c
       spSafe := sign_spSafe (pack h.law (Proof.P224.combOk7 h.law) h.inv c)

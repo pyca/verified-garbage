@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Context
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Entry
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckDomain
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Entry
+import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
+import VerifiedGarbage.Proof.Bignum.Octets
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH domain validation on x86-64: save arguments and check p -/
 

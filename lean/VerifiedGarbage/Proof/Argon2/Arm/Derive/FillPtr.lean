@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCount
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillInput
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
+import VerifiedGarbage.Proof.Argon2.Arm.Mix
+import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
+import VerifiedGarbage.Proof.Argon2.Reference
+import VerifiedGarbage.Proof.Argon2.Dimensions
 
 /-!
 # Argon2 on ARMv7: the reference block's column and the block pointers

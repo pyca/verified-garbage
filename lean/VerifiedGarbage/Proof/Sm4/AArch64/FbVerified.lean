@@ -1,51 +1,32 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
-meta import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
-public import VerifiedGarbage.Proof.Modes.AArch64.Fb
-meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
-public import VerifiedGarbage.Proof.Modes.AArch64.ViaV
-meta import VerifiedGarbage.Proof.Modes.AArch64.ViaV
+import VerifiedGarbage.Proof.Sm4.AArch64.Link
+import VerifiedGarbage.Proof.Modes.AArch64.Fb
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
-meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 public import VerifiedGarbage.Proof.Sm4.FbScratch
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+public import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
+public import VerifiedGarbage.Spec.Sm4.Cfb
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+import VerifiedGarbage.Proof.Sm4.AArch64.FbLit
+public import VerifiedGarbage.Impl.Sm4.AArch64.Fb
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sm4.AArch64.Link
+meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 meta import VerifiedGarbage.Proof.Sm4.FbScratch
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sm4.AArch64.FbLit
-public import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
-meta import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
+meta import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
+meta import VerifiedGarbage.Spec.Sm4.Cfb
+meta import VerifiedGarbage.Impl.StackScratch.AArch64
 meta import VerifiedGarbage.Proof.Sm4.AArch64.FbLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.AesSiv.Ctr32
-public import VerifiedGarbage.Proof.AesSiv.Words
-public import VerifiedGarbage.Proof.Cmac.Stream
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Gcm.Bits
-public import VerifiedGarbage.Proof.Modes.AArch64.Ctr
-public import VerifiedGarbage.Proof.Modes.AArch64.Xor
-public import VerifiedGarbage.Proof.Sm4.AArch64.Imm
-public import VerifiedGarbage.Proof.Sm4.AArch64.Lit
-meta import VerifiedGarbage.Proof.AesSiv.Ctr32
-meta import VerifiedGarbage.Proof.AesSiv.Words
-meta import VerifiedGarbage.Proof.Cmac.Stream
-meta import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Gcm.Bits
-meta import VerifiedGarbage.Proof.Modes.AArch64.Ctr
-meta import VerifiedGarbage.Proof.Modes.AArch64.Xor
-meta import VerifiedGarbage.Proof.Sm4.AArch64.Imm
-meta import VerifiedGarbage.Proof.Sm4.AArch64.Lit
+meta import VerifiedGarbage.Impl.Sm4.AArch64.Fb
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-!
 # SM4-OFB and SM4-CFB128 on AArch64 meet their contracts
@@ -60,8 +41,8 @@ time, by the taint analysis with public values in vector registers
 is everything the code computes from them, which it keeps in registers (the
 IV's address in `v31` across the core, which uses no vector instruction);
 the IV is secret. `ofb_framed`, …
-run them with their working space on the stack, zeroed on return: 3168
-bytes, the 396 words of the scratch buffer.
+run them with their working space on the stack, zeroed on return: 3264
+bytes, the 408 words of the scratch buffer.
 -/
 
 @[expose] public section
@@ -76,11 +57,11 @@ def fbPre (s : State) : Prop :=
   let sched : Region := ⟨s.gpr .x0, 128⟩
   let iv : Region := ⟨s.gpr .x1, 16⟩
   let data : Region := ⟨s.gpr .x2, 16 * (s.gpr .x3).toNat⟩
-  let scratch : Region := ⟨s.gpr .x4, 8 * slots⟩
+  let scratch : Region := ⟨s.gpr .x4, 8 * (slots + 12)⟩
   s.rd = [sched] ∧ s.wr = [iv, data, scratch] ∧ sched.Disjoint iv ∧ sched.Disjoint data ∧
     sched.Disjoint scratch ∧ iv.Disjoint data ∧ iv.Disjoint scratch ∧ data.Disjoint scratch ∧
     (s.gpr .x0).toNat + 128 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 16 ≤ 2 ^ 64 ∧
-    (s.gpr .x2).toNat + 16 * (s.gpr .x3).toNat ≤ 2 ^ 64 ∧ (s.gpr .x4).toNat + 8 * slots ≤ 2 ^ 64
+    (s.gpr .x2).toNat + 16 * (s.gpr .x3).toNat ≤ 2 ^ 64 ∧ (s.gpr .x4).toNat + 8 * (slots + 12) ≤ 2 ^ 64
 
 /-- The public arguments. -/
 def fbPub (s₁ s₂ : State) : Prop :=
@@ -134,7 +115,7 @@ theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : fbPre s₀) :
       Spec.Aes.bytesAt s'.mem (s₀.gpr .x1) 16 =
         Modes.fbIn mo 16 (ciphOf s₀) s₀.mem (s₀.gpr .x2) (ivOf s₀) (s₀.gpr .x3).toNat := by
   obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, fitK, fitV, fitD, fitB⟩ := hp
-  have hwS : (⟨s₀.gpr .x4, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  have hwS : (⟨s₀.gpr .x4, 8 * (slots + 12)⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
   refine WP.mono (Proof.Modes.AArch64.fb_wp fbCoreSpec mo (r := ⟨.x1, .x2, .x3, .x4⟩)
     ⟨by decide, by decide, by decide⟩ (by decide) (ivR := .x19)
     ⟨by decide, by decide, by decide, by decide, by decide⟩
@@ -166,14 +147,6 @@ theorem cfbDecrypt_wp {s₀ : State} (hp : cfbDecAArch64.pre s₀) :
     obtain ⟨h1, h2⟩ := Modes.cfbDec_of 16 (ciphOf s₀) s₀.mem (s₀.gpr .x2) (ivOf s₀) (s₀.gpr .x3).toNat
     exact ⟨hg, hd.trans h1, hv.trans h2⟩
 
-/-- The callee-saved registers and the rest of the ABI, from what a mode
-keeps. -/
-theorem abi_of {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec isa c s t s')
-    (h₁ : ∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
-      s.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19))
-    (h₃ : ∀ r ∈ [Reg.x30], s'.gpr r = s.gpr r) (hv : c.allInstrs keepsV = true) : abiPreserved s s' :=
-  ⟨Modes.AArch64.preserved_of h₁ h₃, Exec.sp he, Exec.preservedV he hv⟩
-
 /-! ## Constant time -/
 
 theorem fbTaint_agree (s₁ s₂ : State) (_ : fbPre s₁) (_ : fbPre s₂) (hp : fbPub s₁ s₂) :
@@ -192,13 +165,13 @@ def fbSat : State where
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩, ⟨0x4000, 8 * 396⟩]
+  wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩, ⟨0x4000, 8 * 408⟩]
 
 theorem ofb_verified :
-    Verified AArch64.target ofb (Proof.Sm4.fbScratchContract AArch64.abi slots Proof.Sm4.ofbPost) :=
+    Verified AArch64.target ofb (Proof.Sm4.fbScratchContract AArch64.abi (slots + 12) Proof.Sm4.ofbPost) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (ofb_wp hs) (by lit_decide) (by lit_decide)
-      exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' ofb_keeps_x30 (ofb_wp hs)
+      exact ⟨t, s', he, modeAbi_of he h₁ h₃ (by lit_decide), h₂⟩)
     (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
         (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
       (by taint_decide_sum [cryptSum])) (by
@@ -206,11 +179,10 @@ theorem ofb_verified :
       ofbAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs, slots, tableEnd, tableSlot] [fbSat] using fbSat)
 
 theorem cfbEncrypt_verified :
-    Verified AArch64.target cfbEncrypt (Proof.Sm4.fbScratchContract AArch64.abi slots Proof.Sm4.cfbEncPost) :=
+    Verified AArch64.target cfbEncrypt (Proof.Sm4.fbScratchContract AArch64.abi (slots + 12) Proof.Sm4.cfbEncPost) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfbEncrypt_wp hs) (by lit_decide)
-        (by lit_decide)
-      exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfbEncrypt_keeps_x30 (cfbEncrypt_wp hs)
+      exact ⟨t, s', he, modeAbi_of he h₁ h₃ (by lit_decide), h₂⟩)
     (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
         (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
       (by taint_decide_sum [cryptSum])) (by
@@ -218,11 +190,10 @@ theorem cfbEncrypt_verified :
       cfbEncAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs, slots, tableEnd, tableSlot] [fbSat] using fbSat)
 
 theorem cfbDecrypt_verified :
-    Verified AArch64.target cfbDecrypt (Proof.Sm4.fbScratchContract AArch64.abi slots Proof.Sm4.cfbDecPost) :=
+    Verified AArch64.target cfbDecrypt (Proof.Sm4.fbScratchContract AArch64.abi (slots + 12) Proof.Sm4.cfbDecPost) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfbDecrypt_wp hs) (by lit_decide)
-        (by lit_decide)
-      exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfbDecrypt_keeps_x30 (cfbDecrypt_wp hs)
+      exact ⟨t, s', he, modeAbi_of he h₁ h₃ (by lit_decide), h₂⟩)
     (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
         (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
       (by taint_decide_sum [cryptSum])) (by
@@ -239,42 +210,42 @@ def fbFrameSat : State where
   rd := [⟨0x1000, 128⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩]
 
-theorem ofbFrameSat_pre : ∃ s, (Spec.Sm4.ofbContract AArch64.abi 3168).pre s := by
+theorem ofbFrameSat_pre : ∃ s, (Spec.Sm4.ofbContract AArch64.abi 3264).pre s := by
   implies_sat [Spec.Sm4.ofbContract, Spec.Sm4.ofbSig, AArch64.abi, AArch64.argRegs] [fbFrameSat] using fbFrameSat
 
-theorem cfbEncFrameSat_pre : ∃ s, (Spec.Sm4.cfbEncryptContract AArch64.abi 3168).pre s := by
+theorem cfbEncFrameSat_pre : ∃ s, (Spec.Sm4.cfbEncryptContract AArch64.abi 3264).pre s := by
   implies_sat [Spec.Sm4.cfbEncryptContract, Spec.Sm4.cfbSig, Spec.Sm4.ofbSig, AArch64.abi, AArch64.argRegs]
     [fbFrameSat] using fbFrameSat
 
-theorem cfbDecFrameSat_pre : ∃ s, (Spec.Sm4.cfbDecryptContract AArch64.abi 3168).pre s := by
+theorem cfbDecFrameSat_pre : ∃ s, (Spec.Sm4.cfbDecryptContract AArch64.abi 3264).pre s := by
   implies_sat [Spec.Sm4.cfbDecryptContract, Spec.Sm4.cfbSig, Spec.Sm4.ofbSig, AArch64.abi, AArch64.argRegs]
     [fbFrameSat] using fbFrameSat
 
 /-- OFB with its working space on the stack. -/
 theorem ofb_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3168 .x4 396 ofb)
-      (Spec.Sm4.ofbContract AArch64.abi 3168) :=
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3264 .x4 408 ofb)
+      (Spec.Sm4.ofbContract AArch64.abi 3264) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.Sm4.ofbSig) (nm := "scratch") (e := .u64)
-    (n := 396) (post := Proof.Sm4.ofbPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 3168) ofb_verified
+    (n := 408) (post := Proof.Sm4.ofbPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 3264) ofb_verified
     (by decide) (by decide) (by decide) (Proof.Sm4.ofbPostOut_local _) ofbFrameSat_pre
 
 /-- CFB128 encryption with its working space on the stack. -/
 theorem cfbEncrypt_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3168 .x4 396 cfbEncrypt)
-      (Spec.Sm4.cfbEncryptContract AArch64.abi 3168) :=
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3264 .x4 408 cfbEncrypt)
+      (Spec.Sm4.cfbEncryptContract AArch64.abi 3264) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.Sm4.cfbSig) (nm := "scratch") (e := .u64)
-    (n := 396) (post := Proof.Sm4.cfbEncPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 3168) cfbEncrypt_verified
+    (n := 408) (post := Proof.Sm4.cfbEncPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 3264) cfbEncrypt_verified
     (by decide) (by decide) (by decide) (Proof.Sm4.cfbEncPostOut_local _) cfbEncFrameSat_pre
 
 /-- CFB128 decryption with its working space on the stack. -/
 theorem cfbDecrypt_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3168 .x4 396 cfbDecrypt)
-      (Spec.Sm4.cfbDecryptContract AArch64.abi 3168) :=
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3264 .x4 408 cfbDecrypt)
+      (Spec.Sm4.cfbDecryptContract AArch64.abi 3264) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.Sm4.cfbSig) (nm := "scratch") (e := .u64)
-    (n := 396) (post := Proof.Sm4.cfbDecPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 3168) cfbDecrypt_verified
+    (n := 408) (post := Proof.Sm4.cfbDecPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 3264) cfbDecrypt_verified
     (by decide) (by decide) (by decide) (Proof.Sm4.cfbDecPostOut_local _) cfbDecFrameSat_pre
 
 end VG.Proof.Sm4.AArch64

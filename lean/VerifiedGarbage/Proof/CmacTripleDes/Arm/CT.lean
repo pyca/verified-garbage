@@ -1,17 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Lit
-meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.Lit
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Init
-meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.Init
 import VerifiedGarbage.Proof.CmacTripleDes.Arm.Finalize
-meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.Finalize
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.Init
+meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.Finalize
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
+meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # TDEA-CMAC on ARMv7: constant time

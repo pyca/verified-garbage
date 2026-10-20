@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.X86.FbVerified
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Idea.X86.ModesLit
 
 /-! # IDEA-OFB artifacts on baseline x86 (32-bit) -/
 
@@ -15,13 +20,10 @@ def note : String :=
   over IDEA's ECB block."
 
 def artifacts : List Artifact := [
-  { Spec.Idea.ofbApi with
-    target := X86.target
-    doc := Spec.Idea.ofbApi.doc (notes := [note])
+  Spec.Idea.ofbApi.artifact X86.target {
+    notes := [note]
     code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.ofb
-    contract := Spec.Idea.ofbContract X86.abi 208
     stack := 208
-    verified := Proof.Idea.X86.Fb.ofb_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Idea.X86.Fb.ofb_framed }]
 
 end VG.Artifacts.IdeaOfb.X86

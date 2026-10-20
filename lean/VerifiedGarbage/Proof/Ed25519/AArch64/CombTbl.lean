@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Comb
 public import VerifiedGarbage.Proof.Framework.ConstMem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519's base-point multiplication on AArch64: the comb's tables in a static
@@ -22,9 +18,9 @@ namespace VG.Proof.Ed25519.AArch64
 
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64
 
-theorem combWords_length : combWords.length = 32 * 96 := by simp [combWords]
+theorem combWords_length : combWords.length = 64 * 96 := by simp [combWords]
 
-theorem combWords_getD {i : Nat} (hi : i < 32 * 96) : combWords.getD i 0 = combWord i := by
+theorem combWords_getD {i : Nat} (hi : i < 64 * 96) : combWords.getD i 0 = combWord i := by
   simp [combWords, List.getD_eq_getElem?_getD, hi]
 
 /-- The comb's tables, the static `combSym`, in `s`, as a contract states them: its words, not

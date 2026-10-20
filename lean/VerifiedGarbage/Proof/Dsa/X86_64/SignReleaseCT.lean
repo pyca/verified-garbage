@@ -1,23 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.SignRelease
-meta import VerifiedGarbage.Proof.Dsa.X86_64.SignRelease
-public import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalarCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalarCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+public import VerifiedGarbage.Proof.Dsa.X86_64.FailureCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalarHead
+import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalarCT
+import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalar
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.SignRelease
+meta import VerifiedGarbage.Proof.Dsa.X86_64.FailureCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalarHead
+meta import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalarCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
 meta import VerifiedGarbage.Proof.Dsa.Layout
 meta import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalar
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant time of masked signature release and register restoration -/
 

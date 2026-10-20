@@ -1,49 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
-public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.KeyGen
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.KeyGen
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
-public import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
-meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
-public import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
-meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
-public import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
-meta import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
-public import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
-meta import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
-public import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
-meta import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.ExpandMask
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.ExpandMask
 public import VerifiedGarbage.Proof.Sha3.AArch64.Permute
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Permute
-public import VerifiedGarbage.Impl.MlKem.AArch64.Sample
-meta import VerifiedGarbage.Impl.MlKem.AArch64.Sample
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 public import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlKem
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlKem
 public import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlDsa
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlDsa
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public meta import VerifiedGarbage.TCB.Code
+public meta import VerifiedGarbage.TCB.AArch64.Isa
+public meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public meta import VerifiedGarbage.Proof.Framework.TaintSum
+public meta import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
+public meta import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+public meta import VerifiedGarbage.Impl.Sha3.AArch64.Stream
+public meta import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 @[expose] public section
 
@@ -59,6 +29,9 @@ structure Permutation where
     ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧
       Proof.Sha3.permuteAArch64.post s s'
   noFrames : callee.code.noFrames = true
+  /-- The summaries of the sponge's and the permutation's calls (`Callers.sums`), with
+  which callers' constant-time checks are decided once for every backend. -/
+  callerSums : Taint.AllOk VectorTaint.taint (Callers.sums callee)
   /-- An absorb override must prove the same functional and SIMD ABI contract
   as the general loop; it need not obey that loop's syntactic register shape. -/
   absorbOverrideOk : ∀ code, callee.absorbOverride = some code →
@@ -177,8 +150,8 @@ theorem Permutation.squeeze_depth (v : Permutation) :
   simp only [Impl.Sha3.AArch64.Stream.squeezeWith, Code.aarch64Depth, Instr.frameUnits, v.squeezeMain_depth]
 
 theorem keeps_of_check {c : Prog isa} {rs : List Reg}
-    (h : (c.allInstrs fun i => rs.all fun r => dstOf i != some r) = true) :
-    ∀ r ∈ rs, ∀ i ∈ instrs c, dstOf i ≠ some r := by
+    (h : (c.allInstrs fun i => rs.all fun r => !clobbers i r) = true) :
+    ∀ r ∈ rs, ∀ i ∈ instrs c, clobbers i r = false := by
   rw [Code.allInstrs_eq] at h
   intro r hr i hi
   have h' := List.all_eq_true.mp (List.all_eq_true.mp h i hi) r hr
@@ -217,6 +190,7 @@ def Permutation.scalar : Permutation where
   features := []
   ok := permute_correct
   noFrames := permute_noFrames
+  callerSums := scalarSums
   absorbOverrideOk := by intro code h; cases h
   absorbOverrideDepth := by intro code h; cases h
   absorbTaint := Taint.exists_check_of_sumOk_call ScalarSums.absorb (VG.AArch64.VectorTaint.le_refl _) rfl

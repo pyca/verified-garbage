@@ -21,6 +21,11 @@ const NAMES: [&str; 6] = ["ssse3", "aes", "bmi2", "adx", "sha3", "neon"];
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 fn runtime() -> u32 {
+    decode(|leaf, sub| cpuid(leaf, sub), || xgetbv(0))
+}
+
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+fn decode(cpuid: impl Fn(u32, u32) -> [u32; 4], xgetbv: impl Fn() -> u64) -> u32 {
     let ssse3 = 1;
     let aes = 1;
     let bmi2 = 1;
@@ -130,7 +135,7 @@ class Selection(unittest.TestCase):
                          [(a, '') for a in planner.PLATFORMS])
 
     def test_shared_and_unknown_dependencies_preserve_full_suite(self):
-        for path in ['Cargo.lock', 'ci/bench_compare.py', 'src/unknown.rs']:
+        for path in ['bench/Cargo.lock', 'ci/bench_compare.py', 'src/unknown.rs']:
             with self.subTest(path=path):
                 rows = self.rows([path])
                 self.assertEqual(len(rows), self.full_matrix())
@@ -225,6 +230,22 @@ class Selection(unittest.TestCase):
         del self.files['src/cpu.rs']
         rows = self.rows(['src/asm/x86_64/x448.rs'])
         self.assertEqual(self.configurations(rows, 'x86_64'), ['', *planner.CPU_FEATURES['x86_64']])
+
+    def test_a_benchmark_selects_only_the_modules_no_other_benchmark_uses(self):
+        # Its shared `sha256` would run `sha256`'s benchmark too; its
+        # configurations still follow every module it uses.
+        self.catalog.update({'sha256': {'sha256'}, 'rsa_pss': {'rsa_pss', 'sha256', 'keccak'}})
+        self.files['bench/benches/primitives/rsa_pss.rs'] = (
+            'pub const USES: &[&str] = &["rsa_pss", "sha256", "keccak"];')
+        rows = self.rows(['bench/benches/primitives/rsa_pss.rs'])
+        self.assertEqual({r['modules'] for r in rows}, {'rsa_pss'})
+        self.assertEqual(self.configurations(rows, 'aarch64'), ['', 'sha3'])
+        # One whose modules are all shared selects them all.
+        self.files['bench/benches/primitives/hmac_sha256.rs'] = (
+            'pub const USES: &[&str] = &["hmac_sha256", "sha256"];')
+        self.catalog['other'] = {'hmac_sha256'}
+        self.assertEqual({r['modules'] for r in self.rows(['bench/benches/primitives/hmac_sha256.rs'])},
+                         {'hmac_sha256 sha256'})
 
     def test_family_code_and_benchmark_tests_select_their_modules(self):
         # Its members, and the modules using it.
@@ -440,8 +461,8 @@ class Selection(unittest.TestCase):
                 del self.files[includer]
 
     def test_manifest_target_tables_select_their_architectures(self):
-        manifest = '[package]\nname = "b"\n\n[dev-dependencies]\nx = "1"\n'
-        target = ('\n[target.\'cfg(any(target_arch = "x86_64", target_arch = "aarch64"))\'.dev-dependencies]\n'
+        manifest = '[package]\nname = "b"\n\n[dependencies]\nx = "1"\n'
+        target = ('\n[target.\'cfg(any(target_arch = "x86_64", target_arch = "aarch64"))\'.dependencies]\n'
                   'x = { version = "1", features = ["all"] }\n')
         for path in planner.MANIFESTS:
             with self.subTest(path=path):
@@ -457,6 +478,34 @@ class Selection(unittest.TestCase):
                             manifest.replace('"1"', '"2"') + target, manifest + '[']:
                     self.files[path] = new
                     self.assertEqual(len(self.rows([path])), self.full_matrix())
+
+    def test_library_lockfile_alone_plans_nothing(self):
+        # The benchmarks build from their own workspace's `bench/Cargo.lock`.
+        self.assertEqual(self.rows(['Cargo.lock']), [])
+        self.assertEqual(len(self.rows(['bench/Cargo.lock'])), self.full_matrix())
+
+    def test_library_dev_dependencies_alone_plan_nothing(self):
+        manifest = ('[package]\nname = "verified-garbage"\n\n[dependencies]\ngetrandom = "0.4"\n\n'
+                    '[dev-dependencies]\nserde = "1"\n')
+        self.base_files['Cargo.toml'] = manifest
+        # Only the library's tests build with its dev-dependencies, plain or
+        # in a target table (a new one, or one that also has others).
+        for new in [manifest + 'libc = "0.2"\n',
+                    manifest + '\n[target.\'cfg(unix)\'.dev-dependencies]\nlibc = "0.2"\n',
+                    manifest.replace('serde = "1"', 'serde = "2"')]:
+            with self.subTest(new=new):
+                self.files['Cargo.toml'] = new
+                self.assertEqual(self.rows(['Cargo.toml', 'Cargo.lock']), [])
+        # Its dependencies are the benchmarks' too: everywhere.
+        for new in [manifest.replace('"0.4"', '"0.5"'),
+                    manifest + '\n[target.\'cfg(unix)\'.dependencies]\nlibc = "0.2"\n']:
+            with self.subTest(new=new):
+                self.files['Cargo.toml'] = new
+                self.assertEqual(len(self.rows(['Cargo.toml', 'Cargo.lock'])), self.full_matrix())
+        # The benchmarks' own dev-dependencies are compiled into them.
+        self.base_files['bench/Cargo.toml'] = manifest
+        self.files['bench/Cargo.toml'] = manifest + 'libc = "0.2"\n'
+        self.assertEqual(len(self.rows(['bench/Cargo.toml'])), self.full_matrix())
 
     def test_manual_runs_select_architectures_and_configurations(self):
         rows = planner.manual()
@@ -522,7 +571,7 @@ class Selection(unittest.TestCase):
         self.assertEqual(bench_compare.shard_groups({'a': 1}, 2, 2), [])
 
     def test_pull_requests_never_run_every_benchmark(self):
-        for path in ['Cargo.lock', 'ci/bench_compare.py', 'src/unknown.rs']:
+        for path in ['bench/Cargo.lock', 'ci/bench_compare.py', 'src/unknown.rs']:
             with self.subTest(path=path):
                 rows, skipped = planner.without_full_runs(self.rows([path]))
                 self.assertEqual(rows, [])
@@ -740,26 +789,76 @@ class Lacking(unittest.TestCase):
         self.assertNotIn('()', bench_compare.not_measured('avx', 'avx', None))
 
 
+class Executables(unittest.TestCase):
+    def test_every_platform_has_an_executable_format(self):
+        self.assertEqual(set(bench_compare.EXECUTABLES), set(planner.PLATFORMS) | set(planner.MANUAL_PLATFORMS))
+
+    def test_check_arch_reads_the_header(self):
+        # The first 20 bytes of an ELF (class, then e_machine at 18) or a
+        # 64-bit Mach-O (cputype at 4) of each architecture.
+        elf = lambda bits, machine: (b'\x7fELF' + bytes([bits // 32]) + bytes(13)
+                                     + machine.to_bytes(2, 'little'))
+        headers = {
+            'x86_64': elf(64, 62), 'aarch64': elf(64, 183), 'x86': elf(32, 3), 'arm': elf(32, 40),
+            'aarch64-apple': b'\xcf\xfa\xed\xfe' + (0x0100000C).to_bytes(4, 'little') + bytes(12),
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            binary = pathlib.Path(tmp, 'bench')
+            for built, header in headers.items():
+                binary.write_bytes(header)
+                for arch in headers:
+                    with self.subTest(built=built, arch=arch):
+                        if arch == built:
+                            bench_compare.check_arch(binary, arch)
+                        else:
+                            with self.assertRaisesRegex(SystemExit, f"not {arch}'s"):
+                                bench_compare.check_arch(binary, arch)
+            binary.write_bytes(b'#!/bin/sh\n')
+            with self.assertRaises(SystemExit):
+                bench_compare.check_arch(binary, 'arm')
+
+    def test_this_machine_is_its_architecture(self):
+        arch = {'x86_64': 'x86_64', 'aarch64': 'aarch64', 'arm64': 'aarch64-apple'}.get(os.uname().machine)
+        if arch is None or not os.path.exists('/bin/sh'):
+            self.skipTest('no architecture of EXECUTABLES')
+        bench_compare.check_arch(os.path.realpath('/bin/sh'), arch)
+
+
 if __name__ == '__main__':
     unittest.main()
 
 
 class FreshCopies(unittest.TestCase):
-    def test_only_the_p521_comb_chacha20poly1305_and_aes_gcm_groups_run_from_copies(self):
+    def test_only_the_p521_comb_chacha20poly1305_aes_gcm_sha512_family_mlkem_and_sha256_groups_run_from_copies(self):
         # P-521's comb table (747 KB) moved its times by up to 7% between
         # identical copies of one binary; P-384's and P-256's did not move.
         # ChaCha20-Poly1305's moved by up to 29% on AMD's Zen 3, and
         # AES-GCM's by up to 35%; ChaCha20's, Poly1305's and AES-GCM-SIV's
-        # own groups are not known to.
-        for group in ['ecdsa_p521_sha512_sign', 'ecdsa_p521_sha512_verify', 'ec_p521_public_key',
+        # own groups are not known to. The SHA-512 family's digests and
+        # PBKDF2's moved by up to 11% and 9% on AMD's Zen 4, and their
+        # HMAC's by 3–4% on Zen 5. ML-KEM's moved by up to 14%. SHA-256's and
+        # SHA-224's digests, HMACs and PBKDF2's moved by up to 3.5%, 1.6% and
+        # 8.6% on an Arm Neoverse N2; SHA-1's and MD5's are not known to.
+        for group in ['mlkem768_keygen', 'mlkem768_encaps', 'mlkem768_encaps_from_bytes', 'mlkem768_decaps',
+                      'mlkem1024_keygen', 'mlkem1024_encaps', 'mlkem1024_encaps_from_bytes', 'mlkem1024_decaps',
+                      'sha384', 'sha512', 'sha512-224', 'sha512-256', 'pbkdf2-hmac-sha384',
+                      'pbkdf2-hmac-sha512', 'pbkdf2-hmac-sha512-224', 'pbkdf2-hmac-sha512-256',
+                      'hmac-sha384', 'hmac-sha384-verify', 'hmac-sha512', 'hmac-sha512-verify',
+                      'hmac-sha512-224', 'hmac-sha512-224-verify', 'hmac-sha512-256', 'hmac-sha512-256-verify',
+                      'ecdsa_p521_sha512_sign', 'ecdsa_p521_sha512_verify', 'ec_p521_public_key',
                       'chacha20poly1305', 'chacha20poly1305-decrypt',
                       'chacha20poly1305-encrypt-out-of-place', 'chacha20poly1305-copy-encrypt-in-place',
                       'aes-128-gcm-encrypt', 'aes-128-gcm-decrypt', 'aes-128-gcm-stream',
-                      'aes-128-gcm-tls-seal', 'aes-256-gcm-tls-open']:
+                      'aes-128-gcm-tls-seal', 'aes-256-gcm-tls-open',
+                      'sha224', 'sha256', 'hmac-sha224', 'hmac-sha224-verify', 'hmac-sha256',
+                      'hmac-sha256-verify', 'pbkdf2-hmac-sha224', 'pbkdf2-hmac-sha256',
+                      'pbkdf2-hmac-sha256-verify']:
             self.assertTrue(bench_compare.FRESH_COPIES.match(group), group)
         for group in ['ecdh_p521', 'ecdsa_p384_sha384_sign', 'ec_p384_public_key', 'ec_p256_public_key',
                       'chacha20', 'poly1305', 'xchacha20poly1305',
-                      'aes-128-gcm-siv-encrypt', 'aes-128-gcm-siv-decrypt', 'aes-128-ctr', 'gcm-ghash']:
+                      'aes-128-gcm-siv-encrypt', 'aes-128-gcm-siv-decrypt', 'aes-128-ctr', 'gcm-ghash',
+                      'sha512-256-hash', 'sha512-verify', 'mldsa65_sign', 'sha1', 'hmac-sha1',
+                      'pbkdf2-hmac-sha1', 'hmac-md5', 'sha256-hash', 'sha3-256']:
             self.assertFalse(bench_compare.FRESH_COPIES.match(group), group)
 
     def test_the_copies_select_only_the_modules_with_those_groups(self):
@@ -770,7 +869,18 @@ class FreshCopies(unittest.TestCase):
         modules = bench_compare.FRESH_COPIES_MODULES.split()
         selected = [name for name, uses in catalog.items()
                     if any(m in uses for m in modules)]
-        self.assertEqual(sorted(selected), ['aes_gcm', 'aes_gcm_siv', 'chacha20poly1305', 'ecdsa_p521'])
+        # The copies' runs set up the benchmarks holding those groups, and
+        # beyond the four that used to run from copies, only benchmarks of
+        # code built on SHA-512 or SHA-256 (which the `sha512` and `sha256`
+        # modules select).
+        held = ['aes_gcm', 'aes_gcm_siv', 'chacha20poly1305', 'ecdsa_p521', 'mlkem1024', 'mlkem768',
+                'hmac_sha384', 'hmac_sha512', 'hmac_sha512_224', 'hmac_sha512_256',
+                'pbkdf2_sha384', 'pbkdf2_sha512', 'pbkdf2_sha512_224', 'pbkdf2_sha512_256', 'sha384', 'sha512',
+                'sha512_224', 'sha512_256', 'sha224', 'sha256', 'hmac_sha224', 'hmac_sha256',
+                'pbkdf2_sha224', 'pbkdf2_sha256']
+        self.assertLessEqual(set(held), set(selected))
+        for name in set(selected) - set(held):
+            self.assertTrue('sha512' in catalog[name] or 'sha256' in catalog[name], name)
         source = (root / 'bench/benches/primitives/ecdsa_p521.rs').read_text()
         for group in ['ec_p521_public_key', 'ecdsa_p521_{name}_sign', 'ecdsa_p521_{name}_verify']:
             self.assertIn(f'"{group}"', source)
@@ -778,6 +888,29 @@ class FreshCopies(unittest.TestCase):
         for group in ['chacha20poly1305', 'chacha20poly1305-decrypt', 'chacha20poly1305-encrypt-out-of-place',
                       'chacha20poly1305-copy-encrypt-in-place']:
             self.assertIn(f'"{group}"', source)
+        for bench, group in [('sha384', 'sha384'), ('sha512', 'sha512'), ('sha512_224', 'sha512-224'),
+                             ('sha512_256', 'sha512-256'), ('pbkdf2_sha384', 'pbkdf2-hmac-sha384'),
+                             ('pbkdf2_sha512', 'pbkdf2-hmac-sha512'),
+                             ('pbkdf2_sha512_224', 'pbkdf2-hmac-sha512-224'),
+                             ('pbkdf2_sha512_256', 'pbkdf2-hmac-sha512-256'),
+                             ('hmac_sha384', 'hmac-sha384'), ('hmac_sha384', 'hmac-sha384-verify'),
+                             ('hmac_sha512', 'hmac-sha512'), ('hmac_sha512', 'hmac-sha512-verify'),
+                             ('hmac_sha512_224', 'hmac-sha512-224'),
+                             ('hmac_sha512_224', 'hmac-sha512-224-verify'),
+                             ('hmac_sha512_256', 'hmac-sha512-256'),
+                             ('hmac_sha512_256', 'hmac-sha512-256-verify')]:
+            source = (root / f'bench/benches/primitives/{bench}.rs').read_text()
+            self.assertIn(f'"{group}"', source)
+        for bench, group in [('sha224', 'sha224'), ('sha256', 'sha256'), ('hmac_sha224', 'hmac-sha224'),
+                             ('hmac_sha224', 'hmac-sha224-verify'), ('hmac_sha256', 'hmac-sha256'),
+                             ('hmac_sha256', 'hmac-sha256-verify'), ('pbkdf2_sha224', 'pbkdf2-hmac-sha224'),
+                             ('pbkdf2_sha256', 'pbkdf2-hmac-sha256'),
+                             ('pbkdf2_sha256', 'pbkdf2-hmac-sha256-verify')]:
+            source = (root / f'bench/benches/primitives/{bench}.rs').read_text()
+            self.assertIn(f'"{group}"', source)
+        source = (root / 'bench/benches/primitives/mlkem.rs').read_text()
+        for suffix in ['_keygen', '_encaps', '_encaps_from_bytes', '_decaps']:
+            self.assertIn(f'concat!(stringify!($module), "{suffix}")', source)
         source = (root / 'bench/benches/primitives/aes_gcm.rs').read_text()
         for group in ['aes-128-gcm-encrypt', 'aes-128-gcm-decrypt', 'aes-{bits}-gcm-tls-seal',
                       'aes-{bits}-gcm-tls-open']:

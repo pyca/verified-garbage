@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Framework.RegSet
-public import VerifiedGarbage.Proof.Framework.RegSetOrder
-public import VerifiedGarbage.Proof.Framework.KernelList
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.X86_64.Masked
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import Batteries.Data.List.Basic
 
 /-!
 # Taint tracking for x86-64
@@ -130,6 +130,13 @@ def kill (τ : T) (d : Reg) : List (Reg × Nat × Nat) := τ.bases.filter (·.1 
 
 def memPub (τ : T) (m : MemOp) : Bool :=
   pub τ m.base && match m.index with
+    | none => true
+    | some i => pub τ i
+
+/-- The index register of `m`, if any, is public: then so is the offset of
+`m` from its base register. -/
+def idxPub (τ : T) (m : MemOp) : Bool :=
+  match m.index with
     | none => true
     | some i => pub τ i
 
@@ -257,6 +264,7 @@ def step (τ : T) : Instr → Option T
   | .store m r => storeStep τ m 8 (pub τ r)
   | .store32 m r => storeStep τ m 4 (pub τ r)
   | .store8 m r => storeStep τ m 1 (pub τ r)
+  | .store16 m r => storeStep τ m 2 (pub τ r)
   | .alu op d src => aluStep τ op d src true
   | .alu32 op d src => aluStep τ op d src false
   -- The result is a function of the old value of `d`, and so are the
@@ -284,8 +292,14 @@ def step (τ : T) : Instr → Option T
   | .movImm64 d _ => some { τ with regs := set τ d true, bases := kill τ d, lo := .empty }
   -- The analysis does not track the addresses of statics.
   | .leaSym d _ => some { τ with regs := set τ d false, bases := kill τ d, lo := .empty }
-  | .movzx8 d m =>
+  | .movzx8 d m | .movzx16 d m =>
     if memPub τ m then some { τ with regs := set τ d false, bases := kill τ d, lo := .empty } else none
+  -- A word of a table of constants: secret (the analysis does not track
+  -- them), and so are the flags it sets. Its offset in the table is
+  -- observed, so its index must be public.
+  | .aluTbl _ d m .. =>
+    if idxPub τ m then some { τ with regs := set τ d false, flags := false, bases := kill τ d, lo := .empty }
+    else none
   -- The vector registers are secret but for those `movq xmm, r64` wrote
   -- from a public register (`xregs`): what `vpmovmskb` moves from one into a
   -- general-purpose register is secret, and no modelled instruction moves
@@ -297,6 +311,10 @@ def step (τ : T) : Instr → Option T
   | .xop (.movq d r) => some { τ with xregs := setX τ d (pub τ r) }
   | .xop _ | .vop _ => some (noX τ)
   | .vmovdquLoad _ _ m | .vbroadcasti128 _ m | .vbinLoad _ _ _ _ m => if memPub τ m then some (noX τ) else none
+  -- Words of a table of constants: secret, as every vector register the
+  -- analysis does not track. Its offset in the table is observed.
+  | .vmovdquTbl _ m .. => if idxPub τ m then some (noX τ) else none
+  | .movdquTbl _ m .. => if idxPub τ m then some (noX τ) else none
   | .vmovdquStore .l128 m _ => storeStep τ m 16 false
   | .vmovdquStore .l256 m _ => storeStep τ m 32 false
   | .zop _ => some (noX τ)
@@ -306,10 +324,10 @@ def step (τ : T) : Instr → Option T
   | .eop _ => some (noX τ)
   | .evLoad _ m | .evMadd52Load _ _ _ m => if memPub τ m then some (noX τ) else none
   | .evStore m _ => storeStep τ m 32 false
-  -- A masked move accesses the quadwords its mask enables, which must be
-  -- public as its address is.
-  | .kLoad k _ m => if memPub τ m && pub τ k then some (noX τ) else none
-  | .kStore m k _ => if pub τ k then storeStep τ m 64 false else none
+  -- A masked move accesses the quadwords (or bytes) its mask enables, which
+  -- must be public as its address is.
+  | .kLoad k _ m | .kLoad8 k _ m => if memPub τ m && pub τ k then some (noX τ) else none
+  | .kStore m k _ | .kStore8 m k _ => if pub τ k then storeStep τ m 64 false else none
   -- MXCSR is not tracked either: nothing moves it into a general-purpose
   -- register or the flags, and it is stored as a secret.
   | .stmxcsr m => storeStep τ m 4 false
@@ -353,6 +371,15 @@ theorem Agree.ea (h : Agree τ s₁ s₂) {m : MemOp} (hm : memPub τ m = true) 
   split <;> rename_i heq <;> rw [heq] at hi <;> simp only at hi
   · rw [h.reg hb]
   · rw [h.reg hb, h.reg hi]
+
+theorem Agree.off (h : Agree τ s₁ s₂) {m : MemOp} (hm : idxPub τ m = true) :
+    s₁.ea m - s₁.gpr m.base = s₂.ea m - s₂.gpr m.base := by
+  unfold idxPub at hm
+  unfold State.ea
+  split <;> rename_i heq <;> rw [heq] at hm <;> simp only at hm
+  · rw [BitVec.add_comm (s₁.gpr _), BitVec.add_sub_cancel, BitVec.add_comm (s₂.gpr _), BitVec.add_sub_cancel]
+  · rw [BitVec.add_assoc, BitVec.add_comm (s₁.gpr _), BitVec.add_sub_cancel, BitVec.add_assoc,
+      BitVec.add_comm (s₂.gpr _), BitVec.add_sub_cancel, h.reg hm]
 
 theorem Agree.srcAddrs (h : Agree τ s₁ s₂) {src : Src} (hs : srcOk τ src = true) :
     X86_64.srcAddrs s₁ src = X86_64.srcAddrs s₂ src := by
@@ -417,6 +444,19 @@ theorem execAlu_eq (op : AluOp) (d : Reg) (src : Src) (s : State) :
       (aluOut op (s.gpr d) b s.cf).map fun (r, c, o) =>
         if writes op then (arithFlags s r c o).setReg d r else arithFlags s r c o := by
   cases op <;> simp only [execAlu, Nat.reducePow, writes, ↓reduceIte, aluOut, Option.map_some,
+      Option.map_map, Function.comp_def, Bool.false_eq_true]
+
+/-- `execAluW`, the ALU operation of `aluTbl` given its source's value, is
+`execAlu` once that reads its source: the two definitions agree for every
+operation. -/
+theorem execAlu_eq_execAluW (op : AluOp) (d : Reg) (src : Src) (s : State) :
+    execAlu op d src s = (readSrc s src).bind fun b => execAluW op d b s := by
+  cases op <;> rfl
+
+theorem execAluW_eq (op : AluOp) (d : Reg) (b : BitVec 64) (s : State) :
+    execAluW op d b s = (aluOut op (s.gpr d) b s.cf).map fun (r, c, o) =>
+      if writes op then (arithFlags s r c o).setReg d r else arithFlags s r c o := by
+  cases op <;> simp only [execAluW, Nat.reducePow, writes, ↓reduceIte, aluOut, Option.map_some,
       Option.map_map, Function.comp_def, Bool.false_eq_true]
 
 theorem execAlu32_eq (op : AluOp) (d : Reg) (src : Src) (s : State) :
@@ -784,13 +824,15 @@ one (none for stores and SSE instructions, and for `mul` and `mulx`, which
 write two). -/
 def dstOf : Instr → Option Reg
   | .mov d _ | .mov32 d _ | .alu _ d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
-  | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .bswap d | .shift _ d _
+  | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _
-  | .vpmovmskb _ d _ | .movqR d _ | .imul d _ => some d
-  | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _ | .vop _
-  | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _ | .vmovdqu32Load ..
-  | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load .. | .stmxcsr _ | .ldmxcsr _
-  | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .lfence
+  | .vpmovmskb _ d _ | .movqR d _ | .imul d _ | .aluTbl _ d .. => some d
+  | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
+  | .vop _
+  | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
+  | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
+  | .stmxcsr _ | .ldmxcsr _
+  | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .kLoad8 .. | .kStore8 .. | .lfence
   | .mul _ | .mulx .. | .push _ | .pop .. | .alloc _ | .free _ => none
 
 /-- An SSE instruction on registers changes only the SSE registers. -/
@@ -945,9 +987,18 @@ theorem exec_nonstore_xmm {i : Instr} {d : Reg} (hd : dstOf i = some d) {s s' : 
   case imul r =>
     simp only [exec, execImul, Option.some.injEq] at h
     subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
-  case movzx8 m =>
+  case movzx8 m | movzx16 m =>
     simp only [exec, Option.map_eq_some_iff] at h
     obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case aluTbl op m n ws =>
+    simp only [exec] at h
+    split at h
+    · simp only [execAluW_eq, Option.map_eq_some_iff] at h
+      obtain ⟨_, _, rfl⟩ := h
+      split
+      · exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+      · exact ⟨rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
+    · cases h
   case bswap =>
     simp only [exec, Option.some.injEq] at h
     subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
@@ -1265,6 +1316,14 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at e₁ <;> [cases e₁; cases e₁]
     split at e₂ <;> [cases e₂; cases e₂]
     exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.store (n := 1) hok (by decide) fun hp => by rw [ha.reg hp]⟩
+  | store16 m r =>
+    simp only [step, storeStep] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hok; cases hs
+    simp only [exec, State.store16] at e₁ e₂
+    split at e₁ <;> [cases e₁; cases e₁]
+    split at e₂ <;> [cases e₂; cases e₂]
+    exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.store (n := 2) hok (by decide) fun hp => by rw [ha.reg hp]⟩
   | movdquLoad d m =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
@@ -1321,6 +1380,24 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     cases len <;> simp only [exec, Option.map_eq_some_iff] at e₁ e₂ <;>
       obtain ⟨v₁, -, rfl⟩ := e₁ <;> obtain ⟨v₂, -, rfl⟩ := e₂ <;>
       exact ⟨by simp [addrs, ha.ea hok], ha.withVec _ _ _ _ _ _⟩
+  | vmovdquTbl d m n ws =>
+    simp only [step] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hok; cases hs
+    simp only [exec] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    exact ⟨congrArg (fun a => [a]) (ha.off hok), ha.withVec _ _ _ _ _ _⟩
+  | movdquTbl d m n ws =>
+    simp only [step] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hok; cases hs
+    simp only [exec] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    exact ⟨congrArg (fun a => [a]) (ha.off hok), ha.withXmm _ _⟩
   | vbroadcasti128 d m =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
@@ -1416,7 +1493,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       split at e₁ <;> [cases e₁; cases e₁]
       split at e₂ <;> [cases e₂; cases e₂]
       exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.store (n := 32) hok (by decide) fun hp => by cases hp⟩
-  | kLoad k d m =>
+  | kLoad k d m | kLoad8 k d m =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
@@ -1432,6 +1509,16 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     rename_i hok; cases hs
     obtain ⟨V₁, rfl⟩ := State.storeMasked512_eq e₁
     obtain ⟨V₂, rfl⟩ := State.storeMasked512_eq e₂
+    exact ⟨by simp only [addrs, ha.ea hok, ha.rf.1 k hk],
+      ha.store (n := 64) hok (by decide) fun hp => by cases hp⟩
+  | kStore8 m k r =>
+    simp only [step, storeStep] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hk
+    split at hs <;> [skip; cases hs]
+    rename_i hok; cases hs
+    obtain ⟨V₁, rfl⟩ := State.storeMasked512B_eq e₁
+    obtain ⟨V₂, rfl⟩ := State.storeMasked512B_eq e₂
     exact ⟨by simp only [addrs, ha.ea hok, ha.rf.1 k hk],
       ha.store (n := 64) hok (by decide) fun hp => by cases hp⟩
   | stmxcsr m =>
@@ -1610,7 +1697,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       simp only [Bool.and_eq_true] at hp; rw [ha.reg hp.1, ha.reg hp.2]
     refine ⟨regs_set (fun r hr => ha.rf.1 r hr) fun hp => by rw [hv hp], fun hp => ?_⟩
     simp only [State.setReg, hv hp, State.setFlags, and_self]
-  | movzx8 d m =>
+  | movzx8 d m | movzx16 d m =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
@@ -1618,6 +1705,16 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     simp only [exec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
     exact ⟨regs_set (p := false) ha.rf.1 (fun h => by cases h), ha.rf.2⟩
+  | aluTbl op d m n ws =>
+    simp only [step] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hok; cases hs
+    refine ⟨congrArg (fun a => [a]) (ha.off hok), ha.write rfl e₁ e₂ ⟨fun r hr => ?_, fun h => by cases h⟩
+      rfl rfl (fun _ h => h) rfl⟩
+    have hrd : r ≠ d := fun h => by subst h; simp [set] at hr
+    have hr' : r ∈ τ.regs := by simp only [set, Bool.false_eq_true, ↓reduceIte, RegSet.mem_erase] at hr; exact hr.2
+    rw [(exec_nonstore_xmm rfl e₁).2.2.2.2 r hrd, (exec_nonstore_xmm rfl e₂).2.2.2.2 r hrd]
+    exact ha.rf.1 r hr'
   | bswap d =>
     simp only [step, Option.some.injEq] at hs
     subst hs
@@ -1944,6 +2041,7 @@ def stepK (τ : T) : Instr → Option T
   | .store m r => storeStepK τ m 8 (pub τ r)
   | .store32 m r => storeStepK τ m 4 (pub τ r)
   | .store8 m r => storeStepK τ m 1 (pub τ r)
+  | .store16 m r => storeStepK τ m 2 (pub τ r)
   | .alu op d src => aluStepK τ op d src true
   | .alu32 op d src => aluStepK τ op d src false
   | .shift32 _ d _ | .shift _ d _ =>
@@ -1964,8 +2062,11 @@ def stepK (τ : T) : Instr → Option T
     some { τ with regs := setK τ d p, flags := p, bases := killK τ d, lo := .empty }
   | .movImm64 d _ => some { τ with regs := setK τ d true, bases := killK τ d, lo := .empty }
   | .leaSym d _ => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }
-  | .movzx8 d m =>
+  | .movzx8 d m | .movzx16 d m =>
     bif memPub τ m then some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty } else none
+  | .aluTbl _ d m .. =>
+    bif idxPub τ m then some { τ with regs := setK τ d false, flags := false, bases := killK τ d, lo := .empty }
+    else none
   | .vpmovmskb _ d _ => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }
   | .movqR d r => some { τ with regs := setK τ d (xpub τ r), bases := killK τ d, lo := .empty }
   | .movdquLoad _ m => bif memPub τ m then some (noX τ) else none
@@ -1973,6 +2074,8 @@ def stepK (τ : T) : Instr → Option T
   | .xop (.movq d r) => some { τ with xregs := setXK τ d (pub τ r) }
   | .xop _ | .vop _ => some (noX τ)
   | .vmovdquLoad _ _ m | .vbroadcasti128 _ m | .vbinLoad _ _ _ _ m => bif memPub τ m then some (noX τ) else none
+  | .vmovdquTbl _ m .. => bif idxPub τ m then some (noX τ) else none
+  | .movdquTbl _ m .. => bif idxPub τ m then some (noX τ) else none
   | .vmovdquStore .l128 m _ => storeStepK τ m 16 false
   | .vmovdquStore .l256 m _ => storeStepK τ m 32 false
   | .zop _ => some (noX τ)
@@ -1982,8 +2085,8 @@ def stepK (τ : T) : Instr → Option T
   | .eop _ => some (noX τ)
   | .evLoad _ m | .evMadd52Load _ _ _ m => bif memPub τ m then some (noX τ) else none
   | .evStore m _ => storeStepK τ m 32 false
-  | .kLoad k _ m => bif memPub τ m && pub τ k then some (noX τ) else none
-  | .kStore m k _ => bif pub τ k then storeStepK τ m 64 false else none
+  | .kLoad k _ m | .kLoad8 k _ m => bif memPub τ m && pub τ k then some (noX τ) else none
+  | .kStore m k _ | .kStore8 m k _ => bif pub τ k then storeStepK τ m 64 false else none
   | .stmxcsr m => storeStepK τ m 4 false
   | .ldmxcsr m => bif memPub τ m then some τ else none
   | .lfence => some τ
@@ -2207,6 +2310,7 @@ def stepKDFn : Instr → Step
   | .store m r => ⟨fun τ => storeStepKD τ m 8 (pub τ r)⟩
   | .store32 m r => ⟨fun τ => storeStepKD τ m 4 (pub τ r)⟩
   | .store8 m r => ⟨fun τ => storeStepKD τ m 1 (pub τ r)⟩
+  | .store16 m r => ⟨fun τ => storeStepKD τ m 2 (pub τ r)⟩
   | .alu op d src => ⟨fun τ => aluStepK τ op d src true⟩
   | .alu32 op d src => ⟨fun τ => aluStepK τ op d src false⟩
   | .shift32 _ d _ | .shift _ d _ => ⟨fun τ =>
@@ -2239,10 +2343,14 @@ def stepKDFn : Instr → Step
     | ⟨_, f, l, _, sl, _, x⟩ => some ⟨setK τ d true, f, l, killK τ d, sl, .empty, x⟩⟩
   | .leaSym d _ => ⟨fun τ => match τ with
     | ⟨_, f, l, _, sl, _, x⟩ => some ⟨setK τ d false, f, l, killK τ d, sl, .empty, x⟩⟩
-  | .movzx8 d m => ⟨fun τ =>
+  | .movzx8 d m | .movzx16 d m => ⟨fun τ =>
     match τ with
     | ⟨_, f, l, _, sl, _, x⟩ =>
       bif memPub τ m then some ⟨setK τ d false, f, l, killK τ d, sl, .empty, x⟩ else none⟩
+  | .aluTbl _ d m .. => ⟨fun τ =>
+    match τ with
+    | ⟨_, _, l, _, sl, _, x⟩ =>
+      bif idxPub τ m then some ⟨setK τ d false, false, l, killK τ d, sl, .empty, x⟩ else none⟩
   | .vpmovmskb _ d _ => ⟨fun τ => match τ with
     | ⟨_, f, l, _, sl, _, x⟩ => some ⟨setK τ d false, f, l, killK τ d, sl, .empty, x⟩⟩
   | .movqR d r => ⟨fun τ => match τ with
@@ -2253,6 +2361,8 @@ def stepKDFn : Instr → Step
   | .vop _ => ⟨fun τ => some (noX τ)⟩
   | .vmovdquLoad _ _ m | .vbroadcasti128 _ m | .vbinLoad _ _ _ _ m =>
     ⟨fun τ => bif memPub τ m then some (noX τ) else none⟩
+  | .vmovdquTbl _ m .. => ⟨fun τ => bif idxPub τ m then some (noX τ) else none⟩
+  | .movdquTbl _ m .. => ⟨fun τ => bif idxPub τ m then some (noX τ) else none⟩
   | .vmovdquStore .l128 m _ => ⟨fun τ => storeStepKD τ m 16 false⟩
   | .vmovdquStore .l256 m _ => ⟨fun τ => storeStepKD τ m 32 false⟩
   | .zop _ => ⟨fun τ => some (noX τ)⟩
@@ -2262,8 +2372,8 @@ def stepKDFn : Instr → Step
   | .eop _ => ⟨fun τ => some (noX τ)⟩
   | .evLoad _ m | .evMadd52Load _ _ _ m => ⟨fun τ => bif memPub τ m then some (noX τ) else none⟩
   | .evStore m _ => ⟨fun τ => storeStepKD τ m 32 false⟩
-  | .kLoad k _ m => ⟨fun τ => bif memPub τ m && pub τ k then some (noX τ) else none⟩
-  | .kStore m k _ => ⟨fun τ => bif pub τ k then storeStepKD τ m 64 false else none⟩
+  | .kLoad k _ m | .kLoad8 k _ m => ⟨fun τ => bif memPub τ m && pub τ k then some (noX τ) else none⟩
+  | .kStore m k _ | .kStore8 m k _ => ⟨fun τ => bif pub τ k then storeStepKD τ m 64 false else none⟩
   | .stmxcsr m => ⟨fun τ => storeStepKD τ m 4 false⟩
   | .ldmxcsr m => ⟨fun τ => bif memPub τ m then some τ else none⟩
   | .lfence => ⟨fun τ => some τ⟩
@@ -2340,11 +2450,12 @@ theorem stepKD_spec (τ : T) (i : Instr) :
   case store m r => exact st m 8 _
   case store32 m r => exact st m 4 _
   case store8 m r => exact st m 1 _
+  case store16 m r => exact st m 2 _
   case movdquStore m _ => exact st m 16 _
   case vmovdquStore l m _ => cases l <;> [exact st m 16 _; exact st m 32 _]
   case vmovdqu32Store m _ => exact st m 64 _
   case evStore m _ => exact st m 32 _
-  case kStore m k _ =>
+  case kStore m k _ | kStore8 m k _ =>
     simp only [stepKD, stepKDFn, step]
     cases pub τ k
     · exact .inl ⟨rfl, rfl⟩

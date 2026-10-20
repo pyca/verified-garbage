@@ -1,8 +1,29 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
 public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Gcm.Spec
 
 /-!
 # AES-CMAC (NIST SP 800-38B) on AArch64
@@ -38,55 +59,40 @@ def streamNote (v : Proof.Aes.AArch64.Ctr32Impl) : String :=
     Spec.Cmac.aesUpdateApi.name ++ v.suffix ++ "`)."
 
 def artifacts (v : Proof.Aes.AArch64.Ctr32Impl) : List Artifact := [
-  { Spec.Cmac.aesSubkeysApi with
-    name := Spec.Cmac.aesSubkeysApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Cmac.aesSubkeysApi.doc (notes := [ctrNote v])
+  Spec.Cmac.aesSubkeysApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [ctrNote v]
     code := Impl.CmacAes.AArch64.subkeys v.callee
-    contract := Spec.Cmac.aesSubkeysContract AArch64.abi
     verified := subkeys_verified v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
-  { Spec.Cmac.aesUpdateApi with
-    name := Spec.Cmac.aesUpdateApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Cmac.aesUpdateApi.doc (notes := [ctrNote v])
+  Spec.Cmac.aesUpdateApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [ctrNote v]
     code := Impl.CmacAes.AArch64.update v.callee
-    contract := Spec.Cmac.aesUpdateContract AArch64.abi
     verified := update_verified v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
-  { Spec.Cmac.aesFinalizeApi with
-    name := Spec.Cmac.aesFinalizeApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Cmac.aesFinalizeApi.doc (notes := [ctrNote v])
+  Spec.Cmac.aesFinalizeApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [ctrNote v]
     code := Impl.CmacAes.AArch64.finalize v.callee
-    contract := Spec.Cmac.aesFinalizeContract AArch64.abi
     verified := finalize_verified v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
-  { Spec.Cmac.aesInitApi with
-    name := Spec.Cmac.aesInitApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Cmac.aesInitApi.doc (notes := [streamNote v,
-      "It expands the key with `" ++ v.expand.name ++ "`."])
+  Spec.Cmac.aesInitApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [streamNote v,
+      "It expands the key with `" ++ v.expand.name ++ "`."]
     code := Impl.StackScratch.AArch64.withStackScratch 2304 .x3
       (Impl.CmacAes.Stream.AArch64.init v.expand v.callee v.suffix)
-    contract := Spec.Cmac.aesInitContract AArch64.abi 2304
     stack := 2304
     verified := Proof.CmacAes.Stream.AArch64.init_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
-  { Spec.Cmac.aesFinishApi with
-    name := Spec.Cmac.aesFinishApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Cmac.aesFinishApi.doc (notes := [streamNote v])
+  Spec.Cmac.aesFinishApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [streamNote v]
     code := Impl.StackScratch.AArch64.withStackScratch 2304 .x4
       (Impl.CmacAes.Stream.AArch64.finish v.callee v.suffix)
-    contract := Spec.Cmac.aesFinishContract AArch64.abi 2304
     stack := 2304
     verified := Proof.CmacAes.Stream.AArch64.finish_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features }]
 
 end VG.Generic.AesCtr32.AArch64.CmacAes

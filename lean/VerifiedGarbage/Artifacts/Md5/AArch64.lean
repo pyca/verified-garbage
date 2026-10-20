@@ -1,10 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Md5.AArch64.Shared
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # MD5 (RFC 1321) on AArch64 -/
 
@@ -13,51 +10,27 @@ import VerifiedGarbage.Proof.MdStream.Spec
 namespace VG.Artifacts.Md5.AArch64
 
 def artifacts : List Artifact := [
-  { Spec.Md5.compressApi with
-    target := AArch64.target
-    doc := Spec.Md5.compressApi.doc
+  Spec.Md5.compressApi.artifact AArch64.target {
     code := Impl.Md5.AArch64.compress
-    contract := Spec.Md5.compressContract AArch64.abi
-    verified := Proof.Md5.AArch64.Shared.compress
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Md5.initApi with
-    target := AArch64.target
-    doc := Spec.Md5.initApi.doc
+    verified := Proof.Md5.AArch64.Shared.compress },
+  Spec.Md5.initApi.artifact AArch64.target {
     code := Impl.Md5.AArch64.Stream.init
-    contract := Spec.Md5.initContract AArch64.abi
-    verified := Proof.Md5.AArch64.Shared.init
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Md5.updateApi with
-    target := AArch64.target
-    doc := Spec.Md5.updateApi.doc
+    verified := Proof.Md5.AArch64.Shared.init },
+  Spec.Md5.updateApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 Impl.Md5.AArch64.Stream.update
-    contract := Spec.Md5.updateContract AArch64.abi (16 + 112)
     stack := 16 + 112
-    verified := Proof.Md5.AArch64.Shared.update
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Md5.finalizeApi with
-    target := AArch64.target
-    doc := Spec.Md5.finalizeApi.doc
+    verified := Proof.Md5.AArch64.Shared.update },
+  Spec.Md5.finalizeApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 Impl.Md5.AArch64.Stream.finalize
-    contract := Spec.Md5.finalizeContract AArch64.abi (16 + 112)
     stack := 16 + 112
-    verified := Proof.Md5.AArch64.Shared.finalize
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Md5.updateScratchApi with
-    target := AArch64.target
-    doc := Spec.Md5.updateScratchApi.doc
+    verified := Proof.Md5.AArch64.Shared.finalize },
+  Spec.Md5.updateScratchApi.artifact AArch64.target {
     code := Impl.Md5.AArch64.Stream.update
-    contract := Spec.Md5.updateScratchContract AArch64.abi 16
     stack := 16
-    verified := Proof.Md5.AArch64.Shared.updateScratch
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Md5.finalizeScratchApi with
-    target := AArch64.target
-    doc := Spec.Md5.finalizeScratchApi.doc
+    verified := Proof.Md5.AArch64.Shared.updateScratch },
+  Spec.Md5.finalizeScratchApi.artifact AArch64.target {
     code := Impl.Md5.AArch64.Stream.finalize
-    contract := Spec.Md5.finalizeScratchContract AArch64.abi 16
     stack := 16
-    verified := Proof.Md5.AArch64.Shared.finalizeScratch
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Md5.AArch64.Shared.finalizeScratch }]
 
 end VG.Artifacts.Md5.AArch64

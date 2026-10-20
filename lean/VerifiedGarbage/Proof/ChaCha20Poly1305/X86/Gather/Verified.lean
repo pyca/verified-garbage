@@ -1,12 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.CT
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.CT
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Verified
-public import VerifiedGarbage.Proof.Framework.X86.CallWith
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86.SealGather
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Callee
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Contract
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Fn
+import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.VariantProof
+import VerifiedGarbage.Proof.ChaCha20.X86.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86: `Verified`
@@ -152,7 +156,7 @@ but its frames' push and pop. -/
 theorem sealGather_spSafe (v : XorImpl) :
     (sealGather (sealFn v).name (sealFn v).code).all (fun i => !X86.isa.writesSp i) = true := by
   have hc : (sealFn v).code.all (fun i => !X86.isa.writesSp i) = true :=
-    Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe (by decide +kernel)
+    Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
       (Proof.ChaCha20Poly1305.X86.seal_spSafe v)
   have he : (Code.block entry : Prog isa).all (fun i => !X86.isa.writesSp i) = true := by decide +kernel
   have hg : Impl.AesGcm.X86.SealGather.gather.all (fun i => !X86.isa.writesSp i) = true := by decide +kernel

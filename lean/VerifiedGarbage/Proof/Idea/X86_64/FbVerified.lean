@@ -1,25 +1,33 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.X86_64.ModeCore
-meta import VerifiedGarbage.Proof.Idea.X86_64.ModeCore
-public import VerifiedGarbage.Proof.Modes.X86_64.Fb
-meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
+import VerifiedGarbage.Proof.Idea.X86_64.ModeCore
+import VerifiedGarbage.Proof.Modes.X86_64.Fb
 public import VerifiedGarbage.Proof.Idea.FbScratch
-meta import VerifiedGarbage.Proof.Idea.FbScratch
 import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+public import VerifiedGarbage.Impl.Idea.X86_64.Modes
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Spec.Idea.Cfb
+public import VerifiedGarbage.Proof.Modes.Fb
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Idea.X86_64.ModeCore
+meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
+meta import VerifiedGarbage.Proof.Idea.FbScratch
 meta import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Impl.Idea.X86_64.Modes
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Spec.Idea.Cfb
+meta import VerifiedGarbage.Proof.Modes.Fb
+meta import VerifiedGarbage.Impl.StackScratch.X86_64
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+meta import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Idea.ModeBytes
+meta import VerifiedGarbage.Proof.Idea.ModeBytes
 
 /-!
 # IDEA-OFB and -CFB64 on x86-64 meet their contracts
@@ -104,6 +112,7 @@ theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : fbPre blkLen s₀) 
       simp only [List.mem_singleton] at hr; subst hr; exact dKS⟩ ⟨Modes.X86_64.keepsIv_of_scal (by lit_decide), Modes.X86_64.keepsIv_of_scal (by lit_decide)⟩)
     fun s' ⟨hcs, hdata, hiv, hf, _, _⟩ =>
     ⟨⟨hcs, ?_⟩, by rw [modeCore_bw, Nat.mul_one] at hdata hiv; exact ⟨hdata, hiv⟩⟩
+  rw [VG.Proof.Modes.X86_64.stkList_eq_nil rfl, List.append_nil] at hf
   refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl

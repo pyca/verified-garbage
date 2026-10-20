@@ -5,35 +5,49 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyWrapped
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
+public import VerifiedGarbage.Proof.P256.EcdhTable.Dblu
+public import VerifiedGarbage.Proof.P256.EcdhTable.Zaddu
+public import VerifiedGarbage.Proof.P256.Linear.WeakCertificate
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.CachedHead
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticCachedHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticRR
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ecdsa.P256
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyWrapped
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointPoints
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointPoints
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPoints
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPoints
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Verified
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedMain
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedMain
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPointsTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPointsTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacContract
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacContract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacContract
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCacheTiming
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCacheTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Divstep.Bound
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigitTiming
-meta import VerifiedGarbage.Proof.Divstep.Bound
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigitTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRaw
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedScalars
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRaw
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedScalars
+import VerifiedGarbage.Proof.P256.Prime
+meta import VerifiedGarbage.Proof.P256.Prime
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-! ## `AllocatedInverse` -/
 
@@ -115,14 +129,14 @@ open VG.Proof.Ecdsa.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
 
 /-- Both allocated stages restore the additional callee-saved registers before
 returning to the unchanged verifier stages. -/
-theorem allocatedVerify_restored (hL : Law Spec.P256.curve) (hI : InvSounds)
+theorem allocatedVerify_restored (hL : Law Spec.P256.curve) (hO : PrimeOrder Spec.P256.curve) (hI : InvSounds)
     (hTInv : InvToM p256.C.n)
     (hTcomb : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     {s t : State} {tr : List Leak} (hp : VPre p256 s)
     (he : Exec isa P256Allocated.verify s tr t) : ∀ r∈untouched,t.gpr r=s.gpr r := by
   refine allocatedVerify_extra_preserved (p256_ok hI)
     (fun _ h => allocatedPrefix_ok hI hTInv h) ?_
-    (fun _ _ _ h m => Allocated.points_untouched (p256_ok hI) hL hTcomb h m) hp he
+    (fun _ _ _ h m => Allocated.points_untouched (p256_ok hI) hL hO hTcomb h m) hp he
   intro s₀ a ha
   refine WP.mono (allocatedInverse_ok hI hTInv ha.scr ha.mod ha.lt) fun b hb r hr => ?_
   exact hb.1.gpr r ((show ∀ r∈untouched,r∉invAllocatedOuterRegs from by decide) r hr)
@@ -139,7 +153,7 @@ namespace VG.Proof.Ecdsa.Verify.AArch64
 open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
 open VG.Proof.Ecdsa.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
 
-theorem allocatedVerify_ok (hL : Law Spec.P256.curve) (hI : InvSounds)
+theorem allocatedVerify_ok (hL : Law Spec.P256.curve) (hO : PrimeOrder Spec.P256.curve) (hI : InvSounds)
     (hN : InvToM p256.C.n)
     (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     {s : State} (h : VPre p256 s) :
@@ -148,24 +162,24 @@ theorem allocatedVerify_ok (hL : Law Spec.P256.curve) (hI : InvSounds)
   apply verify_of_joint_inverse (p256_ok hI) hL P256Allocated.inverse P256Allocated.points
     P256Allocated.verify (allocatedMid_ok hI hN) rfl ?_ h
   intro s₀ base g s hm ht P hp hr
-  exact WP.mono (Allocated.points_ok (p256_ok hI) hL hT hm ht hp hr)
+  exact WP.mono (Allocated.points_ok (p256_ok hI) hL hO hT hm ht hp hr)
     fun _ ⟨hf,hrep,_⟩ => ⟨hf,hrep⟩
 
 /-- The allocated verifier satisfies the existing correctness, ABI and public-input contract. -/
-theorem allocatedVerify_verified (hL : Law Spec.P256.curve) (hI : InvSounds)
+theorem allocatedVerify_verified (hL : Law Spec.P256.curve) (hO : PrimeOrder Spec.P256.curve) (hI : InvSounds)
     (hN : InvToM p256.C.n)
     (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
     Verified AArch64.target P256Allocated.verify
       (Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts p256.combConsts)) := by
   refine ⟨fun s hs => ?_,?_,implies.sat⟩
   · obtain ⟨tr,t,he,ha,hp⟩ := allocatedVerify_a64_of_wp
-      (fun _ hp => allocatedVerify_ok hL hI hN hT hp)
-      (fun hp he => allocatedVerify_restored hL hI hN hT hp he) s (implies.pre _ hs)
+      (fun _ hp => allocatedVerify_ok hL hO hI hN hT hp)
+      (fun hp he => allocatedVerify_restored hL hO hI hN hT hp he) s (implies.pre _ hs)
     exact ⟨tr,t,he,ha,implies.post s t hs hp⟩
   · intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
     exact allocatedVerify_ct_of_points (fun _ hp => allocatedPrefix_ok hI hN hp)
       (allocatedPrefix_ct (p256_ok hI) (allocatedInverse_relCT hI hN) allocatedUv_ct)
-      (fun _ _ ps pt => Allocated.allocatedPoints_relCT Allocated.raw_correct (p256_ok hI) hL hT ps pt)
+      (fun _ _ ps pt => Allocated.allocatedPoints_relCT Allocated.raw_correct (p256_ok hI) hL hO hT ps pt)
       jointTail_ct _ _ _ _ _ _ (jacPre_of (implies.pre _ pre₁)) (jacPre_of (implies.pre _ pre₂))
       (jacPublic_of_spec pub) e₁ e₂
 

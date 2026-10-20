@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.AArch64.Round
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Montgomery arithmetic on AArch64: the rounds of the multiplication
@@ -46,7 +44,7 @@ theorem acc_regs_lt : ∀ n < 10, ∀ r ∈ acc n,
     r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17, .x24, .x25] := by
   decide
 
-/-- `k` rounds, from a cleared accumulator, with `x7 = 0`, `[b]`'s words in
+/-- `k` rounds, from an accumulator ready for the first (`AccInit`), with `x7 = 0`, `[b]`'s words in
 `bRegs` and the reduction's constant in `x6`. -/
 theorem rounds_ok {M : Mod} (hn : M.n < 10) {ra rb : Reg} {pa pb : Addr} {sa sb : Nat}
     (hra : PtrOk M.n ra) (hrb : PtrOk M.n rb) {a b m size : Nat}
@@ -56,14 +54,14 @@ theorem rounds_ok {M : Mod} (hn : M.n < 10) {ra rb : Reg} {pa pb : Addr} {sa sb 
     ∀ k ≤ M.n, ∀ {s : State} {base : Addr}, Scr s base size → Ptr s ra pa sa → Ptr s rb pb sb →
       s.gpr .x7 = 0 →
       wordsVal s.mem base M.mo M.n = m → BRegs s pb b M.n → ConstOk M s →
-      wordsVal s.mem pb b M.n < m → regsVal s (wins M.n 0) = 0 →
+      wordsVal s.mem pb b M.n < m → AccInit M s →
       WP isa (.block ((List.range k).flatMap (round M ra rb a b))) s fun s' =>
-        (∃ U, 2 ^ (64 * k) * regsVal s' (wins M.n k) =
+        (∃ U, 2 ^ (64 * k) * accV M s' k =
           wordsVal s.mem pa a k * wordsVal s.mem pb b M.n + U * m) ∧
-        regsVal s' (wins M.n k) < 2 * m ∧
-        Keeps (.x1 :: .x2 :: .x3 :: acc M.n) s s' ∧ (k = 0 → regsVal s' (wins M.n 0) = 0)
-  | 0, _, s, _, _, _, _, _, _, _, _, hB, h0 => WP.block_nil ⟨⟨0, by simp [h0, wordsVal]⟩, by rw [h0]; omega,
-      ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩, fun _ => h0⟩
+        accV M s' k < 2 * m ∧
+        Keeps (.x1 :: .x2 :: .x3 :: acc M.n) s s' ∧ (k = 0 → AccInit M s')
+  | 0, _, s, _, _, _, _, _, _, _, _, hB, h0 => WP.block_nil ⟨⟨0, by simp [accV, wordsVal]⟩, by
+      simp only [accV, ↓reduceIte]; omega, ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩, fun _ => h0⟩
   | k + 1, hk, s, base, hs, hpa, hpb, hz, hm, hBR, h6, hB, h0 => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
     refine WP.mono (rounds_ok hn hra hrb ha hb hmo ha8 hb8 hmo8 hinv hok k (by omega) hs hpa hpb hz hm hBR h6 hB h0)
@@ -97,11 +95,12 @@ theorem rounds_ok {M : Mod} (hn : M.n < 10) {ra rb : Reg} {pa pb : Addr} {sa sb 
     refine WP.mono (round_ok hs₁ hn hpa₁ hpb₁ hrb (i := k) (by omega) hb hmo ha8 hb8 hmo8 hz₁ (by rw [hmem, hm])
       hinv hok hBR₁ h6₁ (by rw [hmem]; exact hB) hT (fun hk0 => hz0 hk0)) fun s₂ ⟨⟨u, eu⟩, hT₂, k₂⟩ => ?_
     rw [hmem] at eu
+    rw [accV_succ]
     refine ⟨⟨U + 2 ^ (64 * k) * u, ?_⟩, hT₂, k₁.trans (k₂.mono fun q hq => ?_), fun h => absurd h (by omega)⟩
     · calc 2 ^ (64 * (k + 1)) * regsVal s₂ (wins M.n (k + 1))
           = 2 ^ (64 * k) * (2 ^ 64 * regsVal s₂ (wins M.n (k + 1))) := by
             rw [Nat.mul_succ, Nat.pow_add, Nat.mul_assoc]
-        _ = 2 ^ (64 * k) * regsVal s₁ (wins M.n k) +
+        _ = 2 ^ (64 * k) * accV M s₁ k +
             2 ^ (64 * k) * (word s.mem pa (a + 8 * k)).toNat * wordsVal s.mem pb b M.n +
             2 ^ (64 * k) * u * m := by rw [eu]; simp only [Nat.mul_add, Nat.mul_assoc]
         _ = (wordsVal s.mem pa a k + 2 ^ (64 * k) * (word s.mem pa (a + 8 * k)).toNat) *

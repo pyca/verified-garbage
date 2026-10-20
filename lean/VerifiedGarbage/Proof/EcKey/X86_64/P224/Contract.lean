@@ -4,14 +4,7 @@ public import VerifiedGarbage.Spec.EcKey.P224
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Tables
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # P-224 public keys on x86-64: the contract the proof is written against

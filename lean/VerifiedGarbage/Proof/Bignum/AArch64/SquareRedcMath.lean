@@ -1,14 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalCore
-public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 /-! Low-word cancellation and pending high carries for REDC. -/
 

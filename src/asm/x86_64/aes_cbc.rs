@@ -25,51 +25,51 @@ pub(crate) const VG_AES_CBC_ENCRYPT_AESNI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_cbc_encrypt_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+2064], rbx",
-        "mov QWORD PTR [r9+2072], rbp",
-        "mov QWORD PTR [r9+2080], r12",
-        "mov QWORD PTR [r9+2088], r13",
-        "mov QWORD PTR [r9+2096], r14",
-        "mov QWORD PTR [r9+2104], r15",
-        "mov rbx, rdi",
-        "mov rbp, rsi",
-        "mov r12, rdx",
-        "mov r13, rcx",
-        "mov r14, r8",
-        "mov r15, r9",
-        "test r14, r14",
-        "je 20f",
-        "22:",
-        "mov rax, QWORD PTR [r13]",
-        "xor rax, QWORD PTR [r12]",
-        "mov QWORD PTR [r13], rax",
-        "mov rax, QWORD PTR [r13+8]",
-        "xor rax, QWORD PTR [r12+8]",
-        "mov QWORD PTR [r13+8], rax",
-        "mov rdi, rbx",
-        "mov rsi, rbp",
-        "mov rdx, r13",
-        "mov ecx, 1",
-        "mov r8, r15",
-        "call {vg_aes_encrypt_blocks_aesni}",
-        "mov rax, QWORD PTR [r13]",
-        "mov QWORD PTR [r12], rax",
-        "mov rax, QWORD PTR [r13+8]",
-        "mov QWORD PTR [r12+8], rax",
-        "add r13, 16",
-        "sub r14, 1",
-        "jne 22b",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "mov rbx, QWORD PTR [r15+2064]",
-        "mov rbp, QWORD PTR [r15+2072]",
-        "mov r12, QWORD PTR [r15+2080]",
-        "mov r13, QWORD PTR [r15+2088]",
-        "mov r14, QWORD PTR [r15+2096]",
-        "mov r15, QWORD PTR [r15+2104]",
-        "ret",
-        ".p2align 6",
+        r"mov QWORD PTR [r9+2064], rbx
+mov QWORD PTR [r9+2072], rbp
+mov QWORD PTR [r9+2080], r12
+mov QWORD PTR [r9+2088], r13
+mov QWORD PTR [r9+2096], r14
+mov QWORD PTR [r9+2104], r15
+mov rbx, rdi
+mov rbp, rsi
+mov r12, rdx
+mov r13, rcx
+mov r14, r8
+mov r15, r9
+test r14, r14
+je 20f
+22:
+mov rax, QWORD PTR [r13]
+xor rax, QWORD PTR [r12]
+mov QWORD PTR [r13], rax
+mov rax, QWORD PTR [r13+8]
+xor rax, QWORD PTR [r12+8]
+mov QWORD PTR [r13+8], rax
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r13
+mov ecx, 1
+mov r8, r15
+call {vg_aes_encrypt_blocks_aesni}
+mov rax, QWORD PTR [r13]
+mov QWORD PTR [r12], rax
+mov rax, QWORD PTR [r13+8]
+mov QWORD PTR [r12+8], rax
+add r13, 16
+sub r14, 1
+jne 22b
+jmp 21f
+20:
+21:
+mov rbx, QWORD PTR [r15+2064]
+mov rbp, QWORD PTR [r15+2072]
+mov r12, QWORD PTR [r15+2080]
+mov r13, QWORD PTR [r15+2088]
+mov r14, QWORD PTR [r15+2096]
+mov r15, QWORD PTR [r15+2104]
+ret
+.p2align 6",
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
     )
 }
@@ -97,55 +97,55 @@ pub(crate) const VG_AES_CBC_DECRYPT_AESNI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_cbc_decrypt_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+2064], rbx",
-        "mov QWORD PTR [r9+2072], rbp",
-        "mov QWORD PTR [r9+2080], r12",
-        "mov QWORD PTR [r9+2088], r13",
-        "mov QWORD PTR [r9+2096], r14",
-        "mov QWORD PTR [r9+2104], r15",
-        "mov rbx, rdi",
-        "mov rbp, rsi",
-        "mov r12, rdx",
-        "mov r13, rcx",
-        "mov r14, r8",
-        "mov r15, r9",
-        "test r14, r14",
-        "je 20f",
-        "22:",
-        "mov rax, QWORD PTR [r13]",
-        "mov QWORD PTR [r15+2048], rax",
-        "mov rax, QWORD PTR [r13+8]",
-        "mov QWORD PTR [r15+2056], rax",
-        "mov rdi, rbx",
-        "mov rsi, rbp",
-        "mov rdx, r13",
-        "mov ecx, 1",
-        "mov r8, r15",
-        "call {vg_aes_decrypt_blocks_aesni}",
-        "mov rax, QWORD PTR [r13]",
-        "xor rax, QWORD PTR [r12]",
-        "mov QWORD PTR [r13], rax",
-        "mov rax, QWORD PTR [r13+8]",
-        "xor rax, QWORD PTR [r12+8]",
-        "mov QWORD PTR [r13+8], rax",
-        "mov rax, QWORD PTR [r15+2048]",
-        "mov QWORD PTR [r12], rax",
-        "mov rax, QWORD PTR [r15+2056]",
-        "mov QWORD PTR [r12+8], rax",
-        "add r13, 16",
-        "sub r14, 1",
-        "jne 22b",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "mov rbx, QWORD PTR [r15+2064]",
-        "mov rbp, QWORD PTR [r15+2072]",
-        "mov r12, QWORD PTR [r15+2080]",
-        "mov r13, QWORD PTR [r15+2088]",
-        "mov r14, QWORD PTR [r15+2096]",
-        "mov r15, QWORD PTR [r15+2104]",
-        "ret",
-        ".p2align 6",
+        r"mov QWORD PTR [r9+2064], rbx
+mov QWORD PTR [r9+2072], rbp
+mov QWORD PTR [r9+2080], r12
+mov QWORD PTR [r9+2088], r13
+mov QWORD PTR [r9+2096], r14
+mov QWORD PTR [r9+2104], r15
+mov rbx, rdi
+mov rbp, rsi
+mov r12, rdx
+mov r13, rcx
+mov r14, r8
+mov r15, r9
+test r14, r14
+je 20f
+22:
+mov rax, QWORD PTR [r13]
+mov QWORD PTR [r15+2048], rax
+mov rax, QWORD PTR [r13+8]
+mov QWORD PTR [r15+2056], rax
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r13
+mov ecx, 1
+mov r8, r15
+call {vg_aes_decrypt_blocks_aesni}
+mov rax, QWORD PTR [r13]
+xor rax, QWORD PTR [r12]
+mov QWORD PTR [r13], rax
+mov rax, QWORD PTR [r13+8]
+xor rax, QWORD PTR [r12+8]
+mov QWORD PTR [r13+8], rax
+mov rax, QWORD PTR [r15+2048]
+mov QWORD PTR [r12], rax
+mov rax, QWORD PTR [r15+2056]
+mov QWORD PTR [r12+8], rax
+add r13, 16
+sub r14, 1
+jne 22b
+jmp 21f
+20:
+21:
+mov rbx, QWORD PTR [r15+2064]
+mov rbp, QWORD PTR [r15+2072]
+mov r12, QWORD PTR [r15+2080]
+mov r13, QWORD PTR [r15+2088]
+mov r14, QWORD PTR [r15+2096]
+mov r15, QWORD PTR [r15+2104]
+ret
+.p2align 6",
         vg_aes_decrypt_blocks_aesni = sym super::aes::vg_aes_decrypt_blocks_aesni,
     )
 }
@@ -169,51 +169,51 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_cbc_decrypt_aesni(schedule: *const [
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_cbc_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+2064], rbx",
-        "mov QWORD PTR [r9+2072], rbp",
-        "mov QWORD PTR [r9+2080], r12",
-        "mov QWORD PTR [r9+2088], r13",
-        "mov QWORD PTR [r9+2096], r14",
-        "mov QWORD PTR [r9+2104], r15",
-        "mov rbx, rdi",
-        "mov rbp, rsi",
-        "mov r12, rdx",
-        "mov r13, rcx",
-        "mov r14, r8",
-        "mov r15, r9",
-        "test r14, r14",
-        "je 20f",
-        "22:",
-        "mov rax, QWORD PTR [r13]",
-        "xor rax, QWORD PTR [r12]",
-        "mov QWORD PTR [r13], rax",
-        "mov rax, QWORD PTR [r13+8]",
-        "xor rax, QWORD PTR [r12+8]",
-        "mov QWORD PTR [r13+8], rax",
-        "mov rdi, rbx",
-        "mov rsi, rbp",
-        "mov rdx, r13",
-        "mov ecx, 1",
-        "mov r8, r15",
-        "call {vg_aes_encrypt_blocks}",
-        "mov rax, QWORD PTR [r13]",
-        "mov QWORD PTR [r12], rax",
-        "mov rax, QWORD PTR [r13+8]",
-        "mov QWORD PTR [r12+8], rax",
-        "add r13, 16",
-        "sub r14, 1",
-        "jne 22b",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "mov rbx, QWORD PTR [r15+2064]",
-        "mov rbp, QWORD PTR [r15+2072]",
-        "mov r12, QWORD PTR [r15+2080]",
-        "mov r13, QWORD PTR [r15+2088]",
-        "mov r14, QWORD PTR [r15+2096]",
-        "mov r15, QWORD PTR [r15+2104]",
-        "ret",
-        ".p2align 6",
+        r"mov QWORD PTR [r9+2064], rbx
+mov QWORD PTR [r9+2072], rbp
+mov QWORD PTR [r9+2080], r12
+mov QWORD PTR [r9+2088], r13
+mov QWORD PTR [r9+2096], r14
+mov QWORD PTR [r9+2104], r15
+mov rbx, rdi
+mov rbp, rsi
+mov r12, rdx
+mov r13, rcx
+mov r14, r8
+mov r15, r9
+test r14, r14
+je 20f
+22:
+mov rax, QWORD PTR [r13]
+xor rax, QWORD PTR [r12]
+mov QWORD PTR [r13], rax
+mov rax, QWORD PTR [r13+8]
+xor rax, QWORD PTR [r12+8]
+mov QWORD PTR [r13+8], rax
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r13
+mov ecx, 1
+mov r8, r15
+call {vg_aes_encrypt_blocks}
+mov rax, QWORD PTR [r13]
+mov QWORD PTR [r12], rax
+mov rax, QWORD PTR [r13+8]
+mov QWORD PTR [r12+8], rax
+add r13, 16
+sub r14, 1
+jne 22b
+jmp 21f
+20:
+21:
+mov rbx, QWORD PTR [r15+2064]
+mov rbp, QWORD PTR [r15+2072]
+mov r12, QWORD PTR [r15+2080]
+mov r13, QWORD PTR [r15+2088]
+mov r14, QWORD PTR [r15+2096]
+mov r15, QWORD PTR [r15+2104]
+ret
+.p2align 6",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
@@ -237,55 +237,55 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_cbc_encrypt(schedule: *const [u8; 24
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_cbc_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+2064], rbx",
-        "mov QWORD PTR [r9+2072], rbp",
-        "mov QWORD PTR [r9+2080], r12",
-        "mov QWORD PTR [r9+2088], r13",
-        "mov QWORD PTR [r9+2096], r14",
-        "mov QWORD PTR [r9+2104], r15",
-        "mov rbx, rdi",
-        "mov rbp, rsi",
-        "mov r12, rdx",
-        "mov r13, rcx",
-        "mov r14, r8",
-        "mov r15, r9",
-        "test r14, r14",
-        "je 20f",
-        "22:",
-        "mov rax, QWORD PTR [r13]",
-        "mov QWORD PTR [r15+2048], rax",
-        "mov rax, QWORD PTR [r13+8]",
-        "mov QWORD PTR [r15+2056], rax",
-        "mov rdi, rbx",
-        "mov rsi, rbp",
-        "mov rdx, r13",
-        "mov ecx, 1",
-        "mov r8, r15",
-        "call {vg_aes_decrypt_blocks}",
-        "mov rax, QWORD PTR [r13]",
-        "xor rax, QWORD PTR [r12]",
-        "mov QWORD PTR [r13], rax",
-        "mov rax, QWORD PTR [r13+8]",
-        "xor rax, QWORD PTR [r12+8]",
-        "mov QWORD PTR [r13+8], rax",
-        "mov rax, QWORD PTR [r15+2048]",
-        "mov QWORD PTR [r12], rax",
-        "mov rax, QWORD PTR [r15+2056]",
-        "mov QWORD PTR [r12+8], rax",
-        "add r13, 16",
-        "sub r14, 1",
-        "jne 22b",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "mov rbx, QWORD PTR [r15+2064]",
-        "mov rbp, QWORD PTR [r15+2072]",
-        "mov r12, QWORD PTR [r15+2080]",
-        "mov r13, QWORD PTR [r15+2088]",
-        "mov r14, QWORD PTR [r15+2096]",
-        "mov r15, QWORD PTR [r15+2104]",
-        "ret",
-        ".p2align 6",
+        r"mov QWORD PTR [r9+2064], rbx
+mov QWORD PTR [r9+2072], rbp
+mov QWORD PTR [r9+2080], r12
+mov QWORD PTR [r9+2088], r13
+mov QWORD PTR [r9+2096], r14
+mov QWORD PTR [r9+2104], r15
+mov rbx, rdi
+mov rbp, rsi
+mov r12, rdx
+mov r13, rcx
+mov r14, r8
+mov r15, r9
+test r14, r14
+je 20f
+22:
+mov rax, QWORD PTR [r13]
+mov QWORD PTR [r15+2048], rax
+mov rax, QWORD PTR [r13+8]
+mov QWORD PTR [r15+2056], rax
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r13
+mov ecx, 1
+mov r8, r15
+call {vg_aes_decrypt_blocks}
+mov rax, QWORD PTR [r13]
+xor rax, QWORD PTR [r12]
+mov QWORD PTR [r13], rax
+mov rax, QWORD PTR [r13+8]
+xor rax, QWORD PTR [r12+8]
+mov QWORD PTR [r13+8], rax
+mov rax, QWORD PTR [r15+2048]
+mov QWORD PTR [r12], rax
+mov rax, QWORD PTR [r15+2056]
+mov QWORD PTR [r12+8], rax
+add r13, 16
+sub r14, 1
+jne 22b
+jmp 21f
+20:
+21:
+mov rbx, QWORD PTR [r15+2064]
+mov rbp, QWORD PTR [r15+2072]
+mov r12, QWORD PTR [r15+2080]
+mov r13, QWORD PTR [r15+2088]
+mov r14, QWORD PTR [r15+2096]
+mov r15, QWORD PTR [r15+2104]
+ret
+.p2align 6",
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
     )
 }
@@ -313,51 +313,51 @@ pub(crate) const VG_AES_CBC_ENCRYPT_VAES_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_cbc_encrypt_vaes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+2064], rbx",
-        "mov QWORD PTR [r9+2072], rbp",
-        "mov QWORD PTR [r9+2080], r12",
-        "mov QWORD PTR [r9+2088], r13",
-        "mov QWORD PTR [r9+2096], r14",
-        "mov QWORD PTR [r9+2104], r15",
-        "mov rbx, rdi",
-        "mov rbp, rsi",
-        "mov r12, rdx",
-        "mov r13, rcx",
-        "mov r14, r8",
-        "mov r15, r9",
-        "test r14, r14",
-        "je 20f",
-        "22:",
-        "mov rax, QWORD PTR [r13]",
-        "xor rax, QWORD PTR [r12]",
-        "mov QWORD PTR [r13], rax",
-        "mov rax, QWORD PTR [r13+8]",
-        "xor rax, QWORD PTR [r12+8]",
-        "mov QWORD PTR [r13+8], rax",
-        "mov rdi, rbx",
-        "mov rsi, rbp",
-        "mov rdx, r13",
-        "mov ecx, 1",
-        "mov r8, r15",
-        "call {vg_aes_encrypt_blocks_vaes}",
-        "mov rax, QWORD PTR [r13]",
-        "mov QWORD PTR [r12], rax",
-        "mov rax, QWORD PTR [r13+8]",
-        "mov QWORD PTR [r12+8], rax",
-        "add r13, 16",
-        "sub r14, 1",
-        "jne 22b",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "mov rbx, QWORD PTR [r15+2064]",
-        "mov rbp, QWORD PTR [r15+2072]",
-        "mov r12, QWORD PTR [r15+2080]",
-        "mov r13, QWORD PTR [r15+2088]",
-        "mov r14, QWORD PTR [r15+2096]",
-        "mov r15, QWORD PTR [r15+2104]",
-        "ret",
-        ".p2align 6",
+        r"mov QWORD PTR [r9+2064], rbx
+mov QWORD PTR [r9+2072], rbp
+mov QWORD PTR [r9+2080], r12
+mov QWORD PTR [r9+2088], r13
+mov QWORD PTR [r9+2096], r14
+mov QWORD PTR [r9+2104], r15
+mov rbx, rdi
+mov rbp, rsi
+mov r12, rdx
+mov r13, rcx
+mov r14, r8
+mov r15, r9
+test r14, r14
+je 20f
+22:
+mov rax, QWORD PTR [r13]
+xor rax, QWORD PTR [r12]
+mov QWORD PTR [r13], rax
+mov rax, QWORD PTR [r13+8]
+xor rax, QWORD PTR [r12+8]
+mov QWORD PTR [r13+8], rax
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r13
+mov ecx, 1
+mov r8, r15
+call {vg_aes_encrypt_blocks_vaes}
+mov rax, QWORD PTR [r13]
+mov QWORD PTR [r12], rax
+mov rax, QWORD PTR [r13+8]
+mov QWORD PTR [r12+8], rax
+add r13, 16
+sub r14, 1
+jne 22b
+jmp 21f
+20:
+21:
+mov rbx, QWORD PTR [r15+2064]
+mov rbp, QWORD PTR [r15+2072]
+mov r12, QWORD PTR [r15+2080]
+mov r13, QWORD PTR [r15+2088]
+mov r14, QWORD PTR [r15+2096]
+mov r15, QWORD PTR [r15+2104]
+ret
+.p2align 6",
         vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
     )
 }
@@ -385,55 +385,55 @@ pub(crate) const VG_AES_CBC_DECRYPT_VAES_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_cbc_decrypt_vaes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+2064], rbx",
-        "mov QWORD PTR [r9+2072], rbp",
-        "mov QWORD PTR [r9+2080], r12",
-        "mov QWORD PTR [r9+2088], r13",
-        "mov QWORD PTR [r9+2096], r14",
-        "mov QWORD PTR [r9+2104], r15",
-        "mov rbx, rdi",
-        "mov rbp, rsi",
-        "mov r12, rdx",
-        "mov r13, rcx",
-        "mov r14, r8",
-        "mov r15, r9",
-        "test r14, r14",
-        "je 20f",
-        "22:",
-        "mov rax, QWORD PTR [r13]",
-        "mov QWORD PTR [r15+2048], rax",
-        "mov rax, QWORD PTR [r13+8]",
-        "mov QWORD PTR [r15+2056], rax",
-        "mov rdi, rbx",
-        "mov rsi, rbp",
-        "mov rdx, r13",
-        "mov ecx, 1",
-        "mov r8, r15",
-        "call {vg_aes_decrypt_blocks_vaes}",
-        "mov rax, QWORD PTR [r13]",
-        "xor rax, QWORD PTR [r12]",
-        "mov QWORD PTR [r13], rax",
-        "mov rax, QWORD PTR [r13+8]",
-        "xor rax, QWORD PTR [r12+8]",
-        "mov QWORD PTR [r13+8], rax",
-        "mov rax, QWORD PTR [r15+2048]",
-        "mov QWORD PTR [r12], rax",
-        "mov rax, QWORD PTR [r15+2056]",
-        "mov QWORD PTR [r12+8], rax",
-        "add r13, 16",
-        "sub r14, 1",
-        "jne 22b",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "mov rbx, QWORD PTR [r15+2064]",
-        "mov rbp, QWORD PTR [r15+2072]",
-        "mov r12, QWORD PTR [r15+2080]",
-        "mov r13, QWORD PTR [r15+2088]",
-        "mov r14, QWORD PTR [r15+2096]",
-        "mov r15, QWORD PTR [r15+2104]",
-        "ret",
-        ".p2align 6",
+        r"mov QWORD PTR [r9+2064], rbx
+mov QWORD PTR [r9+2072], rbp
+mov QWORD PTR [r9+2080], r12
+mov QWORD PTR [r9+2088], r13
+mov QWORD PTR [r9+2096], r14
+mov QWORD PTR [r9+2104], r15
+mov rbx, rdi
+mov rbp, rsi
+mov r12, rdx
+mov r13, rcx
+mov r14, r8
+mov r15, r9
+test r14, r14
+je 20f
+22:
+mov rax, QWORD PTR [r13]
+mov QWORD PTR [r15+2048], rax
+mov rax, QWORD PTR [r13+8]
+mov QWORD PTR [r15+2056], rax
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r13
+mov ecx, 1
+mov r8, r15
+call {vg_aes_decrypt_blocks_vaes}
+mov rax, QWORD PTR [r13]
+xor rax, QWORD PTR [r12]
+mov QWORD PTR [r13], rax
+mov rax, QWORD PTR [r13+8]
+xor rax, QWORD PTR [r12+8]
+mov QWORD PTR [r13+8], rax
+mov rax, QWORD PTR [r15+2048]
+mov QWORD PTR [r12], rax
+mov rax, QWORD PTR [r15+2056]
+mov QWORD PTR [r12+8], rax
+add r13, 16
+sub r14, 1
+jne 22b
+jmp 21f
+20:
+21:
+mov rbx, QWORD PTR [r15+2064]
+mov rbp, QWORD PTR [r15+2072]
+mov r12, QWORD PTR [r15+2080]
+mov r13, QWORD PTR [r15+2088]
+mov r14, QWORD PTR [r15+2096]
+mov r15, QWORD PTR [r15+2104]
+ret
+.p2align 6",
         vg_aes_decrypt_blocks_vaes = sym super::aes::vg_aes_decrypt_blocks_vaes,
     )
 }

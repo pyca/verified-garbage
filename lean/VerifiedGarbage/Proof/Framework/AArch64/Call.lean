@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Calls and frames (AArch64)
@@ -66,7 +67,7 @@ theorem WP.callV {name : String} {c : Prog isa} {k : Contract isa}
     (hc : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr) {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → Frame wr s.mem s'.mem →
       (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r) →
-      (∀ r, r ∉ linkRegs → (∀ i ∈ instrs c, dstOf i ≠ some r) → s'.gpr r = s.gpr r) →
+      (∀ r, r ∉ linkRegs → (∀ i ∈ instrs c, clobbers i r = false) → s'.gpr r = s.gpr r) →
       (∀ r ∈ VG.AArch64.preservedV, (s'.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) →
       k.post (s.callEntry.withRegions rd wr) (s'.withRegions rd wr) → Q s')
     (hn : c.noFrames = true := by decide +kernel) : WP isa (.call name c) s Q := by
@@ -100,7 +101,7 @@ theorem WP.call {name : String} {c : Prog isa} {k : Contract isa}
     (hc : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr) {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → Frame wr s.mem s'.mem →
       (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r) →
-      (∀ r, r ∉ linkRegs → (∀ i ∈ instrs c, dstOf i ≠ some r) → s'.gpr r = s.gpr r) →
+      (∀ r, r ∉ linkRegs → (∀ i ∈ instrs c, clobbers i r = false) → s'.gpr r = s.gpr r) →
       k.post (s.callEntry.withRegions rd wr) (s'.withRegions rd wr) → Q s')
     (hn : c.noFrames = true := by decide +kernel) : WP isa (.call name c) s Q := by
   exact WP.callV hv hpre hc hw (fun s' hr hwr hsp hf hg hu _ hp => hQ s' hr hwr hsp hf hg hu hp) hn

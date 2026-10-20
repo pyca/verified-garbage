@@ -1,14 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
-public import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointTableAddr
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointTableAddr
+public import VerifiedGarbage.Proof.Ed25519.BaseTable
 import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddMemory
+import VerifiedGarbage.Proof.Ed25519.X86_64.Points
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Adding a table entry

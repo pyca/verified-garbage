@@ -1,13 +1,29 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.X86.Pass
+public import VerifiedGarbage.Proof.AesOcb.X86.RestTag
 
-public import VerifiedGarbage.Proof.AesOcb.X86.HashCT
-meta import VerifiedGarbage.Proof.AesOcb.X86.HashCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesOcb.X86.CTBase
+import VerifiedGarbage.Proof.AesOcb.X86.Body
+import VerifiedGarbage.Proof.Ocb.Sum
+import VerifiedGarbage.Proof.AesOcb.X86.Nonce
+import VerifiedGarbage.Proof.AesOcb.X86.LNtz
+import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.AesOcb.X86.Pass
+meta import VerifiedGarbage.Proof.AesOcb.X86.RestTag
 meta import VerifiedGarbage.Proof.Ocb.State
+meta import VerifiedGarbage.Proof.AesOcb.X86.CTBase
+meta import VerifiedGarbage.Proof.AesOcb.X86.Body
+meta import VerifiedGarbage.Proof.Ocb.Sum
+meta import VerifiedGarbage.Proof.AesOcb.X86.Nonce
+meta import VerifiedGarbage.Proof.AesOcb.X86.LNtz
+meta import VerifiedGarbage.Proof.AesOcb.X86.Run
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-OCB on x86: the data and the tag in constant time

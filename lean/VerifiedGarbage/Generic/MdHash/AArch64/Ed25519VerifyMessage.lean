@@ -2,9 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Verified
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Impl.Mont.Mod
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! Whole-message Ed25519 verification follows every SHA-512 backend carried
 by MdHash. The signature and contract come from the reviewed Ed25519 API. -/
@@ -17,19 +22,16 @@ def artifacts (h : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
   match h.sha512 with
   | none => []
   | some v => [
-    { Spec.Ed25519.verifyApi with
-      name := Spec.Ed25519.verifyApi.name ++ v.suffix
-      target := AArch64.target
-      doc := Spec.Ed25519.verifyApi.doc (notes := ["Hashes R, the public key and the message with \
+    Spec.Ed25519.verifyApi.artifact AArch64.target {
+      suffix := v.suffix
+      notes := ["Hashes R, the public key and the message with \
         the selected SHA-512 backend, reduces the challenge modulo L, and checks the signature \
         equation. The 336-byte stack frame holds the digest, challenge, saved arguments and return address; \
-        the SHA-512 calls use another 16 bytes below it."])
+        the SHA-512 calls use another 16 bytes below it."]
       consts := Impl.Ed25519.AArch64.bConsts
       code := Impl.Ed25519.AArch64.VerifyMessage.code v.code v.suffix
-      contract := Spec.Ed25519.verifyContract (AArch64.abi.withConsts Impl.Ed25519.AArch64.bConsts) 352
       stack := 352
       verified := Proof.Ed25519.AArch64.VerifyMessage.verifyMessage_verified v
-      spSafe := Code.all_of_forall (fun _ => rfl) _
       features := v.features }]
 
 end VG.Generic.MdHash.AArch64.Ed25519VerifyMessage

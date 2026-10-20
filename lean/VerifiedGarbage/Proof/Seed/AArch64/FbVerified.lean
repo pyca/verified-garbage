@@ -1,31 +1,32 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.AArch64.Link
-meta import VerifiedGarbage.Proof.Seed.AArch64.Link
+import VerifiedGarbage.Proof.Seed.AArch64.Link
 import VerifiedGarbage.Proof.Modes.AArch64.Fb
-meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
-import VerifiedGarbage.Proof.Modes.AArch64.ViaV
-meta import VerifiedGarbage.Proof.Modes.AArch64.ViaV
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
-meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 public import VerifiedGarbage.Proof.Seed.FbScratch
-meta import VerifiedGarbage.Proof.Seed.FbScratch
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
+public import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
+public import VerifiedGarbage.Spec.Seed.Cfb
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Seed.AArch64.Link
+meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+meta import VerifiedGarbage.Proof.Seed.FbScratch
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
+meta import VerifiedGarbage.Spec.Seed.Cfb
+meta import VerifiedGarbage.Impl.StackScratch.AArch64
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-!
 # SEED-OFB and SEED-CFB128 on AArch64 meet their contracts

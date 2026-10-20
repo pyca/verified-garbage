@@ -1,15 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragOf
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragL
-import VerifiedGarbage.Proof.MlKem.KPke
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.X86_64.FragL
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
+import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!
 # ML-KEM-768 on x86-64: byte stores, copies, and the calls of `SampleNTT`

@@ -29,7 +29,7 @@
 //! memory the functions work in.
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64"),
+    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
     feature = "alloc"
 ))]
 
@@ -154,7 +154,7 @@ type SignFn<const N: usize> = unsafe extern "sysv64" fn(
     usize,
 ) -> u32;
 /// `vg_rsa_pss_<H>_mgf1_<H>_sign`'s signature, for `N`-byte hash values.
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
 type SignFn<const N: usize> = unsafe extern "C" fn(
     *mut u8,
     usize,
@@ -197,7 +197,7 @@ type VerifyFn<const N: usize> = unsafe extern "sysv64" fn(
     usize,
 ) -> u32;
 /// `vg_rsa_pss_<H>_mgf1_<H>_verify_precomputed`'s signature, for `N`-byte hash values.
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
 type VerifyFn<const N: usize> = unsafe extern "C" fn(
     *const u8,
     usize,
@@ -258,8 +258,14 @@ macro_rules! with_functions {
 
 /// The words of working space the functions need for an `n_len`-byte
 /// modulus (`VG.Spec.RsaPss.scratchWords`).
-fn scratch_words(n_len: usize) -> usize {
+pub(crate) fn scratch_words(n_len: usize) -> usize {
     crate::rsa::scratch_words(n_len) + 1024
+}
+
+/// The words of working space verification needs for an `n_len`-byte
+/// modulus (`VG.Spec.RsaPss.publicScratchWords`).
+pub(crate) fn public_scratch_words(n_len: usize) -> usize {
+    crate::rsa::public_scratch_words(n_len) + 1024
 }
 
 /// RSASSA-PSS-SIGN (RFC 8017 §8.1.1) of the hash value `digest` of the hash
@@ -301,8 +307,6 @@ fn sign_with(key: &PrivateKey, digest: &[u8], hash: Hash, salt: &[u8]) -> Result
         salt,
         &mut scratch
     ));
-    // The working space holds the private key, the encoding and its powers.
-    zeroize(&mut scratch);
     // `PrivateKey::from_crt` checked the key, so a refusal means the encoding
     // does not fit.
     match r {
@@ -332,7 +336,7 @@ pub fn verify(
         SaltLength::Len(l) => (l, 0),
         SaltLength::Any => (0, 1),
     };
-    let mut scratch = key.verify_scratch.take(scratch_words(k));
+    let mut scratch = key.verify_scratch.take(public_scratch_words(k), false);
     let r = with_functions!(hash, |fns| call_verify(
         fns.1,
         key,
@@ -342,7 +346,7 @@ pub fn verify(
         any,
         &mut scratch
     ));
-    // ScratchLease wipes the encoding before returning its buffer to the key.
+    // The encoding is public: ScratchLease returns the buffer to the key unwiped.
     r == 1
 }
 
@@ -408,13 +412,13 @@ fn call_verify<const N: usize>(
     scratch: &mut [u64],
 ) -> u32 {
     let digest: &[u8; N] = digest.try_into().unwrap();
-    assert!(signature.len() == key.n.len() && scratch.len() == scratch_words(key.n.len()));
+    assert!(signature.len() == key.n.len() && scratch.len() == public_scratch_words(key.n.len()));
     let pre = key.pre(scratch);
     // SAFETY: each pointer is valid for its length (`scratch` for writes,
     // `digest` for the hash function's values), and none overlaps another or
     // wraps around, as they are distinct Rust allocations; `PublicKey::new`
     // gives `64 ≤ n_len ≤ 1024` and `1 ≤ e_len ≤ 5 ≤ n_len`; `sig_len = n_len`
-    // and `scratch_len = 16 n_len + 1056`; and the CPU has the features of
+    // and `scratch_len = 8 ⌈n_len / 8⌉ + 1072`; and the CPU has the features of
     // the function `functions` chose. `pre` holds the verified precomputed
     // values for `key.n`, with their required length.
     unsafe {
@@ -440,8 +444,11 @@ fn call_verify<const N: usize>(
 /// its compression function (a variant of its streaming backend), `verify`
 /// and `sign` calling the selected public- and private-key operations
 /// (`crate::rsa::Backend`), with the CPU features each needs. The functions
-/// calling the x86-64 RSA backends (`verify_adx`, `adx`, `ifma`) are given for
-/// the variants that have them, and used on x86-64 only.
+/// calling the x86-64 RSA backends (`verify_adx`, `verify_ifma`, `adx`, `ifma`) are given for
+/// the variants that have them, and used on x86-64 only; the signature
+/// calling the private-key operation with ARMv7's `umaal` (`umaal`), on
+/// ARMv7 only (verification calls the baseline's public-key operation
+/// there).
 macro_rules! pss_hash {
     (
         $n:literal, $backend:ident {
@@ -451,8 +458,12 @@ macro_rules! pss_hash {
                     sign: $sign:path [$($sreq:path),*]
                     $(,
                         verify_adx: $verify_adx:path [$($vareq:path),*],
+                        verify_ifma: $verify_ifma:path [$($vireq:path),*],
                         adx: $adx:path [$($areq:path),*],
                         ifma: $ifma:path [$($ireq:path),*]
+                    )?
+                    $(,
+                        umaal: $umaal:path [$($ureq:path),*]
                     )? $(,)?
                 }
             ),* $(,)?
@@ -467,7 +478,20 @@ macro_rules! pss_hash {
             const _: &[$crate::cpu::Features] = &[$($vreq,)* $($sreq,)*];
             $(
                 #[cfg(target_arch = "x86_64")]
-                const _: &[$crate::cpu::Features] = &[$($vareq,)* $($areq,)* $($ireq,)*];
+                const _: &[$crate::cpu::Features] = &[$($vareq,)* $($vireq,)* $($areq,)* $($ireq,)*];
+            )?
+            $(
+                #[cfg(all(
+                    target_arch = "arm",
+                    any(
+                        target_os = "linux",
+                        target_os = "android",
+                        target_os = "freebsd",
+                        target_os = "netbsd",
+                        target_os = "openbsd"
+                    )
+                ))]
+                const _: &[$crate::cpu::Features] = &[$($ureq,)*];
             )?
         )*
 
@@ -487,13 +511,39 @@ macro_rules! pss_hash {
                                 #[cfg(target_arch = "x86_64")]
                                 $crate::rsa::Backend::Ifma => $ifma,
                             )?
+                            $(
+                                #[cfg(all(
+                                    target_arch = "arm",
+                                    any(
+                                        target_os = "linux",
+                                        target_os = "android",
+                                        target_os = "freebsd",
+                                        target_os = "netbsd",
+                                        target_os = "openbsd"
+                                    )
+                                ))]
+                                $crate::rsa::Backend::Umaal => $umaal,
+                            )?
                         },
                         match crt {
                             $crate::rsa::Backend::Baseline => $verify,
                             $(
                                 #[cfg(target_arch = "x86_64")]
-                                $crate::rsa::Backend::Adx | $crate::rsa::Backend::Ifma => $verify_adx,
+                                $crate::rsa::Backend::Adx => $verify_adx,
+                                #[cfg(target_arch = "x86_64")]
+                                $crate::rsa::Backend::Ifma => $verify_ifma,
                             )?
+                            #[cfg(all(
+                                target_arch = "arm",
+                                any(
+                                    target_os = "linux",
+                                    target_os = "android",
+                                    target_os = "freebsd",
+                                    target_os = "netbsd",
+                                    target_os = "openbsd"
+                                )
+                            ))]
+                            $crate::rsa::Backend::Umaal => $verify,
                         },
                     ),
                 )*
@@ -515,15 +565,28 @@ macro_rules! pss_hash {
                     let crt = $crate::rsa::Backend::select(f);
                     $(
                         $(#[$attr])*
-                        if $backend::select(f) == $backend::$variant {
+                        {
+                            let selected = $backend::select(f) == $backend::$variant;
                             let v: Features = match crt {
                                 $crate::rsa::Backend::Baseline => Features::all(&[$($vreq),*]),
                                 $(
                                     #[cfg(target_arch = "x86_64")]
-                                    $crate::rsa::Backend::Adx | $crate::rsa::Backend::Ifma => Features::all(&[$($vareq),*]),
+                                    $crate::rsa::Backend::Adx => Features::all(&[$($vareq),*]),
+                                    #[cfg(target_arch = "x86_64")]
+                                    $crate::rsa::Backend::Ifma => Features::all(&[$($vireq),*]),
                                 )?
+                                #[cfg(all(
+                                    target_arch = "arm",
+                                    any(
+                                        target_os = "linux",
+                                        target_os = "android",
+                                        target_os = "freebsd",
+                                        target_os = "netbsd",
+                                        target_os = "openbsd"
+                                    )
+                                ))]
+                                $crate::rsa::Backend::Umaal => Features::all(&[$($vreq),*]),
                             };
-                            assert!(f.contains(v));
                             let s: Features = match crt {
                                 $crate::rsa::Backend::Baseline => Features::all(&[$($sreq),*]),
                                 $(
@@ -532,8 +595,24 @@ macro_rules! pss_hash {
                                     #[cfg(target_arch = "x86_64")]
                                     $crate::rsa::Backend::Ifma => Features::all(&[$($ireq),*]),
                                 )?
+                                $(
+                                    #[cfg(all(
+                                        target_arch = "arm",
+                                        any(
+                                            target_os = "linux",
+                                            target_os = "android",
+                                            target_os = "freebsd",
+                                            target_os = "netbsd",
+                                            target_os = "openbsd"
+                                        )
+                                    ))]
+                                    $crate::rsa::Backend::Umaal => Features::all(&[$($ureq),*]),
+                                )?
                             };
-                            assert!(f.contains(s));
+                            // An assertion, not an `if`: on ARMv7 every hash has
+                            // one implementation, which every set of features
+                            // selects.
+                            assert!(!selected || (f.contains(v) && f.contains(s)));
                         }
                     )*
                 }

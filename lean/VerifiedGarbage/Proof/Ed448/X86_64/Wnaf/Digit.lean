@@ -1,14 +1,21 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.X86_64.Wnaf.Recode
-public import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
-public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.DirectKey
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.X448.X86_64.Basic
+public import VerifiedGarbage.Impl.Ed448.Wnaf
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Spec.Ed448
 
 /-! The bounded word arithmetic implementing one public recoding step. -/
 

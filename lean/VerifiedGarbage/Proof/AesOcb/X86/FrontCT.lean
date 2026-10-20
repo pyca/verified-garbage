@@ -1,11 +1,23 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.X86.Callee
+public import VerifiedGarbage.Proof.AesOcb.X86.Entry
 
-public import VerifiedGarbage.Proof.AesOcb.X86.CTBase
+import VerifiedGarbage.Proof.AesOcb.X86.CTBase
+import VerifiedGarbage.Proof.AesOcb.X86.Nonce
+import VerifiedGarbage.Proof.AesOcb.X86.NonceBlock
+import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.AesGcm.X86.Top
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.AesOcb.X86.Callee
+meta import VerifiedGarbage.Proof.AesOcb.X86.Entry
 meta import VerifiedGarbage.Proof.AesOcb.X86.CTBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.AesOcb.X86.Nonce
+meta import VerifiedGarbage.Proof.AesOcb.X86.NonceBlock
+meta import VerifiedGarbage.Proof.AesOcb.X86.Run
+meta import VerifiedGarbage.Proof.AesGcm.X86.Top
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-OCB on x86: the entry, the setup and `Offset_0` in constant time

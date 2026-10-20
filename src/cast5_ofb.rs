@@ -7,8 +7,9 @@
 //! which it replaces with the last output block, in constant time: its
 //! timing depends on none of the key, the chaining value and the data. It is
 //! the modes' generic OFB over CAST5's table-scanning block code, one block
-//! at a time: on x86 and x86-64 over the block code itself, on ARMv7 calling the
-//! verified `vg_cast5_ecb_encrypt` for each block. This module holds the subkeys and handles a partial last block
+//! at a time: on x86, x86-64 and AArch64 over the block code itself, on ARMv7
+//! calling the verified `vg_cast5_ecb_encrypt` for each block. This module
+//! holds the subkeys and handles a partial last block
 //! (§6.4, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block is the next output
 //! block, whose first bytes it XORs into the rest of the input.
 
@@ -21,8 +22,10 @@
 
 use crate::arch::cast5_ofb::vg_cast5_ofb;
 use crate::cast5_ecb::Cast5Ecb;
-pub use crate::cast5_ecb::Error;
 use crate::zeroize::zeroize;
+
+/// The key does not contain 5 to 16 bytes.
+pub use crate::error::InvalidKeyLength;
 
 /// An expanded CAST5 key for OFB, whose encryption and decryption are the
 /// same operation.
@@ -32,9 +35,9 @@ pub struct Cast5Ofb {
 
 impl Cast5Ofb {
     /// Expands a key of 5 to 16 bytes.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
-            key: Cast5Ecb::new(key)?,
+            key: Cast5Ecb::new(key).map_err(|_| InvalidKeyLength)?,
         })
     }
 

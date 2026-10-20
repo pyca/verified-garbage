@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.AesOfb.Arm.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-OFB (NIST SP 800-38A §6.4) on ARMv7
@@ -21,14 +21,11 @@ namespace VG.Artifacts.AesOfb.Arm
 open VG.Proof.AesOfb.Arm
 
 def artifacts : List Artifact := [
-  { Spec.Ofb.aesApi with
-    target := Arm.target
-    doc := Spec.Ofb.aesApi.doc (notes := [
-      "This implementation enciphers one block at a time with `vg_aes_encrypt_blocks`."])
+  Spec.Ofb.aesApi.artifact Arm.target {
+    notes := [
+      "This implementation enciphers one block at a time with `vg_aes_encrypt_blocks`."]
     code := Impl.AesOfb.Arm.crypt
-    contract := Spec.Ofb.aesContract Arm.abi 8
     stack := 8
-    verified := crypt_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := crypt_verified }]
 
 end VG.Artifacts.AesOfb.Arm

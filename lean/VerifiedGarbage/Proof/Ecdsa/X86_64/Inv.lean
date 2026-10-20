@@ -1,15 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
 
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
+import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # ECDSA on x86-64: `Z^(p-2)` and `k^(n-2)`

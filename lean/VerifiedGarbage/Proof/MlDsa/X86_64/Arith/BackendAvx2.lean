@@ -1,20 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomeryInv
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Verified
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNtt
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMul
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YAddSub
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YHint
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YUse
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Avx2Lit
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNtt
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YAddSub
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomery
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomeryInv
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YHint
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YNorm
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YUse
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Verified
 
 /-!
 # ML-DSA on x86-64: the polynomial arithmetic with AVX2, as an `ArithImpl`

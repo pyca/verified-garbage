@@ -1,20 +1,15 @@
 module
 
-import VerifiedGarbage.Impl.CmacTripleDes.X86
-public import VerifiedGarbage.Spec.Cmac.TripleDesContract
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Spec.Cmac
 
 /-!
 # TDEA-CMAC on x86: the contracts the proofs are written against
 
-Untrusted: everything here is checked by Lean. The artifacts' contracts are
-the shared ones of `Spec/Cmac/TripleDesContract.lean`, which imply these
-(`Implies.lean`). The arguments are on the stack, from `[esp + 4]` (cdecl);
+Untrusted: everything here is checked by Lean. These are the contracts of
+the code the streaming functions run inline
+(`Proof/CmacTripleDes/Stream/X86/Inline.lean`). The arguments are on the stack, from `[esp + 4]` (cdecl);
 the functions call nothing and use no stack.
 -/
 

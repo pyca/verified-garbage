@@ -1,13 +1,8 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.Square
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedcStep
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedcStep
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareTiledRow
 
 /-! Reduction rows are safe for every inverse; cancellation requires a valid one. -/

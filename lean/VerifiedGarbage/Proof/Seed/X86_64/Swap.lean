@@ -1,12 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.X86_64.Steps
 public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
+public import VerifiedGarbage.Proof.Seed.X86_64.G16
+public import VerifiedGarbage.Proof.Seed.X86_64.Lanes
 import VerifiedGarbage.Proof.Framework.ReadHalves
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Lanes and slots; exchanging the halves

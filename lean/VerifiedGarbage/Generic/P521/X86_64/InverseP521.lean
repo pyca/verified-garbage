@@ -1,16 +1,12 @@
 module
 
-import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseVerified
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseLit
-import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
-import VerifiedGarbage.Spec.EcKey.Generic
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseLit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # P-521's inversions modulo `p` and `n` on x86-64
@@ -41,36 +37,18 @@ def note (adx : Bool) (mod : String) : String :=
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P521.curve) : List Artifact :=
   ([false, true].map fun adx =>
-    { C.invPApi with
-      name := C.invPApi.name ++ (if adx then "_adx" else "")
-      target := X86_64.target
-      doc := C.invPApi.doc (notes := [note adx "p"])
+    C.invPApi.artifact X86_64.target {
+      suffix := (if adx then "_adx" else "")
+      notes := [note adx "p"]
       code := (cfg adx).invFn (cfg adx).pPowI
-      contract := C.invPContract X86_64.abi
-      ofSig := by exact (⟨_, _, _, by
-        unfold Spec.Weierstrass.Inverse.Curve.invPContract Spec.Weierstrass.Inverse.Curve.invContract
-        rfl⟩)
       verified := p_verified h.inv adx
-      spSafe := by
-        cases adx
-        · exact Code.all_of_allInstrs (show invP.allInstrs _ = true by lit_decide)
-        · exact Code.all_of_allInstrs (show invPAdx.allInstrs _ = true by lit_decide)
       features := if adx then ["bmi2", "adx"] else [] }) ++
   ([false].map fun adx =>
-    { C.invNApi with
-      name := C.invNApi.name ++ (if adx then "_adx" else "")
-      target := X86_64.target
-      doc := C.invNApi.doc (notes := [note adx "n"])
+    C.invNApi.artifact X86_64.target {
+      suffix := (if adx then "_adx" else "")
+      notes := [note adx "n"]
       code := (cfg adx).invFn (cfg adx).nPowI
-      contract := C.invNContract X86_64.abi
-      ofSig := by exact (⟨_, _, _, by
-        unfold Spec.Weierstrass.Inverse.Curve.invNContract Spec.Weierstrass.Inverse.Curve.invContract
-        rfl⟩)
       verified := n_verified h.inv adx
-      spSafe := by
-        cases adx
-        · exact Code.all_of_allInstrs (show invN.allInstrs _ = true by lit_decide)
-        · exact Code.all_of_allInstrs (show invNAdx.allInstrs _ = true by lit_decide)
       features := [] })
 
 end VG.Generic.P521.X86_64.InverseP521

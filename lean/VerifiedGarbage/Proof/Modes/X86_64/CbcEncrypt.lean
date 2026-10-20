@@ -1,12 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
+public import VerifiedGarbage.Proof.Modes.Ctr
+public import VerifiedGarbage.Proof.Modes.X86_64.Setup
+public import VerifiedGarbage.TCB.X86_64.Target
 
-public import VerifiedGarbage.Proof.Modes.X86_64.CbcEncLoop
+import VerifiedGarbage.Proof.Modes.X86_64.CbcEncLoop
 import VerifiedGarbage.Proof.Modes.X86_64.Ctr
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
+import VerifiedGarbage.Proof.Modes.X86_64.Words
+import VerifiedGarbage.Proof.Modes.X86_64.Steps
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # CBC encryption on x86-64, for any core: the whole function
@@ -35,11 +40,12 @@ theorem cbcEncrypt_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.
     (hwD : (⟨D, 8 * c.bw * n⟩ : Region) ∈ s₀.wr) (sPS : Region.Disjoint ⟨P, 8 * c.bw⟩ ⟨B, 8 * c.ctrSlots⟩)
     (sDS : Region.Disjoint ⟨D, 8 * c.bw * n⟩ ⟨B, 8 * c.ctrSlots⟩)
     (sPD : Region.Disjoint ⟨P, 8 * c.bw⟩ ⟨D, 8 * c.bw * n⟩) (fitD : D.toNat + 8 * c.bw * n ≤ 2 ^ 64)
-    (hk : cs.KeyArgs s₀ [⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] k) :
+    (hk : cs.KeyArgs s₀ [⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] k) (hstk : StkOk c s₀ := by exact Or.inl rfl) :
     WP isa (c.cbcEncrypt r) s₀ fun s' => (∀ x ∈ calleeSaved, s'.gpr x = s₀.gpr x) ∧
       blocksOf (8 * c.bw) s'.mem D n =
         Spec.Cbc.encrypt (cs.cipher k) (bytesAt s₀.mem P (8 * c.bw)) (blocksOf (8 * c.bw) s₀.mem D n) ∧
-      Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] s₀.mem s'.mem ∧ s'.rd = s₀.rd ∧ s'.wr = s₀.wr := by
+      Frame ([⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] ++ stkList c (s₀.gpr .rsp)) s₀.mem s'.mem ∧
+      s'.rd = s₀.rd ∧ s'.wr = s₀.wr := by
   have hL := cs.layout
   have hsm := hL.small
   have hroom := hL.room
@@ -131,6 +137,7 @@ theorem cbcEncrypt_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.
   -- The key.
   refine WP.seq (WP.mono (cs.prepare_wp b₃ ⟨by rw [wr₃']; exact hs.wr, hs.fit⟩ List.mem_cons_self hk₃)
     fun s₄ ⟨ready₄, b₄, rsp₄, dr₄, lr₄, f₄, rd₄, wr₄⟩ => ?_)
+  rw [show s₃.gpr .rsp = s₀.gpr .rsp from g₃' _ (by decide) (by decide) (Ne.symm dsp) (Ne.symm lsp)] at f₄
   have rd₄' : s₄.rd = s₀.rd := by rw [rd₄, rd₃']
   have wr₄' : s₄.wr = s₀.wr := by rw [wr₄, wr₃']
   -- Any blocks?
@@ -151,16 +158,17 @@ theorem cbcEncrypt_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.
   have wr₅' : s₅.wr = s₀.wr := by rw [wr₅, wr₄']
   let iv := bytesAt s₀.mem P (8 * c.bw)
   have hiv : iv.length = 8 * c.bw := by simp [iv, bytesAt]
-  have hp : GPre c s₅ B D n (8 * c.bw) := ⟨⟨by rw [wr₅']; exact hs.wr, hs.fit⟩, by rw [wr₅']; exact hwD, sDS, fitD⟩
-  have dCore : ∀ x ∈ [coreRegion c B], Region.Disjoint ⟨D, 8 * c.bw * n⟩ x := fun x hx => by
-    simp only [List.mem_singleton] at hx; subst hx; exact sDS.sub_right (Region.sub_prefix (by
-      simp only [Core.ctrSlots]; omega))
+  have hp : GPre c s₅ B D n (8 * c.bw) :=
+    ⟨⟨by rw [wr₅']; exact hs.wr, hs.fit⟩, by rw [wr₅']; exact hwD, sDS, fitD, hstk.congr rsp₅ wr₅'⟩
+  have dCore : ∀ x ∈ coreFrame c B (s₀.gpr .rsp), Region.Disjoint ⟨D, 8 * c.bw * n⟩ x :=
+    hstk.coreFrame_disj (sDS.sub_right (Region.sub_prefix (by simp only [Core.ctrSlots]; omega)))
+      ⟨_, hwD, fun _ h => h⟩
   -- The blocks.
   refine WP.seq (WP.mono (M := isa) (Q := EDone cs s₅ s₀.mem B D n k iv)
     (WP.ite (decide (n = 0)) (by simp [X86_64.eval, hz₅]) (fun h0 => ?_) (fun h0 => ?_)) fun s₆ d₆ => ?_)
   · have hn0 : n = 0 := by simpa using h0
     exact WP.block_nil ⟨b₅, rfl, fun _ _ => rfl, fun i hi' => by rw [hn0, Nat.mul_zero] at hi'; omega,
-      Frame.refl _ _, rfl, rfl⟩
+      Frame.refl _ _, rfl, rfl, fun h => absurd hn0 h⟩
   · have hn0 : n ≠ 0 := by simpa using h0
     refine cbcEncLoop_wp cs hiv hp ⟨b₅, rfl, cs.ready_frame ready₄ (by rw [mem₅]; exact Frame.refl [] _)
         (fun _ h => by simp at h) ⟨fun _ h => by simp at h, rd₅, wr₅, runBlock_syms e₅⟩ (fun r _ => by rw [g₅]), fun _ _ => rfl, ?_, ?_, by omega, fun q hq r hr => ?_,
@@ -184,9 +192,9 @@ theorem cbcEncrypt_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.
     have hsaved : ∀ i < 6, s₇.gpr (Core.savedRegs.getD i .rbx) = s₀.gpr (Core.savedRegs.getD i .rbx) :=
       fun i hi' => by
         rw [v₇ i hi', d₆.saved i hi', mem₅, ← sv₁ i hi']
-        refine (f₄.readW (Region.contains_self _ _) (fun x hx => by
-          simp only [List.mem_singleton] at hx; subst hx
-          exact VG.Offset.disjoint_base B (by omega) (by omega)) (by decide)).trans ?_
+        refine (f₄.readW (Region.contains_self _ _) (hstk.coreFrame_disj
+          (VG.Offset.disjoint_base B (by omega) (by omega)) ⟨_, hs.wr, VG.Offset.sub_base B
+            (show 8 * (c.slots + i) + 8 ≤ 8 * c.ctrSlots by simp only [Core.ctrSlots]; omega)⟩) (by decide)).trans ?_
         rw [m₃]
         exact f₂.readW (Region.contains_self _ _) (fun x hx => by
           simp only [List.mem_singleton] at hx; subst hx
@@ -202,10 +210,10 @@ theorem cbcEncrypt_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.
     · exact hsaved 5 (by decide)
   · rw [m₇]; exact cbcEnc_of_dinv (cs.cipher_len k) d₆.data
   · rw [m₇]
-    refine (f₃.trans (f₄.sub fun x hx => ⟨⟨B, 8 * c.ctrSlots⟩, List.mem_cons_self, by
-        simp only [List.mem_singleton] at hx; subst hx; exact Region.sub_prefix (by
-          simp only [Core.ctrSlots]; omega)⟩)).trans ?_
-    rw [← mem₅]
+    refine ((f₃.mono fun x hx => List.mem_append_left _ hx).trans
+      (f₄.sub (coreFrame_sub (rs := [⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩]) ⟨_, List.mem_cons_self,
+        Region.sub_prefix (by simp only [Core.ctrSlots]; omega)⟩))).trans ?_
+    rw [← mem₅, ← rsp₅]
     exact d₆.frame
 
 end VG.Proof.Modes.X86_64

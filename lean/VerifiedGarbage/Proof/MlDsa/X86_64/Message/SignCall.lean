@@ -2,14 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignPre
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Rel
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Top
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-DSA on x86-64, `sign_message`: the call of the signing function on `μ`

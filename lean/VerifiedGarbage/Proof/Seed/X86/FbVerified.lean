@@ -1,19 +1,37 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
-public import VerifiedGarbage.Proof.Seed.X86.CbcVerified
-meta import VerifiedGarbage.Proof.Seed.X86.CbcVerified
 public import VerifiedGarbage.Proof.Seed.FbScratch
+public import VerifiedGarbage.Proof.Seed.X86.ModeCore
+import VerifiedGarbage.Proof.Modes.X86.Modes
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Spec.Seed.Cfb
+public import VerifiedGarbage.Proof.Modes.X86.Seq
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Seed.X86.FbLit
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Seed.FbScratch
-public import VerifiedGarbage.Proof.Seed.X86.FbLit
+meta import VerifiedGarbage.Proof.Seed.X86.ModeCore
+meta import VerifiedGarbage.Proof.Modes.X86.Modes
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Impl.StackScratch.X86
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+meta import VerifiedGarbage.Spec.Seed.Cfb
+meta import VerifiedGarbage.Proof.Modes.X86.Seq
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Seed.X86.FbLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Seed.X86.Lanes
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Seed.X86.Lanes
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # SEED-OFB and SEED-CFB128 on x86 (32-bit) meet their contracts
@@ -29,6 +47,19 @@ their working space on the stack, zeroed on return.
 -/
 
 @[expose] public section
+
+namespace VG.Proof.Seed.X86
+
+open VG VG.X86 VG.Impl.Seed.X86
+
+theorem disjoint_empty (r : Region) (a : Addr) : Region.Disjoint ⟨a, 0⟩ r := fun _ h => by
+  simp only [Region.Contains] at h; omega
+
+theorem scr_eq (s : State) (d : Spec.Seed.Direction) :
+    Modes.X86.scrR s (dirCore d) = ⟨(arg s 4).setWidth 64, 8 * 108⟩ := by
+  simp [Modes.X86.scrR, dirCore, slots_eq]
+
+end VG.Proof.Seed.X86
 
 namespace VG.Proof.Seed.X86.Fb
 
@@ -75,10 +106,10 @@ def fbX86 (post : State → State → Prop) : Contract X86.isa where
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 5, arg s₁ i = arg s₂ i
 
 /-- `fbX86`'s precondition gives the modes'. -/
-theorem seqPre_of {post : State → State → Prop} {M : Mode} (hstep : M.step = 16) {s : State}
-    (h : (fbX86 post).pre s) : SeqPre (dirCore .encrypt) M s := by
+theorem seqPre_of {post : State → State → Prop} {M : Mode} (d : Spec.Seed.Direction) (hstep : M.step = 16)
+    {s : State} (h : (fbX86 post).pre s) : SeqPre (dirCore d) M s := by
   obtain ⟨hrd, hwr, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, fK, fV, fD, fS, fE⟩ := h
-  have hL := (dirCoreSpec .encrypt).layout
+  have hL := (dirCoreSpec d).layout
   refine ⟨(by rw [hrd]; simp [dirCore]), fE, ⟨(by rw [hwr]; simp [dirCore, slots_eq]),
       (by simp only [dirCore, slots_eq]; omega)⟩, (by rw [hwr]; simp [dirCore]),
     (fun _ => by rw [hwr]; simp [dirCore]), (by simp only [dirCore]; omega), (by rw [hwr, hstep]; simp [dirCore]),
@@ -94,8 +125,8 @@ theorem seqPre_of {post : State → State → Prop} {M : Mode} (hstep : M.step =
   · rw [hstep]; exact dRD
   · exact dRV
 
-theorem keyArgs_of {post : State → State → Prop} {s : State} (h : (fbX86 post).pre s) :
-    KeyArgs s [Modes.X86.scrR s (dirCore .encrypt)] (Spec.Seed.scheduleAt s.mem ((arg s 0).setWidth 64)) := by
+theorem keyArgs_of {post : State → State → Prop} (d : Spec.Seed.Direction) {s : State} (h : (fbX86 post).pre s) :
+    KeyArgs s [Modes.X86.scrR s (dirCore d)] (Spec.Seed.scheduleAt s.mem ((arg s 0).setWidth 64)) := by
   obtain ⟨hrd, -, dKS, -, -, -, -, -, dAS, -, -, -, fK, -, -, -, -⟩ := h
   refine ⟨arg s 0, ⟨⟨argAddr s 0, 20⟩, by rw [hrd]; simp, ?_⟩, rfl, rfl, by rw [hrd]; simp, fK, fun r hr => ?_,
     fun r hr => ?_⟩
@@ -107,17 +138,17 @@ theorem keyArgs_of {post : State → State → Prop} {s : State} (h : (fbX86 pos
 
 theorem dirCore_ka (d : Spec.Seed.Direction) : (dirCore d).ka = 1 := rfl
 
-theorem data_eq (m : Mem) (s : State) :
-    Proof.Modes.chunksAt (4 * (dirCore .encrypt).bw) m ((arg s 2).setWidth 64) (arg s 3).toNat = dataAt m s := rfl
-theorem iv_eq (m : Mem) (s : State) :
-    Spec.Aes.bytesAt m ((arg s 1).setWidth 64) (4 * (dirCore .encrypt).bw) = ivAt m s := rfl
+theorem data_eq (d : Spec.Seed.Direction) (m : Mem) (s : State) :
+    Proof.Modes.chunksAt (4 * (dirCore d).bw) m ((arg s 2).setWidth 64) (arg s 3).toNat = dataAt m s := rfl
+theorem iv_eq (d : Spec.Seed.Direction) (m : Mem) (s : State) :
+    Spec.Aes.bytesAt m ((arg s 1).setWidth 64) (4 * (dirCore d).bw) = ivAt m s := rfl
 attribute [local irreducible] Spec.Seed.cipher in
 theorem cipher_eq (s : State) :
     (dirCoreSpec .encrypt).cipher (Spec.Seed.scheduleAt s.mem ((arg s 0).setWidth 64)) = ciph s := rfl
 
 theorem ofb_wp_x86 {s₀ : State} (hp : (fbX86 ofbPost).pre s₀) :
     WP isa ofb s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 ofbPost).post s₀ s' :=
-  WP.mono (ofb_wp (dirCoreSpec .encrypt) (seqPre_of rfl hp) (keyArgs_of hp))
+  WP.mono (ofb_wp (dirCoreSpec .encrypt) (seqPre_of .encrypt rfl hp) (keyArgs_of .encrypt hp))
     fun _ ⟨h1, h2, h3⟩ => by
       simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp, Proof.Modes.X86.P,
         Proof.Modes.X86.N, dirCore_ka, Nat.reduceAdd, data_eq, iv_eq, cipher_eq] at h2 h3
@@ -125,7 +156,7 @@ theorem ofb_wp_x86 {s₀ : State} (hp : (fbX86 ofbPost).pre s₀) :
 
 theorem cfbEncrypt_wp {s₀ : State} (hp : (fbX86 cfbEncPost).pre s₀) :
     WP isa cfbEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 cfbEncPost).post s₀ s' :=
-  WP.mono (cfbEnc_wp (dirCoreSpec .encrypt) (seqPre_of rfl hp) (keyArgs_of hp))
+  WP.mono (cfbEnc_wp (dirCoreSpec .encrypt) (seqPre_of .encrypt rfl hp) (keyArgs_of .encrypt hp))
     fun _ ⟨h1, h2, h3⟩ => by
       simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp, Proof.Modes.X86.P,
         Proof.Modes.X86.N, dirCore_ka, Nat.reduceAdd, data_eq, iv_eq, cipher_eq] at h2 h3
@@ -133,7 +164,7 @@ theorem cfbEncrypt_wp {s₀ : State} (hp : (fbX86 cfbEncPost).pre s₀) :
 
 theorem cfbDecrypt_wp {s₀ : State} (hp : (fbX86 cfbDecPost).pre s₀) :
     WP isa cfbDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 cfbDecPost).post s₀ s' :=
-  WP.mono (cfbDec_wp (dirCoreSpec .encrypt) (seqPre_of rfl hp) (keyArgs_of hp))
+  WP.mono (cfbDec_wp (dirCoreSpec .encrypt) (seqPre_of .encrypt rfl hp) (keyArgs_of .encrypt hp))
     fun _ ⟨h1, h2, h3⟩ => by
       simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp, Proof.Modes.X86.P,
         Proof.Modes.X86.N, dirCore_ka, Nat.reduceAdd, data_eq, iv_eq, cipher_eq] at h2 h3

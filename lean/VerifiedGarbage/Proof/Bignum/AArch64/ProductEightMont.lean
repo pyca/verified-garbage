@@ -1,13 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuardCT
-meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuardCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuardCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCallMont
+public import VerifiedGarbage.Impl.Bignum.AArch64.ProductDispatch
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuard
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuardCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCallMont
+meta import VerifiedGarbage.Impl.Bignum.AArch64.ProductDispatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuard
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64

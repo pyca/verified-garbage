@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.FbVerified
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.TripleDes.X86_64.FbLit
 
 /-! # Triple DES-CFB8 artifacts on baseline x86-64 -/
 
@@ -16,21 +17,15 @@ def note : String :=
   space once per call. The mode is the generic CFB8 of `Impl/Modes/X86_64/`."
 
 def artifacts : List Artifact := [
-  { Spec.TripleDes.cfb8EncryptApi with
-    target := X86_64.target
-    doc := Spec.TripleDes.cfb8EncryptApi.doc (notes := [note])
+  Spec.TripleDes.cfb8EncryptApi.artifact X86_64.target {
+    notes := [note]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 976 .r8 121 Impl.TripleDes.X86_64.cfb8Encrypt
-    contract := Spec.TripleDes.cfb8EncryptContract X86_64.abi 984
     stack := 984
-    verified := Proof.TripleDes.X86_64.cfb8Encrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.TripleDes.cfb8DecryptApi with
-    target := X86_64.target
-    doc := Spec.TripleDes.cfb8DecryptApi.doc (notes := [note])
+    verified := Proof.TripleDes.X86_64.cfb8Encrypt_framed },
+  Spec.TripleDes.cfb8DecryptApi.artifact X86_64.target {
+    notes := [note]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 976 .r8 121 Impl.TripleDes.X86_64.cfb8Decrypt
-    contract := Spec.TripleDes.cfb8DecryptContract X86_64.abi 984
     stack := 984
-    verified := Proof.TripleDes.X86_64.cfb8Decrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.TripleDes.X86_64.cfb8Decrypt_framed }]
 
 end VG.Artifacts.TripleDesCfb8.X86_64

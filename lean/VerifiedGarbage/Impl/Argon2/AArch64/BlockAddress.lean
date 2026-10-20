@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! Lane-major matrix addressing. The matrix base is in `x4`, the lane
 in `x8`, the column in `x3`, and the lane length in `x20`. The resulting

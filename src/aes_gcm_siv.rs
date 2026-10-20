@@ -32,7 +32,10 @@ use crate::arch::aes::vg_aes_expand_key_aes;
 use crate::arch::aes::vg_aes_expand_key_aesni;
 use crate::arch::aes_gcm_siv::{vg_aes_gcm_siv_open, vg_aes_gcm_siv_seal};
 #[cfg(target_arch = "aarch64")]
-use crate::arch::aes_gcm_siv::{vg_aes_gcm_siv_open_aes, vg_aes_gcm_siv_seal_aes};
+use crate::arch::aes_gcm_siv::{
+    vg_aes_gcm_siv_open_aes, vg_aes_gcm_siv_open_aes_sha3, vg_aes_gcm_siv_seal_aes,
+    vg_aes_gcm_siv_seal_aes_sha3,
+};
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::aes_gcm_siv::{
     vg_aes_gcm_siv_open_aesni, vg_aes_gcm_siv_open_aesni_pclmul, vg_aes_gcm_siv_open_pclmul,
@@ -66,6 +69,15 @@ pub enum Error {
     /// The tag does not match: the ciphertext, the additional data or the
     /// nonce is not what was authenticated under this key.
     TagMismatch,
+}
+
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid AES-GCM-SIV key length",
+        InvalidTextLength => "AES-GCM-SIV text is too long",
+        InvalidAadLength => "AES-GCM-SIV additional data is too long",
+        TagMismatch => "AES-GCM-SIV tag does not match",
+    }
 }
 
 /// An AES-GCM-SIV key: the AES key schedule of the key-generating key.
@@ -116,7 +128,7 @@ impl AesGcmSiv {
             vaes: [vg_aes_expand_key_aesni, vg_aes_expand_key, vg_aes_expand_key_aesni,
                 vg_aes_expand_key_aesni, vg_aes_expand_key_aesni, vg_aes_expand_key_aesni],
             avx: [vg_aes_expand_key_aesni],
-            aarch64: [vg_aes_expand_key_aes]);
+            aarch64: [vg_aes_expand_key_aes, vg_aes_expand_key_aes]);
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16
         // or 32, and `k.schedule` for reads and writes of 240 bytes. They are
         // distinct objects, so they do not overlap, nor do they overlap the
@@ -145,7 +157,7 @@ impl AesGcmSiv {
                 vg_aes_gcm_siv_seal_aesni_vpclmul, vg_aes_gcm_siv_seal_vaes_vpclmul,
                 vg_aes_gcm_siv_seal_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_siv_seal_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_siv_seal_aes]);
+            aarch64: [vg_aes_gcm_siv_seal_aes, vg_aes_gcm_siv_seal_aes_sha3]);
         let mut tag = [0u8; 16];
         // SAFETY: `self.schedule` is the key schedule `vg_aes_expand_key`
         // wrote for `self.rounds` (10 or 14) rounds, valid for reads of 240
@@ -189,7 +201,7 @@ impl AesGcmSiv {
                 vg_aes_gcm_siv_open_aesni_vpclmul, vg_aes_gcm_siv_open_vaes_vpclmul,
                 vg_aes_gcm_siv_open_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_siv_open_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_siv_open_aes]);
+            aarch64: [vg_aes_gcm_siv_open_aes, vg_aes_gcm_siv_open_aes_sha3]);
         // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
         // valid for reads of 16 bytes, which `data`, a unique borrow, does not
         // overlap.
@@ -221,7 +233,8 @@ mod tests {
     use crate::aes_gcm::{Backend, instance};
     #[cfg(target_arch = "aarch64")]
     use crate::arch::aes_gcm_siv::{
-        VG_AES_GCM_SIV_OPEN_AES_FEATURES, VG_AES_GCM_SIV_SEAL_AES_FEATURES,
+        VG_AES_GCM_SIV_OPEN_AES_FEATURES, VG_AES_GCM_SIV_OPEN_AES_SHA3_FEATURES,
+        VG_AES_GCM_SIV_SEAL_AES_FEATURES, VG_AES_GCM_SIV_SEAL_AES_SHA3_FEATURES,
     };
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     use crate::arch::aes_gcm_siv::{
@@ -254,14 +267,14 @@ mod tests {
                     VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_FEATURES, VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_FEATURES,
                     VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES],
                 avx: [VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES],
-                aarch64: [VG_AES_GCM_SIV_SEAL_AES_FEATURES]);
+                aarch64: [VG_AES_GCM_SIV_SEAL_AES_FEATURES, VG_AES_GCM_SIV_SEAL_AES_SHA3_FEATURES]);
             let open = instance!(b, NONE,
                 x86_64: [VG_AES_GCM_SIV_OPEN_AESNI_FEATURES, VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES, VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES],
                 vaes: [VG_AES_GCM_SIV_OPEN_VAES_FEATURES, VG_AES_GCM_SIV_OPEN_VPCLMUL_FEATURES, VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_FEATURES,
                     VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_FEATURES, VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_FEATURES,
                     VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES],
                 avx: [VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES],
-                aarch64: [VG_AES_GCM_SIV_OPEN_AES_FEATURES]);
+                aarch64: [VG_AES_GCM_SIV_OPEN_AES_FEATURES, VG_AES_GCM_SIV_OPEN_AES_SHA3_FEATURES]);
             assert!(need.contains(seal) && need.contains(open), "{b:?}");
         }
     }

@@ -1,13 +1,12 @@
 module
 
 import VerifiedGarbage.Proof.Seed.Memory
-public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.Seed.Cbc
-public import VerifiedGarbage.Spec.Aes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # SEED's blocks and schedule as the modes see them

@@ -1,23 +1,26 @@
 module
 
 public import VerifiedGarbage.Spec.Camellia.Cbc
-public import VerifiedGarbage.Proof.Camellia.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.Scratch
+import VerifiedGarbage.Proof.Camellia.Scratch
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Camellia-CBC with its working space as an argument
 
-`cbcEncScratchContract n` and `cbcDecScratchContract n` are
-`cbcEncryptContract` and `cbcDecryptContract` with a `scratch` buffer of
-`n` words appended, whatever it holds (each target lays out its own), for
-the frame that keeps it on the stack (`Verified.stackScratchWiped`), which
-needs `cbcEncryptPost` and `cbcDecryptPost` to read the memory on return
-only within the function's buffers (`cbcEncPostOut_local`,
-`cbcDecPostOut_local`), and the precondition and postconditions to read the
-memory on entry only within them too (`cbcPre_local`, `cbcEncryptPost_local`, …).
+`cbcEncChainedScratchContract n` and `cbcDecChainedScratchContract n` are
+`cbcEncryptChainedContract` and `cbcDecryptChainedContract` with a
+`scratch` buffer of `n` words appended, whatever it holds (each target lays
+out its own), for the frame that keeps it on the stack
+(`Verified.stackScratchWiped`), which needs each postcondition to read the
+memory on return only within the function's buffers
+(`cbcEncChainedPostOut_local`, …), and the memory on entry only within them
+too (`cbcEncChainedPost_local`, …). As CFB's (`FbScratch.lean`), whose
+signature has the same shape.
 -/
 
 @[expose] public section
@@ -26,31 +29,51 @@ namespace VG.Proof.Camellia
 
 open VG.Spec.Camellia
 
-/-- `vg_camellia_cbc_decrypt` with `scratch: *mut [u64; n]`. -/
-def cbcScratchSig (n : Nat) : Sig where
-  params := cbcSig.params ++ [("scratch", .array true .u64 n)]
+/-- `vg_camellia_cbc_encrypt_chained` and `_decrypt_chained` with `scratch: *mut [u64; n]`. -/
+def cbcChainedScratchSig (n : Nat) : Sig where
+  params := cbcChainedSig.params ++ [("scratch", .array true .u64 n)]
 
-/-- `cbcEncryptContract`, whatever `scratch` is. -/
-def cbcEncScratchContract {M : ISA} (A : Abi M) (n : Nat) (stack : Nat := 0) : Contract M :=
-  (cbcScratchSig n).contract A
-    (pre := fun schedule rounds iv data n _scratch => cbcPre A.ptrBits schedule rounds iv data n)
-    (post := fun schedule rounds iv data n _scratch => cbcEncryptPost A.ptrBits schedule rounds iv data n)
+/-- `cbcEncryptChainedContract`'s precondition. -/
+def cbcChainedPre (pb : Nat) : Curry (cbcChainedSig.words pb) (Mem → Prop) :=
+  fun _schedule rounds _iv _data _n _ => rounds.toNat = 18 ∨ rounds.toNat = 24
+
+/-- `cbcEncryptChainedContract`'s postcondition. -/
+def cbcEncChainedPost (pb : Nat) : cbcChainedSig.Post pb := fun schedule rounds iv data n m m' _ =>
+      (rounds.toNat = 18 ∨ rounds.toNat = 24) →
+        let cs := Spec.Cbc.encrypt (cipher (subkeysAt m schedule rounds.toNat)) (Spec.Aes.bytesAt m iv 16)
+          (Spec.Cbc.blocksAt m data n.toNat)
+        Spec.Cbc.blocksAt m' data n.toNat = cs ∧
+          Spec.Aes.bytesAt m' iv 16 = Spec.Cbc.next (Spec.Aes.bytesAt m iv 16) cs
+
+/-- `cbcDecryptChainedContract`'s postcondition. -/
+def cbcDecChainedPost (pb : Nat) : cbcChainedSig.Post pb := fun schedule rounds iv data n m m' _ =>
+      (rounds.toNat = 18 ∨ rounds.toNat = 24) →
+        let cs := Spec.Cbc.blocksAt m data n.toNat
+        Spec.Cbc.blocksAt m' data n.toNat =
+            Spec.Cbc.decrypt (invCipher (subkeysAt m schedule rounds.toNat)) (Spec.Aes.bytesAt m iv 16) cs ∧
+          Spec.Aes.bytesAt m' iv 16 = Spec.Cbc.next (Spec.Aes.bytesAt m iv 16) cs
+
+/-- `cbcEncryptChainedContract`, whatever `scratch` is. -/
+def cbcEncChainedScratchContract {M : ISA} (A : Abi M) (n : Nat) (stack : Nat := 0) : Contract M :=
+  (cbcChainedScratchSig n).contract A
+    (pre := fun schedule rounds iv data n _scratch => cbcChainedPre A.ptrBits schedule rounds iv data n)
+    (post := fun schedule rounds iv data n _scratch => cbcEncChainedPost A.ptrBits schedule rounds iv data n)
     (writeArgs := true) (stack := stack)
 
-theorem cbcEncScratchContract_eq {M : ISA} (A : Abi M) (n stack : Nat) :
-    cbcEncScratchContract A n stack = Sig.scratchContract A cbcSig "scratch" .u64 n
-      (cbcPre A.ptrBits) (cbcEncryptPost A.ptrBits) true stack := rfl
+theorem cbcEncChainedScratchContract_eq {M : ISA} (A : Abi M) (n stack : Nat) :
+    cbcEncChainedScratchContract A n stack = Sig.scratchContract A cbcChainedSig "scratch" .u64 n
+      (cbcChainedPre A.ptrBits) (cbcEncChainedPost A.ptrBits) true stack := rfl
 
-/-- `cbcDecryptContract`, whatever `scratch` is. -/
-def cbcDecScratchContract {M : ISA} (A : Abi M) (n : Nat) (stack : Nat := 0) : Contract M :=
-  (cbcScratchSig n).contract A
-    (pre := fun schedule rounds iv data n _scratch => cbcPre A.ptrBits schedule rounds iv data n)
-    (post := fun schedule rounds iv data n _scratch => cbcDecryptPost A.ptrBits schedule rounds iv data n)
+/-- `cbcDecryptChainedContract`, whatever `scratch` is. -/
+def cbcDecChainedScratchContract {M : ISA} (A : Abi M) (n : Nat) (stack : Nat := 0) : Contract M :=
+  (cbcChainedScratchSig n).contract A
+    (pre := fun schedule rounds iv data n _scratch => cbcChainedPre A.ptrBits schedule rounds iv data n)
+    (post := fun schedule rounds iv data n _scratch => cbcDecChainedPost A.ptrBits schedule rounds iv data n)
     (writeArgs := true) (stack := stack)
 
-theorem cbcDecScratchContract_eq {M : ISA} (A : Abi M) (n stack : Nat) :
-    cbcDecScratchContract A n stack = Sig.scratchContract A cbcSig "scratch" .u64 n
-      (cbcPre A.ptrBits) (cbcDecryptPost A.ptrBits) true stack := rfl
+theorem cbcDecChainedScratchContract_eq {M : ISA} (A : Abi M) (n stack : Nat) :
+    cbcDecChainedScratchContract A n stack = Sig.scratchContract A cbcChainedSig "scratch" .u64 n
+      (cbcChainedPre A.ptrBits) (cbcDecChainedPost A.ptrBits) true stack := rfl
 
 section
 
@@ -75,9 +98,9 @@ end
 
 variable (pb : Nat)
 
-theorem cbcPre_local : ∀ vs m₁ m₂, vs.length = (cbcSig.words pb).length →
-    (∀ b ∈ Sig.bufs cbcSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (cbcSig.words pb) (cbcPre pb) vs m₁ → Curry.apply (cbcSig.words pb) (cbcPre pb) vs m₂ := by
+theorem cbcChainedPre_local : ∀ vs m₁ m₂, vs.length = (cbcChainedSig.words pb).length →
+    (∀ b ∈ Sig.bufs cbcChainedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (cbcChainedSig.words pb) (cbcChainedPre pb) vs m₁ → Curry.apply (cbcChainedSig.words pb) (cbcChainedPre pb) vs m₂ := by
   intro vs _ _ hlen _ h
   obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
   replace hlen := Nat.succ.inj hlen
@@ -87,10 +110,9 @@ theorem cbcPre_local : ∀ vs m₁ m₂, vs.length = (cbcSig.words pb).length �
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
   exact h
 
-theorem cbcEncryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cbcSig.words pb).length →
-    (∀ b ∈ Sig.bufs cbcSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (cbcSig.words pb) (cbcEncryptPost pb) vs m₁ m' r →
-      Curry.apply (cbcSig.words pb) (cbcEncryptPost pb) vs m₂ m' r := by
+theorem cbcEncChainedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cbcChainedSig.words pb).length →
+    (∀ b ∈ Sig.bufs cbcChainedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (cbcChainedSig.words pb) (cbcEncChainedPost pb) vs m₁ m' r → Curry.apply (cbcChainedSig.words pb) (cbcEncChainedPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
   replace hlen := Nat.succ.inj hlen
@@ -103,26 +125,25 @@ theorem cbcEncryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cbcSig.words 
   obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [cbcSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [cbcChainedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hs := agree_of hb.1
   have hv := agree_of hb.2.1
   have hd := agree_of hb.2.2
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
-    (cbcEncryptPost pb) _ m₁ m' r at h
+    (cbcEncChainedPost pb) _ m₁ m' r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
-    (cbcEncryptPost pb) _ m₂ m' r
-  dsimp only [Curry.apply, cbcEncryptPost, ArgWord.ofRaw] at h ⊢
+    (cbcEncChainedPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, cbcEncChainedPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
   rw [subkeysAt_congr (by simp only [scheduleLength]; omega) fun i hi => hs i (by omega), bytesAt_congr' hv,
     cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega)]
   exact h hR
 
-theorem cbcDecryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cbcSig.words pb).length →
-    (∀ b ∈ Sig.bufs cbcSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (cbcSig.words pb) (cbcDecryptPost pb) vs m₁ m' r →
-      Curry.apply (cbcSig.words pb) (cbcDecryptPost pb) vs m₂ m' r := by
+theorem cbcDecChainedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cbcChainedSig.words pb).length →
+    (∀ b ∈ Sig.bufs cbcChainedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (cbcChainedSig.words pb) (cbcDecChainedPost pb) vs m₁ m' r → Curry.apply (cbcChainedSig.words pb) (cbcDecChainedPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
   replace hlen := Nat.succ.inj hlen
@@ -135,26 +156,25 @@ theorem cbcDecryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cbcSig.words 
   obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [cbcSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [cbcChainedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hs := agree_of hb.1
   have hv := agree_of hb.2.1
   have hd := agree_of hb.2.2
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
-    (cbcDecryptPost pb) _ m₁ m' r at h
+    (cbcDecChainedPost pb) _ m₁ m' r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
-    (cbcDecryptPost pb) _ m₂ m' r
-  dsimp only [Curry.apply, cbcDecryptPost, ArgWord.ofRaw] at h ⊢
+    (cbcDecChainedPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, cbcDecChainedPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
   rw [subkeysAt_congr (by simp only [scheduleLength]; omega) fun i hi => hs i (by omega), bytesAt_congr' hv,
     cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega)]
   exact h hR
 
-theorem cbcEncPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cbcSig.words pb).length →
-    (∀ b ∈ Sig.bufs cbcSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (cbcSig.words pb) (cbcEncryptPost pb) vs m m₁ r →
-      Curry.apply (cbcSig.words pb) (cbcEncryptPost pb) vs m m₂ r := by
+theorem cbcEncChainedPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cbcChainedSig.words pb).length →
+    (∀ b ∈ Sig.bufs cbcChainedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (cbcChainedSig.words pb) (cbcEncChainedPost pb) vs m m₁ r → Curry.apply (cbcChainedSig.words pb) (cbcEncChainedPost pb) vs m m₂ r := by
   intro vs m m₁ m₂ r hlen hb h
   obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
   replace hlen := Nat.succ.inj hlen
@@ -166,25 +186,24 @@ theorem cbcEncPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cbcSig.words pb
   obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [cbcSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [cbcChainedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hd := agree_of hb.2.2
+  have hv := agree_of hb.2.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
-    (cbcEncryptPost pb) _ m m₁ r at h
+    (cbcEncChainedPost pb) _ m m₁ r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
-    (cbcEncryptPost pb) _ m m₂ r
-  dsimp only [Curry.apply, cbcEncryptPost, ArgWord.ofRaw] at h ⊢
+    (cbcEncChainedPost pb) _ m m₂ r
+  dsimp only [Curry.apply, cbcEncChainedPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
   rw [cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega)]
+    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
   exact h hR
 
-
-theorem cbcDecPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cbcSig.words pb).length →
-    (∀ b ∈ Sig.bufs cbcSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (cbcSig.words pb) (cbcDecryptPost pb) vs m m₁ r →
-      Curry.apply (cbcSig.words pb) (cbcDecryptPost pb) vs m m₂ r := by
+theorem cbcDecChainedPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cbcChainedSig.words pb).length →
+    (∀ b ∈ Sig.bufs cbcChainedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (cbcChainedSig.words pb) (cbcDecChainedPost pb) vs m m₁ r → Curry.apply (cbcChainedSig.words pb) (cbcDecChainedPost pb) vs m m₂ r := by
   intro vs m m₁ m₂ r hlen hb h
   obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
   replace hlen := Nat.succ.inj hlen
@@ -196,18 +215,19 @@ theorem cbcDecPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cbcSig.words pb
   obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [cbcSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [cbcChainedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hd := agree_of hb.2.2
+  have hv := agree_of hb.2.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
-    (cbcDecryptPost pb) _ m m₁ r at h
+    (cbcDecChainedPost pb) _ m m₁ r at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
-    (cbcDecryptPost pb) _ m m₂ r
-  dsimp only [Curry.apply, cbcDecryptPost, ArgWord.ofRaw] at h ⊢
+    (cbcDecChainedPost pb) _ m m₂ r
+  dsimp only [Curry.apply, cbcDecChainedPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
   rw [cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega)]
+    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
   exact h hR
 
 end VG.Proof.Camellia

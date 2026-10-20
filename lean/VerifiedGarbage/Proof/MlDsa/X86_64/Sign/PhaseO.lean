@@ -1,15 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseK
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsD
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseL
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
+import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on x86-64: the signature

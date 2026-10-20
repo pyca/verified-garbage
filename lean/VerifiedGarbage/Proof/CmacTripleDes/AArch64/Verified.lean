@@ -1,15 +1,19 @@
 module
+public import VerifiedGarbage.Impl.CmacTripleDes.AArch64
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Block
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
+public import VerifiedGarbage.Proof.CmacTripleDes.Scratch
 
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Init
-public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Finalize
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Finalize
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.CT
-public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Implies
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Implies
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Update
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # TDEA-CMAC on AArch64: `Verified`
@@ -35,7 +39,7 @@ writes none of the others it preserves and no vector register, and calls
 nothing. -/
 theorem abi_of {c : Prog isa} {s : State} {Q : State → Prop}
     (h : WP isa c s fun s' => Q s' ∧ ∀ r ∈ savedRegs, s'.gpr r = s.gpr r)
-    (hc : c.allInstrs (fun i => unsaved.all fun r => dstOf i != some r) = true)
+    (hc : c.allInstrs (fun i => unsaved.all fun r => !clobbers i r) = true)
     (hn : c.noCalls = true) (hv : c.allInstrs keepsV = true) :
     ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ Q s' := by
   obtain ⟨t, s', he, ⟨hq, hsv⟩, hg⟩ := WP.gprs h hc hn

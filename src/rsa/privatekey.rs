@@ -3,13 +3,29 @@
 //! `(n, e, d, p, q)` or from `(n, e, d)`, and the check of a key: see the
 //! parent module.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
 use super::{Backend, Error, MAX_MODULUS_LEN, MIN_MODULUS_LEN, exponent, scratch_words, trim};
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+use crate::arch::rsa::vg_rsa_private_checked_umaal;
 use crate::arch::rsa::{
     vg_rsa_check_crt_key, vg_rsa_check_key, vg_rsa_crt_values, vg_rsa_private_checked,
     vg_rsa_recover_primes,
@@ -259,6 +275,17 @@ impl PrivateKey {
             // `select` chose it because the CPU has the features it needs.
             #[cfg(target_arch = "x86_64")]
             Backend::Adx | Backend::Ifma => vg_rsa_recover_primes_adx,
+            #[cfg(all(
+                target_arch = "arm",
+                any(
+                    target_os = "linux",
+                    target_os = "android",
+                    target_os = "freebsd",
+                    target_os = "netbsd",
+                    target_os = "openbsd"
+                )
+            ))]
+            Backend::Umaal => vg_rsa_recover_primes,
         };
         // SAFETY: each pointer is valid for its length (`p`, `q` and
         // `scratch` for writes), and none overlaps another or wraps around,
@@ -382,6 +409,17 @@ impl PrivateKey {
             Backend::Adx => vg_rsa_private_checked_adx,
             #[cfg(target_arch = "x86_64")]
             Backend::Ifma => vg_rsa_private_checked_ifma,
+            #[cfg(all(
+                target_arch = "arm",
+                any(
+                    target_os = "linux",
+                    target_os = "android",
+                    target_os = "freebsd",
+                    target_os = "netbsd",
+                    target_os = "openbsd"
+                )
+            ))]
+            Backend::Umaal => vg_rsa_private_checked_umaal,
         };
         // SAFETY: each pointer is valid for its length (`out` for writes,
         // `scratch` too), and none overlaps another or wraps around, as they
@@ -415,8 +453,6 @@ impl PrivateKey {
                 scratch.len(),
             )
         };
-        // The working space holds the private key and powers of the input.
-        crate::zeroize::zeroize(&mut scratch);
         // `PrivateKey::from_crt` checked `e` and the key, so a refusal means
         // the input is not below the modulus.
         match r {
@@ -621,6 +657,16 @@ mod tests {
     /// modulo `p - 1`), and so does a `d` of zero or longer than `n`, which
     /// the check refuses before the arithmetic. With `d = p dP` it passes.
     #[test]
+    fn components_round_trip() {
+        let [n, p, q, dp, dq, qi] = composite(32, false);
+        let key = PrivateKey::from_crt(&n, &[3], &[1], &p, &q, &dp, &dq, &qi).unwrap();
+        let c = key.components();
+        assert_eq!(c[..3], [&n[..], &[3][..], &[1][..]]);
+        let again = PrivateKey::from_crt(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7]).unwrap();
+        assert_eq!(again.components(), c);
+    }
+
+    #[test]
     fn check_key_invalid() {
         let [n, p, q, dp, dq, qi] = composite(32, false);
         let key = |d: &[u8]| PrivateKey::from_crt(&n, &[3], d, &p, &q, &dp, &dq, &qi).unwrap();
@@ -628,6 +674,77 @@ mod tests {
             assert!(!key(d).check_key());
         }
         assert!(key(&mul(&p, &dp)).check_key());
+    }
+
+    // Exercise the full checker even for CRT inputs that the constructor
+    // rejects. Keep all byte lengths unchanged, as required by its FFI.
+    #[test]
+    fn check_key_crt_ranges() {
+        for a in SIZES {
+            for swap in [false, true] {
+                let [n, p, q, dp, dq, qi] = composite(a, swap);
+                let (ones, third) = if swap { (&q, &dq) } else { (&p, &dp) };
+                let d = mul(ones, third);
+                let new = || PrivateKey::from_crt(&n, &[3], &d, &p, &q, &dp, &dq, &qi).unwrap();
+                assert!(new().check_key());
+                for component in 0..3 {
+                    for byte in [0, 0xff] {
+                        let mut key = new();
+                        let value = match component {
+                            0 => &mut key.dp,
+                            1 => &mut key.dq,
+                            _ => &mut key.qinv,
+                        };
+                        // An invalid range must keep rejecting the key even
+                        // when the shortened reduction's bound does not hold.
+                        value.fill(byte);
+                        assert!(!key.check_key());
+                    }
+                }
+            }
+        }
+    }
+
+    // The bounded full-exponent reductions rely on checks that precede
+    // them. Exercise both failed prerequisites and padded factor lengths
+    // through the primitive, preserving the FFI's length constraints.
+    #[test]
+    fn check_key_full_exponent_bounds() {
+        for a in SIZES {
+            for swap in [false, true] {
+                let [n, p, q, dp, dq, qi] = composite(a, swap);
+                let (ones, third) = if swap { (&q, &dq) } else { (&p, &dp) };
+                let d = mul(ones, third);
+                let new = || PrivateKey::from_crt(&n, &[3], &d, &p, &q, &dp, &dq, &qi).unwrap();
+                for bad_d in [n.clone(), vec![0xff; n.len()]] {
+                    let mut key = new();
+                    key.d = bad_d;
+                    assert!(!key.check_key());
+                }
+                for factor in 0..2 {
+                    for byte in [0, 1, 0xff] {
+                        let mut key = new();
+                        let value = if factor == 0 { &mut key.p } else { &mut key.q };
+                        value.fill(0);
+                        *value.last_mut().unwrap() = byte;
+                        assert!(!key.check_key());
+                    }
+                }
+                let mut key = new();
+                for value in [
+                    &mut key.p,
+                    &mut key.q,
+                    &mut key.dp,
+                    &mut key.dq,
+                    &mut key.qinv,
+                ] {
+                    let mut padded = vec![0; n.len() - 1 - value.len()];
+                    padded.extend_from_slice(value);
+                    *value = padded;
+                }
+                assert!(key.check_key());
+            }
+        }
     }
 
     #[test]

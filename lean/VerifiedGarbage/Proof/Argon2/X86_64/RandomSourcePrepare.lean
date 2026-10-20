@@ -5,17 +5,12 @@ public import VerifiedGarbage.Proof.Argon2.Matrix
 import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelStable
 public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheSelect
 import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheWord
-import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapState
-public import VerifiedGarbage.Impl.Argon2.X86_64.AddressMode
-import VerifiedGarbage.Proof.Argon2.X86_64.Memory
-import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernel
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Argon2.X86_64.FillKernelInvariant`. -/
 

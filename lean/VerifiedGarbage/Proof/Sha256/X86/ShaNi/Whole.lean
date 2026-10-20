@@ -1,13 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Sha256.X86.ShaNi
+public import VerifiedGarbage.Proof.Sha256.X86.Compress
 
-public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Load
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MdStream.X86
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Load
+import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Compress
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

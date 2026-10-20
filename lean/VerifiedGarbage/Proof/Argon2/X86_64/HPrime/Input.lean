@@ -1,14 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Frame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-import VerifiedGarbage.Spec.Argon2
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Update
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # H′: arguments for the caller's input -/
 

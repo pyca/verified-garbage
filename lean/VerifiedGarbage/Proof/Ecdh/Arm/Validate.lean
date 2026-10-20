@@ -1,13 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdh.Arm.Peer
+import VerifiedGarbage.Proof.Ecdh.Arm.Peer
 import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
 import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Ecdh.Arm
+import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
+import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
+import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.X25519.Arm.Limbs
 
 /-!
 # ECDH on 32-bit ARM: the peer's point, `[d]P` and `Z^(p-2)`

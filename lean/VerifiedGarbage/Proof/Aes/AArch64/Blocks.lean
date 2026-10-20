@@ -1,16 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.AArch64.Ecb
-meta import VerifiedGarbage.Proof.Aes.AArch64.Ecb
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
-public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Aes.AArch64.Ecb
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES on whole blocks on AArch64: the whole functions
@@ -221,7 +228,7 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
 
 theorem blocks_correct {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
     (hcr : CryptOk crypt4 f)
-    (hx30 : (blocks crypt4).allInstrs (fun i => [Reg.x30].all fun r => dstOf i != some r) = true)
+    (hx30 : (blocks crypt4).allInstrs (fun i => [Reg.x30].all fun r => !clobbers i r) = true)
     (hnc : (blocks crypt4).noCalls = true)
     (hv : (blocks crypt4).allInstrs keepsV = true)
     (s : State) (hs : (Proof.Aes.blocksAArch64 f).pre s) :

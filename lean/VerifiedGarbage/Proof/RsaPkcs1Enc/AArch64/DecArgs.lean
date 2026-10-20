@@ -1,12 +1,9 @@
 module
+public import Mathlib.Data.Fintype.Card
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecHash
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCTBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecMac
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCTBase
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: the calls' arguments

@@ -1,16 +1,13 @@
 module
+public import VerifiedGarbage.Proof.X448.AArch64.Mul
 
-public import VerifiedGarbage.Proof.X448.AArch64.PointwiseFused
+import VerifiedGarbage.Proof.X448.AArch64.PointwiseFused
 import VerifiedGarbage.Proof.X448.AArch64.PointwiseAdd
 import VerifiedGarbage.Proof.X448.AArch64.PointwiseSub
 import VerifiedGarbage.Proof.X448.AArch64.PointwiseSmall
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Batteries.Logic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.X448.AArch64.Columns
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Untrusted: fused pointwise operations satisfy the existing slot contract. -/
 

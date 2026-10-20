@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.CtrVerified
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Camellia-CTR artifacts on baseline AArch64 -/
 
@@ -10,14 +10,10 @@ import Mathlib.Tactic.SplitIfs
 namespace VG.Artifacts.CamelliaCtr.AArch64
 
 def artifacts : List Artifact := [
-  { Spec.Camellia.ctrApi with
-    target := AArch64.target
-    doc := Spec.Camellia.ctrApi.doc
-      (notes := ["Baseline AArch64: eight counter blocks at a time, encrypted bitsliced in general-purpose registers, the S-boxes as Boolean circuits, with no table lookups; the table of bitsliced subkeys is built once per call. The mode is the generic CTR of `Impl/Modes/AArch64/`, over Camellia's ECB core."])
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 3248 .x5 406 Impl.Camellia.AArch64.ctr
-    contract := Spec.Camellia.ctrContract AArch64.abi 3248
-    stack := 3248
-    verified := Proof.Camellia.AArch64.ctr_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+  Spec.Camellia.ctrApi.artifact AArch64.target {
+    notes := ["Baseline AArch64: eight counter blocks at a time, encrypted bitsliced in general-purpose registers, the S-boxes as Boolean circuits, with no table lookups; the table of bitsliced subkeys is built once per call, by a call of `vg_camellia_prepare_keys`, and each batch is a call of `vg_camellia_crypt_prepared`. The mode is the generic CTR of `Impl/Modes/AArch64/`, over Camellia's ECB core."]
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 3344 .x5 418 Impl.Camellia.AArch64.ctr
+    stack := 3344
+    verified := Proof.Camellia.AArch64.ctr_framed }]
 
 end VG.Artifacts.CamelliaCtr.AArch64

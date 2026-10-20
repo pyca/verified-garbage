@@ -1,14 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Pow
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Pow
 import VerifiedGarbage.Proof.Gcm.Stream
-public import VerifiedGarbage.Proof.Gcm.Split
-public import Mathlib.Tactic.LinearCombination
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Gcm.Split
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ok
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # AES-GCM's short path on x86-64: GHASH of the buffer, in the field
@@ -89,6 +95,7 @@ theorem gacc_ghash {m : Mem} {G T : Addr} {H : Block} {g : Nat} (hT : TabOk m T 
 theorem shortFacts : ShortFacts :=
   ⟨powers_ok, powHead_ok, gacc_ghash, finPow_facts,
     fun H _ _ => step1' _ _ _ _ (by rw [x_φ_hInvF_hpow, pow_one]),
-    fun H _ _ _ => step2 _ _ _ _ _ _ (by rw [x_φ_hInvF_hpow, pow_one]) (x_φ_hInvF_hpow H 2)⟩
+    fun H _ _ _ => step2 _ _ _ _ _ _ (by rw [x_φ_hInvF_hpow, pow_one]) (x_φ_hInvF_hpow H 2),
+    VG.Proof.Gcm.X86_64.StitchR.setupFin, VG.Proof.Gcm.X86_64.StitchZHTo.phase1_ok⟩
 
 end VG.Proof.AesGcm.X86_64.Short

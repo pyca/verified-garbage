@@ -1,21 +1,25 @@
 module
 
 public import VerifiedGarbage.Impl.Ct.Arm
-meta import VerifiedGarbage.Impl.Ct.Arm
-public import VerifiedGarbage.Proof.Ct.Common32
-meta import VerifiedGarbage.Proof.Ct.Common32
-public import VerifiedGarbage.Proof.Zeroize.Arm
-meta import VerifiedGarbage.Proof.Zeroize.Arm
+import VerifiedGarbage.Proof.Ct.Common32
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
-meta import VerifiedGarbage.Proof.Framework.Arm.Frame
 public import VerifiedGarbage.Spec.Ct.Contract
+public import VerifiedGarbage.Proof.Ct.Common
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Zeroize.Arm
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Ct.Arm
+meta import VerifiedGarbage.Proof.Ct.Common32
+meta import VerifiedGarbage.Proof.Framework.Arm.Frame
 meta import VerifiedGarbage.Spec.Ct.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Ct.Common
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Zeroize.Arm
+meta import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 
@@ -179,7 +183,7 @@ theorem correct (s : State) (hp : contract.pre s) :
       exact Mem.readW_writeW_self32 _ _ _
     · rw [popped_gpr h4]
       have hc : ∀ r ∈ preserved, r ≠ .r4 →
-          body.allInstrs (fun i => dstOf i != some r) = true := by decide +kernel
+          body.allInstrs (fun i => !clobbers i r) = true := by decide +kernel
       have hkeep := hc r hr h4
       rw [Code.allInstrs_eq] at hkeep
       apply Exec.gpr (fun i hi => ?_) he

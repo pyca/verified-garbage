@@ -1,13 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.Arm.Ecb
 import VerifiedGarbage.Proof.Seed.KeyRot
 public import VerifiedGarbage.Impl.Seed.Arm.ExpandKey
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Seed.KeySchedule
+public import VerifiedGarbage.Proof.Seed.Arm.Lanes
+import VerifiedGarbage.Proof.Seed.Arm.Steps
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # A round of the key schedule on ARMv7

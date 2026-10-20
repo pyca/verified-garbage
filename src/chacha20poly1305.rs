@@ -14,7 +14,9 @@
 //! `vg_poly1305_blocks` for the same CPUs: on x86-64, CPUs with AVX512_IFMA,
 //! AVX-512F and AVX2 run `vg_chacha20_poly1305_seal_ifma` and
 //! `vg_chacha20_poly1305_open_ifma` (with `vg_chacha20_xor_avx512` and
-//! `vg_poly1305_blocks_ifma`), other CPUs with AVX-512F, AVX-512VL and AVX2
+//! `vg_poly1305_blocks_ifma`; from 449 to 639 bytes, `open_ifma` runs the
+//! code `vg_chacha20_poly1305_open_avx512vl` runs for short data, so these
+//! CPUs need AVX-512VL too), other CPUs with AVX-512F, AVX-512VL and AVX2
 //! `vg_chacha20_poly1305_seal_avx512vl` and `vg_chacha20_poly1305_open_avx512vl`
 //! (with `vg_chacha20_xor_avx512vl`, which keeps short data in `ymm` registers,
 //! and `vg_poly1305_blocks_avx512`), other CPUs with AVX-512F and AVX2
@@ -44,9 +46,10 @@
 //! to the output and encrypts them there with the same implementation's
 //! `vg_chacha20_poly1305_seal`. On x86-64, the AVX-512 instances, for more
 //! than 960 bytes, copy the pieces but the first, after the first's length,
-//! and encrypt with `vg_chacha20_poly1305_seal_split`, which reads the first
+//! and encrypt with the same implementation's `seal_split`
+//! (`vg_chacha20_poly1305_seal_split_avx512`, …), which reads the first
 //! piece from where it is and copies only the bytes of it that its first
-//! keystream covers.
+//! keystream covers; only the AVX-512 implementations have one.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -59,14 +62,15 @@ use core::mem::MaybeUninit;
 
 #[cfg(target_arch = "x86_64")]
 use crate::arch::chacha20poly1305::{
-    VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES,
-    VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES, VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES,
-    vg_chacha20_poly1305_open_avx2, vg_chacha20_poly1305_open_avx512,
-    vg_chacha20_poly1305_open_avx512vl, vg_chacha20_poly1305_open_ifma,
-    vg_chacha20_poly1305_seal_avx2, vg_chacha20_poly1305_seal_avx512,
-    vg_chacha20_poly1305_seal_avx512vl, vg_chacha20_poly1305_seal_gather_avx2,
-    vg_chacha20_poly1305_seal_gather_avx512, vg_chacha20_poly1305_seal_gather_avx512vl,
-    vg_chacha20_poly1305_seal_gather_ifma, vg_chacha20_poly1305_seal_ifma,
+    VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES,
+    VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES,
+    VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES, vg_chacha20_poly1305_open_avx2,
+    vg_chacha20_poly1305_open_avx512, vg_chacha20_poly1305_open_avx512vl,
+    vg_chacha20_poly1305_open_ifma, vg_chacha20_poly1305_seal_avx2,
+    vg_chacha20_poly1305_seal_avx512, vg_chacha20_poly1305_seal_avx512vl,
+    vg_chacha20_poly1305_seal_gather_avx2, vg_chacha20_poly1305_seal_gather_avx512,
+    vg_chacha20_poly1305_seal_gather_avx512vl, vg_chacha20_poly1305_seal_gather_ifma,
+    vg_chacha20_poly1305_seal_ifma,
 };
 use crate::arch::chacha20poly1305::{
     vg_chacha20_poly1305_open, vg_chacha20_poly1305_seal, vg_chacha20_poly1305_seal_gather,
@@ -87,12 +91,16 @@ use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
 
 /// The best implementation a CPU with the features `f` can run (`open`'s
-/// instances need the same features as `seal`'s, see the tests).
+/// instances need the same features as `seal`'s, see the tests, but for
+/// `open_ifma`'s, which also need `vg_chacha20_xor_avx512vl`'s).
 #[cfg(target_arch = "x86_64")]
 fn select(f: Features) -> Backend {
     Backend::select_for(
         f,
-        VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES,
+        Features::all(&[
+            VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES,
+            VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES,
+        ]),
         VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES,
         VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES,
         VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES,
@@ -136,6 +144,15 @@ pub enum Error {
     /// More than [`ChaCha20Poly1305::MAX_PIECES`] pieces of plaintext for
     /// [`ChaCha20Poly1305::encrypt`].
     TooManyPieces,
+}
+
+crate::error::impl_error! {
+    Error {
+        InvalidTextLength => "ChaCha20-Poly1305 text is too long",
+        TagMismatch => "ChaCha20-Poly1305 tag does not match",
+        InvalidOutputLength => "ChaCha20-Poly1305 output is not as long as the plaintext",
+        TooManyPieces => "too many pieces of ChaCha20-Poly1305 plaintext",
+    }
 }
 
 /// The AEAD with a key.
@@ -412,9 +429,11 @@ mod tests {
         assert_eq!(check_len(0), Ok(()));
         let max = usize::try_from(P_MAX).unwrap_or(usize::MAX);
         assert_eq!(check_len(max), Ok(()));
-        if let Ok(len) = usize::try_from(P_MAX + 1) {
-            assert_eq!(check_len(len), Err(Error::InvalidTextLength));
-        }
+        // Only a 64-bit `usize` holds a longer length (a `cfg` rather than a
+        // test of the width, so that each architecture runs every line it
+        // builds).
+        #[cfg(target_pointer_width = "64")]
+        assert_eq!(check_len(P_MAX as usize + 1), Err(Error::InvalidTextLength));
         assert_eq!(add_len(P_MAX - 1, 1), Ok(P_MAX));
         assert_eq!(add_len(P_MAX, 1), Err(Error::InvalidTextLength));
         assert_eq!(add_len(u64::MAX, 1), Err(Error::InvalidTextLength));
@@ -538,95 +557,10 @@ mod tests {
         }
     }
 
-    /// `vg_chacha20_poly1305_seal_split` of every implementation encrypts,
-    /// into `dst`, the first `src_len` bytes from `src` followed by `dst`'s
-    /// own from `src_len` on, as `seal` does them in place: for lengths
-    /// about the 960 bytes the AVX-512 instances' first keystream covers and
-    /// its multiples of 1024, and every split around them.
-    #[cfg(target_arch = "x86_64")]
-    #[test]
-    fn seal_split() {
-        use crate::arch::chacha20poly1305::{
-            vg_chacha20_poly1305_seal_split, vg_chacha20_poly1305_seal_split_avx2,
-            vg_chacha20_poly1305_seal_split_avx512, vg_chacha20_poly1305_seal_split_avx512vl,
-            vg_chacha20_poly1305_seal_split_ifma,
-        };
-        let key = core::array::from_fn(|i| (i * 9) as u8);
-        let mut scalar = ChaCha20Poly1305::new(&key);
-        scalar.backend = Backend::Scalar;
-        let best = ChaCha20Poly1305::new(&key);
-        let nonce = [5; 12];
-        let aad = [6; 13];
-        let msg: [u8; 4097] = core::array::from_fn(|i| (i * 29 + 3) as u8);
-        for aead in [&scalar, &best] {
-            let split = match aead.backend {
-                Backend::Scalar => vg_chacha20_poly1305_seal_split,
-                Backend::Avx2 => vg_chacha20_poly1305_seal_split_avx2,
-                Backend::Avx512 => vg_chacha20_poly1305_seal_split_avx512,
-                Backend::Avx512Vl => vg_chacha20_poly1305_seal_split_avx512vl,
-                Backend::Ifma => vg_chacha20_poly1305_seal_split_ifma,
-            };
-            for len in [
-                0, 1, 63, 64, 65, 959, 960, 961, 1024, 1025, 1985, 2049, 3073, 4097,
-            ] {
-                let mut want = msg;
-                let want_tag = aead
-                    .encrypt_in_place(&nonce, &aad, &mut want[..len])
-                    .unwrap();
-                for src_len in [
-                    0,
-                    1,
-                    63,
-                    64,
-                    65,
-                    448,
-                    960,
-                    961,
-                    1025,
-                    len / 2,
-                    len.saturating_sub(1),
-                    len,
-                ] {
-                    if src_len > len {
-                        continue;
-                    }
-                    // `src` apart from `dst`, which holds something else in
-                    // its first `src_len` bytes.
-                    let src = msg;
-                    let mut dst = [0xa5u8; 4097];
-                    dst[src_len..len].copy_from_slice(&msg[src_len..len]);
-                    let mut tag = [0; 16];
-                    // SAFETY: `aead.key` is valid for reads of 32 bytes, `nonce`
-                    // for reads of 12, `aad` for reads of 13 bytes, `src` (a
-                    // local) for reads of `src_len` and `dst` (a local) for
-                    // reads and writes of `len` bytes, with `src_len` at most
-                    // `len`, and `tag` (a local) for writes of 16; `dst` and
-                    // `tag` overlap nothing else, nor anything on the stack the
-                    // function uses. The CPU has the features of the
-                    // implementation (`select`).
-                    unsafe {
-                        split(
-                            &aead.key,
-                            &nonce,
-                            aad.as_ptr(),
-                            aad.len(),
-                            src.as_ptr(),
-                            src_len,
-                            dst.as_mut_ptr(),
-                            len,
-                            &mut tag,
-                        )
-                    };
-                    assert_eq!((&dst[..len], tag), (&want[..len], want_tag));
-                }
-            }
-        }
-    }
-
     /// The functions called for each implementation need the features of
     /// both `vg_chacha20_xor`'s and `vg_poly1305_blocks`'s for the same CPUs,
-    /// `open`'s, `seal_gather`'s and `seal_split`'s the same as `seal`'s, and `select`
-    /// chooses by them.
+    /// `open`'s, `seal_gather`'s and (for AVX-512) `seal_split`'s the same as
+    /// `seal`'s, and `select` chooses by them.
     #[cfg(target_arch = "x86_64")]
     #[test]
     fn features() {
@@ -643,7 +577,7 @@ mod tests {
             VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512VL_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES,
-            VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES, VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX2_FEATURES,
+            VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512VL_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_SPLIT_IFMA_FEATURES,
@@ -663,7 +597,6 @@ mod tests {
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES, avx2);
         assert_eq!(VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES, avx2);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_AVX2_FEATURES, avx2);
-        assert_eq!(VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX2_FEATURES, avx2);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES, avx512);
         assert_eq!(VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES, avx512);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES, avx512);
@@ -681,14 +614,18 @@ mod tests {
             VG_POLY1305_BLOCKS_IFMA_FEATURES,
         ]);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES, ifma);
-        assert_eq!(VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES, ifma);
+        // `open_ifma` runs `vg_chacha20_xor_avx512vl`'s rounds from 449 to
+        // 639 bytes.
+        let ifma_open = Features::all(&[ifma, VG_CHACHA20_XOR_AVX512VL_FEATURES]);
+        assert_eq!(VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES, ifma_open);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES, ifma);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_SPLIT_IFMA_FEATURES, ifma);
         assert_eq!(select(avx2), Backend::Avx2);
         assert_eq!(select(avx512), Backend::Avx512);
         assert_eq!(select(avx512vl), Backend::Avx512Vl);
-        assert_eq!(select(ifma), Backend::Ifma);
+        assert_eq!(select(ifma_open), Backend::Ifma);
         assert_eq!(select(Features::all(&[avx512vl, ifma])), Backend::Ifma);
+        assert_ne!(select(ifma), Backend::Ifma);
         // AVX-512F alone is not enough: the AVX-512 instances' Poly1305
         // calls its AVX2 implementation.
         assert_eq!(select(VG_CHACHA20_XOR_AVX512_FEATURES), Backend::Scalar);

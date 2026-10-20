@@ -1,25 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.Arm.Update
-meta import VerifiedGarbage.Proof.MdStream.Arm.Update
 public import VerifiedGarbage.Proof.MdStream.Arm.Finalize
-meta import VerifiedGarbage.Proof.MdStream.Arm.Finalize
 import VerifiedGarbage.Proof.MdStream.Arm.Words
-meta import VerifiedGarbage.Proof.MdStream.Arm.Words
 public import VerifiedGarbage.Proof.Sha1.Md
-meta import VerifiedGarbage.Proof.Sha1.Md
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha1.Arm.Compress
-meta import VerifiedGarbage.Proof.Sha1.Arm.Compress
 public import VerifiedGarbage.Impl.Sha1.Arm.Stream
-meta import VerifiedGarbage.Impl.Sha1.Arm.Stream
 import VerifiedGarbage.Proof.Sha1.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MdStream.Arm.Update
+meta import VerifiedGarbage.Proof.MdStream.Arm.Finalize
+meta import VerifiedGarbage.Proof.MdStream.Arm.Words
+meta import VerifiedGarbage.Proof.Sha1.Md
+meta import VerifiedGarbage.Proof.Sha1.Arm.Compress
+meta import VerifiedGarbage.Impl.Sha1.Arm.Stream
 meta import VerifiedGarbage.Proof.Sha1.Arm.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming SHA-1 on ARMv7: `update` and `finalize`

@@ -1,14 +1,11 @@
 module
 
 import VerifiedGarbage.Proof.AesOcb.X86_64.OpenCT
-public import VerifiedGarbage.Proof.AesOcb.X86_64.InitCT
+import VerifiedGarbage.Proof.AesOcb.X86_64.InitCT
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Ocb.Contract
 public import VerifiedGarbage.Proof.AesOcb.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Contract
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
 import VerifiedGarbage.Proof.AesOcb.X86_64.Open
 
 /-!

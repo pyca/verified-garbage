@@ -3,15 +3,17 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbols
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 public import VerifiedGarbage.Impl.MlKem.AArch64.Optimized
-public import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbols
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Optimized
-meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! # Public-address checks for the optimized code surrounding matrix generation -/
 @[expose] public section
@@ -19,44 +21,14 @@ namespace VG.Proof.MlKem.AArch64.Optimized
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Callers
 
-theorem kgRest768_taint :
-    ∃h,((VectorSymbols.analysis ["VG_MLKEM_GAMMA","VG_MLKEM_NTT16_ZETAS","VG_MLKEM_INTT16_ZETAS"]).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-      (Impl.MlKem.AArch64.Optimized.kgRest Sha3.AArch64.Sha3.callee lay768) h).isSome=true := by
-  exact ⟨_, by taint_decide⟩
-
-theorem enRest768_taint :
-    ∃h,((VectorSymbols.analysis ["VG_MLKEM_GAMMA","VG_MLKEM_NTT16_ZETAS","VG_MLKEM_INTT16_ZETAS"]).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-      (Impl.MlKem.AArch64.Optimized.enRest Sha3.AArch64.Sha3.callee lay768) h).isSome=true := by
-  exact ⟨_, by taint_decide⟩
-
 theorem deStart768_taint :
     ∃h,((VectorSymbols.analysis ["VG_MLKEM_GAMMA","VG_MLKEM_NTT16_ZETAS","VG_MLKEM_INTT16_ZETAS"]).check (VectorTaint.ofRegs [.x0,.x1,.x2,.x3])
       (Impl.MlKem.AArch64.Optimized.deStart Sha3.AArch64.Sha3.callee lay768) h).isSome=true := by
   exact ⟨_, by taint_decide⟩
 
-theorem deRest768_taint :
-    ∃h,((VectorSymbols.analysis ["VG_MLKEM_GAMMA","VG_MLKEM_NTT16_ZETAS","VG_MLKEM_INTT16_ZETAS"]).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-      (Impl.MlKem.AArch64.Optimized.deRest Sha3.AArch64.Sha3.callee lay768) h).isSome=true := by
-  exact ⟨_, by taint_decide⟩
-
-theorem kgRest1024_taint :
-    ∃h,((VectorSymbols.analysis ["VG_MLKEM_GAMMA","VG_MLKEM_NTT16_ZETAS","VG_MLKEM_INTT16_ZETAS"]).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-      (Impl.MlKem.AArch64.Optimized.kgRest Sha3.AArch64.Sha3.callee Impl.MlKem1024.AArch64.lay1024) h).isSome=true := by
-  exact ⟨_, by taint_decide⟩
-
-theorem enRest1024_taint :
-    ∃h,((VectorSymbols.analysis ["VG_MLKEM_GAMMA","VG_MLKEM_NTT16_ZETAS","VG_MLKEM_INTT16_ZETAS"]).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-      (Impl.MlKem.AArch64.Optimized.enRest Sha3.AArch64.Sha3.callee Impl.MlKem1024.AArch64.lay1024) h).isSome=true := by
-  exact ⟨_, by taint_decide⟩
-
 theorem deStart1024_taint :
     ∃h,((VectorSymbols.analysis ["VG_MLKEM_GAMMA","VG_MLKEM_NTT16_ZETAS","VG_MLKEM_INTT16_ZETAS"]).check (VectorTaint.ofRegs [.x0,.x1,.x2,.x3])
       (Impl.MlKem.AArch64.Optimized.deStart Sha3.AArch64.Sha3.callee Impl.MlKem1024.AArch64.lay1024) h).isSome=true := by
-  exact ⟨_, by taint_decide⟩
-
-theorem deRest1024_taint :
-    ∃h,((VectorSymbols.analysis ["VG_MLKEM_GAMMA","VG_MLKEM_NTT16_ZETAS","VG_MLKEM_INTT16_ZETAS"]).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-      (Impl.MlKem.AArch64.Optimized.deRest Sha3.AArch64.Sha3.callee Impl.MlKem1024.AArch64.lay1024) h).isSome=true := by
   exact ⟨_, by taint_decide⟩
 
 end VG.Proof.MlKem.AArch64.Optimized

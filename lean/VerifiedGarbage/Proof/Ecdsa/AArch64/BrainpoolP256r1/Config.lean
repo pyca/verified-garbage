@@ -4,13 +4,13 @@ public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 import VerifiedGarbage.Proof.BrainpoolP256r1.Point
 import VerifiedGarbage.Proof.BrainpoolP256r1.Prime
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP256r1Literals
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Weierstrass.CombLay
 
 /-! # brainpoolP256r1 parameters for the AArch64 arithmetic -/
 

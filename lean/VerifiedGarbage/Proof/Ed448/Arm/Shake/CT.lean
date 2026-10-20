@@ -5,12 +5,11 @@ public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Header
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CallCT
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
 import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.EntryCT
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # Ed448 on ARMv7: the calls of the sponge functions in constant time
@@ -48,7 +47,7 @@ variable {E scr : BitVec 32} {n : Nat} {val : Nat → BitVec 32} {ins outs : Lis
   {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
 
 /-- Instructions that address memory only through `r12`, and leave it alone. -/
-theorem r12_ct (is : List Instr) (hd : ∀ i ∈ is, dstOf i ≠ some .r12)
+theorem r12_ct (is : List Instr) (hd : ∀ i ∈ is, clobbers i .r12 = false)
     (ha : ∀ i ∈ is, ∀ a b : State, a.gpr .r12 = b.gpr .r12 → addrs i a = addrs i b) :
     RelCT isa (fun a b => a.sp = b.sp ∧ a.gpr .r12 = b.gpr .r12) (.block is)
       (fun a b => a.sp = b.sp ∧ a.gpr .r12 = b.gpr .r12) := by

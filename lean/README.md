@@ -19,6 +19,8 @@ VerifiedGarbage/
     Sig.lean        Rust signatures and calling conventions (`Abi`)
     Artifact.lean   Target, Contract, `Verified`, `Artifact`: what "verified" means;
                     `Sig.contract`: the contract obligations a signature implies
+    Registration.lean  `Api.artifact`: an `Artifact` made from an `Api` and only
+                    what its implementation chooses (`Registration`)
     Rust.lean       rendering artifacts as Rust naked functions; checks that every
                     call is of the artifact whose code the model runs for it, and
                     that each artifact declares the CPU features its code needs
@@ -77,8 +79,10 @@ never import proofs.
    satisfiability of the precondition.
 4. **Registry** — the registration files `Artifacts/<Alg>/<Target>.lean`
    list every `Artifact`, bundling target, Rust name and signature, code,
-   contract and proof: mostly a function's `Api`, with the stack its contract
-   gives its calls (`stack`) and any notes on the implementation. An artifact
+   contract and proof: a function's `Api`, with what its implementation
+   chooses (`Api.artifact`, `TCB/Registration.lean`): the target, the code
+   and its proof, the stack its calls and frames use (`stack`), and any
+   notes on the implementation and suffix of its name. An artifact
    made from an `Api` takes the contract from it with the name and signature
    (`Api.contracts`), and must be proven against exactly that contract on its
    target (`Artifact.ofApi`), so a registration file, or a proof building
@@ -169,26 +173,39 @@ to optimize").
 After CI passes on `main`, it publishes the Linux x86-64 project build and
 Mathlib dependencies to `ghcr.io/pyca/vg-lean-cache:latest`, an OCI artifact
 whose one layer is `lean-cache.tar.zst`: `.lake/build` and `.lake/packages`
-relative to `lean/`. Only the latest version is retained. CI compares the
-checked build's cache key with the manifest's `io.pyca.lean.cache-key`
-annotation and skips packaging and publishing when it matches, so Rust- or
-docs-only changes do not create a new cache version.
+relative to `lean/`, with each module's outputs in one `.ltar` archive, the
+format of Lake's `ltar` facet and Mathlib's cache, and every other file (the
+outputs' `.hash` files, the dependencies' checkouts) in one tar,
+`.lake/ltar/files.tar`, first in the layer (`ci/lean_cache.py`). The publisher
+combines the existing project and dependency module caches with
+`ci/lean_cache.py bundle`, without expanding their compiled outputs. The
+project cache records its dependency cache key; older caches or missing
+dependency caches use the normal setup path first. Only
+the latest version is retained. CI compares the checked build's cache key
+with the manifest's `io.pyca.lean.cache-key` annotation and skips packaging
+and publishing when it matches, so Rust- or docs-only changes do not create
+a new cache version.
 
 Restore it with `ci/fetch_lean_cache.py`, which streams the layer straight
 from the registry API with an anonymous pull token, resumes from where it
 stopped when the connection drops, and checks the download against the
-layer's digest. With `python3` and `zstd` installed, from the repository
-root:
+layer's digest, and `ci/lean_cache.py unpack`, which extracts `files.tar`
+with `tar` in the background and unpacks the archives with the toolchain's
+`leantar` as they arrive. Install the toolchain in `lean/lean-toolchain`
+first (with elan, `lean --version` in `lean/` installs it). Then, with
+`python3`, `tar` and `zstd` installed, from the repository root:
 
 ```sh
 set -o pipefail
-python3 ci/fetch_lean_cache.py | zstd -dc | tar --no-same-owner -xf - -C lean
+python3 ci/fetch_lean_cache.py | zstd -dc | python3 ci/lean_cache.py unpack lean
 ```
 
-The download (about 3 GB) streams through the pipeline and is never
-stored. If the pipeline fails (a connection that drops five times in a row
-without progress, or a download that does not match the digest), run it
-again. Install the toolchain in `lean/lean-toolchain` separately; the
+The download (about 1 GB) streams through the pipeline and is never
+stored: `files.tar` and the archives, a batch at a time, are staged in
+`/dev/shm` (`--tmp` for another directory), and only the unpacked build is
+written. If the
+pipeline fails (a connection that drops five times in a row without
+progress, or a download that does not match the digest), run it again. The
 manifest's `io.pyca.lean.toolchain` and `org.opencontainers.image.revision`
 annotations identify the cached build. Lake rebuilds outputs that differ
 from the checkout. The modules' `.trace` files carry the profile CI's build
@@ -198,10 +215,11 @@ Without the `zstd` command, `pip install zstandard` and replace `zstd -dc`
 with
 `python3 -c 'import sys, zstandard; zstandard.ZstdDecompressor().copy_stream(sys.stdin.buffer, sys.stdout.buffer)'`.
 
-Keep `--no-same-owner`: the archive's files belong to CI's runner user, and
-`tar` run as root (as in a container) would keep that owner. Git then refuses
-the dependencies' checkouts in `.lake/packages` as owned by someone else, so
-Lake clones them again and builds Mathlib from source.
+`unpack` leaves the files' owner alone, as `tar --no-same-owner` would: the
+archive's files belong to CI's runner user, and extracting them as root (as
+in a container) would keep that owner. Git then refuses the dependencies'
+checkouts in `.lake/packages` as owned by someone else, so Lake clones them
+again and builds Mathlib from source.
 
 Moving the cache to a different absolute path can also make Lake relink
 native libraries and rebuild affected native modules. A normal `lake build`

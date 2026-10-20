@@ -1,11 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Block
-public import VerifiedGarbage.Impl.ChaCha20.AArch64.Xor
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Init
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Block
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # The ChaCha20 block function (RFC 8439) on AArch64 -/
 
@@ -14,26 +11,14 @@ import Mathlib.Tactic.SplitIfs
 namespace VG.Artifacts.ChaCha20.AArch64
 
 def artifacts : List Artifact := [
-  { Spec.ChaCha20.blockApi with
-    target := AArch64.target
-    doc := Spec.ChaCha20.blockApi.doc
+  Spec.ChaCha20.blockApi.artifact AArch64.target {
     code := Impl.ChaCha20.AArch64.block
-    contract := Spec.ChaCha20.blockContract AArch64.abi
-    verified := Proof.ChaCha20.AArch64.block_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.ChaCha20.initApi with
-    target := AArch64.target
-    doc := Spec.ChaCha20.initApi.doc
+    verified := Proof.ChaCha20.AArch64.block_verified },
+  Spec.ChaCha20.initApi.artifact AArch64.target {
     code := Impl.ChaCha20.AArch64.Stream.init
-    contract := Spec.ChaCha20.initContract AArch64.abi
-    verified := Proof.ChaCha20.AArch64.Stream.init_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.ChaCha20.setNonceApi with
-    target := AArch64.target
-    doc := Spec.ChaCha20.setNonceApi.doc
+    verified := Proof.ChaCha20.AArch64.Stream.init_verified },
+  Spec.ChaCha20.setNonceApi.artifact AArch64.target {
     code := Impl.ChaCha20.AArch64.Stream.setNonce
-    contract := Spec.ChaCha20.setNonceContract AArch64.abi
-    verified := Proof.ChaCha20.AArch64.Stream.setNonce_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.ChaCha20.AArch64.Stream.setNonce_verified }]
 
 end VG.Artifacts.ChaCha20.AArch64

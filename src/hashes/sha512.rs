@@ -18,7 +18,12 @@
 //! `vg_sha512_finalize_avx2`, which call `vg_sha512_compress_avx2`.
 //!
 //! On AArch64, Rust's `sha3` feature enables the FEAT_SHA512 backend.
-//! Dispatch follows the generated feature requirements.
+//! Dispatch follows the generated feature requirements. On AArch64 and
+//! x86-64, `digest` calls `vg_sha512_digest` (or its variant for the
+//! backend: `_sha3`, `_shani` or `_avx2`; contract
+//! `VG.Spec.Sha512.digestContract`), which runs the same initialization,
+//! update and finalization in one call, as do SHA-384's, SHA-512/224's and
+//! SHA-512/256's.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -27,6 +32,10 @@
     target_arch = "x86"
 ))]
 
+#[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
+use crate::arch::sha512::vg_sha512_digest;
+#[cfg(target_arch = "aarch64")]
+use crate::arch::sha512::vg_sha512_digest_sha3;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::sha512::{
     VG_SHA512_FINALIZE_AVX2_FEATURES, VG_SHA512_FINALIZE_SHANI_FEATURES,
@@ -38,6 +47,8 @@ use crate::arch::sha512::{
     VG_SHA512_FINALIZE_SHA3_FEATURES, VG_SHA512_UPDATE_SHA3_FEATURES, vg_sha512_finalize_sha3,
     vg_sha512_update_sha3,
 };
+#[cfg(target_arch = "x86_64")]
+use crate::arch::sha512::{vg_sha512_digest_avx2, vg_sha512_digest_shani};
 use crate::arch::sha512::{vg_sha512_finalize, vg_sha512_init, vg_sha512_update};
 
 super::streaming_hash!(
@@ -58,6 +69,15 @@ super::streaming_hash!(
             #[cfg(target_arch = "x86_64")]
             Avx2 if [VG_SHA512_UPDATE_AVX2_FEATURES, VG_SHA512_FINALIZE_AVX2_FEATURES] =>
                 (vg_sha512_update_avx2, vg_sha512_finalize_avx2),
+        },
+        digests: #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))] {
+            Scalar => vg_sha512_digest,
+            #[cfg(target_arch = "aarch64")]
+            Sha3 => vg_sha512_digest_sha3,
+            #[cfg(target_arch = "x86_64")]
+            ShaNi => vg_sha512_digest_shani,
+            #[cfg(target_arch = "x86_64")]
+            Avx2 => vg_sha512_digest_avx2,
         },
     }
 );

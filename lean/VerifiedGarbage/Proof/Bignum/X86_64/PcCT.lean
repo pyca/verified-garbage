@@ -1,19 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.Valid
+import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import VerifiedGarbage.Proof.Bignum.X86_64.Setup
+import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
-public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Valid
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Setup
+meta import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
 # `vg_rsa_public_precompute` on x86-64: constant time but for `n`

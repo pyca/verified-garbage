@@ -1,15 +1,19 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRotate8
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Edges
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Edges
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Bignum.X86_64.AdxRotate8
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Edges
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Public header loads establish the pointers used by the edge blocks. -/
 

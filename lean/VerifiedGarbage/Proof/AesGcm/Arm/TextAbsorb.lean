@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.Args
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesGcm.Arm.Absorb
+public import VerifiedGarbage.Proof.AesGcm.Arm.Flush
+import VerifiedGarbage.Proof.AesGcm.Arm.Fn
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # AES-GCM on ARMv7: absorbing the text (`textAbsorb`)

@@ -4,12 +4,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Argon2.Divide
 public import VerifiedGarbage.Impl.Argon2.X86.Divide
 public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Blake2.X86.CompressB
 
 /-!
 # Fixed-time division on x86 (32-bit)

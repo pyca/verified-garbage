@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Impl.Camellia.X86_64.Ecb
-public import VerifiedGarbage.Spec.Camellia
 public import VerifiedGarbage.Impl.Camellia.KeyOrder
+public import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
+public import VerifiedGarbage.Impl.Camellia.X86_64.Layers
+import VerifiedGarbage.Impl.Camellia.X86_64.Ecb
 
 /-!
 # The Camellia key schedule on x86-64

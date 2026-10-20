@@ -1,15 +1,13 @@
 module
 
-public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Shape
-meta import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Shape
+public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.WitnessCut
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.WitnessCut
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH parameter candidates on x86-64: fixed-time shaping and halving -/
 
@@ -27,5 +25,9 @@ theorem shape_ct {α : Type} {Φ : α → State → Prop} (hp : Pins Φ [.rdi, .
 /-- In-place halving has the same trace for every buffer of the public length. -/
 theorem halve_ct {α : Type} {Φ : α → State → Prop} (hp : Pins Φ [.rdi, .rcx]) :
     RelCT isa (Two Φ) halve fun _ _ => True := two_taint _ hp (by taint_decide)
+
+/-- Witness masking leaks only its pointers and public dimensions. -/
+theorem witnessCut_ct {α : Type} {Φ : α → State → Prop} (hp : Pins Φ [.rdi, .rsi, .rcx, .rdx]) :
+    RelCT isa (Two Φ) witnessCut fun _ _ => True := two_taint _ hp (by taint_decide)
 
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

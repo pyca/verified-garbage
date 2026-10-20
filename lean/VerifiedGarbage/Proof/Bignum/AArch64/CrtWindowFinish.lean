@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPendingInv
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinishSquare
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinishSquare
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPendingMath
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! A final partial window consumes exactly the pending exponent bits. -/
 

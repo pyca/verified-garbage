@@ -1,11 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Layout
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Blocks
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
 
 /-!
 # Deterministic ECDSA on AArch64: signing with a candidate
@@ -45,9 +43,13 @@ abbrev coreWr (P : RfcHash) {dn : Nat} (L : Lay dn P.R.E) : List Region := [⟨L
 
 /-- What `core`'s digest and `k` need of the layout: unless two `V`s make a
 candidate, the digest has `Q` bytes; if they do, the frame has its top
-bytes. -/
+bytes; and `h` is where the code keeps it. -/
 def CoreOk (P : RfcHash) {dn : Nat} (L : Lay dn P.R.E) : Prop :=
-  L.q = P.Q ∧ (L.wide = false → P.Q ≤ dn) ∧ L.wide = P.R.wide
+  L.q = P.Q ∧ ((L.wide = false → P.Q ≤ dn) ∧ L.hHigh = P.R.hHigh) ∧ L.wide = P.R.wide
+
+/-- The bytes at the frame's top are the code's. -/
+theorem CoreOk.e_eq {L : Lay dn P.R.E} (hk : CoreOk P L) : L.e = P.e := by
+  rw [L.ew, hk.2.2, hk.2.1.2]
 
 /-- `core`'s digest and `k`: in the digest or the frame, apart from `out`
 and `scratch`. -/
@@ -57,8 +59,7 @@ theorem coreArg_ok (hL : L.Ok) (hk : CoreOk P L) {x : Addr} (hx : x = dgAddr L �
   have nB := hL.nB
   cases hw : L.wide
   · obtain ⟨-, h6, -⟩ := P.sizesA (hk.2.2.symm.trans hw)
-    have hn := hk.2.1 hw
-    have he : L.e = 0 := by rw [L.ew, hw]; rfl
+    have hn := hk.2.1.1 hw
     have hQ := P.wsizes
     simp only [dgAddr, kAddr, hw, Bool.false_eq_true, ite_false] at hx
     rcases hx with rfl | rfl

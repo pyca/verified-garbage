@@ -1,23 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingPublic
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingReadyCT
+import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingReadyCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingPublic
 meta import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingReadyCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
-import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
-meta import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant time of the complete verifying entry point -/
 

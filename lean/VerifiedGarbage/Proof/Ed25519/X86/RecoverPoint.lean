@@ -1,19 +1,14 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.X86.Recover
-public import VerifiedGarbage.Proof.Ed25519.X86.Power
+import VerifiedGarbage.Proof.Ed25519.X86.Power
 public import VerifiedGarbage.Proof.Ed25519.Recover
 public import VerifiedGarbage.Proof.Ed25519.X86.RecoverSign
+public import VerifiedGarbage.Proof.Ed25519.X86.PowerEnv
 import VerifiedGarbage.Proof.Ed25519.X86.AccumulateStep
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Ed25519.X86.RecoverCandidate`. -/
 

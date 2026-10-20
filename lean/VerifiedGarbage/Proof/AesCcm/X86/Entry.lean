@@ -1,11 +1,13 @@
 module
+public import VerifiedGarbage.Impl.AesCcm.X86
+public import VerifiedGarbage.Proof.AesGcm.X86.Fn
 
-public import VerifiedGarbage.Proof.AesCcm.X86.Crypt
-public import VerifiedGarbage.Proof.AesGcm.X86.Top
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesCcm.X86.Run
+import VerifiedGarbage.Proof.AesCcm.X86.Env
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CCM on x86: the entry and the exit

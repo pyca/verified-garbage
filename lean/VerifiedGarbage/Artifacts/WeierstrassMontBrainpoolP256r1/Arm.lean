@@ -1,14 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Impl.Weierstrass.Arm.Mont
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP256r1
-import Batteries.Logic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.RegSet
-import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Montgomery arithmetic modulo brainpoolP256r1's `p` and `n` on ARMv7
 
@@ -29,47 +22,29 @@ def notes : List String := ["The function saves `r4`–`r11` in its own working 
   conditional subtraction selected by a mask."]
 
 def artifacts : List Artifact := [
-  { brainpoolp256r1p.mulApi with
-    target := Arm.target
-    doc := brainpoolp256r1p.mulApi.doc (notes := notes)
+  brainpoolp256r1p.mulApi.artifact Arm.target {
+    notes := notes
     code := mulFn brainpoolp256r1p.k brainpoolp256r1p.m
-    contract := brainpoolp256r1p.mulContract Arm.abi
-    verified := brainpoolp256r1p_mul_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { brainpoolp256r1p.addApi with
-    target := Arm.target
-    doc := brainpoolp256r1p.addApi.doc (notes := notes)
+    verified := brainpoolp256r1p_mul_verified },
+  brainpoolp256r1p.addApi.artifact Arm.target {
+    notes := notes
     code := addFn brainpoolp256r1p.k brainpoolp256r1p.m
-    contract := brainpoolp256r1p.addContract Arm.abi
-    verified := brainpoolp256r1p_add_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { brainpoolp256r1p.subApi with
-    target := Arm.target
-    doc := brainpoolp256r1p.subApi.doc (notes := notes)
+    verified := brainpoolp256r1p_add_verified },
+  brainpoolp256r1p.subApi.artifact Arm.target {
+    notes := notes
     code := subFn brainpoolp256r1p.k brainpoolp256r1p.m
-    contract := brainpoolp256r1p.subContract Arm.abi
-    verified := brainpoolp256r1p_sub_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { brainpoolp256r1n.mulApi with
-    target := Arm.target
-    doc := brainpoolp256r1n.mulApi.doc (notes := notes)
+    verified := brainpoolp256r1p_sub_verified },
+  brainpoolp256r1n.mulApi.artifact Arm.target {
+    notes := notes
     code := mulFn brainpoolp256r1n.k brainpoolp256r1n.m
-    contract := brainpoolp256r1n.mulContract Arm.abi
-    verified := brainpoolp256r1n_mul_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { brainpoolp256r1n.addApi with
-    target := Arm.target
-    doc := brainpoolp256r1n.addApi.doc (notes := notes)
+    verified := brainpoolp256r1n_mul_verified },
+  brainpoolp256r1n.addApi.artifact Arm.target {
+    notes := notes
     code := addFn brainpoolp256r1n.k brainpoolp256r1n.m
-    contract := brainpoolp256r1n.addContract Arm.abi
-    verified := brainpoolp256r1n_add_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { brainpoolp256r1n.subApi with
-    target := Arm.target
-    doc := brainpoolp256r1n.subApi.doc (notes := notes)
+    verified := brainpoolp256r1n_add_verified },
+  brainpoolp256r1n.subApi.artifact Arm.target {
+    notes := notes
     code := subFn brainpoolp256r1n.k brainpoolp256r1n.m
-    contract := brainpoolp256r1n.subContract Arm.abi
-    verified := brainpoolp256r1n_sub_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := brainpoolp256r1n_sub_verified }]
 
 end VG.Artifacts.WeierstrassMontBrainpoolP256r1.Arm

@@ -1,11 +1,22 @@
 module
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Idea.X86.Round
 
-public import VerifiedGarbage.Proof.Idea.X86.Invert
-public import VerifiedGarbage.Proof.Idea.X86.Block
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Idea.X86.Invert
+import VerifiedGarbage.Proof.Idea.X86.Block
+import VerifiedGarbage.Proof.Idea.X86.Key
+import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Idea.X86.Lit
 
 /-!
 # IDEA ECB on x86 (32-bit)
@@ -596,8 +607,6 @@ theorem ecb_wp (s : State) (hs : ecbContract.pre s) :
       show o.zf = _
       rw [pi.zf, show arg s 2 - 0 = arg s 2 from BitVec.sub_zero _]
       congr 1
-      rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
-      exact ⟨fun h => by simp only [n, h]; rfl, fun h => BitVec.eq_of_toNat_eq h⟩
     refine WP.ite _ hz (fun h0 => ?_) (fun h0 => ?_)
     · have h0 : n = 0 := by simpa using h0
       exact WP.block_nil ⟨rfl, rfl, rfl, rfl, Frame.refl _ _, fun j hj => by omega⟩

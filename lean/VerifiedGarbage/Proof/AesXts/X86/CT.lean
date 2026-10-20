@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.X86.Body
-meta import VerifiedGarbage.Proof.AesXts.X86.Body
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesCbc.X86.CT
+import VerifiedGarbage.Proof.MdStream.X86.Common
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.AesXts.X86.Body
 meta import VerifiedGarbage.Proof.AesCbc.X86.CT
+meta import VerifiedGarbage.Proof.MdStream.X86.Common
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # XTS-AES on x86: constant time

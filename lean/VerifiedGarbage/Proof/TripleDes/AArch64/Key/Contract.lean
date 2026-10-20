@@ -1,15 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Body
-import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Save
 public import VerifiedGarbage.Proof.TripleDes.AArch64.ConstantTime
-public import VerifiedGarbage.Spec.TripleDes.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
+import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
 
 @[expose] public section
 

@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNttCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejBounded
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.BallCT
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-DSA (FIPS 204) on 32-bit ARM: the sampling primitives -/
 
@@ -20,43 +20,31 @@ def saveNote : String :=
     pointer hold the stack arguments of the SHA-3 functions it calls."
 
 def artifacts : List Artifact := [
-  { Spec.MlDsa.rejNTTApi with
-    target := Arm.target
-    doc := Spec.MlDsa.rejNTTApi.doc (notes := ["It squeezes 1008 bytes of SHAKE128 output (6 blocks) and \
-      runs the loop of `RejNTTPoly` over them.", saveNote])
+  Spec.MlDsa.rejNTTApi.artifact Arm.target {
+    notes := ["It squeezes 1008 bytes of SHAKE128 output (6 blocks) and \
+      runs the loop of `RejNTTPoly` over them.", saveNote]
     code := Impl.MlDsa.Arm.Sample.rejNTT
-    contract := Spec.MlDsa.rejNTTContract Arm.abi 8
     stack := 8
-    verified := Proof.MlDsa.Arm.Sample.rejNTT_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.rejBoundedApi with
-    target := Arm.target
-    doc := Spec.MlDsa.rejBoundedApi.doc (notes := ["It squeezes 544 bytes of SHAKE256 output (4 blocks) and \
+    verified := Proof.MlDsa.Arm.Sample.rejNTT_verified },
+  Spec.MlDsa.rejBoundedApi.artifact Arm.target {
+    notes := ["It squeezes 544 bytes of SHAKE256 output (4 blocks) and \
       runs the loop of `RejBoundedPoly` over them. The coefficient of an accepted half-byte is computed \
-      without a branch or a table, so only whether each half-byte is accepted affects timing.", saveNote])
+      without a branch or a table, so only whether each half-byte is accepted affects timing.", saveNote]
     code := Impl.MlDsa.Arm.Sample.rejBounded
-    contract := Spec.MlDsa.rejBoundedContract Arm.abi 8
     stack := 8
-    verified := Proof.MlDsa.Arm.Sample.rejBounded_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.expandMaskApi with
-    target := Arm.target
-    doc := Spec.MlDsa.expandMaskApi.doc (notes := ["It squeezes 640 bytes of SHAKE256 output (5 blocks, \
+    verified := Proof.MlDsa.Arm.Sample.rejBounded_verified },
+  Spec.MlDsa.expandMaskApi.artifact Arm.target {
+    notes := ["It squeezes 640 bytes of SHAKE256 output (5 blocks, \
       which hold the 576 or 640 bytes it unpacks) and unpacks them with the loop of \
-      `vg_mldsa_bit_unpack`.", saveNote])
+      `vg_mldsa_bit_unpack`.", saveNote]
     code := Impl.MlDsa.Arm.Sample.expandMask
-    contract := Spec.MlDsa.expandMaskContract Arm.abi 8
     stack := 8
-    verified := Proof.MlDsa.Arm.Sample.expandMask_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.sampleInBallApi with
-    target := Arm.target
-    doc := Spec.MlDsa.sampleInBallApi.doc (notes := ["It squeezes 272 bytes of SHAKE256 output (2 blocks) and \
-      runs the loop of `SampleInBall` over the 264 after the sign bits.", saveNote])
+    verified := Proof.MlDsa.Arm.Sample.expandMask_verified },
+  Spec.MlDsa.sampleInBallApi.artifact Arm.target {
+    notes := ["It squeezes 272 bytes of SHAKE256 output (2 blocks) and \
+      runs the loop of `SampleInBall` over the 264 after the sign bits.", saveNote]
     code := Impl.MlDsa.Arm.Sample.sampleInBall
-    contract := Spec.MlDsa.sampleInBallContract Arm.abi 8
     stack := 8
-    verified := Proof.MlDsa.Arm.Sample.sampleInBall_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.MlDsa.Arm.Sample.sampleInBall_verified }]
 
 end VG.Artifacts.MlDsaSample.Arm

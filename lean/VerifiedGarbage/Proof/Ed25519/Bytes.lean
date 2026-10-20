@@ -1,11 +1,7 @@
 module
 
-public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Proof.X25519.Bytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Spec.Ed25519
 
 /-! Reuse the shared little-endian memory lemmas. -/
 

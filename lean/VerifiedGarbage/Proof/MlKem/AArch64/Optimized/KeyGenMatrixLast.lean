@@ -1,10 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgB
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixTable
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Last
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixPair
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixPair
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixPost
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The odd final matrix entry in key generation -/
 @[expose] public section
@@ -29,10 +31,10 @@ theorem singleton_context {s₀ s : State} (hp : Pre P s₀) {e : Nat} (he : e<P
     · exact tb.apart.sub_right (Offset.sub_base (kA s₀ 3) f1)
   exact ctx
 
-theorem matrix_singleton {s₀ s : State} (hp : Pre P s₀) {e : Nat} (he : e<P.k*P.k)
-    (h : BInv P s₀ e s) (tb : MatrixTable P s₀ s) :
-    WP isa (Paired.lastCode SB SS e P.k (AH+1024*e)) s fun t=>
-      BInv P s₀ (e+1) t ∧ MatrixTable P s₀ t := by
+theorem matrix_singleton {w16 : Bool} {s₀ s : State} (hp : Pre P s₀) {e : Nat} (he : e<P.k*P.k)
+    (h : BInvW w16 P s₀ e s) (tb : MatrixTable P s₀ s) :
+    WP isa (Paired.lastCode SB SS e P.k (AH+1024*e) w16) s fun t=>
+      BInvW w16 P s₀ (e+1) t ∧ MatrixTable P s₀ t := by
   have hw := hp.wf
   have f0 : SS+2048≤kL P 3 := by kl
   have f1 : AH+1024*e+1024≤kL P 3 := matrixEntry_fit hw he

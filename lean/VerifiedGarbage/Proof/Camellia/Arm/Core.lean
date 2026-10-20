@@ -1,15 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Arm.Fl
+import VerifiedGarbage.Proof.Camellia.Arm.Fl
 public import VerifiedGarbage.Proof.Camellia.Words
+public import VerifiedGarbage.Proof.Camellia.Arm.Round
 import VerifiedGarbage.Proof.Camellia.Common
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Semantics
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Eight blocks of bitsliced Camellia on ARMv7: the rounds
@@ -193,7 +191,7 @@ theorem Halves.congr {s s' : State} {S : Nat → BitVec 64 × BitVec 64} (h : Ha
    h.2.congr fun i hi => hs _ (by rw [d1Slot_eq, d2Slot_eq]; omega) (by rw [d2Slot_eq, keySlot_eq]; omega)⟩
 
 theorem round_all (off src dst : Nat) (h : RoundCase off src dst) :
-    (layerKeep.all fun r => (preL off src ++ midLR off src ++ postP dst).all fun i => dstOf i != some r) = true := by
+    (layerKeep.all fun r => (preL off src ++ midLR off src ++ postP dst).all fun i => !clobbers i r) = true := by
   rcases h with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;> decide +kernel
 
 /-- `add kp, kp, #n`, keeping all else. -/

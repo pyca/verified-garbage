@@ -1,11 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Call
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Cmac.Stream
 
 /-!

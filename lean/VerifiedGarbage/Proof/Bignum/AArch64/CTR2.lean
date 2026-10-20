@@ -1,17 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
-meta import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Omega
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.AArch64.R2dCT
+public import VerifiedGarbage.Impl.Rsa.AArch64
+import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+import VerifiedGarbage.Proof.Bignum.AArch64.R2dRecip
+import VerifiedGarbage.Proof.Bignum.AArch64.R2dQuot
+import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
+import VerifiedGarbage.Proof.Bignum.AArch64.Double
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.R2dCT
+meta import VerifiedGarbage.Impl.Rsa.AArch64
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+meta import VerifiedGarbage.Proof.Bignum.AArch64.R2dRecip
+meta import VerifiedGarbage.Proof.Bignum.AArch64.R2dQuot
+meta import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
+meta import VerifiedGarbage.Proof.Bignum.AArch64.Double
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # RSA on AArch64: `R² mod m` is constant time but for `m`
@@ -66,15 +80,6 @@ theorem two_bind {α β : Type} {Φ : α → State → Prop} {Ψ : β → State 
   let ⟨a, h₁, h₂, hsp⟩ := h
   let ⟨b, g₁, g₂⟩ := f a s₁ s₂ h₁ h₂
   ⟨b, g₁, g₂, hsp⟩
-
-/-- `Good` after code that changes no memory and not `x0`. -/
-theorem Good.keep {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good s B Z w minv)
-    (hm : t.mem = s.mem) {rs : List Reg} (k : Keep rs s t) (h0 : .x0 ∉ rs) : Good t B Z w minv :=
-  ⟨hg.scr.congr k.wr, (k.gpr .x0 h0).trans hg.x0, hm ▸ hg.hdr⟩
-
-theorem GoodL.keep {L : Lay} {s t : State} (hg : GoodL L s) (hm : t.mem = s.mem) {rs : List Reg}
-    (k : Keep rs s t) (h0 : .x0 ∉ rs) : GoodL L t :=
-  ⟨hg.1.keep hm k h0, hg.2⟩
 
 /-! ## `double` -/
 
@@ -154,18 +159,6 @@ def DblsAt (mo acc tmp o sl : Nat) (p : DblPub) (j : Nat) (t : State) : Prop :=
 theorem dblsAt_good {mo acc tmp o sl : Nat} {p : DblPub} {j : Nat} {t : State}
     (h : DblsAt mo acc tmp o sl p j t) : GoodL p.L t :=
   let ⟨_, _, _, hI, hZ, _⟩ := h; ⟨⟨hI.scr, hI.x0, hI.hdr⟩, hZ⟩
-
-theorem eval_count {t : State} {j c : Nat} (hj : j < c) (h : (t.gpr .x13).toNat ≠ 0 ↔ j + 1 ≠ c) :
-    isa.eval (.nonzero .x .x13) t = some (decide (j + 1 < c)) := by
-  rw [eval_nonzero]
-  congr 1
-  by_cases hc : j + 1 < c
-  · have hne : t.gpr .x13 ≠ 0 := fun e => by
-      rw [e] at h; exact absurd (h.mpr (by omega)) (by simp)
-    rw [bne_iff_ne.mpr hne, decide_eq_true hc]
-  · have he : t.gpr .x13 = 0 := BitVec.eq_of_toNat_eq (by
-      by_contra hne; exact (h.mp (by simpa using hne)) (by omega))
-    rw [he, decide_eq_false hc]; rfl
 
 theorem doubles_eq (mo acc tmp o sl : Nat) : doubles mo acc tmp o sl =
     .seq (.block [sth .x13 sl]) (.loop (.seq (double mo acc tmp o) (.block (dblCount sl))) (.nonzero .x .x13)) :=
@@ -392,9 +385,9 @@ theorem setWord_eq (o : Nat) : setWord o =
     .seq (.block [ldh .x8 (sArr o), movi .x7 0]) (.seq zeroAcc
       (.block [.lsl .x .x16 .x13 3, .add .x .x16 .x8 .x16, st .x9 .x16])) := rfl
 
-/-- `R² mod m` leaks the same in runs that agree on `m`. -/
-theorem r2_ct (M : Mont) : RelCT isa (Two R2Pre) (seqs (r2Steps M.mm)) fun _ _ => True := by
-  rw [r2Steps_eq]
+/-- `r2StepsOld` leaks the same in runs that agree on `m`. -/
+theorem r2Old_ct (M : Mont) : RelCT isa (Two R2Pre) (seqs (r2StepsOld M.mm)) fun _ _ => True := by
+  rw [r2StepsOld_eq]
   refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (R := Two SqPre) ?_ (sqs_ct M))
   -- `w` and `m`'s base.
   refine RelCT.seq (RelCT.block_append (l₁ := ([ldh .x12 sW, ldh .x8 (sArr aN)] : List Instr))
@@ -525,5 +518,72 @@ theorem r2_ct (M : Mont) : RelCT isa (Two R2Pre) (seqs (r2Steps M.mm)) fun _ _ =
       by rw [hf'.r2_word hn' (by decide) (by decide) (by decide) (by decide)]; exact hinv, ?_⟩
     rw [hv', hf'.r2_wv hn' (by decide) (by decide) (by decide) (by decide), hN]
     exact Nat.mod_lt _ hN0
+
+/-- `fastTest`'s loads of `w` and `m`'s base. -/
+def R2t (p : R2Pub) (s : State) : Prop :=
+  R2Pre p s ∧ s.gpr .x12 = BitVec.ofNat 64 p.L.w ∧ s.gpr .x9 = off p.L.B (slot p.L.w aN)
+
+/-- After `fastTest`: the top bit of `m`. -/
+def R2u (p : R2Pub) (s : State) : Prop :=
+  R2Pre p s ∧ s.gpr .x3 = BitVec.ofNat 64 (decide (2 ^ 63 ≤ p.top)).toNat
+
+theorem fastTest_eq : R2Div.fastTest = ([ldh .x12 sW, ldh .x9 (sArr aN)] : List Instr) ++
+    ([.lsl .x .x13 .x12 3, .subImm .x .x13 .x13 8, .add .x .x13 .x9 .x13, ld .x3 .x13, .lsr .x .x3 .x3 63] :
+      List Instr) := rfl
+
+theorem r2t_ok {p : R2Pub} {s : State} (h : R2Pre p s) :
+    WP isa (.block [ldh .x12 sW, ldh .x9 (sArr aN)]) s (R2t p) := by
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.L.B (8 * i)) 8 := fun i hi =>
+    h.1.1.scr.ld (by have := hdr_lt_slot p.L.w 8 hi; have := h.1.2; omega)
+  refine WP.mono (WP.keep [.x9, .x12] (Q := fun t => t.gpr .x12 = BitVec.ofNat 64 p.L.w ∧
+      t.gpr .x9 = off p.L.B (slot p.L.w aN) ∧ t.mem = s.mem) (by
+    brun [h.1.1.x0, hdr_enc (show sW < 32 by decide), hdr_enc (show sArr aN < 32 by decide), hl sW (by decide),
+      hl (sArr aN) (by decide), h.1.1.hdr.hw, h.1.1.hdr.harr aN (by decide)])
+    (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h12, h9, hm⟩, k⟩ => ⟨h.keep hm k (by decide), h12, h9⟩
+
+theorem r2u_ok {p : R2Pub} {s : State} (ht : R2t p s) :
+    WP isa (.block [.lsl .x .x13 .x12 3, .subImm .x .x13 .x13 8, .add .x .x13 .x9 .x13, ld .x3 .x13,
+      .lsr .x .x3 .x3 63]) s (R2u p) := by
+  obtain ⟨h, h12, h9⟩ := ht
+  obtain ⟨hT, -⟩ := h.top
+  have hw := h.2.1
+  have hn := h.1.1.scr.nowrap
+  have lN := Nat.le_trans (slot_le (w := p.L.w) (show aN < 8 by decide)) h.1.2
+  refine WP.mono (WP.keep [.x3, .x13] (Q := fun t =>
+      t.gpr .x3 = word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1)) >>> 63 ∧ t.mem = s.mem)
+    (by brun [h12, h9, shl3_sub8 (show 1 ≤ p.L.w by omega) (show p.L.w < 2 ^ 61 by have := h.2.2.1; omega),
+        off_add, h.1.1.scr.ld (show slot p.L.w aN + 8 * (p.L.w - 1) + 8 ≤ p.L.Z by omega)])
+    (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h3, hm⟩, k⟩ => ⟨h.keep hm k (by decide), ?_⟩
+  rw [h3, shr63_toNat, hT]
+
+theorem pins_r2t : Pins R2t [.x12, .x9] := by
+  intro p s₁ s₂ h₁ h₂ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · rw [h₁.2.1, h₂.2.1]
+  · rw [h₁.2.2, h₂.2.2]
+
+/-- `fast`'s precondition, when the top bit of `m` is set. -/
+theorem R2Pre.fpre {p : R2Pub} {s : State} (h : R2Pre p s) (h63 : 2 ^ 63 ≤ p.top) : R2dFPre p.L.ws s := by
+  obtain ⟨hT, -⟩ := h.top
+  obtain ⟨hg, hw, hw', hN, -, hodd, -⟩ := h
+  exact ⟨⟨p.L.minv, hg, hw, show p.L.w < 2 ^ 31 by omega⟩, by rw [hN]; exact hodd, by rw [hT]; exact h63⟩
+
+/-- `R² mod m` leaks the same in runs that agree on `m`: `choice` branches on
+its top bit. -/
+theorem r2_ct (M : Mont) : RelCT isa (Two R2Pre) (seqs (r2Steps M.mm)) fun _ _ => True := by
+  show RelCT isa (Two R2Pre) (R2Div.choice (seqs (r2StepsOld M.mm))) _
+  unfold R2Div.choice
+  rw [fastTest_eq]
+  refine RelCT.seq (RelCT.block_append (RelCT.seq
+    (two_piece (Ψ := R2t) _ (pins_r2 fun _ _ h => h) (by taint_decide) fun _ _ h => r2t_ok h)
+    (two_piece (Ψ := R2u) _ pins_r2t (by taint_decide) fun _ _ h => r2u_ok h))) ?_
+  refine two_ite (fun p s₁ s₂ h₁ h₂ => by rw [eval_zero, eval_zero, h₁.2, h₂.2]) ?_ ?_
+  · exact (r2Old_ct M).mono (fun _ _ h => two_mono (fun _ _ h => h.1.1) h) fun _ _ h => h
+  · refine two_map (fun p => p.L.ws) (fun p s ⟨⟨h, h3⟩, he⟩ => h.fpre ?_) r2dFast_ct
+    rw [eval_zero, h3] at he
+    by_contra hlt
+    rw [decide_eq_false hlt] at he
+    exact absurd he (by decide)
 
 end VG.Proof.Bignum.AArch64

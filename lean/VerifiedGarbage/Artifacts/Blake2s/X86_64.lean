@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
-public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # BLAKE2s (RFC 7693) on x86-64
@@ -19,12 +17,8 @@ callers are registered through `Variants/Blake2s/X86_64/` and
 namespace VG.Artifacts.Blake2s.X86_64
 
 def artifacts : List Artifact := [
-  { Spec.Blake2.initSApi with
-    target := X86_64.target
-    doc := Spec.Blake2.initSApi.doc
+  Spec.Blake2.initSApi.artifact X86_64.target {
     code := Impl.Blake2.X86_64.Stream.init Spec.Blake2.s
-    contract := Spec.Blake2.initSContract X86_64.abi
-    verified := Proof.Blake2.X86_64.Stream.initS_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Blake2.X86_64.Stream.initS_verified }]
 
 end VG.Artifacts.Blake2s.X86_64

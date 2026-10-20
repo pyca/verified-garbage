@@ -1,10 +1,15 @@
 module
+public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
 
-public import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
+import VerifiedGarbage.Proof.CmacAes.X86_64.Subkeys
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # AES-CMAC on x86-64: `vg_cmac_aes_finalize` is correct

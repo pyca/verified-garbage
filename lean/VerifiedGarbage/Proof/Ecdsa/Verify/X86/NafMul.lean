@@ -1,12 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowLayout
+public import VerifiedGarbage.Proof.Weierstrass.Law3
+public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulSetup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulSetup
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
+import VerifiedGarbage.Proof.Ecdsa.X86.Stages
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Spec.X25519
 
 /-! # The x86 P-256 variable-base product -/
 

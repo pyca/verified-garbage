@@ -4,43 +4,27 @@ public import VerifiedGarbage.Spec.MlDsa.PairedApi
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
+public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section
 
 namespace VG.Artifacts.MlDsaPaired.AArch64
 
 def artifacts : List Artifact := [
-  { Spec.MlDsa.pairedZApi with
-    target := AArch64.target
-    doc := Spec.MlDsa.pairedZApi.doc
+  Spec.MlDsa.pairedZApi.artifact AArch64.target {
     consts := Impl.MlDsa.AArch64.Optimized.Paired.pairedConsts
     code := Impl.MlDsa.AArch64.Optimized.Paired.selected .z
-    contract := Spec.MlDsa.pairedZContract
-      (AArch64.abi.withConsts Impl.MlDsa.AArch64.Optimized.Paired.pairedConsts)
-    verified := Proof.MlDsa.AArch64.Optimized.Paired.pairedZ_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _
-    ofSig := by exact (⟨_,_,_,by unfold Spec.MlDsa.pairedZContract; rfl⟩) },
-  { Spec.MlDsa.pairedLowApi with
-    target := AArch64.target
-    doc := Spec.MlDsa.pairedLowApi.doc
+    verified := Proof.MlDsa.AArch64.Optimized.Paired.pairedZ_verified },
+  Spec.MlDsa.pairedLowApi.artifact AArch64.target {
     consts := Impl.MlDsa.AArch64.Optimized.Paired.pairedConsts
     code := Impl.MlDsa.AArch64.Optimized.Paired.selected .r0
-    contract := Spec.MlDsa.pairedLowContract
-      (AArch64.abi.withConsts Impl.MlDsa.AArch64.Optimized.Paired.pairedConsts)
-    verified := Proof.MlDsa.AArch64.Optimized.Paired.pairedLow_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _
-    ofSig := by exact (⟨_,_,_,by unfold Spec.MlDsa.pairedLowContract; rfl⟩) },
-  { Spec.MlDsa.pairedHintApi with
-    target := AArch64.target
-    doc := Spec.MlDsa.pairedHintApi.doc
+    verified := Proof.MlDsa.AArch64.Optimized.Paired.pairedLow_verified },
+  Spec.MlDsa.pairedHintApi.artifact AArch64.target {
     consts := Impl.MlDsa.AArch64.Optimized.Paired.pairedConsts
     code := Impl.MlDsa.AArch64.Optimized.Paired.selected .h
-    contract := Spec.MlDsa.pairedHintContract
-      (AArch64.abi.withConsts Impl.MlDsa.AArch64.Optimized.Paired.pairedConsts)
-    verified := Proof.MlDsa.AArch64.Optimized.Paired.pairedHint_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _
-    ofSig := by exact (⟨_,_,_,by unfold Spec.MlDsa.pairedHintContract; rfl⟩) }]
+    verified := Proof.MlDsa.AArch64.Optimized.Paired.pairedHint_verified }]
 
 end VG.Artifacts.MlDsaPaired.AArch64

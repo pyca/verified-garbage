@@ -1,8 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublish
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Attr.Core
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! Published consumption, preserved signature bytes, and erased nonce bytes. -/
 @[expose] public section

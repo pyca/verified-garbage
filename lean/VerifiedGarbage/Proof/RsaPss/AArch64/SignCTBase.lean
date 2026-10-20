@@ -1,13 +1,14 @@
 module
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignChecks
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignMain
 
-public import VerifiedGarbage.Proof.RsaPss.AArch64.SignTop
-public import VerifiedGarbage.Proof.RsaPss.AArch64.MgfCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignPre
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignBody
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
 
 /-!
 # RSASSA-PSS signing on AArch64: constant time, the public data and the checks

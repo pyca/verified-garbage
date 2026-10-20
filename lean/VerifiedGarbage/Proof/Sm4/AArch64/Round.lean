@@ -3,12 +3,9 @@ module
 public import VerifiedGarbage.Proof.Sm4.AArch64.Linear
 public import VerifiedGarbage.Proof.Sm4.AArch64.Sbox
 public import VerifiedGarbage.Proof.Sm4.Rounds
-public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
 
 /-!
 # A round of bitsliced SM4 on AArch64
@@ -123,15 +120,15 @@ theorem round_ok (l : Lin) {a b c d : Nat} (ha : a < 4)
     (hlin : check (lanes 64 12) linCfg (linExt 40) (lin l a) linEnv
       (linPostG 12 [] (linOuts l a) (linKeep a) linEnv) = true)
     (hall : (layerKeep.all fun r =>
-      (preX a b c d ++ lin l a).all fun i => dstOf i != some r) = true)
+      (preX a b c d ++ lin l a).all fun i => !clobbers i r) = true)
     {s : State} (hok : Ok layerCfg s) (hm : MasksOk s) {X : Nat → Nat → Spec.Sm4.Word} {k : Spec.Sm4.Word}
     (hX : StRel s X) (hK : WordRel (fun j => keyW s (8 * a + j)) fun _ => k) :
     ∃ s', runBlock isa (round l a a b c d) s = some s' ∧
       StRel s' (fun b' => sround l k a (X b')) ∧ MasksOk s' ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r) ∧
       Frame [slotRegion layerCfg s] s.mem s'.mem := by
-  have hall' : ∀ r, r ∉ layerWrites → ((preX a b c d).all fun i => dstOf i != some r) = true ∧
-      ((lin l a).all fun i => dstOf i != some r) = true := fun r hr => by
+  have hall' : ∀ r, r ∉ layerWrites → ((preX a b c d).all fun i => !clobbers i r) = true ∧
+      ((lin l a).all fun i => !clobbers i r) = true := fun r hr => by
     have := List.all_eq_true.mp hall r (not_layerWrites r hr)
     rw [List.all_append, Bool.and_eq_true] at this
     exact this

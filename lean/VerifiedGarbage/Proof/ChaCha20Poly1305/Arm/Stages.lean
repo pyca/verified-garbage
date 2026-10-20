@@ -1,23 +1,27 @@
 module
 
 public import VerifiedGarbage.Spec.ChaCha20Poly1305
-public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 public import VerifiedGarbage.Proof.ChaCha20.Arm.Xor
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.Arm
-public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Poly1305.Arm.Init
-public import VerifiedGarbage.Proof.Poly1305.Arm.Blocks
 import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Poly1305.Arm.Bytes
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Poly1305.Stream
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import Batteries.Logic
+import VerifiedGarbage.Proof.Poly1305.Arm.Lit
+import VerifiedGarbage.Proof.ChaCha20.Arm.Lit
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 
@@ -331,7 +335,7 @@ theorem Kept.mem_eq {s s' : State} (hk : Kept [] s s') : s'.mem = s.mem :=
 /-- A block that writes no callee-saved register keeps them, and the stack
 pointer. -/
 theorem WP.kept {is : List Instr} {s : State} {Q : State → Prop} (h : WP isa (.block is) s Q)
-    (hc : (is.all fun i => preserved.all fun r => dstOf i != some r) = true) :
+    (hc : (is.all fun i => preserved.all fun r => !clobbers i r) = true) :
     WP isa (.block is) s fun s' => Q s' ∧ (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.sp = s.sp := by
   obtain ⟨t, s', he, hq⟩ := h
   refine ⟨t, s', he, hq, fun r hr => Exec.gpr (fun i hi => ?_) he (.inl rfl), Exec.sp he⟩
@@ -463,15 +467,15 @@ theorem stateAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : 
 
 /-! ## Registers the callees keep -/
 
-theorem keeps {c : Prog isa} {r : Reg} (h : ((instrs c).all fun i => dstOf i != some r) = true) :
-    ∀ i ∈ instrs c, dstOf i ≠ some r := by
+theorem keeps {c : Prog isa} {r : Reg} (h : ((instrs c).all fun i => !clobbers i r) = true) :
+    ∀ i ∈ instrs c, clobbers i r = false := by
   intro i hi
   simpa using List.all_eq_true.mp h i hi
 
-theorem init_keeps_r0 : ∀ i ∈ instrs Impl.Poly1305.Arm.init, dstOf i ≠ some .r0 :=
+theorem init_keeps_r0 : ∀ i ∈ instrs Impl.Poly1305.Arm.init, clobbers i .r0 = false :=
   keeps (by rw [← Code.allInstrs_eq]; lit_decide)
 
-theorem blocks_keeps_r0 : ∀ i ∈ instrs Impl.Poly1305.Arm.blocks, dstOf i ≠ some .r0 :=
+theorem blocks_keeps_r0 : ∀ i ∈ instrs Impl.Poly1305.Arm.blocks, clobbers i .r0 = false :=
   keeps (by rw [← Code.allInstrs_eq]; lit_decide)
 
 theorem init_noCalls : Impl.Poly1305.Arm.init.noCalls = true := by lit_decide
@@ -2067,8 +2071,8 @@ theorem count_val (n : BitVec 32) : n >>> 28 ++ n <<< 4 = BitVec.ofNat 64 (16 * 
     Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
   omega_using []
 
-theorem finArgs_all {out : Instr} (hkeep : (preserved.all fun r => dstOf out != some r) = true) :
-    ((finalizeArgs out).all fun i => preserved.all fun r => dstOf i != some r) = true := by
+theorem finArgs_all {out : Instr} (hkeep : (preserved.all fun r => !clobbers out r) = true) :
+    ((finalizeArgs out).all fun i => preserved.all fun r => !clobbers i r) = true := by
   simp only [finalizeArgs, ceil16, List.cons_append, List.nil_append, List.all_cons, List.all_nil, hkeep,
     Bool.and_true, Bool.true_and]
   decide
@@ -2076,7 +2080,7 @@ theorem finArgs_all {out : Instr} (hkeep : (preserved.all fun r => dstOf out != 
 /-- The arguments of `vg_poly1305_finalize_scratch`, with `out` set to `O`
 by the instruction `out`. -/
 theorem finArgs_ok {s₀ : State} {s : State} (h : Inv s₀ s) {out : Instr} {O : BitVec 32}
-    (hkeep : (preserved.all fun r => dstOf out != some r) = true)
+    (hkeep : (preserved.all fun r => !clobbers out r) = true)
     (hout : ∀ (t : State) (rest : List Instr) (Q : State → Prop), t.mem = s.mem → t.sp = s.sp →
       t.rd = s.rd → t.gpr .r7 = s.gpr .r7 → (∀ t', Upd t t' .r1 O → WP isa (.block rest) t' Q) →
       WP isa (.block (out :: rest)) t Q) :

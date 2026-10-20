@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.PublicKey
-public import VerifiedGarbage.Impl.Ed25519.X86.Scalar
 public import VerifiedGarbage.Impl.Ed25519.X86.Verify
-public import VerifiedGarbage.Impl.Ed25519.X86.Whole.Wipe
 
 /-! Complete x86 Ed25519 verification: hash R || A || message, reduce the
 challenge modulo L, and invoke the verified strict equation checker. -/

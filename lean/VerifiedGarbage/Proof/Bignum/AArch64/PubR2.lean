@@ -1,21 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+import VerifiedGarbage.Proof.Bignum.AArch64.R2dFast
 public import VerifiedGarbage.Impl.Rsa.AArch64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Proof.Bignum.AArch64.R2
+import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
 # RSA on AArch64: `R² mod m`
 
-`r2Steps`: `2^(b - 1)` for the bit length `b` of `m` into array `aR2`,
+`r2StepsOld`: `2^(b - 1)` for the bit length `b` of `m` into array `aR2`,
 doubled `64 - (b - 1) mod 64 + w` times to `2^w R mod m`, then squared six
-times in a loop (`sqs_ok`, `r2_ok`): `R² mod m`, for any Montgomery multiplication `M`.
+times in a loop (`sqs_ok`, `r2Old_ok`): `R² mod m`, for any Montgomery multiplication `M`.
+`r2Steps` takes long division (`r2dFast_ok`) instead when the top bit of `m` is
+set (`r2_ok`).
 -/
 
 @[expose] public section
@@ -54,24 +55,6 @@ structure SqsInv (s : State) (B : Addr) (Z w : Nat) (minv : BitVec 64) (N E j : 
   cnt : word t.mem B (8 * sCnt) = BitVec.ofNat 64 (6 - j)
   frm : Frm B (r2Ranges w) s.mem t.mem
   keep : Keep mmRegs s t
-
-/-- `sqs`' count: the count `c ≥ 1` in slot `sCnt` less one, there and in `x13`. -/
-theorem sqCount_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good t B Z w minv)
-    (hZ : slot w 8 ≤ Z) {c : Nat} (hc : 1 ≤ c) (hc' : c < 2 ^ 64)
-    (hcnt : word t.mem B (8 * sCnt) = BitVec.ofNat 64 c) :
-    WP isa (.block (dblCount sCnt)) t fun t' => Good t' B Z w minv ∧
-      word t'.mem B (8 * sCnt) = BitVec.ofNat 64 (c - 1) ∧ t'.gpr .x13 = BitVec.ofNat 64 (c - 1) ∧
-      Outside B (8 * sCnt) 8 t.mem t'.mem ∧ Keep [.x13] t t' := by
-  have hn := hg.scr.nowrap
-  have hhs : ∀ j, 8 * sCnt + 8 ≤ slot w j := fun j => hdr_lt_slot w j (by decide)
-  have hld : InRegions (t.rd ++ t.wr) (off B (8 * sCnt)) 8 := hg.scr.ld (by have := hhs 8; omega)
-  refine WP.mono (WP.keep [.x13] (Q := fun t' => t'.mem = t.mem.writeW (off B (8 * sCnt))
-      (BitVec.ofNat 64 (c - 1)) ∧ t'.gpr .x13 = BitVec.ofNat 64 (c - 1)) (by
-    brun [hg.x0, hdr_enc (show sCnt < 32 by decide), hld,
-      hg.scr.st (show 8 * sCnt + 8 ≤ Z by have := hhs 8; omega), hcnt, ofNat_sub_one' hc hc']) rfl rfl rfl) fun t' ⟨⟨hm', h13'⟩, k'⟩ => ?_
-  exact ⟨⟨hg.scr.congr k'.wr, (k'.gpr .x0 (by decide)).trans hg.x0,
-    by rw [hm']; exact Hdr.store hg.hdr (by decide) (by decide) _⟩, by rw [hm', word_writeW_self], h13',
-    by rw [hm']; exact writeW_outside _ _ _ (by have := hhs 8; omega), k'⟩
 
 /-- One squaring of `sqs`, and its count. -/
 theorem sqIter_ok {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N E j : Nat} (hZ : slot w 8 ≤ Z)
@@ -130,7 +113,7 @@ theorem sqs_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N E : Nat}
   exact WP.mono (count_loop (n := 6) (by decide) _ (fun j hj t hI => sqIter_ok M hZ hw hw' hR hj hI) h₁)
     fun t' hI => ⟨hI.g, hI.lt, hI.v, hI.frm, hI.keep⟩
 
-theorem r2Steps_eq : r2Steps M.mm = ([
+theorem r2StepsOld_eq : r2StepsOld M.mm = ([
     .block [ldh .x12 sW, ldh .x8 (sArr aN), .subImm .x .x4 .x12 1, .lsl .x .x4 .x4 3, .add .x .x4 .x8 .x4,
       ld .x3 .x4],
     topBit,
@@ -139,12 +122,12 @@ theorem r2Steps_eq : r2Steps M.mm = ([
     .block [ldh .x13 sCnt, ldh .x12 sW, .add .x .x13 .x13 .x12],
     doubles aN aAcc aTmp aR2 sCnt] : List (Prog isa)) ++ [sqs M.mm] := rfl
 
-/-- `R² mod m`, for the odd `m` of `w ≥ 2` words, its top word not zero. -/
-theorem r2_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N : Nat} (hg : Good s B Z w minv)
+/-- `r2StepsOld`: `R² mod m`, for the odd `m` of `w ≥ 2` words, its top word not zero. -/
+theorem r2Old_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N : Nat} (hg : Good s B Z w minv)
     (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw30 : w < 2 ^ 30) (hn : wv s.mem B (slot w aN) w = N)
     (hinv : ((word s.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0) (hodd : N % 2 = 1)
     (hlo : 2 ^ (64 * (w - 1)) ≤ N) :
-    WP isa (seqs (r2Steps M.mm)) s fun t => Good t B Z w minv ∧
+    WP isa (seqs (r2StepsOld M.mm)) s fun t => Good t B Z w minv ∧
       wv t.mem B (slot w aR2) w < N ∧ wv t.mem B (slot w aR2) w % N = 2 ^ (64 * w) * 2 ^ (64 * w) % N ∧
       Frm B (r2Ranges w) s.mem t.mem ∧ Keep mmRegs s t := by
   have hw' : w < 2 ^ 31 := by omega
@@ -177,7 +160,7 @@ theorem r2_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N : Nat} (h
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_shiftLeft, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
     omega
-  rw [r2Steps_eq]
+  rw [r2StepsOld_eq]
   -- The top word.
   refine WP.seq (WP.mono (WP.keep [.x3, .x4, .x8, .x12] (Q := fun t => t.gpr .x3 = BitVec.ofNat 64 T ∧
       t.gpr .x12 = BitVec.ofNat 64 w ∧ t.mem = s.mem) (by
@@ -248,5 +231,20 @@ theorem r2_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N : Nat} (h
     rw [hm₃]; exact Frm.of_outside (writeW_outside _ B _ (by omega)) (by simp [r2Ranges])
   exact (((f₃.trans (Frm.of_arrays ha₄ (by simp [r2Ranges]))).trans (by rw [hm₅]; exact Frm.refl _ _ _)).trans
     hf₆').trans h4
+
+/-- `R² mod m`, for the odd `m` of `w ≥ 2` words, its top word not zero. -/
+theorem r2_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N : Nat} (hg : Good s B Z w minv)
+    (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw30 : w < 2 ^ 30) (hn : wv s.mem B (slot w aN) w = N)
+    (hinv : ((word s.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0) (hodd : N % 2 = 1)
+    (hlo : 2 ^ (64 * (w - 1)) ≤ N) :
+    WP isa (seqs (r2Steps M.mm)) s fun t => Good t B Z w minv ∧
+      wv t.mem B (slot w aR2) w < N ∧ wv t.mem B (slot w aR2) w % N = 2 ^ (64 * w) * 2 ^ (64 * w) % N ∧
+      Frm B (r2Ranges w) s.mem t.mem ∧ Keep mmRegs s t := by
+  show WP isa (R2Div.choice (seqs (r2StepsOld M.mm))) s _
+  refine r2dChoice_ok hg hZ (by omega) (by omega) (fun t g ht k _ => ?_) (fun t g ht k hd => ?_)
+  · refine WP.mono (r2Old_ok M g hZ hw hw30 (by rw [ht]; exact hn) (by rw [ht]; exact hinv) hodd hlo)
+      fun t' ⟨h1, h2, h3, h4, h5⟩ => ⟨h1, h2, h3, by rw [← ht]; exact h4, (k.trans h5).mono (by decide)⟩
+  · refine WP.mono (r2dFast_ok g hZ hw (by omega) (by rw [ht]; exact hn) hodd (by rw [ht]; exact hd))
+      fun t' ⟨h1, h2, h3, h4, h5⟩ => ⟨h1, h2, h3, by rw [← ht]; exact h4, (k.trans h5).mono (by decide)⟩
 
 end VG.Proof.Bignum.AArch64

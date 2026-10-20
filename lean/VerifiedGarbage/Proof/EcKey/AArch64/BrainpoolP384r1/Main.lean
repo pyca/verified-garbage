@@ -3,12 +3,9 @@ module
 public import VerifiedGarbage.Impl.EcKey.BrainpoolP384r1.AArch64
 public import VerifiedGarbage.Proof.EcKey.AArch64.Main
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Main
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.EcKey.PublicKey
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! # brainpoolP384r1 public-key derivation without constant tables -/
 

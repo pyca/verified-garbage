@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Seed.AArch64.KeyRound
 public import VerifiedGarbage.Proof.Seed.KeySchedule
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Seed.AArch64.Round
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # The sixteen rounds of the key schedule on AArch64

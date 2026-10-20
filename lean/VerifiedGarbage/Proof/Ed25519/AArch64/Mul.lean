@@ -1,13 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Merged from `Proof.Ed25519.AArch64.Row`. -/
 
@@ -226,33 +221,127 @@ theorem movz38_ok (s : State) :
   · rw [RegUpd.gpr_write_self]; rfl
   · exact RegUpd.gpr_write_of_ne _ _ _ (by simpa only [List.mem_singleton] using hq)
 
+/-- The first part of `fold255`: 19 times the bits from 255 up into x9, and
+bit 255 of x7 cleared. -/
+theorem fold255Pre_ok (s : State) (h20 : (s.gpr .x20).toNat < 2 ^ 8) :
+    WP isa (.block [.adds .x .x16 .x7 .x7, .adc .x .x9 .x20 .x20, .lsr .x .x7 .x16 1, .movz .w .x11 19 0,
+      .mul .x .x9 .x9 .x11]) s fun t =>
+      (t.gpr .x9).toNat = 19 * ((s.gpr .x20).toNat * 2 + (s.gpr .x7).toNat / 2 ^ 63) ∧
+      (t.gpr .x7).toNat = (s.gpr .x7).toNat % 2 ^ 63 ∧ Keeps [.x9, .x7, .x11, .x16] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, Size.bits,
+    show (1 : Nat) < 64 from by decide, show 16 * 0 < Size.w.bits from by decide, ite_true,
+    Option.some.injEq, exists_eq_left', RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry,
+    BitVec.setWidth_eq, reduceCtorEq, ite_false]
+  have h7 := (s.gpr .x7).isLt
+  refine ⟨?_, ?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
+  · have c19 : (BitVec.setWidth 64 (BitVec.setWidth 32 (19 : BitVec 16) <<< (16 * 0))).toNat = 19 := by decide
+    have hc : (decide (2 ^ 64 ≤ (s.gpr .x7).toNat + (s.gpr .x7).toNat + false.toNat)).toNat =
+        (s.gpr .x7).toNat / 2 ^ 63 := by
+      by_cases h : 2 ^ 63 ≤ (s.gpr .x7).toNat
+      · rw [decide_eq_true (by simp only [Bool.toNat_false]; omega)]; simp only [Bool.toNat_true]; omega
+      · rw [decide_eq_false (by simp only [Bool.toNat_false]; omega)]; simp only [Bool.toNat_false]; omega
+    simp only [BitVec.toNat_mul, BitVec.toNat_add, BitVec.toNat_ofNat, hc, c19]
+    omega
+  · simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Bool.toNat_false,
+      Nat.shiftRight_eq_div_pow]
+    omega
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2]
+
+/-- The carry chain of `fold255`: x9 into x4, x2 into x5 and x8 into x6. -/
+theorem fold255Chain_ok (s : State) (hz : s.gpr .x10 = 0) :
+    WP isa (.block [.adds .x .x4 .x4 .x9, .adcs .x .x5 .x5 .x2, .adcs .x .x6 .x6 .x8,
+      .adcs .x .x7 .x7 .x10]) s fun t =>
+      ∃ c : Bool, val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) + 2 ^ 256 * c.toNat =
+        val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) + (s.gpr .x9).toNat +
+          2 ^ 64 * (s.gpr .x2).toNat + 2 ^ 128 * (s.gpr .x8).toNat ∧
+      Keeps [.x4, .x5, .x6, .x7] s t := by
+  reg_exec hz
+  refine ⟨carryOut (s.gpr .x7) 0 (carryOut (s.gpr .x6) (s.gpr .x8)
+      (carryOut (s.gpr .x5) (s.gpr .x2) (carryOut (s.gpr .x4) (s.gpr .x9) false))), ?_,
+    ⟨?_, by simp only [RegUpd.mem_addWithCarry], by simp only [RegUpd.rd_addWithCarry],
+      by simp only [RegUpd.wr_addWithCarry], by simp only [RegUpd.sp_addWithCarry]⟩⟩
+  · have e0 := addCarry_value (s.gpr .x4) (s.gpr .x9) false
+    have e1 := addCarry_value (s.gpr .x5) (s.gpr .x2) (carryOut (s.gpr .x4) (s.gpr .x9) false)
+    have e2 := addCarry_value (s.gpr .x6) (s.gpr .x8)
+      (carryOut (s.gpr .x5) (s.gpr .x2) (carryOut (s.gpr .x4) (s.gpr .x9) false))
+    have e3 := addCarry_value (s.gpr .x7) 0 (carryOut (s.gpr .x6) (s.gpr .x8)
+      (carryOut (s.gpr .x5) (s.gpr .x2) (carryOut (s.gpr .x4) (s.gpr .x9) false)))
+    dsimp only [addCarry, carryOut, Size.bits] at e0 e1 e2 e3 ⊢
+    have z : (0 : BitVec 64).toNat = 0 := rfl
+    simp only [val4, Bool.toNat_false, Nat.add_zero, z] at e0 e1 e2 e3 ⊢
+    omega
+  · reg_keeps
+
+/-- `fold255`: the bits from 255 up folded into the low bits, times 19; the
+result is congruent modulo p and below `2²⁵⁵ + 2¹³⁵`. -/
+theorem fold255_ok (s : State) (hz : s.gpr .x10 = 0) (h20 : (s.gpr .x20).toNat < 2 ^ 8)
+    (h2 : (s.gpr .x2).toNat < 2 ^ 6) (h8 : (s.gpr .x8).toNat < 2 ^ 6) :
+    WP isa (.block Impl.Ed25519.AArch64.fold255) s fun t =>
+      val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) +
+          VG.Spec.X25519.P * ((s.gpr .x20).toNat * 2 + (s.gpr .x7).toNat / 2 ^ 63) =
+        val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) + 2 ^ 256 * (s.gpr .x20).toNat +
+          2 ^ 64 * (s.gpr .x2).toNat + 2 ^ 128 * (s.gpr .x8).toNat ∧
+      val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) < 2 ^ 255 + 2 ^ 135 ∧
+      Keeps [.x9, .x7, .x11, .x16, .x4, .x5, .x6] s t := by
+  rw [Impl.Ed25519.AArch64.fold255, show ([.adds .x .x16 .x7 .x7, .adc .x .x9 .x20 .x20, .lsr .x .x7 .x16 1, .movz .w .x11 19 0,
+      .mul .x .x9 .x9 .x11, .adds .x .x4 .x4 .x9, .adcs .x .x5 .x5 .x2, .adcs .x .x6 .x6 .x8,
+      .adcs .x .x7 .x7 .x10] : List Instr) =
+    [.adds .x .x16 .x7 .x7, .adc .x .x9 .x20 .x20, .lsr .x .x7 .x16 1, .movz .w .x11 19 0,
+      .mul .x .x9 .x9 .x11] ++ [.adds .x .x4 .x4 .x9, .adcs .x .x5 .x5 .x2, .adcs .x .x6 .x6 .x8,
+      .adcs .x .x7 .x7 .x10] from rfl, WP.block_append_iff]
+  refine WP.mono (fold255Pre_ok s h20) fun s₁ ⟨e9, e7, k1⟩ => ?_
+  refine WP.mono (fold255Chain_ok s₁ ((k1.gpr _ (by decide)).trans hz)) fun t ⟨c, ec, k2⟩ => ?_
+  rw [k1.gpr .x4 (by decide), k1.gpr .x5 (by decide), k1.gpr .x6 (by decide), k1.gpr .x2 (by decide),
+    k1.gpr .x8 (by decide), e9] at ec
+  have hl := (s.gpr .x4).isLt; have hm := (s.gpr .x5).isLt; have hn := (s.gpr .x6).isLt
+  have h7 := (s.gpr .x7).isLt
+  have hc := Bool.toNat_le c
+  simp only [val4, VG.Spec.X25519.P] at ec ⊢
+  rw [e7] at ec
+  refine ⟨by omega, by omega, (k1.mono (by decide)).trans (k2.mono (by decide))⟩
+
 /-- `reduceWide`: the eight words of a product, reduced modulo p into x4–x7. -/
 theorem reduceWide_ok (s : State) (hz : s.gpr .x10 = 0) :
     WP isa (.block reduceWide) s fun t =>
       toFe (val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7)) = toFe (wide s) ∧
       t.gpr .x10 = 0 ∧
-      Keeps [.x2, .x8, .x9, .x11, .x16, .x4, .x5, .x6, .x7, .x20] s t := by
+      Keeps [.x2, .x8, .x9, .x11, .x16, .x4, .x5, .x6, .x7, .x20] s t ∧
+      val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) < 2 ^ 255 + 2 ^ 135 := by
   rw [reduceWide, List.append_assoc, WP.block_append_iff]
   refine WP.mono (movz38_ok s) fun s₁ ⟨h38, k1⟩ => ?_
   have hz1 : s₁.gpr .x10 = 0 := (k1.gpr _ (by decide)).trans hz
+  have ha : (s₁.gpr .x11).toNat = 38 := by rw [h38]; rfl
   rw [WP.block_append_iff]
-  refine WP.mono (rowAccReduce_ok s₁ hz1) fun s₂ ⟨e2, k2⟩ => ?_
+  refine WP.mono (reduceLo_ok s₁ hz1 (by omega)) fun s₂ ⟨e2, x2, x8, k2⟩ => ?_
   have hz2 : s₂.gpr .x10 = 0 := (k2.gpr _ (by decide)).trans hz1
-  have h382 : s₂.gpr .x11 = 38 := (k2.gpr _ (by decide)).trans h38
-  have hc : (s₂.gpr .x20).toNat < 2 ^ 52 := by
+  have b2 : (s₂.gpr .x2).toNat < 2 ^ 6 := by
+    rw [x2, mulHi, BitVec.toNat_ofNat, ha]
+    have := (s₁.gpr .x21).isLt
+    exact Nat.lt_of_le_of_lt (Nat.mod_le _ _) (Nat.div_lt_of_lt_mul (by omega))
+  have b8 : (s₂.gpr .x8).toNat < 2 ^ 6 := by
+    rw [x8, mulHi, BitVec.toNat_ofNat, ha]
+    have := (s₁.gpr .x22).isLt
+    exact Nat.lt_of_le_of_lt (Nat.mod_le _ _) (Nat.div_lt_of_lt_mul (by omega))
+  have b20 : (s₂.gpr .x20).toNat < 2 ^ 8 := by
     have hl := val4_lt (s₁.gpr .x4) (s₁.gpr .x5) (s₁.gpr .x6) (s₁.gpr .x7)
     have hh := val4_lt (s₁.gpr .x21) (s₁.gpr .x22) (s₁.gpr .x23) (s₁.gpr .x24)
-    rw [h38, show (38 : Word).toNat = 38 from rfl] at e2
+    rw [ha] at e2
     omega_using [e2, hl, hh]
-  refine WP.mono (fold_ok s₂ hz2 h382 hc) fun s₃ ⟨e3, k3⟩ => ?_
+  refine WP.mono (fold255_ok s₂ hz2 b20 b2 b8) fun s₃ ⟨e3, lt3, k3⟩ => ?_
   refine ⟨?_, (k3.gpr _ (by decide)).trans hz2,
-    ((k1.mono (by decide)).trans (k2.mono (by decide))).trans (k3.mono (by decide))⟩
-  rw [e3]
-  rw [h38, show (38 : Word).toNat = 38 from rfl, k1.gpr .x4 (by decide), k1.gpr .x5 (by decide),
+    ((k1.mono (by decide)).trans (k2.mono (by decide))).trans (k3.mono (by decide)), lt3⟩
+  rw [ha, k1.gpr .x4 (by decide), k1.gpr .x5 (by decide),
     k1.gpr .x6 (by decide), k1.gpr .x7 (by decide), k1.gpr .x21 (by decide),
     k1.gpr .x22 (by decide), k1.gpr .x23 (by decide), k1.gpr .x24 (by decide)] at e2
   apply toFe_congr
-  rw [← fold256, e2, fold256]
+  have : val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) +
+        38 * val4 (s.gpr .x21) (s.gpr .x22) (s.gpr .x23) (s.gpr .x24) =
+      val4 (s₃.gpr .x4) (s₃.gpr .x5) (s₃.gpr .x6) (s₃.gpr .x7) +
+        VG.Spec.X25519.P * ((s₂.gpr .x20).toNat * 2 + (s₂.gpr .x7).toNat / 2 ^ 63) := by
+    rw [e3, ← e2]
+  rw [wide, fold256, this, Nat.add_mul_mod_self_left]
 
 end VG.Proof.Ed25519.AArch64
 end
@@ -330,57 +419,54 @@ theorem fe_mul_expand4 (A0 A1 A2 A3 B : Nat) :
       A0 * B + 2 ^ 64 * (A1 * B) + 2 ^ 128 * (A2 * B) + 2 ^ 192 * (A3 * B) := by
   simp only [Nat.add_mul, Nat.mul_assoc]
 
-theorem mulWide_ok {s : State} {base : Addr} (hs : Scr s base large) {a b : Nat}
-    (ha : FieldRange a large) (hb : FieldRange b large) (hz : s.gpr .x10 = 0) :
-    WP isa (.block (mulWide a b)) s fun t =>
-      wide t = fe s.mem base a * fe s.mem base b ∧
-      Keeps (.x12 :: .x13 :: .x14 :: .x15 :: mulRowClob) s t := by
+/-- The rows of a product by the words x12–x15, whose value is `B`. -/
+theorem mulRows_ok {s : State} {base : Addr} (hs : Scr s base large) {a B : Nat}
+    (ha : FieldRange a large) (hz : s.gpr .x10 = 0)
+    (hB : val4 (s.gpr .x12) (s.gpr .x13) (s.gpr .x14) (s.gpr .x15) = B) :
+    WP isa (.block (mulRows a)) s fun t =>
+      wide t = fe s.mem base a * B ∧ Keeps mulRowClob s t := by
   have _hcap := workSize_le large
   have _hmin := workSize_ge large
   obtain ⟨haa, ha'⟩ := ha
-  simp only [mulWide, List.append_assoc]
+  simp only [mulRows, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (loads_ok hs ⟨hb.1, hb.2⟩ (by decide)) fun s₁ ⟨b0, b1, b2, b3, k1⟩ => ?_
-  have hs₁ := hs.of_keeps k1 (by decide)
-  have hz1 : s₁.gpr .x10 = 0 := (k1.gpr _ (by decide)).trans hz
+  refine WP.mono (ld_ok hs (by omega) (by omega) .x3) fun s₂ ⟨a0, k2⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (ld_ok hs₁ (by omega) (by omega) .x3) fun s₂ ⟨a0, k2⟩ => ?_
+  refine WP.mono (rowFirst_ok s₂ ((k2.gpr _ (by decide)).trans hz)) fun s₃ ⟨e0, k3⟩ => ?_
+  have K3 : Keeps mulRowClob s s₃ := (k2.mono (by decide)).trans (k3.mono (by decide))
   rw [WP.block_append_iff]
-  refine WP.mono (rowFirst_ok s₂ ((k2.gpr _ (by decide)).trans hz1)) fun s₃ ⟨e0, k3⟩ => ?_
-  have K3 : Keeps mulRowClob s₁ s₃ := (k2.mono (by decide)).trans (k3.mono (by decide))
-  rw [WP.block_append_iff]
-  refine WP.mono (ld_ok (hs₁.of_keeps K3 (by decide)) (by omega) (by omega) .x3)
+  refine WP.mono (ld_ok (hs.of_keeps K3 (by decide)) (by omega) (by omega) .x3)
     fun s₄ ⟨a1, k4⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (rowAcc1_ok s₄ ((K3.trans (k4.mono (by decide))).gpr _ (by decide) |>.trans hz1))
+  refine WP.mono (rowAcc1_ok s₄ ((K3.trans (k4.mono (by decide))).gpr _ (by decide) |>.trans hz))
     fun s₅ ⟨e1, k5⟩ => ?_
-  have K5 : Keeps mulRowClob s₁ s₅ := (K3.trans (k4.mono (by decide))).trans (k5.mono (by decide))
+  have K5 : Keeps mulRowClob s s₅ := (K3.trans (k4.mono (by decide))).trans (k5.mono (by decide))
   rw [WP.block_append_iff]
-  refine WP.mono (ld_ok (hs₁.of_keeps K5 (by decide)) (by omega) (by omega) .x3)
+  refine WP.mono (ld_ok (hs.of_keeps K5 (by decide)) (by omega) (by omega) .x3)
     fun s₆ ⟨a2, k6⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (rowAcc2_ok s₆ ((K5.trans (k6.mono (by decide))).gpr _ (by decide) |>.trans hz1))
+  refine WP.mono (rowAcc2_ok s₆ ((K5.trans (k6.mono (by decide))).gpr _ (by decide) |>.trans hz))
     fun s₇ ⟨e2, k7⟩ => ?_
-  have K7 : Keeps mulRowClob s₁ s₇ := (K5.trans (k6.mono (by decide))).trans (k7.mono (by decide))
+  have K7 : Keeps mulRowClob s s₇ := (K5.trans (k6.mono (by decide))).trans (k7.mono (by decide))
   rw [WP.block_append_iff]
-  refine WP.mono (ld_ok (hs₁.of_keeps K7 (by decide)) (by omega) (by omega) .x3)
+  refine WP.mono (ld_ok (hs.of_keeps K7 (by decide)) (by omega) (by omega) .x3)
     fun s₈ ⟨a3, k8⟩ => ?_
-  refine WP.mono (rowAcc3_ok s₈ ((K7.trans (k8.mono (by decide))).gpr _ (by decide) |>.trans hz1))
+  refine WP.mono (rowAcc3_ok s₈ ((K7.trans (k8.mono (by decide))).gpr _ (by decide) |>.trans hz))
     fun s₉ ⟨e3, k9⟩ => ?_
-  have K9 : Keeps mulRowClob s₁ s₉ := (K7.trans (k8.mono (by decide))).trans (k9.mono (by decide))
-  refine ⟨?_, (k1.mono (by decide)).trans (K9.mono (by decide))⟩
-  -- The words of `a` and `b` at each row, and where each word of the result was last written.
-  have B : ∀ (t : State), Keeps mulRowClob s₁ t →
-      val4 (t.gpr .x12) (t.gpr .x13) (t.gpr .x14) (t.gpr .x15) = fe s.mem base b := by
+  have K9 : Keeps mulRowClob s s₉ := (K7.trans (k8.mono (by decide))).trans (k9.mono (by decide))
+  refine ⟨?_, K9⟩
+  -- The words of `b` at each row, and where each word of the result was last written.
+  have Bk : ∀ (t : State), Keeps mulRowClob s t →
+      val4 (t.gpr .x12) (t.gpr .x13) (t.gpr .x14) (t.gpr .x15) = B := by
     intro t k
     rw [k.gpr .x12 (by decide), k.gpr .x13 (by decide), k.gpr .x14 (by decide),
-      k.gpr .x15 (by decide), b0, b1, b2, b3]
-  rw [B s₂ (k2.mono (by decide)), a0, k1.mem] at e0
-  rw [B s₄ (K3.trans (k4.mono (by decide))), a1, K3.mem, k1.mem, k4.gpr .x5 (by decide),
+      k.gpr .x15 (by decide), hB]
+  rw [Bk s₂ (k2.mono (by decide)), a0] at e0
+  rw [Bk s₄ (K3.trans (k4.mono (by decide))), a1, K3.mem, k4.gpr .x5 (by decide),
     k4.gpr .x6 (by decide), k4.gpr .x7 (by decide), k4.gpr .x21 (by decide)] at e1
-  rw [B s₆ (K5.trans (k6.mono (by decide))), a2, K5.mem, k1.mem, k6.gpr .x6 (by decide),
+  rw [Bk s₆ (K5.trans (k6.mono (by decide))), a2, K5.mem, k6.gpr .x6 (by decide),
     k6.gpr .x7 (by decide), k6.gpr .x21 (by decide), k6.gpr .x22 (by decide)] at e2
-  rw [B s₈ (K7.trans (k8.mono (by decide))), a3, K7.mem, k1.mem, k8.gpr .x7 (by decide),
+  rw [Bk s₈ (K7.trans (k8.mono (by decide))), a3, K7.mem, k8.gpr .x7 (by decide),
     k8.gpr .x21 (by decide), k8.gpr .x22 (by decide), k8.gpr .x23 (by decide)] at e3
   have K39 : Keeps [.x2, .x3, .x5, .x6, .x7, .x8, .x9, .x16, .x21, .x22, .x23, .x24] s₃ s₉ :=
     (((((k4.mono (by decide)).trans (k5.mono (by decide))).trans (k6.mono (by decide))).trans
@@ -390,17 +476,30 @@ theorem mulWide_ok {s : State} {base : Addr} (hs : Scr s base large) {a b : Nat}
       (k9.mono (by decide))
   have K79 : Keeps [.x2, .x3, .x7, .x8, .x9, .x16, .x21, .x22, .x23, .x24] s₇ s₉ :=
     (k8.mono (by decide)).trans (k9.mono (by decide))
-  have hf : fe s.mem base a * fe s.mem base b =
-      (word s.mem base a).toNat * fe s.mem base b +
-        2 ^ 64 * ((word s.mem base (a + 8)).toNat * fe s.mem base b) +
-        2 ^ 128 * ((word s.mem base (a + 16)).toNat * fe s.mem base b) +
-        2 ^ 192 * ((word s.mem base (a + 24)).toNat * fe s.mem base b) :=
+  have hf : fe s.mem base a * B =
+      (word s.mem base a).toNat * B +
+        2 ^ 64 * ((word s.mem base (a + 8)).toNat * B) +
+        2 ^ 128 * ((word s.mem base (a + 16)).toNat * B) +
+        2 ^ 192 * ((word s.mem base (a + 24)).toNat * B) :=
     fe_mul_expand4 _ _ _ _ _
   dsimp only [wide]
   rw [hf, K39.gpr .x4 (by decide), K59.gpr .x5 (by decide), K79.gpr .x6 (by decide)]
-  generalize fe s.mem base b = FB at e0 e1 e2 e3 ⊢
   simp only [val4] at e0 e1 e2 e3 ⊢
   omega_using [e0, e1, e2, e3]
+
+theorem mulWide_ok {s : State} {base : Addr} (hs : Scr s base large) {a b : Nat}
+    (ha : FieldRange a large) (hb : FieldRange b large) (hz : s.gpr .x10 = 0) :
+    WP isa (.block (mulWide a b)) s fun t =>
+      wide t = fe s.mem base a * fe s.mem base b ∧
+      Keeps (.x12 :: .x13 :: .x14 :: .x15 :: mulRowClob) s t := by
+  rw [mulWide, WP.block_append_iff]
+  refine WP.mono (loads_ok hs ⟨hb.1, hb.2⟩ (by decide)) fun s₁ ⟨b0, b1, b2, b3, k1⟩ => ?_
+  have hs₁ := hs.of_keeps k1 (by decide)
+  have hz1 : s₁.gpr .x10 = 0 := (k1.gpr _ (by decide)).trans hz
+  have hB : val4 (s₁.gpr .x12) (s₁.gpr .x13) (s₁.gpr .x14) (s₁.gpr .x15) = fe s.mem base b := by
+    rw [b0, b1, b2, b3]
+  refine WP.mono (mulRows_ok hs₁ ha hz1 hB) fun t ⟨e, k⟩ => ⟨?_, (k1.mono (by decide)).trans (k.mono (by decide))⟩
+  rw [e, k1.mem]
 
 theorem zeroReg_ok (s : State) (r : Reg) :
     WP isa (.block [.movz .w r 0 0]) s fun t => t.gpr r = 0 ∧ Keeps [r] s t := by
@@ -415,23 +514,27 @@ theorem zeroReg_ok (s : State) (r : Reg) :
 theorem fieldFinish_ok {s₀ s : State} {base : Addr} (hs : Scr s base large) {o : Nat}
     (ho : FieldRange o large) (hz : s.gpr .x10 = 0) (k : Keeps clob s₀ s) :
     WP isa (.block (reduceWide ++ store4 o)) s fun t =>
-      Op base o s₀ t ∧ F t.mem base o = toFe (wide s) := by
+      Op base o s₀ t ∧ F t.mem base o = toFe (wide s) ∧ fe t.mem base o < 2 ^ 255 + 2 ^ 135 := by
   have _hcap := workSize_le large
   have _hmin := workSize_ge large
   rw [WP.block_append_iff]
-  refine WP.mono (reduceWide_ok s hz) fun s₁ ⟨e1, _, k1⟩ => ?_
+  refine WP.mono (reduceWide_ok s hz) fun s₁ ⟨e1, _, k1, b1⟩ => ?_
   refine WP.mono (store4_ok (hs.of_keeps k1 (by decide)) ho) fun s₂ heq => ?_
   subst s₂
-  refine ⟨Op.of_store ho (k.trans (k1.mono (by decide))) _ _ _ _, ?_⟩
-  simp only [F]
-  rw [fe_st4 _ _ (by have := ho.2; omega)]
-  exact e1
+  refine ⟨Op.of_store ho (k.trans (k1.mono (by decide))) _ _ _ _, ?_, ?_⟩
+  · simp only [F]
+    rw [fe_st4 _ _ (by have := ho.2; omega)]
+    exact e1
+  · rw [fe_st4 _ _ (by have := ho.2; omega)]
+    exact b1
 
-/-- Multiplication modulo p, allowing the output to alias either input. -/
-theorem mul_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
+/-- Multiplication modulo p, allowing the output to alias either input; the
+result is stored below `2²⁵⁵ + 2¹³⁵`. -/
+theorem mul_okB {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
     (ho : FieldRange o large) (ha : FieldRange a large) (hb : FieldRange b large) :
     WP isa (.block (fieldMul o a b)) s fun t =>
-      Op base o s t ∧ F t.mem base o = F s.mem base a * F s.mem base b := by
+      Op base o s t ∧ F t.mem base o = F s.mem base a * F s.mem base b ∧
+        fe t.mem base o < 2 ^ 255 + 2 ^ 135 := by
   have _hcap := workSize_le large
   have _hmin := workSize_ge large
   rw [fieldMul, List.append_assoc, List.append_assoc, WP.block_append_iff]
@@ -441,8 +544,15 @@ theorem mul_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
   refine WP.mono (mulWide_ok hs₀ ha hb hz) fun s₁ ⟨e1, k1⟩ => ?_
   refine WP.mono (fieldFinish_ok (hs₀.of_keeps k1 (by decide)) ho
     ((k1.gpr _ (by decide)).trans hz) ((k0.mono (by decide)).trans (k1.mono (by decide))))
-    fun t ⟨hop, ht⟩ => ⟨hop, ?_⟩
+    fun t ⟨hop, ht, hb⟩ => ⟨hop, ?_, hb⟩
   rw [ht, e1, k0.mem]
   exact toFe_mul rfl
+
+/-- Multiplication modulo p, allowing the output to alias either input. -/
+theorem mul_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
+    (ho : FieldRange o large) (ha : FieldRange a large) (hb : FieldRange b large) :
+    WP isa (.block (fieldMul o a b)) s fun t =>
+      Op base o s t ∧ F t.mem base o = F s.mem base a * F s.mem base b :=
+  WP.mono (mul_okB hs ho ha hb) fun _ ⟨h, e, _⟩ => ⟨h, e⟩
 
 end VG.Proof.Ed25519.AArch64

@@ -1,11 +1,14 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.X86.Blk
+public import VerifiedGarbage.Proof.Ocb.Spec
 
-public import VerifiedGarbage.Proof.AesOcb.X86.Hash
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesOcb.X86.HashFill
+import VerifiedGarbage.Proof.AesOcb.X86.LNtz
+import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-OCB on x86: a pass over the whole blocks (`pass`)

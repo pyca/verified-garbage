@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Pair
-public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.MlKem.AArch64.Noise
+import VerifiedGarbage.Proof.MlKem.AArch64.Lay
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
+public import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 
 /-! # Accumulating all paired noise outputs -/
 @[expose] public section

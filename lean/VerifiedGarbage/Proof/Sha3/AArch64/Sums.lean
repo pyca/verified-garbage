@@ -6,18 +6,21 @@ public import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
 meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
 public import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
 meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
-public import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
-public import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
-public import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
 meta import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Impl.MlKem.AArch64.Encode
+meta import VerifiedGarbage.Impl.MlKem.AArch64.Encode
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16
+meta import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16
 
 /-!
 # Summaries for the constant-time checks of the sponge's callers

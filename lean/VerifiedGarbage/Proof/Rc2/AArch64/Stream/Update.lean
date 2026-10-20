@@ -2,14 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Prep
 public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Contract
-public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Contract
+import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Verified
 import VerifiedGarbage.Proof.Rc2.Stream
+import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Copy
+import VerifiedGarbage.Proof.MdStream.AArch64.Common
+import VerifiedGarbage.Proof.Rc2.Memory
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Lit
 
 /-!
 # Streaming RC2-CBC on AArch64: the update functions
@@ -159,7 +165,7 @@ theorem short_ok (d : Spec.Rc2.Direction) {σ : State} {c dp op b : Addr} {p len
 
 /-! ## Complete blocks -/
 
-theorem prep_keeps : prep.allInstrs (fun i => preserved.all fun r => dstOf i != some r) = true := by
+theorem prep_keeps : prep.allInstrs (fun i => preserved.all fun r => !clobbers i r) = true := by
   decide +kernel
 
 /-- `update` with complete blocks, without its frame. -/

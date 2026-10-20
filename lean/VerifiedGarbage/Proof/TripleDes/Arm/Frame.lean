@@ -1,13 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.Arm.Key.Verified
-import VerifiedGarbage.Proof.TripleDes.Arm.Ecb.Verified
+import VerifiedGarbage.Proof.TripleDes.Arm.Key.Verified
 public import VerifiedGarbage.Proof.TripleDes.Scratch
-public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.StackScratch.Arm
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+public import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
+import VerifiedGarbage.Proof.TripleDes.Arm.Lit
+import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 /-!
 # Triple DES key expansion and ECB on ARMv7, with their working space on the stack

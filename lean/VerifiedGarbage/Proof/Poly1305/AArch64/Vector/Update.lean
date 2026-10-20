@@ -1,17 +1,31 @@
 module
 
 import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Vec
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Poly1305.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Lit
+public import VerifiedGarbage.Impl.Poly1305.AArch64.Vector
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Vec
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Lit
+meta import VerifiedGarbage.Impl.StackScratch.AArch64
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Poly1305.Stream
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Impl.Poly1305.AArch64.Vector
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Poly1305.Pair
+meta import VerifiedGarbage.Proof.Poly1305.Pair
 
 /-!
 # Poly1305 on AArch64: `update`, with AdvSIMD

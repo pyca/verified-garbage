@@ -1,19 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ChildCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ChildCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeCTState
+public import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.Layout
+import VerifiedGarbage.Proof.Dsa.AArch64.BoundaryCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Child
+import VerifiedGarbage.Proof.Dsa.AArch64.Parent
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ChildCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ShapeCTState
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.Dsa.Layout
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Spec.Dsa.SignVerify
 meta import VerifiedGarbage.Proof.Dsa.Layout
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Proof.Dsa.AArch64.BoundaryCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Child
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Parent
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant time of initializing both Montgomery workspaces -/
 
@@ -90,7 +96,7 @@ def WorkspacePublic.child (p : WorkspacePublic) (isP : Bool) : ChildPublic where
     have hl := p.lengths
     change (if isP then p.pBytes else p.qBytes).length < 2 ^ 31
     cases isP <;> simp only [Bool.false_eq_true, ↓reduceIte] <;>
-      rcases hl with ⟨h1, h2⟩ | ⟨h1, h2 | h2⟩ | ⟨h1, h2⟩ <;> omega
+      rcases hl with ⟨h1, h2⟩ | ⟨h1, h2 | h2 | h2⟩ | ⟨h1, h2⟩ <;> omega
   width := rfl
 
 def workspaceOperand (isP : Bool) : Operand :=

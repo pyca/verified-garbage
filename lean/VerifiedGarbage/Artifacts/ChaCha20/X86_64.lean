@@ -1,21 +1,15 @@
 module
 
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512VL
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitVerified
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Lit
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Init
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
+public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 
 /-! # The ChaCha20 block function (RFC 8439) on x86-64 -/
 
@@ -24,94 +18,49 @@ import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 namespace VG.Artifacts.ChaCha20.X86_64
 
 def artifacts : List Artifact := [
-  { Spec.ChaCha20.blockApi with
-    target := X86_64.target
-    doc := Spec.ChaCha20.blockApi.doc
+  Spec.ChaCha20.blockApi.artifact X86_64.target {
     code := Impl.ChaCha20.X86_64.block
-    contract := Spec.ChaCha20.blockContract X86_64.abi
-    verified := Proof.ChaCha20.X86_64.block_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.ChaCha20.xorApi with
-    target := X86_64.target
-    doc := Spec.ChaCha20.xorApi.doc (notes := ["Calls `vg_chacha20_block` for each 64 bytes."])
+    verified := Proof.ChaCha20.X86_64.block_verified },
+  Spec.ChaCha20.xorApi.artifact X86_64.target {
+    notes := ["Calls `vg_chacha20_block` for each 64 bytes."]
     code := Impl.ChaCha20.X86_64.Xor.xor
-    contract := Spec.ChaCha20.xorContract X86_64.abi 8
     stack := 8
-    verified := Proof.ChaCha20.X86_64.Xor.xor_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.ChaCha20.xorApi with
-    name := "vg_chacha20_xor_avx2"
-    target := X86_64.target
-    doc := Spec.ChaCha20.xorApi.doc
-      (notes := ["Uses AVX2: eight blocks at a time while at least 512 bytes remain, then \
+    verified := Proof.ChaCha20.X86_64.Xor.xor_verified },
+  Spec.ChaCha20.xorApi.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["Uses AVX2: eight blocks at a time while at least 512 bytes remain, then \
         at most two computations of four or two blocks, two to a set of `ymm` registers, for \
-        the rest, or `vg_chacha20_xor` for at most 64 bytes."])
+        the rest, or `vg_chacha20_xor` for at most 64 bytes."]
     code := Impl.ChaCha20.X86_64.Avx2.xor
-    contract := Spec.ChaCha20.xorContract X86_64.abi 16
-    writeArgs := true
     stack := 16
     verified := Proof.ChaCha20.X86_64.Avx2.xor_verified
-    features := ["avx", "avx2"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.ChaCha20.xorApi with
-    name := "vg_chacha20_xor_avx512"
-    target := X86_64.target
-    doc := Spec.ChaCha20.xorApi.doc
-      (notes := ["Uses AVX-512: sixteen blocks at a time while at least 1024 bytes remain, then \
-        at most two computations of eight or four blocks, four to a set of `zmm` registers, for \
-        the rest, or `vg_chacha20_xor` for at most 64 bytes."])
+    features := ["avx", "avx2"] },
+  Spec.ChaCha20.xorApi.artifact X86_64.target {
+    suffix := "_avx512"
+    notes := ["Uses AVX-512: sixteen blocks at a time while at least 1024 bytes remain; then \
+        twelve blocks in three sets of `zmm` registers, four blocks to a set, for 513 to 768 \
+        bytes left, one more pass of sixteen for 769 to 1023, and at most two computations of \
+        eight or four blocks for fewer."]
     code := Impl.ChaCha20.X86_64.Avx512.xor
-    contract := Spec.ChaCha20.xorContract X86_64.abi 16
-    writeArgs := true
     stack := 16
     verified := Proof.ChaCha20.X86_64.Avx512.xor_verified
-    features := ["avx", "avx512f"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.ChaCha20.xorApi with
-    name := "vg_chacha20_xor_avx512vl"
-    target := X86_64.target
-    doc := Spec.ChaCha20.xorApi.doc
-      (notes := ["For CPUs with AVX-512 whose clock a 512-bit instruction lowers for a while \
+    features := ["avx", "avx512f"] },
+  Spec.ChaCha20.xorApi.artifact X86_64.target {
+    suffix := "_avx512vl"
+    notes := ["For CPUs with AVX-512 whose clock a 512-bit instruction lowers for a while \
         (Skylake-SP, Cascade Lake): fewer than 513 bytes on `ymm` registers, as \
         `vg_chacha20_xor_avx2` does but with AVX-512VL's `vprold` for every rotation (eight \
         blocks with every word in a register, or at most six), so that the code after a short \
-        call keeps its speed; more as `vg_chacha20_xor_avx512` does."])
+        call keeps its speed; more as `vg_chacha20_xor_avx512` does."]
     code := Impl.ChaCha20.X86_64.Avx512VL.xorBy
-    contract := Spec.ChaCha20.xorContract X86_64.abi 16
-    writeArgs := true
     stack := 16
     verified := Proof.ChaCha20.X86_64.Avx512VL.xor_verified
-    features := ["avx", "avx2", "avx512f", "avx512vl"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.ChaCha20.initApi with
-    target := X86_64.target
-    doc := Spec.ChaCha20.initApi.doc
+    features := ["avx", "avx2", "avx512f", "avx512vl"] },
+  Spec.ChaCha20.initApi.artifact X86_64.target {
     code := Impl.ChaCha20.X86_64.Stream.init
-    contract := Spec.ChaCha20.initContract X86_64.abi
-    verified := Proof.ChaCha20.X86_64.Stream.init_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.ChaCha20.setNonceApi with
-    target := X86_64.target
-    doc := Spec.ChaCha20.setNonceApi.doc
+    verified := Proof.ChaCha20.X86_64.Stream.init_verified },
+  Spec.ChaCha20.setNonceApi.artifact X86_64.target {
     code := Impl.ChaCha20.X86_64.Stream.setNonce
-    contract := Spec.ChaCha20.setNonceContract X86_64.abi
-    verified := Proof.ChaCha20.X86_64.Stream.setNonce_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.ChaCha20.xorSplitApi with
-    name := "vg_chacha20_xor_split_avx512"
-    target := X86_64.target
-    doc := Spec.ChaCha20.xorSplitApi.doc
-      (notes := ["Uses AVX-512, as `vg_chacha20_xor_avx512` does on `dst`, but each block of 64 \
-        bytes of the input within the first `src_len` bytes, rounded down to a multiple of 64, is \
-        loaded from `src`, by a comparison of lengths; the bytes of `src` after them (or, when \
-        fewer than 513 bytes follow the whole 1024-byte passes, those from the last pass on) are \
-        first copied to `dst`. Fewer than 513 bytes left after the whole 1024-byte passes are \
-        XORed in place by a call of `vg_chacha20_xor_avx512`."])
-    code := Impl.ChaCha20.X86_64.Avx512.xorSplit
-    contract := Spec.ChaCha20.xorSplitContract X86_64.abi 24
-    stack := 24
-    verified := Proof.ChaCha20.X86_64.Avx512Split.xorSplit_verified
-    features := ["avx", "avx512f"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.ChaCha20.X86_64.Stream.setNonce_verified }]
 
 end VG.Artifacts.ChaCha20.X86_64

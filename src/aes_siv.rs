@@ -193,6 +193,14 @@ pub enum Error {
     TagMismatch,
 }
 
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid AES-SIV key length",
+        TooManyComponents => "too many AES-SIV associated-data components",
+        TagMismatch => "AES-SIV synthetic IV does not match",
+    }
+}
+
 /// An AES-SIV key: its key context. [`encrypt_in_place`](Self::encrypt_in_place)
 /// is `SIV-ENCRYPT` and [`decrypt_in_place`](Self::decrypt_in_place)
 /// `SIV-DECRYPT` (RFC 5297 §2.6, §2.7), with the synthetic IV `V` apart from

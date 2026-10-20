@@ -1,19 +1,74 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Fn
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Fn
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Mid
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Tail
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Full
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Stitch
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Mid
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Tail
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Full
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Stitch
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Impl.AesGcm.X86_64
+meta import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksTo
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.CT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Impl.Gcm.X86_64
+import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
+import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Gcm.Be64
+import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Gcm.Spec
+meta import VerifiedGarbage.Impl.Gcm.X86_64
+meta import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
+meta import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Gcm.Be64
+meta import VerifiedGarbage.Proof.Gcm.Bits
+meta import VerifiedGarbage.Proof.Gcm.Spec
 
 /-!
 # AES-GCM on whole blocks out of place, x86-64: constant time

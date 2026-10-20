@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
@@ -55,8 +54,25 @@ def poly : BitVec 128 := 0xc2000000000000000000000000000000#128
 /-- `x⁻¹` in the reflected representation. -/
 def xInv : BitVec 128 := 0xc2000000000000000000000000000001#128
 
-/-- The 128-bit constant `c` into `x`, through `rax` and `xmm12`. -/
+/-- The constants `const` loads, in this order. -/
+def consts : List (BitVec 128) := [revMask, poly, xInv]
+
+/-- The table of `consts`, two little-endian words each. -/
+def constsName : String := "VG_GCM_CONSTS"
+
+/-- `consts`' words: the low word of each first. -/
+def constsTable : List (BitVec 64) :=
+  consts.flatMap fun c => [c.extractLsb' 0 64, c.extractLsb' 64 64]
+
+/-- The 128-bit constant `c`, one of `consts`, into `x`, from the table
+`constsTable`, through its address in `rax`. -/
 def const (x : XReg) (c : BitVec 128) : List Instr :=
+  [.leaSym .rax constsName, .movdquTbl x (at_ .rax (16 * consts.idxOf c)) constsName constsTable]
+
+/-- The 128-bit constant `c` into `x`, from immediates, through `rax` and
+`xmm12`: the code of the `VEX.128` constants on 128-bit registers
+(`StitchAvx.const`), which their proofs take as `VEX`-free code. -/
+def constImm (x : XReg) (c : BitVec 128) : List Instr :=
   [.movImm64 .rax (c.extractLsb' 0 64), .xop (.movq x .rax),
    .movImm64 .rax (c.extractLsb' 64 64), .xop (.movq .xmm12 .rax),
    .xop (.bin .punpcklqdq x .xmm12)]
@@ -94,15 +110,20 @@ def mul (d a b : XReg) : List Instr := zero ++ acc a b ++ reduce d
 def load (j : Nat) : List Instr :=
   [.movdquLoad .xmm7 (at_ .rdx (16 * j)), .xop (.bin .pshufb .xmm7 .xmm0)]
 
-/-- `H' = H · x⁻¹` into `xmm3`, from `H` in `xmm7`. -/
-def hInv : List Instr :=
-  const .xmm13 xInv ++
+/-- `hInv` after `x⁻¹` into `xmm13`. -/
+def hInvRest : List Instr :=
   ([.movImm64 .rax 0xffffffffffffffff, .xop (.movq .xmm14 .rax), .xop (.bin .punpcklqdq .xmm14 .xmm14),
    .xop (.bin .movdqa .xmm3 .xmm7), .xop (.shift .psllq .xmm3 1),
    .xop (.bin .movdqa .xmm11 .xmm7), .xop (.shift .psrlq .xmm11 63), .xop (.shift .pslldq .xmm11 8),
    .xop (.bin .por .xmm3 .xmm11),
    .xop (.pshufd .xmm11 .xmm7 0xff), .xop (.shift .psrld .xmm11 31), .xop (.bin .paddd .xmm11 .xmm14),
    .xop (.bin .pandn .xmm11 .xmm13), .xop (.bin .pxor .xmm3 .xmm11)] : List Instr)
+
+/-- `H' = H · x⁻¹` into `xmm3`, from `H` in `xmm7`. -/
+def hInv : List Instr := const .xmm13 xInv ++ hInvRest
+
+/-- `hInv` with `constImm`: the code of `StitchAvx.hInv`'s, `VEX`-free. -/
+def hInvImm : List Instr := constImm .xmm13 xInv ++ hInvRest
 
 /-- The constants, `H'` into `xmm3`, `Y` into `xmm2`, and `cmp rcx, 4`. -/
 def prologue : List Instr :=

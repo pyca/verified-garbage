@@ -1,22 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
+import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.AesSiv.Ctr32
-public import VerifiedGarbage.Proof.AesSiv.Words
-public import VerifiedGarbage.Proof.Cmac.Stream
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Framework.ReadHalves
-public import VerifiedGarbage.Proof.Gcm.Bits
-public import VerifiedGarbage.Proof.Modes.AArch64.Xor
-public import VerifiedGarbage.Proof.Seed.Memory
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Seed.AArch64.Modes
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Seed.AArch64.Lit
+public import VerifiedGarbage.Proof.Seed.SboxLit
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # SEED's core for the modes on AArch64: the return address across the call
@@ -88,8 +82,8 @@ tactic_template "keeps_x30" : tactic => `(tactic| repeat (first
   | apply KeepsReg.loop
   | exact Modes.AArch64.keepsReg_of_regSafe (by decide)))
 
-theorem cbcEncrypt_keeps_x30 : KeepsReg .x30 cbcEncrypt := by keeps_x30
-theorem cbcDecrypt_keeps_x30 : KeepsReg .x30 cbcDecrypt := by keeps_x30
+theorem cbcEncryptChained_keeps_x30 : KeepsReg .x30 cbcEncryptChained := by keeps_x30
+theorem cbcDecryptChained_keeps_x30 : KeepsReg .x30 cbcDecryptChained := by keeps_x30
 theorem ofb_keeps_x30 : KeepsReg .x30 ofb := by keeps_x30
 theorem cfbEncrypt_keeps_x30 : KeepsReg .x30 cfbEncrypt := by keeps_x30
 theorem cfbDecrypt_keeps_x30 : KeepsReg .x30 cfbDecrypt := by keeps_x30

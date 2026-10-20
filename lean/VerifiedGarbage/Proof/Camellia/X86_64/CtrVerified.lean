@@ -1,37 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.ModeCore
-meta import VerifiedGarbage.Proof.Camellia.X86_64.ModeCore
-public import VerifiedGarbage.Proof.Modes.X86_64.Ctr
-meta import VerifiedGarbage.Proof.Modes.X86_64.Ctr
+import VerifiedGarbage.Proof.Modes.X86_64.Ctr
 public import VerifiedGarbage.Proof.Camellia.CtrScratch
-meta import VerifiedGarbage.Proof.Camellia.CtrScratch
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Camellia.X86_64.Lit
-meta import VerifiedGarbage.Proof.Camellia.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 import VerifiedGarbage.Proof.Camellia.X86_64.ModesLit
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+meta import VerifiedGarbage.Proof.Camellia.X86_64.ModeCore
+meta import VerifiedGarbage.Proof.Modes.X86_64.Ctr
+meta import VerifiedGarbage.Proof.Camellia.CtrScratch
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Camellia.X86_64.ModesLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.AesSiv.Ctr32
-public import VerifiedGarbage.Proof.AesSiv.Words
-public import VerifiedGarbage.Proof.Cmac.Stream
-public import VerifiedGarbage.Proof.Gcm.Bits
-public import VerifiedGarbage.Proof.Modes.X86_64.Xor
-meta import VerifiedGarbage.Proof.AesSiv.Ctr32
-meta import VerifiedGarbage.Proof.AesSiv.Words
-meta import VerifiedGarbage.Proof.Cmac.Stream
-meta import VerifiedGarbage.Proof.Gcm.Bits
-meta import VerifiedGarbage.Proof.Modes.X86_64.Xor
+meta import VerifiedGarbage.Impl.StackScratch.X86_64
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Camellia-CTR on x86-64 meets its contracts
@@ -41,7 +23,8 @@ with `modeCoreSpec`). `ctr_verified`: `ctr` is correct and constant time, by
 the taint analysis: the pointers, `rounds`, `n` and the stack pointer are
 public, and so is everything the code computes from them; the counter block
 is secret. `ctr_framed` runs it with its working space on the stack, zeroed
-on return: 3216 bytes, the 401 words of the scratch buffer and 8 more.
+on return: 3280 bytes, the 409 words of the scratch buffer and 8 more, below
+the 8 bytes the call of `vg_camellia_crypt_prepared` uses.
 -/
 
 @[expose] public section
@@ -56,13 +39,15 @@ def ctrX86_64 : Contract X86_64.isa where
     let sched : Region := ⟨s.gpr .rdi, 272⟩
     let ctr : Region := ⟨s.gpr .rdx, 16⟩
     let data : Region := ⟨s.gpr .rcx, 16 * (s.gpr .r8).toNat⟩
-    let scratch : Region := ⟨s.gpr .r9, 8 * slots⟩
+    let scratch : Region := ⟨s.gpr .r9, 8 * 409⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
+    let stk : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 8, 8⟩
     s.rd = [sched] ∧ s.wr = [ctr, data, scratch] ∧ sched.Disjoint ctr ∧ sched.Disjoint data ∧
       sched.Disjoint scratch ∧ ctr.Disjoint data ∧ ctr.Disjoint scratch ∧ data.Disjoint scratch ∧
       ret.Disjoint ctr ∧ ret.Disjoint data ∧ ret.Disjoint scratch ∧
+      stk.Disjoint ctr ∧ stk.Disjoint data ∧ stk.Disjoint scratch ∧ 8 ≤ (s.gpr .rsp).toNat ∧
       (s.gpr .rdi).toNat + 272 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 16 ≤ 2 ^ 64 ∧
-      (s.gpr .rcx).toNat + 16 * (s.gpr .r8).toNat ≤ 2 ^ 64 ∧ (s.gpr .r9).toNat + 8 * slots ≤ 2 ^ 64 ∧
+      (s.gpr .rcx).toNat + 16 * (s.gpr .r8).toNat ≤ 2 ^ 64 ∧ (s.gpr .r9).toNat + 8 * 409 ≤ 2 ^ 64 ∧
       ((s.gpr .rsi).toNat = 18 ∨ (s.gpr .rsi).toNat = 24)
   post s s' :=
     Spec.Cbc.blocksAt s'.mem (s.gpr .rcx) (s.gpr .r8).toNat =
@@ -88,8 +73,9 @@ theorem cipher_eq (m : Mem) (p : Addr) (R : Nat) :
 
 theorem ctr_wp {s₀ : State} (hp : ctrX86_64.pre s₀) :
     WP isa ctr s₀ fun s' => gprPreserved s₀ s' ∧ ctrX86_64.post s₀ s' := by
-  obtain ⟨hrd, hwr, dKC, dKD, dKS, dCD, dCS, dDS, dRC, dRD, dRS, fitK, fitC, fitD, fitB, hR⟩ := hp
-  have hwS : (⟨s₀.gpr .r9, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  obtain ⟨hrd, hwr, dKC, dKD, dKS, dCD, dCS, dDS, dRC, dRD, dRS, dTC, dTD, dTS, hst, fitK, fitC, fitD, fitB, hR⟩ :=
+    hp
+  have hwS : (⟨s₀.gpr .r9, 8 * 409⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
   refine WP.mono (Proof.Modes.X86_64.ctr_wp modeCoreSpec (r := ⟨.rdx, .rcx, .r8, .r9⟩)
     ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .r9) (P := s₀.gpr .rdx) (D := s₀.gpr .rcx) (n := (s₀.gpr .r8).toNat)
@@ -101,28 +87,41 @@ theorem ctr_wp {s₀ : State} (hp : ctrX86_64.pre s₀) :
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact dKS
-        · exact dKC⟩) fun s' ⟨hcs, hdata, hctr, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, ?_, hctr⟩
+        · exact dKC, hst, fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact dTS
+        · exact dTC⟩
+    (hstk := .inr ⟨hst, fun w hw => by
+      rw [hwr] at hw
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl | rfl
+      · exact dTC
+      · exact dTD
+      · exact dTS⟩)) fun s' ⟨hcs, hdata, hctr, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, ?_, hctr⟩
   swap
   · rw [cipher_eq] at hdata; exact hdata
+  rw [stkList_dirCore] at hf
   refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
   · exact dRS
   · exact dRC
   · exact dRD
+  · exact VG.Offset.base_disjoint_below _ (by decide)
 
 def ctrTaint : X86_64.Taint.T :=
   { regs := .ofList [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp], flags := false,
-    lens := [16, 0, 8 * slots], bases := [(.r9, 2, 0), (.rdx, 0, 0)] }
+    lens := [16, 0, 8 * 409], bases := [(.r9, 2, 0), (.rdx, 0, 0)] }
 
 theorem ctrTaint_wf (s : State) (hs : ctrX86_64.pre s) : Taint.Wf ctrTaint s := by
-  obtain ⟨_, hwr, _, _, _, dCD, dCS, dDS, _, _, _, _, fitC, fitD, fitB, _⟩ := hs
+  obtain ⟨_, hwr, _, _, _, dCD, dCS, dDS, _, _, _, _, _, _, _, _, fitC, fitD, fitB, _⟩ := hs
   refine ⟨fun _ => ?_, ?_⟩
   · rw [hwr]
     refine ⟨?_, ?_, ?_⟩
     · exact List.Forall₂.cons (by change 16 ≤ 16; omega)
         (List.Forall₂.cons (by change 0 ≤ 16 * (s.gpr .r8).toNat; omega)
-          (List.Forall₂.cons (by change 8 * slots ≤ 8 * slots; omega) List.Forall₂.nil))
+          (List.Forall₂.cons (by change 8 * 409 ≤ 8 * 409; omega) List.Forall₂.nil))
     · refine List.Pairwise.cons (fun r hr => ?_) (List.Pairwise.cons
         (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact dDS)
         (List.Pairwise.cons (by simp) List.Pairwise.nil))
@@ -136,7 +135,7 @@ theorem ctrTaint_wf (s : State) (hs : ctrX86_64.pre s) : Taint.Wf ctrTaint s := 
       · change 16 ≤ 2 ^ 64; omega
       · change 16 * (s.gpr .r8).toNat ≤ 2 ^ 64
         have := (s.gpr .rcx).isLt; omega
-      · change 8 * slots ≤ 2 ^ 64; omega
+      · change 8 * 409 ≤ 2 ^ 64; omega
   · intro p hp
     simp only [ctrTaint, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl <;> unfold Taint.region <;> rw [hwr]
@@ -187,10 +186,10 @@ def ctrSat : State where
   of := none
   mem _ := 0
   rd := [⟨0x1000, 272⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩, ⟨0x4000, 8 * 401⟩]
+  wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩, ⟨0x4000, 8 * 409⟩]
 
 theorem ctr_verified :
-    Verified X86_64.target ctr (Proof.Camellia.ctrScratchContract X86_64.abi slots) :=
+    Verified X86_64.target ctr (Proof.Camellia.ctrScratchContract X86_64.abi 409 8) :=
   Verified.of_correct ctr_correct ctr_ct (by
     sig_implies [Proof.Camellia.ctrScratchContract, Proof.Camellia.ctrScratchSig, Spec.Camellia.ctrSig,
       Spec.Camellia.ctrPre, Spec.Camellia.ctrPost, ctrX86_64, X86_64.abi, X86_64.argRegs, slots,
@@ -210,18 +209,18 @@ def ctrFrameSat : State where
   rd := [⟨0x1000, 272⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩]
 
-theorem ctrFrameSat_pre : ∃ s, (Spec.Camellia.ctrContract X86_64.abi 3216).pre s := by
+theorem ctrFrameSat_pre : ∃ s, (Spec.Camellia.ctrContract X86_64.abi 3288).pre s := by
   implies_sat [Spec.Camellia.ctrContract, Spec.Camellia.ctrSig, Spec.Camellia.ctrPre,
     Spec.Camellia.ctrPost, X86_64.abi, X86_64.argRegs] [ctrFrameSat] using ctrFrameSat
 
 /-- CTR with its working space on the stack. -/
 theorem ctr_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3216 .r9 401 ctr)
-      (Spec.Camellia.ctrContract X86_64.abi 3216) :=
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3280 .r9 409 ctr)
+      (Spec.Camellia.ctrContract X86_64.abi 3288) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64)
-    (n := 401) (pre := Spec.Camellia.ctrPre X86_64.abi.ptrBits)
-    (post := Spec.Camellia.ctrPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 3216) (by rw [← Proof.Camellia.ctrScratchContract_eq]; exact ctr_verified)
+    (n := 409) (pre := Spec.Camellia.ctrPre X86_64.abi.ptrBits)
+    (post := Spec.Camellia.ctrPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 3280) (by rw [← Proof.Camellia.ctrScratchContract_eq]; exact ctr_verified)
     (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.ctrPostOut_local _) ctrFrameSat_pre
 

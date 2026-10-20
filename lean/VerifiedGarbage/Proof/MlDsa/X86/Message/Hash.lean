@@ -1,29 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Message.Call
-meta import VerifiedGarbage.Proof.MlDsa.X86.Message.Call
+public import VerifiedGarbage.Proof.MlKem.X86.Keccak
 import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.MlKem.X86.SampleSetup
-meta import VerifiedGarbage.Proof.MlKem.X86.SampleSetup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.MlDsa.X86.Message.Call
+meta import VerifiedGarbage.Proof.MlKem.X86.Keccak
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.MlKem.X86.SampleSetup
 meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
 meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
 meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: SHAKE256 through the sponge functions

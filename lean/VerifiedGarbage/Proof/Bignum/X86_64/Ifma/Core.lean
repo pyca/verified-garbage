@@ -1,11 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Block
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -28,19 +23,19 @@ variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 
 /-- The zeroing of the accumulators and the zero register. -/
 def zeros (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : List Instr :=
-  (List.range (2 * l.R + 5)).map fun r => .eop (.bin .vpxorq (vreg r) (vreg r) (vreg r))
+  (List.range (l.nl * l.R + 2 * l.nl + 1)).map fun r => .eop (.bin .vpxorq (vreg r) (vreg r) (vreg r))
 
 def checkZeros (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Bool :=
   match ESym.init.run (fun _ => 0) (zeros l) with
-  | some σ => (List.range (2 * l.R + 5)).all fun r => decide (σ.reg r = .zero)
+  | some σ => (List.range (l.nl * l.R + 2 * l.nl + 1)).all fun r => decide (σ.reg r = .zero)
   | none => false
 
-theorem checkZeros_ok (hl : LayOk l) : checkZeros l = true := by
-  rcases hl with rfl | rfl | rfl <;> decide +kernel
+theorem checkZeros_ok (hl : AmmOk l) : checkZeros l = true := by
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide +kernel
 
-theorem zeros_ok (hl : LayOk l) {s : State} :
-    WP isa (.block (zeros l)) s fun s' => (∀ r < 2 * l.R + 5, ∀ t < 4, qv s' (vreg r) t = 0) ∧ Keeps s s' := by
-  obtain ⟨_, hR10⟩ := hl.bounds
+theorem zeros_ok (hl : AmmOk l) {s : State} :
+    WP isa (.block (zeros l)) s fun s' => (∀ r < l.nl * l.R + 2 * l.nl + 1, ∀ t < 4, qv s' (vreg r) t = 0) ∧ Keeps s s' := by
+  obtain ⟨_, hrg⟩ := hl.regs
   have h := checkZeros_ok hl
   unfold checkZeros at h
   split at h
@@ -48,11 +43,11 @@ theorem zeros_ok (hl : LayOk l) {s : State} :
     simp only [List.all_eq_true, List.mem_range, decide_eq_true_eq] at h
     refine WP.mono (run_ok (fun b d n hn hd => absurd hd (by omega)) (SRel.init s) hσ) fun s' hs =>
       ⟨fun r hr t ht => ?_, ⟨fun r hr => hs.gpr hr, hs.mem, hs.rd, hs.wr, hs.mxcsr, hs.flags⟩⟩
-    rw [hs.reg _ t ht, vi_vreg r (by omega), h r hr]; rfl
+    rw [hs.reg _ t ht, vi_vreg r (by omega_using [hr, hrg]), h r hr]; rfl
   · cases h
 
 /-- The loop of `S / R` blocks, from block `S / R - n`. -/
-theorem loop_ok (hl : LayOk l) {s₀ : State} {a m : Nat → Nat → Nat} {k : Nat → Nat} {bl : Nat → Nat → Nat}
+theorem loop_ok (hl : AmmOk l) {s₀ : State} {a m : Nat → Nat → Nat} {k : Nat → Nat} {bl : Nat → Nat → Nat}
     (e : Env l s₀ a m k bl) :
     ∀ n s, 1 ≤ n → n ≤ l.S / l.R → InBlk l s₀ s a m k bl (l.S / l.R - n) 0 → s.gpr .rcx = BitVec.ofNat 64 n →
       WP isa (.loop (.block (ammBlock l)) .ne) s fun s' =>

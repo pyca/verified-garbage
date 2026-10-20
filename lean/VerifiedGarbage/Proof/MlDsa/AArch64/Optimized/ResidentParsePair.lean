@@ -1,11 +1,10 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentMask
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackMemory
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentParse
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentParse
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

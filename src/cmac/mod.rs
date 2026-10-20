@@ -14,7 +14,5 @@ pub mod aes;
 pub mod triple_des;
 
 /// The key does not have a length the block cipher accepts.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct InvalidKeyLength;
-
+pub use crate::error::InvalidKeyLength;
 pub use crate::hmac::InvalidMac;

@@ -1,12 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.Gcm.Compose
 public import VerifiedGarbage.Proof.Cmac.Mem
-public import VerifiedGarbage.Proof.Gcm.Bits
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Spec.Gcm
+import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # GCM: the lengths block from byte-reversed words

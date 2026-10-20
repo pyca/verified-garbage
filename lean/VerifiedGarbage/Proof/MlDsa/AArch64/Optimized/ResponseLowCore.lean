@@ -2,16 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowSemantic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFlags
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowInit
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintFlags
 
 /-! ## From `ResponseLowFlags.lean` -/
 

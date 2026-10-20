@@ -1,14 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Joint
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafPrep
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafPrep
 public import VerifiedGarbage.Proof.Weierstrass.Unch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Proof.Weierstrass.FastNaf
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafPrep
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! Both scalar recoders retain the second input and the first digit buffer. -/
 

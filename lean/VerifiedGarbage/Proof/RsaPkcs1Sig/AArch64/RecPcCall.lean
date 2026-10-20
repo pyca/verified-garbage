@@ -1,15 +1,12 @@
 module
 
-public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.RecoverPrecomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # `vg_rsa_pkcs1_recover_precomputed` on AArch64: the call
@@ -58,7 +55,7 @@ theorem prePR_of {K : Nat} {s : State}
   rw [← e] at sp1 ko kn ke kg ks kp ka
   refine ⟨⟨sp1, by omega, ?_, by rw [hwr]; simp, by rw [hwr]; simp, on, oe, og, os, oa.sub_right (a24_sub s),
     ns, es, gs, sa.sub_right (a24_sub s), ko, kn, ke, kg, ks, ka.sub_right (a24_sub s), wo, wn, we, wg, ws, k1,
-    k2, e1, e2, hh, by unfold Spec.Rsa.scratchWords at hs; omega⟩, ?_, sp, kp, ka, sp2, wp, hl⟩
+    k2, e1, e2, hh, hs⟩, ?_, sp, kp, ka, sp2, wp, hl⟩
   · refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -186,7 +183,7 @@ theorem pdOk_of (c : PdChecked) {s t : State} (hp : PrePR c.stack s) (hc : AtCal
   case h7 => rw [x7, x1]
   case he1 => rw [x5]; exact hv.e1
   case he2 => rw [x5, x1]; exact hv.e2
-  case hs => rw [x1, a1]; unfold Spec.Rsa.scratchWords; exact hv.hs
+  case hs => rw [x1, a1]; exact hv.hs
 
 /-- Whether `pre` holds the values for `n`. -/
 def Consistent (s : State) : Prop :=

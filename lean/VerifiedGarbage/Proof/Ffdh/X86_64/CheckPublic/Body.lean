@@ -1,12 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Context
+public import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Main
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Entry
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Main
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Entry
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
+import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
+import VerifiedGarbage.Proof.Ffdh.Domain
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH public-key validation on x86-64: correctness before the ABI epilogue -/
 

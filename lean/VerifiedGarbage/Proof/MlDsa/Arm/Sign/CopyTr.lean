@@ -1,15 +1,17 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Lay
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
 import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Lay
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
 meta import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA signing on ARMv7: copies leak only their addresses

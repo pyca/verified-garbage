@@ -1,14 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.X86.Stages
+public import VerifiedGarbage.Impl.EcKey.X86
+public import VerifiedGarbage.Spec.EcKey
 
-public import VerifiedGarbage.Proof.EcKey.X86.Finish
+import VerifiedGarbage.Proof.EcKey.X86.Finish
 import VerifiedGarbage.Proof.Ecdsa.X86.Middle
-public import VerifiedGarbage.Proof.Ecdsa.X86.Main
-public import VerifiedGarbage.Proof.EcKey.PublicKey
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.X86.Main
+import VerifiedGarbage.Proof.EcKey.PublicKey
+import VerifiedGarbage.Proof.Ecdsa.X86.Scalar
+import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
+import VerifiedGarbage.Proof.Ecdsa.X86.Setup
 
 /-!
 # Elliptic curve public keys on x86 (32-bit): the whole function

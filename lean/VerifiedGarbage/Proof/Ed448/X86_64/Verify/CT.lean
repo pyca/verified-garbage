@@ -1,13 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.HashCT
+import VerifiedGarbage.Proof.Ed448.X86_64.Verify.HashCT
 public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Correct
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Rel
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLit
+import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarVerified
 
 /-!
 # Ed448 verification on x86-64: constant time

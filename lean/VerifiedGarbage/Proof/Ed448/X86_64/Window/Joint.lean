@@ -1,15 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Memory
 
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.Loop
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.First
-public import VerifiedGarbage.Proof.X448.X86_64.Inv
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.Sign
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.First
+import VerifiedGarbage.Proof.X448.X86_64.Inv
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseStep
 
 /-! End-to-end joint multiplication, including runtime table construction. -/
 

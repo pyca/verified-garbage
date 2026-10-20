@@ -2,11 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Step
 public import VerifiedGarbage.Impl.X25519.X86_64.Adx
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # X25519 on x86-64: the steps of the BMI2/ADX field arithmetic

@@ -1,22 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.Words
-public import VerifiedGarbage.Proof.CmacAes.Arm.Words
+import VerifiedGarbage.Proof.CmacAes.Arm.Words
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Impl.Modes.Arm.Seq
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.SboxSpec
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Frame
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
-import VerifiedGarbage.Proof.AesCbc.Spec
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Copying and XORing blocks a word at a time, on ARMv7

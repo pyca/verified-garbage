@@ -1,15 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.X86.Stream.Verified
+public import VerifiedGarbage.Impl.StackScratch.X86
 import VerifiedGarbage.Proof.Rc2.X86.Stream.Lit
-import VerifiedGarbage.Proof.Rc2.Scratch
-public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RC2-CBC's streaming functions on x86, with their working space on the stack

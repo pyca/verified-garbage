@@ -1,17 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Rc2.X86_64.ExpandKey
-public import VerifiedGarbage.Proof.Rc2.X86_64.Save
-import VerifiedGarbage.Proof.Rc2.Expansion
 import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Finish
-import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Vector
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Vector
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Rc2.Select
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

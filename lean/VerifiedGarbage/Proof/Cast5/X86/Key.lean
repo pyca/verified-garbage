@@ -1,11 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Cast5.X86.Round
+public import VerifiedGarbage.Proof.Framework.X86.Spill
 
 import VerifiedGarbage.Proof.Cast5.X86.KeyHalf
-public import VerifiedGarbage.Proof.Cast5.X86.Ecb
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Cast5.X86.Ecb
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # CAST5 key expansion on 32-bit x86

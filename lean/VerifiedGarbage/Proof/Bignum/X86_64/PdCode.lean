@@ -1,13 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.PdMain
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.Push
+import Mathlib.Data.Nat.Basic
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Order.Basic
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_public_precomputed` on x86-64: correctness
@@ -52,7 +55,7 @@ def pdContract : Contract isa where
       (stackArg s 2).toNat + (stackArg s 3).toNat * 8 ≤ 2 ^ 64 ∧
       Spec.Rsa.lenValid (s.gpr .rsi).toNat ∧ (s.gpr .rcx).toNat = Spec.Rsa.precomputedWords (s.gpr .rsi).toNat ∧
       (stackArg s 1).toNat = (s.gpr .rsi).toNat ∧ 1 ≤ (s.gpr .r9).toNat ∧
-      (s.gpr .r9).toNat ≤ (s.gpr .rsi).toNat ∧ Spec.Rsa.scratchWords (s.gpr .rsi).toNat ≤ (stackArg s 3).toNat
+      (s.gpr .r9).toNat ≤ (s.gpr .rsi).toNat ∧ Spec.Rsa.publicScratchWords (s.gpr .rsi).toNat ≤ (stackArg s 3).toNat
   post s s' :=
     ∀ nB : List Byte, nB.length = (s.gpr .rsi).toNat →
       Spec.Rsa.publicPrecompute nB = some (Spec.Rsa.wordsAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) →
@@ -143,7 +146,7 @@ structure PdCtx (s : State) : Prop where
   hL1 : 1 ≤ (s.gpr .r9).toNat
   hL2 : (s.gpr .r9).toNat ≤ (s.gpr .rsi).toNat
   hpl : (s.gpr .rcx).toNat = 2 * (((s.gpr .rsi).toNat + 7) / 8)
-  hZ : 128 * (s.gpr .rsi).toNat ≤ (stackArg s 3).toNat * 8
+  hZ : 64 * (((s.gpr .rsi).toNat + 7) / 8) + 384 ≤ (stackArg s 3).toNat * 8
   hs : Scr s (stackArg s 2) ((stackArg s 3).toNat * 8)
   ha0 : InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 8
   ha2 : InRegions (s.rd ++ s.wr) (stackArgAddr s 2) 8
@@ -167,7 +170,7 @@ theorem pdCtx_of {s : State} (h : pdContract.pre s) : PdCtx s := by
   obtain ⟨hsp, hrd, hwr, dOp, dOe, dOi, dOs, dOa, dps, des, dis, dsa, dRo, dRp, dRe, dRi, dRs, dRa,
     wO, wP, wE, wI, wS, hk, hpl, hil, hL1, hL2, hsl⟩ := h
   obtain ⟨hk1, hk2⟩ := hk
-  unfold Spec.Rsa.scratchWords at hsl
+  unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords at hsl
   unfold Spec.Rsa.precomputedWords Spec.Rsa.modulusWords at hpl
   have hs : Scr s (stackArg s 2) ((stackArg s 3).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
   have hn := hs.nowrap
@@ -212,6 +215,8 @@ theorem pdPre_of {s t₁ t₂ : State} (c : PdCtx s) (hdi : t₁.gpr .rdi = stac
     (f₂ : Frm (stackArg s 2) (pdLoadRanges (((s.gpr .rsi).toNat + 7) / 8)) t₁.mem t₂.mem) (k₂ : Keep mmRegs t₁ t₂)
     (hodd : wv t₂.mem (stackArg s 2) (slot (((s.gpr .rsi).toNat + 7) / 8) aN) (((s.gpr .rsi).toNat + 7) / 8) % 2 = 1)
     (hN1 : 1 < wv t₂.mem (stackArg s 2) (slot (((s.gpr .rsi).toNat + 7) / 8) aN) (((s.gpr .rsi).toNat + 7) / 8))
+    (hbig : 2 ^ (64 * (((s.gpr .rsi).toNat + 7) / 8 - 1)) ≤
+      wv t₂.mem (stackArg s 2) (slot (((s.gpr .rsi).toNat + 7) / 8) aN) (((s.gpr .rsi).toNat + 7) / 8))
     (hRN : wv t₂.mem (stackArg s 2) (slot (((s.gpr .rsi).toNat + 7) / 8) aR2) (((s.gpr .rsi).toNat + 7) / 8) <
       wv t₂.mem (stackArg s 2) (slot (((s.gpr .rsi).toNat + 7) / 8) aN) (((s.gpr .rsi).toNat + 7) / 8))
     (hev : Spec.Rsa.exponentValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)) = true) :
@@ -234,7 +239,7 @@ theorem pdPre_of {s t₁ t₂ : State} (c : PdCtx s) (hdi : t₁.gpr .rdi = stac
       hO := by rw [x₂ sOut (by decide)]; exact hO, hK := by rw [x₂ sK (by decide), hK, ofNat_toNat64],
       hE := by rw [x₂ sE (by decide)]; exact hE, hL := by rw [x₂ sElen (by decide), hL, ofNat_toNat64],
       hIn := by rw [x₂ sIn (by decide)]; exact hIn, hW := hW₂, hb := hb₂, n := rfl, r := rfl, odd := hodd,
-      n1 := hN1, rlt := hRN, x := c.hxb.congrK i₂ kk, e := c.heb.congrK i₂ kk, xl := bytesAt_length _ _ _,
+      n1 := hN1, big := hbig, rlt := hRN, x := c.hxb.congrK i₂ kk, e := c.heb.congrK i₂ kk, xl := bytesAt_length _ _ _,
       el := bytesAt_length _ _ _, L1 := c.hL1, L2 := c.hL2, out := fun j hj => by rw [kk.2.2]; exact c.hout j hj,
       outSep := c.houts,
       inSpan := by rw [kk.2.1, kk.2.2]; exact c.inSpan,

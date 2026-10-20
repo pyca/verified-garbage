@@ -1,12 +1,16 @@
 //! FFDH component operations against OpenSSL and AWS-LC.
+// AWS-LC's pregenerated ARMv7 bindings omit its C DH API; aws-lc-rs
+// exposes no DH wrapper. ARMv7 compares with OpenSSL.
 #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 #[path = "../../support/ffdh.rs"]
 mod aws_lc;
 use criterion::Criterion;
 pub const USES: &[&str] = &["ffdh", "rsa_mont", "miller_rabin"];
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 pub fn bench(c: &mut Criterion) {
-    use crate::{AWS_LC, OPENSSL, VG};
+    #[cfg(not(target_arch = "arm"))]
+    use crate::AWS_LC;
+    use crate::{OPENSSL, VG};
     use criterion::BenchmarkId;
     use openssl::{bn::BigNum, derive::Deriver, dh::Dh, pkey::PKey};
     use std::hint::black_box;
@@ -53,9 +57,12 @@ pub fn bench(c: &mut Criterion) {
             .unwrap(),
         )
         .unwrap();
+        #[cfg(not(target_arch = "arm"))]
         let aws_key = aws_lc::Dh::parameters(&p, &g, q.as_deref()).with_key(&y, &x);
+        #[cfg(not(target_arch = "arm"))]
         let aws_peer = aws_lc::Dh::parameters(&p, &g, q.as_deref())
             .with_key(peer.public_key().component(), peer.private_component());
+        #[cfg(not(target_arch = "arm"))]
         assert_eq!(
             aws_key.exchange(&aws_peer),
             key.exchange(peer.public_key()).unwrap()
@@ -63,6 +70,7 @@ pub fn bench(c: &mut Criterion) {
         // OpenSSL's compute_key strips leading zero bytes; pad explicitly
         // to compare the complete operation cryptography needs.
         let mut group = c.benchmark_group("ffdh_exchange");
+        #[cfg(not(target_arch = "arm"))]
         group.bench_function(BenchmarkId::new(AWS_LC, size / 8), |b| {
             b.iter(|| black_box(&aws_key).exchange(black_box(&aws_peer)))
         });
@@ -102,7 +110,27 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         group.finish();
+        let mut group = c.benchmark_group("ffdh_from_private");
+        group.bench_function(BenchmarkId::new(VG, size / 8), |b| {
+            b.iter(|| {
+                PrivateKey::from_private_components(black_box(&params), black_box(&x)).unwrap()
+            })
+        });
+        group.bench_function(BenchmarkId::new(OPENSSL, size / 8), |b| {
+            b.iter(|| {
+                Dh::from_pqg(
+                    BigNum::from_slice(black_box(&p)).unwrap(),
+                    q.as_ref().map(|q| BigNum::from_slice(q).unwrap()),
+                    BigNum::from_slice(black_box(&g)).unwrap(),
+                )
+                .unwrap()
+                .set_private_key(BigNum::from_slice(black_box(&x)).unwrap())
+                .unwrap()
+            })
+        });
+        group.finish();
         let mut group = c.benchmark_group("ffdh_generate");
+        #[cfg(not(target_arch = "arm"))]
         group.bench_function(BenchmarkId::new(AWS_LC, size / 8), |b| {
             b.iter(|| aws_lc::Dh::parameters(&p, &g, q.as_deref()).generate())
         });
@@ -185,6 +213,7 @@ pub fn bench(c: &mut Criterion) {
         });
         group.finish();
     }
+    #[cfg(not(target_arch = "arm"))]
     for generator in [2, 5] {
         let mut group = c.benchmark_group(format!("ffdh_parameters_g{generator}"));
         // Safe-prime search has high variance: ten random draws can
@@ -199,5 +228,5 @@ pub fn bench(c: &mut Criterion) {
         group.finish();
     }
 }
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm")))]
 pub fn bench(_c: &mut Criterion) {}

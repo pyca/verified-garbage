@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Words
-public import VerifiedGarbage.Proof.MlKem.Arith
-public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.Arith
+public import VerifiedGarbage.TCB.X86_64.Sse
+public import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.Framework.Omega
+import Batteries.Tactic.SeqFocus
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # ML-KEM on x86-64: arithmetic modulo `q` in 16-bit words

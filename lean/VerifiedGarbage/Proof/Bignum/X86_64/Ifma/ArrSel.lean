@@ -1,15 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Terms
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.VecR
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Push
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.Basic
+public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
 
 /-!
 # RSA with AVX512_IFMA on x86-64: choosing an array of the region's loop

@@ -55,13 +55,13 @@ def mul (A : Arith) : Prog isa := L.encMulAt A (pS L.pU) (pS L.pA) (pS L.k) (pS 
 /-- `u[i]`, compressed and encoded to the ciphertext. -/
 def u (A : Arith) (i : Nat) : Prog isa :=
   .seq (cbd2At A (prfO L (L.k + i)) (pS 15)) (.seq (addAt A (pS (L.pU + i)) (pS 15))
-    (L.ceAt (pS (L.pU + i)) L.du (sc (L.oCT + 32 * L.du * i))))
+    (L.ceAt A.codecs (pS (L.pU + i)) L.du (sc (L.oCT + 32 * L.du * i))))
 
 /-- `v`, compressed and encoded to the ciphertext. -/
 def v (A : Arith) : Prog isa :=
   .seq (cbd2At A (prfO L (2 * L.k)) (pS 15)) (.seq (addAt A (pS (L.pU + L.k)) (pS 15))
-    (.seq (ddAt (sc oM) 1 (pS 15)) (.seq (addAt A (pS (L.pU + L.k)) (pS 15))
-      (L.ceAt (pS (L.pU + L.k)) L.dv (sc (L.oCT + 32 * L.du * L.k))))))
+    (.seq (ddAt A.codecs (sc oM) 1 (pS 15)) (.seq (addAt A (pS (L.pU + L.k)) (pS 15))
+      (L.ceAt A.codecs (pS (L.pU + L.k)) L.dv (sc (L.oCT + 32 * L.du * L.k))))))
 
 def rest (c : Callee4) (E : Ptr) : Prog isa :=
   .seq (c.prfs 0 (2 * L.k + 1) L.oPR L.lPW) (.seq (seqR (y L c.arith) 0 L.k) (.seq (seqR (t L c.arith E) 0 L.k)

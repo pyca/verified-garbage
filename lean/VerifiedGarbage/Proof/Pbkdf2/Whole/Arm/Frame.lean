@@ -1,13 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Pbkdf2.Scratch
+import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # PBKDF2 on ARMv7, with its working space on the stack
@@ -35,8 +32,8 @@ def pbkFrame (I : Spec.Hmac.Instance) : Nat := (12 + 8 + 8 * I.pbkdf2Scratch + 3
 
 theorem pbkFramed {I : Spec.Hmac.Instance} {c : Prog isa} {bytes : Nat}
     (h : Verified Arm.target c (I.pbkdf2ScratchContract Arm.abi 24))
-    (hb : Fits 3 bytes .u64 I.pbkdf2Scratch)
-    (hsat : ∃ s, (I.pbkdf2Contract Arm.abi (24 + bytes)).pre s) :
+    (hsat : ∃ s, (I.pbkdf2Contract Arm.abi (24 + bytes)).pre s)
+    (hb : Fits 3 bytes .u64 I.pbkdf2Scratch := by decide) :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch bytes 3 c)
       (I.pbkdf2Contract Arm.abi (24 + bytes)) :=
   Arm.Verified.stackScratch (sig := Spec.Pbkdf2.pbkdf2Sig) (nm := "scratch") (e := .u64)

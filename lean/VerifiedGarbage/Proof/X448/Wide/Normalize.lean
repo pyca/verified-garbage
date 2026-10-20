@@ -1,11 +1,10 @@
 module
+public import VerifiedGarbage.Proof.X448.Wide.CarryStep
+public import VerifiedGarbage.Proof.X448.Wide.Column
 
-public import VerifiedGarbage.Proof.X448.Wide.Fold
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X448.Wide.Fold
+import VerifiedGarbage.Proof.X448.Wide.Pass
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Untrusted: normalize wide coefficients and restore the field-slot interface. -/
 

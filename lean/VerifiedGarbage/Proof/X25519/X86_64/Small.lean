@@ -1,11 +1,10 @@
 module
+public import VerifiedGarbage.Proof.X25519.X86_64.Ops
 
-public import VerifiedGarbage.Proof.X25519.X86_64.AddSub
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.X86_64.AddSub
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X25519 on x86-64: multiplication by `a24`, and the swap
@@ -253,5 +252,73 @@ theorem cswap_ok {s : State} {base : Addr} (hs : Scr s base) {x y : Nat} (hx : S
   · rw [wr3, wr2, k1.2.2.2]
   · rw [o3.fe hxy (by omega), fx]
   · rw [m3, fe_st4 _ _ (by omega), g2, g2, g2, g2, e2]
+
+/-! ## The multiplexer -/
+
+/-- `store4`, which also keeps the flags. -/
+theorem store4Z_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : Slot o) :
+    WP isa (.block (store4 o)) s fun s' =>
+      s'.mem = st4 s.mem base o (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) ∧
+      (∀ r, s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.zf = s.zf := by
+  have w : ∀ d, d + 8 ≤ 4096 → InRegions s.wr (off base d) 8 :=
+    fun d hd => ⟨_, hs.wr, contains_sc hd⟩
+  apply WP.of_runBlock
+  simp only [store4, stores, runBlock_cons, runStep_some, runBlock_nil, exec, ea_sc, hs.rdi,
+    State.store64, w o (by omega), w (o + 8) (by omega), w (o + 16) (by omega),
+    w (o + 24) (by omega), ite_true, Option.some.injEq, exists_eq_left']
+  exact ⟨rfl, fun _ => trivial, trivial, trivial, trivial⟩
+
+/-- The instructions of `mux` before its stores. -/
+abbrev muxSel : List Instr :=
+  [.cmov .e .r8 (.reg .r12), .cmov .e .r9 (.reg .r13), .cmov .e .r10 (.reg .r14),
+    .cmov .e .r11 (.reg .r15)]
+
+theorem mux_eq (o x y : Nat) : mux o x y =
+    (loads x .r8 .r9 .r10 .r11 ++ loads y .r12 .r13 .r14 .r15 ++ muxSel) ++ store4 o := by
+  simp only [mux, List.append_assoc]
+
+/-- `[y]` into `r8–r11` if ZF is set, else `[x]`. -/
+theorem muxPre_ok {s : State} {base : Addr} (hs : Scr s base) {x y : Nat} (hx : Slot x)
+    (hy : Slot y) {zf : Bool} (hz : s.zf = some zf) :
+    WP isa (.block (loads x .r8 .r9 .r10 .r11 ++ loads y .r12 .r13 .r14 .r15 ++ muxSel)) s
+      fun s' =>
+      val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) =
+        (if zf then fe s.mem base y else fe s.mem base x) ∧ s'.zf = s.zf ∧
+      Keeps [.r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s s' := by
+  cases zf <;>
+  · apply WP.of_runBlock
+    simp only [loads, muxSel, List.cons_append, List.nil_append, runBlock_cons, runStep_some,
+      runBlock_nil, exec, readSrc, execCmov, eval, State.load64, ea_sc, RegUpd.gpr_setReg,
+      RegUpd.zf_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg, hs.rdi, hz,
+      ld_sc hs (d := x) (by omega), ld_sc hs (d := y) (by omega),
+      ld_sc hs (d := x + 8) (by omega), ld_sc hs (d := y + 8) (by omega),
+      ld_sc hs (d := x + 16) (by omega), ld_sc hs (d := y + 16) (by omega),
+      ld_sc hs (d := x + 24) (by omega), ld_sc hs (d := y + 24) (by omega), ite_true,
+      ite_false, reduceCtorEq, Option.map_some, Option.bind_some, Option.some.injEq,
+      exists_eq_left', Bool.false_eq_true]
+    refine ⟨trivial, trivial, fun r hr => ?_, rfl, rfl, rfl⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_setReg, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1,
+      hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2, ite_false]
+
+/-- `[o] = [y]` if ZF is set, else `[x]`, keeping the flags. -/
+theorem mux_ok {s : State} {base : Addr} (hs : Scr s base) {o x y : Nat} (ho : Slot o)
+    (hx : Slot x) (hy : Slot y) {zf : Bool} (hz : s.zf = some zf) :
+    WP isa (.block (mux o x y)) s fun s' =>
+      Op base o s s' ∧ fe s'.mem base o = (if zf then fe s.mem base y else fe s.mem base x) ∧
+        s'.zf = s.zf := by
+  rw [mux_eq, WP.block_append_iff]
+  refine WP.mono (muxPre_ok hs hx hy hz) fun s₁ ⟨e1, z1, k1⟩ => ?_
+  have hs₁ := hs.of_keeps k1 (by decide)
+  refine WP.mono (store4Z_ok hs₁ ho) fun s₂ ⟨m2, g2, rd2, wr2, z2⟩ => ?_
+  have o2 := st4_outside s₁.mem base (o := o) (by omega) (s₁.gpr .r8) (s₁.gpr .r9)
+    (s₁.gpr .r10) (s₁.gpr .r11)
+  rw [← m2, k1.2.1] at o2
+  refine ⟨⟨fun r hr => ?_, by rw [rd2, k1.2.2.1], by rw [wr2, k1.2.2.2], o2⟩, ?_, by rw [z2, z1]⟩
+  · simp only [clob, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    rw [g2, k1.1 r (by simp [hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.1,
+      hr.2.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2.2.2.1,
+      hr.2.2.2.2.2.2.2.2.2.2.2])]
+  · rw [m2, fe_st4 _ _ (by omega), e1]
 
 end VG.Proof.X25519.X86_64

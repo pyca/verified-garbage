@@ -1,12 +1,11 @@
 module
+public import VerifiedGarbage.Impl.AesGcm.X86_64.SealSplit
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Body
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
-import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Body
+import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # AES-GCM `seal_split` on x86-64: the end, in two runs

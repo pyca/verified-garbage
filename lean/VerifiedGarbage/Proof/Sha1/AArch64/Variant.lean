@@ -1,11 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Sha1.AArch64.Stream.Md
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # SHA-1 compression backends on AArch64
@@ -37,9 +34,9 @@ structure Compress where
   finalizeCT : ConstantTime isa (finK (P := Stream.params) md).pre
     (finK (P := Stream.params) md).pub (finalize Stream.params name code)
   updateKeeps : ((instrs (updateMain Stream.params name code)).all fun i =>
-    untouched.all fun r => dstOf i != some r) = true
+    untouched.all fun r => !clobbers i r) = true
   finalizeKeeps : ((instrs (finalizeMain Stream.params name code)).all fun i =>
-    untouched.all fun r => dstOf i != some r) = true
+    untouched.all fun r => !clobbers i r) = true
   updateDepth : (updateMain Stream.params name code).aarch64Depth = 0
   finalizeDepth : (finalizeMain Stream.params name code).aarch64Depth = 0
 

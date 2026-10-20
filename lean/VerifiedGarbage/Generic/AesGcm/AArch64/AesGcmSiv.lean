@@ -1,9 +1,61 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Verified
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Verified
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Init
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Crypt
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Derive
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.FnCT
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Keys
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Polyval
+public import VerifiedGarbage.Proof.Cmac.Dbl32
+public import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Cmac.Stream
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Gcm.Be64
+public import VerifiedGarbage.Proof.Gcm.Bits
+public import VerifiedGarbage.Proof.Gcm.Powers
+public import VerifiedGarbage.Proof.Siv.Spec
+import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+import VerifiedGarbage.Proof.AesGcm.AArch64.Init
+import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Crypt
+import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Derive
+import VerifiedGarbage.Proof.AesGcmSiv.AArch64.FnCT
+import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Keys
+import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Polyval
+import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Gcm.Be64
+import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Gcm.Powers
+import VerifiedGarbage.Proof.Siv.Spec
 
 /-!
 # AES-GCM-SIV (RFC 8452) on AArch64
@@ -38,26 +90,20 @@ def note (v : GcmImpl) : String :=
 
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
-  { Spec.GcmSiv.sealApi with
-    name := Spec.GcmSiv.sealApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.GcmSiv.sealApi.doc (notes := [note v])
+  Spec.GcmSiv.sealApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (Impl.AesGcmSiv.AArch64.«seal» v.callees)
-    contract := Spec.GcmSiv.sealContract AArch64.abi 3824
     stack := 3824
     verified := seal_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
-  { Spec.GcmSiv.openApi with
-    name := Spec.GcmSiv.openApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.GcmSiv.openApi.doc (notes := [note v,
-      "It compares the tags and overwrites the data with zeros without a branch on the result."])
+  Spec.GcmSiv.openApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v,
+      "It compares the tags and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (Impl.AesGcmSiv.AArch64.«open» v.callees)
-    contract := Spec.GcmSiv.openContract AArch64.abi 3824
     stack := 3824
     verified := open_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features }]
 
 /-- The artifacts of a variant, from the implementations it names. -/

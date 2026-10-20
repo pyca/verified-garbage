@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
 public import VerifiedGarbage.Impl.Aes.X86_64.VaesZ
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 public import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
 
 /-!
 # AVX-512 VAES: encrypting the four lanes of the block registers

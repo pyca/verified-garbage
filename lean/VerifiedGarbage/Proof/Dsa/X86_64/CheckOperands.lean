@@ -1,14 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.CheckEffects
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import Batteries.Logic
 
 /-! # Validation preserves every operand outside the arithmetic prefix -/
 

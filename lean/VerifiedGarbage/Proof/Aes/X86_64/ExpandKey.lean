@@ -1,22 +1,29 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.X86_64.ExpandKey
-meta import VerifiedGarbage.Impl.Aes.X86_64.ExpandKey
 public import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
-meta import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
 public import VerifiedGarbage.Proof.Aes.KeyExp
-meta import VerifiedGarbage.Proof.Aes.KeyExp
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Aes.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Aes.X86_64.ExpandKey
+meta import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
+meta import VerifiedGarbage.Proof.Aes.KeyExp
 meta import VerifiedGarbage.Spec.Aes.Contract
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Aes.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The AES key expansion on x86-64

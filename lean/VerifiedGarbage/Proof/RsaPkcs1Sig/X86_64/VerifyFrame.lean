@@ -2,14 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCtx
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Verify
-public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-public import VerifiedGarbage.Proof.Framework.X86_64.Call
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # `vg_rsa_pkcs1_verify` on x86-64: the frame
@@ -68,7 +64,7 @@ structure PreV (s : State) : Prop where
   k2 : (s.gpr .rsi).toNat ≤ 1024
   L1 : 1 ≤ (s.gpr .rcx).toNat
   L2 : (s.gpr .rcx).toNat ≤ (s.gpr .rsi).toNat
-  hsl : 16 * (s.gpr .rsi).toNat + 32 ≤ (stackArg s 4).toNat
+  hsl : Spec.Rsa.publicScratchWords (s.gpr .rsi).toNat ≤ (stackArg s 4).toNat
 
 theorem preV_of {s : State} (h : verContract.pre s) : PreV s := by
   simp only [verContract] at h

@@ -10,10 +10,6 @@ public import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
 public import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 public import VerifiedGarbage.Spec.MlDsa.Contract
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlKem.Encode
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mask32
 public import VerifiedGarbage.Proof.MlDsa.Pack.Coeffs
@@ -22,6 +18,10 @@ public import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
 public import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
+import VerifiedGarbage.Proof.MlKem.X86.Pack
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # ML-DSA verification on x86 (32-bit): the setting

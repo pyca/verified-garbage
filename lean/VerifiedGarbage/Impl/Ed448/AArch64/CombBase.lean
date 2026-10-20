@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.Ed448.AArch64.Point56
 public import VerifiedGarbage.Spec.Ed448.Comb56
+public import VerifiedGarbage.Impl.X448.AArch64.Base
 
 /-!
 # Ed448's fixed-base comb on AArch64, as a function

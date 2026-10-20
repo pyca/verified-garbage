@@ -4,18 +4,10 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindowTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindowTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail
 
@@ -69,7 +61,7 @@ theorem jacWinCfg_double_lit : VG.Impl.P256.VerifyDouble.double
 private abbrev Kc := VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256
 
 private theorem nafTable_add_preserves : ∀ r∈[Reg.x19,Reg.x20],
-    ∀ i∈instrs (Jacobian.jacAdd Kc Kc.R (Naf.twice Kc) Kc.D),dstOf i≠some r := by
+    ∀ i∈instrs (Jacobian.jacAdd Kc Kc.R (Naf.twice Kc) Kc.D),clobbers i r = false := by
   rw [Jacobian.jacAdd,jacWinCfg_double_lit]
   have h : (instrs (.seq (.block (zeroMask Kc.M.n Kc.R.z)) <|
       .ite (.nonzero .x .x2) (.block (copyPt Kc.M.n Kc.D (Naf.twice Kc))) <|
@@ -81,7 +73,7 @@ private theorem nafTable_add_preserves : ∀ r∈[Reg.x19,Reg.x20],
         (.seq (.block (zeroMask Kc.M.n Kc.S.t5)) <|
           .ite (.nonzero .x .x2) (.block Forward.P256Bounds.rightRD.lit) (.block (Jacobian.infinity Kc Kc.D)))
         (fprogB Kc.M (VG.Impl.Weierstrass.jacTail Kc.S Kc.R (Naf.twice Kc) Kc.D)) : Prog isa)).all
-      (fun i => decide (dstOf i≠some .x19 ∧ dstOf i≠some .x20))=true := by decide +kernel
+      (fun i => decide (clobbers i .x19 = false ∧ clobbers i .x20 = false))=true := by decide +kernel
   intro r hr i hi
   have hh := of_decide_eq_true (List.all_eq_true.mp h i hi)
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr

@@ -1,13 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.X86.Crypt
+import VerifiedGarbage.Proof.AesCcm.X86.Absorb
+import VerifiedGarbage.Proof.AesCcm.X86.Callee
+import VerifiedGarbage.Proof.AesCcm.X86.Run
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.AesCcm.X86.Crypt
-import VerifiedGarbage.Proof.AesCcm.X86.AbsorbCT
-meta import VerifiedGarbage.Proof.AesCcm.X86.AbsorbCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.AesCcm.X86.Absorb
+meta import VerifiedGarbage.Proof.AesCcm.X86.Callee
+meta import VerifiedGarbage.Proof.AesCcm.X86.Run
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # AES-CCM on x86: counter mode in constant time

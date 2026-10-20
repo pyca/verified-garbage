@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Sym
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Finish
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Rounds
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # ChaCha20 on x86-64 with AVX-512, the last bytes: the input states and the output
@@ -29,12 +28,17 @@ open VG.Proof.ChaCha20.X86_64.Avx2 (plus ctr_get)
 
 /-- The first doubleword of the lane increments of set `k` in `buf`. -/
 def incB : Nat → Nat
-  | 0 => 64 | _ => 48
+  | 0 => 64 | 1 => 48 | _ => 0
 
 /-- The lane increments in `buf`: `0, 1, 2, 3` for the first set and `4, 5,
 6, 7` for the second, each in doubleword 0 of a lane. -/
 def Incs (m : Mem) (buf : Addr) : Prop :=
   ∀ k < 2, ∀ p < 16, m.readW (buf + BitVec.ofNat 64 (4 * (incB k + p))) 32 =
+    if p % 4 = 0 then BitVec.ofNat 32 (4 * k + p / 4) else 0
+
+/-- As `Incs`, with `8, 9, 10, 11` for the third set, as `part3` stores them. -/
+def Incs3 (m : Mem) (buf : Addr) : Prop :=
+  ∀ k < 3, ∀ p < 16, m.readW (buf + BitVec.ofNat 64 (4 * (incB k + p))) 32 =
     if p % 4 = 0 then BitVec.ofNat 32 (4 * k + p / 4) else 0
 
 /-- Word `i` of block `l` of set `k` before the rounds: word `i` of the
@@ -87,12 +91,28 @@ def partCheck : Bool :=
       σ.mem 1 (16 * l + i) == outT2 1 i l
   | none => false
 
+def setup3Check : Bool :=
+  match run 128 Sym.init setup3 with
+  | some σ => !σ.dirty && (List.range 3).all fun k => (List.range 4).all fun r => (List.range 16).all fun p =>
+      σ.reg (4 * k + r) p == inT k (4 * r + p % 4) (p / 4)
+  | none => false
+
+def part3Check : Bool :=
+  match run 128 Sym.init finish3 with
+  | some σ =>
+    ((List.range 8).all fun j => (List.range 16).all fun i =>
+      σ.mem 2 (16 * j + i) == .xor (.mem 2 (16 * j + i)) (outT2 (j / 4) i (j % 4))) &&
+    (List.range 4).all fun l => (List.range 16).all fun i => σ.mem 1 (16 * l + i) == outT2 2 i l
+  | none => false
+
 theorem setupCheck_eq : setupCheck = true := by decide +kernel
 theorem setup2Check_128 : setup2Check 128 = true := by decide +kernel
 theorem setup2Check_64 : setup2Check 64 = true := by decide +kernel
 theorem finishCheck_eq : finishCheck = true := by decide +kernel
 theorem fullCheck_eq : fullCheck = true := by decide +kernel
 theorem partCheck_eq : partCheck = true := by decide +kernel
+theorem setup3Check_eq : setup3Check = true := by decide +kernel
+theorem part3Check_eq : part3Check = true := by decide +kernel
 
 
 /-! ## Evaluation -/
@@ -135,6 +155,35 @@ theorem outT2_eval {S : Nat} {vs : Nat → CState} (hz : HB S vs s) (hi : Incs s
     (hk : k < S) (hk2 : k < 2) (hi16 : i < 16) (hl : l < 4) :
     T.eval D s (outT2 k i l) = (plus vs (S0 s) (4 * k + l))[i] := by
   rw [← outT_eval (D := D) hz hi hk hk2 hi16 hl]
+  simp only [outT2, outT, inT]
+  split
+  · simp only [T.eval]; exact congrArg _ (BitVec.add_comm _ _)
+  · rfl
+
+theorem inT_eval3 (hi : Incs3 s.mem (s.gpr .r9)) {k i l : Nat} (hk : k < 3) (hi16 : i < 16) (hl : l < 4) :
+    T.eval D s (inT k i l) = (ctr (S0 s) (4 * k + l))[i] := by
+  rw [ctr_get _ _ _ hi16]
+  simp only [inT]
+  have e := hi k hk (4 * l + i % 4) (by omega)
+  rw [show incB k + (4 * l + i % 4) = incB k + 4 * l + i % 4 by omega,
+    show (4 * l + i % 4) / 4 = l by omega, show (4 * l + i % 4) % 4 = i % 4 by omega] at e
+  split
+  · rename_i h3
+    simp only [T.eval, regn, baseR, e, stateAt_get _ _ hi16]
+    by_cases h12 : i = 12
+    · subst h12; simp
+    · rw [ite_eq_right (by omega), ite_eq_right h12]; exact BitVec.add_zero _
+  · simp only [T.eval, regn, baseR, stateAt_get _ _ hi16]
+    rw [ite_eq_right (by omega)]
+
+theorem outT2_eval3 {S : Nat} {vs : Nat → CState} (hz : HB S vs s) (hi : Incs3 s.mem (s.gpr .r9)) {k i l : Nat}
+    (hk : k < S) (hk3 : k < 3) (hi16 : i < 16) (hl : l < 4) :
+    T.eval D s (outT2 k i l) = (plus vs (S0 s) (4 * k + l))[i] := by
+  have e : T.eval D s (outT k i l) = (plus vs (S0 s) (4 * k + l))[i] := by
+    simp only [outT, plus, Vector.getElem_zipWith]
+    rw [← inT_eval3 (D := D) hi hk3 hi16 hl, ← reg_eval hz hk hi16 hl]
+    rfl
+  rw [← e]
   simp only [outT2, outT, inT]
   split
   · simp only [T.eval]; exact congrArg _ (BitVec.add_comm _ _)
@@ -263,6 +312,55 @@ theorem part_ok {s : State} (hc : Ctx 64 s) (hi : Incs s.mem (s.gpr .r9)) {vs : 
         outT2_eval hz hi (by decide) (by decide) (by omega) (by omega)] at d
       simp only [regn, baseR] at d
       rw [show 4 * (16 * (k / 64) + k % 64 / 4) = 4 * (k / 4) by omega, Nat.mul_one] at d
+      rw [byte_dword s'.mem, d, serialize_getD _ (Nat.mod_lt _ (by decide)),
+        show k % 64 % 4 = k % 4 by omega]
+  · cases e
+
+theorem setup3_ok {s : State} (hc : Ctx 128 s) (hi : Incs3 s.mem (s.gpr .r9)) :
+    WP isa (.block setup3) s fun s' =>
+      HB 3 (fun j => ctr (S0 s) j) s' ∧ s'.mem = s.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have e := setup3Check_eq
+  unfold setup3Check at e
+  split at e
+  · rename_i σ hr
+    simp only [Bool.and_eq_true, Bool.not_eq_true', List.all_eq_true, List.mem_range, beq_iff_eq] at e
+    refine WP.mono (srun_ok hc setup3 (SRel.init 128 s) hr) fun s' h => ⟨fun k hk l hl i hi16 => ?_,
+      h.clean e.1, h.gpr, h.rd, h.wr⟩
+    have r := h.reg (zreg (4 * k + i / 4)) (4 * l + i % 4) (by omega)
+    rw [xidx_zreg _ (by omega), e.2 k hk _ (by omega) _ (by omega)] at r
+    simp only [zw, show (4 * l + i % 4) / 4 = l by omega, show (4 * l + i % 4) % 4 = i % 4 by omega,
+      show 4 * (i / 4) + i % 4 = i by omega] at r
+    rw [r, inT_eval3 hi hk hi16 hl]
+  · cases e
+
+theorem part3_ok {s : State} (hc : Ctx 128 s) (hi : Incs3 s.mem (s.gpr .r9)) {vs : Nat → CState}
+    (hz : HB 3 vs s) :
+    WP isa (.block finish3) s fun s' =>
+      (∀ k < 512, s'.mem (s.gpr .rsi + BitVec.ofNat 64 k) = s.mem (s.gpr .rsi + BitVec.ofNat 64 k) ^^^
+        (serialize (plus vs (S0 s) (k / 64))).getD (k % 64) 0) ∧
+      (∀ k < 256, s'.mem (s.gpr .r9 + BitVec.ofNat 64 k) =
+        (serialize (plus vs (S0 s) (8 + k / 64))).getD (k % 64) 0) ∧
+      Frame (wregs 128 s) s.mem s'.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have e := part3Check_eq
+  unfold part3Check at e
+  split at e
+  · rename_i σ hr
+    simp only [Bool.and_eq_true, List.all_eq_true, List.mem_range, beq_iff_eq] at e
+    refine WP.mono (srun_ok hc _ (SRel.init 128 s) hr) fun s' h => ⟨fun k hk => ?_, fun k hk => ?_,
+      h.frame, h.gpr, h.rd, h.wr⟩
+    · have d := h.mem 2 (k / 4) (by decide) (by simp only [bsize]; omega)
+      rw [show k / 4 = 16 * (k / 64) + k % 64 / 4 by omega, e.1 _ (by omega) _ (by omega)] at d
+      simp only [T.eval, regn, baseR] at d
+      rw [outT2_eval3 hz hi (by omega) (by omega) (by omega) (by omega),
+        show 4 * (k / 64 / 4) + k / 64 % 4 = k / 64 by omega,
+        show 4 * (16 * (k / 64) + k % 64 / 4) = 4 * (k / 4) by omega] at d
+      rw [byte_dword s'.mem, byte_dword s.mem, d, BitVec.extractLsb'_xor,
+        serialize_getD _ (Nat.mod_lt _ (by decide)), show k % 64 % 4 = k % 4 by omega]
+    · have d := h.mem 1 (k / 4) (by decide) (by simp only [bsize]; omega)
+      rw [show k / 4 = 16 * (k / 64) + k % 64 / 4 by omega, e.2 _ (by omega) _ (by omega),
+        outT2_eval3 hz hi (by decide) (by decide) (by omega) (by omega)] at d
+      simp only [regn, baseR] at d
+      rw [show 4 * (16 * (k / 64) + k % 64 / 4) = 4 * (k / 4) by omega] at d
       rw [byte_dword s'.mem, d, serialize_getD _ (Nat.mod_lt _ (by decide)),
         show k % 64 % 4 = k % 4 by omega]
   · cases e

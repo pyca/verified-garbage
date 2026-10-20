@@ -23,39 +23,40 @@
 //! AVX512_IFMA), and on an AArch64 CPU with the SHA-2 or SHA-3
 //! instructions, it uses the faster compression functions and private-key
 //! operations, as [`hashes`](crate::hashes) and [`rsa`](crate::rsa) do.
+//! Each pair has a file, `<H>_mgf1_<G>.rs`, naming its verified functions
+//! for each choice of those implementations (`oaep_pair!`).
 //!
 //! This module only checks the lengths, draws the seed and allocates the
 //! memory the functions work in.
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64"),
+    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
     feature = "alloc"
 ))]
+
+mod sha1_mgf1_sha1;
+mod sha224_mgf1_sha1;
+mod sha224_mgf1_sha224;
+mod sha256_mgf1_sha1;
+mod sha256_mgf1_sha256;
+mod sha384_mgf1_sha1;
+mod sha384_mgf1_sha384;
+mod sha512_224_mgf1_sha1;
+mod sha512_224_mgf1_sha512_224;
+mod sha512_256_mgf1_sha1;
+mod sha512_256_mgf1_sha512_256;
+mod sha512_mgf1_sha1;
+mod sha512_mgf1_sha512;
 
 use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
-use crate::cpu::{Features, detected};
-use crate::hashes::sha1::Sha1Backend;
-use crate::hashes::sha224::Sha224Backend;
-use crate::hashes::sha256::Sha256Backend;
-use crate::hashes::sha384::Sha384Backend;
-use crate::hashes::sha512::Sha512Backend;
-use crate::hashes::sha512_224::Sha512_224Backend;
-use crate::hashes::sha512_256::Sha512_256Backend;
-use crate::rsa::{Backend, PrivateKey, PublicKey, scratch_words};
+use crate::cpu::detected;
+use crate::rsa::{PrivateKey, PublicKey};
 pub use crate::rsa_pkcs1_sig::Hash;
+use crate::rsa_pss::{public_scratch_words, scratch_words};
 use crate::zeroize::zeroize;
-
-#[cfg(target_arch = "aarch64")]
-mod aarch64;
-#[cfg(target_arch = "aarch64")]
-use aarch64::*;
-#[cfg(target_arch = "x86_64")]
-mod x86_64;
-#[cfg(target_arch = "x86_64")]
-use x86_64::*;
 
 /// Why an encryption or a decryption was refused.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -94,119 +95,110 @@ impl fmt::Display for Error {
 
 impl core::error::Error for Error {}
 
-/// The words of working space the functions take
-/// (`VG.Spec.RsaPss.scratchWords`).
-fn oaep_scratch_words(n_len: usize) -> usize {
-    scratch_words(n_len) + 1024
-}
-
 /// The operating system's random bytes.
 fn os_random(buf: &mut [u8]) -> Result<(), Error> {
     getrandom::fill(buf).map_err(|_| Error::Randomness)
 }
 
-/// The type of the implementations of
-/// `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`, for `H` of `L` bytes.
-#[cfg(target_arch = "x86_64")]
-type EncryptFn<const L: usize> = unsafe extern "sysv64" fn(
-    *mut u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const [u8; L],
-    *mut u64,
-    usize,
-    *const u64,
-    usize,
-) -> u32;
-#[cfg(target_arch = "aarch64")]
-type EncryptFn<const L: usize> = unsafe extern "C" fn(
-    *mut u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const [u8; L],
-    *mut u64,
-    usize,
-    *const u64,
-    usize,
-) -> u32;
-
-/// An implementation of encryption, by the length of its hash function.
-#[derive(Clone, Copy)]
-enum Encrypt {
-    L20(EncryptFn<20>),
-    L28(EncryptFn<28>),
-    L32(EncryptFn<32>),
-    L48(EncryptFn<48>),
-    L64(EncryptFn<64>),
+/// Declares the types of verified functions, in the calling convention the
+/// emitter generates on each target: `sysv64` on x86-64 (on Windows too),
+/// and C's on AArch64 and ARMv7.
+macro_rules! verified_fn_types {
+    ($(
+        $(#[$doc:meta])*
+        type $name:ident $(<const $l:ident: usize>)? = fn($($arg:ty),* $(,)?) -> $ret:ty;
+    )*) => {$(
+        $(#[$doc])*
+        #[cfg(target_arch = "x86_64")]
+        type $name $(<const $l: usize>)? = unsafe extern "sysv64" fn($($arg),*) -> $ret;
+        $(#[$doc])*
+        #[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
+        type $name $(<const $l: usize>)? = unsafe extern "C" fn($($arg),*) -> $ret;
+    )*};
 }
 
-/// The type of the implementations of `vg_rsa_oaep_<H>_mgf1_<G>_decrypt`.
-#[cfg(target_arch = "x86_64")]
-type DecryptFn = unsafe extern "sysv64" fn(
-    *mut u8,
-    usize,
-    *mut [u64; 1],
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *mut u64,
-    usize,
-) -> u32;
-#[cfg(target_arch = "aarch64")]
-type DecryptFn = unsafe extern "C" fn(
-    *mut u8,
-    usize,
-    *mut [u64; 1],
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *const u8,
-    usize,
-    *mut u64,
-    usize,
-) -> u32;
+verified_fn_types! {
+    /// The type of the implementations of
+    /// `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`, for `H` of `L` bytes.
+    type EncryptFn<const L: usize> = fn(
+        *mut u8,
+        usize,
+        *const u8,
+        usize,
+        *const u8,
+        usize,
+        *const u8,
+        usize,
+        *const u8,
+        usize,
+        *const [u8; L],
+        *mut u64,
+        usize,
+        *const u64,
+        usize,
+    ) -> u32;
+
+    /// The type of the implementations of `vg_rsa_oaep_<H>_mgf1_<G>_decrypt`.
+    type DecryptFn = fn(
+        *mut u8,
+        usize,
+        *mut [u64; 1],
+        *const u8,
+        usize,
+        *const u8,
+        usize,
+        *const u8,
+        usize,
+        *const u8,
+        usize,
+        *const u8,
+        usize,
+        *const u8,
+        usize,
+        *const u8,
+        usize,
+        *const u8,
+        usize,
+        *const u8,
+        usize,
+        *mut u64,
+        usize,
+    ) -> u32;
+}
+
+/// `Some($body)`, with `$fns` the verified functions (`(encrypt, decrypt)`)
+/// of the hash function `$hash` with MGF1 over `$mgf1` for the
+/// implementations this CPU runs best, or `None` if this module does not
+/// support the pair.
+macro_rules! with_functions {
+    (@pairs $pair:expr, |$fns:ident| $body:expr, {$(($h:ident, $g:ident) => $module:ident),* $(,)?}) => {{
+        let f = detected();
+        match $pair {
+            $((Hash::$h, Hash::$g) => {
+                let $fns = $module::functions(f);
+                Some($body)
+            })*
+            _ => None,
+        }
+    }};
+    ($hash:expr, $mgf1:expr, |$fns:ident| $body:expr) => {
+        with_functions!(@pairs ($hash, $mgf1), |$fns| $body, {
+            (Sha1, Sha1) => sha1_mgf1_sha1,
+            (Sha224, Sha1) => sha224_mgf1_sha1,
+            (Sha224, Sha224) => sha224_mgf1_sha224,
+            (Sha256, Sha1) => sha256_mgf1_sha1,
+            (Sha256, Sha256) => sha256_mgf1_sha256,
+            (Sha384, Sha1) => sha384_mgf1_sha1,
+            (Sha384, Sha384) => sha384_mgf1_sha384,
+            (Sha512, Sha1) => sha512_mgf1_sha1,
+            (Sha512, Sha512) => sha512_mgf1_sha512,
+            (Sha512_224, Sha1) => sha512_224_mgf1_sha1,
+            (Sha512_224, Sha512_224) => sha512_224_mgf1_sha512_224,
+            (Sha512_256, Sha1) => sha512_256_mgf1_sha1,
+            (Sha512_256, Sha512_256) => sha512_256_mgf1_sha512_256,
+        })
+    };
+}
 
 /// RSAES-OAEP-ENCRYPT (RFC 8017 §7.1.1) with the hash function `hash` and
 /// MGF1 over `mgf1_hash`: encrypts `plaintext`, of at most
@@ -226,16 +218,14 @@ pub fn encrypt(
     mgf1_hash: Hash,
     label: &[u8],
 ) -> Result<Vec<u8>, Error> {
-    match encrypt_impl(hash, mgf1_hash, detected()).ok_or(Error::UnsupportedHash)? {
-        Encrypt::L20(f) => encrypt_with(key, plaintext, label, f),
-        Encrypt::L28(f) => encrypt_with(key, plaintext, label, f),
-        Encrypt::L32(f) => encrypt_with(key, plaintext, label, f),
-        Encrypt::L48(f) => encrypt_with(key, plaintext, label, f),
-        Encrypt::L64(f) => encrypt_with(key, plaintext, label, f),
-    }
+    with_functions!(hash, mgf1_hash, |fns| encrypt_with(
+        key, plaintext, label, fns.0
+    ))
+    .unwrap_or(Err(Error::UnsupportedHash))
 }
 
-/// The implementation `f` of encryption, with a random seed.
+/// `f`, a `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed` that this CPU can
+/// run, with a random seed.
 fn encrypt_with<const L: usize>(
     key: &PublicKey,
     plaintext: &[u8],
@@ -249,18 +239,17 @@ fn encrypt_with<const L: usize>(
     let mut seed = [0u8; L];
     os_random(&mut seed)?;
     let mut out = vec![0u8; k];
-    let mut scratch = key.verify_scratch.take(oaep_scratch_words(k));
+    let mut scratch = key.verify_scratch.take(public_scratch_words(k), true);
     let pre = key.pre(&mut scratch);
     // SAFETY: each pointer is valid for its length (`out` and `scratch` for
     // writes, `seed` for `L` bytes, the hash function's length), and none
     // overlaps another or wraps around, as they are distinct Rust
     // allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024`,
     // `1 ≤ e_len ≤ 5 ≤ n_len`, and `out_len = n_len` and
-    // `scratch_len = 16 n_len + 1056`; `pre` holds the verified
+    // `scratch_len = 8 ⌈n_len / 8⌉ + 1072`; `pre` holds the verified
     // precomputation for `key.n`, with `2 * ceil(n_len / 8)` words; and the
-    // CPU has the features of the implementations of the hash functions and
-    // of the public-key operation that `encrypt_impl` chose, which are those
-    // of `f`.
+    // CPU has the features of `f`, which `functions` chose for the features
+    // detected (its `backend_features` test checks that they need no others).
     let r = unsafe {
         f(
             out.as_mut_ptr(),
@@ -304,23 +293,35 @@ pub fn decrypt(
     mgf1_hash: Hash,
     label: &[u8],
 ) -> Result<Vec<u8>, Error> {
-    let f = decrypt_impl(hash, mgf1_hash, detected()).ok_or(Error::UnsupportedHash)?;
+    with_functions!(hash, mgf1_hash, |fns| decrypt_with(
+        key, ciphertext, label, fns.1
+    ))
+    .unwrap_or(Err(Error::UnsupportedHash))
+}
+
+/// `f`, a `vg_rsa_oaep_<H>_mgf1_<G>_decrypt` that this CPU can run.
+fn decrypt_with(
+    key: &PrivateKey,
+    ciphertext: &[u8],
+    label: &[u8],
+    f: DecryptFn,
+) -> Result<Vec<u8>, Error> {
     let k = key.modulus_len();
     if ciphertext.len() != k {
         return Err(Error::InvalidLength);
     }
     let mut out = vec![0u8; k];
     let mut len = [0u64; 1];
-    let mut scratch = crate::rsa::Scratch::new(oaep_scratch_words(k));
+    let mut scratch = crate::rsa::Scratch::new(scratch_words(k));
     // SAFETY: each pointer is valid for its length (`out`, `len` and
     // `scratch` for writes), and none overlaps another or wraps around, as
     // they are distinct Rust allocations; `PrivateKey::from_crt` and the
     // check above give `64 ≤ n_len ≤ 1024`, `out_len = ct_len = n_len`,
     // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`,
     // `dp_len = qinv_len = p_len`, `dq_len = q_len` and
-    // `scratch_len = 16 n_len + 1056`; and the CPU has the features of the
-    // implementations of the hash functions and of the private-key
-    // operation that `decrypt_impl` chose, which are those of `f`.
+    // `scratch_len = 16 n_len + 1056`; and the CPU has the features of `f`,
+    // which `functions` chose for the features detected (its
+    // `backend_features` test checks that they need no others).
     let r = unsafe {
         f(
             out.as_mut_ptr(),
@@ -348,8 +349,6 @@ pub fn decrypt(
             scratch.len(),
         )
     };
-    // The working space holds the private key and the encoded message.
-    zeroize(&mut scratch);
     match r {
         1 => {
             // The message is at most `n_len - 2 hLen - 2` bytes.
@@ -361,132 +360,213 @@ pub fn decrypt(
     }
 }
 
-/// The implementation of encryption for `hash` and `mgf1_hash`, if they
-/// are a pair this module supports, for a CPU with the features `f`.
-fn encrypt_impl(hash: Hash, mgf1_hash: Hash, f: Features) -> Option<Encrypt> {
-    let rsa = Backend::select(f);
-    Some(match (hash, mgf1_hash) {
-        (Hash::Sha1, Hash::Sha1) => {
-            Encrypt::L20(encrypt_sha1_mgf1_sha1(Sha1Backend::select(f), rsa))
+/// The verified functions of one pair of hash functions, `H`, of `$n`-byte
+/// values, and `G`, MGF1's: `functions`, which chooses, for a CPU with the
+/// features `f`, the implementations of their compression functions it runs
+/// best (the variants of their streaming backends: `$h`'s, and `$g`'s for
+/// MGF1 over another hash function) and of the RSA operations
+/// (`crate::rsa::Backend`), and returns encryption and decryption calling
+/// them; and a test that each needs no CPU feature that was not required to
+/// choose it.
+///
+/// Each arm names, for one choice of the hash functions' implementations,
+/// encryption and decryption calling RSA's baseline code, each with the
+/// generated constants of the CPU features it needs (none for the baseline
+/// ISA's), and, for the arms that have them, used on x86-64 only, those
+/// calling its other RSA backends: `encrypt_adx`, `encrypt_ifma`,
+/// `decrypt_adx` and `decrypt_ifma`; and, used on ARMv7 only, decryption
+/// calling the private-key operation with `umaal`, `decrypt_umaal`
+/// (encryption calls the baseline's public-key operation there).
+/// With MGF1 over another hash function, the arms after `never` are the
+/// pairs of implementations no CPU chooses: they are there for the match to
+/// be exhaustive, and the test checks that no set of features chooses them.
+macro_rules! oaep_pair {
+    (@impl $f:ident, $n:literal, $select:expr,
+        [$([$(#[$attr:meta])*] $pat:pat => $fns:tt)*],
+        [$([$(#[$nattr:meta])*] $npat:pat => $nfns:tt)*]
+    ) => {
+        /// The length of the hash function's values.
+        const N: usize = $n;
+
+        /// The functions, `(encrypt, decrypt)`, for the implementations
+        /// that a CPU with the features `f` runs best.
+        pub(super) fn functions(
+            $f: $crate::cpu::Features,
+        ) -> (super::EncryptFn<N>, super::DecryptFn) {
+            let rsa = $crate::rsa::Backend::select($f);
+            match $select {
+                $($(#[$attr])* $pat => $crate::rsa_oaep::oaep_pair!(@fns rsa, $fns),)*
+                // NO-COVERAGE-START
+                $($(#[$nattr])* $npat => $crate::rsa_oaep::oaep_pair!(@fns rsa, $nfns),)*
+                // NO-COVERAGE-END
+            }
         }
-        (Hash::Sha224, Hash::Sha1) => Encrypt::L28(encrypt_sha224_mgf1_sha1(
-            Sha224Backend::select(f),
-            Sha1Backend::select(f),
-            rsa,
-        )),
-        (Hash::Sha224, Hash::Sha224) => {
-            Encrypt::L28(encrypt_sha224_mgf1_sha224(Sha224Backend::select(f), rsa))
+
+        #[cfg(test)]
+        mod tests {
+            use super::*;
+
+            /// Each function needs no CPU feature that the implementations
+            /// it calls were not chosen for, and no set of features chooses
+            /// the arms after `never`: on every set of features.
+            #[test]
+            fn backend_features() {
+                for bits in 0..1u32 << $crate::cpu::NAMES.len() {
+                    let $f = $crate::cpu::Features(bits);
+                    let rsa = $crate::rsa::Backend::select($f);
+                    let (encrypt, decrypt) = match $select {
+                        $($(#[$attr])* $pat => $crate::rsa_oaep::oaep_pair!(@features rsa, $fns),)*
+                        // NO-COVERAGE-START
+                        $($(#[$nattr])* $npat => panic!("{} chosen for {bits:#b}", stringify!($npat)),)*
+                        // NO-COVERAGE-END
+                    };
+                    assert!($f.contains(encrypt) && $f.contains(decrypt), "{bits:#b}");
+                }
+            }
         }
-        (Hash::Sha256, Hash::Sha1) => Encrypt::L32(encrypt_sha256_mgf1_sha1(
-            Sha256Backend::select(f),
-            Sha1Backend::select(f),
-            rsa,
-        )),
-        (Hash::Sha256, Hash::Sha256) => {
-            Encrypt::L32(encrypt_sha256_mgf1_sha256(Sha256Backend::select(f), rsa))
-        }
-        (Hash::Sha384, Hash::Sha1) => Encrypt::L48(encrypt_sha384_mgf1_sha1(
-            Sha384Backend::select(f),
-            Sha1Backend::select(f),
-            rsa,
-        )),
-        (Hash::Sha384, Hash::Sha384) => {
-            Encrypt::L48(encrypt_sha384_mgf1_sha384(Sha384Backend::select(f), rsa))
-        }
-        (Hash::Sha512, Hash::Sha1) => Encrypt::L64(encrypt_sha512_mgf1_sha1(
-            Sha512Backend::select(f),
-            Sha1Backend::select(f),
-            rsa,
-        )),
-        (Hash::Sha512, Hash::Sha512) => {
-            Encrypt::L64(encrypt_sha512_mgf1_sha512(Sha512Backend::select(f), rsa))
-        }
-        (Hash::Sha512_224, Hash::Sha1) => Encrypt::L28(encrypt_sha512_224_mgf1_sha1(
-            Sha512_224Backend::select(f),
-            Sha1Backend::select(f),
-            rsa,
-        )),
-        (Hash::Sha512_224, Hash::Sha512_224) => Encrypt::L28(encrypt_sha512_224_mgf1_sha512_224(
-            Sha512_224Backend::select(f),
-            rsa,
-        )),
-        (Hash::Sha512_256, Hash::Sha1) => Encrypt::L32(encrypt_sha512_256_mgf1_sha1(
-            Sha512_256Backend::select(f),
-            Sha1Backend::select(f),
-            rsa,
-        )),
-        (Hash::Sha512_256, Hash::Sha512_256) => Encrypt::L32(encrypt_sha512_256_mgf1_sha512_256(
-            Sha512_256Backend::select(f),
-            rsa,
-        )),
-        _ => return None,
-    })
+    };
+    (@fns $rsa:ident, {
+        encrypt: $enc:path [$($ereq:path),*],
+        decrypt: $dec:path [$($dreq:path),*]
+        $(,
+            encrypt_adx: $enc_adx:path [$($eareq:path),*],
+            encrypt_ifma: $enc_ifma:path [$($eireq:path),*],
+            decrypt_adx: $dec_adx:path [$($dareq:path),*],
+            decrypt_ifma: $dec_ifma:path [$($direq:path),*]
+        )?
+        $(,
+            decrypt_umaal: $dec_umaal:path [$($dureq:path),*]
+        )? $(,)?
+    }) => {
+        (
+            match $rsa {
+                $crate::rsa::Backend::Baseline => $enc,
+                $(
+                    #[cfg(target_arch = "x86_64")]
+                    $crate::rsa::Backend::Adx => $enc_adx,
+                    #[cfg(target_arch = "x86_64")]
+                    $crate::rsa::Backend::Ifma => $enc_ifma,
+                )?
+                #[cfg(all(
+                    target_arch = "arm",
+                    any(
+                        target_os = "linux",
+                        target_os = "android",
+                        target_os = "freebsd",
+                        target_os = "netbsd",
+                        target_os = "openbsd"
+                    )
+                ))]
+                $crate::rsa::Backend::Umaal => $enc,
+            },
+            match $rsa {
+                $crate::rsa::Backend::Baseline => $dec,
+                $(
+                    #[cfg(target_arch = "x86_64")]
+                    $crate::rsa::Backend::Adx => $dec_adx,
+                    #[cfg(target_arch = "x86_64")]
+                    $crate::rsa::Backend::Ifma => $dec_ifma,
+                )?
+                $(
+                    #[cfg(all(
+                        target_arch = "arm",
+                        any(
+                            target_os = "linux",
+                            target_os = "android",
+                            target_os = "freebsd",
+                            target_os = "netbsd",
+                            target_os = "openbsd"
+                        )
+                    ))]
+                    $crate::rsa::Backend::Umaal => $dec_umaal,
+                )?
+            },
+        )
+    };
+    (@features $rsa:ident, {
+        encrypt: $enc:path [$($ereq:path),*],
+        decrypt: $dec:path [$($dreq:path),*]
+        $(,
+            encrypt_adx: $enc_adx:path [$($eareq:path),*],
+            encrypt_ifma: $enc_ifma:path [$($eireq:path),*],
+            decrypt_adx: $dec_adx:path [$($dareq:path),*],
+            decrypt_ifma: $dec_ifma:path [$($direq:path),*]
+        )?
+        $(,
+            decrypt_umaal: $dec_umaal:path [$($dureq:path),*]
+        )? $(,)?
+    }) => {
+        (
+            match $rsa {
+                $crate::rsa::Backend::Baseline => $crate::cpu::Features::all(&[$($ereq),*]),
+                $(
+                    #[cfg(target_arch = "x86_64")]
+                    $crate::rsa::Backend::Adx => $crate::cpu::Features::all(&[$($eareq),*]),
+                    #[cfg(target_arch = "x86_64")]
+                    $crate::rsa::Backend::Ifma => $crate::cpu::Features::all(&[$($eireq),*]),
+                )?
+                #[cfg(all(
+                    target_arch = "arm",
+                    any(
+                        target_os = "linux",
+                        target_os = "android",
+                        target_os = "freebsd",
+                        target_os = "netbsd",
+                        target_os = "openbsd"
+                    )
+                ))]
+                $crate::rsa::Backend::Umaal => $crate::cpu::Features::all(&[$($ereq),*]),
+            },
+            match $rsa {
+                $crate::rsa::Backend::Baseline => $crate::cpu::Features::all(&[$($dreq),*]),
+                $(
+                    #[cfg(target_arch = "x86_64")]
+                    $crate::rsa::Backend::Adx => $crate::cpu::Features::all(&[$($dareq),*]),
+                    #[cfg(target_arch = "x86_64")]
+                    $crate::rsa::Backend::Ifma => $crate::cpu::Features::all(&[$($direq),*]),
+                )?
+                $(
+                    #[cfg(all(
+                        target_arch = "arm",
+                        any(
+                            target_os = "linux",
+                            target_os = "android",
+                            target_os = "freebsd",
+                            target_os = "netbsd",
+                            target_os = "openbsd"
+                        )
+                    ))]
+                    $crate::rsa::Backend::Umaal => $crate::cpu::Features::all(&[$($dureq),*]),
+                )?
+            },
+        )
+    };
+    // MGF1 over the hash function itself: its backend chooses both.
+    ($n:literal, $h:ident {
+        $($(#[$attr:meta])* $hv:ident => $fns:tt),* $(,)?
+    }) => {
+        $crate::rsa_oaep::oaep_pair!(@impl f, $n, $h::select(f),
+            [$([$(#[$attr])*] $h::$hv => $fns)*], []);
+    };
+    // MGF1 over another hash function: the two backends choose.
+    ($n:literal, $h:ident, $g:ident {
+        $($(#[$attr:meta])* ($hv:ident, $gv:ident) => $fns:tt),* $(,)?
+    } never {
+        $($(#[$nattr:meta])* ($nhv:ident, $ngv:ident) => $nfns:tt),* $(,)?
+    }) => {
+        $crate::rsa_oaep::oaep_pair!(@impl f, $n, ($h::select(f), $g::select(f)),
+            [$([$(#[$attr])*] ($h::$hv, $g::$gv) => $fns)*],
+            [$([$(#[$nattr])*] ($h::$nhv, $g::$ngv) => $nfns)*]);
+    };
 }
 
-/// The implementation of decryption for `hash` and `mgf1_hash`, if they
-/// are a pair this module supports, for a CPU with the features `f`.
-fn decrypt_impl(hash: Hash, mgf1_hash: Hash, f: Features) -> Option<DecryptFn> {
-    let crt = Backend::select(f);
-    Some(match (hash, mgf1_hash) {
-        (Hash::Sha1, Hash::Sha1) => decrypt_sha1_mgf1_sha1(Sha1Backend::select(f), crt),
-        (Hash::Sha224, Hash::Sha1) => {
-            decrypt_sha224_mgf1_sha1(Sha224Backend::select(f), Sha1Backend::select(f), crt)
-        }
-        (Hash::Sha224, Hash::Sha224) => decrypt_sha224_mgf1_sha224(Sha224Backend::select(f), crt),
-        (Hash::Sha256, Hash::Sha1) => {
-            decrypt_sha256_mgf1_sha1(Sha256Backend::select(f), Sha1Backend::select(f), crt)
-        }
-        (Hash::Sha256, Hash::Sha256) => decrypt_sha256_mgf1_sha256(Sha256Backend::select(f), crt),
-        (Hash::Sha384, Hash::Sha1) => {
-            decrypt_sha384_mgf1_sha1(Sha384Backend::select(f), Sha1Backend::select(f), crt)
-        }
-        (Hash::Sha384, Hash::Sha384) => decrypt_sha384_mgf1_sha384(Sha384Backend::select(f), crt),
-        (Hash::Sha512, Hash::Sha1) => {
-            decrypt_sha512_mgf1_sha1(Sha512Backend::select(f), Sha1Backend::select(f), crt)
-        }
-        (Hash::Sha512, Hash::Sha512) => decrypt_sha512_mgf1_sha512(Sha512Backend::select(f), crt),
-        (Hash::Sha512_224, Hash::Sha1) => {
-            decrypt_sha512_224_mgf1_sha1(Sha512_224Backend::select(f), Sha1Backend::select(f), crt)
-        }
-        (Hash::Sha512_224, Hash::Sha512_224) => {
-            decrypt_sha512_224_mgf1_sha512_224(Sha512_224Backend::select(f), crt)
-        }
-        (Hash::Sha512_256, Hash::Sha1) => {
-            decrypt_sha512_256_mgf1_sha1(Sha512_256Backend::select(f), Sha1Backend::select(f), crt)
-        }
-        (Hash::Sha512_256, Hash::Sha512_256) => {
-            decrypt_sha512_256_mgf1_sha512_256(Sha512_256Backend::select(f), crt)
-        }
-        _ => return None,
-    })
-}
+use oaep_pair;
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::rsa::tests::composite_key;
     use alloc::string::ToString;
-
-    /// Every implementation of every pair is distinct (each is tested end
-    /// to end on a CPU that chooses it).
-    #[test]
-    fn rsa_oaep_backends() {
-        let (e, d) = all_impls();
-        let mut fns: Vec<usize> = e
-            .iter()
-            .map(|e| match *e {
-                Encrypt::L20(f) => f as usize,
-                Encrypt::L28(f) => f as usize,
-                Encrypt::L32(f) => f as usize,
-                Encrypt::L48(f) => f as usize,
-                Encrypt::L64(f) => f as usize,
-            })
-            .chain(d.iter().map(|&f| f as usize))
-            .collect();
-        fns.sort_unstable();
-        fns.dedup();
-        assert_eq!(fns.len(), IMPLS);
-    }
 
     #[test]
     fn pairs() {
@@ -513,8 +593,7 @@ mod tests {
                         Hash::Sha3_224 | Hash::Sha3_256 | Hash::Sha3_384 | Hash::Sha3_512
                     )
                     && (g == h || g == Hash::Sha1);
-                assert_eq!(encrypt_impl(h, g, detected()).is_some(), ok);
-                assert_eq!(decrypt_impl(h, g, detected()).is_some(), ok);
+                assert_eq!(with_functions!(h, g, |_fns| ()).is_some(), ok);
                 n += usize::from(ok);
             }
         }

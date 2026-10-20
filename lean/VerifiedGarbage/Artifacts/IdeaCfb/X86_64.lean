@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.X86_64.FbVerified
-public import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
 
 /-! # IDEA-CFB64 artifacts on baseline x86-64 -/
 
@@ -18,21 +17,15 @@ def note : String :=
   The mode is the generic CFB of `Impl/Modes/X86_64/`."
 
 def artifacts : List Artifact := [
-  { Spec.Idea.cfbEncryptApi with
-    target := X86_64.target
-    doc := Spec.Idea.cfbEncryptApi.doc (notes := [note])
+  Spec.Idea.cfbEncryptApi.artifact X86_64.target {
+    notes := [note]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 184 .r8 22 Impl.Idea.X86_64.cfbEncrypt
-    contract := Spec.Idea.cfbEncryptContract X86_64.abi 184
     stack := 184
-    verified := Proof.Idea.X86_64.cfbEncrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Idea.cfbDecryptApi with
-    target := X86_64.target
-    doc := Spec.Idea.cfbDecryptApi.doc (notes := [note])
+    verified := Proof.Idea.X86_64.cfbEncrypt_framed },
+  Spec.Idea.cfbDecryptApi.artifact X86_64.target {
+    notes := [note]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 184 .r8 22 Impl.Idea.X86_64.cfbDecrypt
-    contract := Spec.Idea.cfbDecryptContract X86_64.abi 184
     stack := 184
-    verified := Proof.Idea.X86_64.cfbDecrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Idea.X86_64.cfbDecrypt_framed }]
 
 end VG.Artifacts.IdeaCfb.X86_64

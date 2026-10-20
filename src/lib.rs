@@ -115,6 +115,7 @@ pub mod ecdh;
 pub mod ecdsa;
 pub mod ed25519;
 pub mod ed448;
+mod error;
 pub mod ffdh;
 pub mod hashes;
 pub mod hmac;
@@ -157,15 +158,6 @@ pub mod triple_des_ofb;
 pub mod x25519;
 pub mod x448;
 mod zeroize;
-
-#[cfg(test)]
-mod aes_blocks_tests;
-
-#[cfg(test)]
-mod argon2_compress_tests;
-
-#[cfg(test)]
-mod argon2_hprime_tests;
 
 #[cfg(test)]
 mod tests {

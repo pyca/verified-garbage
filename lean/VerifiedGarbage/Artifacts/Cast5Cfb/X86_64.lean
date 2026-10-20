@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86_64.FbVerified
+import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # CAST5-CFB64 artifacts on baseline x86-64 -/
 
@@ -16,23 +18,17 @@ def note : String :=
   of rounds stays in `rsi`; the 240-byte working space on the stack is zeroed on return."
 
 def artifacts : List Artifact := [
-  { Spec.Cast5.cfbEncryptApi with
-    target := X86_64.target
-    doc := Spec.Cast5.cfbEncryptApi.doc (notes := [note])
+  Spec.Cast5.cfbEncryptApi.artifact X86_64.target {
+    notes := [note]
     consts := Impl.Cast5.ecbConsts
     code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 Impl.Cast5.X86_64.cfbEncrypt
-    contract := Spec.Cast5.cfbEncryptContract (X86_64.abi.withConsts Impl.Cast5.ecbConsts) 240
     stack := 240
-    verified := Proof.Cast5.X86_64.cfbEncrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Cast5.cfbDecryptApi with
-    target := X86_64.target
-    doc := Spec.Cast5.cfbDecryptApi.doc (notes := [note])
+    verified := Proof.Cast5.X86_64.cfbEncrypt_framed },
+  Spec.Cast5.cfbDecryptApi.artifact X86_64.target {
+    notes := [note]
     consts := Impl.Cast5.ecbConsts
     code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 Impl.Cast5.X86_64.cfbDecrypt
-    contract := Spec.Cast5.cfbDecryptContract (X86_64.abi.withConsts Impl.Cast5.ecbConsts) 240
     stack := 240
-    verified := Proof.Cast5.X86_64.cfbDecrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Cast5.X86_64.cfbDecrypt_framed }]
 
 end VG.Artifacts.Cast5Cfb.X86_64

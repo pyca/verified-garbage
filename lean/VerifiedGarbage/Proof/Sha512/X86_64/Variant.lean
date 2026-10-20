@@ -2,14 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Md
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
-public import VerifiedGarbage.Proof.Sha512.X86_64.Lit
-public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Implementations of the SHA-512 compression function on x86-64
@@ -55,8 +52,8 @@ namespace Compress
 def scalar : Compress where
   callee := .scalar
   ok := Stream.scalar_ok
-  mxcsr := by change Impl.Sha512.X86_64.compress.allInstrs _ = true; lit_decide
-  spSafe := Code.all_of_allInstrs (by change Impl.Sha512.X86_64.compress.allInstrs _ = true; lit_decide)
+  mxcsr := by change Impl.Sha512.X86_64.Rolled.compress.allInstrs _ = true; lit_decide
+  spSafe := Code.all_of_allInstrs (by change Impl.Sha512.X86_64.Rolled.compress.allInstrs _ = true; lit_decide)
   suffix := ""
   features := []
 
@@ -64,8 +61,8 @@ def scalar : Compress where
 def avx2 : Compress where
   callee := .avx2
   ok := Stream.avx2_ok
-  mxcsr := by change Impl.Sha512.X86_64.Avx2.compress.allInstrs _ = true; lit_decide
-  spSafe := Code.all_of_allInstrs (by change Impl.Sha512.X86_64.Avx2.compress.allInstrs _ = true; lit_decide)
+  mxcsr := by change Impl.Sha512.X86_64.Avx2Rolled.compress.allInstrs _ = true; lit_decide
+  spSafe := Code.all_of_allInstrs (by change Impl.Sha512.X86_64.Avx2Rolled.compress.allInstrs _ = true; lit_decide)
   suffix := "_avx2"
   features := ["avx", "avx2", "bmi1", "bmi2"]
 

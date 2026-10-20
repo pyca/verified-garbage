@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Impl.Ed448.X86_64.Window
+public import VerifiedGarbage.Proof.Ed448.Formulas
+import VerifiedGarbage.Proof.X448.X86_64.Chain
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! The projective table occupies a separate range of the existing scratch space. -/
 

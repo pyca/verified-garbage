@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Md5
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # MD5 on AArch64

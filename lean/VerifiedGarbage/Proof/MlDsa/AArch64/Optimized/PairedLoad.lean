@@ -2,17 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductWord
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductLoad
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedShape
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! ## From `PairedProduct.lean` -/
 

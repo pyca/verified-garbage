@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomState
+public import VerifiedGarbage.Spec.Dsa.Random
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleCT
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleCT
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Apply sampler leakage to contexts with independent secret tapes and memories. -/

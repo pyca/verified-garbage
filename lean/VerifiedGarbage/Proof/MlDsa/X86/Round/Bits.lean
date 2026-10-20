@@ -1,17 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Round.Common
-meta import VerifiedGarbage.Proof.MlDsa.X86.Round.Common
+public import VerifiedGarbage.Proof.MlDsa.X86.Round.Arith
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.X86.Round.Common
+meta import VerifiedGarbage.Proof.MlDsa.X86.Round.Arith
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+meta import Init.Data.Nat.Bitwise.Basic
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_high_bits` and `vg_mldsa_low_bits`

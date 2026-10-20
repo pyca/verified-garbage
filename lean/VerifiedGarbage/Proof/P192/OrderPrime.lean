@@ -1,10 +1,8 @@
 module
+public import Mathlib.Data.Nat.Prime.Defs
+public import VerifiedGarbage.Spec.P192
 
-public import VerifiedGarbage.Proof.P192.Prime
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Pratt
 
 /-! # Primality of the P-192 subgroup order
 

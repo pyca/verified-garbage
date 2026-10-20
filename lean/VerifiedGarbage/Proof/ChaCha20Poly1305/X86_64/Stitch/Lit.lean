@@ -1,13 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Stitch
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Stitch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the code as literals
@@ -51,18 +55,25 @@ materialize_code tailABFF := tailAB false false
 materialize_code tailABFT := tailAB false true
 materialize_code tailABTF := tailAB true false
 materialize_code tailABTT := tailAB true true
-materialize_code tailO4 := tailO false 4
-materialize_code tailO8 := tailO true 8
 materialize_code tailO12 := tailO true 12
-materialize_code tailKABF := tailKAB false
-materialize_code tailKABT := tailKAB true
+materialize_code tail3O16 := tail3O 16
+materialize_code tailKOF := tailKO false 24
+materialize_code tailKOT := tailKO true 24
+materialize_code tailKABFF := tailKAB false false
+materialize_code tailKABFT := tailKAB false true
+materialize_code tailKABTF := tailKAB true false
+materialize_code tailKABTT := tailKAB true true
 
 materialize_code bulkF := bulk false
 materialize_code bulkT := bulk true
+materialize_code tailPF := tailP false
+materialize_code tailPT := tailP true
 materialize_code bulkPF := bulkP false
 materialize_code bulkPT := bulkP true
 materialize_code bulkOF := bulkO false
 materialize_code bulkOT := bulkO true
+materialize_code wholeOF := wholeO false
+materialize_code wholeOT := wholeO true
 materialize_code bigSF := bigS false
 materialize_code bigST := bigS true
 

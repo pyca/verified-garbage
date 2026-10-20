@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.TCB.AArch64.Simd
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd
 
 @[expose] public section
 

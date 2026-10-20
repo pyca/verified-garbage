@@ -1,17 +1,30 @@
 module
+public import VerifiedGarbage.Proof.MdStream.X86.Finalize
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
 
-public import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
-meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
 import VerifiedGarbage.Proof.Sha512.Digest
-meta import VerifiedGarbage.Proof.Sha512.Digest
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MdStream.Prefix
 import VerifiedGarbage.Proof.MdStream.X86.Words
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Sha512.X86.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MdStream.X86.Finalize
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+meta import VerifiedGarbage.Proof.Sha512.Digest
 meta import VerifiedGarbage.Proof.MdStream.Prefix
 meta import VerifiedGarbage.Proof.MdStream.X86.Words
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Sha512.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming SHA-384, SHA-512/256 and SHA-512/224 on x86 (32-bit): `finalize`

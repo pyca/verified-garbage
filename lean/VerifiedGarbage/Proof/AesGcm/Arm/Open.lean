@@ -1,12 +1,12 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.Arm.OneShot
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.Seal
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.Arm.Seal
 import VerifiedGarbage.Proof.AesGcm.Arm.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.Arm.StreamVerify
+import VerifiedGarbage.Proof.AesGcm.Arm.Compare
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # AES-GCM on ARMv7: `vg_aes_gcm_open`

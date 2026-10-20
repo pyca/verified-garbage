@@ -1,8 +1,17 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Ed448.X86_64.VariantVerified
 public import VerifiedGarbage.Proof.Ed448.Facts
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # Ed448 verification's equation on x86-64
@@ -18,11 +27,10 @@ registration files import it.
 namespace VG.Generic.Curve448Field.X86_64.Ed448VerifyEquation
 
 def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
-  { Spec.Ed448.verifyEquationApi with
-    name := Spec.Ed448.verifyEquationApi.name ++ v.suffix
+  Spec.Ed448.verifyEquationApi.artifact X86_64.target {
+    suffix := v.suffix
     features := v.features
-    target := X86_64.target
-    doc := Spec.Ed448.verifyEquationApi.doc (notes := ["Uses the selected field backend and baseline integer instructions elsewhere, \
+    notes := ["Uses the selected field backend and baseline integer instructions elsewhere, \
       and indexes the public-key table using public challenge digits. The checks (the encodings of A and R, \
       S < L, and the comparison) are accumulated in one word of `scratch`, 0 exactly when \
       all pass. Decodes R, then A, by one loop running the decoding twice, with RFC 8032's \
@@ -36,12 +44,10 @@ def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
       additions, without inversions, in scratch bytes 4096–7359. Doublings and additions call the selected point functions; \
       projective addition first forms Z1*Z2 and then reuses the affine formula. Compares [4] of the result with [4]R projectively. Field elements \
       are X448's seven 64-bit words, multiplied by the selected backend. Callee-saved \
-      registers are saved in the first 48 bytes of `scratch`."])
+      registers are saved in the first 48 bytes of `scratch`."]
     code := Impl.Ed448.X86_64.verifyEquationFor v
-    contract := Spec.Ed448.verifyEquationContract X86_64.abi 8
     stack := 8
     verified := Proof.Ed448.X86_64.verifyEquationFor_verified v Proof.Ed448.recover_ok
-      Proof.Ed448.verifyEq_ok
-    spSafe := Code.all_of_allInstrs (by cases v <;> lit_decide) }]
+      Proof.Ed448.verifyEq_ok }]
 
 end VG.Generic.Curve448Field.X86_64.Ed448VerifyEquation

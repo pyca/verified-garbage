@@ -1,35 +1,33 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86.Pclmul.Arith
-meta import VerifiedGarbage.Proof.Gcm.X86.Pclmul.Arith
 public import VerifiedGarbage.Proof.Gcm.X86.Rev
-meta import VerifiedGarbage.Proof.Gcm.X86.Rev
-import VerifiedGarbage.Proof.Framework.X86.Exec
-meta import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-import VerifiedGarbage.Proof.Gcm.Spec
-meta import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.Proof.Gcm.X86.GhashCT
-meta import VerifiedGarbage.Proof.Gcm.X86.GhashCT
-public import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.X86.Wp
-meta import VerifiedGarbage.Proof.Framework.X86.Wp
-public import VerifiedGarbage.Proof.Gcm.X86.Ghash
-meta import VerifiedGarbage.Proof.Gcm.X86.Ghash
+public import VerifiedGarbage.Spec.Gcm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Gcm.X86.Ghash
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Gcm.X86.Pclmul.Arith
+meta import VerifiedGarbage.Proof.Gcm.X86.Rev
+meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+meta import VerifiedGarbage.Proof.Gcm.X86.GhashCT
+meta import VerifiedGarbage.Spec.Gcm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Gcm.X86.Ghash
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Impl.Gcm.X86.Pclmul
-meta import VerifiedGarbage.Impl.Gcm.X86.Pclmul
-public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Sse
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 -- Formerly the module `VerifiedGarbage.Proof.Gcm.X86.Pclmul.Const`.
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 @[expose] public section
 

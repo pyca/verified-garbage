@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Impl.X448.Arm
 public import VerifiedGarbage.Proof.X448.Arm.FnVerified
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Arithmetic in curve448's field, in radix `2^16`, on ARMv7 -/
 
@@ -23,36 +21,21 @@ def notes : List String := ["The function saves `r4`–`r7`, `r9` and `lr` in it
   `2^16`. It never writes `r0`, `r8`, `r10` or `r11`."]
 
 def artifacts : List Artifact := [
-  { mulApi with
-    target := Arm.target
-    doc := mulApi.doc (notes := notes)
+  mulApi.artifact Arm.target {
+    notes := notes
     code := mulFn
-    contract := mulContract Arm.abi
-    verified := gf448_mul_verified
-    ofSig := by unfold mulContract binContract; exact ⟨_, _, _, rfl⟩
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { addApi with
-    target := Arm.target
-    doc := addApi.doc (notes := notes)
+    verified := gf448_mul_verified },
+  addApi.artifact Arm.target {
+    notes := notes
     code := addFn
-    contract := addContract Arm.abi
-    verified := gf448_add_verified
-    ofSig := by unfold addContract binContract; exact ⟨_, _, _, rfl⟩
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { subApi with
-    target := Arm.target
-    doc := subApi.doc (notes := notes)
+    verified := gf448_add_verified },
+  subApi.artifact Arm.target {
+    notes := notes
     code := subFn
-    contract := subContract Arm.abi
-    verified := gf448_sub_verified
-    ofSig := by unfold subContract binContract; exact ⟨_, _, _, rfl⟩
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { mulA24Api with
-    target := Arm.target
-    doc := mulA24Api.doc (notes := notes)
+    verified := gf448_sub_verified },
+  mulA24Api.artifact Arm.target {
+    notes := notes
     code := mulA24Fn
-    contract := mulA24Contract Arm.abi
-    verified := gf448_mulA24_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := gf448_mulA24_verified }]
 
 end VG.Artifacts.X448Field16.Arm

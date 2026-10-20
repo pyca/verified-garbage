@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Cast5.X86_64.EcbVerified
 public import VerifiedGarbage.Proof.Cast5.X86_64.KeyVerified
+import VerifiedGarbage.Proof.Cast5.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! CAST5 key expansion and ECB on baseline x86-64. -/
 
@@ -28,35 +29,23 @@ def keyNote : String :=
   extra lookups by one more scan. Only `key_len` decides the number of bytes copied."
 
 def artifacts : List Artifact := [
-  { Spec.Cast5.expandKeyApi with
-    target := X86_64.target
-    doc := Spec.Cast5.expandKeyApi.doc (notes := [keyNote])
+  Spec.Cast5.expandKeyApi.artifact X86_64.target {
+    notes := [keyNote]
     consts := Impl.Cast5.keyConsts
     code := Impl.Cast5.X86_64.expandKey
-    contract := Spec.Cast5.expandKeyContract (X86_64.abi.withConsts Impl.Cast5.keyConsts)
     stack := 0
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Cast5.expandKeyContract; rfl⟩)
-    verified := Proof.Cast5.X86_64.expandKey_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Cast5.ecbEncryptApi with
-    target := X86_64.target
-    doc := Spec.Cast5.ecbEncryptApi.doc (notes := [scanNote])
+    verified := Proof.Cast5.X86_64.expandKey_verified },
+  Spec.Cast5.ecbEncryptApi.artifact X86_64.target {
+    notes := [scanNote]
     consts := Impl.Cast5.ecbConsts
     code := Impl.Cast5.X86_64.ecbEncrypt
-    contract := Spec.Cast5.ecbEncryptContract (X86_64.abi.withConsts Impl.Cast5.ecbConsts)
     stack := 0
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Cast5.ecbEncryptContract Spec.Cast5.ecbContract; rfl⟩)
-    verified := Proof.Cast5.X86_64.ecbEncrypt_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Cast5.ecbDecryptApi with
-    target := X86_64.target
-    doc := Spec.Cast5.ecbDecryptApi.doc (notes := [scanNote])
+    verified := Proof.Cast5.X86_64.ecbEncrypt_verified },
+  Spec.Cast5.ecbDecryptApi.artifact X86_64.target {
+    notes := [scanNote]
     consts := Impl.Cast5.ecbConsts
     code := Impl.Cast5.X86_64.ecbDecrypt
-    contract := Spec.Cast5.ecbDecryptContract (X86_64.abi.withConsts Impl.Cast5.ecbConsts)
     stack := 0
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Cast5.ecbDecryptContract Spec.Cast5.ecbContract; rfl⟩)
-    verified := Proof.Cast5.X86_64.ecbDecrypt_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Cast5.X86_64.ecbDecrypt_verified }]
 
 end VG.Artifacts.Cast5.X86_64

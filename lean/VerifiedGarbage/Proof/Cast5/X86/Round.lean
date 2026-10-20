@@ -3,10 +3,11 @@ module
 public import VerifiedGarbage.Proof.Cast5.X86.Scan
 public import VerifiedGarbage.Proof.Cast5.Rotate
 public import VerifiedGarbage.Proof.Cast5.Round
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Cast5.Table
+public import VerifiedGarbage.Proof.Cast5.X86.Run
+import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.CallLay
 
 /-!
 # CAST5 on 32-bit x86: a round

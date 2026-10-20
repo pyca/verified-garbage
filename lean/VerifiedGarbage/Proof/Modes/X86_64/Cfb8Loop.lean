@@ -1,14 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.X86_64.Cfb8Steps
+import VerifiedGarbage.Proof.Modes.X86_64.Cfb8Steps
 import VerifiedGarbage.Proof.Modes.X86_64.Fb
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Modes.Cfb8
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Modes.X86_64.Cfb8
+public import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Modes.X86_64.Words
+import VerifiedGarbage.Proof.Modes.X86_64.Steps
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # CFB8 on x86-64, for any core: the data loop
@@ -43,6 +46,7 @@ structure C8Pre (c : Core) (s₀ : State) (B D P : Addr) (n : Nat) : Prop where
   fitD : D.toNat + n ≤ 2 ^ 64
   small : n < 2 ^ 64
   ivx : s₀.xmm Core.ivX = (0 : BitVec 64) ++ P
+  stk : StkOk c s₀
 
 /-- The data loop, before byte `j`; `m₀` is the memory on entry, `iv` the
 IV. -/
@@ -58,7 +62,7 @@ structure C8Inv (cs : BlockSpec c) (enc : Bool) (s₀ : State) (m₀ : Mem) (B D
   ivB : ∀ u < 8 * c.bw, s.mem (P + BitVec.ofNat 64 u) = (cfb8In enc (cs.cipher k) m₀ D iv j).getD u 0
   data : ∀ q < n, s.mem (D + BitVec.ofNat 64 q) =
     if q < j then cfb8Out enc (cs.cipher k) m₀ D iv q else m₀ (D + BitVec.ofNat 64 q)
-  frame : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, n⟩, ⟨P, 8 * c.bw⟩] s₀.mem s.mem
+  frame : Frame ([⟨B, 8 * c.ctrSlots⟩, ⟨D, n⟩, ⟨P, 8 * c.bw⟩] ++ stkList c (s₀.gpr .rsp)) s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   xmm : s.xmm Core.ivX = s₀.xmm Core.ivX
@@ -71,7 +75,7 @@ structure C8Done (cs : BlockSpec c) (enc : Bool) (s₀ : State) (m₀ : Mem) (B 
   saved : ∀ i < 7, s.mem.readW (wordAddr B (c.slots + i)) 64 = s₀.mem.readW (wordAddr B (c.slots + i)) 64
   ivB : ∀ u < 8 * c.bw, s.mem (P + BitVec.ofNat 64 u) = (cfb8In enc (cs.cipher k) m₀ D iv n).getD u 0
   data : ∀ q < n, s.mem (D + BitVec.ofNat 64 q) = cfb8Out enc (cs.cipher k) m₀ D iv q
-  frame : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, n⟩, ⟨P, 8 * c.bw⟩] s₀.mem s.mem
+  frame : Frame ([⟨B, 8 * c.ctrSlots⟩, ⟨D, n⟩, ⟨P, 8 * c.bw⟩] ++ stkList c (s₀.gpr .rsp)) s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   xmm : s.xmm Core.ivX = s₀.xmm Core.ivX
@@ -160,6 +164,7 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {s₀ : State} {m₀ : Mem}
   -- Enciphered.
   refine WP.seq (WP.mono (WP.keepIv hsc (by rw [x₁, x₁a, px]; exact hi_zero_append _) (cs.crypt_wp base₁ ⟨by rw [wr₁]; exact hp.scr.wr, hfit⟩ ready₁))
     fun s₂ ⟨⟨base₂, rsp₂, dr₂, lr₂, ready₂, f₂, ks₂, rd₂, wr₂⟩, x₂⟩ => ?_)
+  rw [show s₁.gpr .rsp = s₀.gpr .rsp by rw [g₁ _ (by decide) (by decide), hi.rsp]] at f₂
   have eT : blkAddr c B 0 = T := by simp only [blkAddr, T, Nat.mul_zero, Nat.add_zero]
   have hX : bytesAt s₁.mem T (8 * c.bw) = cfb8In enc ciph m₀ D iv j := by
     apply List.ext_getElem (by
@@ -172,16 +177,21 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {s₀ : State} {m₀ : Mem}
     have h0 : s₂.mem T = (bytesAt s₂.mem T (8 * c.bw)).getD 0 0 := by rw [bytesAt_getD _ _ hL0]; simp
     rw [h0, ← eT, ks₂ 0 hG0, eT, hX, headD_eq_getD]
   -- The memory outside the buffer and the core, as before.
-  have out₂ : ∀ x, (∀ R ∈ [(⟨T, 8 * c.bw⟩ : Region), coreRegion c B], ¬ R.Contains x 1) → s₂.mem x = s.mem x :=
-    fun x hx => by
-      rw [f₂ x (fun R hR => hx R (by simp only [List.mem_singleton] at hR; subst hR; simp)),
+  have out₂ : ∀ x, (∀ R ∈ [(⟨T, 8 * c.bw⟩ : Region), coreRegion c B], ¬ R.Contains x 1) →
+      (∀ R ∈ stkList c (s₀.gpr .rsp), ¬ R.Contains x 1) → s₂.mem x = s.mem x :=
+    fun x hx hs => by
+      rw [f₂ x (fun R hR => by
+          rcases List.mem_cons.mp hR with rfl | hR
+          · exact hx _ (by simp)
+          · exact hs R hR),
         f₁ x (fun R hR => hx R (by simp only [List.mem_singleton] at hR; subst hR; simp))]
   have A₂ : s₂.mem A = m₀ A := by
     rw [out₂ A (fun R hR hc => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
       rcases hR with rfl | rfl
       · exact (dAS.sub_right subT) A (Region.contains_self A 1) hc
-      · exact (dAS.sub_right subCore) A (Region.contains_self A 1) hc)]
+      · exact (dAS.sub_right subCore) A (Region.contains_self A 1) hc)
+      (fun R hR hc => hp.stk.disj ⟨_, hp.dat, subA⟩ R hR A (Region.contains_self A 1) hc)]
     have := hi.data j hj
     rw [ite_eq_right (Nat.lt_irrefl _)] at this
     exact this
@@ -267,15 +277,15 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {s₀ : State} {m₀ : Mem}
       rcases hR with rfl | rfl
       · exact slotOut i hi7 (.inr (.inr (.inl rfl)))
       · exact slotOut i hi7 (.inr (.inr (.inr rfl)))) (by decide)).trans ?_
-    refine (f₂.readW (Region.contains_self _ _) (fun R hR => by
-      simp only [List.mem_singleton] at hR; subst hR; exact slotOut i hi7 (.inr (.inl rfl))) (by decide)).trans ?_
+    refine (f₂.readW (Region.contains_self _ _) (hp.stk.coreFrame_disj (slotOut i hi7 (.inr (.inl rfl)))
+      ⟨_, hp.scr.wr, VG.Offset.sub_base B (show 8 * (c.slots + i) + 8 ≤ 8 * c.ctrSlots by
+        simp only [Core.ctrSlots]; omega)⟩) (by decide)).trans ?_
     exact f₁.readW (Region.contains_self _ _) (fun R hR => by
       simp only [List.mem_singleton] at hR; subst hR; exact slotOut i hi7 (.inl rfl)) (by decide)
-  have fr₅ : Frame [S, ⟨D, n⟩, ⟨P, 8 * c.bw⟩] s₀.mem s₅.mem :=
+  have fr₅ : Frame ([S, ⟨D, n⟩, ⟨P, 8 * c.bw⟩] ++ stkList c (s₀.gpr .rsp)) s₀.mem s₅.mem :=
     hi.frame.trans (((f₁.sub fun r hr => ⟨S, List.mem_cons_self, by
         simp only [List.mem_singleton] at hr; subst hr; exact subT⟩).trans
-      (f₂.sub fun r hr => ⟨S, List.mem_cons_self, by
-        simp only [List.mem_singleton] at hr; subst hr; exact subCore⟩)).trans
+      (f₂.sub (coreFrame_sub ⟨S, List.mem_cons_self, subCore⟩))).trans
       (f₅.sub fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
@@ -290,7 +300,8 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {s₀ : State} {m₀ : Mem}
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
         rcases hR with rfl | rfl
         · exact dTP _ hR' hc
-        · exact dPcore _ hc hR')]
+        · exact dPcore _ hc hR')
+      (fun R hR hR' => hp.stk.disj ⟨_, hp.ivw, fun _ h => h⟩ R hR _ hc hR')]
   have ivB₅ : ∀ u < 8 * c.bw, s₅.mem (P + BitVec.ofNat 64 u) = (cfb8In enc ciph m₀ D iv (j + 1)).getD u 0 :=
     fun u hu => by
       rw [mem₅, P₄ u hu, cfb8In_succ_getD enc ciph m₀ D hiv hL0 j hu]
@@ -311,7 +322,8 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {s₀ : State} {m₀ : Mem}
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
         rcases hR with rfl | rfl
         · exact (hp.sepD.sub_right subT) _ hcD hR'
-        · exact dDcore _ hcD hR'), hi.data q hq]
+        · exact dDcore _ hcD hR')
+        (fun R hR hR' => hp.stk.disj ⟨_, hp.dat, fun _ h => h⟩ R hR _ hcD hR'), hi.data q hq]
       by_cases h3 : q < j
       · rw [ite_eq_left h3, ite_eq_left (by omega)]
       · rw [ite_eq_right h3, ite_eq_right (by omega)]

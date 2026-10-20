@@ -1,13 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Encode
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Encode
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.Ct.Common
-public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Encode
 
 /-!
 # Comparing two buffers on x86-64

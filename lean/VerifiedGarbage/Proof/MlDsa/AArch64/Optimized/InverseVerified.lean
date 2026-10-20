@@ -1,15 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseStaticCore
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemoryCorrect
 public import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
+public import VerifiedGarbage.Spec.MlDsa.Montgomery
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
 
 /-! ## From `InverseContract.lean` -/
 

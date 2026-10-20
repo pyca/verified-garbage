@@ -1,15 +1,45 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
+public import VerifiedGarbage.Proof.AesGcm.AArch64.FinTag
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
 import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamFinish
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.StreamFinish
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Gcm.Bits
+meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.FinTag
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Gcm.Bits
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_stream_finish` and `_verify` are constant time
@@ -131,7 +161,7 @@ theorem streamVerify_ct (v : GcmImpl) :
       τ'.gpr .x27 = BitVec.ofNat 64 (σ₁.gpr .x4).toNat → τ'.gpr .x28 = BitVec.ofNat 64 (σ₁.gpr .x6).toNat →
       τ'.gpr .x12 = σ₁.gpr .x5 → Covers [⟨σ₁.gpr .x5, (σ₁.gpr .x6).toNat⟩] (τ'.rd ++ τ'.wr) →
       WP isa (.ite (.zero .x .x9) (.block [imm .x0 0])
-        (.seq tagIn (.seq (finBody v.callees uO) (.seq cmpSeg (.block verRet))))) τ' fun τ'' =>
+        (.seq tagIn (.seq (finBody v.callees uO) (.seq cmp (.block verRet))))) τ' fun τ'' =>
         Env (σ₁.gpr .x0) (σ₁.gpr .x2) (σ₁.gpr .x7) σ₁.sp τ'' := by
     intro τ' k he hk h9 h22 h26 h27 h28 h12 hr
     refine WP.ite _ (ev h9) (fun _ => ?_) (fun hf => ?_)
@@ -146,7 +176,7 @@ theorem streamVerify_ct (v : GcmImpl) :
       refine WP.seq (WP.mono (finBody_env v L (.inr rfl) he₃ hk₃ (by rw [hk₃ .x22 (by decide), h22]) hRb
         (by rw [hk₃ .x26 (by decide), h26]) (by rw [hk₃ .x27 (by decide), h27]) (σ₁.gpr .x4).isLt)
         fun τ₄ ⟨he₄, hk₄, _⟩ => ?_)
-      refine WP.seq (WP.mono (cmpSeg_ok L he₄ hk₄ (by rw [hk₄ .x28 (by decide), h28])
+      refine WP.seq (WP.mono (cmp_ok L he₄ hk₄ (by rw [hk₄ .x28 (by decide), h28])
         (tagLenOk_le hok)) fun τ₅ ⟨x10₅, he₅, _, _, _⟩ => ?_)
       exact WP.mono (verRet_ok (b := decide (bytesAt τ₄.mem (σ₁.gpr .x7 + BitVec.ofNat 64 112)
         (σ₁.gpr .x6).toNat = bytesAt τ₄.mem (σ₁.gpr .x7) (σ₁.gpr .x6).toNat))
@@ -188,7 +218,7 @@ theorem streamVerify_ct (v : GcmImpl) :
     have c28₂ : τ₄'.gpr .x28 = _ := (hk₄' .x28 (by decide)).trans o28₂
     refine rel_seq (rel_taint [.x19, .x28] (by rw [he₄.sp, he₄'.sp])
         (by agree_tac [he₄.x19, he₄'.x19, c28₁, c28₂]) ⟨_, by taint_decide⟩)
-      (cmpSeg_ok L he₄ hk₄ c28₁ (tagLenOk_le hok)) (cmpSeg_ok L he₄' hk₄' c28₂ (tagLenOk_le hok))
+      (cmp_ok L he₄ hk₄ c28₁ (tagLenOk_le hok)) (cmp_ok L he₄' hk₄' c28₂ (tagLenOk_le hok))
       fun τ₅ τ₅' ⟨_, he₅, _, _, _⟩ ⟨_, he₅', _, _, _⟩ => ?_
     exact rel_taint [] (by rw [he₅.sp, he₅'.sp]) (by agree_tac []) ⟨_, by taint_decide⟩
   · exact rel_taint [.x19] (by rw [f₁.sp, f₂.sp]) (by agree_tac [f₁.x19, f₂.x19]) ⟨_, by taint_decide⟩

@@ -1,11 +1,13 @@
 module
+public import VerifiedGarbage.Impl.P256.VerifySparse
+public import VerifiedGarbage.Proof.Mont.AArch64.Ops
+public import VerifiedGarbage.Proof.P256.VerifySparse.Arithmetic
 
-public import VerifiedGarbage.Proof.P256.VerifySparse.Correct
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.P256.VerifySparse.Correct
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Mont.AArch64.Rounds
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! The existing Montgomery setup/round and addition-chain proofs are reused here.
 Only their final conditional subtraction is replaced with the sparse P-256 proof. -/
@@ -53,6 +55,7 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     (Nat.le_refl _) hs₁ hs₁.ptr hs₁.ptr z₁
     (by rw [hmem₁]; exact hM.val) hBR₁ h6₁ (by rw [hmem₁]; exact hB) h0)
     fun s₂ ⟨⟨U, eU⟩, hT, k₂, _⟩ => ?_
+  rw [accV_of_pos M s₂ hM.n0] at eU hT
   have nk : ∀ r ∈ [Reg.x0, .x7], r ∉ Reg.x1 :: Reg.x2 :: Reg.x3 :: acc M.n := by
     intro r hr h
     by_cases hr' : r ∈ acc M.n

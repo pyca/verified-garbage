@@ -1,11 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.Arm.MulKeep
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.MulInput
-import VerifiedGarbage.Proof.Ed25519.Arm.DecodeKeep
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Point engines preserve register saves, the output pointer, and
 the three packed points reserved for verification. -/

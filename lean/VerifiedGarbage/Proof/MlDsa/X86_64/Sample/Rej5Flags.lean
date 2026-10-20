@@ -1,15 +1,11 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt5
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Parse
 
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Batch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Top
+import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 
 @[expose] public section
 

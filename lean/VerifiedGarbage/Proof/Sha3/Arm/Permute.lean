@@ -1,35 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Framework.Taint
-meta import VerifiedGarbage.Proof.Framework.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Sha3.Lanes
-meta import VerifiedGarbage.Proof.Sha3.Lanes
 public import VerifiedGarbage.Proof.Sha512.Arm.Rounds
-meta import VerifiedGarbage.Proof.Sha512.Arm.Rounds
-public import VerifiedGarbage.Impl.Sha3.Arm
-meta import VerifiedGarbage.Impl.Sha3.Arm
 public import VerifiedGarbage.Spec.Sha3.Contract
-meta import VerifiedGarbage.Spec.Sha3.Contract
-public import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Sha3.Stream
-meta import VerifiedGarbage.Proof.Sha3.Stream
-import VerifiedGarbage.Proof.Sha3.Arith
-meta import VerifiedGarbage.Proof.Sha3.Arith
-public import VerifiedGarbage.Proof.Framework.Arm.Call
-meta import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Impl.Sha3.Arm.Stream
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Sha3.Lanes
+meta import VerifiedGarbage.Proof.Sha512.Arm.Rounds
+meta import VerifiedGarbage.Spec.Sha3.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Call
 meta import VerifiedGarbage.Impl.Sha3.Arm.Stream
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 
@@ -1296,14 +1286,14 @@ open VG.Proof.Sha3 (off_disjoint sub_offset add_zero')
 
 theorem permute_noCalls : permute.noCalls = true := by decide +kernel
 
-theorem permute_r0 : ∀ i ∈ instrs permute, dstOf i ≠ some .r0 := by
-  have : ((instrs permute).all fun i => dstOf i != some .r0) = true := by
+theorem permute_r0 : ∀ i ∈ instrs permute, clobbers i .r0 = false := by
+  have : ((instrs permute).all fun i => !clobbers i .r0) = true := by
     rw [← Code.allInstrs_eq]; decide +kernel
   intro i hi
   simpa using List.all_eq_true.mp this i hi
 
-theorem permute_r1 : ∀ i ∈ instrs permute, dstOf i ≠ some .r1 := by
-  have : ((instrs permute).all fun i => dstOf i != some .r1) = true := by
+theorem permute_r1 : ∀ i ∈ instrs permute, clobbers i .r1 = false := by
+  have : ((instrs permute).all fun i => !clobbers i .r1) = true := by
     rw [← Code.allInstrs_eq]; decide +kernel
   intro i hi
   simpa using List.all_eq_true.mp this i hi

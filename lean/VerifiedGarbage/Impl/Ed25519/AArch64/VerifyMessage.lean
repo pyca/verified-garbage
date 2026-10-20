@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.AArch64.Scalar
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Setup
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Entry

@@ -1,14 +1,9 @@
 module
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Minus
-public import VerifiedGarbage.Proof.Dsa.AArch64.ResultCall
+import VerifiedGarbage.Proof.Dsa.AArch64.ResultCall
 public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Proof.Dsa.AArch64.Call
 
 /-! # Encoded p-minus-one and q-minus-two for DSA -/
 

@@ -1,17 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Joint
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.JointEncode
-meta import VerifiedGarbage.Proof.Dsa.X86_64.JointEncode
-public import VerifiedGarbage.Proof.Dsa.X86_64.JointBuildCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.JointBuildCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-import VerifiedGarbage.Spec.Dsa
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-meta import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Joint
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant-time encoding of both bases -/
 

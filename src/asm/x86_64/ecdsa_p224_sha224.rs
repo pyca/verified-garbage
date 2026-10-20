@@ -20,453 +20,453 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p224_sha224_sign(out: *mut [u8; 56], d: *const [u8; 28], digest: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi",
-        "push rsi",
-        "push rdx",
-        "push rcx",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "mov rsi, QWORD PTR [rsp+192]",
-        "mov rax, QWORD PTR [rsi+20]",
-        "bswap rax",
-        "mov QWORD PTR [rsp+64], rax",
-        "movabs rdx, 1431345634452711997",
-        "sub rax, rdx",
-        "mov QWORD PTR [rsp], rax",
-        "mov rax, QWORD PTR [rsi+12]",
-        "bswap rax",
-        "mov QWORD PTR [rsp+72], rax",
-        "movabs rdx, -256586165981122",
-        "sbb rax, rdx",
-        "mov QWORD PTR [rsp+8], rax",
-        "mov rax, QWORD PTR [rsi+4]",
-        "bswap rax",
-        "mov QWORD PTR [rsp+80], rax",
-        "movabs rdx, -1",
-        "sbb rax, rdx",
-        "mov QWORD PTR [rsp+16], rax",
-        "mov eax, DWORD PTR [rsi]",
-        "bswap eax",
-        "mov QWORD PTR [rsp+88], rax",
-        "movabs rdx, 4294967295",
-        "sbb rax, rdx",
-        "mov QWORD PTR [rsp+24], rax",
-        "sbb rdx, rdx",
-        "mov rax, QWORD PTR [rsp+64]",
-        "mov rcx, QWORD PTR [rsp]",
-        "xor rax, rcx",
-        "and rax, rdx",
-        "xor rax, rcx",
-        "bswap rax",
-        "mov QWORD PTR [rsp+148], rax",
-        "mov rax, QWORD PTR [rsp+72]",
-        "mov rcx, QWORD PTR [rsp+8]",
-        "xor rax, rcx",
-        "and rax, rdx",
-        "xor rax, rcx",
-        "bswap rax",
-        "mov QWORD PTR [rsp+140], rax",
-        "mov rax, QWORD PTR [rsp+80]",
-        "mov rcx, QWORD PTR [rsp+16]",
-        "xor rax, rcx",
-        "and rax, rdx",
-        "xor rax, rcx",
-        "bswap rax",
-        "mov QWORD PTR [rsp+132], rax",
-        "mov rax, QWORD PTR [rsp+88]",
-        "mov rcx, QWORD PTR [rsp+24]",
-        "xor rax, rcx",
-        "and rax, rdx",
-        "xor rax, rcx",
-        "bswap rax",
-        "mov QWORD PTR [rsp+124], rax",
-        "movabs rax, 72340172838076673",
-        "xor ecx, ecx",
-        "mov QWORD PTR [rsp+64], rax",
-        "mov QWORD PTR [rsp], rcx",
-        "mov QWORD PTR [rsp+72], rax",
-        "mov QWORD PTR [rsp+8], rcx",
-        "mov QWORD PTR [rsp+80], rax",
-        "mov QWORD PTR [rsp+16], rcx",
-        "mov QWORD PTR [rsp+88], rax",
-        "mov QWORD PTR [rsp+24], rcx",
-        "mov QWORD PTR [rsp+96], rax",
-        "mov QWORD PTR [rsp+32], rcx",
-        "mov QWORD PTR [rsp+104], rax",
-        "mov QWORD PTR [rsp+40], rcx",
-        "mov QWORD PTR [rsp+112], rax",
-        "mov QWORD PTR [rsp+48], rcx",
-        "mov QWORD PTR [rsp+120], rax",
-        "mov QWORD PTR [rsp+56], rcx",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "mov rsi, QWORD PTR [rsp+200]",
-        "mov rax, QWORD PTR [rsp+64]",
-        "mov QWORD PTR [rdi+2256], rax",
-        "mov rax, QWORD PTR [rsp+72]",
-        "mov QWORD PTR [rdi+2264], rax",
-        "mov rax, QWORD PTR [rsp+80]",
-        "mov QWORD PTR [rdi+2272], rax",
-        "mov rax, QWORD PTR [rsp+84]",
-        "mov QWORD PTR [rdi+2276], rax",
-        "mov eax, 0",
-        "mov BYTE PTR [rdi+2284], al",
-        "mov rax, QWORD PTR [rsi]",
-        "mov QWORD PTR [rdi+2285], rax",
-        "mov rax, QWORD PTR [rsi+8]",
-        "mov QWORD PTR [rdi+2293], rax",
-        "mov rax, QWORD PTR [rsi+16]",
-        "mov QWORD PTR [rdi+2301], rax",
-        "mov rax, QWORD PTR [rsi+20]",
-        "mov QWORD PTR [rdi+2305], rax",
-        "mov rax, QWORD PTR [rsp+128]",
-        "mov QWORD PTR [rdi+2313], rax",
-        "mov rax, QWORD PTR [rsp+136]",
-        "mov QWORD PTR [rdi+2321], rax",
-        "mov rax, QWORD PTR [rsp+144]",
-        "mov QWORD PTR [rdi+2329], rax",
-        "mov rax, QWORD PTR [rsp+148]",
-        "mov QWORD PTR [rdi+2333], rax",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, QWORD PTR [rsp+184]",
-        "add rdx, 2256",
-        "mov ecx, 85",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 149",
-        "mov rcx, rsp",
-        "add rcx, 0",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, rsp",
-        "add rdx, 64",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 92",
-        "mov rcx, rsp",
-        "add rcx, 64",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "mov rsi, QWORD PTR [rsp+200]",
-        "mov rax, QWORD PTR [rsp+64]",
-        "mov QWORD PTR [rdi+2256], rax",
-        "mov rax, QWORD PTR [rsp+72]",
-        "mov QWORD PTR [rdi+2264], rax",
-        "mov rax, QWORD PTR [rsp+80]",
-        "mov QWORD PTR [rdi+2272], rax",
-        "mov rax, QWORD PTR [rsp+84]",
-        "mov QWORD PTR [rdi+2276], rax",
-        "mov eax, 1",
-        "mov BYTE PTR [rdi+2284], al",
-        "mov rax, QWORD PTR [rsi]",
-        "mov QWORD PTR [rdi+2285], rax",
-        "mov rax, QWORD PTR [rsi+8]",
-        "mov QWORD PTR [rdi+2293], rax",
-        "mov rax, QWORD PTR [rsi+16]",
-        "mov QWORD PTR [rdi+2301], rax",
-        "mov rax, QWORD PTR [rsi+20]",
-        "mov QWORD PTR [rdi+2305], rax",
-        "mov rax, QWORD PTR [rsp+128]",
-        "mov QWORD PTR [rdi+2313], rax",
-        "mov rax, QWORD PTR [rsp+136]",
-        "mov QWORD PTR [rdi+2321], rax",
-        "mov rax, QWORD PTR [rsp+144]",
-        "mov QWORD PTR [rdi+2329], rax",
-        "mov rax, QWORD PTR [rsp+148]",
-        "mov QWORD PTR [rdi+2333], rax",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, QWORD PTR [rsp+184]",
-        "add rdx, 2256",
-        "mov ecx, 85",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 149",
-        "mov rcx, rsp",
-        "add rcx, 0",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, rsp",
-        "add rdx, 64",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 92",
-        "mov rcx, rsp",
-        "add rcx, 64",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch}",
-        "mov eax, 8",
-        "mov QWORD PTR [rsp+176], rax",
-        "20:",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, rsp",
-        "add rdx, 64",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 92",
-        "mov rcx, rsp",
-        "add rcx, 64",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch}",
-        "mov rdi, QWORD PTR [rsp+208]",
-        "mov rsi, QWORD PTR [rsp+200]",
-        "mov rdx, QWORD PTR [rsp+192]",
-        "mov rcx, rsp",
-        "add rcx, 64",
-        "mov r8, QWORD PTR [rsp+184]",
-        "call {vg_ecdsa_p224_sign}",
-        "mov rcx, QWORD PTR [rsp+176]",
-        "sub rcx, 1",
-        "mov QWORD PTR [rsp+176], rcx",
-        "cmp eax, 1",
-        "sbb rdx, rdx",
-        "and rdx, rcx",
-        "test rdx, rdx",
-        "jne 21f",
-        "xor edx, edx",
-        "jmp 22f",
-        "21:",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "mov rsi, QWORD PTR [rsp+200]",
-        "mov rax, QWORD PTR [rsp+64]",
-        "mov QWORD PTR [rdi+2256], rax",
-        "mov rax, QWORD PTR [rsp+72]",
-        "mov QWORD PTR [rdi+2264], rax",
-        "mov rax, QWORD PTR [rsp+80]",
-        "mov QWORD PTR [rdi+2272], rax",
-        "mov rax, QWORD PTR [rsp+84]",
-        "mov QWORD PTR [rdi+2276], rax",
-        "mov eax, 0",
-        "mov BYTE PTR [rdi+2284], al",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, QWORD PTR [rsp+184]",
-        "add rdx, 2256",
-        "mov ecx, 29",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 93",
-        "mov rcx, rsp",
-        "add rcx, 0",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, rsp",
-        "add rdx, 64",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 92",
-        "mov rcx, rsp",
-        "add rcx, 64",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch}",
-        "mov edx, 1",
-        "test rdx, rdx",
-        "22:",
-        "jne 20b",
-        "xor ecx, ecx",
-        "mov QWORD PTR [rsp], rcx",
-        "mov QWORD PTR [rsp+8], rcx",
-        "mov QWORD PTR [rsp+16], rcx",
-        "mov QWORD PTR [rsp+24], rcx",
-        "mov QWORD PTR [rsp+32], rcx",
-        "mov QWORD PTR [rsp+40], rcx",
-        "mov QWORD PTR [rsp+48], rcx",
-        "mov QWORD PTR [rsp+56], rcx",
-        "mov QWORD PTR [rsp+64], rcx",
-        "mov QWORD PTR [rsp+72], rcx",
-        "mov QWORD PTR [rsp+80], rcx",
-        "mov QWORD PTR [rsp+88], rcx",
-        "mov QWORD PTR [rsp+96], rcx",
-        "mov QWORD PTR [rsp+104], rcx",
-        "mov QWORD PTR [rsp+112], rcx",
-        "mov QWORD PTR [rsp+120], rcx",
-        "mov QWORD PTR [rsp+128], rcx",
-        "mov QWORD PTR [rsp+136], rcx",
-        "mov QWORD PTR [rsp+144], rcx",
-        "mov QWORD PTR [rsp+152], rcx",
-        "mov QWORD PTR [rsp+160], rcx",
-        "mov QWORD PTR [rsp+168], rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "ret",
-        ".p2align 6",
+        r"push rdi
+push rsi
+push rdx
+push rcx
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+mov rsi, QWORD PTR [rsp+192]
+mov rax, QWORD PTR [rsi+20]
+bswap rax
+mov QWORD PTR [rsp+64], rax
+movabs rdx, 1431345634452711997
+sub rax, rdx
+mov QWORD PTR [rsp], rax
+mov rax, QWORD PTR [rsi+12]
+bswap rax
+mov QWORD PTR [rsp+72], rax
+movabs rdx, -256586165981122
+sbb rax, rdx
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsi+4]
+bswap rax
+mov QWORD PTR [rsp+80], rax
+movabs rdx, -1
+sbb rax, rdx
+mov QWORD PTR [rsp+16], rax
+mov eax, DWORD PTR [rsi]
+bswap eax
+mov QWORD PTR [rsp+88], rax
+movabs rdx, 4294967295
+sbb rax, rdx
+mov QWORD PTR [rsp+24], rax
+sbb rdx, rdx
+mov rax, QWORD PTR [rsp+64]
+mov rcx, QWORD PTR [rsp]
+xor rax, rcx
+and rax, rdx
+xor rax, rcx
+bswap rax
+mov QWORD PTR [rsp+148], rax
+mov rax, QWORD PTR [rsp+72]
+mov rcx, QWORD PTR [rsp+8]
+xor rax, rcx
+and rax, rdx
+xor rax, rcx
+bswap rax
+mov QWORD PTR [rsp+140], rax
+mov rax, QWORD PTR [rsp+80]
+mov rcx, QWORD PTR [rsp+16]
+xor rax, rcx
+and rax, rdx
+xor rax, rcx
+bswap rax
+mov QWORD PTR [rsp+132], rax
+mov rax, QWORD PTR [rsp+88]
+mov rcx, QWORD PTR [rsp+24]
+xor rax, rcx
+and rax, rdx
+xor rax, rcx
+bswap rax
+mov QWORD PTR [rsp+124], rax
+movabs rax, 72340172838076673
+xor ecx, ecx
+mov QWORD PTR [rsp+64], rax
+mov QWORD PTR [rsp], rcx
+mov QWORD PTR [rsp+72], rax
+mov QWORD PTR [rsp+8], rcx
+mov QWORD PTR [rsp+80], rax
+mov QWORD PTR [rsp+16], rcx
+mov QWORD PTR [rsp+88], rax
+mov QWORD PTR [rsp+24], rcx
+mov QWORD PTR [rsp+96], rax
+mov QWORD PTR [rsp+32], rcx
+mov QWORD PTR [rsp+104], rax
+mov QWORD PTR [rsp+40], rcx
+mov QWORD PTR [rsp+112], rax
+mov QWORD PTR [rsp+48], rcx
+mov QWORD PTR [rsp+120], rax
+mov QWORD PTR [rsp+56], rcx
+mov rdi, QWORD PTR [rsp+184]
+mov rsi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+64]
+mov QWORD PTR [rdi+2256], rax
+mov rax, QWORD PTR [rsp+72]
+mov QWORD PTR [rdi+2264], rax
+mov rax, QWORD PTR [rsp+80]
+mov QWORD PTR [rdi+2272], rax
+mov rax, QWORD PTR [rsp+84]
+mov QWORD PTR [rdi+2276], rax
+mov eax, 0
+mov BYTE PTR [rdi+2284], al
+mov rax, QWORD PTR [rsi]
+mov QWORD PTR [rdi+2285], rax
+mov rax, QWORD PTR [rsi+8]
+mov QWORD PTR [rdi+2293], rax
+mov rax, QWORD PTR [rsi+16]
+mov QWORD PTR [rdi+2301], rax
+mov rax, QWORD PTR [rsi+20]
+mov QWORD PTR [rdi+2305], rax
+mov rax, QWORD PTR [rsp+128]
+mov QWORD PTR [rdi+2313], rax
+mov rax, QWORD PTR [rsp+136]
+mov QWORD PTR [rdi+2321], rax
+mov rax, QWORD PTR [rsp+144]
+mov QWORD PTR [rdi+2329], rax
+mov rax, QWORD PTR [rsp+148]
+mov QWORD PTR [rdi+2333], rax
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, QWORD PTR [rsp+184]
+add rdx, 2256
+mov ecx, 85
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 149
+mov rcx, rsp
+add rcx, 0
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, rsp
+add rdx, 64
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 92
+mov rcx, rsp
+add rcx, 64
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch}
+mov rdi, QWORD PTR [rsp+184]
+mov rsi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+64]
+mov QWORD PTR [rdi+2256], rax
+mov rax, QWORD PTR [rsp+72]
+mov QWORD PTR [rdi+2264], rax
+mov rax, QWORD PTR [rsp+80]
+mov QWORD PTR [rdi+2272], rax
+mov rax, QWORD PTR [rsp+84]
+mov QWORD PTR [rdi+2276], rax
+mov eax, 1
+mov BYTE PTR [rdi+2284], al
+mov rax, QWORD PTR [rsi]
+mov QWORD PTR [rdi+2285], rax
+mov rax, QWORD PTR [rsi+8]
+mov QWORD PTR [rdi+2293], rax
+mov rax, QWORD PTR [rsi+16]
+mov QWORD PTR [rdi+2301], rax
+mov rax, QWORD PTR [rsi+20]
+mov QWORD PTR [rdi+2305], rax
+mov rax, QWORD PTR [rsp+128]
+mov QWORD PTR [rdi+2313], rax
+mov rax, QWORD PTR [rsp+136]
+mov QWORD PTR [rdi+2321], rax
+mov rax, QWORD PTR [rsp+144]
+mov QWORD PTR [rdi+2329], rax
+mov rax, QWORD PTR [rsp+148]
+mov QWORD PTR [rdi+2333], rax
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, QWORD PTR [rsp+184]
+add rdx, 2256
+mov ecx, 85
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 149
+mov rcx, rsp
+add rcx, 0
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, rsp
+add rdx, 64
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 92
+mov rcx, rsp
+add rcx, 64
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch}
+mov eax, 8
+mov QWORD PTR [rsp+176], rax
+20:
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, rsp
+add rdx, 64
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 92
+mov rcx, rsp
+add rcx, 64
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch}
+mov rdi, QWORD PTR [rsp+208]
+mov rsi, QWORD PTR [rsp+200]
+mov rdx, QWORD PTR [rsp+192]
+mov rcx, rsp
+add rcx, 64
+mov r8, QWORD PTR [rsp+184]
+call {vg_ecdsa_p224_sign}
+mov rcx, QWORD PTR [rsp+176]
+sub rcx, 1
+mov QWORD PTR [rsp+176], rcx
+cmp eax, 1
+sbb rdx, rdx
+and rdx, rcx
+test rdx, rdx
+jne 21f
+xor edx, edx
+jmp 22f
+21:
+mov rdi, QWORD PTR [rsp+184]
+mov rsi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+64]
+mov QWORD PTR [rdi+2256], rax
+mov rax, QWORD PTR [rsp+72]
+mov QWORD PTR [rdi+2264], rax
+mov rax, QWORD PTR [rsp+80]
+mov QWORD PTR [rdi+2272], rax
+mov rax, QWORD PTR [rsp+84]
+mov QWORD PTR [rdi+2276], rax
+mov eax, 0
+mov BYTE PTR [rdi+2284], al
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, QWORD PTR [rsp+184]
+add rdx, 2256
+mov ecx, 29
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 93
+mov rcx, rsp
+add rcx, 0
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, rsp
+add rdx, 64
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 92
+mov rcx, rsp
+add rcx, 64
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch}
+mov edx, 1
+test rdx, rdx
+22:
+jne 20b
+xor ecx, ecx
+mov QWORD PTR [rsp], rcx
+mov QWORD PTR [rsp+8], rcx
+mov QWORD PTR [rsp+16], rcx
+mov QWORD PTR [rsp+24], rcx
+mov QWORD PTR [rsp+32], rcx
+mov QWORD PTR [rsp+40], rcx
+mov QWORD PTR [rsp+48], rcx
+mov QWORD PTR [rsp+56], rcx
+mov QWORD PTR [rsp+64], rcx
+mov QWORD PTR [rsp+72], rcx
+mov QWORD PTR [rsp+80], rcx
+mov QWORD PTR [rsp+88], rcx
+mov QWORD PTR [rsp+96], rcx
+mov QWORD PTR [rsp+104], rcx
+mov QWORD PTR [rsp+112], rcx
+mov QWORD PTR [rsp+120], rcx
+mov QWORD PTR [rsp+128], rcx
+mov QWORD PTR [rsp+136], rcx
+mov QWORD PTR [rsp+144], rcx
+mov QWORD PTR [rsp+152], rcx
+mov QWORD PTR [rsp+160], rcx
+mov QWORD PTR [rsp+168], rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+ret
+.p2align 6",
         vg_hmac_sha224_init_scratch = sym super::hmac_sha224::vg_hmac_sha224_init_scratch,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
         vg_hmac_sha224_finalize_scratch = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch,
@@ -496,453 +496,453 @@ pub(crate) const VG_ECDSA_P224_SHA224_SIGN_AVX2_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p224_sha224_sign_avx2(out: *mut [u8; 56], d: *const [u8; 28], digest: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi",
-        "push rsi",
-        "push rdx",
-        "push rcx",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "mov rsi, QWORD PTR [rsp+192]",
-        "mov rax, QWORD PTR [rsi+20]",
-        "bswap rax",
-        "mov QWORD PTR [rsp+64], rax",
-        "movabs rdx, 1431345634452711997",
-        "sub rax, rdx",
-        "mov QWORD PTR [rsp], rax",
-        "mov rax, QWORD PTR [rsi+12]",
-        "bswap rax",
-        "mov QWORD PTR [rsp+72], rax",
-        "movabs rdx, -256586165981122",
-        "sbb rax, rdx",
-        "mov QWORD PTR [rsp+8], rax",
-        "mov rax, QWORD PTR [rsi+4]",
-        "bswap rax",
-        "mov QWORD PTR [rsp+80], rax",
-        "movabs rdx, -1",
-        "sbb rax, rdx",
-        "mov QWORD PTR [rsp+16], rax",
-        "mov eax, DWORD PTR [rsi]",
-        "bswap eax",
-        "mov QWORD PTR [rsp+88], rax",
-        "movabs rdx, 4294967295",
-        "sbb rax, rdx",
-        "mov QWORD PTR [rsp+24], rax",
-        "sbb rdx, rdx",
-        "mov rax, QWORD PTR [rsp+64]",
-        "mov rcx, QWORD PTR [rsp]",
-        "xor rax, rcx",
-        "and rax, rdx",
-        "xor rax, rcx",
-        "bswap rax",
-        "mov QWORD PTR [rsp+148], rax",
-        "mov rax, QWORD PTR [rsp+72]",
-        "mov rcx, QWORD PTR [rsp+8]",
-        "xor rax, rcx",
-        "and rax, rdx",
-        "xor rax, rcx",
-        "bswap rax",
-        "mov QWORD PTR [rsp+140], rax",
-        "mov rax, QWORD PTR [rsp+80]",
-        "mov rcx, QWORD PTR [rsp+16]",
-        "xor rax, rcx",
-        "and rax, rdx",
-        "xor rax, rcx",
-        "bswap rax",
-        "mov QWORD PTR [rsp+132], rax",
-        "mov rax, QWORD PTR [rsp+88]",
-        "mov rcx, QWORD PTR [rsp+24]",
-        "xor rax, rcx",
-        "and rax, rdx",
-        "xor rax, rcx",
-        "bswap rax",
-        "mov QWORD PTR [rsp+124], rax",
-        "movabs rax, 72340172838076673",
-        "xor ecx, ecx",
-        "mov QWORD PTR [rsp+64], rax",
-        "mov QWORD PTR [rsp], rcx",
-        "mov QWORD PTR [rsp+72], rax",
-        "mov QWORD PTR [rsp+8], rcx",
-        "mov QWORD PTR [rsp+80], rax",
-        "mov QWORD PTR [rsp+16], rcx",
-        "mov QWORD PTR [rsp+88], rax",
-        "mov QWORD PTR [rsp+24], rcx",
-        "mov QWORD PTR [rsp+96], rax",
-        "mov QWORD PTR [rsp+32], rcx",
-        "mov QWORD PTR [rsp+104], rax",
-        "mov QWORD PTR [rsp+40], rcx",
-        "mov QWORD PTR [rsp+112], rax",
-        "mov QWORD PTR [rsp+48], rcx",
-        "mov QWORD PTR [rsp+120], rax",
-        "mov QWORD PTR [rsp+56], rcx",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "mov rsi, QWORD PTR [rsp+200]",
-        "mov rax, QWORD PTR [rsp+64]",
-        "mov QWORD PTR [rdi+2256], rax",
-        "mov rax, QWORD PTR [rsp+72]",
-        "mov QWORD PTR [rdi+2264], rax",
-        "mov rax, QWORD PTR [rsp+80]",
-        "mov QWORD PTR [rdi+2272], rax",
-        "mov rax, QWORD PTR [rsp+84]",
-        "mov QWORD PTR [rdi+2276], rax",
-        "mov eax, 0",
-        "mov BYTE PTR [rdi+2284], al",
-        "mov rax, QWORD PTR [rsi]",
-        "mov QWORD PTR [rdi+2285], rax",
-        "mov rax, QWORD PTR [rsi+8]",
-        "mov QWORD PTR [rdi+2293], rax",
-        "mov rax, QWORD PTR [rsi+16]",
-        "mov QWORD PTR [rdi+2301], rax",
-        "mov rax, QWORD PTR [rsi+20]",
-        "mov QWORD PTR [rdi+2305], rax",
-        "mov rax, QWORD PTR [rsp+128]",
-        "mov QWORD PTR [rdi+2313], rax",
-        "mov rax, QWORD PTR [rsp+136]",
-        "mov QWORD PTR [rdi+2321], rax",
-        "mov rax, QWORD PTR [rsp+144]",
-        "mov QWORD PTR [rdi+2329], rax",
-        "mov rax, QWORD PTR [rsp+148]",
-        "mov QWORD PTR [rdi+2333], rax",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch_avx2}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, QWORD PTR [rsp+184]",
-        "add rdx, 2256",
-        "mov ecx, 85",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch_avx2}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 149",
-        "mov rcx, rsp",
-        "add rcx, 0",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch_avx2}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch_avx2}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, rsp",
-        "add rdx, 64",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch_avx2}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 92",
-        "mov rcx, rsp",
-        "add rcx, 64",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch_avx2}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "mov rsi, QWORD PTR [rsp+200]",
-        "mov rax, QWORD PTR [rsp+64]",
-        "mov QWORD PTR [rdi+2256], rax",
-        "mov rax, QWORD PTR [rsp+72]",
-        "mov QWORD PTR [rdi+2264], rax",
-        "mov rax, QWORD PTR [rsp+80]",
-        "mov QWORD PTR [rdi+2272], rax",
-        "mov rax, QWORD PTR [rsp+84]",
-        "mov QWORD PTR [rdi+2276], rax",
-        "mov eax, 1",
-        "mov BYTE PTR [rdi+2284], al",
-        "mov rax, QWORD PTR [rsi]",
-        "mov QWORD PTR [rdi+2285], rax",
-        "mov rax, QWORD PTR [rsi+8]",
-        "mov QWORD PTR [rdi+2293], rax",
-        "mov rax, QWORD PTR [rsi+16]",
-        "mov QWORD PTR [rdi+2301], rax",
-        "mov rax, QWORD PTR [rsi+20]",
-        "mov QWORD PTR [rdi+2305], rax",
-        "mov rax, QWORD PTR [rsp+128]",
-        "mov QWORD PTR [rdi+2313], rax",
-        "mov rax, QWORD PTR [rsp+136]",
-        "mov QWORD PTR [rdi+2321], rax",
-        "mov rax, QWORD PTR [rsp+144]",
-        "mov QWORD PTR [rdi+2329], rax",
-        "mov rax, QWORD PTR [rsp+148]",
-        "mov QWORD PTR [rdi+2333], rax",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch_avx2}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, QWORD PTR [rsp+184]",
-        "add rdx, 2256",
-        "mov ecx, 85",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch_avx2}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 149",
-        "mov rcx, rsp",
-        "add rcx, 0",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch_avx2}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch_avx2}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, rsp",
-        "add rdx, 64",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch_avx2}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 92",
-        "mov rcx, rsp",
-        "add rcx, 64",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch_avx2}",
-        "mov eax, 8",
-        "mov QWORD PTR [rsp+176], rax",
-        "20:",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch_avx2}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, rsp",
-        "add rdx, 64",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch_avx2}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 92",
-        "mov rcx, rsp",
-        "add rcx, 64",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch_avx2}",
-        "mov rdi, QWORD PTR [rsp+208]",
-        "mov rsi, QWORD PTR [rsp+200]",
-        "mov rdx, QWORD PTR [rsp+192]",
-        "mov rcx, rsp",
-        "add rcx, 64",
-        "mov r8, QWORD PTR [rsp+184]",
-        "call {vg_ecdsa_p224_sign}",
-        "mov rcx, QWORD PTR [rsp+176]",
-        "sub rcx, 1",
-        "mov QWORD PTR [rsp+176], rcx",
-        "cmp eax, 1",
-        "sbb rdx, rdx",
-        "and rdx, rcx",
-        "test rdx, rdx",
-        "jne 21f",
-        "xor edx, edx",
-        "jmp 22f",
-        "21:",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "mov rsi, QWORD PTR [rsp+200]",
-        "mov rax, QWORD PTR [rsp+64]",
-        "mov QWORD PTR [rdi+2256], rax",
-        "mov rax, QWORD PTR [rsp+72]",
-        "mov QWORD PTR [rdi+2264], rax",
-        "mov rax, QWORD PTR [rsp+80]",
-        "mov QWORD PTR [rdi+2272], rax",
-        "mov rax, QWORD PTR [rsp+84]",
-        "mov QWORD PTR [rdi+2276], rax",
-        "mov eax, 0",
-        "mov BYTE PTR [rdi+2284], al",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch_avx2}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, QWORD PTR [rsp+184]",
-        "add rdx, 2256",
-        "mov ecx, 29",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch_avx2}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 93",
-        "mov rcx, rsp",
-        "add rcx, 0",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch_avx2}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch_avx2}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, rsp",
-        "add rdx, 64",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch_avx2}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 92",
-        "mov rcx, rsp",
-        "add rcx, 64",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch_avx2}",
-        "mov edx, 1",
-        "test rdx, rdx",
-        "22:",
-        "jne 20b",
-        "xor ecx, ecx",
-        "mov QWORD PTR [rsp], rcx",
-        "mov QWORD PTR [rsp+8], rcx",
-        "mov QWORD PTR [rsp+16], rcx",
-        "mov QWORD PTR [rsp+24], rcx",
-        "mov QWORD PTR [rsp+32], rcx",
-        "mov QWORD PTR [rsp+40], rcx",
-        "mov QWORD PTR [rsp+48], rcx",
-        "mov QWORD PTR [rsp+56], rcx",
-        "mov QWORD PTR [rsp+64], rcx",
-        "mov QWORD PTR [rsp+72], rcx",
-        "mov QWORD PTR [rsp+80], rcx",
-        "mov QWORD PTR [rsp+88], rcx",
-        "mov QWORD PTR [rsp+96], rcx",
-        "mov QWORD PTR [rsp+104], rcx",
-        "mov QWORD PTR [rsp+112], rcx",
-        "mov QWORD PTR [rsp+120], rcx",
-        "mov QWORD PTR [rsp+128], rcx",
-        "mov QWORD PTR [rsp+136], rcx",
-        "mov QWORD PTR [rsp+144], rcx",
-        "mov QWORD PTR [rsp+152], rcx",
-        "mov QWORD PTR [rsp+160], rcx",
-        "mov QWORD PTR [rsp+168], rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "ret",
-        ".p2align 6",
+        r"push rdi
+push rsi
+push rdx
+push rcx
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+mov rsi, QWORD PTR [rsp+192]
+mov rax, QWORD PTR [rsi+20]
+bswap rax
+mov QWORD PTR [rsp+64], rax
+movabs rdx, 1431345634452711997
+sub rax, rdx
+mov QWORD PTR [rsp], rax
+mov rax, QWORD PTR [rsi+12]
+bswap rax
+mov QWORD PTR [rsp+72], rax
+movabs rdx, -256586165981122
+sbb rax, rdx
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsi+4]
+bswap rax
+mov QWORD PTR [rsp+80], rax
+movabs rdx, -1
+sbb rax, rdx
+mov QWORD PTR [rsp+16], rax
+mov eax, DWORD PTR [rsi]
+bswap eax
+mov QWORD PTR [rsp+88], rax
+movabs rdx, 4294967295
+sbb rax, rdx
+mov QWORD PTR [rsp+24], rax
+sbb rdx, rdx
+mov rax, QWORD PTR [rsp+64]
+mov rcx, QWORD PTR [rsp]
+xor rax, rcx
+and rax, rdx
+xor rax, rcx
+bswap rax
+mov QWORD PTR [rsp+148], rax
+mov rax, QWORD PTR [rsp+72]
+mov rcx, QWORD PTR [rsp+8]
+xor rax, rcx
+and rax, rdx
+xor rax, rcx
+bswap rax
+mov QWORD PTR [rsp+140], rax
+mov rax, QWORD PTR [rsp+80]
+mov rcx, QWORD PTR [rsp+16]
+xor rax, rcx
+and rax, rdx
+xor rax, rcx
+bswap rax
+mov QWORD PTR [rsp+132], rax
+mov rax, QWORD PTR [rsp+88]
+mov rcx, QWORD PTR [rsp+24]
+xor rax, rcx
+and rax, rdx
+xor rax, rcx
+bswap rax
+mov QWORD PTR [rsp+124], rax
+movabs rax, 72340172838076673
+xor ecx, ecx
+mov QWORD PTR [rsp+64], rax
+mov QWORD PTR [rsp], rcx
+mov QWORD PTR [rsp+72], rax
+mov QWORD PTR [rsp+8], rcx
+mov QWORD PTR [rsp+80], rax
+mov QWORD PTR [rsp+16], rcx
+mov QWORD PTR [rsp+88], rax
+mov QWORD PTR [rsp+24], rcx
+mov QWORD PTR [rsp+96], rax
+mov QWORD PTR [rsp+32], rcx
+mov QWORD PTR [rsp+104], rax
+mov QWORD PTR [rsp+40], rcx
+mov QWORD PTR [rsp+112], rax
+mov QWORD PTR [rsp+48], rcx
+mov QWORD PTR [rsp+120], rax
+mov QWORD PTR [rsp+56], rcx
+mov rdi, QWORD PTR [rsp+184]
+mov rsi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+64]
+mov QWORD PTR [rdi+2256], rax
+mov rax, QWORD PTR [rsp+72]
+mov QWORD PTR [rdi+2264], rax
+mov rax, QWORD PTR [rsp+80]
+mov QWORD PTR [rdi+2272], rax
+mov rax, QWORD PTR [rsp+84]
+mov QWORD PTR [rdi+2276], rax
+mov eax, 0
+mov BYTE PTR [rdi+2284], al
+mov rax, QWORD PTR [rsi]
+mov QWORD PTR [rdi+2285], rax
+mov rax, QWORD PTR [rsi+8]
+mov QWORD PTR [rdi+2293], rax
+mov rax, QWORD PTR [rsi+16]
+mov QWORD PTR [rdi+2301], rax
+mov rax, QWORD PTR [rsi+20]
+mov QWORD PTR [rdi+2305], rax
+mov rax, QWORD PTR [rsp+128]
+mov QWORD PTR [rdi+2313], rax
+mov rax, QWORD PTR [rsp+136]
+mov QWORD PTR [rdi+2321], rax
+mov rax, QWORD PTR [rsp+144]
+mov QWORD PTR [rdi+2329], rax
+mov rax, QWORD PTR [rsp+148]
+mov QWORD PTR [rdi+2333], rax
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch_avx2}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, QWORD PTR [rsp+184]
+add rdx, 2256
+mov ecx, 85
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch_avx2}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 149
+mov rcx, rsp
+add rcx, 0
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch_avx2}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch_avx2}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, rsp
+add rdx, 64
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch_avx2}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 92
+mov rcx, rsp
+add rcx, 64
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch_avx2}
+mov rdi, QWORD PTR [rsp+184]
+mov rsi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+64]
+mov QWORD PTR [rdi+2256], rax
+mov rax, QWORD PTR [rsp+72]
+mov QWORD PTR [rdi+2264], rax
+mov rax, QWORD PTR [rsp+80]
+mov QWORD PTR [rdi+2272], rax
+mov rax, QWORD PTR [rsp+84]
+mov QWORD PTR [rdi+2276], rax
+mov eax, 1
+mov BYTE PTR [rdi+2284], al
+mov rax, QWORD PTR [rsi]
+mov QWORD PTR [rdi+2285], rax
+mov rax, QWORD PTR [rsi+8]
+mov QWORD PTR [rdi+2293], rax
+mov rax, QWORD PTR [rsi+16]
+mov QWORD PTR [rdi+2301], rax
+mov rax, QWORD PTR [rsi+20]
+mov QWORD PTR [rdi+2305], rax
+mov rax, QWORD PTR [rsp+128]
+mov QWORD PTR [rdi+2313], rax
+mov rax, QWORD PTR [rsp+136]
+mov QWORD PTR [rdi+2321], rax
+mov rax, QWORD PTR [rsp+144]
+mov QWORD PTR [rdi+2329], rax
+mov rax, QWORD PTR [rsp+148]
+mov QWORD PTR [rdi+2333], rax
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch_avx2}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, QWORD PTR [rsp+184]
+add rdx, 2256
+mov ecx, 85
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch_avx2}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 149
+mov rcx, rsp
+add rcx, 0
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch_avx2}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch_avx2}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, rsp
+add rdx, 64
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch_avx2}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 92
+mov rcx, rsp
+add rcx, 64
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch_avx2}
+mov eax, 8
+mov QWORD PTR [rsp+176], rax
+20:
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch_avx2}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, rsp
+add rdx, 64
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch_avx2}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 92
+mov rcx, rsp
+add rcx, 64
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch_avx2}
+mov rdi, QWORD PTR [rsp+208]
+mov rsi, QWORD PTR [rsp+200]
+mov rdx, QWORD PTR [rsp+192]
+mov rcx, rsp
+add rcx, 64
+mov r8, QWORD PTR [rsp+184]
+call {vg_ecdsa_p224_sign}
+mov rcx, QWORD PTR [rsp+176]
+sub rcx, 1
+mov QWORD PTR [rsp+176], rcx
+cmp eax, 1
+sbb rdx, rdx
+and rdx, rcx
+test rdx, rdx
+jne 21f
+xor edx, edx
+jmp 22f
+21:
+mov rdi, QWORD PTR [rsp+184]
+mov rsi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+64]
+mov QWORD PTR [rdi+2256], rax
+mov rax, QWORD PTR [rsp+72]
+mov QWORD PTR [rdi+2264], rax
+mov rax, QWORD PTR [rsp+80]
+mov QWORD PTR [rdi+2272], rax
+mov rax, QWORD PTR [rsp+84]
+mov QWORD PTR [rdi+2276], rax
+mov eax, 0
+mov BYTE PTR [rdi+2284], al
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch_avx2}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, QWORD PTR [rsp+184]
+add rdx, 2256
+mov ecx, 29
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch_avx2}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 93
+mov rcx, rsp
+add rcx, 0
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch_avx2}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch_avx2}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, rsp
+add rdx, 64
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch_avx2}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 92
+mov rcx, rsp
+add rcx, 64
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch_avx2}
+mov edx, 1
+test rdx, rdx
+22:
+jne 20b
+xor ecx, ecx
+mov QWORD PTR [rsp], rcx
+mov QWORD PTR [rsp+8], rcx
+mov QWORD PTR [rsp+16], rcx
+mov QWORD PTR [rsp+24], rcx
+mov QWORD PTR [rsp+32], rcx
+mov QWORD PTR [rsp+40], rcx
+mov QWORD PTR [rsp+48], rcx
+mov QWORD PTR [rsp+56], rcx
+mov QWORD PTR [rsp+64], rcx
+mov QWORD PTR [rsp+72], rcx
+mov QWORD PTR [rsp+80], rcx
+mov QWORD PTR [rsp+88], rcx
+mov QWORD PTR [rsp+96], rcx
+mov QWORD PTR [rsp+104], rcx
+mov QWORD PTR [rsp+112], rcx
+mov QWORD PTR [rsp+120], rcx
+mov QWORD PTR [rsp+128], rcx
+mov QWORD PTR [rsp+136], rcx
+mov QWORD PTR [rsp+144], rcx
+mov QWORD PTR [rsp+152], rcx
+mov QWORD PTR [rsp+160], rcx
+mov QWORD PTR [rsp+168], rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+ret
+.p2align 6",
         vg_hmac_sha224_init_scratch_avx2 = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_avx2,
         vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2,
         vg_hmac_sha224_finalize_scratch_avx2 = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch_avx2,
@@ -972,453 +972,453 @@ pub(crate) const VG_ECDSA_P224_SHA224_SIGN_SHANI_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p224_sha224_sign_shani(out: *mut [u8; 56], d: *const [u8; 28], digest: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi",
-        "push rsi",
-        "push rdx",
-        "push rcx",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "push rax",
-        "mov rsi, QWORD PTR [rsp+192]",
-        "mov rax, QWORD PTR [rsi+20]",
-        "bswap rax",
-        "mov QWORD PTR [rsp+64], rax",
-        "movabs rdx, 1431345634452711997",
-        "sub rax, rdx",
-        "mov QWORD PTR [rsp], rax",
-        "mov rax, QWORD PTR [rsi+12]",
-        "bswap rax",
-        "mov QWORD PTR [rsp+72], rax",
-        "movabs rdx, -256586165981122",
-        "sbb rax, rdx",
-        "mov QWORD PTR [rsp+8], rax",
-        "mov rax, QWORD PTR [rsi+4]",
-        "bswap rax",
-        "mov QWORD PTR [rsp+80], rax",
-        "movabs rdx, -1",
-        "sbb rax, rdx",
-        "mov QWORD PTR [rsp+16], rax",
-        "mov eax, DWORD PTR [rsi]",
-        "bswap eax",
-        "mov QWORD PTR [rsp+88], rax",
-        "movabs rdx, 4294967295",
-        "sbb rax, rdx",
-        "mov QWORD PTR [rsp+24], rax",
-        "sbb rdx, rdx",
-        "mov rax, QWORD PTR [rsp+64]",
-        "mov rcx, QWORD PTR [rsp]",
-        "xor rax, rcx",
-        "and rax, rdx",
-        "xor rax, rcx",
-        "bswap rax",
-        "mov QWORD PTR [rsp+148], rax",
-        "mov rax, QWORD PTR [rsp+72]",
-        "mov rcx, QWORD PTR [rsp+8]",
-        "xor rax, rcx",
-        "and rax, rdx",
-        "xor rax, rcx",
-        "bswap rax",
-        "mov QWORD PTR [rsp+140], rax",
-        "mov rax, QWORD PTR [rsp+80]",
-        "mov rcx, QWORD PTR [rsp+16]",
-        "xor rax, rcx",
-        "and rax, rdx",
-        "xor rax, rcx",
-        "bswap rax",
-        "mov QWORD PTR [rsp+132], rax",
-        "mov rax, QWORD PTR [rsp+88]",
-        "mov rcx, QWORD PTR [rsp+24]",
-        "xor rax, rcx",
-        "and rax, rdx",
-        "xor rax, rcx",
-        "bswap rax",
-        "mov QWORD PTR [rsp+124], rax",
-        "movabs rax, 72340172838076673",
-        "xor ecx, ecx",
-        "mov QWORD PTR [rsp+64], rax",
-        "mov QWORD PTR [rsp], rcx",
-        "mov QWORD PTR [rsp+72], rax",
-        "mov QWORD PTR [rsp+8], rcx",
-        "mov QWORD PTR [rsp+80], rax",
-        "mov QWORD PTR [rsp+16], rcx",
-        "mov QWORD PTR [rsp+88], rax",
-        "mov QWORD PTR [rsp+24], rcx",
-        "mov QWORD PTR [rsp+96], rax",
-        "mov QWORD PTR [rsp+32], rcx",
-        "mov QWORD PTR [rsp+104], rax",
-        "mov QWORD PTR [rsp+40], rcx",
-        "mov QWORD PTR [rsp+112], rax",
-        "mov QWORD PTR [rsp+48], rcx",
-        "mov QWORD PTR [rsp+120], rax",
-        "mov QWORD PTR [rsp+56], rcx",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "mov rsi, QWORD PTR [rsp+200]",
-        "mov rax, QWORD PTR [rsp+64]",
-        "mov QWORD PTR [rdi+2256], rax",
-        "mov rax, QWORD PTR [rsp+72]",
-        "mov QWORD PTR [rdi+2264], rax",
-        "mov rax, QWORD PTR [rsp+80]",
-        "mov QWORD PTR [rdi+2272], rax",
-        "mov rax, QWORD PTR [rsp+84]",
-        "mov QWORD PTR [rdi+2276], rax",
-        "mov eax, 0",
-        "mov BYTE PTR [rdi+2284], al",
-        "mov rax, QWORD PTR [rsi]",
-        "mov QWORD PTR [rdi+2285], rax",
-        "mov rax, QWORD PTR [rsi+8]",
-        "mov QWORD PTR [rdi+2293], rax",
-        "mov rax, QWORD PTR [rsi+16]",
-        "mov QWORD PTR [rdi+2301], rax",
-        "mov rax, QWORD PTR [rsi+20]",
-        "mov QWORD PTR [rdi+2305], rax",
-        "mov rax, QWORD PTR [rsp+128]",
-        "mov QWORD PTR [rdi+2313], rax",
-        "mov rax, QWORD PTR [rsp+136]",
-        "mov QWORD PTR [rdi+2321], rax",
-        "mov rax, QWORD PTR [rsp+144]",
-        "mov QWORD PTR [rdi+2329], rax",
-        "mov rax, QWORD PTR [rsp+148]",
-        "mov QWORD PTR [rdi+2333], rax",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch_shani}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, QWORD PTR [rsp+184]",
-        "add rdx, 2256",
-        "mov ecx, 85",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch_shani}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 149",
-        "mov rcx, rsp",
-        "add rcx, 0",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch_shani}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch_shani}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, rsp",
-        "add rdx, 64",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch_shani}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 92",
-        "mov rcx, rsp",
-        "add rcx, 64",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch_shani}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "mov rsi, QWORD PTR [rsp+200]",
-        "mov rax, QWORD PTR [rsp+64]",
-        "mov QWORD PTR [rdi+2256], rax",
-        "mov rax, QWORD PTR [rsp+72]",
-        "mov QWORD PTR [rdi+2264], rax",
-        "mov rax, QWORD PTR [rsp+80]",
-        "mov QWORD PTR [rdi+2272], rax",
-        "mov rax, QWORD PTR [rsp+84]",
-        "mov QWORD PTR [rdi+2276], rax",
-        "mov eax, 1",
-        "mov BYTE PTR [rdi+2284], al",
-        "mov rax, QWORD PTR [rsi]",
-        "mov QWORD PTR [rdi+2285], rax",
-        "mov rax, QWORD PTR [rsi+8]",
-        "mov QWORD PTR [rdi+2293], rax",
-        "mov rax, QWORD PTR [rsi+16]",
-        "mov QWORD PTR [rdi+2301], rax",
-        "mov rax, QWORD PTR [rsi+20]",
-        "mov QWORD PTR [rdi+2305], rax",
-        "mov rax, QWORD PTR [rsp+128]",
-        "mov QWORD PTR [rdi+2313], rax",
-        "mov rax, QWORD PTR [rsp+136]",
-        "mov QWORD PTR [rdi+2321], rax",
-        "mov rax, QWORD PTR [rsp+144]",
-        "mov QWORD PTR [rdi+2329], rax",
-        "mov rax, QWORD PTR [rsp+148]",
-        "mov QWORD PTR [rdi+2333], rax",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch_shani}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, QWORD PTR [rsp+184]",
-        "add rdx, 2256",
-        "mov ecx, 85",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch_shani}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 149",
-        "mov rcx, rsp",
-        "add rcx, 0",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch_shani}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch_shani}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, rsp",
-        "add rdx, 64",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch_shani}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 92",
-        "mov rcx, rsp",
-        "add rcx, 64",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch_shani}",
-        "mov eax, 8",
-        "mov QWORD PTR [rsp+176], rax",
-        "20:",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch_shani}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, rsp",
-        "add rdx, 64",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch_shani}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 92",
-        "mov rcx, rsp",
-        "add rcx, 64",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch_shani}",
-        "mov rdi, QWORD PTR [rsp+208]",
-        "mov rsi, QWORD PTR [rsp+200]",
-        "mov rdx, QWORD PTR [rsp+192]",
-        "mov rcx, rsp",
-        "add rcx, 64",
-        "mov r8, QWORD PTR [rsp+184]",
-        "call {vg_ecdsa_p224_sign}",
-        "mov rcx, QWORD PTR [rsp+176]",
-        "sub rcx, 1",
-        "mov QWORD PTR [rsp+176], rcx",
-        "cmp eax, 1",
-        "sbb rdx, rdx",
-        "and rdx, rcx",
-        "test rdx, rdx",
-        "jne 21f",
-        "xor edx, edx",
-        "jmp 22f",
-        "21:",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "mov rsi, QWORD PTR [rsp+200]",
-        "mov rax, QWORD PTR [rsp+64]",
-        "mov QWORD PTR [rdi+2256], rax",
-        "mov rax, QWORD PTR [rsp+72]",
-        "mov QWORD PTR [rdi+2264], rax",
-        "mov rax, QWORD PTR [rsp+80]",
-        "mov QWORD PTR [rdi+2272], rax",
-        "mov rax, QWORD PTR [rsp+84]",
-        "mov QWORD PTR [rdi+2276], rax",
-        "mov eax, 0",
-        "mov BYTE PTR [rdi+2284], al",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch_shani}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, QWORD PTR [rsp+184]",
-        "add rdx, 2256",
-        "mov ecx, 29",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch_shani}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 93",
-        "mov rcx, rsp",
-        "add rcx, 0",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch_shani}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov rdx, rsp",
-        "add rdx, 0",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_init_scratch_shani}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov esi, 64",
-        "mov rdx, rsp",
-        "add rdx, 64",
-        "mov ecx, 28",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_sha256_update_scratch_shani}",
-        "mov rdi, QWORD PTR [rsp+184]",
-        "add rdi, 0",
-        "mov rsi, QWORD PTR [rsp+184]",
-        "add rsi, 192",
-        "mov edx, 92",
-        "mov rcx, rsp",
-        "add rcx, 64",
-        "mov r8, QWORD PTR [rsp+184]",
-        "add r8, 384",
-        "call {vg_hmac_sha224_finalize_scratch_shani}",
-        "mov edx, 1",
-        "test rdx, rdx",
-        "22:",
-        "jne 20b",
-        "xor ecx, ecx",
-        "mov QWORD PTR [rsp], rcx",
-        "mov QWORD PTR [rsp+8], rcx",
-        "mov QWORD PTR [rsp+16], rcx",
-        "mov QWORD PTR [rsp+24], rcx",
-        "mov QWORD PTR [rsp+32], rcx",
-        "mov QWORD PTR [rsp+40], rcx",
-        "mov QWORD PTR [rsp+48], rcx",
-        "mov QWORD PTR [rsp+56], rcx",
-        "mov QWORD PTR [rsp+64], rcx",
-        "mov QWORD PTR [rsp+72], rcx",
-        "mov QWORD PTR [rsp+80], rcx",
-        "mov QWORD PTR [rsp+88], rcx",
-        "mov QWORD PTR [rsp+96], rcx",
-        "mov QWORD PTR [rsp+104], rcx",
-        "mov QWORD PTR [rsp+112], rcx",
-        "mov QWORD PTR [rsp+120], rcx",
-        "mov QWORD PTR [rsp+128], rcx",
-        "mov QWORD PTR [rsp+136], rcx",
-        "mov QWORD PTR [rsp+144], rcx",
-        "mov QWORD PTR [rsp+152], rcx",
-        "mov QWORD PTR [rsp+160], rcx",
-        "mov QWORD PTR [rsp+168], rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "pop rcx",
-        "ret",
-        ".p2align 6",
+        r"push rdi
+push rsi
+push rdx
+push rcx
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+push rax
+mov rsi, QWORD PTR [rsp+192]
+mov rax, QWORD PTR [rsi+20]
+bswap rax
+mov QWORD PTR [rsp+64], rax
+movabs rdx, 1431345634452711997
+sub rax, rdx
+mov QWORD PTR [rsp], rax
+mov rax, QWORD PTR [rsi+12]
+bswap rax
+mov QWORD PTR [rsp+72], rax
+movabs rdx, -256586165981122
+sbb rax, rdx
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsi+4]
+bswap rax
+mov QWORD PTR [rsp+80], rax
+movabs rdx, -1
+sbb rax, rdx
+mov QWORD PTR [rsp+16], rax
+mov eax, DWORD PTR [rsi]
+bswap eax
+mov QWORD PTR [rsp+88], rax
+movabs rdx, 4294967295
+sbb rax, rdx
+mov QWORD PTR [rsp+24], rax
+sbb rdx, rdx
+mov rax, QWORD PTR [rsp+64]
+mov rcx, QWORD PTR [rsp]
+xor rax, rcx
+and rax, rdx
+xor rax, rcx
+bswap rax
+mov QWORD PTR [rsp+148], rax
+mov rax, QWORD PTR [rsp+72]
+mov rcx, QWORD PTR [rsp+8]
+xor rax, rcx
+and rax, rdx
+xor rax, rcx
+bswap rax
+mov QWORD PTR [rsp+140], rax
+mov rax, QWORD PTR [rsp+80]
+mov rcx, QWORD PTR [rsp+16]
+xor rax, rcx
+and rax, rdx
+xor rax, rcx
+bswap rax
+mov QWORD PTR [rsp+132], rax
+mov rax, QWORD PTR [rsp+88]
+mov rcx, QWORD PTR [rsp+24]
+xor rax, rcx
+and rax, rdx
+xor rax, rcx
+bswap rax
+mov QWORD PTR [rsp+124], rax
+movabs rax, 72340172838076673
+xor ecx, ecx
+mov QWORD PTR [rsp+64], rax
+mov QWORD PTR [rsp], rcx
+mov QWORD PTR [rsp+72], rax
+mov QWORD PTR [rsp+8], rcx
+mov QWORD PTR [rsp+80], rax
+mov QWORD PTR [rsp+16], rcx
+mov QWORD PTR [rsp+88], rax
+mov QWORD PTR [rsp+24], rcx
+mov QWORD PTR [rsp+96], rax
+mov QWORD PTR [rsp+32], rcx
+mov QWORD PTR [rsp+104], rax
+mov QWORD PTR [rsp+40], rcx
+mov QWORD PTR [rsp+112], rax
+mov QWORD PTR [rsp+48], rcx
+mov QWORD PTR [rsp+120], rax
+mov QWORD PTR [rsp+56], rcx
+mov rdi, QWORD PTR [rsp+184]
+mov rsi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+64]
+mov QWORD PTR [rdi+2256], rax
+mov rax, QWORD PTR [rsp+72]
+mov QWORD PTR [rdi+2264], rax
+mov rax, QWORD PTR [rsp+80]
+mov QWORD PTR [rdi+2272], rax
+mov rax, QWORD PTR [rsp+84]
+mov QWORD PTR [rdi+2276], rax
+mov eax, 0
+mov BYTE PTR [rdi+2284], al
+mov rax, QWORD PTR [rsi]
+mov QWORD PTR [rdi+2285], rax
+mov rax, QWORD PTR [rsi+8]
+mov QWORD PTR [rdi+2293], rax
+mov rax, QWORD PTR [rsi+16]
+mov QWORD PTR [rdi+2301], rax
+mov rax, QWORD PTR [rsi+20]
+mov QWORD PTR [rdi+2305], rax
+mov rax, QWORD PTR [rsp+128]
+mov QWORD PTR [rdi+2313], rax
+mov rax, QWORD PTR [rsp+136]
+mov QWORD PTR [rdi+2321], rax
+mov rax, QWORD PTR [rsp+144]
+mov QWORD PTR [rdi+2329], rax
+mov rax, QWORD PTR [rsp+148]
+mov QWORD PTR [rdi+2333], rax
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch_shani}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, QWORD PTR [rsp+184]
+add rdx, 2256
+mov ecx, 85
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch_shani}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 149
+mov rcx, rsp
+add rcx, 0
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch_shani}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch_shani}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, rsp
+add rdx, 64
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch_shani}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 92
+mov rcx, rsp
+add rcx, 64
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch_shani}
+mov rdi, QWORD PTR [rsp+184]
+mov rsi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+64]
+mov QWORD PTR [rdi+2256], rax
+mov rax, QWORD PTR [rsp+72]
+mov QWORD PTR [rdi+2264], rax
+mov rax, QWORD PTR [rsp+80]
+mov QWORD PTR [rdi+2272], rax
+mov rax, QWORD PTR [rsp+84]
+mov QWORD PTR [rdi+2276], rax
+mov eax, 1
+mov BYTE PTR [rdi+2284], al
+mov rax, QWORD PTR [rsi]
+mov QWORD PTR [rdi+2285], rax
+mov rax, QWORD PTR [rsi+8]
+mov QWORD PTR [rdi+2293], rax
+mov rax, QWORD PTR [rsi+16]
+mov QWORD PTR [rdi+2301], rax
+mov rax, QWORD PTR [rsi+20]
+mov QWORD PTR [rdi+2305], rax
+mov rax, QWORD PTR [rsp+128]
+mov QWORD PTR [rdi+2313], rax
+mov rax, QWORD PTR [rsp+136]
+mov QWORD PTR [rdi+2321], rax
+mov rax, QWORD PTR [rsp+144]
+mov QWORD PTR [rdi+2329], rax
+mov rax, QWORD PTR [rsp+148]
+mov QWORD PTR [rdi+2333], rax
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch_shani}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, QWORD PTR [rsp+184]
+add rdx, 2256
+mov ecx, 85
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch_shani}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 149
+mov rcx, rsp
+add rcx, 0
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch_shani}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch_shani}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, rsp
+add rdx, 64
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch_shani}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 92
+mov rcx, rsp
+add rcx, 64
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch_shani}
+mov eax, 8
+mov QWORD PTR [rsp+176], rax
+20:
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch_shani}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, rsp
+add rdx, 64
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch_shani}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 92
+mov rcx, rsp
+add rcx, 64
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch_shani}
+mov rdi, QWORD PTR [rsp+208]
+mov rsi, QWORD PTR [rsp+200]
+mov rdx, QWORD PTR [rsp+192]
+mov rcx, rsp
+add rcx, 64
+mov r8, QWORD PTR [rsp+184]
+call {vg_ecdsa_p224_sign}
+mov rcx, QWORD PTR [rsp+176]
+sub rcx, 1
+mov QWORD PTR [rsp+176], rcx
+cmp eax, 1
+sbb rdx, rdx
+and rdx, rcx
+test rdx, rdx
+jne 21f
+xor edx, edx
+jmp 22f
+21:
+mov rdi, QWORD PTR [rsp+184]
+mov rsi, QWORD PTR [rsp+200]
+mov rax, QWORD PTR [rsp+64]
+mov QWORD PTR [rdi+2256], rax
+mov rax, QWORD PTR [rsp+72]
+mov QWORD PTR [rdi+2264], rax
+mov rax, QWORD PTR [rsp+80]
+mov QWORD PTR [rdi+2272], rax
+mov rax, QWORD PTR [rsp+84]
+mov QWORD PTR [rdi+2276], rax
+mov eax, 0
+mov BYTE PTR [rdi+2284], al
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch_shani}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, QWORD PTR [rsp+184]
+add rdx, 2256
+mov ecx, 29
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch_shani}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 93
+mov rcx, rsp
+add rcx, 0
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch_shani}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov rdx, rsp
+add rdx, 0
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_init_scratch_shani}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov esi, 64
+mov rdx, rsp
+add rdx, 64
+mov ecx, 28
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_sha256_update_scratch_shani}
+mov rdi, QWORD PTR [rsp+184]
+add rdi, 0
+mov rsi, QWORD PTR [rsp+184]
+add rsi, 192
+mov edx, 92
+mov rcx, rsp
+add rcx, 64
+mov r8, QWORD PTR [rsp+184]
+add r8, 384
+call {vg_hmac_sha224_finalize_scratch_shani}
+mov edx, 1
+test rdx, rdx
+22:
+jne 20b
+xor ecx, ecx
+mov QWORD PTR [rsp], rcx
+mov QWORD PTR [rsp+8], rcx
+mov QWORD PTR [rsp+16], rcx
+mov QWORD PTR [rsp+24], rcx
+mov QWORD PTR [rsp+32], rcx
+mov QWORD PTR [rsp+40], rcx
+mov QWORD PTR [rsp+48], rcx
+mov QWORD PTR [rsp+56], rcx
+mov QWORD PTR [rsp+64], rcx
+mov QWORD PTR [rsp+72], rcx
+mov QWORD PTR [rsp+80], rcx
+mov QWORD PTR [rsp+88], rcx
+mov QWORD PTR [rsp+96], rcx
+mov QWORD PTR [rsp+104], rcx
+mov QWORD PTR [rsp+112], rcx
+mov QWORD PTR [rsp+120], rcx
+mov QWORD PTR [rsp+128], rcx
+mov QWORD PTR [rsp+136], rcx
+mov QWORD PTR [rsp+144], rcx
+mov QWORD PTR [rsp+152], rcx
+mov QWORD PTR [rsp+160], rcx
+mov QWORD PTR [rsp+168], rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+pop rcx
+ret
+.p2align 6",
         vg_hmac_sha224_init_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_shani,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
         vg_hmac_sha224_finalize_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch_shani,

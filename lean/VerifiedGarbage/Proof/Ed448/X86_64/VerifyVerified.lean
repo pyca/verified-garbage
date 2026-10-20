@@ -2,24 +2,32 @@ module
 
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Timing
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyPrefix
-public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Ed448.Contract
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyMain
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyDecode
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Ed448.X86_64.PointSums
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Timing
 meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyPrefix
-meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Spec.Ed448.Contract
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyMain
+meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyDecode
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Ed448.X86_64.PointSums
+meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-!
 # Ed448 verification's equation on x86-64: `Verified`

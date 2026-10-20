@@ -1,11 +1,13 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Hint
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+public import VerifiedGarbage.Proof.MlDsa.Pack.Hint
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintPack
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintPack
+import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Loop
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_hint_bit_unpack`, one polynomial

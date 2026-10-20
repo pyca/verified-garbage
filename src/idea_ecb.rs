@@ -25,6 +25,13 @@ pub enum Error {
     IncompleteBlock,
 }
 
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid IDEA key length",
+        IncompleteBlock => "IDEA-ECB input is not a whole number of blocks",
+    }
+}
+
 /// An expanded IDEA key for ECB encryption and decryption: its encryption
 /// and decryption subkeys. No padding is added or removed.
 pub struct IdeaEcb {

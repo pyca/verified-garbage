@@ -1,27 +1,37 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombBodyCT
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombBodyCT
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombBodyCT
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombInput
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombPrefix
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMain
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafWindowChecks
+import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
+import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombBodyCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Framework.NativeTaint
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.X86.Sse
-meta import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.P256.Prime
-meta import VerifiedGarbage.Proof.P256.Prime
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombInput
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombPrefix
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMain
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafWindowChecks
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-! # Verification with the static comb table address -/
 

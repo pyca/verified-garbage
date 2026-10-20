@@ -1,17 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.X86_64.Common
-import VerifiedGarbage.Proof.Scrypt.BlockMix
 import VerifiedGarbage.Proof.Scrypt.Memory
 public import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMix
 public import VerifiedGarbage.Spec.Scrypt.Contract
-import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import all Init.Data.Nat.Power2.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # scrypt on x86-64: common lemmas

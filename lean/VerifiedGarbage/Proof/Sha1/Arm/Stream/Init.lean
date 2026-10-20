@@ -1,21 +1,23 @@
 module
 
 import VerifiedGarbage.Proof.MdStream.Arm.Common
-meta import VerifiedGarbage.Proof.MdStream.Arm.Common
 public import VerifiedGarbage.Proof.Sha1.Arm.Compress
-meta import VerifiedGarbage.Proof.Sha1.Arm.Compress
 import VerifiedGarbage.Proof.Sha1.Stream
-meta import VerifiedGarbage.Proof.Sha1.Stream
 public import VerifiedGarbage.Impl.Sha1.Arm.Stream
-meta import VerifiedGarbage.Impl.Sha1.Arm.Stream
 import VerifiedGarbage.Proof.Sha1.StateMem
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MdStream.Arm.Common
+meta import VerifiedGarbage.Proof.Sha1.Arm.Compress
+meta import VerifiedGarbage.Proof.Sha1.Stream
+meta import VerifiedGarbage.Impl.Sha1.Arm.Stream
 meta import VerifiedGarbage.Proof.Sha1.StateMem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming SHA-1 on ARMv7: `init`

@@ -3,14 +3,9 @@ module
 public import VerifiedGarbage.Proof.P256.EcdhJac.TableMath
 public import VerifiedGarbage.Proof.P256.EcdhJac.DbluCertificate
 import VerifiedGarbage.Proof.P256.EcdhJac.ZadduCertificate
-public import VerifiedGarbage.Proof.P256.EcdhJac.Frame
-import VerifiedGarbage.Proof.P256.EcdhJac.BuildState
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.P256.EcdhJac.Frame
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.P256.EcdhJac.State
 import VerifiedGarbage.Proof.Weierstrass.JacMadd
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 

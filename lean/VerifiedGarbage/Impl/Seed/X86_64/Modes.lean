@@ -1,17 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Seed.X86_64.Ecb
-public import VerifiedGarbage.Impl.Modes.X86_64.Cbc
-public import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
-public import VerifiedGarbage.Impl.Modes.X86_64.Fb
+public import VerifiedGarbage.Impl.Modes.X86_64.CbcChained
 
 /-!
 # SEED-CBC, -OFB and -CFB128 on x86-64
 
-`cbcEncrypt`, `cbcDecrypt`, `ofb`, `cfbEncrypt` and `cfbDecrypt`
-(schedule = rdi, iv = rsi, data = rdx, n = rcx, scratch = r8): the modes'
-generic CBC, OFB and CFB (`Impl/Modes/X86_64/Cbc.lean`, `CbcEnc.lean`,
-`Fb.lean`) over `vg_seed_ecb_{en,de}crypt`'s batch of sixteen blocks
+`cbcEncryptChained`, `cbcDecryptChained`, `ofb`, `cfbEncrypt` and
+`cfbDecrypt` (schedule = rdi, iv = rsi, data = rdx, n = rcx, scratch = r8):
+the modes' generic CBC that updates the chaining value, OFB and CFB
+(`Impl/Modes/X86_64/CbcChained.lean`, `Fb.lean`) over `vg_seed_ecb_{en,de}crypt`'s batch of sixteen blocks
 (`batch`), with the working space in the scratch buffer, which the artifact
 allocates on the stack. CBC decryption deciphers sixteen blocks at a time;
 the other modes encipher one block per batch, of which the other fifteen
@@ -61,11 +59,11 @@ def dirCore (d : Direction) : Impl.Modes.X86_64.Core where
 /-- The registers of the arguments. -/
 def modeRegs : Impl.Modes.X86_64.CtrRegs := ⟨.rsi, .rdx, .rcx, .r8⟩
 
-/-- `vg_seed_cbc_encrypt`. -/
-def cbcEncrypt : Prog isa := (dirCore .encrypt).cbcEncrypt modeRegs
+/-- `vg_seed_cbc_encrypt_chained`. -/
+def cbcEncryptChained : Prog isa := (dirCore .encrypt).cbcEncryptChained modeRegs
 
-/-- `vg_seed_cbc_decrypt`. -/
-def cbcDecrypt : Prog isa := (dirCore .decrypt).cbcDecrypt modeRegs
+/-- `vg_seed_cbc_decrypt_chained`. -/
+def cbcDecryptChained : Prog isa := (dirCore .decrypt).cbcDecryptChained modeRegs
 
 /-- `vg_seed_ofb`. -/
 def ofb : Prog isa := (dirCore .encrypt).fb .ofb modeRegs

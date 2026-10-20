@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Steps
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Rc2.Stream
+import VerifiedGarbage.Proof.Rc2.Memory
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Rc2.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 @[expose] public section
 

@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+public import VerifiedGarbage.Spec.MlDsa
 
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
 
 @[expose] public section
 

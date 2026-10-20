@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.TCB.Mem
 
-public import VerifiedGarbage.TCB.Code
 
 /-!
 # x86-64 machine state
@@ -125,6 +125,14 @@ def load8 (s : State) (a : Addr) : Option Byte :=
 def store8 (s : State) (a : Addr) (v : Byte) : Option State :=
   if InRegions s.wr a 1 then some { s with mem := s.mem.writeW a v } else none
 
+/-- Load 2 bytes, faulting if not permitted. -/
+def load16 (s : State) (a : Addr) : Option (BitVec 16) :=
+  if InRegions (s.rd ++ s.wr) a 2 then some (s.mem.readW a 16) else none
+
+/-- Store 2 bytes, faulting if not permitted. -/
+def store16 (s : State) (a : Addr) (v : BitVec 16) : Option State :=
+  if InRegions s.wr a 2 then some { s with mem := s.mem.writeW a v } else none
+
 /-- Load 16 bytes, faulting if not permitted. -/
 def load128 (s : State) (a : Addr) : Option (BitVec 128) :=
   if InRegions (s.rd ++ s.wr) a 16 then some (s.mem.readW a 128) else none
@@ -174,6 +182,26 @@ enabled quadword may be written, and writes no other. -/
 def storeMasked512 (s : State) (a : Addr) (k : BitVec 64) (v : BitVec 512) : Option State :=
   if ∀ j ∈ qOn k, InRegions s.wr (qAddr a j) 8 then
     some { s with mem := (qOn k).foldl (fun m j => m.writeW (qAddr a j) (v.extractLsb' (64 * j) 64)) s.mem }
+  else none
+
+/-- The bytes of a 64-byte access that the mask `k` enables: bit `j` of `k`
+for byte `j`, from 0 to 63. -/
+def bOn (k : BitVec 64) : List Nat := (List.range 64).filter k.getLsbD
+
+/-- Load the 64 bytes at `a`, each byte that `k` does not enable read as 0
+(zeroing-masking: byte `j`, at `a + j`, is enabled by bit `j` of `k`); faults
+unless each enabled byte may be read, and reads no other. -/
+def loadMasked512B (s : State) (a : Addr) (k : BitVec 64) : Option (BitVec 512) :=
+  if ∀ j ∈ bOn k, InRegions (s.rd ++ s.wr) (a + BitVec.ofNat 64 j) 1 then
+    some (Mem.readW (fun x => if k.getLsbD (x - a).toNat then s.mem x else 0) a 512)
+  else none
+
+/-- Store the bytes of `v` that `k` enables to the 64 bytes at `a`, leaving
+the others unchanged (merging-masking); faults unless each enabled byte may
+be written, and writes no other. -/
+def storeMasked512B (s : State) (a : Addr) (k : BitVec 64) (v : BitVec 512) : Option State :=
+  if ∀ j ∈ bOn k, InRegions s.wr (a + BitVec.ofNat 64 j) 1 then
+    some { s with mem := (bOn k).foldl (fun m j => m.writeW (a + BitVec.ofNat 64 j) (v.extractLsb' (8 * j) 8)) s.mem }
   else none
 
 /-- Lane `i` (bits `128i+127:128i`, for `i` 0 or 1) of an AVX register. -/

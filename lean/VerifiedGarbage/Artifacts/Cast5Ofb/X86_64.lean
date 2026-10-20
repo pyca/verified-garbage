@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86_64.FbVerified
+import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # CAST5-OFB artifacts on baseline x86-64 -/
 
@@ -16,14 +18,11 @@ def note : String :=
   of rounds stays in `rsi`; the 240-byte working space on the stack is zeroed on return."
 
 def artifacts : List Artifact := [
-  { Spec.Cast5.ofbApi with
-    target := X86_64.target
-    doc := Spec.Cast5.ofbApi.doc (notes := [note])
+  Spec.Cast5.ofbApi.artifact X86_64.target {
+    notes := [note]
     consts := Impl.Cast5.ecbConsts
     code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 Impl.Cast5.X86_64.ofb
-    contract := Spec.Cast5.ofbContract (X86_64.abi.withConsts Impl.Cast5.ecbConsts) 240
     stack := 240
-    verified := Proof.Cast5.X86_64.ofb_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Cast5.X86_64.ofb_framed }]
 
 end VG.Artifacts.Cast5Ofb.X86_64

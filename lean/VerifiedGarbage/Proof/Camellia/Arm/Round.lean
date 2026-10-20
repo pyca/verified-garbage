@@ -2,12 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.Arm.Linear
 public import VerifiedGarbage.Proof.Camellia.Arm.Sbox
-public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Camellia.Bitsliced
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # A round of bitsliced Camellia on ARMv7
@@ -139,7 +136,7 @@ theorem round_ok {off src dst : Nat}
     (hE : check (lanes 32 11) linCfg (linExt 48) (postP dst) postEnv
       (linPostG 11 [] (postOuts dst) (otherSlots dst) postEnv) = true)
     (hall : (layerKeep.all fun r =>
-      (preL off src ++ midLR off src ++ postP dst).all fun i => dstOf i != some r) = true)
+      (preL off src ++ midLR off src ++ postP dst).all fun i => !clobbers i r) = true)
     (hcase : RoundCase off src dst)
     {s : State} (hok : Ok layerCfg s) {d1 d2 : Nat → BitVec 64} {k : BitVec 64}
     (hQ : W32.HalfRel (half s src) d1) (hK : W32.HalfRel (fun i => keyW s (off + i)) fun _ => k)
@@ -149,9 +146,9 @@ theorem round_ok {off src dst : Nat}
       (∀ i < 16, slotW s' (src + i) = slotW s (src + i)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r) ∧
       Frame [slotRegion layerCfg s] s.mem s'.mem := by
-  have hall' : ∀ r, r ∉ layerWrites → ((preL off src).all fun i => dstOf i != some r) = true ∧
-      ((midLR off src).all fun i => dstOf i != some r) = true ∧
-      ((postP dst).all fun i => dstOf i != some r) = true := fun r hr => by
+  have hall' : ∀ r, r ∉ layerWrites → ((preL off src).all fun i => !clobbers i r) = true ∧
+      ((midLR off src).all fun i => !clobbers i r) = true ∧
+      ((postP dst).all fun i => !clobbers i r) = true := fun r hr => by
     have := List.all_eq_true.mp hall r (not_layerWrites r hr)
     simp only [List.all_append, Bool.and_eq_true] at this
     exact ⟨this.1.1, this.1.2, this.2⟩

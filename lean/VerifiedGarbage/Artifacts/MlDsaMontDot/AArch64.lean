@@ -1,21 +1,53 @@
 module
 
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotVerified
+public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MontDot
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.MlDsa.MontDot
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotVerified
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Layers
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedLayer
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedSpec
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedStep
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Pro
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Step
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotVec
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotMem
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVec
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Word
+public import VerifiedGarbage.Spec.MlDsa.PositiveNtt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Layers
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedLayer
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedSpec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedStep
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Pro
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Step
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotMem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Word
+import VerifiedGarbage.Spec.MlDsa.PositiveNtt
 
 @[expose] public section
 
 namespace VG.Artifacts.MlDsaMontDot.AArch64
 
-def one (n : Nat) (h : n=4∨n=5∨n=7) : Artifact :=
-  { Spec.MlDsa.montDotApi n with
-    target := AArch64.target
-    doc := (Spec.MlDsa.montDotApi n).doc
-    code := Impl.MlDsa.AArch64.Optimized.MontDot.dot n
-    contract := Spec.MlDsa.montDotContract AArch64.abi n
-    verified := Proof.MlDsa.AArch64.Optimized.MontDot.verified h
-    spSafe := Code.all_of_forall (fun _=>rfl) _ }
-
-def artifacts : List Artifact := [one 4 (by omega),one 5 (by omega),one 7 (by omega)]
+def artifacts : List Artifact := [
+  (Spec.MlDsa.montDotApi 4).artifact AArch64.target {
+    code := Impl.MlDsa.AArch64.Optimized.MontDot.dot 4
+    verified := Proof.MlDsa.AArch64.Optimized.MontDot.verified (.inl rfl) },
+  (Spec.MlDsa.montDotApi 5).artifact AArch64.target {
+    code := Impl.MlDsa.AArch64.Optimized.MontDot.dot 5
+    verified := Proof.MlDsa.AArch64.Optimized.MontDot.verified (.inr (.inl rfl)) },
+  (Spec.MlDsa.montDotApi 7).artifact AArch64.target {
+    code := Impl.MlDsa.AArch64.Optimized.MontDot.dot 7
+    verified := Proof.MlDsa.AArch64.Optimized.MontDot.verified (.inr (.inr rfl)) }]
 
 end VG.Artifacts.MlDsaMontDot.AArch64

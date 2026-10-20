@@ -1,9 +1,49 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.MlDsa.X86.Message.Verified
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inv
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Run
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.MlDsa.DecideAt
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
+public import VerifiedGarbage.Proof.MlDsa.X86.Message.Sign
+public import VerifiedGarbage.Proof.MlDsa.X86.Message.Verify
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Verified
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Ball
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Final
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Inst
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Local
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Row
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Top
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Verified
+public import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
+public import VerifiedGarbage.Proof.MlKem.X86.EncV
+public import VerifiedGarbage.Proof.MlKem.X86.NttSetup
+public import VerifiedGarbage.Proof.MlKem.X86.Table
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
+import VerifiedGarbage.Proof.MlDsa.X86.Message.Sign
+import VerifiedGarbage.Proof.MlDsa.X86.Message.Verify
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.Verified
+import VerifiedGarbage.Proof.MlDsa.X86.Verify.Ball
+import VerifiedGarbage.Proof.MlDsa.X86.Verify.Final
+import VerifiedGarbage.Proof.MlDsa.X86.Verify.Inst
+import VerifiedGarbage.Proof.MlDsa.X86.Verify.Local
+import VerifiedGarbage.Proof.MlDsa.X86.Verify.Row
+import VerifiedGarbage.Proof.MlDsa.X86.Verify.Top
+import VerifiedGarbage.Proof.MlDsa.X86.Verify.Verified
+import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
+import VerifiedGarbage.Proof.MlKem.X86.EncV
+import VerifiedGarbage.Proof.MlKem.X86.NttSetup
+import VerifiedGarbage.Proof.MlKem.X86.Table
 
 /-!
 # ML-DSA (FIPS 204) on x86 (32-bit): verifying messages
@@ -37,32 +77,23 @@ def notes : List String :=
     and calls the verification function on it, which uses the rest of `scratch`."]
 
 def artifacts : List Artifact := [
-  { Spec.MlDsa.verifyMessage44Api with
-    target := X86.target
-    doc := Spec.MlDsa.verifyMessage44Api.doc (notes := notes)
+  Spec.MlDsa.verifyMessage44Api.artifact X86.target {
+    notes := notes
     code := Impl.MlDsa.X86.Message.verifyMessage Spec.MlDsa.verify44Api.name
       Impl.MlDsa.X86.Verify.verify44 Spec.MlDsa.mlDsa44
-    contract := Spec.MlDsa.verifyMessageContract Spec.MlDsa.mlDsa44 X86.abi 132
     stack := 132
-    verified := Proof.MlDsa.X86.Message.verifyMessage44_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlDsa.verifyMessage65Api with
-    target := X86.target
-    doc := Spec.MlDsa.verifyMessage65Api.doc (notes := notes)
+    verified := Proof.MlDsa.X86.Message.verifyMessage44_verified },
+  Spec.MlDsa.verifyMessage65Api.artifact X86.target {
+    notes := notes
     code := Impl.MlDsa.X86.Message.verifyMessage Spec.MlDsa.verify65Api.name
       Impl.MlDsa.X86.Verify.verify65 Spec.MlDsa.mlDsa65
-    contract := Spec.MlDsa.verifyMessageContract Spec.MlDsa.mlDsa65 X86.abi 132
     stack := 132
-    verified := Proof.MlDsa.X86.Message.verifyMessage65_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlDsa.verifyMessage87Api with
-    target := X86.target
-    doc := Spec.MlDsa.verifyMessage87Api.doc (notes := notes)
+    verified := Proof.MlDsa.X86.Message.verifyMessage65_verified },
+  Spec.MlDsa.verifyMessage87Api.artifact X86.target {
+    notes := notes
     code := Impl.MlDsa.X86.Message.verifyMessage Spec.MlDsa.verify87Api.name
       Impl.MlDsa.X86.Verify.verify87 Spec.MlDsa.mlDsa87
-    contract := Spec.MlDsa.verifyMessageContract Spec.MlDsa.mlDsa87 X86.abi 132
     stack := 132
-    verified := Proof.MlDsa.X86.Message.verifyMessage87_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    verified := Proof.MlDsa.X86.Message.verifyMessage87_verified }]
 
 end VG.Artifacts.MlDsaVerifyMessage.X86

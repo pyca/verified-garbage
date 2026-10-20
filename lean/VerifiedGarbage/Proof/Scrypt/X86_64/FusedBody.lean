@@ -1,11 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Scrypt.X86_64.FusedInvariant
 
-public import VerifiedGarbage.Proof.Scrypt.X86_64.FusedTail
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedTail
 import VerifiedGarbage.Proof.Scrypt.Memory
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedHalf
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedSetup
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

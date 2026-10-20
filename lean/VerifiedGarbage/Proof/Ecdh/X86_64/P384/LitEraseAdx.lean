@@ -1,15 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitAdx
-meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitAdx
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitAdx
+public import VerifiedGarbage.Impl.Ecdh.P384.X86_64
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-public import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Framework.LitShare
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitAdx
+meta import VerifiedGarbage.Impl.Ecdh.P384.X86_64
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # ECDH over P-384 on x86-64 with BMI2 and ADX: the code without its displacements, as a literal

@@ -1,15 +1,14 @@
 module
 
 import VerifiedGarbage.Proof.TripleDes.SboxTables
-public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
 public import VerifiedGarbage.Proof.CmacTripleDes.Des
 public import VerifiedGarbage.Proof.Framework.Bitslice.Table
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
+public import VerifiedGarbage.Impl.CmacTripleDes.AArch64.Round
+import VerifiedGarbage.Proof.Framework.InstancePriority
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # DES on AArch64: the spread words and the tables

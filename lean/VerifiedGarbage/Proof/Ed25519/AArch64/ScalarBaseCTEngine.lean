@@ -1,15 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
+public import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
+public import VerifiedGarbage.Proof.Ed25519.AArch64.CombSelect
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Impl.Mont.Mod
-meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.CombSelect
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.X25519.AArch64.Ladder
 
 /-! Expanding the secret scalar's bits, the comb and the encoding have a public
 trace. The loops' counters (`x19`, and `x1` for the doublings) and the table index are
@@ -34,6 +38,19 @@ runs after it. -/
 theorem combMultiply_ct (base T : Addr) :
     CT (fun x y => (Scr x base ∧ x.syms combSym = T) ∧ (Scr y base ∧ y.syms combSym = T))
       combMultiply (fun x y => ∀ r ∈ [Reg.x0], x.gpr r = y.gpr r) := by
+  apply CT.taintSRegs (L := [combSym]) (τ := Taint.ofRegs [.x0]) _ [.x0] (by taint_decide)
+  intro x y h
+  refine ⟨agree_ofRegs fun r hr => ?_, fun n hn => ?_⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    subst hr; exact h.1.1.x0.trans h.2.1.x0.symm
+  · simp only [List.mem_singleton] at hn
+    subst hn
+    exact h.1.2.trans h.2.2.symm
+
+/-- The comb of a scalar whose bits 0–2 are clear (`combMultiplyClamped`), as `combMultiply_ct`. -/
+theorem combMultiplyClamped_ct (base T : Addr) :
+    CT (fun x y => (Scr x base ∧ x.syms combSym = T) ∧ (Scr y base ∧ y.syms combSym = T))
+      combMultiplyClamped (fun x y => ∀ r ∈ [Reg.x0], x.gpr r = y.gpr r) := by
   apply CT.taintSRegs (L := [combSym]) (τ := Taint.ofRegs [.x0]) _ [.x0] (by taint_decide)
   intro x y h
   refine ⟨agree_ofRegs fun r hr => ?_, fun n hn => ?_⟩

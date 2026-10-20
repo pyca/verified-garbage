@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.FbVerified
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Triple DES-OFB artifacts on baseline AArch64 -/
 
@@ -16,13 +16,10 @@ def note : String :=
   space once per call. The mode is the generic OFB of `Impl/Modes/AArch64/`."
 
 def artifacts : List Artifact := [
-  { Spec.TripleDes.ofbApi with
-    target := AArch64.target
-    doc := Spec.TripleDes.ofbApi.doc (notes := [note])
+  Spec.TripleDes.ofbApi.artifact AArch64.target {
+    notes := [note]
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 Impl.TripleDes.AArch64.ofb
-    contract := Spec.TripleDes.ofbContract AArch64.abi 1008
     stack := 1008
-    verified := Proof.TripleDes.AArch64.ofb_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.TripleDes.AArch64.ofb_framed }]
 
 end VG.Artifacts.TripleDesOfb.AArch64

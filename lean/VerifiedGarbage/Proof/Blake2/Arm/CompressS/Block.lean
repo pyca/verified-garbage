@@ -1,11 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Blake2.Arm.CompressS.Rounds
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # BLAKE2s on ARMv7: one block

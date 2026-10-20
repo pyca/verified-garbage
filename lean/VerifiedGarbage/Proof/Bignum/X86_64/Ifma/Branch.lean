@@ -2,11 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Ws
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Comp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtBack
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Post
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the IFMA branch
@@ -151,8 +149,8 @@ theorem branchA2_ok (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} 
       have hZa' := hZa
       rw [hoq] at hZa'
       rcases hr with rfl | rfl
-      · simp only [sIfma, sFn]; rw [hop]; omega_using [o10, hW1, hEW, hZa']
-      · simp only [sIfma, sFn]; rw [hoq]; omega_using [o10, hW1, hEW, hZa']
+      · simp only [sIfma, sFn]; rw [hop]; omega_using [o10, hW1, hEW, hZa', (lay_P hl).1, (lay_P hl).2.1, (lay_P hl).2.2.1]
+      · simp only [sIfma, sFn]; rw [hoq]; omega_using [o10, hW1, hEW, hZa', (lay_P hl).1, (lay_P hl).2.1, (lay_P hl).2.2.1]
     · have := ifmaR_le (by rw [hoq, hop]) (le_refl _) r hr; omega_using [hZa, this]
   have hb₂ : ∀ d, d + 8 ≤ offP ((k + 7) / 8) → word t.mem B d = word s₁.mem B d := fun d hd =>
     word_below_frm f₂ hge hd (by omega_using [hop, hz])

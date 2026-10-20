@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCorrect
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Args
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.Arm.Common
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: two runs
@@ -29,7 +30,7 @@ open VG.Proof.MlDsa.Message
 
 /-- An instruction whose addresses are a function of `r7`, which it keeps. -/
 def R7Only (i : Instr) : Prop :=
-  (∀ s₁ s₂ : State, s₁.gpr .r7 = s₂.gpr .r7 → isa.addrs i s₁ = isa.addrs i s₂) ∧ dstOf i ≠ some .r7
+  (∀ s₁ s₂ : State, s₁.gpr .r7 = s₂.gpr .r7 → isa.addrs i s₁ = isa.addrs i s₂) ∧ clobbers i .r7 = false
 
 theorem execBlock_r7_tr : ∀ {is : List Instr}, (∀ i ∈ is, R7Only i) →
     ∀ {s₁ s₂ s₁' s₂' : State} {t₁ t₂ : List Leak}, s₁.gpr .r7 = s₂.gpr .r7 →
@@ -62,7 +63,7 @@ theorem arg_r7 (d : Reg) (hd : d ≠ .r7) (a : Arg) : ∀ i ∈ a.mov d, R7Only 
   intro i hi
   cases a <;> simp only [Arg.mov, List.mem_cons, List.not_mem_nil, or_false] at hi <;>
     (try rcases hi with rfl | rfl) <;> (try subst hi) <;>
-    exact ⟨fun s₁ s₂ h => by simp [addrs, h], by simpa [dstOf] using hd⟩
+    exact ⟨fun s₁ s₂ h => by simp [addrs, h], by simpa [clobbers, dstOf] using hd⟩
 
 theorem setArgs_r7 {as : List (Reg × Arg)} (h : argsOk as = true) : ∀ i ∈ setArgs as, R7Only i := by
   induction as with

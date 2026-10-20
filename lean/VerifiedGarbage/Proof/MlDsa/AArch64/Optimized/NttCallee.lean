@@ -1,14 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttOutVerified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttOutVerified
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.NttTable
+public import VerifiedGarbage.Spec.MlDsa.PositiveNtt
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 @[expose] public section
 

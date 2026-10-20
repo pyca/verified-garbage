@@ -5,12 +5,11 @@ import VerifiedGarbage.Proof.Md5.Stream
 import VerifiedGarbage.Proof.Sha1.Stream
 import VerifiedGarbage.Proof.Sha256.Scratch
 import VerifiedGarbage.Proof.Sha512.Stream
-public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.InstancePriority
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # HMAC's postconditions read memory only within the buffers

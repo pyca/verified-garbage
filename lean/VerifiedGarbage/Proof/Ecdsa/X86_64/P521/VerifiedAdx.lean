@@ -1,30 +1,29 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Contract
 import VerifiedGarbage.Proof.P521.X86_64.TaintSumsAdx
-meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Proof.P521.Prime
+import VerifiedGarbage.Proof.P521.Point
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Contract
+meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
 meta import VerifiedGarbage.Proof.P521.Prime
+meta import VerifiedGarbage.Proof.P521.Point
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 
 /-!
 # ECDSA over P-521 on x86-64 with BMI2 and ADX: `Verified`

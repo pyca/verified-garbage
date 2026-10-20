@@ -1,13 +1,13 @@
 module
 
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.MlKem1024.X86.CompressEncode
-import VerifiedGarbage.Proof.MlKem1024.X86.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem1024.X86.CheckEk
 public import VerifiedGarbage.Proof.MlKem1024.X86.KeyGen
 public import VerifiedGarbage.Proof.MlKem1024.X86.Encaps
 public import VerifiedGarbage.Proof.MlKem1024.X86.Decaps
 import VerifiedGarbage.Proof.Sha3.X86.Lit
+public import VerifiedGarbage.Proof.MlKem1024.X86.DecodeDecompress
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ML-KEM-1024 (FIPS 203) on x86
@@ -25,53 +25,29 @@ callee's 56 bytes below it (`stack := 88`); their other calls use less.
 namespace VG.Artifacts.MlKem1024.X86
 
 def artifacts : List Artifact := [
-  { Spec.MlKem1024.compressEncodeApi with
-    target := X86.target
-    doc := Spec.MlKem1024.compressEncodeApi.doc
+  Spec.MlKem1024.compressEncodeApi.artifact X86.target {
     code := Impl.MlKem1024.X86.compressEncode
-    contract := Spec.MlKem1024.compressEncodeContract X86.abi 16
     stack := 16
-    verified := Proof.MlKem1024.X86.CompressEncode.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem1024.decodeDecompressApi with
-    target := X86.target
-    doc := Spec.MlKem1024.decodeDecompressApi.doc
+    verified := Proof.MlKem1024.X86.CompressEncode.verified },
+  Spec.MlKem1024.decodeDecompressApi.artifact X86.target {
     code := Impl.MlKem1024.X86.decodeDecompress
-    contract := Spec.MlKem1024.decodeDecompressContract X86.abi 16
     stack := 16
-    verified := Proof.MlKem1024.X86.DecodeDecompress.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem1024.checkEkApi with
-    target := X86.target
-    doc := Spec.MlKem1024.checkEkApi.doc
+    verified := Proof.MlKem1024.X86.DecodeDecompress.verified },
+  Spec.MlKem1024.checkEkApi.artifact X86.target {
     code := Impl.MlKem1024.X86.checkEk
-    contract := Spec.MlKem1024.checkEkContract X86.abi 16
     stack := 16
-    verified := Proof.MlKem1024.X86.CheckEk.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem1024.keyGenApi with
-    target := X86.target
-    doc := Spec.MlKem1024.keyGenApi.doc
+    verified := Proof.MlKem1024.X86.CheckEk.verified },
+  Spec.MlKem1024.keyGenApi.artifact X86.target {
     code := Impl.MlKem1024.X86.keyGen
-    contract := Spec.MlKem1024.keyGenContract X86.abi 88
     stack := 88
-    verified := Proof.MlKem1024.X86.KeyGen.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem1024.encapsApi with
-    target := X86.target
-    doc := Spec.MlKem1024.encapsApi.doc
+    verified := Proof.MlKem1024.X86.KeyGen.verified },
+  Spec.MlKem1024.encapsApi.artifact X86.target {
     code := Impl.MlKem1024.X86.encaps
-    contract := Spec.MlKem1024.encapsContract X86.abi 88
     stack := 88
-    verified := Proof.MlKem1024.X86.Encaps.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem1024.decapsApi with
-    target := X86.target
-    doc := Spec.MlKem1024.decapsApi.doc
+    verified := Proof.MlKem1024.X86.Encaps.verified },
+  Spec.MlKem1024.decapsApi.artifact X86.target {
     code := Impl.MlKem1024.X86.decaps
-    contract := Spec.MlKem1024.decapsContract X86.abi 88
     stack := 88
-    verified := Proof.MlKem1024.X86.Decaps.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.MlKem1024.X86.Decaps.verified }]
 
 end VG.Artifacts.MlKem1024.X86

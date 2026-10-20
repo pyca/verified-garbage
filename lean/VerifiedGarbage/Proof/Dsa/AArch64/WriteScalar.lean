@@ -1,12 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.WriteScalarHead
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.AArch64.WriteScalarHead
+import VerifiedGarbage.Proof.Dsa.AArch64.CopyMasked
+import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Masked copying of each DSA signature scalar to the caller -/
 

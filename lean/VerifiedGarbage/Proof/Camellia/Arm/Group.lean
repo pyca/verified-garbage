@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.Arm.Prologue
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Camellia.Common
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Camellia.Arm.Keys
+import VerifiedGarbage.Proof.Camellia.Arm.Copy
+import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # A group of blocks of Camellia ECB on ARMv7

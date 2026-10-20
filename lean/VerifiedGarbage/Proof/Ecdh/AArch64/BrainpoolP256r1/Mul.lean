@@ -2,13 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.GMul
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP256r1.AArch64
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 
 /-! # brainpoolP256r1 multiplication of a point, by a call of `vg_brainpoolp256r1_mul` -/
 

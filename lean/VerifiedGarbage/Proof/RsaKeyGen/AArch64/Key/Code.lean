@@ -3,13 +3,8 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Res
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Main
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Entry
-public import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
-import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
 
 /-!
 # An RSA key from its primes on AArch64: correctness

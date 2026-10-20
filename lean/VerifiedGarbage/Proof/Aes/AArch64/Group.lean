@@ -3,13 +3,10 @@ module
 public import VerifiedGarbage.Proof.Aes.AArch64.Encrypt
 public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
 public import VerifiedGarbage.Proof.Aes.Blocks
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 
@@ -105,11 +102,10 @@ theorem keyStore_ok {s : State} {r : Region} {off : Nat} (hr : r ∈ s.wr)
     exact h
   · funext r
     exact p.other r (by
-      have : (keyStore.all fun i => dstOf i != some r) = true :=
+      have : (keyStore.all fun i => !clobbers i r) = true :=
         List.all_eq_true.mpr fun i hi => by
-          rw [show dstOf i = none from (List.all_eq_true.mp (show keyStore.all (fun i => dstOf i == none) = true by
-            decide +kernel) i hi |> beq_iff_eq.mp)]
-          rfl
+          simpa using clobbers_eq_false_of_isEmpty (r := r) (List.all_eq_true.mp
+            (show keyStore.all (fun i => (dsts i).isEmpty) = true by decide +kernel) i hi)
       simp [this])
 
 /-! ## Stepping back -/

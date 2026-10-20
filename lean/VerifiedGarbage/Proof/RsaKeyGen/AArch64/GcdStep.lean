@@ -1,14 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
 public import VerifiedGarbage.Proof.RsaKeyGen.Gcd
-import VerifiedGarbage.Proof.RsaKeyGen.CandMath
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.Bignum.AArch64.Row
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # A candidate on AArch64: a step of the binary gcd, and a bit of `(c − 1) mod e`

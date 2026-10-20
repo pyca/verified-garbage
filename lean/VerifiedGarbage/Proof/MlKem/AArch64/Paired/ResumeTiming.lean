@@ -1,37 +1,43 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Resume
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ZeroTiming
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraPair
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ZeroBothTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraPair
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ZeroBothTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 
 /-! # Fourth/fifth-block continuation branches only on the public matrix streams -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
-def StepTiming (A B : Spec.Sha3.State) (p a b c : Addr) : Prop :=
-  ∀{s u : State}{n : Nat}, n=3 ∨ n=4 → Progress A B n p a b c s → Progress A B n p a b c u →
+def StepTimingW (w16 : Bool) (A B : Spec.Sha3.State) (p a b c : Addr) : Prop :=
+  ∀{s u : State}{n : Nat}, n=3 ∨ n=4 → ProgressW w16 A B n p a b c s → ProgressW w16 A B n p a b c u →
     s.syms "VG_MLKEM_REJ_SHUFFLE"=c → u.syms "VG_MLKEM_REJ_SHUFFLE"=c → s.sp=u.sp →
-    RelCT isa (fun t v=>t=s ∧ v=u) Impl.MlKem.AArch64.Paired.extraStep (fun _ _=>True)
+    RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.extraStep w16) (fun _ _=>True)
 
-theorem bounded_relCT {A B : Spec.Sha3.State} {p a b c : Addr} {s u : State}
-    (step : StepTiming A B p a b c) (ps : Progress A B 3 p a b c s) (pu : Progress A B 3 p a b c u)
+abbrev StepTiming := StepTimingW false
+
+theorem bounded_relCT {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s u : State}
+    (step : StepTimingW w16 A B p a b c) (ps : ProgressW w16 A B 3 p a b c s) (pu : ProgressW w16 A B 3 p a b c u)
     (ss : s.syms "VG_MLKEM_REJ_SHUFFLE"=c) (us : u.syms "VG_MLKEM_REJ_SHUFFLE"=c) (sp : s.sp=u.sp) :
     RelCT isa (fun t v=>t=s ∧ v=u)
-      (.seq Impl.MlKem.AArch64.Paired.extraStep (.ite (.zero .x .x6) Impl.MlKem.AArch64.Paired.extraStep (.block [])))
-      (fun t v=>Bounded A B p a b c s t ∧ Bounded A B p a b c u v) := by
-  let R := fun t v : State=>Advanced A B 4 p a b c s t ∧ Advanced A B 4 p a b c u v ∧
+      (.seq (Impl.MlKem.AArch64.Paired.extraStep w16) (.ite (.zero .x .x6) (Impl.MlKem.AArch64.Paired.extraStep w16) (.block [])))
+      (fun t v=>BoundedW w16 A B p a b c s t ∧ BoundedW w16 A B p a b c u v) := by
+  let R := fun t v : State=>AdvancedW w16 A B 4 p a b c s t ∧ AdvancedW w16 A B 4 p a b c u v ∧
     t.syms=s.syms ∧ v.syms=u.syms
-  have start : RelCT isa (fun t v=>t=s ∧ v=u) Impl.MlKem.AArch64.Paired.extraStep R := by
+  have start : RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.extraStep w16) R := by
     intro t v tr ur t' v' h et ev
     rcases h with ⟨ht,hv⟩; subst t; subst v
     exact ⟨(step (Or.inl rfl) ps pu ss us sp s u tr ur t' v' ⟨rfl,rfl⟩ et ev).1,
       exec_post (advance_ok ps ss) et,exec_post (advance_ok pu us) ev,Exec.syms et,Exec.syms ev⟩
   have trace : RelCT isa (fun t v=>t=s ∧ v=u)
-      (.seq Impl.MlKem.AArch64.Paired.extraStep (.ite (.zero .x .x6) Impl.MlKem.AArch64.Paired.extraStep (.block [])))
+      (.seq (Impl.MlKem.AArch64.Paired.extraStep w16) (.ite (.zero .x .x6) (Impl.MlKem.AArch64.Paired.extraStep w16) (.block [])))
       (fun _ _=>True) := by
     refine RelCT.seq start (RelCT.ite ?_ ?_ (RelCT.block_nil (by intros; trivial)))
     · intro t v h
@@ -48,20 +54,20 @@ theorem bounded_relCT {A B : Spec.Sha3.State} {p a b c : Addr} {s u : State}
     exec_post (bounded_ok (fun _ ht hs=>advance_ok ht hs) ps ss) et,
     exec_post (bounded_ok (fun _ ht hs=>advance_ok ht hs) pu us) ev⟩
 
-structure Cleanup (A B : Spec.Sha3.State) (p a b c : Addr) (s : State) : Prop where
+structure CleanupW (w16 : Bool) (A B : Spec.Sha3.State) (p a b c : Addr) (s : State) : Prop where
   context : Context p a b c s
   pointer : s.gpr .x19=p
-  left : Rej8.Scalar.Coeffs s.mem a (accepted A 5)
-  right : Rej8.Scalar.Coeffs s.mem b (accepted B 5)
-  saveLeft : checkpoint (p+1680) a (accepted A 5) s.mem
-  saveRight : checkpoint (p+1696) b (accepted B 5) s.mem
+  left : Rej8.Scalar.CoeffsW w16 s.mem a (accepted A 5)
+  right : Rej8.Scalar.CoeffsW w16 s.mem b (accepted B 5)
+  saveLeft : checkpointW w16 (p+1680) a (accepted A 5) s.mem
+  saveRight : checkpointW w16 (p+1696) b (accepted B 5) s.mem
 
-theorem Bounded.cleanup {A B : Spec.Sha3.State} {p a b c : Addr} {s u : State}
-    (h : Bounded A B p a b c s u) : Cleanup A B p a b c u :=
+theorem BoundedW.cleanup {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s u : State}
+    (h : BoundedW w16 A B p a b c s u) : CleanupW w16 A B p a b c u :=
   ⟨h.context,h.ptr,h.left,h.right,h.saveLeft,h.saveRight⟩
 
-theorem Cleanup.only {A B : Spec.Sha3.State} {p a b c : Addr} {s u : State}
-    (h : Cleanup A B p a b c s) (k : Only [.x24] s u) : Cleanup A B p a b c u := by
+theorem CleanupW.only {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s u : State}
+    (h : CleanupW w16 A B p a b c s) (k : Only [.x24] s u) : CleanupW w16 A B p a b c u := by
   refine ⟨h.context.frame k.rd k.wr (by rw [k.mem]; exact Frame.refl _ _),?_,?_,?_,?_,?_⟩
   · rw [k.get .x19]; exact h.pointer
   all_goals rw [k.mem]
@@ -70,36 +76,36 @@ theorem Cleanup.only {A B : Spec.Sha3.State} {p a b c : Addr} {s u : State}
   · exact h.saveLeft
   · exact h.saveRight
 
-theorem Cleanup.zeroLeft {A B : Spec.Sha3.State} {p a b c : Addr} {s : State}
-    (h : Cleanup A B p a b c s) : ZeroReady (accepted A 5) 1680 a s := by
+theorem CleanupW.zeroLeft {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s : State}
+    (h : CleanupW w16 A B p a b c s) : ZeroReadyW w16 (accepted A 5) 1680 a s := by
   refine ⟨accepted_length A 5,h.left,?_,?_,?_,?_⟩
   · rw [h.pointer]; exact h.saveLeft
   · rw [h.pointer]; exact in_rd_wr (Noise.inScratch h.context.scratch (by decide) (by decide))
   · rw [h.pointer]; exact in_rd_wr (Noise.inScratch h.context.scratch (by decide) (by decide))
-  · intro i hi; exact Noise.inScratch h.context.outA (by omega) (by decide)
+  · intro i hi; exact Noise.inScratch h.context.outA (cs_store_le w16 hi) (by decide)
 
-theorem Cleanup.zeroRight {A B : Spec.Sha3.State} {p a b c : Addr} {s : State}
-    (h : Cleanup A B p a b c s) : ZeroReady (accepted B 5) 1696 b s := by
+theorem CleanupW.zeroRight {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s : State}
+    (h : CleanupW w16 A B p a b c s) : ZeroReadyW w16 (accepted B 5) 1696 b s := by
   refine ⟨accepted_length B 5,h.right,?_,?_,?_,?_⟩
   · rw [h.pointer]; exact h.saveRight
   · rw [h.pointer]; exact in_rd_wr (Noise.inScratch h.context.scratch (by decide) (by decide))
   · rw [h.pointer]; exact in_rd_wr (Noise.inScratch h.context.scratch (by decide) (by decide))
-  · intro i hi; exact Noise.inScratch h.context.outB (by omega) (by decide)
+  · intro i hi; exact Noise.inScratch h.context.outB (cs_store_le w16 hi) (by decide)
 
 theorem mask_ct : ConstantTime isa (fun _=>True) (VG.AArch64.Taint.Agree (Taint.ofRegs []))
     (.block [.logic .and .x .x24 .x24 .x6]) :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs []) (fun _ _ _ _ h=>h) (hc:=.block []) rfl
 
-theorem resume_relCT {A B : Spec.Sha3.State} {p a b c : Addr} {s u : State}
-    (step : StepTiming A B p a b c) (ps : Progress A B 3 p a b c s) (pu : Progress A B 3 p a b c u)
+theorem resume_relCT {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s u : State}
+    (step : StepTimingW w16 A B p a b c) (ps : ProgressW w16 A B 3 p a b c s) (pu : ProgressW w16 A B 3 p a b c u)
     (ss : s.syms "VG_MLKEM_REJ_SHUFFLE"=c) (us : u.syms "VG_MLKEM_REJ_SHUFFLE"=c) (sp : s.sp=u.sp) :
-    RelCT isa (fun t v=>t=s ∧ v=u) Impl.MlKem.AArch64.Paired.extraPair
-      (fun t v=>ResumePost A B p a b s t ∧ ResumePost A B p a b u v) := by
-  have trace : RelCT isa (fun t v=>t=s ∧ v=u) Impl.MlKem.AArch64.Paired.extraPair (fun _ _=>True) := by
+    RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.extraPair w16)
+      (fun t v=>ResumePostW w16 A B p a b s t ∧ ResumePostW w16 A B p a b u v) := by
+  have trace : RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.extraPair w16) (fun _ _=>True) := by
     change RelCT isa _ (.seq _ (.seq (.ite _ _ _) _)) _
     apply RelCT.assoc
     refine RelCT.seq (bounded_relCT step ps pu ss us sp) ?_
-    refine RelCT.seq (R:=fun t v : State=>Cleanup A B p a b c t ∧ Cleanup A B p a b c v ∧ t.sp=v.sp) ?_ ?_
+    refine RelCT.seq (R:=fun t v : State=>CleanupW w16 A B p a b c t ∧ CleanupW w16 A B p a b c v ∧ t.sp=v.sp) ?_ ?_
     · intro t v tr ur t' v' h et ev
       have mt : Only [.x24] t t' := (exec_post (wp_and (fun w kw ew=>wp_nil (show Only [.x24] t w from kw))) et)
       have mv : Only [.x24] v v' := (exec_post (wp_and (fun w kw ew=>wp_nil (show Only [.x24] v w from kw))) ev)

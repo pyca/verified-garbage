@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Hash
-public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Hash
 public import VerifiedGarbage.Proof.MlKem.Arm.Reduce
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Lay
+public import VerifiedGarbage.Proof.MlDsa.Sign.Leak
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on ARMv7: the function's contract, layout, entry and exit

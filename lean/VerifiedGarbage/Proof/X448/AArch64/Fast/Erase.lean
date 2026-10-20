@@ -1,12 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit
-public import VerifiedGarbage.Proof.Framework.KernelRfl
-public import VerifiedGarbage.Impl.X448.AArch64.Base
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.X448.AArch64.Fast
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-!
 # Curve448's register-resident field arithmetic on AArch64, erased

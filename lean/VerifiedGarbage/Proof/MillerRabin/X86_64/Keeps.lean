@@ -1,16 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Frame
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Frame
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Restore
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Normalize
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Core
 import VerifiedGarbage.Proof.MillerRabin.X86_64.NormalizeByte
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Restore bookkeeping without changing the reusable round contract -/
 

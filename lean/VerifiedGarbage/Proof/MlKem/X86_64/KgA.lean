@@ -1,13 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragS4
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 
 /-!
 # ML-KEM on x86-64: key generation, `G` and the matrix
@@ -255,7 +249,7 @@ structure KA (L : Kem) (σ s : State) : Prop where
   sig : bytesAt s.mem (pa s sigP) 32 = KPke.kgSigma L.p (kgD σ)
   sb : bytesAt s.mem (pa s (sc oSB)) 32 = KPke.kgRho L.p (kgD σ)
 
-theorem gRho_ok {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {s : State} (h : KC σ s)
+theorem gRho_ok {L : Kem} (W : KgWfB L) {σ : State} (hp : (keyGenK L).pre σ) {s : State} (h : KC σ s)
     (h15 : s.gpr .r15 = 1) : WP isa (gRho L) s fun s' => KA L σ s' ∧ s'.gpr .r15 = 1 := by
   have L₀ := h.lay W hp
   unfold gRho
@@ -302,7 +296,7 @@ theorem KB.zero {L : Kem} {σ s : State} (h : KA L σ s) (h15 : s.gpr .r15 = 1) 
   ⟨h, MatB.zero L _ h15⟩
 
 /-- The pieces of the key's state that a piece writing `ws` keeps. -/
-theorem KA.keep {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {s s' : State} (h : KA L σ s)
+theorem KA.keep {L : Kem} (W : KgWfB L) {σ : State} (hp : (keyGenK L).pre σ) {s s' : State} (h : KA L σ s)
     {ws : List (Ptr × Nat)} (hP : PPostB s s' ws) (hkc : kcChk L ws = true) (kG : keepB (kgB L) ws (sc oG) 32 = true)
     (kS : keepB (kgB L) ws sigP 32 = true) (kB : keepB (kgB L) ws (sc oSB) 32 = true) : KA L σ s' := by
   have L₀ := h.kc.lay W hp

@@ -1,13 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.AArch64.Steps
 public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
+public import VerifiedGarbage.Proof.Seed.AArch64.G16
+public import VerifiedGarbage.Proof.Seed.AArch64.Lanes
 import VerifiedGarbage.Proof.Framework.ReadHalves
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Lanes and slots; exchanging the halves
@@ -61,7 +58,7 @@ theorem ok_of_room {s : State} (h : Room s) {c : Cfg} (hb : c.base = .x5) (hs : 
     fun k hk => by omega, by omega, fun _ _ j hj => by omega⟩
 
 theorem swap_writes (r : Reg) (h1 : r ≠ .x14) (h2 : r ≠ .x15) :
-    (swapHalves.all fun i => dstOf i != some r) = true := by
+    (swapHalves.all fun i => !clobbers i r) = true := by
   cases r <;> first | exact absurd rfl h1 | exact absurd rfl h2 | decide
 
 theorem swap_ok {s : State} (h : Room s) :

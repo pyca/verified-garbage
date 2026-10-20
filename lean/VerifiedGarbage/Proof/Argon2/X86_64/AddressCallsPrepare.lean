@@ -3,12 +3,11 @@ module
 public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsStage
 import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlock
 public import VerifiedGarbage.Proof.Argon2.AddressInput
-public import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderWords
-public import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
+import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderWords
+import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressSetup
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Argon2.X86_64.AddressHeaderCorrect`. -/
 

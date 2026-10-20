@@ -1,9 +1,24 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintUnpack
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintPack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+public import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+public import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 
 /-! # ML-DSA (FIPS 204) on x86-64: the encodings -/
 
@@ -12,47 +27,23 @@ import VerifiedGarbage.Proof.Framework.X86_64.Call
 namespace VG.Artifacts.MlDsaPack.X86_64
 
 def artifacts : List Artifact := [
-  { Spec.MlDsa.simpleBitPackApi with
-    target := X86_64.target
-    doc := Spec.MlDsa.simpleBitPackApi.doc
+  Spec.MlDsa.simpleBitPackApi.artifact X86_64.target {
     code := Impl.MlDsa.X86_64.Pack.simpleBitPack
-    contract := Spec.MlDsa.simpleBitPackContract X86_64.abi
-    verified := Proof.MlDsa.X86_64.Pack.simpleBitPack_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlDsa.bitPackApi with
-    target := X86_64.target
-    doc := Spec.MlDsa.bitPackApi.doc
+    verified := Proof.MlDsa.X86_64.Pack.simpleBitPack_verified },
+  Spec.MlDsa.bitPackApi.artifact X86_64.target {
     code := Impl.MlDsa.X86_64.Pack.bitPack
-    contract := Spec.MlDsa.bitPackContract X86_64.abi
-    verified := Proof.MlDsa.X86_64.Pack.bitPack_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlDsa.bitUnpackApi with
-    target := X86_64.target
-    doc := Spec.MlDsa.bitUnpackApi.doc
+    verified := Proof.MlDsa.X86_64.Pack.bitPack_verified },
+  Spec.MlDsa.bitUnpackApi.artifact X86_64.target {
     code := Impl.MlDsa.X86_64.Pack.bitUnpack
-    contract := Spec.MlDsa.bitUnpackContract X86_64.abi
-    verified := Proof.MlDsa.X86_64.Pack.bitUnpack_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlDsa.unpackT1Api with
-    target := X86_64.target
-    doc := Spec.MlDsa.unpackT1Api.doc
+    verified := Proof.MlDsa.X86_64.Pack.bitUnpack_verified },
+  Spec.MlDsa.unpackT1Api.artifact X86_64.target {
     code := Impl.MlDsa.X86_64.Pack.unpackT1
-    contract := Spec.MlDsa.unpackT1Contract X86_64.abi
-    verified := Proof.MlDsa.X86_64.Pack.unpackT1_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlDsa.hintBitPackApi with
-    target := X86_64.target
-    doc := Spec.MlDsa.hintBitPackApi.doc
+    verified := Proof.MlDsa.X86_64.Pack.unpackT1_verified },
+  Spec.MlDsa.hintBitPackApi.artifact X86_64.target {
     code := Impl.MlDsa.X86_64.Pack.hintBitPack
-    contract := Spec.MlDsa.hintBitPackContract X86_64.abi
-    verified := Proof.MlDsa.X86_64.Pack.hintBitPack_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlDsa.hintBitUnpackApi with
-    target := X86_64.target
-    doc := Spec.MlDsa.hintBitUnpackApi.doc
+    verified := Proof.MlDsa.X86_64.Pack.hintBitPack_verified },
+  Spec.MlDsa.hintBitUnpackApi.artifact X86_64.target {
     code := Impl.MlDsa.X86_64.Pack.hintBitUnpack
-    contract := Spec.MlDsa.hintBitUnpackContract X86_64.abi
-    verified := Proof.MlDsa.X86_64.Pack.hintBitUnpack_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    verified := Proof.MlDsa.X86_64.Pack.hintBitUnpack_verified }]
 
 end VG.Artifacts.MlDsaPack.X86_64

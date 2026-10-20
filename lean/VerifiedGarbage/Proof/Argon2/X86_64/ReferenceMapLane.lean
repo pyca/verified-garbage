@@ -1,23 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapState
-meta import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapState
-public import VerifiedGarbage.Impl.Argon2.X86_64.FirstLane
-meta import VerifiedGarbage.Impl.Argon2.X86_64.FirstLane
-import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
-meta import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
-public import VerifiedGarbage.Impl.Argon2.X86_64.ReferenceLane
-meta import VerifiedGarbage.Impl.Argon2.X86_64.ReferenceLane
 public import VerifiedGarbage.Proof.Argon2.X86_64.Divide
-meta import VerifiedGarbage.Proof.Argon2.X86_64.Divide
 import VerifiedGarbage.Proof.Argon2.X86_64.DivideCT
-meta import VerifiedGarbage.Proof.Argon2.X86_64.DivideCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapState
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Divide
+meta import VerifiedGarbage.Proof.Argon2.X86_64.DivideCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Argon2.X86_64.ReferenceLane`. -/
 

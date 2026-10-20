@@ -1,21 +1,41 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTR2c
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTR2c
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
-public import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
-meta import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
+import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
+public import VerifiedGarbage.Proof.RsaKeyGen.Generate
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
+import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTR2c
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+meta import VerifiedGarbage.Proof.RsaKeyGen.Slots
+meta import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
+meta import VerifiedGarbage.Proof.RsaKeyGen.Generate
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
 
 /-!
 # A candidate on AArch64: constant time of `montSetup`

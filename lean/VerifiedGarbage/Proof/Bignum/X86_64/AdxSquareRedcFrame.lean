@@ -1,11 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
+public import VerifiedGarbage.Proof.Bignum.Layout
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcStep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcStep
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 
 /-! The reduction row's memory and public-control behavior, even when the

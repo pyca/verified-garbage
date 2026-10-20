@@ -1,14 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZR
-public import VerifiedGarbage.Proof.Framework.X86_64.ZFrameBlock
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Spec.Gcm.Prepared
+public import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
+import VerifiedGarbage.Proof.Framework.X86_64.ZFrameBlock
+import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Loading two prepared powers without per-record conversion -/
 

@@ -1,13 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPss.AArch64
-meta import VerifiedGarbage.Impl.RsaPss.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Impl.RsaPss.AArch64
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on AArch64: the taint checks of each hash function

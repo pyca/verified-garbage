@@ -1,15 +1,13 @@
 module
 
 public import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Framework.Sig
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Rsa.Scratch
+import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # The checked RSA private-key operation on AArch64: its callees' contracts
@@ -148,7 +146,9 @@ theorem pc_pre {s : State} (h : pcA.pre s) : (Spec.Rsa.publicPrecomputeContract 
   simp only [pcA] at h
   sig_split h
   sig_and_intros
-  all_goals with_reducible assumption
+  all_goals first
+    | with_reducible assumption
+    | exact VG.Proof.Rsa.publicScratch_le ‹_› ‹_›
 
 theorem pc_post {s s' : State} (h : (Spec.Rsa.publicPrecomputeContract abi 0).post s s') : pcA.post s s' := by
   sig_post [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs] at h
@@ -210,7 +210,9 @@ theorem pd_pre {s : State} (h : pdA.pre s) : (Spec.Rsa.publicPrecomputedCheckedC
   simp only [pdA] at h
   sig_split h
   sig_and_intros
-  all_goals with_reducible assumption
+  all_goals first
+    | with_reducible assumption
+    | exact VG.Proof.Rsa.publicScratch_le ‹_› ‹_›
 
 theorem pd_post {s s' : State} (h : (Spec.Rsa.publicPrecomputedCheckedContract abi 0).post s s') :
     pdA.post s s' := by

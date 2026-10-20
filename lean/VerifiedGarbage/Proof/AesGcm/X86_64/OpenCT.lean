@@ -1,19 +1,37 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Open
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Open
-public import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Undo
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Undo
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Open
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Undo
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+import VerifiedGarbage.Impl.Gcm.X86_64
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Impl.AesGcm.X86_64
+meta import VerifiedGarbage.Impl.Gcm.X86_64
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_open` is constant time
@@ -66,11 +84,11 @@ abbrev ArgR (SP T : Addr) (s : State) : Prop :=
 `oneTag_rel` gives for `oneTag 112`. -/
 def TagRel (M : Gcm.X86_64.Stitch.CtxMode) (tg : Prog isa) : Prop :=
   ∀ {Ctx W SP : Addr}, Lay Ctx (W + BitVec.ofNat 64 16) W SP →
-    ∀ {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n N : Nat}, (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩ →
+    ∀ {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n N : Nat}, (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩ → n < 16 →
     RelCT isa (OneS₂ M Ctx W SP R A al D n (some N)) tg fun _ _ => True
 
 theorem tagRel_oneTag (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} : TagRel M (oneTag v.callees uO) :=
-  fun {_ _ _} L {_ _ _ _ _ _} hDW => oneTag_rel v L (.inr rfl) hDW
+  fun {_ _ _} L {_ _ _ _ _ _} hDW _ => oneTag_rel v L (.inr rfl) hDW
 
 section
 variable (v : GcmImpl) {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP)
@@ -196,7 +214,7 @@ theorem openPre_ok {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {aadP tg : Prog
   have hS := (E.aadPre C X hNp hnl hal hR).1
   have hR' : R = 10 ∨ R = 12 ∨ R = 14 := hR ▸ C.rounds
   have hb : 1 ≤ t ∧ t ≤ 16 := by
-    simp only [Spec.Gcm.tagLenOk, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true, decide_eq_true_eq] at hok
+    simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at hok
     omega
   have hlt := C.data.ok.lt
   refine WP.seq (WP.mono ha fun s₃ Mi => ?_)
@@ -293,7 +311,7 @@ theorem openPreW_rel {aadP tg : Prog isa} (htr : TagRel M tg) (htg : TagOk M tg)
       (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h) (fun _ _ h => h)
     (fun _ h => blocksTl_ok L B C.t_c C.t_w C.t_d C.sp24 oA h)
     (fun _ h => blocksTl_ok L B C.t_c C.t_w C.t_d C.sp24 oA h)
-  have b := rel_wp ((htr L hDW' (N := n)).mono (P' := fun (s₁ s₂ : State) =>
+  have b := rel_wp ((htr L hDW' (N := n) (by omega)).mono (P' := fun (s₁ s₂ : State) =>
         (OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s₁ ∧
           s₁.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t ∧ ArgR SP Tp s₁) ∧
         (OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s₂ ∧
@@ -428,7 +446,7 @@ theorem openBody_relOf {s₀ s₀' : State} {Ctx W SP A D : Addr} {n t : Nat} {m
         simp only [List.mem_singleton] at hr; subst hr; rw [h.2.1.2.1, h.2.2.2.1]⟩) ⟨_, by taint_decide⟩)
     (fun _ _ h => h.2) (fun _ h => hK h) (fun _ h => hK h)
   refine RelCT.seq a (rel_ite_e (fun _ _ h => (h.1.2 rfl).2.1) ?_ ?_)
-  · -- A length §5.2.1.2 does not allow.
+  · -- A length `tagLenOk` does not allow.
     exact (rel_env (by decide) (fun _ _ h => ⟨h.1.2.1.1.1.env, h.1.2.2.1.1.env⟩)
       (rel_taint [.r13, .r14, .r15, .rsp] (fun _ _ h => env_agree h.1.2.1.1.1.env h.1.2.2.1.1.env)
         ⟨_, by taint_decide⟩)).mono (fun _ _ h => h) fun _ _ h => h.2

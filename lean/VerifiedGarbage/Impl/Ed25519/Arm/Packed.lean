@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.TCB.Arm.Isa
+import VerifiedGarbage.Impl.Ed25519.Arm.Word
 
-public import VerifiedGarbage.Impl.Ed25519.Arm.Field
 
 /-! Pack each sixteen-bit limb into two bytes. Tables use 128 bytes per
 extended point; arithmetic continues to use 256 bytes per point. -/

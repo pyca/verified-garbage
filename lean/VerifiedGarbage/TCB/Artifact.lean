@@ -296,7 +296,10 @@ structure Artifact where
   address (`Abi.sym`; on AArch64 and ARMv7, `adrSym`; on x86-64, `leaSym`), and
   checks that every artifact of the target with a table of that name gives
   the same words (`Rust.checkConsts`). So `contract` is one for the calling convention
-  `target.abi.withConsts consts` (`Abi.withConsts`). -/
+  `target.abi.withConsts consts` (`Abi.withConsts`). A table an instruction
+  carries (x86-64's `aluTbl`, `Printer.tables`) is written and checked the
+  same way without being listed here: the model reads its words from the
+  instruction, not from memory the contract describes. -/
   consts : List (String × List (BitVec 64)) := []
   code : Prog target.isa
   contract : Contract target.isa
@@ -335,5 +338,19 @@ structure Artifact where
   function's `# Safety` section, which `doc` must end with when this is not
   empty. -/
   features : List String := []
+  /-- How much of some writable array parameters the function writes, in
+  bytes: for each `(name, n)`, it changes no byte of the buffer of the
+  parameter `name` at offset `n` or beyond (`writtenOk`). The emitter checks
+  that each names a writable array parameter, once, with `n` at most its size
+  (`Rust.checkWritten`), exports `n` as the constant
+  `<NAME>_<PARAM>_WRITTEN` (`Rust.writtenConsts`) and documents it, so that a
+  caller that must destroy what the function wrote there need destroy only
+  the first `n` bytes. -/
+  written : List (String × Nat) := []
+  /-- Every run from a state satisfying `contract.pre` changes no byte of
+  those buffers beyond their bounds (`Sig.writtenWithin`). -/
+  writtenOk : ∀ s t s', contract.pre s → Exec target.isa code s t s' →
+      Sig.writtenWithin (target.abi.withConsts consts) sig written s s' := by
+    exact fun _ _ _ _ _ => True.intro
 
 end VG

@@ -2,15 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Tail
 import VerifiedGarbage.Proof.RsaKeyGen.KeyOp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
-import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # An RSA key from its primes on AArch64: the results, against `keyOp`

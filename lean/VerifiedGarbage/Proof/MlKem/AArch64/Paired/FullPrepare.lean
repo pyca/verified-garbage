@@ -1,14 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullReject
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Env
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Env
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Readonly
-public import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Constants and complete-stream rejection entry for the singleton fallback -/
 @[expose] public section
@@ -21,7 +20,7 @@ def fullPrep (out : Nat) : List Instr := Rej8.rejConsts ++
 def prepWrites (p : Addr) : List Region := [⟨p+1408,8⟩,⟨p+1240,8⟩]
 def prepRegs : List Reg := [.x2,.x3,.x4,.x5,.x9,.x10,.x16]
 
-theorem fullPrep_ok {s : State} {p out : Addr} {off : Nat} {B : Nat → Byte}
+theorem fullPrep_ok {w16 : Bool} {s : State} {p out : Addr} {off : Nat} {B : Nat → Byte}
     (hoff : off<65536) (hp : s.gpr .x19=p) (hout : s.gpr .x28+BitVec.ofNat 64 off=out)
     (hc : Covers [⟨p,2048⟩] s.wr) (ho : Covers [⟨out,1024⟩] s.wr)
     (hd : (Region.mk p 2048).Disjoint ⟨out,1024⟩)
@@ -31,7 +30,7 @@ theorem fullPrep_ok {s : State} {p out : Addr} {off : Nat} {B : Nat → Byte}
     (ts : (Region.mk (s.syms "VG_MLKEM_REJ_SHUFFLE") 4096).Disjoint ⟨p,2048⟩)
     (to : (Region.mk (s.syms "VG_MLKEM_REJ_SHUFFLE") 4096).Disjoint ⟨out,1024⟩) :
     WP isa (.block (fullPrep off)) s fun u =>
-      Keep prepRegs s u ∧ Frame (prepWrites p) s.mem u.mem ∧ Rej8.Entry [] 280 B (p+400) out u ∧ u.gpr .x16=s.syms "VG_MLKEM_REJ_SHUFFLE" := by
+      Keep prepRegs s u ∧ Frame (prepWrites p) s.mem u.mem ∧ Rej8.EntryW w16 [] 280 B (p+400) out u ∧ u.gpr .x16=s.syms "VG_MLKEM_REJ_SHUFFLE" := by
   have iw {o l : Nat} (h : o+l≤2048) := Noise.inScratch hc h (by decide)
   rw [fullPrep,List.append_assoc,WP.block_append_iff]
   refine WP.mono_syms (Rej8.constants_ok s (by rw [hp]; exact iw (by decide))) fun a ⟨ka,ca,ma,ta⟩ sa => ?_
@@ -62,7 +61,7 @@ theorem fullPrep_ok {s : State} {p out : Addr} {off : Nat} {B : Nat → Byte}
     · rw [c16]; exact tab.frame fc (fun r hr => ts.sub_right (subs r hr))
     · rw [c16,pc.rd,pc.wr]; exact tr
     · rw [c16]; exact to
-  have env : Rej8.Env 280 B (p+400) out c := rejection_env (by decide) (by decide)
+  have env : Rej8.EnvW w16 280 B (p+400) out c := rejection_envW (w16 := w16) (by decide) (by decide)
     (by rw [pc.wr]; exact hc) (by rw [pc.wr]; exact ho) hd
     (by
       intro i hi
@@ -71,7 +70,7 @@ theorem fullPrep_ok {s : State} {p out : Addr} {off : Nat} {B : Nat → Byte}
         rcases hr with rfl | rfl <;> exact Offset.disjoint p (by decide) (by decide) (by decide)
       exact (fc.bytes hsep (by change 840≤2^64; decide) hi).trans (bytes i hi))
     (fun _ hm => ready.read hm) (fun _ hm => ready.artifact.vector hm) (fun _ hm => ready.disjoint hm)
-  have env' : Rej8.Env 280 B (c.gpr .x19+400) (c.gpr .x28+BitVec.ofNat 64 off) c := by
+  have env' : Rej8.EnvW w16 280 B (c.gpr .x19+400) (c.gpr .x28+BitVec.ofNat 64 off) c := by
     rw [pc.get .x19,pc.get .x28,hp,hout]; exact env
   refine WP.mono (fullEntry_ok c (by decide) hoff env' cc) fun u ⟨ku,eu⟩ => ?_
   refine ⟨(pc.trans ku.keep).mono (by decide),?_,?_,(ku.get .x16).trans c16⟩

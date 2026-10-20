@@ -1,19 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
-meta import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
-meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
-public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
-meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.X448.X86_64.Lit
+public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
+meta import VerifiedGarbage.Proof.X448.X86_64.Lit
+meta import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
+meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
+meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-! Literal code for the ADX scalar multiplication and verification equation. -/
 

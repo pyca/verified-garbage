@@ -1,20 +1,22 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointCorrect
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointCT
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointLit
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointCT
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointLitAdx
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointLit
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86_64
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.CombW
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+import Batteries.Data.List.Lemmas
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # ECDSA verification over P-521 on x86-64: `Verified`

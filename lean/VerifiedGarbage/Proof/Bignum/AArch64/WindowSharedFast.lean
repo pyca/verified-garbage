@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedWork
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedWork
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedSave
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowReset
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLayout
 public import VerifiedGarbage.Proof.Bignum.CrtWindowFrame
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowShared
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
+public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowShared

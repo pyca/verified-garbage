@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.X86_64.KeyStore
+public import VerifiedGarbage.Proof.Seed.X86_64.G16
+public import VerifiedGarbage.Proof.Seed.X86_64.KeyRounds
 import VerifiedGarbage.Proof.Seed.X86_64.Batch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The key schedule's computation on x86-64
@@ -170,7 +170,7 @@ theorem keyHalves_wp (key : Spec.Seed.Block) {s : State} {S : Addr} (hin : (⟨S
     rw [g4 _ (by decide), g3 _ (by decide), regs2 _ (by decide), hi.rdx]
   have zf4 : t4.zf = some (decide (c = 1)) := by
     rw [z4, ← g4 _ (show Reg.rdx ≠ .rsi by decide), ← rsi4, rsi_4, rdx_4, endTest S (c + 1) (by omega)]
-    congr 1; exact decide_eq_decide.mpr (by omega)
+    congr 1
   -- the schedule's words so far
   have lvS : ∀ (t t' : State) (rs : List Region), Frame rs t.mem t'.mem →
       ∀ i, (∀ r ∈ rs, (⟨S + BitVec.ofNat 64 (4 * i), 4⟩ : Region).Disjoint r) →

@@ -1,12 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemB
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SpecPost
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Last
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullSample
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Context
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Restore
 
 /-! # Paired matrix writes preserve the encryption caller and prior entries -/
 @[expose] public section

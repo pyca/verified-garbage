@@ -1,15 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
-import VerifiedGarbage.Proof.Dsa.DomainShape
-public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceCount
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
+import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-! # The public actual-width scan's first-nonzero selection -/
 

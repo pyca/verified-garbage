@@ -1,15 +1,13 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Encode
-public import VerifiedGarbage.Proof.MlKem.Arm.Common
+import VerifiedGarbage.Proof.MlKem.Arm.Common
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.MlDsa.Pack.Stream
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+public import VerifiedGarbage.Proof.MlKem.Bits
+public import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Stream
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # ML-DSA on 32-bit ARM: streaming fields through `r3`
@@ -60,9 +58,7 @@ theorem Keep.refl (rs : List Reg) (s : State) : Keep rs s s := ⟨fun _ _ => rfl
 
 /-- Whether every instruction of `is` writes only registers of `rs`. -/
 def writesOnly (rs : List Reg) (is : List Instr) : Bool :=
-  is.all fun i => match dstOf i with
-    | some r => rs.contains r
-    | none => true
+  is.all fun i => (dsts i).all rs.contains
 
 theorem WP.keep {is : List Instr} {s : State} {Q : State → Prop} (rs : List Reg)
     (h : WP isa (.block is) s Q) (hc : writesOnly rs is = true) :
@@ -70,10 +66,8 @@ theorem WP.keep {is : List Instr} {s : State} {Q : State → Prop} (rs : List Re
   obtain ⟨t, s', he, hq⟩ := h
   have he' := Exec.block_iff.mp he
   obtain ⟨r, w, p, -⟩ := execBlock_regions he'
-  refine ⟨t, s', he, hq, fun r' hr => execBlock_gpr (fun i hi e => hr ?_) he', r, w, p⟩
-  have := List.all_eq_true.mp hc i hi
-  simp only [e, List.contains_iff_mem] at this
-  exact this
+  exact ⟨t, s', he, hq, fun r' hr => execBlock_gpr (fun i hi =>
+    clobbers_eq_false_of_contains (List.all_eq_true.mp hc i hi) hr) he', r, w, p⟩
 
 /-! ## Instructions -/
 

@@ -2,12 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.ScratchP
 public import VerifiedGarbage.Spec.Gcm.Prepared
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.AesGcm.Scratch
+import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! # Prepared-context scratch contracts and locality -/
 
@@ -77,6 +74,35 @@ theorem preparedPowersRepr_congr {m₁ m₂ : Mem} {p : Addr}
   intro k hk
   rw [keep _ (by omega), keep _ (by omega), ctxH_congr fun i hi => h i (by omega)]
   exact hr k hk
+
+private theorem foldl_fix {α β : Type} (f : α → β → α) (a : α) (h : ∀ b, f a b = a) :
+    ∀ l : List β, l.foldl f a = a
+  | [] => rfl
+  | b :: l => by rw [List.foldl_cons, h b]; exact foldl_fix f a h l
+
+/-- Multiplying by zero gives zero. -/
+theorem gcmMul_zero_right (x : Block) : mul x 0 = 0 := by
+  unfold mul
+  rw [foldl_fix _ _ fun i => ?_]
+  have e : (0 : Block).getLsbD 0 = false := by decide
+  simp only [BitVec.xor_self, e, Bool.false_eq_true, ↓reduceIte]
+  split <;> decide
+
+/-- Zero memory has the prepared powers of the zero subkey. -/
+theorem preparedPowersRepr_zeroMem (p : Addr) : PreparedPowersRepr (fun _ => 0) p := by
+  intro k hk
+  have z : ∀ q : Addr, blockAt (fun _ => 0) q = 0 := fun q => by
+    simp [blockAt, Spec.Aes.bytesAt, ofBytes]; decide
+  have w : ∀ q : Addr, Mem.readW (fun _ => 0) q 128 = 0 := fun q => by
+    simp [Mem.readW, Mem.read]
+  have hz : ∀ k, hpow 0 (k + 1) = 0 := fun _ => gcmMul_zero_right _
+  simp only [ctxH, z, hz, w]
+  constructor <;> decide
+
+/-- A context of zeros has the prepared powers. -/
+theorem preparedPowersRepr_of_zeroMem {m : Mem} {p : Addr} (h : ∀ i < 128 * 8, m (p + BitVec.ofNat 64 i) = 0) :
+    PreparedPowersRepr m p :=
+  preparedPowersRepr_congr (m₁ := fun _ => 0) h (preparedPowersRepr_zeroMem p)
 
 variable (pb : Nat)
 

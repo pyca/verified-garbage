@@ -3,14 +3,9 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedCTMain
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTTail
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMr
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KTail
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KTail
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Bignum.AArch64.PdCTExp
 
 /-! # Constant time of RSA setup, shared Miller–Rabin, and result -/
 

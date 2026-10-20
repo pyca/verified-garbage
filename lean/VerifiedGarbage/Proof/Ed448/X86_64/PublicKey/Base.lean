@@ -1,14 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyVerified
+public import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
+public import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Hash
 import VerifiedGarbage.Proof.Ed448.Prune
 import VerifiedGarbage.Proof.Ed448.X86_64.Words57
-public import VerifiedGarbage.Proof.Ed448.X86_64.VariantVerified
-public import VerifiedGarbage.Proof.Ed448.X86_64.VariantBounds
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed448.X86_64.VariantVerified
+import VerifiedGarbage.Proof.Ed448.X86_64.VariantBounds
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Ed448 public-key derivation on x86-64: pruning and the base point

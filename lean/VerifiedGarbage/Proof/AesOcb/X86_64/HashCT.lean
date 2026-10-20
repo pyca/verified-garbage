@@ -1,17 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
-meta import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
-meta import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
-import VerifiedGarbage.Proof.AesOcb.X86_64.TagCT
-meta import VerifiedGarbage.Proof.AesOcb.X86_64.TagCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesOcb.X86_64.HashChunk
+import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
 import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesOcb.X86_64.PadTo
+import VerifiedGarbage.Proof.AesOcb.X86_64.Run
+import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.HashChunk
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.PadTo
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.Run
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-OCB on x86-64: `HASH` is constant time

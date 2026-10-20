@@ -1,15 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Rc2.Arm.Lookup
-import VerifiedGarbage.Proof.Rc2.Select32
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Spec.Rc2
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Rc2.Select32
 
 /-! # Correctness of the baseline Arm RC2 key lookup
 

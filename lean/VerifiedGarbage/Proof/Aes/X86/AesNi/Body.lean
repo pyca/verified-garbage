@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Invariant
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Counters
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 
 @[expose] public section
 

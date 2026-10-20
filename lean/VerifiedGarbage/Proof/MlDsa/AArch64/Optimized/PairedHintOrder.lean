@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalCheck
 public import VerifiedGarbage.Proof.MlDsa.Round.Ones
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import Batteries.Data.List.Lemmas
+import Mathlib.Tactic.Conv
+import Mathlib.Data.Fintype.Fin
+import Mathlib.Tactic.FinCases
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

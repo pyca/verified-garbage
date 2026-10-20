@@ -3,15 +3,15 @@
 
 A CPU's `runs` are lines of `<VG_CPU_FEATURES> | <tests>`, each a `cargo
 test` (see ci.yml). A CPU whose runs take long has several matrix entries,
-its shards, with the same `runs` and a `shard` of `i/n`: each job runs its
-share of the lines. The lines are dealt out by the CPU time each took in
-`main`'s last run (from a cache `main` saves), largest first, each to the
-shard with the least time so far, so that a slow line (e.g. Wycheproof's RSA
-tests under SDE) does not share a runner with another when it need not. A
-line without a time (new, or before `main` saved any) counts as the median
-of the CPU's known lines, or 1 if none is known. Every shard computes the
-same split from the same times (which the plan job hands to all of them), so
-each line runs in exactly one.
+its shards (`shards = n` in ci/rust_matrix.toml), with the same `runs` and a
+`shard` of `i/n`: each job runs its share of the lines. The lines are dealt
+out by the CPU time each took in `main`'s last run (from a cache `main`
+saves), largest first, each to the shard with the least time so far, so that
+a slow line (e.g. Wycheproof's RSA tests under SDE) does not share a runner
+with another when it need not. A line without a time (new, or before
+`main` saved any) counts as the median of the CPU's known lines, or 1 if
+none is known. Every shard computes the same split from the same times
+(which the plan job hands to all of them), so each line runs in exactly one.
 
 A runner's CPU decides how fast SDE emulates another: one without AVX-512
 emulates `-icx`'s AVX-512 instructions several times slower, and the shards

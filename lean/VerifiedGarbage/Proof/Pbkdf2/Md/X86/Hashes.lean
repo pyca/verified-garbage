@@ -2,13 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Block
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hashes
-public import VerifiedGarbage.Proof.Sha512.Md
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Md5.X86.Lit
+import VerifiedGarbage.Proof.Sha512.X86.Lit
+import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.Proof.Md5.X86.Compress
+public import VerifiedGarbage.Proof.Pbkdf2.MdHmac
+public import VerifiedGarbage.Proof.Pbkdf2.Memory
+public import VerifiedGarbage.Proof.Sha256.X86.Compress
 
 /-!
 # HMAC and PBKDF2-HMAC on x86 (32-bit): the Merkle–Damgård hash functions

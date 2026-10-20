@@ -1,15 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Dsa.Layout
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.EntryFieldsFrame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Push
+import Aesop.BuiltinRules
+import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Impl.Dsa.X86_64.Arithmetic
+import VerifiedGarbage.Proof.Bignum.X86_64.Words
 
 /-! # Loading caller scratch and preserving stack and saved registers -/
 

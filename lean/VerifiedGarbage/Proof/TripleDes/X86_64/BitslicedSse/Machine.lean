@@ -1,15 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Sbox
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Transpose
 public import VerifiedGarbage.Proof.Framework.Bitslice.Vars
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+import VerifiedGarbage.Proof.TripleDes.SboxTables
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.SboxLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # The SSE2 machine state of a batch

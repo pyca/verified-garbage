@@ -1,16 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.Contract
-public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.Pieces
-public import VerifiedGarbage.Proof.Ffdh.Domain
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Stage
+import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.Pieces
+import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
 # `vg_ffdh_check_domain` on AArch64: the stages of a run

@@ -1,27 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Rel
-meta import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Rel
 public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
-meta import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.MlKem.X86_64.KCall
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
-meta import VerifiedGarbage.Proof.MlKem.X86_64.KCall
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
+public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Rel
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KCall
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
-meta import VerifiedGarbage.Spec.X25519
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Ed448 verification on x86-64: the hash leaks only the layout

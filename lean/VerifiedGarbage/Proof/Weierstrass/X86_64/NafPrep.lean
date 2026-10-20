@@ -1,12 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Mont.X86_64.Csub
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafSubtract
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafChoose
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafChoose
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
-public import VerifiedGarbage.Proof.Mont.X86_64.Chain
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Chain
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! The public scalar recoder, its byte stores and bounded 257-step loop. -/
 

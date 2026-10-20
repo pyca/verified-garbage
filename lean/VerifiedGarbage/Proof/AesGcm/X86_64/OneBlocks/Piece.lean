@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneShot
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Crypt
+import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM on x86-64: the whole blocks of `seal` and `open` in one call

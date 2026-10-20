@@ -1,13 +1,24 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
-meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Open
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ok
+import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Open
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ok
+meta import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+meta import VerifiedGarbage.Proof.Cmac.Spec
 
 /-!
 # AES-GCM-SIV on x86-64: `vg_aes_gcm_siv_open` with the interleaved loop is constant time

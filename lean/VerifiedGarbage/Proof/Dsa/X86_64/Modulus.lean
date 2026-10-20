@@ -1,13 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Execution
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 import VerifiedGarbage.Proof.Dsa.Layout
+import Mathlib.Tactic.Set
 
 /-! # Selecting one of the two reusable DSA arithmetic moduli -/
 
@@ -35,7 +30,7 @@ theorem ModulusSide.bounds (side : ModulusSide) (L : ExecutionLayout) :
   obtain ⟨hp2, hp48, hq2, hq48, hpLo, hpHi, hqHi, _⟩ := VG.Proof.Dsa.workspace_bounds L.lengths
   have hqa : qWorkspace ≤ activeBytes := by decide
   have hl : 1 ≤ L.pLen ∧ L.pLen < 2 ^ 31 ∧ 1 ≤ L.qLen ∧ L.qLen < 2 ^ 31 := by
-    rcases L.lengths with ⟨h1, h2⟩ | ⟨h1, h2 | h2⟩ | ⟨h1, h2⟩ <;> rw [h1, h2] <;> decide
+    rcases L.lengths with ⟨h1, h2⟩ | ⟨h1, h2 | h2 | h2⟩ | ⟨h1, h2⟩ <;> rw [h1, h2] <;> decide
   cases side
   · exact ⟨hp2, hp48, hpLo, by decide, Nat.le_trans hpHi hqa, hl.1, hl.2.1⟩
   · exact ⟨hq2, hq48, by decide, by decide, hqHi, hl.2.2.1, hl.2.2.2⟩

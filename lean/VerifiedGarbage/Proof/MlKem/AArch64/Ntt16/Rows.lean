@@ -1,14 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
 public import VerifiedGarbage.Proof.MlKem.NttLayer
-public import VerifiedGarbage.Proof.MlKem.AArch64.Barrett
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Barrett
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # ML-KEM's 16-bit NTT on AArch64: the butterflies on rows

@@ -1,14 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.NewChild
+import VerifiedGarbage.Proof.Dsa.AArch64.NewChild
 import VerifiedGarbage.Proof.Dsa.AArch64.SealChild
 public import VerifiedGarbage.Proof.Dsa.AArch64.InitFrame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Impl.Dsa.AArch64.Workspace
+import VerifiedGarbage.Proof.Dsa.AArch64.Load
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Complete initialization of one DSA Montgomery workspace -/
 

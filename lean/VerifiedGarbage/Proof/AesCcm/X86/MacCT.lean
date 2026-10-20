@@ -1,13 +1,19 @@
 module
+public import VerifiedGarbage.Proof.AesCcm.X86.Absorb
 
 import VerifiedGarbage.Proof.AesCcm.X86.Mac
+import VerifiedGarbage.Proof.AesCcm.X86.AadCT
+import VerifiedGarbage.Proof.AesCcm.X86.Aad
+import VerifiedGarbage.Proof.AesCcm.X86.Blocks
+import VerifiedGarbage.Proof.AesCcm.X86.Run
+meta import VerifiedGarbage.Proof.AesCcm.X86.Absorb
 meta import VerifiedGarbage.Proof.AesCcm.X86.Mac
-public import VerifiedGarbage.Proof.AesCcm.X86.AadCT
 meta import VerifiedGarbage.Proof.AesCcm.X86.AadCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.AesCcm.X86.Aad
+meta import VerifiedGarbage.Proof.AesCcm.X86.Blocks
+meta import VerifiedGarbage.Proof.AesCcm.X86.Run
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-CCM on x86: the CBC-MAC and the tag in constant time

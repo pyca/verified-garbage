@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.CbcEnc
+import VerifiedGarbage.Proof.Modes.CbcEnc
 public import VerifiedGarbage.Impl.Modes.FbMode
 public import VerifiedGarbage.Spec.Ofb
 public import VerifiedGarbage.Spec.Cfb
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Modes.Ctr
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # OFB's and CFB's results, for any block cipher and target

@@ -2,17 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P384
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Lit
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
+import VerifiedGarbage.Proof.Framework.OmegaLit
 
 /-!
 # Deterministic ECDSA on x86-64: P-384 with BMI2 and ADX
@@ -45,8 +41,9 @@ def p384x (hL : Weierstrass.Law Spec.P384.curve)
   inst := Spec.Ecdsa.P384.inst
   curve := rfl
   wide := false
-  sizes := ⟨.inr rfl, .inl rfl, p384_nBits, by decide +kernel⟩
+  sizes := ⟨.inr (.inl rfl), .inl rfl, p384_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
+  hHigh := false
   sh := 0
   sh_eq := Proof.Ecdsa.X86_64.P384.p384x_sh
   coreN := Spec.Ecdsa.P384.signApi.name ++ "_adx"

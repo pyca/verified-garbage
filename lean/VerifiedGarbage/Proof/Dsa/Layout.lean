@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.Layout
 public import VerifiedGarbage.Spec.Dsa.SignVerify
-public import VerifiedGarbage.Proof.Bignum.CrtExp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Bignum.CrtFrame
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Bounds of the DSA scratch layout -/
 
@@ -25,7 +24,7 @@ theorem workspace_bounds {pLen qLen : Nat} (h : Spec.Dsa.lengthsValid pLen qLen)
     pWorkspace + slot ((pLen + 7) / 8) 8 + tabBytes ((pLen + 7) / 8) ≤ qWorkspace ∧
     qWorkspace + slot ((qLen + 7) / 8) 8 + tabBytes ((qLen + 7) / 8) ≤ activeBytes ∧
     usedBytes ≤ 8 * Spec.Dsa.scratchWords pLen := by
-  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl | rfl⟩ | ⟨rfl, rfl⟩ <;> decide
+  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl | rfl | rfl⟩ | ⟨rfl, rfl⟩ <;> decide
 
 /-- All local operands are outside the arithmetic prefix and mutually
 separate at their maximum lengths. -/

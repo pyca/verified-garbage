@@ -1,12 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Msg
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Mont.X86_64.Row
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hmac
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 
 /-!
 # Deterministic ECDSA on x86-64: the steps on `K` and `V`
@@ -29,7 +25,7 @@ variable {P : RfcHash} {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : M
 abbrev kOf (P : RfcHash) {dn : Nat} (L : Lay dn) (m : Mem) : List Byte := keyOf P L m
 abbrev vOf (P : RfcHash) {dn : Nat} (L : Lay dn) (m : Mem) : List Byte :=
   Spec.Sha256.bytesAt m (L.B + BitVec.ofNat 64 88) P.H.D
-abbrev hOf (P : RfcHash) {dn : Nat} (L : Lay dn) (m : Mem) : List Byte := hPart P.R.wide P.Q P.H.D L m
+abbrev hOf (P : RfcHash) {dn : Nat} (L : Lay dn) (m : Mem) : List Byte := hPart P.R.wide P.Q P.H.D P.hB L m
 
 /-- HMAC's output is the hash function's. -/
 theorem mac_length (P : RfcHash) (K t : List Byte) : (P.mac K t).length = P.H.D := by
@@ -87,14 +83,16 @@ theorem hmacK_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {len : Nat} (hlen
       · exact Offset.disjoint _ (by nums) (by nums) (by nums)) (by nums), h.mac⟩
 
 /-- What the message's `h` needs of the layout: unless two `V`s make a
-candidate, `h` in the frame; if they do, the digest. -/
-def HOk (P : RfcHash) {dn : Nat} (L : Lay dn) : Prop := P.Q ≤ L.q ∧ (P.R.wide = true → P.H.D ≤ dn)
+candidate, `h` in the frame (above its pointers for 64-byte scalars, in the
+words `L.e` counts); if they do, the digest. -/
+def HOk (P : RfcHash) {dn : Nat} (L : Lay dn) : Prop :=
+  P.Q ≤ L.q ∧ (P.R.wide = true → P.H.D ≤ dn) ∧ L.e = P.e
 
 /-- `K = HMAC_K(m)`, then `V = HMAC_K(V)`, for the message `m = V ‖ b (‖ d ‖ h)`. -/
 theorem rekey_gen (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g m₀ t) {b : Nat} {full wd : Bool}
-    (hwd : full = true → wd = P.R.wide) {len : Nat}
+    (hwd : full = true → wd = P.R.wide) {ho : Nat} (hho : full = true → ho = P.hB - 24) {len : Nat}
     (hlen : len = if full then P.H.D + 2 * P.Q + 1 else P.H.D + 1) :
-    WP isa (.seq (.block (Cfg.msgPtrs wd)) (.seq (.block (Cfg.msg P.Q P.H.D b full wd))
+    WP isa (.seq (.block (Cfg.msgPtrs wd)) (.seq (.block (Cfg.msg P.Q P.H.D b full wd ho))
       (.seq ((cfgOf P).hmac (Cfg.scr .rdx sMsg) len fK) (cfgOf P).hmacV))) t
       fun t' => Ctx L g m₀ t' ∧ Frame (KVW L) t.mem t'.mem ∧
         kOf P L t'.mem = P.mac (kOf P L t.mem) (vOf P L t.mem ++ [BitVec.ofNat 8 b] ++
@@ -102,16 +100,21 @@ theorem rekey_gen (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g m₀ t) {
         vOf P L t'.mem = P.mac (kOf P L t'.mem) (vOf P L t.mem) := by
   refine WP.seq (WP.mono (ptrs_ok hL hc wd) fun p ⟨hcp, hmp, hdip, hsip, hdxp⟩ => ?_)
   rw [← hmp]
-  have hmsg := msg_ok hL hcp hdip hsip b full wd hdxp (D := P.H.D) (Q := P.Q) (by nums) (by nums) (by nums)
+  have hmsg := msg_ok hL hcp hdip hsip b full wd ho hdxp (D := P.H.D) (Q := P.Q) (by nums) (by nums) (by nums)
     (by nums) hq.1 (fun hf hw => by
-      have := P.sizesA (hw ▸ hwd hf).symm; omega)
+      have hA := (hw ▸ hwd hf).symm
+      have := P.sizesA hA
+      obtain ⟨-, -, hb₃, -, -, -⟩ := hb_facts hA hq.2.2
+      have := hB_ge P
+      rw [hho hf]; exact ⟨by omega, by omega⟩)
     (fun hf hw => by
-      have := P.sizesW (hw ▸ hwd hf).symm; exact ⟨by omega, by omega, hq.2 (hw ▸ hwd hf).symm, by omega⟩)
-  have hh : (if full then Spec.Sha256.bytesAt p.mem L.d P.Q ++ hPart wd P.Q P.H.D L p.mem else []) =
+      have := P.sizesW (hw ▸ hwd hf).symm; exact ⟨by omega, by omega, hq.2.1 (hw ▸ hwd hf).symm, by omega⟩)
+  have hh : (if full then Spec.Sha256.bytesAt p.mem L.d P.Q ++ hPart wd P.Q P.H.D (24 + ho) L p.mem else []) =
       (if full then Spec.Sha256.bytesAt p.mem L.d P.Q ++ hOf P L p.mem else []) := by
     cases full
     · rfl
-    · rw [hwd rfl]
+    · have := hB_ge P
+      rw [hwd rfl, hho rfl, show 24 + (P.hB - 24) = P.hB by omega]
   rw [hh] at hmsg
   refine WP.seq (WP.mono hmsg fun u ⟨hcu, hfu, hbu⟩ => ?_)
   refine WP.seq (WP.mono (hmacK_ok (P := P) hL hcu (len := len) (by cases full <;> simp only [hlen, Bool.false_eq_true, ite_true, ite_false] <;> nums))
@@ -136,14 +139,15 @@ theorem rekeyFull_ok (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g m₀ t
       kOf P L t'.mem = P.mac (kOf P L t.mem) (vOf P L t.mem ++ [BitVec.ofNat 8 b] ++
         (Spec.Sha256.bytesAt t.mem L.d P.Q ++ hOf P L t.mem)) ∧
       vOf P L t'.mem = P.mac (kOf P L t'.mem) (vOf P L t.mem) :=
-  rekey_gen (full := true) hL hq hc (fun _ => rfl) rfl
+  rekey_gen (full := true) hL hq hc (fun _ => rfl) (ho := (cfgOf P).fHo) (fun _ => fHo_eq P) rfl
 
 /-- `K = HMAC_K(V ‖ 0x00)`, then `V = HMAC_K(V)` (step h.3). -/
 theorem rekey_ok (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (cfgOf P).rekey t fun t' => Ctx L g m₀ t' ∧ Frame (KVW L) t.mem t'.mem ∧
       kOf P L t'.mem = P.mac (kOf P L t.mem) (vOf P L t.mem ++ [0]) ∧
       vOf P L t'.mem = P.mac (kOf P L t'.mem) (vOf P L t.mem) :=
-  WP.mono (rekey_gen (b := 0) (full := false) (wd := false) hL hq hc (fun h => absurd h (by decide)) rfl)
+  WP.mono (rekey_gen (b := 0) (full := false) (wd := false) hL hq hc (fun h => absurd h (by decide)) (ho := fH)
+    (fun h => absurd h (by decide)) rfl)
     fun _ h => ⟨h.1, h.2.1, by rw [h.2.2.1]; simp, h.2.2.2⟩
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

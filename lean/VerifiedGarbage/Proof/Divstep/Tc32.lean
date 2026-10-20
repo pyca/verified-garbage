@@ -1,13 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Divstep.Alg32Def
 
-public import VerifiedGarbage.Proof.Divstep.Alg32
-import VerifiedGarbage.Proof.Divstep.Tc32Red
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.Divstep.Batch
+import VerifiedGarbage.Proof.Divstep.Alg32
 import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.NormNum.OfScientific
+import Mathlib.Tactic.NormNum.DivMod
+import Mathlib.Tactic.NormNum.Abs
+import Mathlib.Data.Rat.Cast.Order
+import Mathlib.Tactic.Linarith.Frontend
+import Mathlib.Data.Finset.Attr
 
 /-!
 # Inversion by batches of divsteps: words in two's complement

@@ -1,16 +1,17 @@
 module
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Spec.RsaOaep
+public import VerifiedGarbage.Spec.RsaPss.Contract
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCtx
-import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-public import VerifiedGarbage.Spec.RsaOaep.Contract
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # RSAES-OAEP encryption on x86-64: the contract on the registers
@@ -69,7 +70,7 @@ def encK : Contract isa where
       (stackArg s 5).toNat + (stackArg s 6).toNat * 8 ≤ 2 ^ 64 ∧
       Spec.Rsa.lenValid (s.gpr .rcx).toNat ∧ (s.gpr .rsi).toNat = (s.gpr .rcx).toNat ∧
       1 ≤ (s.gpr .r9).toNat ∧ (s.gpr .r9).toNat ≤ (s.gpr .rcx).toNat ∧
-      Spec.RsaPss.scratchWords (s.gpr .rcx).toNat ≤ (stackArg s 6).toNat
+      Spec.RsaPss.publicScratchWords (s.gpr .rcx).toNat ≤ (stackArg s 6).toNat
   post s s' :=
     Spec.Rsa.written s'.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((s'.gpr .rax).setWidth 32)
       (Spec.RsaOaep.encrypt H G (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)

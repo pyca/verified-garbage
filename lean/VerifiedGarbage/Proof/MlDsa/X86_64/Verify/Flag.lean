@@ -1,13 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CallSample
 
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Blocks
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CallPack
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-DSA verification on x86-64: the result in `r15`, and the samplers

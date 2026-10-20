@@ -2,19 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombSat
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Sha256.X86.Shared
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+import VerifiedGarbage.Proof.Md5.X86.Lit
+import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-! # The shared RFC 6979 contract with the x86 P-256 comb table -/
 

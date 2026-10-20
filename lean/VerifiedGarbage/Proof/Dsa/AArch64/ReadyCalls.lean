@@ -4,12 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Modulus
 import VerifiedGarbage.Proof.Dsa.AArch64.CoreCalls
 import VerifiedGarbage.Proof.Dsa.AArch64.CoreReduce
 import VerifiedGarbage.Proof.Dsa.AArch64.CoreAdd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-! # Arithmetic calls preserving the complete DSA execution context -/
 

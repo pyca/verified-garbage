@@ -1,17 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedReduce
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowVec
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFrame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackMath
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMath
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
 
 /-! ## `PairedLowVec` -/
 

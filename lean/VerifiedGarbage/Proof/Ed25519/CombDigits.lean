@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Ed25519.CombTable
 public import VerifiedGarbage.Proof.Ed25519.BaseTable
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.CombConstants`. -/
 
@@ -38,12 +34,12 @@ def half : Fe := ⟨(Spec.X25519.P + 1) / 2, by decide⟩
 def uncache (e : Fe × Fe × Fe) : Fe × Fe := ((e.2.1 - e.1) * half, (e.2.1 + e.1) * half)
 
 /-- The entries `p`, `p + b`, `p + 2b`, …, each compared with `p`'s representative. -/
-private def checkRow (b p : Point) : List (Fe × Fe) → Bool
+def checkRow (b p : Point) : List (Fe × Fe) → Bool
   | [] => true
   | q :: qs => (q.1 * p.Z == p.X && q.2 * p.Z == p.Y && p.Z != 0) &&
       checkRow b (pointAdd (combPt q) b) qs
 
-private theorem combPt_rep {p : Point} {a : EPoint dZ} (h : Rep p a) {q : Fe × Fe}
+theorem combPt_rep {p : Point} {a : EPoint dZ} (h : Rep p a) {q : Fe × Fe}
     (hx : q.1 * p.Z = p.X) (hy : q.2 * p.Z = p.Y) : Rep (combPt q) a := by
   refine h.of_proj (show toZ 1 ≠ 0 by decide) ?_ ?_
     (by show toZ (q.1 * q.2) * toZ 1 = toZ q.1 * toZ q.2; rw [toZ_mul, toZ_one, mul_one])
@@ -52,7 +48,7 @@ private theorem combPt_rep {p : Point} {a : EPoint dZ} (h : Rep p a) {q : Fe × 
   · show toZ q.2 * toZ p.Z = toZ p.Y * toZ 1
     rw [toZ_one, mul_one, ← toZ_mul, hy]
 
-private theorem checkRow_ok (b p : Point) (c a : EPoint dZ) (hb : Rep b c) (h : Rep p a)
+theorem checkRow_ok (b p : Point) (c a : EPoint dZ) (hb : Rep b c) (h : Rep p a)
     (qs : List (Fe × Fe)) (hc : checkRow b p qs = true) (i : Nat) (hi : i < qs.length) :
     Rep (combPt (qs.getD i (0, 1))) (i • c + a) := by
   induction qs generalizing p a i with
@@ -70,11 +66,11 @@ private theorem checkRow_ok (b p : Point) (c a : EPoint dZ) (hb : Rep b c) (h : 
       exact this
 
 /-- Each table checked from the representative `b` of its first entry. -/
-private def checkTables (b : Point) : List (List (Fe × Fe)) → Bool
+def checkTables (b : Point) : List (List (Fe × Fe)) → Bool
   | [] => true
   | row :: rows => checkRow b b row && checkTables (pointMul 256 b) rows
 
-private theorem checkTables_ok (b : Point) (c : EPoint dZ) (hb : Rep b c)
+theorem checkTables_ok (b : Point) (c : EPoint dZ) (hb : Rep b c)
     (rows : List (List (Fe × Fe))) (hc : checkTables b rows = true) (j : Nat) (hj : j < rows.length)
     (k : Nat) (hk : k < (rows.getD j []).length) :
     Rep (combPt ((rows.getD j []).getD k (0, 1))) ((k + 1) • ((256 ^ j) • c)) := by
@@ -96,19 +92,10 @@ private theorem checkTables_ok (b : Point) (c : EPoint dZ) (hb : Rep b c)
       rw [smul_smul, pow_succ, ← Nat.mul_assoc]
       exact this
 
-private theorem tables_check :
-    checkTables basePoint (combTable.map (·.map uncache)) = true := by decide +kernel
-
 /-- The caching of `combPt (uncache e)`. -/
-private def recache (e : Fe × Fe × Fe) : Fe × Fe × Fe :=
+def recache (e : Fe × Fe × Fe) : Fe × Fe × Fe :=
   ((uncache e).2 - (uncache e).1, (uncache e).2 + (uncache e).1,
     (uncache e).1 * (uncache e).2 * 2 * d)
-
-private theorem tables_cached :
-    combTable.all (fun row => row.all fun e => decide (recache e = e)) = true := by decide +kernel
-
-private theorem tables_length :
-    combTable.length = 32 ∧ combTable.all (fun row => row.length == 8) = true := by decide +kernel
 
 private theorem getD_map' {α β : Type} (l : List α) (f : α → β) (n : Nat) (d : α) :
     (l.map f).getD n (f d) = f (l.getD n d) := by
@@ -116,40 +103,65 @@ private theorem getD_map' {α β : Type} (l : List α) (f : α → β) (n : Nat)
 
 private theorem uncache_default : uncache (1, 1, 0) = (0, 1) := by decide
 
-/-- Entry `k ≤ 8` of table `j` is the cached `[k 256^j]B`, of a point with `Z = 1`. -/
-theorem combCached_ok (j k : Nat) (hj : j < 32) (hk : k < 9) :
-    ∃ q, combCached j k = cache q ∧ q.Z = 1 ∧ Rep q ((k * 256 ^ j) • baseAff) := by
+/-- Entry `k ≤ 8` of table `j` of `tbl`, cached as `combCached` reads it. -/
+def cachedOf (tbl : List (List (Fe × Fe × Fe))) (j k : Nat) : Point :=
+  if k = 0 then ⟨1, 1, 0, 2⟩ else
+    match (tbl.getD j []).getD (k - 1) (1, 1, 0) with
+    | (a, b, c) => ⟨a, b, c, 2⟩
+
+/-- The tables `tbl`, checked from `b`'s representative `c` (`checkTables`), with every entry
+cached (`recache`): entry `k ≤ 8` of table `j` is the cached `[k 256^j]` of `c`. -/
+theorem cachedOf_ok (tbl : List (List (Fe × Fe × Fe))) (b : Point) (c : EPoint dZ) (hb : Rep b c)
+    (hchk : checkTables b (tbl.map (·.map uncache)) = true)
+    (hcache : tbl.all (fun row => row.all fun e => decide (recache e = e)) = true)
+    (hlen : tbl.length = 32 ∧ tbl.all (fun row => row.length == 8) = true)
+    (j k : Nat) (hj : j < 32) (hk : k < 9) :
+    ∃ q, cachedOf tbl j k = cache q ∧ q.Z = 1 ∧ Rep q ((k * 256 ^ j) • c) := by
   cases k with
   | zero =>
     refine ⟨identity, ?_, rfl, ?_⟩
-    · simp only [combCached, ↓reduceIte]; decide +kernel
+    · simp only [cachedOf, ↓reduceIte]; decide +kernel
     · rw [Nat.zero_mul, zero_smul]; exact identity_rep
   | succ k =>
-    have hrow : (combTable.getD j []) ∈ combTable := by
-      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [tables_length.1]; exact hj)]
+    have hrow : (tbl.getD j []) ∈ tbl := by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [hlen.1]; exact hj)]
       exact List.getElem_mem _
-    have hlen : (combTable.getD j []).length = 8 :=
-      beq_iff_eq.mp (List.all_eq_true.mp tables_length.2 _ hrow)
-    have hmem : (combTable.getD j []).getD k (1, 1, 0) ∈ combTable.getD j [] := by
-      have hk' : k < (combTable.getD j []).length := by rw [hlen]; omega
-      rw [List.getD_eq_getElem?_getD (l := combTable.getD j []), List.getElem?_eq_getElem hk']
+    have hl8 : (tbl.getD j []).length = 8 :=
+      beq_iff_eq.mp (List.all_eq_true.mp hlen.2 _ hrow)
+    have hmem : (tbl.getD j []).getD k (1, 1, 0) ∈ tbl.getD j [] := by
+      have hk' : k < (tbl.getD j []).length := by rw [hl8]; omega
+      rw [List.getD_eq_getElem?_getD (l := tbl.getD j []), List.getElem?_eq_getElem hk']
       exact List.getElem_mem _
     have hre := of_decide_eq_true
-      (List.all_eq_true.mp (List.all_eq_true.mp tables_cached _ hrow) _ hmem)
-    refine ⟨combPt (uncache ((combTable.getD j []).getD k (1, 1, 0))), ?_, rfl, ?_⟩
-    · simp only [combCached, Nat.add_one_ne_zero, ↓reduceIte, Nat.add_sub_cancel]
-      generalize (combTable.getD j []).getD k (1, 1, 0) = e at hre
+      (List.all_eq_true.mp (List.all_eq_true.mp hcache _ hrow) _ hmem)
+    refine ⟨combPt (uncache ((tbl.getD j []).getD k (1, 1, 0))), ?_, rfl, ?_⟩
+    · simp only [cachedOf, Nat.add_one_ne_zero, ↓reduceIte, Nat.add_sub_cancel]
+      generalize (tbl.getD j []).getD k (1, 1, 0) = e at hre
       obtain ⟨a, b, c⟩ := e
       simp only [recache, Prod.mk.injEq] at hre
       simp only [cache, combPt, Point.mk.injEq]
       exact ⟨hre.1.symm, hre.2.1.symm, hre.2.2.symm, rfl⟩
-    · have hgj : (combTable.map (·.map uncache)).getD j [] = (combTable.getD j []).map uncache := by
+    · have hgj : (tbl.map (·.map uncache)).getD j [] = (tbl.getD j []).map uncache := by
         rw [show ([] : List (Fe × Fe)) = ([] : List (Fe × Fe × Fe)).map uncache from rfl, getD_map']
-      have hr := checkTables_ok basePoint baseAff basePoint_rep _ tables_check j
-        (by rw [List.length_map, tables_length.1]; exact hj) k
-        (by rw [hgj, List.length_map, hlen]; omega)
+      have hr := checkTables_ok b c hb _ hchk j
+        (by rw [List.length_map, hlen.1]; exact hj) k
+        (by rw [hgj, List.length_map, hl8]; omega)
       rw [hgj, ← uncache_default, getD_map', smul_smul] at hr
       exact hr
+
+private theorem tables_check :
+    checkTables basePoint (combTable.map (·.map uncache)) = true := by decide +kernel
+
+private theorem tables_cached :
+    combTable.all (fun row => row.all fun e => decide (recache e = e)) = true := by decide +kernel
+
+private theorem tables_length :
+    combTable.length = 32 ∧ combTable.all (fun row => row.length == 8) = true := by decide +kernel
+
+/-- Entry `k ≤ 8` of table `j` is the cached `[k 256^j]B`, of a point with `Z = 1`. -/
+theorem combCached_ok (j k : Nat) (hj : j < 32) (hk : k < 9) :
+    ∃ q, combCached j k = cache q ∧ q.Z = 1 ∧ Rep q ((k * 256 ^ j) • baseAff) :=
+  cachedOf_ok combTable basePoint baseAff basePoint_rep tables_check tables_cached tables_length j k hj hk
 
 /-- The constant the comb's digits are offset by: `8 Σ_{j < 32} 256^j`. -/
 def combGVal : Nat := 8 * ((256 ^ 32 - 1) / 255)

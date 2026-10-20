@@ -4,11 +4,9 @@ public import VerifiedGarbage.Impl.Aes.AArch64.Blocks
 public import VerifiedGarbage.Proof.Aes.AArch64.Encrypt
 public import VerifiedGarbage.Proof.Aes.InvSboxSpec
 public import VerifiedGarbage.Proof.Aes.InvBitsliced
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Decrypting four blocks, bitsliced, on AArch64
@@ -54,7 +52,7 @@ theorem invSbox_ok {s : State} (hok : Ok sboxCfg s) :
     simpa using this
   have key : ∀ p < 64, ∃ s', runBlock isa invSboxCode s = some s' ∧
       Post (TableRel p (bsByte (fun k => s.gpr (q k)) p).toNat) sboxCfg (fun _ => none) e' s s'
-        (fun r => (invSboxCode.all fun i => dstOf i != some r) = false) := by
+        (fun r => (invSboxCode.all fun i => !clobbers i r) = false) := by
     intro p hp
     have hc := (bsByte (fun k => s.gpr (q k)) p).isLt
     refine run (table_sound hp hc) hok ⟨fun r a h => ?_, (fun _ _ _ h => by cases h),

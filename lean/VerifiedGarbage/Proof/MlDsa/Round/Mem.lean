@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.MlDsa.Poly
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ML-DSA: polynomials in memory, for every target
@@ -107,8 +105,8 @@ theorem zipWith_get {α β γ : Type} [Inhabited α] [Inhabited β] [Inhabited �
 /-- Coefficient `j` of the hint polynomial at `p`: whether its word is not 0. -/
 theorem hintAt_get (m : Mem) (p : Addr) {j : Nat} (hj : j < n) :
     ((hintAt m p 1).headD (Vector.replicate n false))[j]! = decide (coeffAt m p j ≠ 0) := by
-  rw [getElem!_eq _ hj]
-  simp [hintAt]
+  rw [getElem!_eq _ hj, hintAt, List.range_one, List.map_cons, List.map_nil, List.headD_cons,
+    Vector.getElem_ofFn, Nat.mul_zero, Nat.zero_add]
 
 /-- A hint polynomial is stored at `p` if each of its coefficients is. -/
 theorem hintIs_of_toNat {m : Mem} {p : Addr} {h : Vector Bool n}

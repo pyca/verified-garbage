@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Rc2.AArch64.CbcVec
-import VerifiedGarbage.Proof.Framework.AArch64.Tbl
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!

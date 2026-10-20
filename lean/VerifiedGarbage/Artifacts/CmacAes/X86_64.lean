@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.CmacAes.X86_64.AesNi
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-CMAC's chaining with AES-NI on x86-64
@@ -20,19 +20,16 @@ The other x86-64 CMAC functions are generic over `vg_aes_ctr32`
 namespace VG.Artifacts.CmacAes.X86_64
 
 def artifacts : List Artifact := [
-  { Spec.Cmac.aesUpdateApi with
-    name := Spec.Cmac.aesUpdateApi.name ++ "_aesni_cbc"
-    target := X86_64.target
-    doc := Spec.Cmac.aesUpdateApi.doc (notes := [
+  Spec.Cmac.aesUpdateApi.artifact X86_64.target {
+    suffix := "_aesni_cbc"
+    notes := [
       "This implementation keeps the round keys in SSE registers and the chaining value in `xmm0` \
       across all blocks: it loads them once, and stores the chaining value once. The first round \
       key is folded into the chaining value and the last one, so each block is one `pxor`, the \
       `aesenc` rounds and one `aesenclast`; the number of rounds is selected once. It uses no \
-      stack and does not use `scratch`."])
+      stack and does not use `scratch`."]
     code := Impl.CmacAes.X86_64.AesNi.update
-    contract := Spec.Cmac.aesUpdateContract X86_64.abi
     verified := Proof.CmacAes.X86_64.AesNi.verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["aes"] }]
 
 end VG.Artifacts.CmacAes.X86_64

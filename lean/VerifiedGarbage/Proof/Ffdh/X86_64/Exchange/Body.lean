@@ -1,12 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Context
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Data
+public import VerifiedGarbage.Impl.Ffdh.X86_64.Exchange
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Main
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Entry
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Entry
+import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
+import VerifiedGarbage.Proof.Bignum.Octets
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH exchange on x86-64: entry and modulus validation -/
 

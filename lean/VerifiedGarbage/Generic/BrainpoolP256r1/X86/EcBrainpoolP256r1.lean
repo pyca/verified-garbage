@@ -1,14 +1,76 @@
 module
 
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
-public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Impl.EcKey.BrainpoolP256r1.X86
-public import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP256r1.Verified
+import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP256r1.Verified
 public import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP256r1.Lit
-import VerifiedGarbage.Proof.X25519.X86.Column
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Spec.EcKey.BrainpoolP256r1
+public import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP256r1.Verified
+import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.EcKey.PublicKey
+public import VerifiedGarbage.Proof.EcKey.X86.Finish
+public import VerifiedGarbage.Proof.Ecdsa.Sign
+public import VerifiedGarbage.Proof.Ecdsa.X86.Finish
+public import VerifiedGarbage.Proof.Ecdsa.X86.Lays
+public import VerifiedGarbage.Proof.Ecdsa.X86.Main
+public import VerifiedGarbage.Proof.Ecdsa.X86.Middle
+public import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
+public import VerifiedGarbage.Proof.Ecdsa.X86.Scalar
+public import VerifiedGarbage.Proof.Ecdsa.X86.Setup
+public import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
+public import VerifiedGarbage.Proof.Framework.BitByte
+public import VerifiedGarbage.Proof.Framework.NativeTaint
+public import VerifiedGarbage.Proof.Framework.NativeTaintCore
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Rc2.Memory32
+public import VerifiedGarbage.Proof.Weierstrass.InvToM
+public import VerifiedGarbage.Proof.Weierstrass.X86.Bits
+public import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
+public import VerifiedGarbage.Proof.Weierstrass.X86.Loop
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareArithmetic
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareRed
+public import VerifiedGarbage.Proof.Weierstrass.X86.Rep
+public import VerifiedGarbage.Proof.X25519.Field
+public import VerifiedGarbage.Proof.X25519.X86.Arith
+public import VerifiedGarbage.Proof.X25519.X86.Fold
+import VerifiedGarbage.Proof.EcKey.PublicKey
+import VerifiedGarbage.Proof.EcKey.X86.Finish
+import VerifiedGarbage.Proof.Ecdsa.Sign
+import VerifiedGarbage.Proof.Ecdsa.X86.Finish
+import VerifiedGarbage.Proof.Ecdsa.X86.Lays
+import VerifiedGarbage.Proof.Ecdsa.X86.Main
+import VerifiedGarbage.Proof.Ecdsa.X86.Middle
+import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
+import VerifiedGarbage.Proof.Ecdsa.X86.Scalar
+import VerifiedGarbage.Proof.Ecdsa.X86.Setup
+import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
+import VerifiedGarbage.Proof.Framework.BitByte
+import VerifiedGarbage.Proof.Framework.NativeTaint
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Rc2.Memory32
+import VerifiedGarbage.Proof.Weierstrass.InvToM
+import VerifiedGarbage.Proof.Weierstrass.X86.Bits
+import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
+import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
+import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
+import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
+import VerifiedGarbage.Proof.Weierstrass.X86.Loop
+import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareArithmetic
+import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareRed
+import VerifiedGarbage.Proof.Weierstrass.X86.Rep
+import VerifiedGarbage.Proof.X25519.Field
+import VerifiedGarbage.Proof.X25519.X86.Arith
+import VerifiedGarbage.Proof.X25519.X86.Fold
 
 /-!
 # brainpoolP256r1 public keys (FIPS 186-5 §A.2) on x86 (32-bit)
@@ -22,9 +84,8 @@ A generic file (see `TCB/Emit.lean`) over brainpoolP256r1's group law `h`, the v
 namespace VG.Generic.BrainpoolP256r1.X86.EcBrainpoolP256r1
 
 def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.BrainpoolP256r1.curve) : List Artifact := [
-  { Spec.EcKey.BrainpoolP256r1.publicKeyApi with
-    target := X86.target
-    doc := Spec.EcKey.BrainpoolP256r1.publicKeyApi.doc (notes := ["The function is `vg_ecdsa_brainpoolp256r1_sign`'s \
+  Spec.EcKey.BrainpoolP256r1.publicKeyApi.artifact X86.target {
+    notes := ["The function is `vg_ecdsa_brainpoolp256r1_sign`'s \
       code up to the inversion of `Z`, with `d` as both the key and the secret number: it \
       saves the callee-saved registers `ebx`, `esi`, `edi` and `ebp` in `scratch`; field \
       elements are eight 32-bit words in Montgomery form, multiplied by word-by-word Montgomery \
@@ -35,11 +96,9 @@ def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.BrainpoolP256r1.curv
       doubling (calls of `vg_brainpoolp256r1_point_double` and `vg_brainpoolp256r1_point_add`) and a masked \
       selection for each bit; and `Z⁻¹` is Fermat's, by \
       square-and-always-multiply over the bits of `p - 2`. The result (or zeros) is selected \
-      by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
+      by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."]
     code := Impl.EcKey.X86.publicKeyBrainpoolP256r1
-    contract := Spec.EcKey.BrainpoolP256r1.inst.publicKeyContract X86.abi 28
     stack := 28
-    verified := Proof.EcKey.X86.BrainpoolP256r1.pk_verified h.law h.inv
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.EcKey.X86.BrainpoolP256r1.pk_verified h.law h.inv }]
 
 end VG.Generic.BrainpoolP256r1.X86.EcBrainpoolP256r1

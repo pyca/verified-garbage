@@ -1,13 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.AArch64.CbcVerified
-meta import VerifiedGarbage.Proof.Cast5.AArch64.CbcVerified
+public import VerifiedGarbage.Proof.Cast5.AArch64.ModeCore
+import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
+public import VerifiedGarbage.Proof.Cast5.AArch64.EcbVerified
+public import VerifiedGarbage.Proof.Cast5.ModeScratch
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratchConsts
 import VerifiedGarbage.Proof.Modes.AArch64.Fb
+import VerifiedGarbage.Proof.Cast5.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Cast5.AArch64.ModeCore
+meta import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
+meta import VerifiedGarbage.Proof.Cast5.AArch64.EcbVerified
+meta import VerifiedGarbage.Proof.Cast5.ModeScratch
+meta import VerifiedGarbage.Impl.StackScratch.AArch64
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchConsts
 meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Cast5.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # CAST5-OFB and -CFB64 on AArch64 meet their contracts
@@ -33,6 +45,36 @@ namespace VG.Proof.Cast5.AArch64
 open VG VG.AArch64 VG.Impl.Cast5.AArch64
 open VG.Impl.Cast5 (s1234Sym s1234 ecbConsts)
 open VG.Proof.Cast5.AArch64.Mode (dirCoreSpec TabAt SchedAt dirCore_bw)
+
+/-- The `n` blocks at `p`, as the modes read them. -/
+theorem blocksOf_eq (m : Mem) (p : Addr) (n : Nat) :
+    VG.Proof.Modes.blocksOf 8 m p n = Spec.Cast5.cbcBlocksAt m p n :=
+  (Proof.Cast5.cbcBlocksAt_eq m p n).symm
+
+/-- The data, in blocks. -/
+abbrev dataOf (s : State) (m : Mem) : List (List Byte) :=
+  Spec.Cast5.cbcBlocksAt m (s.gpr .x3) (s.gpr .x4).toNat
+/-- The chaining value. -/
+abbrev ivOf (s : State) : List Byte := Spec.Aes.bytesAt s.mem (s.gpr .x2) 8
+/-- The subkeys. -/
+abbrev keyOf (s : State) : Spec.Cast5.Schedule := Spec.Cast5.scheduleAt s.mem (s.gpr .x0)
+
+/-- The public arguments and the table's address. -/
+def cbcPub (s₁ s₂ : State) : Prop :=
+  s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
+    s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.gpr .x5 = s₂.gpr .x5 ∧
+    s₁.sp = s₂.sp ∧ s₁.syms s1234Sym = s₂.syms s1234Sym
+
+/-- The public registers. -/
+def modePub : List Reg := [.x0, .x1, .x2, .x3, .x4, .x5]
+
+/-- The callee-saved registers and the rest of the ABI, from what a mode
+keeps. -/
+theorem abi_of {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec isa c s t s')
+    (h₁ : ∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
+      s.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19))
+    (h₃ : ∀ r ∈ [Reg.x30], s'.gpr r = s.gpr r) (hv : c.allInstrs keepsV = true) : abiPreserved s s' :=
+  ⟨Modes.AArch64.preserved_of h₁ h₃, Exec.sp he, Exec.preservedV he hv⟩
 
 /-- The facts of the feedback modes' precondition on this target, with the
 working space at `x5`. -/

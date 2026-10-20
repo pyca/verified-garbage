@@ -1,19 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontProductVerified
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section
 
 namespace VG.Artifacts.MlDsaMontProduct.AArch64
 
 def artifacts : List Artifact := [
-  { Spec.MlDsa.montProductApi with
-    target := AArch64.target
-    doc := Spec.MlDsa.montProductApi.doc
+  Spec.MlDsa.montProductApi.artifact AArch64.target {
     code := Impl.MlDsa.AArch64.Optimized.MontProduct.code
-    contract := Spec.MlDsa.montProductContract AArch64.abi
-    verified := Proof.MlDsa.AArch64.Optimized.MontProduct.verified
-    spSafe := Code.all_of_forall (fun _=>rfl) _ }]
+    verified := Proof.MlDsa.AArch64.Optimized.MontProduct.verified }]
 
 end VG.Artifacts.MlDsaMontProduct.AArch64

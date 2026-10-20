@@ -1,14 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontRow
 public import VerifiedGarbage.Proof.Mont.X86.SparseChain
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontBase
+import VerifiedGarbage.Proof.Mont.X86.Row
+import VerifiedGarbage.Proof.Mont.X86.Chain
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Montgomery arithmetic as functions on x86 (32-bit): P-256's sparse reduction

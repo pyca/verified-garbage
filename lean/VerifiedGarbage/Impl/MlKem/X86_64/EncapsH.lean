@@ -49,7 +49,5 @@ def kemEncapsH (L : Kem) (c : Callee4) : Prog isa :=
   .seq (.block pro) (.seq hCopy (.seq hashes (.seq (encrypt L c (.r14, 0)) (.seq (out L)
     (.block topEpi)))))
 
-/-- `vg_mlkem768_encaps_h`. -/
-abbrev encapsH (c : Callee4) : Prog isa := kemEncapsH kem768 c
 
 end VG.Impl.MlKem.X86_64

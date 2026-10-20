@@ -3,13 +3,13 @@ module
 public import VerifiedGarbage.Proof.TripleDes.Arm.Head
 import VerifiedGarbage.Proof.TripleDes.Arm.WordStore
 import VerifiedGarbage.Proof.TripleDes.Word
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.TripleDes.Arm.Bytes
 import VerifiedGarbage.Proof.TripleDes.Arm.Initial
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## `Store` -/
 
@@ -69,7 +69,7 @@ theorem blockStore_ok (d : Direction) (s : State) (l r : BitVec 32)
   have keeps : ∀ q ∈ loadKept, s₁.gpr q = s.gpr q := by
     intro q hq
     have checks : ∀ q ∈ loadKept,
-        ((instrs finalPermutation.lit).all fun op => dstOf op != some q) = true := by decide +kernel
+        ((instrs finalPermutation.lit).all fun op => !clobbers op q) = true := by decide +kernel
     exact reg₁ q (checks q hq)
   have fit₁ : (s₁.gpr .r1).toNat + 8 ≤ 2 ^ 32 := by rw [keeps .r1 (by decide)]; exact fit
   have hw₁ : ∀ t < 2, InRegions s₁.wr (State.addr (s₁.gpr .r1 + BitVec.ofNat 32 (4 * t))) 4 := by

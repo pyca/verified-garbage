@@ -1,17 +1,14 @@
 module
 
-import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Hint
-public import VerifiedGarbage.Proof.MlKem.Arm.Common
-public import VerifiedGarbage.Proof.MlKem.Arm.CallF
-public import VerifiedGarbage.Proof.MlDsa.Pack.Hint
-import VerifiedGarbage.Proof.MlDsa.Pack.Mem
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Arm.Frame
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Spec.MlDsa.Poly
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.Arm.CallF
+import VerifiedGarbage.Proof.MlKem.Arm.Common
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on 32-bit ARM: what the proofs of `HintBitPack` and `HintBitUnpack` share
@@ -157,8 +154,8 @@ theorem entry_ok {s : State} (ia : InRegions (s.rd ++ s.wr) (State.addr (s.sp + 
   run_block [ia]
 
 /-- No instruction of `c` writes `r`, by evaluating `Code.allInstrs`. -/
-theorem noWrite {c : Prog isa} {r : Reg} (h : c.allInstrs (fun i => dstOf i != some r) = true) :
-    ∀ i ∈ instrs c, dstOf i ≠ some r := by
+theorem noWrite {c : Prog isa} {r : Reg} (h : c.allInstrs (fun i => !clobbers i r) = true) :
+    ∀ i ∈ instrs c, clobbers i r = false := by
   rw [Code.allInstrs_eq, List.all_eq_true] at h
   intro i hi
   simpa using h i hi

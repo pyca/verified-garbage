@@ -1,16 +1,15 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Sum
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Sum
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Row0
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Math
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Math
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
-import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Value
+public import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 
 /-! ## AdxTri8Rows -/
 
@@ -28,13 +27,15 @@ def output (w I i : Nat) := slot w aAcc+16*I+(16+8*(2*i+1))
 private theorem compose_arith {P R T V A S W : Nat}
     (h : P+R*T=V+A) (e : W=T+S) : P+R*W=V+(A+R*S) := by grind
 
+/-- The rows from `i`, over the columns `rs` whose top one each row zeroes:
+the value of the others, plus the rows' products. -/
 theorem rows_ok (n : Nat) {s : State} {B : Addr} {Z w I i e : Nat} {rs : List Reg}
     (hs : Scr s B Z) (hc : s.gpr .rcx=off B (slot w aAcc+16*I)) (hp : s.gpr .rbp=off B e)
     (he : e+8*(i+n+1)≤Z) (hout : output w I i+16*n≤Z)
     (hsep : e+8*(i+n+1)≤output w I i ∨ output w I i+16*n≤e)
-    (hr : Regs rs) (hlen : rs.length=n+1) (hv : value s rs<2^(64*n)) :
+    (hr : Regs rs) (hlen : rs.length=n+1) :
     WP isa (AdxTri8.rows n i rs) s fun t =>
-      wv t.mem B (output w I i) (2*n)=value s rs+rowSum s.mem B e i n ∧
+      wv t.mem B (output w I i) (2*n)=value s rs.dropLast+rowSum s.mem B e i n ∧
       Outside B (output w I i) (16*n) s.mem t.mem ∧
       Keep (([.rdx,.rax,.rbx,.rsi] : List Reg)++rs) s t := by
   have nowrap := hs.nowrap
@@ -42,8 +43,9 @@ theorem rows_ok (n : Nat) {s : State} {B : Addr} {Z w I i e : Nat} {rs : List Re
   | zero =>
     change WP isa (.block []) s _
     apply WP.block_nil
-    have vz : value s rs=0 := by simpa only [Nat.mul_zero,Nat.pow_zero,Nat.lt_one_iff] using hv
-    exact ⟨by simp only [wv,rowSum,vz,Nat.zero_add],Outside.refl _ _ _ _,Keep.refl _ _⟩
+    have vz : rs.dropLast=[] := by
+      rw [List.dropLast_eq_take,hlen]; rfl
+    exact ⟨by simp only [wv,rowSum,vz,value,Nat.zero_add],Outside.refl _ _ _ _,Keep.refl _ _⟩
   | succ n ih =>
     cases rs with
     | nil => simp only [List.length_nil] at hlen; omega_using [hlen]
@@ -54,8 +56,8 @@ theorem rows_ok (n : Nat) {s : State} {B : Addr} {Z w I i e : Nat} {rs : List Re
         have tl : tail.length=n := by simp only [List.length_cons] at hlen; omega_using [hlen]
         change WP isa (.seq (AdxTri8.rowStep i lo hi tail) (AdxTri8.rows n (i+1) (tail++[lo]))) s _
         refine WP.seq (WP.mono (rowStep_ok hs hc hp (by rw [hlen]; omega_using [he])
-          (by unfold output at hout; omega_using [hout]) hr.1 hr.2 (by rw [hlen]; simpa only [Nat.add_sub_cancel] using hv))
-          fun a ⟨va,za,oa,ka⟩ => ?_)
+          (by unfold output at hout; omega_using [hout]) hr.1 hr.2)
+          fun a ⟨va,oa,ka⟩ => ?_)
         change Outside B (output w I i) 16 s.mem a.mem at oa
         have sa := hs.congr ka.2.2
         have ca : a.gpr .rcx=off B (slot w aAcc+16*I) := (ka.gpr (by
@@ -66,14 +68,12 @@ theorem rows_ok (n : Nat) {s : State} {B : Addr} {Z w I i e : Nat} {rs : List Re
           simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
           exact ⟨by decide,⟨(hr.2 lo (by simp)).1.2.1.symm,(hr.2 hi (by simp)).1.2.1.symm,
             fun h => (hr.2 .rbp (by simp [h])).1.2.1 rfl⟩⟩)).trans hp
-        have av : value a (tail++[lo])<2^(64*n) := by
-          have h := value_zero_top (rs := tail) za
-          simpa only [List.length_append,List.length_cons,List.length_nil,tl,Nat.zero_add,Nat.add_sub_cancel] using h
         have outNext : output w I (i+1)=output w I i+16 := by unfold output; omega_using []
         refine WP.mono (ih (i := i+1) sa ca pa (by omega_using [he])
           (by rw [outNext]; omega_using [hout]) (by rw [outNext]; omega_using [hsep]) (rotate_regs hr)
-          (by simp only [List.length_append,List.length_cons,List.length_nil,tl]) av)
+          (by simp only [List.length_append,List.length_cons,List.length_nil,tl]))
           fun t ⟨vt,ot,kt⟩ => ?_
+        rw [List.dropLast_concat] at vt
         have input : rowSum a.mem B e (i+1) n=rowSum s.mem B e (i+1) n :=
           rowSum_congr fun j hj => oa.word (by omega_using [hsep, hj]) (by omega_using [nowrap, he, hj])
         rw [input] at vt
@@ -202,28 +202,25 @@ theorem block_ok {s : State} {B : Addr} {Z w a I : Nat} {mi : BitVec 64}
   have regs := columns_regs
   refine WP.seq (WP.mono (rowStep0_ok (lo := .r8) (hi := .r9) (tail := [.r10,.r11,.r12,.r13,.r14,.r15])
     (hs.congr kux.2.2) cx px (by simp only [List.length_cons,List.length_nil]; omega_using [hZ, ar])
-    (by unfold output at outZ; omega_using [endZ]) regs.1 regs.2) fun y ⟨vy,zy,oy,ky⟩ => ?_)
+    (by unfold output at outZ; omega_using [endZ]) regs.1 regs.2) fun y ⟨vy,oy,ky⟩ => ?_)
   change Outside B (output w I 0) 16 x.mem y.mem at oy
   have sy := hs.congr (kux.trans ky).2.2
   have cy : y.gpr .rcx=off B (slot w aAcc+16*I) := (ky.gpr (by decide)).trans cx
   have py : y.gpr .rbp=off B (slot w a+8*I) := (ky.gpr (by decide)).trans px
   have rot : AdxTri8.rotate AdxTri8.columns=[.r10,.r11,.r12,.r13,.r14,.r15]++[.r8] := rfl
-  have vlt : value y ([.r10,.r11,.r12,.r13,.r14,.r15]++[.r8])<2^(64*6) := by
-    have h := value_zero_top (rs := [.r10,.r11,.r12,.r13,.r14,.r15]) zy
-    rwa [show ([Reg.r10,.r11,.r12,.r13,.r14,.r15]++[Reg.r8]).length-1=6 from rfl] at h
   have outNext : output w I 1=output w I 0+16 := by unfold output; omega_using []
   refine WP.mono (rows_ok 6 (i := 1) sy cy py (by omega_using [hZ, ar])
     (by rw [outNext]; unfold output at outZ ⊢; omega_using [endZ]) (by unfold output; omega_using [ar])
-    (by rw [rot]; exact rotate_regs regs) (by rw [rot]; rfl) (by rw [rot]; exact vlt))
+    (by rw [rot]; exact rotate_regs regs) (by rw [rot]; rfl))
     fun t ⟨vt,ot,kt⟩ => ?_
-  rw [rot] at vt
+  rw [rot,List.dropLast_concat] at vt
   have input : rowSum y.mem B (slot w a+8*I) 1 6=rowSum s.mem B (slot w a+8*I) 1 6 :=
     rowSum_congr fun j hj => by
       rw [oy.word (by unfold output; omega_using [ar, hj]) (by omega_using [hZ, nowrap, ar, hj]),ox.word (by omega_using [ar, hj]) (by omega_using [hZ, nowrap, ar, hj])]
   have e0 : word x.mem B (slot w a+8*I+8*0)=word s.mem B (slot w a+8*I+8*0) := ox.word (by omega_using [ar]) (by omega_using [hZ, nowrap, ar])
   have e1 : wv x.mem B (slot w a+8*I+8*(0+1)) 7=wv s.mem B (slot w a+8*I+8*(0+1)) 7 :=
     ox.wv (by omega_using [ar]) (by omega_using [hZ, nowrap, ar])
-  have vy' : wv y.mem B (output w I 0) 2+2^128*value y ([.r10,.r11,.r12,.r13,.r14,.r15]++[.r8])=
+  have vy' : wv y.mem B (output w I 0) 2+2^128*value y [.r10,.r11,.r12,.r13,.r14,.r15]=
       (word s.mem B (slot w a+8*I+8*0)).toNat*wv s.mem B (slot w a+8*I+8*(0+1)) (6+1) := by
     rw [← e0, ← e1]; exact vy
   rw [input] at vt

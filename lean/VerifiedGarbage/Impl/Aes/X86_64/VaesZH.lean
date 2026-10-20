@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Aes.X86_64.AesNi
 
-public import VerifiedGarbage.Impl.Aes.X86_64.VaesZ
 
 /-!
 # AVX-512 AES with round keys kept in the high vector registers

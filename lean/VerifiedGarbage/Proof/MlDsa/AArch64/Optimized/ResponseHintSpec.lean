@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Spec.MlDsa.ResponseHint
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintContract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintWord
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseWord
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintField
 
 @[expose] public section

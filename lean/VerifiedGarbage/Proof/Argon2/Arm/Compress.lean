@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.CompressContract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Argon2.Arm.Words
+import VerifiedGarbage.Proof.Argon2.Arm.Rounds
+import VerifiedGarbage.Proof.Argon2.Permutation
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Argon2 compression on ARMv7: correctness

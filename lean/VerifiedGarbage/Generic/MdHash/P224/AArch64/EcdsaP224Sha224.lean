@@ -1,13 +1,12 @@
 module
 
-import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.P224.Comb7
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P224Sha224
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Sha512.Word64
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Verified
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-224 with HMAC-SHA-224 on AArch64
@@ -38,18 +37,13 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch6
   match v.sha224 with
   | none => []
   | some c => [
-    { Spec.Ecdsa.Rfc6979.P224Sha224.signApi with
-      name := Spec.Ecdsa.Rfc6979.P224Sha224.signApi.name ++ c.suffix
-      target := AArch64.target
-      doc := Spec.Ecdsa.Rfc6979.P224Sha224.signApi.doc
-        (notes := [signNotes (cfgOf (pack h.law h.inv (Proof.P224.combOk7 h.law) c)).H 28 Spec.Ecdsa.P224.signApi.name])
+    Spec.Ecdsa.Rfc6979.P224Sha224.signApi.artifact AArch64.target {
+      suffix := c.suffix
+      notes := [signNotes (cfgOf (pack h.law h.inv (Proof.P224.combOk7 h.law) c)).H 28 Spec.Ecdsa.P224.signApi.name]
       code := (cfgOf (pack h.law h.inv (Proof.P224.combOk7 h.law) c)).sign
       consts := Impl.Ecdsa.AArch64.p224.combConsts
-      contract := Spec.Ecdsa.Rfc6979.P224Sha224.inst.signContract
-        (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p224.combConsts) 256
       stack := 256
       verified := sign_verified h.law h.inv (Proof.P224.combOk7 h.law) c
-      spSafe := Code.all_of_forall (fun _ => rfl) _
       features := c.features }]
 
 end VG.Generic.MdHash.P224.AArch64.EcdsaP224Sha224

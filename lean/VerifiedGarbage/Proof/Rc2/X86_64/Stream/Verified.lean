@@ -1,29 +1,31 @@
 module
 
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
-meta import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
-import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Steps
-meta import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Steps
 public import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Long
-meta import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Long
-import VerifiedGarbage.Proof.Rc2.Scratch
-meta import VerifiedGarbage.Proof.Rc2.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Rc2.X86_64.Key
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Rc2.X86_64.Key
-meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Verified
 import VerifiedGarbage.Proof.Rc2.CbcMemory
 import VerifiedGarbage.Proof.Rc2.Stream
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
+meta import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Long
+meta import VerifiedGarbage.Proof.Rc2.X86_64.Key
+meta import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Verified
 meta import VerifiedGarbage.Proof.Rc2.CbcMemory
 meta import VerifiedGarbage.Proof.Rc2.Stream
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

@@ -1,13 +1,16 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Crypt
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Save
+public import VerifiedGarbage.Proof.Gcm.Compose
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.FinTag
-import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCrypt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.AArch64.FinTag
 import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInit
+import VerifiedGarbage.Proof.AesGcm.AArch64.Body
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_stream_finish`

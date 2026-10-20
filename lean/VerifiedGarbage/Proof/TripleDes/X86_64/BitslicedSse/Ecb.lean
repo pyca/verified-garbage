@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Wide
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Ecb
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # The SSE2 function

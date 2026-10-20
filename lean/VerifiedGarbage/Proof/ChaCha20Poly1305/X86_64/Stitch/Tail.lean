@@ -5,12 +5,12 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Bulk
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailK
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Pad
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the last bytes of `seal`
@@ -672,18 +672,17 @@ theorem movK_ok (s : State) :
     Option.some.injEq, exists_eq_left', reduceCtorEq, ite_true, ite_false]
   exact ⟨trivial, trivial, trivial, fun r h₁ h₂ h₃ => by simp [h₁, h₂, h₃], trivial, trivial, trivial⟩
 
-/-- After `tailKAB`, from `s` (`LI` with 257 to 448 bytes left): the
-keystream of the bytes left at `kA`, the last chunk absorbed, the accumulator
-stored, `rbx`, `rbp`, `rdx` the bytes left, `rsi` at `kA`. -/
-structure TailMidK (c dp : Addr) (L : Nat) (R0 R1 : BitVec 64) (A : Nat) (sp : Addr) (T : Nat)
+/-- After `tailKAB`, from `s` (`TP`, with up to 512 bytes left): the
+keystream of the bytes left at `kA`, the `N` bytes before them absorbed, the
+accumulator stored, `rbx`, `rbp`, `rdx` the bytes left, `rsi` at `kA`. -/
+structure TailMidKg (c dp : Addr) (o N n : Nat) (R0 R1 : BitVec 64) (X : Nat) (sp : Addr)
     (s s' : State) : Prop where
-  ks : ∀ k < L - 512 * T, s'.mem (kA (bfA c) + BitVec.ofNat 64 k) =
-    (keystream (stateAt s.mem (stA c)) (L - 512 * T)).getD k 0
-  acc : leNum (bytesAt s'.mem (psA c) 24) = absorbAll (rN R0 R1) A (bytesAt s.mem dp (512 * T)) % P
+  ks : ∀ k < n, s'.mem (kA (bfA c) + BitVec.ofNat 64 k) = (keystream (stateAt s.mem (stA c)) n).getD k 0
+  acc : leNum (bytesAt s'.mem (psA c) 24) = absorbAll (rN R0 R1) X (bytesAt s.mem (dp + BitVec.ofNat 64 o) N) % P
   frame : Frame [slotsR (bfA c), kR (bfA c), accR c] s.mem s'.mem
-  rbx : s'.gpr .rbx = dp + BitVec.ofNat 64 (512 * T)
-  rbp : s'.gpr .rbp = BitVec.ofNat 64 (L - 512 * T)
-  rdx : s'.gpr .rdx = BitVec.ofNat 64 (L - 512 * T)
+  rbx : s'.gpr .rbx = dp + BitVec.ofNat 64 (o + N)
+  rbp : s'.gpr .rbp = BitVec.ofNat 64 n
+  rdx : s'.gpr .rdx = BitVec.ofNat 64 n
   rsi : s'.gpr .rsi = kA (bfA c)
   r9 : s'.gpr .r9 = bfA c
   r12 : s'.gpr .r12 = s.mem.readW (c + BitVec.ofNat 64 520) 64
@@ -694,28 +693,24 @@ structure TailMidK (c dp : Addr) (L : Nat) (R0 R1 : BitVec 64) (A : Nat) (sp : A
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
 
-/-- `tailKAB`, after the whole chunks with 257 to 448 bytes left. -/
-theorem tailKAB_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (hk : Key R0 R1)
-    {A : Nat} {m₀ : Mem} {sp : Addr} {T : Nat} (hlo : 257 ≤ L - 512 * T) (hhi : L - 512 * T ≤ 448) {s : State}
-    (h : LI c dp L R0 R1 A m₀ sp T s) :
-    WP isa (tailKAB vl) s (TailMidK c dp L R0 R1 A sp T s) := by
+/-- `tailKAB`, with up to 512 bytes left after the `N` at `dp + o` (the last
+chunk, or, `pre`, the 448 bytes before the first). -/
+theorem tailKABg_ok (vl pre : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64}
+    (hk : Key R0 R1) {X : Nat} {o N n : Nat} {sp : Addr} (hN : N = 16 * total pre) (ho : o + 512 ≤ L)
+    (hn : n ≤ 512) {s : State} (h : TP c dp L o N n R0 R1 X sp s) (hc : Consts s.mem (bfA c))
+    (mk : kR (bfA c) ∈ s.wr) :
+    WP isa (tailKAB vl pre) s (TailMidKg c dp o N n R0 R1 X sp s) := by
   have hLe := hl.L_lt
-  have ht := h.t1
-  have hTL := h.le
-  have hq : dp + BitVec.ofNat 64 (512 * (T - 1)) + tot false = dp + BitVec.ofNat 64 (512 * T) := window_eq dp ht
-  have wsub : Region.Sub (Proof.ChaCha20.X86_64.Avx2.dR5 (dp + BitVec.ofNat 64 (512 * (T - 1)))) ⟨dp, L⟩ :=
-    win (t := T - 1) (by omega_arith)
-  have mst : stR (stA c) ∈ s.wr := by rw [h.wr]; simp
-  have mbf : bufR (bfA c) ∈ s.wr := by rw [h.wr]; simp
-  have mps : psR c ∈ s.wr := by rw [h.wr]; simp
-  have mk : kR (bfA c) ∈ s.wr := by rw [h.wr]; simp
-  have md : (⟨dp, L⟩ : Region) ∈ s.wr := by rw [h.wr]; simp
+  have hq : dp + BitVec.ofNat 64 o + tot pre = dp + BitVec.ofNat 64 (o + N) := by
+    rw [hN]; exact Offset.add_add _ _ _
+  have wsub : Region.Sub (Proof.ChaCha20.X86_64.Avx2.dR5 (dp + BitVec.ofNat 64 o)) ⟨dp, L⟩ :=
+    Offset.sub_base dp ho
   have hin : ∀ off n, off + n ≤ 512 →
-      InRegions (s.rd ++ s.wr) (dp + BitVec.ofNat 64 (512 * (T - 1)) + BitVec.ofNat 64 off) n := by
-    intro off n hn
-    exact ⟨_, List.mem_append_right _ md, by
+      InRegions (s.rd ++ s.wr) (dp + BitVec.ofNat 64 o + BitVec.ofNat 64 off) n := by
+    intro off n hn'
+    exact ⟨_, List.mem_append_right _ h.dw, by
       rw [Offset.add_add]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  have dqs : (Proof.ChaCha20.X86_64.Avx2.dR5 (dp + BitVec.ofNat 64 (512 * (T - 1)))).Disjoint
+  have dqs : (Proof.ChaCha20.X86_64.Avx2.dR5 (dp + BitVec.ofNat 64 o)).Disjoint
       (Proof.ChaCha20.X86_64.Avx2.slotsR (bfA c)) :=
     ((hl.cd (d := 128) (n := 128) (by decide)).sub_right wsub).symm
   have kc : kR (bfA c) = ⟨c + BitVec.ofNat 64 736, 512⟩ := by simp only [kR, kA, bfA, Offset.add_add]
@@ -726,12 +721,14 @@ theorem tailKAB_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 
   have dak : (accR c).Disjoint (kR (bfA c)) := by
     rw [kc]; exact Offset.disjoint c (Or.inl (by decide)) (by decide) (by decide)
   unfold tailKAB
-  refine WP.seq (WP.mono (tailKMain_ok vl hk h.rdi h.rcx h.rsi mst mbf mk hin h.consts st_bf dsk dbk dqs h.acc)
+  refine WP.seq (WP.mono (tailKMain_ok vl pre hk h.rdi h.rcx h.rsi h.st h.bf mk
+    (fun o n h => hin o n (Nat.le_trans h (Nat.mul_le_mul_left 16 (total_le pre)))) hc st_bf dsk dbk
+    (dqs.sub_left (Region.sub_prefix (by cases pre <;> decide))) h.acc)
     fun s₁ ⟨d₁, a₁, f₁, g₁, rd₁, wr₁⟩ => ?_)
   rw [leaveT_eq, List.append_assoc]
   refine WP.block_append (WP.mono (Proof.Poly1305.X86_64.reduce_ok s₁) fun s₂ ⟨red, k₂⟩ => ?_)
-  refine WP.block_append (WP.mono (storeT_ok false (c := c) (s := s₂) (by rw [k₂.gpr', g₁ _ (by decide), h.rcx])
-    (by rw [k₂.2.2.2, wr₁]; exact mps)) fun s₃ ⟨m₃, rbx₃, rbp₃, r12₃, r13₃, r14₃, r15₃, g₃, rd₃, wr₃⟩ => ?_)
+  refine WP.block_append (WP.mono (storeT_ok pre (c := c) (s := s₂) (by rw [k₂.gpr', g₁ _ (by decide), h.rcx])
+    (by rw [k₂.2.2.2, wr₁]; exact h.ps)) fun s₃ ⟨m₃, rbx₃, rbp₃, r12₃, r13₃, r14₃, r15₃, g₃, rd₃, wr₃⟩ => ?_)
   refine WP.mono (movK_ok s₃) fun s₄ ⟨r9₄, rsi₄, rdx₄, g₄, m₄, rd₄, wr₄⟩ => ?_
   have rcx₂ : s₂.gpr .rcx = bfA c := by rw [k₂.gpr', g₁ _ (by decide), h.rcx]
   have rcx₃ : s₃.gpr .rcx = bfA c := by
@@ -754,14 +751,14 @@ theorem tailKAB_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 
       s₁.mem.readW (c + BitVec.ofNat 64 d) 64 = s.mem.readW (c + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ =>
     f₁.readW (Region.contains_self _ _) (fun r hr => nst d h₁ h₂ r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl <;> simp)) (by decide)
-  have rbp₄ : s₄.gpr .rbp = BitVec.ofNat 64 (L - 512 * T) := by
+  have rbp₄ : s₄.gpr .rbp = BitVec.ofNat 64 n := by
     rw [g₄ _ (by decide) (by decide) (by decide), rbp₃, k₂.2.1, rd₁' 544 (by decide) (by decide), ← slot_eq, h.left]
-  have rbx₄ : s₄.gpr .rbx = dp + BitVec.ofNat 64 (512 * T) := by
+  have rbx₄ : s₄.gpr .rbx = dp + BitVec.ofNat 64 (o + N) := by
     rw [g₄ _ (by decide) (by decide) (by decide), rbx₃, k₂.gpr', g₁ _ (by decide), h.rsi, hq]
   have rsi₄' : s₄.gpr .rsi = kA (bfA c) := by rw [rsi₄, rcx₃]
-  have rdx₄' : s₄.gpr .rdx = BitVec.ofNat 64 (L - 512 * T) := by rw [rdx₄, ← rbp₄, g₄ _ (by decide) (by decide) (by decide)]
-  have ks₄ : ∀ k < L - 512 * T, s₄.mem (kA (bfA c) + BitVec.ofNat 64 k) =
-      (keystream (stateAt s.mem (stA c)) (L - 512 * T)).getD k 0 := by
+  have rdx₄' : s₄.gpr .rdx = BitVec.ofNat 64 n := by rw [rdx₄, ← rbp₄, g₄ _ (by decide) (by decide) (by decide)]
+  have ks₄ : ∀ k < n, s₄.mem (kA (bfA c) + BitVec.ofNat 64 k) =
+      (keystream (stateAt s.mem (stA c)) n).getD k 0 := by
     intro k hk'
     rw [m₄, fa _ (fun r hr hc => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -777,22 +774,23 @@ theorem tailKAB_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 
     by rw [rd₄, rd₃, k₂.2.2.1, rd₁], by rw [wr₄, wr₃, k₂.2.2.2, wr₁]⟩
   rw [m₄, mA, accMem_acc]
   show hval s₂ = _
-  rw [red a₁.h2, a₁.val, absorb_last _ _ ht]
+  rw [red a₁.h2, a₁.val, ← hN]
 
-/-- `tailK`, after the whole chunks with 257 to 448 bytes left: those bytes
-encrypted from the keystream stored at `kA`, the last chunk absorbed, the
+/-- `tailKX`, with 1 to 512 bytes left after the `N` at `dp + o`: those bytes
+encrypted from the keystream stored at `kA`, the `N` absorbed, the
 accumulator stored, `rbx`, `rbp` the bytes left, and the stashed registers
-restored, as `tailS_ok`. -/
-theorem tailKX_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (hk : Key R0 R1)
-    {A : Nat} {m₀ : Mem} {sp : Addr} {T : Nat} (hlo : 257 ≤ L - 512 * T) (hhi : L - 512 * T ≤ 448) {s : State}
-    (h : LI c dp L R0 R1 A m₀ sp T s) :
-    WP isa (tailKX vl) s fun s' =>
-      (∀ k < L - 512 * T, s'.mem (dp + BitVec.ofNat 64 (512 * T) + BitVec.ofNat 64 k) =
-        s.mem (dp + BitVec.ofNat 64 (512 * T) + BitVec.ofNat 64 k) ^^^
-          (keystream (stateAt s.mem (stA c)) (L - 512 * T)).getD k 0) ∧
-      leNum (bytesAt s'.mem (psA c) 24) = absorbAll (rN R0 R1) A (bytesAt s.mem dp (512 * T)) % P ∧
-      Frame [accR c, bufR (bfA c), kR (bfA c), ⟨dp + BitVec.ofNat 64 (512 * T), L - 512 * T⟩] s.mem s'.mem ∧
-      s'.gpr .rbx = dp + BitVec.ofNat 64 (512 * T) ∧ s'.gpr .rbp = BitVec.ofNat 64 (L - 512 * T) ∧
+restored, as `tailSg_ok`. -/
+theorem tailKXg_ok (vl pre : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64}
+    (hk : Key R0 R1) {X : Nat} {o N n : Nat} {sp : Addr} (hN : N = 16 * total pre) (ho : o + 512 ≤ L)
+    (hlo : 1 ≤ n) (hn : n ≤ 512) {s : State} (h : TP c dp L o N n R0 R1 X sp s) (hc : Consts s.mem (bfA c))
+    (mk : kR (bfA c) ∈ s.wr) :
+    WP isa (tailKX vl pre) s fun s' =>
+      (∀ k < n, s'.mem (dp + BitVec.ofNat 64 (o + N) + BitVec.ofNat 64 k) =
+        s.mem (dp + BitVec.ofNat 64 (o + N) + BitVec.ofNat 64 k) ^^^
+          (keystream (stateAt s.mem (stA c)) n).getD k 0) ∧
+      leNum (bytesAt s'.mem (psA c) 24) = absorbAll (rN R0 R1) X (bytesAt s.mem (dp + BitVec.ofNat 64 o) N) % P ∧
+      Frame [accR c, bufR (bfA c), kR (bfA c), ⟨dp + BitVec.ofNat 64 (o + N), n⟩] s.mem s'.mem ∧
+      s'.gpr .rbx = dp + BitVec.ofNat 64 (o + N) ∧ s'.gpr .rbp = BitVec.ofNat 64 n ∧
       s'.gpr .rdx = 0 ∧ s'.gpr .rcx = bfA c ∧
       s'.gpr .r12 = s.mem.readW (c + BitVec.ofNat 64 520) 64 ∧
       s'.gpr .r13 = s.mem.readW (c + BitVec.ofNat 64 528) 64 ∧
@@ -800,18 +798,17 @@ theorem tailKX_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 :
       s'.gpr .rsp = sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hLe := hl.L_lt
   have hTL := h.le
-  have md : (⟨dp, L⟩ : Region) ∈ s.wr := by rw [h.wr]; simp
-  have mk : kR (bfA c) ∈ s.wr := by rw [h.wr]; simp
+  have md := h.dw
   have kc : kR (bfA c) = ⟨c + BitVec.ofNat 64 736, 512⟩ := by simp only [kR, kA, bfA, Offset.add_add]
-  have dsub : Region.Sub ⟨dp + BitVec.ofNat 64 (512 * T), L - 512 * T⟩ ⟨dp, L⟩ := Offset.sub_base _ (by omega)
-  have hDK : (⟨dp + BitVec.ofNat 64 (512 * T), L - 512 * T⟩ : Region).Disjoint ⟨kA (bfA c), L - 512 * T⟩ := by
-    have e : (⟨kA (bfA c), L - 512 * T⟩ : Region) = ⟨c + BitVec.ofNat 64 736, L - 512 * T⟩ := by
+  have dsub : Region.Sub ⟨dp + BitVec.ofNat 64 (o + N), n⟩ ⟨dp, L⟩ := Offset.sub_base _ (by omega)
+  have hDK : (⟨dp + BitVec.ofNat 64 (o + N), n⟩ : Region).Disjoint ⟨kA (bfA c), n⟩ := by
+    have e : (⟨kA (bfA c), n⟩ : Region) = ⟨c + BitVec.ofNat 64 736, n⟩ := by
       simp only [kA, bfA, Offset.add_add]
-    rw [e]; exact (hl.cd (d := 736) (n := L - 512 * T) (by omega)).symm.sub_left dsub
+    rw [e]; exact (hl.cd (d := 736) (n := n) (by omega)).symm.sub_left dsub
   unfold tailKX
-  refine WP.seq (WP.mono (tailKAB_ok vl hl hk hlo hhi h) fun s₃' t₃' => ?_)
+  refine WP.seq (WP.mono (tailKABg_ok vl pre hl hk hN ho hn h hc mk) fun s₃' t₃' => ?_)
   refine WP.seq (WP.mono (testRdx_ok s₃') fun s₃ ⟨g₃, m₃, rd₃, wr₃, _⟩ => ?_)
-  have t₃ : TailMidK c dp L R0 R1 A sp T s s₃ :=
+  have t₃ : TailMidKg c dp o N n R0 R1 X sp s s₃ :=
     ⟨fun k hk => by rw [m₃]; exact t₃'.ks k hk, by rw [m₃]; exact t₃'.acc, by rw [m₃]; exact t₃'.frame,
       by rw [g₃]; exact t₃'.rbx, by rw [g₃]; exact t₃'.rbp, by rw [g₃]; exact t₃'.rdx, by rw [g₃]; exact t₃'.rsi,
       by rw [g₃]; exact t₃'.r9, by rw [g₃]; exact t₃'.r12, by rw [g₃]; exact t₃'.r13,
@@ -819,7 +816,7 @@ theorem tailKX_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 :
       by rw [wr₃]; exact t₃'.wr⟩
   -- The bytes left.
   refine WP.seq (WP.mono (XorBufX.xorBufX_ok (w := 5) (by decide) (d := .rbx) (by decide)
-    (D := dp + BitVec.ofNat 64 (512 * T)) (B := kA (bfA c)) (n := L - 512 * T)
+    (D := dp + BitVec.ofNat 64 (o + N)) (B := kA (bfA c)) (n := n)
     t₃.rbx t₃.rsi t₃.rdx (by omega) hDK
     ⟨_, by rw [t₃.wr]; exact md, Offset.contains_base _ (by omega) (by omega)⟩
     ⟨_, List.mem_append_right _ (by rw [t₃.wr]; exact mk),
@@ -829,16 +826,16 @@ theorem tailKX_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 :
   have g45 : ∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .rdi → s₅.gpr r = s₃.gpr r :=
     fun r h1 h2 h3 h4 h5 h6 => by rw [g₅ r h3 h4, x₄.keep r h1 h2 h3 h4 h5 h6]
   -- The bytes left are apart from what `tailKAB` writes.
-  have nd : ∀ k < L - 512 * T, ∀ x ∈ [slotsR (bfA c), kR (bfA c), accR c],
-      ¬ x.Contains (dp + BitVec.ofNat 64 (512 * T) + BitVec.ofNat 64 k) 1 := by
-    intro k hk' x hx hc
-    have hin' : (⟨dp, L⟩ : Region).Contains (dp + BitVec.ofNat 64 (512 * T) + BitVec.ofNat 64 k) 1 := by
+  have nd : ∀ k < n, ∀ x ∈ [slotsR (bfA c), kR (bfA c), accR c],
+      ¬ x.Contains (dp + BitVec.ofNat 64 (o + N) + BitVec.ofNat 64 k) 1 := by
+    intro k hk' x hx hc'
+    have hin' : (⟨dp, L⟩ : Region).Contains (dp + BitVec.ofNat 64 (o + N) + BitVec.ofNat 64 k) 1 := by
       rw [Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl
-    · exact hl.cd (d := 128) (n := 128) (by decide) _ (by simpa [bfA, Offset.add_add] using hc) hin'
-    · exact hl.cd (d := 736) (n := 512) (by decide) _ (by rw [kc] at hc; exact hc) hin'
-    · exact hl.cd (d := 448) (n := 24) (by decide) _ hc hin'
+    · exact hl.cd (d := 128) (n := 128) (by decide) _ (by simpa [bfA, Offset.add_add] using hc') hin'
+    · exact hl.cd (d := 736) (n := 512) (by decide) _ (by rw [kc] at hc'; exact hc') hin'
+    · exact hl.cd (d := 448) (n := 24) (by decide) _ hc' hin'
   have gg : ∀ r, r = .rbx ∨ r = .rbp ∨ r = .r12 ∨ r = .r13 ∨ r = .r14 ∨ r = .r15 ∨ r = .rsp →
       s₅.gpr r = s₃.gpr r := by
     intro r hr
@@ -865,6 +862,69 @@ theorem tailKX_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 :
     · exact ⟨bufR (bfA c), by simp, slotsR_sub _⟩
     · exact ⟨kR (bfA c), by simp, fun _ h => h⟩
     · exact ⟨accR c, by simp, fun _ h => h⟩
+
+/-- After `tailKAB`, from `s` (`LI` with 257 to 448 bytes left): the
+keystream of the bytes left at `kA`, the last chunk absorbed, the accumulator
+stored, `rbx`, `rbp`, `rdx` the bytes left, `rsi` at `kA`. -/
+structure TailMidK (c dp : Addr) (L : Nat) (R0 R1 : BitVec 64) (A : Nat) (sp : Addr) (T : Nat)
+    (s s' : State) : Prop where
+  ks : ∀ k < L - 512 * T, s'.mem (kA (bfA c) + BitVec.ofNat 64 k) =
+    (keystream (stateAt s.mem (stA c)) (L - 512 * T)).getD k 0
+  acc : leNum (bytesAt s'.mem (psA c) 24) = absorbAll (rN R0 R1) A (bytesAt s.mem dp (512 * T)) % P
+  frame : Frame [slotsR (bfA c), kR (bfA c), accR c] s.mem s'.mem
+  rbx : s'.gpr .rbx = dp + BitVec.ofNat 64 (512 * T)
+  rbp : s'.gpr .rbp = BitVec.ofNat 64 (L - 512 * T)
+  rdx : s'.gpr .rdx = BitVec.ofNat 64 (L - 512 * T)
+  rsi : s'.gpr .rsi = kA (bfA c)
+  r9 : s'.gpr .r9 = bfA c
+  r12 : s'.gpr .r12 = s.mem.readW (c + BitVec.ofNat 64 520) 64
+  r13 : s'.gpr .r13 = s.mem.readW (c + BitVec.ofNat 64 528) 64
+  r14 : s'.gpr .r14 = s.mem.readW (c + BitVec.ofNat 64 536) 64
+  r15 : s'.gpr .r15 = c
+  rsp : s'.gpr .rsp = sp
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+
+/-- `tailKAB`, after the whole chunks with 257 to 448 bytes left. -/
+theorem tailKAB_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (hk : Key R0 R1)
+    {A : Nat} {m₀ : Mem} {sp : Addr} {T : Nat} (hlo : 257 ≤ L - 512 * T) (hhi : L - 512 * T ≤ 448) {s : State}
+    (h : LI c dp L R0 R1 A m₀ sp T s) :
+    WP isa (tailKAB vl false) s (TailMidK c dp L R0 R1 A sp T s) := by
+  have ht := h.t1
+  have hTL := h.le
+  have e : 512 * (T - 1) + 512 = 512 * T := by omega_arith
+  refine WP.mono (tailKABg_ok vl false hl hk (N := 512) rfl (by omega_arith) (by omega_arith) (TP.of_LI h)
+    h.consts (by rw [h.wr]; simp)) fun s' t => ?_
+  exact ⟨t.ks, by rw [t.acc, absorb_last _ _ ht], t.frame, by rw [t.rbx, e], t.rbp, t.rdx, t.rsi, t.r9,
+    t.r12, t.r13, t.r14, t.r15, t.rsp, t.rd, t.wr⟩
+
+/-- `tailK`, after the whole chunks with 257 to 448 bytes left: those bytes
+encrypted from the keystream stored at `kA`, the last chunk absorbed, the
+accumulator stored, `rbx`, `rbp` the bytes left, and the stashed registers
+restored, as `tailS_ok`. -/
+theorem tailKX_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (hk : Key R0 R1)
+    {A : Nat} {m₀ : Mem} {sp : Addr} {T : Nat} (hlo : 257 ≤ L - 512 * T) (hhi : L - 512 * T ≤ 448) {s : State}
+    (h : LI c dp L R0 R1 A m₀ sp T s) :
+    WP isa (tailKX vl false) s fun s' =>
+      (∀ k < L - 512 * T, s'.mem (dp + BitVec.ofNat 64 (512 * T) + BitVec.ofNat 64 k) =
+        s.mem (dp + BitVec.ofNat 64 (512 * T) + BitVec.ofNat 64 k) ^^^
+          (keystream (stateAt s.mem (stA c)) (L - 512 * T)).getD k 0) ∧
+      leNum (bytesAt s'.mem (psA c) 24) = absorbAll (rN R0 R1) A (bytesAt s.mem dp (512 * T)) % P ∧
+      Frame [accR c, bufR (bfA c), kR (bfA c), ⟨dp + BitVec.ofNat 64 (512 * T), L - 512 * T⟩] s.mem s'.mem ∧
+      s'.gpr .rbx = dp + BitVec.ofNat 64 (512 * T) ∧ s'.gpr .rbp = BitVec.ofNat 64 (L - 512 * T) ∧
+      s'.gpr .rdx = 0 ∧ s'.gpr .rcx = bfA c ∧
+      s'.gpr .r12 = s.mem.readW (c + BitVec.ofNat 64 520) 64 ∧
+      s'.gpr .r13 = s.mem.readW (c + BitVec.ofNat 64 528) 64 ∧
+      s'.gpr .r14 = s.mem.readW (c + BitVec.ofNat 64 536) 64 ∧ s'.gpr .r15 = c ∧
+      s'.gpr .rsp = sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have ht := h.t1
+  have hTL := h.le
+  have e : 512 * (T - 1) + 512 = 512 * T := by omega_arith
+  refine WP.mono (tailKXg_ok vl false hl hk (N := 512) rfl (by omega_arith) (by omega_arith) (by omega_arith)
+    (TP.of_LI h) h.consts (by rw [h.wr]; simp)) fun s' t => ?_
+  rw [e] at t
+  obtain ⟨d, a, f, rest⟩ := t
+  exact ⟨d, by rw [a, absorb_last _ _ ht], f, rest⟩
 
 /-- `tailK`: `tailKX` and its padding, which writes only `rax`. -/
 theorem tailK_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (hk : Key R0 R1)

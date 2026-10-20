@@ -2,12 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.X448.X86_64.Swap
 public import Mathlib.Logic.Function.Basic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Proof.X448.X86_64.Field
+import VerifiedGarbage.Proof.X448.X86_64.AddSub
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on x86-64: the working space as slots

@@ -1,14 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Impl.Weierstrass.Arm.Mont
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontP192
-import Batteries.Logic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.RegSet
-import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Montgomery arithmetic modulo P-192's `p` and `n` on ARMv7
 
@@ -29,47 +22,29 @@ def notes : List String := ["The function saves `r4`–`r11` in its own working 
   conditional subtraction selected by a mask."]
 
 def artifacts : List Artifact := [
-  { p192p.mulApi with
-    target := Arm.target
-    doc := p192p.mulApi.doc (notes := notes)
+  p192p.mulApi.artifact Arm.target {
+    notes := notes
     code := mulFn p192p.k p192p.m
-    contract := p192p.mulContract Arm.abi
-    verified := p192p_mul_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { p192p.addApi with
-    target := Arm.target
-    doc := p192p.addApi.doc (notes := notes)
+    verified := p192p_mul_verified },
+  p192p.addApi.artifact Arm.target {
+    notes := notes
     code := addFn p192p.k p192p.m
-    contract := p192p.addContract Arm.abi
-    verified := p192p_add_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { p192p.subApi with
-    target := Arm.target
-    doc := p192p.subApi.doc (notes := notes)
+    verified := p192p_add_verified },
+  p192p.subApi.artifact Arm.target {
+    notes := notes
     code := subFn p192p.k p192p.m
-    contract := p192p.subContract Arm.abi
-    verified := p192p_sub_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { p192n.mulApi with
-    target := Arm.target
-    doc := p192n.mulApi.doc (notes := notes)
+    verified := p192p_sub_verified },
+  p192n.mulApi.artifact Arm.target {
+    notes := notes
     code := mulFn p192n.k p192n.m
-    contract := p192n.mulContract Arm.abi
-    verified := p192n_mul_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { p192n.addApi with
-    target := Arm.target
-    doc := p192n.addApi.doc (notes := notes)
+    verified := p192n_mul_verified },
+  p192n.addApi.artifact Arm.target {
+    notes := notes
     code := addFn p192n.k p192n.m
-    contract := p192n.addContract Arm.abi
-    verified := p192n_add_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { p192n.subApi with
-    target := Arm.target
-    doc := p192n.subApi.doc (notes := notes)
+    verified := p192n_add_verified },
+  p192n.subApi.artifact Arm.target {
+    notes := notes
     code := subFn p192n.k p192n.m
-    contract := p192n.subContract Arm.abi
-    verified := p192n_sub_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := p192n_sub_verified }]
 
 end VG.Artifacts.WeierstrassMontP192.Arm

@@ -1,16 +1,10 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Tables
+public import VerifiedGarbage.Spec.Ecdsa.P521
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ECDSA verification over P-521 on AArch64: the contract the proof is written against

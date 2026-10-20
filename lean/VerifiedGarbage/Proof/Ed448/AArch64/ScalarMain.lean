@@ -1,14 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarOperands
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarOperands
 import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.TCB.AArch64.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarIO
 import VerifiedGarbage.Proof.Ed448.ScalarWords
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLoop
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
 
 /-!
 # Ed448 scalar reduction on AArch64: the whole function

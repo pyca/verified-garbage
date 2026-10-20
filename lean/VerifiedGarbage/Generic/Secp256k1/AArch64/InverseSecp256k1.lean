@@ -1,10 +1,10 @@
 module
 
-import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.InverseVerified
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # secp256k1's inversions modulo `p` and `n` on AArch64
@@ -33,25 +33,13 @@ def note (mod : String) : String :=
   128 to 159; nothing depends on the numbers but through masks and `csel`."
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.Secp256k1.curve) : List Artifact := [
-  { C.invPApi with
-    target := AArch64.target
-    doc := C.invPApi.doc (notes := [note "p"])
+  C.invPApi.artifact AArch64.target {
+    notes := [note "p"]
     code := secp256k1.invFn secp256k1.pPowI
-    contract := C.invPContract AArch64.abi
-    ofSig := by exact (⟨_, _, _, by
-      unfold Spec.Weierstrass.Inverse.Curve.invPContract Spec.Weierstrass.Inverse.Curve.invContract
-      rfl⟩)
-    verified := p_verified h.inv
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { C.invNApi with
-    target := AArch64.target
-    doc := C.invNApi.doc (notes := [note "n"])
+    verified := p_verified h.inv },
+  C.invNApi.artifact AArch64.target {
+    notes := [note "n"]
     code := secp256k1.invFn secp256k1.nPowI
-    contract := C.invNContract AArch64.abi
-    ofSig := by exact (⟨_, _, _, by
-      unfold Spec.Weierstrass.Inverse.Curve.invNContract Spec.Weierstrass.Inverse.Curve.invContract
-      rfl⟩)
-    verified := n_verified h.inv
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := n_verified h.inv }]
 
 end VG.Generic.Secp256k1.AArch64.InverseSecp256k1

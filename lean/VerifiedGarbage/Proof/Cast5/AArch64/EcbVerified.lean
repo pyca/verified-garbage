@@ -1,24 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.AArch64.Ecb
-meta import VerifiedGarbage.Proof.Cast5.AArch64.Ecb
-public import VerifiedGarbage.Proof.Cast5.AArch64.Lit
-meta import VerifiedGarbage.Proof.Cast5.AArch64.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.ConstMem
-meta import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 public import VerifiedGarbage.Spec.Cast5.Contract
-meta import VerifiedGarbage.Spec.Cast5.Contract
-public import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.TCB.AArch64.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Cast5.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Cast5.AArch64.Ecb
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+meta import VerifiedGarbage.Spec.Cast5.Contract
+meta import VerifiedGarbage.Proof.Cast5.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

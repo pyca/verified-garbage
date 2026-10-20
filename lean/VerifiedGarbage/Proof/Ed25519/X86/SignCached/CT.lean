@@ -1,49 +1,53 @@
 module
 
 import VerifiedGarbage.Proof.Ed25519.X86.SignCached.CTReady
-meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.CTReady
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
-meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
-meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashFinalize
-meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashFinalize
 import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashInputs
-meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashInputs
-public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Calls
-meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Calls
-import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
-meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Base
-meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Base
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.MulAdd
-meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.MulAdd
-public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Prefix
-meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Prefix
+import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Prefix
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
-meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
-meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
+public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashUpdate
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Prune
 import VerifiedGarbage.Proof.Framework.X86.Syms
-meta import VerifiedGarbage.Proof.Framework.X86.Syms
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.Ed25519.Signing
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
-import VerifiedGarbage.Spec.Rc2
-meta import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarVerified
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.CTReady
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashFinalize
+meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashInputs
+meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Base
+meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.MulAdd
+meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Prefix
+meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
+meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
+meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashUpdate
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Prune
+meta import VerifiedGarbage.Proof.Framework.X86.Syms
 meta import VerifiedGarbage.Proof.Ed25519.Signing
 meta import VerifiedGarbage.Proof.Framework.OffsetBelow
 meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
-meta import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarVerified
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.X86.SignCached.CTCommon`. -/
 

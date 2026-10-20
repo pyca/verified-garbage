@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86.Seal
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Crypt
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Keys
+import VerifiedGarbage.Proof.AesGcmSiv.X86.TagIO
+import VerifiedGarbage.Proof.AesGcmSiv.X86.Cmp
+import VerifiedGarbage.Proof.AesGcmSiv.X86.Polyval
+import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.AesGcm.X86.Contract
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Context
 
 /-!
 # AES-GCM-SIV on x86: `vg_aes_gcm_siv_open` (correctness)

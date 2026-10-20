@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.DcBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
+import VerifiedGarbage.Proof.MlKem.X86_64.FragC
+import VerifiedGarbage.Proof.MlKem.X86_64.FragL
 
 /-!
 # ML-KEM on x86-64: decapsulation, K-PKE.Decrypt
@@ -32,7 +30,7 @@ open VG.Impl.MlKem.X86_64.Decaps
 
 abbrev R (L : Kem) (I : State → State → Prop) : State → State → Prop := Rel2 (decapsK L).pre (decapsK L).pub I
 
-theorem dc_lrel {L : Kem} (W : DcWf L) {σ₁ σ₂ x y : State} (p₁ : (decapsK L).pre σ₁) (p₂ : (decapsK L).pre σ₂)
+theorem dc_lrel {L : Kem} {oc : Nat} (W : DcWfB L oc) {σ₁ σ₂ x y : State} (p₁ : (decapsK L).pre σ₁) (p₂ : (decapsK L).pre σ₂)
     (pub : (decapsK L).pub σ₁ σ₂) (h₁ : DC L σ₁ x) (h₂ : DC L σ₂ y) : LRel (dcR L) (dcW L) x y := by
   obtain ⟨e1, e2, e3, e4, e5, _⟩ := pub
   refine ⟨h₁.lay W p₁, h₂.lay W p₂, fa4 ?_ ?_ ?_ ?_, by rw [h₁.top.rsp, h₂.top.rsp, e5]⟩
@@ -53,8 +51,8 @@ theorem DR.keep {L : Kem} (W : DcWf L) {σ : State} (hp : (decapsK L).pre σ) {n
     DR L nu ns σ s' := by
   simp only [drChk, Bool.and_eq_true, List.all_eq_true, List.mem_range] at hc
   obtain ⟨⟨hdc, kU⟩, kS⟩ := hc
-  have L₀ := h.dc.lay W hp
-  exact ⟨h.dc.step W hp hP.b hdc, by rw [hP.cs .r15 (by decide)]; exact h.r15,
+  have L₀ := h.dc.lay W.toDcWfB hp
+  exact ⟨h.dc.step W.toDcWfB hp hP.b hdc, by rw [hP.cs .r15 (by decide)]; exact h.r15,
     fun i hi => L₀.keepPoly hP.b (kU i hi) (h.u i hi), fun i hi => L₀.keepPoly hP.b (kS i hi) (h.sh i hi)⟩
 
 theorem DR.zero {L : Kem} {σ s : State} (h : DC L σ s) (h15 : s.gpr .r15 = 1) : DR L 0 0 σ s :=
@@ -70,15 +68,15 @@ theorem uSlice_le (L : Kem) {i : Nat} (hi : i < L.k) : 32 * L.du * i + 32 * L.du
 
 /-! ## `u'` -/
 
-theorem u_ok {L : Kem} (W : DcWf L) {wc wd : List Nat} (K : KemCalls L wc wd) {σ : State}
+theorem u_ok (A : Arith) {L : Kem} (W : DcWf L) {wc wd : List Nat} (K : KemCalls L wc wd) {σ : State}
     (hp : (decapsK L).pre σ) {i : Nat} (hi : i < L.k) {s : State} (h : DR L i 0 σ s) :
-    WP isa (uHat L i) s (DR L (i + 1) 0 σ) := by
+    WP isa (uHat L A i) s (DR L (i + 1) 0 σ) := by
   have hc := W.u i hi
   simp only [uChk, Bool.and_eq_true] at hc
   obtain ⟨hdd, hrc⟩ := hc
-  have L₀ := h.dc.lay W hp
+  have L₀ := h.dc.lay W.toDcWfB hp
   unfold uHat
-  refine WP.mono (ddCall_okL K.dd L₀ (d := L.du) rbx_na hdd K.du.2) fun s₁ ⟨hP₁, hp₁⟩ => ?_
+  refine WP.mono (ddCall_okL (K.dd A.codecs) L₀ (d := L.du) rbx_na hdd K.du.2) fun s₁ ⟨hP₁, hp₁⟩ => ?_
   have hk := h.keep W hp hP₁ hrc
   refine ⟨hk.dc, hk.r15, fun k hk' => ?_, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   rcases (by omega : k < i ∨ k = i) with hk' | rfl
@@ -86,12 +84,12 @@ theorem u_ok {L : Kem} (W : DcWf L) {wc wd : List Nat} (K : KemCalls L wc wd) {�
   · rw [← hP₁.pa rbx_cs, slice_of h.dc.c (uSlice_le L hi)] at hp₁
     exact hp₁
 
-theorem u_tr {L : Kem} (W : DcWf L) {wc wd : List Nat} (K : KemCalls L wc wd) {i : Nat}
-    (hi : i < L.k) : RelCT isa (R L (DR L i 0)) (uHat L i) fun _ _ => True := by
+theorem u_tr (A : Arith) {L : Kem} (W : DcWf L) {wc wd : List Nat} (K : KemCalls L wc wd) {i : Nat}
+    (hi : i < L.k) : RelCT isa (R L (DR L i 0)) (uHat L A i) fun _ _ => True := by
   have hc := W.u i hi
   simp only [uChk, Bool.and_eq_true] at hc
-  exact rel2_of (ddCall_trL K.dd (d := L.du) rbx_na hc.1 K.du.2)
-    fun _ _ _ _ p₁ p₂ pub h₁ h₂ => dc_lrel W p₁ p₂ pub h₁.dc h₂.dc
+  exact rel2_of (ddCall_trL (K.dd A.codecs) (d := L.du) rbx_na hc.1 K.du.2)
+    fun _ _ _ _ p₁ p₂ pub h₁ h₂ => dc_lrel W.toDcWfB p₁ p₂ pub h₁.dc h₂.dc
 
 /-! ## `ŝ` -/
 
@@ -99,7 +97,7 @@ theorem s_ok {A : Arith} (hA : ArithOk A) {L : Kem} (W : DcWf L) {σ : State} (h
     (h : DR L L.k i σ s) : WP isa (sHat L A i) s (DR L L.k (i + 1) σ) := by
   have hc := W.s i hi
   simp only [sChk, Bool.and_eq_true] at hc
-  have L₀ := h.dc.lay W hp
+  have L₀ := h.dc.lay W.toDcWfB hp
   refine WP.mono (dec12At_okL hA L₀ rbx_na hc.1) fun s' ⟨hP, hq⟩ => ?_
   have hk := h.keep W hp hP hc.2
   refine ⟨hk.dc, hk.r15, hk.u, fun k hk' => ?_⟩
@@ -115,7 +113,7 @@ theorem s_tr {A : Arith} (hA : ArithOk A) {L : Kem} (W : DcWf L) {i : Nat} (hi :
     RelCT isa (R L (DR L L.k i)) (sHat L A i) fun _ _ => True := by
   have hc := W.s i hi
   simp only [sChk, Bool.and_eq_true] at hc
-  exact rel2_of (dec12At_trL hA rbx_na hc.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => dc_lrel W p₁ p₂ pub h₁.dc h₂.dc
+  exact rel2_of (dec12At_trL hA rbx_na hc.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => dc_lrel W.toDcWfB p₁ p₂ pub h₁.dc h₂.dc
 
 /-! ## `m'` -/
 
@@ -128,14 +126,14 @@ structure DM (L : Kem) (σ s : State) : Prop where
 /-- The rest of `decrypt`. -/
 abbrev tail (L : Kem) (A : Arith) : Prog isa :=
   .seq (L.decMulAt A (pS 15) (pS L.k) (pS 0) (pS (2 * L.k)))
-    (.seq (L.ddAt (.r14, 32 * L.du * L.k) L.dv (pS 16)) (.seq (subAt A (pS 16) (pS 15)) (ceAt (pS 16) 1 (sc oM))))
+    (.seq (L.ddAt A.codecs (.r14, 32 * L.du * L.k) L.dv (pS 16)) (.seq (subAt A (pS 16) (pS 15)) (ceAt A.codecs (pS 16) 1 (sc oM))))
 
 theorem tail_ok {A : Arith} (hA : ArithOk A) {L : Kem} (W : DcWf L) {wc wd : List Nat} (K : KemCalls L wc wd)
     {σ : State} (hp : (decapsK L).pre σ) {s : State} (h : DR L L.k L.k σ s) : WP isa (tail L A) s (DM L σ) := by
   have hc := W.tail
   simp only [tailChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨⟨hdm, hdd⟩, hk15⟩, hac⟩, htw⟩, hkc⟩, hk₁⟩ := hc
-  have L₀ := h.dc.lay W hp
+  have L₀ := h.dc.lay W.toDcWfB hp
   refine WP.seq (WP.mono (decMulAt_okL hA W.k34 L₀ rbx_na rbx_na rbx_na hdm
     (vecReduced_pS fun i hi => (h.sh i hi).1) (vecReduced_pS fun i hi => by rw [Nat.zero_add]; exact (h.u i hi).1))
     fun s₁ ⟨hP₁, hp₁⟩ => ?_)
@@ -148,20 +146,20 @@ theorem tail_ok {A : Arith} (hA : ArithOk A) {L : Kem} (W : DcWf L) {wc wd : Lis
       simp only [Function.comp, Nat.zero_add]; rw [(h.u i (List.mem_range.mp hi)).2]
   rw [e1, e2, KPke.dot_eq_dotK, ← hP₁.pa rbx_cs] at hp₁
   have L₁ := L₀.post hP₁.b (dcB_bases L)
-  refine WP.seq (WP.mono (ddCall_okL K.dd L₁ (d := L.dv) rbx_na hdd K.dv.2) fun s₂ ⟨hP₂, hp₂⟩ => ?_)
+  refine WP.seq (WP.mono (ddCall_okL (K.dd A.codecs) L₁ (d := L.dv) rbx_na hdd K.dv.2) fun s₂ ⟨hP₂, hp₂⟩ => ?_)
   have L₂ := L₁.post hP₂.b (dcB_bases L)
   have hc₂ : bytesAt s₁.mem (pa s₁ (.r14, 32 * L.du * L.k)) (32 * L.dv) =
       ((dcC L σ).drop (32 * L.du * L.k)).take (32 * L.dv) := by
-    have k₁ := h.dc.step W hp hP₁.b hk₁
+    have k₁ := h.dc.step W.toDcWfB hp hP₁.b hk₁
     exact slice_of k₁.c (by simp only [Kem.ctLen, Params.ctLen, Kem.du, Kem.dv, Kem.k]; rw [Nat.mul_add, ← Nat.mul_assoc])
   rw [hc₂, ← hP₂.pa rbx_cs] at hp₂
   have hq₂ := L₁.keepPoly hP₂.b hk15 hp₁
   refine WP.seq (WP.mono (subAt_ok hA L₂ rbx_na hac hp₂.1 hq₂.1) fun s₃ ⟨hP₃, hp₃⟩ => ?_)
   have L₃ := L₂.post hP₃.b (dcB_bases L)
   rw [hp₂.2, hq₂.2, ← hP₃.pa rbx_cs] at hp₃
-  refine WP.mono (ceCall_okL ceImpl L₃ (d := 1) rbx_na htw (by decide) hp₃.1) fun s₄ ⟨hP₄, hb₄⟩ => ?_
+  refine WP.mono (ceCall_okL (Codecs.ceI A.codecs) L₃ (d := 1) rbx_na htw (by decide) hp₃.1) fun s₄ ⟨hP₄, hb₄⟩ => ?_
   have hP := PPost.app (PPost.app (PPost.app hP₁ hP₂ (by decide)) hP₃ (by decide)) hP₄ (by decide)
-  refine ⟨h.dc.step W hp hP.b hkc, ?_, ?_⟩
+  refine ⟨h.dc.step W.toDcWfB hp hP.b hkc, ?_, ?_⟩
   · rw [hP₄.cs .r15 (by decide), hP₃.cs .r15 (by decide), hP₂.cs .r15 (by decide), hP₁.cs .r15 (by decide), h.r15]
   · rw [hP₄.pa rbx_cs, hb₄, hp₃.2, KPke.decM, KPke.kpkeDecrypt_eq]
     rfl
@@ -179,14 +177,14 @@ theorem tail_tr {A : Arith} (hA : ArithOk A) {L : Kem} (W : DcWf L) {wc wd : Lis
     (fun x Lx hx => WP.mono (decMulAt_okL hA W.k34 Lx rbx_na rbx_na rbx_na hdm hx.1 hx.2)
       fun x' ⟨hP, hq⟩ => ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1⟩)
     (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS 16)) ∧ Reduced x.mem (pa x (pS 15))) (dcB_bases L)
-      (RelCT.mono (ddCall_trL K.dd (d := L.dv) rbx_na hdd K.dv.2) (fun _ _ h => h.1) fun _ _ h => h)
-      (fun x Lx hx => WP.mono (ddCall_okL K.dd Lx (d := L.dv) rbx_na hdd K.dv.2) fun x' ⟨hP, hq⟩ =>
+      (RelCT.mono (ddCall_trL (K.dd A.codecs) (d := L.dv) rbx_na hdd K.dv.2) (fun _ _ h => h.1) fun _ _ h => h)
+      (fun x Lx hx => WP.mono (ddCall_okL (K.dd A.codecs) Lx (d := L.dv) rbx_na hdd K.dv.2) fun x' ⟨hP, hq⟩ =>
         ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1, Lx.keepRed hP.b hk15 hx⟩)
     (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS 16))) (dcB_bases L) (subAt_tr hA rbx_na hac)
       (fun x Lx hx => WP.mono (subAt_ok hA Lx rbx_na hac hx.1 hx.2) fun x' ⟨hP, hq⟩ =>
         ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1⟩)
-      (ceCall_trL ceImpl (d := 1) rbx_na htw (by decide)))))
-    fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ⟨dc_lrel W p₁ p₂ pub h₁.dc h₂.dc,
+      (ceCall_trL (Codecs.ceI A.codecs) (d := 1) rbx_na htw (by decide)))))
+    fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ⟨dc_lrel W.toDcWfB p₁ p₂ pub h₁.dc h₂.dc,
       ⟨vecReduced_pS fun i hi => (h₁.sh i hi).1, vecReduced_pS fun i hi => by rw [Nat.zero_add]; exact (h₁.u i hi).1⟩,
       ⟨vecReduced_pS fun i hi => (h₂.sh i hi).1, vecReduced_pS fun i hi => by rw [Nat.zero_add]; exact (h₂.u i hi).1⟩⟩
 

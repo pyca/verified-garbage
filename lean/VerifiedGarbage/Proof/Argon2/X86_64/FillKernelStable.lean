@@ -1,11 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelArgs
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
 
 /-! Register-only helpers retain the filling allocation and position invariants. -/
 

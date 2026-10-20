@@ -1,7 +1,8 @@
 module
 
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Sha512.X86.Shared
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-! # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on x86 -/
 
@@ -10,99 +11,51 @@ public import VerifiedGarbage.Proof.Sha512.X86.Shared
 namespace VG.Artifacts.Sha512.X86
 
 def artifacts : List Artifact := [
-  { Spec.Sha512.compressApi with
-    target := X86.target
-    doc := Spec.Sha512.compressApi.doc
+  Spec.Sha512.compressApi.artifact X86.target {
     code := Impl.Sha512.X86.compress
-    contract := Spec.Sha512.compressContract X86.abi
-    verified := Proof.Sha512.X86.Shared.compress
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha512.init384Api with
-    target := X86.target
-    doc := Spec.Sha512.init384Api.doc
+    verified := Proof.Sha512.X86.Shared.compress },
+  Spec.Sha512.init384Api.artifact X86.target {
     code := Impl.Sha512.X86.Stream.init Spec.Sha512.H0_384
-    contract := Spec.Sha512.initContract X86.abi Spec.Sha512.H0_384
-    verified := Proof.Sha512.X86.Shared.init Spec.Sha512.H0_384
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha512.init512Api with
-    target := X86.target
-    doc := Spec.Sha512.init512Api.doc
+    verified := Proof.Sha512.X86.Shared.init Spec.Sha512.H0_384 },
+  Spec.Sha512.init512Api.artifact X86.target {
     code := Impl.Sha512.X86.Stream.init Spec.Sha512.H0_512
-    contract := Spec.Sha512.initContract X86.abi Spec.Sha512.H0_512
-    verified := Proof.Sha512.X86.Shared.init Spec.Sha512.H0_512
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha512.init512_224Api with
-    target := X86.target
-    doc := Spec.Sha512.init512_224Api.doc
+    verified := Proof.Sha512.X86.Shared.init Spec.Sha512.H0_512 },
+  Spec.Sha512.init512_224Api.artifact X86.target {
     code := Impl.Sha512.X86.Stream.init Spec.Sha512.H0_512_224
-    contract := Spec.Sha512.initContract X86.abi Spec.Sha512.H0_512_224
-    verified := Proof.Sha512.X86.Shared.init Spec.Sha512.H0_512_224
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha512.init512_256Api with
-    target := X86.target
-    doc := Spec.Sha512.init512_256Api.doc
+    verified := Proof.Sha512.X86.Shared.init Spec.Sha512.H0_512_224 },
+  Spec.Sha512.init512_256Api.artifact X86.target {
     code := Impl.Sha512.X86.Stream.init Spec.Sha512.H0_512_256
-    contract := Spec.Sha512.initContract X86.abi Spec.Sha512.H0_512_256
-    verified := Proof.Sha512.X86.Shared.init Spec.Sha512.H0_512_256
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha512.updateApi with
-    target := X86.target
-    doc := Spec.Sha512.updateApi.doc
+    verified := Proof.Sha512.X86.Shared.init Spec.Sha512.H0_512_256 },
+  Spec.Sha512.updateApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch 1404 5 Impl.Sha512.X86.Stream.update
-    contract := Spec.Sha512.updateContract X86.abi (20 + 1404)
     stack := 20 + 1404
-    verified := Proof.Sha512.X86.Shared.update
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha512.finalizeApi with
-    target := X86.target
-    doc := Spec.Sha512.finalizeApi.doc
+    verified := Proof.Sha512.X86.Shared.update },
+  Spec.Sha512.finalizeApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch 1400 4 Impl.Sha512.X86.Stream.finalize
-    contract := Spec.Sha512.finalizeContract X86.abi (20 + 1400)
     stack := 20 + 1400
-    verified := Proof.Sha512.X86.Shared.finalize
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha512.updateScratchApi with
-    target := X86.target
-    doc := Spec.Sha512.updateScratchApi.doc
+    verified := Proof.Sha512.X86.Shared.finalize },
+  Spec.Sha512.updateScratchApi.artifact X86.target {
     code := Impl.Sha512.X86.Stream.update
-    contract := Spec.Sha512.updateScratchContract X86.abi 20
     stack := 20
-    verified := Proof.Sha512.X86.Shared.updateScratch
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha512.finalizeScratchApi with
-    target := X86.target
-    doc := Spec.Sha512.finalizeScratchApi.doc
+    verified := Proof.Sha512.X86.Shared.updateScratch },
+  Spec.Sha512.finalizeScratchApi.artifact X86.target {
     code := Impl.Sha512.X86.Stream.finalize
-    contract := Spec.Sha512.finalizeScratchContract X86.abi 20
     stack := 20
-    verified := Proof.Sha512.X86.Shared.finalizeScratch
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha512.finalize384Api with
-    target := X86.target
-    doc := Spec.Sha512.finalize384Api.doc
+    verified := Proof.Sha512.X86.Shared.finalizeScratch },
+  Spec.Sha512.finalize384Api.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch 1400 4
       (Impl.Sha512.X86.Stream.finalizeDigest Impl.Sha512.X86.Stream.params384)
-    contract := Spec.Sha512.finalizeDigestContract X86.abi Spec.Sha512.H0_384 48 Spec.Sha512.sha384 (20 + 1400)
     stack := 20 + 1400
-    verified := Proof.Sha512.X86.Shared.finalize384
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha512.finalize512_256Api with
-    target := X86.target
-    doc := Spec.Sha512.finalize512_256Api.doc
+    verified := Proof.Sha512.X86.Shared.finalize384 },
+  Spec.Sha512.finalize512_256Api.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch 1400 4
       (Impl.Sha512.X86.Stream.finalizeDigest Impl.Sha512.X86.Stream.params512_256)
-    contract := Spec.Sha512.finalizeDigestContract X86.abi Spec.Sha512.H0_512_256 32 Spec.Sha512.sha512_256 (20 + 1400)
     stack := 20 + 1400
-    verified := Proof.Sha512.X86.Shared.finalize512_256
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha512.finalize512_224Api with
-    target := X86.target
-    doc := Spec.Sha512.finalize512_224Api.doc
+    verified := Proof.Sha512.X86.Shared.finalize512_256 },
+  Spec.Sha512.finalize512_224Api.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch 1400 4
       (Impl.Sha512.X86.Stream.finalizeDigest Impl.Sha512.X86.Stream.params512_224)
-    contract := Spec.Sha512.finalizeDigestContract X86.abi Spec.Sha512.H0_512_224 28 Spec.Sha512.sha512_224 (20 + 1400)
     stack := 20 + 1400
-    verified := Proof.Sha512.X86.Shared.finalize512_224
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Sha512.X86.Shared.finalize512_224 }]
 
 end VG.Artifacts.Sha512.X86

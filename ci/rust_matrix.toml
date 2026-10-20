@@ -1,0 +1,288 @@
+# The matrices of ci.yml's Rust jobs, which `rust-arches` (ci/rust_arches.py)
+# narrows to the architectures a run tests: a job starts only for the
+# entries it keeps. Each entry's `arch` is the `target_arch` its tests run
+# (the SDE chips', which have none, are x86-64's).
+
+# `rust`: every test, with coverage, on each platform, and the lints.
+[[rust]]
+name = "Linux, x86-64"
+os = "ubuntu-26.04"
+arch = "x86_64"
+rust = "stable"
+
+# x86: a 32-bit userspace, run natively on the x86-64 host, in the image
+# ci/runner.Dockerfile builds (Runner images workflow). It holds only that
+# platform, so it is named.
+# Docker 29.4.2 on ubuntu-26.04 denies socketcall(2), which i386 glibc makes
+# its socket calls through, so the container has no network
+# (actions/runner-images#14790); drop the flag once the runner has Docker
+# 29.4.3 or later.
+[[rust]]
+name = "Linux, x86"
+os = "ubuntu-26.04"
+arch = "x86"
+rust = "stable"
+container = { image = "ghcr.io/pyca/verified-garbage-runner:i686", options = "--platform linux/386 --security-opt seccomp=unconfined" }
+
+[[rust]]
+name = "Linux, AArch64"
+os = "ubuntu-26.04-arm"
+arch = "aarch64"
+rust = "stable"
+
+# ARMv7: cross-compiled on the ARM64 host, in the same Dockerfile's 64-bit
+# image for it, whose Cargo runs the tests (ci/arm32-run) natively when the
+# CPU has AArch32 and under QEMU when it doesn't: some runners are Neoverse
+# V3, which has none, and on which a 32-bit container can't even start.
+[[rust]]
+name = "Linux, ARMv7"
+os = "ubuntu-26.04-arm"
+arch = "arm"
+rust = "stable"
+container = { image = "ghcr.io/pyca/verified-garbage-runner:armv7-cross" }
+
+[[rust]]
+name = "macOS, AArch64"
+os = "macos-latest"
+arch = "aarch64"
+rust = "stable"
+
+[[rust]]
+name = "Windows, x86-64"
+os = "windows-latest"
+arch = "x86_64"
+rust = "stable"
+
+# The minimum supported Rust version (Cargo.toml's `rust-version`), on one
+# platform.
+[[rust]]
+name = "Linux, x86-64"
+os = "ubuntu-26.04"
+arch = "x86_64"
+rust = "1.88"
+
+# One job each for the upcoming toolchains, to catch regressions (and new
+# warnings, which are errors here) before they reach stable.
+[[rust]]
+name = "Linux, x86-64"
+os = "ubuntu-26.04"
+arch = "x86_64"
+rust = "beta"
+
+[[rust]]
+name = "Linux, x86-64"
+os = "ubuntu-26.04"
+arch = "x86_64"
+rust = "nightly"
+
+# `rust-thumb`: ARM's code assembled as T32. The minimum supported Rust
+# version is tested in `rust`.
+[[thumb]]
+arch = "arm"
+rust = "stable"
+
+# `rust-cpu-features`: one CPU (and userspace) each; see ci.yml. `shards = n`
+# runs the CPU's lines as n jobs (ci/cpu_shards.py), with a `shard` of `i/n`.
+
+# AES-GCM's instances for AES's or GHASH's extension alone, which
+# no runner or chip has without the other; AES-NI's and
+# PCLMULQDQ's together, without AVX and with it, and with AVX2
+# too, whose key setup with the powers needs it (and AES-CMAC's,
+# AES-CCM's and AES-SIV's AES-NI functions, those chaining CMAC's
+# blocks in registers among them, and the AES-NI instances of
+# AES-OCB and of the modes over whole blocks, ECB to XTS), which a
+# runner with VAES and VPCLMULQDQ never chooses; and VAES's and
+# VPCLMULQDQ's 256-bit ones, which a runner with AVX512BW too
+# never chooses; and XTS's VAES instances calling the block
+# functions, which a runner with VPCLMULQDQ never chooses; and
+# RSAES-PKCS1-v1_5 and RSAES-OAEP decryption and
+# RSASSA-PSS with the hash functions' SHA extensions and RSA's
+# baseline code (and P-256's signatures with SHA-256's SHA
+# extensions and the baseline multiplication); and `vg_zeroize_avx`, and `vg_zeroize` without
+# AVX. And RSAES-OAEP with SHA-1's and SHA-256's SHA extensions
+# and with SHA-512's baseline code and RSA's ADX code, or with
+# SHA-512's AVX2 code and RSA's baseline or ADX code (whatever
+# the runner's AVX512_IFMA).
+[[cpu]]
+chip = "native"
+arch = "x86_64"
+runs = """
+- | ffdh dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs zeroize cpu
+aes,ssse3 | aes_gcm cmac aes_ccm aes_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts zeroize cpu
+pclmulqdq,ssse3 | aes_gcm cpu
+aes,pclmulqdq,ssse3 | aes_gcm cpu
+aes,avx,pclmulqdq,ssse3 | aes_gcm aes_xts cpu
+aes,avx,avx2,pclmulqdq,ssse3 | aes_gcm cpu
+aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
+aes,avx,avx2,ssse3,vaes | aes_xts cpu
+sha,ssse3 | dsa_parameters rsa_pkcs1 rsa_pss rsa_oaep p256_sha cpu
+avx,avx2,bmi2,adx,sha,ssse3 | dsa_parameters rsa_oaep cpu
+avx,avx2,bmi1,bmi2,sha,ssse3 | rsa_oaep cpu
+adx,avx,avx2,bmi1,bmi2,sha,ssse3 | rsa_oaep cpu
+"""
+
+# x86 feature dispatch, natively in a 32-bit userspace, with the
+# runner's features (ChaCha20's and ChaCha20-Poly1305's SSSE3
+# instances) and every test with the baseline implementations; and
+# AES-GCM's and AES-GCM-SIV's instances for AES's or GHASH's
+# extension alone. The container's options are `rust`'s x86 entry's.
+[[cpu]]
+chip = "native"
+arch = "x86"
+container = { image = "ghcr.io/pyca/verified-garbage-runner:i686", options = "--platform linux/386 --security-opt seccomp=unconfined" }
+runs = """
+- | sha1 sha224 sha256 sha384 sha512 aes_ccm aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts aes_siv cmac chacha20 mlkem scrypt x25519 ed25519 ecdsa p256_sha cpu
+none | all
+aes | aes_gcm aes_gcm_siv cpu
+pclmulqdq,ssse3 | aes_gcm aes_gcm_siv cpu
+"""
+
+# AVX-512F and AVX512VL (with Argon2's vg_argon2_compress_avx512
+# and BLAKE2b's vg_blake2b_compress_avx512), BMI2 and ADX (with
+# FFDH's and DSA's ADX functions), and with AVX2 too (RSA's ADX
+# functions, whose private-key operation selects its table's entries
+# with AVX2, and P-256's, P-384's, P-521's and Ed25519's `_adx`
+# functions, whose combs select their entries with AVX2, P-384's
+# and P-521's with SHA-512's baseline code); BMI2 and
+# ADX without AVX-512F; AVX-512F without AVX2, for Argon2 with G's
+# AVX-512 code and BLAKE2b's baseline code; and AVX-512F without
+# AVX512VL, for Argon2 with G's AVX-512 code and BLAKE2b's AVX2
+# code, and for ChaCha20's and ChaCha20-Poly1305's `_avx512`
+# instances, which the CPU's AVX512VL replaces with `_avx512vl`.
+[[cpu]]
+chip = "skx"
+arch = "x86_64"
+runs = """
+- | dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+bmi2,adx | ffdh dsa ed448 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+avx,avx2,bmi2,adx | rsa_pkcs1 rsa_pss rsa_oaep p256 p384 p521 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+avx,avx512f | argon2 rfc9106 cpu
+avx,avx2,avx512f | argon2 rfc9106 mlkem chacha20 cpu
+"""
+
+# AVX2, but not AVX-512F or ADX; AES-NI and PCLMULQDQ with AVX, but
+# not VAES or VPCLMULQDQ (RSAES-PKCS1-v1_5 decryption and RSASSA-PSS
+# with the hash functions' AVX2 code and RSA's baseline code, and
+# P-256, P-384 and P-521 with their baseline multiplications).
+[[cpu]]
+chip = "hsw"
+arch = "x86_64"
+runs = """
+- | dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa_pkcs1 rsa_pss rsa_oaep p256 p384 p521 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+"""
+
+# Nothing beyond x86-64's baseline, not even CPUID leaf 7.
+# Ubuntu 26.04's x86-64 userspace is built for x86-64-v3 (AVX2), so
+# SDE stops on its dynamic loader's AVX instructions: this CPU runs
+# on 24.04, whose userspace is the baseline ISA's. The only x86-64 CPU
+# here to choose AES-CCM's baseline AES.
+[[cpu]]
+chip = "p4p"
+arch = "x86_64"
+runner = "ubuntu-24.04"
+runs = """
+- | ffdh dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+"""
+
+# Arrow Lake: the SHA512 extension, which no runner has (and
+# RSASSA-PSS and RSAES-OAEP with SHA-384's and SHA-512's code using
+# it, and P-256's and P-384's signatures with SHA-384 and P-521's
+# with SHA-512 using it, with and without ADX; and RSAES-OAEP with
+# it and MGF1 over SHA-1 with SHA-1's baseline code and RSA's ADX
+# code, or with SHA-1's SHA extensions and RSA's baseline code).
+[[cpu]]
+chip = "arl"
+runs = """
+- | sha384 sha512 ed25519 rsa_pss rsa_oaep message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+avx,avx2,sha512 | ed25519 rsa_oaep p256 p384 p521 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+avx,avx2,sha512,bmi2,adx | rsa_oaep_pairs cpu
+avx,avx2,sha512,sha,ssse3 | rsa_oaep_pairs cpu
+"""
+
+# Ice Lake server: AVX512_IFMA and AVX512VL, for vg_x25519_ifma
+# and (with AVX512F) vg_x25519_base_ifma, Ed25519's IFMA variants,
+# vg_rsa_private_checked_ifma and vg_poly1305_blocks_ifma (with the
+# `_ifma` instances of Poly1305, ChaCha20 and ChaCha20-Poly1305); VAES,
+# VPCLMULQDQ and AVX512BW, for vg_aes_ctr32_vaes, vg_ghash_vpclmul
+# and the AES-GCM and AES-CMAC instances calling them (AES-GCM's
+# with its 512-bit loops); and AES-GCM's instances with VAES or
+# VPCLMULQDQ alone or paired with the other's 128-bit instruction,
+# which no chip has without the other, and with both in 256-bit
+# registers alone, which a chip with AVX512BW never chooses; and
+# RSAES-PKCS1-v1_5 decryption and RSASSA-PSS signing with
+# vg_rsa_private_checked_ifma and each hash function's
+# implementations (and RSAES-OAEP decryption with SHA-1's SHA
+# extensions and SHA-512's baseline code).
+# Two shards: its RSA lines each run Wycheproof's RSA tests under
+# SDE, which take minutes on a runner without AVX-512, and longer
+# sharing a runner's cores. There, only the line without
+# VG_CPU_FEATURES signs with 3072- and 4096-bit keys
+# (tests/wycheproof/harness.rs), about half of each line's time, so
+# the other two RSA lines take about as long together as it alone.
+[[cpu]]
+chip = "icx"
+shards = 2
+runs = """
+- | x25519 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm cmac chacha20 poly1305 cpu
+avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl | ed25519 rsa_pkcs1 rsa_pss rsa_oaep message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+avx,avx2,avx512f,bmi1,bmi2,adx,avx512ifma,avx512vl | rsa_pkcs1 rsa_pss rsa_oaep cpu
+avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl,sha,ssse3 | rsa_oaep_pairs cpu
+aes,avx,avx2,ssse3,vaes | aes_gcm cpu
+avx,avx2,pclmulqdq,ssse3,vpclmulqdq | aes_gcm cpu
+aes,avx,avx2,pclmulqdq,ssse3,vaes | aes_gcm cpu
+aes,avx,avx2,pclmulqdq,ssse3,vpclmulqdq | aes_gcm cpu
+aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
+"""
+
+# Diamond Rapids: the SHA512 extension and AVX512_IFMA, for
+# Ed25519's verification with both (vg_ed25519_verify_shani_ifma)
+# and RSASSA-PSS signing and RSAES-OAEP decryption with both (with
+# MGF1 over SHA-1 with its SHA extensions or its baseline code).
+[[cpu]]
+chip = "dmr"
+runs = """
+- | ed25519 rsa_pss rsa_oaep_pairs message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+avx,avx2,sha512,avx512f,bmi2,adx,avx512ifma,avx512vl | rsa_oaep_pairs cpu
+"""
+
+# The runner has SVE2, so the unrestricted run tests the `_sve2`
+# instances; `neon` and `none` test ChaCha20's NEON and scalar ones,
+# `sha3` and `none` the SHA-3 prototype and its scalar fallback (and
+# the instances of ML-KEM, ML-DSA and Ed448 calling each),
+# `none` deterministic ECDSA with the scalar SHA-256 and SHA-512
+# and AES-CCM with the scalar AES, and RSAES-PKCS1-v1_5 decryption
+# with the scalar SHA-256 (the unrestricted runs of the plain tests
+# take its `_sha256_sha2` instance), and the unrestricted run and
+# `none` AES-OCB's `_aes` and scalar instances. AES-GCM and
+# AES-GCM-SIV: the unrestricted run takes their `_aes_sha3` instances,
+# `aes` their `_aes` ones, and `none` AES-GCM-SIV's scalar ones.
+# RSAES-OAEP: `sha2` takes SHA-1's and SHA-256's `_sha2`
+# instances with SHA-512's scalar ones, `none` the scalar ones,
+# `sha3` SHA-512's `_sha3` ones with SHA-1's scalar MGF1, and
+# `sha2,sha3` both extensions together.
+[[cpu]]
+chip = "native"
+arch = "aarch64"
+os = "ubuntu-26.04-arm"
+runs = """
+- | aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts aes_siv aes_ccm cmac sha1 sha224 sha256 sha384 sha512 sha3 shake mlkem mldsa ed448 scrypt chacha20 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+neon | chacha20
+aes | aes_gcm aes_gcm_siv
+sha3 | sha3 shake mlkem mldsa ed448 rsa_oaep
+sha2 | dsa_parameters rsa_oaep
+sha2,sha3 | rsa_oaep
+none | dsa aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p224_sha p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts rsa_pkcs1 rsa_oaep
+"""
+
+# ARMv7, in the `rust` job's container (cross-compiled, run as that job
+# runs them): `none` takes RSA and FFDH's baseline code, which a CPU with `umaal`
+# (every runner's) never chooses.
+[[cpu]]
+chip = "native"
+arch = "arm"
+os = "ubuntu-26.04-arm"
+container = { image = "ghcr.io/pyca/verified-garbage-runner:armv7-cross" }
+runs = """
+none | rsa ffdh cpu
+"""
+

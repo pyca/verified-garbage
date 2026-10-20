@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Sm4.Circuit
 meta import VerifiedGarbage.Impl.Sm4.Circuit
 public import VerifiedGarbage.Impl.Aes.AArch64.Sbox
 meta import VerifiedGarbage.Impl.Aes.AArch64.Sbox
+meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
 
 /-!
 # The bitsliced SM4 S-box on AArch64

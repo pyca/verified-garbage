@@ -1,22 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Sym
-public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 public import VerifiedGarbage.Proof.Bignum.Amm52
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
-public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-public import VerifiedGarbage.Proof.Bignum.CrtFrame
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
-public import VerifiedGarbage.Proof.Bignum.Math
-public import VerifiedGarbage.Proof.Framework.X86_64.StraightY
-public import VerifiedGarbage.Proof.Framework.AddrArith
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.Bignum.Layout
+import VerifiedGarbage.Proof.Bignum.CrtFrame
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSA with AVX512_IFMA on x86-64: lemmas
@@ -375,7 +372,7 @@ theorem ofNat64_inj' {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) : BitVec.of
   · rintro rfl; rfl
 
 /-- The mask of entry `i`. -/
-theorem selMask_ok {s : State} {i v : Nat} (hi : i < 16) (hv : v < 16)
+theorem selMask_ok {s : State} {i v : Nat} (hi : i < 32) (hv : v < 32)
     (hc : s.gpr .rcx = BitVec.ofNat 64 i) (hd : s.gpr .rdx = BitVec.ofNat 64 v) :
     WP isa (.block [.mov .rax (.reg .rcx), .alu .xor .rax (.reg .rdx), .alu .cmp .rax (.imm 1),
       .alu .sbb .rax (.reg .rax)]) s fun s' => s'.gpr .rax = selMask (decide (i = v)) ∧ Keep [.rax] s s' ∧
@@ -396,11 +393,6 @@ theorem selMask_and (w : BitVec 64) (c : Bool) : (w &&& selMask c) = if c then w
 
 theorem zero_or64 (x : BitVec 64) : 0 ||| x = x := by simp
 theorem or_zero64 (x : BitVec 64) : x ||| 0 = x := by simp
-
-theorem shr60 (w : BitVec 64) : w >>> 60 = BitVec.ofNat 64 (w.toNat / 2 ^ 60) := by
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-    Nat.mod_eq_of_lt (by have := w.isLt; omega)]
 
 /-- Writes of 32 bytes within `[o, o + n)` leave the rest. -/
 theorem wrList_outside' (B : Addr) {o n : Nat} (hn : o + n ≤ 2 ^ 63) :
@@ -450,7 +442,7 @@ open VG.Proof.Bignum (off word ofs Outside off_off ofs_off writeW_outside)
 open VG.Proof.Bignum.X86_64 (Scr)
 
 /-- The squarings' count down, `ZF` at 0. -/
-theorem r15Dec_ok {s : State} {n : Nat} (hn : 1 ≤ n) (hn' : n ≤ 5) (h15 : s.gpr .r15 = BitVec.ofNat 64 n) :
+theorem r15Dec_ok {s : State} {n : Nat} (hn : 1 ≤ n) (hn' : n ≤ 6) (h15 : s.gpr .r15 = BitVec.ofNat 64 n) :
     WP isa (.block [.alu .sub .r15 (.imm 1)]) s fun s' =>
       s'.gpr .r15 = BitVec.ofNat 64 (n - 1) ∧ s'.zf = some (decide (n - 1 = 0)) ∧
       VG.Proof.MlKem.X86_64.Keep [.r15] s s' ∧ s'.mem = s.mem ∧ s'.mxcsr = s.mxcsr := by
@@ -500,51 +492,11 @@ open VG VG.X86_64 VG.Proof.Bignum.Amm52
 open VG.Proof.Bignum (off word ofs Outside off_off ofs_off writeW_outside)
 open VG.Proof.Bignum.X86_64 (Scr)
 
-theorem ror8_byte : ∀ b : BitVec 8, (b.setWidth 64).rotateRight 8 = BitVec.ofNat 64 (b.toNat * 2 ^ 56) := by
-  decide +kernel
-
-theorem ror60_v : ∀ b < 256, (BitVec.ofNat 64 (b * 2 ^ 56)).rotateRight 60 =
-    BitVec.ofNat 64 (b % 16 * 2 ^ 60 + b / 16) := by
-  decide +kernel
-
 theorem ea_idx (t : State) (d : Nat) :
     t.ea { base := .rbx, index := some .r13, disp := ((d : Nat) : Int) } =
       t.gpr .rbx + t.gpr .r13 + BitVec.ofNat 64 d := by
   simp only [State.ea, BitVec.mul_one]
   exact congrArg _ (BitVec.ofInt_natCast ..)
-
-/-- The windows' count down, `ZF` at 0. -/
-theorem r14Dec_ok {s : State} {n : Nat} (hn : 1 ≤ n) (hn' : n ≤ 2) (h14 : s.gpr .r14 = BitVec.ofNat 64 n) :
-    WP isa (.block [.alu .sub .r14 (.imm 1)]) s fun s' =>
-      s'.gpr .r14 = BitVec.ofNat 64 (n - 1) ∧ s'.zf = some (decide (n - 1 = 0)) ∧
-      VG.Proof.MlKem.X86_64.Keep [.r14] s s' ∧ s'.mem = s.mem ∧ s'.mxcsr = s.mxcsr := by
-  refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.r14] (Q := fun s' =>
-    s'.gpr .r14 = BitVec.ofNat 64 (n - 1) ∧ s'.zf = some (decide (n - 1 = 0)) ∧ s'.mem = s.mem ∧
-      s'.mxcsr = s.mxcsr) (by
-    xrun [h14]
-    have e : BitVec.ofNat 64 n - 1 = BitVec.ofNat 64 (n - 1) := by
-      rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, ← VG.Offset.ofNat_sub_ofNat hn]
-    and_intros
-    · exact e
-    · rw [e]; congr 1
-      by_cases h : n - 1 = 0
-      · simp only [h, decide_true]; rfl
-      · simp only [h, decide_false, beq_eq_false_iff_ne, ne_eq]
-        intro h'
-        have := congrArg BitVec.toNat h'
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-        exact h this
-    all_goals rfl) rfl)
-    fun s' ⟨⟨a, b, c, d⟩, k⟩ => ⟨a, b, k, c, d⟩
-
-/-- `V` before window `j` of the byte `b`. -/
-def vj (b j : Nat) : Nat := if j = 0 then b * 2 ^ 56 else b % 16 * 2 ^ 60 + b / 16
-
-theorem win_exp {E b j : Nat} (hb : b < 256) (hj : j < 2) (n : Nat) (hn : n = if j = 0 then b / 16 else b % 16) :
-    (E * 16 ^ j + b / 16 ^ (2 - j)) * 16 + n = E * 16 ^ (j + 1) + b / 16 ^ (2 - (j + 1)) := by
-  subst hn
-  rcases (show j = 0 ∨ j = 1 by omega) with rfl | rfl <;> simp only [Nat.reducePow, Nat.reduceSub, Nat.reduceAdd,
-    ite_true, ite_false, Nat.one_ne_zero] <;> omega
 
 theorem ofs_off0 (B : Addr) {d : Nat} (h : d < 2 ^ 64) : ofs B (off B d) = d := by
   simp only [ofs, off, VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]

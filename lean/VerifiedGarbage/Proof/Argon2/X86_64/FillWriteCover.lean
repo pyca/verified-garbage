@@ -1,12 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillWrite
+public import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Inline
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillWritePrefix
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Argon2.X86_64.FillWritePrefix
 import VerifiedGarbage.Proof.Argon2.X86_64.CountCandidates
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Merged from `Proof.Argon2.X86_64.FillWrite`. -/
 

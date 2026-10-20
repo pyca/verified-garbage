@@ -1,14 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.AArch64.KsaSetup
+import VerifiedGarbage.Proof.Rc4.AArch64.KsaSetup
 import VerifiedGarbage.Proof.Rc4.AArch64.ApplyFinish
 public import VerifiedGarbage.TCB.AArch64.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Rc4.AArch64.KsaGroup
 import VerifiedGarbage.Proof.Rc4.AArch64.Rows
+import VerifiedGarbage.Proof.Rc4.Memory
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # The key schedule

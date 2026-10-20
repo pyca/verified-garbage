@@ -1,19 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRow
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRow
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRow
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTailCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTail
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRow
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTailCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRows
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRows
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTail
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## AdxTiledRowCT -/
 

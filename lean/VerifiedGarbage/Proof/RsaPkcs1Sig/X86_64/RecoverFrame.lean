@@ -3,11 +3,8 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCtx
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyFrame
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Recover
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-!
 # `vg_rsa_pkcs1_recover` on x86-64: the frame
@@ -64,7 +61,7 @@ structure PreR (s : State) : Prop where
   L1 : 1 ≤ (s.gpr .r9).toNat
   L2 : (s.gpr .r9).toNat ≤ (s.gpr .rcx).toNat
   hash : ∃ h, Spec.RsaPkcs1Sig.Hash.ofId ((stackArg s 0).setWidth 32).toNat = some h ∧ (s.gpr .rsi).toNat = h.len
-  hsl : 16 * (s.gpr .rcx).toNat + 32 ≤ (stackArg s 4).toNat
+  hsl : Spec.Rsa.publicScratchWords (s.gpr .rcx).toNat ≤ (stackArg s 4).toNat
 
 theorem preR_of {s : State} (h : recContract.pre s) : PreR s := by
   simp only [recContract] at h

@@ -1,15 +1,24 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86_64.SealCT
-meta import VerifiedGarbage.Proof.AesOcb.X86_64.SealCT
 import VerifiedGarbage.Proof.AesOcb.X86_64.Open
-meta import VerifiedGarbage.Proof.AesOcb.X86_64.Open
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesOcb.X86_64.CmpMask
+import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.SealCT
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.Open
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.CmpMask
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Impl.AesOcb.X86_64
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
 
 /-!
 # AES-OCB on x86-64: `vg_aes_ocb_open` is constant time

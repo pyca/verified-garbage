@@ -1,13 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
 public import VerifiedGarbage.Proof.Ed448.SignedWindow
-public import VerifiedGarbage.Impl.Ed448.X86_64.Window
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.X448.X86_64.Env
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Impl.Ed448.X86_64.Scalar
+import VerifiedGarbage.Impl.Ed448.X86_64.WindowRegister
 
 /-! Expanded scalar bits preserved by verification's point operations. -/
 

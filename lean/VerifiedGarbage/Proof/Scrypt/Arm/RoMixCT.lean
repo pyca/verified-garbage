@@ -1,40 +1,44 @@
 module
 
 public import VerifiedGarbage.Proof.Scrypt.RoMix
-meta import VerifiedGarbage.Proof.Scrypt.RoMix
 public import VerifiedGarbage.Impl.Scrypt.Arm.RoMix
-meta import VerifiedGarbage.Impl.Scrypt.Arm.RoMix
-public import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.Set
-meta import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Scrypt.Arm.BlockMixVerified
-meta import VerifiedGarbage.Proof.Scrypt.Arm.BlockMixVerified
-public import Mathlib.Tactic.DefEqTransformations
-meta import Mathlib.Tactic.DefEqTransformations
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Spec.Scrypt.Contract
-meta import VerifiedGarbage.Spec.Scrypt.Contract
-import VerifiedGarbage.Proof.Scrypt.Arm.Lit
-meta import VerifiedGarbage.Proof.Scrypt.Arm.Lit
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import all Init.Data.Nat.Power2.Basic
 public import VerifiedGarbage.Proof.Framework.RelCT
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.OmegaLit
-meta import VerifiedGarbage.Proof.Framework.RelCT
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.OmegaLit
+public import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Scrypt.Memory
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import Mathlib.Tactic.DefEqTransformations
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Scrypt.Arm.Lit
+meta import VerifiedGarbage.Proof.Scrypt.RoMix
+meta import VerifiedGarbage.Impl.Scrypt.Arm.RoMix
+meta import VerifiedGarbage.Proof.Scrypt.Arm.BlockMixVerified
+meta import Init.Data.Nat.Power2.Basic
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.Arm.Call
 meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
 meta import VerifiedGarbage.Proof.Scrypt.Memory
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import Mathlib.Tactic.DefEqTransformations
+meta import Mathlib.Tactic.Set
+meta import Mathlib.Tactic.Conv
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Scrypt.Arm.Lit
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # scryptROMix on 32-bit ARM: the precondition
@@ -1694,7 +1698,7 @@ theorem KR.keep {s₀ : State} {bp q : BitVec 32} {s s' : State} (h : KR s₀ bp
     (hk _ (by decide)).trans h.r8, (hk _ (by decide)).trans h.r9, h.frame.trans hf⟩
 
 /-- Whether an instruction writes none of `kRegs`. -/
-def kFree (i : Instr) : Bool := kRegs.all fun r => dstOf i != some r
+def kFree (i : Instr) : Bool := kRegs.all fun r => !clobbers i r
 
 /-- `KR` survives code that writes none of its registers. -/
 theorem KR.exec {c : Prog isa} (hc : c.allInstrs kFree = true) (hn : c.noFrames = true)
@@ -1704,7 +1708,7 @@ theorem KR.exec {c : Prog isa} (hc : c.allInstrs kFree = true) (hn : c.noFrames 
   rw [Code.allInstrs_eq, List.all_eq_true] at hc
   refine h.keep rd wr sp (fun r hr => Exec.gpr (fun i hi => ?_) he (.inr (kRegs_pres r hr).2.2)) ?_
   · have := hc i hi
-    simp only [kFree, List.all_eq_true, bne_iff_ne, ne_eq] at this
+    simp only [kFree, List.all_eq_true, Bool.not_eq_true'] at this
     exact this r hr
   · rw [h.wr, hw] at f; exact f
 
@@ -2142,7 +2146,7 @@ theorem pubEq_of {s₁ s₂ : State} (h : Proof.Scrypt.roMixArm.pub s₁ s₂) :
 /-- No instruction of ROMix, or of the functions it calls, writes `r10` or `r11`. -/
 theorem others_kept :
     (instrs Impl.Scrypt.Arm.roMix).all
-      (fun i => [Reg.r10, .r11].all fun r => dstOf i != some r) = true := by
+      (fun i => [Reg.r10, .r11].all fun r => !clobbers i r) = true := by
   rw [← Code.allInstrs_eq]; decide +kernel
 
 theorem preserved_cases :
@@ -2176,7 +2180,7 @@ theorem roMix_correct (s : State) (hs : Proof.Scrypt.roMixArm.pre s) :
     rw [List.all_eq_true] at hc
     refine Exec.gpr (fun i hi => ?_) he (.inr (by revert h; revert r; decide))
     have := hc i hi
-    simp only [List.all_eq_true, bne_iff_ne, ne_eq] at this
+    simp only [List.all_eq_true, Bool.not_eq_true'] at this
     exact this r h
 
 theorem roMix_ct : ConstantTime isa Proof.Scrypt.roMixArm.pre Proof.Scrypt.roMixArm.pub

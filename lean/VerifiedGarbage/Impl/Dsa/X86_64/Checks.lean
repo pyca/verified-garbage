@@ -45,6 +45,12 @@ def widthMask (n : Nat) : List Instr :=
   [.mov .rax (.reg .r8), .alu .xor .rax (.imm (BitVec.ofNat 32 n)),
     .alu .cmp .rax (.imm 1), .alu .sbb .rax (.reg .rax)]
 
+/-- All imported subgroup widths for a 2048-bit modulus, including legacy 160-bit q. -/
+def width2048 : List Instr :=
+  widthMask 28 ++ ([.mov .r10 (.reg .rax)] : List Instr) ++ widthMask 32 ++
+    ([.alu .or .rax (.reg .r10)] : List Instr) ++ ([.mov .r10 (.reg .rax)] : List Instr) ++ widthMask 20 ++
+    ([.alu .or .rax (.reg .r10)] : List Instr)
+
 /-- Check supported actual bit lengths (not just allocated byte widths),
 public modulus oddness, and compute the digest-prefix length. ZF on exit
 is set iff the mask is zero. Public fields p and q remain unchanged. -/
@@ -61,8 +67,7 @@ def domainShape : Prog isa := seqs [
   .ite .e (.block (widthMask 20))
     (.seq (.block [.alu .cmp .rdx (.imm 256)])
       (.ite .e
-        (.block (widthMask 28 ++ ([.mov .r10 (.reg .rax)] : List Instr) ++ widthMask 32 ++
-          ([.alu .or .rax (.reg .r10)] : List Instr)))
+        (.block width2048)
         (.seq (.block [.alu .cmp .rdx (.imm 384)])
           (.ite .e (.block (widthMask 32)) (.block [.mov32 .rax (.imm 0)]))))),
   .block (accumulate ++

@@ -1,14 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Base
-public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Bytes
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, the round constants and the padded seeds
@@ -21,15 +18,17 @@ states holding the padded seeds, byte by byte (`absorb_ok`).
 
 namespace VG.Proof.MlKem.X86_64.S4
 
+variable {w16 : Bool}
+
 open VG VG.X86_64 VG.Impl.MlKem.X86_64 VG.Impl.MlKem.X86_64.Sample4
 open VG.Spec.MlKem
 open VG.Proof.Sha3.X86_64.X4 (q4 VUpd la ba Lanes4 wp_vmovq wp_vbcast wp_vst wp_vxor readW_write256 q4_ymm)
 open VG.Proof.Sha3.X86_64 (wp_movi64)
 
 /-- `Env` after writes below the saved registers. -/
-theorem Env.write {σ s s' : State} (he : Env σ s) {a n : Nat} (h : a + n ≤ oSave)
+theorem EnvW.write {σ s s' : State} (he : EnvW w16 σ s) {a n : Nat} (h : a + n ≤ oSave)
     (hf : Frame [⟨at' σ a, n⟩] s.mem s'.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
-    (hg : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15], s'.gpr r = s.gpr r) : Env σ s' := by
+    (hg : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15], s'.gpr r = s.gpr r) : EnvW w16 σ s' := by
   refine ⟨hrd.trans he.rd, hwr.trans he.wr, by rw [hg .rbx (by simp), he.rbx], by rw [hg .r12 (by simp), he.r12],
     by rw [hg .r13 (by simp), he.r13], by rw [hg .rsp (by simp), he.rsp], by rw [hg .r15 (by simp), he.r15],
     fun i hi => ?_, ?_⟩
@@ -59,16 +58,19 @@ theorem wb_out (m : Mem) (p : Addr) {w : Nat} (v : BitVec w) {e d : Nat} (h : d 
 /-! ## The round constants -/
 
 /-- After the first `n` round constants. -/
-structure RcInv (σ s₀ : State) (n : Nat) (s : State) : Prop where
+structure RcInvW (w16 : Bool) (σ s₀ : State) (n : Nat) (s : State) : Prop where
   keep : Keep [.rax] s₀ s
   frame : Frame [⟨at' σ oRc, 768⟩] s₀.mem s.mem
   rc : ∀ r < n, ∀ k < 4, s.mem.readW (la (scr σ) (50 + r) k) 64 = Spec.Sha3.RC r
 
-theorem rc_step {σ : State} (hp : Pre σ) {s₀ : State} (he : Env σ s₀) {r : Nat} (hr : r < 24) {s : State}
-    (h : RcInv σ s₀ r s) :
+/-- `RcInvW` with 32-bit coefficients. -/
+abbrev RcInv := RcInvW false
+
+theorem rc_step {σ : State} (hp : PreW w16 σ) {s₀ : State} (he : EnvW w16 σ s₀) {r : Nat} (hr : r < 24) {s : State}
+    (h : RcInvW w16 σ s₀ r s) :
     WP isa (.block [.movImm64 .rax (Spec.Sha3.RC r), .vop (.vmovq .xmm0 .rax),
       .vop (.vpbroadcastq .l256 .xmm0 .xmm0), Impl.Sha3.X86_64.X4.st .rbx (oRc / 32 + r) .xmm0]) s
-      (RcInv σ s₀ (r + 1)) := by
+      (RcInvW w16 σ s₀ (r + 1)) := by
   have hbx : s.gpr .rbx = scr σ := by rw [h.keep.gpr (by decide), he.rbx]
   refine wp_movi64 fun s₁ u₁ => wp_vmovq fun s₂ u₂ => wp_vbcast fun s₃ u₃ =>
     wp_vst (a := at' σ (32 * (50 + r))) (by rw [VG.Proof.Sha3.X86_64.ea_at, u₃.gpr, u₂.gpr, u₁.other _ (by decide), hbx]; rfl)
@@ -96,10 +98,10 @@ theorem rcTable_eq : Impl.Sha3.X86_64.X4.rcTable .rbx (oRc / 32) = (List.range 2
       Impl.Sha3.X86_64.X4.st .rbx (oRc / 32 + r) .xmm0] := rfl
 
 /-- The table of the round constants. -/
-theorem rc_ok {σ : State} (hp : Pre σ) {s₀ : State} (he : Env σ s₀) :
-    WP isa (.block (Impl.Sha3.X86_64.X4.rcTable .rbx (oRc / 32))) s₀ (RcInv σ s₀ 24) := by
+theorem rc_ok {σ : State} (hp : PreW w16 σ) {s₀ : State} (he : EnvW w16 σ s₀) :
+    WP isa (.block (Impl.Sha3.X86_64.X4.rcTable .rbx (oRc / 32))) s₀ (RcInvW w16 σ s₀ 24) := by
   rw [rcTable_eq]
-  exact wp_range_flatMap (M := isa) (RcInv σ s₀) (fun r s hr h => rc_step hp he hr h) 24 (Nat.le_refl _) s₀
+  exact wp_range_flatMap (M := isa) (RcInvW w16 σ s₀) (fun r s hr h => rc_step hp he hr h) 24 (Nat.le_refl _) s₀
     ⟨Keep.refl _ _, Frame.refl _ _, fun _ h => absurd h (by bdd_omega)⟩
 
 
@@ -128,14 +130,17 @@ def SB (σ : State) (m : Mem) (F : Nat → Nat → Byte) : Prop :=
   ∀ k < 4, ∀ q < 200, m (ba (scr σ) k q) = F k q
 
 /-- During the writes to the states, after the round constants (in `m₁`). -/
-structure AI (σ : State) (m₁ : Mem) (s : State) : Prop where
-  env : Env σ s
+structure AIW (w16 : Bool) (σ : State) (m₁ : Mem) (s : State) : Prop where
+  env : EnvW w16 σ s
   r14 : s.gpr .r14 = 1
   frame : Frame [⟨scr σ, 800⟩] m₁ s.mem
 
-theorem AI.write {σ : State} {m₁ : Mem} {s s' : State} (h : AI σ m₁ s) {e n : Nat} (hn : e + n ≤ 800)
+/-- `AIW` with 32-bit coefficients. -/
+abbrev AI := AIW false
+
+theorem AIW.write {σ : State} {m₁ : Mem} {s s' : State} (h : AIW w16 σ m₁ s) {e n : Nat} (hn : e + n ≤ 800)
     (hm : ∃ v : BitVec (8 * n), s'.mem = s.mem.writeW (at' σ e) v) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
-    (hg : ∀ r, r ≠ .rax → s'.gpr r = s.gpr r) : AI σ m₁ s' := by
+    (hg : ∀ r, r ≠ .rax → s'.gpr r = s.gpr r) : AIW w16 σ m₁ s' := by
   obtain ⟨v, hv⟩ := hm
   have hf : Frame [⟨at' σ e, n⟩] s.mem s'.mem := by
     rw [hv]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (by
@@ -150,13 +155,16 @@ theorem AI.write {σ : State} {m₁ : Mem} {s s' : State} (h : AI σ m₁ s) {e 
 /-! ### Zeroing -/
 
 /-- After zeroing the first `n` lanes of each state. -/
-structure ZInv (σ : State) (m₁ : Mem) (n : Nat) (s : State) : Prop where
-  ai : AI σ m₁ s
+structure ZInvW (w16 : Bool) (σ : State) (m₁ : Mem) (n : Nat) (s : State) : Prop where
+  ai : AIW w16 σ m₁ s
   x0 : ∀ k < 4, q4 s .xmm0 k = 0
   bytes : ∀ k < 4, ∀ q < 200, q / 8 < n → s.mem (ba (scr σ) k q) = 0
 
-theorem zero_step {σ : State} (hp : Pre σ) {m₁ : Mem} {i : Nat} (hi : i < 25) {s : State} (h : ZInv σ m₁ i s) :
-    WP isa (.block [Impl.Sha3.X86_64.X4.st .rbx i .xmm0]) s (ZInv σ m₁ (i + 1)) := by
+/-- `ZInvW` with 32-bit coefficients. -/
+abbrev ZInv := ZInvW false
+
+theorem zero_step {σ : State} (hp : PreW w16 σ) {m₁ : Mem} {i : Nat} (hi : i < 25) {s : State} (h : ZInvW w16 σ m₁ i s) :
+    WP isa (.block [Impl.Sha3.X86_64.X4.st .rbx i .xmm0]) s (ZInvW w16 σ m₁ (i + 1)) := by
   refine wp_vst (a := at' σ (32 * i)) (by rw [VG.Proof.Sha3.X86_64.ea_at, h.ai.env.rbx])
     (by rw [h.ai.env.wr]; exact in_scr hp rfl (by bdd_omega)) fun s' g' q' m' r' w' => VG.Proof.Sha3.X86_64.wp_nil ?_
   refine ⟨h.ai.write (e := 32 * i) (n := 32) (by bdd_omega) ⟨_, m'⟩ r' w' fun r _ => by rw [g'],
@@ -178,10 +186,10 @@ theorem zero_step {σ : State} (hp : Pre σ) {m₁ : Mem} {i : Nat} (hi : i < 25
 theorem zero4_eq : zero4 = Impl.Sha3.X86_64.X4.vb .vpxor .xmm0 .xmm0 .xmm0 ::
     (List.range 25).flatMap fun i => [Impl.Sha3.X86_64.X4.st .rbx i .xmm0] := rfl
 
-theorem zero_ok {σ : State} (hp : Pre σ) {m₁ : Mem} {s : State} (h : AI σ m₁ s) :
-    WP isa (.block zero4) s (fun s' => AI σ m₁ s' ∧ SB σ s'.mem fun _ _ => 0) := by
+theorem zero_ok {σ : State} (hp : PreW w16 σ) {m₁ : Mem} {s : State} (h : AIW w16 σ m₁ s) :
+    WP isa (.block zero4) s (fun s' => AIW w16 σ m₁ s' ∧ SB σ s'.mem fun _ _ => 0) := by
   rw [zero4_eq]
-  refine wp_vxor fun s₁ u₁ => WP.mono (wp_range_flatMap (M := isa) (ZInv σ m₁) (fun i s hi h => zero_step hp hi h)
+  refine wp_vxor fun s₁ u₁ => WP.mono (wp_range_flatMap (M := isa) (ZInvW w16 σ m₁) (fun i s hi h => zero_step hp hi h)
     25 (Nat.le_refl _) s₁ ⟨h.write (e := 0) (n := 0) (by bdd_omega) ⟨0, ?_⟩ u₁.rd u₁.wr fun r _ => by rw [u₁.gpr],
       fun k hk => by rw [u₁.val k hk, BitVec.xor_self]; rfl, fun _ _ _ _ h => absurd h (by bdd_omega)⟩)
     fun s' h' => ⟨h'.ai, fun k hk q hq => h'.bytes k hk q hq (by bdd_omega)⟩
@@ -200,10 +208,10 @@ def HF (σ : State) (K i : Nat) (k q : Nat) : Byte :=
   if (k < K ∧ q < 34) ∨ (k = K ∧ q < 8 * i) then Bq σ k q else 0
 
 open VG.Proof.Sha3.X86_64 (wp_movm wp_store wp_movzx8 wp_store8 wp_mov32i wp_nil) in
-theorem lane_step {σ : State} (hp : Pre σ) {m₁ : Mem} {K i : Nat} (hK : K < 4) (hi : i < 4) {s : State}
-    (h : AI σ m₁ s ∧ SB σ s.mem (HF σ K i)) :
+theorem lane_step {σ : State} (hp : PreW w16 σ) {m₁ : Mem} {K i : Nat} (hK : K < 4) (hi : i < 4) {s : State}
+    (h : AIW w16 σ m₁ s ∧ SB σ s.mem (HF σ K i)) :
     WP isa (.block [.mov .rax (.mem (at_ .r12 (34 * K + 8 * i))), .store (at_ .rbx (32 * i + 8 * K)) .rax]) s
-      (fun s' => AI σ m₁ s' ∧ SB σ s'.mem (HF σ K (i + 1))) := by
+      (fun s' => AIW w16 σ m₁ s' ∧ SB σ s'.mem (HF σ K (i + 1))) := by
   obtain ⟨ha, hb⟩ := h
   refine wp_movm (a := sd σ + BitVec.ofNat 64 (34 * K + 8 * i)) (by rw [ea_at, ha.env.r12])
     (in_sd' hp ha.env.rd ha.env.wr (by bdd_omega)) fun s₁ u₁ => wp_store (a := at' σ (32 * i + 8 * K))
@@ -233,10 +241,10 @@ theorem byte_setWidth (b : Byte) : BitVec.setWidth 8 (BitVec.setWidth 64 b) = b 
 
 open VG.Proof.Sha3.X86_64 (wp_movm wp_store wp_movzx8 wp_store8 wp_mov32i wp_nil) in
 /-- Byte `32 + j` of seed `K`. -/
-theorem byte_step {σ : State} (hp : Pre σ) {m₁ : Mem} {K j : Nat} (hK : K < 4) (hj : j < 2) {s : State}
-    (h : AI σ m₁ s ∧ SB σ s.mem fun k q => if (k < K ∧ q < 34) ∨ (k = K ∧ q < 32 + j) then Bq σ k q else 0) :
+theorem byte_step {σ : State} (hp : PreW w16 σ) {m₁ : Mem} {K j : Nat} (hK : K < 4) (hj : j < 2) {s : State}
+    (h : AIW w16 σ m₁ s ∧ SB σ s.mem fun k q => if (k < K ∧ q < 34) ∨ (k = K ∧ q < 32 + j) then Bq σ k q else 0) :
     WP isa (.block [.movzx8 .rax (at_ .r12 (34 * K + (32 + j))), .store8 (at_ .rbx (128 + 8 * K + j)) .rax]) s
-      (fun s' => AI σ m₁ s' ∧
+      (fun s' => AIW w16 σ m₁ s' ∧
         SB σ s'.mem fun k q => if (k < K ∧ q < 34) ∨ (k = K ∧ q < 32 + (j + 1)) then Bq σ k q else 0) := by
   obtain ⟨ha, hb⟩ := h
   refine wp_movzx8 (a := sd σ + BitVec.ofNat 64 (34 * K + (32 + j))) (by rw [ea_at, ha.env.r12])
@@ -269,11 +277,11 @@ theorem seedLanes_eq (K : Nat) : seedLanes K = (List.range 4).flatMap (fun i =>
 /-- The states after the first `K` seeds. -/
 def GF (σ : State) (K : Nat) (k q : Nat) : Byte := if k < K ∧ q < 34 then Bq σ k q else 0
 
-theorem seed_step {σ : State} (hp : Pre σ) {m₁ : Mem} {K : Nat} (hK : K < 4) {s : State}
-    (h : AI σ m₁ s ∧ SB σ s.mem (GF σ K)) :
-    WP isa (.block (seedLanes K)) s (fun s' => AI σ m₁ s' ∧ SB σ s'.mem (GF σ (K + 1))) := by
+theorem seed_step {σ : State} (hp : PreW w16 σ) {m₁ : Mem} {K : Nat} (hK : K < 4) {s : State}
+    (h : AIW w16 σ m₁ s ∧ SB σ s.mem (GF σ K)) :
+    WP isa (.block (seedLanes K)) s (fun s' => AIW w16 σ m₁ s' ∧ SB σ s'.mem (GF σ (K + 1))) := by
   rw [seedLanes_eq, WP.block_append_iff]
-  refine WP.mono (wp_range_flatMap (M := isa) (fun i s => AI σ m₁ s ∧ SB σ s.mem (HF σ K i))
+  refine WP.mono (wp_range_flatMap (M := isa) (fun i s => AIW w16 σ m₁ s ∧ SB σ s.mem (HF σ K i))
     (fun i s hi h => lane_step hp hK hi h) 4 (Nat.le_refl _) s ⟨h.1, fun k hk q hq => ?_⟩) fun s₁ h₁ => ?_
   · rw [h.2 k hk q hq, GF, HF]
     by_cases hc : k < K ∧ q < 34
@@ -300,10 +308,10 @@ theorem seed_step {σ : State} (hp : Pre σ) {m₁ : Mem} {K : Nat} (hK : K < 4)
 
 open VG.Proof.Sha3.X86_64 (wp_store8 wp_mov32i wp_nil) in
 /-- The byte `c` (in `rax`) to byte `q₀` of state `K`. -/
-theorem cbyte_step {σ : State} (hp : Pre σ) {m₁ : Mem} {F : Nat → Nat → Byte} {K q₀ : Nat} (hK : K < 4)
-    (hq₀ : q₀ < 200) {c : Byte} {s : State} (hax : s.gpr .rax = c.setWidth 64) (h : AI σ m₁ s ∧ SB σ s.mem F) :
+theorem cbyte_step {σ : State} (hp : PreW w16 σ) {m₁ : Mem} {F : Nat → Nat → Byte} {K q₀ : Nat} (hK : K < 4)
+    (hq₀ : q₀ < 200) {c : Byte} {s : State} (hax : s.gpr .rax = c.setWidth 64) (h : AIW w16 σ m₁ s ∧ SB σ s.mem F) :
     WP isa (.block [.store8 (at_ .rbx (32 * (q₀ / 8) + 8 * K + q₀ % 8)) .rax]) s
-      (fun s' => AI σ m₁ s' ∧ s'.gpr .rax = s.gpr .rax ∧
+      (fun s' => AIW w16 σ m₁ s' ∧ s'.gpr .rax = s.gpr .rax ∧
         SB σ s'.mem fun k q => if k = K ∧ q = q₀ then c else F k q) := by
   obtain ⟨ha, hb⟩ := h
   refine wp_store8 (a := at' σ (32 * (q₀ / 8) + 8 * K + q₀ % 8)) (by rw [ea_at, ha.env.rbx])
@@ -331,11 +339,11 @@ theorem last_eq : (List.range 4).flatMap (fun k => [Instr.store8 (at_ .rbx (640 
     (List.range 4).flatMap (fun k => [Instr.store8 (at_ .rbx (32 * (167 / 8) + 8 * k + 167 % 8)) .rax]) := rfl
 
 /-- The byte `c` to byte `q₀` of each state. -/
-theorem cbytes_ok {σ : State} (hp : Pre σ) {m₁ : Mem} {F : Nat → Nat → Byte} {q₀ : Nat} (hq₀ : q₀ < 200)
-    {c : Byte} {s : State} (hax : s.gpr .rax = c.setWidth 64) (h : AI σ m₁ s ∧ SB σ s.mem F) :
+theorem cbytes_ok {σ : State} (hp : PreW w16 σ) {m₁ : Mem} {F : Nat → Nat → Byte} {q₀ : Nat} (hq₀ : q₀ < 200)
+    {c : Byte} {s : State} (hax : s.gpr .rax = c.setWidth 64) (h : AIW w16 σ m₁ s ∧ SB σ s.mem F) :
     WP isa (.block ((List.range 4).flatMap fun k => [.store8 (at_ .rbx (32 * (q₀ / 8) + 8 * k + q₀ % 8)) .rax])) s
-      (fun s' => AI σ m₁ s' ∧ SB σ s'.mem fun k q => if q = q₀ then c else F k q) := by
-  refine WP.mono (wp_range_flatMap (M := isa) (fun K s' => AI σ m₁ s' ∧ s'.gpr .rax = c.setWidth 64 ∧
+      (fun s' => AIW w16 σ m₁ s' ∧ SB σ s'.mem fun k q => if q = q₀ then c else F k q) := by
+  refine WP.mono (wp_range_flatMap (M := isa) (fun K s' => AIW w16 σ m₁ s' ∧ s'.gpr .rax = c.setWidth 64 ∧
       SB σ s'.mem fun k q => if k < K ∧ q = q₀ then c else F k q)
     (fun K s' hK ⟨ha, hx, hb⟩ => WP.mono (cbyte_step hp hK hq₀ hx ⟨ha, hb⟩) fun s'' ⟨ha', hx', hb'⟩ =>
       ⟨ha', hx'.trans hx, fun k hk q hq => ?_⟩) 4 (Nat.le_refl _) s ⟨h.1, hax, fun k hk q hq => ?_⟩)
@@ -364,17 +372,17 @@ theorem absorb4_eq : absorb4 = zero4 ++ ((List.range 4).flatMap seedLanes ++
 
 open VG.Proof.Sha3.X86_64 (wp_mov32i) in
 /-- The padded seeds in the four states. -/
-theorem absorb_ok {σ : State} (hp : Pre σ) {m₁ : Mem} {s : State} (h : AI σ m₁ s) :
-    WP isa (.block absorb4) s (fun s' => AI σ m₁ s' ∧ SB σ s'.mem (PF σ)) := by
+theorem absorb_ok {σ : State} (hp : PreW w16 σ) {m₁ : Mem} {s : State} (h : AIW w16 σ m₁ s) :
+    WP isa (.block absorb4) s (fun s' => AIW w16 σ m₁ s' ∧ SB σ s'.mem (PF σ)) := by
   rw [absorb4_eq, WP.block_append_iff]
   refine WP.mono (zero_ok hp h) fun s₁ ⟨h₁, z₁⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (wp_range_flatMap (M := isa) (fun K s => AI σ m₁ s ∧ SB σ s.mem (GF σ K))
+  refine WP.mono (wp_range_flatMap (M := isa) (fun K s => AIW w16 σ m₁ s ∧ SB σ s.mem (GF σ K))
     (fun K s hK h => seed_step hp hK h) 4 (Nat.le_refl _) s₁ ⟨h₁, fun k hk q hq => ?_⟩) fun s₂ h₂ => ?_
   · rw [z₁ k hk q hq, GF, ifn (by bdd_omega)]
   rw [WP.block_append_iff]
   refine WP.mono (wp_mov32i (is := []) fun s₃ u₃ => VG.Proof.Sha3.X86_64.wp_nil
-    (Q := fun s₃ => AI σ m₁ s₃ ∧ s₃.gpr .rax = (0x1f : Byte).setWidth 64 ∧ SB σ s₃.mem (GF σ 4))
+    (Q := fun s₃ => AIW w16 σ m₁ s₃ ∧ s₃.gpr .rax = (0x1f : Byte).setWidth 64 ∧ SB σ s₃.mem (GF σ 4))
     ⟨h₂.1.write (e := 0) (n := 0) (by bdd_omega) ⟨0, ?_⟩ u₃.rd u₃.wr fun r hr => u₃.other r hr, by rw [u₃.gpr]; rfl,
       by rw [u₃.mem]; exact h₂.2⟩) fun s₃ ⟨a₃, x₃, b₃⟩ => ?_
   · rw [u₃.mem]; funext x; simp [Mem.writeW, Mem.write]
@@ -382,7 +390,7 @@ theorem absorb_ok {σ : State} (hp : Pre σ) {m₁ : Mem} {s : State} (h : AI σ
   refine WP.mono (cbytes_ok hp (by decide) x₃ ⟨a₃, b₃⟩) fun s₄ ⟨a₄, b₄⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (wp_mov32i (is := []) fun s₅ u₅ => VG.Proof.Sha3.X86_64.wp_nil
-    (Q := fun s₅ => AI σ m₁ s₅ ∧ s₅.gpr .rax = (0x80 : Byte).setWidth 64 ∧
+    (Q := fun s₅ => AIW w16 σ m₁ s₅ ∧ s₅.gpr .rax = (0x80 : Byte).setWidth 64 ∧
       SB σ s₅.mem fun k q => if q = 34 then 0x1f else GF σ 4 k q)
     ⟨a₄.write (e := 0) (n := 0) (by bdd_omega) ⟨0, ?_⟩ u₅.rd u₅.wr fun r hr => u₅.other r hr, by rw [u₅.gpr]; rfl,
       by rw [u₅.mem]; exact b₄⟩) fun s₅ ⟨a₅, x₅, b₅⟩ => ?_

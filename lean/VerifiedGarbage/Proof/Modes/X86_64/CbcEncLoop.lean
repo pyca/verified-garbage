@@ -1,13 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
 public import VerifiedGarbage.Proof.Modes.CbcEnc
 public import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Modes.X86_64.Group
+import VerifiedGarbage.Proof.Modes.X86_64.Words
+import VerifiedGarbage.Proof.Modes.X86_64.Steps
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # CBC encryption on x86-64, for any core: the data loop
@@ -47,7 +48,7 @@ structure EInv (cs : BlockSpec c) (s₀ : State) (m₀ : Mem) (B D : Addr) (n : 
   lt : j < n
   data : ∀ q < n, ∀ r < 8 * c.bw, s.mem (D + BitVec.ofNat 64 (8 * c.bw * q + r)) =
     encByte (8 * c.bw) (cs.cipher k) m₀ D iv j q r
-  frame : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] s₀.mem s.mem
+  frame : Frame ([⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] ++ stkList c (s₀.gpr .rsp)) s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
@@ -58,9 +59,12 @@ structure EDone (cs : BlockSpec c) (s₀ : State) (m₀ : Mem) (B D : Addr) (n :
   rsp : s.gpr .rsp = s₀.gpr .rsp
   saved : ∀ i < 6, s.mem.readW (wordAddr B (c.slots + i)) 64 = s₀.mem.readW (wordAddr B (c.slots + i)) 64
   data : DInv (8 * c.bw) m₀ s.mem D n n (cbcEncC (8 * c.bw) (cs.cipher k) m₀ D iv)
-  frame : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] s₀.mem s.mem
+  frame : Frame ([⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] ++ stkList c (s₀.gpr .rsp)) s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
+  /-- The buffer's first block holds the last ciphertext block. -/
+  last : n ≠ 0 → ∀ u < 8 * c.bw, s.mem (B + BitVec.ofNat 64 (8 * c.buf) + BitVec.ofNat 64 u) =
+    (cbcEncC (8 * c.bw) (cs.cipher k) m₀ D iv (n - 1)).getD u 0
 
 theorem cbcEncBlock_wp (cs : BlockSpec c) {s₀ : State} {m₀ : Mem} {B D : Addr} {n : Nat} {k : cs.Key}
     {iv : List Byte} (hiv : iv.length = 8 * c.bw) (hp : GPre c s₀ B D n (8 * c.bw)) {j : Nat} {s : State}
@@ -128,6 +132,7 @@ theorem cbcEncBlock_wp (cs : BlockSpec c) {s₀ : State} {m₀ : Mem} {B D : Add
   -- Encrypted.
   refine WP.seq (WP.mono (cs.crypt_wp base₁ ⟨by rw [h₁.wr]; exact hwS, hfit⟩ ready₁)
     fun s₂ ⟨base₂, rsp₂, dr₂, lr₂, ready₂, f₂, ks₂, rd₂, wr₂⟩ => ?_)
+  rw [show s₁.gpr .rsp = s₀.gpr .rsp by rw [h₁.regs _ (by decide), hi.rsp]] at f₂
   have eT : blkAddr c B 0 = T := by simp only [blkAddr, T, Nat.mul_zero, Nat.add_zero]
   have hpl : (cbcEncPrev (8 * c.bw) ciph m₀ D iv j).length = 8 * c.bw := by
     unfold cbcEncPrev; split
@@ -155,8 +160,8 @@ theorem cbcEncBlock_wp (cs : BlockSpec c) {s₀ : State} {m₀ : Mem} {B D : Add
       rw [h₁.mem, over_at hv (by omega)]
   have D₂ : ∀ q < n, ∀ r < 8 * c.bw, s₂.mem (D + BitVec.ofNat 64 (8 * c.bw * q + r)) =
       s.mem (D + BitVec.ofNat 64 (8 * c.bw * q + r)) := fun q hq r hr => by
-    rw [f₂.bytes (R := ⟨D, 8 * c.bw * n⟩) (fun x hx => by
-        simp only [List.mem_singleton] at hx; subst hx; exact dDS subCore) hn64 (hqr hq hr), h₁.mem,
+    rw [f₂.bytes (R := ⟨D, 8 * c.bw * n⟩) (hp.stk.coreFrame_disj (dDS subCore) ⟨_, hp.dat, fun _ h => h⟩)
+        hn64 (hqr hq hr), h₁.mem,
       over_sep (dDS subT).symm (hqr hq hr) hn64]
   -- Back to the data, and the count.
   have data₂ : s₂.gpr c.dataReg = A := by rw [dr₂, h₁.regs _ da, hi.dataR]
@@ -202,15 +207,15 @@ theorem cbcEncBlock_wp (cs : BlockSpec c) {s₀ : State} {m₀ : Mem} {B D : Add
     rw [← hi.saved i hi6]
     refine (f₃.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact slotOut i hi6 (.inl subA)) (by decide)).trans ?_
-    refine (f₂.readW (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact slotOut i hi6 (.inr (.inr rfl))) (by decide)).trans ?_
+    refine (f₂.readW (Region.contains_self _ _) (hp.stk.coreFrame_disj (slotOut i hi6 (.inr (.inr rfl)))
+      ⟨_, hp.scr.wr, VG.Offset.sub_base B (show 8 * (c.slots + i) + 8 ≤ 8 * c.ctrSlots by
+        simp only [Core.ctrSlots]; omega)⟩) (by decide)).trans ?_
     exact f₁.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact slotOut i hi6 (.inr (.inl rfl))) (by decide)
-  have fr₃ : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] s₀.mem s₃.mem :=
+  have fr₃ : Frame ([⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] ++ stkList c (s₀.gpr .rsp)) s₀.mem s₃.mem :=
     hi.frame.trans (((f₁.sub fun r hr => ⟨_, List.mem_cons_self, by
       simp only [List.mem_singleton] at hr; subst hr; exact subT⟩).trans
-      (f₂.sub fun r hr => ⟨_, List.mem_cons_self, by
-        simp only [List.mem_singleton] at hr; subst hr; exact subCore⟩)).trans
+      (f₂.sub (coreFrame_sub ⟨_, List.mem_cons_self, subCore⟩))).trans
       (f₃.sub fun r hr => ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by
         simp only [List.mem_singleton] at hr; subst hr; exact subA⟩))
   have rsp₃ : s₃.gpr .rsp = s₀.gpr .rsp := by
@@ -267,7 +272,8 @@ theorem cbcEncBlock_wp (cs : BlockSpec c) {s₀ : State} {m₀ : Mem} {B D : Add
   by_cases hdone : j + 1 = n
   · have hm : s₆.mem = s₃.mem := by rw [mem₆, mDone hdone]
     refine .inl ⟨by rw [hz, decide_eq_true hdone], base₆, rsp₆, by rw [hm]; exact saved₃,
-      dinv_of_blocks hL0 fun q hq r hr => ?_, by rw [hm]; exact fr₃, rd₆', wr₆'⟩
+      dinv_of_blocks hL0 fun q hq r hr => ?_, by rw [hm]; exact fr₃, rd₆', wr₆',
+      fun _ u hu => by rw [hm, ← hdone, Nat.add_sub_cancel]; exact T₃ u hu⟩
     rw [hm, D₃ q hq r hr, ite_eq_left hq]
     split
     · rename_i h; subst h; rfl

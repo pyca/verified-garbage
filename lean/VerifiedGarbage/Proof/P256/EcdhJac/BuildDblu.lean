@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.P256.EcdhJac.BuildState
-public import VerifiedGarbage.Proof.P256.EcdhTable.Transfer
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.Booth
+public import VerifiedGarbage.Proof.P256.EcdhJac.DbluCertificate
+public import VerifiedGarbage.Proof.P256.EcdhTable.Dblu
+public import VerifiedGarbage.Proof.P256.EcdhTable.Zaddu
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+import VerifiedGarbage.Proof.P256.EcdhTable.Transfer
+import VerifiedGarbage.Proof.P256.EcdhJac.Frame
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! ## `BuildStart` -/
 

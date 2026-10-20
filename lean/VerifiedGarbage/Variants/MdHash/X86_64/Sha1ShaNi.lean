@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha1
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha1ShaNi
 
 /-!
 # SHA-1 on x86-64 with the SHA extensions
@@ -13,15 +12,6 @@ A variant of `MdHash` on x86-64 (see `TCB/Emit.lean`): SHA-1, with `vg_sha1_comp
 
 namespace VG.Variants.MdHash.X86_64.Sha1ShaNi
 
-/-- The compression function with the SHA extensions. -/
-def compress : Proof.Sha1.X86_64.Compress where
-  callee := .shani
-  ok := Proof.Sha1.X86_64.Stream.shani_ok
-  mxcsr := by decide +kernel
-  spSafe := Code.all_of_allInstrs (by lit_decide)
-  suffix := "_shani"
-  features := ["sha", "ssse3"]
-
-def variant : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Pbkdf2.Md.X86_64.Sha1.variant compress
+def variant : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha1ShaNi.variant
 
 end VG.Variants.MdHash.X86_64.Sha1ShaNi

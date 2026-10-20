@@ -1,19 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.X86.CombBodyCT
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombPrefix
+import VerifiedGarbage.Proof.EcKey.X86.CombMain
+import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
+import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
+import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.EcKey.X86.CombBodyCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Framework.X86.Sse
-meta import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombPrefix
+meta import VerifiedGarbage.Proof.EcKey.X86.CombMain
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-! # The public-key comb function, including its static-address prefix -/
 

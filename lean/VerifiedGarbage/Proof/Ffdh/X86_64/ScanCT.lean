@@ -1,14 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import VerifiedGarbage.Proof.Ffdh.Lead
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Scan
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Ffdh.X86_64.Scan
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+meta import VerifiedGarbage.Proof.Ffdh.Lead
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Scan
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-meta import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH on x86-64: the public scan is constant time -/
 

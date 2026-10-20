@@ -5,12 +5,8 @@ import VerifiedGarbage.Proof.X448.X86.Counters
 public import VerifiedGarbage.Proof.X448.X86.Ops
 import VerifiedGarbage.Proof.X448.X86.Iter
 public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Impl.X25519.X86
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit): the loop over the bits

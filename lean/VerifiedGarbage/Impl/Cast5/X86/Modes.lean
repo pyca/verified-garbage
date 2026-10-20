@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Cast5.X86
 public import VerifiedGarbage.Impl.Modes.X86.Seq
+public import VerifiedGarbage.Impl.Modes.CbcChained
 
 /-!
 # CAST5's core for the modes on x86 (32-bit)
@@ -71,10 +72,10 @@ def dirCore (up : Bool) : Impl.Modes.X86.Core where
   stack := 4
   ka := 2
 
-/-- `vg_cast5_cbc_encrypt`, with its scratch buffer as the sixth argument. -/
-def cbcEncrypt : Prog isa := (dirCore true).seq (Impl.Modes.Mode.cbcEnc 2)
-/-- `vg_cast5_cbc_decrypt`. -/
-def cbcDecrypt : Prog isa := (dirCore false).seq (Impl.Modes.Mode.cbcDec 2)
+/-- `vg_cast5_cbc_encrypt_chained`, with its scratch buffer as the sixth argument. -/
+def cbcEncryptChained : Prog isa := (dirCore true).seq (Impl.Modes.Mode.cbcEncChained 2)
+/-- `vg_cast5_cbc_decrypt_chained`. -/
+def cbcDecryptChained : Prog isa := (dirCore false).seq (Impl.Modes.Mode.cbcDecChained 2)
 /-- `vg_cast5_ofb`. -/
 def ofb : Prog isa := (dirCore true).seq (Impl.Modes.Mode.ofb 2)
 /-- `vg_cast5_cfb64_encrypt`. -/

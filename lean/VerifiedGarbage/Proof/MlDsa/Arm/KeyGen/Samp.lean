@@ -1,13 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.SeedsCT
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.SeedsCT
 import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Mask
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Good
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Seeds
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.StepsCT
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
 
 /-!
 # ML-DSA key generation on 32-bit ARM: the samplers

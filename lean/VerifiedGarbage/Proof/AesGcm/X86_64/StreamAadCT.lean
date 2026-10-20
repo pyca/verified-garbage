@@ -1,17 +1,26 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamAad
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamAad
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Impl.AesGcm.X86_64
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_aad` is constant time

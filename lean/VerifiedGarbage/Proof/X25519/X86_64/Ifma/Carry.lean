@@ -1,11 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Arith
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.Field
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: carries
@@ -69,7 +67,7 @@ theorem carryF_nat (E : Env) (l : Nat) : ∀ k < 5,
 def carryB (r : Nat → Nat) : Bnds :=
   ⟨fun i => if i = r 0 ∨ i = r 1 ∨ i = r 2 ∨ i = r 3 ∨ i = r 4 then 2 ^ 63 - 1 else 2 ^ 64 - 1,
     fun _ => 2 ^ 64 - 1, fun d => if d = KM then 2 ^ 51 - 1 else if d = K19 then 19 else 2 ^ 64 - 1,
-    fun _ => 0⟩
+    fun _ => 0, fun _ => 2 ^ 64 - 1⟩
 
 theorem carryI_ok : ∀ k < 5, ∀ l < 4, (carryI.reg k).ok (carryB id) l = true ∧
     (carryI.reg k).bnd (carryB id) l < 2 ^ 52 := by decide +kernel

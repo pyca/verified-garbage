@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
+import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
 public import VerifiedGarbage.Proof.Camellia.Arm.KeyLin
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Camellia.Arm.Core
+public import VerifiedGarbage.Proof.Camellia.Arm.StoreFrame
+import VerifiedGarbage.Proof.Camellia.Arm.Fl
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Camellia's key schedule on ARMv7: a pair of rounds on one value
@@ -40,11 +41,11 @@ theorem VW.congr {s s' : State} {a : Nat} {v : BitVec 64 × BitVec 64} (h : VW s
 
 theorem ok_fromBsCfg {s : State} (hs : Scr s (s.gpr sb)) : Ok fromBsCfg s := ok_fromBs hs
 
-theorem bcast_all : (layerKeep.all fun r => bcast.all fun i => dstOf i != some r) = true ∧
+theorem bcast_all : (layerKeep.all fun r => bcast.all fun i => !clobbers i r) = true ∧
     bcast.all (storesIn (4 * d1Slot) (4 * keySlot)) = true := by
   constructor <;> decide +kernel
 
-theorem unbcast_all : (layerKeep.all fun r => unbcast.all fun i => dstOf i != some r) = true ∧
+theorem unbcast_all : (layerKeep.all fun r => unbcast.all fun i => !clobbers i r) = true ∧
     unbcast.all (storesIn (4 * wSlot) (4 * wSlot + 16)) = true := by
   constructor <;> decide +kernel
 

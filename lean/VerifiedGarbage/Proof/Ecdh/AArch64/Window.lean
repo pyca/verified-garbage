@@ -1,14 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 
-public import VerifiedGarbage.Proof.Ecdh.AArch64.Validate
 import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
 
 /-!
 # ECDH on AArch64: `[d]P` by windows, and `Z^(p-2)`

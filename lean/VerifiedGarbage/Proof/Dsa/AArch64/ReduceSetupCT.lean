@@ -1,17 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReduceByteCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceByteCT
 import VerifiedGarbage.Proof.Dsa.AArch64.SetupCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ReduceSetup
+import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
+import VerifiedGarbage.Proof.Dsa.AArch64.Setup
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceByteCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.SetupCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceSetup
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Setup
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant time of streaming-reduction setup -/
 

@@ -32,6 +32,25 @@ class InstructionLocations(unittest.TestCase):
              [14, 18, 20], {"2": [0, 2], "3": [1, 1]}),
         )
 
+    def test_multiline_literals(self):
+        # The emitter writes each run of lines as one literal.
+        body = '\n'.join([
+            '    naked_asm!(',
+            '        "2:',
+            'mov eax, 8127',
+            '3:",',
+            '        "pmuludq xmm0, xmm1",',
+            '        "call {vg_f}',
+            'ret",',
+            '        vg_f = sym super::f::vg_f,',
+            '    );',
+        ])
+        self.assertEqual(
+            check_mcdt.code(body, 10),
+            (["mov eax, 8127", "pmuludq xmm0, xmm1", "call {vg_f}", "ret"],
+             [12, 14, 15, 16], {"2": [0], "3": [1]}),
+        )
+
     def test_diagnostics_across_functions_and_files(self):
         # Include documentation, blank lines, and labels before instructions;
         # main() must reset its file offset and code() must include labels.
@@ -40,8 +59,8 @@ class InstructionLocations(unittest.TestCase):
             '',
             'pub(crate) unsafe extern "sysv64" fn vg_first() {',
             '    naked_asm!(',
-            '        "2:",',
-            '        "pmuludq xmm0, xmm1",',
+            '        "2:',
+            'pmuludq xmm0, xmm1",',
             '    );',
             '}',
             '',
@@ -76,6 +95,26 @@ class InstructionLocations(unittest.TestCase):
                     "(MCDT, see lean/VerifiedGarbage/TCB/X86_64/Isa.lean)"
                 )
         self.assertEqual(stderr.getvalue().splitlines(), expected)
+
+
+class ColdBranch(unittest.TestCase):
+    PROLOGUE = [
+        "stmxcsr DWORD PTR [rsp]",
+        "mov eax, 8127",
+        "mov DWORD PTR [rsp+4], eax",
+        "ldmxcsr DWORD PTR [rsp+4]",
+        "lfence",
+    ]
+    EPILOGUE = ["lfence", "ldmxcsr DWORD PTR [rsp]", "ret"]
+
+    def test_cold_branch_inside_a_region(self):
+        # `je 20f` to cold code after the `ret`, whose `jmp 21b` returns into
+        # the region.
+        instrs = self.PROLOGUE + ["je 20f", "pmuludq xmm0, xmm1"] + self.EPILOGUE + [
+            "pmuludq xmm0, xmm2", "jmp 21b"]
+        labels = {"21": [6], "20": [len(instrs) - 2]}
+        errors, _ = check_mcdt.check_function("f", instrs, list(range(len(instrs))), labels)
+        self.assertIn("f:11: `jmp 21b` jumps into the MCDT region at line 5 from outside it", errors)
 
 
 if __name__ == "__main__":

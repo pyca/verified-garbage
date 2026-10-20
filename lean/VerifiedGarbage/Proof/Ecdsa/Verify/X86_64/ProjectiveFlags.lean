@@ -1,14 +1,13 @@
 module
+public import Mathlib.Tactic.ClearExcept
+public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Final
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Final
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
+import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 @[expose] public section
 

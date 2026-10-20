@@ -1,15 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Normalize
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
+public import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
 meta import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.Attr.Core
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Normalization observes only the public workspace and limb count -/
 

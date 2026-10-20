@@ -1,13 +1,12 @@
 module
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncLay
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
 
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCorrect
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RSAES-OAEP encryption on AArch64: two runs

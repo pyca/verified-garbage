@@ -1,12 +1,19 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Verify
+public import VerifiedGarbage.Proof.MlDsa.Verify.Spec
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CallArith
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CallPack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Hash
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.PrimsOk
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Top
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.StageA
-import VerifiedGarbage.Proof.MlDsa.Verify.Final
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.StageA
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
+import VerifiedGarbage.Proof.MlDsa.Verify.Norm
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-DSA verification on x86-64: `w′₁`, row by row

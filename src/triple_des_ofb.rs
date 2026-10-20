@@ -26,8 +26,7 @@ use crate::arch::triple_des_ofb::vg_triple_des_ofb;
 use crate::zeroize::zeroize;
 
 /// The key does not contain 16 or 24 bytes.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct InvalidKeyLength;
+pub use crate::error::InvalidKeyLength;
 
 /// An expanded Triple DES key for OFB, whose encryption and decryption are
 /// the same operation.

@@ -1,8 +1,15 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Verified
 public import VerifiedGarbage.Proof.Ed448.AArch64.BaseVerified
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # Ed448 public-key derivation on AArch64
@@ -21,23 +28,20 @@ the proof here, so that only registration and generic files import its algebra.
 namespace VG.Generic.Keccak.AArch64.Ed448PublicKey
 
 def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
-  { Spec.Ed448.publicKeyApi with
-    name := Spec.Ed448.publicKeyApi.name ++ v.callee.suffix
+  Spec.Ed448.publicKeyApi.artifact AArch64.target {
+    suffix := v.callee.suffix
     features := v.features
-    target := AArch64.target
-    doc := Spec.Ed448.publicKeyApi.doc (notes := ["Uses baseline integer instructions, and \
+    notes := ["Uses baseline integer instructions, and \
       those of the Keccak permutation it calls. Hashes the private key with \
       `vg_keccak_absorb_scratch`, `vg_keccak_pad_scratch` and `vg_keccak_squeeze_scratch` \
       (SHAKE256, into its stack frame, with the Keccak state in `scratch`), prunes the first 57 \
       bytes of the hash into the frame, encodes `[s]B` \
       with `vg_ed448_scalar_base`, and clears the frame's scalar and hash. The base-point \
       multiplication's working values are left in `scratch`. The function saves `x30` and its \
-      arguments on the stack, and the functions it calls use 16 bytes below its frame."])
+      arguments on the stack, and the functions it calls use 16 bytes below its frame."]
     consts := Impl.X448.AArch64.Base.combConsts
     code := Impl.Ed448.AArch64.PublicKey.publicKeyWith v.callee
-    contract := Spec.Ed448.publicKeyContract (AArch64.abi.withConsts Impl.X448.AArch64.Base.combConsts) 352
     stack := 352
-    verified := Proof.Ed448.AArch64.PublicKey.publicKey_verified v Proof.Ed448.AArch64.scalarBase_baseOk
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Ed448.AArch64.PublicKey.publicKey_verified v Proof.Ed448.AArch64.scalarBase_baseOk }]
 
 end VG.Generic.Keccak.AArch64.Ed448PublicKey

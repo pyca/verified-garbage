@@ -1,15 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT4
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT4
 public import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import Mathlib.Data.Fintype.Card
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecHash
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT1
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCT
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT3
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCorrect
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: verified

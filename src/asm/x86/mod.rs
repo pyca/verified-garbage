@@ -116,6 +116,9 @@ pub(crate) mod consts;
 pub(crate) mod ct;
 
 #[rustfmt::skip]
+pub(crate) mod dsa;
+
+#[rustfmt::skip]
 pub(crate) mod ec_brainpoolp256r1;
 
 #[rustfmt::skip]
@@ -183,6 +186,9 @@ pub(crate) mod ecdsa_brainpoolp384r1_sha384;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_brainpoolp512r1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_brainpoolp512r1_sha512;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_p192;
@@ -317,9 +323,6 @@ pub(crate) mod p224_point;
 pub(crate) mod p256_mont;
 
 #[rustfmt::skip]
-pub(crate) mod p256_point;
-
-#[rustfmt::skip]
 pub(crate) mod p384_mont;
 
 #[rustfmt::skip]
@@ -360,6 +363,15 @@ pub(crate) mod rc2;
 
 #[rustfmt::skip]
 pub(crate) mod rc4;
+
+#[rustfmt::skip]
+pub(crate) mod rsa;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_mont;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_pkcs1_sig;
 
 #[rustfmt::skip]
 pub(crate) mod scrypt;

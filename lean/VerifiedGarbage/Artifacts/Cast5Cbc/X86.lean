@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86.ModesVerified
+import VerifiedGarbage.Proof.Cast5.X86.ModesLit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # CAST5-CBC artifacts on baseline x86 (32-bit) -/
 
@@ -15,23 +17,17 @@ def note : String :=
   so no secret is an address. The subkeys and the number of rounds are reloaded from the arguments for each block."
 
 def artifacts : List Artifact := [
-  { Spec.Cast5.cbcEncryptApi with
-    target := X86.target
-    doc := Spec.Cast5.cbcEncryptApi.doc (notes := [note])
+  Spec.Cast5.cbcEncryptChainedApi.artifact X86.target {
+    notes := [note, "The chaining value, the last ciphertext block, goes back to the IV at the end."]
     consts := Impl.Cast5.ecbConsts
-    code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cbcEncrypt
-    contract := Spec.Cast5.cbcEncryptContract (X86.abi.withConsts Impl.Cast5.ecbConsts) 336
+    code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cbcEncryptChained
     stack := 336
-    verified := Proof.Cast5.X86.ModeFns.cbcEncrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Cast5.cbcDecryptApi with
-    target := X86.target
-    doc := Spec.Cast5.cbcDecryptApi.doc (notes := [note])
+    verified := Proof.Cast5.X86.ModeFns.cbcEncryptChained_framed },
+  Spec.Cast5.cbcDecryptChainedApi.artifact X86.target {
+    notes := [note, "The chaining value, the last ciphertext block, goes back to the IV at the end."]
     consts := Impl.Cast5.ecbConsts
-    code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cbcDecrypt
-    contract := Spec.Cast5.cbcDecryptContract (X86.abi.withConsts Impl.Cast5.ecbConsts) 336
+    code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cbcDecryptChained
     stack := 336
-    verified := Proof.Cast5.X86.ModeFns.cbcDecrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Cast5.X86.ModeFns.cbcDecryptChained_framed }]
 
 end VG.Artifacts.Cast5Cbc.X86

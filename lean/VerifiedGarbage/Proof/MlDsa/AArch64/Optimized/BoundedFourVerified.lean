@@ -1,43 +1,41 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSpec
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSpec
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Masked
-meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Masked
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourShake
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourShake
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
-meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 public import VerifiedGarbage.Spec.MlDsa.BoundedFour
-meta import VerifiedGarbage.Spec.MlDsa.BoundedFour
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatch
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatch
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourOuterTaint
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourOuterTaint
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourRound
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourRound
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourAdaptive
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourAdaptive
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFinish
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFinish
-public import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourOuterTaint
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitialized
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import Std.Tactic.BVDecide.Normalize.BitVec
+import Std.Tactic.BVDecide.Normalize.Prop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSpec
+meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Masked
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourShake
+meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+meta import VerifiedGarbage.Spec.MlDsa.BoundedFour
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatch
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourOuterTaint
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitialized
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import Std.Tactic.BVDecide.Normalize.BitVec
+meta import Std.Tactic.BVDecide.Normalize.Prop
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! ## From `BoundedFourSmall.lean` -/
 

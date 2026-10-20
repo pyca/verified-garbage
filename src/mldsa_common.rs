@@ -47,8 +47,10 @@ impl Backend {
 
 /// Defines the API of one ML-DSA parameter set: its `Error`, `SigningKey`
 /// and `VerifyingKey`, over its verified `keygen`, `sign_message` and
-/// `verify_message` functions, its `sign` and `verify` functions (which take
-/// `μ`, for known-answer tests) and its sizes.
+/// `verify_message` functions (on AArch64, `verify_message_cached`, which
+/// takes the hash `tr` of the public key the `VerifyingKey` keeps), its
+/// `sign` and `verify` functions (which take a precomputed `μ`)
+/// and its sizes.
 macro_rules! ml_dsa {
     (
         name: $name:literal,
@@ -59,6 +61,7 @@ macro_rules! ml_dsa {
         verify: $verify:path,
         sign_message: $sign_message:path,
         verify_message: $verify_message:path,
+        verify_message_cached: $verify_message_cached:path,
         keygen_sha3: ($keygen_sha3:path, $keygen_sha3_features:path),
         sign_sha3: ($sign_sha3:path, $sign_sha3_features:path),
         verify_sha3: ($verify_sha3:path, $verify_sha3_features:path),
@@ -117,6 +120,15 @@ macro_rules! ml_dsa {
             InvalidSignature,
             /// The operating system's random number generator failed.
             Randomness,
+        }
+
+        $crate::error::impl_error! {
+            Error {
+                LoopBound => concat!($name, " loop reached its bound"),
+                ContextTooLong => concat!($name, " context is longer than 255 bytes"),
+                InvalidSignature => concat!("invalid ", $name, " signature"),
+                Randomness => concat!($name, " random number generator failed"),
+            }
         }
 
         /// The working space of the assembly functions on `μ`.
@@ -182,10 +194,13 @@ macro_rules! ml_dsa {
                 // Backend selection checks the generated CPU feature requirements.
                 let r = unsafe {
                     match backend() {
+                        #[cfg(not(target_arch = "aarch64"))]
                         Backend::Scalar => $verify_message(&self.bytes, m, m_len, c, c_len, sig, &mut scratch),
-                        #[cfg(target_arch = "aarch64")]
                         // Both constructors establish tr = SHAKE256(bytes, 64);
                         // the key and digest remain private and immutable.
+                        #[cfg(target_arch = "aarch64")]
+                        Backend::Scalar => $verify_message_cached(&self.bytes, m, m_len, c, c_len, sig, &mut scratch, &self.tr),
+                        #[cfg(target_arch = "aarch64")]
                         Backend::Sha3 => $verify_message_cached_sha3(&self.bytes, m, m_len, c, c_len, sig, &mut scratch, &self.tr),
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => $verify_message_avx2(&self.bytes, m, m_len, c, c_len, sig, &mut scratch),
@@ -198,11 +213,14 @@ macro_rules! ml_dsa {
                 }
             }
 
-            /// `ML-DSA.Verify_internal` (FIPS 204 Algorithm 8) with the
-            /// message representative `mu` = `μ` given: for known-answer
-            /// tests.
-            #[doc(hidden)]
-            pub fn verify_internal(&self, mu: &[u8; 64], sig: &[u8; $sig]) -> Result<(), Error> {
+            /// Verify a signature of the 64-byte message representative `mu`
+            /// using FIPS 204 Algorithm 8, with `μ` already computed.
+            /// For pure ML-DSA, compute `mu = SHAKE256(tr || 0x00 ||
+            /// len(ctx) || ctx || msg, 64)`, where `tr = SHAKE256(pk, 64)`
+            /// and `len(ctx)` is one byte (at most 255). This method does
+            /// not hash the message or apply context formatting.
+            /// Returns [`Error::InvalidSignature`] if verification fails.
+            pub fn verify_mu(&self, mu: &[u8; 64], sig: &[u8; $sig]) -> Result<(), Error> {
                 let mut scratch: Scratch = [0; $scratch];
                 // SAFETY: `self.bytes`, `mu`, `sig` and `scratch` are valid
                 // for reads (and, for `scratch`, writes) of their sizes; they
@@ -314,13 +332,7 @@ macro_rules! ml_dsa {
             /// bytes.
             pub fn sign(&self, msg: &[u8], ctx: &[u8]) -> Result<[u8; $sig], Error> {
                 let mut rnd = [0u8; 32];
-                if getrandom::fill(&mut rnd).is_err() {
-                    // The operating system's generator does not fail in the
-                    // tests.
-                    // NO-COVERAGE-START
-                    return Err(Error::Randomness);
-                    // NO-COVERAGE-END
-                }
+                getrandom::fill(&mut rnd).map_err(|_| Error::Randomness)?;
                 let r = self.sign_with(msg, ctx, &rnd);
                 zeroize(&mut rnd);
                 r
@@ -375,12 +387,19 @@ macro_rules! ml_dsa {
                 }
             }
 
-            /// `ML-DSA.Sign_internal` (FIPS 204 Algorithm 7) with the
-            /// message representative `mu` = `μ` and the randomness `rnd`
-            /// given: for known-answer tests only. `rnd` must otherwise be
-            /// fresh random bytes, which [`sign`](Self::sign) draws.
-            #[doc(hidden)]
-            pub fn sign_internal(&self, mu: &[u8; 64], rnd: &[u8; 32]) -> Result<[u8; $sig], Error> {
+            /// Sign the 64-byte message representative `mu` using FIPS 204
+            /// Algorithm 7, with `μ` already computed. For pure ML-DSA,
+            /// compute `mu = SHAKE256(tr || 0x00 || len(ctx) || ctx || msg, 64)`,
+            /// where `tr = SHAKE256(pk, 64)` and `len(ctx)` is one byte
+            /// (at most 255). This method does not hash the message or
+            /// apply context formatting.
+            ///
+            /// Supply 32 fresh random bytes from an approved RBG as `rnd`
+            /// for hedged signing, or all zeros for deterministic signing.
+            /// FIPS 204 §3.4 recommends hedged signing where side channels
+            /// are a concern. Returns [`Error::LoopBound`] if a loop reaches
+            /// its bound.
+            pub fn sign_mu(&self, mu: &[u8; 64], rnd: &[u8; 32]) -> Result<[u8; $sig], Error> {
                 let mut sig = [0u8; $sig];
                 let mut scratch: Scratch = [0; $scratch];
                 // SAFETY: `self.sk`, `mu`, `rnd`, `sig` and `scratch` are
@@ -417,10 +436,6 @@ macro_rules! ml_dsa {
 
 pub(crate) use ml_dsa;
 
-#[cfg(all(test, target_arch = "aarch64"))]
-#[path = "mldsa_fused_tests.rs"]
-mod fused_tests;
-
 #[cfg(test)]
 mod tests {
     use crate::mldsa44::{Error, SigningKey44};
@@ -441,223 +456,6 @@ mod tests {
         );
         assert_eq!(Backend::select(required, required), Backend::Sha3);
     }
-
-    #[cfg(target_arch = "aarch64")]
-    #[test]
-    fn fused_dots_match_canonical_reference() {
-        use crate::arch::mldsa::{
-            vg_mldsa_dot_inverse4, vg_mldsa_dot_inverse5, vg_mldsa_dot_inverse7, vg_mldsa_inv_ntt,
-        };
-        const Q: u32 = 8_380_417;
-        fn check<const N: usize>(
-            kernel: unsafe extern "C" fn(
-                *mut [u32; 256],
-                *const [u32; N],
-                *const [u32; N],
-                *mut [u64; 128],
-            ),
-        ) {
-            for case in 0..4 {
-                let a: [u32; N] = core::array::from_fn(|i| match case {
-                    0 => 0,
-                    1 => 3 * Q - 1,
-                    2 => {
-                        if i % 2 == 0 {
-                            Q
-                        } else {
-                            2 * Q - 1
-                        }
-                    }
-                    _ => ((i as u64 * 1_103_515_245 + 12_345) % u64::from(3 * Q)) as u32,
-                });
-                let b: [u32; N] = core::array::from_fn(|i| match case {
-                    0 => 3 * Q - 1,
-                    1 => 3 * Q - 1,
-                    2 => {
-                        if i % 3 == 0 {
-                            0
-                        } else {
-                            3 * Q - 1
-                        }
-                    }
-                    _ => ((i as u64 * 2_654_435_761 + 91) % u64::from(3 * Q)) as u32,
-                });
-                let before_a = a;
-                let before_b = b;
-                let mut reference: [u32; 256] = core::array::from_fn(|i| {
-                    let sum: u64 = (0..N / 256)
-                        .map(|j| u64::from(a[j * 256 + i] % Q) * u64::from(b[j * 256 + i] % Q))
-                        .sum();
-                    (sum % u64::from(Q)) as u32
-                });
-                let mut scratch = [0u64; 128];
-                let mut output = [u32::MAX; 256];
-                // SAFETY: independent correctly sized buffers; reference is canonical,
-                // fused inputs are below 3q; kernels use baseline AArch64 instructions.
-                unsafe {
-                    vg_mldsa_inv_ntt(&mut reference, &mut scratch);
-                    kernel(&mut output, &a, &b, &mut scratch);
-                }
-                assert_eq!(output, reference, "count={} case={case}", N / 256);
-                assert!(output.iter().all(|&x| x < Q));
-                assert_eq!(a, before_a);
-                assert_eq!(b, before_b);
-            }
-        }
-        check(vg_mldsa_dot_inverse4);
-        check(vg_mldsa_dot_inverse5);
-        check(vg_mldsa_dot_inverse7);
-    }
-
-    #[cfg(target_arch = "aarch64")]
-    #[test]
-    fn optimized_transforms_match_canonical_reference() {
-        use crate::arch::mldsa::{
-            vg_mldsa_montgomery_inv_ntt, vg_mldsa_ntt, vg_mldsa_ntt_positive,
-            vg_mldsa_ntt_positive_from,
-        };
-        const Q: u32 = 8_380_417;
-        const R: u64 = 4_193_792;
-        for case in 0..4 {
-            let input = core::array::from_fn(|i| match case {
-                0 => 0,
-                1 => Q - 1,
-                2 => {
-                    if i % 2 == 0 {
-                        0
-                    } else {
-                        Q - 1
-                    }
-                }
-                _ => ((i as u64 * 1_103_515_245 + 12_345) % u64::from(Q)) as u32,
-            });
-            let mut reference = input;
-            let mut positive = input;
-            let mut separate = [u32::MAX; 256];
-            let mut scratch = [0u64; 128];
-            // SAFETY: canonical inputs, separate correctly sized buffers,
-            // and AArch64 baseline instructions only.
-            unsafe {
-                vg_mldsa_ntt(&mut reference, &mut scratch);
-                vg_mldsa_ntt_positive(&mut positive);
-                vg_mldsa_ntt_positive_from(&mut separate, &input);
-            }
-            assert_eq!(positive, separate);
-            for i in 0..256 {
-                assert!(positive[i] < 3 * Q);
-                assert_eq!(positive[i] % Q, reference[i]);
-            }
-            // SAFETY: the reference transform produces canonical coefficients.
-            unsafe { vg_mldsa_montgomery_inv_ntt(&mut reference, &mut scratch) };
-            for i in 0..256 {
-                assert_eq!(
-                    reference[i],
-                    (u64::from(input[i]) * R % u64::from(Q)) as u32
-                );
-            }
-        }
-    }
-
-    // Compare both key constructors with the original raw-key entry. In
-    // SHA3-enabled test runs the wrapper takes the cached-digest path.
-    macro_rules! cached_verification_matches_raw {
-        ($test:ident, $module:ident, $signing:ident, $verifying:ident, $raw:ident,
-         $raw_sha3:ident, $raw_sha3_features:ident, $scratch:literal) => {
-            #[test]
-            fn $test() {
-                use crate::$module::{Error, $signing, $verifying};
-                for seed in 0..4 {
-                    let key = $signing::from_seed(&[seed; 32]).unwrap();
-                    let imported = $verifying::from_bytes(key.verifying_key().as_bytes());
-                    assert_eq!(&imported, key.verifying_key());
-                    for ctx in [&[][..], &[3; 255][..]] {
-                        let msg = [seed; 137];
-                        let sig = key.sign_deterministic(&msg, ctx).unwrap();
-                        for vk in [key.verifying_key(), &imported, &imported.clone()] {
-                            for corrupt in [false, true] {
-                                let mut candidate = sig;
-                                if corrupt {
-                                    candidate[0] ^= 1;
-                                }
-                                let mut scratch = [0u64; $scratch];
-                                // SAFETY: valid, nonoverlapping buffers with the
-                                // exact generated sizes; the scalar entry needs
-                                // no optional CPU features.
-                                let raw = unsafe {
-                                    crate::arch::$module::$raw(
-                                        vk.as_bytes(),
-                                        msg.as_ptr(),
-                                        msg.len(),
-                                        ctx.as_ptr(),
-                                        ctx.len(),
-                                        &candidate,
-                                        &mut scratch,
-                                    )
-                                };
-                                #[cfg(target_arch = "aarch64")]
-                                if crate::cpu::detected()
-                                    .contains(crate::arch::$module::$raw_sha3_features)
-                                {
-                                    // SAFETY: the buffers have the generated sizes,
-                                    // and the accelerated entry's CPU requirements
-                                    // were checked above. The raw call has finished.
-                                    let accelerated = unsafe {
-                                        crate::arch::$module::$raw_sha3(
-                                            vk.as_bytes(),
-                                            msg.as_ptr(),
-                                            msg.len(),
-                                            ctx.as_ptr(),
-                                            ctx.len(),
-                                            &candidate,
-                                            &mut scratch,
-                                        )
-                                    };
-                                    assert_eq!(accelerated, raw);
-                                }
-                                let expected = if raw == 1 {
-                                    Ok(())
-                                } else {
-                                    Err(Error::InvalidSignature)
-                                };
-                                assert_eq!(vk.verify(&msg, ctx, &candidate), expected);
-                            }
-                        }
-                    }
-                }
-            }
-        };
-    }
-
-    cached_verification_matches_raw!(
-        cached44_matches_raw,
-        mldsa44,
-        SigningKey44,
-        VerifyingKey44,
-        vg_mldsa44_verify_message,
-        vg_mldsa44_verify_message_sha3,
-        VG_MLDSA44_VERIFY_MESSAGE_SHA3_FEATURES,
-        9856
-    );
-    cached_verification_matches_raw!(
-        cached65_matches_raw,
-        mldsa65,
-        SigningKey65,
-        VerifyingKey65,
-        vg_mldsa65_verify_message,
-        vg_mldsa65_verify_message_sha3,
-        VG_MLDSA65_VERIFY_MESSAGE_SHA3_FEATURES,
-        13056
-    );
-    cached_verification_matches_raw!(
-        cached87_matches_raw,
-        mldsa87,
-        SigningKey87,
-        VerifyingKey87,
-        vg_mldsa87_verify_message,
-        vg_mldsa87_verify_message_sha3,
-        VG_MLDSA87_VERIFY_MESSAGE_SHA3_FEATURES,
-        18176
-    );
 
     #[test]
     fn context_too_long() {

@@ -1,15 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
-meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
 meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # `vg_rsa_mont_mul_adx` meets `vg_rsa_mont_mul`'s contract -/
 

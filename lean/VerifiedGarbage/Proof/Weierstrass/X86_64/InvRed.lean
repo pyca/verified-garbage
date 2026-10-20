@@ -1,22 +1,28 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvWords
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvWords
+import VerifiedGarbage.Proof.Divstep.TcS
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Weierstrass.InvMask
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvStep
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.Positivity
+public import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Divstep.Alg
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import VerifiedGarbage.Proof.Mont.X86_64.WideOps
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import Aesop.BuiltinRules
 
 /-!
 # Inversion by divsteps on x86-64: the reduction of the coefficients
 
-The reduction `mredC` of a signed number of `n + 1` words to `Divstep.mred`
-(`mredC_ok`): `k = t₀ m`, `[t]` sign-extended and plus `k p`, then its words
-`1 … n + 1` brought into `[0, p)` by carry chains with `p` under masks.
+The reduction `mredS` of a signed number of `n + 1` words to `Divstep.mredRaw`
+(`mredS_ok`): `k = t₀ m`, `[t]` sign-extended and plus `k p`, then its words
+`1 … n + 1`; and the normalization `normC` of a signed number of `n + 1` words
+in `(-p, 2p)` to `Divstep.norm` (`normC_ok`), by carry chains with `p` under masks.
 -/
 
 @[expose] public section
@@ -264,23 +270,25 @@ theorem low_high_mod {L A y Q : Nat} (hL : L < A) (hQ : 0 < Q) : L + A * (y % Q)
 tactic_template "inv_apart_arith" : tactic => `(tactic| (simp only [List.mem_cons, List.not_mem_nil, or_false,
                    forall_eq_or_imp, forall_eq] <;> omega_arith))
 
-/-- `[dst] = mred p m T` (`n` words), for `[t]` (`n + 1` words) holding `T`, `|T| ≤ 2^63 p`. -/
-theorem mredC_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {p : Nat}
-    (hM : ModOkW M size p s.mem base) {dst t U : Nat}
-    (ht : t + 8 * (M.n + 2) ≤ size) (hd : dst + 8 * M.n ≤ size) (hU : U + 8 * (M.n + 1) ≤ size)
-    (htm : t + 8 * (M.n + 2) ≤ M.mo ∨ M.mo + 8 * M.n ≤ t) (hdt : dst + 8 * M.n ≤ t ∨ t + 8 * (M.n + 2) ≤ dst)
-    (htU : t + 8 * (M.n + 2) ≤ U ∨ U + 8 * (M.n + 1) ≤ t) (hUm : U + 8 * (M.n + 1) ≤ M.mo ∨ M.mo + 8 * M.n ≤ U)
+/-- `[dst] = mredRaw p m T` (`n + 1` words, signed), for `[t]` (`n + 1` words) holding `T`,
+`|T| ≤ 2^63 p`. -/
+theorem mredS_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {p : Nat}
+    (hM : ModOkW M size p s.mem base) {dst t : Nat}
+    (ht : t + 8 * (M.n + 2) ≤ size) (hd : dst + 8 * (M.n + 1) ≤ size)
+    (htm : t + 8 * (M.n + 2) ≤ M.mo ∨ M.mo + 8 * M.n ≤ t)
+    (hdt : dst + 8 * (M.n + 1) ≤ t ∨ t + 8 * (M.n + 2) ≤ dst)
     {T : Int} (hT : |T| ≤ 2 ^ 63 * p)
     (hW : (wordsVal s.mem base t (M.n + 1) : Int) % ((2 ^ (64 * (M.n + 1)) : Nat) : Int) =
       T % ((2 ^ (64 * (M.n + 1)) : Nat) : Int)) :
-    WP isa (.block (mredC M dst t U)) s fun u =>
-      (wordsVal u.mem base dst M.n : Int) = Divstep.mred p M.minv.toNat T ∧
+    WP isa (.block (mredS M dst t)) s fun u =>
+      (wordsVal u.mem base dst (M.n + 1) : Int) % ((2 ^ (64 * (M.n + 1)) : Nat) : Int) =
+        Divstep.mredRaw p M.minv.toNat T % ((2 ^ (64 * (M.n + 1)) : Nat) : Int) ∧
       KeepRegs [.rax, .rcx, .rdx, .rbp, .r8, .r13] s u ∧
-      Unch base [(t, 8 * (M.n + 2)), (U, 8 * (M.n + 1)), (dst, 8 * M.n)] s.mem u.mem := by
+      Unch base [(t, 8 * (M.n + 2)), (dst, 8 * (M.n + 1))] s.mem u.mem := by
   have hn := hs.nowrap
   have hP : wordsVal s.mem base M.mo M.n = p := hM.val
   have hmo := hM.mo
-  simp only [mredC, List.append_assoc]
+  simp only [mredS, List.append_assoc]
   -- `rcx = k`.
   rw [WP.block_append_iff]
   refine WP.mono (kOf_ok hs M (t := t) (by omega_using [ht])) fun s₁ ⟨x₁, k₁⟩ => ?_
@@ -296,38 +304,15 @@ theorem mredC_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   rw [WP.block_append_iff]
   refine WP.mono (carry2_ok hs₃ (d := t + 8 * M.n) (by omega_using [ht])) fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   have hs₄ := hs₃.of_keepRegs k₄ (by decide)
-  -- `[U + 8 n] = 0`.
-  rw [WP.block_append_iff]
-  refine WP.mono (zeroTop_ok hs₄ (U := U) (n := M.n) (by omega_using [hU])) fun s₅ ⟨z₅, k₅, O₅⟩ => ?_
-  have hs₅ := hs₄.of_keepRegs k₅ (by decide)
-  have U₅ : Unch base [(t, 8 * (M.n + 2)), (U + 8 * M.n, 8)] s.mem s₅.mem := fun x hx => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hx
-    rw [O₅ x (by omega_using [hx]), O₄ x (by omega_using [hx]), O₃ x (by omega_using [hx]), O₂ x (by omega_using [hx]), k₁.2.1]
-  have P₅ : wordsVal s₅.mem base M.mo M.n = p := by rw [U₅.wordsVal (by inv_apart_arith) (by omega_using [hn, hmo]), hP]
-  -- `R₁ = R + (p if negative)`.
-  rw [WP.block_append_iff]
-  refine WP.mono (addIfNeg_ok hs₅ M ht hU hmo htU hUm htm z₅) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
-  have hs₆ := hs₅.of_keepRegs k₆ (by decide)
-  have P₆ : wordsVal s₆.mem base M.mo M.n = p := by rw [O₆.wordsVal (by inv_apart_arith) (by omega_using [hn, hmo]), P₅]
-  have z₆ : word s₆.mem base (U + 8 * M.n) = 0 := by rw [O₆.word (by inv_apart_arith) (by omega_using [hU, hn]), z₅]
-  -- `R₂ = R₁ - p`.
-  rw [WP.block_append_iff]
-  refine WP.mono (subP_ok hs₆ M ht hU hmo htU hUm z₆) fun s₇ ⟨e₇, k₇, O₇⟩ => ?_
-  have hs₇ := hs₆.of_keepRegs k₇ (by decide)
-  have P₇ : wordsVal s₇.mem base M.mo M.n = p := by rw [O₇.wordsVal (by inv_apart_arith) (by omega_using [hn, hmo]), P₆]
-  have z₇ : word s₇.mem base (U + 8 * M.n) = 0 := by rw [O₇.word (by inv_apart_arith) (by omega_using [hU, hn]), z₆]
-  -- `R₃ = R₂ + (p if negative)`.
-  rw [WP.block_append_iff]
-  refine WP.mono (addIfNeg_ok hs₇ M ht hU hmo htU hUm htm z₇) fun s₈ ⟨e₈, k₈, O₈⟩ => ?_
-  have hs₈ := hs₇.of_keepRegs k₈ (by decide)
-  -- `[dst] = R₃`.
-  refine WP.mono (copy_ok M.n hs₈ (o := dst) (a := t + 8) hd (by omega_using [ht]) (by omega_using [hdt])) fun u ⟨eu, ku, Ou⟩ => ?_
-  refine ⟨?_, (((((((((Keeps.regs k₁).mono (by decide)).trans (k₂.mono (by decide))).trans
-    (k₃.mono (by decide))).trans (k₄.mono (by decide))).trans (k₅.mono (by decide))).trans (k₆.mono (by decide))).trans
-    (k₇.mono (by decide))).trans (k₈.mono (by decide))).trans (ku.mono (by decide)), fun x hx => ?_⟩
+  -- `[dst] = R`.
+  refine WP.mono (copy_ok (M.n + 1) hs₄ (o := dst) (a := t + 8) hd (by omega_using [ht]) (by omega_using [hdt]))
+    fun u ⟨eu, ku, Ou⟩ => ?_
+  refine ⟨?_, (((((Keeps.regs k₁).mono (by decide)).trans (k₂.mono (by decide))).trans
+    (k₃.mono (by decide))).trans (k₄.mono (by decide))).trans (ku.mono (by decide)), fun x hx => ?_⟩
   rotate_left
   · simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hx
-    rw [Ou x (by omega_using [hx]), O₈ x (by inv_apart_arith), O₇ x (by inv_apart_arith), O₆ x (by inv_apart_arith), U₅ x (by inv_apart_arith)]
+    rw [Ou x (by omega_using [hx]), O₄ x (by omega_using [hx]), O₃ x (by omega_using [hx]), O₂ x (by omega_using [hx]),
+      k₁.2.1]
   -- The arithmetic.
   have hp0 : 0 < p := by
     have := hM.inv
@@ -337,7 +322,6 @@ theorem mredC_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   have hpA : p < 2 ^ (64 * M.n) := hP ▸ wordsVal_lt _ _ _ _
   have hm₁ : s₁.mem = s.mem := k₁.2.1
   have hrcx : s₂.gpr .rcx = s₁.gpr .rcx := k₂.gpr .rcx (by decide)
-  -- `E`.
   have P₂ : wordsVal s₂.mem base M.mo M.n = p := by rw [O₂.wordsVal (by omega_using [htm]) (by omega_using [hn, hmo]), hm₁, hP]
   rw [hrcx, P₂] at e₃
   rw [hm₁, pow64_succ', sgnW_top] at e₂
@@ -360,35 +344,87 @@ theorem mredC_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     generalize (2 : Nat) ^ (64 * M.n) = A at *
     rw [Nat.mul_add, show wordsVal s₃.mem base t M.n + (A * wordsVal s₂.mem base (t + 8 * M.n) 2 + A * r) =
       wordsVal s₂.mem base t M.n + A * wordsVal s₂.mem base (t + 8 * M.n) 2 + kp by omega_using [e₃]]
-  -- `R = E / 2^64` and the corrections.
   have eR : wordsVal s₄.mem base t (M.n + 2) =
       (word s₄.mem base t).toNat + 2 ^ 64 * wordsVal s₄.mem base (t + 8) (M.n + 1) := rfl
   have hR : wordsVal s₄.mem base (t + 8) (M.n + 1) = wordsVal s₄.mem base t (M.n + 2) / 2 ^ 64 := by
     rw [eR, Nat.add_mul_div_left _ _ (by decide), Nat.div_eq_of_lt (BitVec.isLt _), Nat.zero_add]
-  have R₅ : wordsVal s₅.mem base (t + 8) (M.n + 1) = wordsVal s₄.mem base (t + 8) (M.n + 1) :=
-    O₅.wordsVal (by omega_using [htU]) (by omega_using [ht, hn])
-  rw [R₅, P₅] at e₆
-  rw [P₆] at e₇
-  rw [P₇] at e₈
   have hk : (s₁.gpr .rcx).toNat = wordsVal s.mem base t (M.n + 1) % 2 ^ 64 * M.minv.toNat % 2 ^ 64 := by
     rw [x₁, wordsVal, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (BitVec.isLt _)]
   have hW1 : wordsVal s.mem base t (M.n + 1) < 2 ^ (64 * M.n) * 2 ^ 64 := by
     rw [← pow64_succ']; exact wordsVal_lt _ _ _ _
-  have hR₂1 : wordsVal s₇.mem base (t + 8) (M.n + 1) < 2 ^ (64 * M.n) * 2 ^ 64 := by
-    rw [← pow64_succ']; exact wordsVal_lt _ _ _ _
-  have key := Divstep.mred_nat (A := 2 ^ (64 * M.n)) (B := 2 ^ 64) (H := 2 ^ 63) (p := p) (m := M.minv.toNat)
+  have key := Divstep.mredRaw_nat (A := 2 ^ (64 * M.n)) (B := 2 ^ 64) (H := 2 ^ 63) (p := p) (m := M.minv.toNat)
     (t := T) (W := wordsVal s.mem base t (M.n + 1)) (k := (s₁.gpr .rcx).toNat)
     (E := wordsVal s₄.mem base t (M.n + 2)) (R := wordsVal s₄.mem base (t + 8) (M.n + 1))
-    (R₁ := wordsVal s₆.mem base (t + 8) (M.n + 1)) (R₂ := wordsVal s₇.mem base (t + 8) (M.n + 1))
-    (R₃ := wordsVal s₈.mem base (t + 8) (M.n + 1))
-    rfl rfl (Nat.two_pow_pos _) hp0 hpA hM.inv hT hW1 (by rw [← pow64_succ']; exact hW) hk hE hR e₆ hR₂1 e₇ e₈
-  obtain ⟨r0, r1⟩ := Divstep.mred_range (p := p) (m := M.minv.toNat) (t := T) (by exact_mod_cast hp0)
-    (by exact_mod_cast hM.inv) hT
-  have hR₃ : wordsVal s₈.mem base (t + 8) (M.n + 1) < 2 ^ (64 * M.n) := by omega_using [hpA, key, r1]
-  have hlow : wordsVal s₈.mem base (t + 8) M.n = wordsVal s₈.mem base (t + 8) (M.n + 1) := by
-    have h := congrArg (· % 2 ^ (64 * M.n)) (wordsVal_succ_top s₈.mem base (t + 8) M.n)
+    rfl rfl (Nat.two_pow_pos _) hp0 hpA hM.inv hT hW1 (by rw [← pow64_succ']; exact hW) hk hE hR
+  rw [eu, pow64_succ']
+  exact key
+
+/-- `[t + 8]` (`n + 1` words) holding `r ∈ (-p, 2p)` brought to `norm p r` (its low `n` words). -/
+theorem normC_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {p : Nat}
+    (hM : ModOkW M size p s.mem base) {t U : Nat}
+    (ht : t + 8 * (M.n + 2) ≤ size) (hU : U + 8 * (M.n + 1) ≤ size)
+    (htm : t + 8 * (M.n + 2) ≤ M.mo ∨ M.mo + 8 * M.n ≤ t)
+    (htU : t + 8 * (M.n + 2) ≤ U ∨ U + 8 * (M.n + 1) ≤ t) (hUm : U + 8 * (M.n + 1) ≤ M.mo ∨ M.mo + 8 * M.n ≤ U)
+    {r : Int} (hr0 : -(p : Int) < r) (hr1 : r < 2 * p)
+    (hR : (wordsVal s.mem base (t + 8) (M.n + 1) : Int) % ((2 ^ (64 * (M.n + 1)) : Nat) : Int) =
+      r % ((2 ^ (64 * (M.n + 1)) : Nat) : Int)) :
+    WP isa (.block (normC M t U)) s fun u =>
+      (wordsVal u.mem base (t + 8) M.n : Int) = Divstep.norm p r ∧
+      KeepRegs [.rax, .rdx, .r8, .r13] s u ∧
+      Unch base [(t + 8, 8 * (M.n + 1)), (U, 8 * (M.n + 1))] s.mem u.mem := by
+  have hn := hs.nowrap
+  have hP : wordsVal s.mem base M.mo M.n = p := hM.val
+  have hmo := hM.mo
+  simp only [normC, List.append_assoc]
+  -- `[U + 8 n] = 0`.
+  rw [WP.block_append_iff]
+  refine WP.mono (zeroTop_ok hs (U := U) (n := M.n) (by omega_using [hU])) fun s₅ ⟨z₅, k₅, O₅⟩ => ?_
+  have hs₅ := hs.of_keepRegs k₅ (by decide)
+  have P₅ : wordsVal s₅.mem base M.mo M.n = p := by
+    rw [O₅.wordsVal (by omega_using [hUm]) (by omega_using [hn, hmo]), hP]
+  have R₅ : wordsVal s₅.mem base (t + 8) (M.n + 1) = wordsVal s.mem base (t + 8) (M.n + 1) :=
+    O₅.wordsVal (by omega_using [htU]) (by omega_using [ht, hn])
+  -- `R₁ = R + (p if negative)`.
+  rw [WP.block_append_iff]
+  refine WP.mono (addIfNeg_ok hs₅ M ht hU hmo htU hUm htm z₅) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
+  have hs₆ := hs₅.of_keepRegs k₆ (by decide)
+  have P₆ : wordsVal s₆.mem base M.mo M.n = p := by rw [O₆.wordsVal (by inv_apart_arith) (by omega_using [hn, hmo]), P₅]
+  have z₆ : word s₆.mem base (U + 8 * M.n) = 0 := by rw [O₆.word (by inv_apart_arith) (by omega_using [hU, hn]), z₅]
+  -- `R₂ = R₁ - p`.
+  rw [WP.block_append_iff]
+  refine WP.mono (subP_ok hs₆ M ht hU hmo htU hUm z₆) fun s₇ ⟨e₇, k₇, O₇⟩ => ?_
+  have hs₇ := hs₆.of_keepRegs k₇ (by decide)
+  have P₇ : wordsVal s₇.mem base M.mo M.n = p := by rw [O₇.wordsVal (by inv_apart_arith) (by omega_using [hn, hmo]), P₆]
+  have z₇ : word s₇.mem base (U + 8 * M.n) = 0 := by rw [O₇.word (by inv_apart_arith) (by omega_using [hU, hn]), z₆]
+  -- `R₃ = R₂ + (p if negative)`.
+  refine WP.mono (addIfNeg_ok hs₇ M ht hU hmo htU hUm htm z₇) fun u ⟨e₈, k₈, O₈⟩ => ?_
+  refine ⟨?_, ((k₅.mono (by decide)).trans (k₆.mono (by decide))).trans ((k₇.mono (by decide)).trans
+    (k₈.mono (by decide))), fun x hx => ?_⟩
+  rotate_left
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hx
+    rw [O₈ x (by inv_apart_arith), O₇ x (by inv_apart_arith), O₆ x (by inv_apart_arith), O₅ x (by omega_using [hx])]
+  have hpA : p < 2 ^ (64 * M.n) := hP ▸ wordsVal_lt _ _ _ _
+  rw [R₅, P₅] at e₆
+  rw [P₆] at e₇
+  rw [P₇] at e₈
+  have hR₂1 : wordsVal s₇.mem base (t + 8) (M.n + 1) < 2 ^ (64 * M.n) * 2 ^ 64 := by
+    rw [← pow64_succ']; exact wordsVal_lt _ _ _ _
+  have hR1 : wordsVal s.mem base (t + 8) (M.n + 1) < 2 ^ (64 * M.n) * 2 ^ 64 := by
+    rw [← pow64_succ']; exact wordsVal_lt _ _ _ _
+  have key := Divstep.norm_nat (A := 2 ^ (64 * M.n)) (B := 2 ^ 64) (H := 2 ^ 63) (p := p) (r := r)
+    (R := wordsVal s.mem base (t + 8) (M.n + 1)) (R₁ := wordsVal s₆.mem base (t + 8) (M.n + 1))
+    (R₂ := wordsVal s₇.mem base (t + 8) (M.n + 1)) (R₃ := wordsVal u.mem base (t + 8) (M.n + 1))
+    rfl rfl (Nat.two_pow_pos _) hpA hr0 hr1 hR1 (by rw [← pow64_succ']; exact hR) e₆ hR₂1 e₇ e₈
+  obtain ⟨r0, r1⟩ := Divstep.norm_range hr0 hr1
+  have hR₃ : wordsVal u.mem base (t + 8) (M.n + 1) < 2 ^ (64 * M.n) := by
+    have : (wordsVal u.mem base (t + 8) (M.n + 1) : Int) < 2 ^ (64 * M.n) := by
+      rw [key]; have : (p : Int) < 2 ^ (64 * M.n) := by exact_mod_cast hpA
+      omega
+    exact_mod_cast this
+  have hlow : wordsVal u.mem base (t + 8) M.n = wordsVal u.mem base (t + 8) (M.n + 1) := by
+    have h := congrArg (· % 2 ^ (64 * M.n)) (wordsVal_succ_top u.mem base (t + 8) M.n)
     simp only [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (wordsVal_lt _ _ _ _), Nat.mod_eq_of_lt hR₃] at h
     exact h.symm
-  rw [eu, hlow, key]
+  rw [hlow, key]
 
 end VG.Proof.Weierstrass.X86_64

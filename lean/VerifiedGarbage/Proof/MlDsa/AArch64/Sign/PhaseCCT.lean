@@ -1,18 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseC
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Rel
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.MaskPairTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.MaskPairTiming
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseDCT
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
 
 @[expose] public section
 

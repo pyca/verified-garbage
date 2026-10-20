@@ -1,33 +1,25 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.InverseLit
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.InverseLit
 public import VerifiedGarbage.Proof.Framework.Pratt
-meta import VerifiedGarbage.Proof.Framework.Pratt
 import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Proof.Mont.Read
-public import VerifiedGarbage.Spec.Weierstrass.Inverse
-meta import VerifiedGarbage.Spec.Weierstrass.Inverse
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.InverseLit
+public import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
+meta import VerifiedGarbage.Proof.Framework.Pratt
+meta import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.InverseLit
+meta import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
-meta import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
 
 /-!
 # `vg_p384_inv_mod_p` and `_n` on x86-64: `Verified`
@@ -88,6 +80,10 @@ theorem dec_eq {m : Nat} [NeZero m] (h1 : 1 < m) (he : m - 2 < 2 ^ 400)
     rw [← ofNat_mul', ← ofNat_mod, h]; rfl
   have hr := mul_rinv (m := m) ⟨_, hR⟩
   have : Fin.ofNat m (Pratt.powMod m 400 (2 ^ (64 * C.k)) (m - 2)) = rinv m (2 ^ (64 * C.k)) := by
+    -- Hide `2 ^ 384` and the like from `grind`'s arithmetic, which would
+    -- evaluate it.
+    clear h he hp
+    generalize 2 ^ (64 * C.k) = R at hR hr ⊢
     grind
   unfold Spec.Weierstrass.Inverse.Curve.dec toM
   rw [hp, this]

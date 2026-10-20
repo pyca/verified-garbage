@@ -1,23 +1,33 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Contract
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Lit
-public import VerifiedGarbage.Proof.Secp256k1.Point
-meta import VerifiedGarbage.Proof.Secp256k1.Point
+import VerifiedGarbage.Proof.Secp256k1.Point
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontSecp256k1
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Lit
+public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.Arm
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Contract
+meta import VerifiedGarbage.Proof.Secp256k1.Point
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
+meta import VerifiedGarbage.Proof.Weierstrass.Law
+meta import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontSecp256k1
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Lit
+meta import VerifiedGarbage.Impl.Ecdsa.Secp256k1.Arm
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ECDSA over secp256k1 on 32-bit ARM: `Verified`

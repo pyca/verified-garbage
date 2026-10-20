@@ -1,22 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticTableTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticTableTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.CachedChecks
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointPoints
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPoints
+import VerifiedGarbage.Proof.P256.VerifyTable.Timing
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointFinishTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointGenerator
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyExtra
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointPoints
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
+public import VerifiedGarbage.Proof.P256.VerifyTable.Build
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticTableTimingStep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
+import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafPrep
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-! ## `ArithmeticTableChecks` -/
 
@@ -53,7 +54,7 @@ private theorem tail_lit : VG.Impl.P256.VerifyArithmetic.program Kc.M (VG.Impl.W
   exact congrArg Code.block Forward.ArithmeticTableTail.optimized_lit
 
 private theorem arithmeticTable_add_preserves : ∀ r∈[Reg.x19,Reg.x20],
-    ∀ i∈instrs (ArithmeticAdd.add Kc Kc.R (Naf.twice Kc) Kc.D),dstOf i≠some r := by
+    ∀ i∈instrs (ArithmeticAdd.add Kc Kc.R (Naf.twice Kc) Kc.D),clobbers i r = false := by
   rw [ArithmeticAdd.add,head_lit,tail_lit,jacWinCfg_double_lit]
   have h : (instrs (.seq (.block (zeroMask Kc.M.n Kc.R.z)) <|
       .ite (.nonzero .x .x2) (.block (copyPt Kc.M.n Kc.D (Naf.twice Kc))) <|
@@ -65,7 +66,7 @@ private theorem arithmeticTable_add_preserves : ∀ r∈[Reg.x19,Reg.x20],
         (.seq (.block (zeroMask Kc.M.n Kc.S.t5)) <|
           .ite (.nonzero .x .x2) (.block Forward.P256Bounds.rightRD.lit) (.block (Jacobian.infinity Kc Kc.D)))
         (.block Forward.ArithmeticTableTail.rightCode.lit) : Prog isa)).all
-      (fun i => decide (dstOf i≠some .x19 ∧ dstOf i≠some .x20))=true := by decide +kernel
+      (fun i => decide (clobbers i .x19 = false ∧ clobbers i .x20 = false))=true := by decide +kernel
   intro r hr i hi
   have hh := of_decide_eq_true (List.all_eq_true.mp h i hi)
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -377,31 +378,93 @@ open VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
 open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 Spec.Weierstrass
 
+/-- After preparation and the co-Z table: one field environment, and each
+run's table and frame. -/
+def AllocatedTablePair (base : Addr) (P : Point p256.C) (u v : Nat) (a b s t : State) : Prop :=
+  (∃ E,FieldPair cfg.K.M base 8192 p256.C.p (·∈jointSlots cfg) (jointLive cfg) E s t) ∧
+  ∃ g₁ g₂ a' b',JointPrepPost base g₁ P a a' ∧ JointPrepPost base g₂ P b b' ∧
+    AllocatedFrame Proof.P256.VerifyTable.regs base Proof.P256.VerifyTable.buildW a' s ∧
+    AllocatedFrame Proof.P256.VerifyTable.regs base Proof.P256.VerifyTable.buildW b' t ∧
+    s.syms=a'.syms ∧ t.syms=b'.syms ∧
+    JointStable cfg p256.C base P u v s ∧ JointStable cfg p256.C base P u v t
+
+theorem allocatedPrepTable_relCT (hc : CfgOk p256) (hC : Law p256.C) (hO : PrimeOrder p256.C)
+    {base : Addr} {P : Point p256.C} {u v : Nat} {a b : State} (hP : onCurve p256.C P=true) :
+    RelCT isa (fun s t => s=a ∧ t=b ∧ JacWinPublic p256 base P v s t ∧
+      sv p256 base s U=u ∧ sv p256 base t U=u)
+      (.seq jointPrepProgram Impl.P256.VerifyTable.build)
+      (AllocatedTablePair base P u v a b) := by
+  intro s t ts tt s' t' ⟨rfl,rfl,hp,us,ut⟩ es et
+  obtain ⟨g₁,fs⟩ := hp.left.fixed
+  obtain ⟨g₂,ft⟩ := hp.right.fixed
+  cases es with | seq ps ws =>
+    cases et with | seq pt wt =>
+      have he := (jointPrep_trace _ _ _ _ _ _ ⟨hp.left.scr,hp.right.scr,hp.sp,
+        us.trans ut.symm,hp.left.scalar.trans hp.right.scalar.symm⟩ ps pt).1
+      obtain ⟨_,_,xs,is⟩ := jointPrepStage_ok hc hC hp.left.scr fs hp.left.px hp.left.py hp.left.rep
+      obtain ⟨_,_,xt,it⟩ := jointPrepStage_ok hc hC hp.right.scr ft hp.right.px hp.right.py hp.right.rep
+      obtain ⟨_,rfl⟩ := Exec.det ps xs
+      obtain ⟨_,rfl⟩ := Exec.det pt xt
+      have li : Inv Proof.P256.VerifyTable.M base 8192 Proof.P256.VerifyTable.C.p
+          (·∈jointSlots cfg) Proof.P256.VerifyTable.V0 _ _ :=
+        is.field.mono_sl fun x hx => List.mem_append_left _ (List.mem_append_left _ hx)
+      have ri : Inv Proof.P256.VerifyTable.M base 8192 Proof.P256.VerifyTable.C.p
+          (·∈jointSlots cfg) Proof.P256.VerifyTable.V0 (tmv p256.C 4 base _) _ :=
+        (it.field.congr_env (fun x hx => (it.fields x hx).trans
+          ((hp.fields x hx).symm.trans (is.fields x hx).symm))).mono_sl
+          fun x hx => List.mem_append_left _ (List.mem_append_left _ hx)
+      obtain ⟨hw,lb,rb,sp⟩ := Proof.P256.VerifyTable.build_relCT JointLayout.layout.lay
+        JointLayout.layout.aligned build_slots _ _ _ _ _ _
+        ⟨li,ri,is.keep.sp.trans (hp.sp.trans it.keep.sp.symm)⟩ ws wt
+      obtain ⟨_,_,ys,ks,js⟩ := WP.mono_syms (buildStage_ok hc hC hO hP is)
+        fun t h sy => (⟨h.1,h.2.2,sy⟩ : _ ∧ _ ∧ _)
+      obtain ⟨_,_,yt,kt,jt⟩ := WP.mono_syms (buildStage_ok hc hC hO hP it)
+        fun t h sy => (⟨h.1,h.2.2,sy⟩ : _ ∧ _ ∧ _)
+      obtain ⟨_,rfl⟩ := Exec.det ws ys
+      obtain ⟨_,rfl⟩ := Exec.det wt yt
+      rw [us,hp.left.scalar] at js
+      rw [ut,hp.right.scalar] at jt
+      refine ⟨by rw [he,hw],⟨_,(lb.sub build_live),(rb.sub build_live),sp⟩,g₁,g₂,_,_,is,it,ks,kt,
+        js.2,jt.2,js.1,jt.1⟩
+
+theorem AllocatedTablePair.generators {base T : Addr} {P G : Point p256.C} {u v : Nat}
+    {a b s t : State} (h : AllocatedTablePair base P u v a b s t)
+    (ga : Weierstrass.AArch64.JointGenerator P256Joint.cfg p256.C base size G T a)
+    (gb : Weierstrass.AArch64.JointGenerator P256Joint.cfg p256.C base size G T b) :
+    Weierstrass.AArch64.JointGenerator P256Joint.cfg p256.C base size G T s ∧
+    Weierstrass.AArch64.JointGenerator P256Joint.cfg p256.C base size G T t := by
+  obtain ⟨_,_,_,_,_,pa,pb,ka,kb,sa,sb,_,_⟩ := h
+  have ga' := jointGenerator_unch ga pa.unch pa.keep.rd pa.keep.wr pa.syms (by decide +kernel)
+  have gb' := jointGenerator_unch gb pb.unch pb.keep.rd pb.keep.wr pb.syms (by decide +kernel)
+  exact ⟨jointGenerator_unch ga' ka.unch ka.regs.rd ka.regs.wr sa (by decide +kernel),
+    jointGenerator_unch gb' kb.unch kb.regs.rd kb.regs.wr sb (by decide +kernel)⟩
+
 theorem allocatedAfterTable_relCT (raw : RawCorrect) (hc : CfgOk p256) (hC : Law p256.C)
     {base T : Addr} {P Q : Point p256.C} {u v : Nat} {a b : State}
     (hP : onCurve p256.C P=true) (hQ : onCurve p256.C Q=true)
     (hu : u<2^256) (hv : v<2^256)
     (ga : Weierstrass.AArch64.JointGenerator cfg p256.C base 8192 P T a)
     (gb : Weierstrass.AArch64.JointGenerator cfg p256.C base 8192 P T b) :
-    RelCT isa (JointTablePair base Q u v a b)
-      (.seq (CachedJac.cache cfg.K)
+    RelCT isa (AllocatedTablePair base Q u v a b)
+      (.seq (.block [])
         (.seq (.block (Jacobian.infinity cfg.K cfg.K.R++([.movz .x .x19 256 0] : List Instr)))
           (.seq (Joint.run cfg P256Allocated.ops) (Jacobian.jacFinish cfg.K))))
       (AArch64.Taint.Agree (Taint.ofRegs [.x0])) := by
   have hm : UnitMod p256.C.p (2^(64*cfg.K.M.n)) := unitMod_pow_two hc.p_odd _
   have one : cfg.K.one<p256.C.p := Nat.mod_lt _ (by have := hc.p_ge; omega)
-  have cache : RelCT isa (JointTablePair base Q u v a b) (CachedJac.cache cfg.K)
+  have cache : RelCT isa (AllocatedTablePair base Q u v a b) (.block [])
       (JointCachePair p256.C base T P Q u v) := by
-    intro s t ts tt s' t' h es et
+    apply RelCT.block_nil
+    intro s t h
     have ⟨gs,gt⟩ := h.generators ga gb
-    obtain ⟨E,hp,_,_,_,_,_,_,ps,pt⟩ := h
-    exact jointCache_relCT hm _ _ _ _ _ _
-      ⟨hp,ps.stable,pt.stable,ps.generator,pt.generator,ps.one,pt.one,gs,gt⟩ es et
+    obtain ⟨hp,_,_,_,_,_,_,_,_,_,_,ps,pt⟩ := h
+    exact ⟨hp,ps,pt,gs,gt⟩
   apply RelCT.seq cache
   apply RelCT.seq (jointInit_relCT one)
   exact RelCT.seq (allocatedRun_timing raw hm hC hc.am3 one hP hQ hu hv) (jointFinish_relCT hc hC)
 
 theorem allocatedPoints_inputCT (raw : RawCorrect) (hc : CfgOk p256) (hC : Law p256.C)
+    (hO : PrimeOrder p256.C)
     {base T : Addr} {P Q : Point p256.C} {u v : Nat} {a b : State}
     (hP : onCurve p256.C P=true) (hQ : onCurve p256.C Q=true)
     (hu : u<2^256) (hv : v<2^256)
@@ -413,10 +476,11 @@ theorem allocatedPoints_inputCT (raw : RawCorrect) (hc : CfgOk p256) (hC : Law p
   change RelCT isa _ (.seq _ (.seq _ (.seq _ _))) _
   apply RelCT.assoc
   apply RelCT.assoc
-  exact RelCT.seq (jointPrepTable_relCT Forward.Arithmetic.cases hc hC hQ)
+  exact RelCT.seq (allocatedPrepTable_relCT hc hC hO hQ)
     (allocatedAfterTable_relCT raw hc hC hP hQ hu hv ga gb)
 
 theorem allocatedPointsBody_relCT (raw : RawCorrect) (hc : CfgOk p256) (hC : Law p256.C)
+    (hO : PrimeOrder p256.C)
     (hT : CombOkW p256.C 7 37 p256.tbl p256.start)
     {s₀ t₀ : State} (ps : VPre p256 s₀) (pt : VPre p256 t₀) :
     RelCT isa (JointBoundary p256 s₀ t₀) (Joint.points cfg P256Allocated.ops (p256.sl U) (p256.sl V))
@@ -430,7 +494,7 @@ theorem allocatedPointsBody_relCT (raw : RawCorrect) (hc : CfgOk p256) (hC : Law
   have hv : publicV p256 s₀<2^256 := by
     rw [←hp.left.scalar]
     exact wordsVal_lt s.mem (s₀.gpr .x3) (p256.sl V) 4
-  exact allocatedPoints_inputCT raw hc hC hc.onG (peerPt_onCurve hc _ _ _) hu hv gs gt
+  exact allocatedPoints_inputCT raw hc hC hO hc.onG (peerPt_onCurve hc _ _ _) hu hv gs gt
     _ _ _ _ _ _ ⟨rfl,rfl,hp,us,ut⟩ es et
 
 
@@ -459,20 +523,20 @@ private theorem restorePublic_relCT :
     (Exec.rdwr es).2.2.trans (hp.1.trans (Exec.rdwr et).2.2.symm),fun r hr => ?_⟩
   have : r=.x0 := by simpa only [Taint.mem_ofRegs,List.mem_singleton] using hr
   subst r
-  have keep : ∀i∈instrs (.block P256Allocated.restoreExtra : Prog isa),dstOf i≠some .x0 := by decide
+  have keep : ∀i∈instrs (.block P256Allocated.restoreExtra : Prog isa),clobbers i .x0 = false := by decide
   rw [Exec.gpr keep es,Exec.gpr keep et]
   exact hp.2 _ (by decide)
 
 /-- The allocated points stage preserves the original public-input timing contract,
 including the save and restore of its extra working registers. -/
 theorem allocatedPoints_relCT (raw : RawCorrect) (hc : CfgOk p256) (hC : Law p256.C)
-    (hT : CombOkW p256.C 7 37 p256.tbl p256.start)
+    (hO : PrimeOrder p256.C) (hT : CombOkW p256.C 7 37 p256.tbl p256.start)
     {s₀ t₀ : State} (ps : VPre p256 s₀) (pt : VPre p256 t₀) :
     RelCT isa (JointBoundary p256 s₀ t₀) P256Allocated.points
       (AArch64.Taint.Agree (Taint.ofRegs [.x0])) := by
   rw [P256Allocated.points]
   exact RelCT.seq saveBoundary_relCT
-    (RelCT.seq (allocatedPointsBody_relCT raw hc hC hT ps pt) restorePublic_relCT)
+    (RelCT.seq (allocatedPointsBody_relCT raw hc hC hO hT ps pt) restorePublic_relCT)
 
 end VG.Proof.Ecdsa.Verify.AArch64.Allocated
 

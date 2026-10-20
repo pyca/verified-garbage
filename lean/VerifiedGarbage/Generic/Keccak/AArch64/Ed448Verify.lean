@@ -1,9 +1,56 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Verified
+import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Verified
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyVerified
 public import VerifiedGarbage.Proof.Ed448.Facts
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Lit
+public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Tactic.NormNum.Prime
+public import VerifiedGarbage.Impl.Ed448.AArch64.Verify
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
+public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
+public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Verified
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLoop
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
+public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Correct
+public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Main
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyMain
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CallsCT
+public import VerifiedGarbage.Proof.Ed448.ScalarWords
+public import VerifiedGarbage.Proof.Ed448.VerifyEq
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+public import VerifiedGarbage.Proof.Framework.OffsetBelow
+public import VerifiedGarbage.Proof.Sha3.AArch64.Call
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
+import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
+import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
+import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
+import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
+import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLoop
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
+import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Correct
+import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Main
+import VerifiedGarbage.Proof.Ed448.AArch64.VerifyMain
+import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CallsCT
+import VerifiedGarbage.Proof.Ed448.ScalarWords
+import VerifiedGarbage.Proof.Ed448.VerifyEq
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Sha3.AArch64.Call
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 
 /-!
 # Ed448 verification on AArch64
@@ -24,11 +71,10 @@ its algebra.
 namespace VG.Generic.Keccak.AArch64.Ed448Verify
 
 def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
-  { Spec.Ed448.verifyApi with
-    name := Spec.Ed448.verifyApi.name ++ v.callee.suffix
+  Spec.Ed448.verifyApi.artifact AArch64.target {
+    suffix := v.callee.suffix
     features := v.features
-    target := AArch64.target
-    doc := Spec.Ed448.verifyApi.doc (notes := ["Uses baseline integer instructions, and \
+    notes := ["Uses baseline integer instructions, and \
       those of the Keccak permutation it calls. Returns 0 at once for a context of 256 bytes \
       or more. Otherwise writes the first ten bytes of dom4(0, C) into its stack frame, hashes \
       them, the context, R, the public key and the message with `vg_keccak_absorb_scratch`, \
@@ -38,13 +84,11 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
       with `vg_ed448_scalar_reduce`, and returns `vg_ed448_verify_equation`'s result. The \
       frame (the hash and k) is not cleared: verification has no secrets. The function saves \
       `x30` and its arguments on the stack, and the functions it calls use 16 bytes below its \
-      frame."])
+      frame."]
     consts := Impl.X448.AArch64.Base.combConsts
     code := Impl.Ed448.AArch64.Verify.verifyWith v.callee
-    contract := Spec.Ed448.verifyContract (AArch64.abi.withConsts Impl.X448.AArch64.Base.combConsts) 352
     stack := 352
     verified := Proof.Ed448.AArch64.Verify.verify_verified v
-      (Proof.Ed448.AArch64.verifyEquation_eqOk Proof.Ed448.recover_ok)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+      (Proof.Ed448.AArch64.verifyEquation_eqOk Proof.Ed448.recover_ok) }]
 
 end VG.Generic.Keccak.AArch64.Ed448Verify

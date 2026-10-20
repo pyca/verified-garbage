@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleStep
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleLoop
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleLoop
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleStep
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleLoop
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! The sampling loop reveals only the specified sequence of draw decisions. -/
 @[expose] public section

@@ -1,11 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Impl.X448.X86
 public import VerifiedGarbage.Proof.X448.X86.Verified
 import VerifiedGarbage.Proof.X448.X86.Lit
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # X448 (RFC 7748) on x86 (32-bit) -/
 
@@ -14,16 +11,13 @@ import VerifiedGarbage.Spec.X25519
 namespace VG.Artifacts.X448.X86
 
 def artifacts : List Artifact := [
-  { Spec.X448.x448Api with
-    target := X86.target
-    doc := Spec.X448.x448Api.doc (notes := ["The function saves its caller's callee-saved \
+  Spec.X448.x448Api.artifact X86.target {
+    notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements are twenty-eight 16-bit limbs in `scratch`; the field \
       arithmetic is by calls of `vg_gf448_r16_mul`, `vg_gf448_r16_add`, `vg_gf448_r16_sub` and \
-      `vg_gf448_r16_mul_a24`. Inversion uses an addition chain for `p - 2`."])
+      `vg_gf448_r16_mul_a24`. Inversion uses an addition chain for `p - 2`."]
     code := Impl.X448.X86.x448
-    contract := Spec.X448.x448Contract X86.abi 20
     stack := 20
-    verified := Proof.X448.X86.x448_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.X448.X86.x448_verified }]
 
 end VG.Artifacts.X448.X86

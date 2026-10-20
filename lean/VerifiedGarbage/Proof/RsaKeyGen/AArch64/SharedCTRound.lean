@@ -1,12 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedRound
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedRound
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrRound
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Constant time of RSA's round with a shared prepared kernel -/
 

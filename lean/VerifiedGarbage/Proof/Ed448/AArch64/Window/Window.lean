@@ -5,13 +5,12 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Digit
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.X448.AArch64.BitBody
 public import VerifiedGarbage.Proof.X448.AArch64.Counters
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.X448.BaseAdd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Ed448 verification on AArch64: one window of the challenge

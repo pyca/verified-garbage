@@ -1,23 +1,22 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.AddSub
-public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd2
-public import VerifiedGarbage.Proof.MlKem.AArch64.Encode12
-public import VerifiedGarbage.Proof.MlKem.AArch64.Decode12
+import VerifiedGarbage.Proof.MlKem.AArch64.Cbd2
+import VerifiedGarbage.Proof.MlKem.AArch64.Encode12
+import VerifiedGarbage.Proof.MlKem.AArch64.Decode12
 public import VerifiedGarbage.Proof.MlKem.AArch64.CompressEncode
 public import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem.AArch64.Mul
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Inv
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
 public import VerifiedGarbage.Proof.MlKem.AArch64.Sample
+public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecBase
+public import VerifiedGarbage.Proof.MlKem.AArch64.NttCommon
+public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Base
+public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.EncBase
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Fwd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM-768 on AArch64: calling the primitives

@@ -1,12 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Derive
 public import VerifiedGarbage.Proof.GcmSiv.MulX
+public import VerifiedGarbage.Impl.AesGcmSiv.X86_64
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Env
 import VerifiedGarbage.Proof.Gcm.X86_64.Bits
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.GcmSiv.Spec
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM-SIV on x86-64: the encryption key's schedule and GHASH's key

@@ -1,11 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Cfb8
-import VerifiedGarbage.Spec.Aes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # CFB8's result, for any block cipher and target

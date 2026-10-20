@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowShared
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowOperations
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowOperations
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
+public import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawTriangle
 import VerifiedGarbage.Proof.Bignum.CrtWindowRelation
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBuild
 import Mathlib.Data.Int.ModEq

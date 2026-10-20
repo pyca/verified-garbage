@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Emit the shared prepared round for each implementation -/
 
@@ -11,14 +12,11 @@ namespace VG.Generic.MillerRabin.X86_64.Round
 open VG.Proof.MillerRabin.X86_64
 
 def artifacts (v : RoundImpl) : List Artifact := [
-  { Spec.MillerRabin.roundApi Spec.MillerRabin.extended with
-    name := v.name
-    target := X86_64.target
-    doc := (Spec.MillerRabin.roundApi Spec.MillerRabin.extended).doc
-      (notes := ["Fixed four-bit windows with the verified Montgomery kernel. The saved frame \
-        restores the caller's bookkeeping without making it public. Shared by RSA and FFDH."])
+  (Spec.MillerRabin.roundApi Spec.MillerRabin.extended).artifact X86_64.target {
+    suffix := v.suffix
+    notes := ["Fixed four-bit windows with the verified Montgomery kernel. The saved frame \
+        restores the caller's bookkeeping without making it public. Shared by RSA and FFDH."]
     code := v.code
-    contract := Spec.MillerRabin.roundContract X86_64.abi Spec.MillerRabin.extended 120
     stack := 120
     verified := v.verified
     spSafe := v.spSafe

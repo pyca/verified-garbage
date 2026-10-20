@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtMain
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtBack
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtMain
 import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
 # RSA with the CRT on AArch64: `main` in constant time

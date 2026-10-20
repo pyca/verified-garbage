@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86_64.Friendly
-public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Friendly
+public import VerifiedGarbage.Proof.Mont.X86_64.Row
+import VerifiedGarbage.Proof.Mont.X86_64.Round
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Montgomery arithmetic on x86-64: the reduction for P-384's `p`
@@ -362,9 +362,9 @@ theorem roundM_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   have hAB : (word s.mem base (a + 8 * i)).toNat * wordsVal s.mem base b M.n ≤ (2 ^ 64 - 1) * m :=
     Nat.mul_le_mul (by omega) (by omega)
   rw [show roundM M a b i = (([.mov .rcx (.mem (sc (a + 8 * i)))] : List Instr) ++
-      (mulRow ((List.range M.n).map (win M.n i)) b ++ carryUp (win M.n i M.n) (win M.n i (M.n + 1)))) ++
+      (mulRowB (lateRow M) ((List.range M.n).map (win M.n i)) b ++ carryUp (win M.n i M.n) (win M.n i (M.n + 1)))) ++
         redRound M i by simp only [roundM, List.append_assoc], WP.block_append_iff]
-  refine WP.mono (prod_ok hs hn ha hb hm' hB hT) fun s₂ ⟨e₂, hs₂, k₂⟩ => ?_
+  refine WP.mono (prod_ok hs (lateRow M) hn ha hb hm' hB hT) fun s₂ ⟨e₂, hs₂, k₂⟩ => ?_
   have hmem : s₂.mem = s.mem := k₂.2.1
   -- From `2⁶⁴ T' = T + a_i B + u m` for a word `u`.
   have fin : ∀ {s' : State} (u : Nat), u < 2 ^ 64 →

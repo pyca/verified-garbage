@@ -1,14 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourBytes
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourBytes
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackLoads
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackField
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourMath
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! ## From `KeygenPackFourInput.lean` -/
 

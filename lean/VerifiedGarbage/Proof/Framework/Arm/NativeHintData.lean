@@ -2,7 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Framework.RegSet
 public import VerifiedGarbage.Proof.Framework.NativeHintOps
-public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Arm.Isa
+meta import VerifiedGarbage.Proof.Framework.RegSet
+meta import VerifiedGarbage.Proof.Framework.NativeHintOps
+meta import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Executable ARMv7 taint operations for the compiled hint search
 (`native_taint_decide`), separated from their soundness proofs: a copy of
@@ -130,6 +133,8 @@ def step (τ : T) : Instr → Option T
   | .movt d _ => some { τ with regs := set τ d (pub τ d), bases := kill τ d }
   | .rev d m => some { τ with regs := set τ d (pub τ m), bases := kill τ d }
   | .mul d n m => some { τ with regs := set τ d (pub τ n && pub τ m), bases := kill τ d }
+  | .mla d n m a => some { τ with regs := set τ d (pub τ n && pub τ m && pub τ a), bases := kill τ d }
+  | .umaal .. => none
   | .ldr t n off =>
     if pub τ n then some { τ with regs := set τ t (slotPub τ n off 4), bases := kill τ t } else none
   | .str t n off => storeStep τ n off 4 (pub τ t)

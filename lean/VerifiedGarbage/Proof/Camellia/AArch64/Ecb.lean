@@ -1,11 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.Group
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Camellia ECB on AArch64: the whole function
@@ -145,13 +142,13 @@ theorem dataLoop_wp {s₀ : State} {b D : Addr} {n g : Nat} {E : Nat → BitVec 
 theorem sreg_ne (i : Nat) (hi : i < 10) : sreg i ≠ sb := by
   revert i; decide
 
-theorem prologue_ok {s₀ : State} {b : Addr} (hb : s₀.gpr .x4 = b) (hw : (⟨b, 8 * slots⟩ : Region) ∈ s₀.wr) :
-    ∃ s, runBlock isa (([movR sb .x4] : List Instr) ++ saveRegs ++ setSlots layerMasks ++
+theorem prologue_ok {s₀ : State} {a : Reg} {b : Addr} (hb : s₀.gpr a = b) (hw : (⟨b, 8 * slots⟩ : Region) ∈ s₀.wr) :
+    ∃ s, runBlock isa (([movR sb a] : List Instr) ++ saveRegs ++ setSlots layerMasks ++
         ([.subImm .x t0 .x1 18] : List Instr)) s₀ = some s ∧
       s.gpr sb = b ∧ (∀ r, r ≠ sb → r ≠ t0 → s.gpr r = s₀.gpr r) ∧
       Saved s₀ b s.mem ∧ MasksOk s ∧ s.gpr t0 = s₀.gpr .x1 - BitVec.ofNat 64 18 ∧
       Frame [⟨b, 8 * keySlot⟩, savedRegion b] s₀.mem s.mem ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr := by
-  obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := movR_ok s₀ sb .x4
+  obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := movR_ok s₀ sb a
   have hb₁ : s₁.gpr sb = b := by rw [r₁, hb]
   obtain ⟨s₂, e₂, sv₂, g₂, rd₂, wr₂, f₂, -⟩ := save_ok (b := b) (by rw [wr₁]; exact hw) hb₁
   obtain ⟨s₃, e₃, v₃, g₃, rd₃, wr₃, f₃⟩ := setSlots_ok (b := b) (by rw [wr₂, wr₁]; exact hw) (by rw [g₂, hb₁])

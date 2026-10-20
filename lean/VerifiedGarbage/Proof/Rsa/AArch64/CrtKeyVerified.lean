@@ -1,11 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyCode
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyCTCode
-import VerifiedGarbage.Proof.Rsa.AArch64.CkVerified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyCTCode
+import VerifiedGarbage.Proof.Rsa.AArch64.ExpCheck
+import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # `vg_rsa_check_crt_key` on AArch64: verified against the shared contract

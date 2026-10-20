@@ -10,9 +10,11 @@ cpu-features-env`, after the directory):
 
     python3 ci/export_rust_coverage.py <dir> [<cargo test options>...]
 
-This writes `<uuid>.lcov` in the current directory, containing only this
+This writes `<arch>-<uuid>.lcov` in the current directory, where `<arch>`
+is the `target_arch` the tests were built for, containing only this
 repository's files, with repository-relative `/`-separated paths, so lcov
-files from different platforms can be merged by `ci/merge_rust_coverage.py`.
+files from different platforms can be merged by `ci/merge_rust_coverage.py`,
+which also checks each architecture's alone.
 """
 
 import json
@@ -64,6 +66,20 @@ def relative_records(lcov: str, root: pathlib.Path) -> str:
     return "".join(line + "\n" for line in out)
 
 
+def target_arch() -> str:
+    """The `target_arch` Cargo builds for: the host's, or that of
+    `CARGO_BUILD_TARGET` (the ARMv7 image's cross-compilation)."""
+    target = os.environ.get("CARGO_BUILD_TARGET")
+    cfg = subprocess.run(
+        ["rustc", "--print", "cfg", *(["--target", target] if target else [])],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    (arch,) = [line.split('"')[1] for line in cfg.splitlines() if line.startswith("target_arch=")]
+    return arch
+
+
 def main(profraw_dir: str, *cargo_args: str) -> None:
     root = pathlib.Path.cwd().resolve()
     libdir = subprocess.run(
@@ -97,7 +113,7 @@ def main(profraw_dir: str, *cargo_args: str) -> None:
         text=True,
     ).stdout
 
-    out = f"{uuid.uuid4()}.lcov"
+    out = f"{target_arch()}-{uuid.uuid4()}.lcov"
     with open(out, "w", newline="\n") as f:
         f.write(relative_records(lcov, root))
     print(f"wrote {out}")

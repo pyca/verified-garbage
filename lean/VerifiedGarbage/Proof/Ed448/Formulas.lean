@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Ed448.Formulas
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import Mathlib.Logic.Function.Basic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Ed448: the point formulas' field programs, evaluated

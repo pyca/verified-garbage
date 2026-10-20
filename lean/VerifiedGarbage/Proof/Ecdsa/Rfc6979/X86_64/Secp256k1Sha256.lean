@@ -1,20 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Verified
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Secp256k1
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Secp256k1Sha256
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hash
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.EcKey.Generic
 
 /-!
 # Deterministic ECDSA over secp256k1 with HMAC-SHA-256 on x86-64

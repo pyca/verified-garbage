@@ -1,10 +1,8 @@
 module
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncLoops
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncEM
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncEM
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

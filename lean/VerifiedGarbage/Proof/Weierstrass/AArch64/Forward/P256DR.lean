@@ -1,17 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
-import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
-public import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Spec.Ecdsa.Generic
 
 @[expose] public section
 

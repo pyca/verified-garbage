@@ -1,20 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots
+import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Scalars
-import VerifiedGarbage.Proof.Ecdsa.X86_64.GMul
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Window
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
+import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
+import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import VerifiedGarbage.Proof.Weierstrass.JacMadd
 
 /-!
 # ECDSA verification on x86-64: `[u]G + [v]Q`

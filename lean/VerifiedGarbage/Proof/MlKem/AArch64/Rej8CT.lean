@@ -1,12 +1,13 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Finish
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8StepCT
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8LoopCT
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8LoopCT
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Finish
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8StepCT
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8LoopCT
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The complete SIMD/scalar rejection loop has public-seed-only timing -/
 
@@ -23,12 +24,12 @@ theorem finish_ct : ConstantTime isa (fun _ => True)
   exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x3,.x4])
     (fun _ _ _ _ h => h) (by taint_decide)
 
-theorem loop_relCT {initial : List Zq} {N : Nat} {B : Nat → Byte} {bP aP : Addr}
-    {s₀ u₀ : State} (ps : Env N B bP aP s₀) (pu : Env N B bP aP u₀)
+theorem loop_relCT {w16 : Bool} {initial : List Zq} {N : Nat} {B : Nat → Byte} {bP aP : Addr}
+    {s₀ u₀ : State} (ps : EnvW w16 N B bP aP s₀) (pu : EnvW w16 N B bP aP u₀)
     (hsp : s₀.sp=u₀.sp) (htab : s₀.gpr .x16=u₀.gpr .x16) (hN : 0<N) (hm : N%4=0) :
-    RelCT isa (PairInv initial N B bP aP s₀ u₀ 0) Impl.MlKem.AArch64.Rej8.rejLoop
-      (fun s u => Post initial N B aP s₀ s ∧ Post initial N B aP u₀ u) := by
-  have hct : RelCT isa (PairInv initial N B bP aP s₀ u₀ 0) Impl.MlKem.AArch64.Rej8.rejLoop
+    RelCT isa (PairInvW w16 initial N B bP aP s₀ u₀ 0) (Impl.MlKem.AArch64.Rej8.rejLoop w16)
+      (fun s u => PostW w16 initial N B aP s₀ s ∧ PostW w16 initial N B aP u₀ u) := by
+  have hct : RelCT isa (PairInvW w16 initial N B bP aP s₀ u₀ 0) (Impl.MlKem.AArch64.Rej8.rejLoop w16)
       (fun _ _ => True) := by
     refine RelCT.seq (iters_relCT ps pu hsp htab hN hm) ?_
     intro s u tr ur s' u' hp es eu

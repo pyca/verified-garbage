@@ -1,11 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Sm3.AArch64.Shared
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SM3 (GB/T 32905-2016) on AArch64 -/
 
@@ -14,35 +10,19 @@ import VerifiedGarbage.Proof.MdStream.Spec
 namespace VG.Artifacts.Sm3.AArch64
 
 def artifacts : List Artifact := [
-  { Spec.Sm3.compressApi with
-    target := AArch64.target
-    doc := Spec.Sm3.compressApi.doc
+  Spec.Sm3.compressApi.artifact AArch64.target {
     code := Impl.Sm3.AArch64.compress
-    contract := Spec.Sm3.compressContract AArch64.abi
-    verified := Proof.Sm3.AArch64.Shared.compress
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sm3.initApi with
-    target := AArch64.target
-    doc := Spec.Sm3.initApi.doc
+    verified := Proof.Sm3.AArch64.Shared.compress },
+  Spec.Sm3.initApi.artifact AArch64.target {
     code := Impl.Sm3.AArch64.Stream.init
-    contract := Spec.Sm3.initContract AArch64.abi
-    verified := Proof.Sm3.AArch64.Shared.init
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sm3.updateApi with
-    target := AArch64.target
-    doc := Spec.Sm3.updateApi.doc
+    verified := Proof.Sm3.AArch64.Shared.init },
+  Spec.Sm3.updateApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 Impl.Sm3.AArch64.Stream.update
-    contract := Spec.Sm3.updateContract AArch64.abi (16 + 112)
     stack := 16 + 112
-    verified := Proof.Sm3.AArch64.Shared.update
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sm3.finalizeApi with
-    target := AArch64.target
-    doc := Spec.Sm3.finalizeApi.doc
+    verified := Proof.Sm3.AArch64.Shared.update },
+  Spec.Sm3.finalizeApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 Impl.Sm3.AArch64.Stream.finalize
-    contract := Spec.Sm3.finalizeContract AArch64.abi (16 + 112)
     stack := 16 + 112
-    verified := Proof.Sm3.AArch64.Shared.finalize
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Sm3.AArch64.Shared.finalize }]
 
 end VG.Artifacts.Sm3.AArch64

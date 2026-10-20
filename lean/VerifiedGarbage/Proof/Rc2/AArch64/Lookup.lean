@@ -1,17 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Rc2.AArch64.Lookup
-import VerifiedGarbage.Proof.Rc2.Select
 public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! # Correctness of baseline AArch64 RC2 lookup steps -/
 
@@ -97,8 +95,9 @@ theorem quarters_run (full : Bool) (s : State) :
   have h1 : ∀ e < 16, vbyte (s₃.v .v1) e = vbyte (s.v .v0) e ^^^ 64 := by
     intro e he
     have : s₃.v .v1 = s.v .v0 ^^^ bc 64 := by
-      rw [show s₃.v .v1 = s₂.v .v0 ^^^ s₂.v .v4 from v_setV_self _ _ _]
-      rw [← h4, ← h0]; rfl
+      rw [show s₃.v .v1 = s₂.v .v0 ^^^ s₂.v .v4 from v_setV_self _ _ _, ← h4, ← h0]
+      simp only [s₃, v_setV_of_ne _ _ (by decide : VReg.v0 ≠ .v1),
+        v_setV_of_ne _ _ (by decide : VReg.v4 ≠ .v1)]
     rw [this, vbyte_xor, vbyte_bc _ he]
   have run₃ : runBlock isa ([imm .x6 64, .vop (.dup .b16 .v4 .x6), .vop (.logic .eor .v1 .v0 .v4)]) s
       = some s₃ := by

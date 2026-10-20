@@ -1,0 +1,63 @@
+module
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+public import VerifiedGarbage.Impl.Bignum.Arm.InputCompare
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+
+import VerifiedGarbage.Proof.Bignum.Arm.InputCompareArgs
+import VerifiedGarbage.Proof.Bignum.Arm.SubCompare
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Block
+
+/-! # Range checking does not require a prevalidated modulus -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
+open VG.Spec.Rsa.Mont (arrAt numAt Keeps)
+open VG.Proof.X25519.Arm (Rest)
+
+theorem inputCompareLayout_ok (s : State) {base : BitVec 32} {len w : Nat}
+    (h : LayoutFrameReady base len w s) :
+    WP isa inputCompare s fun t => LayoutFrameReady base len w t ∧
+      t.gpr .r11 = (if numAt s.mem (State.addr base) w 1 < numAt s.mem (State.addr base) w 0 then 1 else 0) ∧
+      Keeps (State.addr base) len w 3 s.mem t.mem ∧
+      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+  have hw : 2 ≤ w := h.width ▸ h.layout.1
+  have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have f0 := Nat.le_trans (array_end_le (w := w) (by decide : 0 < 8)) fits
+  have f1 := Nat.le_trans (array_end_le (w := w) (by decide : 1 < 8)) fits
+  have f3 := Nat.le_trans (array_end_le (w := w) (by decide : 3 < 8)) fits
+  have sep1 := array_end_le (w := w) (by decide : 1 < 3)
+  have sep0 := array_end_le (w := w) (by decide : 0 < 3)
+  have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
+  rw [h.width] at header
+  rw [inputCompare, WP.seq_iff]
+  refine WP.mono (inputCompareArgs_ok s h.workspace size header h.ptr) ?_
+  rintro u ⟨p0, p10, p12, count, borrow, memU, restU⟩
+  have ctx : SubCtx u base (8 * len) (arrAt w 3) (arrAt w 1) (arrAt w 0) (2 * w) :=
+    ⟨h.workspace.nowrap, by omega, by omega, by omega, Or.inr (by omega), Or.inr (by omega),
+      by rw [restU.wr]; exact h.workspace.writable⟩
+  rw [WP.seq_iff]
+  refine WP.mono (subCompare_ok u ctx (by omega) p0 p10 p12 count borrow) ?_
+  rintro v ⟨value, outside, restV⟩
+  rw [memU, ← numAt_native, ← numAt_native] at value
+  rw [memU, show 4 * (2 * w) = 8 * w by omega] at outside
+  have frame := outside_workspace outside (size := 8 * len) (by omega)
+  have keeps := outside_array_keeps outside (len := len) (by have := h.workspace.nowrap; omega)
+  have restUV : Rest roundClobbers s v := (restU.mono (by simp [roundClobbers])).trans
+    (restV.mono (by simp [roundClobbers, subLoopClobbers]))
+  refine WP.mono (restoreBase_ok v
+    (by rw [restUV.rd, restUV.wr, restUV.sp]; exact h.stackRead)
+    (saved_base_kept frame h.stackSep h.saved restUV.sp)) ?_
+  rintro t ⟨ptr, memT, restT⟩
+  rw [← memT] at frame keeps
+  have rest := restUV.trans (restT.mono (by simp [roundClobbers]))
+  exact ⟨h.after_array keeps frame rest ptr,
+    (restT.gpr .r11 (by simp)).trans value, keeps, frame, rest⟩
+
+end VG.Proof.Bignum.Arm

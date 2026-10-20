@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Short
-public import VerifiedGarbage.Impl.Aes.X86_64.AesNi
 
 /-!
 # AES-GCM on x86-64: `seal` ending without calls, with AES-NI
@@ -25,8 +24,9 @@ open VG.Impl.AesGcm.X86_64 (at_ Callees tagOut restore oneEntry oneAad oneBlocks
 def mid (c : Callees) : Prog isa :=
   .seq (oneAad c) (.seq (oneBlocks c.enc) (Short.finishWith Short.finKsA))
 
-/-- `vg_aes_gcm_seal`, ending without calls. -/
-def «seal» (c : Callees) : Prog isa :=
-  .seq (.block (oneEntry 32)) (.seq (mid c) (.seq (.block (tagOut (at_ .rsp 24))) (.block restore)))
+/-- `vg_aes_gcm_seal`, ending without calls, with `md` after the entry
+(`mid`, by default). -/
+def «seal» (c : Callees) (md : Prog isa := mid c) : Prog isa :=
+  .seq (.block (oneEntry 32)) (.seq md (.seq (.block (tagOut (at_ .rsp 24))) (.block restore)))
 
 end VG.Impl.AesGcm.X86_64.SealFin

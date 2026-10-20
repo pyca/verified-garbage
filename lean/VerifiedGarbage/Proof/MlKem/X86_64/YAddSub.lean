@@ -1,16 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
+public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+public import VerifiedGarbage.Proof.MlKem.X86_64.VLanes
+import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
-public import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
+meta import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VLanes
 meta import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
-# ML-KEM on x86-64: `vg_mlkem_add_avx2` and `vg_mlkem_sub_avx2`
+# ML-KEM on x86-64: addition and subtraction with AVX2, which the K-PKE functions inline
 
 Each iteration of the loop loads eight coefficients of `f` and of `g` and, in
 each lane, does what an iteration of `vg_mlkem_add` (`vg_mlkem_sub`) does
@@ -203,15 +207,5 @@ theorem addY_ct : ConstantTime isa (accK Spec.MlKem.add).pre (accK Spec.MlKem.ad
 
 theorem subY_ct : ConstantTime isa (accK Spec.MlKem.sub).pre (accK Spec.MlKem.sub).pub subAvx2 :=
   VG.Taint.constantTime (A := taint) accτ acc_agree (by taint_decide)
-
-theorem addY_verified : Verified X86_64.target addAvx2 (Spec.MlKem.addContract X86_64.abi) :=
-  Verified.of_correct addY_correct addY_ct (by
-    mlkem_implies [Spec.MlKem.addContract, Spec.MlKem.accSig, accK, X86_64.abi, X86_64.argRegs]
-      [accSat] using accSat)
-
-theorem subY_verified : Verified X86_64.target subAvx2 (Spec.MlKem.subContract X86_64.abi) :=
-  Verified.of_correct subY_correct subY_ct (by
-    mlkem_implies [Spec.MlKem.subContract, Spec.MlKem.accSig, accK, X86_64.abi, X86_64.argRegs]
-      [accSat] using accSat)
 
 end VG.Proof.MlKem.X86_64

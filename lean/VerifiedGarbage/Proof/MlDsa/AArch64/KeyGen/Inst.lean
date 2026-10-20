@@ -3,36 +3,24 @@ module
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSelected
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSelected
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Depth
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Main
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Main
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Lay
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
+public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Power2Round
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Round.UseHint
 import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Ball
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.SimpleBitPack
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpack
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSqueezeApart
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Ntt
 
 /-!
 # ML-DSA key generation on AArch64, with this library's primitives
@@ -64,18 +52,18 @@ theorem prims_okWith : PrimsOk (primsWith keccak.callee) 16 where
     exact CalleeOk.of_verified (by decide) h (by decide) (by dsimp only [primsWith]; decide)
   mul := CalleeOk.of_verified (by decide) Arith.mul_verified (by decide) (by dsimp only [primsWith]; decide)
   mulAdd := CalleeOk.of_verified (by decide) Arith.mulAdd_verified (by decide) (by dsimp only [primsWith]; decide)
-  add := CalleeOk.of_verified (by decide) Arith.add_verified (by decide) (by dsimp only [primsWith]; decide)
-  sub := CalleeOk.of_verified (by decide) Arith.sub_verified (by decide) (by dsimp only [primsWith]; decide)
+  add := CalleeOk.of_verified (by decide) Optimized.AddSub.add_verified (by decide) (by dsimp only [primsWith]; decide)
+  sub := CalleeOk.of_verified (by decide) Optimized.AddSub.sub_verified (by decide) (by dsimp only [primsWith]; decide)
   rejNtt := CalleeOk.of_verified (by decide) (Sample.rejNTT_verifiedWith keccak) (by decide) (by simp [primsWith, Sample.rejNTT_depth keccak])
   rej4 := CalleeOk.of_verified (by decide) (Optimized.ResidentRej.selected_verified keccak.callee.pairedSha3) (by decide)
     (by simp only [primsWith,Optimized.ResidentRej.selected_depth,Nat.mul_zero]; decide)
   rejBounded := CalleeOk.of_verified (by decide) (Sample.rejBounded_verifiedWith keccak) (by decide) (by simp [primsWith, Sample.rejBounded_depth keccak])
   ball := CalleeOk.of_verified (by decide) (Optimized.Ball.selected_verified keccak) (by decide) (by simp [primsWith, Optimized.Ball.selected_depth keccak])
-  power2Round := CalleeOk.of_verified (by decide) Round.power2Round_verified (by decide) (by dsimp only [primsWith]; decide)
+  power2Round := CalleeOk.of_verified (by decide) Optimized.KeygenRound.power2Round_verified (by decide) (by dsimp only [primsWith]; decide)
   useHint := CalleeOk.of_verified (by decide) Round.useHint_verified (by decide) (by dsimp only [primsWith]; decide)
   normLt := CalleeOk.of_verified (by decide) Round.normLt_verified (by decide) (by dsimp only [primsWith]; decide)
-  simpleBitPack := CalleeOk.of_verified (by decide) Pack.simpleBitPack_verified (by decide) (by dsimp only [primsWith]; decide)
-  bitPack := CalleeOk.of_verified (by decide) Pack.bitPack_verified (by decide) (by dsimp only [primsWith]; decide)
+  simpleBitPack := CalleeOk.of_verified (by decide) Optimized.KeygenPack.simple_verified (by decide) (by dsimp only [primsWith]; decide)
+  bitPack := CalleeOk.of_verified (by decide) Optimized.KeygenPack.signed_verified (by decide) (by dsimp only [primsWith]; decide)
   bitUnpack := CalleeOk.of_verified (by decide) Pack.bitUnpack_verified (by decide) (by dsimp only [primsWith]; decide)
   unpackT1 := CalleeOk.of_verified (by decide) Pack.unpackT1_verified (by decide) (by dsimp only [primsWith]; decide)
   hintUnpack := CalleeOk.of_verified (by decide) Pack.hintBitUnpack_verified (by decide) (by dsimp only [primsWith]; decide)

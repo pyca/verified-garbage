@@ -1,14 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Aes
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Keep
-public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Load
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Keep
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.X86_64.HighKeep
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # A cached-key GCM batch from one buffer to another -/
 

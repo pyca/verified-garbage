@@ -26,6 +26,12 @@ def sample : Sig where
   count: usize) -> u64"
 #guard ({ params := [] } : Sig).rust == "()"
 
+-- `u16` elements: 2 bytes, printed as Rust's `u16`.
+#guard Elem.size .u16 == 2
+#guard (Elem.array .u16 256).size == 512
+#guard ({ params := [("p", .array true .u16 256), ("q", .slice false .u16 "n")] } : Sig).rust ==
+  "(p: *mut [u16; 256], q: *const u16, n: usize)"
+
 #guard (sample.words 64).map (·.bits 64) == [64, 32, 64, 64, 64, 64, 64, 64, 64, 64, 64]
 #guard (sample.words 32).map (·.bits 32) == [64, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32]
 
@@ -101,6 +107,25 @@ def aarch64StackRd : AArch64.State :=
 #guard (AArch64.exec (.ldrSp .x9 4) { aarch64StackRd with sp := 0xfc }).isNone
 #guard (AArch64.exec (.ldrSp .x9 32760) { aarch64StackRd with sp := 0x100 - 32760 }).isSome
 #guard (AArch64.exec (.ldrSp .x9 32768) { aarch64StackRd with sp := 0x100 - 32768 }).isNone
+-- `str xt, [sp, #off]` stores into a writable region at the stack pointer
+-- (a frame's, here the 16 bytes at `sp`), where `ldrSp` reads it back.
+def aarch64StackWr : AArch64.State := { aarch64Stack with wr := [⟨0x100, 16⟩] }
+#guard ((AArch64.exec (.strSp .x1 8) aarch64StackWr).bind (AArch64.exec (.ldrSp .x9 8))).map
+  (·.gpr .x9) == some 2
+#guard ((AArch64.exec (.strSp .x7 0) aarch64StackWr).bind (AArch64.exec (.ldrSp .x9 0))).map
+  (·.gpr .x9) == some 8
+#guard (AArch64.exec (.strSp .x1 8) aarch64StackWr).map (·.sp) == some 0x100
+#guard AArch64.addrs (.strSp .x9 8) aarch64Stack == [0x108]
+-- It faults outside the writable regions (past the frame, or in a region
+-- that is only readable, as the stack arguments are), at an offset that is
+-- not a multiple of 8, and at one it cannot encode (`imm12 * 8`, so below
+-- 32768).
+#guard (AArch64.exec (.strSp .x9 16) aarch64StackWr).isNone
+#guard (AArch64.exec (.strSp .x9 0) aarch64StackRd).isNone
+#guard (AArch64.exec (.strSp .x9 0) aarch64Stack).isNone
+#guard (AArch64.exec (.strSp .x9 4) { aarch64StackWr with sp := 0xfc }).isNone
+#guard (AArch64.exec (.strSp .x9 32760) { aarch64StackWr with sp := 0x100 - 32760 }).isSome
+#guard (AArch64.exec (.strSp .x9 32768) { aarch64StackWr with sp := 0x100 - 32768 }).isNone
 #guard AArch64.abi.ret aarch64State == 1
 
 /-! ### Public arguments are public only in the bits of their width

@@ -1,15 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.X86_64.XorBytes
-public import VerifiedGarbage.Proof.AesSiv.Ctr32
+import VerifiedGarbage.Proof.AesSiv.X86_64.XorBytes
+import VerifiedGarbage.Proof.AesSiv.Ctr32
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Env
+public import VerifiedGarbage.Proof.AesSiv.CtrPart
 import VerifiedGarbage.Proof.AesSiv.X86_64.Bits
 import VerifiedGarbage.Proof.AesSiv.X86_64.Common
+import VerifiedGarbage.Proof.CmacAes.X86_64.Dbl
+import VerifiedGarbage.Proof.Gcm.X86_64.Bits
+import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-SIV on x86-64: CTR (`ctr`)

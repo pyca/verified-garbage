@@ -1,21 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductCallTiming
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedResponse
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChallenge
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopInit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasks
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseK
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 
 /-! ## From `OptimizedProduct.lean` -/
 

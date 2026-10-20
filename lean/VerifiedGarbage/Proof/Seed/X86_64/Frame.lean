@@ -1,12 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Seed.Scratch
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
-public import VerifiedGarbage.Proof.Seed.X86_64.KeyVerified
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Seed.X86_64.KeyVerified
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+import VerifiedGarbage.Proof.Seed.X86_64.Verified
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Seed.X86_64.Lit
+public import VerifiedGarbage.Impl.Seed.X86_64.ExpandKey
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-!
 # SEED on x86-64, with its working space on the stack

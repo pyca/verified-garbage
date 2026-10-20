@@ -1,14 +1,13 @@
 module
 
 import VerifiedGarbage.Proof.P256.VerifySparse.Code
-public import VerifiedGarbage.Proof.P256.VerifySparse.Sub
+import VerifiedGarbage.Proof.P256.VerifySparse.Sub
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Impl.P256.VerifySparse
+public import VerifiedGarbage.Proof.P256.VerifySparse.Arithmetic
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

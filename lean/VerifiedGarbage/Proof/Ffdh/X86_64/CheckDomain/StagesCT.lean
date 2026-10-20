@@ -1,16 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Correct
-public import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ChecksCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.PowCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
-public meta import VerifiedGarbage.Impl.Ffdh.X86_64.CheckDomain
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckDomain
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Context
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Setup
+public import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Range
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Loads
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Start
+import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ChecksCT
+meta import VerifiedGarbage.Impl.Ffdh.X86_64.CheckDomain
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Context
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Setup
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Range
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Loads
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Start
+meta import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH domain validation on x86-64: public stages for constant time -/
 

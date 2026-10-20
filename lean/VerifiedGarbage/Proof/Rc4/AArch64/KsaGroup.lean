@@ -1,11 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Rc4.AArch64.Prga
+public import VerifiedGarbage.Proof.Rc4.Schedule
 
-public import VerifiedGarbage.Proof.Rc4.AArch64.KsaStep
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Rc4.AArch64.KsaStep
+import VerifiedGarbage.Proof.Rc4.AArch64.Group
+import VerifiedGarbage.Proof.Rc4.Memory
+import VerifiedGarbage.Proof.Rc4.AArch64.Rotate
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # The key schedule's groups

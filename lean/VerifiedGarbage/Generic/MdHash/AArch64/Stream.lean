@@ -1,9 +1,6 @@
 module
 
-import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # Streaming Merkle–Damgård hash functions on AArch64
@@ -16,7 +13,7 @@ in its registration file.
 
 The variant supplies each function's `Api` and its verified code
 (`MdHash.stream`, a `StreamFn`), whose contract is the one the `Api` gives it
-(`StreamFn.ofApi`, which this file passes on as the artifact's `ofApi`).
+(`StreamFn.ofApi`).
 -/
 
 @[expose] public section
@@ -24,18 +21,6 @@ The variant supplies each function's `Api` and its verified code
 namespace VG.Generic.MdHash.AArch64.Stream
 
 def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := v.stream.map fun f =>
-  { f.api with
-    name := f.api.name ++ v.suffix
-    target := AArch64.target
-    doc := f.api.doc
-    code := f.code
-    contract := f.contract
-    stack := f.stack
-    verified := f.verified
-    consts := []
-    ofSig := f.ofSig
-    ofApi := f.ofApi
-    spSafe := f.spSafe
-    features := v.features }
+  f.api.artifact AArch64.target { f.reg with suffix := v.suffix, features := v.features }
 
 end VG.Generic.MdHash.AArch64.Stream

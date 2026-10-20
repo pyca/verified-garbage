@@ -1,12 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.QPrepareCT
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.StagesCT
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Subgroup
+public import VerifiedGarbage.Proof.Ffdh.X86_64.PowCT
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.QTestCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.QTestCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.SubgroupRun
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 
 /-! # FFDH domain validation on x86-64: public subgroup exponentiation stages -/
 

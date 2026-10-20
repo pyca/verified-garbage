@@ -3,17 +3,22 @@ module
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Impl.Cast5.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Impl.Cast5.Arm
 public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Impl.Cast5.Arm
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # CAST5 on ARMv7: running blocks
@@ -204,9 +209,7 @@ theorem Keep.refl (rs : List Reg) (s : State) : Keep rs s s := ⟨fun _ _ => rfl
 
 /-- Whether every instruction of `c` writes, if any register, one of `rs`. -/
 def writesOnly (rs : List Reg) (c : Prog isa) : Bool :=
-  c.allInstrs fun i => match dstOf i with
-    | none => true
-    | some d => rs.contains d
+  c.allInstrs fun i => (dsts i).all rs.contains
 
 /-- A register that no instruction writes keeps its value (code without calls). -/
 theorem WP.keep {c : Prog isa} {s : State} {Q : State → Prop} (rs : List Reg) (h : WP isa c s Q)
@@ -217,11 +220,7 @@ theorem WP.keep {c : Prog isa} {s : State} {Q : State → Prop} (rs : List Reg) 
     (Exec.rdwr he).2.1, (Exec.rdwr he).2.2⟩⟩
   unfold writesOnly at hc
   rw [Code.allInstrs_eq, List.all_eq_true] at hc
-  have := hc i hi
-  intro e
-  rw [e] at this
-  simp only [List.contains_iff_mem] at this
-  exact hr (by simpa using this)
+  exact clobbers_eq_false_of_contains (hc i hi) hr
 
 /-! ## Addresses in the working space -/
 

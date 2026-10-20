@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChecks
-public import VerifiedGarbage.Proof.Curve448.AArch64.Legacy
+import VerifiedGarbage.Proof.Curve448.AArch64.Legacy
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.X448.AArch64.Freeze
+import VerifiedGarbage.Proof.Curve448.AArch64.Copy
+import VerifiedGarbage.Proof.X448.AArch64.Copy
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Ed448 verification on AArch64: comparing slots of the register-resident arithmetic
@@ -64,19 +65,19 @@ theorem canonF_ok {s : State} {base : Addr} (hs : Scr s base) (a : Fin 22) (ha :
 
 /-! ## The passes of `eqSlots` -/
 
-theorem copy_x8 (o a : Nat) : ∀ i ∈ VG.Impl.Curve448.AArch64.copy o a, dstOf i ≠ some .x8 := by
+theorem copy_x8 (o a : Nat) : ∀ i ∈ VG.Impl.Curve448.AArch64.copy o a, clobbers i .x8 = false := by
   intro i hi
   simp only [VG.Impl.Curve448.AArch64.copy, List.mem_flatMap, List.mem_cons, List.not_mem_nil,
     or_false] at hi
-  obtain ⟨_, _, rfl | rfl⟩ := hi <;> simp [ld, st, dstOf]
+  obtain ⟨_, _, rfl | rfl⟩ := hi <;> simp [ld, st, clobbers, dstOf]
 
-theorem copy16_x8 (o a : Nat) : ∀ i ∈ VG.Impl.X448.AArch64.copy o a, dstOf i ≠ some .x8 := by
+theorem copy16_x8 (o a : Nat) : ∀ i ∈ VG.Impl.X448.AArch64.copy o a, clobbers i .x8 = false := by
   intro i hi
   simp only [VG.Impl.X448.AArch64.copy, List.mem_flatMap, List.mem_cons, List.not_mem_nil,
     or_false] at hi
-  obtain ⟨_, _, rfl | rfl⟩ := hi <;> simp [ld, st, dstOf]
+  obtain ⟨_, _, rfl | rfl⟩ := hi <;> simp [ld, st, clobbers, dstOf]
 
-theorem reduceX2_x8 : ∀ i ∈ reduceX2, dstOf i ≠ some .x8 := by
+theorem reduceX2_x8 : ∀ i ∈ reduceX2, clobbers i .x8 = false := by
   have h := instrs_keeps (c := (.block reduceX2 : Prog isa)) (rs := [.x8]) (by decide +kernel)
   intro i hi
   have := List.all_eq_true.mp h i hi
@@ -86,7 +87,7 @@ theorem reduceX2_x8 : ∀ i ∈ reduceX2, dstOf i ≠ some .x8 := by
 theorem passRest_x8 (a b : Nat) :
     ∀ i ∈ instrs (.seq (.ite (.nonzero .x .x8) (.block (VG.Impl.Curve448.AArch64.copy X2 (slot a)))
       (.block (VG.Impl.X448.AArch64.copy CAN X2 ++ VG.Impl.Curve448.AArch64.copy X2 (slot b))))
-      (.block reduceX2) : Prog isa), dstOf i ≠ some .x8 := by
+      (.block reduceX2) : Prog isa), clobbers i .x8 = false := by
   intro i hi
   simp only [instrs, List.mem_append] at hi
   rcases hi with (h | h | h) | h

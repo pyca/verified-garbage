@@ -1,27 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.KeyEk
-meta import VerifiedGarbage.Proof.Sm4.Arm.KeyEk
-import VerifiedGarbage.Proof.Sm4.Arm.Ecb
-meta import VerifiedGarbage.Proof.Sm4.Arm.Ecb
 public import VerifiedGarbage.Proof.Sm4.Scratch
-meta import VerifiedGarbage.Proof.Sm4.Scratch
-public import VerifiedGarbage.Proof.Framework.Arm.Inline
-meta import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+public import VerifiedGarbage.Impl.StackScratch.Arm
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Sm4.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
+meta import VerifiedGarbage.Proof.Sm4.Arm.KeyEk
+meta import VerifiedGarbage.Proof.Sm4.Scratch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
 meta import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sm4.Arm.Lit
+meta import VerifiedGarbage.Impl.StackScratch.Arm
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Sm4.Arm.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
 
 /-!
 # SM4 key expansion on ARMv7 meets its contracts

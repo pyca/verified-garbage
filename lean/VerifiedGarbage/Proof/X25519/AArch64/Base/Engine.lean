@@ -2,25 +2,27 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Impl.X25519.AArch64.Base
-public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
-public import VerifiedGarbage.Proof.Ed25519.AArch64.BitByte
-public import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
+import VerifiedGarbage.Proof.Ed25519.AArch64.BitByte
 import VerifiedGarbage.Proof.X25519.Edwards.Base
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
-import VerifiedGarbage.Impl.Mont.Mod
+public import VerifiedGarbage.Proof.Ed25519.AArch64.CombSelect
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
+public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Ed25519.AArch64.CombClamped
+import VerifiedGarbage.Proof.X25519.Edwards.Ladder
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.X25519.AArch64.Ops
 
 /-!
 # X25519 of the base point on AArch64: the engine
 
 The expanded bits of the scalar, clamped (`clampBits_ok`), are those of
 `decodeScalar25519` (`clamped_bit`); the comb computes `[k] B` from them
-(`combMultiply_ok`), and `uEncode` its u-coordinate `(Z + Y) / (Z - Y)`, which
+(`combMultiplyClamped_ok`, which absorbs digit 0 into its start), and `uEncode` its u-coordinate `(Z + Y) / (Z - Y)`, which
 `Proof/X25519/Edwards/Ladder.lean` shows is `X25519(k, 9)` (`engine_ok`).
 -/
 
@@ -54,7 +56,7 @@ theorem write1_outside (m : Mem) (base : Addr) {d : Nat} (hd : d < 2 ^ 64) {x : 
 
 /-- Clamping the expanded bits: five byte stores at `768 + q`. -/
 theorem clampBits_ok {s : State} {base : Addr} (hs : Scr s base) :
-    WP isa (.block clampBits) s fun t => PowersKeep base 56 7368 s t ∧
+    WP isa (.block clampBits) s fun t => PowersKeep base 56 968 s t ∧
       ∀ q < 256, t.mem (off base (768 + q)) =
         if q < 3 ∨ q = 255 then 0 else if q = 254 then 1 else s.mem (off base (768 + q)) := by
   have _hcap : workSize true = 8192 := rfl
@@ -114,7 +116,7 @@ theorem uEncode_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} {base : 
 theorem engine_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} {base k T : Addr} (hs : Scr s base) (hp : s.gpr .x1 = k)
     (hr : ∀ q < 32, InRegions (s.rd ++ s.wr) (off k q) 1)
     (hd : ∀ q < 32, 8192 ≤ ofs base (off k q)) (htb : TblAt s base T) (hT : s.syms combSym = T) :
-    WP isa engine s fun t => PowersKeep base 56 7368 s t ∧ ∃ w : Fe,
+    WP isa engine s fun t => PowersKeep base 56 968 s t ∧ ∃ w : Fe,
       val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) = w.val ∧
       Spec.X25519.x25519 (Spec.Ed25519.bytesAt s.mem k 32) Spec.X25519.basePoint =
         Spec.X25519.encodeUCoordinate w := by
@@ -139,7 +141,10 @@ theorem engine_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} {base k T
     · exact bbits q (by simpa using hq)
   have htc : TblAt c base T := htb.of_far (by rw [kbc.rd, kbc.wr, kab.rd, kab.wr])
     (fun x hx => (powersKeep_outside (kab.trans kbc)) x (Or.inr (by omega)))
-  refine WP.seq (WP.mono (combMultiply_ok hsc htc (by rw [syc, syb]; exact hT) hS cb)
+  have hc : ∀ q < 3, (decodeScalar25519 kb / 2 ^ q) % 2 = 0 := fun q hq => by
+    rw [clamped_bit hk (by omega)]
+    simp only [hq, true_or, ↓reduceIte]
+  refine WP.seq (WP.mono (combMultiplyClamped_ok hsc htc (by rw [syc, syb]; exact hT) hS hc cb)
     fun d ⟨dp, kd⟩ => ?_)
   refine WP.mono (uEncode_ok (kd.scr hsc)) fun t ⟨kt, tv⟩ => ?_
   refine ⟨((kab.trans kbc).trans kd.powers).trans

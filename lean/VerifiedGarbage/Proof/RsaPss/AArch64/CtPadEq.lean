@@ -1,12 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
 public import VerifiedGarbage.Proof.RsaPss.CtPad
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.RsaPss.AArch64.PadLen
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RSASSA-PSS on AArch64: the padded message in `Y`

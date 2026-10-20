@@ -3,9 +3,9 @@
 //!
 //! The block cipher work and the chaining are verified assembly:
 //! `vg_camellia_expand_key` (contract `VG.Spec.Camellia.expandKeyContract`)
-//! writes the subkeys, and `vg_camellia_cbc_encrypt` and
-//! `vg_camellia_cbc_decrypt` (`VG.Spec.Camellia.cbcEncryptContract`,
-//! `cbcDecryptContract`) replace each block with its CBC encryption or
+//! writes the subkeys, and `vg_camellia_cbc_encrypt_chained` and
+//! `vg_camellia_cbc_decrypt_chained` (`VG.Spec.Camellia.cbcEncryptChainedContract`,
+//! `cbcDecryptChainedContract`) replace each block with its CBC encryption or
 //! decryption from the chaining value at `iv`, in constant time: their
 //! timing depends on none of the key, the chaining value and the data. Both
 //! are the modes' generic CBC over Camellia's bitsliced ECB code, with the
@@ -15,8 +15,7 @@
 //! eight times ECB's cost). On x86, both transform one block at a time in
 //! a batch of eight, and on ARMv7 both call the verified ECB function once
 //! per block (a batch of eight), so about eight times ECB's cost. This
-//! module checks the lengths, holds the subkeys and keeps the chaining value
-//! to continue from: the last ciphertext block.
+//! module checks the lengths and holds the subkeys.
 
 #![cfg(any(
     target_arch = "x86",
@@ -26,7 +25,7 @@
 ))]
 
 use crate::arch::camellia::vg_camellia_expand_key;
-use crate::arch::camellia_cbc::{vg_camellia_cbc_decrypt, vg_camellia_cbc_encrypt};
+use crate::arch::camellia_cbc::{vg_camellia_cbc_decrypt_chained, vg_camellia_cbc_encrypt_chained};
 use crate::zeroize::zeroize;
 
 /// Why a Camellia-CBC operation failed.
@@ -36,6 +35,13 @@ pub enum Error {
     InvalidKeyLength,
     /// The input length is not a multiple of 16 bytes.
     IncompleteBlock,
+}
+
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid Camellia key length",
+        IncompleteBlock => "Camellia-CBC input is not a whole number of blocks",
+    }
 }
 
 /// An expanded Camellia key for CBC encryption and decryption.
@@ -79,21 +85,18 @@ impl CamelliaCbc {
         }
         // SAFETY: `rounds` is 18 for a key of 16 bytes and 24 otherwise, as
         // `new` expanded the schedule for. The buffer holds `len / 16` whole
-        // blocks, and it, the chaining value and the schedule are separate
-        // valid objects of the sizes of the signature, none of them on the
-        // callee's stack. The function zeroes its working space on its own
-        // stack before returning.
+        // blocks, and it, the chaining value (which the function reads and
+        // replaces) and the schedule are separate valid objects of the sizes of
+        // the signature, none of them on the callee's stack. The function
+        // zeroes its working space on its own stack before returning.
         unsafe {
-            vg_camellia_cbc_encrypt(
+            vg_camellia_cbc_encrypt_chained(
                 &self.schedule,
                 self.rounds,
                 iv,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 16,
             );
-        }
-        if let Some(last) = buffer.rchunks_exact(16).next() {
-            iv.copy_from_slice(last);
         }
         Ok(())
     }
@@ -107,13 +110,9 @@ impl CamelliaCbc {
         if !buffer.len().is_multiple_of(16) {
             return Err(Error::IncompleteBlock);
         }
-        let mut next = *iv;
-        if let Some(last) = buffer.rchunks_exact(16).next() {
-            next.copy_from_slice(last);
-        }
         // SAFETY: as in `encrypt`.
         unsafe {
-            vg_camellia_cbc_decrypt(
+            vg_camellia_cbc_decrypt_chained(
                 &self.schedule,
                 self.rounds,
                 iv,
@@ -121,7 +120,6 @@ impl CamelliaCbc {
                 buffer.len() / 16,
             );
         }
-        *iv = next;
         Ok(())
     }
 }

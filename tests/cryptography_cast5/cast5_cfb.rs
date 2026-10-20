@@ -5,7 +5,7 @@
     target_arch = "arm"
 ))]
 
-use verified_garbage::cast5_cfb::{Cast5Cfb64, Error};
+use verified_garbage::cast5_cfb::{Cast5Cfb64, InvalidKeyLength};
 
 const VECTORS: &str = include_str!("../../vectors/cryptography-cast5-cfb/cast5-cfb.txt");
 
@@ -51,7 +51,7 @@ fn vectors() {
 
 #[test]
 fn errors_and_empty_input() {
-    assert!(matches!(Cast5Cfb64::new(&[]), Err(Error::InvalidKeyLength)));
+    assert!(matches!(Cast5Cfb64::new(&[]), Err(InvalidKeyLength)));
     let cipher = Cast5Cfb64::new(&[7; 5]).unwrap();
     let mut iv = [0x5a; 8];
     cipher.encrypt(&mut iv, &mut []);

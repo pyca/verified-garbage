@@ -1,13 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Child
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Dsa.AArch64.Child
 public import VerifiedGarbage.Spec.Dsa.SignVerify
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Impl.Dsa.AArch64.Workspace
+public import VerifiedGarbage.Proof.Dsa.AArch64.InitFrame
 import VerifiedGarbage.Proof.Dsa.Layout
+import VerifiedGarbage.Proof.Dsa.AArch64.Parent
 
 /-! # Initializing both DSA moduli in the shared scratch allocation -/
 
@@ -37,7 +35,8 @@ theorem workspaces_ok {s : State} {B pp qp : Addr} {Z : Nat} {p q : List Byte}
       Keep coreRegs s t := by
   obtain ⟨hp2, hp48, hq2, hq48, hpLo, hpHi, hqHi, _⟩ := VG.Proof.Dsa.workspace_bounds hlens
   have hlengths : 1 ≤ p.length ∧ p.length < 2 ^ 31 ∧ 1 ≤ q.length ∧ q.length < 2 ^ 31 := by
-    rcases hlens with ⟨h1, h2⟩ | ⟨h1, h2 | h2⟩ | ⟨h1, h2⟩ <;> rw [h1, h2] <;> decide
+    unfold Spec.Dsa.lengthsValid at hlens
+    omega
   have hparent : pWorkspace ≤ Z := Nat.le_trans (by decide) hZ
   unfold SignVerify.workspaces seqs
   refine WP.seq (WP.mono (parent_ok hs hdi hparent) fun u ⟨hgu, hfu, hku⟩ => ?_)

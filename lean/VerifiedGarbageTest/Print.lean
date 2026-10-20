@@ -35,7 +35,7 @@ open X86_64
     "lea esp, [esp+4]", "ret"]
 
 #guard Rust.line "call" (.sym ".long " .x86PcRel "VG_TABLE") ==
-  "        \".long {VG_TABLE} - 2b\",\n"
+  "        r\".long {VG_TABLE} - 2b\",\n"
 
 -- Neither a plain block nor an invalid frame can use symPush.
 def symState : X86.State :=
@@ -201,6 +201,38 @@ def sample8 : Prog isa := .block ([
 #guard (printer.unencodable (.adox .rax (.mem { base := .rsi, disp := -4294967304 }))).isSome
 #guard printer.unencodable (.alu .add .rax (.imm 0x7fffffff)) == none
 
+-- A cold branch (`Code.iteCold`): `je` to its code after the `ret`, which
+-- jumps back to the code after the `ite`; the else branch falls through, with
+-- no jump, so the code around the `ite` is as long as without `t`.
+#guard text (printer.function
+    (.seq (Code.iteCold .e (.block [.mov .rax (.imm 1)]) (.block [.mov .rax (.imm 2)]))
+      (.block [.mov .rcx (.imm 3)]) : Prog isa)) ==
+  ["je 20f", "mov rax, 2", "21:", "mov rcx, 3", "ret", "20:", "mov rax, 1", "jmp 21b"]
+
+-- In a loop, and nested: each cold branch's code follows the return, in the
+-- order of the branches, the inner one's after the outer one's jump back.
+#guard text (printer.function
+    (.loop (Code.iteCold .ne
+      (Code.iteCold .b (.block [.mov .rax (.imm 1)]) (.block [.mov .rax (.imm 2)]))
+      (.block [.mov .rax (.imm 3)])) .ae : Prog isa)) ==
+  ["20:", "jne 21f", "mov rax, 3", "22:", "jae 20b", "ret",
+    "21:", "jb 23f", "mov rax, 2", "24:", "jmp 22b", "23:", "mov rax, 1", "jmp 24b"]
+
+-- An ordinary `ite` and a cold branch in one loop body: the numbers stay
+-- distinct (the loop's 20, the `ite`'s 21 and 22, the cold branch's 23 and
+-- 24), the `ite`'s references are forward, and the cold code, after the
+-- return, jumps backward to its place in the loop.
+#guard text (printer.function
+    (.loop (.seq (.ite .e (.block [.mov .rax (.imm 1)]) (.block [.mov .rax (.imm 2)]))
+      (Code.iteCold .ne (.block [.mov .rcx (.imm 3)]) (.block [.mov .rcx (.imm 4)]))) .ae : Prog isa)) ==
+  ["20:", "je 21f", "mov rax, 2", "jmp 22f", "21:", "mov rax, 1", "22:",
+    "jne 23f", "mov rcx, 4", "24:", "jae 20b", "ret", "23:", "mov rcx, 3", "jmp 24b"]
+
+-- An `ite` whose `then` branch merely starts with one empty block is not cold.
+#guard text (printer.function
+    (.ite .e (.seq (.block []) (.block [.mov .rax (.imm 1)])) (.block [.mov .rax (.imm 2)]) : Prog isa)) ==
+  ["je 20f", "mov rax, 2", "jmp 21f", "20:", "mov rax, 1", "21:", "ret"]
+
 /-- The 64-bit shifts and `movabs`, including an immediate ≥ 2⁶³. -/
 def sample64 : Prog isa := .block [
   .shift .ror .rax 28,
@@ -235,7 +267,7 @@ def sampleA64 : Prog AArch64.isa :=
       .ldr .w .x12 .x1 60, .str .w .x12 .x3 4, .ldr .x .x16 .x17 8, .str .x .x20 .x19 16,
       .sub .w .x4 .x5 .x6, .sub .x .x0 .x1 .x30, .rev .x9 .x10,
       .ldrb .x11 .x20 0, .ldrb .x21 .x22 4095, .strb .x23 .x24 7, .strb .x25 .x26 4095,
-      .ldrSp .x9 0, .ldrSp .x10 32760])
+      .ldrSp .x9 0, .ldrSp .x10 32760, .strSp .x11 0, .strSp .x30 32760])
       (.nonzero .x .x2))
 
 #guard text (AArch64.printer.function sampleA64) == [
@@ -266,12 +298,29 @@ def sampleA64 : Prog AArch64.isa :=
   "strb w25, [x26, #4095]",
   "ldr x9, [sp, #0]",
   "ldr x10, [sp, #32760]",
+  "str x11, [sp, #0]",
+  "str x30, [sp, #32760]",
   "cbnz x2, 22b",
   "b 21f",
   "20:",
   "21:",
   "ret"
 ]
+
+-- AArch64 alignment padding before a loop's head: `.p2align k`, ahead of
+-- the label, and refused for any `k` but 4, 5 and 6; a NOP in the model.
+#guard text (AArch64.printer.function
+    (.seq (.block [.align 5]) (.loop (.block [.subImm .x .x2 .x2 1]) (.nonzero .x .x2)))) ==
+  [".p2align 5", "20:", "sub x2, x2, #1", "cbnz x2, 20b", "ret"]
+#guard AArch64.Instr.asm (.align 4) == [".p2align 4"]
+#guard AArch64.Instr.asm (.align 6) == [".p2align 6"]
+#guard [4, 5, 6].all fun k => AArch64.printer.unencodable (.align k) == none
+#guard AArch64.printer.unencodable (.align 3) == some "`.p2align 3`: only 4, 5 and 6 are allowed"
+#guard AArch64.printer.unencodable (.align 7) == some "`.p2align 7`: only 4, 5 and 6 are allowed"
+#guard (AArch64.printer.unencodable (.align 0)).isSome
+#guard AArch64.isa.requires (.align 5) == []
+example (s : AArch64.State) : AArch64.exec (.align 5) s = some s := rfl
+example (s : AArch64.State) : AArch64.addrs (.align 5) s = [] := rfl
 
 /-- Every x86 (32-bit) instruction form, every operand form, and both conditions. -/
 def sampleX86 : Prog X86.isa :=
@@ -346,7 +395,8 @@ def sampleArm : Prog Arm.isa :=
         .dp .add .r1 .r1 (.imm 64), .dp .sub .r4 .r5 (.reg .r6),
         .dp .and .r7 .r8 (.reg .lr), .dp .orr .r9 .r10 (.reg .r11),
         .dp .eor .r12 .r12 (.shifted .r8 .ror 11),
-        .movw .r12 0x2f98, .movt .r12 0x428a, .rev .r12 .r12,
+        .movw .r12 0x2f98, .movt .r12 0x428a, .rev .r12 .r12, .mul .r3 .r4 .r5,
+        .mla .r6 .r7 .r8 .r9,
         .ldr .r12 .r1 60, .str .lr .r3 100, .ldrb .r5 .r6 4095, .strb .lr .r7 3, .ldrSp .r4 8,
         .subs .r2 .r2 (.imm 1)]) .ne))
 
@@ -367,6 +417,8 @@ def sampleArm : Prog Arm.isa :=
   "movw r12, #12184",
   "movt r12, #17034",
   "rev r12, r12",
+  "mul r3, r4, r5",
+  "mla r6, r7, r8, r9",
   "ldr r12, [r1, #60]",
   "str lr, [r3, #100]",
   "ldrb r5, [r6, #4095]",
@@ -379,6 +431,14 @@ def sampleArm : Prog Arm.isa :=
   "21:",
   "bx lr"
 ]
+
+-- `mla` writes the low 32 bits of `n * m + a` to its register alone, flags
+-- unchanged: (2³² − 1)² + 5 = 2⁶⁴ − 2³³ + 6, whose low word is 6.
+#guard match Arm.exec (.mla .r0 .r1 .r1 .r2)
+    { gpr := fun r => if r = .r1 then 0xffffffff else if r = .r2 then 5 else 17, sp := 4096,
+      n := true, z := false, c := true, v := false, mem := fun _ => 0, rd := [], wr := [] } with
+  | none => false
+  | some s => s.gpr .r0 == 6 && s.gpr .r1 == 0xffffffff && s.gpr .r3 == 17 && s.n && !s.z && s.c && !s.v
 
 #guard Arm.encodable 0xff000000 && Arm.encodable 0x3fc && !Arm.encodable 0x101 && !Arm.encodable 0x1fe00
 
@@ -400,10 +460,25 @@ def callSample : Prog X86_64.isa :=
 #guard X86.printer.function (.call "vg_f" (.block []) : Prog X86.isa) == [.call "vg_f", .text "ret"]
 #guard Arm.printer.function (.call "vg_f" (.block []) : Prog Arm.isa) == [.call "vg_f", .text "bx lr"]
 
-#guard Rust.line printer.call (.call "vg_f") == "        \"call {vg_f}\",\n"
-#guard Rust.line Arm.printer.call (.call "vg_f") == "        \"bl {vg_f}\",\n"
+#guard Rust.line printer.call (.call "vg_f") == "        r\"call {vg_f}\",\n"
+#guard Rust.line Arm.printer.call (.call "vg_f") == "        r\"bl {vg_f}\",\n"
 #guard Rust.line printer.call (.text "mov rax, QWORD PTR [rdi]") ==
-  "        \"mov rax, QWORD PTR [rdi]\",\n"
+  "        r\"mov rax, QWORD PTR [rdi]\",\n"
+
+-- A raw string literal, unless the text has a `"` or a carriage return.
+#guard Rust.literal "mov rax, rbx\nret" == "r\"mov rax, rbx\nret\""
+#guard Rust.literal ".ascii \"a\\b\"\nret" == "\".ascii \\\"a\\\\b\\\"\\nret\""
+#guard Rust.literal "a\rb" == "\"a\\rb\""
+
+-- A run of lines that are text alone is one string literal, its lines
+-- separated by newlines (as `naked_asm!` joins its arguments); the page of a
+-- static's address, which a macro writes, is an argument of its own.
+#guard Rust.template "bl" [.text "mov x0, x1", .call "vg_f", .sym "adrp x16, " .page "VG_T",
+    .text "ret", .text ".p2align 6"] ==
+  "        r\"mov x0, x1\nbl {vg_f}\",\n" ++
+  "        concat!(\"adrp x16, \", vg_sym_page!(\"{VG_T}\")),\n" ++
+  "        r\"ret\n.p2align 6\",\n"
+#guard Rust.template "bl" [] == ""
 
 /-! ## Frames
 
@@ -427,7 +502,7 @@ instructions. -/
   "movw r4, #:lower16:(<armpcrel VG_TABLE>", "movt r4, #:upper16:(<armpcrel VG_TABLE>", "2:",
   "add r4, pc", "3:", "bx lr"]
 #guard Rust.line Arm.printer.call (.sym "movw r4, #:lower16:(" .armPcRel "VG_TABLE") ==
-  "        \"movw r4, #:lower16:({VG_TABLE} - (2f + 2 * (3f - 2f)))\",\n"
+  "        r\"movw r4, #:lower16:({VG_TABLE} - (2f + 2 * (3f - 2f)))\",\n"
 #guard Arm.Instr.asm (.adrSym .r4 "VG_TABLE") == [
   "movw r4, #:lower16:(VG_TABLE - (2f + 2 * (3f - 2f)))",
   "movt r4, #:upper16:(VG_TABLE - (2f + 2 * (3f - 2f)))", "2:", "add r4, pc", "3:"]
@@ -459,7 +534,7 @@ instructions. -/
       Prog X86_64.isa)) == [
   "push rbx", "push rcx", "push rax", "<call vg_f>", "pop rdx", "pop rdx", "pop rbx", "ret"]
 
-#guard Rust.line Arm.printer.call (.text "push {r4, lr}") == "        \"push {{r4, lr}}\",\n"
+#guard Rust.line Arm.printer.call (.text "push {r4, lr}") == "        r\"push {{r4, lr}}\",\n"
 
 /-! ## CPU features
 
@@ -481,6 +556,33 @@ def featureSample : Code String Unit :=
 
 #guard featureSample.requires req == ["sha", "sha", "ssse3", "sse4.1"]
 #guard (Code.block ["mov", "add"] : Code String Unit).requires req == []
+
+/-! `Rust.requiresDedup` and `Rust.firstSome?` go through the code of each
+call once (`Rust.distinctCalls`): the features of `Code.requires` each once,
+and an instruction through any call. -/
+
+/-- Calls of `f` and `g` nested in a call of `k`, and a later call of `f`
+whose code requires something else. -/
+def nestedSample : Code String Unit :=
+  .seq (.call "k" (.seq (.block ["mov"]) (.call "g" (.call "f" (.block ["sha256rnds2"])))))
+    (.seq (.call "f" (.block ["sha256rnds2"])) (.call "f" (.block ["pblendw"])))
+
+#guard Rust.requiresDedup req featureSample == ["sha", "sse4.1", "ssse3"]
+#guard Rust.requiresDedup req nestedSample == ["sha", "sse4.1"]
+#guard Rust.requiresDedup req (Code.block ["mov", "add"] : Code String Unit) == []
+-- The value of each call's code, but for a later call of a function whose
+-- value is the first call's.
+#guard Rust.distinctCalls (Rust.ownRequires req []) nestedSample.calls ==
+  [[], [], ["sha"], ["sse4.1"]]
+
+/-- The instruction `bad`, which a printer cannot encode. -/
+def badInstr (i : String) : Option String := if i == "bad" then some i else none
+
+#guard Rust.firstSome? badInstr nestedSample == none
+#guard Rust.firstSome? badInstr (.seq nestedSample (.call "f" (.block ["bad"]))) == some "bad"
+#guard Rust.firstSome? badInstr
+  (.call "k" (.call "g" (.call "f" (.block ["bad"]))) : Code String Unit) == some "bad"
+#guard Rust.firstSome? badInstr (.frame "bad" (.block []) "pop" : Code String Unit) == some "bad"
 
 /-- The error of a failed check. -/
 def err : Except String Unit → Option String
@@ -509,10 +611,25 @@ def safeDoc : String := "Does things.\n\n# Safety\n\n* `p` must be valid."
 #guard Rust.featureDoc safeDoc ["sha", "ssse3", "sse4.1"] ==
   safeDoc ++ "\n* The CPU must support the `sha`, `ssse3` and `sse4.1` target features."
 
-#guard Rust.featuresConst "vg_f" [] == ""
-#guard Rust.featuresConst "vg_sha256_compress_shani" ["sha", "ssse3"] ==
+#guard Rust.featuresConst "vg_f" "" [] == ""
+#guard Rust.featuresConst "vg_sha256_compress_shani" "" ["sha", "ssse3"] ==
   "/// The CPU features `vg_sha256_compress_shani` requires (`Artifact.features`).\n\
   pub(crate) const VG_SHA256_COMPRESS_SHANI_FEATURES: crate::cpu::Features = \
   crate::cpu::Features::of(&[\"sha\", \"ssse3\"]);\n\n"
+
+-- A feature some of the target's configurations cannot assemble or must
+-- never run compiles its functions and constants only under its `cfg`.
+#guard Rust.cfgGate [] == ""
+#guard Rust.cfgGate ["target_os = \"linux\""] == "#[cfg(target_os = \"linux\")]\n"
+#guard Rust.cfgGate ["a", "b"] == "#[cfg(all(a, b))]\n"
+#guard Arm.Instr.asm (.umaal .r3 .r11 .r2 .r9) == ["umaal r3, r11, r2, r9"]
+#guard Arm.Instr.requires (.umaal .r3 .r11 .r2 .r9) == ["umaal"]
+#guard Arm.Instr.requires (.mla .r3 .r11 .r2 .r9) == []
+#guard (Arm.printer.featureCfg "umaal").isSome
+#guard (Arm.printer.featureCfg "neon").isNone
+#guard Rust.featuresConst "vg_f_umaal" "#[cfg(c)]\n" ["umaal"] ==
+  "/// The CPU features `vg_f_umaal` requires (`Artifact.features`).\n#[cfg(c)]\n\
+  pub(crate) const VG_F_UMAAL_FEATURES: crate::cpu::Features = \
+  crate::cpu::Features::of(&[\"umaal\"]);\n\n"
 
 end VG.Test

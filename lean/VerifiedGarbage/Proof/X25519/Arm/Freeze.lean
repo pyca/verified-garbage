@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.Arm.Invert
+import VerifiedGarbage.Proof.X25519.Arm.Invert
 public import VerifiedGarbage.Proof.X25519.Bytes
+public import VerifiedGarbage.Proof.X25519.Arm.Slots
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.X25519.Arm.Mul
+import VerifiedGarbage.Proof.X25519.Arm.AddSub
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # X25519 on 32-bit ARM: the final reduction and the output

@@ -1,14 +1,40 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Start
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Initial
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Resume
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdSplit
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Initialize and parse the first three paired matrix blocks -/
 @[expose] public section
@@ -16,22 +42,22 @@ namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 
-def beginCode (sb ss a b k oa ob : Nat) : Prog isa :=
+def beginCode (sb ss a b k oa ob : Nat) (w16 : Bool := false) : Prog isa :=
  .seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a b k))
   (.seq Impl.MlKem.AArch64.Paired.squeeze
-   (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob)))
+   (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob w16)))
 
 def beginRegs : List Reg := startRegs++[.x9,.x16]++
  [.x0,.x2,.x3,.x4,.x5,.x6,.x7,.x8,.x9,.x10,.x11,.x12,.x13,.x14,.x15,.x22,.x23]
 
-structure BeginPost (A B : Spec.Sha3.State) (p a b c : Addr) (s t : State) : Prop where
+structure BeginPostW (w16 : Bool) (A B : Spec.Sha3.State) (p a b c : Addr) (s t : State) : Prop where
  keep : Keep beginRegs s t
  frame : Frame (stepWrites p a b) s.mem t.mem
  saved : Noise.Saved p s t.mem
- progress : Progress A B 3 p a b c t
+ progress : ProgressW w16 A B 3 p a b c t
  flag : (t.gpr .x6).toNat=if (accepted A 3).length=256 ∧ (accepted B 3).length=256 then 1 else 0
 
-theorem begin_ok {s : State} {p seed outA outB table : Addr} {sb ss a b k oa ob : Nat}
+theorem begin_ok {w16 : Bool} {s : State} {p seed outA outB table : Addr} {sb ss a b k oa ob : Nat}
     (hss : ss<65536) (hsb : sb+32≤32768) (h8 : sb%8=0)
     (hoa : oa<65536) (hob : ob<65536)
     (hp : s.gpr .x28+BitVec.ofNat 64 ss=p) (hseed : s.gpr .x28+BitVec.ofNat 64 sb=seed)
@@ -39,11 +65,11 @@ theorem begin_ok {s : State} {p seed outA outB table : Addr} {sb ss a b k oa ob 
     (hin : ∀j<4,InRegions (s.rd++s.wr) (seed+BitVec.ofNat 64 (8*j)) 8)
     (hsep : (Region.mk seed 32).Disjoint ⟨p,2048⟩)
     (ctx : Context p outA outB table s) (ht : s.syms "VG_MLKEM_REJ_SHUFFLE"=table) :
-    WP isa (beginCode sb ss a b k oa ob) s
-      (BeginPost (seedState s.mem seed a k) (seedState s.mem seed b k) p outA outB table s) := by
+    WP isa (beginCode sb ss a b k oa ob w16) s
+      (BeginPostW w16 (seedState s.mem seed a k) (seedState s.mem seed b k) p outA outB table s) := by
   have combined := WP.mono_syms (start_ok (a := a) (b := b) (k := k) hss hsb h8 hp hseed hin ctx.scratch hsep)
-    (R := fun u => WP isa (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob)) u
-      (BeginPost (seedState s.mem seed a k) (seedState s.mem seed b k) p outA outB table s))
+    (R := fun u => WP isa (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob w16)) u
+      (BeginPostW w16 (seedState s.mem seed a k) (seedState s.mem seed b k) p outA outB table s))
     (fun u ⟨ku,fu,svu,u19,_,pu,buA,buB⟩ sy => by
       have cu : Context p outA outB table u := ctx.frame ku.rd ku.wr (fu.mono (by simp [stepWrites]))
       refine WP.seq (WP.mono_syms (Rej8.constants_ok u (by
@@ -71,8 +97,8 @@ theorem begin_ok {s : State} {p seed outA outB table : Addr} {sb ss a b k oa ob 
           intro r hr; simp only [List.mem_singleton] at hr; subst r
           exact (Offset.disjoint p (d := 904) (e := 1408) (n := 504) (k := 8) (by decide) (by decide) (by decide))
         exact (fv.bytes hd (by change 504≤2^64; decide) hi).trans (buB.byte hi)
-      have ea := ctv.env (N := 168) (off := 400) v16 (by decide) (by decide) (Or.inl rfl) streamA
-      have eb := ctv.env (N := 168) (off := 904) v16 (by decide) (by decide) (Or.inr rfl) streamB
+      have ea := ctv.envW (w16 := w16) (N := 168) (off := 400) v16 (by decide) (by decide) (Or.inl rfl) streamA
+      have eb := ctv.envW (w16 := w16) (N := 168) (off := 904) v16 (by decide) (by decide) (Or.inr rfl) streamB
       have pv := pair_frame pu fv (by
         simp only [List.mem_singleton,forall_eq]
         exact Offset.base_disjoint p (by decide) (by decide))

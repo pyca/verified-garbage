@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowShared
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSave
-import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawTriangle
+public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowShared

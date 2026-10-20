@@ -1,31 +1,31 @@
 module
 
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
-meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
-meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.AddS
-meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.AddS
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.AddS
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Buffer
-meta import VerifiedGarbage.Proof.Poly1305.AArch64.Buffer
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Poly1305.Contract
-meta import VerifiedGarbage.Spec.Poly1305.Contract
-public import VerifiedGarbage.Proof.Framework.PowLit
-meta import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
+import VerifiedGarbage.Proof.Poly1305.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.AddS
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Buffer
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
+meta import VerifiedGarbage.Proof.Poly1305.Stream
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Poly1305 on AArch64: `finalize`

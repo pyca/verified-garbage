@@ -1,15 +1,19 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RangeLow
-public import VerifiedGarbage.Proof.Dsa.X86_64.RangeHead
+import VerifiedGarbage.Proof.Dsa.X86_64.RangeLow
+import VerifiedGarbage.Proof.Dsa.X86_64.RangeHead
 import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.X86_64.OrWords
+import VerifiedGarbage.Proof.Dsa.X86_64.Masks
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-! # Exact scalar range masks without secret-dependent branches -/
 

@@ -1,14 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Setup
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
 public import VerifiedGarbage.Spec.Ed448.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Ed448 on ARMv7: what a complete operation's calls need of its layout

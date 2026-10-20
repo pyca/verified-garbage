@@ -1,17 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacNorm
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacIter
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntryA
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJac
-import VerifiedGarbage.Proof.Weierstrass.JacMadd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJac
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacStep
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntry
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
+import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+import VerifiedGarbage.Proof.Mont.X86_64.MulP
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.Steps
+import VerifiedGarbage.Proof.X25519.X86_64.Mem
 
 /-!
 # 5-bit windows with an affine table on x86-64

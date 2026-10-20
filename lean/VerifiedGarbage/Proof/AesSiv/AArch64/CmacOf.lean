@@ -1,15 +1,40 @@
 module
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Env
 
-public import VerifiedGarbage.Proof.AesSiv.AArch64.Call
+import VerifiedGarbage.Proof.AesSiv.AArch64.Call
 meta import VerifiedGarbage.Proof.AesSiv.AArch64.Call
-import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.AbsorbBlocks
-meta import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.AbsorbBlocks
 import VerifiedGarbage.Proof.AesSiv.CtrPart
 meta import VerifiedGarbage.Proof.AesSiv.CtrPart
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.AesSiv.AArch64.Init
+import VerifiedGarbage.Proof.AesSiv.Key
+import VerifiedGarbage.Proof.AesSiv.Words
+import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
+import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.AbsorbBlocks
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Gcm.Spec
+meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+meta import VerifiedGarbage.Proof.AesSiv.AArch64.Env
+meta import VerifiedGarbage.Proof.AesSiv.AArch64.Init
+meta import VerifiedGarbage.Proof.AesSiv.Key
+meta import VerifiedGarbage.Proof.AesSiv.Words
+meta import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
+meta import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.AbsorbBlocks
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Gcm.Spec
 
 /-!
 # AES-SIV on AArch64: the CMAC of a string (`cmacOf`)

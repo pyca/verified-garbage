@@ -1,19 +1,17 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Stitch
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # ChaCha20-Poly1305 with the AVX2 code for short data (x86-64): the length test
 
 `Stitch.smallTest lim` sets `CF` if `len` (`r9`) is below `lim` or from
 `winLo` to `winHi - 1`, writing only `rax`, `r10` and the flags
-(`smallTest_ok`).
+(`smallTest_ok`); `Stitch.ifmaTest` sets it if `len` is from `ifmaLo` to
+`ifmaHi - 1`, writing only `rax` and the flags (`ifmaTest_ok`).
 -/
 
 @[expose] public section
@@ -70,6 +68,28 @@ theorem smallTest_ok {lim : Nat} (hl : BitVec.signExtend 64 (BitVec.ofNat 32 lim
       readSrc32, State.setReg32,
       decide_false, Bool.false_eq_true, Option.some.injEq, exists_eq_left', ↓reduceIte, reduceCtorEq, e64, el]
     exact ⟨trivial, fun r h1 h2 => by simp only [h1, h2, ite_false], rfl, rfl, rfl, rfl⟩
+
+/-- `len - ifmaLo` is below `ifmaHi - ifmaLo`, unsigned, in the window alone. -/
+theorem ifma_iff (x : BitVec 64) :
+    (x - BitVec.ofNat 64 449).toNat < 191 ↔ 449 ≤ x.toNat ∧ x.toNat < 640 := by
+  bv_omega
+
+/-- The IFMA instance's length test, from `s`: `CF` set if `len` is from
+`ifmaLo` to `ifmaHi - 1`, and only `rax` and the flags written. -/
+theorem ifmaTest_ok (s : State) :
+    WP isa (.block ifmaTest) s fun t =>
+      isa.eval .b t = some (decide (ifmaLo ≤ (s.gpr .r9).toNat ∧ (s.gpr .r9).toNat < ifmaHi)) ∧
+      (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      t.mxcsr = s.mxcsr := by
+  apply WP.of_runBlock
+  have x449 : BitVec.signExtend 64 (BitVec.ofNat 32 449) = BitVec.ofNat 64 449 := by decide
+  have x191 : BitVec.signExtend 64 (BitVec.ofNat 32 191) = BitVec.ofNat 64 191 := by decide
+  have e191 : (BitVec.ofNat 64 191).toNat = 191 := rfl
+  have hw := ifma_iff (s.gpr .r9)
+  simp only [ifmaTest, ifmaLo, ifmaHi, Nat.reduceSub, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+    readSrc, x449, x191, Option.bind_some, Option.map_some, gpr_arithFlags, cf_arithFlags, gpr_setReg, eval,
+    e191, Option.some.injEq, exists_eq_left', ↓reduceIte]
+  exact ⟨decide_eq_decide.mpr hw, fun r h1 => by simp only [h1, ite_false], rfl, rfl, rfl, rfl⟩
 
 /-- `len mod 512` is from `lo` to `lo + n - 1` if `(len & 511) - lo` is below
 `n`. -/

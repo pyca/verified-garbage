@@ -1,20 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointChecks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.LitShare
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
-import VerifiedGarbage.Spec.EcKey.Generic
+import VerifiedGarbage.Proof.P384.X86_64.JointLayout
 
 /-! Whole-function timing of P-384's joint verification follows the public-input contract. -/
 
@@ -32,7 +24,7 @@ include hL hT hI
 
 theorem jointVerify_p384_public_ct :
     ConstantTime isa (VPre p384v) (JointPublic p384v p384Table)
-      (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384v publicJoint (Joint.jacDouble publicJoint.K)).inline := by
+      (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384v publicJoint (jointDouble publicJoint.K)).inline := by
   have hc := p384v_ok hI
   refine jointVerify_ct_of_points hc joint_before_ct ?_ joint_after_ct
   intro s₀ t₀ ps pt pub
@@ -42,7 +34,7 @@ theorem jointVerify_p384_public_ct :
 theorem jointVerify_p384_adx_public_ct :
     ConstantTime isa (VPre p384vx) (JointPublic p384vx p384Table)
       (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384vx publicJointAdx
-        (Joint.jacDouble publicJointAdx.K)).inline := by
+        (jointDoubleAdx publicJointAdx.K)).inline := by
   have hc := p384vx_ok hI
   refine jointVerify_ct_of_points hc joint_adx_before_ct ?_ joint_adx_after_ct
   intro s₀ t₀ ps pt pub

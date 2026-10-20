@@ -1,15 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-public import VerifiedGarbage.Proof.Dsa.X86_64.JointInit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Dsa.X86_64.JointInit
 public import VerifiedGarbage.Spec.Dsa
-import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
+public import VerifiedGarbage.Proof.Dsa.X86_64.JointBuildContext
+public import VerifiedGarbage.Proof.Dsa.X86_64.JointWindow
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Dsa.X86_64.JointByte
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # Joint exponentiation and conversion out of Montgomery representation -/
 

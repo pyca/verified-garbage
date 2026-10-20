@@ -1,12 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCalls
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.CallOperands
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.CallOperands
+import VerifiedGarbage.Proof.Dsa.AArch64.BufferFrame
 
 /-! # Buffer separation in the complete DSA arithmetic schedules -/
 
@@ -51,7 +47,7 @@ theorem CallResult.local {L : ExecutionLayout} {side : ModulusSide} {d value e :
 
 theorem ExecutionLayout.widths (L : ExecutionLayout) :
     1 ≤ L.qLen ∧ L.qLen ≤ 32 ∧ L.qLen ≤ L.pLen ∧ L.pLen ≤ 384 := by
-  rcases L.lengths with ⟨h1, h2⟩ | ⟨h1, h2 | h2⟩ | ⟨h1, h2⟩ <;> rw [h1, h2] <;> decide
+  rcases L.lengths with ⟨h1, h2⟩ | ⟨h1, h2 | h2 | h2⟩ | ⟨h1, h2⟩ <;> rw [h1, h2] <;> decide
 
 theorem CallResult.scheduleFrame {L : ExecutionLayout} {side : ModulusSide} {d value : Nat} {s t : State}
     (h : CallResult L side d value s t) (hd : activeBytes ≤ d) (hend : d + side.length L ≤ usedBytes) :

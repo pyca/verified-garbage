@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.AArch64.Common
-public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Streaming Merkle–Damgård hash functions on AArch64: `update`
@@ -827,7 +825,7 @@ theorem epilogue_ok (hd : Dims P) {s₀ : State} (hp : Pre P s₀) {s : State} (
 
 /-- `update` without its frame: the callee-saved registers but `x30` are kept. -/
 theorem correctMain (hd : Dims P) {name : String} {code : Prog isa} (hf : CalleeOk H code)
-    (hu : ∀ r ∈ untouched, ∀ i ∈ instrs (updateMain P name code), dstOf i ≠ some r) {s₀ : State}
+    (hu : ∀ r ∈ untouched, ∀ i ∈ instrs (updateMain P name code), clobbers i r = false) {s₀ : State}
     (hp : Pre P s₀) :
     WP isa (updateMain P name code) s₀ fun s' => (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s₀.gpr r) ∧
       s'.sp = s₀.sp ∧ (updK H).post s₀ s' := by
@@ -863,7 +861,7 @@ abbrev inner (s₀ : State) : State :=
   { s₀ with sp := s₀.sp - 16, mem := s₀.mem.write (s₀.sp - 16) 8 (s₀.gpr .x30) }
 
 theorem correct (hd : Dims P) {name : String} {code : Prog isa} (hf : CalleeOk H code)
-    (hu : ∀ r ∈ untouched, ∀ i ∈ instrs (updateMain P name code), dstOf i ≠ some r)
+    (hu : ∀ r ∈ untouched, ∀ i ∈ instrs (updateMain P name code), clobbers i r = false)
     (hn : 16 * (updateMain P name code).aarch64Depth + 16 < 2 ^ 64) {s₀ : State} (hp : Pre P s₀)
     (hs : Stack P s₀) :
     WP isa (update P name code) s₀ fun s' => abiPreserved s₀ s' ∧ (updK H).post s₀ s' := by
@@ -902,11 +900,11 @@ analysis proves of each hash function's code), never writes `untouched`, and
 fits its frames in the address space. -/
 theorem verified (hd : Dims P) {name : String} {code : Prog isa} (hf : CalleeOk H code)
     (hct : ConstantTime isa (updK H).pre (updK H).pub (update P name code))
-    (hu : ((instrs (updateMain P name code)).all fun i => untouched.all fun r => dstOf i != some r) = true)
+    (hu : ((instrs (updateMain P name code)).all fun i => untouched.all fun r => !clobbers i r) = true)
     (hn : 16 * (updateMain P name code).aarch64Depth + 16 < 2 ^ 64) :
     Verified AArch64.target (update P name code) (updK H) := by
   have hd_N := hd.N; have hd_B := hd.B; have hd_so := hd.so
-  have hu' : ∀ r ∈ untouched, ∀ i ∈ instrs (updateMain P name code), dstOf i ≠ some r := by
+  have hu' : ∀ r ∈ untouched, ∀ i ∈ instrs (updateMain P name code), clobbers i r = false := by
     intro r hr i hi
     have := List.all_eq_true.mp (List.all_eq_true.mp hu i hi) r hr
     simpa using this

@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8StepCT
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Choice
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Body
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Public
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8StepCT
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Body
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Public
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Paired executions choose the same rejection path and early exit -/
 
@@ -15,19 +18,19 @@ import all Init.Data.Vector.Basic
 namespace VG.Proof.MlKem.AArch64.Rej8
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
-def BodyPairPost (initial : List Zq) (N : Nat) (B : Nat → Byte) (bP aP : Addr)
+def BodyPairPostW (w16 : Bool) (initial : List Zq) (N : Nat) (B : Nat → Byte) (bP aP : Addr)
     (s₀ u₀ : State) (t : Nat) (s u : State) : Prop :=
-  PairInv initial N B bP aP s₀ u₀ (t+4) s u ∨
-    (Result initial N B aP s₀ s ∧ Result initial N B aP u₀ u ∧ s.gpr .x5=0 ∧ u.gpr .x5=0)
+  PairInvW w16 initial N B bP aP s₀ u₀ (t+4) s u ∨
+    (ResultW w16 initial N B aP s₀ s ∧ ResultW w16 initial N B aP u₀ u ∧ s.gpr .x5=0 ∧ u.gpr .x5=0)
 
 theorem choice_ct : ConstantTime isa (fun _ => True)
     (VG.AArch64.Taint.Agree (Taint.ofRegs [])) (.block choosePrefix) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs []) (fun _ _ _ _ h => h) (by taint_decide)
 
-theorem choice_relCT {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : Addr}
+theorem choice_relCT {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : Addr}
     {s₀ u₀ : State} (hsp : s₀.sp=u₀.sp) :
-    RelCT isa (PairInv initial N B bP aP s₀ u₀ t) (.block choosePrefix)
-      (fun s u => PairInv initial N B bP aP s₀ u₀ t s u ∧
+    RelCT isa (PairInvW w16 initial N B bP aP s₀ u₀ t) (.block choosePrefix)
+      (fun s u => PairInvW w16 initial N B bP aP s₀ u₀ t s u ∧
         (s.gpr .x6 == 0)=(u.gpr .x6 == 0) ∧
         ((s.gpr .x6 == 0)=true ↔ 8≤(s.gpr .x4).toNat)) := by
   intro s u tr ur s' u' hp es eu
@@ -41,13 +44,13 @@ theorem choice_relCT {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP :
   apply Bool.eq_iff_iff.mpr
   rw [fa,fb,(inv_public ha hb hsp).2 .x4 (by simp)]
 
-theorem stop_full_ok {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : Addr}
-    {s₀ s : State} (h : Scalar.Inv initial N B bP aP s₀ t s) (hc : Constants s)
+theorem stop_full_ok {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : Addr}
+    {s₀ s : State} (h : Scalar.InvW w16 initial N B bP aP s₀ t s) (hc : Constants s)
     (ht : t≤N) (hf : (Scalar.LA initial B t).length=256) :
-    WP isa (.block [.movz .x .x5 0 0]) s fun u => Result initial N B aP s₀ u ∧ u.gpr .x5=0 := by
+    WP isa (.block [.movz .x .x5 0 0]) s fun u => ResultW w16 initial N B aP s₀ u ∧ u.gpr .x5=0 := by
   have heq := sampleAfter_full (show (Scalar.LA initial B t).length=n from hf) N ht
   have hw : WP isa (.block [.movz .x .x5 0 0]) s fun u =>
-      Scalar.Acc aP s₀ (Scalar.LA initial B N) u ∧ Keep Scalar.lRegs s₀ u ∧ u.gpr .x5=0 := by
+      Scalar.AccW w16 aP s₀ (Scalar.LA initial B N) u ∧ Keep Scalar.lRegs s₀ u ∧ u.gpr .x5=0 := by
     refine wp_movz fun u hu eu => wp_nil ⟨?_,(h.keep.trans hu.keep).mono (by decide),eu⟩
     rw [show Scalar.LA initial B N=Scalar.LA initial B t from heq]
     exact Scalar.acc_keep h.acc hu.keep hu.mem
@@ -56,11 +59,11 @@ theorem stop_full_ok {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP :
     by simpa only [ve] using hc.q,by simpa only [ve] using hc.weights,
     by simpa only [ve] using hc.zero⟩
 
-theorem stop_relCT {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : Addr}
+theorem stop_relCT {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : Addr}
     {s₀ u₀ : State} (hsp : s₀.sp=u₀.sp) (ht : t+4≤N) :
-    RelCT isa (PairInv initial N B bP aP s₀ u₀ (t+4))
+    RelCT isa (PairInvW w16 initial N B bP aP s₀ u₀ (t+4))
       (.ite (.zero .x .x4) (.block [.movz .x .x5 0 0]) (.block []))
-      (BodyPairPost initial N B bP aP s₀ u₀ t) := by
+      (BodyPairPostW w16 initial N B bP aP s₀ u₀ t) := by
   refine RelCT.ite (fun s u hp => by rw [eval_zero,eval_zero,(inv_public hp.1 hp.2.1 hsp).2 .x4 (by simp)]) ?_ ?_
   · intro s u tr ur s' u' hp es eu
     have hf : (Scalar.LA initial B (t+4)).length=256 := by
@@ -82,12 +85,11 @@ theorem stop_relCT {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : A
     exact ⟨htr,Or.inr ⟨ha,hb,xa,xb⟩⟩
   · exact RelCT.block_nil (fun _ _ h => Or.inl h.1)
 
-
-theorem body_relCT {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : Addr}
-    {s₀ u₀ : State} (ps : Env N B bP aP s₀) (pu : Env N B bP aP u₀)
+theorem body_relCT {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : Addr}
+    {s₀ u₀ : State} (ps : EnvW w16 N B bP aP s₀) (pu : EnvW w16 N B bP aP u₀)
     (hsp : s₀.sp=u₀.sp) (htab : s₀.gpr .x16=u₀.gpr .x16) (ht : t+4≤N) :
-    RelCT isa (PairInv initial N B bP aP s₀ u₀ t) body
-      (BodyPairPost initial N B bP aP s₀ u₀ t) := by
+    RelCT isa (PairInvW w16 initial N B bP aP s₀ u₀ t) (body w16)
+      (BodyPairPostW w16 initial N B bP aP s₀ u₀ t) := by
   refine RelCT.seq (choice_relCT hsp) (RelCT.ite (fun s u hp => by
     rw [eval_zero,eval_zero,hp.2.1]) ?_ ?_)
   · intro s u tr ur s' u' hp es eu

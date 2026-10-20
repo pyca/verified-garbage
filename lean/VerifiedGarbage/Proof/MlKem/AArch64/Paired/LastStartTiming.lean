@@ -1,26 +1,26 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullPrefix
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastPrepare
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastPrepare
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Proof.MlKem
 
-theorem lastStart_relCT {s u : State} {p seed out table : Addr} {sb ss off a k : Nat}
+theorem lastStart_relCT {w16 : Bool} {s u : State} {p seed out table : Addr} {sb ss off a k : Nat}
     (hss : ss<65536) (hsb : sb+32≤32768) (h8 : sb%8=0) (hoff : off<65536)
     (hk : 0<k) (hk256 : k≤256)
     (ps : LastInput sb ss off p seed out table s) (pu : LastInput sb ss off p seed out table u)
     (sp : s.sp=u.sp) (base : s.gpr .x28=u.gpr .x28)
     (seedEq : seedBytes s.mem seed a k=seedBytes u.mem seed a k) :
-    RelCT isa (fun t v=>t=s ∧ v=u) (lastStartCode sb ss a k off)
-      (fun t v=>LastStartPost (xofByte (seedBytes s.mem seed a k)) p out table s t ∧
-        LastStartPost (xofByte (seedBytes u.mem seed a k)) p out table u v) := by
-  let R := fun t v : State=>LastPrepared (xofByte (seedBytes s.mem seed a k)) p out table s t ∧
-    LastPrepared (xofByte (seedBytes u.mem seed a k)) p out table u v
+    RelCT isa (fun t v=>t=s ∧ v=u) (lastStartCode sb ss a k off w16)
+      (fun t v=>LastStartPostW w16 (xofByte (seedBytes s.mem seed a k)) p out table s t ∧
+        LastStartPostW w16 (xofByte (seedBytes u.mem seed a k)) p out table u v) := by
+  let R := fun t v : State=>LastPreparedW w16 (xofByte (seedBytes s.mem seed a k)) p out table s t ∧
+    LastPreparedW w16 (xofByte (seedBytes u.mem seed a k)) p out table u v
   have start : RelCT isa (fun t v=>t=s ∧ v=u) (prepareCode sb ss a a k) R := by
     intro t v tr ur t' v' h et ev
     rcases h with ⟨ht,hv⟩; subst t; subst v
@@ -29,7 +29,7 @@ theorem lastStart_relCT {s u : State} {p seed out table : Addr} {sb ss off a k :
       exec_post (lastPrepare_ok hss hsb h8 hk hk256 ps) et,
       exec_post (lastPrepare_ok hss hsb h8 hk hk256 pu) ev⟩
   have grouped : RelCT isa (fun t v=>t=s ∧ v=u)
-      (.seq (prepareCode sb ss a a k) (Impl.MlKem.AArch64.Paired.reject 400 off .x22)) (fun _ _=>True) := by
+      (.seq (prepareCode sb ss a a k) (Impl.MlKem.AArch64.Paired.reject 400 off .x22 w16)) (fun _ _=>True) := by
     refine RelCT.seq start ?_
     intro t v tr ur t' v' h et ev
     have ht28 := h.1.keep.get .x28
@@ -42,7 +42,7 @@ theorem lastStart_relCT {s u : State} {p seed out table : Addr} {sb ss off a k :
       (by rw [ht28,hv28,base]) (h.1.tablePtr.trans h.2.tablePtr.symm)
       t v tr ur t' v' ⟨rfl,rfl⟩ et ev
     exact ⟨rr.1,trivial⟩
-  have trace : RelCT isa (fun t v=>t=s ∧ v=u) (lastStartCode sb ss a k off) (fun _ _=>True) :=
+  have trace : RelCT isa (fun t v=>t=s ∧ v=u) (lastStartCode sb ss a k off w16) (fun _ _=>True) :=
     RelCT.assoc (RelCT.assoc grouped)
   intro t v tr ur t' v' h et ev
   rcases h with ⟨ht,hv⟩; subst t; subst v

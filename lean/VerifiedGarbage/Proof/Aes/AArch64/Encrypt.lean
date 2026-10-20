@@ -1,18 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.AArch64.Ctr32
-import VerifiedGarbage.Impl.Aes.AArch64.Linear
 public import VerifiedGarbage.Proof.Framework.AArch64.Linear
-import VerifiedGarbage.Impl.Aes.AArch64.Sbox
 public import VerifiedGarbage.Proof.Aes.SboxSpec
 public import VerifiedGarbage.Proof.Aes.Bitsliced
-public import VerifiedGarbage.Proof.Framework.AArch64.Straight
-public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 
@@ -75,8 +69,8 @@ theorem not_layerWrites (r : Reg) (hr : r ∉ layerWrites) : r ∈ layerKeep := 
 
 /-- A block that writes none of `layerKeep` writes only `layerWrites`. -/
 theorem writes_rest {is : List Instr}
-    (h : layerKeep.all (fun r => is.all fun i => dstOf i != some r) = true)
-    (r : Reg) (hr : r ∉ layerWrites) : (is.all fun i => dstOf i != some r) = true :=
+    (h : layerKeep.all (fun r => is.all fun i => !clobbers i r) = true)
+    (r : Reg) (hr : r ∉ layerWrites) : (is.all fun i => !clobbers i r) = true :=
   List.all_eq_true.mp h r (not_layerWrites r hr)
 
 /-- The S-box, at every bit position of the words in `q 0 … q 7`. -/
@@ -94,7 +88,7 @@ theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
   -- The run at bit position `p`, on the input formed by the bits `p`.
   have key : ∀ p < 64, ∃ s', runBlock isa sboxCode s = some s' ∧
       Post (TableRel p (bsByte (fun k => s.gpr (q k)) p).toNat) sboxCfg (fun _ => none) e' s s'
-        (fun r => (sboxCode.all fun i => dstOf i != some r) = false) := by
+        (fun r => (sboxCode.all fun i => !clobbers i r) = false) := by
     intro p hp
     have hc := (bsByte (fun k => s.gpr (q k)) p).isLt
     refine run (table_sound hp hc) hok ⟨fun r a h => ?_, (fun _ _ _ h => by cases h),
@@ -172,7 +166,7 @@ theorem addRoundKey_check :
 theorem q_linear {k xb : Nat} {c : Cfg} {is : List Instr} {g : Nat → Nat → List Nat}
     (hchk : check (lanes 64 k) c (linExt xb) is (linEnv qIns) (linPost k (qOuts g)) = true)
     (hk : 512 ≤ 2 ^ k)
-    (hw : layerKeep.all (fun r => is.all fun i => dstOf i != some r) = true)
+    (hw : layerKeep.all (fun r => is.all fun i => !clobbers i r) = true)
     {s : State} (hok : Ok c s) (W : Nat → BitVec 64) (hW : ∀ i < 8, W i = s.gpr (q i))
     (hext : ∀ j < c.exts,
       64 * (xb + j) + 64 ≤ 2 ^ k ∧ W (xb + j) = s.mem.readW (wordAddr (s.gpr c.ext) j) 64) :

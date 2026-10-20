@@ -1,18 +1,22 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Crypt
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Save
+public import VerifiedGarbage.Proof.Gcm.Compose
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamFinish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamFinish
 import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInit
+import VerifiedGarbage.Proof.AesGcm.AArch64.FinTag
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_stream_verify`
 
 Untrusted: everything here is checked by Lean. After the entry, `tagLenOk`
-checks the tag length (a public value); if §5.2.1.2 does not allow it, 0 is
+checks the tag length (a public value); if `tagLenOk` does not allow it, 0 is
 returned; otherwise `tagIn` copies the received tag to `W`, `finBody 112`
 writes the tag at `W + 112`, `cmpSeg` compares its first `tag_len` bytes with
 the received ones without a branch, and `verRet` returns 1 or 0
@@ -31,7 +35,7 @@ open VG.Spec.Gcm (Block blockAt ghashFrom ghash blocks ghashInput StreamRepr ofB
 open VG.Proof.Gcm (Absorbed lensBlock padded)
 
 theorem tagLenOk_le {t : Nat} (h : Spec.Gcm.tagLenOk t = true) : t ≤ 16 := by
-  simp only [Spec.Gcm.tagLenOk, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true, decide_eq_true_eq] at h
+  simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at h
   omega
 
 theorem setWidth_ofNat_bool (b : Bool) :
@@ -152,7 +156,7 @@ theorem ver_run (v : GcmImpl) {s : State} (hs : streamVerifyAArch64.pre s) {a c 
     refine WP.seq (WP.mono (finBody_ok L v (.inr rfl) (a := a) (c := c) (H := ctxH s.mem (s.gpr .x0)) he₄ hk₄
       x22₄ hR x26₄ x27₄ hc hH₄) fun s₅ ⟨he₅, hk₅, f₅, out₅⟩ => ?_)
     have x28₅ : s₅.gpr .x28 = BitVec.ofNat 64 tl := by rw [hk₅ .x28 (by decide), x28₃]
-    refine WP.seq (WP.mono (cmpSeg_ok L he₅ hk₅ x28₅ hle) fun s₆ ⟨x10₆, he₆, _, _, f₆⟩ => ?_)
+    refine WP.seq (WP.mono (cmp_ok L he₅ hk₅ x28₅ hle) fun s₆ ⟨x10₆, he₆, _, _, f₆⟩ => ?_)
     refine WP.mono (verRet_ok
       (b := decide (bytesAt s₅.mem (s.gpr .x7 + BitVec.ofNat 64 112) tl = bytesAt s₅.mem (s.gpr .x7) tl))
       (by rw [x10₆]; by_cases hp : bytesAt s₅.mem (s.gpr .x7 + BitVec.ofNat 64 112) tl =

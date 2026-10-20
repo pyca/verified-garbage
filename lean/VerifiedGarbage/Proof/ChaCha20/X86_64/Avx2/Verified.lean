@@ -1,11 +1,15 @@
 module
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Tail
 
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Tail
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # `vg_chacha20_xor_avx2` verified

@@ -36,14 +36,14 @@ aws-lc-rs = { version = "1.18", default-features = false, features = ["aws-lc-sy
 # The same AWS-LC, for ML-KEM key generation from a seed, which aws-lc-rs does
 # not wrap. Without `all-bindings` (its default), whose ARMv7 bindings need
 # bindgen.
-aws-lc-sys = { version = "0.45", default-features = false }
+aws-lc-sys = { version = "0.46", default-features = false }
 criterion = { version = "0.8", default-features = false, features = ["cargo_bench_support"] }
 openssl = "0.10"
 
 # FFDH is exposed by AWS-LC's C API, but not the minimal aws-lc-rs bindings.
 # Keep other targets on their pre-generated minimal bindings.
 [target.'cfg(any(target_arch = "x86_64", target_arch = "aarch64"))'.dev-dependencies]
-aws-lc-sys = { version = "0.45", default-features = false, features = ["all-bindings"] }
+aws-lc-sys = { version = "0.46", default-features = false, features = ["all-bindings"] }
 
 [[bench]]
 name = "primitives"

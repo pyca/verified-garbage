@@ -1,12 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Exp
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Vec
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the vector code from the regions
@@ -60,7 +56,7 @@ theorem k0_of {M : Nat} {mi : BitVec 64} (h : (M % 2 ^ 64 * mi.toNat + 1) % 2 ^ 
 /-- `vec` from the regions: for each prime `M p` (odd, `w = W` words), `k₀`
 from its inverse `mi p`, `2^dbls R mod M`, `x R`, `R` (`R = 2^(64 w)`) and
 the last multiplier `Fin p`. -/
-theorem vecR_ok (hl : LayOk l) {s : State} {F : Addr} {M K1 Xc Y Fin x : Nat → Nat} {mi : Nat → BitVec 64}
+theorem vecR_ok (hl : LayOk l) {s : State} {F : Addr} {M K1 Xc Y Fin x e : Nat → Nat} {mi : Nat → BitVec 64}
     {Q : Prop} {w R : Nat}
     (hw : w = l.W) (hR : R = 2 ^ (64 * w)) (hB : s.gpr .rbx = F) (hs : Scr s F (2 * l.D + 8))
     (hM : LimbsAt l s.mem F oM M) (hK : LimbsAt l s.mem F l.oK1 K1) (hX : LimbsAt l s.mem F l.oX Xc)
@@ -72,10 +68,11 @@ theorem vecR_ok (hl : LayOk l) {s : State} {F : Addr} {M K1 Xc Y Fin x : Nat →
     (hFlt : ∀ p < 2, Fin p < 2 * M p)
     (vx : Q → ∀ p < 2, Xc p % M p = x p * R % M p)
     (vy : Q → ∀ p < 2, Y p % M p = R % M p)
-    (vk : Q → ∀ p < 2, K1 p % M p = 2 ^ l.dbls * R % M p) :
+    (vk : Q → ∀ p < 2, K1 p % M p = 2 ^ l.dbls * R % M p)
+    (he : ∀ p < 2, e p < 2 ^ (8 * l.E)) (hd : ∀ p < 2, ∀ i < l.ND, dig l s.mem F p i = digit l (e p) i) :
     WP isa (vec l) s fun s' =>
       (∀ p < 2, Good l s'.mem F M l.oY p ∧
-        (Q → val52 l s'.mem F (l.D * p + l.oY) % M p = x p ^ ev l s.mem F p l.E * Fin p % M p)) ∧
+        (Q → val52 l s'.mem F (l.D * p + l.oY) % M p = x p ^ e p * Fin p % M p)) ∧
       Outside F 0 (2 * l.D + 8) s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
         r ≠ .r13 → r ≠ .r14 → r ≠ .r15 → s'.gpr r = s.gpr r) ∧
@@ -106,7 +103,7 @@ theorem vecR_ok (hl : LayOk l) {s : State} {F : Addr} {M K1 Xc Y Fin x : Nat →
     (fun p hp => good_of hl (hF p hp) (hFlt p hp) (hMlt p hp))
     (fun q p hp => by rw [hv hX p hp (by have := hXlt p hp; omega)]; exact vx q p hp)
     (fun q p hp => by rw [Nat.one_mul, ← vy q p hp, hv hY p hp (by have := hYlt p hp; omega)])
-    (fun q p hp => by rw [e2, ← vk q p hp, hv hK p hp (by have := hKlt p hp; omega)]))
+    (fun q p hp => by rw [e2, ← vk q p hp, hv hK p hp (by have := hKlt p hp; omega)]) he hd)
     fun s' ⟨hy, ho, hr, hrd, hwr, hmx⟩ => ⟨fun p hp => ⟨(hy p hp).1, fun q => by
       rw [(hy p hp).2 q, hv hF p hp (hFlt p hp)]⟩, ho, hr, hrd, hwr, hmx⟩
 

@@ -4,12 +4,7 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.Arithmetic
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # Correctness of DSA's x86-64 byte-reduction arithmetic -/
 

@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Verified
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # scrypt (RFC 7914 §6) on x86-64, over SHA-256
@@ -27,15 +26,13 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   match v.sha256 with
   | none => []
   | some c => [
-    { Spec.Scrypt.scryptApi with
-      name := Spec.Scrypt.scryptApi.name ++ c.suffix
-      target := X86_64.target
-      doc := Spec.Scrypt.scryptApi.doc (notes := ["Derives both keys with `" ++ pbkName c ++ "` and \
+    Spec.Scrypt.scryptApi.artifact X86_64.target {
+      suffix := c.suffix
+      notes := ["Derives both keys with `" ++ pbkName c ++ "` and \
         runs scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the \
         working space of each. The password, its length, `r` and `b`, PBKDF2's stack arguments and \
-        the next block are kept in a 56-byte stack frame; the calls use the 32 bytes below it."])
+        the next block are kept in a 56-byte stack frame; the calls use the 32 bytes below it."]
       code := Impl.Scrypt.X86_64.scrypt (pbkName c) (pbkOf c)
-      contract := Spec.Scrypt.scryptContract X86_64.abi 88
       stack := 88
       verified := scrypt_verified c
       spSafe := scrypt_spSafe c

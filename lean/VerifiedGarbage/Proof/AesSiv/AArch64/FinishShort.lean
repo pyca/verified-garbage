@@ -1,10 +1,14 @@
 module
+public import VerifiedGarbage.Proof.AesSiv.AArch64.CmacOf
 
-public import VerifiedGarbage.Proof.AesSiv.AArch64.S2vAd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesSiv.AArch64.Call
+import VerifiedGarbage.Proof.AesSiv.Words
+import VerifiedGarbage.Proof.Siv.Spec
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-SIV on AArch64: finishing S2V with a string shorter than a block

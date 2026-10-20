@@ -70,6 +70,21 @@ Modelling choices:
   RIP-relative operand, resolved by the linker) puts in a register. No
   instruction changes `syms`: a static's address is fixed for the run of
   the program.
+* A table of constants an instruction carries (`aluTbl`, `movdquTbl` and `vmovdquTbl`,
+  its name and its words) is the `static` of that name the emitter writes from it
+  (`TCB/Rust.lean`), so that for the whole run of the program it is mapped
+  readable at `State.syms name` and holds exactly those words, 8 bytes each,
+  little-endian, and does not wrap around the address space; and no memory
+  any code writes overlaps it: no region a contract lets a function write,
+  nor the stack. This is what a Rust `static` without interior mutability
+  is: an immutable object, which the linker places in read-only memory,
+  apart from every other object and from the stack, and which no `&mut`
+  (safe Rust cannot make one to it) nor any other pointer the program may
+  write through can reach. So the model reads the words from the
+  instruction rather than from `State.mem`, whose writes never reach it,
+  and no contract states any of this. Its address, fixed when the program
+  is loaded, does not depend on the data the code works on: an access to it
+  is observed (`addrs`) as its offset in the table.
 * `push` and `pop` (of 64-bit registers other than `rsp`) only occur as the
   push and pop of a frame (see `push`), as a sequence of them. A caller
   passes arguments on the stack by pushing them, the last first, just
@@ -97,22 +112,23 @@ Modelling choices:
   0–15 (Intel SDM Vol. 2, "VZEROUPPER").
 * The opmask registers `k0`–`k7` (SDM Vol. 1, Chapter 15) are not modelled.
   The only masked instructions are the masked 512-bit moves `kLoad` and
-  `kStore`, each of which the model treats as one instruction together with
-  the `kmovw k1, r32` before it that sets its mask, as `push` is the
-  sequence of a frame's pushes: no modelled instruction reads `k1`
+  `kStore` (of quadwords) and `kLoad8` and `kStore8` (of bytes), each of
+  which the model treats as one instruction together with the `kmovw k1,
+  r32` (`kmovq k1, r64` for the bytes) before it that sets its mask, as
+  `push` is the sequence of a frame's pushes: no modelled instruction reads `k1`
   otherwise, and only these write it. The value they leave in `k1` is
   never read, and the opmask registers are caller-saved (System V AMD64
   psABI §3.2.1, Figure 3.4: `%k0`–`%k7`, "No" under "callee-saved"), so the
-  model need not know it. A masked move accesses exactly the quadwords its
-  mask enables: the others are neither read nor written, and may be
-  outside the permitted regions, as their faults are suppressed (SDM Vol. 2,
+  model need not know it. A masked move accesses exactly the quadwords (or
+  bytes) its mask enables: the others are neither read nor written, and may
+  be outside the permitted regions, as their faults are suppressed (SDM Vol. 2,
   "MOVDQU,VMOVDQU8/16/32/64", whose EVEX forms have the exceptions of Type
   E4.nb, Vol. 2A §2.8, Table 2-49, which suppress the memory faults of the
   elements whose mask bit is 0). Where an
-  access is and which quadwords it enables can affect its timing (a
-  masked-off quadword on an unmapped page may take a microcode assist), so
-  it leaks both: its address and the mask, bits 7:0 of the register it
-  moves to `k1` (`addrs`).
+  access is and which quadwords (or bytes) it enables can affect its timing
+  (a masked-off element on an unmapped page may take a microcode assist), so
+  it leaks both: its address and the mask, bits 7:0 (bits 63:0 for the
+  bytes) of the register it moves to `k1` (`addrs`).
   No SSE, AVX or AVX-512 instruction has a memory operand except the
   unaligned `movdqu`/`vmovdqu`/`vmovdqu32` loads and stores,
   `vbroadcasti128`/`vbroadcasti32x4`, the `vmovdqu64` loads and stores
@@ -120,8 +136,8 @@ Modelling choices:
   embedded-broadcast forms `zbcst` (`m64bcst`), the second source of
   `vbinLoad` (`xmm3/m128` or `ymm3/m256`), the 256-bit second
   source of `vpmadd52Load` and `evMadd52Load` (`m256`), and the masked
-  moves `kLoad` and `kStore` (`m512`), which (like every VEX or
-  EVEX memory operand but those of the aligned moves) need no alignment, so
+  moves `kLoad`, `kStore`, `kLoad8` and `kStore8` (`m512`), which (like
+  every VEX or EVEX memory operand but those of the aligned moves) need no alignment, so
   no alignment fault needs modelling.
 * MXCSR (SDM Vol. 1 §10.2.3) is modelled as a 32-bit value that only
   `ldmxcsr` and `stmxcsr` access: no other modelled instruction reads or
@@ -137,8 +153,9 @@ Modelling choices:
   on return. Nothing is known to set it.
 * MXCSR-configuration-dependent timing (MCDT): on some Intel processors,
   the multiplies of the model but `mul` and `mulx` (`pmuludq`, `vpmuludq`,
-  `pmullw`, `vpmullw`, `pmulhw`, `vpmulhw`, `vpmadd52luq` and
-  `vpmadd52huq`), although on Intel's DOIT
+  `pmullw`, `vpmullw`, `pmulhw`, `vpmulhw`, `pmaddwd`, `vpmaddwd`,
+  `pmulhrsw`, `vpmulhrsw`,
+  `vpmadd52luq` and `vpmadd52huq`), although on Intel's DOIT
   list, may take up to a cycle longer to retire for specific data values
   unless MXCSR holds `0x1FBF` (Intel, "MXCSR Configuration Dependent Timing", and
   its list of the instructions affected, "MCDT Data Operand Independent
@@ -226,8 +243,12 @@ inductive Instr
   | andn (dst src1 src2 : Reg)
   /-- `movzx r32, BYTE PTR [src]`: the byte, zero-extended into the 64-bit register. -/
   | movzx8 (dst : Reg) (src : MemOp)
+  /-- `movzx r32, WORD PTR [src]`: the word, zero-extended into the 64-bit register. -/
+  | movzx16 (dst : Reg) (src : MemOp)
   /-- `mov BYTE PTR [dst], r8`: the low byte of `src`. -/
   | store8 (dst : MemOp) (src : Reg)
+  /-- `mov WORD PTR [dst], r16`: the low 16 bits of `src`. -/
+  | store16 (dst : MemOp) (src : Reg)
   /-- `bswap r64` -/
   | bswap (dst : Reg)
   /-- `op r64, count` (64-bit) with an immediate count. Only counts `1 ≤ count ≤ 63`
@@ -246,10 +267,20 @@ inductive Instr
   /-- `lea r64, [rip + name]` (REX.W + 8D /r, with a RIP-relative memory
   operand): the address of the `static` `name`, `State.syms name`. -/
   | leaSym (dst : Reg) (name : String)
+  /-- `op r64, QWORD PTR [m]` (REX.W + 03 /r, 2B /r, 23 /r, 0B /r, 33 /r,
+  3B /r, 85 /r, 13 /r, 1B /r: the memory forms of `alu`), whose base register
+  holds the address of the `static` `name`, whose words are `words`: the
+  emitter writes that static from this instruction (`TCB/Rust.lean`). -/
+  | aluTbl (op : AluOp) (dst : Reg) (m : MemOp) (name : String) (words : List (BitVec 64))
   /-- `movdqu xmm, XMMWORD PTR [src]` (`F3 0F 6F /r`) -/
   | movdquLoad (dst : XReg) (src : MemOp)
   /-- `movdqu XMMWORD PTR [dst], xmm` (`F3 0F 7F /r`) -/
   | movdquStore (dst : MemOp) (src : XReg)
+  /-- `movdqu xmm, XMMWORD PTR [m]` (`F3 0F 6F /r`), whose base register
+  holds the address of the `static` `name`, whose words are `words`: the
+  emitter writes that static from this instruction (`TCB/Rust.lean`), as for
+  `aluTbl` and `vmovdquTbl`. -/
+  | movdquTbl (dst : XReg) (m : MemOp) (name : String) (words : List (BitVec 64))
   /-- `movq r64, xmm` (`66 REX.W 0F 7E /r`, SSE2): the low quadword of `src`. -/
   | movqR (dst : Reg) (src : XReg)
   /-- An SSE instruction that writes only an SSE register. -/
@@ -262,6 +293,11 @@ inductive Instr
   /-- `vmovdqu XMMWORD PTR [dst], xmm` (`VEX.128.F3.0F.WIG 7F /r`) or
   `vmovdqu YMMWORD PTR [dst], ymm` (`VEX.256.F3.0F.WIG 7F /r`) -/
   | vmovdquStore (len : VLen) (dst : MemOp) (src : XReg)
+  /-- `vmovdqu ymm, YMMWORD PTR [m]` (`VEX.256.F3.0F.WIG 6F /r`), whose base
+  register holds the address of the `static` `name`, whose words are
+  `words`: the emitter writes that static from this instruction
+  (`TCB/Rust.lean`), as for `aluTbl`. -/
+  | vmovdquTbl (dst : XReg) (m : MemOp) (name : String) (words : List (BitVec 64))
   /-- `vbroadcasti128 ymm, XMMWORD PTR [src]` (`VEX.256.66.0F38.W0 5A /r`) -/
   | vbroadcasti128 (dst : XReg) (src : MemOp)
   /-- `op xmm1, xmm2, XMMWORD PTR [src2]` or `op ymm1, ymm2, YMMWORD PTR
@@ -319,6 +355,16 @@ inductive Instr
   quadwords of `src` that bits 7:0 of `mask` enable, stored to the 64 bytes
   at `dst`. -/
   | kStore (dst : MemOp) (mask : Reg) (src : XReg)
+  /-- `kmovq k1, r64` (`VEX.L0.F2.0F.W1 92 /r`), then `vmovdqu8 zmm1 {k1}{z},
+  ZMMWORD PTR [src]` (`EVEX.512.F2.0F.W0 6F /r`), with zeroing-masking: the
+  bytes of the 64 at `src` that bits 63:0 of `mask` enable, the others
+  zero. -/
+  | kLoad8 (mask : Reg) (dst : XReg) (src : MemOp)
+  /-- `kmovq k1, r64` (`VEX.L0.F2.0F.W1 92 /r`), then `vmovdqu8 ZMMWORD PTR
+  [dst] {k1}, zmm1` (`EVEX.512.F2.0F.W0 7F /r`), with merging-masking: the
+  bytes of `src` that bits 63:0 of `mask` enable, stored to the 64 bytes at
+  `dst`. -/
+  | kStore8 (dst : MemOp) (mask : Reg) (src : XReg)
   /-- `stmxcsr DWORD PTR [dst]` (`NP 0F AE /3`) -/
   | stmxcsr (dst : MemOp)
   /-- `ldmxcsr DWORD PTR [src]` (`NP 0F AE /2`) -/
@@ -364,7 +410,8 @@ inductive Instr
 (x86-64-v1, which includes SSE and SSE2: System V AMD64 psABI,
 "Micro-Architecture Levels"), named as Rust's target features. SDM Vol. 2,
 the "CPUID Feature Flag" column of each instruction's opcode table: SSSE3
-for PSHUFB and PALIGNR (`66 0F 38 00 /r`, `66 0F 3A 0F /r ib`), SHA for
+for PSHUFB, PALIGNR and PMULHRSW (`66 0F 38 00 /r`, `66 0F 3A 0F /r ib`,
+`66 0F 38 0B /r`), SSE4_1 for PBLENDW (`66 0F 3A 0E /r ib`), SHA for
 SHA256RNDS2, SHA256MSG1 and SHA256MSG2 (`NP 0F 38 CB /r`, `NP 0F 38 CC /r`,
 `NP 0F 38 CD /r`) and for SHA1RNDS4, SHA1NEXTE, SHA1MSG1 and SHA1MSG2
 (`NP 0F 3A CC /r ib`, `NP 0F 38 C8 /r`, `NP 0F 38 C9 /r`, `NP 0F 38 CA /r`); AES for AESENC, AESENCLAST, AESDEC, AESDECLAST, AESIMC
@@ -372,12 +419,16 @@ and AESKEYGENASSIST (`66 0F 38 DC /r`, `66 0F 38 DD /r`, `66 0F 38 DE /r`,
 `66 0F 38 DF /r`, `66 0F 38 DB /r`, `66 0F 3A DF /r ib`); PCLMULQDQ for
 PCLMULQDQ (`66 0F 3A 44 /r ib`); SSE2 for MOVQ xmm, r64 (`66 REX.W 0F 6E /r`),
 PAND, PANDN, PADDQ, PMULUDQ, PSLLQ, PSRLQ, PSLLDQ, PSRLDQ and PCMPEQD
-(`66 0F 76 /r`); AVX for the
+(`66 0F 76 /r`), PMADDWD (`66 0F F5 /r`), PCMPGTW (`66 0F 65 /r`) and PACKSSWB
+(`66 0F 63 /r`); AVX for the
 VEX.128 forms of the lane-wise instructions (e.g. `VEX.128.66.0F.WIG FE /r`
-VPADDD, `VEX.128.66.0F.WIG 76 /r` VPCMPEQD), for VMOVDQA, VMOVDQU (both
+VPADDD, `VEX.128.66.0F.WIG 76 /r` VPCMPEQD, `VEX.128.66.0F.WIG 63 /r`
+VPACKSSWB) and of VPBLENDW
+(`VEX.128.66.0F3A.WIG 0E /r ib`), for VMOVDQA, VMOVDQU (both
 lengths), VMOVQ and VZEROUPPER; AVX2 for their VEX.256 forms (e.g.
-`VEX.256.66.0F.WIG FE /r` VPADDD, `VEX.256.66.0F.WIG 76 /r` VPCMPEQD) and
-for VPBLENDD, VPSLLVD/Q, VPSRLVD/Q, VPBROADCASTD/Q, VPERMQ, VPERM2I128,
+`VEX.256.66.0F.WIG FE /r` VPADDD, `VEX.256.66.0F.WIG 76 /r` VPCMPEQD,
+`VEX.256.66.0F.WIG 63 /r` VPACKSSWB,
+`VEX.256.66.0F3A.WIG 0E /r ib` VPBLENDW) and for VPBLENDD, VPSLLVD/Q, VPSRLVD/Q, VPBROADCASTD/Q, VPERMQ, VPERM2I128,
 VINSERTI128, VEXTRACTI128 and VBROADCASTI128 at any length; AVX for VPMOVMSKB reg, xmm1
 (`VEX.128.66.0F.WIG D7 /r`) and AVX2 for VPMOVMSKB reg, ymm1
 (`VEX.256.66.0F.WIG D7 /r`) and VPERMD (`VEX.256.66.0F38.W0 36 /r`). LDMXCSR and STMXCSR (SSE,
@@ -426,7 +477,11 @@ VPBROADCASTQ `EVEX.256.66.0F38.W1 59 /r`, VMOVDQU64 `EVEX.256.F3.0F.W1 6F
 VPMADD52LUQ and VPMADD52HUQ of any register. AVX512F for KMOVW k1, r32
 (`VEX.L0.0F.W0 92 /r`) and for the EVEX.512 VMOVDQU64 load and store with
 a write mask (`EVEX.512.F3.0F.W1 6F /r`, `7F /r`), and so for `kLoad` and
-`kStore`.
+`kStore`. AVX512BW for KMOVQ k1, r64 (`VEX.L0.F2.0F.W1 92 /r`) and for the
+EVEX.512 VMOVDQU8 load and store with a write mask (`EVEX.512.F2.0F.W0 6F
+/r`, `7F /r`), and so for `kLoad8` and `kStore8`, which list AVX512F too:
+software must check AVX512F before any AVX-512 subset (SDM Vol. 1 §15.2,
+"Detection of AVX-512 Foundation Instructions", and §15.3).
 
 Vector AES/GCM additions: SDM Vol. 2, "AESENC", "AESENCLAST", "AESDEC",
 "AESDECLAST", "PCLMULQDQ", "PSHUFB", "PSLLDQ" and "PSRLDQ", opcode tables'
@@ -444,7 +499,8 @@ AVX and AVX512F requirements also ensure the vector state is enabled,
 following the model's existing feature convention. -/
 def Instr.requires : Instr → List String
   | .zop (.zbinH .vaesenc ..) | .zop (.zbinH .vaesenclast ..) => ["vaes", "avx512f"]
-  | .xop (.bin .pshufb ..) | .xop (.palignr ..) => ["ssse3"]
+  | .xop (.bin .pshufb ..) | .xop (.palignr ..) | .xop (.bin .pmulhrsw ..) => ["ssse3"]
+  | .xop (.pblendw ..) => ["sse4.1"]
   | .xop (.bin .sha256msg1 ..) | .xop (.bin .sha256msg2 ..) | .xop (.sha256rnds2 ..) => ["sha"]
   | .xop (.bin .sha1msg1 ..) | .xop (.bin .sha1msg2 ..) | .xop (.bin .sha1nexte ..)
   | .xop (.sha1rnds4 ..) => ["sha"]
@@ -462,11 +518,11 @@ def Instr.requires : Instr → List String
   | .vop (.vpclmulqdq .l128 ..) => ["pclmulqdq", "avx"]
   | .vop (.vpclmulqdq .l256 ..) => ["vpclmulqdq", "avx"]
   | .vop (.vbin _ .l256 ..) | .vbinLoad _ .l256 .. | .vop (.vshift _ .l256 ..)
-  | .vop (.vpshufd .l256 ..) | .vop (.vpalignr .l256 ..) => ["avx2"]
+  | .vop (.vpshufd .l256 ..) | .vop (.vpalignr .l256 ..) | .vop (.vpblendw .l256 ..) => ["avx2"]
   | .vop (.vbin _ .l128 ..) | .vbinLoad _ .l128 .. | .vop (.vshift _ .l128 ..)
   | .vop (.vpshufd .l128 ..)
-  | .vop (.vpalignr .l128 ..) | .vop (.vmovdqa ..) | .vop (.vmovq ..) | .vop .vzeroupper
-  | .vmovdquLoad .. | .vmovdquStore .. => ["avx"]
+  | .vop (.vpalignr .l128 ..) | .vop (.vpblendw .l128 ..) | .vop (.vmovdqa ..) | .vop (.vmovq ..) | .vop .vzeroupper
+  | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. => ["avx"]
   | .vop (.vpblendd ..) | .vop (.vvar ..) | .vop (.vpbroadcastd ..) | .vop (.vpbroadcastq ..)
   | .vop (.vpermq ..) | .vop (.vpermd ..) | .vop (.vperm2i128 ..) | .vop (.vinserti128 ..) | .vop (.vextracti128 ..)
   | .vbroadcasti128 .. | .vpmovmskb .l256 .. => ["avx2"]
@@ -483,6 +539,7 @@ def Instr.requires : Instr → List String
   | .zop _ | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. =>
     ["avx512f"]
   | .kLoad .. | .kStore .. => ["avx512f"]
+  | .kLoad8 .. | .kStore8 .. => ["avx512f", "avx512bw"]
   | .vop (.vsha512rnds2 ..) | .vop (.vsha512msg1 ..) | .vop (.vsha512msg2 ..) => ["sha512"]
   | .vop (.vpmadd52luq ..) | .vop (.vpmadd52huq ..) | .vpmadd52Load .. =>
     ["avx512ifma", "avx512vl"]
@@ -511,7 +568,18 @@ def exec : Instr → State → Option State
   | .rorx d r n, s => execRorx d r n s
   | .andn d a b, s => some (execAndn d a b s)
   | .movzx8 d m, s => (s.load8 (s.ea m)).map fun v => s.setReg d (v.setWidth 64)
+  -- SDM Vol. 2, "MOVZX—Move With Zero-Extend", `MOVZX r32, r/m16` (0F B7 /r):
+  -- `DEST := ZeroExtend(SRC)`, the source the 2 bytes at the address,
+  -- little-endian (SDM Vol. 1 §1.3.1), and the 32-bit result zero-extended to
+  -- 64 bits (SDM Vol. 1 §3.4.1.1); no alignment is required and no flags are
+  -- affected.
+  | .movzx16 d m, s => (s.load16 (s.ea m)).map fun v => s.setReg d (v.setWidth 64)
   | .store8 m r, s => s.store8 (s.ea m) ((s.gpr r).setWidth 8)
+  -- SDM Vol. 2, "MOV—Move", `MOV r/m16, r16` (66 89 /r): `DEST := SRC`,
+  -- the source the register's low 16 bits (AX, CX, …, R8W–R15W; SDM Vol. 1
+  -- §3.4.1.1), the destination the 2 bytes at the address, little-endian
+  -- (SDM Vol. 1 §1.3.1); no alignment is required and no flags are affected.
+  | .store16 m r, s => s.store16 (s.ea m) ((s.gpr r).setWidth 16)
   | .bswap d, s => some (s.setReg d (bswap64 (s.gpr d)))
   | .shift op d n, s => execShift op d n s
   | .shiftCl op d, s => some (execShiftCl op d s)
@@ -530,11 +598,39 @@ def exec : Instr → State → Option State
   -- `X86_64_RELOC_SIGNED`; COFF's `IMAGE_REL_AMD64_REL32`): `DEST := S`. A
   -- static beyond `disp32`'s range (±2 GB) does not link.
   | .leaSym d name, s => some (s.setReg d (s.syms name))
+  -- `aluTbl`: as `alu op d (.mem m)` (SDM Vol. 2, ADD, SUB, AND, OR, XOR,
+  -- CMP, TEST, ADC, SBB, the `r64, r/m64` forms; `execAlu`), its source the
+  -- 8 bytes at `m`, little-endian: when `m`'s base register holds the
+  -- static's address and `m` is `off` bytes past it, a multiple of 8 within
+  -- the table, word `off / 8` of the static `name`; otherwise it faults. The
+  -- static is the immutable object of these words that the emitter writes,
+  -- which no writable memory overlaps (see the module docs), so the bytes
+  -- there are always these.
+  | .aluTbl op d m name ws, s =>
+    let off := (s.ea m - s.gpr m.base).toNat
+    if s.gpr m.base = s.syms name ∧ off % 8 = 0 ∧ off / 8 < ws.length then
+      execAluW op d (ws.getD (off / 8) 0) s
+    else none
   -- SDM Vol. 2, "MOVDQU": `DEST[127:0] := SRC[127:0]`, with memory in
   -- little-endian byte order (SDM Vol. 1 §1.3.1); no alignment is required
   -- and no flags are affected.
   | .movdquLoad d m, s => (s.load128 (s.ea m)).map fun v => s.setXmm d v
   | .movdquStore m r, s => s.store128 (s.ea m) (s.xmm r)
+  -- `movdquTbl`: SDM Vol. 2, "MOVDQU": `DEST[127:0] := SRC[127:0]`, as
+  -- `movdquLoad d m` (SSE2, F3 0F 6F /r; no alignment is required and no
+  -- flags are affected), its source the 16 bytes at `m`,
+  -- little-endian: when `m`'s base register holds the static's address and
+  -- `m` is `off` bytes past it, a multiple of 8 with two words of the table
+  -- from there, words `off / 8` and `off / 8 + 1` of the static `name` (bits
+  -- 63:0 the first); otherwise it faults. As for `aluTbl`, the static is the
+  -- immutable object of these words the emitter writes, so the bytes there
+  -- are always these.
+  | .movdquTbl d m name ws, s =>
+    let off := (s.ea m - s.gpr m.base).toNat
+    let w := fun j => ws.getD (off / 8 + j) 0
+    if s.gpr m.base = s.syms name ∧ off % 8 = 0 ∧ off / 8 + 2 ≤ ws.length then
+      some (s.setXmm d (w 1 ++ w 0))
+    else none
   -- SDM Vol. 2, "MOVQ—Move Quadword", `MOVQ r/m64, xmm` (66 REX.W 0F 7E /r),
   -- "MOVQ instruction when destination operand is r/m64": `DEST[63:0] :=
   -- SRC[63:0]`; "Flags Affected: None".
@@ -549,6 +645,19 @@ def exec : Instr → State → Option State
   | .vmovdquLoad .l256 d m, s =>
     (s.load256 (s.ea m)).map fun v => s.setV .l256 d (v.extractLsb' 0 128) (v.extractLsb' 128 128)
   | .vmovdquStore .l128 m r, s => s.store128 (s.ea m) (s.xmm r)
+  -- `vmovdquTbl`: as `vmovdquLoad .l256 d m`, its source the 32 bytes at
+  -- `m`, little-endian: when `m`'s base register holds the static's address
+  -- and `m` is `off` bytes past it, a multiple of 8 with four words of the
+  -- table from there, words `off / 8` to `off / 8 + 3` of the static `name`
+  -- (bits 63:0 the first); otherwise it faults. As for `aluTbl`, the static
+  -- is the immutable object of these words the emitter writes, so the bytes
+  -- there are always these.
+  | .vmovdquTbl d m name ws, s =>
+    let off := (s.ea m - s.gpr m.base).toNat
+    let w := fun j => ws.getD (off / 8 + j) 0
+    if s.gpr m.base = s.syms name ∧ off % 8 = 0 ∧ off / 8 + 4 ≤ ws.length then
+      some (s.setV .l256 d (w 1 ++ w 0) (w 3 ++ w 2))
+    else none
   | .vmovdquStore .l256 m r, s => s.store256 (s.ea m) (s.ymm r)
   -- SDM Vol. 2, "VBROADCAST": `DEST[127:0] := SRC[127:0]; DEST[255:128] :=
   -- SRC[127:0]`; no alignment is required.
@@ -621,6 +730,20 @@ def exec : Instr → State → Option State
     s.setZ d (v.extractLsb' 0 128) (v.extractLsb' 128 128) (v.extractLsb' 256 128)
       (v.extractLsb' 384 128)
   | .kStore m k r, s => s.storeMasked512 (s.ea m) (s.gpr k) (s.zmm r)
+  -- SDM Vol. 2, "KMOVW/KMOVB/KMOVQ/KMOVD—Move From and to Mask Registers"
+  -- (`KMOVQ k1, r64`): `DEST := SRC[63:0]`, so `k1[j]` is bit `j` of
+  -- `mask`; "Flags Affected: None". Then "MOVDQU,VMOVDQU8/16/32/64",
+  -- VMOVDQU8 (EVEX encoded versions, load-form), with `KL = 64`, `VL = 512`
+  -- and zeroing-masking: `FOR j := 0 TO KL-1; i := j * 8; IF k1[j] THEN
+  -- DEST[i+7:i] := SRC[i+7:i] ELSE DEST[i+7:i] := 0`, and the store-form,
+  -- merging-masking: `IF k1[j] THEN DEST[i+7:i] := SRC[i+7:i] ELSE
+  -- *DEST[i+7:i] remains unchanged*`. No alignment is required, and a
+  -- masked-off byte is not accessed (its faults are suppressed: see the
+  -- opmask registers above).
+  | .kLoad8 k d m, s => (s.loadMasked512B (s.ea m) (s.gpr k)).map fun v =>
+    s.setZ d (v.extractLsb' 0 128) (v.extractLsb' 128 128) (v.extractLsb' 256 128)
+      (v.extractLsb' 384 128)
+  | .kStore8 m k r, s => s.storeMasked512B (s.ea m) (s.gpr k) (s.zmm r)
   -- SDM Vol. 2, "STMXCSR": `m32 := MXCSR`. "LDMXCSR": `MXCSR := m32`, with
   -- #GP(0) "for an attempt to set reserved bits in MXCSR", which are bits
   -- 31:16 (SDM Vol. 1 §10.2.3); on processors without DAZ, bit 6 is
@@ -655,13 +778,20 @@ def addrs : Instr → State → List Addr
   | .rorx .., _ => []
   | .andn .., _ => []
   | .movzx8 _ m, s => [s.ea m]
+  | .movzx16 _ m, s => [s.ea m]
   | .store8 m _, s => [s.ea m]
+  | .store16 m _, s => [s.ea m]
   | .bswap _, _ => []
   | .shift .., _ => []
   | .shiftCl .., _ => []
   | .shiftx .., _ => []
   | .movImm64 .., _ => []
   | .leaSym .., _ => []
+  -- The offset in the table: the static's address does not depend on the
+  -- data (see the module docs).
+  | .aluTbl _ _ m .., s => [s.ea m - s.gpr m.base]
+  | .vmovdquTbl _ m .., s => [s.ea m - s.gpr m.base]
+  | .movdquTbl _ m .., s => [s.ea m - s.gpr m.base]
   | .movdquLoad _ m, s => [s.ea m]
   | .movdquStore m _, s => [s.ea m]
   | .movqR .., _ => []
@@ -687,6 +817,7 @@ def addrs : Instr → State → List Addr
   -- opmask registers above), as a number, so that every run of an
   -- instruction makes the same number of observations.
   | .kLoad k _ m, s | .kStore m k _, s => [s.ea m, (s.gpr k).setWidth 8 |>.setWidth 64]
+  | .kLoad8 k _ m, s | .kStore8 m k _, s => [s.ea m, s.gpr k]
   | .stmxcsr m, s => [s.ea m]
   | .ldmxcsr m, s => [s.ea m]
   | .lfence, _ => []
@@ -792,13 +923,13 @@ one (the pop of a frame also moves `rsp`, as the push does): `mul` writes
 two, `rax` and `rdx`, and stores and SSE instructions none. -/
 def Instr.dst : Instr → Option Reg
   | .mov d _ | .alu _ d _ | .mov32 d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
-  | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .bswap d | .shift _ d _
-  | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _
+  | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _
+  | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .aluTbl _ d .. | .adcx d _ | .adox d _
   | .cmov _ d _ | .pop d _ | .vpmovmskb _ d _ | .movqR d _ | .imul d _ => some d
-  | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _
-  | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
+  | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
+  | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
-  | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore ..
+  | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .kLoad8 .. | .kStore8 ..
   | .stmxcsr _ | .ldmxcsr _ | .lfence | .mul _ | .mulx .. | .push _ | .alloc _ | .free _ => none
 
 abbrev isa : ISA where

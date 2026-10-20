@@ -1,26 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.CTCommon
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.CTCommon
-import VerifiedGarbage.Proof.Framework.ConstMem
-meta import VerifiedGarbage.Proof.Framework.ConstMem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Sha512.Word64
-meta import VerifiedGarbage.Proof.Framework.KernelRfl
-meta import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
-meta import VerifiedGarbage.Impl.Mont.Mod
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
+import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.CTCommon
 meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Merged from `Proof.Ed25519.AArch64.PublicKey.CT`. -/
 
@@ -205,7 +204,7 @@ def satState : State where
   gpr r := match r with | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x4000 | _ => 0
   sp := 0x9000
   mem := satMem
-  rd := [⟨0x2000, 32⟩, ⟨0x100000, 24576⟩]
+  rd := [⟨0x2000, 32⟩, ⟨0x100000, 49152⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩]
   syms _ := 0x100000
 

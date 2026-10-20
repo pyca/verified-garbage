@@ -1,15 +1,9 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.AArch64.Recover
 import VerifiedGarbage.Proof.Ed25519.AArch64.Power
-import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
+public import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
 public import VerifiedGarbage.Proof.Ed25519.Recover
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverSign
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
 
 /-! Merged from `Proof.Ed25519.AArch64.RecoverCandidate`. -/
 

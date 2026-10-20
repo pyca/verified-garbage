@@ -1,17 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Comp
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Comp
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTLemmas
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTLemmas
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Region
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTLemmas
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Region
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: constant time, a prime's region
@@ -48,6 +56,15 @@ def k0Tail (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : Nat) : List Instr :=
   ([.alu .add .r11 (.imm (BitVec.ofNat 32 (l.D * p))), .mov .rax (.mem (hdr sMinv)), .alu .and .rax (.reg .r12)] :
     List Instr) ++ (List.range 4).map (fun i => .store (at_ .r11 (l.oK0 + 8 * i)) .rax)
 
+/-- `recode`'s first block: the pointers to the padded exponent and its
+digits, and the count of groups. -/
+def recBlk (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : Nat) : List Instr :=
+  [.mov .r8 (.mem (hdr sIfma)), .alu .add .r8 (.imm (BitVec.ofNat 32 (l.D * p + l.oE))),
+    .mov .r9 (.mem (hdr sIfma)), .alu .add .r9 (.imm (BitVec.ofNat 32 (l.D * p + l.oD))),
+    .mov32 .rcx (.imm (BitVec.ofNat 32 (l.P / l.w)))]
+
+theorem recode_eq (p : Nat) : recode l p = [.block (recBlk l p), .loop (.block (recodeBody l)) .ne] := rfl
+
 /-- The region's checks that depend on the layout. -/
 structure RegT (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop where
   sel0 : TOk [.rdi, .r8] (arrSel l 0 (arrs l))
@@ -57,14 +74,17 @@ structure RegT (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop where
   k01 : TOk [.rdi, .r11] (.block (k0Tail l 1))
   eZ : TOk [.r11] (.block (eZero l))
   fin : TOk [.r11] (.block (finOne l))
-  eEnd : TOk [.rcx, .r11] (.block [.alu .add .r11 (.imm (BitVec.ofNat 32 (l.oE + l.E))), .alu .sub .r11 (.reg .rcx)])
+  eEnd : TOk [.rcx, .r11] (.block [.alu .add .r11 (.imm (BitVec.ofNat 32 (l.oE + l.P))), .alu .sub .r11 (.reg .rcx)])
   cnt : TOk [.rdi] (.block [.mov32 .rcx (.imm (BitVec.ofNat 32 l.dbls))])
+  rb0 : TOk [.rdi] (.block (recBlk l 0))
+  rb1 : TOk [.rdi] (.block (recBlk l 1))
+  rl : TOk [.r8, .r9, .rcx] (.loop (.block (recodeBody l)) .ne)
 
 theorem regT (hl : LayOk l) : RegT l := by
   rcases hl with rfl | rfl | rfl <;>
     exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
       ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-      ⟨_, by taint_decide⟩⟩
+      ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
 /-! ## The region's public data and what its blocks read -/
 
@@ -155,8 +175,9 @@ theorem eZero_rt (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State}
   obtain ⟨⟨⟨hoa, haZ, hp, -⟩, mx, eb, c, -⟩, h11⟩ := h
   have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
   obtain ⟨-, -, -, -, -, o6, o7, o8, o9, o10⟩ := lay_offs l
+  obtain ⟨-, -, pX, -, -, -⟩ := lay_P hl
   exact WP.mono (eZr_ok hl c.scr haZ hp h11) fun t ⟨_, f, ra, k⟩ =>
-    ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, hDp, o6, o10]) k,
+    ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, hDp, o6, o7, o10, pX]) k,
       (k.gpr (by decide)).trans h11, ra⟩
 
 theorem eZero_ct (p : Nat) {sp sl : Nat} (hT : TOk [.r11] (.block (eZero l))) :
@@ -190,47 +211,48 @@ theorem finOne_ct {sp sl : Nat} (hT : TOk [.r11] (.block (finOne l))) :
 /-- After `eCopy`'s first block: the pointer, the length and the destination. -/
 def ECp (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : Nat) (q : RegPub) (t : State) : Prop :=
   t.gpr .rsi = q.ep ∧ t.gpr .rcx = BitVec.ofNat 64 q.L ∧
-    t.gpr .r11 = off (off (off q.B q.a) (l.D * p)) (l.oE + l.E - q.L)
+    t.gpr .r11 = off (off (off q.B q.a) (l.D * p)) (l.oE + l.P - q.L)
 
 theorem eBlk_ok (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State}
     (h : RT l p sp sl q s ∧ s.gpr .r11 = off (off q.B q.a) (l.D * p)) :
     WP isa (.block [.mov .rax (.mem (hdr sLink)), .mov .rsi (.mem (ws .rax sp)), .mov .rcx (.mem (ws .rax sl)),
-      .alu .add .r11 (.imm (BitVec.ofNat 32 (l.oE + l.E))), .alu .sub .r11 (.reg .rcx)]) s (ECp l p q) := by
+      .alu .add .r11 (.imm (BitVec.ofNat 32 (l.oE + l.P))), .alu .sub .r11 (.reg .rcx)]) s (ECp l p q) := by
   have hH := h.1.hd
   obtain ⟨⟨⟨hoa, haZ, hp, hsp, hsl, hL1, hL2⟩, mx, eb, c, hl'⟩, h11⟩ := h
   have hn := c.scr.nowrap
   have h8 := hdr_lt_slot l.W 8 (show 31 < 32 by decide)
-  obtain ⟨-, -, -, -, -, o6, -, -, -, o10⟩ := lay_offs l
+  obtain ⟨-, -, -, -, -, o6, o7, -, -, o10⟩ := lay_offs l
+  obtain ⟨pE, pP, pX, -, -, -⟩ := lay_P hl
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
   have hlv₁ : s.mem.readW (off (off q.B q.o) (8 * sLink)) 64 = q.B := c.lk
   have hp' : InRegions (s.rd ++ s.wr) (off q.B (8 * sp)) 8 := c.scr.ld (by omega_using [hoa, haZ, hsp, h8])
   have hl'' : InRegions (s.rd ++ s.wr) (off q.B (8 * sl)) 8 := c.scr.ld (by omega_using [hoa, haZ, hsl, h8])
   have hlv' : word s.mem q.B (8 * sl) = BitVec.ofNat 64 q.L := by rw [← hl']; exact c.lv
   refine WP.mono (WP.keep [.rax, .rcx, .rsi, .r11] (Q := fun t => t.gpr .rsi = q.ep ∧
-    t.gpr .rcx = BitVec.ofNat 64 q.L ∧ t.gpr .r11 = off (off (off q.B q.a) (l.D * p)) (l.oE + l.E - q.L)) (by
+    t.gpr .rcx = BitVec.ofNat 64 q.L ∧ t.gpr .r11 = off (off (off q.B q.a) (l.D * p)) (l.oE + l.P - q.L)) (by
     xrun [State.ea, hdr, ws, c.rdi, hdrOff, hH sLink (by decide), hlv₁, hp', hl'',
-      AmmSym.se_ofNat (show l.oE + l.E < 2 ^ 31 by omega_using [o6, o10, hDb2])]
+      AmmSym.se_ofNat (show l.oE + l.P < 2 ^ 31 by omega_using [o6, o7, o10, pP, pX, hDb2])]
     and_intros
     · exact c.pv
     · exact hlv'
     rw [show s.mem.readW (off q.B (8 * sl)) 64 = BitVec.ofNat 64 q.L from hlv', h11,
-      VG.Offset.add_ofNat_sub _ (by omega_using [hL2])]) rfl) fun t h => h.1
+      VG.Offset.add_ofNat_sub _ (by omega_using [hL2, pE])]) rfl) fun t h => h.1
 
 /-- `eCopy` is constant time, given that the taint analysis checks its loads
 from `n`'s workspace. -/
 theorem eCopy_ct (hl : LayOk l) {p sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (hT : (taint.check (Taint.ofRegs [.rax]) (.block [.mov .rsi (.mem (ws .rax sp)),
       .mov .rcx (.mem (ws .rax sl))]) hc).isSome = true)
-    (hE : TOk [.rcx, .r11] (.block [.alu .add .r11 (.imm (BitVec.ofNat 32 (l.oE + l.E))), .alu .sub .r11 (.reg .rcx)])) :
+    (hE : TOk [.rcx, .r11] (.block [.alu .add .r11 (.imm (BitVec.ofNat 32 (l.oE + l.P))), .alu .sub .r11 (.reg .rcx)])) :
     RelCT isa (Two fun q s => RT l p sp sl q s ∧ s.gpr .r11 = off (off q.B q.a) (l.D * p))
       (seqs (eCopy l sp sl)) fun _ _ => True := by
   obtain ⟨_, hE⟩ := hE
   show RelCT isa _ (.seq (.block (([.mov .rax (.mem (hdr sLink))] : List Instr) ++
     (([.mov .rsi (.mem (ws .rax sp)), .mov .rcx (.mem (ws .rax sl))] : List Instr) ++
-      ([.alu .add .r11 (.imm (BitVec.ofNat 32 (l.oE + l.E))), .alu .sub .r11 (.reg .rcx)] : List Instr)))) _) _
+      ([.alu .add .r11 (.imm (BitVec.ofNat 32 (l.oE + l.P))), .alu .sub .r11 (.reg .rcx)] : List Instr)))) _) _
   refine RelCT.seq (two_post (Ψ := ECp l p) ?_ fun q s h => eBlk_ok hl h)
     (two_taint [.rsi, .rcx, .r11] (pins_eqs (fun q r => if r = .rsi then q.ep else if r = .rcx then
-      BitVec.ofNat 64 q.L else off (off (off q.B q.a) (l.D * p)) (l.oE + l.E - q.L)) fun q s h r hr => by
+      BitVec.ofNat 64 q.L else off (off (off q.B q.a) (l.D * p)) (l.oE + l.P - q.L)) fun q s h r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
         · exact h.1
@@ -264,6 +286,66 @@ theorem eCopy_ct (hl : LayOk l) {p sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Ta
     refine WP.mono (WP.keep [.rsi, .rcx] (Q := fun t => t.gpr .rcx = BitVec.ofNat 64 q.L) (by
       xrun [State.ea, ws, ha, hdrOff, hp', hl'']; rw [← hl']; exact c.lv) rfl) fun t ⟨hcx, k⟩ =>
         ⟨hcx, (k.gpr (by decide)).trans h11⟩
+
+/-- After `eCopy`, the region's reads are still `RT`. -/
+theorem eCopy_rt (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State}
+    (h : RT l p sp sl q s ∧ s.gpr .r11 = off (off q.B q.a) (l.D * p)) :
+    WP isa (seqs (eCopy l sp sl)) s (RT l p sp sl q) := by
+  have hRT := h.1
+  obtain ⟨⟨⟨hoa, haZ, hp, hsp, hsl, hL1, hL2⟩, mx, eb, c, hl'⟩, h11⟩ := h
+  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
+  obtain ⟨-, -, -, -, -, o6, o7, -, -, o10⟩ := lay_offs l
+  obtain ⟨pE, pP, pX, -, -, -⟩ := lay_P hl
+  exact WP.mono (eCr_ok hl c.scr c.rdi c.lk hoa haZ hp hsp hsl c.pv c.lv c.src rfl (by omega_using [hl', hL1])
+      (by omega_using [hl', hL2]) h11) fun t ⟨_, f, k⟩ =>
+    hRT.of_frm f (fun r hr => by
+      rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, hDp, o6, o7, o10, pE, pP, pX, hl', hL2]) k
+
+/-! ## The exponent's digits -/
+
+/-- After `recode`'s first block: its pointers and count. -/
+def RecP (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : Nat) (q : RegPub) (t : State) : Prop :=
+  t.gpr .r8 = off (off q.B q.a) (l.D * p + l.oE) ∧ t.gpr .r9 = off (off q.B q.a) (l.D * p + l.oD) ∧
+    t.gpr .rcx = BitVec.ofNat 64 (l.P / l.w)
+
+theorem recBlk_ok (hl : LayOk l) (hw : l.w ≠ 4) {p sp sl : Nat} {q : RegPub} {s : State} (h : RT l p sp sl q s) :
+    WP isa (.block (recBlk l p)) s (RecP l p q) := by
+  have hH := h.hd
+  obtain ⟨⟨hoa, haZ, hp, -⟩, mx, eb, c, -⟩ := h
+  obtain ⟨-, -, -, -, -, o6, o7, -, -, o10⟩ := lay_offs l
+  obtain ⟨d1, d2⟩ := lay_oD l hw
+  obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
+  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
+  have hG : l.P / l.w < 2 ^ 31 := by rcases hl with rfl | rfl | rfl <;> decide
+  refine WP.mono (WP.keep [.rcx, .r8, .r9] (Q := fun t =>
+    t.gpr .r8 = off (off q.B q.a) (l.D * p + l.oE) ∧ t.gpr .r9 = off (off q.B q.a) (l.D * p + l.oD) ∧
+      t.gpr .rcx = BitVec.ofNat 64 (l.P / l.w)) (by
+    have hia : s.mem.readW (off (off q.B q.o) (8 * sIfma)) 64 = off q.B q.a := c.ia
+    xrun [recBlk, State.ea, hdr, c.rdi, hdrOff, hH sIfma (by decide), hia,
+      AmmSym.se_ofNat (show l.D * p + l.oE < 2 ^ 31 by omega_using [hDp, o6, o10, hDb2]),
+      AmmSym.se_ofNat (show l.D * p + l.oD < 2 ^ 31 by omega_using [hDp, d2, o7, o10, hDb2])]
+    and_intros
+    · apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+      rw [Nat.mod_eq_of_lt (a := l.P / l.w) (b := 2 ^ 32) (by omega_using [hG]),
+        Nat.mod_eq_of_lt (a := l.P / l.w) (b := 2 ^ 64) (by omega_using [hG])]
+    all_goals rfl) rfl) fun t h => h.1
+
+/-- `recode` is constant time. -/
+theorem recode_ct (hl : LayOk l) (hw : l.w ≠ 4) {p sp sl : Nat} (hB : TOk [.rdi] (.block (recBlk l p)))
+    (hL : TOk [.r8, .r9, .rcx] (.loop (.block (recodeBody l)) .ne)) :
+    RelCT isa (Two (RT l p sp sl)) (seqs (recode l p)) fun _ _ => True := by
+  obtain ⟨_, hB⟩ := hB
+  obtain ⟨_, hL⟩ := hL
+  rw [recode_eq]
+  exact RelCT.seq (two_piece (Ψ := RecP l p) [.rdi] (pins_rt fun _ _ h => h) hB fun q s h => recBlk_ok hl hw h)
+    (two_taint [.r8, .r9, .rcx] (pins_eqs (fun q r => if r = .r8 then off (off q.B q.a) (l.D * p + l.oE) else
+      if r = .r9 then off (off q.B q.a) (l.D * p + l.oD) else BitVec.ofNat 64 (l.P / l.w)) fun q s h r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact h.1
+        · exact h.2.1
+        · exact h.2.2) hL)
 
 /-! ## `k1`, and the region -/
 
@@ -468,15 +550,27 @@ theorem region0_ct (hl : LayOk l) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Ta
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   have hoM : oM = 0 := rfl
   have := NB_le hl
-  have := E_pos hl
+  by_cases hw : l.w = 4
+  · rw [show region l 0 sp sl = k1 l ++ (arrLoop l 0 ::
+      .block (k0St l 0) :: .block (eZero l) :: eCopy l sp sl) by unfold region; simp only [hw, ↓reduceIte]; rfl]
+    refine k1_ct hl hR (List.cons_ne_nil _ _) ?_
+    refine ct_cons (List.cons_ne_nil _ _) ((arrLoop_ct hl hR.sel0 hR.tail).mono (fun _ _ h => h) fun _ _ _ => trivial)
+      (fun _ _ h => arrLoop_rt hl h) ?_
+    refine ct_cons (List.cons_ne_nil _ _) (k0St_ct 0 hR.k00) (fun _ _ h => k0St_rt hl h) ?_
+    refine ct_cons (by simp [eCopy]) (eZero_ct 0 hR.eZ) (fun _ _ h => eZero_rt hl h) ?_
+    exact (two_map id (fun _ _ h => ⟨h.1, h.2.1⟩) (eCopy_ct hl hT hR.eEnd)).mono (fun _ _ h => h)
+      fun _ _ _ => trivial
   rw [show region l 0 sp sl = k1 l ++ (arrLoop l 0 ::
-    .block (k0St l 0) :: .block (eZero l) :: eCopy l sp sl) from rfl]
+    .block (k0St l 0) :: .block (eZero l) :: (eCopy l sp sl ++ recode l 0)) by
+      unfold region; simp only [hw, ↓reduceIte]; rfl]
   refine k1_ct hl hR (List.cons_ne_nil _ _) ?_
   refine ct_cons (List.cons_ne_nil _ _) ((arrLoop_ct hl hR.sel0 hR.tail).mono (fun _ _ h => h) fun _ _ _ => trivial)
     (fun _ _ h => arrLoop_rt hl h) ?_
   refine ct_cons (List.cons_ne_nil _ _) (k0St_ct 0 hR.k00) (fun _ _ h => k0St_rt hl h) ?_
   refine ct_cons (by simp [eCopy]) (eZero_ct 0 hR.eZ) (fun _ _ h => eZero_rt hl h) ?_
-  exact two_map id (fun _ _ h => ⟨h.1, h.2.1⟩) (eCopy_ct hl hT hR.eEnd)
+  refine VG.Proof.Bignum.X86_64.RelCT.seqs_append (by simp [eCopy]) (by simp [recode])
+    (RelCT.seq (two_post (two_map id (fun _ _ h => ⟨h.1, h.2.1⟩) (eCopy_ct hl hT hR.eEnd))
+      fun _ _ h => eCopy_rt hl ⟨h.1, h.2.1⟩) (recode_ct hl hw hR.rb0 hR.rl))
 
 /-- `q`'s region is constant time. -/
 theorem region1_ct (hl : LayOk l) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
@@ -487,15 +581,27 @@ theorem region1_ct (hl : LayOk l) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Ta
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   have hoM : oM = 0 := rfl
   have := NB_le hl
-  have := E_pos hl
+  by_cases hw : l.w = 4
+  · rw [show region l 1 sp sl = k1 l ++ (arrLoop l 1 ::
+      .block (k0St l 1) :: .block (eZero l) :: .block (finOne l) :: eCopy l sp sl) by
+        unfold region; simp only [hw, ↓reduceIte]; rfl]
+    refine k1_ct hl hR (List.cons_ne_nil _ _) ?_
+    refine ct_cons (List.cons_ne_nil _ _) ((arrLoop_ct hl hR.sel1 hR.tail).mono (fun _ _ h => h) fun _ _ _ => trivial)
+      (fun _ _ h => arrLoop_rt hl h) ?_
+    refine ct_cons (List.cons_ne_nil _ _) (k0St_ct 1 hR.k01) (fun _ _ h => k0St_rt hl h) ?_
+    refine ct_cons (List.cons_ne_nil _ _) (eZero_ct 1 hR.eZ) (fun _ _ h => eZero_rt hl h) ?_
+    refine ct_cons (by simp [eCopy]) (finOne_ct hR.fin) (fun _ _ h => finOne_rt hl h) ?_
+    exact (eCopy_ct hl hT hR.eEnd).mono (fun _ _ h => h) fun _ _ _ => trivial
   rw [show region l 1 sp sl = k1 l ++ (arrLoop l 1 ::
-    .block (k0St l 1) :: .block (eZero l) :: .block (finOne l) :: eCopy l sp sl) from rfl]
+    .block (k0St l 1) :: .block (eZero l) :: .block (finOne l) :: (eCopy l sp sl ++ recode l 1)) by
+      unfold region; simp only [hw, ↓reduceIte]; rfl]
   refine k1_ct hl hR (List.cons_ne_nil _ _) ?_
   refine ct_cons (List.cons_ne_nil _ _) ((arrLoop_ct hl hR.sel1 hR.tail).mono (fun _ _ h => h) fun _ _ _ => trivial)
     (fun _ _ h => arrLoop_rt hl h) ?_
   refine ct_cons (List.cons_ne_nil _ _) (k0St_ct 1 hR.k01) (fun _ _ h => k0St_rt hl h) ?_
   refine ct_cons (List.cons_ne_nil _ _) (eZero_ct 1 hR.eZ) (fun _ _ h => eZero_rt hl h) ?_
   refine ct_cons (by simp [eCopy]) (finOne_ct hR.fin) (fun _ _ h => finOne_rt hl h) ?_
-  exact eCopy_ct hl hT hR.eEnd
+  exact VG.Proof.Bignum.X86_64.RelCT.seqs_append (by simp [eCopy]) (by simp [recode])
+    (RelCT.seq (two_post (eCopy_ct hl hT hR.eEnd) fun _ _ h => eCopy_rt hl h) (recode_ct hl hw hR.rb1 hR.rl))
 
 end VG.Proof.Bignum.X86_64.Ifma

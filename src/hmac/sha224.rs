@@ -1,12 +1,13 @@
 //! HMAC-SHA-224: `vg_hmac_sha224_init`, `vg_sha256_update` and
-//! `vg_hmac_sha224_finalize` (contracts `VG.Spec.Hmac.Instance.initContract`
-//! of `VG.Spec.Hmac.sha224I`, `VG.Spec.Sha256.updateContract` and
-//! `VG.Spec.Hmac.Instance.finalizeContract`) compute `H((K₀ ⊕ opad) ‖ H((K₀ ⊕
-//! ipad) ‖ text))` (`VG.Spec.Hmac.hmacBlockKey`), keeping the two SHA-224
-//! streaming states (SHA-256's, from SHA-224's initial hash value). `init`
-//! and `finalize` are the one HMAC implementation for every streaming hash
-//! function, calling SHA-224's verified `vg_sha224_init` and SHA-256's
-//! verified `update` and `finalize` (and, on x86-64, x86 and AArch64,
+//! `vg_hmac_sha224_finalize` (contracts
+//! `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha224I`,
+//! `VG.Spec.Sha256.updateContract` and
+//! `VG.Spec.Hmac.Instance.finalizeContract`) compute HMAC with a key of any
+//! length, `H((K₀ ⊕ opad) ‖ H((K₀ ⊕ ipad) ‖ text))` (`VG.Spec.Hmac.hmac`),
+//! keeping the two SHA-224 streaming states (SHA-256's, from SHA-224's initial
+//! hash value). `init` and `finalize` are the one HMAC implementation for every
+//! streaming hash function, calling SHA-224's verified `vg_sha224_init` and
+//! SHA-256's verified `update` and `finalize` (and, on x86-64, x86 and AArch64,
 //! `compress`).
 //!
 //! On x86-64 and x86, they follow the implementation of SHA-256's streaming

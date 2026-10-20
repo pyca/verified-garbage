@@ -1,15 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVerified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseStaticCore
+public import VerifiedGarbage.Spec.MlDsa.Montgomery
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 
 @[expose] public section
 

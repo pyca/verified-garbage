@@ -1,23 +1,25 @@
 module
 
 import VerifiedGarbage.Proof.Dsa.X86_64.SetupChoice
-meta import VerifiedGarbage.Proof.Dsa.X86_64.SetupChoice
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
+import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Dsa.X86_64.Setup
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.SetupChoice
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Spec.Dsa
-meta import VerifiedGarbage.Spec.Dsa
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Setup
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.CrtMath
+meta import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-! # Constant-time Montgomery constants for padded DSA moduli -/
 

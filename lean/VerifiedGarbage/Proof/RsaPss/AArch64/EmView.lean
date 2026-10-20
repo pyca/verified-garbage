@@ -2,11 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Mgf
 public import VerifiedGarbage.Proof.RsaPss.EncBytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RSASSA-PSS on AArch64: the encoding's bytes

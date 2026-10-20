@@ -1,23 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Post
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Post
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPH
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPH
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPre
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPre
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
-meta import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 import VerifiedGarbage.Proof.Bignum.Amm52
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPH
+meta import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 meta import VerifiedGarbage.Proof.Bignum.Amm52
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPre
 
 /-!
 # RSA with AVX512_IFMA on x86-64: constant time, after the exponentiations

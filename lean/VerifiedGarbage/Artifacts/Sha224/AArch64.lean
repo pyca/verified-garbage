@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # SHA-224 (FIPS 180-4) on AArch64
@@ -20,12 +18,8 @@ writes its digest, is emitted with each compression function
 namespace VG.Artifacts.Sha224.AArch64
 
 def artifacts : List Artifact := [
-  { Spec.Sha256.init224Api with
-    target := AArch64.target
-    doc := Spec.Sha256.init224Api.doc
+  Spec.Sha256.init224Api.artifact AArch64.target {
     code := Impl.Sha256.AArch64.Stream.init224
-    contract := Spec.Sha256.init224Contract AArch64.abi
-    verified := Proof.Sha256.AArch64.Shared.init224
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Sha256.AArch64.Shared.init224 }]
 
 end VG.Artifacts.Sha224.AArch64

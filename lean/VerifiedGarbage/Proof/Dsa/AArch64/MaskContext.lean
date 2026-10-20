@@ -1,13 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Masks
+import VerifiedGarbage.Proof.Dsa.AArch64.Masks
 public import VerifiedGarbage.Proof.Dsa.AArch64.Return
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Acceptance-mask writes preserve reusable arithmetic state -/
 

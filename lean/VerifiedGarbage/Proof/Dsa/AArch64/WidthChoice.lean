@@ -1,12 +1,18 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.WidthMask
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.AArch64.WidthMask
+import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 
 /-! # Public selection of supported DSA modulus widths -/
 
@@ -76,12 +82,42 @@ theorem widthEither_ok {s : State} {q : Nat} (hq : q < 2 ^ 64)
   rw [← Bool.decide_or]
   exact congrArg mask (decide_eq_decide.mpr or_comm)
 
+/-- The legacy 160-bit subgroup extends the two FIPS 2048-bit cases. -/
+theorem width2048_ok {s : State} {q : Nat} (hq : q < 2 ^ 64)
+    (h8 : s.gpr .x8 = BitVec.ofNat 64 q) :
+    WP isa (.block Checks.width2048) s fun t =>
+      t.gpr .x3 = mask (decide (q = 20 ∨ q = 28 ∨ q = 32)) ∧
+      t.mem = s.mem ∧ Keep [.x3, .x4, .x11] s t := by
+  unfold Checks.width2048
+  rw [show Checks.widthMask 28 ++ ([mov .x11 .x3] : List Instr) ++ Checks.widthMask 32 ++
+      ([.logic .orr .x .x3 .x3 .x11] : List Instr) ++ ([mov .x11 .x3] : List Instr) ++ Checks.widthMask 20 ++
+      ([.logic .orr .x .x3 .x3 .x11] : List Instr) =
+      (Checks.widthMask 28 ++ ([mov .x11 .x3] : List Instr) ++ Checks.widthMask 32 ++
+        ([.logic .orr .x .x3 .x3 .x11] : List Instr)) ++
+      (([mov .x11 .x3] : List Instr) ++ Checks.widthMask 20 ++ ([.logic .orr .x .x3 .x3 .x11] : List Instr)) by
+        simp only [List.append_assoc]]
+  rw [WP.block_append_iff]
+  refine WP.mono (widthEither_ok hq h8) fun u ⟨hua, hum, hku⟩ => ?_
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono (WP.keep [.x11] (Q := fun v =>
+    v.gpr .x11 = mask (decide (q = 28 ∨ q = 32)) ∧ v.mem = u.mem)
+    (by brun [hua]) rfl rfl rfl) fun v ⟨⟨hvs, hvm⟩, hkv⟩ => ?_
+  rw [WP.block_append_iff]
+  have hv8 := ((hku.trans hkv).gpr .x8 (show Reg.x8 ∉ _ by decide)).trans h8
+  refine WP.mono (widthMask_ok (by decide) hq hv8) fun z ⟨hza, hzm, hkz⟩ => ?_
+  have hzs := (hkz.gpr .x11 (show Reg.x11 ∉ [Reg.x3, Reg.x4] by decide)).trans hvs
+  refine WP.mono (WP.keep [.x3] (Q := fun t =>
+    t.gpr .x3 = mask (decide (q = 20 ∨ q = 28 ∨ q = 32)) ∧ t.mem = z.mem) ?_ rfl rfl rfl)
+    fun t ⟨⟨ht, htm⟩, hkt⟩ =>
+      ⟨ht, htm.trans (hzm.trans (hvm.trans hum)),
+        (((hku.trans hkv).trans hkz).trans hkt).mono (by decide)⟩
+  brun [hza, hzs, mask_union, ← Bool.decide_or]
+
 abbrev widthChoice : Prog isa :=
   .ite (.zero .x .x6) (.block (Checks.widthMask 20))
     (.seq (.block [.subImm .x .x6 .x2 256])
       (.ite (.zero .x .x6)
-        (.block (Checks.widthMask 28 ++ ([mov .x11 .x3] : List Instr) ++ Checks.widthMask 32 ++
-          ([.logic .orr .x .x3 .x3 .x11] : List Instr)))
+        (.block Checks.width2048)
         (.seq (.block [.subImm .x .x6 .x2 384])
           (.ite (.zero .x .x6) (.block (Checks.widthMask 32)) (.block [movi .x3 0])))))
 
@@ -111,10 +147,10 @@ theorem widthChoice_ok {s : State} {p q : Nat} (hp : p < 2 ^ 64) (hq : q < 2 ^ 6
       · refine WP.ite true ?_ (fun _ => ?_) (fun h => Bool.noConfusion h)
         · change some (u.gpr .x6 == (0#64)) = some true
           simp only [huz, h256, decide_true]
-        · have he : Spec.Dsa.supportedSizes (8 * p) (8 * q) ↔ q = 28 ∨ q = 32 := by
+        · have he : Spec.Dsa.supportedSizes (8 * p) (8 * q) ↔ q = 20 ∨ q = 28 ∨ q = 32 := by
             unfold Spec.Dsa.supportedSizes; omega
           rw [decide_eq_decide.mpr he]
-          exact WP.mono (widthEither_ok hq hu8) fun t ⟨ht, hm, hk⟩ =>
+          exact WP.mono (width2048_ok hq hu8) fun t ⟨ht, hm, hk⟩ =>
             ⟨ht, hm.trans hum, (hku.trans hk).mono (by decide)⟩
       · refine WP.ite false ?_ (fun h => Bool.noConfusion h) (fun _ => ?_)
         · change some (u.gpr .x6 == (0#64)) = some false

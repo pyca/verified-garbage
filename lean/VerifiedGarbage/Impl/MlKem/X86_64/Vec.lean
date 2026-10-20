@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Common
-public import VerifiedGarbage.Spec.MlKem
 
 /-!
 # ML-KEM on x86-64: arithmetic modulo `q` in the words of SSE registers
@@ -74,6 +73,12 @@ def vbfly : List Instr :=
 def vibfly : List Instr :=
   (xmov .xmm3 .xmm1 :: xb .psubw .xmm3 .xmm0 :: xb .paddw .xmm0 .xmm1 :: vcsub .xmm0 .xmm2) ++
     vmont .xmm3 .xmm13 .xmm2 ++ vcadd .xmm3 .xmm2
+
+/-- The butterflies of Algorithm 10 without reductions, for the lazy layers:
+`xmm0 ← xmm0 + xmm1` and `xmm3 ← ζ · (xmm1 - xmm0)` by Montgomery
+multiplication, in `(-q, q)`. -/
+def vibflyL : List Instr :=
+  [xmov .xmm3 .xmm1, xb .psubw .xmm3 .xmm0, xb .paddw .xmm0 .xmm1] ++ vmont .xmm3 .xmm13 .xmm2
 
 /-! ## MXCSR -/
 

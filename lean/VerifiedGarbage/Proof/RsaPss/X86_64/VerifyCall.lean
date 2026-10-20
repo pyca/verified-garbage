@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFrame
+public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Order.Defs.PartialOrder
+import Mathlib.Tactic.Set
+import Mathlib.Data.Int.GCD
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
 
 /-!
 # RSASSA-PSS verification on x86-64: the call of `vg_rsa_public_checked`
@@ -123,7 +125,7 @@ theorem pub_pre {s t : State} (hp : VPre G s) (hsp : t.gpr .rsp = fb s)
     (hp.dKs.sub_left sRet).sub_right sI, hp.dKn.sub_left sRet, hp.dKe.sub_left sRet, dKsg.sub_left sRet,
     (hp.dKs.sub_left sRet).sub_right sR, dRA,
     by rw [toNat_off (by omega)]; omega, hp.wN, hp.wE, wSg, by rw [toNat_off (by omega), hsc]; omega,
-    ⟨hk1, hk2⟩, trivial, trivial, hp.L1, hp.L2, by unfold Spec.Rsa.scratchWords; rw [hsc]; omega⟩
+    ⟨hk1, hk2⟩, trivial, trivial, hp.L1, hp.L2, by unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords; rw [hsc]; omega⟩
 
 theorem pub_covers {s t : State} (hp : VPre G s) (hrd : t.rd = s.rd) (hwr : t.wr = frR s :: s.wr) :
     Covers (vRd s ++ vWr s) (t.rd ++ t.wr) ∧ Covers (vWr s) t.wr := by

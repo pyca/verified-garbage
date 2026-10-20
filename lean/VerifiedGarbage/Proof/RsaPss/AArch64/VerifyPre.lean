@@ -1,14 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.RsaPss.Precomputed
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyLogic
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignPre
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RSASSA-PSS verification on AArch64: the precondition
@@ -68,7 +64,7 @@ structure PreV (D K : Nat) (s : State) : Prop where
   e1 : 1 ≤ (s.gpr .x3).toNat
   e2 : (s.gpr .x3).toNat ≤ (s.gpr .x1).toNat
   sgl : (s.gpr .x6).toNat = (s.gpr .x1).toNat
-  hs : 16 * (s.gpr .x1).toNat + 32 + 1024 ≤ (stackArg s 2).toNat
+  hs : 8 * (((s.gpr .x1).toNat + 7) / 8) + 48 + 1024 ≤ (stackArg s 2).toNat
   hl : (stackArg s 4).toNat = Spec.Rsa.precomputedWords (s.gpr .x1).toNat
 
 theorem preV_of (G : Spec.Mgf1.Hash) {K : Nat} {s : State}
@@ -84,7 +80,7 @@ theorem preV_of (G : Spec.Mgf1.Hash) {K : Nat} {s : State}
   rw [← e] at sp1 kn ke kdg ksg ks kP ka
   exact ⟨sp1, sp2, by rw [hrd]; exact Covers.refl _, by rw [hwr]; simp, hwr, ns, es, dgs, sgs, sP, sa, kn, ke,
     kdg, ksg, ks, kP, ka, wn, we, wdg, wsg, ws, wP, k1, k2, e1, e2, sgl,
-    by unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hs; omega, hl⟩
+    by unfold Spec.RsaPss.publicScratchWords Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords at hs; omega, hl⟩
 
 theorem kb_toNat {D K : Nat} {s : State} (hp : PreV D K s) :
     (kb K s).toNat + stk K = s.sp.toNat ∧ s.sp.toNat + 40 ≤ 2 ^ 64 := by

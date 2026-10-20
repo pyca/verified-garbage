@@ -1,16 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.WindowLoop
-public import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Ed25519.X86.Verify
+import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
+import VerifiedGarbage.Proof.Ed25519.X86.WindowTables
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
+import VerifiedGarbage.Proof.Ed25519.Window
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Verification's equation from the windows

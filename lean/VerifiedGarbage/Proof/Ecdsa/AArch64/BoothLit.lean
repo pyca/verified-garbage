@@ -1,23 +1,25 @@
 module
 
 public import VerifiedGarbage.Impl.P256.Booth
-meta import VerifiedGarbage.Impl.P256.Booth
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
-import VerifiedGarbage.Proof.EcKey.AArch64.Lit
-meta import VerifiedGarbage.Proof.EcKey.AArch64.Lit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombMixed
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombMixed
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombOut
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombOut
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
+import VerifiedGarbage.Proof.EcKey.AArch64.Lit
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+meta import VerifiedGarbage.Impl.P256.Booth
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombMixed
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombOut
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
+meta import VerifiedGarbage.Proof.EcKey.AArch64.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 
 /-! The comb that signing and public keys share is checked once, and their
 literals read it.

@@ -26,8 +26,7 @@ use crate::arch::blowfish_ofb::vg_blowfish_ofb;
 use crate::zeroize::zeroize;
 
 /// The key length is outside 4..=56 bytes (32 to 448 bits).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct InvalidKeyLength;
+pub use crate::error::InvalidKeyLength;
 
 /// An expanded Blowfish key for OFB, whose encryption and decryption are the
 /// same operation.

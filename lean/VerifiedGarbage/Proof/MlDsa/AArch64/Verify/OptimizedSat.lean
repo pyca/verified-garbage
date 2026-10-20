@@ -1,19 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedPre
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedSat
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Lay
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Inst
 
 @[expose] public section
 

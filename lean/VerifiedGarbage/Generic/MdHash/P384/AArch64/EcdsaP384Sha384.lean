@@ -1,12 +1,13 @@
 module
 
-import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.P384.Comb7
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P384Sha384
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Verified
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-384 with HMAC-SHA-384 on AArch64
@@ -32,23 +33,18 @@ namespace VG.Generic.MdHash.P384.AArch64.EcdsaP384Sha384
 open VG.Proof.Ecdsa.Rfc6979.AArch64 (cfgOf signNotes)
 open VG.Proof.Ecdsa.Rfc6979.AArch64.P384Sha384 (pack sign_verified)
 
-def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P384.curve) :
+def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) :
     List Artifact :=
   match v.sha384 with
   | none => []
   | some c => [
-    { Spec.Ecdsa.Rfc6979.P384Sha384.signApi with
-      name := Spec.Ecdsa.Rfc6979.P384Sha384.signApi.name ++ c.suffix
-      target := AArch64.target
-      doc := Spec.Ecdsa.Rfc6979.P384Sha384.signApi.doc
-        (notes := [signNotes (cfgOf (pack h.law h.inv (Proof.P384.combOk7 h.law) c)).H 48 Spec.Ecdsa.P384.signApi.name])
+    Spec.Ecdsa.Rfc6979.P384Sha384.signApi.artifact AArch64.target {
+      suffix := c.suffix
+      notes := [signNotes (cfgOf (pack h.law h.inv (Proof.P384.combOk7 h.law) c)).H 48 Spec.Ecdsa.P384.signApi.name]
       code := (cfgOf (pack h.law h.inv (Proof.P384.combOk7 h.law) c)).sign
       consts := Impl.Ecdsa.AArch64.p384.combConsts
-      contract := Spec.Ecdsa.Rfc6979.P384Sha384.inst.signContract
-        (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p384.combConsts) 256
       stack := 256
       verified := sign_verified h.law h.inv (Proof.P384.combOk7 h.law) c
-      spSafe := Code.all_of_forall (fun _ => rfl) _
       features := c.features }]
 
 end VG.Generic.MdHash.P384.AArch64.EcdsaP384Sha384

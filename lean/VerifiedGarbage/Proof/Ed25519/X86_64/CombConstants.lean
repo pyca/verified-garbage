@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.WindowConstants
-public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Ed25519.X86_64.CombTable
+import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+import Mathlib.Tactic.Abel
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # The comb's tables represent `[k 1024^j]B`, `combG` represents `[G]B`, and `combStart` `[G']B`

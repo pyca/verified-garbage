@@ -1,27 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.X86_64.CbcVerified
-meta import VerifiedGarbage.Proof.Cast5.X86_64.CbcVerified
-public import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
-meta import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
-import VerifiedGarbage.Proof.Cast5.X86_64.EcbVerified
-meta import VerifiedGarbage.Proof.Cast5.X86_64.EcbVerified
+public import VerifiedGarbage.Proof.Cast5.X86_64.ModeCore
+public import VerifiedGarbage.Proof.Cast5.X86_64.EcbVerified
 public import VerifiedGarbage.Proof.Cast5.ModeScratch
-meta import VerifiedGarbage.Proof.Cast5.ModeScratch
-public import VerifiedGarbage.Proof.Modes.X86_64.Fb
-meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
+public import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+import VerifiedGarbage.Proof.Modes.X86_64.Fb
 import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
-meta import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchConsts
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchConsts
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchConsts
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
+meta import VerifiedGarbage.Proof.Cast5.X86_64.ModeCore
+meta import VerifiedGarbage.Proof.Cast5.X86_64.EcbVerified
+meta import VerifiedGarbage.Proof.Cast5.ModeScratch
+meta import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
+meta import VerifiedGarbage.Impl.StackScratch.X86_64
+meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
+meta import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchConsts
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
 
 /-!
 # CAST5-OFB and -CFB64 on x86-64 meet their contracts
@@ -48,6 +46,25 @@ namespace VG.Proof.Cast5.X86_64
 open VG VG.X86_64 VG.Impl.Cast5.X86_64
 open VG.Impl.Cast5 (s1234Sym s1234 ecbConsts)
 open VG.Proof.Cast5.X86_64.Mode (dirCoreSpec TabAt dirCore_bw)
+
+/-- The `n` blocks at `p`, as the modes read them. -/
+theorem blocksOf_eq (m : Mem) (p : Addr) (n : Nat) :
+    VG.Proof.Modes.blocksOf 8 m p n = Spec.Cast5.cbcBlocksAt m p n :=
+  (Proof.Cast5.cbcBlocksAt_eq m p n).symm
+
+/-- The data, in blocks. -/
+abbrev dataOf (s : State) (m : Mem) : List (List Byte) :=
+  Spec.Cast5.cbcBlocksAt m (s.gpr .rcx) (s.gpr .r8).toNat
+/-- The chaining value. -/
+abbrev ivOf (s : State) : List Byte := Spec.Aes.bytesAt s.mem (s.gpr .rdx) 8
+/-- The subkeys. -/
+abbrev keyOf (s : State) : Spec.Cast5.Schedule := Spec.Cast5.scheduleAt s.mem (s.gpr .rdi)
+
+/-- The public arguments and the table's address. -/
+def cbcPub (s₁ s₂ : State) : Prop :=
+  s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
+    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧
+    s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.syms s1234Sym = s₂.syms s1234Sym
 
 /-- The facts of the feedback modes' precondition on this target, with the
 working space at `r9`. -/
@@ -219,6 +236,7 @@ theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : FPre s₀) :
       by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq], hp.rounds, hp.tabAt, fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact hp.dTS⟩ keepsIv_core)
     fun s' ⟨hcs, hdata, hiv, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, by rw [dirCore_bw] at hdata hiv; exact ⟨hdata, hiv⟩⟩
+  rw [VG.Proof.Modes.X86_64.stkList_eq_nil rfl, List.append_nil] at hf
   refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl

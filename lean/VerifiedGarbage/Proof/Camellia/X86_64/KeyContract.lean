@@ -1,17 +1,17 @@
 module
 
 public import VerifiedGarbage.Impl.Camellia.X86_64.ExpandKey
-meta import VerifiedGarbage.Impl.Camellia.X86_64.ExpandKey
-public import VerifiedGarbage.Spec.Camellia.Contract
-meta import VerifiedGarbage.Spec.Camellia.Contract
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Camellia.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Impl.Camellia.X86_64.ExpandKey
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Camellia.X86_64.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-!
 # The Camellia key schedule on x86-64: contract and constant time

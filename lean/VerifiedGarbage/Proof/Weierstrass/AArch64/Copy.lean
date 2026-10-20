@@ -1,14 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
-public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+public import VerifiedGarbage.Impl.Weierstrass.AArch64
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # Short Weierstrass curves on AArch64: copies, selections and constants

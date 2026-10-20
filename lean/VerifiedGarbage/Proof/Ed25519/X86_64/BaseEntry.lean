@@ -1,13 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowEntry
 import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddMemory
 public import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
+public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Verification's static odd multiples of `B`

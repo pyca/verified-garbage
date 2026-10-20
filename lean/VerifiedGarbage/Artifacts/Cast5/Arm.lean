@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Cast5.Arm.EcbVerified
 public import VerifiedGarbage.Proof.Cast5.Arm.KeyVerified
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! CAST5 key expansion and ECB on baseline ARMv7. -/
 
@@ -32,34 +32,23 @@ def keyNote : String :=
   `key_len` decides the number of bytes copied."
 
 def artifacts : List Artifact := [
-  { Spec.Cast5.expandKeyApi with
-    target := Arm.target
-    doc := Spec.Cast5.expandKeyApi.doc (notes := [keyNote])
+  Spec.Cast5.expandKeyApi.artifact Arm.target {
+    notes := [keyNote]
     consts := Impl.Cast5.keyConsts
     code := Impl.Cast5.Arm.expandKey
-    contract := Spec.Cast5.expandKeyContract (Arm.abi.withConsts Impl.Cast5.keyConsts)
     stack := 0
-    verified := Proof.Cast5.Arm.expandKey_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Cast5.ecbEncryptApi with
-    target := Arm.target
-    doc := Spec.Cast5.ecbEncryptApi.doc (notes := [scanNote])
+    verified := Proof.Cast5.Arm.expandKey_verified },
+  Spec.Cast5.ecbEncryptApi.artifact Arm.target {
+    notes := [scanNote]
     consts := Impl.Cast5.ecbConsts
     code := Impl.Cast5.Arm.ecbEncrypt
-    contract := Spec.Cast5.ecbEncryptContract (Arm.abi.withConsts Impl.Cast5.ecbConsts)
     stack := 0
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Cast5.ecbEncryptContract Spec.Cast5.ecbContract; rfl⟩)
-    verified := Proof.Cast5.Arm.ecbEncrypt_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Cast5.ecbDecryptApi with
-    target := Arm.target
-    doc := Spec.Cast5.ecbDecryptApi.doc (notes := [scanNote])
+    verified := Proof.Cast5.Arm.ecbEncrypt_verified },
+  Spec.Cast5.ecbDecryptApi.artifact Arm.target {
+    notes := [scanNote]
     consts := Impl.Cast5.ecbConsts
     code := Impl.Cast5.Arm.ecbDecrypt
-    contract := Spec.Cast5.ecbDecryptContract (Arm.abi.withConsts Impl.Cast5.ecbConsts)
     stack := 0
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Cast5.ecbDecryptContract Spec.Cast5.ecbContract; rfl⟩)
-    verified := Proof.Cast5.Arm.ecbDecrypt_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Cast5.Arm.ecbDecrypt_verified }]
 
 end VG.Artifacts.Cast5.Arm

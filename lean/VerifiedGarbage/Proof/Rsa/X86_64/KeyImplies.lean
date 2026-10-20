@@ -2,14 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCode
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-public import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 public import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-!
 # `vg_rsa_check_key` on x86-64: the shared contract

@@ -1,17 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # ChaCha20 keystream XOR on x86-64 with AVX2

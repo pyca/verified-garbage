@@ -1,10 +1,35 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
 import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Sign
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inst
+public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
+public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+public import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+public import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseCCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseDCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseKCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.SignCT
+public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseCCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseDCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseKCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.SignCT
+import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 
 /-!
 # ML-DSA (FIPS 204) on x86-64: signing
@@ -31,33 +56,27 @@ def notes : List String :=
     is the only place an iteration's outcome affects timing."]
 
 def artifacts (v : ArithImpl) : List Artifact := [
-  { Spec.MlDsa.sign44Api with
-    name := Spec.MlDsa.sign44Api.name ++ v.code.sfx
+  Spec.MlDsa.sign44Api.artifact X86_64.target {
+    suffix := v.code.sfx
     features := v.features
-    target := X86_64.target
-    doc := Spec.MlDsa.sign44Api.doc (notes := notes)
+    notes := notes
     code := Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa44
-    contract := Spec.MlDsa.signContract Spec.MlDsa.mlDsa44 X86_64.abi 32
     stack := 32
     verified := Proof.MlDsa.X86_64.Sign.sign_verified' v (.inl rfl)
     spSafe := Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inl rfl) },
-  { Spec.MlDsa.sign65Api with
-    name := Spec.MlDsa.sign65Api.name ++ v.code.sfx
+  Spec.MlDsa.sign65Api.artifact X86_64.target {
+    suffix := v.code.sfx
     features := v.features
-    target := X86_64.target
-    doc := Spec.MlDsa.sign65Api.doc (notes := notes)
+    notes := notes
     code := Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa65
-    contract := Spec.MlDsa.signContract Spec.MlDsa.mlDsa65 X86_64.abi 32
     stack := 32
     verified := Proof.MlDsa.X86_64.Sign.sign_verified' v (.inr (.inl rfl))
     spSafe := Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inr (.inl rfl)) },
-  { Spec.MlDsa.sign87Api with
-    name := Spec.MlDsa.sign87Api.name ++ v.code.sfx
+  Spec.MlDsa.sign87Api.artifact X86_64.target {
+    suffix := v.code.sfx
     features := v.features
-    target := X86_64.target
-    doc := Spec.MlDsa.sign87Api.doc (notes := notes)
+    notes := notes
     code := Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa87
-    contract := Spec.MlDsa.signContract Spec.MlDsa.mlDsa87 X86_64.abi 32
     stack := 32
     verified := Proof.MlDsa.X86_64.Sign.sign_verified' v (.inr (.inr rfl))
     spSafe := Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inr (.inr rfl)) }]

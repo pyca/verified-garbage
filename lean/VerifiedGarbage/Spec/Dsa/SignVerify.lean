@@ -34,9 +34,9 @@ open VG.Spec.Rsa (bytesAt)
 /-- The least working space, in `u64`s, for a `p` of `pLen` octets. -/
 def scratchWords (pLen : Nat) : Nat := 16 * pLen
 
-/-- Supported external widths, in bytes. 224-bit q is import-only. -/
+/-- Supported external widths, in bytes. (2048,160) and (2048,224) are import-only. -/
 def lengthsValid (pLen qLen : Nat) : Prop :=
-  (pLen = 128 ∧ qLen = 20) ∨ (pLen = 256 ∧ (qLen = 28 ∨ qLen = 32)) ∨
+  (pLen = 128 ∧ qLen = 20) ∨ (pLen = 256 ∧ (qLen = 20 ∨ qLen = 28 ∨ qLen = 32)) ∨
     (pLen = 384 ∧ qLen = 32)
 
 instance (pLen qLen : Nat) : Decidable (lengthsValid pLen qLen) := by
@@ -140,7 +140,7 @@ def signApi : Api where
     not primality. Caller must assure domain validity and supply fresh independent \
     nonces. Timing may depend on public p,q,g,y and success, not otherwise on \
     x, nonce or digest. Contract: `VG.Spec.Dsa.signContract`."
-  safety := ["(p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).",
+  safety := ["(p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).",
     "key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.",
     "scratch_len must be at least 16*p_len words. Scratch may contain secrets on return."]
 
@@ -156,7 +156,7 @@ def verifyApi : Api where
     not primality; caller must assure domain validity. Timing may depend on \
     p,q,g,y and the result, not otherwise on signature or digest. \
     Contract: `VG.Spec.Dsa.verifyContract`."
-  safety := ["(p_len, q_len) must be (128,20), (256,28), (256,32), or (384,32).",
+  safety := ["(p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).",
     "key_len must be 3*p_len + q_len; signature_len must be 2*q_len.",
     "scratch_len must be at least 16*p_len words. Scratch contents are unspecified on return."]
 

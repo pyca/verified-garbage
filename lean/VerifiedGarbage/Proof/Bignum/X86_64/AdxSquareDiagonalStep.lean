@@ -1,10 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonal
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonal
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
 
 /-! Storing a pair of words after the square's diagonal addition. -/
 
@@ -29,13 +31,24 @@ theorem write2 (m : Mem) (B : Addr) (d : Nat) (x y : BitVec 64) (hd : d + 16 ≤
   refine ⟨?_, (ho.mono (Nat.le_refl _) (by omega)).trans (ho'.mono (by omega) (by omega))⟩
   rw [wv2, ho'.word (by omega) (by omega), word_writeW_self, word_writeW_self]
 
+/-- A diagonal step's core: `rbx:r12:r11 = 2 (r11 + 2⁶⁴ r12) + rdx² + r15`,
+as `diagonalCore` computes it. -/
+structure CoreOk (core : List Instr) : Prop where
+  ok : ∀ s : State, WP isa (.block core) s fun t =>
+    (t.gpr .r11).toNat + 2 ^ 64 * (t.gpr .r12).toNat + 2 ^ 128 * (t.gpr .rbx).toNat =
+      2 * ((s.gpr .r11).toNat + 2 ^ 64 * (s.gpr .r12).toNat) +
+        (s.gpr .rdx).toNat * (s.gpr .rdx).toNat + (s.gpr .r15).toNat ∧
+    Keeps [.rsi, .rbx, .rax, .rcx, .r11, .r12] s t
+
+theorem diagonalCore_coreOk : CoreOk AdxSquare.diagonalCore := ⟨diagonalCore_ok⟩
+
 /-- One pair of stored words, the exact carry, and public loop counts. -/
-theorem diagonalStep_ok {s : State} {B : Addr} {Z A eb i w : Nat} (hs : Scr s B Z)
+theorem diagonalStepWith_ok {core : List Instr} (hc : CoreOk core) {s : State} {B : Addr} {Z A eb i w : Nat} (hs : Scr s B Z)
     (h8 : s.gpr .r8 = off B A) (h9 : s.gpr .r9 = off B eb)
     (hbp : s.gpr .rbp = BitVec.ofNat 64 i) (h14 : s.gpr .r14 = BitVec.ofNat 64 (2 * i))
     (h10 : s.gpr .r10 = BitVec.ofNat 64 w) (hi : i < w) (hw : w < 2 ^ 60)
     (hA : A + 16 * (i + 1) ≤ Z) (hb : eb + 8 * (i + 1) ≤ Z) :
-    WP isa AdxSquare.diagonalStep s fun t =>
+    WP isa (AdxSquare.diagonalStepWith core) s fun t =>
       wv t.mem B (A + 16 * i) 2 + 2 ^ 128 * (t.gpr .r15).toNat =
         2 * wv s.mem B (A + 16 * i) 2 +
           (word s.mem B (eb + 8 * i)).toNat * (word s.mem B (eb + 8 * i)).toNat + (s.gpr .r15).toNat ∧
@@ -61,9 +74,9 @@ theorem diagonalStep_ok {s : State} {B : Addr} {Z A eb i w : Nat} (hs : Scr s B 
     xrun [State.ea, ix, h8, h9, hbp, h14, ad, ad', src,
       hs.ld (show eb + 8 * i + 8 ≤ Z by omega), hs.ld (show A + 16 * i + 8 ≤ Z by omega),
       hs.ld (show A + 16 * i + 8 + 8 ≤ Z by omega)]
-  unfold AdxSquare.diagonalStep
+  unfold AdxSquare.diagonalStepWith
   refine WP.seq (WP.mono head fun s₁ ⟨hdx, h11, h12, hm₁, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (diagonalCore_ok s₁) fun s₂ ⟨hv, k₂⟩ => ?_)
+  refine WP.seq (WP.mono (hc.ok s₁) fun s₂ ⟨hv, k₂⟩ => ?_)
   have k12 := k₁.trans k₂.keep
   have h8₂ : s₂.gpr .r8 = off B A := (k12.gpr (by decide)).trans h8
   have h14₂ : s₂.gpr .r14 = BitVec.ofNat 64 (2 * i) := (k12.gpr (by decide)).trans h14

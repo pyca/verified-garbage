@@ -1,13 +1,17 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Args
 
-public import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
+import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
+import VerifiedGarbage.Proof.AesOcb.AArch64.NonceBlock
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+meta import VerifiedGarbage.Proof.AesOcb.AArch64.Args
 meta import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
-import VerifiedGarbage.Proof.AesOcb.AArch64.Nonce
-meta import VerifiedGarbage.Proof.AesOcb.AArch64.Nonce
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.AesOcb.AArch64.NonceBlock
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Impl.AesOcb.AArch64
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # AES-OCB on AArch64: `Offset_0` is constant time

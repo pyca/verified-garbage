@@ -1,14 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyCompute
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.AcceptedSpec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.AcceptedSpec
 import Mathlib.Basic.IsEmpty.Basic
 import VerifiedGarbage.Proof.Dsa.SizeBounds
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import Mathlib.Tactic.Convert
 
 /-! # The verification mask implements the packed DSA verification spec -/
 

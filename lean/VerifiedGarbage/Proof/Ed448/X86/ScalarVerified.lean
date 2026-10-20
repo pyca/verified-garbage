@@ -1,25 +1,59 @@
 module
 
-import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
 meta import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarMulAddMain
 meta import VerifiedGarbage.Proof.Ed448.X86.ScalarMulAddMain
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
 meta import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Ed448.Contract
-meta import VerifiedGarbage.Spec.Ed448.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed448.ScalarWords
+import VerifiedGarbage.Proof.Ed448.X86.ScalarMulAdd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.X25519.X86.Basic
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.X448.X86.Carry
+import VerifiedGarbage.Proof.X448.X86.Columns
+import VerifiedGarbage.Proof.X448.X86.Copy
+import VerifiedGarbage.Proof.X448.X86.FnVerified
+import VerifiedGarbage.Proof.X448.X86.Frame
+import VerifiedGarbage.Proof.X448.X86.Freeze
 import VerifiedGarbage.Proof.X448.X86.Ops
+import VerifiedGarbage.Proof.X448.X86.Restore
+import VerifiedGarbage.Proof.X448.X86.Select
+import VerifiedGarbage.Proof.X448.X86.Small
+import VerifiedGarbage.Proof.X448.X86.Step
+meta import VerifiedGarbage.Proof.Ed448.ScalarWords
+meta import VerifiedGarbage.Proof.Ed448.X86.ScalarMulAdd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.X25519.X86.Basic
+meta import VerifiedGarbage.Proof.X448.Bytes
+meta import VerifiedGarbage.Proof.X448.X86.Carry
+meta import VerifiedGarbage.Proof.X448.X86.Columns
+meta import VerifiedGarbage.Proof.X448.X86.Copy
+meta import VerifiedGarbage.Proof.X448.X86.FnVerified
+meta import VerifiedGarbage.Proof.X448.X86.Frame
+meta import VerifiedGarbage.Proof.X448.X86.Freeze
 meta import VerifiedGarbage.Proof.X448.X86.Ops
+meta import VerifiedGarbage.Proof.X448.X86.Restore
+meta import VerifiedGarbage.Proof.X448.X86.Select
+meta import VerifiedGarbage.Proof.X448.X86.Small
+meta import VerifiedGarbage.Proof.X448.X86.Step
 
 /-!
 # Ed448 scalar arithmetic on x86 (32-bit): `Verified`

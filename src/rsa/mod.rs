@@ -16,7 +16,10 @@
 //! the input. On a CPU with BMI2, ADX and AVX2 (as for the private-key
 //! operation below), `vg_rsa_public_precompute_adx` and
 //! `vg_rsa_public_precomputed_checked_adx`, with the same contracts, do the
-//! same with a faster Montgomery multiplication.
+//! same with a faster Montgomery multiplication; on one with AVX512_IFMA and
+//! AVX512VL too, `vg_rsa_public_precomputed_checked_ifma` computes
+//! `input^65537 mod n` for a 2048-, 3072- or 4096-bit modulus with
+//! AVX512_IFMA's multiplications, and does as the `_adx` function otherwise.
 //!
 //! The private-key operation, with a key in the Chinese remainder form
 //! `(p, q, dP, dQ, qInv)` (§3.2) and its public exponent `e`, is the verified
@@ -60,7 +63,12 @@
 //! scheme.
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64"),
+    any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "arm"
+    ),
     feature = "alloc"
 ))]
 
@@ -79,12 +87,27 @@ use crate::arch::rsa::vg_rsa_public_precomputed_checked;
 use crate::arch::rsa::{
     VG_RSA_PRIVATE_CHECKED_ADX_FEATURES, VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES,
     VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES, VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
-    VG_RSA_RECOVER_PRIMES_ADX_FEATURES, vg_rsa_public_precomputed_checked_adx,
+    VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_IFMA_FEATURES, VG_RSA_RECOVER_PRIMES_ADX_FEATURES,
+    vg_rsa_public_precomputed_checked_adx, vg_rsa_public_precomputed_checked_ifma,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_keygen::VG_RSA_KEYGEN_CANDIDATE_ADX_FEATURES;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_pkcs1_sig::{VG_RSA_PKCS1_SIGN_ADX_FEATURES, VG_RSA_PKCS1_SIGN_IFMA_FEATURES};
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+use crate::arch::{
+    rsa::VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES, rsa_keygen::VG_RSA_KEYGEN_CANDIDATE_UMAAL_FEATURES,
+    rsa_pkcs1_sig::VG_RSA_PKCS1_SIGN_UMAAL_FEATURES,
+};
 use crate::cpu::{Features, detected};
 
 /// The implementations of `vg_rsa_public_precompute`,
@@ -100,10 +123,26 @@ pub(crate) enum Backend {
     /// `adox`, and the private-key operation's table read with AVX2.
     #[cfg(target_arch = "x86_64")]
     Adx,
-    /// `Adx`, and for the private-key operation, AVX512_IFMA's
-    /// multiplications for 2048-, 3072- and 4096-bit keys.
+    /// `Adx`, and AVX512_IFMA's multiplications for 2048-, 3072- and
+    /// 4096-bit keys: for the private-key operation, and for the public-key
+    /// operation with `e = 65537`.
     #[cfg(target_arch = "x86_64")]
     Ifma,
+    /// ARMv7's `umaal` for each word of a Montgomery row, in the
+    /// private-key operation and the Miller–Rabin rounds of key generation
+    /// (the public-key operation and the other functions run the
+    /// baseline's).
+    #[cfg(all(
+        target_arch = "arm",
+        any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        )
+    ))]
+    Umaal,
 }
 
 impl Backend {
@@ -118,6 +157,7 @@ impl Backend {
             && f.contains(VG_RSA_KEYGEN_CANDIDATE_ADX_FEATURES);
         if adx
             && f.contains(VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES)
+            && f.contains(VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_IFMA_FEATURES)
             && f.contains(VG_RSA_PKCS1_SIGN_IFMA_FEATURES)
         {
             Backend::Ifma
@@ -129,10 +169,47 @@ impl Backend {
     }
 
     /// The best implementation a CPU with the features `f` can run: on
-    /// AArch64, the baseline is the only one.
-    #[cfg(target_arch = "aarch64")]
+    /// i686, AArch64, and ARMv7 where `umaal` is not detected, the baseline
+    /// is the only one.
+    #[cfg(any(
+        target_arch = "x86",
+        target_arch = "aarch64",
+        all(
+            target_arch = "arm",
+            not(any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            ))
+        )
+    ))]
     pub(crate) fn select(_f: Features) -> Backend {
         Backend::Baseline
+    }
+
+    /// The best implementation a CPU with the features `f` can run, on
+    /// ARMv7.
+    #[cfg(all(
+        target_arch = "arm",
+        any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        )
+    ))]
+    pub(crate) fn select(f: Features) -> Backend {
+        if f.contains(VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES)
+            && f.contains(VG_RSA_PKCS1_SIGN_UMAAL_FEATURES)
+            && f.contains(VG_RSA_KEYGEN_CANDIDATE_UMAAL_FEATURES)
+        {
+            Backend::Umaal
+        } else {
+            Backend::Baseline
+        }
     }
 }
 
@@ -186,6 +263,13 @@ impl core::error::Error for Error {}
 /// modulus (`VG.Spec.Rsa.scratchWords`).
 pub(crate) fn scratch_words(n_len: usize) -> usize {
     16 * n_len + 32
+}
+
+/// The words of working space the public-key operation and its
+/// precomputation need for an `n_len`-byte modulus
+/// (`VG.Spec.Rsa.publicScratchWords`).
+pub(crate) fn public_scratch_words(n_len: usize) -> usize {
+    8 * n_len.div_ceil(8) + 48
 }
 
 /// `x` without its leading zero bytes.
@@ -242,7 +326,7 @@ impl PublicKey {
     }
 
     /// The values of `n` (`VG.Spec.Rsa.publicPrecompute`), computed in
-    /// `scratch` (at least `scratch_words(n_len)` words, left holding only
+    /// `scratch` (at least `public_scratch_words(n_len)` words, left holding only
     /// values of `n`) at the key's first operation.
     pub(crate) fn pre(&self, scratch: &mut [u64]) -> &[u64] {
         self.pre.get(&self.n, scratch)
@@ -262,20 +346,33 @@ impl PublicKey {
         if input.len() != k || out.len() != k {
             return Err(Error::InvalidLength);
         }
-        let mut scratch = vec![0u64; scratch_words(k)];
+        let mut scratch = vec![0u64; public_scratch_words(k)];
         let pre = self.pre(&mut scratch);
         let f = match Backend::select(detected()) {
             Backend::Baseline => vg_rsa_public_precomputed_checked,
             // `select` chose it because the CPU has the features it needs.
             #[cfg(target_arch = "x86_64")]
-            Backend::Adx | Backend::Ifma => vg_rsa_public_precomputed_checked_adx,
+            Backend::Adx => vg_rsa_public_precomputed_checked_adx,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Ifma => vg_rsa_public_precomputed_checked_ifma,
+            #[cfg(all(
+                target_arch = "arm",
+                any(
+                    target_os = "linux",
+                    target_os = "android",
+                    target_os = "freebsd",
+                    target_os = "netbsd",
+                    target_os = "openbsd"
+                )
+            ))]
+            Backend::Umaal => vg_rsa_public_precomputed_checked,
         };
         // SAFETY: each pointer is valid for its length (`out` for writes,
         // `scratch` too), and none overlaps another or wraps around, as they
         // are distinct Rust allocations; `PublicKey::new` and the check above
         // give `64 ≤ out_len ≤ 1024`, `input_len = out_len`,
         // `pre_len = 2 ⌈out_len / 8⌉`, `1 ≤ e_len ≤ 5 ≤ out_len`, and
-        // `scratch_len = 16 out_len + 32`; `pre` holds what
+        // `scratch_len = 8 ⌈out_len / 8⌉ + 48`; `pre` holds what
         // `vg_rsa_public_precompute` (or its variant, with the same contract)
         // wrote for the modulus, returning 1; and the CPU has the features of
         // the function `select` chose.
@@ -312,6 +409,18 @@ pub use privatekey::PrivateKey;
 pub(crate) mod tests {
     use super::*;
     use alloc::string::ToString;
+
+    #[test]
+    fn public_scratch_within_scratch() {
+        // `VG.Proof.Rsa.publicScratch_le`: over every modulus length the
+        // functions accept, the public-key operation's working space is no
+        // more than the private-key operation's.
+        for n_len in MIN_MODULUS_LEN..=MAX_MODULUS_LEN {
+            assert!(public_scratch_words(n_len) <= scratch_words(n_len));
+        }
+        assert_eq!(public_scratch_words(256), 8 * 32 + 48);
+        assert_eq!(public_scratch_words(257), 8 * 33 + 48);
+    }
 
     /// The CRT form `[n, p, q, dP, dQ, qInv]` of a key whose values match
     /// each other for `e = 3`, but whose factors are not prime: `p = 2^(8a) - 1`
@@ -392,6 +501,24 @@ pub(crate) mod tests {
     #[test]
     fn backends() {
         assert_eq!(Backend::select(Features(0)), Backend::Baseline);
+    }
+
+    #[cfg(all(
+        target_arch = "arm",
+        any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        )
+    ))]
+    #[test]
+    fn backends_arm() {
+        assert_eq!(
+            Backend::select(VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES),
+            Backend::Umaal
+        );
     }
 
     #[cfg(target_arch = "x86_64")]

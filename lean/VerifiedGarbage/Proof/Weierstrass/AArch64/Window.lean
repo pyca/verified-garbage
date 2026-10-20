@@ -1,14 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 
 /-!
 # The window method on AArch64

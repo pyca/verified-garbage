@@ -1,14 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Machine
 public import VerifiedGarbage.Proof.TripleDes.SboxTables
-public import VerifiedGarbage.Proof.Framework.Bitslice.Table
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.StraightV
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The AdvSIMD S-box circuits' machine code
@@ -59,7 +55,7 @@ theorem sboxLiteral_eq : ∀ j < 8, sboxLiteral j = .block (sboxCode j)
 
 theorem sbox_preserves : ∀ j < 8,
     (instrs (sboxLiteral j)).all (fun op => vdstOf op != some keyReg && vdstOf op != some zeroReg &&
-      dstOf op == none) = true := by
+      (dsts op).isEmpty) = true := by
   decide +kernel
 
 /-- Bit `P` of each input register, as the S-box's input. -/
@@ -90,7 +86,7 @@ theorem sbox_ok (j : Nat) (hj : j < 8) (s : State) :
   have key : ∀ p < 64, ∃ s', runBlock isa (sboxCode j) s = some s' ∧
       Post (fun q => TableRel p (inputAt s (64 * q + p)).toNat) sboxCfg e' s s'
         (fun r => ((sboxCode j).all fun op => vdstOf op != some r) = false)
-        (fun r => ((sboxCode j).all fun op => dstOf op != some r) = false) := by
+        (fun r => ((sboxCode j).all fun op => !clobbers op r) = false) := by
     intro p hp
     refine run (fun q _ => table_sound hp (inputAt s (64 * q + p)).isLt) (sboxOk s)
       ⟨fun r a h q hq => ?_, (fun _ _ hk _ => absurd hk (by simp [sboxCfg])), (fun _ _ h => by cases h)⟩ he
@@ -118,10 +114,11 @@ theorem sbox_ok (j : Nat) (hj : j < 8) (s : State) :
     funext a
     exact p₀.frame a (by simp [slotRegion, sboxCfg, Region.Contains])
   refine ⟨s', hs', fun i hi P hP => ?_, funext fun r => p₀.gpr r (by
-      simp only [Bool.not_eq_false, List.all_eq_true, bne_iff_ne, ne_eq]
-      intro op hop h
+      simp only [Bool.not_eq_false, List.all_eq_true]
+      intro op hop
       have := pres' op hop
-      simp [h] at this),
+      simp only [Bool.and_eq_true] at this
+      simpa using clobbers_eq_false_of_isEmpty (r := r) this.2),
     p₀.carry, p₀.sp, p₀.rd, p₀.wr, p₀.other _ (noV _ (Or.inl rfl)), p₀.other _ (noV _ (Or.inr rfl)),
     frame0⟩
   obtain ⟨s'', hs'', p₁⟩ := key (P % 64) (Nat.mod_lt _ (by decide))

@@ -1,13 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Setup
+import VerifiedGarbage.Proof.Dsa.AArch64.Setup
 public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
-public import VerifiedGarbage.Proof.Dsa.AArch64.Load
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Dsa.AArch64.Load
 
 /-! # Preparing DSA arithmetic in a linked child workspace -/
 

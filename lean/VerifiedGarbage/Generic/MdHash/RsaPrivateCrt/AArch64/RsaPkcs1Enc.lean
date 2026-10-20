@@ -2,8 +2,11 @@ module
 
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Callees
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCTBase
 
 /-!
 # RSAES-PKCS1-v1_5 decryption with implicit rejection on AArch64
@@ -33,21 +36,17 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (c : Proof.Rsa.AArch64.CrtImp
   match v.sha256 with
   | none => []
   | some h => [
-    { Spec.RsaPkcs1Enc.decryptApi with
-      name := Emit.qualifiedName Spec.RsaPkcs1Enc.decryptApi.name [("sha256", h.suffix), ("crt", c.suffix)]
-      target := AArch64.target
-      doc := Spec.RsaPkcs1Enc.decryptApi.doc
-        (notes := ["This implementation calls `" ++ (privOf c).name ++ "`, then derives `KDK` and \
+    Spec.RsaPkcs1Enc.decryptApi.artifact AArch64.target {
+      suffix := Emit.qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
+      notes := ["This implementation calls `" ++ (privOf c).name ++ "`, then derives `KDK` and \
           the alternative message and lengths with `" ++ (HH h).updN ++ "`, `" ++ (HH h).hmacInitN ++
           "` and `" ++ (HH h).hmacFinN ++ "`, a block of IRPRF per HMAC. The padding's checks, the \
           scan for the separator, the choice of the alternative length and of the message are masks \
           computed without branches, and every byte of `EM` and of the alternative message is read \
-          whichever is returned."])
+          whichever is returned."]
       code := Impl.RsaPkcs1Enc.AArch64.Decrypt.code (HH h) (privOf c).name (privOf c).code
-      contract := Spec.RsaPkcs1Enc.decryptContract AArch64.abi (decStack (privOf c))
       stack := decStack (privOf c)
       verified := dec_verified h (privOf c) (dec_sat c)
-      spSafe := Code.all_of_forall (fun _ => rfl) _
       features := h.features ++ c.features.filter (!h.features.contains ·) }]
 
 end VG.Generic.MdHash.RsaPrivateCrt.AArch64.RsaPkcs1Enc

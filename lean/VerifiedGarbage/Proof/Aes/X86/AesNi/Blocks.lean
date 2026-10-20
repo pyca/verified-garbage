@@ -1,10 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Aes.X86.AesNiBlocks
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Rounds
+public import VerifiedGarbage.Proof.Aes.X86.BlocksContract
 
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 
 /-!
 # AES-NI on x86 (32-bit): encryption and decryption of whole blocks

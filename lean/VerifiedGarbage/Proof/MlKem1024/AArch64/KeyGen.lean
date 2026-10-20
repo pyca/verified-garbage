@@ -1,19 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
-meta import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
-public import VerifiedGarbage.Impl.MlKem1024.AArch64.KeyGen
-meta import VerifiedGarbage.Impl.MlKem1024.AArch64.KeyGen
 public import VerifiedGarbage.Spec.MlKem.Contract1024
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM-1024 on AArch64: `vg_mlkem1024_keygen`

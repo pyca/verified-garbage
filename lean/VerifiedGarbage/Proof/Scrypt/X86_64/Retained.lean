@@ -1,19 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
-meta import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
 import VerifiedGarbage.Proof.Scrypt.Memory
-meta import VerifiedGarbage.Proof.Scrypt.Memory
-public import VerifiedGarbage.Proof.MdStream.X86_64.Common
-meta import VerifiedGarbage.Proof.MdStream.X86_64.Common
+import VerifiedGarbage.Proof.MdStream.X86_64.Common
 public import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMixFused
-meta import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMixFused
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
+meta import VerifiedGarbage.Proof.Scrypt.Memory
+meta import VerifiedGarbage.Proof.MdStream.X86_64.Common
+meta import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMixFused
+meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! The scalar BlockMix state retained between Salsa invocations. -/
 

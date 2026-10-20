@@ -1,14 +1,10 @@
 module
+public import VerifiedGarbage.Proof.X448.AArch64.Mul
 
-public import VerifiedGarbage.Proof.X448.Wide.TailSquare
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Batteries.Logic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.X448.Wide.TailSquare
 import VerifiedGarbage.Proof.X448.Wide.TailProduct
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Untrusted: choose cached squaring from public, static field-slot indices. -/
 

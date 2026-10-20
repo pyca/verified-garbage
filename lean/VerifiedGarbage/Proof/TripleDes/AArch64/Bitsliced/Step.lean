@@ -1,13 +1,14 @@
 module
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Machine
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Sbox
-public import VerifiedGarbage.Proof.TripleDes.Bitslice.Tdea
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Sbox
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Bitsliced
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # One S-box of an AdvSIMD round, and the exchange of the halves
@@ -201,7 +202,7 @@ theorem outIdx_lt (ρ : Role) (j x i : Nat) (h : outIdx ρ j x = some i) : i < 4
   simpa using this
 
 theorem outputCode_regs : ∀ ρ : Role, ∀ j < 8,
-    ((outputCode ρ j).all fun i => dstOf i == none && vdstOf i != some keyReg &&
+    ((outputCode ρ j).all fun i => (dsts i).isEmpty && vdstOf i != some keyReg &&
       vdstOf i != some zeroReg) = true := by
   intro ρ; cases ρ <;> lit_decide
 
@@ -227,10 +228,11 @@ theorem outputs_ok (ρ : Role) {j : Nat} (hj : j < 8) {s : State} (h : Room s) :
     have := regs op hop
     rcases hr with rfl | rfl <;> simp [h'] at this
   refine ⟨s', hrun, fun k hk => ?_, funext fun r => p.gpr r (by
-      simp only [Bool.not_eq_false, List.all_eq_true, bne_iff_ne, ne_eq]
-      intro op hop h'
+      simp only [Bool.not_eq_false, List.all_eq_true]
+      intro op hop
       have := regs op hop
-      simp [h'] at this),
+      simp only [Bool.and_eq_true] at this
+      simpa using clobbers_eq_false_of_isEmpty (r := r) this.1.1),
     p.other _ (noV _ (Or.inl rfl)), p.other _ (noV _ (Or.inr rfl)), p.rd, p.wr, p.sp, p.carry,
     p.frame⟩
   apply eq_of_vdword; intro q hq
@@ -304,7 +306,7 @@ theorem swap_check : check (vars 64) stateCfg swapHalves (varEnv [.v0, .v1]) swa
 
 theorem swapSlot_lt : ∀ k < 64, swapSlot k < 64 := by lit_decide
 
-theorem swap_regs : (swapHalves.all fun i => dstOf i == none && vdstOf i != some keyReg &&
+theorem swap_regs : (swapHalves.all fun i => (dsts i).isEmpty && vdstOf i != some keyReg &&
     vdstOf i != some zeroReg) = true := by
   lit_decide
 
@@ -324,10 +326,11 @@ theorem swapHalves_ok {s : State} (h : Room s) :
     have := regs op hop
     rcases hr with rfl | rfl <;> simp [h'] at this
   refine ⟨s', hrun, fun x hx => ?_, funext fun r => p.gpr r (by
-      simp only [Bool.not_eq_false, List.all_eq_true, bne_iff_ne, ne_eq]
-      intro op hop h'
+      simp only [Bool.not_eq_false, List.all_eq_true]
+      intro op hop
       have := regs op hop
-      simp [h'] at this),
+      simp only [Bool.and_eq_true] at this
+      simpa using clobbers_eq_false_of_isEmpty (r := r) this.1.1),
     p.other _ (noV _ (Or.inl rfl)), p.other _ (noV _ (Or.inr rfl)), p.rd, p.wr, p.sp, p.carry,
     p.frame⟩
   apply eq_of_vdword; intro q hq

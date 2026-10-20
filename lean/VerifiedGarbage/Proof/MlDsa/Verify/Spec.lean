@@ -1,11 +1,8 @@
 module
-
-public import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Spec.MlDsa
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
+
 
 /-!
 # ML-DSA: `verifyMu` as the verification functions compute it

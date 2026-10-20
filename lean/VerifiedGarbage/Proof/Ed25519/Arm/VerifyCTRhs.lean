@@ -1,21 +1,21 @@
 module
 
 import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
-meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
 import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
-meta import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
 public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
-meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
 import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
-meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
+import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
+meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
+meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Block
 
 /-! Merged from `Proof.Ed25519.Arm.PointEqualCT`. -/
 

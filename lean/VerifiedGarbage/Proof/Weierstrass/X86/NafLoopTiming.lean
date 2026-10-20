@@ -1,20 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.NafPublicFields
+import VerifiedGarbage.Proof.Weierstrass.X86.NafPublicFields
 public import VerifiedGarbage.Proof.Weierstrass.X86.RegFieldTiming
-import VerifiedGarbage.Proof.Weierstrass.X86.NafDigitRead
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Weierstrass.X86.NafEntry
-public import VerifiedGarbage.Proof.Weierstrass.X86.NafArithmeticTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafEntry
+public import VerifiedGarbage.Proof.Weierstrass.X86.JacAddTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointTransfer
+import VerifiedGarbage.Proof.Weierstrass.X86.NafArithmeticTiming
 import VerifiedGarbage.Proof.Weierstrass.X86.NafFinish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Weierstrass.X86.WinQuad
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.Weierstrass.Booth
+import VerifiedGarbage.Proof.Weierstrass.X86.Loop
 
 /-! ## `NafLoadTiming` -/
 

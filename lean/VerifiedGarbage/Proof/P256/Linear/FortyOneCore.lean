@@ -1,16 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.P256.Linear.FortyOneValue
-public import VerifiedGarbage.Proof.P256.Linear.WeakCore
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+public import VerifiedGarbage.Proof.P256.Linear.FortyOneWords
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Impl.NatPairs
-import VerifiedGarbage.Proof.Mont.AArch64.Row
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.P256.VerifyArithmetic
+import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Arithmetic
 
 @[expose] public section
 

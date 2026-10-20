@@ -2,54 +2,21 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
-public import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
-public import VerifiedGarbage.Proof.RsaKeyGen.MrMont
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCancelTile
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtSquare
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcFinish
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcRestore
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcStore
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcTile
-public import VerifiedGarbage.Proof.Bignum.AArch64.CarrySelect
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
-public import VerifiedGarbage.Proof.Bignum.AArch64.FastFinish
-public import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishSel
-public import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishSelTile
-public import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishSub
-public import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishSubTile
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRowMath
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSetup
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCorrect
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCross
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonal
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCarry
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCorrect
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightMath
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightPolynomial
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRowMath
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRows
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightSetup
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquarePrefix
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareRaw
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedc
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareTiledRow
-public import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChainStep
-public import VerifiedGarbage.Proof.Bignum.CrtMath
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Entry
-public import VerifiedGarbage.Proof.RsaKeyGen.Bits
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightInternal
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
+import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
+public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Front
+import VerifiedGarbage.Proof.Rsa.Ranges
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+import VerifiedGarbage.Proof.Bignum.AArch64.Setup
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
 # A candidate on AArch64: Montgomery arithmetic modulo `c`

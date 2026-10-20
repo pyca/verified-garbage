@@ -1,27 +1,21 @@
 module
 
 public import VerifiedGarbage.Impl.P521.X86_64.Joint
-meta import VerifiedGarbage.Impl.P521.X86_64.Joint
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacTiming
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
 import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
-meta import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Mont.X86_64.MulPX
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Impl.P521.X86_64.Joint
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
+meta import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Mont.X86_64.MulPX
 meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.Ecdsa.Generic
-meta import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! Baseline and ADX taint checks of P-521's joint verifier's point additions.
 

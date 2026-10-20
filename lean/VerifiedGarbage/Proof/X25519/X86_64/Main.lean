@@ -1,18 +1,17 @@
 module
 
 import VerifiedGarbage.Proof.X25519.X86_64.Finish
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
-public import VerifiedGarbage.Proof.X25519.X86_64.Invert
+import VerifiedGarbage.Proof.X25519.X86_64.Invert
 public import VerifiedGarbage.Spec.X25519.Contract
-public import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.X25519.X86_64.Iter
-import VerifiedGarbage.Impl.Mont.Mod
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
 import VerifiedGarbage.Proof.X25519.X86_64.Bits
+import VerifiedGarbage.Proof.X25519.X86_64.Freeze
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.X86_64.Lit
 
 /-!
 # X25519 on x86-64: the whole function
@@ -157,13 +156,16 @@ theorem correct_of [DivstepInv] {lad : Prog isa} (hli : lad.inline = lad)
       by rw [e₃ 5 (by decide), x3₁], by rw [e₃ 6 (by decide), z3₁],
       by rw [k₃.2.1, o₂.word (by decide) (by decide), sw₁],
       by rw [k₃.2.1, o₂.fe (by decide) (by decide)]; exact zb2₁,
-      by rw [k₃.2.1, o₂.fe (by decide) (by decide)]; exact zb3₁⟩) fun s₄ L => ?_)
-  refine WP.seq (WP.mono (lastSwap_ok L.scr
-    (by have := ladderAfter_swap_le
-          (Spec.X25519.decodeScalar25519 (Spec.X25519.bytesAt s₀.mem (s₀.gpr .rsi) 32))
-          (toFe (Spec.X25519.decodeUCoordinate (Spec.X25519.bytesAt s₀.mem (s₀.gpr .rdx) 32)))
-          (n := 0) (by omega)
-        omega) L.swap L.x2 L.z2 L.x3 L.z3) fun s₅ ⟨K₅, e3₅, e4₅⟩ => ?_)
+      by rw [k₃.2.1, o₂.fe (by decide) (by decide)]; exact zb3₁,
+      ⟨by rw [scalar_bit (length_bytesAt _ _ _) (by decide)]; rfl,
+        by rw [scalar_bit (length_bytesAt _ _ _) (by decide)]; rfl,
+        by rw [scalar_bit (length_bytesAt _ _ _) (by decide)]; rfl⟩⟩) fun s₄ L => ?_)
+  obtain ⟨sw, hsw, hw, hx, hz⟩ := L.res
+  refine WP.seq (WP.mono (lastSwap_ok L.scr (st := ⟨E s₄.mem base 3, E s₄.mem base 4,
+    E s₄.mem base 5, E s₄.mem base 6, sw⟩) hsw hw rfl rfl rfl rfl)
+    fun s₅ ⟨K₅, e3₅, e4₅⟩ => ?_)
+  rw [hx] at e3₅
+  rw [hz] at e4₅
   have hs₅ := K₅.scr L.scr
   refine WP.seq (WP.mono (invertFn_pow hs₅) fun s₆ ⟨g₆, rd₆, wr₆, o₆, e₆⟩ => ?_)
   have hs₆ : Scr s₆ base := ⟨(g₆ _ (by decide) (by decide)).trans hs₅.rdi, wr₆ ▸ hs₅.wr, hn⟩

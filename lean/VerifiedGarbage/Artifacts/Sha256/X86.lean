@@ -1,8 +1,7 @@
 module
 
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Sha256.X86.Shared
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SHA-256 (FIPS 180-4) on x86 -/
 
@@ -11,12 +10,8 @@ import Mathlib.Tactic.SplitIfs
 namespace VG.Artifacts.Sha256.X86
 
 def artifacts : List Artifact := [
-  { Spec.Sha256.initApi with
-    target := X86.target
-    doc := Spec.Sha256.initApi.doc
+  Spec.Sha256.initApi.artifact X86.target {
     code := Impl.Sha256.X86.Stream.init
-    contract := Spec.Sha256.initContract X86.abi
-    verified := Proof.Sha256.X86.Shared.init
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Sha256.X86.Shared.init }]
 
 end VG.Artifacts.Sha256.X86

@@ -1,14 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Divstep.Alg32Def
 
-public import VerifiedGarbage.Proof.Divstep.Tc32Red
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Algebra.Order.Ring.Abs
-import Mathlib.Data.BitVec
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
+import VerifiedGarbage.Proof.Divstep.Tc32Red
 import VerifiedGarbage.Proof.Divstep.Tc32Words
 
 /-! # Finishing a 32-bit divstep reduction with one conditional subtraction -/

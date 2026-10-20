@@ -6,8 +6,9 @@ updates:
       interval: weekly
   - package-ecosystem: cargo
     # bench/ is its own workspace with a path dependency on the library, so
-    # its lock file must change in the same PR as the root one: list both
-    # directories and group them into one PR.
+    # a dependency they share must change in both lock files in the same PR:
+    # list both directories and group each dependency's update across them,
+    # one PR per dependency, never one PR for unrelated dependencies.
     directories:
       - /
       - /bench
@@ -15,6 +16,7 @@ updates:
       interval: weekly
     groups:
       cargo:
+        group-by: dependency-name
         patterns:
           - "*"
   - package-ecosystem: pip

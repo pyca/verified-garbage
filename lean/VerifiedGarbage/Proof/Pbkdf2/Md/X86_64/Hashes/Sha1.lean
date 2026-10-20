@@ -1,25 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.Proof.Sha1.X86_64.Variant
-meta import VerifiedGarbage.Proof.Sha1.X86_64.Variant
-public import VerifiedGarbage.Proof.Sha1.X86_64.Shared
-meta import VerifiedGarbage.Proof.Sha1.X86_64.Shared
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-meta import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.TCB.X86_64.Target
-meta import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Init
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Spec.Sha1.Contract
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+meta import VerifiedGarbage.Proof.Sha1.X86_64.Variant
+meta import VerifiedGarbage.Proof.Sha1.X86_64.Shared
 meta import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Init
-meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Spec.Sha1.Contract
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Sha1.X86_64.Shared
 
 /-!
 # SHA-1 on x86-64, as a Merkle–Damgård hash function
@@ -107,6 +103,10 @@ theorem coreOK : CoreOK coreH := by
     fitF := ?_ }
   taint_decide_all
 
+theorem anyOK : Any.AnyOK coreH := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_, ?_⟩
+  taint_decide_all
+
 variable (v : Compress)
 
 theorem callees : Callees (hash v) where
@@ -150,6 +150,7 @@ def ok : HashOK (hash v) where
   hDL := by simp only [hash] <;> decide
   hL4 := by simp only [hash] <;> decide
   hNL := by simp only [hash] <;> decide
+  hPad := by simp only [hash] <;> decide
   hso := by simp only [hash] <;> decide
   fits := by simp only [hash] <;> decide
   hW := by simp only [hash] <;> decide
@@ -174,6 +175,10 @@ theorem satF : ∃ s, (Spec.Hmac.sha1I.finalizeScratchContract X86_64.abi 16).pr
 theorem satT : ∃ s, (Spec.Hmac.sha1I.iterateContract X86_64.abi 8).pre s := by
   inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Hmac.sha1I, Spec.Pbkdf2.iterateContract,
     Spec.Pbkdf2.iterateSig, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs] using Pbkdf2.X86_64.iterSat 84 20 56
+
+theorem satA : ∃ s, (Any.anyScratchContract Spec.Hmac.sha1I.S Spec.Hmac.sha1I.initAnyKeyScratch).pre s := by
+  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha1I, Spec.Hmac.initScratchSig,
+    Spec.Hmac.initPost, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs] using initSat 84 140
 
 theorem satP : ∃ s, (Spec.Hmac.sha1I.pbkdf2ScratchContract X86_64.abi 24).pre s := by
   inst_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha1I,
@@ -226,9 +231,14 @@ theorem pss_sha1 : Proof.RsaPss.X86_64.PssChecks Impl.Sha1.X86_64.Stream.params 
 /-- SHA-1 with the implementation `v` of its compression function. -/
 def variant : MdHash :=
   MdHash.of (ok v) coreOK (callees v) ⟨Spec.Mgf1.sha1, by simp [mdHashes], fun _ => rfl, rfl⟩ pss_sha1 rfl rfl satI satF satT satP (by decide)
+    anyOK satA (by decide) Proof.Hmac.sha1_local
+    (by
+      unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
+      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by
       unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by decide)
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))

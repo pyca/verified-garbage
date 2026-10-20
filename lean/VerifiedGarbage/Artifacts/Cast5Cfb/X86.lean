@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86.ModesVerified
+import VerifiedGarbage.Proof.Cast5.X86.ModesLit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # CAST5-CFB64 artifacts on baseline x86 (32-bit) -/
 
@@ -15,23 +17,17 @@ def note : String :=
   so no secret is an address. The subkeys and the number of rounds are reloaded from the arguments for each block."
 
 def artifacts : List Artifact := [
-  { Spec.Cast5.cfbEncryptApi with
-    target := X86.target
-    doc := Spec.Cast5.cfbEncryptApi.doc (notes := [note])
+  Spec.Cast5.cfbEncryptApi.artifact X86.target {
+    notes := [note]
     consts := Impl.Cast5.ecbConsts
     code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cfbEncrypt
-    contract := Spec.Cast5.cfbEncryptContract (X86.abi.withConsts Impl.Cast5.ecbConsts) 336
     stack := 336
-    verified := Proof.Cast5.X86.ModeFns.cfbEncrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Cast5.cfbDecryptApi with
-    target := X86.target
-    doc := Spec.Cast5.cfbDecryptApi.doc (notes := [note])
+    verified := Proof.Cast5.X86.ModeFns.cfbEncrypt_framed },
+  Spec.Cast5.cfbDecryptApi.artifact X86.target {
+    notes := [note]
     consts := Impl.Cast5.ecbConsts
     code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cfbDecrypt
-    contract := Spec.Cast5.cfbDecryptContract (X86.abi.withConsts Impl.Cast5.ecbConsts) 336
     stack := 336
-    verified := Proof.Cast5.X86.ModeFns.cfbDecrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Cast5.X86.ModeFns.cfbDecrypt_framed }]
 
 end VG.Artifacts.Cast5Cfb.X86

@@ -1,21 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
-meta import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.Double
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.Double
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.TableHead
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.TableHead
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.TableTail
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.TableTail
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.Double
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 
 /-! P-256 verification with register-allocated arithmetic on AArch64 as a
 literal, reading the literals of the forwarded field programs it shares with

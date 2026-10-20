@@ -1,15 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PointDecode
-import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverParity
+public import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
+public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverSign
+public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.AArch64.DecodeBits
-public import VerifiedGarbage.Proof.Ed25519.Decode
-public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Ed25519.Decode
+import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
+import VerifiedGarbage.Proof.Ed25519.Canonical64
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Merged from `Proof.Ed25519.AArch64.DecodeLoad`. -/
 

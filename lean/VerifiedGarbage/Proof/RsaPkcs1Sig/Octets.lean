@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Rsa
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # OS2IP and I2OSP are inverse

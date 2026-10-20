@@ -1,17 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Blowfish.X86_64
-public import VerifiedGarbage.Impl.Modes.X86_64.Cbc
-public import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
-public import VerifiedGarbage.Impl.Modes.X86_64.Fb
+public import VerifiedGarbage.Impl.Modes.X86_64.CbcChained
 
 /-!
 # Blowfish-CBC, -OFB and -CFB64 on x86-64
 
-`cbcEncrypt`, `cbcDecrypt`, `ofb`, `cfbEncrypt` and `cfbDecrypt`
+`cbcEncryptChained`, `cbcDecryptChained`, `ofb`, `cfbEncrypt` and `cfbDecrypt`
 (schedule = rdi, iv = rsi, data = rdx, n = rcx, scratch = r8): the modes'
-generic CBC, OFB and CFB (`Impl/Modes/X86_64/Cbc.lean`, `CbcEnc.lean`,
-`Fb.lean`) over the block code of `vg_blowfish_ecb_{en,de}crypt` (`cipher`),
+generic CBC that updates the chaining value, OFB and CFB
+(`Impl/Modes/X86_64/CbcChained.lean`, `Fb.lean`) over the block code of `vg_blowfish_ecb_{en,de}crypt` (`cipher`),
 one 8-byte block at a time, with the working space in the scratch buffer,
 which the artifact allocates on the stack.
 
@@ -21,7 +19,7 @@ schedule where the caller passed it, at `rdi`, which neither the modes nor
 the block code write; `prepare` does nothing. `crypt` points `rsi` and `rcx`
 at the buffer and the 16 bytes, and keeps the scratch buffer's address
 (`sb`, the block code's row counter `r9`) in `rdx`. The block code uses
-every `xmm` register, `xmm15` (where the feedback modes keep the IV's
+every `xmm` register, `xmm15` (where CBC encryption and the feedback modes keep the IV's
 address, its upper half zero) among them: `crypt` keeps its low half in
 `r14`, which neither the block code nor the modes use, and puts it back.
 -/
@@ -71,11 +69,11 @@ def dirCore (up : Bool) : Impl.Modes.X86_64.Core where
 /-- The registers of the arguments. -/
 def modeRegs : Impl.Modes.X86_64.CtrRegs := ⟨.rsi, .rdx, .rcx, .r8⟩
 
-/-- `vg_blowfish_cbc_encrypt`. -/
-def cbcEncrypt : Prog isa := (dirCore true).cbcEncrypt modeRegs
+/-- `vg_blowfish_cbc_encrypt_chained`. -/
+def cbcEncryptChained : Prog isa := (dirCore true).cbcEncryptChained modeRegs
 
-/-- `vg_blowfish_cbc_decrypt`. -/
-def cbcDecrypt : Prog isa := (dirCore false).cbcDecrypt modeRegs
+/-- `vg_blowfish_cbc_decrypt_chained`. -/
+def cbcDecryptChained : Prog isa := (dirCore false).cbcDecryptChained modeRegs
 
 /-- `vg_blowfish_ofb`. -/
 def ofb : Prog isa := (dirCore true).fb .ofb modeRegs

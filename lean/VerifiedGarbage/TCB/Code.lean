@@ -137,6 +137,16 @@ inductive Code (I C : Type) where
   /-- `push; body; pop`: a stack frame around `body`. -/
   | frame (push : I) (body : Code I C) (pop : I)
 
+/-- `if c then t else e`, with `t` laid out after the function's return
+(cold): `Code.ite c (.seq (.seq (.block []) (.block [])) t) e`. It is an
+`ite`, whose `then` branch runs two empty blocks (which do nothing and leak
+nothing) before `t`, so its semantics are `ite`'s by construction; the two
+empty blocks are only the mark by which the printer (`Printer.lower`) places
+`t` out of line, so that the code around the `ite` keeps its addresses
+whatever `t`'s size. -/
+def Code.iteCold {I C : Type} (c : C) (t e : Code I C) : Code I C :=
+  .ite c (.seq (.seq (.block []) (.block [])) t) e
+
 /-- Whether every instruction of `c`, and of the functions it calls, satisfies `p`. -/
 def Code.all {I C : Type} (p : I → Bool) : Code I C → Bool
   | .block is => is.all p

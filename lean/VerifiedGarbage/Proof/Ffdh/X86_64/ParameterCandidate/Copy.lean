@@ -1,12 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Shape
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ShapeOctets
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeByte
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! # FFDH parameter candidates on x86-64: copy the remaining random bytes -/
 
@@ -41,22 +40,28 @@ theorem copyByte_ok {s : State} {rp op : Addr} {j k : Nat} {b : Byte}
   · rw [show k - j - 1 = k - (j + 1) by omega]
   · exact decide_eq_decide.mpr (by omega)
 
-structure CopyInv (s₀ : State) (rp op : Addr) (bs : List Byte) (bit : Nat) (j : Nat) (t : State) : Prop where
+private theorem headTail_getD (head : Byte) (bs : List Byte) (i : Nat) :
+    (head :: bs.drop 1).getD i 0 = if i = 0 then head else bs.getD i 0 := by
+  cases i with
+  | zero => rfl
+  | succ i => simp [List.getD_eq_getElem?_getD]
+
+structure CopyTailInv (s₀ : State) (rp op : Addr) (bs : List Byte) (head : Byte) (j : Nat) (t : State) : Prop where
   keep : Keep [.rax, .r10, .r11, .rcx] s₀ t
   ptrR : t.gpr .r10 = off rp j
   ptrO : t.gpr .r11 = off op j
   count : t.gpr .rcx = BitVec.ofNat 64 (bs.length - j)
-  bytes : ∀ i < j, t.mem (off op i) = (topCut bs bit).getD i 0
+  bytes : ∀ i < j, t.mem (off op i) = (head :: bs.drop 1).getD i 0
   frame : ∀ a, (∀ i < j, a ≠ off op i) → t.mem a = s₀.mem a
 
-theorem copyStep_ok {s₀ t : State} {rp op : Addr} {bs : List Byte} {bit j : Nat}
+theorem copyTailStep_ok {s₀ t : State} {rp op : Addr} {bs : List Byte} {head : Byte} {j : Nat}
     (hk : bs.length < 2 ^ 31) (hj1 : 1 ≤ j) (hj : j < bs.length)
     (hrd : ∀ i < bs.length, InRegions (s₀.rd ++ s₀.wr) (off rp i) 1)
     (hwr : ∀ i < bs.length, InRegions s₀.wr (off op i) 1)
     (hb : ∀ i < bs.length, s₀.mem (off rp i) = bs.getD i 0)
     (hsep : ∀ i < bs.length, ∀ l < bs.length, off rp i ≠ off op l)
-    (h : CopyInv s₀ rp op bs bit j t) : WP isa (.block copyByte) t fun u =>
-      u.zf = some (decide (j + 1 = bs.length)) ∧ CopyInv s₀ rp op bs bit (j + 1) u := by
+    (h : CopyTailInv s₀ rp op bs head j t) : WP isa (.block copyByte) t fun u =>
+      u.zf = some (decide (j + 1 = bs.length)) ∧ CopyTailInv s₀ rp op bs head (j + 1) u := by
   have hrd' : InRegions (t.rd ++ t.wr) (off rp j) 1 := by rw [h.keep.2.1, h.keep.2.2]; exact hrd j hj
   have hwr' : InRegions t.wr (off op j) 1 := by rw [h.keep.2.2]; exact hwr j hj
   have hb' : t.mem (off rp j) = bs.getD j 0 := by
@@ -68,12 +73,36 @@ theorem copyStep_ok {s₀ t : State} {rp op : Addr} {bs : List Byte} {bit j : Na
     rw [hm, WriteBytes.writeW8_apply]
     by_cases he : i = j
     · subst he
-      rw [ite_eq_left rfl, topCut_getD, ite_eq_right (show i ≠ 0 by omega)]
+      rw [ite_eq_left rfl, headTail_getD, ite_eq_right (show i ≠ 0 by omega)]
     · rw [ite_eq_right (out_ne (by omega) (by omega) he)]
       exact h.bytes i (by omega)
   · intro a ha
     rw [hm, WriteBytes.writeW8_apply, ite_eq_right (ha j (by omega))]
     exact h.frame a (fun i hi => ha i (by omega))
+
+/-- An arbitrary first output byte is ready; copy the remaining source bytes unchanged. -/
+theorem copyTailLoop_ok {s : State} {rp op : Addr} {bs : List Byte} {head : Byte}
+    (hk1 : 2 ≤ bs.length) (hk : bs.length < 2 ^ 31)
+    (hp : s.gpr .r10 = off rp 1) (ho : s.gpr .r11 = off op 1)
+    (hn : s.gpr .rcx = BitVec.ofNat 64 (bs.length - 1))
+    (hfirst : s.mem op = head)
+    (hrd : ∀ i < bs.length, InRegions (s.rd ++ s.wr) (off rp i) 1)
+    (hwr : ∀ i < bs.length, InRegions s.wr (off op i) 1)
+    (hb : ∀ i < bs.length, s.mem (off rp i) = bs.getD i 0)
+    (hsep : ∀ i < bs.length, ∀ l < bs.length, off rp i ≠ off op l) :
+    WP isa (.loop (.block copyByte) .ne) s (CopyTailInv s rp op bs head bs.length) :=
+  wp_upto (a := 1) (by omega) (CopyTailInv s rp op bs head)
+    (fun j hj1 hj t ht => copyTailStep_ok hk hj1 hj hrd hwr hb hsep ht) (fun _ h => h)
+    ⟨Keep.refl _ _, hp, ho, hn, (fun i hi => by
+      have he : i = 0 := by omega
+      subst he
+      rw [headTail_getD, ite_eq_left rfl]
+      simpa [off] using hfirst),
+      fun _ _ => rfl⟩
+
+/-- The candidate-shaping instance of the generic tail-copy invariant. -/
+abbrev CopyInv (s₀ : State) (rp op : Addr) (bs : List Byte) (bit j : Nat) (t : State) : Prop :=
+  CopyTailInv s₀ rp op bs (topByte bit (bs.getD 0 0)) j t
 
 /-- The first byte is already shaped; all remaining bytes are copied unchanged. -/
 theorem copyLoop_ok {s : State} {rp op : Addr} {bs : List Byte} {bit : Nat}
@@ -86,13 +115,6 @@ theorem copyLoop_ok {s : State} {rp op : Addr} {bs : List Byte} {bit : Nat}
     (hb : ∀ i < bs.length, s.mem (off rp i) = bs.getD i 0)
     (hsep : ∀ i < bs.length, ∀ l < bs.length, off rp i ≠ off op l) :
     WP isa (.loop (.block copyByte) .ne) s (CopyInv s rp op bs bit bs.length) :=
-  wp_upto (a := 1) (by omega) (CopyInv s rp op bs bit)
-    (fun j hj1 hj t ht => copyStep_ok hk hj1 hj hrd hwr hb hsep ht) (fun _ h => h)
-    ⟨Keep.refl _ _, hp, ho, hn, (fun i hi => by
-      have he : i = 0 := by omega
-      subst he
-      rw [topCut_getD, ite_eq_left rfl]
-      simpa [off] using hfirst),
-      fun _ _ => rfl⟩
+  copyTailLoop_ok hk1 hk hp ho hn hfirst hrd hwr hb hsep
 
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

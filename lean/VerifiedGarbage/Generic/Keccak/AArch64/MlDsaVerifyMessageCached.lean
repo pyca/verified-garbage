@@ -1,14 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSelected
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ML-DSA (FIPS 204) on AArch64: verifying messages
@@ -42,41 +35,32 @@ def notes : List String :=
     uses the rest of `scratch`."]
 
 def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
-  { (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44") with
-    name := (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").name ++ v.callee.suffix
+  ((Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")).artifact AArch64.target {
+    suffix := v.callee.suffix
     features := v.features
     consts := selectedConsts v
-    target := AArch64.target
-    doc := (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").doc (notes := notes)
+    notes := notes
     code := Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee (Spec.MlDsa.verify44Api.name ++ v.callee.suffix)
       (selectedCode v Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44
-    contract := Spec.MlDsa.verifyMessageCachedContract Spec.MlDsa.mlDsa44 (selectedAbi v) 16
     stack := 16
-    verified := selected_cached_message_verified v (.inl rfl) (Spec.MlDsa.verify44Api.name ++ v.callee.suffix)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65") with
-    name := (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").name ++ v.callee.suffix
+    verified := selected_cached_message_verified v (.inl rfl) (Spec.MlDsa.verify44Api.name ++ v.callee.suffix) },
+  ((Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")).artifact AArch64.target {
+    suffix := v.callee.suffix
     features := v.features
     consts := selectedConsts v
-    target := AArch64.target
-    doc := (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").doc (notes := notes)
+    notes := notes
     code := Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee (Spec.MlDsa.verify65Api.name ++ v.callee.suffix)
       (selectedCode v Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65
-    contract := Spec.MlDsa.verifyMessageCachedContract Spec.MlDsa.mlDsa65 (selectedAbi v) 16
     stack := 16
-    verified := selected_cached_message_verified v (.inr (.inl rfl)) (Spec.MlDsa.verify65Api.name ++ v.callee.suffix)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87") with
-    name := (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").name ++ v.callee.suffix
+    verified := selected_cached_message_verified v (.inr (.inl rfl)) (Spec.MlDsa.verify65Api.name ++ v.callee.suffix) },
+  ((Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")).artifact AArch64.target {
+    suffix := v.callee.suffix
     features := v.features
     consts := selectedConsts v
-    target := AArch64.target
-    doc := (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").doc (notes := notes)
+    notes := notes
     code := Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee (Spec.MlDsa.verify87Api.name ++ v.callee.suffix)
       (selectedCode v Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87
-    contract := Spec.MlDsa.verifyMessageCachedContract Spec.MlDsa.mlDsa87 (selectedAbi v) 16
     stack := 16
-    verified := selected_cached_message_verified v (.inr (.inr rfl)) (Spec.MlDsa.verify87Api.name ++ v.callee.suffix)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := selected_cached_message_verified v (.inr (.inr rfl)) (Spec.MlDsa.verify87Api.name ++ v.callee.suffix) }]
 
 end VG.Generic.Keccak.AArch64.MlDsaVerifyMessageCached

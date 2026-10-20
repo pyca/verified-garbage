@@ -1,23 +1,19 @@
 module
 
 public import VerifiedGarbage.Impl.Zeroize.X86
-meta import VerifiedGarbage.Impl.Zeroize.X86
-public import VerifiedGarbage.Proof.Zeroize.Common32
-meta import VerifiedGarbage.Proof.Zeroize.Common32
-public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
-meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
+import VerifiedGarbage.Proof.Zeroize.Common32
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
-meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Zeroize.Contract
+public import VerifiedGarbage.Proof.Zeroize.Common
+import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Impl.Zeroize.X86
+meta import VerifiedGarbage.Proof.Zeroize.Common32
+meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 meta import VerifiedGarbage.Spec.Zeroize.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Zeroize.Common
+meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

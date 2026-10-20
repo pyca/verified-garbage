@@ -71,3 +71,25 @@ theorem wr_setV (r : VReg) (x : BitVec 128) : (s.setV r x).wr = s.wr := rfl
 theorem sp_setV (r : VReg) (x : BitVec 128) : (s.setV r x).sp = s.sp := rfl
 
 end VG.AArch64.RegUpd
+
+namespace VG.AArch64
+
+/-- A successful `ldp` writes its two registers and nothing else. -/
+theorem exec_ldp_eq {t1 t2 n : Reg} {off : Nat} {s s' : State} (h : exec (.ldp t1 t2 n off) s = some s') :
+    ∃ v₁ v₂ : BitVec 64, s' = (s.write .x t1 v₁).write .x t2 v₂ := by
+  obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
+  simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+  obtain ⟨_, -, _, -, rfl⟩ := h
+  exact ⟨_, _, rfl⟩
+
+/-- A successful `stp` changes memory and nothing else. -/
+theorem exec_stp_eq {t1 t2 n : Reg} {off : Nat} {s s' : State} (h : exec (.stp t1 t2 n off) s = some s') :
+    ∃ m : Mem, s' = { s with mem := m } := by
+  obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
+  simp only [Option.bind_eq_some_iff, State.store] at h
+  obtain ⟨_, h₁, h₂⟩ := h
+  split at h₁ <;> cases h₁
+  split at h₂ <;> cases h₂
+  exact ⟨_, rfl⟩
+
+end VG.AArch64

@@ -1,12 +1,18 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hmac
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Copy
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Copy
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Layout
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: the messages of steps d, f and h.3
@@ -121,23 +127,23 @@ theorem head_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {b : Nat} (hb : b 
     show [u₃.mem (State.addr L.scr + BitVec.ofNat 64 (2256 + D) + BitVec.ofNat 64 0)] = _
     rw [BitVec.add_zero, hm₃, byte_self]
 
-/-- `‖ d ‖ h`, `k` words each, after `D + 1` bytes. -/
-theorem tail_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {D k : Nat} (hD : D ≤ 64) (hq : 4 * k ≤ L.q)
-    (hk : k ≤ 12) :
-    WP isa (.block (Cfg.copyN k .r5 0 .r11 (sMsg + D + 1) ++ Cfg.copyN k .r8 fH .r11 (sMsg + D + 1 + 4 * k))) u
+/-- `‖ d ‖ h`, `k` words each, after `D + 1` bytes, `h` at `ho` in the frame. -/
+theorem tail_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {D k ho : Nat} (hD : D ≤ 64) (hq : 4 * k ≤ L.q)
+    (hk : k ≤ 16) (hho : 24 + ho + 4 * k ≤ 240 + 4 * L.e) :
+    WP isa (.block (Cfg.copyN k .r5 0 .r11 (sMsg + D + 1) ++ Cfg.copyN k .r8 ho .r11 (sMsg + D + 1 + 4 * k))) u
       fun u' => Ctx L g m₀ u' ∧ (∀ r, r ≠ .r0 → u'.gpr r = u.gpr r) ∧
         Frame [⟨State.addr L.scr + BitVec.ofNat 64 (2256 + D + 1), 8 * k⟩] u.mem u'.mem ∧
         Spec.Sha256.bytesAt u'.mem (State.addr L.scr + BitVec.ofNat 64 (2256 + D + 1)) (8 * k) =
           Spec.Sha256.bytesAt u.mem (State.addr L.d) (4 * k) ++
-            Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 152) (4 * k) := by
-  have := L.sp.isLt; have := fp_toNat' hL; have := hL.nd
-  simp only [fH, sMsg]
+            Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 (24 + ho)) (4 * k) := by
+  have := L.sp.isLt; have := fp_toNat' hL; have := hL.nd; have := L.he
+  simp only [sMsg]
   rw [WP.block_append_iff]
   refine WP.mono (copy_ok hL hc (src := .r5) hc.r5 (by decide) (so := 0) (d := 2256 + D + 1) (K := k) (by omega_arith)
     (by omega_arith) (by omega_arith) (fun j hj => hc.inD (by omega_arith) (by omega_arith))
     (hL.dc.sub_left (Offset.sub_base _ (by omega_arith)) |>.sub_right (Offset.sub_base _ (by omega_arith))))
     fun u₂ ⟨hc₂, hg₂, hf₂, hb₂⟩ => ?_
-  refine WP.mono (copy_ok hL hc₂ (src := .r8) hc₂.r8 (by decide) (so := 128) (d := 2256 + D + 1 + 4 * k) (K := k)
+  refine WP.mono (copy_ok hL hc₂ (src := .r8) hc₂.r8 (by decide) (so := ho) (d := 2256 + D + 1 + 4 * k) (K := k)
     (by omega_arith) (by omega_arith) (by omega_arith)
     (fun j hj => by rw [hL.fpA0, Offset.add_add]; exact hc₂.inFr (by omega_arith) (by omega_arith))
     (by rw [hL.fpA0, Offset.add_add]; exact hL.stk_scr (by omega_arith) (by omega_arith)))
@@ -266,24 +272,26 @@ theorem tailW_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {D Q : Nat} (hD :
           exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)) (by omega_arith)]
       exact hb₂ _ (by omega_arith)
 
-/-- `h` in the message: from the frame (`Q` bytes), or, if `wide`, `Q - D`
-zero bytes then the digest. -/
-abbrev hPart (wide : Bool) (Q D : Nat) {dn : Nat} (L : Lay dn) (m : Mem) : List Byte :=
+/-- `h` in the message: from the stack at `hb` (`Q` bytes), or, if `wide`,
+`Q - D` zero bytes then the digest. -/
+abbrev hPart (wide : Bool) (Q D hb : Nat) {dn : Nat} (L : Lay dn) (m : Mem) : List Byte :=
   if wide then List.replicate (Q - D) 0 ++ Spec.Sha256.bytesAt m (State.addr L.dg) D
-  else Spec.Sha256.bytesAt m (L.B + BitVec.ofNat 64 152) Q
+  else Spec.Sha256.bytesAt m (L.B + BitVec.ofNat 64 hb) Q
 
 /-- The message `V ‖ b` (`‖ d ‖ h` if `full`, `Q` bytes each) at
-`scratch + 2256`, for `V` of `D` bytes. -/
-theorem msg_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {b : Nat} (hb : b < 2) (full wide : Bool)
+`scratch + 2256`, for `V` of `D` bytes, `h` at `ho` in the frame. -/
+theorem msg_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {b : Nat} (hb : b < 2) (full wide : Bool) (ho : Nat)
     {D k Q : Nat} (hD : D ≤ 64) (hD4 : D % 4 = 0) (h4 : 4 ≤ Q) (hQ : Q ≤ 72) (hq : Q ≤ L.q)
-    (hA : full = true → wide = false → Q = 4 * k ∧ k ≤ 12)
+    (hA : full = true → wide = false → Q = 4 * k ∧ k ≤ 16 ∧ 24 + ho + Q ≤ 240 + 4 * L.e)
     (hW : full = true → wide = true → D ≤ Q ∧ Q ≤ D + 4 ∧ D ≤ dn) :
-    WP isa (.block (Cfg.msg k Q D b full wide)) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .r9 = t.gpr .r9 ∧
+    WP isa (.block (Cfg.msg k Q D b full wide ho)) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .r9 = t.gpr .r9 ∧
       Frame [⟨msgA L, D + 2 * Q + 1⟩] t.mem t'.mem ∧
       Spec.Sha256.bytesAt t'.mem (msgA L) (if full then D + 2 * Q + 1 else D + 1) =
         vOf L D t.mem ++ [BitVec.ofNat 8 b] ++
-          (if full then Spec.Sha256.bytesAt t.mem (State.addr L.d) Q ++ hPart wide Q D L t.mem else []) := by
+          (if full then Spec.Sha256.bytesAt t.mem (State.addr L.d) Q ++ hPart wide Q D (24 + ho) L t.mem
+          else []) := by
   have nc := hL.nc
+  have := L.he
   cases full
   · simp only [Cfg.msg, Bool.false_eq_true, ite_false, List.append_nil]
     refine WP.mono (head_ok hL hc hb hD hD4) fun u ⟨hcu, hg, hf, hb⟩ =>
@@ -298,11 +306,11 @@ theorem msg_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {b : Nat} (hb : b <
           Cfg.copyBytes Q .r5 0 .r11 (sMsg + D + 1) ++
             ([.mov .r0 (.imm 0), .str .r0 .r11 (sMsg + D + 1 + Q)] : List Instr) ++
             Cfg.copyN (D / 4) .r6 0 .r11 (sMsg + 1 + 2 * Q)
-        else Cfg.copyN k .r5 0 .r11 (sMsg + D + 1) ++ Cfg.copyN k .r8 fH .r11 (sMsg + D + 1 + 4 * k))) u
+        else Cfg.copyN k .r5 0 .r11 (sMsg + D + 1) ++ Cfg.copyN k .r8 ho .r11 (sMsg + D + 1 + 4 * k))) u
         fun u' => Ctx L g m₀ u' ∧ (∀ r, r ≠ .r0 → u'.gpr r = u.gpr r) ∧
           Frame [⟨State.addr L.scr + BitVec.ofNat 64 (2256 + D + 1), 2 * Q⟩] u.mem u'.mem ∧
           Spec.Sha256.bytesAt u'.mem (State.addr L.scr + BitVec.ofNat 64 (2256 + D + 1)) (2 * Q) =
-            Spec.Sha256.bytesAt u.mem (State.addr L.d) Q ++ hPart wide Q D L u.mem by
+            Spec.Sha256.bytesAt u.mem (State.addr L.d) Q ++ hPart wide Q D (24 + ho) L u.mem by
       refine WP.mono h fun u' ⟨hcu', hg', hf', hb'⟩ =>
         ⟨hcu', (hg' _ (by decide)).trans (hg _ (by decide)), ?_, ?_⟩
       · refine (hf.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩).trans
@@ -324,7 +332,7 @@ theorem msg_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {b : Nat} (hb : b <
         rw [hdq]
         refine congrArg (Spec.Sha256.bytesAt t.mem (State.addr L.d) Q ++ ·) ?_
         cases wide
-        · obtain ⟨_, _⟩ := hA rfl rfl
+        · obtain ⟨_, _, _⟩ := hA rfl rfl
           simp only [hPart, Bool.false_eq_true, ite_false]
           exact bytesAt_frame hf (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr
@@ -336,9 +344,9 @@ theorem msg_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {b : Nat} (hb : b <
             simp only [List.mem_singleton] at hr; subst hr
             exact (hL.gc.sub_left (Region.sub_prefix hdn)).sub_right (Offset.sub_base _ (by omega_arith))) (by omega_arith)
     cases wide
-    · obtain ⟨rfl, hk⟩ := hA rfl rfl
+    · obtain ⟨rfl, hk, hho⟩ := hA rfl rfl
       simp only [Bool.false_eq_true, ite_false, hPart, show 2 * (4 * k) = 8 * k by omega_arith]
-      exact tail_ok hL hcu hD (by omega_arith) hk
+      exact tail_ok hL hcu hD (by omega_arith) hk hho
     · obtain ⟨hQD, hQD4, hdn⟩ := hW rfl rfl
       simp only [ite_true, hPart]
       exact tailW_ok hL hcu hD hD4 h4 hQD hQD4 hq hdn

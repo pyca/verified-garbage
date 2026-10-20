@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Loop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.X25519.X86.Column
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Reduce
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Copy
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): correctness
@@ -128,7 +126,9 @@ theorem stageB_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
     have e4 : 4 * P.k = P.Q := by simp only [RfcHash.k, RfcHash.Q] at *; omega
     have hwc : (cfgOf P).wide = false := hw
     simp only [hwc, Bool.false_eq_true, ite_false]
-    refine WP.mono (reduce_ok (P := P) hw hL hc hsi (by rw [e4, ← hD]; exact hQD)) fun u₁ ⟨hc₁, _, hh₁⟩ => ?_
+    obtain ⟨hb₁, hb₂, -, -⟩ := hb_facts hw hk.e_eq
+    have := L.he
+    refine WP.mono (reduce_ok (P := P) hw hk.e_eq hL hc hsi (by rw [e4, ← hD]; exact hQD)) fun u₁ ⟨hc₁, _, hh₁⟩ => ?_
     rw [e4] at hh₁
     refine WP.mono (initKV_ok hL hc₁) fun u₂ ⟨hc₂, hf₂, hv₂, hk₂⟩ =>
       ⟨hc₂, ?_, hk₂ _ (by nums), hv₂ _ (by nums), dgOk_narrow hL hk hw hc₂⟩
@@ -137,7 +137,7 @@ theorem stageB_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
       simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by omega)]
     rw [hSpec, bits2octets_eqQ hB (by rw [hBOf, length_bytesAt]; exact hQD), hBOf, ← bytesAt_take m₀ L.dg hQD,
       ← hh₁]
-    have e := toBytes_ofBytes (Spec.Sha256.bytesAt u₁.mem (L.B + BitVec.ofNat 64 204) P.Q)
+    have e := toBytes_ofBytes (Spec.Sha256.bytesAt u₁.mem (L.B + BitVec.ofNat 64 P.hB) P.Q)
     rw [length_bytesAt] at e
     exact e.symm
   · obtain ⟨hw9, hQ66, hD64, -⟩ := P.sizesW hw
@@ -182,12 +182,14 @@ theorem stageB_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
       rw [e₁, e₂]
 
 /-- `h` in the message, kept by the steps on `K` and `V`. -/
-theorem hOf_kvw (hL : L.Ok) {m m' : Mem} (hf : Frame (KVW L) m m') : hOf P L m' = hOf P L m := by
+theorem hOf_kvw (hL : L.Ok) (hk : CoreOk P L) {m m' : Mem} (hf : Frame (KVW L) m m') :
+    hOf P L m' = hOf P L m := by
   have hs := P.sizes
   have nB := hL.nB
   simp only [hOf, hPart]
   cases hw : P.R.wide
   · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
+    obtain ⟨hb₁, hb₂, -, -⟩ := hb_facts hw hk.e_eq
     simp only [Bool.false_eq_true, ite_false]
     refine bytesAt_frame hf (fun r hr => ?_) (by omega)
     simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -205,7 +207,7 @@ theorem hOf_kvw (hL : L.Ok) {m m' : Mem} (hf : Frame (KVW L) m m') : hOf P L m' 
 theorem stageC_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u) (hq : QB P L m₀ u) :
     WP isa ((cfgOf P).rekeyFull 0) u fun u' => Ctx L g m₀ u' ∧ QC P L m₀ u' :=
   WP.mono (rekeyFull_ok hL (hok_of hk) hc 0) fun u' ⟨hc', hf', hk', hv'⟩ =>
-    ⟨(hOf_kvw hL hf').trans hq.h,
+    ⟨(hOf_kvw hL hk hf').trans hq.h,
       by rw [hk', hq.k, hq.v, hq.h, hc.dBytes hL (by rw [hk.1])],
       by rw [hv', hk', hq.k, hq.v, hq.h, hc.dBytes hL (by rw [hk.1])], hq.dg.frameOf hL hk hf' kvw_apart⟩ |>
     fun h => ⟨hc', h⟩
@@ -229,7 +231,7 @@ theorem stageE_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
 
 theorem stageG_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u) {i : Nat}
     (hx : Exit P L m₀ i u) :
-    WP isa (.block (Cfg.wipe L.wide)) u fun u' => Ctx L g m₀ u' ∧ Exit P L m₀ i u' ∧
+    WP isa (.block (Cfg.wipe L.wide L.hHigh)) u fun u' => Ctx L g m₀ u' ∧ Exit P L m₀ i u' ∧
       ∀ p ∈ saved, u'.gpr p.1 = g p.1 :=
   WP.mono (wipe_ok hL hc) fun _ ⟨hc₇, ha₇, hf₇, hs₇⟩ => ⟨hc₇, ⟨hx.lt, hx.fails, hx.last,
     hx.res.keep ha₇ (bytesAt_frame hf₇ (fun r hr => by
@@ -241,7 +243,7 @@ theorem stageG_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
 
 /-- `digest` in `esi`, and, if `wide`, `scratch` in `edi`. -/
 theorem digestPtr_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
-    WP isa (.block (Cfg.digestPtr L.wide)) t fun u => Ctx L g m₀ u ∧ u.gpr .esi = L.a2 ∧
+    WP isa (.block (Cfg.digestPtr L.wide L.hHigh)) t fun u => Ctx L g m₀ u ∧ u.gpr .esi = L.a2 ∧
       (L.wide = true → u.gpr .edi = L.a3) := by
   rw [Cfg.digestPtr, WP.block_append_iff]
   refine WP.mono (arg_ok hL hc (d := .esi) (by decide) (i := 2) (by omega)) fun u₁ h₁ => ?_
@@ -254,12 +256,12 @@ theorem digestPtr_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
 
 /-- The body, after our caller's registers are saved. -/
 theorem rest_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) :
-    WP isa (.block (Cfg.digestPtr P.R.wide)) t fun u =>
+    WP isa (.block (Cfg.digestPtr P.R.wide P.R.hHigh)) t fun u =>
       WP isa (.seq (.block ((if (cfgOf P).wide then (cfgOf P).coreDigest else (cfgOf P).reduce) ++ Cfg.initKV))
         (.seq ((cfgOf P).rekeyFull 0) (.seq ((cfgOf P).rekeyFull 1) (.seq (.block (cfgOf P).initCnt)
-        (.seq (.loop (cfgOf P).tryOne .ne) (.block (Cfg.wipe P.R.wide))))))) u
+        (.seq (.loop (cfgOf P).tryOne .ne) (.block (Cfg.wipe P.R.wide P.R.hHigh))))))) u
       fun t' => Ctx L g m₀ t' ∧ (∃ i, Exit P L m₀ i t') ∧ ∀ p ∈ saved, t'.gpr p.1 = g p.1 := by
-  rw [← hk.2.2.1]
+  rw [← hk.2.2.1, ← hk.2.1.2]
   exact WP.mono (digestPtr_ok hL hc) fun _ ⟨h₀, hsi, hdi⟩ =>
     WP.seq (WP.mono (stageB_ok hL hk h₀ hsi fun hw => hdi (hk.2.2.1.trans hw)) fun _ ⟨h₁, q₁⟩ =>
       WP.seq (WP.mono (stageC_ok hL hk h₁ q₁) fun _ ⟨h₂, q₂⟩ =>
@@ -406,13 +408,15 @@ theorem body_nosp (P : RfcHash) : NoSp (cfgOf P).body := by
   cases hW : P.R.wide
   · have hR := reduceKV_nosp (cfgOf P)
     have hlen := P.lengthsA hW
+    have hhq : (cfgOf P).hHigh = decide (P.Q = 64) := hHigh_q P hW
     simp only [Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac, Code.allInstrs.eq_2,
       Code.allInstrs.eq_3, Code.allInstrs.eq_4, Code.allInstrs.eq_5, Code.allInstrs.eq_6, hwd, hW,
       Bool.false_eq_true, ite_false, cfgOf_F, coreC_eq, hI, hU, hF, hK, hR, initCnt_nosp, Bool.and_true,
-      Bool.true_and]
+      Bool.true_and, hhq, fHo_q P hW]
     simp only [hl]
-    rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rcases hlen with h'' | h'' | h'' | h'' <;>
-      simp only [show P.R.E.C.len = P.Q from rfl, h, h', h''] <;> decide +kernel
+    rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rcases hlen with h'' | h'' | h'' | h'' | h'' <;>
+      simp only [show P.R.E.C.len = P.Q from rfl, h, h', h'', Nat.reduceEqDiff, decide_true, decide_false,
+        ite_true, ite_false] <;> decide +kernel
   · obtain ⟨hn, hlen, -⟩ := P.R.sizesW hW
     obtain ⟨-, -, hD, hB⟩ := P.sizesW hW
     have h7 := sh7 hW
@@ -420,7 +424,8 @@ theorem body_nosp (P : RfcHash) : NoSp (cfgOf P).body := by
       Code.allInstrs.eq_3, Code.allInstrs.eq_4, Code.allInstrs.eq_5, Code.allInstrs.eq_6, hwd, hW, ite_true,
       cfgOf_F, coreC_eq, hI, hU, hF, hK, initCnt_nosp, Bool.and_true, Cfg.coreDigest, Cfg.keepV,
       Cfg.candTop, Cfg.conv]
-    simp only [hw, hl, hsh, hn, hlen, h7, hD, hB]
+    simp only [hw, hl, hsh, hn, hlen, h7, hD, hB, show (cfgOf P).hHigh = false from hHigh_wide P hW,
+      fHo_wide P hW]
     decide +kernel
 
 theorem released_gpr {e : Nat} {s₂ : State} {r : Reg} (hr : r ≠ .esp) : (released e s₂).gpr r = s₂.gpr r :=
@@ -430,8 +435,9 @@ theorem released_esp (e : Nat) (s₂ : State) :
     (released e s₂).gpr .esp = s₂.gpr .esp + BitVec.ofNat 32 (196 + 4 * e) :=
   (Wp.Upd.setReg s₂ .esp _).gpr
 
-theorem coreOk_lay (P : RfcHash) (s : State) : CoreOk P (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s P.R.E.combConsts) :=
-  ⟨P.curveLen, fun hw => by show P.Q ≤ P.I.hashLen; rw [P.len]; exact (P.sizesA hw).2.2, rfl, rfl⟩
+theorem coreOk_lay (P : RfcHash) (s : State) :
+    CoreOk P (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s P.R.E.combConsts) :=
+  ⟨P.curveLen, ⟨fun hw => by show P.Q ≤ P.I.hashLen; rw [P.len]; exact (P.sizesA hw).2.2, rfl⟩, rfl, rfl⟩
 
 /-- `vg_ecdsa_<curve>_<hash>_sign` meets `rfcX86 P.I` and keeps the
 callee-saved registers and its return address. -/
@@ -452,12 +458,12 @@ theorem sign_ok {s : State} (h : (rfcX86 P.I (272 + 4 * P.e) P.R.E.combConsts).p
     · rw [released_gpr (by decide)]; exact hs' (.ebp, 192) (by decide)
     · rw [released_esp, hc'.esp]; exact BitVec.sub_add_cancel _ _
   · have hret : (s.gpr .esp).setWidth 64 =
-        (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s P.R.E.combConsts).B + BitVec.ofNat 64 (272 + 4 * P.e) := by
-      have le : (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s P.R.E.combConsts).e = P.e := rfl
+        (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s P.R.E.combConsts).B + BitVec.ofNat 64 (272 + 4 * P.e) := by
+      have le : (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s P.R.E.combConsts).e = P.e := rfl
       rw [hL.B_eq, le, BitVec.sub_add_cancel]; rfl
     show u'.mem.readW _ 32 = _
     rw [hret]
-    refine hc'.frame.readW (r := (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s P.R.E.combConsts).RET) (Region.contains_self _ _) ?_
+    refine hc'.frame.readW (r := (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s P.R.E.combConsts).RET) (Region.contains_self _ _) ?_
       (by decide)
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -465,8 +471,8 @@ theorem sign_ok {s : State} (h : (rfcX86 P.I (272 + 4 * P.e) P.R.E.combConsts).p
     · exact hL.ro
     · exact hL.rc
     · exact Offset.disjoint_base _ (by omega) (by omega)
-  · show match (result P.I s.mem (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s P.R.E.combConsts).d
-        (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s P.R.E.combConsts).dg).1 with
+  · show match (result P.I s.mem (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s P.R.E.combConsts).d
+        (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s P.R.E.combConsts).dg).1 with
       | some rs => _ | none => _
     rw [result_eq hx]
     have e₁ : 2 * P.I.ecdsa.curve.len = 2 * P.Q := by rw [P.curveLen]
@@ -475,7 +481,7 @@ theorem sign_ok {s : State} (h : (rfcX86 P.I (272 + 4 * P.e) P.R.E.combConsts).p
     have hr := hx.res
     have ha : (released P.e u').gpr .eax = u'.gpr .eax := released_gpr (by decide)
     revert hr
-    cases sigI P (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s P.R.E.combConsts) s.mem i with
+    cases sigI P (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s P.R.E.combConsts) s.mem i with
     | some rs => exact fun ⟨h₁, h₂⟩ => ⟨by rw [BitVec.setWidth_append_eq_right, ha]; exact h₁, by rw [e₂]; exact h₂⟩
     | none => exact fun ⟨h₁, h₂⟩ => ⟨by rw [BitVec.setWidth_append_eq_right, ha]; exact h₁, h₂⟩
 

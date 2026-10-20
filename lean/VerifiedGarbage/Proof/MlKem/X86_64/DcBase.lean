@@ -1,14 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
-public import VerifiedGarbage.Proof.MlKem.X86_64.DcSel
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.MlKem.X86_64.Decaps
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 
 /-!
 # ML-KEM on x86-64: decapsulation, its contract, layout, checks and entry
@@ -103,14 +99,12 @@ def dckChk (ws : List (Ptr × Nat)) : Bool := dcChk L ws && keepB (dcB L) ws (sc
 abbrev hW₁ : List (Ptr × Nat) := [(sc 0, 200), (sc 200, 640), (sc oG, 64)]
 abbrev hW₂ : List (Ptr × Nat) := [(sc 0, 200), (sc 200, 640), (sc oKB, 32)]
 
-/-- What every piece of decapsulation needs of the layout, evaluated for each parameter set. -/
-structure DcWf : Prop extends KemWf L where
+/-- What the pieces of decapsulation that do not depend on how it stores its
+polynomials need of the layout (the hashes, the choice of the key, with `c'`
+at `scratch + oc`, and the end), evaluated for each parameter set. -/
+structure DcWfB (oc : Nat) : Prop extends KemWf L where
   scr : 888 ≤ L.scr ∧ L.scr < 2 ^ 32
   small : ∀ b ∈ dcB L, b.2 < 2 ^ 32
-  -- K-PKE.Decrypt
-  u : ∀ i < L.k, uChk L i = true
-  s : ∀ i < L.k, sChk L i = true
-  tail : tailChk L = true
   -- the hashes
   h₁ : hashChk (dcB L) (dcW L) [(sc oM, 32), ((.rbp, 768 * L.k + 32), 32)] 72 (sc oG) 64 = true
   h₁K : dcChk L hW₁ = true
@@ -119,22 +113,32 @@ structure DcWf : Prop extends KemWf L where
   h₂K : dcChk L hW₂ = true
   h₂G : keepB (dcB L) hW₂ (sc oG) 64 = true
   h₂M : keepB (dcB L) hW₂ (sc oM) 32 = true
-  enc : Enc.encChk L (dcB L) (dcW L) (dckChk L) (.rbp, 384 * L.k) = true
   -- the choice of the key
   selK : dcChk L [((.r12, 0), 32)] = true
-  sel : inB (dcB L) (.r14, 0) L.ctLen = true ∧ inB (dcB L) (sc L.oCT) L.ctLen = true ∧
+  sel : inB (dcB L) (.r14, 0) L.ctLen = true ∧ inB (dcB L) (sc oc) L.ctLen = true ∧
     inB (dcB L) (sc oG) 32 = true ∧ inB (dcB L) (sc oKB) 32 = true ∧ inB (dcW L) (.r12, 0) 32 = true ∧
     sepB (dcB L) (sc oG) 32 (.r12, 0) 32 = true ∧ sepB (dcB L) (sc oKB) 32 (.r12, 0) 32 = true
-  ct : L.oCT < 2 ^ 31 ∧ L.ctLen < 2 ^ 32 ∧ 0 < L.ctLen ∧ L.ctLen % 8 = 0
+  ct : oc < 2 ^ 31 ∧ L.ctLen < 2 ^ 32 ∧ 0 < L.ctLen ∧ L.ctLen % 8 = 0
   sv : ∀ k < 6, inB (dcB L) (sc (oSV + 8 * k)) 8 = true
   -- constant time
   inBs : inB (dcB L) (sc 0) 1 = true ∧ inB (dcB L) (.r12, 0) 1 = true ∧ inB (dcB L) (.r14, 0) 1 = true
-  selT : ∃ h, (taint.check (X86_64.Taint.ofRegs [.rbx, .r12, .r14]) (select L) h).isSome = true
+  selT : ∃ h, (taint.check (X86_64.Taint.ofRegs [.rbx, .r12, .r14]) (selectAt oc L.ctLen) h).isSome = true
   rhoT : ∃ h, (taint.check (X86_64.Taint.ofRegs [.rbx, .rbp]) (copy (sc oSB) (.rbp, 384 * L.k + 384 * L.k) 32)
     h).isSome = true
 
+/-- What every piece of decapsulation with polynomials of `u32`s needs of the
+layout, evaluated for each parameter set. -/
+structure DcWf : Prop extends DcWfB L L.oCT where
+  -- K-PKE.Decrypt
+  u : ∀ i < L.k, uChk L i = true
+  s : ∀ i < L.k, sChk L i = true
+  tail : tailChk L = true
+  enc : Enc.encChk L (dcB L) (dcW L) (dckChk L) (.rbp, 384 * L.k) = true
+
+instance : CoeOut (DcWf L) (DcWfB L L.oCT) := ⟨DcWf.toDcWfB⟩
+
 section
-variable {L : Kem} (W : DcWf L) {σ : State} (hp : (decapsK L).pre σ)
+variable {L : Kem} {oc : Nat} (W : DcWfB L oc) {σ : State} (hp : (decapsK L).pre σ)
 include W hp
 
 theorem dcLay {s : State} (h : Top dcM σ s) : Lay (dcR L) (dcW L) s := by
@@ -172,7 +176,7 @@ structure DC (L : Kem) (σ s : State) : Prop where
   c : bytesAt s.mem (pa s (.r14, 0)) L.ctLen = dcC L σ
 
 section
-variable {L : Kem} (W : DcWf L) {σ : State} (hp : (decapsK L).pre σ)
+variable {L : Kem} {oc : Nat} (W : DcWfB L oc) {σ : State} (hp : (decapsK L).pre σ)
 include W hp
 
 theorem DC.lay {s : State} (h : DC L σ s) : Lay (dcR L) (dcW L) s := dcLay W hp h.top
@@ -195,7 +199,7 @@ theorem pro_eq : pro = [.store (at_ .rcx 840) .rbx, .store (at_ .rcx 848) .rbp, 
     .store (at_ .rcx 864) .r13, .store (at_ .rcx 872) .r14, .store (at_ .rcx 880) .r15, .mov .rbx (.reg .rcx),
     .mov .rbp (.reg .rdi), .mov .r14 (.reg .rsi), .mov .r12 (.reg .rdx), .mov32 .r15 (.imm 1)] := rfl
 
-theorem pro_ok {L : Kem} (W : DcWf L) {σ : State} (hp : (decapsK L).pre σ) :
+theorem pro_ok {L : Kem} {oc : Nat} (W : DcWfB L oc) {σ : State} (hp : (decapsK L).pre σ) :
     WP isa (.block pro) σ fun s => DC L σ s ∧ s.gpr .r15 = 1 := by
   have hp' := hp
   obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, r1, r2, r3, r4, k1, k2, k3, k4, n1, n2, n3, n4⟩ := hp'

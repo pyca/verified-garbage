@@ -1,15 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Flag
 
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Top
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.HashCT
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.HashCT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Blocks
+import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA verification on x86-64: branches, sequences and the comparison

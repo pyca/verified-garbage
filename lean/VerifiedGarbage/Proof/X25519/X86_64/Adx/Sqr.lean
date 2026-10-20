@@ -1,12 +1,11 @@
 module
+public import VerifiedGarbage.Impl.X25519.X86_64.Adx
+public import VerifiedGarbage.Proof.X25519.X86_64.Ops
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Mul
-public import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.X25519.X86_64.Sqr
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.Mul
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Framework.Block
+public import Mathlib.Tactic.ToDual
 
 /-!
 # X25519 on x86-64: squaring with BMI2 and ADX

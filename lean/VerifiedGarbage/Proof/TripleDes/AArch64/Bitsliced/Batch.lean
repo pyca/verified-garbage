@@ -1,16 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Pass
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Tdea
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Transpose
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Bytes
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 /-!
 # An AdvSIMD batch

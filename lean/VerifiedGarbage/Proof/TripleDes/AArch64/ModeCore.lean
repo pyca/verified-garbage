@@ -1,17 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.VerifiedBlock
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.TripleDes.AArch64.VerifiedBlock
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Modes.AArch64.Core
-public import VerifiedGarbage.Proof.Modes.AArch64.Words
+import VerifiedGarbage.Proof.Modes.AArch64.Words
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Cbc
 public import VerifiedGarbage.Proof.TripleDes.CbcBlocks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Pre
 import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
+import VerifiedGarbage.Proof.TripleDes.AArch64.RoundLit
 
 /-!
 # Triple DES's core for the modes on AArch64
@@ -105,8 +107,8 @@ theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k 
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_singleton_self _, sched_sub B⟩
 
 /-- No instruction of the block function writes `x2`. -/
-theorem block_keeps_x2 (d : Direction) : ∀ i ∈ instrs (dirBlock d), dstOf i ≠ some .x2 := by
-  have h : ((instrs (dirBlock d)).all fun i => decide (dstOf i ≠ some .x2)) = true := by
+theorem block_keeps_x2 (d : Direction) : ∀ i ∈ instrs (dirBlock d), clobbers i .x2 = false := by
+  have h : ((instrs (dirBlock d)).all fun i => decide (clobbers i .x2 = false)) = true := by
     cases d
     · change ((instrs encryptBlock).all _) = true
       rw [← Code.allInstrs_eq]; lit_decide

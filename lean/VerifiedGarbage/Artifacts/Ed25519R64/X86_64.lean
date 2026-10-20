@@ -1,17 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-meta import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Verified
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Verified
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Keeps
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Keeps
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-meta import VerifiedGarbage.Impl.Mont.Mod
-meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Fns
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Ed25519's point doubling and cached additions, in radix `2^64`, on x86-64 -/
 
@@ -58,125 +48,46 @@ def affNotes (mul : String) : List String := ["The function keeps `rbp` and `r12
   64-bit words, " ++ mul ++ ", folded with `2^256 = 38`, and additions and subtractions, each \
   folded once where an operand is a product."]
 
-theorem addAffine_verified : Verified X86_64.target (addAffineFn baseline)
-    (addAffineContract X86_64.abi true) :=
-  Verified.of_correct (addAffine_correct addAffineFn_keeps (by lit_decide))
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp]) (fun _ _ _ _ hp => fnPub_agree hp)
-      (by taint_decide))
-    addAffK_implies
-
-theorem addAffineAdx_verified : Verified X86_64.target (addAffineFn adx)
-    (addAffineContract X86_64.abi true) :=
-  Verified.of_correct (addAffine_correct addAffineFn_keeps (by lit_decide))
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp]) (fun _ _ _ _ hp => fnPub_agree hp)
-      (by taint_decide))
-    addAffK_implies
-
-theorem doubleExt_verified : Verified X86_64.target (doubleFn baseline true)
-    (doubleContract X86_64.abi true) :=
-  Verified.of_correct (double_correct true (doubleFn_keeps true) (by lit_decide))
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp]) (fun _ _ _ _ hp => fnPub_agree hp)
-      (by taint_decide))
-    (doubleK_implies true)
-
-theorem addExt_verified : Verified X86_64.target (addFn baseline true)
-    (addCachedContract X86_64.abi true) :=
-  Verified.of_correct (add_correct true (addFn_keeps true) (by lit_decide))
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp]) (fun _ _ _ _ hp => fnPub_agree hp)
-      (by taint_decide))
-    (addK_implies true)
-
-theorem addProj_verified : Verified X86_64.target (addFn baseline false)
-    (addCachedContract X86_64.abi false) :=
-  Verified.of_correct (add_correct false (addFn_keeps false) (by lit_decide))
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp]) (fun _ _ _ _ hp => fnPub_agree hp)
-      (by taint_decide))
-    (addK_implies false)
-
-theorem doubleExtAdx_verified : Verified X86_64.target (doubleFn adx true)
-    (doubleContract X86_64.abi true) :=
-  Verified.of_correct (double_correct true (doubleFn_keeps true) (by lit_decide))
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp]) (fun _ _ _ _ hp => fnPub_agree hp)
-      (by taint_decide))
-    (doubleK_implies true)
-
-theorem addExtAdx_verified : Verified X86_64.target (addFn adx true)
-    (addCachedContract X86_64.abi true) :=
-  Verified.of_correct (add_correct true (addFn_keeps true) (by lit_decide))
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp]) (fun _ _ _ _ hp => fnPub_agree hp)
-      (by taint_decide))
-    (addK_implies true)
-
-theorem addProjAdx_verified : Verified X86_64.target (addFn adx false)
-    (addCachedContract X86_64.abi false) :=
-  Verified.of_correct (add_correct false (addFn_keeps false) (by lit_decide))
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp]) (fun _ _ _ _ hp => fnPub_agree hp)
-      (by taint_decide))
-    (addK_implies false)
-
-def artifacts : List Artifact := [  { doubleExtApi with
-    target := X86_64.target
-    doc := doubleExtApi.doc (notes := (notes dblWhat baseMul).map ("Uses baseline integer instructions, and SSE2 moves. " ++ ·))
+def artifacts : List Artifact := [
+  doubleExtApi.artifact X86_64.target {
+    notes := (notes dblWhat baseMul).map ("Uses baseline integer instructions, and SSE2 moves. " ++ ·)
     code := doubleFn baseline true
-    contract := doubleContract X86_64.abi true
-    verified := doubleExt_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { addCachedExtApi with
-    target := X86_64.target
-    doc := addCachedExtApi.doc (notes := (notes (addWhat true) baseMul).map ("Uses baseline integer instructions, and SSE2 moves. " ++ ·))
+    verified := doubleExt_verified },
+  addCachedExtApi.artifact X86_64.target {
+    notes := (notes (addWhat true) baseMul).map ("Uses baseline integer instructions, and SSE2 moves. " ++ ·)
     code := addFn baseline true
-    contract := addCachedContract X86_64.abi true
-    verified := addExt_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { addCachedProjApi with
-    target := X86_64.target
-    doc := addCachedProjApi.doc (notes := (notes (addWhat false) baseMul).map ("Uses baseline integer instructions, and SSE2 moves. " ++ ·))
+    verified := addExt_verified },
+  addCachedProjApi.artifact X86_64.target {
+    notes := (notes (addWhat false) baseMul).map ("Uses baseline integer instructions, and SSE2 moves. " ++ ·)
     code := addFn baseline false
-    contract := addCachedContract X86_64.abi false
-    verified := addProj_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { doubleExtApi with
-    target := X86_64.target
-    name := doubleExtApi.name ++ "_adx"
-    doc := doubleExtApi.doc (notes := (notes dblWhat adxMul).map ("Uses BMI2 and ADX, and SSE2 moves. " ++ ·))
+    verified := addProj_verified },
+  doubleExtApi.artifact X86_64.target {
+    suffix := "_adx"
+    notes := (notes dblWhat adxMul).map ("Uses BMI2 and ADX, and SSE2 moves. " ++ ·)
     code := doubleFn adx true
-    contract := doubleContract X86_64.abi true
     verified := doubleExtAdx_verified
-    features := ["bmi2", "adx"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { addCachedExtApi with
-    target := X86_64.target
-    name := addCachedExtApi.name ++ "_adx"
-    doc := addCachedExtApi.doc (notes := (notes (addWhat true) adxMul).map ("Uses BMI2 and ADX, and SSE2 moves. " ++ ·))
+    features := ["bmi2", "adx"] },
+  addCachedExtApi.artifact X86_64.target {
+    suffix := "_adx"
+    notes := (notes (addWhat true) adxMul).map ("Uses BMI2 and ADX, and SSE2 moves. " ++ ·)
     code := addFn adx true
-    contract := addCachedContract X86_64.abi true
     verified := addExtAdx_verified
-    features := ["bmi2", "adx"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { addCachedProjApi with
-    target := X86_64.target
-    name := addCachedProjApi.name ++ "_adx"
-    doc := addCachedProjApi.doc (notes := (notes (addWhat false) adxMul).map ("Uses BMI2 and ADX, and SSE2 moves. " ++ ·))
+    features := ["bmi2", "adx"] },
+  addCachedProjApi.artifact X86_64.target {
+    suffix := "_adx"
+    notes := (notes (addWhat false) adxMul).map ("Uses BMI2 and ADX, and SSE2 moves. " ++ ·)
     code := addFn adx false
-    contract := addCachedContract X86_64.abi false
     verified := addProjAdx_verified
-    features := ["bmi2", "adx"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { addAffineExtApi with
-    target := X86_64.target
-    doc := addAffineExtApi.doc (notes := (affNotes baseMul).map ("Uses baseline integer instructions, and SSE2 moves. " ++ ·))
+    features := ["bmi2", "adx"] },
+  addAffineExtApi.artifact X86_64.target {
+    notes := (affNotes baseMul).map ("Uses baseline integer instructions, and SSE2 moves. " ++ ·)
     code := addAffineFn baseline
-    contract := addAffineContract X86_64.abi true
-    verified := addAffine_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { addAffineExtApi with
-    target := X86_64.target
-    name := addAffineExtApi.name ++ "_adx"
-    doc := addAffineExtApi.doc (notes := (affNotes adxMul).map ("Uses BMI2 and ADX, and SSE2 moves. " ++ ·))
+    verified := addAffine_verified },
+  addAffineExtApi.artifact X86_64.target {
+    suffix := "_adx"
+    notes := (affNotes adxMul).map ("Uses BMI2 and ADX, and SSE2 moves. " ++ ·)
     code := addAffineFn adx
-    contract := addAffineContract X86_64.abi true
     verified := addAffineAdx_verified
-    features := ["bmi2", "adx"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    features := ["bmi2", "adx"] }]
 
 end VG.Artifacts.Ed25519R64.X86_64

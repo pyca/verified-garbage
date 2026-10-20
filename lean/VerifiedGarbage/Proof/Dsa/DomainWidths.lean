@@ -1,15 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.DomainShape
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Proof.Dsa.Digest
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Relating public width scans to the DSA parameter-size predicate -/
 
@@ -39,8 +36,8 @@ theorem supported_scans (p q : List Byte) :
     show (224 : Nat) = 8 * 28 from rfl, show (256 : Nat) = 8 * 32 from rfl, hp1, hp2, hp3, hq1, hq2,
     hq3, e]
   constructor
-  · rintro (⟨⟨h1, h2⟩, h3, h4⟩ | ⟨⟨h1, h2⟩, (⟨h3, h4⟩ | ⟨h3, h4⟩)⟩ | ⟨⟨h1, h2⟩, h3, h4⟩) <;> simp_all
-  · rintro ⟨h1, h2, (⟨h3, h4⟩ | ⟨h3, (h4 | h4)⟩ | ⟨h3, h4⟩)⟩ <;> simp_all
+  · rintro (⟨⟨h1, h2⟩, h3, h4⟩ | ⟨⟨h1, h2⟩, (⟨h3, h4⟩ | ⟨h3, h4⟩ | ⟨h3, h4⟩)⟩ | ⟨⟨h1, h2⟩, h3, h4⟩) <;> simp_all
+  · rintro ⟨h1, h2, (⟨h3, h4⟩ | ⟨h3, (h4 | h4 | h4)⟩ | ⟨h3, h4⟩)⟩ <;> simp_all
 
 /-- Supported subgroup widths are byte-aligned, including padded inputs. -/
 theorem subgroup_scan_width {p q : List Byte}

@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Aes.Arm.Blocks
 public import VerifiedGarbage.Proof.Aes.Arm.Group
 public import VerifiedGarbage.Proof.Aes.InvSboxSpec
 public import VerifiedGarbage.Proof.Aes.Ct32.InvBitsliced
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Decrypting two blocks, bitsliced, on ARMv7
@@ -58,7 +54,7 @@ theorem invSbox_ok {s : State} (hok : Ok sboxCfg s) :
     simpa using this
   have key : ∀ p < 32, ∃ s', runBlock isa invSboxCode s = some s' ∧
       Post (TableRel p (bsByte (fun k => s.gpr (q k)) p).toNat) sboxCfg (fun _ => none) e' s s'
-        (fun r => (invSboxCode.all fun i => dstOf i != some r) = false) := by
+        (fun r => (invSboxCode.all fun i => !clobbers i r) = false) := by
     intro p hp
     have hc := (bsByte (fun k => s.gpr (q k)) p).isLt
     refine run (table_sound hp hc) hok ⟨fun r a h => ?_, (fun _ _ _ h => by cases h),

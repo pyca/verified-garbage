@@ -1,13 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Divstep.Alg32Def
 
 import VerifiedGarbage.Proof.Divstep.Batch
-public import VerifiedGarbage.Proof.Divstep.Word32
-public import VerifiedGarbage.Proof.Divstep.Mred32
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Divstep.Mred32
 import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.NormNum.OfScientific
+import Mathlib.Tactic.NormNum.DivMod
+import Mathlib.Tactic.NormNum.Abs
+import Mathlib.Data.Rat.Cast.Order
+import Mathlib.Tactic.Linarith.Frontend
+import Mathlib.Data.Finset.Attr
 
 /-!
 # Inversion by batches of divsteps

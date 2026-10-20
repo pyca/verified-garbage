@@ -1,17 +1,22 @@
 module
 
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Impl.AesGcm.X86_64
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
+meta import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # AES-GCM on x86-64: `oneBlocks` in two runs

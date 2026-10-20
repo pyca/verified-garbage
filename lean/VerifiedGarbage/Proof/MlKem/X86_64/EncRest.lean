@@ -1,14 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncBase
-import VerifiedGarbage.Proof.MlKem.X86_64.Prfs
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragEM
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.MlKem.X86_64.KgB
+import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
+import VerifiedGarbage.Proof.MlKem.X86_64.FragC
+import VerifiedGarbage.Proof.MlKem.X86_64.FragL
 
 /-!
 # ML-KEM on x86-64: K-PKE.Encrypt, the ciphertext
@@ -317,7 +315,7 @@ theorem u_ok {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc 
   refine WP.seq (WP.mono (addAt_ok hA L₁ rbx_na hac hw₁.1 hp₁.1) fun s₂ ⟨hP₂, hp₂⟩ => ?_)
   have L₂ := L₁.post hP₂.b C.bs
   rw [hw₁.2, hp₁.2, ← hP₂.pa rbx_cs] at hp₂
-  refine WP.mono (ceCall_okL K.ce L₂ rbx_na htw K.du.1 hp₂.1) fun s₃ ⟨hP₃, hb₃⟩ => ?_
+  refine WP.mono (ceCall_okL (K.ce A.codecs) L₂ rbx_na htw K.du.1 hp₂.1) fun s₃ ⟨hP₃, hb₃⟩ => ?_
   have hP := PPost.app (PPost.app hP₁ hP₂ (by simp [calleeSaved])) hP₃ (by simp [calleeSaved])
   obtain ⟨hk, hw, hu⟩ := h.keep (Nat.le_succ i) hP hrc
   refine ⟨hP, hk, hw, fun i' hi' => ?_⟩
@@ -343,7 +341,7 @@ theorem u_tr {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc 
     (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS (L.pU + i)))) C.bs (addAt_tr hA rbx_na hac)
       (fun x Lx hx => WP.mono (addAt_ok hA Lx rbx_na hac hx.1 hx.2) fun x' ⟨hP, hq⟩ =>
         ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1⟩)
-      (ceCall_trL K.ce rbx_na htw K.du.1)))
+      (ceCall_trL (K.ce A.codecs) rbx_na htw K.du.1)))
     (fun x y ⟨hl, ⟨_, _, _, _, h₁⟩, ⟨_, _, _, _, h₂⟩⟩ =>
       ⟨hl, (h₁.w i (by omega) (Nat.le_refl _)).1, (h₂.w i (by omega) (Nat.le_refl _)).1⟩) fun _ _ h => h
 
@@ -376,14 +374,14 @@ theorem v_ok {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc 
   have e₂ := h.i.keep hP₁₂.b hi₂
   have L₂ := C.lay e₂.out
   rw [hw₁.2, hp₁.2, ← hP₂.pa rbx_cs] at hp₂
-  refine WP.seq (WP.mono (ddCall_okL ddImpl L₂ (d := 1) rbx_na hdd (by decide)) fun s₃ ⟨hP₃, hp₃⟩ => ?_)
+  refine WP.seq (WP.mono (ddCall_okL (Codecs.ddI A.codecs) L₂ (d := 1) rbx_na hdd (by decide)) fun s₃ ⟨hP₃, hp₃⟩ => ?_)
   have L₃ := L₂.post hP₃.b C.bs
   rw [e₂.m, ← hP₃.pa rbx_cs] at hp₃
   have hq₃ := L₂.keepPoly hP₃.b hkw hp₂
   refine WP.seq (WP.mono (addAt_ok hA L₃ rbx_na hac hq₃.1 hp₃.1) fun s₄ ⟨hP₄, hp₄⟩ => ?_)
   have L₄ := L₃.post hP₄.b C.bs
   rw [hq₃.2, hp₃.2, ← hP₄.pa rbx_cs] at hp₄
-  refine WP.mono (ceCall_okL K.ce L₄ (d := L.dv) rbx_na htw K.dv.1 hp₄.1) fun s₅ ⟨hP₅, hb₅⟩ => ?_
+  refine WP.mono (ceCall_okL (K.ce A.codecs) L₄ (d := L.dv) rbx_na htw K.dv.1 hp₄.1) fun s₅ ⟨hP₅, hb₅⟩ => ?_
   have hP₄' := PPost.app (PPost.app hP₁₂ hP₃ (by simp [calleeSaved])) hP₄ (by simp [calleeSaved])
   have hP := PPost.app hP₄' hP₅ (by simp [calleeSaved])
   obtain ⟨hk, -, hu⟩ := h.keep (Nat.le_succ _) hP hrc
@@ -428,13 +426,13 @@ theorem v_tr {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc 
       (fun x Lx hx => WP.mono (addAt_ok hA Lx rbx_na hac hx.1 hx.2) fun x' ⟨hP, hq⟩ =>
         ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1⟩)
     (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS (L.pU + L.k))) ∧ Reduced x.mem (pa x (pS 15))) C.bs
-      (RelCT.mono (ddCall_trL ddImpl (d := 1) rbx_na hdd (by decide)) (fun _ _ h => h.1) fun _ _ h => h)
-      (fun x Lx hx => WP.mono (ddCall_okL ddImpl Lx (d := 1) rbx_na hdd (by decide)) fun x' ⟨hP, hq⟩ =>
+      (RelCT.mono (ddCall_trL (Codecs.ddI A.codecs) (d := 1) rbx_na hdd (by decide)) (fun _ _ h => h.1) fun _ _ h => h)
+      (fun x Lx hx => WP.mono (ddCall_okL (Codecs.ddI A.codecs) Lx (d := 1) rbx_na hdd (by decide)) fun x' ⟨hP, hq⟩ =>
         ⟨⟨_, hP.b⟩, Lx.keepRed hP.b hkw hx, by rw [hP.pa rbx_cs]; exact hq.1⟩)
     (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS (L.pU + L.k)))) C.bs (addAt_tr hA rbx_na hac)
       (fun x Lx hx => WP.mono (addAt_ok hA Lx rbx_na hac hx.1 hx.2) fun x' ⟨hP, hq⟩ =>
         ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1⟩)
-      (ceCall_trL K.ce (d := L.dv) rbx_na htw K.dv.1)))))
+      (ceCall_trL (K.ce A.codecs) (d := L.dv) rbx_na htw K.dv.1)))))
     (fun x y ⟨hl, ⟨_, _, _, _, h₁⟩, ⟨_, _, _, _, h₂⟩⟩ =>
       ⟨hl, (h₁.w L.k (by omega) (Nat.le_refl _)).1, (h₂.w L.k (by omega) (Nat.le_refl _)).1⟩) fun _ _ h => h
 

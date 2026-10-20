@@ -1,11 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Call
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Top
 import VerifiedGarbage.Proof.MlKem.Arm.Loops
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on ARMv7: the blocks between the calls

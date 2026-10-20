@@ -1,13 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawCT
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawCT
 public import VerifiedGarbage.Impl.Bignum.AArch64.WindowArithmetic
 import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishCT
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCT
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawCT
 meta import VerifiedGarbage.Impl.Bignum.AArch64.WindowArithmetic
 meta import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowArithmetic

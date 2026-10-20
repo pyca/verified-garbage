@@ -1,24 +1,58 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.SignCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
 public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Mul
 public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttInv
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Bits
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.NormLt
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.MakeHint
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintPackCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNttCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.BallCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Prims
+import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Ball
+import VerifiedGarbage.Proof.MlDsa.Sign.Leak
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.SignCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
 import VerifiedGarbage.Proof.MlKem.Arm.Prf
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Ball
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseCCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseKCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseOCT
+public import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+public import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+public import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+public import VerifiedGarbage.Proof.MlKem.Arm.Add
+public import VerifiedGarbage.Proof.MlKem.Compress
+public import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseCCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseKCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseOCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.SignCT
+import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+import VerifiedGarbage.Proof.MlKem.Arm.HashTop
+import VerifiedGarbage.Proof.MlKem.Arm.Loops
+import VerifiedGarbage.Proof.MlKem.Arm.NttInv
+import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 
 /-!
 # ML-DSA signing on ARMv7: the primitives it calls

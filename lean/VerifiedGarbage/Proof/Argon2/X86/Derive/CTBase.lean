@@ -1,11 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.Scratch
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Argon2.X86.Derive.Correct
-import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Argon2.X86.Derive.MemoryInit
+import VerifiedGarbage.Proof.Argon2.X86.Compress
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
 
 /-!
 # Argon2 on x86 (32-bit): the derivation's taint analysis

@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Ed25519.X86.Field
 
-public import VerifiedGarbage.Impl.Ed25519.X86.FieldMemory
 
 /-! Sixteen doublings with a public register counter. -/
 

@@ -1,12 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.Poly
-import VerifiedGarbage.Proof.GcmSiv.Spec
 public import VerifiedGarbage.Proof.GcmSiv.Words
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV: POLYVAL is GHASH

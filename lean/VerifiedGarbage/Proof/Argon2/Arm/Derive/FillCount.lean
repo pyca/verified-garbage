@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillRef
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillInput
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
+import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
 
 /-!
 # Argon2 on ARMv7: the reference window's size

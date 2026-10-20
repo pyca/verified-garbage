@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Aes.Ct32.Bitsliced
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The linear layers of bitsliced AES on 32-bit words, as atoms

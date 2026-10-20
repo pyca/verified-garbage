@@ -1,249 +1,174 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.X86_64.ModeCore
-meta import VerifiedGarbage.Proof.Seed.X86_64.ModeCore
-import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
-import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
+public import VerifiedGarbage.Proof.Seed.X86_64.FbVerified
+import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
+import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
+import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
 public import VerifiedGarbage.Proof.Seed.CbcScratch
-meta import VerifiedGarbage.Proof.Seed.CbcScratch
 import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Seed.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Seed.X86_64.FbVerified
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
+meta import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
+meta import VerifiedGarbage.Proof.Seed.CbcScratch
 meta import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+meta import VerifiedGarbage.Proof.Seed.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # SEED-CBC on x86-64 meets its contracts
 
-`cbcEncrypt_wp`, `cbcDecrypt_wp`: the modes' CBC encryption and decryption
-over SEED's core for each direction (`Proof.Modes.X86_64.cbcEncrypt_wp` and
-`cbcDecrypt_wp` with `dirCoreSpec`). `cbcEncrypt_verified`,
-`cbcDecrypt_verified`: each is correct and constant time, by the taint
-analysis: the pointers, `n` and the stack pointer are public, and so is
-everything the code computes from them; the IV is secret. `cbcEncrypt_framed`
-and `cbcDecrypt_framed` run them with their working space on the stack,
-zeroed on return: 1512 bytes, the 188 words of the scratch buffer and 8 more.
+`cbcEncryptChained_wp`, `cbcDecryptChained_wp`: the modes' CBC that updates
+the chaining value over SEED's core for each direction
+(`Proof.Modes.X86_64.cbcEncryptChained_wp` and `cbcDecryptChained_wp` with
+`dirCoreSpec`), with the feedback modes' precondition (`fbPre`, as the IV
+is written too); encryption keeps the IV's address in `xmm15`, as those
+modes do. `cbcEncryptChained_verified`, `cbcDecryptChained_verified`: each
+is correct and constant time, by the taint analysis: the pointers, `n` and
+the stack pointer are public, and so is everything the code computes from
+them; the IV is secret. Encryption's analysis reads the feedback modes'
+summary of the loop of rounds (`fbRoundSum`). `cbcEncryptChained_framed`
+and `cbcDecryptChained_framed` run them with their working space on the
+stack, zeroed on return: 1512 bytes, the 188 words of the scratch buffer
+and 8 more.
 -/
 
 @[expose] public section
 
-namespace VG.Proof.Seed
-
-open VG VG.X86_64 VG.Impl.Seed.X86_64
-
-/-- CBC decryption on x86-64 with its working space at `r8`. -/
-def cbcDecX86_64 : Contract X86_64.isa where
-  pre s :=
-    let sched : Region := ⟨s.gpr .rdi, 128⟩
-    let iv : Region := ⟨s.gpr .rsi, 16⟩
-    let data : Region := ⟨s.gpr .rdx, 16 * (s.gpr .rcx).toNat⟩
-    let scratch : Region := ⟨s.gpr .r8, 8 * 188⟩
-    let ret : Region := ⟨s.gpr .rsp, 8⟩
-    s.rd = [sched, iv] ∧ s.wr = [data, scratch] ∧ sched.Disjoint data ∧ sched.Disjoint scratch ∧
-      iv.Disjoint data ∧ iv.Disjoint scratch ∧ data.Disjoint scratch ∧ ret.Disjoint data ∧
-      ret.Disjoint scratch ∧
-      (s.gpr .rdi).toNat + 128 ≤ 2 ^ 64 ∧ (s.gpr .rsi).toNat + 16 ≤ 2 ^ 64 ∧
-      (s.gpr .rdx).toNat + 16 * (s.gpr .rcx).toNat ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 8 * 188 ≤ 2 ^ 64
-  post s s' :=
-    Spec.Cbc.blocksAt s'.mem (s.gpr .rdx) (s.gpr .rcx).toNat =
-      Spec.Cbc.decrypt (Spec.Seed.invCipher (Spec.Seed.scheduleAt s.mem (s.gpr .rdi)))
-        (Spec.Aes.bytesAt s.mem (s.gpr .rsi) 16)
-        (Spec.Cbc.blocksAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
-  pub s₁ s₂ :=
-    s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
-      s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .rsp = s₂.gpr .rsp
-
-/-- CBC encryption on x86-64 with its working space at `r8`: as decryption,
-with encryption's result. -/
-def cbcEncX86_64 : Contract X86_64.isa where
-  pre := cbcDecX86_64.pre
-  post s s' :=
-    Spec.Cbc.blocksAt s'.mem (s.gpr .rdx) (s.gpr .rcx).toNat =
-      Spec.Cbc.encrypt (Spec.Seed.cipher (Spec.Seed.scheduleAt s.mem (s.gpr .rdi)))
-        (Spec.Aes.bytesAt s.mem (s.gpr .rsi) 16)
-        (Spec.Cbc.blocksAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
-  pub := cbcDecX86_64.pub
-
-end VG.Proof.Seed
-
 namespace VG.Proof.Seed.X86_64
 
 open VG VG.X86_64 VG.Impl.Seed.X86_64
-open VG.Proof.Seed (cbcDecX86_64 cbcEncX86_64)
+
+/-- CBC decryption on x86-64 that updates the chaining value. -/
+def cbcDecX86_64 : Contract isa where
+  pre := fbPre blkLen
+  post s s' := blocksOf s s'.mem =
+      Spec.Cbc.decrypt (Spec.Seed.invCipher (Spec.Seed.scheduleAt s.mem (s.gpr .rdi))) (ivOf s) (blocksOf s s.mem) ∧
+    Spec.Aes.bytesAt s'.mem (s.gpr .rsi) 16 = Spec.Cbc.next (ivOf s) (blocksOf s s.mem)
+  pub := fbPub
+
+/-- CBC encryption on x86-64 that updates the chaining value. -/
+def cbcEncX86_64 : Contract isa where
+  pre := fbPre blkLen
+  post s s' := blocksOf s s'.mem = Spec.Cbc.encrypt (ciphOf s) (ivOf s) (blocksOf s s.mem) ∧
+    Spec.Aes.bytesAt s'.mem (s.gpr .rsi) 16 =
+      Spec.Cbc.next (ivOf s) (Spec.Cbc.encrypt (ciphOf s) (ivOf s) (blocksOf s s.mem))
+  pub := fbPub
 
 attribute [local irreducible] Spec.Seed.invCipher in
 /-- The core's cipher is the contract's (stated once: unifying them unfolds the cipher's spec). -/
 theorem decCipher_eq : (dirCoreSpec .decrypt).cipher = Spec.Seed.invCipher := rfl
 
-attribute [local irreducible] Spec.Seed.cipher in
-/-- The core's cipher is the contract's (stated once: unifying them unfolds the cipher's spec). -/
-theorem encCipher_eq : (dirCoreSpec .encrypt).cipher = Spec.Seed.cipher := rfl
-
-theorem cbcDecrypt_wp {s₀ : State} (hp : cbcDecX86_64.pre s₀) :
-    WP isa cbcDecrypt s₀ fun s' => gprPreserved s₀ s' ∧ cbcDecX86_64.post s₀ s' := by
-  obtain ⟨hrd, hwr, dKD, dKS, dVD, dVS, dDS, dRD, dRS, fitK, fitV, fitD, fitB⟩ := hp
+theorem cbcDecryptChained_wp {s₀ : State} (hp : cbcDecX86_64.pre s₀) :
+    WP isa cbcDecryptChained s₀ fun s' => gprPreserved s₀ s' ∧ cbcDecX86_64.post s₀ s' := by
+  obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, fitK, fitV, fitD, fitB⟩ := hp
   have hwS : (⟨s₀.gpr .r8, 8 * 188⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  refine WP.mono (Proof.Modes.X86_64.cbcDecrypt_wp (dirCoreSpec .decrypt) (r := ⟨.rsi, .rdx, .rcx, .r8⟩)
+  refine WP.mono (Proof.Modes.X86_64.cbcDecryptChained_wp (dirCoreSpec .decrypt) (r := modeRegs)
     ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .r8) (P := s₀.gpr .rsi) (D := s₀.gpr .rdx) (n := (s₀.gpr .rcx).toNat)
     (k := Spec.Seed.scheduleAt s₀.mem (s₀.gpr .rdi)) rfl rfl rfl rfl ⟨hwS, fitB⟩
-    (by rw [hrd]; simp) (by rw [hwr]; simp) dVS dDS fitD
-    ⟨s₀.gpr .rdi, rfl, rfl, by rw [hrd]; simp, fitK, fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dKS⟩) fun s' ⟨hcs, hdata, hf, _, _⟩ =>
-    ⟨⟨hcs, ?_⟩, ?_⟩
-  · refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact dRS
-    · exact dRD
-  · rw [dirCore_bw, show 8 * 2 = 16 from rfl, decCipher_eq] at hdata
-    exact hdata
-
-def cbcTaint : X86_64.Taint.T :=
-  { regs := .ofList [.rdi, .rsi, .rdx, .rcx, .r8, .rsp], flags := false,
-    lens := [0, 8 * 188], bases := [(.r8, 1, 0)] }
-
-theorem cbcTaint_wf (s : State) (hs : cbcDecX86_64.pre s) : Taint.Wf cbcTaint s := by
-  obtain ⟨_, hwr, _, _, _, _, dDS, _, _, _, _, fitD, fitB⟩ := hs
-  refine ⟨fun _ => ?_, ?_⟩
-  · rw [hwr]
-    refine ⟨?_, ?_, ?_⟩
-    · exact List.Forall₂.cons (by change 0 ≤ 16 * (s.gpr .rcx).toNat; omega)
-        (List.Forall₂.cons (by change 8 * 188 ≤ 8 * 188; omega) List.Forall₂.nil)
-    · exact List.Pairwise.cons (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact dDS)
-        (List.Pairwise.cons (by simp) List.Pairwise.nil)
-    · intro r hr
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · change 16 * (s.gpr .rcx).toNat ≤ 2 ^ 64
-        have := (s.gpr .rdx).isLt; omega
-      · change 8 * 188 ≤ 2 ^ 64; omega
-  · intro p hp
-    simp only [cbcTaint, List.mem_singleton] at hp
-    subst p
-    unfold Taint.region
-    rw [hwr]
-    change s.gpr .r8 = s.gpr .r8 + (0 : BitVec 64)
-    exact (BitVec.add_zero _).symm
-
-theorem cbcTaint_agree (s t : State) (hs : cbcDecX86_64.pre s) (ht : cbcDecX86_64.pre t)
-    (hp : cbcDecX86_64.pub s t) : X86_64.Taint.Agree cbcTaint s t := by
-  obtain ⟨p1, p2, p3, p4, p5, p6⟩ := hp
-  refine ⟨?_, ?_, cbcTaint_wf s hs, cbcTaint_wf t ht, ?_, ?_, ?_, X86_64.Taint.noXr⟩
-  · constructor
-    · intro r hr
-      simp only [cbcTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-      exacts [p1, p2, p3, p4, p5, p6]
-    · intro h
-      change false = true at h
-      contradiction
-  · intro _
-    rw [hs.2.1, ht.2.1, p3, p4, p5]
-  · intro slot hslot
-    change slot ∈ ([] : List (Nat × Nat × Nat)) at hslot
-    exact False.elim (List.not_mem_nil hslot)
-  · intro slot hslot
-    change slot ∈ ([] : List (Nat × Nat × Nat)) at hslot
-    exact False.elim (List.not_mem_nil hslot)
-  · intro r hr
-    simp only [cbcTaint, RegSet.not_mem_empty] at hr
-
-theorem cbcDecrypt_ct : ConstantTime isa cbcDecX86_64.pre cbcDecX86_64.pub cbcDecrypt :=
-  VG.Taint.constantTime (A := taint) cbcTaint cbcTaint_agree (by taint_decide)
-
-theorem cbcDecrypt_correct (s : State) (hs : cbcDecX86_64.pre s) :
-    ∃ t s', Exec isa cbcDecrypt s t s' ∧ abiPreserved s s' ∧ cbcDecX86_64.post s s' := by
-  obtain ⟨t, s', he, hg, hpost⟩ := cbcDecrypt_wp hs
-  exact ⟨t, s', he, abiPreserved_of_exec (c := cbcDecrypt) (by lit_decide) he hg, hpost⟩
-
-/-- A state satisfying the precondition (one block). -/
-def cbcSat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rcx => 1 | .r8 => 0x4000 | .rsp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 128⟩, ⟨0x2000, 16⟩]
-  wr := [⟨0x3000, 16⟩, ⟨0x4000, 8 * 188⟩]
-
-theorem cbcDecrypt_verified :
-    Verified X86_64.target cbcDecrypt (Proof.Seed.cbcDecScratchContract X86_64.abi 188) :=
-  Verified.of_correct cbcDecrypt_correct cbcDecrypt_ct (by
-    sig_implies [Proof.Seed.cbcDecScratchContract, Proof.Seed.cbcScratchSig, Spec.Seed.cbcSig,
-      Proof.Seed.cbcDecPost, cbcDecX86_64, X86_64.abi, X86_64.argRegs] [cbcSat] using cbcSat)
-
-/-- CBC decryption with its working space on the stack. -/
-theorem cbcDecrypt_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 1512 .r8 188 cbcDecrypt)
-      (Spec.Seed.cbcDecryptContract X86_64.abi 1512) :=
-  X86_64.Verified.stackScratchWiped (sig := Spec.Seed.cbcSig) (nm := "scratch") (e := .u64)
-    (n := 188) (post := Proof.Seed.cbcDecPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1512) cbcDecrypt_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
-    (Proof.Seed.cbcDecPostOut_local _)
-    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
-
-/-! ## Encryption -/
-
-theorem cbcEncrypt_wp {s₀ : State} (hp : cbcEncX86_64.pre s₀) :
-    WP isa cbcEncrypt s₀ fun s' => gprPreserved s₀ s' ∧ cbcEncX86_64.post s₀ s' := by
-  obtain ⟨hrd, hwr, dKD, dKS, dVD, dVS, dDS, dRD, dRS, fitK, fitV, fitD, fitB⟩ := hp
-  have hwS : (⟨s₀.gpr .r8, 8 * 188⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  refine WP.mono (Proof.Modes.X86_64.cbcEncrypt_wp (dirCoreSpec .encrypt) (r := ⟨.rsi, .rdx, .rcx, .r8⟩)
-    ⟨by decide, by decide, by decide⟩ (by decide)
-    (B := s₀.gpr .r8) (P := s₀.gpr .rsi) (D := s₀.gpr .rdx) (n := (s₀.gpr .rcx).toNat)
-    (k := Spec.Seed.scheduleAt s₀.mem (s₀.gpr .rdi)) rfl rfl rfl rfl ⟨hwS, fitB⟩
-    (by rw [hrd]; simp) (by rw [hwr]; simp) dVS dDS dVD fitD
+    (by rw [dirCore_bw, hwr]; exact List.mem_cons_self)
+    (by rw [dirCore_bw, show 8 * 2 = 16 from rfl, hwr]; exact List.mem_cons_of_mem _ List.mem_cons_self)
+    dVS dDS dVD fitD
     ⟨s₀.gpr .rdi, rfl, rfl, by rw [hrd]; simp, fitK, fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact dKS
-      · exact dKD⟩) fun s' ⟨hcs, hdata, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, ?_⟩
-  · refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+      · exact dKV⟩) fun s' ⟨hcs, hdata, hiv, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, ?_⟩
+  · rw [VG.Proof.Modes.X86_64.stkList_eq_nil rfl, List.append_nil] at hf
+    refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
+    rcases hr with rfl | rfl | rfl
     · exact dRS
     · exact dRD
-  · rw [dirCore_bw, show 8 * 2 = 16 from rfl, encCipher_eq] at hdata
-    exact hdata
+    · exact dRV
+  · rw [dirCore_bw, show 8 * 2 = 16 from rfl] at hdata hiv
+    rw [decCipher_eq] at hdata
+    exact ⟨hdata, hiv⟩
 
-theorem cbcEncrypt_ct : ConstantTime isa cbcEncX86_64.pre cbcEncX86_64.pub cbcEncrypt :=
-  VG.Taint.constantTime (A := taint) cbcTaint cbcTaint_agree (by taint_decide)
+theorem cbcDecryptChained_ct : ConstantTime isa cbcDecX86_64.pre cbcDecX86_64.pub cbcDecryptChained :=
+  VG.Taint.constantTime (A := taint) fbTaint (fbTaint_agree blkLen_congr) (by taint_decide)
 
-theorem cbcEncrypt_correct (s : State) (hs : cbcEncX86_64.pre s) :
-    ∃ t s', Exec isa cbcEncrypt s t s' ∧ abiPreserved s s' ∧ cbcEncX86_64.post s s' := by
-  obtain ⟨t, s', he, hg, hpost⟩ := cbcEncrypt_wp hs
-  exact ⟨t, s', he, abiPreserved_of_exec (c := cbcEncrypt) (by lit_decide) he hg, hpost⟩
+theorem cbcDecryptChained_verified :
+    Verified X86_64.target cbcDecryptChained (Proof.Seed.cbcDecChainedScratchContract X86_64.abi 188) :=
+  Verified.of_correct (fun s hs => by
+      obtain ⟨t, s', he, hg, hpost⟩ := cbcDecryptChained_wp hs
+      exact ⟨t, s', he, abiPreserved_of_exec (c := cbcDecryptChained) (by lit_decide) he hg, hpost⟩)
+    cbcDecryptChained_ct (by
+    sig_implies [Proof.Seed.cbcDecChainedScratchContract, Proof.Seed.cbcChainedScratchSig, Spec.Seed.cbcChainedSig,
+      Proof.Seed.cbcDecChainedPost, cbcDecX86_64, fbPre, fbPub, X86_64.abi, X86_64.argRegs] [fbSat] using fbSat)
 
-theorem cbcEncrypt_verified :
-    Verified X86_64.target cbcEncrypt (Proof.Seed.cbcEncScratchContract X86_64.abi 188) :=
-  Verified.of_correct cbcEncrypt_correct cbcEncrypt_ct (by
-    sig_implies [Proof.Seed.cbcEncScratchContract, Proof.Seed.cbcScratchSig, Spec.Seed.cbcSig,
-      Proof.Seed.cbcEncPost, cbcEncX86_64, cbcDecX86_64, X86_64.abi, X86_64.argRegs] [cbcSat] using cbcSat)
+/-- CBC decryption with its working space on the stack. -/
+theorem cbcDecryptChained_framed :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 1512 .r8 188 cbcDecryptChained)
+      (Spec.Seed.cbcDecryptChainedContract X86_64.abi 1512) :=
+  X86_64.Verified.stackScratchWiped (sig := Spec.Seed.cbcChainedSig) (nm := "scratch") (e := .u64)
+    (n := 188) (post := Proof.Seed.cbcDecChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 1512) cbcDecryptChained_verified (by decide) (by decide) (by decide)
+    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Proof.Seed.cbcDecChainedPostOut_local _)
+    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+/-! ## Encryption -/
+
+theorem cbcEncryptChained_wp {s₀ : State} (hp : cbcEncX86_64.pre s₀) :
+    WP isa cbcEncryptChained s₀ fun s' => gprPreserved s₀ s' ∧ cbcEncX86_64.post s₀ s' := by
+  obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, fitK, fitV, fitD, fitB⟩ := hp
+  have hwS : (⟨s₀.gpr .r8, 8 * 188⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  refine WP.mono (Proof.Modes.X86_64.cbcEncryptChained_wp (dirCoreSpec .encrypt) (r := modeRegs)
+    ⟨by decide, by decide, by decide⟩ (by decide)
+    (B := s₀.gpr .r8) (P := s₀.gpr .rsi) (D := s₀.gpr .rdx) (n := (s₀.gpr .rcx).toNat)
+    (k := Spec.Seed.scheduleAt s₀.mem (s₀.gpr .rdi)) rfl rfl rfl rfl ⟨hwS, fitB⟩
+    (by rw [dirCore_bw, hwr]; exact List.mem_cons_self)
+    (by rw [dirCore_bw, show 8 * 2 = 16 from rfl, hwr]; exact List.mem_cons_of_mem _ List.mem_cons_self)
+    dVS dDS dVD fitD
+    ⟨s₀.gpr .rdi, rfl, rfl, by rw [hrd]; simp, fitK, fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact dKS
+      · exact dKD⟩ ⟨Modes.X86_64.keepsIv_of_scal (by lit_decide),
+      Modes.X86_64.keepsIv_of_ivSafe (by lit_decide)⟩)
+    fun s' ⟨hcs, hdata, hiv, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, ?_⟩
+  · rw [VG.Proof.Modes.X86_64.stkList_eq_nil rfl, List.append_nil] at hf
+    refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact dRS
+    · exact dRD
+    · exact dRV
+  · rw [dirCore_bw, show 8 * 2 = 16 from rfl, encCipher_eq] at hdata hiv
+    exact ⟨hdata, hiv⟩
+
+theorem cbcEncryptChained_ct : ConstantTime isa cbcEncX86_64.pre cbcEncX86_64.pub cbcEncryptChained :=
+  let ⟨_, h⟩ := (by taint_decide_sum [fbRoundSum] : ∃ h, (taintS.check fbTaint cbcEncryptChained h).isSome = true)
+  VG.Taint.constantTime (A := taintS) fbTaint (fbTaint_agree blkLen_congr) h
+
+theorem cbcEncryptChained_verified :
+    Verified X86_64.target cbcEncryptChained (Proof.Seed.cbcEncChainedScratchContract X86_64.abi 188) :=
+  Verified.of_correct (fun s hs => by
+      obtain ⟨t, s', he, hg, hpost⟩ := cbcEncryptChained_wp hs
+      exact ⟨t, s', he, abiPreserved_of_exec (c := cbcEncryptChained) (by lit_decide) he hg, hpost⟩)
+    cbcEncryptChained_ct (by
+    sig_implies [Proof.Seed.cbcEncChainedScratchContract, Proof.Seed.cbcChainedScratchSig, Spec.Seed.cbcChainedSig,
+      Proof.Seed.cbcEncChainedPost, cbcEncX86_64, fbPre, fbPub, X86_64.abi, X86_64.argRegs] [fbSat] using fbSat)
 
 /-- CBC encryption with its working space on the stack. -/
-theorem cbcEncrypt_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 1512 .r8 188 cbcEncrypt)
-      (Spec.Seed.cbcEncryptContract X86_64.abi 1512) :=
-  X86_64.Verified.stackScratchWiped (sig := Spec.Seed.cbcSig) (nm := "scratch") (e := .u64)
-    (n := 188) (post := Proof.Seed.cbcEncPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1512) cbcEncrypt_verified (by decide) (by decide) (by decide)
+theorem cbcEncryptChained_framed :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 1512 .r8 188 cbcEncryptChained)
+      (Spec.Seed.cbcEncryptChainedContract X86_64.abi 1512) :=
+  X86_64.Verified.stackScratchWiped (sig := Spec.Seed.cbcChainedSig) (nm := "scratch") (e := .u64)
+    (n := 188) (post := Proof.Seed.cbcEncChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 1512) cbcEncryptChained_verified (by decide) (by decide) (by decide)
     (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
-    (Proof.Seed.cbcEncPostOut_local _)
+    (Proof.Seed.cbcEncChainedPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Seed.X86_64

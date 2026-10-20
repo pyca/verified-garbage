@@ -2,14 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Points
-public import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.Sub
+public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Ed25519's point functions on AArch64: their bodies
@@ -30,44 +25,18 @@ open VG VG.AArch64 VG.Impl.Ed25519.AArch64 VG.Impl.Ed25519.AArch64.Point64 VG.Pr
 
 /-! ## Frames -/
 
-theorem fieldOp_frame {s : State} {base : Addr} (hs : Scr s base) (op : FieldOp) :
-    WP isa (.block op.code) s fun t => Keep base s t ∧ env t.mem base = evalOp op (env s.mem base) ∧
-      Outside base (offset (fieldDest op)) 32 s.mem t.mem := by
-  cases op with
-  | copy o a =>
-    exact WP.mono (copyField_op hs o a) fun t ⟨h, e⟩ =>
-      ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, h.mem⟩
-  | const o v =>
-    exact WP.mono (constField_op hs o v) fun t ⟨h, e⟩ =>
-      ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, h.mem⟩
-  | mul o a b =>
-    exact WP.mono (mul_ok hs (slot_range o) (slot_range a) (slot_range b)) fun t ⟨h, e⟩ =>
-      ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, h.mem⟩
-  | sqr o a =>
-    exact WP.mono (sqr_ok hs (slot_range o) (slot_range a)) fun t ⟨h, e⟩ =>
-      ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, h.mem⟩
-  | add o a b =>
-    exact WP.mono (add_ok hs (slot_range o) (slot_range a) (slot_range b)) fun t ⟨h, e⟩ =>
-      ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, h.mem⟩
-  | sub o a b =>
-    exact WP.mono (sub_ok hs (slot_range o) (slot_range a) (slot_range b)) fun t ⟨h, e⟩ =>
-      ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, h.mem⟩
-
 /-- The address `x` is in no result's slot of `ops`. -/
 def Unwritten (ops : List FieldOp) (base x : Addr) : Prop :=
   ∀ op ∈ ops, ofs base x < offset (fieldDest op) ∨ offset (fieldDest op) + 32 ≤ ofs base x
 
 theorem fieldCode_frame (ops : List FieldOp) {s : State} {base : Addr} (hs : Scr s base) :
     WP isa (.block (fieldCode ops)) s fun t => Keep base s t ∧
-      env t.mem base = evalOps ops (env s.mem base) ∧ ∀ x, Unwritten ops base x → t.mem x = s.mem x := by
-  induction ops generalizing s with
-  | nil => exact WP.block_nil ⟨Keep.refl _ _, rfl, fun _ _ => rfl⟩
-  | cons op ops ih =>
-    rw [fieldCode, List.flatMap_cons, WP.block_append_iff]
-    refine WP.mono (fieldOp_frame hs op) fun t ⟨ht, et, mt⟩ => ?_
-    refine WP.mono (ih (ht.scr hs)) fun u ⟨hu, eu, mu⟩ => ?_
-    exact ⟨ht.trans hu, by rw [eu, et]; rfl, fun x hx =>
-      (mu x fun o ho => hx o (List.mem_cons_of_mem _ ho)).trans (mt x (hx op List.mem_cons_self))⟩
+      env t.mem base = evalOps ops (env s.mem base) ∧ ∀ x, Unwritten ops base x → t.mem x = s.mem x :=
+  WP.mono (fieldCodeFrom_ok ops hs (C := fun _ => false) (S := fun _ => false) nofun (Small.none _ _))
+    fun _ ⟨k, e, _, m⟩ => ⟨k, e, fun x hx => m x fun op hop => by
+      have h := hx op hop
+      have : fieldDest op = op.out := by cases op <;> rfl
+      rwa [this] at h⟩
 
 /-! ## The functions -/
 

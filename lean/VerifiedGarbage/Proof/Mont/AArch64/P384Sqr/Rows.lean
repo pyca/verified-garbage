@@ -1,11 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Mont.AArch64.Row
 
-public import VerifiedGarbage.Impl.Mont.AArch64.P384Sqr
-public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.AArch64.Round
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
 
 /-!
 # P-384's Montgomery square on AArch64: the products of distinct words
@@ -40,7 +38,7 @@ theorem sqRow_facts : ∀ i < 5, (P384Mul.accRegs.take (2 * i + 1)).length = 2 *
     (sqRowRegs i).Nodup ∧
     (∀ t ∈ sqRowRegs i, t ≠ .x0 ∧ t ≠ .x2 ∧ t ≠ .x3 ∧ t ≠ .x7 ∧ t ≠ sqX i) ∧
     (∀ r ∈ aRegs.drop (i + 1), r ∉ sqRowRegs i ∧ r ≠ .x2 ∧ r ≠ .x3) ∧
-    sqX i ≠ .x2 ∧ sqX i ≠ .x3 ∧ Reg.x27 ∉ Reg.x2 :: .x3 :: sqRowRegs i ∧
+    sqX i ≠ .x2 ∧ sqX i ≠ .x3 ∧
     Reg.x7 ∉ Reg.x2 :: .x3 :: sqRowRegs i ∧ sqX i ∉ Reg.x2 :: .x3 :: sqRowRegs i ∧
     (∀ r ∈ aRegs, r ∉ Reg.x2 :: .x3 :: sqRowRegs i) ∧
     (∀ r ∈ P384Mul.accRegs.take (2 * i + 1), r ∉ Reg.x2 :: .x3 :: sqRowRegs i) ∧
@@ -49,7 +47,7 @@ theorem sqRow_facts : ∀ i < 5, (P384Mul.accRegs.take (2 * i + 1)).length = 2 *
   intro i hi
   rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> decide
 
-theorem sqRowOk {i : Nat} (hi : i < 5) : RowOk 48 (sqX i) (sqRowRegs i) (sqWords i) := by
+theorem sqRowOk {size i : Nat} (hi : i < 5) : RowOk size (sqX i) (sqRowRegs i) (sqWords i) := by
   obtain ⟨-, -, -, -, hnd, hregs, hrd, hx2, hx3, -⟩ := sqRow_facts i hi
   have hw : ∀ w ∈ sqWords i, ∃ r ∈ aRegs.drop (i + 1), w = .gen (.reg r) := fun w hw => by
     obtain ⟨r, hr, rfl⟩ := List.mem_map.mp hw
@@ -62,17 +60,26 @@ theorem sqRowOk {i : Nat} (hi : i < 5) : RowOk 48 (sqX i) (sqRowRegs i) (sqWords
     subst hq
     exact hrd _ hr
 
+/-- What the rows need of their base register. -/
+abbrev RmOk (rm : Reg) : Prop := rm ∉ Reg.x2 :: .x3 :: .x7 :: P384Mul.accRegs
+
+theorem RmOk.row {rm : Reg} (h : RmOk rm) : ∀ i < 5, rm ∉ Reg.x2 :: .x3 :: sqRowRegs i := by
+  have : ∀ i < 5, ∀ r ∈ Reg.x2 :: .x3 :: sqRowRegs i, r ∈ Reg.x2 :: .x3 :: .x7 :: P384Mul.accRegs := by
+    decide
+  exact fun i hi hm => h (this i hi _ hm)
+
 /-- Row `i`: `[acc] += 2^(64 (2i + 1)) a_i [a_(i+1) … a_5]`, the accumulator
 being below `2^(64 (6 + i))` before and `2^(64 (7 + i))` after. -/
-theorem sqRow_ok {i : Nat} (hi : i < 5) {s : State} {base : Addr} (hp : Ptr s .x27 base 48)
-    (hz : s.gpr .x7 = 0) (hv : regsVal s P384Mul.accRegs < 2 ^ (64 * (6 + i))) :
-    WP isa (.block (sqRow i)) s fun t =>
+theorem sqRow_ok {rm : Reg} (hrm : RmOk rm) {i : Nat} (hi : i < 5) {s : State} {base : Addr} {size : Nat}
+    (hp : Ptr s rm base size) (hz : s.gpr .x7 = 0) (hv : regsVal s P384Mul.accRegs < 2 ^ (64 * (6 + i))) :
+    WP isa (.block (sqRowAt rm i)) s fun t =>
       regsVal t P384Mul.accRegs = regsVal s P384Mul.accRegs +
         2 ^ (64 * (2 * i + 1)) * ((s.gpr (sqX i)).toNat * regsVal s (aRegs.drop (i + 1))) ∧
       regsVal t P384Mul.accRegs < 2 ^ (64 * (7 + i)) ∧
       Keeps (.x2 :: .x3 :: sqRowRegs i) s t := by
-  obtain ⟨hlen, hrl, hwl, hsplit, -, -, -, -, -, f27, -, -, -, flo, fhi, -⟩ := sqRow_facts i hi
-  have hR := sqRowOk hi
+  obtain ⟨hlen, hrl, hwl, hsplit, -, -, -, -, -, -, -, -, flo, fhi, -⟩ := sqRow_facts i hi
+  have f27 := hrm.row i hi
+  have hR := sqRowOk (size := size) hi
   -- The accumulator around the row's words.
   have hv' := hv
   rw [hsplit, regsVal_append, regsVal_append, hlen, hrl] at hv'
@@ -103,7 +110,8 @@ theorem sqRow_ok {i : Nat} (hi : i < 5) {s : State} {base : Addr} (hp : Ptr s .x
   have hx := (s.gpr (sqX i)).isLt
   have hxW : (s.gpr (sqX i)).toNat * regsVal s (aRegs.drop (i + 1)) ≤
       (2 ^ 64 - 1) * regsVal s (aRegs.drop (i + 1)) := Nat.mul_le_mul_right _ (by omega)
-  refine WP.mono (row_ok hp hz hR (by decide) (by decide) (fun h => f27 (List.mem_cons_of_mem _
+  refine WP.mono (row_ok hp hz hR (fun e => f27 (by simp [e])) (fun e => f27 (by simp [e]))
+    (fun h => f27 (List.mem_cons_of_mem _
     (List.mem_cons_of_mem _ h))) (by simp only [List.length_map, hwl, hrl]; omega)
     (by rw [rwVal_regs, hT, hrl, hQ']; simp only [sqX] at hxW ⊢; omega)) fun t ⟨e, k⟩ => ?_
   rw [rwVal_regs, hT] at e

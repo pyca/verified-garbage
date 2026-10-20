@@ -1,17 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontProductLoop
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontProductLoop
-public import VerifiedGarbage.Proof.MlDsa.Arith.Montgomery
-meta import VerifiedGarbage.Proof.MlDsa.Arith.Montgomery
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
+import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontProductLoop
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
+meta import Init.Data.Nat.Bitwise.Basic
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## From `MontProductCorrect.lean` -/
 

@@ -1,19 +1,13 @@
 module
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableInit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableStep
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableStep
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableState
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
 
 @[expose] public section
 

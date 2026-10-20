@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.FbVerified
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.TripleDes.X86_64.FbLit
 
 /-! # Triple DES-OFB artifacts on baseline x86-64 -/
 
@@ -16,13 +17,10 @@ def note : String :=
   space once per call. The mode is the generic OFB of `Impl/Modes/X86_64/`."
 
 def artifacts : List Artifact := [
-  { Spec.TripleDes.ofbApi with
-    target := X86_64.target
-    doc := Spec.TripleDes.ofbApi.doc (notes := [note])
+  Spec.TripleDes.ofbApi.artifact X86_64.target {
+    notes := [note]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 976 .r8 121 Impl.TripleDes.X86_64.ofb
-    contract := Spec.TripleDes.ofbContract X86_64.abi 984
     stack := 984
-    verified := Proof.TripleDes.X86_64.ofb_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.TripleDes.X86_64.ofb_framed }]
 
 end VG.Artifacts.TripleDesOfb.X86_64

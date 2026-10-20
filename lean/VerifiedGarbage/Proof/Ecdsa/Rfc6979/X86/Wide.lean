@@ -3,11 +3,12 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Steps
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Copy
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): scalars longer than the hash
@@ -241,7 +242,8 @@ theorem kvw_cww : ∀ r ∈ KVW L, ∃ r' ∈ CWW L, Region.Sub r r' := fun r hr
 /-- Two `V`s to a candidate: `V = HMAC_K(V)`, kept in the frame's top
 words, then `V = HMAC_K(V)` again, its first word after it, and the
 candidate's `Q` bytes shifted right by `sh` bits. -/
-theorem candW_ok (hL : L.Ok) (hw : L.wide = P.R.wide) (hW : P.R.wide = true) {t : State} (hc : Ctx L g m₀ t) :
+theorem candW_ok (hL : L.Ok) (hw : L.wide = P.R.wide) (hh : L.hHigh = P.R.hHigh) (hW : P.R.wide = true) {t : State}
+    (hc : Ctx L g m₀ t) :
     WP isa (cfgOf P).cand t fun u => Ctx L g m₀ u ∧ Frame (CWW L) t.mem u.mem ∧ kOf P L u.mem = kOf P L t.mem ∧
       vOf P L u.mem = P.mac (kOf P L t.mem) (P.mac (kOf P L t.mem) (vOf P L t.mem)) ∧
       Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 344) P.Q =
@@ -255,7 +257,7 @@ theorem candW_ok (hL : L.Ok) (hw : L.wide = P.R.wide) (hW : P.R.wide = true) {t 
   have hD' : (cfgOf P).F.H.D = 64 := hD64
   simp only [Cfg.cand, Cfg.keepV, Cfg.candTop, Cfg.scrPtr, hwd, ite_true, fV, fKb, hD', Nat.reduceDiv,
     Nat.reduceAdd]
-  refine WP.seq (WP.mono (hmacV_ok hL hw hc) fun u₁ ⟨hc₁, hf₁, hk₁, hv₁⟩ => ?_)
+  refine WP.seq (WP.mono (hmacV_ok hL hw hh hc) fun u₁ ⟨hc₁, hf₁, hk₁, hv₁⟩ => ?_)
   -- `V` in the frame's top words.
   refine WP.seq (WP.mono (copyF_ok hL hc₁ (src := .esp) (S := L.F) (SA := L.B + BitVec.ofNat 64 140) hc₁.esp
     (by decide) (so := 64) (d := 268) (K := 16) (by omega_arith) (by omega_arith) (fun j hj => fr_addr hL (by omega_arith))
@@ -266,7 +268,7 @@ theorem candW_ok (hL : L.Ok) (hw : L.wide = P.R.wide) (hW : P.R.wide = true) {t 
     simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint _ (by nums) (by nums) (by nums)) (by nums)
   have hv₂ : vOf P L u₂.mem = vOf P L u₁.mem := bytesAt_frame hf₂ (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint _ (by nums) (by nums) (by nums)) (by nums)
-  refine WP.seq (WP.mono (hmacV_ok hL hw hc₂) fun u₃ ⟨hc₃, hf₃, hk₃, hv₃⟩ => ?_)
+  refine WP.seq (WP.mono (hmacV_ok hL hw hh hc₂) fun u₃ ⟨hc₃, hf₃, hk₃, hv₃⟩ => ?_)
   have hb₃ : Spec.Sha256.bytesAt u₃.mem (L.B + BitVec.ofNat 64 344) 64 = vOf P L u₁.mem := by
     rw [bytesAt_frame hf₃ (fun r hr => by
       simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr

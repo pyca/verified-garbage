@@ -2,10 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Sym
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.SymSel
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ChaCha20 on x86-64 with AVX-512, the last bytes: blocks of the input from either buffer

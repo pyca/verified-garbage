@@ -1,17 +1,37 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCT1
-meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCT1
+import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCT1
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
+public import VerifiedGarbage.Impl.RsaOaep.AArch64.Precomputed
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCTBase
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCall
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEntry
+import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
+import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCorrect
+import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
+import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCT1
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Impl.RsaOaep.AArch64.Precomputed
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCTBase
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCall
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEntry
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCorrect
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
+meta import VerifiedGarbage.Proof.Mgf1.Bytes
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSAES-OAEP encryption on AArch64: verified

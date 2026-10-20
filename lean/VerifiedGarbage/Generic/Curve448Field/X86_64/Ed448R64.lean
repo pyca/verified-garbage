@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
 
 /-! # Ed448's point doubling and affine addition, in radix `2^64`, on x86-64 -/
 
@@ -19,25 +20,19 @@ def notes (v : Impl.Ed448.X86_64.FieldVariant) (formula : String) : List String 
   temporaries in slots 12 to 20 and the product's words at byte 1536."]
 
 def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
-  { doubleApi with
-    name := doubleApi.name ++ v.suffix
+  doubleApi.artifact X86_64.target {
+    suffix := v.suffix
     features := v.features
-    target := X86_64.target
-    doc := doubleApi.doc (notes := notes v "Runs RFC 8032's doubling formulas, seven products")
+    notes := notes v "Runs RFC 8032's doubling formulas, seven products"
     code := v.doubleFn
-    contract := doubleContract X86_64.abi
-    verified := Proof.Ed448.X86_64.FieldVariant.double_verified v
-    spSafe := Code.all_of_allInstrs (by cases v <;> lit_decide) },
-  { addAffineApi with
-    name := addAffineApi.name ++ v.suffix
+    verified := Proof.Ed448.X86_64.FieldVariant.double_verified v },
+  addAffineApi.artifact X86_64.target {
+    suffix := v.suffix
     features := v.features
-    target := X86_64.target
-    doc := addAffineApi.doc (notes := notes v "Runs RFC 8032's complete addition formula with \
+    notes := notes v "Runs RFC 8032's complete addition formula with \
       `A = Z₁` for `Z₁ Z₂`, as `Z₂ = 1`: nine full products and multiplication by \
-      `d = -39081` using negation and X448's small-constant multiplier")
+      `d = -39081` using negation and X448's small-constant multiplier"
     code := v.addFn
-    contract := addAffineContract X86_64.abi
-    verified := Proof.Ed448.X86_64.FieldVariant.add_verified v
-    spSafe := Code.all_of_allInstrs (by cases v <;> lit_decide) }]
+    verified := Proof.Ed448.X86_64.FieldVariant.add_verified v }]
 
 end VG.Generic.Curve448Field.X86_64.Ed448R64

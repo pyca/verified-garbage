@@ -1,20 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Composition
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Proof.Framework.X86_64.Straight
 import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Body
 import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Save
+import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.TripleDes.X86_64.FunctionsLit
 
 @[expose] public section
 

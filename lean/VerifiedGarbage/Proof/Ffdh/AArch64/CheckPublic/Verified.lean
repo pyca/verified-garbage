@@ -1,11 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.AArch64.Domain
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
+public import VerifiedGarbage.Spec.Ffdh.Contract
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPublic.CT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPublic.CT
+import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPublic.Correct
 
 /-!
 # `vg_ffdh_check_public` on AArch64: verified

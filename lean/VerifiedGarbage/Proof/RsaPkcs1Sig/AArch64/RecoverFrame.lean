@@ -1,12 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverPre
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Recover
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # `vg_rsa_pkcs1_recover` on AArch64: the call's arguments

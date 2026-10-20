@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Pair
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Offsets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Execute a pair using only the public scratch allocation -/
 @[expose] public section

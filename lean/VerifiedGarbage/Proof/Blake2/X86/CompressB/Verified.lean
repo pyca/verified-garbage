@@ -1,21 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Blake2.X86.CompressB.Compress
-meta import VerifiedGarbage.Proof.Blake2.X86.CompressB.Compress
-public import VerifiedGarbage.Proof.Blake2.X86.CompressB.Lit
-meta import VerifiedGarbage.Proof.Blake2.X86.CompressB.Lit
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Spec.Blake2.Contract
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Blake2.X86.CompressB.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Blake2.X86.CompressB.Compress
 meta import VerifiedGarbage.Spec.Blake2.Contract
-public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Blake2.X86.CompressB.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # BLAKE2b compression function on x86 (32-bit): the whole function

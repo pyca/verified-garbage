@@ -1,27 +1,33 @@
 module
 
 import VerifiedGarbage.Proof.P256.EcdhJac.Frame
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedArithmetic
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRaw
 import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
 public import VerifiedGarbage.Proof.P256.EcdhJac.First
 public import VerifiedGarbage.Proof.P256.EcdhJac.Masks
 public import VerifiedGarbage.Proof.P256.EcdhJac.Finish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowEntryTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSum
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSumTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
+public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
+public import VerifiedGarbage.Proof.P256.Linear.WeakCertificate
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.CachedHead
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddField
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticRR
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 import VerifiedGarbage.Proof.Weierstrass.WinJacPoint
+import Mathlib.Tactic.ClearExcept
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 
 /-! ## `HotField` -/
 

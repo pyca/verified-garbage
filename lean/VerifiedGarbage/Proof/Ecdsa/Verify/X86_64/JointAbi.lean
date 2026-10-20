@@ -1,19 +1,20 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointCorrect
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointLit
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Verified
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Proof.P256.Prime
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Verified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointLit
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64.Joint
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.CombW
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.LitShare
 
 /-! The joint verifier restores registers and keeps the caller's return address. -/
 

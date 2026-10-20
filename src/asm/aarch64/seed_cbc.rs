@@ -2,660 +2,684 @@
 //! Verified `seed_cbc` functions for `aarch64`.
 #![allow(dead_code)]
 
-/// SEED-CBC encryption (NIST SP 800-38A §6.2, RFC 4269 §2) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on return. `CIPH_K` is SEED encryption under the schedule written by `vg_seed_expand_key`. No padding is added.
+/// SEED-CBC encryption (NIST SP 800-38A §6.2, RFC 4269 §2) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SEED encryption under the schedule written by `vg_seed_expand_key`. No padding is added.
 ///
-/// Contract: `VG.Spec.Seed.cbcEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+/// Contract: `VG.Spec.Seed.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
 /// Baseline AArch64: through `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt`'s batch of sixteen blocks (inlined), with SEED's S-boxes computed bitsliced from AES's circuit and no table lookups; decryption deciphers sixteen blocks per batch; encryption, whose blocks depend on each other, one, with the other fifteen lanes unused. The schedule is copied into the working space once per call. The mode is the generic CBC of `Impl/Modes/AArch64/`.
+///
+/// The IV's address is kept in `x25`, which the core keeps in `v31`, and after the last block the core's buffer, the last ciphertext block, goes back to the IV.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads of 16 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 1456 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_seed_cbc_encrypt(schedule: *const [u8; 128], iv: *const [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_seed_cbc_encrypt_chained(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #1456",
-        "add x4, sp, #0",
-        "add x5, x4, #0",
-        "str x19, [x5, #1360]",
-        "str x20, [x5, #1368]",
-        "str x21, [x5, #1376]",
-        "str x22, [x5, #1384]",
-        "str x23, [x5, #1392]",
-        "str x24, [x5, #1400]",
-        "str x25, [x5, #1408]",
-        "str x26, [x5, #1416]",
-        "str x27, [x5, #1424]",
-        "str x28, [x5, #1432]",
-        "cbz x3, 20f",
-        "ldr x6, [x2, #0]",
-        "ldr x7, [x1, #0]",
-        "eor x6, x6, x7",
-        "str x6, [x2, #0]",
-        "ldr x6, [x2, #8]",
-        "ldr x7, [x1, #8]",
-        "eor x6, x6, x7",
-        "str x6, [x2, #8]",
-        "b 21f",
-        "20:",
-        "21:",
-        "add x23, x2, #0",
-        "add x24, x3, #0",
-        "ldr x6, [x0, #0]",
-        "str x6, [x5, #1232]",
-        "ldr x6, [x0, #8]",
-        "str x6, [x5, #1240]",
-        "ldr x6, [x0, #16]",
-        "str x6, [x5, #1248]",
-        "ldr x6, [x0, #24]",
-        "str x6, [x5, #1256]",
-        "ldr x6, [x0, #32]",
-        "str x6, [x5, #1264]",
-        "ldr x6, [x0, #40]",
-        "str x6, [x5, #1272]",
-        "ldr x6, [x0, #48]",
-        "str x6, [x5, #1280]",
-        "ldr x6, [x0, #56]",
-        "str x6, [x5, #1288]",
-        "ldr x6, [x0, #64]",
-        "str x6, [x5, #1296]",
-        "ldr x6, [x0, #72]",
-        "str x6, [x5, #1304]",
-        "ldr x6, [x0, #80]",
-        "str x6, [x5, #1312]",
-        "ldr x6, [x0, #88]",
-        "str x6, [x5, #1320]",
-        "ldr x6, [x0, #96]",
-        "str x6, [x5, #1328]",
-        "ldr x6, [x0, #104]",
-        "str x6, [x5, #1336]",
-        "ldr x6, [x0, #112]",
-        "str x6, [x5, #1344]",
-        "ldr x6, [x0, #120]",
-        "str x6, [x5, #1352]",
-        "cbz x24, 22f",
-        "24:",
-        "ldr x6, [x23, #0]",
-        "str x6, [x5, #976]",
-        "ldr x6, [x23, #8]",
-        "str x6, [x5, #984]",
-        "dup v28.2d, x30",
-        "dup v27.2d, x5",
-        "dup v29.2d, x23",
-        "dup v30.2d, x24",
-        "add x0, x5, #1232",
-        "add x1, x5, #976",
-        "movz x2, #16, lsl #0",
-        "add x3, x5, #0",
-        "bl {vg_seed_encrypt_blocks}",
-        "umov x5, v27.d[0]",
-        "umov x30, v28.d[0]",
-        "umov x23, v29.d[0]",
-        "umov x24, v30.d[0]",
-        "ldr x6, [x5, #976]",
-        "str x6, [x23, #0]",
-        "ldr x6, [x5, #984]",
-        "str x6, [x23, #8]",
-        "sub x24, x24, #1",
-        "cbz x24, 25f",
-        "ldr x6, [x23, #16]",
-        "ldr x7, [x5, #976]",
-        "eor x6, x6, x7",
-        "str x6, [x23, #16]",
-        "ldr x6, [x23, #24]",
-        "ldr x7, [x5, #984]",
-        "eor x6, x6, x7",
-        "str x6, [x23, #24]",
-        "b 26f",
-        "25:",
-        "26:",
-        "add x23, x23, #16",
-        "cbnz x24, 24b",
-        "b 23f",
-        "22:",
-        "23:",
-        "ldr x19, [x5, #1360]",
-        "ldr x20, [x5, #1368]",
-        "ldr x21, [x5, #1376]",
-        "ldr x22, [x5, #1384]",
-        "ldr x23, [x5, #1392]",
-        "ldr x24, [x5, #1400]",
-        "ldr x25, [x5, #1408]",
-        "ldr x26, [x5, #1416]",
-        "ldr x27, [x5, #1424]",
-        "ldr x28, [x5, #1432]",
-        "add x16, sp, #0",
-        "movz x17, #0, lsl #0",
-        "str x17, [x16, #0]",
-        "str x17, [x16, #8]",
-        "str x17, [x16, #16]",
-        "str x17, [x16, #24]",
-        "str x17, [x16, #32]",
-        "str x17, [x16, #40]",
-        "str x17, [x16, #48]",
-        "str x17, [x16, #56]",
-        "str x17, [x16, #64]",
-        "str x17, [x16, #72]",
-        "str x17, [x16, #80]",
-        "str x17, [x16, #88]",
-        "str x17, [x16, #96]",
-        "str x17, [x16, #104]",
-        "str x17, [x16, #112]",
-        "str x17, [x16, #120]",
-        "str x17, [x16, #128]",
-        "str x17, [x16, #136]",
-        "str x17, [x16, #144]",
-        "str x17, [x16, #152]",
-        "str x17, [x16, #160]",
-        "str x17, [x16, #168]",
-        "str x17, [x16, #176]",
-        "str x17, [x16, #184]",
-        "str x17, [x16, #192]",
-        "str x17, [x16, #200]",
-        "str x17, [x16, #208]",
-        "str x17, [x16, #216]",
-        "str x17, [x16, #224]",
-        "str x17, [x16, #232]",
-        "str x17, [x16, #240]",
-        "str x17, [x16, #248]",
-        "str x17, [x16, #256]",
-        "str x17, [x16, #264]",
-        "str x17, [x16, #272]",
-        "str x17, [x16, #280]",
-        "str x17, [x16, #288]",
-        "str x17, [x16, #296]",
-        "str x17, [x16, #304]",
-        "str x17, [x16, #312]",
-        "str x17, [x16, #320]",
-        "str x17, [x16, #328]",
-        "str x17, [x16, #336]",
-        "str x17, [x16, #344]",
-        "str x17, [x16, #352]",
-        "str x17, [x16, #360]",
-        "str x17, [x16, #368]",
-        "str x17, [x16, #376]",
-        "str x17, [x16, #384]",
-        "str x17, [x16, #392]",
-        "str x17, [x16, #400]",
-        "str x17, [x16, #408]",
-        "str x17, [x16, #416]",
-        "str x17, [x16, #424]",
-        "str x17, [x16, #432]",
-        "str x17, [x16, #440]",
-        "str x17, [x16, #448]",
-        "str x17, [x16, #456]",
-        "str x17, [x16, #464]",
-        "str x17, [x16, #472]",
-        "str x17, [x16, #480]",
-        "str x17, [x16, #488]",
-        "str x17, [x16, #496]",
-        "str x17, [x16, #504]",
-        "str x17, [x16, #512]",
-        "str x17, [x16, #520]",
-        "str x17, [x16, #528]",
-        "str x17, [x16, #536]",
-        "str x17, [x16, #544]",
-        "str x17, [x16, #552]",
-        "str x17, [x16, #560]",
-        "str x17, [x16, #568]",
-        "str x17, [x16, #576]",
-        "str x17, [x16, #584]",
-        "str x17, [x16, #592]",
-        "str x17, [x16, #600]",
-        "str x17, [x16, #608]",
-        "str x17, [x16, #616]",
-        "str x17, [x16, #624]",
-        "str x17, [x16, #632]",
-        "str x17, [x16, #640]",
-        "str x17, [x16, #648]",
-        "str x17, [x16, #656]",
-        "str x17, [x16, #664]",
-        "str x17, [x16, #672]",
-        "str x17, [x16, #680]",
-        "str x17, [x16, #688]",
-        "str x17, [x16, #696]",
-        "str x17, [x16, #704]",
-        "str x17, [x16, #712]",
-        "str x17, [x16, #720]",
-        "str x17, [x16, #728]",
-        "str x17, [x16, #736]",
-        "str x17, [x16, #744]",
-        "str x17, [x16, #752]",
-        "str x17, [x16, #760]",
-        "str x17, [x16, #768]",
-        "str x17, [x16, #776]",
-        "str x17, [x16, #784]",
-        "str x17, [x16, #792]",
-        "str x17, [x16, #800]",
-        "str x17, [x16, #808]",
-        "str x17, [x16, #816]",
-        "str x17, [x16, #824]",
-        "str x17, [x16, #832]",
-        "str x17, [x16, #840]",
-        "str x17, [x16, #848]",
-        "str x17, [x16, #856]",
-        "str x17, [x16, #864]",
-        "str x17, [x16, #872]",
-        "str x17, [x16, #880]",
-        "str x17, [x16, #888]",
-        "str x17, [x16, #896]",
-        "str x17, [x16, #904]",
-        "str x17, [x16, #912]",
-        "str x17, [x16, #920]",
-        "str x17, [x16, #928]",
-        "str x17, [x16, #936]",
-        "str x17, [x16, #944]",
-        "str x17, [x16, #952]",
-        "str x17, [x16, #960]",
-        "str x17, [x16, #968]",
-        "str x17, [x16, #976]",
-        "str x17, [x16, #984]",
-        "str x17, [x16, #992]",
-        "str x17, [x16, #1000]",
-        "str x17, [x16, #1008]",
-        "str x17, [x16, #1016]",
-        "str x17, [x16, #1024]",
-        "str x17, [x16, #1032]",
-        "str x17, [x16, #1040]",
-        "str x17, [x16, #1048]",
-        "str x17, [x16, #1056]",
-        "str x17, [x16, #1064]",
-        "str x17, [x16, #1072]",
-        "str x17, [x16, #1080]",
-        "str x17, [x16, #1088]",
-        "str x17, [x16, #1096]",
-        "str x17, [x16, #1104]",
-        "str x17, [x16, #1112]",
-        "str x17, [x16, #1120]",
-        "str x17, [x16, #1128]",
-        "str x17, [x16, #1136]",
-        "str x17, [x16, #1144]",
-        "str x17, [x16, #1152]",
-        "str x17, [x16, #1160]",
-        "str x17, [x16, #1168]",
-        "str x17, [x16, #1176]",
-        "str x17, [x16, #1184]",
-        "str x17, [x16, #1192]",
-        "str x17, [x16, #1200]",
-        "str x17, [x16, #1208]",
-        "str x17, [x16, #1216]",
-        "str x17, [x16, #1224]",
-        "str x17, [x16, #1232]",
-        "str x17, [x16, #1240]",
-        "str x17, [x16, #1248]",
-        "str x17, [x16, #1256]",
-        "str x17, [x16, #1264]",
-        "str x17, [x16, #1272]",
-        "str x17, [x16, #1280]",
-        "str x17, [x16, #1288]",
-        "str x17, [x16, #1296]",
-        "str x17, [x16, #1304]",
-        "str x17, [x16, #1312]",
-        "str x17, [x16, #1320]",
-        "str x17, [x16, #1328]",
-        "str x17, [x16, #1336]",
-        "str x17, [x16, #1344]",
-        "str x17, [x16, #1352]",
-        "str x17, [x16, #1360]",
-        "str x17, [x16, #1368]",
-        "str x17, [x16, #1376]",
-        "str x17, [x16, #1384]",
-        "str x17, [x16, #1392]",
-        "str x17, [x16, #1400]",
-        "str x17, [x16, #1408]",
-        "str x17, [x16, #1416]",
-        "str x17, [x16, #1424]",
-        "str x17, [x16, #1432]",
-        "str x17, [x16, #1440]",
-        "str x17, [x16, #1448]",
-        "add sp, sp, #1456",
-        "ret",
-        ".p2align 6",
+        r"sub sp, sp, #1456
+add x4, sp, #0
+add x5, x4, #0
+str x19, [x5, #1360]
+str x20, [x5, #1368]
+str x21, [x5, #1376]
+str x22, [x5, #1384]
+str x23, [x5, #1392]
+str x24, [x5, #1400]
+str x25, [x5, #1408]
+str x26, [x5, #1416]
+str x27, [x5, #1424]
+str x28, [x5, #1432]
+add x25, x1, #0
+cbz x3, 20f
+ldr x6, [x2, #0]
+ldr x7, [x1, #0]
+eor x6, x6, x7
+str x6, [x2, #0]
+ldr x6, [x2, #8]
+ldr x7, [x1, #8]
+eor x6, x6, x7
+str x6, [x2, #8]
+b 21f
+20:
+21:
+add x23, x2, #0
+add x24, x3, #0
+dup v31.2d, x25
+ldr x6, [x0, #0]
+str x6, [x5, #1232]
+ldr x6, [x0, #8]
+str x6, [x5, #1240]
+ldr x6, [x0, #16]
+str x6, [x5, #1248]
+ldr x6, [x0, #24]
+str x6, [x5, #1256]
+ldr x6, [x0, #32]
+str x6, [x5, #1264]
+ldr x6, [x0, #40]
+str x6, [x5, #1272]
+ldr x6, [x0, #48]
+str x6, [x5, #1280]
+ldr x6, [x0, #56]
+str x6, [x5, #1288]
+ldr x6, [x0, #64]
+str x6, [x5, #1296]
+ldr x6, [x0, #72]
+str x6, [x5, #1304]
+ldr x6, [x0, #80]
+str x6, [x5, #1312]
+ldr x6, [x0, #88]
+str x6, [x5, #1320]
+ldr x6, [x0, #96]
+str x6, [x5, #1328]
+ldr x6, [x0, #104]
+str x6, [x5, #1336]
+ldr x6, [x0, #112]
+str x6, [x5, #1344]
+ldr x6, [x0, #120]
+str x6, [x5, #1352]
+umov x25, v31.d[0]
+cbz x24, 22f
+24:
+ldr x6, [x23, #0]
+str x6, [x5, #976]
+ldr x6, [x23, #8]
+str x6, [x5, #984]
+dup v31.2d, x25
+dup v28.2d, x30
+dup v27.2d, x5
+dup v29.2d, x23
+dup v30.2d, x24
+add x0, x5, #1232
+add x1, x5, #976
+movz x2, #16, lsl #0
+add x3, x5, #0
+bl {vg_seed_encrypt_blocks}
+umov x5, v27.d[0]
+umov x30, v28.d[0]
+umov x23, v29.d[0]
+umov x24, v30.d[0]
+umov x25, v31.d[0]
+ldr x6, [x5, #976]
+str x6, [x23, #0]
+ldr x6, [x5, #984]
+str x6, [x23, #8]
+sub x24, x24, #1
+cbz x24, 25f
+ldr x6, [x23, #16]
+ldr x7, [x5, #976]
+eor x6, x6, x7
+str x6, [x23, #16]
+ldr x6, [x23, #24]
+ldr x7, [x5, #984]
+eor x6, x6, x7
+str x6, [x23, #24]
+b 26f
+25:
+26:
+add x23, x23, #16
+cbnz x24, 24b
+ldr x6, [x5, #976]
+str x6, [x25, #0]
+ldr x6, [x5, #984]
+str x6, [x25, #8]
+b 23f
+22:
+23:
+ldr x19, [x5, #1360]
+ldr x20, [x5, #1368]
+ldr x21, [x5, #1376]
+ldr x22, [x5, #1384]
+ldr x23, [x5, #1392]
+ldr x24, [x5, #1400]
+ldr x25, [x5, #1408]
+ldr x26, [x5, #1416]
+ldr x27, [x5, #1424]
+ldr x28, [x5, #1432]
+add x16, sp, #0
+movz x17, #0, lsl #0
+str x17, [x16, #0]
+str x17, [x16, #8]
+str x17, [x16, #16]
+str x17, [x16, #24]
+str x17, [x16, #32]
+str x17, [x16, #40]
+str x17, [x16, #48]
+str x17, [x16, #56]
+str x17, [x16, #64]
+str x17, [x16, #72]
+str x17, [x16, #80]
+str x17, [x16, #88]
+str x17, [x16, #96]
+str x17, [x16, #104]
+str x17, [x16, #112]
+str x17, [x16, #120]
+str x17, [x16, #128]
+str x17, [x16, #136]
+str x17, [x16, #144]
+str x17, [x16, #152]
+str x17, [x16, #160]
+str x17, [x16, #168]
+str x17, [x16, #176]
+str x17, [x16, #184]
+str x17, [x16, #192]
+str x17, [x16, #200]
+str x17, [x16, #208]
+str x17, [x16, #216]
+str x17, [x16, #224]
+str x17, [x16, #232]
+str x17, [x16, #240]
+str x17, [x16, #248]
+str x17, [x16, #256]
+str x17, [x16, #264]
+str x17, [x16, #272]
+str x17, [x16, #280]
+str x17, [x16, #288]
+str x17, [x16, #296]
+str x17, [x16, #304]
+str x17, [x16, #312]
+str x17, [x16, #320]
+str x17, [x16, #328]
+str x17, [x16, #336]
+str x17, [x16, #344]
+str x17, [x16, #352]
+str x17, [x16, #360]
+str x17, [x16, #368]
+str x17, [x16, #376]
+str x17, [x16, #384]
+str x17, [x16, #392]
+str x17, [x16, #400]
+str x17, [x16, #408]
+str x17, [x16, #416]
+str x17, [x16, #424]
+str x17, [x16, #432]
+str x17, [x16, #440]
+str x17, [x16, #448]
+str x17, [x16, #456]
+str x17, [x16, #464]
+str x17, [x16, #472]
+str x17, [x16, #480]
+str x17, [x16, #488]
+str x17, [x16, #496]
+str x17, [x16, #504]
+str x17, [x16, #512]
+str x17, [x16, #520]
+str x17, [x16, #528]
+str x17, [x16, #536]
+str x17, [x16, #544]
+str x17, [x16, #552]
+str x17, [x16, #560]
+str x17, [x16, #568]
+str x17, [x16, #576]
+str x17, [x16, #584]
+str x17, [x16, #592]
+str x17, [x16, #600]
+str x17, [x16, #608]
+str x17, [x16, #616]
+str x17, [x16, #624]
+str x17, [x16, #632]
+str x17, [x16, #640]
+str x17, [x16, #648]
+str x17, [x16, #656]
+str x17, [x16, #664]
+str x17, [x16, #672]
+str x17, [x16, #680]
+str x17, [x16, #688]
+str x17, [x16, #696]
+str x17, [x16, #704]
+str x17, [x16, #712]
+str x17, [x16, #720]
+str x17, [x16, #728]
+str x17, [x16, #736]
+str x17, [x16, #744]
+str x17, [x16, #752]
+str x17, [x16, #760]
+str x17, [x16, #768]
+str x17, [x16, #776]
+str x17, [x16, #784]
+str x17, [x16, #792]
+str x17, [x16, #800]
+str x17, [x16, #808]
+str x17, [x16, #816]
+str x17, [x16, #824]
+str x17, [x16, #832]
+str x17, [x16, #840]
+str x17, [x16, #848]
+str x17, [x16, #856]
+str x17, [x16, #864]
+str x17, [x16, #872]
+str x17, [x16, #880]
+str x17, [x16, #888]
+str x17, [x16, #896]
+str x17, [x16, #904]
+str x17, [x16, #912]
+str x17, [x16, #920]
+str x17, [x16, #928]
+str x17, [x16, #936]
+str x17, [x16, #944]
+str x17, [x16, #952]
+str x17, [x16, #960]
+str x17, [x16, #968]
+str x17, [x16, #976]
+str x17, [x16, #984]
+str x17, [x16, #992]
+str x17, [x16, #1000]
+str x17, [x16, #1008]
+str x17, [x16, #1016]
+str x17, [x16, #1024]
+str x17, [x16, #1032]
+str x17, [x16, #1040]
+str x17, [x16, #1048]
+str x17, [x16, #1056]
+str x17, [x16, #1064]
+str x17, [x16, #1072]
+str x17, [x16, #1080]
+str x17, [x16, #1088]
+str x17, [x16, #1096]
+str x17, [x16, #1104]
+str x17, [x16, #1112]
+str x17, [x16, #1120]
+str x17, [x16, #1128]
+str x17, [x16, #1136]
+str x17, [x16, #1144]
+str x17, [x16, #1152]
+str x17, [x16, #1160]
+str x17, [x16, #1168]
+str x17, [x16, #1176]
+str x17, [x16, #1184]
+str x17, [x16, #1192]
+str x17, [x16, #1200]
+str x17, [x16, #1208]
+str x17, [x16, #1216]
+str x17, [x16, #1224]
+str x17, [x16, #1232]
+str x17, [x16, #1240]
+str x17, [x16, #1248]
+str x17, [x16, #1256]
+str x17, [x16, #1264]
+str x17, [x16, #1272]
+str x17, [x16, #1280]
+str x17, [x16, #1288]
+str x17, [x16, #1296]
+str x17, [x16, #1304]
+str x17, [x16, #1312]
+str x17, [x16, #1320]
+str x17, [x16, #1328]
+str x17, [x16, #1336]
+str x17, [x16, #1344]
+str x17, [x16, #1352]
+str x17, [x16, #1360]
+str x17, [x16, #1368]
+str x17, [x16, #1376]
+str x17, [x16, #1384]
+str x17, [x16, #1392]
+str x17, [x16, #1400]
+str x17, [x16, #1408]
+str x17, [x16, #1416]
+str x17, [x16, #1424]
+str x17, [x16, #1432]
+str x17, [x16, #1440]
+str x17, [x16, #1448]
+add sp, sp, #1456
+ret
+.p2align 6",
         vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks,
     )
 }
 
-/// SEED-CBC decryption (NIST SP 800-38A §6.2, RFC 4269 §2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on entry. `CIPH⁻¹_K` is SEED decryption under the schedule written by `vg_seed_expand_key`. No padding is removed.
+/// SEED-CBC decryption (NIST SP 800-38A §6.2, RFC 4269 §2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is SEED decryption under the schedule written by `vg_seed_expand_key`. No padding is removed.
 ///
-/// Contract: `VG.Spec.Seed.cbcDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+/// Contract: `VG.Spec.Seed.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
 /// Baseline AArch64: through `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt`'s batch of sixteen blocks (inlined), with SEED's S-boxes computed bitsliced from AES's circuit and no table lookups; decryption deciphers sixteen blocks per batch; encryption, whose blocks depend on each other, one, with the other fifteen lanes unused. The schedule is copied into the working space once per call. The mode is the generic CBC of `Impl/Modes/AArch64/`.
+///
+/// The last ciphertext block is copied to the IV before any block is decrypted.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads of 16 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 1456 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_seed_cbc_decrypt(schedule: *const [u8; 128], iv: *const [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "C" fn vg_seed_cbc_decrypt_chained(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #1456",
-        "add x4, sp, #0",
-        "add x5, x4, #0",
-        "str x19, [x5, #1360]",
-        "str x20, [x5, #1368]",
-        "str x21, [x5, #1376]",
-        "str x22, [x5, #1384]",
-        "str x23, [x5, #1392]",
-        "str x24, [x5, #1400]",
-        "str x25, [x5, #1408]",
-        "str x26, [x5, #1416]",
-        "str x27, [x5, #1424]",
-        "str x28, [x5, #1432]",
-        "ldr x6, [x1, #0]",
-        "str x6, [x5, #1440]",
-        "ldr x6, [x1, #8]",
-        "str x6, [x5, #1448]",
-        "add x23, x2, #0",
-        "add x24, x3, #0",
-        "ldr x6, [x0, #0]",
-        "str x6, [x5, #1232]",
-        "ldr x6, [x0, #8]",
-        "str x6, [x5, #1240]",
-        "ldr x6, [x0, #16]",
-        "str x6, [x5, #1248]",
-        "ldr x6, [x0, #24]",
-        "str x6, [x5, #1256]",
-        "ldr x6, [x0, #32]",
-        "str x6, [x5, #1264]",
-        "ldr x6, [x0, #40]",
-        "str x6, [x5, #1272]",
-        "ldr x6, [x0, #48]",
-        "str x6, [x5, #1280]",
-        "ldr x6, [x0, #56]",
-        "str x6, [x5, #1288]",
-        "ldr x6, [x0, #64]",
-        "str x6, [x5, #1296]",
-        "ldr x6, [x0, #72]",
-        "str x6, [x5, #1304]",
-        "ldr x6, [x0, #80]",
-        "str x6, [x5, #1312]",
-        "ldr x6, [x0, #88]",
-        "str x6, [x5, #1320]",
-        "ldr x6, [x0, #96]",
-        "str x6, [x5, #1328]",
-        "ldr x6, [x0, #104]",
-        "str x6, [x5, #1336]",
-        "ldr x6, [x0, #112]",
-        "str x6, [x5, #1344]",
-        "ldr x6, [x0, #120]",
-        "str x6, [x5, #1352]",
-        "cbz x24, 20f",
-        "22:",
-        "lsr x13, x24, #4",
-        "cbnz x13, 23f",
-        "add x16, x24, #0",
-        "b 24f",
-        "23:",
-        "movz x16, #16, lsl #0",
-        "24:",
-        "add x14, x5, #0",
-        "add x14, x14, #976",
-        "add x15, x23, #0",
-        "add x17, x16, #0",
-        "25:",
-        "ldr x8, [x15, #0]",
-        "str x8, [x14, #0]",
-        "ldr x8, [x15, #8]",
-        "str x8, [x14, #8]",
-        "add x14, x14, #16",
-        "add x15, x15, #16",
-        "sub x17, x17, #1",
-        "cbnz x17, 25b",
-        "dup v28.2d, x30",
-        "dup v27.2d, x5",
-        "dup v29.2d, x23",
-        "dup v30.2d, x24",
-        "add x0, x5, #1232",
-        "add x1, x5, #976",
-        "movz x2, #16, lsl #0",
-        "add x3, x5, #0",
-        "bl {vg_seed_decrypt_blocks}",
-        "umov x5, v27.d[0]",
-        "umov x30, v28.d[0]",
-        "umov x23, v29.d[0]",
-        "umov x24, v30.d[0]",
-        "lsr x13, x24, #4",
-        "cbnz x13, 26f",
-        "add x16, x24, #0",
-        "b 27f",
-        "26:",
-        "movz x16, #16, lsl #0",
-        "27:",
-        "add x14, x5, #0",
-        "add x14, x14, #976",
-        "add x15, x23, #0",
-        "add x17, x16, #0",
-        "28:",
-        "ldr x8, [x14, #0]",
-        "ldr x9, [x5, #1440]",
-        "eor x8, x8, x9",
-        "str x8, [x14, #0]",
-        "ldr x8, [x14, #8]",
-        "ldr x9, [x5, #1448]",
-        "eor x8, x8, x9",
-        "str x8, [x14, #8]",
-        "ldr x8, [x15, #0]",
-        "str x8, [x5, #1440]",
-        "ldr x8, [x15, #8]",
-        "str x8, [x5, #1448]",
-        "ldr x8, [x14, #0]",
-        "str x8, [x15, #0]",
-        "ldr x8, [x14, #8]",
-        "str x8, [x15, #8]",
-        "add x14, x14, #16",
-        "add x15, x15, #16",
-        "sub x17, x17, #1",
-        "cbnz x17, 28b",
-        "add x23, x15, #0",
-        "sub x24, x24, x16",
-        "cbnz x24, 22b",
-        "b 21f",
-        "20:",
-        "21:",
-        "ldr x19, [x5, #1360]",
-        "ldr x20, [x5, #1368]",
-        "ldr x21, [x5, #1376]",
-        "ldr x22, [x5, #1384]",
-        "ldr x23, [x5, #1392]",
-        "ldr x24, [x5, #1400]",
-        "ldr x25, [x5, #1408]",
-        "ldr x26, [x5, #1416]",
-        "ldr x27, [x5, #1424]",
-        "ldr x28, [x5, #1432]",
-        "add x16, sp, #0",
-        "movz x17, #0, lsl #0",
-        "str x17, [x16, #0]",
-        "str x17, [x16, #8]",
-        "str x17, [x16, #16]",
-        "str x17, [x16, #24]",
-        "str x17, [x16, #32]",
-        "str x17, [x16, #40]",
-        "str x17, [x16, #48]",
-        "str x17, [x16, #56]",
-        "str x17, [x16, #64]",
-        "str x17, [x16, #72]",
-        "str x17, [x16, #80]",
-        "str x17, [x16, #88]",
-        "str x17, [x16, #96]",
-        "str x17, [x16, #104]",
-        "str x17, [x16, #112]",
-        "str x17, [x16, #120]",
-        "str x17, [x16, #128]",
-        "str x17, [x16, #136]",
-        "str x17, [x16, #144]",
-        "str x17, [x16, #152]",
-        "str x17, [x16, #160]",
-        "str x17, [x16, #168]",
-        "str x17, [x16, #176]",
-        "str x17, [x16, #184]",
-        "str x17, [x16, #192]",
-        "str x17, [x16, #200]",
-        "str x17, [x16, #208]",
-        "str x17, [x16, #216]",
-        "str x17, [x16, #224]",
-        "str x17, [x16, #232]",
-        "str x17, [x16, #240]",
-        "str x17, [x16, #248]",
-        "str x17, [x16, #256]",
-        "str x17, [x16, #264]",
-        "str x17, [x16, #272]",
-        "str x17, [x16, #280]",
-        "str x17, [x16, #288]",
-        "str x17, [x16, #296]",
-        "str x17, [x16, #304]",
-        "str x17, [x16, #312]",
-        "str x17, [x16, #320]",
-        "str x17, [x16, #328]",
-        "str x17, [x16, #336]",
-        "str x17, [x16, #344]",
-        "str x17, [x16, #352]",
-        "str x17, [x16, #360]",
-        "str x17, [x16, #368]",
-        "str x17, [x16, #376]",
-        "str x17, [x16, #384]",
-        "str x17, [x16, #392]",
-        "str x17, [x16, #400]",
-        "str x17, [x16, #408]",
-        "str x17, [x16, #416]",
-        "str x17, [x16, #424]",
-        "str x17, [x16, #432]",
-        "str x17, [x16, #440]",
-        "str x17, [x16, #448]",
-        "str x17, [x16, #456]",
-        "str x17, [x16, #464]",
-        "str x17, [x16, #472]",
-        "str x17, [x16, #480]",
-        "str x17, [x16, #488]",
-        "str x17, [x16, #496]",
-        "str x17, [x16, #504]",
-        "str x17, [x16, #512]",
-        "str x17, [x16, #520]",
-        "str x17, [x16, #528]",
-        "str x17, [x16, #536]",
-        "str x17, [x16, #544]",
-        "str x17, [x16, #552]",
-        "str x17, [x16, #560]",
-        "str x17, [x16, #568]",
-        "str x17, [x16, #576]",
-        "str x17, [x16, #584]",
-        "str x17, [x16, #592]",
-        "str x17, [x16, #600]",
-        "str x17, [x16, #608]",
-        "str x17, [x16, #616]",
-        "str x17, [x16, #624]",
-        "str x17, [x16, #632]",
-        "str x17, [x16, #640]",
-        "str x17, [x16, #648]",
-        "str x17, [x16, #656]",
-        "str x17, [x16, #664]",
-        "str x17, [x16, #672]",
-        "str x17, [x16, #680]",
-        "str x17, [x16, #688]",
-        "str x17, [x16, #696]",
-        "str x17, [x16, #704]",
-        "str x17, [x16, #712]",
-        "str x17, [x16, #720]",
-        "str x17, [x16, #728]",
-        "str x17, [x16, #736]",
-        "str x17, [x16, #744]",
-        "str x17, [x16, #752]",
-        "str x17, [x16, #760]",
-        "str x17, [x16, #768]",
-        "str x17, [x16, #776]",
-        "str x17, [x16, #784]",
-        "str x17, [x16, #792]",
-        "str x17, [x16, #800]",
-        "str x17, [x16, #808]",
-        "str x17, [x16, #816]",
-        "str x17, [x16, #824]",
-        "str x17, [x16, #832]",
-        "str x17, [x16, #840]",
-        "str x17, [x16, #848]",
-        "str x17, [x16, #856]",
-        "str x17, [x16, #864]",
-        "str x17, [x16, #872]",
-        "str x17, [x16, #880]",
-        "str x17, [x16, #888]",
-        "str x17, [x16, #896]",
-        "str x17, [x16, #904]",
-        "str x17, [x16, #912]",
-        "str x17, [x16, #920]",
-        "str x17, [x16, #928]",
-        "str x17, [x16, #936]",
-        "str x17, [x16, #944]",
-        "str x17, [x16, #952]",
-        "str x17, [x16, #960]",
-        "str x17, [x16, #968]",
-        "str x17, [x16, #976]",
-        "str x17, [x16, #984]",
-        "str x17, [x16, #992]",
-        "str x17, [x16, #1000]",
-        "str x17, [x16, #1008]",
-        "str x17, [x16, #1016]",
-        "str x17, [x16, #1024]",
-        "str x17, [x16, #1032]",
-        "str x17, [x16, #1040]",
-        "str x17, [x16, #1048]",
-        "str x17, [x16, #1056]",
-        "str x17, [x16, #1064]",
-        "str x17, [x16, #1072]",
-        "str x17, [x16, #1080]",
-        "str x17, [x16, #1088]",
-        "str x17, [x16, #1096]",
-        "str x17, [x16, #1104]",
-        "str x17, [x16, #1112]",
-        "str x17, [x16, #1120]",
-        "str x17, [x16, #1128]",
-        "str x17, [x16, #1136]",
-        "str x17, [x16, #1144]",
-        "str x17, [x16, #1152]",
-        "str x17, [x16, #1160]",
-        "str x17, [x16, #1168]",
-        "str x17, [x16, #1176]",
-        "str x17, [x16, #1184]",
-        "str x17, [x16, #1192]",
-        "str x17, [x16, #1200]",
-        "str x17, [x16, #1208]",
-        "str x17, [x16, #1216]",
-        "str x17, [x16, #1224]",
-        "str x17, [x16, #1232]",
-        "str x17, [x16, #1240]",
-        "str x17, [x16, #1248]",
-        "str x17, [x16, #1256]",
-        "str x17, [x16, #1264]",
-        "str x17, [x16, #1272]",
-        "str x17, [x16, #1280]",
-        "str x17, [x16, #1288]",
-        "str x17, [x16, #1296]",
-        "str x17, [x16, #1304]",
-        "str x17, [x16, #1312]",
-        "str x17, [x16, #1320]",
-        "str x17, [x16, #1328]",
-        "str x17, [x16, #1336]",
-        "str x17, [x16, #1344]",
-        "str x17, [x16, #1352]",
-        "str x17, [x16, #1360]",
-        "str x17, [x16, #1368]",
-        "str x17, [x16, #1376]",
-        "str x17, [x16, #1384]",
-        "str x17, [x16, #1392]",
-        "str x17, [x16, #1400]",
-        "str x17, [x16, #1408]",
-        "str x17, [x16, #1416]",
-        "str x17, [x16, #1424]",
-        "str x17, [x16, #1432]",
-        "str x17, [x16, #1440]",
-        "str x17, [x16, #1448]",
-        "add sp, sp, #1456",
-        "ret",
-        ".p2align 6",
+        r"sub sp, sp, #1456
+add x4, sp, #0
+add x5, x4, #0
+str x19, [x5, #1360]
+str x20, [x5, #1368]
+str x21, [x5, #1376]
+str x22, [x5, #1384]
+str x23, [x5, #1392]
+str x24, [x5, #1400]
+str x25, [x5, #1408]
+str x26, [x5, #1416]
+str x27, [x5, #1424]
+str x28, [x5, #1432]
+ldr x6, [x1, #0]
+str x6, [x5, #1440]
+ldr x6, [x1, #8]
+str x6, [x5, #1448]
+cbz x3, 20f
+sub x7, x3, #1
+lsl x7, x7, #4
+add x7, x7, x2
+ldr x6, [x7, #0]
+str x6, [x1, #0]
+ldr x6, [x7, #8]
+str x6, [x1, #8]
+b 21f
+20:
+21:
+add x23, x2, #0
+add x24, x3, #0
+ldr x6, [x0, #0]
+str x6, [x5, #1232]
+ldr x6, [x0, #8]
+str x6, [x5, #1240]
+ldr x6, [x0, #16]
+str x6, [x5, #1248]
+ldr x6, [x0, #24]
+str x6, [x5, #1256]
+ldr x6, [x0, #32]
+str x6, [x5, #1264]
+ldr x6, [x0, #40]
+str x6, [x5, #1272]
+ldr x6, [x0, #48]
+str x6, [x5, #1280]
+ldr x6, [x0, #56]
+str x6, [x5, #1288]
+ldr x6, [x0, #64]
+str x6, [x5, #1296]
+ldr x6, [x0, #72]
+str x6, [x5, #1304]
+ldr x6, [x0, #80]
+str x6, [x5, #1312]
+ldr x6, [x0, #88]
+str x6, [x5, #1320]
+ldr x6, [x0, #96]
+str x6, [x5, #1328]
+ldr x6, [x0, #104]
+str x6, [x5, #1336]
+ldr x6, [x0, #112]
+str x6, [x5, #1344]
+ldr x6, [x0, #120]
+str x6, [x5, #1352]
+cbz x24, 22f
+24:
+lsr x13, x24, #4
+cbnz x13, 25f
+add x16, x24, #0
+b 26f
+25:
+movz x16, #16, lsl #0
+26:
+add x14, x5, #0
+add x14, x14, #976
+add x15, x23, #0
+add x17, x16, #0
+27:
+ldr x8, [x15, #0]
+str x8, [x14, #0]
+ldr x8, [x15, #8]
+str x8, [x14, #8]
+add x14, x14, #16
+add x15, x15, #16
+sub x17, x17, #1
+cbnz x17, 27b
+dup v28.2d, x30
+dup v27.2d, x5
+dup v29.2d, x23
+dup v30.2d, x24
+add x0, x5, #1232
+add x1, x5, #976
+movz x2, #16, lsl #0
+add x3, x5, #0
+bl {vg_seed_decrypt_blocks}
+umov x5, v27.d[0]
+umov x30, v28.d[0]
+umov x23, v29.d[0]
+umov x24, v30.d[0]
+lsr x13, x24, #4
+cbnz x13, 28f
+add x16, x24, #0
+b 29f
+28:
+movz x16, #16, lsl #0
+29:
+add x14, x5, #0
+add x14, x14, #976
+add x15, x23, #0
+add x17, x16, #0
+210:
+ldr x8, [x14, #0]
+ldr x9, [x5, #1440]
+eor x8, x8, x9
+str x8, [x14, #0]
+ldr x8, [x14, #8]
+ldr x9, [x5, #1448]
+eor x8, x8, x9
+str x8, [x14, #8]
+ldr x8, [x15, #0]
+str x8, [x5, #1440]
+ldr x8, [x15, #8]
+str x8, [x5, #1448]
+ldr x8, [x14, #0]
+str x8, [x15, #0]
+ldr x8, [x14, #8]
+str x8, [x15, #8]
+add x14, x14, #16
+add x15, x15, #16
+sub x17, x17, #1
+cbnz x17, 210b
+add x23, x15, #0
+sub x24, x24, x16
+cbnz x24, 24b
+b 23f
+22:
+23:
+ldr x19, [x5, #1360]
+ldr x20, [x5, #1368]
+ldr x21, [x5, #1376]
+ldr x22, [x5, #1384]
+ldr x23, [x5, #1392]
+ldr x24, [x5, #1400]
+ldr x25, [x5, #1408]
+ldr x26, [x5, #1416]
+ldr x27, [x5, #1424]
+ldr x28, [x5, #1432]
+add x16, sp, #0
+movz x17, #0, lsl #0
+str x17, [x16, #0]
+str x17, [x16, #8]
+str x17, [x16, #16]
+str x17, [x16, #24]
+str x17, [x16, #32]
+str x17, [x16, #40]
+str x17, [x16, #48]
+str x17, [x16, #56]
+str x17, [x16, #64]
+str x17, [x16, #72]
+str x17, [x16, #80]
+str x17, [x16, #88]
+str x17, [x16, #96]
+str x17, [x16, #104]
+str x17, [x16, #112]
+str x17, [x16, #120]
+str x17, [x16, #128]
+str x17, [x16, #136]
+str x17, [x16, #144]
+str x17, [x16, #152]
+str x17, [x16, #160]
+str x17, [x16, #168]
+str x17, [x16, #176]
+str x17, [x16, #184]
+str x17, [x16, #192]
+str x17, [x16, #200]
+str x17, [x16, #208]
+str x17, [x16, #216]
+str x17, [x16, #224]
+str x17, [x16, #232]
+str x17, [x16, #240]
+str x17, [x16, #248]
+str x17, [x16, #256]
+str x17, [x16, #264]
+str x17, [x16, #272]
+str x17, [x16, #280]
+str x17, [x16, #288]
+str x17, [x16, #296]
+str x17, [x16, #304]
+str x17, [x16, #312]
+str x17, [x16, #320]
+str x17, [x16, #328]
+str x17, [x16, #336]
+str x17, [x16, #344]
+str x17, [x16, #352]
+str x17, [x16, #360]
+str x17, [x16, #368]
+str x17, [x16, #376]
+str x17, [x16, #384]
+str x17, [x16, #392]
+str x17, [x16, #400]
+str x17, [x16, #408]
+str x17, [x16, #416]
+str x17, [x16, #424]
+str x17, [x16, #432]
+str x17, [x16, #440]
+str x17, [x16, #448]
+str x17, [x16, #456]
+str x17, [x16, #464]
+str x17, [x16, #472]
+str x17, [x16, #480]
+str x17, [x16, #488]
+str x17, [x16, #496]
+str x17, [x16, #504]
+str x17, [x16, #512]
+str x17, [x16, #520]
+str x17, [x16, #528]
+str x17, [x16, #536]
+str x17, [x16, #544]
+str x17, [x16, #552]
+str x17, [x16, #560]
+str x17, [x16, #568]
+str x17, [x16, #576]
+str x17, [x16, #584]
+str x17, [x16, #592]
+str x17, [x16, #600]
+str x17, [x16, #608]
+str x17, [x16, #616]
+str x17, [x16, #624]
+str x17, [x16, #632]
+str x17, [x16, #640]
+str x17, [x16, #648]
+str x17, [x16, #656]
+str x17, [x16, #664]
+str x17, [x16, #672]
+str x17, [x16, #680]
+str x17, [x16, #688]
+str x17, [x16, #696]
+str x17, [x16, #704]
+str x17, [x16, #712]
+str x17, [x16, #720]
+str x17, [x16, #728]
+str x17, [x16, #736]
+str x17, [x16, #744]
+str x17, [x16, #752]
+str x17, [x16, #760]
+str x17, [x16, #768]
+str x17, [x16, #776]
+str x17, [x16, #784]
+str x17, [x16, #792]
+str x17, [x16, #800]
+str x17, [x16, #808]
+str x17, [x16, #816]
+str x17, [x16, #824]
+str x17, [x16, #832]
+str x17, [x16, #840]
+str x17, [x16, #848]
+str x17, [x16, #856]
+str x17, [x16, #864]
+str x17, [x16, #872]
+str x17, [x16, #880]
+str x17, [x16, #888]
+str x17, [x16, #896]
+str x17, [x16, #904]
+str x17, [x16, #912]
+str x17, [x16, #920]
+str x17, [x16, #928]
+str x17, [x16, #936]
+str x17, [x16, #944]
+str x17, [x16, #952]
+str x17, [x16, #960]
+str x17, [x16, #968]
+str x17, [x16, #976]
+str x17, [x16, #984]
+str x17, [x16, #992]
+str x17, [x16, #1000]
+str x17, [x16, #1008]
+str x17, [x16, #1016]
+str x17, [x16, #1024]
+str x17, [x16, #1032]
+str x17, [x16, #1040]
+str x17, [x16, #1048]
+str x17, [x16, #1056]
+str x17, [x16, #1064]
+str x17, [x16, #1072]
+str x17, [x16, #1080]
+str x17, [x16, #1088]
+str x17, [x16, #1096]
+str x17, [x16, #1104]
+str x17, [x16, #1112]
+str x17, [x16, #1120]
+str x17, [x16, #1128]
+str x17, [x16, #1136]
+str x17, [x16, #1144]
+str x17, [x16, #1152]
+str x17, [x16, #1160]
+str x17, [x16, #1168]
+str x17, [x16, #1176]
+str x17, [x16, #1184]
+str x17, [x16, #1192]
+str x17, [x16, #1200]
+str x17, [x16, #1208]
+str x17, [x16, #1216]
+str x17, [x16, #1224]
+str x17, [x16, #1232]
+str x17, [x16, #1240]
+str x17, [x16, #1248]
+str x17, [x16, #1256]
+str x17, [x16, #1264]
+str x17, [x16, #1272]
+str x17, [x16, #1280]
+str x17, [x16, #1288]
+str x17, [x16, #1296]
+str x17, [x16, #1304]
+str x17, [x16, #1312]
+str x17, [x16, #1320]
+str x17, [x16, #1328]
+str x17, [x16, #1336]
+str x17, [x16, #1344]
+str x17, [x16, #1352]
+str x17, [x16, #1360]
+str x17, [x16, #1368]
+str x17, [x16, #1376]
+str x17, [x16, #1384]
+str x17, [x16, #1392]
+str x17, [x16, #1400]
+str x17, [x16, #1408]
+str x17, [x16, #1416]
+str x17, [x16, #1424]
+str x17, [x16, #1432]
+str x17, [x16, #1440]
+str x17, [x16, #1448]
+add sp, sp, #1456
+ret
+.p2align 6",
         vg_seed_decrypt_blocks = sym super::seed::vg_seed_decrypt_blocks,
     )
 }

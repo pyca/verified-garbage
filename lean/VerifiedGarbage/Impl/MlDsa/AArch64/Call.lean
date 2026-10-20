@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
 
-public import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
 
 /-!
 # ML-DSA on AArch64: calls with their arguments

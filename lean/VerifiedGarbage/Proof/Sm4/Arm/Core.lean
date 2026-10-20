@@ -1,16 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.Round
-import VerifiedGarbage.Proof.Sm4.Layout
-import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Impl.Sm4.Arm.Ecb
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
 
 /-!
 # Eight blocks of bitsliced SM4 on ARMv7: the rounds
@@ -154,7 +152,7 @@ theorem round_step (l : Lin) {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : 
     (hlin : check (lanes 32 11) linCfg (linExt 40) (lin l a) linEnv
       (linPostG 11 [] (linOuts l a) (linKeep a) linEnv) = true)
     (hall : (layerKeep.all fun r =>
-      (preX a b c d ++ lin l a).all fun i => dstOf i != some r) = true)
+      (preX a b c d ++ lin l a).all fun i => !clobbers i r) = true)
     (hk : AtEntry s (s₀.gpr sb) m) (hm : m + 4 ≤ 32) {X : Nat → Nat → Spec.Sm4.Word} (hX : StRel s X) :
     ∃ s', runBlock isa (round l a a b c d) s = some s' ∧ Ctx s₀ s' ∧ s'.gpr kp = s.gpr kp ∧
       StRel s' (fun b' => sround l (E (m + a)) a (X b')) := by

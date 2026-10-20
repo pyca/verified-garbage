@@ -1,12 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointEncode
+public import VerifiedGarbage.Proof.Ed25519.Arm.Power
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
+import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
 import VerifiedGarbage.Proof.Ed25519.Arm.Freeze
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Canonical point encoding in sixteen bounded limbs. -/
 

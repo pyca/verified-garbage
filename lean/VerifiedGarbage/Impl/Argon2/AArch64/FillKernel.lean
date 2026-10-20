@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceMap
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillPointers
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillCompress

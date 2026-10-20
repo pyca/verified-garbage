@@ -1,14 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Arith
-public import VerifiedGarbage.Proof.Framework.X86.Exec
-public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 public import VerifiedGarbage.Impl.Aes.X86.AesNi
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! AES-NI round execution on IA-32. Register updates stay folded; the same
 proof applies to any distinct block registers other than the key temporary. -/

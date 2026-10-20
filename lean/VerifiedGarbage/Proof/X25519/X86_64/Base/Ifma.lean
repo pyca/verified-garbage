@@ -1,22 +1,16 @@
 module
+public import VerifiedGarbage.Proof.X25519.X86_64.Base.Main
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Base.Verified
+import VerifiedGarbage.Proof.X25519.X86_64.Base.Verified
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.ScalarBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
 import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
+import VerifiedGarbage.Proof.X25519.X86_64.Base.CT
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.X25519.X86_64.Base.Lit
 import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Proof.Ed25519.Recode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
-import VerifiedGarbage.Spec.EcKey.Generic
-import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # Fixed-base X25519 with AVX512_IFMA: `Verified`

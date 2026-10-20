@@ -1,13 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
+public import VerifiedGarbage.Proof.Modes.X86_64.Setup
+public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Modes.X86_64.Ctr
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
+import VerifiedGarbage.Proof.Modes.X86_64.Words
+import VerifiedGarbage.Proof.Modes.X86_64.Steps
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # OFB and CFB on x86-64, for any core: the whole function
@@ -56,13 +59,13 @@ theorem fb_wp (cs : BlockSpec c) (mo : FbMode) {r : CtrRegs} (hr : RegsOk r) (hd
     (sDS : Region.Disjoint ⟨D, 8 * c.bw * n⟩ ⟨B, 8 * c.ctrSlots⟩)
     (sPD : Region.Disjoint ⟨P, 8 * c.bw⟩ ⟨D, 8 * c.bw * n⟩)
     (fitD : D.toNat + 8 * c.bw * n ≤ 2 ^ 64) (hk : cs.KeyArgs s₀ [⟨B, 8 * c.ctrSlots⟩] k)
-    (hsc : KeepsIv c.prepare ∧ KeepsIv c.crypt) :
+    (hsc : KeepsIv c.prepare ∧ KeepsIv c.crypt) (hstk : StkOk c s₀ := by exact Or.inl rfl) :
     WP isa (c.fb mo r) s₀ fun s' => (∀ x ∈ calleeSaved, s'.gpr x = s₀.gpr x) ∧
       blocksOf (8 * c.bw) s'.mem D n =
         (List.range n).map (fbOut mo (8 * c.bw) (cs.cipher k) s₀.mem D (bytesAt s₀.mem P (8 * c.bw))) ∧
       bytesAt s'.mem P (8 * c.bw) = fbIn mo (8 * c.bw) (cs.cipher k) s₀.mem D (bytesAt s₀.mem P (8 * c.bw)) n ∧
-      Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩, ⟨P, 8 * c.bw⟩] s₀.mem s'.mem ∧ s'.rd = s₀.rd ∧
-      s'.wr = s₀.wr := by
+      Frame ([⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩, ⟨P, 8 * c.bw⟩] ++ stkList c (s₀.gpr .rsp)) s₀.mem s'.mem ∧
+      s'.rd = s₀.rd ∧ s'.wr = s₀.wr := by
   have hL := cs.layout
   have hsm := hL.small
   have hroom := hL.room
@@ -89,10 +92,10 @@ theorem fb_wp (cs : BlockSpec c) (mo : FbMode) {r : CtrRegs} (hr : RegsOk r) (hd
   have subTbuf : Region.Sub ⟨T, (8 * c.bw)⟩ (blkRegion c B) := Region.sub_prefix hLG
   have subTcore : Region.Sub ⟨T, (8 * c.bw)⟩ (coreRegion c B) := VG.Offset.sub_base B (by omega)
   have dTP : Region.Disjoint ⟨T, (8 * c.bw)⟩ ⟨P, (8 * c.bw)⟩ := (sPS.sub_right subT).symm
-  have dDcore : ∀ x ∈ [coreRegion c B], Region.Disjoint ⟨D, 8 * c.bw * n⟩ x := fun x hx => by
-    simp only [List.mem_singleton] at hx; subst hx; exact sDS.sub_right subCore
-  have dPcore : ∀ x ∈ [coreRegion c B], Region.Disjoint ⟨P, (8 * c.bw)⟩ x := fun x hx => by
-    simp only [List.mem_singleton] at hx; subst hx; exact sPS.sub_right subCore
+  have dDcore : ∀ x ∈ coreFrame c B (s₀.gpr .rsp), Region.Disjoint ⟨D, 8 * c.bw * n⟩ x :=
+    hstk.coreFrame_disj (sDS.sub_right subCore) ⟨_, hwD, fun _ h => h⟩
+  have dPcore : ∀ x ∈ coreFrame c B (s₀.gpr .rsp), Region.Disjoint ⟨P, (8 * c.bw)⟩ x :=
+    hstk.coreFrame_disj (sPS.sub_right subCore) ⟨_, hwP, fun _ h => h⟩
   have inS : ∀ {d m : Nat}, d + m ≤ 8 * c.ctrSlots → InRegions s₀.wr (B + BitVec.ofNat 64 d) m := fun h =>
     ⟨_, hs.wr, VG.Offset.contains_base B h (by omega)⟩
   -- The mode's 7 slots: none of the core's, nor in the data or at the IV.
@@ -131,12 +134,13 @@ theorem fb_wp (cs : BlockSpec c) (mo : FbMode) {r : CtrRegs} (hr : RegsOk r) (hd
   -- The key.
   refine WP.seq (WP.mono (WP.keepIv hsc.1 (by rw [xA]; exact hi_zero_append _) (cs.prepare_wp bA ⟨by rw [wrA']; exact hs.wr, hs.fit⟩ List.mem_cons_self hkA))
     fun s₄ ⟨⟨ready₄, b₄, rsp₄, dr₄, lr₄, f₄, rd₄, wr₄⟩, x₄⟩ => ?_)
+  rw [show sA.gpr .rsp = s₀.gpr .rsp from gA' _ (by decide) (Ne.symm dsp) (Ne.symm lsp)] at f₄
   have rd₄' : s₄.rd = s₀.rd := by rw [rd₄, rdA']
   have wr₄' : s₄.wr = s₀.wr := by rw [wr₄, wrA']
   have sv₄ : ∀ i < 6, s₄.mem.readW (wordAddr B (c.slots + i)) 64 = sv i := fun i hi => by
     rw [← svA i hi]
-    exact f₄.readW (Region.contains_self _ _) (fun x hx => by
-      simp only [List.mem_singleton] at hx; subst hx; exact slotCore i (by omega)) (by decide)
+    exact f₄.readW (Region.contains_self _ _)
+      (hstk.coreFrame_disj (slotCore i (by omega)) ⟨_, hs.wr, slotIn i (by omega)⟩) (by decide)
   -- The IV to the buffer.
   obtain ⟨s₅a, e₅a, ax₅a, o₅a, m₅a, rd₅a, wr₅a, x₅a⟩ := movqR_ok s₄ .rax Core.ivX
   have ax₅ : s₅a.gpr .rax = P := by rw [ax₅a, x₄, xA, extract_zero_append]
@@ -190,11 +194,15 @@ theorem fb_wp (cs : BlockSpec c) (mo : FbMode) {r : CtrRegs} (hr : RegsOk r) (hd
   have buf₅ : ∀ u < (8 * c.bw), s₅.mem (B + BitVec.ofNat 64 (8 * c.buf) + BitVec.ofNat 64 u) =
       (fbIn mo (8 * c.bw) (cs.cipher k) s₀.mem D iv 0).getD u 0 := fun u hu => by
     rw [mem₅, over_at hu (by omega), m₄P u hu, fbIn, bytesAt_getD _ _ hu]
-  have hp : GPre c s₅ B D n (8 * c.bw) := ⟨⟨by rw [wr₅']; exact hs.wr, hs.fit⟩, by rw [wr₅']; exact hwD, sDS, fitD⟩
-  have fr₅ : Frame [S] s₀.mem s₅.mem :=
-    fA.trans ((f₄.sub fun x hx => ⟨S, List.mem_singleton_self _, by
-      simp only [List.mem_singleton] at hx; subst hx; exact subCore⟩).trans
-      (f₅.sub fun x hx => ⟨S, List.mem_singleton_self _, by
+  have hp : GPre c s₅ B D n (8 * c.bw) :=
+    ⟨⟨by rw [wr₅']; exact hs.wr, hs.fit⟩, by rw [wr₅']; exact hwD, sDS, fitD, hstk.congr rsp₅ wr₅'⟩
+  have fr₅ : Frame (S :: stkList c (s₀.gpr .rsp)) s₀.mem s₅.mem :=
+    (fA.mono fun x hx => by simp only [List.mem_singleton] at hx; subst hx; exact List.mem_cons_self).trans
+      ((f₄.sub fun x hx => by
+        rcases List.mem_cons.mp hx with rfl | hx
+        · exact ⟨S, List.mem_cons_self, subCore⟩
+        · exact ⟨x, List.mem_cons_of_mem _ hx, fun _ h => h⟩).trans
+      (f₅.sub fun x hx => ⟨S, List.mem_cons_self, by
         simp only [List.mem_singleton] at hx; subst hx; exact subT⟩))
   -- The blocks.
   refine WP.seq (WP.mono (M := isa) (Q := FDone cs mo s₅ s₀.mem B D n k iv)
@@ -269,12 +277,17 @@ theorem fb_wp (cs : BlockSpec c) (mo : FbMode) {r : CtrRegs} (hr : RegsOk r) (hd
     rfl
   · rw [m₈]
     refine ((fr₅.mono fun x hx => by
-        simp only [List.mem_singleton] at hx; subst hx; exact List.mem_cons_self).trans
-      (d₆.frame.mono fun x hx => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-        rcases hx with rfl | rfl
+        rcases List.mem_cons.mp hx with rfl | hx
         · exact List.mem_cons_self
-        · exact List.mem_cons_of_mem _ List.mem_cons_self)).trans
+        · exact List.mem_append_right _ hx).trans
+      (d₆.frame.mono fun x hx => by
+        rw [rsp₅] at hx
+        rcases List.mem_append.mp hx with hx | hx
+        · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+          rcases hx with rfl | rfl
+          · exact List.mem_cons_self
+          · exact List.mem_cons_of_mem _ List.mem_cons_self
+        · exact List.mem_append_right _ hx)).trans
       (f₇.mono fun x hx => by
         simp only [List.mem_singleton] at hx; subst hx
         exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))

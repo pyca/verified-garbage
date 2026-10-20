@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Add
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Impl.Ed448.Wnaf
+import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
+import Mathlib.Tactic.Abel
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! The sparse loop's group interpretation. -/
 

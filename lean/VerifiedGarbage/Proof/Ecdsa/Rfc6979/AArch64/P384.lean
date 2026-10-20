@@ -1,21 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
+import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Lit
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Lit
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 
 /-!
 # Deterministic ECDSA on AArch64: P-384
@@ -45,7 +45,7 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSou
   inst := Spec.Ecdsa.P384.inst
   curve := rfl
   wide := false
-  sizes := ⟨.inr rfl, .inl rfl, p384_nBits, by decide +kernel⟩
+  sizes := ⟨.inr (.inl rfl), .inl rfl, p384_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 48 - Spec.Ecdsa.nBits Spec.P384.curve = 0; rw [p384_nBits]

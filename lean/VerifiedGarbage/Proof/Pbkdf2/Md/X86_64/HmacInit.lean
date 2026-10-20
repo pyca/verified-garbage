@@ -1,15 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Common
 public import VerifiedGarbage.Proof.Pbkdf2.MdKeys
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
 import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # HMAC over any Merkle–Damgård hash function on x86-64: `init`
@@ -457,10 +455,6 @@ theorem keys_ok {s : State} (hk : KR H s₀ (inn s₀) s) :
   have hz : s₄.zf = some (decide (kl s₀ = 0)) := by
     rw [z₄, u₃.other _ (by decide), g₂, u₁.other _ (by decide), hk.r13, BitVec.and_self]
     congr 1
-    by_cases h : kl s₀ = 0
-    · simp [h, BitVec.eq_of_toNat_eq (show (s₀.gpr .rcx).toNat = (0 : BitVec 64).toNat from h)]
-    · simp only [h, decide_false, beq_eq_false_iff_ne, ne_eq]
-      intro h'; exact h (by show (s₀.gpr .rcx).toNat = 0; rw [h']; rfl)
   have hm : s₄.mem = writeBytes s.mem (bufOf H (inn s₀)) (ipadBlk s₀.mem (kp s₀) H.P.B 0) := by
     rw [m₄, u₃.mem, m₂, u₁.mem, ipadBlk_zero, eB]
   refine WP.seq (WP.mono (key_ok hr h14 hz hm) fun t ht => ?_)

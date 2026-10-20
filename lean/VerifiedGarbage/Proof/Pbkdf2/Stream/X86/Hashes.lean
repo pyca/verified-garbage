@@ -1,27 +1,37 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
-meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
 public import VerifiedGarbage.Proof.Hmac.Generic.Common
-meta import VerifiedGarbage.Proof.Hmac.Generic.Common
-public import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
-meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
-meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
-public import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
-meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
 public import VerifiedGarbage.Proof.Md5.X86.Stream.Init
-meta import VerifiedGarbage.Proof.Md5.X86.Stream.Init
 public import VerifiedGarbage.Proof.Md5.X86.Stream.Md
-meta import VerifiedGarbage.Proof.Md5.X86.Stream.Md
 public import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Sha512.X86.Compress
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
+meta import VerifiedGarbage.Proof.Hmac.Generic.Common
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+meta import VerifiedGarbage.Proof.Md5.X86.Stream.Init
+meta import VerifiedGarbage.Proof.Md5.X86.Stream.Md
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Sha512.X86.Compress
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
+import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Md5.X86.Lit
+import VerifiedGarbage.Proof.Sha256.StateMem
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha512.X86.Lit
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Md5.X86.Lit
+meta import VerifiedGarbage.Proof.Sha256.StateMem
+meta import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Sha512.X86.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # HMAC over any streaming hash function on x86 (32-bit): the hash functions

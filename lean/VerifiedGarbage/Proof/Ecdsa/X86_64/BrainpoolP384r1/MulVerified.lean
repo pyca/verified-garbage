@@ -1,37 +1,37 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.MulLit
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.MulLit
-import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
 public import VerifiedGarbage.Proof.Weierstrass.PointFacts
-meta import VerifiedGarbage.Proof.Weierstrass.PointFacts
 import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Proof.Mont.Read
-public import VerifiedGarbage.Spec.Weierstrass.Mul
-meta import VerifiedGarbage.Spec.Weierstrass.Mul
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.BrainpoolP384r1.Point
+import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Batteries.Data.List.Lemmas
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.MulLit
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
+meta import VerifiedGarbage.Proof.Weierstrass.PointFacts
+meta import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.BrainpoolP384r1.Point
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
+meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.X86_64
+meta import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Batteries.Data.List.Lemmas
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.EcKey.Generic
-meta import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Lit
 
 /-!
 # `vg_brainpoolp384r1_mul` on x86-64: `Verified`

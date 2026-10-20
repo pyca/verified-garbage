@@ -1,31 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Message.VerifyCall
-meta import VerifiedGarbage.Proof.MlDsa.X86.Message.VerifyCall
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Impl.MlKem.X86.Cbd
-import VerifiedGarbage.Impl.MlKem.X86.Compress
-import VerifiedGarbage.Impl.MlKem.X86.Encode
-import VerifiedGarbage.Impl.MlKem.X86.Ntt
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
-meta import VerifiedGarbage.Impl.MlKem.X86.Cbd
-meta import VerifiedGarbage.Impl.MlKem.X86.Compress
-meta import VerifiedGarbage.Impl.MlKem.X86.Encode
-meta import VerifiedGarbage.Impl.MlKem.X86.Ntt
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.MlKem.X86.Top
 import VerifiedGarbage.Proof.Sha3.Stream
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.MlDsa.X86.Message.Sign
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.MlDsa.X86.Message.VerifyCall
 meta import VerifiedGarbage.Proof.MlKem.X86.Top
 meta import VerifiedGarbage.Proof.Sha3.Stream
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.MlDsa.X86.Message.Sign
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA on x86 (32-bit), `verify_message`: correct and constant time

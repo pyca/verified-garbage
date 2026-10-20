@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.AesCbc.Arm.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.AesCbc.Arm.Body
 
 /-!
 # AES-CBC (NIST SP 800-38A §6.2) on ARMv7
@@ -21,23 +22,17 @@ namespace VG.Artifacts.AesCbc.Arm
 open VG.Proof.AesCbc.Arm
 
 def artifacts : List Artifact := [
-  { Spec.Cbc.aesEncryptApi with
-    target := Arm.target
-    doc := Spec.Cbc.aesEncryptApi.doc (notes := [
-      "This implementation enciphers one block at a time with `vg_aes_encrypt_blocks`."])
+  Spec.Cbc.aesEncryptApi.artifact Arm.target {
+    notes := [
+      "This implementation enciphers one block at a time with `vg_aes_encrypt_blocks`."]
     code := Impl.AesCbc.Arm.encrypt
-    contract := Spec.Cbc.aesEncryptContract Arm.abi 8
     stack := 8
-    verified := encrypt_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Cbc.aesDecryptApi with
-    target := Arm.target
-    doc := Spec.Cbc.aesDecryptApi.doc (notes := [
-      "This implementation deciphers one block at a time with `vg_aes_decrypt_blocks`."])
+    verified := encrypt_verified },
+  Spec.Cbc.aesDecryptApi.artifact Arm.target {
+    notes := [
+      "This implementation deciphers one block at a time with `vg_aes_decrypt_blocks`."]
     code := Impl.AesCbc.Arm.decrypt
-    contract := Spec.Cbc.aesDecryptContract Arm.abi 8
     stack := 8
-    verified := decrypt_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := decrypt_verified }]
 
 end VG.Artifacts.AesCbc.Arm

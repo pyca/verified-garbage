@@ -1,15 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.JointByteCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.ProductCallCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.JointBuildContext
+import VerifiedGarbage.Proof.Dsa.AArch64.JointRun
+import VerifiedGarbage.Proof.Dsa.AArch64.JointInit
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointByteCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.JointRun
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ProductCallCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.JointBuildContext
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointRun
-public import VerifiedGarbage.Proof.Dsa.AArch64.JointPrepareCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.JointPrepareCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Dsa.AArch64.JointInit
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Bignum.Math
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant time of the joint exponentiation loop and decoding -/
 

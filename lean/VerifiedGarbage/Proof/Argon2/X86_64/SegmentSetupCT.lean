@@ -1,79 +1,61 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetup
-meta import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetup
-import VerifiedGarbage.Proof.Argon2.X86_64.FillSegment
-meta import VerifiedGarbage.Proof.Argon2.X86_64.FillSegment
-public import VerifiedGarbage.Proof.Argon2.SegmentIndices
+import VerifiedGarbage.Proof.Argon2.SegmentIndices
 meta import VerifiedGarbage.Proof.Argon2.SegmentIndices
-import VerifiedGarbage.Proof.Argon2.X86_64.FillSegmentBody
-meta import VerifiedGarbage.Proof.Argon2.X86_64.FillSegmentBody
-import VerifiedGarbage.Proof.Argon2.X86_64.FillBlock
-meta import VerifiedGarbage.Proof.Argon2.X86_64.FillBlock
-import VerifiedGarbage.Proof.Argon2.X86_64.FillCompress
-meta import VerifiedGarbage.Proof.Argon2.X86_64.FillCompress
-import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressOperation
-meta import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressOperation
-import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelPrepare
-meta import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelPrepare
 import VerifiedGarbage.Proof.Argon2.X86_64.FillPointersLit
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FillPointersLit
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Impl.Argon2.X86_64.FillWrite
-meta import VerifiedGarbage.Impl.Argon2.X86_64.FillWrite
-import VerifiedGarbage.Proof.Argon2.X86_64.RandomSourcePrepare
-meta import VerifiedGarbage.Proof.Argon2.X86_64.RandomSourcePrepare
-import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheSelect
-meta import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheSelect
-import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheWord
-meta import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheWord
-import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsPrepare
-meta import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsPrepare
-import VerifiedGarbage.Proof.Argon2.X86_64.AddressCalls
-meta import VerifiedGarbage.Proof.Argon2.X86_64.AddressCalls
 public import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlockLit
 meta import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlockLit
 public import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderLit
 meta import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderLit
-public import VerifiedGarbage.Impl.Argon2.X86_64.AddressMode
-meta import VerifiedGarbage.Impl.Argon2.X86_64.AddressMode
 import VerifiedGarbage.Proof.Argon2.X86_64.DependentWord
 meta import VerifiedGarbage.Proof.Argon2.X86_64.DependentWord
-public import VerifiedGarbage.Impl.Argon2.X86_64.DependentWord
-meta import VerifiedGarbage.Impl.Argon2.X86_64.DependentWord
-import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressCall
-meta import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressCall
-import VerifiedGarbage.Proof.Argon2.X86_64.RandomSource
-meta import VerifiedGarbage.Proof.Argon2.X86_64.RandomSource
 import VerifiedGarbage.Proof.Argon2.X86_64.Relative
 meta import VerifiedGarbage.Proof.Argon2.X86_64.Relative
 import VerifiedGarbage.Proof.Argon2.X86_64.Wrap
 meta import VerifiedGarbage.Proof.Argon2.X86_64.Wrap
-import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapLane
-meta import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapLane
-import VerifiedGarbage.Impl.Argon2.X86_64.FirstLane
-meta import VerifiedGarbage.Impl.Argon2.X86_64.FirstLane
-import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapState
-meta import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapState
 import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceStart
 meta import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceStart
 import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceCount
 meta import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceCount
-import VerifiedGarbage.Impl.Argon2.X86_64.ReferenceStart
-meta import VerifiedGarbage.Impl.Argon2.X86_64.ReferenceStart
 public import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetupPrepare
 meta import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetupPrepare
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
 import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressLit
-meta import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressLit
+import VerifiedGarbage.Proof.Argon2.SegmentStart
+meta import VerifiedGarbage.Proof.Argon2.SegmentStart
+import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Argon2.Reference
+import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheWord
+import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderWords
+import VerifiedGarbage.Proof.Argon2.X86_64.FillCompress
+import VerifiedGarbage.Proof.Argon2.X86_64.Mix
+import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetup
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
+meta import VerifiedGarbage.Proof.Argon2.Dimensions
+meta import VerifiedGarbage.Proof.Argon2.Reference
+meta import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheWord
+meta import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderWords
+meta import VerifiedGarbage.Proof.Argon2.X86_64.FillCompress
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Mix
+meta import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetup
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
 
 /-! Merged from `Proof.Argon2.X86_64.SegmentSetupTrace`. -/
 

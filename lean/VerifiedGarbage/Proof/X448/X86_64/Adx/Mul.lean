@@ -1,15 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.X448.X86_64.Adx
-public import VerifiedGarbage.Proof.X448.X86_64.Env
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.X448.X86_64.Field
+public import VerifiedGarbage.Proof.X448.X86_64.Swap
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.X448.X86_64.AddSub
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import Batteries.Data.List.Basic
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on x86-64: multiplication with BMI2 and ADX

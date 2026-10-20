@@ -25,7 +25,7 @@ theorem exec_zvec {i : Instr} (hi : scalarI i = true) {s t : State} (h : exec i 
     | exact execCmov_vec h
     | (obtain ⟨v, -, rfl⟩ := h; exact ⟨rfl, rfl, rfl⟩)
     | (simp only [Option.some.injEq] at h; subst h; exact ⟨rfl, rfl, rfl⟩)
-    | (simp only [State.store64, State.store8, State.store32] at h; split at h <;> [(cases h; exact ⟨rfl, rfl, rfl⟩); cases h])
+    | (simp only [State.store64, State.store8, State.store16, State.store32] at h; split at h <;> [(cases h; exact ⟨rfl, rfl, rfl⟩); cases h])
     | (unfold execAlu at h
        simp only [Option.bind_eq_some_iff] at h
        obtain ⟨b, -, h⟩ := h
@@ -70,7 +70,14 @@ theorem exec_zscal {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c
     intro hc
     obtain ⟨a, b, c⟩ := ih₁ hc; obtain ⟨a', b', c'⟩ := ih₂ hc
     exact ⟨a'.trans a, b'.trans b, c'.trans c⟩
-  | call => intro hc; simp only [scalCode, Bool.false_eq_true] at hc
+  | call hc₁ _ hr ih =>
+    intro hc
+    obtain ⟨a, b, c⟩ := ih hc
+    simp only [isa, call, Option.some.injEq] at hc₁
+    subst hc₁
+    simp only [isa, ret] at hr
+    split at hr <;> cases hr
+    exact ⟨a, b, c⟩
   | frame => intro hc; simp only [scalCode, Bool.false_eq_true] at hc
 
 /-- Scalar code keeps the vector registers, `zmm` included. -/

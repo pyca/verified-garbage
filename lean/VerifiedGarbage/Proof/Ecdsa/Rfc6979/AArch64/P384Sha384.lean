@@ -1,17 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Verified
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Tables
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P384
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha512
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P384Sha384
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # Deterministic ECDSA over P-384 with HMAC-SHA-384 on AArch64

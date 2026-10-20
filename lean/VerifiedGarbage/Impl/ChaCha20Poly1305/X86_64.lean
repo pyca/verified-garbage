@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Callee
 public import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
-import VerifiedGarbage.Impl.ChaCha20.X86_64.XorBuf
 
 /-!
 # ChaCha20-Poly1305: x86-64 implementation
@@ -47,8 +46,9 @@ bytes are the one-time key, and the keystream of the first `m` bytes of the
 data. `crypt` XORs those into the data (`XorBuf.xorBuf`), and the rest of
 the data (none, or all but the first `m` bytes) by a second call of
 `vg_chacha20_xor`, from counter `1 + m / 64`. Then it zeros those `64 + m`
-bytes again, as the wrapper zeroes only `ctx[0, 672)`, and nothing else is
-written after it.
+bytes again, as the wrapper zeroes only `ctx[0, 672)`; the stitched AVX2 code
+(`Stitch`), whose tails store keystream after them too, zeros those as well
+for more than `fold` bytes (`wipeL`).
 
 The entry loads `work` and `tag` from the stack (`entry`). `r15` holds the
 context, `r14` the data, `r13` its length and `r12` the tag, which
@@ -126,19 +126,28 @@ def moves : List Instr :=
   [.mov .r15 (.reg .rax), .mov .r12 (.reg .r11), .mov .rbx (.reg .rdx), .mov .rbp (.reg .rcx),
     .mov .r14 (.reg .r8), .mov .r13 (.reg .r9)]
 
+/-- `rdx = fold` if `CF` is set, else 0, without a branch. -/
+def mask (fold : Nat) : List Instr := [.alu .sbb .rdx (.reg .rdx), .alu .and .rdx (.imm (BitVec.ofNat 32 fold))]
+
 /-- For more than `fold` bytes of data (in `r13`), `rdx = m`: if `pass` is
-512 (the stitched AVX2 `seal`, whose first chunk can absorb the `fold` bytes
-before it), `fold` if the bytes after them are whole chunks of 512 and 1 to
-`512 - fold`, else 0; if `pass` is another number but 0, the bytes past the
-last multiple of `pass` rounded up to a multiple of 64 (`pass` a power of
-two), if that is at most `fold`; else (or if `pass` is 0, adding no code)
-`rdx` stays 0. -/
+512 (the stitched AVX2 `seal`, `fold` 448, whose first chunk can absorb the
+`fold` bytes before it), `fold` if the bytes after them are whole chunks of
+512 and 1 to `512 - fold`, or for any length below 1409 bytes (after them
+up to 512 bytes and no chunk, or a chunk and up to 448 bytes): the
+prologue's pass computes their keystream with the one-time key's, which
+saves a pass (of the one-time key's block alone, or a chunk); else 0,
+without a branch (`mask`).
+If `pass` is another number but 0,
+the bytes past the last multiple of `pass` rounded up to a multiple of 64
+(`pass` a power of two), if that is at most `fold`; else (or if `pass` is 0,
+adding no code) `rdx` stays 0. -/
 def splitM (fold pass : Nat) : Prog isa :=
   if pass = 0 then .block [] else
   if pass = 512 then
-    .seq (.block [.mov .rdx (.reg .r13), .alu .sub .rdx (.imm 1), .alu .and .rdx (.imm 511),
-      .alu .cmp .rdx (.imm (BitVec.ofNat 32 fold))])
-      (.ite .b (.block [.mov32 .rdx (.imm 0)]) (.block [.mov32 .rdx (.imm (BitVec.ofNat 32 fold))]))
+    .seq (.block [.alu .cmp .r13 (.imm 1409)])
+      (.ite .b (.block [.mov32 .rdx (.imm (BitVec.ofNat 32 fold))])
+        (.block ([.mov .rdx (.reg .r13), .alu .sub .rdx (.imm 1), .alu .and .rdx (.imm 511),
+          .alu .add .rdx (.imm (BitVec.ofInt 32 (-(fold : Int))))] ++ mask fold)))
   else
   .seq (.block [.mov .rdx (.reg .r13), .alu .and .rdx (.imm (BitVec.ofNat 32 (pass - 1))),
     .alu .add .rdx (.imm 63), .alu .and .rdx (.imm (BitVec.ofInt 32 (-64))),
@@ -148,6 +157,11 @@ def splitM (fold pass : Nat) : Prog isa :=
 /-- `rdx = m`: the length of the data (in `r13`) if it is at most `fold`,
 else as `splitM`. -/
 def foldM (fold pass : Nat) : Prog isa :=
+  if pass = 512 then
+    -- `splitM` last, so that it ends without a jump.
+    .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (fold + 1)))])
+      (.ite .ae (splitM fold pass) (.block [.mov .rdx (.reg .r13)]))
+  else
   .seq (.block [.mov32 .rdx (.imm 0), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (fold + 1)))])
     (.ite .b (.block [.mov .rdx (.reg .r13)]) (splitM fold pass))
 
@@ -178,6 +192,23 @@ def zeroKs (w : Nat) : Prog isa :=
     (.seq (.loop (.block [storeW w zeroQ, .alu .add .rcx (.imm (BitVec.ofNat 32 (2 ^ w))),
       .alu .cmp .rcx (.reg .rdx)]) .b) (.block (clearW w)))
 
+/-- For a pass of 512 bytes (the stitched AVX2 `seal`), `m` (`rdx`) kept at
+`ctx + 48`, which `seal` does not otherwise use, so that `seal` reads it
+back rather than computing it again (`mLoad`). -/
+def mStore (pass : Nat) : List Instr := if pass = 512 then [.store (at_ .r15 48) .rdx] else []
+
+/-- `m` read back from `ctx + 48` (`mStore`). -/
+def mLoad : List Instr := [.mov .rdx (.mem (at_ .r15 48))]
+
+/-- `rdx` for the stitched code's wipe (`zeroKs`, after `64` is added): the
+length of the data (in `r13`) if it is at most `fold`, else `extra`, so that
+`ctx[672, 736 + extra)` is zeroed, where the stitched code's tails also store
+keystream: `seal`'s `Stitch.tailK` in `ctx[736, 1248)` (`extra` 512),
+`open`'s `Stitch.twoKs` in `ctx[672, 800)` (`extra` 64). -/
+def wipeL (fold extra : Nat) : Prog isa :=
+  .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (fold + 1)))])
+    (.ite .b (.block [.mov .rdx (.reg .r13)]) (.block [.mov32 .rdx (.imm (BitVec.ofNat 32 extra))]))
+
 /-- The prologue up to the call of `vg_chacha20_xor`: saves the registers,
 moves the arguments, builds the ChaCha20 state twice (the copy for the call), zeros the first
 `64 + m` bytes of `ctx[672, 1696)` (rounded up to quadwords) and sets up the
@@ -185,7 +216,7 @@ call's arguments, the copy of the state and those bytes. -/
 def prologueA (fold pass w : Nat) : Prog isa :=
   .seq (.block (save ++ moves ++ initStateQ 64 ++ initStateQ 608))
   (.seq (foldM fold pass)
-  (.seq (.block [.alu .add .rdx (.imm 64)])
+  (.seq (.block (mStore pass ++ ([.alu .add .rdx (.imm 64)] : List Instr)))
   (.seq (zeroKs w)
     (.block (ptr .rdi .r15 608 ++ ptr .rsi .r15 672 ++ ptr .rcx .r15 128)))))
 
@@ -203,18 +234,47 @@ def prologue (x : ChaCha20.X86_64.Callee) : Prog isa :=
   .seq (prologueA x.fold x.pass x.wide) (.seq (.call x.name x.code) prologueB)
 
 /-- `[rsi + rcx]` and `[r15 + rcx + 576]`. -/
-def tailByte : MemOp := { base := .rsi, index := some .rcx }
+def copyByte : MemOp := { base := .rsi, index := some .rcx }
 def padByte : MemOp := { base := .r15, index := some .rcx, disp := 576 }
 
 /-- The last `rdx` bytes (1 to 15) at `rsi`, padded with zeros, absorbed,
-with the `k - 1` blocks after the padded block in `ctx` (the lengths block,
-for `k = 2`). -/
-def padTail (b : Poly1305.X86_64.Blocks) (k : Nat) : Prog isa :=
+with the `k - 1` blocks after the padded block in `ctx`, copied byte by byte.
+The call's loads of the padded block wait for the byte stores to retire, but
+this has fewer instructions than `padTail`: it pads the associated data,
+whose absorption the keystream computed after it overlaps on long messages. -/
+def padCopy (b : Poly1305.X86_64.Blocks) (k : Nat) : Prog isa :=
   .seq (.block [.mov32 .rax (.imm 0), .store (at_ .r15 576) .rax, .store (at_ .r15 584) .rax,
     .mov32 .rcx (.imm 0)])
-  (.seq (.loop (.block [.movzx8 .rax tailByte, .store8 padByte .rax, .alu .add .rcx (.imm 1),
+  (.seq (.loop (.block [.movzx8 .rax copyByte, .store8 padByte .rax, .alu .add .rcx (.imm 1),
     .alu .cmp .rcx (.reg .rdx)]) .ne)
   (.seq (.block (ptr .rdi .r15 448 ++ ptr .rsi .r15 576 ++ ([.mov32 .rdx (.imm (BitVec.ofNat 32 k))] : List Instr)))
+  (.seq (.call b.name b.code)
+    (.block (anchor .rdi 448)))))
+
+/-- `[rsi + rdx - 1]`. -/
+def tailByte : MemOp := { base := .rsi, index := some .rdx, disp := -1 }
+
+/-- One byte shifted into `r9` (the bytes after it, as a little-endian number):
+`r9` shifted left by a byte, and byte `rdx - 1` at `rsi` added; `rdx`
+decremented, setting `ZF` once it reaches 0. -/
+def tailIn : List Instr :=
+  [.shift .shl .r9 8, .movzx8 .rcx tailByte, .alu .or .r9 (.reg .rcx), .alu .sub .rdx (.imm 1)]
+
+/-- The last `rdx` bytes (1 to 15) at `rsi`, padded with zeros, absorbed,
+with the `k - 1` blocks after the padded block in `ctx` (the lengths block,
+for `k = 2`). The padded block is built in `r9:rax` and stored as two
+quadwords, which the call's loads of it can forward from (they could not from
+`padCopy`'s byte stores): with 8 bytes or more, `rax` is the first 8, in one
+load, and `r9` the rest; with fewer, `rax` is all of them, shifted into `r9`
+from the last (`tailIn`) and moved. -/
+def padTail (b : Poly1305.X86_64.Blocks) (k : Nat) : Prog isa :=
+  .seq (.block [.alu32 .xor .r9 (.reg .r9), .alu .cmp .rdx (.imm 8)])
+  (.seq (.ite .b
+    (.seq (.loop (.block tailIn) .ne) (.block [.mov .rax (.reg .r9), .alu32 .xor .r9 (.reg .r9)]))
+    (.seq (.block [.mov .rax (.mem (at_ .rsi 0)), .alu .add .rsi (.imm 8), .alu .sub .rdx (.imm 8)])
+      (.ite .e (.block []) (.loop (.block tailIn) .ne))))
+  (.seq (.block (ptr .rdi .r15 448 ++ ptr .rsi .r15 576 ++
+    ([.store (at_ .rsi 0) .rax, .store (at_ .rsi 8) .r9, .mov32 .rdx (.imm (BitVec.ofNat 32 k))] : List Instr)))
   (.seq (.call b.name b.code)
     (.block (anchor .rdi 448)))))
 
@@ -227,11 +287,25 @@ def wholeBlocks (b : Poly1305.X86_64.Blocks) (p n : Reg) : Prog isa :=
 /-- `rsi` at the last `rdx` bytes of the `n` bytes at `p`. -/
 def tailPtr (p n : Reg) : List Instr := [.mov .rsi (.reg n), .alu .sub .rsi (.reg .rdx), .alu .add .rsi (.reg p)]
 
+/-- Whether the data's last bytes are padded by `padCopy` rather than
+`padTail`: with the baseline `vg_poly1305_blocks`, whose loads of the padded
+block wait for its other work anyway, `padTail`'s longer loop was measured
+slower (on Emerald Rapids); with the others, faster. -/
+def dataCopy : Poly1305.X86_64.Blocks → Bool
+  | .scalar => true
+  | .avx2 => false
+  | .avx512 => false
+  | .ifma => false
+
+/-- `padCopy` or `padTail`. -/
+def padRest (copy : Bool) (b : Poly1305.X86_64.Blocks) (k : Nat) : Prog isa :=
+  cond copy (padCopy b k) (padTail b k)
+
 /-- The `n` bytes at `p`, padded with zeros to a multiple of 16, absorbed. -/
 def macPad (b : Poly1305.X86_64.Blocks) (p n : Reg) : Prog isa :=
   .seq (wholeBlocks b p n)
   (.seq (.block [.mov .rdx (.reg n), .alu .and .rdx (.imm 15)])
-    (.ite .e (.block []) (.seq (.block (tailPtr p n)) (padTail b 1))))
+    (.ite .e (.block []) (.seq (.block (tailPtr p n)) (padRest true b 1))))
 
 /-- The lengths block absorbed. -/
 def absorbLengths (b : Poly1305.X86_64.Blocks) : Prog isa :=
@@ -245,7 +319,7 @@ padded last block and the lengths block in one call. -/
 def macPadLengths (b : Poly1305.X86_64.Blocks) (p n : Reg) : Prog isa :=
   .seq (wholeBlocks b p n)
   (.seq (.block [.mov .rdx (.reg n), .alu .and .rdx (.imm 15)])
-    (.ite .e (absorbLengths b) (.seq (.block (tailPtr p n)) (padTail b 2))))
+    (Code.iteCold .ne (.seq (.block (tailPtr p n)) (padRest (dataCopy b) b 2)) (absorbLengths b)))
 
 /-- The arguments of the second call of `vg_chacha20_xor`: the ChaCha20
 state with the counter set to 1, and the data. -/

@@ -1,12 +1,37 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86.Gather.CT
+import VerifiedGarbage.Proof.AesGcm.X86.Gather.CT
 public import VerifiedGarbage.Proof.AesGcm.X86.Frame
+public import VerifiedGarbage.Impl.AesGcm.X86.SealGather
+public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
+public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Contract
+import VerifiedGarbage.Proof.AesGcm.X86.Gather.Fn
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
+import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
+import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
+import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
+import VerifiedGarbage.Proof.AesGcm.X86.Flush
+import VerifiedGarbage.Proof.AesGcm.X86.Init
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Gcm.SealGather
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.AesGcm.X86.Callee
+public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+public import VerifiedGarbage.TCB.Mem
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Proof.Framework.X86.Call
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86: `Verified`
@@ -147,7 +172,7 @@ but its frames' push and pop. -/
 theorem sealGather_spSafe (v : GcmImpl) :
     (sealGather (sealFn v).name (sealFn v).code).all (fun i => !X86.isa.writesSp i) = true := by
   have hc : (sealFn v).code.all (fun i => !X86.isa.writesSp i) = true :=
-    withStackScratch_spSafe (bytes := 2604) (n := 9) (by decide) (seal_spSafe v)
+    withStackScratch_spSafe (bytes := 2604) (n := 9) (seal_spSafe v)
   have he : (Code.block entry : Prog isa).all (fun i => !X86.isa.writesSp i) = true := by decide +kernel
   have hg : gather.all (fun i => !X86.isa.writesSp i) = true := by decide +kernel
   have hr : (Code.block restore : Prog isa).all (fun i => !X86.isa.writesSp i) = true := by decide +kernel

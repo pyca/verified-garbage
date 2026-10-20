@@ -1,13 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.EncV
-public import VerifiedGarbage.Proof.MlKem1024.X86.CompressEncode
-public import VerifiedGarbage.Proof.MlKem1024.X86.DecodeDecompress
+import VerifiedGarbage.Proof.MlKem1024.X86.CompressEncode
+import VerifiedGarbage.Proof.MlKem1024.X86.DecodeDecompress
 public import VerifiedGarbage.Impl.MlKem1024.X86.Kem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Spec.MlKem.Contract1024
 
 /-!
 # ML-KEM-1024 on x86 (32-bit): the parameter set

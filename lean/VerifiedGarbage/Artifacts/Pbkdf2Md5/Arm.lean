@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Hmac.Generic.Implies
+public import VerifiedGarbage.Proof.Pbkdf2.Memory
+public import VerifiedGarbage.Proof.Pbkdf2.Scratch
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+import VerifiedGarbage.Proof.Pbkdf2.Memory
+import VerifiedGarbage.Proof.Pbkdf2.Scratch
 
 /-!
 # PBKDF2-HMAC-MD5 (RFC 8018) on ARMv7: the iteration and the whole derivation
@@ -27,25 +33,15 @@ runs in a frame holding its working space
 namespace VG.Artifacts.Pbkdf2Md5.Arm
 
 def artifacts : List Artifact := [
-  { Spec.Hmac.md5I.iterateApi with
-    target := Arm.target
-    doc := Spec.Hmac.md5I.iterateApi.doc
+  Spec.Hmac.md5I.iterateApi.artifact Arm.target {
     code := Proof.Pbkdf2.Md.Arm.md5Md.iterate
-    contract := Spec.Hmac.md5I.iterateContract Arm.abi 16
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩)
     stack := 16
-    verified := Proof.Pbkdf2.Md.Arm.Instances.md5_iterate
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Hmac.md5I.pbkdf2Api with
-    target := Arm.target
-    doc := Spec.Hmac.md5I.pbkdf2Api.doc
+    verified := Proof.Pbkdf2.Md.Arm.Instances.md5_iterate },
+  Spec.Hmac.md5I.pbkdf2Api.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.md5I) 3
       Proof.Pbkdf2.Whole.Arm.md5F.pbkdf2
-    contract := Spec.Hmac.md5I.pbkdf2Contract Arm.abi (24 + Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.md5I)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩)
     stack := 24 + Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.md5I
-    verified := Proof.Pbkdf2.Whole.Arm.pbkFramed Proof.Pbkdf2.Whole.Arm.md5 (by decide)
-      Proof.Pbkdf2.Whole.Arm.md5_pbkFrameSat
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Pbkdf2.Whole.Arm.pbkFramed Proof.Pbkdf2.Whole.Arm.md5
+      Proof.Pbkdf2.Whole.Arm.md5_pbkFrameSat }]
 
 end VG.Artifacts.Pbkdf2Md5.Arm

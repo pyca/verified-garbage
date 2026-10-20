@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifySpec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyParts
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignBody
+import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignCorrect
 
 /-!
 # RSASSA-PSS verification on AArch64: the checks

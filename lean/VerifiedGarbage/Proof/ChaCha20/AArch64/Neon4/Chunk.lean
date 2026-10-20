@@ -1,19 +1,11 @@
 module
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Setup
 
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Finish
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.RoundLoop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.RoundLoop
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Feed
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Variant
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.Spill
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

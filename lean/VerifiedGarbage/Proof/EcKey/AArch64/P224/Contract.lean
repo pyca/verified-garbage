@@ -1,14 +1,9 @@
 module
 
 public import VerifiedGarbage.Spec.EcKey.P224
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Tables
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # P-224 public keys on AArch64: the contract the proof is written against

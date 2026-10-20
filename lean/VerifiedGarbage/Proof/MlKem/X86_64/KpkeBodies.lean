@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
+import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
 public import VerifiedGarbage.Proof.MlKem.X86_64.Mul
 public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeMul
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlKem.X86_64.Ntt
+import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 
 /-!
 # ML-KEM on x86-64: the SSE2 arithmetic without its MXCSR region

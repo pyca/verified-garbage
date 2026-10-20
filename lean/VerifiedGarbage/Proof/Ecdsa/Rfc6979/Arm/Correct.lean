@@ -1,14 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Loop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Weierstrass.Layout
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Reduce
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Copy
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: correctness
@@ -131,7 +134,8 @@ theorem stageB_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
     have e4 : 4 * P.k = P.Q := by simp only [RfcHash.k, RfcHash.Q] at *; omega_arith
     have hwc : (cfgOf P).wide = false := hw
     simp only [hwc, Bool.false_eq_true, ite_false]
-    refine WP.mono (reduce_ok (P := P) hw hL hc (by rw [e4, ← hD]; exact hQD)) fun u₁ ⟨hc₁, _, hh₁⟩ => ?_
+    obtain ⟨hb₁, hb₂, -, -⟩ := hb_facts hw hk.e_eq
+    refine WP.mono (reduce_ok (P := P) hw hk.e_eq hL hc (by rw [e4, ← hD]; exact hQD)) fun u₁ ⟨hc₁, _, hh₁⟩ => ?_
     rw [e4] at hh₁
     refine WP.mono (initKV_ok hL hc₁) fun u₂ ⟨hc₂, hf₂, hv₂, hk₂⟩ =>
       ⟨hc₂, ?_, hk₂ _ (by anums), hv₂ _ (by anums), dgOk_narrow hL hk hw hc₂⟩
@@ -141,7 +145,7 @@ theorem stageB_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
       (by omega_arith)]
     rw [hSpec, bits2octets_eqQ hB (by rw [hBOf, length_bytesAt]; exact hQD), hBOf,
       ← bytesAt_take m₀ (State.addr L.dg) hQD, ← hh₁]
-    have e := toBytes_ofBytes (Spec.Sha256.bytesAt u₁.mem (L.B + BitVec.ofNat 64 152) P.Q)
+    have e := toBytes_ofBytes (Spec.Sha256.bytesAt u₁.mem (L.B + BitVec.ofNat 64 P.hB) P.Q)
     rw [length_bytesAt] at e
     exact e.symm
   · obtain ⟨hw9, hQ66, hD64, -⟩ := P.sizesW hw
@@ -189,12 +193,14 @@ theorem stageB_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
       rw [e₁, e₂]
 
 /-- `h` in the message, kept by the steps on `K` and `V`. -/
-theorem hOf_kvw (hL : L.Ok) {m m' : Mem} (hf : Frame (KVW L) m m') : hOf P L m' = hOf P L m := by
+theorem hOf_kvw (hL : L.Ok) (hk : CoreOk P L) {m m' : Mem} (hf : Frame (KVW L) m m') :
+    hOf P L m' = hOf P L m := by
   have nB := hL.nB
   have hb := hL.B_fit
   simp only [hOf, hPart]
   cases hw : P.R.wide
   · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
+    obtain ⟨hb₁, hb₂, -, -⟩ := hb_facts hw hk.e_eq
     simp only [Bool.false_eq_true, ite_false]
     refine bytesAt_frame hf (fun r hr => ?_) (by simp only [RfcHash.Q] at *; omega_arith)
     simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -212,7 +218,7 @@ theorem hOf_kvw (hL : L.Ok) {m m' : Mem} (hf : Frame (KVW L) m m') : hOf P L m' 
 theorem stageC_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u) (hq : QB P L m₀ u) :
     WP isa ((cfgOf P).rekeyFull 0) u fun u' => Ctx L g m₀ u' ∧ QC P L m₀ u' :=
   WP.mono (rekeyFull_ok hL (hok_of hk) hc (b := 0) (by decide)) fun u' ⟨hc', _, hf', hk', hv'⟩ =>
-    ⟨hc', (hOf_kvw hL hf').trans hq.h,
+    ⟨hc', (hOf_kvw hL hk hf').trans hq.h,
       by rw [hk', hq.k, hq.v, hq.h, hc.dBytes hL (by rw [hk.1])],
       by rw [hv', hk', hq.k, hq.v, hq.h, hc.dBytes hL (by rw [hk.1])], hq.dg.frameOf hL hk hf' kvw_apart⟩
 
@@ -236,11 +242,12 @@ structure Fin (P : RfcHash) (L : Lay P.I.hashLen) (g : Reg → BitVec 32) (m₀ 
 
 theorem stageG_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u) {i : Nat}
     (hx : Exit P L m₀ i u) :
-    WP isa (.block (Cfg.wipe (cfgOf P).wide)) u (Fin P L g m₀) := by
+    WP isa (.block (Cfg.wipe (cfgOf P).wide (cfgOf P).hHigh)) u (Fin P L g m₀) := by
   have hw : (cfgOf P).wide = L.wide := hk.2.2.symm
+  have hh : (cfgOf P).hHigh = L.hHigh := hk.2.1.2.symm
   have := L.he
   have := hL.B_fit
-  rw [hw]
+  rw [hw, hh]
   exact WP.mono (wipe_ok hL hc) fun _ ⟨_, hwr, hsp, hs, ha, hf⟩ => ⟨hwr.trans hc.wr, hsp.trans hc.sp, hs, i,
     hx.lt, hx.fails, hx.last, hx.res.keep ha (bytesAt_frame hf (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -251,7 +258,7 @@ theorem stageG_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
 /-- The body, after `h`, `V` and `K`. -/
 theorem rest_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) (hq : QB P L m₀ t) :
     WP isa (.seq ((cfgOf P).rekeyFull 0) (.seq ((cfgOf P).rekeyFull 1) (.seq (.block (cfgOf P).initCnt)
-      (.seq (.loop (cfgOf P).tryOne .ne) (.block (Cfg.wipe (cfgOf P).wide)))))) t (Fin P L g m₀) :=
+      (.seq (.loop (cfgOf P).tryOne .ne) (.block (Cfg.wipe (cfgOf P).wide (cfgOf P).hHigh)))))) t (Fin P L g m₀) :=
   WP.seq (WP.mono (stageC_ok hL hk hc hq) fun _ ⟨h₂, q₂⟩ =>
     WP.seq (WP.mono (stageD_ok hL hk h₂ q₂) fun _ ⟨h₃, q₃⟩ =>
       WP.seq (WP.mono (stageE_ok h₃ q₃) fun _ ⟨h₄, q₄⟩ =>
@@ -369,21 +376,21 @@ theorem saved_pairwise : Impl.Ecdsa.Rfc6979.Arm.saved.Pairwise (fun p q => p.2 +
 
 /-- The prologue: our caller's registers into the frame, and the pointers to the registers that keep them. -/
 theorem entry_ok {s : State} (h : (rfcArm P.I (240 + 4 * P.e)).pre s) :
-    WP isa (.block Cfg.prologue) (allocated (frameBytes P.R.wide) s)
-      (Ctx (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s) s.gpr s.mem) := by
+    WP isa (.block Cfg.prologue) (allocated (frameBytes P.R.wide P.R.hHigh) s)
+      (Ctx (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s) s.gpr s.mem) := by
   have hL := lay_ok h
   obtain ⟨hrd, hwr, -⟩ := h
-  have hA : State.addr (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s).fp =
-      (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s).B + BitVec.ofNat 64 24 := hL.fpA0
+  have hA : State.addr (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s).fp =
+      (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s).B + BitVec.ofNat 64 24 := hL.fpA0
   have hb := hL.B_fit
-  have he := (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s).he
+  have he := (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s).he
   simp only [Cfg.prologue, List.cons_append]
   refine wp_addSp (d := .r12) (imm := 0) (by decide) fun u₁ v₁ => ?_
-  have h12 : u₁.gpr .r12 = (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s).fp := by
+  have h12 : u₁.gpr .r12 = (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s).fp := by
     rw [v₁.gpr, BitVec.add_zero]; rfl
-  have hs : VG.Proof.Mont.Arm.Scr u₁ (State.addr (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s).fp) 216 :=
-    ⟨by rw [h12], ⟨frameBytes P.R.wide, by simp only [frameBytes]; omega_arith,
-      by simp only [frameBytes]; have : extra P.R.wide ≤ 36 := by simp only [extra]; split <;> omega_arith
+  have hs : VG.Proof.Mont.Arm.Scr u₁ (State.addr (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s).fp) 216 :=
+    ⟨by rw [h12], ⟨frameBytes P.R.wide P.R.hHigh, by simp only [frameBytes]; omega_arith,
+      by simp only [frameBytes]; have : extra P.R.wide P.R.hHigh ≤ 36 := by simp only [extra]; split <;> (try split) <;> omega_arith
          omega_arith, by rw [v₁.wr]; exact List.mem_cons_self⟩,
       by rw [hA, Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (by omega_arith)]; omega_arith, by omega_arith⟩
   rw [WP.block_append_iff]
@@ -399,7 +406,7 @@ theorem entry_ok {s : State} (h : (rfcArm P.I (240 + 4 * P.e)).pre s) :
   refine ⟨by rw [K.rd, K₂.rd, v₁.rd]; exact hrd, ?_, by rw [K.sp, K₂.sp, v₁.sp]; rfl, ?_, ?_, ?_, ?_, ?_,
     fun p hp => ?_, ?_⟩
   · rw [K.wr, K₂.wr, v₁.wr]
-    show ⟨State.addr (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s).fp, frameBytes P.R.wide⟩ :: s.wr = _
+    show ⟨State.addr (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s).fp, frameBytes P.R.wide P.R.hHigh⟩ :: s.wr = _
     rw [hA, hwr]
     rfl
   · rw [v₇.other _ (by decide), v₆.other _ (by decide), v₅.other _ (by decide), v₄.other _ (by decide), v₃.gpr,
@@ -419,19 +426,20 @@ theorem entry_ok {s : State} (h : (rfcArm P.I (240 + 4 * P.e)).pre s) :
       obtain ⟨q, hq, rfl⟩ := hr
       exact (saved_off q hq).2
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨(lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s).STK, by simp, by rw [hA]; exact Offset.sub_base _ (by omega_arith)⟩
+      exact ⟨(lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s).STK, by simp, by rw [hA]; exact Offset.sub_base _ (by omega_arith)⟩
 
 theorem low_preserved : ∀ r ∈ preserved, r ∈ Impl.Ecdsa.Rfc6979.Arm.saved.map Prod.fst := by decide
 
 /-- `vg_ecdsa_<curve>_<hash>_sign` meets `rfcArm P.I` and keeps the
 callee-saved registers and the stack pointer. -/
-theorem coreOk_lay (P : RfcHash) (s : State) : CoreOk P (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s) :=
-  ⟨P.curveLen, fun hw => by show P.Q ≤ P.I.hashLen; rw [P.len]; exact (P.sizesA hw).2.2, rfl⟩
+theorem coreOk_lay (P : RfcHash) (s : State) :
+    CoreOk P (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s) :=
+  ⟨P.curveLen, ⟨fun hw => by show P.Q ≤ P.I.hashLen; rw [P.len]; exact (P.sizesA hw).2.2, rfl⟩, rfl⟩
 
-theorem frameBytes_ok (wide : Bool) :
-    0 < frameBytes wide ∧ frameBytes wide < 4096 ∧ frameBytes wide % 8 = 0 ∧
-      encodable (BitVec.ofNat 32 (frameBytes wide)) = true := by
-  cases wide <;> decide
+theorem frameBytes_ok (wide hHigh : Bool) :
+    0 < frameBytes wide hHigh ∧ frameBytes wide hHigh < 4096 ∧ frameBytes wide hHigh % 8 = 0 ∧
+      encodable (BitVec.ofNat 32 (frameBytes wide hHigh)) = true := by
+  cases wide <;> cases hHigh <;> decide
 
 /-- `vg_ecdsa_<curve>_<hash>_sign` meets `rfcArm P.I` and keeps the
 callee-saved registers and the stack pointer. -/
@@ -441,8 +449,8 @@ theorem sign_ok {s : State} (h : (rfcArm P.I (240 + 4 * P.e)).pre s) :
   have hL := lay_ok h
   have hN : 240 + 4 * P.e ≤ s.sp.toNat := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
   have hk := coreOk_lay P s
-  have hfb : frameBytes (cfgOf P).wide = 216 + 4 * P.e := rfl
-  refine WP.alloc (frameBytes_ok _) (by rw [hfb]; omega_arith) ?_
+  have hfb : frameBytes (cfgOf P).wide (cfgOf P).hHigh = 216 + 4 * P.e := rfl
+  refine WP.alloc (frameBytes_ok _ _) (by rw [hfb]; omega_arith) ?_
   rw [Cfg.body, show Cfg.prologue ++ (if (cfgOf P).wide then (cfgOf P).coreDigest else (cfgOf P).reduce) ++
     Cfg.initKV = Cfg.prologue ++ ((if (cfgOf P).wide then (cfgOf P).coreDigest else (cfgOf P).reduce) ++
       Cfg.initKV) from List.append_assoc _ _ _]
@@ -450,12 +458,12 @@ theorem sign_ok {s : State} (h : (rfcArm P.I (240 + 4 * P.e)).pre s) :
   rw [WP.block_append_iff]
   refine WP.mono (entry_ok h) fun t hc => WP.mono (stageB_ok hL hk hc) fun u ⟨hu, hq⟩ => ?_
   refine WP.mono (rest_ok hL hk hu hq) fun v ⟨hwr, hsp, hs, i, hx⟩ => ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
-  · show (freed (frameBytes (cfgOf P).wide) v).gpr r = _
+  · show (freed (frameBytes (cfgOf P).wide (cfgOf P).hHigh) v).gpr r = _
     obtain ⟨p, hp, rfl⟩ := List.mem_map.mp (low_preserved r hr)
     exact hs p hp
-  · show v.sp + BitVec.ofNat 32 (frameBytes (cfgOf P).wide) = s.sp
+  · show v.sp + BitVec.ofNat 32 (frameBytes (cfgOf P).wide (cfgOf P).hHigh) = s.sp
     rw [hsp]; exact BitVec.sub_add_cancel _ _
-  · show match (result P.I s.mem (State.addr (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s).d) (State.addr (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s).dg)).1 with
+  · show match (result P.I s.mem (State.addr (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s).d) (State.addr (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s).dg)).1 with
       | some rs => _ | none => _
     rw [result_eq hx]
     have e₁ : 2 * P.I.ecdsa.curve.len = 2 * P.Q := by rw [P.curveLen]
@@ -463,8 +471,8 @@ theorem sign_ok {s : State} (h : (rfcArm P.I (240 + 4 * P.e)).pre s) :
     rw [e₁, e₂]
     have hr := hx.res
     unfold ResultIs at hr
-    show match sigI P (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s) s.mem i with | some rs => _ | none => _
-    cases hsig : sigI P (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s) s.mem i <;> rw [hsig] at hr <;>
+    show match sigI P (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s) s.mem i with | some rs => _ | none => _
+    cases hsig : sigI P (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s) s.mem i <;> rw [hsig] at hr <;>
       exact ⟨by rw [low_word]; exact hr.1, hr.2⟩
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

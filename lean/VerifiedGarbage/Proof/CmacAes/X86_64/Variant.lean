@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.CmacAes.X86_64.Callee
 public import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
 public import VerifiedGarbage.Proof.CmacAes.X86_64.AesNi
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Implementations of `vg_cmac_aes_update` on x86-64

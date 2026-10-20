@@ -2,10 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Mul
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Load
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Poly1305 on x86-64 with AVX-512 IFMA: loading blocks

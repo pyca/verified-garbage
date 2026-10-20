@@ -1,21 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.Lay
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragK
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # ML-KEM-768 on x86-64: the calls, in a layout
 
-What each call of the top-level functions needs (`IpH`, `MulH`, …) from a
+What each call of the top-level functions needs (`IpH`, `TwoH`, …) from a
 layout (`Lay`) and a check of its pointers that evaluates to `true` (`ipChk`,
-`mulChk`, …), and two runs in the same layout (`LRel`), with the same
+`twoChk`, …), and two runs in the same layout (`LRel`), with the same
 addresses in its registers, which every call keeps.
 -/
 
@@ -40,11 +34,6 @@ def ipChk (bs wbs : List (Reg × Nat)) (f : Ptr) : Bool :=
 
 def accChk (bs wbs : List (Reg × Nat)) (f g : Ptr) : Bool :=
   wrOk bs wbs f 1024 && rdOk bs g 1024 && sepB bs f 1024 g 1024
-
-def mulChk (bs wbs : List (Reg × Nat)) (h f g : Ptr) : Bool :=
-  wrOk bs wbs h 1024 && rdOk bs f 1024 && rdOk bs g 1024 && wrOk bs wbs (sc oSS) 1024 &&
-    sepB bs h 1024 f 1024 && sepB bs h 1024 g 1024 && sepB bs h 1024 (sc oSS) 1024 &&
-    sepB bs f 1024 (sc oSS) 1024 && sepB bs g 1024 (sc oSS) 1024
 
 def twoChk (bs wbs : List (Reg × Nat)) (p : Ptr) (n : Nat) (q : Ptr) (m : Nat) : Bool :=
   rdOk bs p n && wrOk bs wbs q m && sepB bs p n q m
@@ -83,16 +72,6 @@ theorem AccH.of {f g : Ptr} (hc : accChk (rbs ++ wbs) wbs f g = true) (redF : Re
   exact ⟨⟨ho, ho2⟩, redF, redG, L.disj hs, L.stkD hr, L.stkD hr2,
     covers_append (covers_cons (L.cR hr2) covers_nil) (covers_cons (L.cR hr) covers_nil),
     covers_cons (L.cW hw) covers_nil⟩
-
-theorem MulH.of {h f g : Ptr} (hc : mulChk (rbs ++ wbs) wbs h f g = true) (redF : Reduced s.mem (pa s f))
-    (redG : Reduced s.mem (pa s g)) : MulH h f g s := by
-  simp only [mulChk, wrOk, rdOk, Bool.and_eq_true, decide_eq_true_eq] at hc
-  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hoh, hrh⟩, hwh⟩, hof, hrf⟩, hog, hrg⟩, ⟨_, hrz⟩, hwz⟩, s1⟩, s2⟩, s3⟩, s4⟩, s5⟩ := hc
-  exact ⟨⟨hoh, hof, hog⟩, redF, redG, L.disj s1, L.disj s2, L.disj s3, L.disj s4, L.disj s5, L.stkD hrh,
-    L.stkD hrf, L.stkD hrg, L.stkD hrz,
-    covers_append (covers_cons (L.cR hrf) (covers_cons (L.cR hrg) covers_nil))
-      (covers_cons (L.cR hrh) (covers_cons (L.cR hrz) covers_nil)),
-    covers_cons (L.cW hwh) (covers_cons (L.cW hwz) covers_nil)⟩
 
 theorem TwoH.of {p q : Ptr} {n m : Nat} (hc : twoChk (rbs ++ wbs) wbs p n q m = true) : TwoH p q n m s := by
   simp only [twoChk, wrOk, rdOk, Bool.and_eq_true, decide_eq_true_eq] at hc

@@ -1,13 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.CT
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.CT
 import Mathlib.Logic.Function.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # Deterministic ECDSA on AArch64: `Verified`
@@ -32,7 +27,8 @@ open VG VG.AArch64 VG.Impl.Ecdsa.Rfc6979.AArch64
 variable (P : RfcHash)
 
 theorem cfgOf_H : (cfgOf P).H = P.H := rfl
-theorem reduce_eq : (cfgOf P).reduce = (cfgC P.R.E).reduce := rfl
+theorem reduce_eq : (cfgOf P).reduce = (cfgC P.R.E P.R.hHigh).reduce := rfl
+theorem cfgOf_hHigh : (cfgOf P).hHigh = P.R.hHigh := rfl
 /-- The count's initial store writes no callee-saved SIMD register, whatever the count. -/
 theorem initCnt_keepsV :
     List.rec (motive := fun _ => Bool) true (fun i _ ih => keepsV i && ih) (cfgOf P).initCnt = true := rfl
@@ -53,20 +49,21 @@ theorem sign_keepsV : (cfgOf P).sign.allInstrs keepsV = true := by
     have e : (cfgOf P).wide = false := hw
     simp only [Cfg.sign, Cfg.body, Cfg.start, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV,
       Cfg.hmac, e, Bool.false_eq_true, ite_false, initCnt_keepsV, Code.allInstrs, reduce_eq, cfgOf_H, coreC_eq, hI,
-      hU, hF, P.R.coreKeepsV, Bool.and_true, Bool.true_and] at hR ⊢
+      hU, hF, P.R.coreKeepsV, Bool.and_true, Bool.true_and, cfgOf_hHigh, fHo_q P hw, hHigh_q P hw] at hR ⊢
     have hQD : P.R.E.C.len ≤ P.H.D := (P.sizesA hw).2.2
     simp only [hR, hw', hl', Bool.true_and]
-    rcases (P.R.sizesA hw).1 with hn | hn <;> rcases (P.R.sizesA hw).2.1 with hl | ⟨hn', hl | hl⟩ <;>
+    rcases (P.R.sizesA hw).1 with hn | hn | hn <;> rcases (P.R.sizesA hw).2.1 with hl | ⟨hn', hl | hl⟩ <;>
       rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
       first
       | (exfalso; omega)
-      | (simp only [h, h', hn, hl]; decide +kernel)
+      | (simp only [h, h', hn, hl, Nat.reduceMul, Nat.reduceEqDiff, decide_true, decide_false, ite_true,
+          ite_false]; decide +kernel)
   · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
     have e : (cfgOf P).wide = true := hw
     have hs : (cfgOf P).sh = 7 := sh7 hw
     simp only [Cfg.sign, Cfg.body, Cfg.start, Cfg.tryOne, Cfg.cand, Cfg.coreDigest, Cfg.keepV, Cfg.candTop, Cfg.conv,
       Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac, e, ite_true, initCnt_keepsV, Code.allInstrs, cfgOf_H, coreC_eq,
-      hI, hU, hF, P.R.coreKeepsV, Bool.and_true, Bool.true_and]
+      hI, hU, hF, P.R.coreKeepsV, Bool.and_true, Bool.true_and, cfgOf_hHigh, fHo_wide P hw, hHigh_wide P hw]
     have hw9' : P.R.E.n = 9 := hw9
     have hQ66' : P.R.E.C.len = 66 := hQ66
     simp only [hw', hl', hs, hw9', hQ66', hD64, hB]
@@ -78,16 +75,17 @@ theorem sign_a64 (s : State) (h : (rfcAArch64 P.R.E P.I (256 + P.e)).pre s) :
   exact ⟨t, s', he, ⟨hg, hsp, Exec.preservedV he (sign_keepsV P)⟩, hp⟩
 
 /-- The notes on the implementation, for the documentation of the function
-with the hash function `H`, for scalars of `q` bytes signed by `core`. -/
-def signNotes (H : Impl.Pbkdf2.Md.AArch64.Hash) (q : Nat) (core : String) : String :=
+with the hash function `H`, for scalars of `q` bytes signed by `core`, in a
+stack frame of `frame` bytes. -/
+def signNotes (H : Impl.Pbkdf2.Md.AArch64.Hash) (q : Nat) (core : String) (frame : Nat := 224) : String :=
   "Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost " ++
   toString q ++ " bytes, and each HMAC with `" ++ H.hmacInitN ++ "`, `" ++ H.updN ++ "` and `" ++ H.hmacFinN ++ "`, \
   using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, \
   the leftmost " ++ toString q ++ " bytes of `V`, is tried with `" ++ core ++ "`, which uses all of `scratch`; \
   whether to try another is computed without branches from its result and the count of candidates left, so \
-  the code branches only on that. `K`, `V`, `h`, the count and the pointers are kept in a 224-byte stack \
-  frame, below the 16 bytes saving `x30`, and the secrets are cleared before it is freed; the calls use \
-  the 16 bytes below it."
+  the code branches only on that. `K`, `V`, `h`, the count and the pointers are kept in a " ++
+  toString frame ++ "-byte stack frame, below the 16 bytes saving `x30`, and the secrets are cleared before it \
+  is freed; the calls use the 16 bytes below it."
 
 /-- The notes of an instance whose scalars are longer than the hash
 (`wide`): `q` bytes of `nb` bits, from a `D`-byte hash. -/

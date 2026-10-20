@@ -1,23 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inv
-public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
-public import VerifiedGarbage.Proof.MlDsa.Verify.Final
-public import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
 public import VerifiedGarbage.Proof.MlDsa.Verify.Norm
-public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallPack
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Lay
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintSumGeneric
 
 /-!
 # ML-DSA verification on AArch64: parameters, buffers, and pieces
@@ -190,10 +183,7 @@ theorem sepB_v {p : Params} {r r' : Reg} (h : r ≠ r') (hw : r = .x28 ∨ r' = 
   rcases hw with rfl | rfl <;> simp [isW, List.lookup]
 
 /-- Unfolds the checks of pointers into the layout into arithmetic, then `omega`. -/
-syntax "vlay" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| vlay) => `(tactic| vlay [])
-  | `(tactic| vlay [$ls,*]) => `(tactic| plain_simp_names (
+tactic_template "vlay" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                        set_option linter.unusedSimpArgs false in
                        simp (config := { decide := true }) only [VG.Proof.MlDsa.AArch64.keepB,
                          VG.Proof.MlDsa.AArch64.sepB_same, VG.Proof.MlDsa.AArch64.Verify.sepB_v,
@@ -209,14 +199,14 @@ macro_rules
                          VG.Impl.MlDsa.AArch64.Verify.oHint, or_true, true_or, and_true, true_and, $ls,*]
                        and_intros <;> omega_arith))
 
+tactic_template "vlay" : tactic => `(tactic| vlay [])
+
 /-- A check about the layout that mentions no variable but the parameter set and
 bounded indices, decided for each parameter set (`decide_at`): cheaper than
 `vlay`, which unfolds it into arithmetic on the parameters for `omega`, unless
 there are many indices to try. -/
-syntax "vlayd" : tactic
-macro_rules
-  | `(tactic| vlayd) => `(tactic| (
-      have hmem := (‹VG.Proof.MlDsa.AArch64.Verify.VFacts _›).mem; decide_at hmem))
+tactic_template "vlayd" : tactic => `(tactic| (
+    have hmem := (‹VG.Proof.MlDsa.AArch64.Verify.VFacts _›).mem; decide_at hmem))
 
 /-! ## What holds throughout -/
 

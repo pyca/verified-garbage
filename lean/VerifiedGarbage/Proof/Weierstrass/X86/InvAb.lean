@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvLayout
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.X25519.X86.Column
 public import VerifiedGarbage.Proof.Rc2.PairMem
 public import VerifiedGarbage.Proof.Rc2.Select
@@ -13,6 +9,8 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontBody
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareBody
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareInit
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 
 /-! # Applying both matrix rows to the reduced inverse coefficients -/
 

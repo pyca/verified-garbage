@@ -1,16 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Permutation
-import VerifiedGarbage.Proof.TripleDes.AArch64.BlockIO
+import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Permutation
 public import VerifiedGarbage.Impl.TripleDes.AArch64.ExpandKey
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bytes
 import VerifiedGarbage.Proof.TripleDes.AArch64.Word
 import VerifiedGarbage.Proof.TripleDes.Word
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.AArch64.RoundLit
+import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 @[expose] public section
 
@@ -109,7 +109,7 @@ theorem load_ok (s : State) (offset component : Nat) (hc : component < 3)
     have unused : ∀ r ∈ keyKept,
         r ∉ [Reg.x19, .x20, .x21, .x22] ∧ r ≠ .x4 := by decide
     have hcheck : ∀ r ∈ keyKept,
-        ((instrs keyPermutation1.lit).all fun op => dstOf op != some r) = true := by decide +kernel
+        ((instrs keyPermutation1.lit).all fun op => !clobbers op r) = true := by decide +kernel
     exact (reg₃ r (unused r hr).1).trans ((reg₂ r (hcheck r hr)).trans (reg₁ r (unused r hr).2))
 
 end VG.Proof.TripleDes.AArch64.Key

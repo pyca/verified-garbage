@@ -1,19 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-meta import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxMont
-meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxMont
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyVerified
-meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyVerified
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
+public import VerifiedGarbage.Impl.Bignum.X86_64.MontFnLazy
+import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyVerified
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyCT
+import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazy
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
+meta import VerifiedGarbage.Impl.Bignum.X86_64.MontFnLazy
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyVerified
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazy
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Lazy squarings by calls of `vg_rsa_lazy_mont_mul` and `vg_rsa_lazy_mont_mul_adx`
@@ -60,8 +64,8 @@ def MontS.fnLazy : MontS where
     refine WP.seq (WP.mono (fnArgs_ok _ _ _ _) fun t ⟨hdx, hcx, h8, hm, k⟩ => ?_)
     rw [← hm] at hinv ⊢
     refine WP.mono (MontFn.mulBaseLazy_ok (hg.scr.congr k.2.2) ((k.gpr (by decide)).trans hg.rdi) (hm ▸ hg.hdr)
-      hZ hw hw' (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hdx hcx h8
-      hinv) fun t' ⟨h2, h3, k', _⟩ => ?_
+      hZ hw hw' (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) hdx hcx h8 hinv) fun t' ⟨h2, h3, k', _⟩ => ?_
     exact ⟨⟨hg.scr.congr ((k.trans k').2.2), ((k.trans k').gpr (by decide)).trans hg.rdi, h3.hdr (hm ▸ hg.hdr)⟩,
       wv_lt _ _ _ _, h2, h3, (k.trans k').mono (by decide)⟩
   ct := Mont.fnBase.ct (.inr (.inl ⟨rfl, rfl, rfl⟩))

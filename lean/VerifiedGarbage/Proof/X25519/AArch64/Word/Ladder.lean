@@ -1,11 +1,11 @@
 module
+public import VerifiedGarbage.Proof.X25519.AArch64.Word.Formula
+public import VerifiedGarbage.Proof.X25519.AArch64.Word.Head
 
-public import VerifiedGarbage.Proof.X25519.AArch64.Word.Step
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X25519.AArch64.Word.Step
+import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! The 255 public-count ladder iterations and the final conditional swaps. -/
 

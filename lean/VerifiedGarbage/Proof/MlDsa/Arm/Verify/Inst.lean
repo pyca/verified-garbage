@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Top
+import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Top
 public import VerifiedGarbage.Impl.MlDsa.Arm.Verify.Inst
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Hint
 import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttInv
 import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
 import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNttCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Sample.BallCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Round.NormLt
@@ -12,10 +12,6 @@ import VerifiedGarbage.Proof.MlDsa.Arm.Round.UseHint
 import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
 import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
 import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintUnpackCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on 32-bit ARM, with this library's primitives

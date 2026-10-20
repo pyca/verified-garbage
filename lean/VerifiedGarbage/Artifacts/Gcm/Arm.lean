@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Gcm.Arm.Ghash
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # GHASH on ARMv7 -/
 
@@ -12,14 +10,10 @@ import Mathlib.Tactic.SplitIfs
 namespace VG.Artifacts.Gcm.Arm
 
 def artifacts : List Artifact := [
-  { Spec.Gcm.ghashApi with
-    target := Arm.target
-    doc := Spec.Gcm.ghashApi.doc
-      (notes := ["`•` is computed bit by bit as Algorithm 1 of §6.3 does, with masks instead of \
-        branches."])
+  Spec.Gcm.ghashApi.artifact Arm.target {
+    notes := ["`•` is computed bit by bit as Algorithm 1 of §6.3 does, with masks instead of \
+        branches."]
     code := Impl.Gcm.Arm.ghash
-    contract := Spec.Gcm.ghashContract Arm.abi
-    verified := Proof.Gcm.Arm.ghash_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Gcm.Arm.ghash_verified }]
 
 end VG.Artifacts.Gcm.Arm

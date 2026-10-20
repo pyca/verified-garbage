@@ -1,11 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Proof.Ecdh.Exchange
+public import VerifiedGarbage.Spec.Ecdsa.Verify
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify
-public import VerifiedGarbage.Proof.Weierstrass.JacAdd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ecdsa.Verify
+import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-! Verification can compare a Jacobian X against the square of its Z coordinate. -/
 

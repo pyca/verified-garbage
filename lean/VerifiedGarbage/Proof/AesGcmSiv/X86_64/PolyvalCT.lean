@@ -1,11 +1,32 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.CryptCT
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Absorb
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Derive
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Polyval
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.CryptCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Absorb
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Derive
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Polyval
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Impl.AesGcmSiv.X86_64
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM-SIV on x86-64: the keys and POLYVAL are constant time

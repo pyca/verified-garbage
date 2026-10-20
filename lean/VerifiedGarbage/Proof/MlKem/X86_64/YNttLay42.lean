@@ -1,12 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
-public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 
 /-!
@@ -37,19 +31,19 @@ abbrev ybody42 (core zeta : List Instr) (dz : BitVec 32) : List Instr :=
 /-- An iteration of a layer with `len` = 4 or 2: the 32 words of `G` from `j`,
 in lane `l` the eight from `j + 8l` and the eight from `j + 16 + 8l`, become
 those of `R`, with the zetas `ζ l` that `zeta` leaves in the lanes of `ymm13`. -/
-theorem ystep42 {core zeta : List Instr} {dz : BitVec 32} (hY : laneSseBlock (toY core) = some core)
-    {sP : Addr} {j : Nat} (hj : j + 32 ≤ 256) {G R : Poly} {ζ : Nat → Nat → Zq} {s : State} (hc : YConsts s)
-    (hdx : s.gpr .rdx = wAddr (spW sP) j) (hS : S16 s.mem (spW sP) G) (hw : pR sP ∈ s.wr)
+theorem ystep42 {α : Type} [Inhabited α] {R : BitVec 16 → α → Prop} {core zeta : List Instr} {dz : BitVec 32} (hY : laneSseBlock (toY core) = some core)
+    {sP : Addr} {j : Nat} (hj : j + 32 ≤ 256) {G H : Vector α n} {ζ : Nat → Nat → Zq} {s : State} (hc : YConsts s)
+    (hdx : s.gpr .rdx = wAddr (spW sP) j) (hS : S16R R s.mem (spW sP) G) (hw : pR sP ∈ s.wr)
     (hz : ∀ s', XKeep s s' →
       WP isa (.block zeta) s' fun s'' => (∀ l < 2, ZLanes (s''.lane .xmm13 l) (ζ l)) ∧
         YOnly [.xmm13, .xmm2, .xmm1] s' s'')
-    (hcore : ∀ l < 2, ∀ t : State, VConsts t → Lanes (t.xmm .xmm0) (fun e => G[j + 8 * l + e]!) →
-      Lanes (t.xmm .xmm4) (fun e => G[j + 16 + 8 * l + e]!) → ZLanes (t.xmm .xmm13) (ζ l) →
-      WP isa (.block core) t fun t' => (Lanes (t'.xmm .xmm0) (fun e => R[j + 8 * l + e]!) ∧
-        Lanes (t'.xmm .xmm1) (fun e => R[j + 16 + 8 * l + e]!)) ∧ XOnly [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4] t t')
-    (hR : ∀ i < 256, i < j ∨ j + 32 ≤ i → R[i]! = G[i]!) :
+    (hcore : ∀ l < 2, ∀ t : State, VConsts t → LanesR R (t.xmm .xmm0) (fun e => G[j + 8 * l + e]!) →
+      LanesR R (t.xmm .xmm4) (fun e => G[j + 16 + 8 * l + e]!) → ZLanes (t.xmm .xmm13) (ζ l) →
+      WP isa (.block core) t fun t' => (LanesR R (t'.xmm .xmm0) (fun e => H[j + 8 * l + e]!) ∧
+        LanesR R (t'.xmm .xmm1) (fun e => H[j + 16 + 8 * l + e]!)) ∧ XOnly [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4] t t')
+    (hR : ∀ i < 256, i < j ∨ j + 32 ≤ i → H[i]! = G[i]!) :
     WP isa (.block (ybody42 core zeta dz)) s fun s' =>
-      S16 s'.mem (spW sP) R ∧ s'.gpr .rdx = wAddr (spW sP) (j + 32) ∧
+      S16R R s'.mem (spW sP) H ∧ s'.gpr .rdx = wAddr (spW sP) (j + 32) ∧
       s'.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
       s'.zf = some (s.gpr .rcx - 1 == 0) ∧ BInvY sP s s' := by
   have j0 : j + 16 ≤ 256 := by bdd_omega 256
@@ -71,13 +65,13 @@ theorem ystep42 {core zeta : List Instr} {dz : BitVec 32} (hY : laneSseBlock (to
   have l4 := GOnly.lane g4 y4
   have c4 : YConsts s4 := lanes_gpr (s := s3) l4 (o12.trans o3) hc (by decide) (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (ylanes hY (P := fun l t => Lanes (t.xmm .xmm0) (fun e => R[j + 8 * l + e]!) ∧
-      Lanes (t.xmm .xmm1) (fun e => R[j + 16 + 8 * l + e]!))
+  refine WP.mono (ylanes hY (P := fun l t => LanesR R (t.xmm .xmm0) (fun e => H[j + 8 * l + e]!) ∧
+      LanesR R (t.xmm .xmm1) (fun e => H[j + 16 + 8 * l + e]!))
     fun l hl => hcore l hl _ (c4 l hl)
       (by rw [State.proj_xmm, l4, o3.lane _ (by decide) l hl, o2.lane _ (by decide) l hl, L0 l hl, hdx,
-        add_ofNat_zero]; exact (lanes_loadY hS j0 hl).congr fun _ _ => rfl)
+        add_ofNat_zero]; exact (lanes_loadYR hS j0 hl).congr fun _ _ => rfl)
       (by rw [State.proj_xmm, l4, o3.lane _ (by decide) l hl, L4 l hl, o1.gpr, o1.mem, hdx, a1]
-          exact (lanes_loadY hS j1 hl).congr fun _ _ => rfl)
+          exact (lanes_loadYR hS j1 hl).congr fun _ _ => rfl)
       (by rw [State.proj_xmm, l4]; exact Z3 l hl)) fun s5 ⟨C5, o5⟩ => ?_
   have m5 : s5.mem = s.mem := by rw [o5.mem, g4.mem, o3.mem, o12.mem]
   have g5 : s5.gpr = s4.gpr := o5.gpr
@@ -90,7 +84,7 @@ theorem ystep42 {core zeta : List Instr} {dz : BitVec 32} (hY : laneSseBlock (to
     State.setMem_setMem, w0, w1]
   rw [dx5, a1, m5]
   refine ⟨?_, ?_, ?_, ?_, ?_, ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, ?_⟩⟩
-  · refine s16_write2Y (s := s5) hS j0 j1 (by bdd_omega 256) (a := fun e => R[j + e]!) (b := fun e => R[j + 16 + e]!)
+  · refine s16_write2YR (s := s5) hS j0 j1 (by bdd_omega 256) (a := fun e => H[j + e]!) (b := fun e => H[j + 16 + e]!)
       (fun l hl => ((C5 l hl).1).congr fun e _ => by rw [show j + 8 * l + e = j + (8 * l + e) by bdd_omega 256])
       (fun l hl => ((C5 l hl).2).congr fun e _ => by
         rw [show j + 16 + 8 * l + e = j + 16 + (8 * l + e) by bdd_omega 256]) fun i hi => ?_
@@ -147,18 +141,19 @@ theorem scat2_ok (t : State) :
   exact ⟨by first | trivial | simp, by xonly⟩
 
 section
-variable {bf : List Instr} {op : Zq → Zq → Zq → Zq × Zq} (hbf : VBflyOk bf op)
+variable {α : Type} {R : BitVec 16 → α → Prop} {bf : List Instr} {op : α → α → Zq → α × α}
+  (hbf : VBflyOk R bf op)
 include hbf
 
 /-- `vlay4`'s work on the words `A` of `xmm0` and `B` of `xmm4`: the blocks
 `A` and `B` of `len = 4`, with the zetas `ζ` (the first four words for the
 lower halves, the last four for the upper halves). -/
-theorem core4_ok {t : State} (hc : VConsts t) {A B ζ : Nat → Zq} (hA : Lanes (t.xmm .xmm0) A)
-    (hB : Lanes (t.xmm .xmm4) B) (hz : ZLanes (t.xmm .xmm13) ζ) :
+theorem core4_ok {t : State} (hc : VConsts t) {A B : Nat → α} {ζ : Nat → Zq} (hA : LanesR R (t.xmm .xmm0) A)
+    (hB : LanesR R (t.xmm .xmm4) B) (hz : ZLanes (t.xmm .xmm13) ζ) :
     WP isa (.block (gath4 ++ bf ++ scat4)) t fun t' =>
-      (Lanes (t'.xmm .xmm0) (fun e => if e < 4 then (op (A e) (A (4 + e)) (ζ e)).1
+      (LanesR R (t'.xmm .xmm0) (fun e => if e < 4 then (op (A e) (A (4 + e)) (ζ e)).1
           else (op (A (e - 4)) (A e) (ζ (e - 4))).2) ∧
-        Lanes (t'.xmm .xmm1) (fun e => if e < 4 then (op (B e) (B (4 + e)) (ζ (4 + e))).1
+        LanesR R (t'.xmm .xmm1) (fun e => if e < 4 then (op (B e) (B (4 + e)) (ζ (4 + e))).1
           else (op (B (e - 4)) (B e) (ζ e)).2)) ∧ XOnly [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4] t t' := by
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (gath4_ok t) fun t1 ⟨⟨e0, e1⟩, o1⟩ => ?_
@@ -179,20 +174,20 @@ theorem core4_ok {t : State} (hc : VConsts t) {A B ζ : Nat → Zq} (hA : Lanes 
   refine WP.mono (scat4_ok t2) fun t3 ⟨⟨f0, f1⟩, o3⟩ => ⟨⟨fun e he => ?_, fun e he => ?_⟩, ?_⟩
   · rw [f0, word_punpcklqdq _ _ he]
     split
-    · rw [X e he]; dsimp only
+    · refine rel_of_eq (X e he) ?_; dsimp only
       rw [ite_eq_left_of_eq_true _ _ (eq_true ‹e < 4›), ite_eq_left_of_eq_true _ _ (eq_true ‹e < 4›),
         ite_eq_left_of_eq_true _ _ (eq_true ‹e < 4›)]
-    · rw [Y (e - 4) (by bdd_omega 256)]; dsimp only
+    · refine rel_of_eq (Y (e - 4) (by bdd_omega 256)) ?_; dsimp only
       rw [ite_eq_left_of_eq_true _ _ (eq_true (show e - 4 < 4 by bdd_omega 256)),
         ite_eq_left_of_eq_true _ _ (eq_true (show e - 4 < 4 by bdd_omega 256)),
         ite_eq_right_of_eq_false _ _ (eq_false ‹¬ e < 4›), show 4 + (e - 4) = e by bdd_omega 256]
   · rw [f1, word_punpckhqdq _ _ he]
     split
-    · rw [X (4 + e) (by bdd_omega 256)]; dsimp only
+    · refine rel_of_eq (X (4 + e) (by bdd_omega 256)) ?_; dsimp only
       rw [ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 4 + e < 4 by bdd_omega 256)),
         ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 4 + e < 4 by bdd_omega 256)),
         ite_eq_left_of_eq_true _ _ (eq_true ‹e < 4›), show 4 + e - 4 = e by bdd_omega 256]
-    · rw [Y e he]; dsimp only
+    · refine rel_of_eq (Y e he) ?_; dsimp only
       rw [ite_eq_right_of_eq_false _ _ (eq_false ‹¬ e < 4›), ite_eq_right_of_eq_false _ _ (eq_false ‹¬ e < 4›),
         ite_eq_right_of_eq_false _ _ (eq_false ‹¬ e < 4›)]
   · exact ((o1.trans o2).trans o3).mono (by simp)
@@ -200,12 +195,12 @@ theorem core4_ok {t : State} (hc : VConsts t) {A B ζ : Nat → Zq} (hA : Lanes 
 /-- `vlay2`'s work on the words `A` of `xmm0` and `B` of `xmm4`: the blocks
 `A` and `B` of `len = 2`, with the zetas `ζ` (by doubleword, of the blocks
 `A₀₋₃`, `A₄₋₇`, `B₀₋₃`, `B₄₋₇`). -/
-theorem core2_ok {t : State} (hc : VConsts t) {A B ζ : Nat → Zq} (hA : Lanes (t.xmm .xmm0) A)
-    (hB : Lanes (t.xmm .xmm4) B) (hz : ZLanes (t.xmm .xmm13) ζ) :
+theorem core2_ok {t : State} (hc : VConsts t) {A B : Nat → α} {ζ : Nat → Zq} (hA : LanesR R (t.xmm .xmm0) A)
+    (hB : LanesR R (t.xmm .xmm4) B) (hz : ZLanes (t.xmm .xmm13) ζ) :
     WP isa (.block (gath2 ++ bf ++ scat2)) t fun t' =>
-      (Lanes (t'.xmm .xmm0) (fun i => if i % 4 < 2 then (op (A i) (A (i + 2)) (ζ (2 * (i / 4) + i % 2))).1
+      (LanesR R (t'.xmm .xmm0) (fun i => if i % 4 < 2 then (op (A i) (A (i + 2)) (ζ (2 * (i / 4) + i % 2))).1
           else (op (A (i - 2)) (A i) (ζ (2 * (i / 4) + i % 2))).2) ∧
-        Lanes (t'.xmm .xmm1) (fun i => if i % 4 < 2 then (op (B i) (B (i + 2)) (ζ (4 + 2 * (i / 4) + i % 2))).1
+        LanesR R (t'.xmm .xmm1) (fun i => if i % 4 < 2 then (op (B i) (B (i + 2)) (ζ (4 + 2 * (i / 4) + i % 2))).1
           else (op (B (i - 2)) (B i) (ζ (4 + 2 * (i / 4) + i % 2))).2)) ∧
       XOnly [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4] t t' := by
   rw [List.append_assoc, WP.block_append_iff]
@@ -233,12 +228,12 @@ theorem core2_ok {t : State} (hc : VConsts t) {A B ζ : Nat → Zq} (hA : Lanes 
   · rw [f0, word_punpckldq _ _ hi]
     have hw : 2 * (i / 4) + i % 2 < 8 := by bdd_omega 256
     by_cases h : i % 4 < 2
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true (show i / 2 % 2 = 0 by bdd_omega 256)), X _ hw]; dsimp only
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true (show i / 2 % 2 = 0 by bdd_omega 256))]; refine rel_of_eq (X _ hw) ?_; dsimp only
       rw [ite_eq_left_of_eq_true _ _ (eq_true h), ite_eq_left_of_eq_true _ _ (eq_true (show 2 * (i / 4) + i % 2 < 4 by bdd_omega 256)),
         ite_eq_left_of_eq_true _ _ (eq_true (show 2 * (i / 4) + i % 2 < 4 by bdd_omega 256)),
         show 4 * ((2 * (i / 4) + i % 2) / 2) + (2 * (i / 4) + i % 2) % 2 = i by bdd_omega 256,
         show 4 * ((2 * (i / 4) + i % 2) / 2) + 2 + (2 * (i / 4) + i % 2) % 2 = i + 2 by bdd_omega 256]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false (show ¬ i / 2 % 2 = 0 by bdd_omega 256)), Y _ hw]; dsimp only
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (show ¬ i / 2 % 2 = 0 by bdd_omega 256))]; refine rel_of_eq (Y _ hw) ?_; dsimp only
       rw [ite_eq_right_of_eq_false _ _ (eq_false h),
         ite_eq_left_of_eq_true _ _ (eq_true (show 2 * (i / 4) + i % 2 < 4 by bdd_omega 256)),
         ite_eq_left_of_eq_true _ _ (eq_true (show 2 * (i / 4) + i % 2 < 4 by bdd_omega 256)),
@@ -247,13 +242,13 @@ theorem core2_ok {t : State} (hc : VConsts t) {A B ζ : Nat → Zq} (hA : Lanes 
   · rw [f1, word_punpckhdq _ _ hi]
     have hw : 4 + 2 * (i / 4) + i % 2 < 8 := by bdd_omega 256
     by_cases h : i % 4 < 2
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true (show i / 2 % 2 = 0 by bdd_omega 256)), X _ hw]; dsimp only
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true (show i / 2 % 2 = 0 by bdd_omega 256))]; refine rel_of_eq (X _ hw) ?_; dsimp only
       rw [ite_eq_left_of_eq_true _ _ (eq_true h),
         ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 4 + 2 * (i / 4) + i % 2 < 4 by bdd_omega 256)),
         ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 4 + 2 * (i / 4) + i % 2 < 4 by bdd_omega 256)),
         show 4 * ((4 + 2 * (i / 4) + i % 2 - 4) / 2) + (4 + 2 * (i / 4) + i % 2) % 2 = i by bdd_omega 256,
         show 4 * ((4 + 2 * (i / 4) + i % 2 - 4) / 2) + 2 + (4 + 2 * (i / 4) + i % 2) % 2 = i + 2 by bdd_omega 256]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false (show ¬ i / 2 % 2 = 0 by bdd_omega 256)), Y _ hw]; dsimp only
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (show ¬ i / 2 % 2 = 0 by bdd_omega 256))]; refine rel_of_eq (Y _ hw) ?_; dsimp only
       rw [ite_eq_right_of_eq_false _ _ (eq_false h),
         ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 4 + 2 * (i / 4) + i % 2 < 4 by bdd_omega 256)),
         ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 4 + 2 * (i / 4) + i % 2 < 4 by bdd_omega 256)),
@@ -267,27 +262,27 @@ end
 
 /-- A layer of eight iterations of `ystep42`, iteration `m` turning `Gs m`
 into `Gs (m + 1)`, with `r8` at word `t + c m` of the table. -/
-theorem ylay42_loop {bf gath scat zeta : List Instr} {dz : BitVec 32}
+theorem ylay42_loop {α : Type} [Inhabited α] {R : BitVec 16 → α → Prop} {bf gath scat zeta : List Instr} {dz : BitVec 32}
     (hY : laneSseBlock (toY (gath ++ bf ++ scat)) = some (gath ++ bf ++ scat)) {sP : Addr} {t : Nat} (ht : t < 128)
     (c : Nat → Nat) (hc0 : c 0 = 0) (hdz : ∀ m < 8, wAddr sP (t + c m) + BitVec.signExtend 64 dz = wAddr sP (t + c (m + 1)))
-    {z : Nat → Zq} (Gs : Nat → Poly) (ζ : Nat → Nat → Nat → Zq)
+    {z : Nat → Zq} (Gs : Nat → Vector α n) (ζ : Nat → Nat → Nat → Zq)
     (hz : ∀ m < 8, ∀ s' : State, s'.gpr .r8 = wAddr sP (t + c m) → TZ s'.mem sP z → pR sP ∈ s'.wr →
       WP isa (.block zeta) s' fun s'' => (∀ l < 2, ZLanes (s''.lane .xmm13 l) (ζ m l)) ∧
         YOnly [.xmm13, .xmm2, .xmm1] s' s'')
-    (hcore : ∀ m < 8, ∀ l < 2, ∀ t' : State, VConsts t' → Lanes (t'.xmm .xmm0) (fun e => (Gs m)[32 * m + 8 * l + e]!) →
-      Lanes (t'.xmm .xmm4) (fun e => (Gs m)[32 * m + 16 + 8 * l + e]!) → ZLanes (t'.xmm .xmm13) (ζ m l) →
+    (hcore : ∀ m < 8, ∀ l < 2, ∀ t' : State, VConsts t' → LanesR R (t'.xmm .xmm0) (fun e => (Gs m)[32 * m + 8 * l + e]!) →
+      LanesR R (t'.xmm .xmm4) (fun e => (Gs m)[32 * m + 16 + 8 * l + e]!) → ZLanes (t'.xmm .xmm13) (ζ m l) →
       WP isa (.block (gath ++ bf ++ scat)) t' fun t'' =>
-        (Lanes (t''.xmm .xmm0) (fun e => (Gs (m + 1))[32 * m + 8 * l + e]!) ∧
-          Lanes (t''.xmm .xmm1) (fun e => (Gs (m + 1))[32 * m + 16 + 8 * l + e]!)) ∧
+        (LanesR R (t''.xmm .xmm0) (fun e => (Gs (m + 1))[32 * m + 8 * l + e]!) ∧
+          LanesR R (t''.xmm .xmm1) (fun e => (Gs (m + 1))[32 * m + 16 + 8 * l + e]!)) ∧
         XOnly [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4] t' t'')
     (hR : ∀ m < 8, ∀ i < 256, i < 32 * m ∨ 32 * m + 32 ≤ i → (Gs (m + 1))[i]! = (Gs m)[i]!)
-    {s : State} (hc : YConsts s) (hsi : s.gpr .rsi = sP) (hS : S16 s.mem (spW sP) (Gs 0))
+    {s : State} (hc : YConsts s) (hsi : s.gpr .rsi = sP) (hS : S16R R s.mem (spW sP) (Gs 0))
     (hT : TZ s.mem sP z) (hw : pR sP ∈ s.wr) :
-    WP isa (ylay42 bf gath scat zeta dz t) s fun s' => S16 s'.mem (spW sP) (Gs 8) ∧ BInvY sP s s' := by
+    WP isa (ylay42 bf gath scat zeta dz t) s fun s' => S16R R s'.mem (spW sP) (Gs 8) ∧ BInvY sP s s' := by
   refine WP.seq (WP.mono (ypre_ok t ht hsi) fun w ⟨hdx, h8, og, hy⟩ => ?_)
   have cw : YConsts w := lanes_gpr (s := s) (GOnly.lane og hy) (YOnly.refl [] s) hc (by decide) (by decide)
   refine WP.mono (wp_rcxLoopY (N := 8) (by decide) (by decide)
-    (fun i u => S16 u.mem (spW sP) (Gs i) ∧ u.gpr .rdx = wAddr (spW sP) (32 * i) ∧
+    (fun i u => S16R R u.mem (spW sP) (Gs i) ∧ u.gpr .rdx = wAddr (spW sP) (32 * i) ∧
       u.gpr .r8 = wAddr sP (t + c i) ∧ BInvY sP w u)
     (fun u ou hu _ => ⟨by rw [ou.mem, og.mem]; exact hS,
       by rw [ou.keep.gpr (by decide), hdx, Nat.mul_zero, wAddr, Nat.mul_zero, add_ofNat_zero],
@@ -316,16 +311,16 @@ theorem sel_F5 {j : Nat} (hj : j < 4) : sel 0xF5 j = 1 + 2 * (j / 2) := by
   rcases (by bdd_omega 256 : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide
 
 section
-variable {bf : List Instr} {op : Zq → Zq → Zq → Zq × Zq} (hbf : VBflyOk bf op)
-  {blk : Poly → Nat → Nat → Nat → Nat → Poly} (hblk : BlkOk blk op)
+variable {α : Type} [Inhabited α] {R : BitVec 16 → α → Prop} {bf : List Instr} {op : α → α → Zq → α × α}
+  (hbf : VBflyOk R bf op) {blk : Vector α n → Nat → Nat → Nat → Nat → Vector α n} (hblk : BlkOk blk op)
 include hbf hblk
 
 theorem ylay4_ok (hY : laneSseBlock (toY (gath4 ++ bf ++ scat4)) = some (gath4 ++ bf ++ scat4))
     {sP : Addr} {t : Nat} (zi : Nat → Nat) {z : Nat → Zq}
     (hz : ∀ c < 32, t + c < 128 ∧ z (t + c) = zeta (zi c))
-    {F : Poly} {s : State} (hc : YConsts s) (hsi : s.gpr .rsi = sP) (hS : S16 s.mem (spW sP) F)
+    {F : Vector α n} {s : State} (hc : YConsts s) (hsi : s.gpr .rsi = sP) (hS : S16R R s.mem (spW sP) F)
     (hT : TZ s.mem sP z) (hw : pR sP ∈ s.wr) :
-    WP isa (ylay4 bf t) s fun s' => S16 s'.mem (spW sP) (layF blk F 4 zi 32) ∧ BInvY sP s s' := by
+    WP isa (ylay4 bf t) s fun s' => S16R R s'.mem (spW sP) (layF blk F 4 zi 32) ∧ BInvY sP s s' := by
   have ht : t < 128 := by have := (hz 0 (by decide)).1; omega
   have hF : ∀ m, m ≤ 8 → ∀ j, 32 * m ≤ j → j < 256 → (layF blk F 4 zi (4 * m))[j]! = F[j]! := fun m hm j h1 h2 => by
     rw [layF_get hblk F (by decide) zi (by bdd_omega 256) h2, ite_eq_right_of_eq_false _ _ (eq_false (by bdd_omega 256))]
@@ -392,9 +387,9 @@ theorem ylay4_ok (hY : laneSseBlock (toY (gath4 ++ bf ++ scat4)) = some (gath4 +
 theorem ylay2_ok (hY : laneSseBlock (toY (gath2 ++ bf ++ scat2)) = some (gath2 ++ bf ++ scat2))
     {sP : Addr} {t : Nat} (zi : Nat → Nat) {z : Nat → Zq}
     (hz : ∀ c < 64, t + c < 128 ∧ z (t + c) = zeta (zi c))
-    {F : Poly} {s : State} (hc : YConsts s) (hsi : s.gpr .rsi = sP) (hS : S16 s.mem (spW sP) F)
+    {F : Vector α n} {s : State} (hc : YConsts s) (hsi : s.gpr .rsi = sP) (hS : S16R R s.mem (spW sP) F)
     (hT : TZ s.mem sP z) (hw : pR sP ∈ s.wr) :
-    WP isa (ylay2 bf t) s fun s' => S16 s'.mem (spW sP) (layF blk F 2 zi 64) ∧ BInvY sP s s' := by
+    WP isa (ylay2 bf t) s fun s' => S16R R s'.mem (spW sP) (layF blk F 2 zi 64) ∧ BInvY sP s s' := by
   have ht : t < 128 := by have := (hz 0 (by decide)).1; omega
   have hF : ∀ m, m ≤ 8 → ∀ j, 32 * m ≤ j → j < 256 → (layF blk F 2 zi (8 * m))[j]! = F[j]! := fun m hm j h1 h2 => by
     rw [layF_get hblk F (by decide) zi (by bdd_omega 256) h2, ite_eq_right_of_eq_false _ _ (eq_false (by bdd_omega 256))]

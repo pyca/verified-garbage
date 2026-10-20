@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.P256.VerifyDouble
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
 
 /-! Sparse signed digits for public P-256 verification scalars. -/

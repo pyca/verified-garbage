@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.Ffdh
 import VerifiedGarbage.Proof.RsaKeyGen.KeyCheck
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH parameter candidates: exact bit widths, including Sophie Germain q -/

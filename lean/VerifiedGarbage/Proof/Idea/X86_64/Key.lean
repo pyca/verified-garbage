@@ -1,13 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.X86_64.Verified
 import VerifiedGarbage.Proof.Idea.KeyBits
 public import VerifiedGarbage.Proof.Framework.X86_64.Linear
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Idea.X86_64.ConstantTime
+public import VerifiedGarbage.Spec.Idea.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Idea.KeyLit
+import VerifiedGarbage.Proof.Idea.X86_64.Block
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Idea.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-!
 # IDEA key expansion on x86-64

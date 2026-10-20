@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Round
-public import VerifiedGarbage.Proof.CmacTripleDes.Words
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.CmacTripleDes.Block
+import VerifiedGarbage.Proof.CmacTripleDes.Words
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # TDEA on 32-bit ARM: the passes and the block
@@ -327,9 +328,9 @@ theorem fp_check :
       (linPost 6 [(.r0, fpG0), (.r1, fpG1)]) = true := by
   lit_decide
 
-theorem ip_kept : [Reg.r9, .r10].all (fun r => ipCode.all fun i => dstOf i != some r) = true := by lit_decide
+theorem ip_kept : [Reg.r9, .r10].all (fun r => ipCode.all fun i => !clobbers i r) = true := by lit_decide
 
-theorem fp_kept : [Reg.r9, .r10].all (fun r => fpCode.all fun i => dstOf i != some r) = true := by lit_decide
+theorem fp_kept : [Reg.r9, .r10].all (fun r => fpCode.all fun i => !clobbers i r) = true := by lit_decide
 
 theorem ipSrc_lt : ∀ j < 64, ipSrc j < 64 := by lit_decide
 

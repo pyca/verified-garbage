@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86.FbVerified
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sm4.X86.FbLit
 
 /-! # SM4-OFB artifacts on baseline x86 (32-bit) -/
 
@@ -17,13 +18,10 @@ def note : String :=
   keys is built once per call. The mode is the generic OFB of `Impl/Modes/X86/`, over SM4's ECB core."
 
 def artifacts : List Artifact := [
-  { Spec.Sm4.ofbApi with
-    target := X86.target
-    doc := Spec.Sm4.ofbApi.doc (notes := [note])
-    code := Impl.StackScratch.X86.withStackScratchWiped 1472 4 362 Impl.Sm4.X86.ofb
-    contract := Spec.Sm4.ofbContract X86.abi 1472
-    stack := 1472
-    verified := Proof.Sm4.X86.Fb.ofb_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+  Spec.Sm4.ofbApi.artifact X86.target {
+    notes := [note]
+    code := Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.ofb
+    stack := 1516
+    verified := Proof.Sm4.X86.Fb.ofb_framed }]
 
 end VG.Artifacts.Sm4Ofb.X86

@@ -3,11 +3,6 @@ module
 public import VerifiedGarbage.Impl.Camellia.X86.Ecb
 public import VerifiedGarbage.Proof.Camellia.Bitsliced32
 public import VerifiedGarbage.Proof.Framework.X86.Linear
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # The linear layers of bitsliced Camellia on x86 (32-bit), by evaluation

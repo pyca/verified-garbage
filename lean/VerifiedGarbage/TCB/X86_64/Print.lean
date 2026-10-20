@@ -27,6 +27,13 @@ def Reg.name32 : Reg → String
   | .r8 => "r8d" | .r9 => "r9d" | .r10 => "r10d" | .r11 => "r11d"
   | .r12 => "r12d" | .r13 => "r13d" | .r14 => "r14d" | .r15 => "r15d"
 
+/-- The 16-bit name of a register (its low 16 bits). -/
+def Reg.name16 : Reg → String
+  | .rax => "ax" | .rcx => "cx" | .rdx => "dx" | .rbx => "bx"
+  | .rsp => "sp" | .rbp => "bp" | .rsi => "si" | .rdi => "di"
+  | .r8 => "r8w" | .r9 => "r9w" | .r10 => "r10w" | .r11 => "r11w"
+  | .r12 => "r12w" | .r13 => "r13w" | .r14 => "r14w" | .r15 => "r15w"
+
 /-- The 8-bit name of a register (its low byte). -/
 def Reg.name8 : Reg → String
   | .rax => "al" | .rcx => "cl" | .rdx => "dl" | .rbx => "bl"
@@ -47,6 +54,8 @@ def MemOp.str (m : MemOp) : String := s!"QWORD PTR {m.addr}"
 def MemOp.str32 (m : MemOp) : String := s!"DWORD PTR {m.addr}"
 
 def MemOp.str8 (m : MemOp) : String := s!"BYTE PTR {m.addr}"
+
+def MemOp.str16 (m : MemOp) : String := s!"WORD PTR {m.addr}"
 
 def MemOp.str128 (m : MemOp) : String := s!"XMMWORD PTR {m.addr}"
 
@@ -89,6 +98,8 @@ def XBinOp.name : XBinOp → String
   | .punpckhwd => "punpckhwd"
   | .aesenc => "aesenc" | .aesenclast => "aesenclast" | .aesdec => "aesdec"
   | .aesdeclast => "aesdeclast" | .aesimc => "aesimc" | .pcmpeqd => "pcmpeqd"
+  | .pmaddwd => "pmaddwd" | .pmulhrsw => "pmulhrsw" | .pcmpgtw => "pcmpgtw"
+  | .packsswb => "packsswb"
 
 def XShiftOp.name : XShiftOp → String
   | .pslld => "pslld" | .psrld => "psrld" | .psllq => "psllq" | .psrlq => "psrlq"
@@ -100,6 +111,7 @@ def XOp.asm : XOp → String
   | .shift op d n => s!"{op.name} {d.name}, {n.toNat}"
   | .pshufd d r o => s!"pshufd {d.name}, {r.name}, {o.toNat}"
   | .palignr d r n => s!"palignr {d.name}, {r.name}, {n.toNat}"
+  | .pblendw d r n => s!"pblendw {d.name}, {r.name}, {n.toNat}"
   | .sha256rnds2 d r => s!"sha256rnds2 {d.name}, {r.name}, xmm0"
   | .sha1rnds4 d r n => s!"sha1rnds4 {d.name}, {r.name}, {n.toNat}"
   | .movq d r => s!"movq {d.name}, {r.name}"
@@ -115,7 +127,8 @@ def VBinOp.name : VBinOp → String
   | .vpmulhw => "vpmulhw" | .vpackssdw => "vpackssdw" | .vpunpcklwd => "vpunpcklwd"
   | .vpunpckhwd => "vpunpckhwd" | .vpsubq => "vpsubq"
   | .vaesenc => "vaesenc" | .vaesenclast => "vaesenclast" | .vaesdec => "vaesdec"
-  | .vaesdeclast => "vaesdeclast" | .vpcmpeqd => "vpcmpeqd"
+  | .vaesdeclast => "vaesdeclast" | .vpcmpeqd => "vpcmpeqd" | .vpmaddwd => "vpmaddwd"
+  | .vpmulhrsw => "vpmulhrsw" | .vpcmpgtw => "vpcmpgtw" | .vpacksswb => "vpacksswb"
 
 def VVarOp.name : VVarOp → String
   | .vpsllvd => "vpsllvd" | .vpsrlvd => "vpsrlvd" | .vpsllvq => "vpsllvq" | .vpsrlvq => "vpsrlvq"
@@ -128,6 +141,7 @@ def VOp.asm : VOp → String
   | .vpshufd l d r o => s!"vpshufd {d.vname l}, {r.vname l}, {o.toNat}"
   | .vpalignr l d a b n => s!"vpalignr {d.vname l}, {a.vname l}, {b.vname l}, {n.toNat}"
   | .vpblendd l d a b n => s!"vpblendd {d.vname l}, {a.vname l}, {b.vname l}, {n.toNat}"
+  | .vpblendw l d a b n => s!"vpblendw {d.vname l}, {a.vname l}, {b.vname l}, {n.toNat}"
   | .vvar op l d a b => s!"{op.name} {d.vname l}, {a.vname l}, {b.vname l}"
   | .vpbroadcastd l d r => s!"vpbroadcastd {d.vname l}, {r.name}"
   | .vpbroadcastq l d r => s!"vpbroadcastq {d.vname l}, {r.name}"
@@ -251,6 +265,7 @@ def Instr.asm : Instr → List String
   | .mov d s => [s!"mov {d.name}, {s.str}"]
   | .store m r => [s!"mov {m.str}, {r.name}"]
   | .alu op d s => [s!"{op.name} {d.name}, {s.str}"]
+  | .aluTbl op d m .. => [s!"{op.name} {d.name}, {m.str}"]
   | .mov32 d s => [s!"mov {d.name32}, {s.str32}"]
   | .store32 m r => [s!"mov {m.str32}, {r.name32}"]
   | .alu32 op d s => [s!"{op.name} {d.name32}, {s.str32}"]
@@ -261,7 +276,9 @@ def Instr.asm : Instr → List String
   | .rorx d r n => [s!"rorx {d.name}, {r.name}, {n}"]
   | .andn d a b => [s!"andn {d.name}, {a.name}, {b.name}"]
   | .movzx8 d m => [s!"movzx {d.name32}, {m.str8}"]
+  | .movzx16 d m => [s!"movzx {d.name32}, {m.str16}"]
   | .store8 m r => [s!"mov {m.str8}, {r.name8}"]
+  | .store16 m r => [s!"mov {m.str16}, {r.name16}"]
   | .bswap d => [s!"bswap {d.name}"]
   | .shift op d n => [s!"{op.name} {d.name}, {n}"]
   | .shiftCl op d => [s!"{op.name} {d.name}, cl"]
@@ -275,6 +292,8 @@ def Instr.asm : Instr → List String
   | .xop op => [op.asm]
   | .vop op => [op.asm]
   | .vmovdquLoad l d m => [s!"vmovdqu {d.vname l}, {m.strV l}"]
+  | .vmovdquTbl d m .. => [s!"vmovdqu {d.vname .l256}, {m.strV .l256}"]
+  | .movdquTbl d m .. => [s!"movdqu {d.name}, {m.str128}"]
   | .vmovdquStore l m r => [s!"vmovdqu {m.strV l}, {r.vname l}"]
   | .vbroadcasti128 d m => [s!"vbroadcasti128 {d.yname}, {m.str128}"]
   | .vbinLoad op l d a m => [s!"{op.name} {d.vname l}, {a.vname l}, {m.strV l}"]
@@ -294,6 +313,8 @@ def Instr.asm : Instr → List String
     [s!"vpmadd52{if hi then "h" else "l"}uq {d.yname}, {a.yname}, {m.strV .l256}"]
   | .kLoad k d m => [s!"kmovw k1, {k.name32}", s!"vmovdqu64 {d.zname} " ++ "{k1}{z}" ++ s!", {m.str512}"]
   | .kStore m k r => [s!"kmovw k1, {k.name32}", s!"vmovdqu64 {m.str512} " ++ "{k1}" ++ s!", {r.zname}"]
+  | .kLoad8 k d m => [s!"kmovq k1, {k.name}", s!"vmovdqu8 {d.zname} " ++ "{k1}{z}" ++ s!", {m.str512}"]
+  | .kStore8 m k r => [s!"kmovq k1, {k.name}", s!"vmovdqu8 {m.str512} " ++ "{k1}" ++ s!", {r.zname}"]
   | .stmxcsr m => [s!"stmxcsr {m.str32}"]
   | .ldmxcsr m => [s!"ldmxcsr {m.str32}"]
   | .lfence => ["lfence"]
@@ -328,10 +349,13 @@ def Src.memOps : Src → List MemOp
 def Instr.memOps : Instr → List MemOp
   | .mov _ s | .alu _ _ s | .mov32 _ s | .alu32 _ _ s | .mulx _ _ s | .adcx _ s | .adox _ s
   | .cmov _ _ s => s.memOps
-  | .store m _ | .store32 m _ | .movzx8 _ m | .store8 m _ | .movdquLoad _ m | .movdquStore m _
-  | .vmovdquLoad _ _ m | .vmovdquStore _ m _ | .vbroadcasti128 _ m | .vbinLoad _ _ _ _ m
+  | .aluTbl _ _ m .. => [m]
+  | .store m _ | .store32 m _ | .movzx8 _ m | .movzx16 _ m | .store8 m _ | .store16 m _ | .movdquLoad _ m
+  | .movdquStore m _ | .movdquTbl _ m ..
+  | .vmovdquLoad _ _ m | .vmovdquStore _ m _ | .vmovdquTbl _ m .. | .vbroadcasti128 _ m | .vbinLoad _ _ _ _ m
   | .vmovdqu32Load _ m | .vmovdqu32Store m _ | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m
   | .evLoad _ m | .evStore m _ | .evMadd52Load _ _ _ m | .kLoad _ _ m | .kStore m _ _
+  | .kLoad8 _ _ m | .kStore8 m _ _
   | .stmxcsr m | .ldmxcsr m => [m]
   | .shift32 .. | .bswap32 _ | .rorx32 .. | .andn32 .. | .rorx .. | .andn .. | .bswap _
   | .shift .. | .shiftCl .. | .shiftx .. | .movImm64 .. | .leaSym .. | .movqR .. | .xop _ | .vop _
@@ -350,6 +374,11 @@ def printer : Printer isa where
   symLines
     | .leaSym d name => some [.sym s!"lea {d.name}, " .ripRel name]
     | _ => none
+  tables
+    | .aluTbl _ _ _ name ws => [(name, ws)]
+    | .vmovdquTbl _ _ name ws => [(name, ws)]
+    | .movdquTbl _ _ name ws => [(name, ws)]
+    | _ => []
   /- Every function starts on a 64-byte boundary, a cache line: the unit
   AMD's op cache builds its entries from (Zen 4 Software Optimization Guide,
   57647, §2.9.1), and one of the 16- and 32-byte windows Intel's decoders and

@@ -1,15 +1,12 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Impl.Poly1305.AArch64.Radix64
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Finalize
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Init
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Update
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame
-import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Finish
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame
+import Mathlib.Tactic.NormNum.Inv
+import Mathlib.Tactic.NormNum.Pow
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Poly1305 (RFC 8439 §2.5) on AArch64 -/
 
@@ -18,54 +15,31 @@ import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Finish
 namespace VG.Artifacts.Poly1305.AArch64
 
 def artifacts : List Artifact := [
-  { Spec.Poly1305.initApi with
-    target := AArch64.target
-    doc := Spec.Poly1305.initApi.doc
+  Spec.Poly1305.initApi.artifact AArch64.target {
     code := Impl.Poly1305.AArch64.init
-    contract := Spec.Poly1305.initContract AArch64.abi
-    verified := Proof.Poly1305.AArch64.init_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Poly1305.blocksApi with
-    target := AArch64.target
-    doc := Spec.Poly1305.blocksApi.doc
+    verified := Proof.Poly1305.AArch64.init_verified },
+  Spec.Poly1305.blocksApi.artifact AArch64.target {
     code := Impl.Poly1305.AArch64.Radix64.blocks
-    contract := Spec.Poly1305.blocksContract AArch64.abi
-    verified := Proof.Poly1305.AArch64.Radix64.blocks_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Poly1305.updateApi with
-    target := AArch64.target
-    doc := Spec.Poly1305.updateApi.doc
+    verified := Proof.Poly1305.AArch64.Radix64.blocks_verified },
+  Spec.Poly1305.updateApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratch 128 .x4 Impl.Poly1305.AArch64.Radix64.update
-    contract := Spec.Poly1305.updateContract AArch64.abi 128
     stack := 128
-    verified := Proof.Poly1305.AArch64.Radix64.update_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Poly1305.updateApi with
-    name := Spec.Poly1305.updateApi.name ++ "_neon"
-    target := AArch64.target
-    doc := Spec.Poly1305.updateApi.doc (notes := ["This implementation absorbs the whole blocks of data of at \
+    verified := Proof.Poly1305.AArch64.Radix64.update_framed },
+  Spec.Poly1305.updateApi.artifact AArch64.target {
+    suffix := "_neon"
+    notes := ["This implementation absorbs the whole blocks of data of at \
       least 128 bytes four at a time in NEON (AdvSIMD), and the rest one at a time. It is faster than \
       `vg_poly1305_update` on Apple's cores, and slower on Arm's Neoverse N2, whose two vector pipelines \
-      the multiplications saturate."])
+      the multiplications saturate."]
     code := Impl.StackScratch.AArch64.withStackScratch 128 .x4 Impl.Poly1305.AArch64.Vector.update
-    contract := Spec.Poly1305.updateContract AArch64.abi 128
     stack := 128
-    verified := Proof.Poly1305.AArch64.Vector.update_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Poly1305.finalizeApi with
-    target := AArch64.target
-    doc := Spec.Poly1305.finalizeApi.doc
+    verified := Proof.Poly1305.AArch64.Vector.update_framed },
+  Spec.Poly1305.finalizeApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratch 128 .x3 Impl.Poly1305.AArch64.Radix64.finalize
-    contract := Spec.Poly1305.finalizeContract AArch64.abi 128
     stack := 128
-    verified := Proof.Poly1305.AArch64.Radix64.finalize_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Poly1305.finalizeScratchApi with
-    target := AArch64.target
-    doc := Spec.Poly1305.finalizeScratchApi.doc
+    verified := Proof.Poly1305.AArch64.Radix64.finalize_framed },
+  Spec.Poly1305.finalizeScratchApi.artifact AArch64.target {
     code := Impl.Poly1305.AArch64.Radix64.finalize
-    contract := Spec.Poly1305.finalizeScratchContract AArch64.abi
-    verified := Proof.Poly1305.AArch64.Radix64.finalize_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Poly1305.AArch64.Radix64.finalize_verified }]
 
 end VG.Artifacts.Poly1305.AArch64

@@ -2,10 +2,13 @@ module
 
 import VerifiedGarbage.Proof.AesOcb.Arm.Offset0
 public import VerifiedGarbage.Proof.AesOcb.Arm.Calls
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesOcb.Arm.NonceBlock
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 
 /-!
 # AES-OCB on ARMv7: `Offset_0` (`nonce`)

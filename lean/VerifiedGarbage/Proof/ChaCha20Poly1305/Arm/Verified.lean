@@ -1,35 +1,35 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Stages
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Stages
 import VerifiedGarbage.Proof.Framework.ContractPost
-meta import VerifiedGarbage.Proof.Framework.ContractPost
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
-meta import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Stages
+meta import VerifiedGarbage.Proof.Framework.ContractPost
+meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
+meta import VerifiedGarbage.Impl.StackScratch.Arm
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 meta import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

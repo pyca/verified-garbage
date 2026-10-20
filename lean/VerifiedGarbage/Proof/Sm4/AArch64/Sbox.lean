@@ -3,13 +3,9 @@ module
 public import VerifiedGarbage.Impl.Sm4.AArch64.Sbox
 public import VerifiedGarbage.Proof.Sm4.SboxTable
 public import VerifiedGarbage.Proof.Framework.AArch64.Straight
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Aes.Bitsliced
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The bitsliced SM4 S-box on AArch64
@@ -57,8 +53,8 @@ theorem not_layerWrites (r : Reg) (hr : r ∉ layerWrites) : r ∈ layerKeep := 
 
 /-- A block that writes none of `layerKeep` writes only `layerWrites`. -/
 theorem writes_rest {is : List Instr}
-    (h : layerKeep.all (fun r => is.all fun i => dstOf i != some r) = true)
-    (r : Reg) (hr : r ∉ layerWrites) : (is.all fun i => dstOf i != some r) = true :=
+    (h : layerKeep.all (fun r => is.all fun i => !clobbers i r) = true)
+    (r : Reg) (hr : r ∉ layerWrites) : (is.all fun i => !clobbers i r) = true :=
   List.all_eq_true.mp h r (not_layerWrites r hr)
 
 /-- The S-box, at every bit position of the words in `q 0 … q 7`. -/
@@ -76,7 +72,7 @@ theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
   -- The run at bit position `p`, on the input formed by the bits `p`.
   have key : ∀ p < 64, ∃ s', runBlock isa Impl.Sm4.AArch64.sboxCode s = some s' ∧
       Post (TableRel p (bsByte (fun k => s.gpr (q k)) p).toNat) sboxCfg (fun _ => none) e' s s'
-        (fun r => (Impl.Sm4.AArch64.sboxCode.all fun i => dstOf i != some r) = false) := by
+        (fun r => (Impl.Sm4.AArch64.sboxCode.all fun i => !clobbers i r) = false) := by
     intro p hp
     have hc := (bsByte (fun k => s.gpr (q k)) p).isLt
     refine run (table_sound hp hc) hok ⟨fun r a h => ?_, (fun _ _ _ h => by cases h),

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Aes.Bitsliced
 public import VerifiedGarbage.Proof.Framework.Arm.Linear
 public import Mathlib.Tactic.SplitIfs
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Bitsliced AES in 32-bit words: the layout and the round transformations

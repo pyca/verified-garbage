@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.X86_64.CbcVerified
-public import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
 
 /-! # SEED-CBC artifacts on baseline x86-64 -/
 
@@ -20,21 +19,15 @@ def note : String :=
   generic CBC of `Impl/Modes/X86_64/`."
 
 def artifacts : List Artifact := [
-  { Spec.Seed.cbcEncryptApi with
-    target := X86_64.target
-    doc := Spec.Seed.cbcEncryptApi.doc (notes := [note])
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 1512 .r8 188 Impl.Seed.X86_64.cbcEncrypt
-    contract := Spec.Seed.cbcEncryptContract X86_64.abi 1512
+  Spec.Seed.cbcEncryptChainedApi.artifact X86_64.target {
+    notes := [note, "The IV's address is kept in `xmm15`, and after the last block the core's buffer, the last ciphertext block, goes back to the IV."]
+    code := Impl.StackScratch.X86_64.withStackScratchWiped 1512 .r8 188 Impl.Seed.X86_64.cbcEncryptChained
     stack := 1512
-    verified := Proof.Seed.X86_64.cbcEncrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Seed.cbcDecryptApi with
-    target := X86_64.target
-    doc := Spec.Seed.cbcDecryptApi.doc (notes := [note])
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 1512 .r8 188 Impl.Seed.X86_64.cbcDecrypt
-    contract := Spec.Seed.cbcDecryptContract X86_64.abi 1512
+    verified := Proof.Seed.X86_64.cbcEncryptChained_framed },
+  Spec.Seed.cbcDecryptChainedApi.artifact X86_64.target {
+    notes := [note, "The last ciphertext block is copied to the IV before any block is decrypted."]
+    code := Impl.StackScratch.X86_64.withStackScratchWiped 1512 .r8 188 Impl.Seed.X86_64.cbcDecryptChained
     stack := 1512
-    verified := Proof.Seed.X86_64.cbcDecrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Seed.X86_64.cbcDecryptChained_framed }]
 
 end VG.Artifacts.SeedCbc.X86_64

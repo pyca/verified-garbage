@@ -1,27 +1,17 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseLCT
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseOCT
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseOCT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseOCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseLCT
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseOCT
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA signing on AArch64: constant time

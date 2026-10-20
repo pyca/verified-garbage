@@ -1,25 +1,33 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Hint
-meta import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Hint
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
 import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.MemTaint
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.MemTaint
 public import VerifiedGarbage.Proof.MlDsa.Pack.Hint
-meta import VerifiedGarbage.Proof.MlDsa.Pack.Hint
+public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
+public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
+import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+meta import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Hint
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.MemTaint
+meta import VerifiedGarbage.Proof.MlDsa.Pack.Hint
+meta import VerifiedGarbage.Proof.MlDsa.Pack.Mem
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.MlKem.Mem
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
+meta import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_hint_bit_pack`

@@ -1,23 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceReadCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceReadCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceStepCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceStepCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ReduceReadCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ReduceStepCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceByte
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceByte
 public import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
+import VerifiedGarbage.Proof.Dsa.X86_64.ReduceRead
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceReadCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceStepCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceByte
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceRead
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant time of one complete streaming reduction byte -/
 

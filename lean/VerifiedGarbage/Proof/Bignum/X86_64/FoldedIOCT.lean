@@ -1,21 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIO
-meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIO
 public import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.Compare8
+import VerifiedGarbage.Proof.Bignum.X86_64.WordIOStore
+import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
+import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIO
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Compare8
+meta import VerifiedGarbage.Proof.Bignum.X86_64.WordIOStore
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
+meta import VerifiedGarbage.Proof.Bignum.Octets
 
 @[expose] public section
 

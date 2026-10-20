@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.AesGcm.Arm.Frame
 public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-GCM (NIST SP 800-38D) on ARMv7
@@ -48,85 +47,55 @@ def gatherNote : String :=
     encrypts them there in place with `" ++ Spec.Gcm.sealApi.name ++ "`."
 
 def artifacts : List Artifact := [
-  { Spec.Gcm.initApi with
-    target := Arm.target
-    doc := Spec.Gcm.initApi.doc (notes := [initNote])
+  Spec.Gcm.initApi.artifact Arm.target {
+    notes := [initNote]
     code := Impl.StackScratch.Arm.withRegScratch 2560 .r3 Impl.AesGcm.Arm.init
-    contract := Spec.Gcm.initContract Arm.abi 2568
     stack := 2568
-    verified := init_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Gcm.sealApi with
-    target := Arm.target
-    doc := Spec.Gcm.sealApi.doc (notes := [callNote])
+    verified := init_framed },
+  Spec.Gcm.sealApi.artifact Arm.target {
+    notes := [callNote]
     code := Impl.StackScratch.Arm.withStackScratch 2592 5 Impl.AesGcm.Arm.«seal»
-    contract := Spec.Gcm.sealContract Arm.abi 2600
     stack := 2600
-    verified := seal_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Gcm.openApi with
-    target := Arm.target
-    doc := Spec.Gcm.openApi.doc (notes := [callNote])
+    verified := seal_framed },
+  Spec.Gcm.openApi.artifact Arm.target {
+    notes := [callNote]
     code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.«open»
-    contract := Spec.Gcm.openContract Arm.abi 2600
     stack := 2600
-    verified := open_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Gcm.streamInitApi with
-    target := Arm.target
-    doc := Spec.Gcm.streamInitApi.doc (notes := [ghashNote])
+    verified := open_framed },
+  Spec.Gcm.streamInitApi.artifact Arm.target {
+    notes := [ghashNote]
     code := Impl.StackScratch.Arm.withStackScratch 2576 0 Impl.AesGcm.Arm.streamInit
-    contract := Spec.Gcm.streamInitContract Arm.abi 2584
     stack := 2584
-    verified := streamInit_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Gcm.streamAadApi with
-    target := Arm.target
-    doc := Spec.Gcm.streamAadApi.doc (notes := [ghashNote])
+    verified := streamInit_framed },
+  Spec.Gcm.streamAadApi.artifact Arm.target {
+    notes := [ghashNote]
     code := Impl.StackScratch.Arm.withStackScratch 2576 2 Impl.AesGcm.Arm.streamAad
-    contract := Spec.Gcm.streamAadContract Arm.abi 2584
     stack := 2584
-    verified := streamAad_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Gcm.streamEncryptApi with
-    target := Arm.target
-    doc := Spec.Gcm.streamEncryptApi.doc (notes := [callNote])
+    verified := streamAad_framed },
+  Spec.Gcm.streamEncryptApi.artifact Arm.target {
+    notes := [callNote]
     code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.streamEncrypt
-    contract := Spec.Gcm.streamEncryptContract Arm.abi 2600
     stack := 2600
-    verified := streamEncrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Gcm.streamDecryptApi with
-    target := Arm.target
-    doc := Spec.Gcm.streamDecryptApi.doc (notes := [callNote])
+    verified := streamEncrypt_framed },
+  Spec.Gcm.streamDecryptApi.artifact Arm.target {
+    notes := [callNote]
     code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.streamDecrypt
-    contract := Spec.Gcm.streamDecryptContract Arm.abi 2600
     stack := 2600
-    verified := streamDecrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Gcm.streamFinishApi with
-    target := Arm.target
-    doc := Spec.Gcm.streamFinishApi.doc (notes := [callNote])
+    verified := streamDecrypt_framed },
+  Spec.Gcm.streamFinishApi.artifact Arm.target {
+    notes := [callNote]
     code := Impl.StackScratch.Arm.withStackScratch 2592 5 Impl.AesGcm.Arm.streamFinish
-    contract := Spec.Gcm.streamFinishContract Arm.abi 2600
     stack := 2600
-    verified := streamFinish_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Gcm.streamVerifyApi with
-    target := Arm.target
-    doc := Spec.Gcm.streamVerifyApi.doc (notes := [callNote])
+    verified := streamFinish_framed },
+  Spec.Gcm.streamVerifyApi.artifact Arm.target {
+    notes := [callNote]
     code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.streamVerify
-    contract := Spec.Gcm.streamVerifyContract Arm.abi 2600
     stack := 2600
-    verified := streamVerify_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Gcm.sealGatherApi with
-    target := Arm.target
-    doc := Spec.Gcm.sealGatherApi.doc (notes := [gatherNote])
+    verified := streamVerify_framed },
+  Spec.Gcm.sealGatherApi.artifact Arm.target {
+    notes := [gatherNote]
     code := Impl.AesGcm.Arm.SealGather.sealGather Gather.sealFn.name Gather.sealFn.code
-    contract := Spec.Gcm.sealGatherContract Arm.abi 2640
     stack := 2640
-    verified := Gather.sealGather_verified Gather.sealFn
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Gather.sealGather_verified Gather.sealFn }]
 
 end VG.Artifacts.AesGcm.Arm

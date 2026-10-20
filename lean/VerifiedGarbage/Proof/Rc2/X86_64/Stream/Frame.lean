@@ -1,14 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Verified
-public import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
-public import VerifiedGarbage.Proof.Rc2.Scratch
-public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Verified
+public import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Steps
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
+import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RC2-CBC's streaming functions on x86-64, with their working space on the stack

@@ -1,17 +1,19 @@
 module
 
-import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Verified
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Verified
 public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Verified
-public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCode
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyCT
-public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
-import Mathlib.Data.BitVec
-import VerifiedGarbage.Proof.Divstep.Bound
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.EqCodes
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # Ed25519 (RFC 8032) on x86-64, over SHA-512
@@ -37,18 +39,15 @@ def verifyWith (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Ari
     (fs : String) (ff : List String)
     (hq : Proof.Ed25519.X86_64.VerifyMessage.EqCode fld win) :
     Artifact :=
-  { Spec.Ed25519.verifyApi with
-    name := Spec.Ed25519.verifyApi.name ++ c.suffix ++ fs
-    target := X86_64.target
-    doc := Spec.Ed25519.verifyApi.doc (notes := ["Hashes R, the public key and the message with \
+  Spec.Ed25519.verifyApi.artifact X86_64.target {
+    suffix := c.suffix ++ fs
+    notes := ["Hashes R, the public key and the message with \
       the selected SHA-512 backend, reduces the challenge modulo L, and calls \
       `vg_ed25519_verify_equation" ++ fs ++ "`. The digest and zero-extended reduced challenge \
       occupy separate buffers in a 168-byte stack frame; calls, and the point functions' calls from \
-      `vg_ed25519_verify_equation" ++ fs ++ "`, use another 16 bytes below it."])
+      `vg_ed25519_verify_equation" ++ fs ++ "`, use another 16 bytes below it."]
     consts := Impl.Ed25519.X86_64.baseOddConsts
     code := Impl.Ed25519.X86_64.VerifyMessage.code fld win fs c.callee c.suffix
-    contract :=
-      Spec.Ed25519.verifyContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseOddConsts) 184
     stack := 184
     verified := Proof.Ed25519.X86_64.VerifyMessage.verified hq c
     spSafe := Proof.Ed25519.X86_64.VerifyMessage.spSafe hq c
@@ -58,18 +57,16 @@ def verifyWith (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Ari
 `bs`, `vg_ed25519_scalar_base` with the suffix `fs`, which needs the CPU features `ff`. -/
 def publicKeyWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
     [Proof.Ed25519.X86_64.EdBase bs] (fs : String) (ff : List String) : Artifact :=
-  { Spec.Ed25519.publicKeyApi with
-    name := Spec.Ed25519.publicKeyApi.name ++ c.suffix ++ fs
-    target := X86_64.target
-    doc := Spec.Ed25519.publicKeyApi.doc (notes := ["Hashes the seed with `vg_sha512_init`, \
+  Spec.Ed25519.publicKeyApi.artifact X86_64.target {
+    suffix := c.suffix ++ fs
+    notes := ["Hashes the seed with `vg_sha512_init`, \
       `vg_sha512_update_scratch" ++ c.suffix ++ "` and `vg_sha512_finalize_scratch" ++ c.suffix ++ "`, keeping \
       the state and the digest in `scratch`, and encodes `[s]B` with \
       `vg_ed25519_scalar_base" ++ fs ++ "`. The pruned scalar `s` is kept in a \
       56-byte stack frame with the pointers and cleared before the frame is popped; the calls \
-      use the 16 bytes below it."])
+      use the 16 bytes below it."]
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.Ed25519.X86_64.publicKey bs fs c.callee c.suffix
-    contract := Spec.Ed25519.publicKeyContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 72
     stack := 72
     verified := Proof.Ed25519.X86_64.PublicKey.publicKey_verified c
     spSafe := Proof.Ed25519.X86_64.PublicKey.publicKey_spSafe c
@@ -80,18 +77,16 @@ multiplication `bs`, `vg_ed25519_scalar_base` with the suffix `fs`, which needs 
 `ff`. -/
 def signCachedWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
     [Proof.Ed25519.X86_64.EdBase bs] (fs : String) (ff : List String) : Artifact :=
-  { Spec.Ed25519.signCachedApi with
-    name := Spec.Ed25519.signCachedApi.name ++ c.suffix ++ fs
-    target := X86_64.target
-    doc := Spec.Ed25519.signCachedApi.doc (notes := ["Computes all three SHA-512 hashes with \
+  Spec.Ed25519.signCachedApi.artifact X86_64.target {
+    suffix := c.suffix ++ fs
+    notes := ["Computes all three SHA-512 hashes with \
       the selected backend, reduces the nonce and challenge, encodes the nonce point \
       with `vg_ed25519_scalar_base" ++ fs ++ "`, and computes the final scalar. \
       The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest \
       and saved arguments; its secret buffers are cleared before return. Calls use another 16 \
-      bytes below the frame."])
+      bytes below the frame."]
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.Ed25519.X86_64.SignCached.code bs fs c.callee c.suffix
-    contract := Spec.Ed25519.signCachedContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 264
     stack := 264
     verified := Proof.Ed25519.X86_64.SignCached.verified c
     spSafe := Proof.Ed25519.X86_64.SignCached.spSafe c
@@ -119,17 +114,14 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   | none => []
   | some c => withField c Impl.X25519.X86_64.baseline "" []
         (Impl.Ed25519.X86_64.scalarBase_precomputed Impl.X25519.X86_64.baseline) []
-        ⟨Proof.Ed25519.X86_64.VerifyCode.baseline_call, Proof.Ed25519.X86_64.VerifyCode.baseline_noSp, by lit_decide,
-          Proof.Ed25519.X86_64.VerifyCode.baseline_spSafe⟩ ++
+        Proof.Ed25519.X86_64.VerifyCode.baseline_eq ++
       withField c Impl.X25519.X86_64.adx "_adx" ["bmi2", "adx"] Impl.Ed25519.X86_64.scalarBase_adx
         ["avx", "avx2", "bmi2", "adx"]
-        ⟨Proof.Ed25519.X86_64.VerifyCode.adx_call, Proof.Ed25519.X86_64.VerifyCode.adx_noSp, by lit_decide,
-          Proof.Ed25519.X86_64.VerifyCode.adx_spSafe⟩ ++
+        Proof.Ed25519.X86_64.VerifyCode.adx_eq ++
       [verifyWith c Impl.X25519.X86_64.adx
         Impl.Ed25519.X86_64.Ifma.windows "_ifma"
         ["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"]
-        ⟨Proof.Ed25519.X86_64.VerifyCode.ifma_call, Proof.Ed25519.X86_64.VerifyCode.ifma_noSp, by lit_decide,
-          Proof.Ed25519.X86_64.VerifyCode.ifma_spSafe⟩,
+        Proof.Ed25519.X86_64.VerifyCode.ifma_eq,
         publicKeyWith c Impl.Ed25519.X86_64.scalarBase_ifma "_ifma"
           ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"],
         signCachedWith c Impl.Ed25519.X86_64.scalarBase_ifma "_ifma"

@@ -1,6 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitVerified
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Init
+public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section
 
@@ -8,11 +10,10 @@ namespace VG.Artifacts.Ffdh.X86_64
 open VG.X86_64
 
 def artifacts : List Artifact := [
-  { Spec.Ffdh.chooseApi with
-    target := target
-    doc := Spec.Ffdh.chooseApi.doc
-    code := Impl.Ffdh.X86_64.choose
-    contract := Spec.Ffdh.chooseContract abi
-    verified := Proof.Ffdh.X86_64.verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+  Spec.Ffdh.parameterInitApi.artifact target {
+    code := Impl.Ffdh.X86_64.Generation.init
+    verified := Proof.Ffdh.X86_64.Generation.init_verified },
+  Spec.Ffdh.keyInitApi.artifact target {
+    code := Impl.Ffdh.X86_64.KeyGeneration.init
+    verified := Proof.Ffdh.X86_64.KeyGeneration.init_verified }]
 end VG.Artifacts.Ffdh.X86_64

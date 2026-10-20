@@ -30,6 +30,8 @@
     target_arch = "aarch64"
 ))]
 
+#[cfg(target_arch = "aarch64")]
+use crate::arch::x25519::VG_X25519_BASE_SCRATCH_WRITTEN;
 use crate::arch::x25519::vg_x25519;
 #[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::x25519::vg_x25519_base;
@@ -53,9 +55,9 @@ enum Backend {
     #[cfg(target_arch = "x86_64")]
     Adx,
     /// AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq` for the ladder (on
-    /// `ymm` registers, with AVX512VL) and the fixed-base comb (on `zmm`
-    /// registers, with AVX512F), and `Adx`'s multiplications for the
-    /// inversion.
+    /// `ymm` registers, `ymm16`–`ymm20` among them, with AVX512F and
+    /// AVX512VL) and the fixed-base comb (on `zmm` registers, with
+    /// AVX512F), and `Adx`'s multiplications for the inversion.
     #[cfg(target_arch = "x86_64")]
     Ifma,
 }
@@ -93,6 +95,13 @@ pub enum Error {
     ZeroSharedSecret,
     /// The operating system's random number generator failed.
     Randomness,
+}
+
+crate::error::impl_error! {
+    Error {
+        ZeroSharedSecret => "X25519 shared secret is all zero",
+        Randomness => "X25519 random number generator failed",
+    }
 }
 
 /// The u-coordinate of the base point, 9 (RFC 7748 §4.1), encoded.
@@ -147,8 +156,16 @@ fn base(scalar: &[u8; 32]) -> [u8; 32] {
     // callee's stack or wraps around the address space. The selected backend
     // has the required CPU features.
     unsafe { f(&mut out, scalar, scratch.as_mut_ptr()) };
-    // SAFETY: `scratch` is writable for its whole length.
-    unsafe { zeroize_raw(scratch.as_mut_ptr().cast(), size_of::<[u64; 1024]>()) };
+    // The bytes of `scratch` the function may have written: on AArch64 its
+    // first `VG_X25519_BASE_SCRATCH_WRITTEN` (`Artifact.written`), elsewhere
+    // all of it.
+    #[cfg(target_arch = "aarch64")]
+    let written = VG_X25519_BASE_SCRATCH_WRITTEN;
+    #[cfg(not(target_arch = "aarch64"))]
+    let written = size_of::<[u64; 1024]>();
+    // SAFETY: `scratch` is writable for its whole length, which `written`
+    // does not exceed.
+    unsafe { zeroize_raw(scratch.as_mut_ptr().cast(), written) };
     out
 }
 
@@ -184,12 +201,7 @@ impl PrivateKey {
     /// A new private key: 32 random bytes from the operating system.
     pub fn generate() -> Result<Self, Error> {
         let mut bytes = [0u8; 32];
-        if getrandom::fill(&mut bytes).is_err() {
-            // The operating system's generator does not fail in the tests.
-            // NO-COVERAGE-START
-            return Err(Error::Randomness);
-            // NO-COVERAGE-END
-        }
+        getrandom::fill(&mut bytes).map_err(|_| Error::Randomness)?;
         Ok(PrivateKey { bytes })
     }
 
@@ -264,17 +276,10 @@ mod tests {
         }
     }
 
-    /// The baseline agrees with the implementation chosen for this CPU,
-    /// and the choice follows the features.
+    /// The choice of implementation follows the features (CI tests each
+    /// end to end, `VG_CPU_FEATURES=none` the baseline).
     #[test]
     fn backends() {
-        let k = [0x42; 32];
-        let u = PrivateKey::from_bytes(&[0x24; 32]).public_key();
-        let mut out = [0u8; 32];
-        let mut scratch = [0u64; 512];
-        // SAFETY: as in `x25519`, and the baseline needs no CPU feature.
-        unsafe { vg_x25519(&mut out, &k, &u, &mut scratch) };
-        assert_eq!(out, x25519(&k, &u));
         assert_eq!(Backend::select(Features(0)), Backend::Baseline);
         #[cfg(target_arch = "x86_64")]
         {
@@ -289,8 +294,12 @@ mod tests {
                 Backend::select(Features(adx.0 | Features::of(&["avx512ifma"]).0)),
                 Backend::Adx
             );
-            // The ladder's features alone, without the comb's AVX512F.
-            assert_eq!(Backend::select(VG_X25519_IFMA_FEATURES), Backend::Adx);
+            // Without AVX512F, which the ladder's EVEX-encoded instructions and
+            // the comb need.
+            assert_eq!(
+                Backend::select(Features(ifma.0 & !Features::of(&["avx512f"]).0)),
+                Backend::Adx
+            );
         }
     }
 

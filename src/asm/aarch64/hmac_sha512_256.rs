@@ -2,209 +2,702 @@
 //! Verified `hmac_sha512_256` functions for `aarch64`.
 #![allow(dead_code)]
 
-/// Starts an HMAC-SHA-512/256 computation with a key of at most 128 bytes: makes the SHA-512/256 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` padded with zeros to 128 bytes (FIPS 198-1). The text is then absorbed with `vg_sha512_update` on `*inner` (its `count` starting at 128), and the MAC computed with `vg_hmac_sha512_256_finalize`.
+/// Starts an HMAC-SHA-512/256 computation with a key of any length: makes the SHA-512/256 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-512/256 digest, if there are more than 128) padded with zeros to 128 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha512_update` on `*inner` (its `count` starting at 128), and the MAC computed with `vg_hmac_sha512_256_finalize`.
 ///
-/// Contract: `VG.Spec.Hmac.Instance.initContract` of `VG.Spec.Hmac.sha512_256I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+/// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha512_256I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 192 bytes.
 /// * `outer` must be valid for reads and writes of 192 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
-/// * `key_len` must be at most 128.
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `key` may overlap the 1888 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `key` may overlap the 3424 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_256_init(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #1872",
-        "add x4, sp, #0",
-        "str x19, [x4, #688]",
-        "str x20, [x4, #696]",
-        "str x21, [x4, #704]",
-        "str x22, [x4, #712]",
-        "str x24, [x4, #720]",
-        "str x30, [x4, #728]",
-        "str x23, [x4, #736]",
-        "add x19, x0, #0",
-        "add x20, x4, #0",
-        "add x21, x1, #0",
-        "add x22, x2, #0",
-        "add x23, x4, #0",
-        "add x24, x3, #0",
-        "add x0, x19, #0",
-        "bl {vg_sha512_256_init}",
-        "add x0, x21, #0",
-        "bl {vg_sha512_256_init}",
-        "movz w14, #13878, lsl #0",
-        "movk w14, #13878, lsl #16",
-        "str w14, [x19, #64]",
-        "str w14, [x19, #68]",
-        "str w14, [x19, #72]",
-        "str w14, [x19, #76]",
-        "str w14, [x19, #80]",
-        "str w14, [x19, #84]",
-        "str w14, [x19, #88]",
-        "str w14, [x19, #92]",
-        "str w14, [x19, #96]",
-        "str w14, [x19, #100]",
-        "str w14, [x19, #104]",
-        "str w14, [x19, #108]",
-        "str w14, [x19, #112]",
-        "str w14, [x19, #116]",
-        "str w14, [x19, #120]",
-        "str w14, [x19, #124]",
-        "str w14, [x19, #128]",
-        "str w14, [x19, #132]",
-        "str w14, [x19, #136]",
-        "str w14, [x19, #140]",
-        "str w14, [x19, #144]",
-        "str w14, [x19, #148]",
-        "str w14, [x19, #152]",
-        "str w14, [x19, #156]",
-        "str w14, [x19, #160]",
-        "str w14, [x19, #164]",
-        "str w14, [x19, #168]",
-        "str w14, [x19, #172]",
-        "str w14, [x19, #176]",
-        "str w14, [x19, #180]",
-        "str w14, [x19, #184]",
-        "str w14, [x19, #188]",
-        "movz x10, #0, lsl #0",
-        "cbz x24, 20f",
-        "22:",
-        "add x13, x22, x10",
-        "ldrb w9, [x13, #0]",
-        "eor x9, x9, x14",
-        "add x12, x19, x10",
-        "strb w9, [x12, #64]",
-        "add x10, x10, #1",
-        "sub x11, x24, x10",
-        "cbnz x11, 22b",
-        "b 21f",
-        "20:",
-        "21:",
-        "movz w15, #27242, lsl #0",
-        "movk w15, #27242, lsl #16",
-        "ldr w9, [x19, #64]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #64]",
-        "ldr w9, [x19, #68]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #68]",
-        "ldr w9, [x19, #72]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #72]",
-        "ldr w9, [x19, #76]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #76]",
-        "ldr w9, [x19, #80]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #80]",
-        "ldr w9, [x19, #84]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #84]",
-        "ldr w9, [x19, #88]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #88]",
-        "ldr w9, [x19, #92]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #92]",
-        "ldr w9, [x19, #96]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #96]",
-        "ldr w9, [x19, #100]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #100]",
-        "ldr w9, [x19, #104]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #104]",
-        "ldr w9, [x19, #108]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #108]",
-        "ldr w9, [x19, #112]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #112]",
-        "ldr w9, [x19, #116]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #116]",
-        "ldr w9, [x19, #120]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #120]",
-        "ldr w9, [x19, #124]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #124]",
-        "ldr w9, [x19, #128]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #128]",
-        "ldr w9, [x19, #132]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #132]",
-        "ldr w9, [x19, #136]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #136]",
-        "ldr w9, [x19, #140]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #140]",
-        "ldr w9, [x19, #144]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #144]",
-        "ldr w9, [x19, #148]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #148]",
-        "ldr w9, [x19, #152]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #152]",
-        "ldr w9, [x19, #156]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #156]",
-        "ldr w9, [x19, #160]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #160]",
-        "ldr w9, [x19, #164]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #164]",
-        "ldr w9, [x19, #168]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #168]",
-        "ldr w9, [x19, #172]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #172]",
-        "ldr w9, [x19, #176]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #176]",
-        "ldr w9, [x19, #180]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #180]",
-        "ldr w9, [x19, #184]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #184]",
-        "ldr w9, [x19, #188]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #188]",
-        "add x1, x19, #64",
-        "add x0, x19, #0",
-        "movz x2, #1, lsl #0",
-        "add x3, x20, #0",
-        "bl {vg_sha512_compress}",
-        "add x19, x21, #0",
-        "add x1, x21, #64",
-        "add x0, x19, #0",
-        "movz x2, #1, lsl #0",
-        "add x3, x20, #0",
-        "bl {vg_sha512_compress}",
-        "ldr x19, [x23, #688]",
-        "ldr x20, [x23, #696]",
-        "ldr x21, [x23, #704]",
-        "ldr x22, [x23, #712]",
-        "ldr x24, [x23, #720]",
-        "ldr x30, [x23, #728]",
-        "ldr x23, [x23, #736]",
-        "add sp, sp, #1872",
-        "ret",
-        ".p2align 6",
+        r"movz x10, #128, lsl #0
+movz x12, #0, lsl #0
+subs x11, x10, x3
+csel x9, x12, x3, hs
+cbnz x9, 20f
+sub sp, sp, #1872
+add x4, sp, #0
+str x19, [x4, #688]
+str x20, [x4, #696]
+str x21, [x4, #704]
+str x22, [x4, #712]
+str x24, [x4, #720]
+str x30, [x4, #728]
+str x23, [x4, #736]
+add x19, x0, #0
+add x20, x4, #0
+add x21, x1, #0
+add x22, x2, #0
+add x23, x4, #0
+add x24, x3, #0
+add x0, x19, #0
+bl {vg_sha512_256_init}
+add x0, x21, #0
+bl {vg_sha512_256_init}
+movz w14, #13878, lsl #0
+movk w14, #13878, lsl #16
+str w14, [x19, #64]
+str w14, [x19, #68]
+str w14, [x19, #72]
+str w14, [x19, #76]
+str w14, [x19, #80]
+str w14, [x19, #84]
+str w14, [x19, #88]
+str w14, [x19, #92]
+str w14, [x19, #96]
+str w14, [x19, #100]
+str w14, [x19, #104]
+str w14, [x19, #108]
+str w14, [x19, #112]
+str w14, [x19, #116]
+str w14, [x19, #120]
+str w14, [x19, #124]
+str w14, [x19, #128]
+str w14, [x19, #132]
+str w14, [x19, #136]
+str w14, [x19, #140]
+str w14, [x19, #144]
+str w14, [x19, #148]
+str w14, [x19, #152]
+str w14, [x19, #156]
+str w14, [x19, #160]
+str w14, [x19, #164]
+str w14, [x19, #168]
+str w14, [x19, #172]
+str w14, [x19, #176]
+str w14, [x19, #180]
+str w14, [x19, #184]
+str w14, [x19, #188]
+movz x10, #0, lsl #0
+cbz x24, 22f
+24:
+add x13, x22, x10
+ldrb w9, [x13, #0]
+eor x9, x9, x14
+add x12, x19, x10
+strb w9, [x12, #64]
+add x10, x10, #1
+sub x11, x24, x10
+cbnz x11, 24b
+b 23f
+22:
+23:
+movz w15, #27242, lsl #0
+movk w15, #27242, lsl #16
+ldr w9, [x19, #64]
+eor x9, x9, x15
+str w9, [x21, #64]
+ldr w9, [x19, #68]
+eor x9, x9, x15
+str w9, [x21, #68]
+ldr w9, [x19, #72]
+eor x9, x9, x15
+str w9, [x21, #72]
+ldr w9, [x19, #76]
+eor x9, x9, x15
+str w9, [x21, #76]
+ldr w9, [x19, #80]
+eor x9, x9, x15
+str w9, [x21, #80]
+ldr w9, [x19, #84]
+eor x9, x9, x15
+str w9, [x21, #84]
+ldr w9, [x19, #88]
+eor x9, x9, x15
+str w9, [x21, #88]
+ldr w9, [x19, #92]
+eor x9, x9, x15
+str w9, [x21, #92]
+ldr w9, [x19, #96]
+eor x9, x9, x15
+str w9, [x21, #96]
+ldr w9, [x19, #100]
+eor x9, x9, x15
+str w9, [x21, #100]
+ldr w9, [x19, #104]
+eor x9, x9, x15
+str w9, [x21, #104]
+ldr w9, [x19, #108]
+eor x9, x9, x15
+str w9, [x21, #108]
+ldr w9, [x19, #112]
+eor x9, x9, x15
+str w9, [x21, #112]
+ldr w9, [x19, #116]
+eor x9, x9, x15
+str w9, [x21, #116]
+ldr w9, [x19, #120]
+eor x9, x9, x15
+str w9, [x21, #120]
+ldr w9, [x19, #124]
+eor x9, x9, x15
+str w9, [x21, #124]
+ldr w9, [x19, #128]
+eor x9, x9, x15
+str w9, [x21, #128]
+ldr w9, [x19, #132]
+eor x9, x9, x15
+str w9, [x21, #132]
+ldr w9, [x19, #136]
+eor x9, x9, x15
+str w9, [x21, #136]
+ldr w9, [x19, #140]
+eor x9, x9, x15
+str w9, [x21, #140]
+ldr w9, [x19, #144]
+eor x9, x9, x15
+str w9, [x21, #144]
+ldr w9, [x19, #148]
+eor x9, x9, x15
+str w9, [x21, #148]
+ldr w9, [x19, #152]
+eor x9, x9, x15
+str w9, [x21, #152]
+ldr w9, [x19, #156]
+eor x9, x9, x15
+str w9, [x21, #156]
+ldr w9, [x19, #160]
+eor x9, x9, x15
+str w9, [x21, #160]
+ldr w9, [x19, #164]
+eor x9, x9, x15
+str w9, [x21, #164]
+ldr w9, [x19, #168]
+eor x9, x9, x15
+str w9, [x21, #168]
+ldr w9, [x19, #172]
+eor x9, x9, x15
+str w9, [x21, #172]
+ldr w9, [x19, #176]
+eor x9, x9, x15
+str w9, [x21, #176]
+ldr w9, [x19, #180]
+eor x9, x9, x15
+str w9, [x21, #180]
+ldr w9, [x19, #184]
+eor x9, x9, x15
+str w9, [x21, #184]
+ldr w9, [x19, #188]
+eor x9, x9, x15
+str w9, [x21, #188]
+add x1, x19, #64
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress}
+add x19, x21, #0
+add x1, x21, #64
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress}
+ldr x19, [x23, #688]
+ldr x20, [x23, #696]
+ldr x21, [x23, #704]
+ldr x22, [x23, #712]
+ldr x24, [x23, #720]
+ldr x30, [x23, #728]
+ldr x23, [x23, #736]
+add sp, sp, #1872
+21:
+ret
+20:
+sub sp, sp, #3408
+add x4, sp, #0
+str x19, [x4, #1872]
+str x20, [x4, #1880]
+str x21, [x4, #1888]
+str x22, [x4, #1896]
+str x24, [x4, #1904]
+str x30, [x4, #1912]
+str x23, [x4, #1920]
+add x23, x4, #0
+add x19, x2, #0
+add x20, x3, #0
+add x21, x0, #0
+add x22, x1, #0
+lsr x9, x20, #7
+cbz x9, 25f
+sub x9, x20, #128
+cbz x9, 27f
+add x0, x23, #2528
+bl {vg_sha512_256_init}
+add x0, x23, #2528
+movz x1, #0, lsl #0
+add x2, x19, #0
+add x3, x20, #0
+add x4, x23, #0
+bl {vg_sha512_update_scratch}
+add x0, x23, #2528
+add x1, x20, #0
+add x2, x23, #2784
+add x3, x23, #0
+bl {vg_sha512_finalize_scratch}
+add x2, x23, #2784
+movz x3, #32, lsl #0
+b 28f
+27:
+add x2, x19, #0
+add x3, x20, #0
+28:
+b 26f
+25:
+add x2, x19, #0
+add x3, x20, #0
+26:
+add x0, x21, #0
+add x1, x22, #0
+add x4, x23, #0
+bl {vg_hmac_sha512_256_init_scratch}
+ldr x19, [x23, #1872]
+ldr x20, [x23, #1880]
+ldr x21, [x23, #1888]
+ldr x22, [x23, #1896]
+ldr x24, [x23, #1904]
+ldr x30, [x23, #1912]
+ldr x23, [x23, #1920]
+add x16, sp, #0
+movz x17, #0, lsl #0
+str x17, [x16, #0]
+str x17, [x16, #8]
+str x17, [x16, #16]
+str x17, [x16, #24]
+str x17, [x16, #32]
+str x17, [x16, #40]
+str x17, [x16, #48]
+str x17, [x16, #56]
+str x17, [x16, #64]
+str x17, [x16, #72]
+str x17, [x16, #80]
+str x17, [x16, #88]
+str x17, [x16, #96]
+str x17, [x16, #104]
+str x17, [x16, #112]
+str x17, [x16, #120]
+str x17, [x16, #128]
+str x17, [x16, #136]
+str x17, [x16, #144]
+str x17, [x16, #152]
+str x17, [x16, #160]
+str x17, [x16, #168]
+str x17, [x16, #176]
+str x17, [x16, #184]
+str x17, [x16, #192]
+str x17, [x16, #200]
+str x17, [x16, #208]
+str x17, [x16, #216]
+str x17, [x16, #224]
+str x17, [x16, #232]
+str x17, [x16, #240]
+str x17, [x16, #248]
+str x17, [x16, #256]
+str x17, [x16, #264]
+str x17, [x16, #272]
+str x17, [x16, #280]
+str x17, [x16, #288]
+str x17, [x16, #296]
+str x17, [x16, #304]
+str x17, [x16, #312]
+str x17, [x16, #320]
+str x17, [x16, #328]
+str x17, [x16, #336]
+str x17, [x16, #344]
+str x17, [x16, #352]
+str x17, [x16, #360]
+str x17, [x16, #368]
+str x17, [x16, #376]
+str x17, [x16, #384]
+str x17, [x16, #392]
+str x17, [x16, #400]
+str x17, [x16, #408]
+str x17, [x16, #416]
+str x17, [x16, #424]
+str x17, [x16, #432]
+str x17, [x16, #440]
+str x17, [x16, #448]
+str x17, [x16, #456]
+str x17, [x16, #464]
+str x17, [x16, #472]
+str x17, [x16, #480]
+str x17, [x16, #488]
+str x17, [x16, #496]
+str x17, [x16, #504]
+str x17, [x16, #512]
+str x17, [x16, #520]
+str x17, [x16, #528]
+str x17, [x16, #536]
+str x17, [x16, #544]
+str x17, [x16, #552]
+str x17, [x16, #560]
+str x17, [x16, #568]
+str x17, [x16, #576]
+str x17, [x16, #584]
+str x17, [x16, #592]
+str x17, [x16, #600]
+str x17, [x16, #608]
+str x17, [x16, #616]
+str x17, [x16, #624]
+str x17, [x16, #632]
+str x17, [x16, #640]
+str x17, [x16, #648]
+str x17, [x16, #656]
+str x17, [x16, #664]
+str x17, [x16, #672]
+str x17, [x16, #680]
+str x17, [x16, #688]
+str x17, [x16, #696]
+str x17, [x16, #704]
+str x17, [x16, #712]
+str x17, [x16, #720]
+str x17, [x16, #728]
+str x17, [x16, #736]
+str x17, [x16, #744]
+str x17, [x16, #752]
+str x17, [x16, #760]
+str x17, [x16, #768]
+str x17, [x16, #776]
+str x17, [x16, #784]
+str x17, [x16, #792]
+str x17, [x16, #800]
+str x17, [x16, #808]
+str x17, [x16, #816]
+str x17, [x16, #824]
+str x17, [x16, #832]
+str x17, [x16, #840]
+str x17, [x16, #848]
+str x17, [x16, #856]
+str x17, [x16, #864]
+str x17, [x16, #872]
+str x17, [x16, #880]
+str x17, [x16, #888]
+str x17, [x16, #896]
+str x17, [x16, #904]
+str x17, [x16, #912]
+str x17, [x16, #920]
+str x17, [x16, #928]
+str x17, [x16, #936]
+str x17, [x16, #944]
+str x17, [x16, #952]
+str x17, [x16, #960]
+str x17, [x16, #968]
+str x17, [x16, #976]
+str x17, [x16, #984]
+str x17, [x16, #992]
+str x17, [x16, #1000]
+str x17, [x16, #1008]
+str x17, [x16, #1016]
+str x17, [x16, #1024]
+str x17, [x16, #1032]
+str x17, [x16, #1040]
+str x17, [x16, #1048]
+str x17, [x16, #1056]
+str x17, [x16, #1064]
+str x17, [x16, #1072]
+str x17, [x16, #1080]
+str x17, [x16, #1088]
+str x17, [x16, #1096]
+str x17, [x16, #1104]
+str x17, [x16, #1112]
+str x17, [x16, #1120]
+str x17, [x16, #1128]
+str x17, [x16, #1136]
+str x17, [x16, #1144]
+str x17, [x16, #1152]
+str x17, [x16, #1160]
+str x17, [x16, #1168]
+str x17, [x16, #1176]
+str x17, [x16, #1184]
+str x17, [x16, #1192]
+str x17, [x16, #1200]
+str x17, [x16, #1208]
+str x17, [x16, #1216]
+str x17, [x16, #1224]
+str x17, [x16, #1232]
+str x17, [x16, #1240]
+str x17, [x16, #1248]
+str x17, [x16, #1256]
+str x17, [x16, #1264]
+str x17, [x16, #1272]
+str x17, [x16, #1280]
+str x17, [x16, #1288]
+str x17, [x16, #1296]
+str x17, [x16, #1304]
+str x17, [x16, #1312]
+str x17, [x16, #1320]
+str x17, [x16, #1328]
+str x17, [x16, #1336]
+str x17, [x16, #1344]
+str x17, [x16, #1352]
+str x17, [x16, #1360]
+str x17, [x16, #1368]
+str x17, [x16, #1376]
+str x17, [x16, #1384]
+str x17, [x16, #1392]
+str x17, [x16, #1400]
+str x17, [x16, #1408]
+str x17, [x16, #1416]
+str x17, [x16, #1424]
+str x17, [x16, #1432]
+str x17, [x16, #1440]
+str x17, [x16, #1448]
+str x17, [x16, #1456]
+str x17, [x16, #1464]
+str x17, [x16, #1472]
+str x17, [x16, #1480]
+str x17, [x16, #1488]
+str x17, [x16, #1496]
+str x17, [x16, #1504]
+str x17, [x16, #1512]
+str x17, [x16, #1520]
+str x17, [x16, #1528]
+str x17, [x16, #1536]
+str x17, [x16, #1544]
+str x17, [x16, #1552]
+str x17, [x16, #1560]
+str x17, [x16, #1568]
+str x17, [x16, #1576]
+str x17, [x16, #1584]
+str x17, [x16, #1592]
+str x17, [x16, #1600]
+str x17, [x16, #1608]
+str x17, [x16, #1616]
+str x17, [x16, #1624]
+str x17, [x16, #1632]
+str x17, [x16, #1640]
+str x17, [x16, #1648]
+str x17, [x16, #1656]
+str x17, [x16, #1664]
+str x17, [x16, #1672]
+str x17, [x16, #1680]
+str x17, [x16, #1688]
+str x17, [x16, #1696]
+str x17, [x16, #1704]
+str x17, [x16, #1712]
+str x17, [x16, #1720]
+str x17, [x16, #1728]
+str x17, [x16, #1736]
+str x17, [x16, #1744]
+str x17, [x16, #1752]
+str x17, [x16, #1760]
+str x17, [x16, #1768]
+str x17, [x16, #1776]
+str x17, [x16, #1784]
+str x17, [x16, #1792]
+str x17, [x16, #1800]
+str x17, [x16, #1808]
+str x17, [x16, #1816]
+str x17, [x16, #1824]
+str x17, [x16, #1832]
+str x17, [x16, #1840]
+str x17, [x16, #1848]
+str x17, [x16, #1856]
+str x17, [x16, #1864]
+str x17, [x16, #1872]
+str x17, [x16, #1880]
+str x17, [x16, #1888]
+str x17, [x16, #1896]
+str x17, [x16, #1904]
+str x17, [x16, #1912]
+str x17, [x16, #1920]
+str x17, [x16, #1928]
+str x17, [x16, #1936]
+str x17, [x16, #1944]
+str x17, [x16, #1952]
+str x17, [x16, #1960]
+str x17, [x16, #1968]
+str x17, [x16, #1976]
+str x17, [x16, #1984]
+str x17, [x16, #1992]
+str x17, [x16, #2000]
+str x17, [x16, #2008]
+str x17, [x16, #2016]
+str x17, [x16, #2024]
+str x17, [x16, #2032]
+str x17, [x16, #2040]
+str x17, [x16, #2048]
+str x17, [x16, #2056]
+str x17, [x16, #2064]
+str x17, [x16, #2072]
+str x17, [x16, #2080]
+str x17, [x16, #2088]
+str x17, [x16, #2096]
+str x17, [x16, #2104]
+str x17, [x16, #2112]
+str x17, [x16, #2120]
+str x17, [x16, #2128]
+str x17, [x16, #2136]
+str x17, [x16, #2144]
+str x17, [x16, #2152]
+str x17, [x16, #2160]
+str x17, [x16, #2168]
+str x17, [x16, #2176]
+str x17, [x16, #2184]
+str x17, [x16, #2192]
+str x17, [x16, #2200]
+str x17, [x16, #2208]
+str x17, [x16, #2216]
+str x17, [x16, #2224]
+str x17, [x16, #2232]
+str x17, [x16, #2240]
+str x17, [x16, #2248]
+str x17, [x16, #2256]
+str x17, [x16, #2264]
+str x17, [x16, #2272]
+str x17, [x16, #2280]
+str x17, [x16, #2288]
+str x17, [x16, #2296]
+str x17, [x16, #2304]
+str x17, [x16, #2312]
+str x17, [x16, #2320]
+str x17, [x16, #2328]
+str x17, [x16, #2336]
+str x17, [x16, #2344]
+str x17, [x16, #2352]
+str x17, [x16, #2360]
+str x17, [x16, #2368]
+str x17, [x16, #2376]
+str x17, [x16, #2384]
+str x17, [x16, #2392]
+str x17, [x16, #2400]
+str x17, [x16, #2408]
+str x17, [x16, #2416]
+str x17, [x16, #2424]
+str x17, [x16, #2432]
+str x17, [x16, #2440]
+str x17, [x16, #2448]
+str x17, [x16, #2456]
+str x17, [x16, #2464]
+str x17, [x16, #2472]
+str x17, [x16, #2480]
+str x17, [x16, #2488]
+str x17, [x16, #2496]
+str x17, [x16, #2504]
+str x17, [x16, #2512]
+str x17, [x16, #2520]
+str x17, [x16, #2528]
+str x17, [x16, #2536]
+str x17, [x16, #2544]
+str x17, [x16, #2552]
+str x17, [x16, #2560]
+str x17, [x16, #2568]
+str x17, [x16, #2576]
+str x17, [x16, #2584]
+str x17, [x16, #2592]
+str x17, [x16, #2600]
+str x17, [x16, #2608]
+str x17, [x16, #2616]
+str x17, [x16, #2624]
+str x17, [x16, #2632]
+str x17, [x16, #2640]
+str x17, [x16, #2648]
+str x17, [x16, #2656]
+str x17, [x16, #2664]
+str x17, [x16, #2672]
+str x17, [x16, #2680]
+str x17, [x16, #2688]
+str x17, [x16, #2696]
+str x17, [x16, #2704]
+str x17, [x16, #2712]
+str x17, [x16, #2720]
+str x17, [x16, #2728]
+str x17, [x16, #2736]
+str x17, [x16, #2744]
+str x17, [x16, #2752]
+str x17, [x16, #2760]
+str x17, [x16, #2768]
+str x17, [x16, #2776]
+str x17, [x16, #2784]
+str x17, [x16, #2792]
+str x17, [x16, #2800]
+str x17, [x16, #2808]
+str x17, [x16, #2816]
+str x17, [x16, #2824]
+str x17, [x16, #2832]
+str x17, [x16, #2840]
+str x17, [x16, #2848]
+str x17, [x16, #2856]
+str x17, [x16, #2864]
+str x17, [x16, #2872]
+str x17, [x16, #2880]
+str x17, [x16, #2888]
+str x17, [x16, #2896]
+str x17, [x16, #2904]
+str x17, [x16, #2912]
+str x17, [x16, #2920]
+str x17, [x16, #2928]
+str x17, [x16, #2936]
+str x17, [x16, #2944]
+str x17, [x16, #2952]
+str x17, [x16, #2960]
+str x17, [x16, #2968]
+str x17, [x16, #2976]
+str x17, [x16, #2984]
+str x17, [x16, #2992]
+str x17, [x16, #3000]
+str x17, [x16, #3008]
+str x17, [x16, #3016]
+str x17, [x16, #3024]
+str x17, [x16, #3032]
+str x17, [x16, #3040]
+str x17, [x16, #3048]
+str x17, [x16, #3056]
+str x17, [x16, #3064]
+str x17, [x16, #3072]
+str x17, [x16, #3080]
+str x17, [x16, #3088]
+str x17, [x16, #3096]
+str x17, [x16, #3104]
+str x17, [x16, #3112]
+str x17, [x16, #3120]
+str x17, [x16, #3128]
+str x17, [x16, #3136]
+str x17, [x16, #3144]
+str x17, [x16, #3152]
+str x17, [x16, #3160]
+str x17, [x16, #3168]
+str x17, [x16, #3176]
+str x17, [x16, #3184]
+str x17, [x16, #3192]
+str x17, [x16, #3200]
+str x17, [x16, #3208]
+str x17, [x16, #3216]
+str x17, [x16, #3224]
+str x17, [x16, #3232]
+str x17, [x16, #3240]
+str x17, [x16, #3248]
+str x17, [x16, #3256]
+str x17, [x16, #3264]
+str x17, [x16, #3272]
+str x17, [x16, #3280]
+str x17, [x16, #3288]
+str x17, [x16, #3296]
+str x17, [x16, #3304]
+str x17, [x16, #3312]
+str x17, [x16, #3320]
+str x17, [x16, #3328]
+str x17, [x16, #3336]
+str x17, [x16, #3344]
+str x17, [x16, #3352]
+str x17, [x16, #3360]
+str x17, [x16, #3368]
+str x17, [x16, #3376]
+str x17, [x16, #3384]
+str x17, [x16, #3392]
+str x17, [x16, #3400]
+add sp, sp, #3408
+b 21b
+.p2align 6",
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_hmac_sha512_256_init_scratch = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch,
     )
 }
 
@@ -223,160 +716,99 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha512_256_init(inner: *mut [u8; 192], o
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_256_finalize(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #1872",
-        "add x4, sp, #0",
-        "str x19, [x4, #688]",
-        "str x20, [x4, #696]",
-        "str x21, [x4, #704]",
-        "str x22, [x4, #712]",
-        "str x24, [x4, #720]",
-        "str x30, [x4, #728]",
-        "str x23, [x4, #736]",
-        "add x19, x0, #0",
-        "add x20, x1, #0",
-        "add x21, x3, #0",
-        "add x23, x4, #0",
-        "add x1, x2, #0",
-        "add x2, x23, #744",
-        "add x3, x23, #0",
-        "bl {vg_sha512_finalize_scratch}",
-        "ldr w9, [x20, #0]",
-        "str w9, [x19, #0]",
-        "ldr w9, [x20, #4]",
-        "str w9, [x19, #4]",
-        "ldr w9, [x20, #8]",
-        "str w9, [x19, #8]",
-        "ldr w9, [x20, #12]",
-        "str w9, [x19, #12]",
-        "ldr w9, [x20, #16]",
-        "str w9, [x19, #16]",
-        "ldr w9, [x20, #20]",
-        "str w9, [x19, #20]",
-        "ldr w9, [x20, #24]",
-        "str w9, [x19, #24]",
-        "ldr w9, [x20, #28]",
-        "str w9, [x19, #28]",
-        "ldr w9, [x20, #32]",
-        "str w9, [x19, #32]",
-        "ldr w9, [x20, #36]",
-        "str w9, [x19, #36]",
-        "ldr w9, [x20, #40]",
-        "str w9, [x19, #40]",
-        "ldr w9, [x20, #44]",
-        "str w9, [x19, #44]",
-        "ldr w9, [x20, #48]",
-        "str w9, [x19, #48]",
-        "ldr w9, [x20, #52]",
-        "str w9, [x19, #52]",
-        "ldr w9, [x20, #56]",
-        "str w9, [x19, #56]",
-        "ldr w9, [x20, #60]",
-        "str w9, [x19, #60]",
-        "ldr w9, [x23, #744]",
-        "str w9, [x19, #64]",
-        "ldr w9, [x23, #748]",
-        "str w9, [x19, #68]",
-        "ldr w9, [x23, #752]",
-        "str w9, [x19, #72]",
-        "ldr w9, [x23, #756]",
-        "str w9, [x19, #76]",
-        "ldr w9, [x23, #760]",
-        "str w9, [x19, #80]",
-        "ldr w9, [x23, #764]",
-        "str w9, [x19, #84]",
-        "ldr w9, [x23, #768]",
-        "str w9, [x19, #88]",
-        "ldr w9, [x23, #772]",
-        "str w9, [x19, #92]",
-        "add x24, x21, #0",
-        "add x21, x19, #64",
-        "add x20, x23, #0",
-        "movz x9, #128, lsl #0",
-        "str w9, [x21, #32]",
-        "movz x9, #0, lsl #0",
-        "str w9, [x21, #36]",
-        "str w9, [x21, #40]",
-        "str w9, [x21, #44]",
-        "str w9, [x21, #48]",
-        "str w9, [x21, #52]",
-        "str w9, [x21, #56]",
-        "str w9, [x21, #60]",
-        "str w9, [x21, #64]",
-        "str w9, [x21, #68]",
-        "str w9, [x21, #72]",
-        "str w9, [x21, #76]",
-        "str w9, [x21, #80]",
-        "str w9, [x21, #84]",
-        "str w9, [x21, #88]",
-        "str w9, [x21, #92]",
-        "str w9, [x21, #96]",
-        "str w9, [x21, #100]",
-        "str w9, [x21, #104]",
-        "str w9, [x21, #108]",
-        "movz x22, #160, lsl #0",
-        "lsr x9, x22, #61",
-        "rev x9, x9",
-        "str x9, [x19, #176]",
-        "add x9, x22, x22",
-        "add x9, x9, x9",
-        "add x9, x9, x9",
-        "rev x9, x9",
-        "str x9, [x19, #184]",
-        "add x1, x21, #0",
-        "add x0, x19, #0",
-        "movz x2, #1, lsl #0",
-        "add x3, x20, #0",
-        "bl {vg_sha512_compress}",
-        "ldr x9, [x19, #0]",
-        "rev x9, x9",
-        "str x9, [x21, #0]",
-        "ldr x9, [x19, #8]",
-        "rev x9, x9",
-        "str x9, [x21, #8]",
-        "ldr x9, [x19, #16]",
-        "rev x9, x9",
-        "str x9, [x21, #16]",
-        "ldr x9, [x19, #24]",
-        "rev x9, x9",
-        "str x9, [x21, #24]",
-        "ldr x9, [x19, #32]",
-        "rev x9, x9",
-        "str x9, [x21, #32]",
-        "ldr x9, [x19, #40]",
-        "rev x9, x9",
-        "str x9, [x21, #40]",
-        "ldr x9, [x19, #48]",
-        "rev x9, x9",
-        "str x9, [x21, #48]",
-        "ldr x9, [x19, #56]",
-        "rev x9, x9",
-        "str x9, [x21, #56]",
-        "ldr w9, [x21, #0]",
-        "str w9, [x24, #0]",
-        "ldr w9, [x21, #4]",
-        "str w9, [x24, #4]",
-        "ldr w9, [x21, #8]",
-        "str w9, [x24, #8]",
-        "ldr w9, [x21, #12]",
-        "str w9, [x24, #12]",
-        "ldr w9, [x21, #16]",
-        "str w9, [x24, #16]",
-        "ldr w9, [x21, #20]",
-        "str w9, [x24, #20]",
-        "ldr w9, [x21, #24]",
-        "str w9, [x24, #24]",
-        "ldr w9, [x21, #28]",
-        "str w9, [x24, #28]",
-        "ldr x19, [x23, #688]",
-        "ldr x20, [x23, #696]",
-        "ldr x21, [x23, #704]",
-        "ldr x22, [x23, #712]",
-        "ldr x24, [x23, #720]",
-        "ldr x30, [x23, #728]",
-        "ldr x23, [x23, #736]",
-        "add sp, sp, #1872",
-        "ret",
-        ".p2align 6",
+        r"sub sp, sp, #1872
+add x4, sp, #0
+str x19, [x4, #688]
+str x20, [x4, #696]
+str x21, [x4, #704]
+str x22, [x4, #712]
+str x24, [x4, #720]
+str x30, [x4, #728]
+str x23, [x4, #736]
+add x19, x0, #0
+add x20, x1, #0
+add x21, x3, #0
+add x23, x4, #0
+add x1, x2, #0
+add x2, x23, #744
+add x3, x23, #0
+bl {vg_sha512_finalize_scratch}
+ldp x9, x10, [x20, #0]
+stp x9, x10, [x19, #0]
+ldp x9, x10, [x20, #16]
+stp x9, x10, [x19, #16]
+ldp x9, x10, [x20, #32]
+stp x9, x10, [x19, #32]
+ldp x9, x10, [x20, #48]
+stp x9, x10, [x19, #48]
+ldr x9, [x23, #744]
+ldr x10, [x23, #752]
+stp x9, x10, [x19, #64]
+ldr x9, [x23, #760]
+ldr x10, [x23, #768]
+stp x9, x10, [x19, #80]
+add x24, x21, #0
+add x21, x19, #64
+add x20, x23, #0
+movz x9, #128, lsl #0
+movz x10, #0, lsl #0
+stp x9, x10, [x21, #32]
+stp x10, x10, [x21, #48]
+stp x10, x10, [x21, #64]
+stp x10, x10, [x21, #80]
+stp x10, x10, [x21, #96]
+movz x22, #160, lsl #0
+lsr x9, x22, #61
+rev x9, x9
+str x9, [x19, #176]
+add x9, x22, x22
+add x9, x9, x9
+add x9, x9, x9
+rev x9, x9
+str x9, [x19, #184]
+add x1, x21, #0
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress}
+ldr x9, [x19, #0]
+rev x9, x9
+str x9, [x21, #0]
+ldr x9, [x19, #8]
+rev x9, x9
+str x9, [x21, #8]
+ldr x9, [x19, #16]
+rev x9, x9
+str x9, [x21, #16]
+ldr x9, [x19, #24]
+rev x9, x9
+str x9, [x21, #24]
+ldr x9, [x19, #32]
+rev x9, x9
+str x9, [x21, #32]
+ldr x9, [x19, #40]
+rev x9, x9
+str x9, [x21, #40]
+ldr x9, [x19, #48]
+rev x9, x9
+str x9, [x21, #48]
+ldr x9, [x19, #56]
+rev x9, x9
+str x9, [x21, #56]
+ldp x9, x10, [x21, #0]
+stp x9, x10, [x24, #0]
+ldp x9, x10, [x21, #16]
+stp x9, x10, [x24, #16]
+ldr x19, [x23, #688]
+ldr x20, [x23, #696]
+ldr x21, [x23, #704]
+ldr x22, [x23, #712]
+ldr x24, [x23, #720]
+ldr x30, [x23, #728]
+ldr x23, [x23, #736]
+add sp, sp, #1872
+ret
+.p2align 6",
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
     )
@@ -399,189 +831,189 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha512_256_finalize(inner: *mut [u8; 192
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_256_init_scratch(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
-        "str x19, [x4, #688]",
-        "str x20, [x4, #696]",
-        "str x21, [x4, #704]",
-        "str x22, [x4, #712]",
-        "str x24, [x4, #720]",
-        "str x30, [x4, #728]",
-        "str x23, [x4, #736]",
-        "add x19, x0, #0",
-        "add x20, x4, #0",
-        "add x21, x1, #0",
-        "add x22, x2, #0",
-        "add x23, x4, #0",
-        "add x24, x3, #0",
-        "add x0, x19, #0",
-        "bl {vg_sha512_256_init}",
-        "add x0, x21, #0",
-        "bl {vg_sha512_256_init}",
-        "movz w14, #13878, lsl #0",
-        "movk w14, #13878, lsl #16",
-        "str w14, [x19, #64]",
-        "str w14, [x19, #68]",
-        "str w14, [x19, #72]",
-        "str w14, [x19, #76]",
-        "str w14, [x19, #80]",
-        "str w14, [x19, #84]",
-        "str w14, [x19, #88]",
-        "str w14, [x19, #92]",
-        "str w14, [x19, #96]",
-        "str w14, [x19, #100]",
-        "str w14, [x19, #104]",
-        "str w14, [x19, #108]",
-        "str w14, [x19, #112]",
-        "str w14, [x19, #116]",
-        "str w14, [x19, #120]",
-        "str w14, [x19, #124]",
-        "str w14, [x19, #128]",
-        "str w14, [x19, #132]",
-        "str w14, [x19, #136]",
-        "str w14, [x19, #140]",
-        "str w14, [x19, #144]",
-        "str w14, [x19, #148]",
-        "str w14, [x19, #152]",
-        "str w14, [x19, #156]",
-        "str w14, [x19, #160]",
-        "str w14, [x19, #164]",
-        "str w14, [x19, #168]",
-        "str w14, [x19, #172]",
-        "str w14, [x19, #176]",
-        "str w14, [x19, #180]",
-        "str w14, [x19, #184]",
-        "str w14, [x19, #188]",
-        "movz x10, #0, lsl #0",
-        "cbz x24, 20f",
-        "22:",
-        "add x13, x22, x10",
-        "ldrb w9, [x13, #0]",
-        "eor x9, x9, x14",
-        "add x12, x19, x10",
-        "strb w9, [x12, #64]",
-        "add x10, x10, #1",
-        "sub x11, x24, x10",
-        "cbnz x11, 22b",
-        "b 21f",
-        "20:",
-        "21:",
-        "movz w15, #27242, lsl #0",
-        "movk w15, #27242, lsl #16",
-        "ldr w9, [x19, #64]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #64]",
-        "ldr w9, [x19, #68]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #68]",
-        "ldr w9, [x19, #72]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #72]",
-        "ldr w9, [x19, #76]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #76]",
-        "ldr w9, [x19, #80]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #80]",
-        "ldr w9, [x19, #84]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #84]",
-        "ldr w9, [x19, #88]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #88]",
-        "ldr w9, [x19, #92]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #92]",
-        "ldr w9, [x19, #96]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #96]",
-        "ldr w9, [x19, #100]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #100]",
-        "ldr w9, [x19, #104]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #104]",
-        "ldr w9, [x19, #108]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #108]",
-        "ldr w9, [x19, #112]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #112]",
-        "ldr w9, [x19, #116]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #116]",
-        "ldr w9, [x19, #120]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #120]",
-        "ldr w9, [x19, #124]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #124]",
-        "ldr w9, [x19, #128]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #128]",
-        "ldr w9, [x19, #132]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #132]",
-        "ldr w9, [x19, #136]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #136]",
-        "ldr w9, [x19, #140]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #140]",
-        "ldr w9, [x19, #144]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #144]",
-        "ldr w9, [x19, #148]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #148]",
-        "ldr w9, [x19, #152]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #152]",
-        "ldr w9, [x19, #156]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #156]",
-        "ldr w9, [x19, #160]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #160]",
-        "ldr w9, [x19, #164]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #164]",
-        "ldr w9, [x19, #168]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #168]",
-        "ldr w9, [x19, #172]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #172]",
-        "ldr w9, [x19, #176]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #176]",
-        "ldr w9, [x19, #180]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #180]",
-        "ldr w9, [x19, #184]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #184]",
-        "ldr w9, [x19, #188]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #188]",
-        "add x1, x19, #64",
-        "add x0, x19, #0",
-        "movz x2, #1, lsl #0",
-        "add x3, x20, #0",
-        "bl {vg_sha512_compress}",
-        "add x19, x21, #0",
-        "add x1, x21, #64",
-        "add x0, x19, #0",
-        "movz x2, #1, lsl #0",
-        "add x3, x20, #0",
-        "bl {vg_sha512_compress}",
-        "ldr x19, [x23, #688]",
-        "ldr x20, [x23, #696]",
-        "ldr x21, [x23, #704]",
-        "ldr x22, [x23, #712]",
-        "ldr x24, [x23, #720]",
-        "ldr x30, [x23, #728]",
-        "ldr x23, [x23, #736]",
-        "ret",
-        ".p2align 6",
+        r"str x19, [x4, #688]
+str x20, [x4, #696]
+str x21, [x4, #704]
+str x22, [x4, #712]
+str x24, [x4, #720]
+str x30, [x4, #728]
+str x23, [x4, #736]
+add x19, x0, #0
+add x20, x4, #0
+add x21, x1, #0
+add x22, x2, #0
+add x23, x4, #0
+add x24, x3, #0
+add x0, x19, #0
+bl {vg_sha512_256_init}
+add x0, x21, #0
+bl {vg_sha512_256_init}
+movz w14, #13878, lsl #0
+movk w14, #13878, lsl #16
+str w14, [x19, #64]
+str w14, [x19, #68]
+str w14, [x19, #72]
+str w14, [x19, #76]
+str w14, [x19, #80]
+str w14, [x19, #84]
+str w14, [x19, #88]
+str w14, [x19, #92]
+str w14, [x19, #96]
+str w14, [x19, #100]
+str w14, [x19, #104]
+str w14, [x19, #108]
+str w14, [x19, #112]
+str w14, [x19, #116]
+str w14, [x19, #120]
+str w14, [x19, #124]
+str w14, [x19, #128]
+str w14, [x19, #132]
+str w14, [x19, #136]
+str w14, [x19, #140]
+str w14, [x19, #144]
+str w14, [x19, #148]
+str w14, [x19, #152]
+str w14, [x19, #156]
+str w14, [x19, #160]
+str w14, [x19, #164]
+str w14, [x19, #168]
+str w14, [x19, #172]
+str w14, [x19, #176]
+str w14, [x19, #180]
+str w14, [x19, #184]
+str w14, [x19, #188]
+movz x10, #0, lsl #0
+cbz x24, 20f
+22:
+add x13, x22, x10
+ldrb w9, [x13, #0]
+eor x9, x9, x14
+add x12, x19, x10
+strb w9, [x12, #64]
+add x10, x10, #1
+sub x11, x24, x10
+cbnz x11, 22b
+b 21f
+20:
+21:
+movz w15, #27242, lsl #0
+movk w15, #27242, lsl #16
+ldr w9, [x19, #64]
+eor x9, x9, x15
+str w9, [x21, #64]
+ldr w9, [x19, #68]
+eor x9, x9, x15
+str w9, [x21, #68]
+ldr w9, [x19, #72]
+eor x9, x9, x15
+str w9, [x21, #72]
+ldr w9, [x19, #76]
+eor x9, x9, x15
+str w9, [x21, #76]
+ldr w9, [x19, #80]
+eor x9, x9, x15
+str w9, [x21, #80]
+ldr w9, [x19, #84]
+eor x9, x9, x15
+str w9, [x21, #84]
+ldr w9, [x19, #88]
+eor x9, x9, x15
+str w9, [x21, #88]
+ldr w9, [x19, #92]
+eor x9, x9, x15
+str w9, [x21, #92]
+ldr w9, [x19, #96]
+eor x9, x9, x15
+str w9, [x21, #96]
+ldr w9, [x19, #100]
+eor x9, x9, x15
+str w9, [x21, #100]
+ldr w9, [x19, #104]
+eor x9, x9, x15
+str w9, [x21, #104]
+ldr w9, [x19, #108]
+eor x9, x9, x15
+str w9, [x21, #108]
+ldr w9, [x19, #112]
+eor x9, x9, x15
+str w9, [x21, #112]
+ldr w9, [x19, #116]
+eor x9, x9, x15
+str w9, [x21, #116]
+ldr w9, [x19, #120]
+eor x9, x9, x15
+str w9, [x21, #120]
+ldr w9, [x19, #124]
+eor x9, x9, x15
+str w9, [x21, #124]
+ldr w9, [x19, #128]
+eor x9, x9, x15
+str w9, [x21, #128]
+ldr w9, [x19, #132]
+eor x9, x9, x15
+str w9, [x21, #132]
+ldr w9, [x19, #136]
+eor x9, x9, x15
+str w9, [x21, #136]
+ldr w9, [x19, #140]
+eor x9, x9, x15
+str w9, [x21, #140]
+ldr w9, [x19, #144]
+eor x9, x9, x15
+str w9, [x21, #144]
+ldr w9, [x19, #148]
+eor x9, x9, x15
+str w9, [x21, #148]
+ldr w9, [x19, #152]
+eor x9, x9, x15
+str w9, [x21, #152]
+ldr w9, [x19, #156]
+eor x9, x9, x15
+str w9, [x21, #156]
+ldr w9, [x19, #160]
+eor x9, x9, x15
+str w9, [x21, #160]
+ldr w9, [x19, #164]
+eor x9, x9, x15
+str w9, [x21, #164]
+ldr w9, [x19, #168]
+eor x9, x9, x15
+str w9, [x21, #168]
+ldr w9, [x19, #172]
+eor x9, x9, x15
+str w9, [x21, #172]
+ldr w9, [x19, #176]
+eor x9, x9, x15
+str w9, [x21, #176]
+ldr w9, [x19, #180]
+eor x9, x9, x15
+str w9, [x21, #180]
+ldr w9, [x19, #184]
+eor x9, x9, x15
+str w9, [x21, #184]
+ldr w9, [x19, #188]
+eor x9, x9, x15
+str w9, [x21, #188]
+add x1, x19, #64
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress}
+add x19, x21, #0
+add x1, x21, #64
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress}
+ldr x19, [x23, #688]
+ldr x20, [x23, #696]
+ldr x21, [x23, #704]
+ldr x22, [x23, #712]
+ldr x24, [x23, #720]
+ldr x30, [x23, #728]
+ldr x23, [x23, #736]
+ret
+.p2align 6",
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
     )
@@ -604,157 +1036,96 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha512_256_init_scratch(inner: *mut [u8;
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_256_finalize_scratch(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
-        "str x19, [x4, #688]",
-        "str x20, [x4, #696]",
-        "str x21, [x4, #704]",
-        "str x22, [x4, #712]",
-        "str x24, [x4, #720]",
-        "str x30, [x4, #728]",
-        "str x23, [x4, #736]",
-        "add x19, x0, #0",
-        "add x20, x1, #0",
-        "add x21, x3, #0",
-        "add x23, x4, #0",
-        "add x1, x2, #0",
-        "add x2, x23, #744",
-        "add x3, x23, #0",
-        "bl {vg_sha512_finalize_scratch}",
-        "ldr w9, [x20, #0]",
-        "str w9, [x19, #0]",
-        "ldr w9, [x20, #4]",
-        "str w9, [x19, #4]",
-        "ldr w9, [x20, #8]",
-        "str w9, [x19, #8]",
-        "ldr w9, [x20, #12]",
-        "str w9, [x19, #12]",
-        "ldr w9, [x20, #16]",
-        "str w9, [x19, #16]",
-        "ldr w9, [x20, #20]",
-        "str w9, [x19, #20]",
-        "ldr w9, [x20, #24]",
-        "str w9, [x19, #24]",
-        "ldr w9, [x20, #28]",
-        "str w9, [x19, #28]",
-        "ldr w9, [x20, #32]",
-        "str w9, [x19, #32]",
-        "ldr w9, [x20, #36]",
-        "str w9, [x19, #36]",
-        "ldr w9, [x20, #40]",
-        "str w9, [x19, #40]",
-        "ldr w9, [x20, #44]",
-        "str w9, [x19, #44]",
-        "ldr w9, [x20, #48]",
-        "str w9, [x19, #48]",
-        "ldr w9, [x20, #52]",
-        "str w9, [x19, #52]",
-        "ldr w9, [x20, #56]",
-        "str w9, [x19, #56]",
-        "ldr w9, [x20, #60]",
-        "str w9, [x19, #60]",
-        "ldr w9, [x23, #744]",
-        "str w9, [x19, #64]",
-        "ldr w9, [x23, #748]",
-        "str w9, [x19, #68]",
-        "ldr w9, [x23, #752]",
-        "str w9, [x19, #72]",
-        "ldr w9, [x23, #756]",
-        "str w9, [x19, #76]",
-        "ldr w9, [x23, #760]",
-        "str w9, [x19, #80]",
-        "ldr w9, [x23, #764]",
-        "str w9, [x19, #84]",
-        "ldr w9, [x23, #768]",
-        "str w9, [x19, #88]",
-        "ldr w9, [x23, #772]",
-        "str w9, [x19, #92]",
-        "add x24, x21, #0",
-        "add x21, x19, #64",
-        "add x20, x23, #0",
-        "movz x9, #128, lsl #0",
-        "str w9, [x21, #32]",
-        "movz x9, #0, lsl #0",
-        "str w9, [x21, #36]",
-        "str w9, [x21, #40]",
-        "str w9, [x21, #44]",
-        "str w9, [x21, #48]",
-        "str w9, [x21, #52]",
-        "str w9, [x21, #56]",
-        "str w9, [x21, #60]",
-        "str w9, [x21, #64]",
-        "str w9, [x21, #68]",
-        "str w9, [x21, #72]",
-        "str w9, [x21, #76]",
-        "str w9, [x21, #80]",
-        "str w9, [x21, #84]",
-        "str w9, [x21, #88]",
-        "str w9, [x21, #92]",
-        "str w9, [x21, #96]",
-        "str w9, [x21, #100]",
-        "str w9, [x21, #104]",
-        "str w9, [x21, #108]",
-        "movz x22, #160, lsl #0",
-        "lsr x9, x22, #61",
-        "rev x9, x9",
-        "str x9, [x19, #176]",
-        "add x9, x22, x22",
-        "add x9, x9, x9",
-        "add x9, x9, x9",
-        "rev x9, x9",
-        "str x9, [x19, #184]",
-        "add x1, x21, #0",
-        "add x0, x19, #0",
-        "movz x2, #1, lsl #0",
-        "add x3, x20, #0",
-        "bl {vg_sha512_compress}",
-        "ldr x9, [x19, #0]",
-        "rev x9, x9",
-        "str x9, [x21, #0]",
-        "ldr x9, [x19, #8]",
-        "rev x9, x9",
-        "str x9, [x21, #8]",
-        "ldr x9, [x19, #16]",
-        "rev x9, x9",
-        "str x9, [x21, #16]",
-        "ldr x9, [x19, #24]",
-        "rev x9, x9",
-        "str x9, [x21, #24]",
-        "ldr x9, [x19, #32]",
-        "rev x9, x9",
-        "str x9, [x21, #32]",
-        "ldr x9, [x19, #40]",
-        "rev x9, x9",
-        "str x9, [x21, #40]",
-        "ldr x9, [x19, #48]",
-        "rev x9, x9",
-        "str x9, [x21, #48]",
-        "ldr x9, [x19, #56]",
-        "rev x9, x9",
-        "str x9, [x21, #56]",
-        "ldr w9, [x21, #0]",
-        "str w9, [x24, #0]",
-        "ldr w9, [x21, #4]",
-        "str w9, [x24, #4]",
-        "ldr w9, [x21, #8]",
-        "str w9, [x24, #8]",
-        "ldr w9, [x21, #12]",
-        "str w9, [x24, #12]",
-        "ldr w9, [x21, #16]",
-        "str w9, [x24, #16]",
-        "ldr w9, [x21, #20]",
-        "str w9, [x24, #20]",
-        "ldr w9, [x21, #24]",
-        "str w9, [x24, #24]",
-        "ldr w9, [x21, #28]",
-        "str w9, [x24, #28]",
-        "ldr x19, [x23, #688]",
-        "ldr x20, [x23, #696]",
-        "ldr x21, [x23, #704]",
-        "ldr x22, [x23, #712]",
-        "ldr x24, [x23, #720]",
-        "ldr x30, [x23, #728]",
-        "ldr x23, [x23, #736]",
-        "ret",
-        ".p2align 6",
+        r"str x19, [x4, #688]
+str x20, [x4, #696]
+str x21, [x4, #704]
+str x22, [x4, #712]
+str x24, [x4, #720]
+str x30, [x4, #728]
+str x23, [x4, #736]
+add x19, x0, #0
+add x20, x1, #0
+add x21, x3, #0
+add x23, x4, #0
+add x1, x2, #0
+add x2, x23, #744
+add x3, x23, #0
+bl {vg_sha512_finalize_scratch}
+ldp x9, x10, [x20, #0]
+stp x9, x10, [x19, #0]
+ldp x9, x10, [x20, #16]
+stp x9, x10, [x19, #16]
+ldp x9, x10, [x20, #32]
+stp x9, x10, [x19, #32]
+ldp x9, x10, [x20, #48]
+stp x9, x10, [x19, #48]
+ldr x9, [x23, #744]
+ldr x10, [x23, #752]
+stp x9, x10, [x19, #64]
+ldr x9, [x23, #760]
+ldr x10, [x23, #768]
+stp x9, x10, [x19, #80]
+add x24, x21, #0
+add x21, x19, #64
+add x20, x23, #0
+movz x9, #128, lsl #0
+movz x10, #0, lsl #0
+stp x9, x10, [x21, #32]
+stp x10, x10, [x21, #48]
+stp x10, x10, [x21, #64]
+stp x10, x10, [x21, #80]
+stp x10, x10, [x21, #96]
+movz x22, #160, lsl #0
+lsr x9, x22, #61
+rev x9, x9
+str x9, [x19, #176]
+add x9, x22, x22
+add x9, x9, x9
+add x9, x9, x9
+rev x9, x9
+str x9, [x19, #184]
+add x1, x21, #0
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress}
+ldr x9, [x19, #0]
+rev x9, x9
+str x9, [x21, #0]
+ldr x9, [x19, #8]
+rev x9, x9
+str x9, [x21, #8]
+ldr x9, [x19, #16]
+rev x9, x9
+str x9, [x21, #16]
+ldr x9, [x19, #24]
+rev x9, x9
+str x9, [x21, #24]
+ldr x9, [x19, #32]
+rev x9, x9
+str x9, [x21, #32]
+ldr x9, [x19, #40]
+rev x9, x9
+str x9, [x21, #40]
+ldr x9, [x19, #48]
+rev x9, x9
+str x9, [x21, #48]
+ldr x9, [x19, #56]
+rev x9, x9
+str x9, [x21, #56]
+ldp x9, x10, [x21, #0]
+stp x9, x10, [x24, #0]
+ldp x9, x10, [x21, #16]
+stp x9, x10, [x24, #16]
+ldr x19, [x23, #688]
+ldr x20, [x23, #696]
+ldr x21, [x23, #704]
+ldr x22, [x23, #712]
+ldr x24, [x23, #720]
+ldr x30, [x23, #728]
+ldr x23, [x23, #736]
+ret
+.p2align 6",
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
     )
@@ -763,212 +1134,705 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha512_256_finalize_scratch(inner: *mut 
 /// The CPU features `vg_hmac_sha512_256_init_sha3` requires (`Artifact.features`).
 pub(crate) const VG_HMAC_SHA512_256_INIT_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
 
-/// Starts an HMAC-SHA-512/256 computation with a key of at most 128 bytes: makes the SHA-512/256 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` padded with zeros to 128 bytes (FIPS 198-1). The text is then absorbed with `vg_sha512_update` on `*inner` (its `count` starting at 128), and the MAC computed with `vg_hmac_sha512_256_finalize`.
+/// Starts an HMAC-SHA-512/256 computation with a key of any length: makes the SHA-512/256 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-512/256 digest, if there are more than 128) padded with zeros to 128 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha512_update` on `*inner` (its `count` starting at 128), and the MAC computed with `vg_hmac_sha512_256_finalize`.
 ///
-/// Contract: `VG.Spec.Hmac.Instance.initContract` of `VG.Spec.Hmac.sha512_256I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+/// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha512_256I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 192 bytes.
 /// * `outer` must be valid for reads and writes of 192 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
-/// * `key_len` must be at most 128.
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `key` may overlap the 1888 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `key` may overlap the 3424 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_256_init_sha3(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        ".arch_extension sha3",
-        "sub sp, sp, #1872",
-        "add x4, sp, #0",
-        "str x19, [x4, #688]",
-        "str x20, [x4, #696]",
-        "str x21, [x4, #704]",
-        "str x22, [x4, #712]",
-        "str x24, [x4, #720]",
-        "str x30, [x4, #728]",
-        "str x23, [x4, #736]",
-        "add x19, x0, #0",
-        "add x20, x4, #0",
-        "add x21, x1, #0",
-        "add x22, x2, #0",
-        "add x23, x4, #0",
-        "add x24, x3, #0",
-        "add x0, x19, #0",
-        "bl {vg_sha512_256_init}",
-        "add x0, x21, #0",
-        "bl {vg_sha512_256_init}",
-        "movz w14, #13878, lsl #0",
-        "movk w14, #13878, lsl #16",
-        "str w14, [x19, #64]",
-        "str w14, [x19, #68]",
-        "str w14, [x19, #72]",
-        "str w14, [x19, #76]",
-        "str w14, [x19, #80]",
-        "str w14, [x19, #84]",
-        "str w14, [x19, #88]",
-        "str w14, [x19, #92]",
-        "str w14, [x19, #96]",
-        "str w14, [x19, #100]",
-        "str w14, [x19, #104]",
-        "str w14, [x19, #108]",
-        "str w14, [x19, #112]",
-        "str w14, [x19, #116]",
-        "str w14, [x19, #120]",
-        "str w14, [x19, #124]",
-        "str w14, [x19, #128]",
-        "str w14, [x19, #132]",
-        "str w14, [x19, #136]",
-        "str w14, [x19, #140]",
-        "str w14, [x19, #144]",
-        "str w14, [x19, #148]",
-        "str w14, [x19, #152]",
-        "str w14, [x19, #156]",
-        "str w14, [x19, #160]",
-        "str w14, [x19, #164]",
-        "str w14, [x19, #168]",
-        "str w14, [x19, #172]",
-        "str w14, [x19, #176]",
-        "str w14, [x19, #180]",
-        "str w14, [x19, #184]",
-        "str w14, [x19, #188]",
-        "movz x10, #0, lsl #0",
-        "cbz x24, 20f",
-        "22:",
-        "add x13, x22, x10",
-        "ldrb w9, [x13, #0]",
-        "eor x9, x9, x14",
-        "add x12, x19, x10",
-        "strb w9, [x12, #64]",
-        "add x10, x10, #1",
-        "sub x11, x24, x10",
-        "cbnz x11, 22b",
-        "b 21f",
-        "20:",
-        "21:",
-        "movz w15, #27242, lsl #0",
-        "movk w15, #27242, lsl #16",
-        "ldr w9, [x19, #64]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #64]",
-        "ldr w9, [x19, #68]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #68]",
-        "ldr w9, [x19, #72]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #72]",
-        "ldr w9, [x19, #76]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #76]",
-        "ldr w9, [x19, #80]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #80]",
-        "ldr w9, [x19, #84]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #84]",
-        "ldr w9, [x19, #88]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #88]",
-        "ldr w9, [x19, #92]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #92]",
-        "ldr w9, [x19, #96]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #96]",
-        "ldr w9, [x19, #100]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #100]",
-        "ldr w9, [x19, #104]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #104]",
-        "ldr w9, [x19, #108]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #108]",
-        "ldr w9, [x19, #112]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #112]",
-        "ldr w9, [x19, #116]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #116]",
-        "ldr w9, [x19, #120]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #120]",
-        "ldr w9, [x19, #124]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #124]",
-        "ldr w9, [x19, #128]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #128]",
-        "ldr w9, [x19, #132]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #132]",
-        "ldr w9, [x19, #136]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #136]",
-        "ldr w9, [x19, #140]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #140]",
-        "ldr w9, [x19, #144]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #144]",
-        "ldr w9, [x19, #148]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #148]",
-        "ldr w9, [x19, #152]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #152]",
-        "ldr w9, [x19, #156]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #156]",
-        "ldr w9, [x19, #160]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #160]",
-        "ldr w9, [x19, #164]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #164]",
-        "ldr w9, [x19, #168]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #168]",
-        "ldr w9, [x19, #172]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #172]",
-        "ldr w9, [x19, #176]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #176]",
-        "ldr w9, [x19, #180]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #180]",
-        "ldr w9, [x19, #184]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #184]",
-        "ldr w9, [x19, #188]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #188]",
-        "add x1, x19, #64",
-        "add x0, x19, #0",
-        "movz x2, #1, lsl #0",
-        "add x3, x20, #0",
-        "bl {vg_sha512_compress_sha3}",
-        "add x19, x21, #0",
-        "add x1, x21, #64",
-        "add x0, x19, #0",
-        "movz x2, #1, lsl #0",
-        "add x3, x20, #0",
-        "bl {vg_sha512_compress_sha3}",
-        "ldr x19, [x23, #688]",
-        "ldr x20, [x23, #696]",
-        "ldr x21, [x23, #704]",
-        "ldr x22, [x23, #712]",
-        "ldr x24, [x23, #720]",
-        "ldr x30, [x23, #728]",
-        "ldr x23, [x23, #736]",
-        "add sp, sp, #1872",
-        "ret",
-        ".arch_extension nosha3",
-        ".p2align 6",
+        r".arch_extension sha3
+movz x10, #128, lsl #0
+movz x12, #0, lsl #0
+subs x11, x10, x3
+csel x9, x12, x3, hs
+cbnz x9, 20f
+sub sp, sp, #1872
+add x4, sp, #0
+str x19, [x4, #688]
+str x20, [x4, #696]
+str x21, [x4, #704]
+str x22, [x4, #712]
+str x24, [x4, #720]
+str x30, [x4, #728]
+str x23, [x4, #736]
+add x19, x0, #0
+add x20, x4, #0
+add x21, x1, #0
+add x22, x2, #0
+add x23, x4, #0
+add x24, x3, #0
+add x0, x19, #0
+bl {vg_sha512_256_init}
+add x0, x21, #0
+bl {vg_sha512_256_init}
+movz w14, #13878, lsl #0
+movk w14, #13878, lsl #16
+str w14, [x19, #64]
+str w14, [x19, #68]
+str w14, [x19, #72]
+str w14, [x19, #76]
+str w14, [x19, #80]
+str w14, [x19, #84]
+str w14, [x19, #88]
+str w14, [x19, #92]
+str w14, [x19, #96]
+str w14, [x19, #100]
+str w14, [x19, #104]
+str w14, [x19, #108]
+str w14, [x19, #112]
+str w14, [x19, #116]
+str w14, [x19, #120]
+str w14, [x19, #124]
+str w14, [x19, #128]
+str w14, [x19, #132]
+str w14, [x19, #136]
+str w14, [x19, #140]
+str w14, [x19, #144]
+str w14, [x19, #148]
+str w14, [x19, #152]
+str w14, [x19, #156]
+str w14, [x19, #160]
+str w14, [x19, #164]
+str w14, [x19, #168]
+str w14, [x19, #172]
+str w14, [x19, #176]
+str w14, [x19, #180]
+str w14, [x19, #184]
+str w14, [x19, #188]
+movz x10, #0, lsl #0
+cbz x24, 22f
+24:
+add x13, x22, x10
+ldrb w9, [x13, #0]
+eor x9, x9, x14
+add x12, x19, x10
+strb w9, [x12, #64]
+add x10, x10, #1
+sub x11, x24, x10
+cbnz x11, 24b
+b 23f
+22:
+23:
+movz w15, #27242, lsl #0
+movk w15, #27242, lsl #16
+ldr w9, [x19, #64]
+eor x9, x9, x15
+str w9, [x21, #64]
+ldr w9, [x19, #68]
+eor x9, x9, x15
+str w9, [x21, #68]
+ldr w9, [x19, #72]
+eor x9, x9, x15
+str w9, [x21, #72]
+ldr w9, [x19, #76]
+eor x9, x9, x15
+str w9, [x21, #76]
+ldr w9, [x19, #80]
+eor x9, x9, x15
+str w9, [x21, #80]
+ldr w9, [x19, #84]
+eor x9, x9, x15
+str w9, [x21, #84]
+ldr w9, [x19, #88]
+eor x9, x9, x15
+str w9, [x21, #88]
+ldr w9, [x19, #92]
+eor x9, x9, x15
+str w9, [x21, #92]
+ldr w9, [x19, #96]
+eor x9, x9, x15
+str w9, [x21, #96]
+ldr w9, [x19, #100]
+eor x9, x9, x15
+str w9, [x21, #100]
+ldr w9, [x19, #104]
+eor x9, x9, x15
+str w9, [x21, #104]
+ldr w9, [x19, #108]
+eor x9, x9, x15
+str w9, [x21, #108]
+ldr w9, [x19, #112]
+eor x9, x9, x15
+str w9, [x21, #112]
+ldr w9, [x19, #116]
+eor x9, x9, x15
+str w9, [x21, #116]
+ldr w9, [x19, #120]
+eor x9, x9, x15
+str w9, [x21, #120]
+ldr w9, [x19, #124]
+eor x9, x9, x15
+str w9, [x21, #124]
+ldr w9, [x19, #128]
+eor x9, x9, x15
+str w9, [x21, #128]
+ldr w9, [x19, #132]
+eor x9, x9, x15
+str w9, [x21, #132]
+ldr w9, [x19, #136]
+eor x9, x9, x15
+str w9, [x21, #136]
+ldr w9, [x19, #140]
+eor x9, x9, x15
+str w9, [x21, #140]
+ldr w9, [x19, #144]
+eor x9, x9, x15
+str w9, [x21, #144]
+ldr w9, [x19, #148]
+eor x9, x9, x15
+str w9, [x21, #148]
+ldr w9, [x19, #152]
+eor x9, x9, x15
+str w9, [x21, #152]
+ldr w9, [x19, #156]
+eor x9, x9, x15
+str w9, [x21, #156]
+ldr w9, [x19, #160]
+eor x9, x9, x15
+str w9, [x21, #160]
+ldr w9, [x19, #164]
+eor x9, x9, x15
+str w9, [x21, #164]
+ldr w9, [x19, #168]
+eor x9, x9, x15
+str w9, [x21, #168]
+ldr w9, [x19, #172]
+eor x9, x9, x15
+str w9, [x21, #172]
+ldr w9, [x19, #176]
+eor x9, x9, x15
+str w9, [x21, #176]
+ldr w9, [x19, #180]
+eor x9, x9, x15
+str w9, [x21, #180]
+ldr w9, [x19, #184]
+eor x9, x9, x15
+str w9, [x21, #184]
+ldr w9, [x19, #188]
+eor x9, x9, x15
+str w9, [x21, #188]
+add x1, x19, #64
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress_sha3}
+add x19, x21, #0
+add x1, x21, #64
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress_sha3}
+ldr x19, [x23, #688]
+ldr x20, [x23, #696]
+ldr x21, [x23, #704]
+ldr x22, [x23, #712]
+ldr x24, [x23, #720]
+ldr x30, [x23, #728]
+ldr x23, [x23, #736]
+add sp, sp, #1872
+21:
+ret
+20:
+sub sp, sp, #3408
+add x4, sp, #0
+str x19, [x4, #1872]
+str x20, [x4, #1880]
+str x21, [x4, #1888]
+str x22, [x4, #1896]
+str x24, [x4, #1904]
+str x30, [x4, #1912]
+str x23, [x4, #1920]
+add x23, x4, #0
+add x19, x2, #0
+add x20, x3, #0
+add x21, x0, #0
+add x22, x1, #0
+lsr x9, x20, #7
+cbz x9, 25f
+sub x9, x20, #128
+cbz x9, 27f
+add x0, x23, #2528
+bl {vg_sha512_256_init}
+add x0, x23, #2528
+movz x1, #0, lsl #0
+add x2, x19, #0
+add x3, x20, #0
+add x4, x23, #0
+bl {vg_sha512_update_scratch_sha3}
+add x0, x23, #2528
+add x1, x20, #0
+add x2, x23, #2784
+add x3, x23, #0
+bl {vg_sha512_finalize_scratch_sha3}
+add x2, x23, #2784
+movz x3, #32, lsl #0
+b 28f
+27:
+add x2, x19, #0
+add x3, x20, #0
+28:
+b 26f
+25:
+add x2, x19, #0
+add x3, x20, #0
+26:
+add x0, x21, #0
+add x1, x22, #0
+add x4, x23, #0
+bl {vg_hmac_sha512_256_init_scratch_sha3}
+ldr x19, [x23, #1872]
+ldr x20, [x23, #1880]
+ldr x21, [x23, #1888]
+ldr x22, [x23, #1896]
+ldr x24, [x23, #1904]
+ldr x30, [x23, #1912]
+ldr x23, [x23, #1920]
+add x16, sp, #0
+movz x17, #0, lsl #0
+str x17, [x16, #0]
+str x17, [x16, #8]
+str x17, [x16, #16]
+str x17, [x16, #24]
+str x17, [x16, #32]
+str x17, [x16, #40]
+str x17, [x16, #48]
+str x17, [x16, #56]
+str x17, [x16, #64]
+str x17, [x16, #72]
+str x17, [x16, #80]
+str x17, [x16, #88]
+str x17, [x16, #96]
+str x17, [x16, #104]
+str x17, [x16, #112]
+str x17, [x16, #120]
+str x17, [x16, #128]
+str x17, [x16, #136]
+str x17, [x16, #144]
+str x17, [x16, #152]
+str x17, [x16, #160]
+str x17, [x16, #168]
+str x17, [x16, #176]
+str x17, [x16, #184]
+str x17, [x16, #192]
+str x17, [x16, #200]
+str x17, [x16, #208]
+str x17, [x16, #216]
+str x17, [x16, #224]
+str x17, [x16, #232]
+str x17, [x16, #240]
+str x17, [x16, #248]
+str x17, [x16, #256]
+str x17, [x16, #264]
+str x17, [x16, #272]
+str x17, [x16, #280]
+str x17, [x16, #288]
+str x17, [x16, #296]
+str x17, [x16, #304]
+str x17, [x16, #312]
+str x17, [x16, #320]
+str x17, [x16, #328]
+str x17, [x16, #336]
+str x17, [x16, #344]
+str x17, [x16, #352]
+str x17, [x16, #360]
+str x17, [x16, #368]
+str x17, [x16, #376]
+str x17, [x16, #384]
+str x17, [x16, #392]
+str x17, [x16, #400]
+str x17, [x16, #408]
+str x17, [x16, #416]
+str x17, [x16, #424]
+str x17, [x16, #432]
+str x17, [x16, #440]
+str x17, [x16, #448]
+str x17, [x16, #456]
+str x17, [x16, #464]
+str x17, [x16, #472]
+str x17, [x16, #480]
+str x17, [x16, #488]
+str x17, [x16, #496]
+str x17, [x16, #504]
+str x17, [x16, #512]
+str x17, [x16, #520]
+str x17, [x16, #528]
+str x17, [x16, #536]
+str x17, [x16, #544]
+str x17, [x16, #552]
+str x17, [x16, #560]
+str x17, [x16, #568]
+str x17, [x16, #576]
+str x17, [x16, #584]
+str x17, [x16, #592]
+str x17, [x16, #600]
+str x17, [x16, #608]
+str x17, [x16, #616]
+str x17, [x16, #624]
+str x17, [x16, #632]
+str x17, [x16, #640]
+str x17, [x16, #648]
+str x17, [x16, #656]
+str x17, [x16, #664]
+str x17, [x16, #672]
+str x17, [x16, #680]
+str x17, [x16, #688]
+str x17, [x16, #696]
+str x17, [x16, #704]
+str x17, [x16, #712]
+str x17, [x16, #720]
+str x17, [x16, #728]
+str x17, [x16, #736]
+str x17, [x16, #744]
+str x17, [x16, #752]
+str x17, [x16, #760]
+str x17, [x16, #768]
+str x17, [x16, #776]
+str x17, [x16, #784]
+str x17, [x16, #792]
+str x17, [x16, #800]
+str x17, [x16, #808]
+str x17, [x16, #816]
+str x17, [x16, #824]
+str x17, [x16, #832]
+str x17, [x16, #840]
+str x17, [x16, #848]
+str x17, [x16, #856]
+str x17, [x16, #864]
+str x17, [x16, #872]
+str x17, [x16, #880]
+str x17, [x16, #888]
+str x17, [x16, #896]
+str x17, [x16, #904]
+str x17, [x16, #912]
+str x17, [x16, #920]
+str x17, [x16, #928]
+str x17, [x16, #936]
+str x17, [x16, #944]
+str x17, [x16, #952]
+str x17, [x16, #960]
+str x17, [x16, #968]
+str x17, [x16, #976]
+str x17, [x16, #984]
+str x17, [x16, #992]
+str x17, [x16, #1000]
+str x17, [x16, #1008]
+str x17, [x16, #1016]
+str x17, [x16, #1024]
+str x17, [x16, #1032]
+str x17, [x16, #1040]
+str x17, [x16, #1048]
+str x17, [x16, #1056]
+str x17, [x16, #1064]
+str x17, [x16, #1072]
+str x17, [x16, #1080]
+str x17, [x16, #1088]
+str x17, [x16, #1096]
+str x17, [x16, #1104]
+str x17, [x16, #1112]
+str x17, [x16, #1120]
+str x17, [x16, #1128]
+str x17, [x16, #1136]
+str x17, [x16, #1144]
+str x17, [x16, #1152]
+str x17, [x16, #1160]
+str x17, [x16, #1168]
+str x17, [x16, #1176]
+str x17, [x16, #1184]
+str x17, [x16, #1192]
+str x17, [x16, #1200]
+str x17, [x16, #1208]
+str x17, [x16, #1216]
+str x17, [x16, #1224]
+str x17, [x16, #1232]
+str x17, [x16, #1240]
+str x17, [x16, #1248]
+str x17, [x16, #1256]
+str x17, [x16, #1264]
+str x17, [x16, #1272]
+str x17, [x16, #1280]
+str x17, [x16, #1288]
+str x17, [x16, #1296]
+str x17, [x16, #1304]
+str x17, [x16, #1312]
+str x17, [x16, #1320]
+str x17, [x16, #1328]
+str x17, [x16, #1336]
+str x17, [x16, #1344]
+str x17, [x16, #1352]
+str x17, [x16, #1360]
+str x17, [x16, #1368]
+str x17, [x16, #1376]
+str x17, [x16, #1384]
+str x17, [x16, #1392]
+str x17, [x16, #1400]
+str x17, [x16, #1408]
+str x17, [x16, #1416]
+str x17, [x16, #1424]
+str x17, [x16, #1432]
+str x17, [x16, #1440]
+str x17, [x16, #1448]
+str x17, [x16, #1456]
+str x17, [x16, #1464]
+str x17, [x16, #1472]
+str x17, [x16, #1480]
+str x17, [x16, #1488]
+str x17, [x16, #1496]
+str x17, [x16, #1504]
+str x17, [x16, #1512]
+str x17, [x16, #1520]
+str x17, [x16, #1528]
+str x17, [x16, #1536]
+str x17, [x16, #1544]
+str x17, [x16, #1552]
+str x17, [x16, #1560]
+str x17, [x16, #1568]
+str x17, [x16, #1576]
+str x17, [x16, #1584]
+str x17, [x16, #1592]
+str x17, [x16, #1600]
+str x17, [x16, #1608]
+str x17, [x16, #1616]
+str x17, [x16, #1624]
+str x17, [x16, #1632]
+str x17, [x16, #1640]
+str x17, [x16, #1648]
+str x17, [x16, #1656]
+str x17, [x16, #1664]
+str x17, [x16, #1672]
+str x17, [x16, #1680]
+str x17, [x16, #1688]
+str x17, [x16, #1696]
+str x17, [x16, #1704]
+str x17, [x16, #1712]
+str x17, [x16, #1720]
+str x17, [x16, #1728]
+str x17, [x16, #1736]
+str x17, [x16, #1744]
+str x17, [x16, #1752]
+str x17, [x16, #1760]
+str x17, [x16, #1768]
+str x17, [x16, #1776]
+str x17, [x16, #1784]
+str x17, [x16, #1792]
+str x17, [x16, #1800]
+str x17, [x16, #1808]
+str x17, [x16, #1816]
+str x17, [x16, #1824]
+str x17, [x16, #1832]
+str x17, [x16, #1840]
+str x17, [x16, #1848]
+str x17, [x16, #1856]
+str x17, [x16, #1864]
+str x17, [x16, #1872]
+str x17, [x16, #1880]
+str x17, [x16, #1888]
+str x17, [x16, #1896]
+str x17, [x16, #1904]
+str x17, [x16, #1912]
+str x17, [x16, #1920]
+str x17, [x16, #1928]
+str x17, [x16, #1936]
+str x17, [x16, #1944]
+str x17, [x16, #1952]
+str x17, [x16, #1960]
+str x17, [x16, #1968]
+str x17, [x16, #1976]
+str x17, [x16, #1984]
+str x17, [x16, #1992]
+str x17, [x16, #2000]
+str x17, [x16, #2008]
+str x17, [x16, #2016]
+str x17, [x16, #2024]
+str x17, [x16, #2032]
+str x17, [x16, #2040]
+str x17, [x16, #2048]
+str x17, [x16, #2056]
+str x17, [x16, #2064]
+str x17, [x16, #2072]
+str x17, [x16, #2080]
+str x17, [x16, #2088]
+str x17, [x16, #2096]
+str x17, [x16, #2104]
+str x17, [x16, #2112]
+str x17, [x16, #2120]
+str x17, [x16, #2128]
+str x17, [x16, #2136]
+str x17, [x16, #2144]
+str x17, [x16, #2152]
+str x17, [x16, #2160]
+str x17, [x16, #2168]
+str x17, [x16, #2176]
+str x17, [x16, #2184]
+str x17, [x16, #2192]
+str x17, [x16, #2200]
+str x17, [x16, #2208]
+str x17, [x16, #2216]
+str x17, [x16, #2224]
+str x17, [x16, #2232]
+str x17, [x16, #2240]
+str x17, [x16, #2248]
+str x17, [x16, #2256]
+str x17, [x16, #2264]
+str x17, [x16, #2272]
+str x17, [x16, #2280]
+str x17, [x16, #2288]
+str x17, [x16, #2296]
+str x17, [x16, #2304]
+str x17, [x16, #2312]
+str x17, [x16, #2320]
+str x17, [x16, #2328]
+str x17, [x16, #2336]
+str x17, [x16, #2344]
+str x17, [x16, #2352]
+str x17, [x16, #2360]
+str x17, [x16, #2368]
+str x17, [x16, #2376]
+str x17, [x16, #2384]
+str x17, [x16, #2392]
+str x17, [x16, #2400]
+str x17, [x16, #2408]
+str x17, [x16, #2416]
+str x17, [x16, #2424]
+str x17, [x16, #2432]
+str x17, [x16, #2440]
+str x17, [x16, #2448]
+str x17, [x16, #2456]
+str x17, [x16, #2464]
+str x17, [x16, #2472]
+str x17, [x16, #2480]
+str x17, [x16, #2488]
+str x17, [x16, #2496]
+str x17, [x16, #2504]
+str x17, [x16, #2512]
+str x17, [x16, #2520]
+str x17, [x16, #2528]
+str x17, [x16, #2536]
+str x17, [x16, #2544]
+str x17, [x16, #2552]
+str x17, [x16, #2560]
+str x17, [x16, #2568]
+str x17, [x16, #2576]
+str x17, [x16, #2584]
+str x17, [x16, #2592]
+str x17, [x16, #2600]
+str x17, [x16, #2608]
+str x17, [x16, #2616]
+str x17, [x16, #2624]
+str x17, [x16, #2632]
+str x17, [x16, #2640]
+str x17, [x16, #2648]
+str x17, [x16, #2656]
+str x17, [x16, #2664]
+str x17, [x16, #2672]
+str x17, [x16, #2680]
+str x17, [x16, #2688]
+str x17, [x16, #2696]
+str x17, [x16, #2704]
+str x17, [x16, #2712]
+str x17, [x16, #2720]
+str x17, [x16, #2728]
+str x17, [x16, #2736]
+str x17, [x16, #2744]
+str x17, [x16, #2752]
+str x17, [x16, #2760]
+str x17, [x16, #2768]
+str x17, [x16, #2776]
+str x17, [x16, #2784]
+str x17, [x16, #2792]
+str x17, [x16, #2800]
+str x17, [x16, #2808]
+str x17, [x16, #2816]
+str x17, [x16, #2824]
+str x17, [x16, #2832]
+str x17, [x16, #2840]
+str x17, [x16, #2848]
+str x17, [x16, #2856]
+str x17, [x16, #2864]
+str x17, [x16, #2872]
+str x17, [x16, #2880]
+str x17, [x16, #2888]
+str x17, [x16, #2896]
+str x17, [x16, #2904]
+str x17, [x16, #2912]
+str x17, [x16, #2920]
+str x17, [x16, #2928]
+str x17, [x16, #2936]
+str x17, [x16, #2944]
+str x17, [x16, #2952]
+str x17, [x16, #2960]
+str x17, [x16, #2968]
+str x17, [x16, #2976]
+str x17, [x16, #2984]
+str x17, [x16, #2992]
+str x17, [x16, #3000]
+str x17, [x16, #3008]
+str x17, [x16, #3016]
+str x17, [x16, #3024]
+str x17, [x16, #3032]
+str x17, [x16, #3040]
+str x17, [x16, #3048]
+str x17, [x16, #3056]
+str x17, [x16, #3064]
+str x17, [x16, #3072]
+str x17, [x16, #3080]
+str x17, [x16, #3088]
+str x17, [x16, #3096]
+str x17, [x16, #3104]
+str x17, [x16, #3112]
+str x17, [x16, #3120]
+str x17, [x16, #3128]
+str x17, [x16, #3136]
+str x17, [x16, #3144]
+str x17, [x16, #3152]
+str x17, [x16, #3160]
+str x17, [x16, #3168]
+str x17, [x16, #3176]
+str x17, [x16, #3184]
+str x17, [x16, #3192]
+str x17, [x16, #3200]
+str x17, [x16, #3208]
+str x17, [x16, #3216]
+str x17, [x16, #3224]
+str x17, [x16, #3232]
+str x17, [x16, #3240]
+str x17, [x16, #3248]
+str x17, [x16, #3256]
+str x17, [x16, #3264]
+str x17, [x16, #3272]
+str x17, [x16, #3280]
+str x17, [x16, #3288]
+str x17, [x16, #3296]
+str x17, [x16, #3304]
+str x17, [x16, #3312]
+str x17, [x16, #3320]
+str x17, [x16, #3328]
+str x17, [x16, #3336]
+str x17, [x16, #3344]
+str x17, [x16, #3352]
+str x17, [x16, #3360]
+str x17, [x16, #3368]
+str x17, [x16, #3376]
+str x17, [x16, #3384]
+str x17, [x16, #3392]
+str x17, [x16, #3400]
+add sp, sp, #3408
+b 21b
+.arch_extension nosha3
+.p2align 6",
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
+        vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3,
+        vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,
+        vg_hmac_sha512_256_init_scratch_sha3 = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch_sha3,
     )
 }
 
@@ -991,162 +1855,101 @@ pub(crate) const VG_HMAC_SHA512_256_FINALIZE_SHA3_FEATURES: crate::cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_256_finalize_sha3(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        ".arch_extension sha3",
-        "sub sp, sp, #1872",
-        "add x4, sp, #0",
-        "str x19, [x4, #688]",
-        "str x20, [x4, #696]",
-        "str x21, [x4, #704]",
-        "str x22, [x4, #712]",
-        "str x24, [x4, #720]",
-        "str x30, [x4, #728]",
-        "str x23, [x4, #736]",
-        "add x19, x0, #0",
-        "add x20, x1, #0",
-        "add x21, x3, #0",
-        "add x23, x4, #0",
-        "add x1, x2, #0",
-        "add x2, x23, #744",
-        "add x3, x23, #0",
-        "bl {vg_sha512_finalize_scratch_sha3}",
-        "ldr w9, [x20, #0]",
-        "str w9, [x19, #0]",
-        "ldr w9, [x20, #4]",
-        "str w9, [x19, #4]",
-        "ldr w9, [x20, #8]",
-        "str w9, [x19, #8]",
-        "ldr w9, [x20, #12]",
-        "str w9, [x19, #12]",
-        "ldr w9, [x20, #16]",
-        "str w9, [x19, #16]",
-        "ldr w9, [x20, #20]",
-        "str w9, [x19, #20]",
-        "ldr w9, [x20, #24]",
-        "str w9, [x19, #24]",
-        "ldr w9, [x20, #28]",
-        "str w9, [x19, #28]",
-        "ldr w9, [x20, #32]",
-        "str w9, [x19, #32]",
-        "ldr w9, [x20, #36]",
-        "str w9, [x19, #36]",
-        "ldr w9, [x20, #40]",
-        "str w9, [x19, #40]",
-        "ldr w9, [x20, #44]",
-        "str w9, [x19, #44]",
-        "ldr w9, [x20, #48]",
-        "str w9, [x19, #48]",
-        "ldr w9, [x20, #52]",
-        "str w9, [x19, #52]",
-        "ldr w9, [x20, #56]",
-        "str w9, [x19, #56]",
-        "ldr w9, [x20, #60]",
-        "str w9, [x19, #60]",
-        "ldr w9, [x23, #744]",
-        "str w9, [x19, #64]",
-        "ldr w9, [x23, #748]",
-        "str w9, [x19, #68]",
-        "ldr w9, [x23, #752]",
-        "str w9, [x19, #72]",
-        "ldr w9, [x23, #756]",
-        "str w9, [x19, #76]",
-        "ldr w9, [x23, #760]",
-        "str w9, [x19, #80]",
-        "ldr w9, [x23, #764]",
-        "str w9, [x19, #84]",
-        "ldr w9, [x23, #768]",
-        "str w9, [x19, #88]",
-        "ldr w9, [x23, #772]",
-        "str w9, [x19, #92]",
-        "add x24, x21, #0",
-        "add x21, x19, #64",
-        "add x20, x23, #0",
-        "movz x9, #128, lsl #0",
-        "str w9, [x21, #32]",
-        "movz x9, #0, lsl #0",
-        "str w9, [x21, #36]",
-        "str w9, [x21, #40]",
-        "str w9, [x21, #44]",
-        "str w9, [x21, #48]",
-        "str w9, [x21, #52]",
-        "str w9, [x21, #56]",
-        "str w9, [x21, #60]",
-        "str w9, [x21, #64]",
-        "str w9, [x21, #68]",
-        "str w9, [x21, #72]",
-        "str w9, [x21, #76]",
-        "str w9, [x21, #80]",
-        "str w9, [x21, #84]",
-        "str w9, [x21, #88]",
-        "str w9, [x21, #92]",
-        "str w9, [x21, #96]",
-        "str w9, [x21, #100]",
-        "str w9, [x21, #104]",
-        "str w9, [x21, #108]",
-        "movz x22, #160, lsl #0",
-        "lsr x9, x22, #61",
-        "rev x9, x9",
-        "str x9, [x19, #176]",
-        "add x9, x22, x22",
-        "add x9, x9, x9",
-        "add x9, x9, x9",
-        "rev x9, x9",
-        "str x9, [x19, #184]",
-        "add x1, x21, #0",
-        "add x0, x19, #0",
-        "movz x2, #1, lsl #0",
-        "add x3, x20, #0",
-        "bl {vg_sha512_compress_sha3}",
-        "ldr x9, [x19, #0]",
-        "rev x9, x9",
-        "str x9, [x21, #0]",
-        "ldr x9, [x19, #8]",
-        "rev x9, x9",
-        "str x9, [x21, #8]",
-        "ldr x9, [x19, #16]",
-        "rev x9, x9",
-        "str x9, [x21, #16]",
-        "ldr x9, [x19, #24]",
-        "rev x9, x9",
-        "str x9, [x21, #24]",
-        "ldr x9, [x19, #32]",
-        "rev x9, x9",
-        "str x9, [x21, #32]",
-        "ldr x9, [x19, #40]",
-        "rev x9, x9",
-        "str x9, [x21, #40]",
-        "ldr x9, [x19, #48]",
-        "rev x9, x9",
-        "str x9, [x21, #48]",
-        "ldr x9, [x19, #56]",
-        "rev x9, x9",
-        "str x9, [x21, #56]",
-        "ldr w9, [x21, #0]",
-        "str w9, [x24, #0]",
-        "ldr w9, [x21, #4]",
-        "str w9, [x24, #4]",
-        "ldr w9, [x21, #8]",
-        "str w9, [x24, #8]",
-        "ldr w9, [x21, #12]",
-        "str w9, [x24, #12]",
-        "ldr w9, [x21, #16]",
-        "str w9, [x24, #16]",
-        "ldr w9, [x21, #20]",
-        "str w9, [x24, #20]",
-        "ldr w9, [x21, #24]",
-        "str w9, [x24, #24]",
-        "ldr w9, [x21, #28]",
-        "str w9, [x24, #28]",
-        "ldr x19, [x23, #688]",
-        "ldr x20, [x23, #696]",
-        "ldr x21, [x23, #704]",
-        "ldr x22, [x23, #712]",
-        "ldr x24, [x23, #720]",
-        "ldr x30, [x23, #728]",
-        "ldr x23, [x23, #736]",
-        "add sp, sp, #1872",
-        "ret",
-        ".arch_extension nosha3",
-        ".p2align 6",
+        r".arch_extension sha3
+sub sp, sp, #1872
+add x4, sp, #0
+str x19, [x4, #688]
+str x20, [x4, #696]
+str x21, [x4, #704]
+str x22, [x4, #712]
+str x24, [x4, #720]
+str x30, [x4, #728]
+str x23, [x4, #736]
+add x19, x0, #0
+add x20, x1, #0
+add x21, x3, #0
+add x23, x4, #0
+add x1, x2, #0
+add x2, x23, #744
+add x3, x23, #0
+bl {vg_sha512_finalize_scratch_sha3}
+ldp x9, x10, [x20, #0]
+stp x9, x10, [x19, #0]
+ldp x9, x10, [x20, #16]
+stp x9, x10, [x19, #16]
+ldp x9, x10, [x20, #32]
+stp x9, x10, [x19, #32]
+ldp x9, x10, [x20, #48]
+stp x9, x10, [x19, #48]
+ldr x9, [x23, #744]
+ldr x10, [x23, #752]
+stp x9, x10, [x19, #64]
+ldr x9, [x23, #760]
+ldr x10, [x23, #768]
+stp x9, x10, [x19, #80]
+add x24, x21, #0
+add x21, x19, #64
+add x20, x23, #0
+movz x9, #128, lsl #0
+movz x10, #0, lsl #0
+stp x9, x10, [x21, #32]
+stp x10, x10, [x21, #48]
+stp x10, x10, [x21, #64]
+stp x10, x10, [x21, #80]
+stp x10, x10, [x21, #96]
+movz x22, #160, lsl #0
+lsr x9, x22, #61
+rev x9, x9
+str x9, [x19, #176]
+add x9, x22, x22
+add x9, x9, x9
+add x9, x9, x9
+rev x9, x9
+str x9, [x19, #184]
+add x1, x21, #0
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress_sha3}
+ldr x9, [x19, #0]
+rev x9, x9
+str x9, [x21, #0]
+ldr x9, [x19, #8]
+rev x9, x9
+str x9, [x21, #8]
+ldr x9, [x19, #16]
+rev x9, x9
+str x9, [x21, #16]
+ldr x9, [x19, #24]
+rev x9, x9
+str x9, [x21, #24]
+ldr x9, [x19, #32]
+rev x9, x9
+str x9, [x21, #32]
+ldr x9, [x19, #40]
+rev x9, x9
+str x9, [x21, #40]
+ldr x9, [x19, #48]
+rev x9, x9
+str x9, [x21, #48]
+ldr x9, [x19, #56]
+rev x9, x9
+str x9, [x21, #56]
+ldp x9, x10, [x21, #0]
+stp x9, x10, [x24, #0]
+ldp x9, x10, [x21, #16]
+stp x9, x10, [x24, #16]
+ldr x19, [x23, #688]
+ldr x20, [x23, #696]
+ldr x21, [x23, #704]
+ldr x22, [x23, #712]
+ldr x24, [x23, #720]
+ldr x30, [x23, #728]
+ldr x23, [x23, #736]
+add sp, sp, #1872
+ret
+.arch_extension nosha3
+.p2align 6",
         vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
     )
@@ -1173,191 +1976,191 @@ pub(crate) const VG_HMAC_SHA512_256_INIT_SCRATCH_SHA3_FEATURES: crate::cpu::Feat
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_256_init_scratch_sha3(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
-        ".arch_extension sha3",
-        "str x19, [x4, #688]",
-        "str x20, [x4, #696]",
-        "str x21, [x4, #704]",
-        "str x22, [x4, #712]",
-        "str x24, [x4, #720]",
-        "str x30, [x4, #728]",
-        "str x23, [x4, #736]",
-        "add x19, x0, #0",
-        "add x20, x4, #0",
-        "add x21, x1, #0",
-        "add x22, x2, #0",
-        "add x23, x4, #0",
-        "add x24, x3, #0",
-        "add x0, x19, #0",
-        "bl {vg_sha512_256_init}",
-        "add x0, x21, #0",
-        "bl {vg_sha512_256_init}",
-        "movz w14, #13878, lsl #0",
-        "movk w14, #13878, lsl #16",
-        "str w14, [x19, #64]",
-        "str w14, [x19, #68]",
-        "str w14, [x19, #72]",
-        "str w14, [x19, #76]",
-        "str w14, [x19, #80]",
-        "str w14, [x19, #84]",
-        "str w14, [x19, #88]",
-        "str w14, [x19, #92]",
-        "str w14, [x19, #96]",
-        "str w14, [x19, #100]",
-        "str w14, [x19, #104]",
-        "str w14, [x19, #108]",
-        "str w14, [x19, #112]",
-        "str w14, [x19, #116]",
-        "str w14, [x19, #120]",
-        "str w14, [x19, #124]",
-        "str w14, [x19, #128]",
-        "str w14, [x19, #132]",
-        "str w14, [x19, #136]",
-        "str w14, [x19, #140]",
-        "str w14, [x19, #144]",
-        "str w14, [x19, #148]",
-        "str w14, [x19, #152]",
-        "str w14, [x19, #156]",
-        "str w14, [x19, #160]",
-        "str w14, [x19, #164]",
-        "str w14, [x19, #168]",
-        "str w14, [x19, #172]",
-        "str w14, [x19, #176]",
-        "str w14, [x19, #180]",
-        "str w14, [x19, #184]",
-        "str w14, [x19, #188]",
-        "movz x10, #0, lsl #0",
-        "cbz x24, 20f",
-        "22:",
-        "add x13, x22, x10",
-        "ldrb w9, [x13, #0]",
-        "eor x9, x9, x14",
-        "add x12, x19, x10",
-        "strb w9, [x12, #64]",
-        "add x10, x10, #1",
-        "sub x11, x24, x10",
-        "cbnz x11, 22b",
-        "b 21f",
-        "20:",
-        "21:",
-        "movz w15, #27242, lsl #0",
-        "movk w15, #27242, lsl #16",
-        "ldr w9, [x19, #64]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #64]",
-        "ldr w9, [x19, #68]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #68]",
-        "ldr w9, [x19, #72]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #72]",
-        "ldr w9, [x19, #76]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #76]",
-        "ldr w9, [x19, #80]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #80]",
-        "ldr w9, [x19, #84]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #84]",
-        "ldr w9, [x19, #88]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #88]",
-        "ldr w9, [x19, #92]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #92]",
-        "ldr w9, [x19, #96]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #96]",
-        "ldr w9, [x19, #100]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #100]",
-        "ldr w9, [x19, #104]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #104]",
-        "ldr w9, [x19, #108]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #108]",
-        "ldr w9, [x19, #112]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #112]",
-        "ldr w9, [x19, #116]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #116]",
-        "ldr w9, [x19, #120]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #120]",
-        "ldr w9, [x19, #124]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #124]",
-        "ldr w9, [x19, #128]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #128]",
-        "ldr w9, [x19, #132]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #132]",
-        "ldr w9, [x19, #136]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #136]",
-        "ldr w9, [x19, #140]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #140]",
-        "ldr w9, [x19, #144]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #144]",
-        "ldr w9, [x19, #148]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #148]",
-        "ldr w9, [x19, #152]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #152]",
-        "ldr w9, [x19, #156]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #156]",
-        "ldr w9, [x19, #160]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #160]",
-        "ldr w9, [x19, #164]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #164]",
-        "ldr w9, [x19, #168]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #168]",
-        "ldr w9, [x19, #172]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #172]",
-        "ldr w9, [x19, #176]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #176]",
-        "ldr w9, [x19, #180]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #180]",
-        "ldr w9, [x19, #184]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #184]",
-        "ldr w9, [x19, #188]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #188]",
-        "add x1, x19, #64",
-        "add x0, x19, #0",
-        "movz x2, #1, lsl #0",
-        "add x3, x20, #0",
-        "bl {vg_sha512_compress_sha3}",
-        "add x19, x21, #0",
-        "add x1, x21, #64",
-        "add x0, x19, #0",
-        "movz x2, #1, lsl #0",
-        "add x3, x20, #0",
-        "bl {vg_sha512_compress_sha3}",
-        "ldr x19, [x23, #688]",
-        "ldr x20, [x23, #696]",
-        "ldr x21, [x23, #704]",
-        "ldr x22, [x23, #712]",
-        "ldr x24, [x23, #720]",
-        "ldr x30, [x23, #728]",
-        "ldr x23, [x23, #736]",
-        "ret",
-        ".arch_extension nosha3",
-        ".p2align 6",
+        r".arch_extension sha3
+str x19, [x4, #688]
+str x20, [x4, #696]
+str x21, [x4, #704]
+str x22, [x4, #712]
+str x24, [x4, #720]
+str x30, [x4, #728]
+str x23, [x4, #736]
+add x19, x0, #0
+add x20, x4, #0
+add x21, x1, #0
+add x22, x2, #0
+add x23, x4, #0
+add x24, x3, #0
+add x0, x19, #0
+bl {vg_sha512_256_init}
+add x0, x21, #0
+bl {vg_sha512_256_init}
+movz w14, #13878, lsl #0
+movk w14, #13878, lsl #16
+str w14, [x19, #64]
+str w14, [x19, #68]
+str w14, [x19, #72]
+str w14, [x19, #76]
+str w14, [x19, #80]
+str w14, [x19, #84]
+str w14, [x19, #88]
+str w14, [x19, #92]
+str w14, [x19, #96]
+str w14, [x19, #100]
+str w14, [x19, #104]
+str w14, [x19, #108]
+str w14, [x19, #112]
+str w14, [x19, #116]
+str w14, [x19, #120]
+str w14, [x19, #124]
+str w14, [x19, #128]
+str w14, [x19, #132]
+str w14, [x19, #136]
+str w14, [x19, #140]
+str w14, [x19, #144]
+str w14, [x19, #148]
+str w14, [x19, #152]
+str w14, [x19, #156]
+str w14, [x19, #160]
+str w14, [x19, #164]
+str w14, [x19, #168]
+str w14, [x19, #172]
+str w14, [x19, #176]
+str w14, [x19, #180]
+str w14, [x19, #184]
+str w14, [x19, #188]
+movz x10, #0, lsl #0
+cbz x24, 20f
+22:
+add x13, x22, x10
+ldrb w9, [x13, #0]
+eor x9, x9, x14
+add x12, x19, x10
+strb w9, [x12, #64]
+add x10, x10, #1
+sub x11, x24, x10
+cbnz x11, 22b
+b 21f
+20:
+21:
+movz w15, #27242, lsl #0
+movk w15, #27242, lsl #16
+ldr w9, [x19, #64]
+eor x9, x9, x15
+str w9, [x21, #64]
+ldr w9, [x19, #68]
+eor x9, x9, x15
+str w9, [x21, #68]
+ldr w9, [x19, #72]
+eor x9, x9, x15
+str w9, [x21, #72]
+ldr w9, [x19, #76]
+eor x9, x9, x15
+str w9, [x21, #76]
+ldr w9, [x19, #80]
+eor x9, x9, x15
+str w9, [x21, #80]
+ldr w9, [x19, #84]
+eor x9, x9, x15
+str w9, [x21, #84]
+ldr w9, [x19, #88]
+eor x9, x9, x15
+str w9, [x21, #88]
+ldr w9, [x19, #92]
+eor x9, x9, x15
+str w9, [x21, #92]
+ldr w9, [x19, #96]
+eor x9, x9, x15
+str w9, [x21, #96]
+ldr w9, [x19, #100]
+eor x9, x9, x15
+str w9, [x21, #100]
+ldr w9, [x19, #104]
+eor x9, x9, x15
+str w9, [x21, #104]
+ldr w9, [x19, #108]
+eor x9, x9, x15
+str w9, [x21, #108]
+ldr w9, [x19, #112]
+eor x9, x9, x15
+str w9, [x21, #112]
+ldr w9, [x19, #116]
+eor x9, x9, x15
+str w9, [x21, #116]
+ldr w9, [x19, #120]
+eor x9, x9, x15
+str w9, [x21, #120]
+ldr w9, [x19, #124]
+eor x9, x9, x15
+str w9, [x21, #124]
+ldr w9, [x19, #128]
+eor x9, x9, x15
+str w9, [x21, #128]
+ldr w9, [x19, #132]
+eor x9, x9, x15
+str w9, [x21, #132]
+ldr w9, [x19, #136]
+eor x9, x9, x15
+str w9, [x21, #136]
+ldr w9, [x19, #140]
+eor x9, x9, x15
+str w9, [x21, #140]
+ldr w9, [x19, #144]
+eor x9, x9, x15
+str w9, [x21, #144]
+ldr w9, [x19, #148]
+eor x9, x9, x15
+str w9, [x21, #148]
+ldr w9, [x19, #152]
+eor x9, x9, x15
+str w9, [x21, #152]
+ldr w9, [x19, #156]
+eor x9, x9, x15
+str w9, [x21, #156]
+ldr w9, [x19, #160]
+eor x9, x9, x15
+str w9, [x21, #160]
+ldr w9, [x19, #164]
+eor x9, x9, x15
+str w9, [x21, #164]
+ldr w9, [x19, #168]
+eor x9, x9, x15
+str w9, [x21, #168]
+ldr w9, [x19, #172]
+eor x9, x9, x15
+str w9, [x21, #172]
+ldr w9, [x19, #176]
+eor x9, x9, x15
+str w9, [x21, #176]
+ldr w9, [x19, #180]
+eor x9, x9, x15
+str w9, [x21, #180]
+ldr w9, [x19, #184]
+eor x9, x9, x15
+str w9, [x21, #184]
+ldr w9, [x19, #188]
+eor x9, x9, x15
+str w9, [x21, #188]
+add x1, x19, #64
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress_sha3}
+add x19, x21, #0
+add x1, x21, #64
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress_sha3}
+ldr x19, [x23, #688]
+ldr x20, [x23, #696]
+ldr x21, [x23, #704]
+ldr x22, [x23, #712]
+ldr x24, [x23, #720]
+ldr x30, [x23, #728]
+ldr x23, [x23, #736]
+ret
+.arch_extension nosha3
+.p2align 6",
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
     )
@@ -1384,159 +2187,98 @@ pub(crate) const VG_HMAC_SHA512_256_FINALIZE_SCRATCH_SHA3_FEATURES: crate::cpu::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_256_finalize_scratch_sha3(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
-        ".arch_extension sha3",
-        "str x19, [x4, #688]",
-        "str x20, [x4, #696]",
-        "str x21, [x4, #704]",
-        "str x22, [x4, #712]",
-        "str x24, [x4, #720]",
-        "str x30, [x4, #728]",
-        "str x23, [x4, #736]",
-        "add x19, x0, #0",
-        "add x20, x1, #0",
-        "add x21, x3, #0",
-        "add x23, x4, #0",
-        "add x1, x2, #0",
-        "add x2, x23, #744",
-        "add x3, x23, #0",
-        "bl {vg_sha512_finalize_scratch_sha3}",
-        "ldr w9, [x20, #0]",
-        "str w9, [x19, #0]",
-        "ldr w9, [x20, #4]",
-        "str w9, [x19, #4]",
-        "ldr w9, [x20, #8]",
-        "str w9, [x19, #8]",
-        "ldr w9, [x20, #12]",
-        "str w9, [x19, #12]",
-        "ldr w9, [x20, #16]",
-        "str w9, [x19, #16]",
-        "ldr w9, [x20, #20]",
-        "str w9, [x19, #20]",
-        "ldr w9, [x20, #24]",
-        "str w9, [x19, #24]",
-        "ldr w9, [x20, #28]",
-        "str w9, [x19, #28]",
-        "ldr w9, [x20, #32]",
-        "str w9, [x19, #32]",
-        "ldr w9, [x20, #36]",
-        "str w9, [x19, #36]",
-        "ldr w9, [x20, #40]",
-        "str w9, [x19, #40]",
-        "ldr w9, [x20, #44]",
-        "str w9, [x19, #44]",
-        "ldr w9, [x20, #48]",
-        "str w9, [x19, #48]",
-        "ldr w9, [x20, #52]",
-        "str w9, [x19, #52]",
-        "ldr w9, [x20, #56]",
-        "str w9, [x19, #56]",
-        "ldr w9, [x20, #60]",
-        "str w9, [x19, #60]",
-        "ldr w9, [x23, #744]",
-        "str w9, [x19, #64]",
-        "ldr w9, [x23, #748]",
-        "str w9, [x19, #68]",
-        "ldr w9, [x23, #752]",
-        "str w9, [x19, #72]",
-        "ldr w9, [x23, #756]",
-        "str w9, [x19, #76]",
-        "ldr w9, [x23, #760]",
-        "str w9, [x19, #80]",
-        "ldr w9, [x23, #764]",
-        "str w9, [x19, #84]",
-        "ldr w9, [x23, #768]",
-        "str w9, [x19, #88]",
-        "ldr w9, [x23, #772]",
-        "str w9, [x19, #92]",
-        "add x24, x21, #0",
-        "add x21, x19, #64",
-        "add x20, x23, #0",
-        "movz x9, #128, lsl #0",
-        "str w9, [x21, #32]",
-        "movz x9, #0, lsl #0",
-        "str w9, [x21, #36]",
-        "str w9, [x21, #40]",
-        "str w9, [x21, #44]",
-        "str w9, [x21, #48]",
-        "str w9, [x21, #52]",
-        "str w9, [x21, #56]",
-        "str w9, [x21, #60]",
-        "str w9, [x21, #64]",
-        "str w9, [x21, #68]",
-        "str w9, [x21, #72]",
-        "str w9, [x21, #76]",
-        "str w9, [x21, #80]",
-        "str w9, [x21, #84]",
-        "str w9, [x21, #88]",
-        "str w9, [x21, #92]",
-        "str w9, [x21, #96]",
-        "str w9, [x21, #100]",
-        "str w9, [x21, #104]",
-        "str w9, [x21, #108]",
-        "movz x22, #160, lsl #0",
-        "lsr x9, x22, #61",
-        "rev x9, x9",
-        "str x9, [x19, #176]",
-        "add x9, x22, x22",
-        "add x9, x9, x9",
-        "add x9, x9, x9",
-        "rev x9, x9",
-        "str x9, [x19, #184]",
-        "add x1, x21, #0",
-        "add x0, x19, #0",
-        "movz x2, #1, lsl #0",
-        "add x3, x20, #0",
-        "bl {vg_sha512_compress_sha3}",
-        "ldr x9, [x19, #0]",
-        "rev x9, x9",
-        "str x9, [x21, #0]",
-        "ldr x9, [x19, #8]",
-        "rev x9, x9",
-        "str x9, [x21, #8]",
-        "ldr x9, [x19, #16]",
-        "rev x9, x9",
-        "str x9, [x21, #16]",
-        "ldr x9, [x19, #24]",
-        "rev x9, x9",
-        "str x9, [x21, #24]",
-        "ldr x9, [x19, #32]",
-        "rev x9, x9",
-        "str x9, [x21, #32]",
-        "ldr x9, [x19, #40]",
-        "rev x9, x9",
-        "str x9, [x21, #40]",
-        "ldr x9, [x19, #48]",
-        "rev x9, x9",
-        "str x9, [x21, #48]",
-        "ldr x9, [x19, #56]",
-        "rev x9, x9",
-        "str x9, [x21, #56]",
-        "ldr w9, [x21, #0]",
-        "str w9, [x24, #0]",
-        "ldr w9, [x21, #4]",
-        "str w9, [x24, #4]",
-        "ldr w9, [x21, #8]",
-        "str w9, [x24, #8]",
-        "ldr w9, [x21, #12]",
-        "str w9, [x24, #12]",
-        "ldr w9, [x21, #16]",
-        "str w9, [x24, #16]",
-        "ldr w9, [x21, #20]",
-        "str w9, [x24, #20]",
-        "ldr w9, [x21, #24]",
-        "str w9, [x24, #24]",
-        "ldr w9, [x21, #28]",
-        "str w9, [x24, #28]",
-        "ldr x19, [x23, #688]",
-        "ldr x20, [x23, #696]",
-        "ldr x21, [x23, #704]",
-        "ldr x22, [x23, #712]",
-        "ldr x24, [x23, #720]",
-        "ldr x30, [x23, #728]",
-        "ldr x23, [x23, #736]",
-        "ret",
-        ".arch_extension nosha3",
-        ".p2align 6",
+        r".arch_extension sha3
+str x19, [x4, #688]
+str x20, [x4, #696]
+str x21, [x4, #704]
+str x22, [x4, #712]
+str x24, [x4, #720]
+str x30, [x4, #728]
+str x23, [x4, #736]
+add x19, x0, #0
+add x20, x1, #0
+add x21, x3, #0
+add x23, x4, #0
+add x1, x2, #0
+add x2, x23, #744
+add x3, x23, #0
+bl {vg_sha512_finalize_scratch_sha3}
+ldp x9, x10, [x20, #0]
+stp x9, x10, [x19, #0]
+ldp x9, x10, [x20, #16]
+stp x9, x10, [x19, #16]
+ldp x9, x10, [x20, #32]
+stp x9, x10, [x19, #32]
+ldp x9, x10, [x20, #48]
+stp x9, x10, [x19, #48]
+ldr x9, [x23, #744]
+ldr x10, [x23, #752]
+stp x9, x10, [x19, #64]
+ldr x9, [x23, #760]
+ldr x10, [x23, #768]
+stp x9, x10, [x19, #80]
+add x24, x21, #0
+add x21, x19, #64
+add x20, x23, #0
+movz x9, #128, lsl #0
+movz x10, #0, lsl #0
+stp x9, x10, [x21, #32]
+stp x10, x10, [x21, #48]
+stp x10, x10, [x21, #64]
+stp x10, x10, [x21, #80]
+stp x10, x10, [x21, #96]
+movz x22, #160, lsl #0
+lsr x9, x22, #61
+rev x9, x9
+str x9, [x19, #176]
+add x9, x22, x22
+add x9, x9, x9
+add x9, x9, x9
+rev x9, x9
+str x9, [x19, #184]
+add x1, x21, #0
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress_sha3}
+ldr x9, [x19, #0]
+rev x9, x9
+str x9, [x21, #0]
+ldr x9, [x19, #8]
+rev x9, x9
+str x9, [x21, #8]
+ldr x9, [x19, #16]
+rev x9, x9
+str x9, [x21, #16]
+ldr x9, [x19, #24]
+rev x9, x9
+str x9, [x21, #24]
+ldr x9, [x19, #32]
+rev x9, x9
+str x9, [x21, #32]
+ldr x9, [x19, #40]
+rev x9, x9
+str x9, [x21, #40]
+ldr x9, [x19, #48]
+rev x9, x9
+str x9, [x21, #48]
+ldr x9, [x19, #56]
+rev x9, x9
+str x9, [x21, #56]
+ldp x9, x10, [x21, #0]
+stp x9, x10, [x24, #0]
+ldp x9, x10, [x21, #16]
+stp x9, x10, [x24, #16]
+ldr x19, [x23, #688]
+ldr x20, [x23, #696]
+ldr x21, [x23, #704]
+ldr x22, [x23, #712]
+ldr x24, [x23, #720]
+ldr x30, [x23, #728]
+ldr x23, [x23, #736]
+ret
+.arch_extension nosha3
+.p2align 6",
         vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
     )

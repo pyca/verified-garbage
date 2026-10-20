@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Teardown
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Stack
+public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # All six saved registers and the stack pointer return to their caller -/
 

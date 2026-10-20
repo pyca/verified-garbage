@@ -1,19 +1,11 @@
 module
 
-public import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64
-public import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
-public import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
+import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
+import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
-public import VerifiedGarbage.Proof.Hmac.Generic.Common
-public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Hmac.Generic.Common
 public import VerifiedGarbage.Proof.Pbkdf2.X86_64.Iterate
 public import VerifiedGarbage.Spec.Mgf1
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on x86-64: the hash function
@@ -72,6 +64,9 @@ structure HashOK (H : Hash) where
   hDL : H.D + H.P.L + 4 ≤ H.P.B
   hL4 : H.P.L % 4 = 0
   hNL : H.P.N + H.P.L ≤ H.P.B
+  /-- The outer block's padding has room for its 16-byte words after `0x80`
+  (`Hash.padA`, `Hash.padW`). -/
+  hPad : 16 * (H.D / 16 + 1) + 16 ≤ H.P.B
   hso : H.P.so % 8 = 0 ∧ H.P.so + 48 ≤ 8 * 256
   /-- The working space our functions get holds `iterate`'s. -/
   fits : H.P.so + 48 + H.P.N + H.P.B ≤ 8 * H.W

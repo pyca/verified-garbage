@@ -1,16 +1,12 @@
 module
 
-public import VerifiedGarbage.Impl.Modes.X86_64.Ctr
 import VerifiedGarbage.Proof.Modes.Addr
-import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.X86_64.Straight
-import VerifiedGarbage.Spec.Aes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Aes.X86_64.Sbox
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Steps of the modes on x86-64

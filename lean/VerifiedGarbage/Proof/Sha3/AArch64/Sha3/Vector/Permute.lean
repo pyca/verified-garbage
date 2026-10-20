@@ -1,27 +1,35 @@
 module
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Boundary
+public import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 
-public import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Save
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Save
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Load
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Load
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Load
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Store
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Store
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Restore
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Restore
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Rounds
+import VerifiedGarbage.Proof.Framework.Block
+import Std.Tactic.BVDecide.Normalize.Prop
+import Std.Tactic.BVDecide.Normalize.Bool
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Boundary
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Permute
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Save
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Load
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Store
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Restore
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
-meta import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Rounds
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import Std.Tactic.BVDecide.Normalize.Prop
+meta import Std.Tactic.BVDecide.Normalize.Bool
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.TCB.Axioms
 
 @[expose] public section
 
@@ -78,8 +86,8 @@ theorem correct (s₀ : VG.AArch64.State) (hp : Pre s₀) :
         rw [h₅.1.mem]
         simpa only [p₃.x0] using h₄.2.2
 
-theorem permute_preserved : ∀ r ∈ preserved, ∀ i ∈ instrs permute, dstOf i ≠ some r := by
-  have h : ((instrs permute).all fun i => preserved.all fun r => dstOf i != some r) = true := by
+theorem permute_preserved : ∀ r ∈ preserved, ∀ i ∈ instrs permute, clobbers i r = false := by
+  have h : ((instrs permute).all fun i => preserved.all fun r => !clobbers i r) = true := by
     rw [← Code.allInstrs_eq]
     lit_decide
   intro r hr i hi

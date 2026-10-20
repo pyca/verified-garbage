@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
+import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
 public import VerifiedGarbage.Proof.MlDsa.Sample.RejBounded
 public import VerifiedGarbage.Impl.MlDsa.Arm.Sample.RejBounded
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Sponge
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA on 32-bit ARM: the loop of `vg_mldsa_rej_bounded_poly`

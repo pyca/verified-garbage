@@ -1,12 +1,13 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.X86.Body
+public import VerifiedGarbage.Proof.AesOcb.X86.Entry
 
-public import VerifiedGarbage.Proof.AesOcb.X86.TagIO
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ocb.Bytes
 import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesOcb.X86.Hash
+import VerifiedGarbage.Proof.AesOcb.X86.Setup
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-OCB on x86: up to the tag (`front`)

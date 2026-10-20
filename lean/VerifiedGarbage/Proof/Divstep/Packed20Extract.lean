@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 public import Mathlib.Data.Int.Basic
 public import Mathlib.Tactic.Linarith
 public import Mathlib.Tactic.NormNum
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Signed coefficient extraction for the 20/19-step packed divstep rows. -/
 

@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.AArch64.SignChecks
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignFrame
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RSASSA-PSS signing on AArch64: the call of `vg_rsa_private_checked`

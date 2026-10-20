@@ -1,20 +1,19 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.ScalarBase
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseAdx
-import Mathlib.Data.BitVec
-import VerifiedGarbage.Proof.Divstep.Bound
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
-import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Proof.Ed25519.Recode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
-import VerifiedGarbage.Spec.EcKey.Generic
-import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! Complete unsigned scalar multiplication by the Ed25519 base point. -/
 
@@ -23,9 +22,8 @@ import VerifiedGarbage.Spec.Ecdsa.Generic
 namespace VG.Artifacts.Ed25519ScalarBase.X86_64
 
 def artifacts : List Artifact := [
-  { Spec.Ed25519.scalarBaseApi with
-    target := X86_64.target
-    doc := Spec.Ed25519.scalarBaseApi.doc (notes := ["Uses baseline integer instructions and \
+  Spec.Ed25519.scalarBaseApi.artifact X86_64.target {
+    notes := ["Uses baseline integer instructions and \
       a comb: 26 tables of the multiples [k 1024^j]B (1 ≤ k ≤ 16) of the base point, affine, \
       precomputed as [Y - X, Y + X, 2dT] and checked against the specification in Lean, in the \
       static `VG_ED25519_COMB`. Each of the scalar's 52 chunks n of five bits (the last is bit \
@@ -38,36 +36,30 @@ def artifacts : List Artifact := [
       the offset of the digits, 33 G (G = 16 Σ 1024^j; G' = 33 G / 32 modulo the group's \
       order): 51 additions, calls of `vg_ed25519_r64_add_affine_ext`, and five doublings, calls \
       of `vg_ed25519_r64_double_ext`. The working values, masks and saved registers reside in \
-      `scratch`. The point's encoding inverts Z with a call of `vg_gf25519_r64_invert`."])
+      `scratch`. The point's encoding inverts Z with a call of `vg_gf25519_r64_invert`."]
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.Ed25519.X86_64.scalarBase_precomputed Impl.X25519.X86_64.baseline
-    contract := Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 8
     verified := Proof.Ed25519.X86_64.scalarBase_precomputed_verified
       (fld := Impl.X25519.X86_64.baseline)
-    stack := 8
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Ed25519.scalarBaseApi with
-    target := X86_64.target
-    name := "vg_ed25519_scalar_base_adx"
-    doc := Spec.Ed25519.scalarBaseApi.doc (notes := ["The code of \
+    stack := 8 },
+  Spec.Ed25519.scalarBaseApi.artifact X86_64.target {
+    suffix := "_adx"
+    notes := ["The code of \
       `vg_ed25519_scalar_base` but for the field multiplications and squarings, \
       which use BMI2's `mulx` and ADX's `adcx` and `adox` (two carry chains at once), as \
       `vg_x25519_adx` does, and so its doublings and additions call \
       `vg_ed25519_r64_double_ext_adx` and `vg_ed25519_r64_add_affine_ext_adx`. Its comb selects each of the scalar's 52 signed digits' table entry \
       in constant time from the static `VG_ED25519_COMB`, 32 bytes at a time with AVX2 (as \
       `vg_ed25519_scalar_base_ifma`'s did); the working values, masks and saved registers \
-      reside in `scratch`."])
+      reside in `scratch`."]
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.Ed25519.X86_64.scalarBase_adx
-    contract := Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 8
     verified := Proof.Ed25519.X86_64.scalarBase_adx_verified
     features := ["avx", "avx2", "bmi2", "adx"]
-    stack := 8
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Ed25519.scalarBaseApi with
-    target := X86_64.target
-    name := "vg_ed25519_scalar_base_ifma"
-    doc := Spec.Ed25519.scalarBaseApi.doc (notes := ["The comb of `vg_ed25519_scalar_base_adx` \
+    stack := 8 },
+  Spec.Ed25519.scalarBaseApi.artifact X86_64.target {
+    suffix := "_ifma"
+    notes := ["The comb of `vg_ed25519_scalar_base_adx` \
       with two accumulated points, one in each half of `zmm` registers, (X, Y, Z, T) in the four \
       quadwords of the half as five limbs of 51 bits: one sums the entries of the odd digits, \
       the other those of the even digits, so each of the 26 steps adds two tables' entries at \
@@ -78,13 +70,11 @@ def artifacts : List Artifact := [
       times as `vg_ed25519_verify_ifma`'s doublings (on `ymm` registers, with AVX512VL) and the \
       even digits' added. The comb runs with MXCSR `0x1FBF` (Intel's MCDT prologue and \
       epilogue), saved in `scratch` and restored; the rest uses BMI2's and ADX's field \
-      multiplications."])
+      multiplications."]
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.Ed25519.X86_64.scalarBase_ifma
-    contract := Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 8
     verified := Proof.Ed25519.X86_64.Ifma.scalarBase_ifma_verified
     features := ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]
-    stack := 8
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    stack := 8 }]
 
 end VG.Artifacts.Ed25519ScalarBase.X86_64

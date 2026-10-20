@@ -1,12 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Shape
-public import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.X86_64.Words
 
 /-! # FFDH parameter candidates on x86-64: public bit-mask selection -/
 
@@ -18,7 +15,7 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Impl.Ffdh.X86_64.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 
-private theorem cmov_reg (s : State) (cc : Cond) (d r : Reg) :
+theorem cmov_reg_value (s : State) (cc : Cond) (d r : Reg) :
     execCmov cc d (.reg r) s = (eval cc s).map
       (fun c => s.setReg d (if c then s.gpr r else s.gpr d)) := by
   simp only [execCmov, readSrc, Option.bind_some]
@@ -46,7 +43,7 @@ theorem masks_ok {s : State} {j : Nat} (hj : j < 8) (hd : s.gpr .rdx = BitVec.of
   simp only [maskCase, List.cons_append, List.nil_append]
   have he : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 := by omega
   rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    xrun [hd, cmov_reg, eval]
+    xrun [hd, cmov_reg_value, eval]
 
 /-- Select the two masks for the actual requested bit width. -/
 theorem shapeMasks_ok {s : State} {bits : Nat} (hb : 1 ≤ bits) (hk : bits < 2 ^ 31)

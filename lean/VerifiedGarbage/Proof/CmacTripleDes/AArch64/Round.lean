@@ -3,13 +3,11 @@ module
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Layout
 public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 public import VerifiedGarbage.Proof.Framework.AArch64.Linear
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # A DES round on AArch64
@@ -238,20 +236,20 @@ theorem pOut12_check :
   lit_decide
 
 theorem pOut11_masks :
-    maskConsts.all (fun p => (pOut .x11).all fun i => dstOf i != some p.1) = true := by
+    maskConsts.all (fun p => (pOut .x11).all fun i => !clobbers i p.1) = true := by
   lit_decide
 
 theorem pOut12_masks :
-    maskConsts.all (fun p => (pOut .x12).all fun i => dstOf i != some p.1) = true := by
+    maskConsts.all (fun p => (pOut .x12).all fun i => !clobbers i p.1) = true := by
   lit_decide
 
 /-- The registers `pOut` keeps. -/
 def pKept : List Reg := [.x1, .x2, .x3, .x4, .x5, .x10, .x14, .x15, .x16]
 
-theorem pOut11_kept : (.x12 :: pKept).all (fun r => (pOut .x11).all fun i => dstOf i != some r) = true := by
+theorem pOut11_kept : (.x12 :: pKept).all (fun r => (pOut .x11).all fun i => !clobbers i r) = true := by
   lit_decide
 
-theorem pOut12_kept : (.x11 :: pKept).all (fun r => (pOut .x12).all fun i => dstOf i != some r) = true := by
+theorem pOut12_kept : (.x11 :: pKept).all (fun r => (pOut .x12).all fun i => !clobbers i r) = true := by
   lit_decide
 
 theorem pOut11_v : (pOut .x11).all (fun i => vdstOf i == none) = true := by lit_decide
@@ -267,8 +265,8 @@ theorem pOut_ok (s : State) {a b : Reg} (hab : (a = .x11 ∧ b = .x12) ∨ (a = 
   let W (i : Nat) : BitVec 64 := if i = 0 then s.gpr .x5 else s.gpr a
   have go : ∀ (hchk : check (lanes 64 7) oCfg (linExt 2) (pOut a) (linEnvC (pIns a) maskConsts)
         (linPost 7 [(a, pG)]) = true)
-      (hkept : (b :: pKept).all (fun r => (pOut a).all fun i => dstOf i != some r) = true)
-      (hmk : maskConsts.all (fun p => (pOut a).all fun i => dstOf i != some p.1) = true)
+      (hkept : (b :: pKept).all (fun r => (pOut a).all fun i => !clobbers i r) = true)
+      (hmk : maskConsts.all (fun p => (pOut a).all fun i => !clobbers i p.1) = true)
       (hv : (pOut a).all (fun i => vdstOf i == none) = true),
       ∃ s', runBlock isa (pOut a) s = some s' ∧
       (∀ p < 64, (s'.gpr a).getLsbD p =

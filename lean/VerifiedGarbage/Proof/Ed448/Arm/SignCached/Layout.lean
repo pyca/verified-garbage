@@ -1,12 +1,9 @@
 module
 
-public import VerifiedGarbage.Impl.Ed448.Arm.SignCached
 public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Sponge
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 signing with a cached public key on ARMv7: the layout

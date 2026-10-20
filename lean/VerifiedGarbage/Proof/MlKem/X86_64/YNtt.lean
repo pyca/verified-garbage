@@ -1,13 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 public import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
@@ -30,11 +24,12 @@ open VG.Spec.MlKem
 /-! ## A layer, coefficient by coefficient -/
 
 section
-variable {op : Zq → Zq → Zq → Zq × Zq} {blk : Poly → Nat → Nat → Nat → Nat → Poly} (hblk : BlkOk blk op)
+variable {α : Type} [Inhabited α] {op : α → α → Zq → α × α} {blk : Vector α n → Nat → Nat → Nat → Nat → Vector α n}
+  (hblk : BlkOk blk op)
 include hblk
 
 /-- Each coefficient after the first `b` blocks of the layer with `len`. -/
-theorem layF_get (F : Poly) {len : Nat} (hl : 0 < len) (zi : Nat → Nat) {b : Nat} (hb : 2 * len * b ≤ 256)
+theorem layF_get (F : Vector α n) {len : Nat} (hl : 0 < len) (zi : Nat → Nat) {b : Nat} (hb : 2 * len * b ≤ 256)
     {j : Nat} (hj : j < 256) :
     (layF blk F len zi b)[j]! = if j < 2 * len * b then
       (if j % (2 * len) < len then (op F[j]! F[j + len]! (zeta (zi (j / (2 * len))))).1
@@ -108,10 +103,15 @@ theorem zeta_lanesZ (o : BitVec 8) {zP : Addr} {k : Nat} {z : Nat → Zq} (hk : 
 /-! ## Words in both lanes -/
 
 /-- Lane `l` of a 256-bit load of the words of a polynomial. -/
-theorem lanes_loadY {m : Mem} {p : Addr} {F : Poly} (h : S16 m p F) {j : Nat} (hj : j + 16 ≤ 256) {l : Nat}
-    (hl : l < 2) : Lanes (m.readW (wAddr p j + BitVec.ofNat 64 (16 * l)) 128) (fun e => F[j + 8 * l + e]!) := by
+theorem lanes_loadYR {α : Type} [Inhabited α] {R : BitVec 16 → α → Prop} {m : Mem} {p : Addr} {F : Vector α n}
+    (h : S16R R m p F) {j : Nat} (hj : j + 16 ≤ 256) {l : Nat} (hl : l < 2) :
+    LanesR R (m.readW (wAddr p j + BitVec.ofNat 64 (16 * l)) 128) (fun e => F[j + 8 * l + e]!) := by
   rw [show 16 * l = 2 * (8 * l) by bdd_omega, wAddr_add]
-  exact lanes_load h (by bdd_omega)
+  exact lanes_loadR h (by bdd_omega)
+
+theorem lanes_loadY {m : Mem} {p : Addr} {F : Poly} (h : S16 m p F) {j : Nat} (hj : j + 16 ≤ 256) {l : Nat}
+    (hl : l < 2) : Lanes (m.readW (wAddr p j + BitVec.ofNat 64 (16 * l)) 128) (fun e => F[j + 8 * l + e]!) :=
+  lanes_loadYR (R := canW) h hj hl
 
 /-- Word `e` of a 256-bit register, as stored. -/
 theorem word_ymm (s : State) (r : XReg) {e : Nat} (he : e < 16) :
@@ -138,27 +138,38 @@ theorem wordAt_write256 (m : Mem) (p : Addr) {j : Nat} (hj : j + 16 ≤ 256) (x 
   · exact Mem.readW_writeW_sep (Offset.sep p (by bdd_omega) (by bdd_omega) (by bdd_omega)) (by decide)
 
 /-- Two registers stored into the words of a polynomial, with the lanes `a` and `b`. -/
+theorem s16_write2YR {α : Type} [Inhabited α] {R : BitVec 16 → α → Prop} {m : Mem} {p : Addr} {P Q : Vector α n}
+    (hP : S16R R m p P) {j j' : Nat}
+    (hj : j + 16 ≤ 256) (hj' : j' + 16 ≤ 256) (hsep : j + 16 ≤ j' ∨ j' + 16 ≤ j) {s : State} {x y : XReg}
+    {a b : Nat → α} (hx : ∀ l < 2, LanesR R (s.lane x l) (fun e => a (8 * l + e)))
+    (hy : ∀ l < 2, LanesR R (s.lane y l) (fun e => b (8 * l + e)))
+    (hR : ∀ i < 256, Q[i]! = if j ≤ i ∧ i < j + 16 then a (i - j)
+      else if j' ≤ i ∧ i < j' + 16 then b (i - j') else P[i]!) :
+    S16R R ((m.writeW (wAddr p j) (s.ymm x)).writeW (wAddr p j') (s.ymm y)) p Q := fun i hi => by
+  rw [wordAt_write256 _ _ hj' _ hi, wordAt_write256 _ _ hj _ hi, hR i hi]
+  by_cases h1 : j' ≤ i ∧ i < j' + 16
+  · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ite_eq_right_of_eq_false _ _ (eq_false (by bdd_omega)),
+      ite_eq_left_of_eq_true _ _ (eq_true h1), word_ymm _ _ (by bdd_omega)]
+    have := hy ((i - j') / 8) (by bdd_omega) ((i - j') % 8) (Nat.mod_lt _ (by bdd_omega))
+    dsimp only at this; rwa [show 8 * ((i - j') / 8) + (i - j') % 8 = i - j' by bdd_omega] at this
+  · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
+    by_cases h2 : j ≤ i ∧ i < j + 16
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h2), ite_eq_left_of_eq_true _ _ (eq_true h2), word_ymm _ _ (by bdd_omega)]
+      have := hx ((i - j) / 8) (by bdd_omega) ((i - j) % 8) (Nat.mod_lt _ (by bdd_omega))
+      dsimp only at this; rwa [show 8 * ((i - j) / 8) + (i - j) % 8 = i - j by bdd_omega] at this
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), ite_eq_right_of_eq_false _ _ (eq_false h2),
+        ite_eq_right_of_eq_false _ _ (eq_false h1)]
+      exact hP i hi
+
+/-- Two registers stored into the words of a polynomial, with the lanes `a` and `b`. -/
 theorem s16_write2Y {m : Mem} {p : Addr} {P R : Poly} (hP : S16 m p P) {j j' : Nat}
     (hj : j + 16 ≤ 256) (hj' : j' + 16 ≤ 256) (hsep : j + 16 ≤ j' ∨ j' + 16 ≤ j) {s : State} {x y : XReg}
     {a b : Nat → Zq} (hx : ∀ l < 2, Lanes (s.lane x l) (fun e => a (8 * l + e)))
     (hy : ∀ l < 2, Lanes (s.lane y l) (fun e => b (8 * l + e)))
     (hR : ∀ i < 256, R[i]! = if j ≤ i ∧ i < j + 16 then a (i - j)
       else if j' ≤ i ∧ i < j' + 16 then b (i - j') else P[i]!) :
-    S16 ((m.writeW (wAddr p j) (s.ymm x)).writeW (wAddr p j') (s.ymm y)) p R := fun i hi => by
-  rw [wordAt_write256 _ _ hj' _ hi, wordAt_write256 _ _ hj _ hi, hR i hi]
-  by_cases h1 : j' ≤ i ∧ i < j' + 16
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ite_eq_right_of_eq_false _ _ (eq_false (by bdd_omega)),
-      ite_eq_left_of_eq_true _ _ (eq_true h1), word_ymm _ _ (by bdd_omega)]
-    have := hy ((i - j') / 8) (by bdd_omega) ((i - j') % 8) (Nat.mod_lt _ (by bdd_omega))
-    rw [this]; exact congrArg _ (congrArg _ (by bdd_omega))
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
-    by_cases h2 : j ≤ i ∧ i < j + 16
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true h2), ite_eq_left_of_eq_true _ _ (eq_true h2), word_ymm _ _ (by bdd_omega)]
-      have := hx ((i - j) / 8) (by bdd_omega) ((i - j) % 8) (Nat.mod_lt _ (by bdd_omega))
-      rw [this]; exact congrArg _ (congrArg _ (by bdd_omega))
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), ite_eq_right_of_eq_false _ _ (eq_false h2),
-        ite_eq_right_of_eq_false _ _ (eq_false h1)]
-      exact hP i hi
+    S16 ((m.writeW (wAddr p j) (s.ymm x)).writeW (wAddr p j') (s.ymm y)) p R :=
+  s16_write2YR (R := canW) hP hj hj' hsep hx hy hR
 
 theorem sR_containsY (p : Addr) {j : Nat} (hj : j + 16 ≤ 256) : (sR p).Contains (wAddr p j) 32 :=
   Offset.contains_base p (by bdd_omega) (by bdd_omega)

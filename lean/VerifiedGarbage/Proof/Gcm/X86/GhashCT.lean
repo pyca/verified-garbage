@@ -1,17 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Gcm.X86
-meta import VerifiedGarbage.Impl.Gcm.X86
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Aes.X86.Common
-meta import VerifiedGarbage.Proof.Aes.X86.Common
 public import VerifiedGarbage.Spec.Gcm
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Gcm.X86
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Aes.X86.Common
 meta import VerifiedGarbage.Spec.Gcm
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # GHASH on x86 (32-bit): the contract, and constant time

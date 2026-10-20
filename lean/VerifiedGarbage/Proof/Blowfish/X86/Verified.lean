@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.X86.KeyMain
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Blowfish.X86.KeyMain
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Blowfish.X86.KeyMain
 public import VerifiedGarbage.Proof.Blowfish.X86.Contract
@@ -9,15 +8,34 @@ meta import VerifiedGarbage.Proof.Blowfish.X86.Contract
 public import VerifiedGarbage.Proof.Blowfish.X86.Lit
 meta import VerifiedGarbage.Proof.Blowfish.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Blowfish.X86.Ecb
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Rc4.Scan32
+import VerifiedGarbage.Proof.Blowfish.Blocks
+import VerifiedGarbage.Proof.Blowfish.Table
+import VerifiedGarbage.Proof.Blowfish.X86.KeyEnc
+import VerifiedGarbage.Proof.Blowfish.X86.KeyP
+import VerifiedGarbage.Proof.Blowfish.X86.Run
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Rc4.Scan32
+import VerifiedGarbage.Proof.Rc4.Table
+meta import VerifiedGarbage.Proof.Blowfish.Blocks
+meta import VerifiedGarbage.Proof.Blowfish.Table
+meta import VerifiedGarbage.Proof.Blowfish.X86.KeyEnc
+meta import VerifiedGarbage.Proof.Blowfish.X86.KeyP
+meta import VerifiedGarbage.Proof.Blowfish.X86.Run
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.MlKem.X86.Leaf
 meta import VerifiedGarbage.Proof.Rc4.Scan32
+meta import VerifiedGarbage.Proof.Rc4.Table
 
 /-!
 # Blowfish on x86 (32-bit): the functions meet their contracts, with the working space as an argument

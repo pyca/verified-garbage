@@ -1,12 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixCall
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullPrefix
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.BeginTiming
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrix
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! # Public-seed timing of the optimized encryption matrix -/
 @[expose] public section
@@ -38,17 +38,17 @@ theorem last_input {s₀ s : State} (hp : Pre P L s₀) {e : Nat} (he : e<P.k*P.
   rw [ptr_add]
   exact in_R (cov_sr hp h (o:=SB) (l:=32) (by lom)) (k:=8*j) (by omega) (by omega)
 
-def MatrixRel (P : KemLay) (L : Layout) (σ τ : State) (m n : Mem) (ρ : List Byte) (e : Nat)
+def MatrixRel (w16 : Bool) (P : KemLay) (L : Layout) (σ τ : State) (m n : Mem) (ρ : List Byte) (e : Nat)
     (s u : State) : Prop :=
-  BInv P L σ m ρ e s ∧ BInv P L τ n ρ e u ∧
+  BInvW w16 P L σ m ρ e s ∧ BInvW w16 P L τ n ρ e u ∧
   MatrixTable P L σ s ∧ MatrixTable P L τ u ∧
   s.syms "VG_MLKEM_REJ_SHUFFLE"=u.syms "VG_MLKEM_REJ_SHUFFLE"
 
-theorem pair_matrix_relCT {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
+theorem pair_matrix_relCT {w16 : Bool} {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
     (base : kA σ L.sc=kA τ L.sc) (sp : σ.sp=τ.sp) {m n : Mem} {ρ : List Byte} {e : Nat}
     (he : e+1<P.k*P.k) :
-    RelCT isa (MatrixRel P L σ τ m n ρ e) (Impl.MlKem.AArch64.Paired.pair P false e)
-      (MatrixRel P L σ τ m n ρ (e+2)) := by
+    RelCT isa (MatrixRel w16 P L σ τ m n ρ e) (Impl.MlKem.AArch64.Paired.pair P false e w16)
+      (MatrixRel w16 P L σ τ m n ρ (e+2)) := by
   intro s u tr ur t v h et eu
   have hw := hp.wf
   have ps := pair_input hp he h.1.kb h.2.2.1
@@ -61,7 +61,7 @@ theorem pair_matrix_relCT {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
     rw [Paired.seedState_eq _ _ (by lom) (by lom),Paired.seedState_eq _ _ (by lom) (by lom)]
     unfold Paired.seedBytes
     rw [h.1.rho,ba SB,h.2.1.rho]
-  have ct := Paired.pair_relCT (L:=P) (kg:=false) (a:=e) (by decide) (by decide) (by decide)
+  have ct := Paired.pair_relCT (w16:=w16) (L:=P) (kg:=false) (a:=e) (by decide) (by decide) (by decide)
     (by change AH+1024*e<65536; lom) (by change AH+1024*(e+1)<65536; lom) ps pu
     (by rw [h.1.kb.sp,h.2.1.kb.sp,sp]) (by rw [h.1.kb.x28,h.2.1.kb.x28,base]) (seeds e) (seeds (e+1))
   have ht := Paired.exec_post (paired_step hp he h.1 h.2.2.1) et
@@ -70,11 +70,11 @@ theorem pair_matrix_relCT {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
     by rw [Exec.syms et,Exec.syms eu]; exact h.2.2.2.2⟩
 
 
-theorem last_matrix_relCT {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
+theorem last_matrix_relCT {w16 : Bool} {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
     (base : kA σ L.sc=kA τ L.sc) (sp : σ.sp=τ.sp) {m n : Mem} {ρ : List Byte} {e : Nat}
     (he : e<P.k*P.k) :
-    RelCT isa (MatrixRel P L σ τ m n ρ e) (Paired.lastCode SB SS e P.k (AH+1024*e))
-      (MatrixRel P L σ τ m n ρ (e+1)) := by
+    RelCT isa (MatrixRel w16 P L σ τ m n ρ e) (Paired.lastCode SB SS e P.k (AH+1024*e) w16)
+      (MatrixRel w16 P L σ τ m n ρ (e+1)) := by
   intro s u tr ur t v h et eu
   have hw := hp.wf
   have ps := last_input hp he h.1.kb h.2.2.1
@@ -85,7 +85,7 @@ theorem last_matrix_relCT {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
   have seed : Paired.seedBytes s.mem (sA L σ SB) e P.k=Paired.seedBytes u.mem (sA L σ SB) e P.k := by
     unfold Paired.seedBytes
     rw [h.1.rho,ba SB,h.2.1.rho]
-  have ct := Paired.lastCode_relCT (by decide) (by decide) (by decide) (by lom) (by lom) (by lom)
+  have ct := Paired.lastCode_relCT (w16 := w16) (by decide) (by decide) (by decide) (by lom) (by lom) (by lom)
     ps pu (sdisj hp (by lom) (by lom) (by lom))
     (by rw [h.1.kb.sp,h.2.1.kb.sp,sp]) (by rw [h.1.kb.x28,h.2.1.kb.x28,base]) seed
   have ht := Paired.exec_post (singleton_step hp he h.1 h.2.2.1) et
@@ -94,10 +94,10 @@ theorem last_matrix_relCT {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
     by rw [Exec.syms et,Exec.syms eu]; exact h.2.2.2.2⟩
 
 
-theorem paired_matrix_relCT {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
+theorem paired_matrix_relCT {w16 : Bool} {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
     (base : kA σ L.sc=kA τ L.sc) (sp : σ.sp=τ.sp) {m n : Mem} {ρ : List Byte} :
-    RelCT isa (MatrixRel P L σ τ m n ρ 0) (Impl.MlKem.AArch64.Paired.matrix P false)
-      (MatrixRel P L σ τ m n ρ (P.k*P.k)) := by
+    RelCT isa (MatrixRel w16 P L σ τ m n ρ 0) (Impl.MlKem.AArch64.Paired.matrix P false w16)
+      (MatrixRel w16 P L σ τ m n ρ (P.k*P.k)) := by
   have hk : 0<P.k := hp.wf.facts.1
   have hn : 0<P.k*P.k := Nat.mul_pos hk hk
   apply RelCTs.seqs
@@ -107,7 +107,7 @@ theorem paired_matrix_relCT {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
     · simpa only [ite_eq_left ho,List.cons_ne_nil] using parts.2
     · have np : 0<P.k*P.k/2 := by omega
       exact map_range_ne_nil np _ parts.1
-  · refine RelCTs.append (RelCTs.range (I:=fun i=>MatrixRel P L σ τ m n ρ (2*i))
+  · refine RelCTs.append (RelCTs.range (I:=fun i=>MatrixRel w16 P L σ τ m n ρ (2*i))
       (fun i hi=>?_)) ?_
     · simpa only [Nat.mul_add,Nat.mul_one] using
         pair_matrix_relCT hp hq base sp (m:=m) (n:=n) (ρ:=ρ) (by omega : 2*i+1<P.k*P.k)
@@ -115,7 +115,7 @@ theorem paired_matrix_relCT {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
       · rw [ite_eq_left ho]
         have idx : 2*(P.k*P.k/2)=P.k*P.k-1 := by omega
         rw [idx]
-        refine ⟨MatrixRel P L σ τ m n ρ (P.k*P.k-1+1),?_,?_⟩
+        refine ⟨MatrixRel w16 P L σ τ m n ρ (P.k*P.k-1+1),?_,?_⟩
         · rw [Paired.lastSample_eq]
           exact last_matrix_relCT hp hq base sp (by omega : P.k*P.k-1<P.k*P.k)
         · intro s u h

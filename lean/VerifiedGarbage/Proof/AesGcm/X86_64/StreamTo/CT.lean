@@ -1,19 +1,35 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Fn
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Fn
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Blocks
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Blocks
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Head
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Copy
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Rest
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Blocks
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Head
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Copy
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Rest
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Aes.KeyExp
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: constant time

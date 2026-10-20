@@ -1,14 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafPrep
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! Recoding branches depend only on the public scalar, never on stale scratch. -/
 

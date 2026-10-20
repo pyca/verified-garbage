@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.Arm.Bits
+import VerifiedGarbage.Proof.X25519.Arm.Bits
 public import VerifiedGarbage.TCB.Arm.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.X25519.Arm.Setup
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.X25519.Arm.Mul
+import VerifiedGarbage.Proof.X25519.Arm.Freeze
+import VerifiedGarbage.Proof.X25519.Arm.Invert
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # X25519 on 32-bit ARM: the whole function

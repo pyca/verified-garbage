@@ -1,14 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.Words
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.X86.Wp
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Montgomery arithmetic on x86 (32-bit): instruction rules

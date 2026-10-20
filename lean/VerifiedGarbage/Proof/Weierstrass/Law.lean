@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Rcb
 public import VerifiedGarbage.Spec.Weierstrass
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The group law, as the proofs of the code use it

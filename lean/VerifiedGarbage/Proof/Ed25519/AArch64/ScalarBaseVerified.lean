@@ -1,24 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
-import VerifiedGarbage.Proof.Framework.ConstMem
-meta import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Impl.Mont.Mod
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.X25519.AArch64.Ladder
 
 /-! Merged from `Proof.Ed25519.AArch64.ScalarBaseCT`. -/
 
@@ -166,7 +167,7 @@ def baseSatState : State where
     | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x3000 | _ => 0
   sp := 0x8000
   mem := satMem
-  rd := [⟨0x2000, 32⟩, ⟨0x100000, 24576⟩]
+  rd := [⟨0x2000, 32⟩, ⟨0x100000, 49152⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x3000, 8192⟩]
   syms _ := 0x100000
 

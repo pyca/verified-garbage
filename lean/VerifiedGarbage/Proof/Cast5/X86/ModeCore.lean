@@ -1,14 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.X86.Ecb
 public import VerifiedGarbage.Proof.Modes.X86.Core
 public import VerifiedGarbage.Impl.Cast5.X86.Modes
 public import VerifiedGarbage.Proof.Cast5.ModeCipher
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Cast5.X86.Block
 import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Cast5.X86.Ecb
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # CAST5's core for the modes on x86 (32-bit)

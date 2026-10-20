@@ -1,21 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ChildCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ChildCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeCTState
+public import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.Layout
+import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Child
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ChildCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ShapeCTState
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.Dsa.Layout
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Spec.Dsa.SignVerify
 meta import VerifiedGarbage.Proof.Dsa.Layout
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-meta import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Child
+import VerifiedGarbage.Proof.Dsa.X86_64.Parent
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Parent
 
 /-! # Constant time of initializing both Montgomery workspaces -/
 
@@ -92,7 +90,7 @@ def WorkspacePublic.child (p : WorkspacePublic) (isP : Bool) : ChildPublic where
     have hl := p.lengths
     change (if isP then p.pBytes else p.qBytes).length < 2 ^ 31
     cases isP <;> simp only [Bool.false_eq_true, ↓reduceIte] <;>
-      rcases hl with ⟨h1, h2⟩ | ⟨h1, h2 | h2⟩ | ⟨h1, h2⟩ <;> omega
+      rcases hl with ⟨h1, h2⟩ | ⟨h1, h2 | h2 | h2⟩ | ⟨h1, h2⟩ <;> omega
   width := rfl
 
 def workspaceOperand (isP : Bool) : Operand :=

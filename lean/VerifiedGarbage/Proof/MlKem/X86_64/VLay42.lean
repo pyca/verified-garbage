@@ -1,12 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.VLay
-public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # ML-KEM on x86-64: the layers of the NTT and its inverse with `len` = 4 and 2
@@ -70,14 +65,14 @@ theorem word_d8 (x : BitVec 128) {e : Nat} (he : e < 8) :
 
 /-- Coefficient `t` of the block from `st` of a layer with `len`, from the
 coefficients `G` before it and the zeta `z`. -/
-def blkV (op : Zq → Zq → Zq → Zq × Zq) (G : Poly) (len : Nat) (z : Zq) (st t : Nat) : Zq :=
+def blkV {α : Type} [Inhabited α] (op : α → α → Zq → α × α) (G : Vector α n) (len : Nat) (z : Zq) (st t : Nat) : α :=
   if t < len then (op G[st + t]! G[st + t + len]! z).1 else (op G[st + (t - len)]! G[st + t]! z).2
 
 /-! ## The layer with `len = 4` -/
 
 section
-variable {bf : List Instr} {op : Zq → Zq → Zq → Zq × Zq} (hbf : VBflyOk bf op)
-  {blk : Poly → Nat → Nat → Nat → Nat → Poly} (hblk : BlkOk blk op)
+variable {α : Type} [Inhabited α] {R : BitVec 16 → α → Prop} {bf : List Instr} {op : α → α → Zq → α × α}
+  (hbf : VBflyOk R bf op) {blk : Vector α n → Nat → Nat → Nat → Nat → Vector α n} (hblk : BlkOk blk op)
 include hbf hblk
 
 /-- The loads, the zetas and the gathering of the lower and upper halves. -/
@@ -94,7 +89,7 @@ abbrev post4 : List Instr :=
 
 omit hbf hblk in
 /-- `blkV` reads only the block's coefficients. -/
-theorem blkV_congr {G H : Poly} {len st t : Nat} {z : Zq} (h : ∀ x, st ≤ x → x < st + 2 * len → H[x]! = G[x]!)
+theorem blkV_congr {G H : Vector α n} {len st t : Nat} {z : Zq} (h : ∀ x, st ≤ x → x < st + 2 * len → H[x]! = G[x]!)
     (ht : t < 2 * len) : blkV op H len z st t = blkV op G len z st t := by
   unfold blkV
   split
@@ -104,7 +99,7 @@ theorem blkV_congr {G H : Poly} {len st t : Nat} {z : Zq} (h : ∀ x, st ≤ x �
 omit hbf in
 /-- Two consecutive blocks `c` and `c + 1` of a layer, from `st = 2 len c`:
 each coefficient of the two blocks as `blkV` of the coefficients before. -/
-theorem layF_two (F : Poly) {len c st st' en : Nat} (hl : 0 < len) (zi : Nat → Nat) (hst : st = 2 * len * c)
+theorem layF_two (F : Vector α n) {len c st st' en : Nat} (hl : 0 < len) (zi : Nat → Nat) (hst : st = 2 * len * c)
     (hst' : st' = st + 2 * len) (hen : en = st' + 2 * len) (hb : en ≤ 256) {j : Nat} (hj : j < 256) :
     (layF blk F len zi (c + 2))[j]! =
       if st ≤ j ∧ j < st' then blkV op (layF blk F len zi c) len (zeta (zi c)) st (j - st)
@@ -143,7 +138,7 @@ theorem layF_two (F : Poly) {len c st st' en : Nat} (hl : 0 < len) (zi : Nat →
 
 omit hbf in
 /-- Four consecutive blocks `c`, …, `c + 3` of the layer with `len = 2`, from `st = 4 c`. -/
-theorem layF_four2 (F : Poly) {c st : Nat} (zi : Nat → Nat) (hst : st = 4 * c) (hb : st + 8 + 8 ≤ 256) {j : Nat}
+theorem layF_four2 (F : Vector α n) {c st : Nat} (zi : Nat → Nat) (hst : st = 4 * c) (hb : st + 8 + 8 ≤ 256) {j : Nat}
     (hj : j < 256) :
     (layF blk F 2 zi (c + 4))[j]! =
       if st ≤ j ∧ j < st + 8 then
@@ -183,11 +178,11 @@ theorem layF_four2 (F : Poly) {c st : Nat} (zi : Nat → Nat) (hst : st = 4 * c)
 
 theorem vstep4 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVec 32) (zi : Nat → Nat)
     (hk : ∀ j < 4, kz + sel o j < 128) (hsel : ∀ e < 8, kz + sel o (e / 2) = zi (2 * i + e / 4))
-    {F : Poly} {s : State} (hc : VConsts s) (hdx : s.gpr .rdx = wAddr (spW sP) (16 * i))
-    (h8 : s.gpr .r8 = wAddr sP kz) (hS : S16 s.mem (spW sP) (layF blk F 4 zi (2 * i))) (hT : T16 s.mem sP)
+    {F : Vector α n} {s : State} (hc : VConsts s) (hdx : s.gpr .rdx = wAddr (spW sP) (16 * i))
+    (h8 : s.gpr .r8 = wAddr sP kz) (hS : S16R R s.mem (spW sP) (layF blk F 4 zi (2 * i))) (hT : T16 s.mem sP)
     (hw : pR sP ∈ s.wr) :
     WP isa (.block (pre4 o dz ++ (bf ++ post4))) s fun s' =>
-      S16 s'.mem (spW sP) (layF blk F 4 zi (2 * (i + 1))) ∧ s'.gpr .rdx = wAddr (spW sP) (16 * (i + 1)) ∧
+      S16R R s'.mem (spW sP) (layF blk F 4 zi (2 * (i + 1))) ∧ s'.gpr .rdx = wAddr (spW sP) (16 * (i + 1)) ∧
       s'.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
       s'.zf = some (s.gpr .rcx - 1 == 0) ∧ BInv sP s s' := by
   have j0 : 16 * i + 8 ≤ 256 := by bdd_omega
@@ -197,12 +192,12 @@ theorem vstep4 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
   have r1 := sp_in (List.mem_append_right s.rd hw) j1
   have rz := tab_in (List.mem_append_right s.rd hw) (k := kz) (by have := hk 0 (by decide); omega)
   generalize hG : layF blk F 4 zi (2 * i) = G at hS
-  have lx := lanes_load hS j0
-  have ly := lanes_load hS j1
+  have lx := lanes_loadR hS j0
+  have ly := lanes_loadR hS j1
   have lz := zeta_lanes o hk hT
   rw [WP.block_append_iff]
-  refine WP.mono (Q := fun (s1 : State) => Lanes (s1.xmm .xmm0) (fun e => G[16 * i + e + 4 * (e / 4)]!) ∧
-      Lanes (s1.xmm .xmm1) (fun e => G[16 * i + 4 + e + 4 * (e / 4)]!) ∧
+  refine WP.mono (Q := fun (s1 : State) => LanesR R (s1.xmm .xmm0) (fun e => G[16 * i + e + 4 * (e / 4)]!) ∧
+      LanesR R (s1.xmm .xmm1) (fun e => G[16 * i + 4 + e + 4 * (e / 4)]!) ∧
       ZLanes (s1.xmm .xmm13) (fun e => zeta (zi (2 * i + e / 4))) ∧ VConsts s1 ∧
       s1.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz ∧ GKeep [.r8] s s1) ?_
     fun s1 ⟨l0, l1, l13, c1, h81, o1⟩ => ?_
@@ -221,15 +216,15 @@ theorem vstep4 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
     · intro e he
       rw [word_punpcklqdq _ _ he]
       split
-      · rw [lx e he]; dsimp only; rw [show 16 * i + e + 4 * (e / 4) = 16 * i + e by bdd_omega]
-      · rw [ly (e - 4) (by bdd_omega)]; dsimp only
-        rw [show 16 * i + e + 4 * (e / 4) = 16 * i + 8 + (e - 4) by bdd_omega]
+      · dsimp only; rw [show 16 * i + e + 4 * (e / 4) = 16 * i + e by bdd_omega]; exact lx e he
+      · dsimp only; rw [show 16 * i + e + 4 * (e / 4) = 16 * i + 8 + (e - 4) by bdd_omega]
+        exact ly (e - 4) (by bdd_omega)
     · intro e he
       rw [word_movdqa, word_punpckhqdq _ _ he, word_movdqa]
       split
-      · rw [lx (4 + e) (by bdd_omega)]; dsimp only
-        rw [show 16 * i + 4 + e + 4 * (e / 4) = 16 * i + (4 + e) by bdd_omega]
-      · rw [ly e he]; dsimp only; rw [show 16 * i + 4 + e + 4 * (e / 4) = 16 * i + 8 + e by bdd_omega]
+      · dsimp only; rw [show 16 * i + 4 + e + 4 * (e / 4) = 16 * i + (4 + e) by bdd_omega]
+        exact lx (4 + e) (by bdd_omega)
+      · dsimp only; rw [show 16 * i + 4 + e + 4 * (e / 4) = 16 * i + 8 + e by bdd_omega]; exact ly e he
     · intro e he
       rw [lz e he]; dsimp only; rw [hsel e he]
   rw [WP.block_append_iff]
@@ -247,18 +242,17 @@ theorem vstep4 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
   refine ⟨?_, by rw [show (32 : BitVec 64) = BitVec.ofNat 64 (2 * 16) from rfl, wAddr_add, Nat.mul_succ], r81,
     by rw [rc1], by rw [rc1], ?_⟩
   · -- the words stored
-    simp only [Lanes] at a0 a3
-    refine s16_write2 hS j0 j1 (by bdd_omega) (a := blkV op G 4 (zeta (zi (2 * i))) (16 * i))
+    refine s16_write2R hS j0 j1 (by bdd_omega) (a := blkV op G 4 (zeta (zi (2 * i))) (16 * i))
       (b := blkV op G 4 (zeta (zi (2 * i + 1))) (16 * i + 8)) (fun e he => ?_) (fun e he => ?_)
       (fun j hj => ?_)
     · rcases (by bdd_omega : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 ∨ e = 4 ∨ e = 5 ∨ e = 6 ∨ e = 7) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [word_punpcklqdq _ _ he, a0, a3, blkV, Nat.reduceDiv, Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub,
-        Nat.reduceLT, ite_true, ite_false, Nat.add_zero, Nat.add_assoc]
+      simp only [word_punpcklqdq _ _ he, blkV, Nat.reduceAdd, Nat.reduceSub, Nat.reduceLT, ite_true, ite_false, Nat.add_zero, Nat.add_assoc] <;>
+      first | exact a0 _ (by decide) | exact a3 _ (by decide)
     · rcases (by bdd_omega : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 ∨ e = 4 ∨ e = 5 ∨ e = 6 ∨ e = 7) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [word_punpckhqdq _ _ he, word_movdqa, a0, a3, blkV, Nat.reduceDiv, Nat.reduceMul,
-        Nat.reduceAdd, Nat.reduceSub, Nat.reduceLT, ite_true, ite_false, Nat.add_zero, Nat.add_assoc]
+      simp only [word_punpckhqdq _ _ he, word_movdqa, blkV, Nat.reduceAdd, Nat.reduceSub, Nat.reduceLT, ite_true, ite_false, Nat.add_zero, Nat.add_assoc] <;>
+      first | exact a0 _ (by decide) | exact a3 _ (by decide)
     · -- the specification: two blocks
       rw [show 2 * (i + 1) = 2 * i + 2 by omega,
         layF_two hblk F (by decide) zi (st := 16 * i) (st' := 16 * i + 8) (en := 16 * i + 8 + 8) (by omega) (by omega)
@@ -289,14 +283,14 @@ theorem vlay4_ok {sP : Addr} (k : Nat) (o : BitVec 8) (dz : BitVec 32) (zi kz : 
     (hk : ∀ i < 16, ∀ j < 4, kz i + sel o j < 128)
     (hsel : ∀ i < 16, ∀ e < 8, kz i + sel o (e / 2) = zi (2 * i + e / 4))
     (hstep : ∀ i < 16, wAddr sP (kz i) + BitVec.signExtend 64 dz = wAddr sP (kz (i + 1)))
-    {F : Poly} {s : State} (hc : VConsts s) (hsi : s.gpr .rsi = sP) (hS : S16 s.mem (spW sP) F)
+    {F : Vector α n} {s : State} (hc : VConsts s) (hsi : s.gpr .rsi = sP) (hS : S16R R s.mem (spW sP) F)
     (hT : T16 s.mem sP) (hw : pR sP ∈ s.wr) :
-    WP isa (vlay4 bf k o dz) s fun s' => S16 s'.mem (spW sP) (layF blk F 4 zi 32) ∧ BInv sP s s' := by
+    WP isa (vlay4 bf k o dz) s fun s' => S16R R s'.mem (spW sP) (layF blk F 4 zi 32) ∧ BInv sP s s' := by
   have hk0 : k < 128 := by have := hk 0 (by decide) 0 (by decide); omega
   refine WP.seq (WP.mono (vpre42 k hk0 hsi)
     fun w ⟨hdx, h8, og⟩ => ?_)
   refine WP.mono (wp_rcxLoop (N := 16) (by decide) (by decide)
-    (fun i u => S16 u.mem (spW sP) (layF blk F 4 zi (2 * i)) ∧ u.gpr .rdx = wAddr (spW sP) (16 * i) ∧
+    (fun i u => S16R R u.mem (spW sP) (layF blk F 4 zi (2 * i)) ∧ u.gpr .rdx = wAddr (spW sP) (16 * i) ∧
       u.gpr .r8 = wAddr sP (kz i) ∧ BInv sP w u)
     (fun u ou _ => ⟨by rw [ou.mem, og.mem]; exact hS,
       by rw [ou.keep.gpr (by decide), hdx, Nat.mul_zero, wAddr, Nat.mul_zero, add_ofNat_zero],
@@ -331,11 +325,11 @@ abbrev post2 : List Instr :=
 
 theorem vstep2 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVec 32) (zi : Nat → Nat)
     (hk : ∀ j < 4, kz + sel o j < 128) (hsel : ∀ e < 8, kz + sel o (e / 2) = zi (4 * i + e / 2))
-    {F : Poly} {s : State} (hc : VConsts s) (hdx : s.gpr .rdx = wAddr (spW sP) (16 * i))
-    (h8 : s.gpr .r8 = wAddr sP kz) (hS : S16 s.mem (spW sP) (layF blk F 2 zi (4 * i))) (hT : T16 s.mem sP)
+    {F : Vector α n} {s : State} (hc : VConsts s) (hdx : s.gpr .rdx = wAddr (spW sP) (16 * i))
+    (h8 : s.gpr .r8 = wAddr sP kz) (hS : S16R R s.mem (spW sP) (layF blk F 2 zi (4 * i))) (hT : T16 s.mem sP)
     (hw : pR sP ∈ s.wr) :
     WP isa (.block (pre2 o dz ++ (bf ++ post2))) s fun s' =>
-      S16 s'.mem (spW sP) (layF blk F 2 zi (4 * (i + 1))) ∧ s'.gpr .rdx = wAddr (spW sP) (16 * (i + 1)) ∧
+      S16R R s'.mem (spW sP) (layF blk F 2 zi (4 * (i + 1))) ∧ s'.gpr .rdx = wAddr (spW sP) (16 * (i + 1)) ∧
       s'.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
       s'.zf = some (s.gpr .rcx - 1 == 0) ∧ BInv sP s s' := by
   have j0 : 16 * i + 8 ≤ 256 := by bdd_omega
@@ -345,12 +339,12 @@ theorem vstep2 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
   have r1 := sp_in (List.mem_append_right s.rd hw) j1
   have rz := tab_in (List.mem_append_right s.rd hw) (k := kz) (by have := hk 0 (by decide); omega)
   generalize hG : layF blk F 2 zi (4 * i) = G at hS
-  have lx := lanes_load hS j0
-  have ly := lanes_load hS j1
+  have lx := lanes_loadR hS j0
+  have ly := lanes_loadR hS j1
   have lz := zeta_lanes o hk hT
   rw [WP.block_append_iff]
-  refine WP.mono (Q := fun (s1 : State) => Lanes (s1.xmm .xmm0) (fun e => G[16 * i + 4 * (e / 2) + e % 2]!) ∧
-      Lanes (s1.xmm .xmm1) (fun e => G[16 * i + 4 * (e / 2) + 2 + e % 2]!) ∧
+  refine WP.mono (Q := fun (s1 : State) => LanesR R (s1.xmm .xmm0) (fun e => G[16 * i + 4 * (e / 2) + e % 2]!) ∧
+      LanesR R (s1.xmm .xmm1) (fun e => G[16 * i + 4 * (e / 2) + 2 + e % 2]!) ∧
       ZLanes (s1.xmm .xmm13) (fun e => zeta (zi (4 * i + e / 2))) ∧ VConsts s1 ∧
       s1.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz ∧ GKeep [.r8] s s1) ?_
     fun s1 ⟨l0, l1, l13, c1, h81, o1⟩ => ?_
@@ -369,18 +363,22 @@ theorem vstep2 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
     · intro e he
       rw [word_punpcklqdq _ _ he]
       split
-      · rw [word_d8 _ he, ite_eq_left (by bdd_omega), lx _ (by bdd_omega)]; dsimp only
-        rw [show 16 * i + (4 * (e / 2) + e % 2) = 16 * i + 4 * (e / 2) + e % 2 by bdd_omega]
-      · rw [word_d8 _ (by bdd_omega), ite_eq_left (by bdd_omega), ly _ (by bdd_omega)]; dsimp only
-        rw [show 16 * i + 8 + (4 * ((e - 4) / 2) + (e - 4) % 2) = 16 * i + 4 * (e / 2) + e % 2 by bdd_omega]
+      · rw [word_d8 _ he, ite_eq_left (by bdd_omega)]; dsimp only
+        rw [show 16 * i + 4 * (e / 2) + e % 2 = 16 * i + (4 * (e / 2) + e % 2) by bdd_omega]
+        exact lx _ (by bdd_omega)
+      · rw [word_d8 _ (by bdd_omega), ite_eq_left (by bdd_omega)]; dsimp only
+        rw [show 16 * i + 4 * (e / 2) + e % 2 = 16 * i + 8 + (4 * ((e - 4) / 2) + (e - 4) % 2) by bdd_omega]
+        exact ly _ (by bdd_omega)
     · intro e he
       rw [word_punpckhqdq _ _ he]
       simp only [word_movdqa]
       split
-      · rw [word_d8 _ (by bdd_omega), ite_eq_right (by bdd_omega), lx _ (by bdd_omega)]; dsimp only
-        rw [show 16 * i + (4 * ((4 + e - 4) / 2) + 2 + (4 + e) % 2) = 16 * i + 4 * (e / 2) + 2 + e % 2 by bdd_omega]
-      · rw [word_d8 _ he, ite_eq_right (by bdd_omega), ly _ (by bdd_omega)]; dsimp only
-        rw [show 16 * i + 8 + (4 * ((e - 4) / 2) + 2 + e % 2) = 16 * i + 4 * (e / 2) + 2 + e % 2 by bdd_omega]
+      · rw [word_d8 _ (by bdd_omega), ite_eq_right (by bdd_omega)]
+        rw [show 16 * i + 4 * (e / 2) + 2 + e % 2 = 16 * i + (4 * ((4 + e - 4) / 2) + 2 + (4 + e) % 2) by bdd_omega]
+        exact lx _ (by bdd_omega)
+      · rw [word_d8 _ he, ite_eq_right (by bdd_omega)]
+        rw [show 16 * i + 4 * (e / 2) + 2 + e % 2 = 16 * i + 8 + (4 * ((e - 4) / 2) + 2 + e % 2) by bdd_omega]
+        exact ly _ (by bdd_omega)
     · intro e he
       rw [lz e he]; dsimp only; rw [hsel e he]
   rw [WP.block_append_iff]
@@ -398,8 +396,7 @@ theorem vstep2 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
   refine ⟨?_, by rw [show (32 : BitVec 64) = BitVec.ofNat 64 (2 * 16) from rfl, wAddr_add, Nat.mul_succ], r81,
     by rw [rc1], by rw [rc1], ?_⟩
   · -- the words stored
-    simp only [Lanes] at a0 a3
-    refine s16_write2 hS j0 j1 (by bdd_omega)
+    refine s16_write2R hS j0 j1 (by bdd_omega)
       (a := fun e => if e < 4 then blkV op G 2 (zeta (zi (4 * i))) (16 * i) e
         else blkV op G 2 (zeta (zi (4 * i + 1))) (16 * i + 4) (e - 4))
       (b := fun e => if e < 4 then blkV op G 2 (zeta (zi (4 * i + 2))) (16 * i + 8) e
@@ -407,14 +404,16 @@ theorem vstep2 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
       (fun e he => ?_) (fun e he => ?_) (fun j hj => ?_)
     · rcases (by bdd_omega : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 ∨ e = 4 ∨ e = 5 ∨ e = 6 ∨ e = 7) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [word_punpckldq _ _ he, a0, a3, blkV, Nat.reduceDiv, Nat.reduceMod,
+      simp only [word_punpckldq _ _ he, blkV, Nat.reduceDiv, Nat.reduceMod,
         Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub, Nat.reduceLT, Nat.reduceEqDiff, ite_true, ite_false,
-        Nat.add_zero, Nat.add_assoc]
+        Nat.add_zero, Nat.add_assoc] <;>
+      first | exact a0 _ (by decide) | exact a3 _ (by decide)
     · rcases (by bdd_omega : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 ∨ e = 4 ∨ e = 5 ∨ e = 6 ∨ e = 7) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [word_punpckhdq _ _ he, word_movdqa, a0, a3, blkV, Nat.reduceDiv,
+      simp only [word_punpckhdq _ _ he, word_movdqa, blkV, Nat.reduceDiv,
         Nat.reduceMod, Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub, Nat.reduceLT, Nat.reduceEqDiff, ite_true,
-        ite_false, Nat.add_zero, Nat.add_assoc]
+        ite_false, Nat.add_zero, Nat.add_assoc] <;>
+      first | exact a0 _ (by decide) | exact a3 _ (by decide)
     · -- the specification: four blocks
       rw [show 4 * (i + 1) = 4 * i + 4 by omega,
         layF_four2 hblk F (st := 16 * i) zi (by omega) (by omega) hj, hG]
@@ -436,13 +435,13 @@ theorem vlay2_ok {sP : Addr} (k : Nat) (o : BitVec 8) (dz : BitVec 32) (zi kz : 
     (hk : ∀ i < 16, ∀ j < 4, kz i + sel o j < 128)
     (hsel : ∀ i < 16, ∀ e < 8, kz i + sel o (e / 2) = zi (4 * i + e / 2))
     (hstep : ∀ i < 16, wAddr sP (kz i) + BitVec.signExtend 64 dz = wAddr sP (kz (i + 1)))
-    {F : Poly} {s : State} (hc : VConsts s) (hsi : s.gpr .rsi = sP) (hS : S16 s.mem (spW sP) F)
+    {F : Vector α n} {s : State} (hc : VConsts s) (hsi : s.gpr .rsi = sP) (hS : S16R R s.mem (spW sP) F)
     (hT : T16 s.mem sP) (hw : pR sP ∈ s.wr) :
-    WP isa (vlay2 bf k o dz) s fun s' => S16 s'.mem (spW sP) (layF blk F 2 zi 64) ∧ BInv sP s s' := by
+    WP isa (vlay2 bf k o dz) s fun s' => S16R R s'.mem (spW sP) (layF blk F 2 zi 64) ∧ BInv sP s s' := by
   have hk0 : k < 128 := by have := hk 0 (by decide) 0 (by decide); omega
   refine WP.seq (WP.mono (vpre42 k hk0 hsi) fun w ⟨hdx, h8, og⟩ => ?_)
   refine WP.mono (wp_rcxLoop (N := 16) (by decide) (by decide)
-    (fun i u => S16 u.mem (spW sP) (layF blk F 2 zi (4 * i)) ∧ u.gpr .rdx = wAddr (spW sP) (16 * i) ∧
+    (fun i u => S16R R u.mem (spW sP) (layF blk F 2 zi (4 * i)) ∧ u.gpr .rdx = wAddr (spW sP) (16 * i) ∧
       u.gpr .r8 = wAddr sP (kz i) ∧ BInv sP w u)
     (fun u ou _ => ⟨by rw [ou.mem, og.mem]; exact hS,
       by rw [ou.keep.gpr (by decide), hdx, Nat.mul_zero, wAddr, Nat.mul_zero, add_ofNat_zero],

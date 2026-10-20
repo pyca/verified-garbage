@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Argon2.X86_64.Initial
 public import VerifiedGarbage.Impl.Argon2.X86_64.InitFill
 
 /-! Complete derivation inside its enclosing argument and register-save frame. -/

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Framework.RegSet
-public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # Taint tracking for AArch64
@@ -61,16 +61,23 @@ def stepFn : Instr → Step
   | .madd _ d n m a => ⟨fun τ => some (set τ d (pub τ n && pub τ m && pub τ a))⟩
   | .umaddl d n m a => ⟨fun τ => some (set τ d (pub τ n && pub τ m && pub τ a))⟩
   | .addImm _ d n _ | .subImm _ d n _ | .ror _ d n _ | .lsr _ d n _ | .lsl _ d n _ | .rev32 d n
-  | .rev d n => ⟨fun τ => some (set τ d (pub τ n))⟩
+  | .rev d n | .clz _ d n | .rbit _ d n => ⟨fun τ => some (set τ d (pub τ n))⟩
   | .addSp d _ | .movz _ d _ _ => ⟨fun τ => some (set τ d true)⟩
   | .movk _ d _ _ => ⟨fun τ => some (set τ d (pub τ d))⟩
   | .ldr _ t n _ | .ldrb t n _ => ⟨fun τ => if pub τ n then some (set τ t false) else none⟩
   -- The stack pointer is public, and memory secret.
   | .ldrSp t _ => ⟨fun τ => some (set τ t false)⟩
+  | .strSp _ _ => ⟨fun τ => some τ⟩
   | .str _ _ n _ | .strb _ n _ => ⟨fun τ => if pub τ n then some τ else none⟩
+  | .ldp t1 t2 n _ => ⟨fun τ => if pub τ n then some (set (set τ t1 false) t2 false) else none⟩
+  | .stp _ _ n _ => ⟨fun τ => if pub τ n then some τ else none⟩
   | .vop _ => ⟨fun τ => some τ⟩
   | .ldrq _ n _ | .strq _ n _ => ⟨fun τ => if pub τ n then some τ else none⟩
+  -- Words of a table of constants, into a vector register, which this
+  -- domain does not track; its offset in the table, an immediate, is observed.
+  | .ldrqTbl .. => ⟨fun τ => some τ⟩
   | .umov _ d _ _ => ⟨fun τ => some (set τ d false)⟩
+  | .align _ => ⟨fun τ => some τ⟩
   -- Frames are analysed by the `push` and `pop` hooks (`Taint.push`,
   -- `Taint.pop`), not here.
   | .push .. | .pop .. | .alloc _ | .free _ => ⟨fun _ => none⟩
@@ -235,6 +242,14 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     refine ⟨rfl, ha.write sz d fun hp => ?_⟩
     simp only [Bool.and_eq_true] at hp
     rw [ha.read hp.1, ha.read hp.2]
+  | clz sz d n =>
+    obtain rfl := Option.some.inj hs
+    obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
+    exact ⟨rfl, ha.write sz d fun hp => by rw [ha.read hp]⟩
+  | rbit sz d n =>
+    obtain rfl := Option.some.inj hs
+    obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
+    exact ⟨rfl, ha.write sz d fun hp => by rw [ha.read hp]⟩
   | rev32 d n =>
     obtain rfl := Option.some.inj hs
     obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
@@ -273,6 +288,15 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at e₁ <;> [cases e₁; cases e₁]
     split at e₂ <;> [cases e₂; cases e₂]
     exact ha
+  | strSp t off =>
+    obtain rfl := Option.some.inj hs
+    refine ⟨by simp [addrs, ha.1], ?_⟩
+    simp only [exec] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    rename_i h; simp only [h, and_self, ite_true, State.store] at e₁ e₂
+    split at e₁ <;> [cases e₁; cases e₁]
+    split at e₂ <;> [cases e₂; cases e₂]
+    exact ha
   | ldrb t n off =>
     simp only [step, stepFn] at hs
     split at hs <;> [skip; cases hs]
@@ -299,6 +323,28 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at e₁ <;> [cases e₁; cases e₁]
     split at e₂ <;> [cases e₂; cases e₂]
     exact ha
+  | ldp t1 t2 n off =>
+    simp only [step, stepFn] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hn; cases hs
+    refine ⟨by simp [addrs, ha.reg hn], ?_⟩
+    obtain ⟨-, e₁⟩ := Option.ite_none_right_eq_some.mp e₁
+    obtain ⟨-, e₂⟩ := Option.ite_none_right_eq_some.mp e₂
+    simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
+    obtain ⟨_, -, _, -, rfl⟩ := e₁; obtain ⟨_, -, _, -, rfl⟩ := e₂
+    exact (ha.write .x t1 fun h => by cases h).write .x t2 fun h => by cases h
+  | stp t1 t2 n off =>
+    simp only [step, stepFn] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hn; cases hs
+    refine ⟨by simp [addrs, ha.reg hn], ?_⟩
+    obtain ⟨-, e₁⟩ := Option.ite_none_right_eq_some.mp e₁
+    obtain ⟨-, e₂⟩ := Option.ite_none_right_eq_some.mp e₂
+    simp only [Option.bind_eq_some_iff, State.store] at e₁ e₂
+    obtain ⟨_, e₁, e₁'⟩ := e₁; obtain ⟨_, e₂, e₂'⟩ := e₂
+    split at e₁ <;> cases e₁; split at e₁' <;> cases e₁'
+    split at e₂ <;> cases e₂; split at e₂' <;> cases e₂'
+    exact ha
   | vop op =>
     obtain rfl := Option.some.inj hs
     simp only [exec, Option.map_eq_some_iff] at e₁ e₂
@@ -311,6 +357,14 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     refine ⟨by simp [addrs, ha.reg hn], ?_⟩
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨a₁, -, v₁, -, rfl⟩ := e₁; obtain ⟨a₂, -, v₂, -, rfl⟩ := e₂
+    exact ⟨ha.1, ha.2⟩
+  | ldrqTbl t n off name ws =>
+    obtain rfl := Option.some.inj hs
+    refine ⟨rfl, ?_⟩
+    simp only [exec] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
     exact ⟨ha.1, ha.2⟩
   | strq t n off =>
     simp only [step, stepFn] at hs
@@ -328,6 +382,10 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     obtain ⟨-, e₂⟩ := Option.ite_none_right_eq_some.mp e₂
     obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
     exact ⟨rfl, ha.write sz d fun h => by cases h⟩
+  | align k =>
+    obtain rfl := Option.some.inj hs
+    obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
+    exact ⟨rfl, ha⟩
 
 theorem cond_sound {τ : T} {c : Cond} {s₁ s₂ : State} (ha : Agree τ s₁ s₂)
     (hc : condPub τ c = true) : eval c s₁ = eval c s₂ := by

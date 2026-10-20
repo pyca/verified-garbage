@@ -1,15 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCorrect
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCorrect
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCorrect
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCall
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCorrect
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCall
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_pkcs1_verify` on AArch64: constant time

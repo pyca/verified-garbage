@@ -1,17 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Permute
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Permute
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.Conv
@@ -179,6 +173,7 @@ def backend : Permutation where
   features := ["sha3"]
   ok := Vector.permute_correct
   noFrames := Vector.permute_noFrames
+  callerSums := callerSums
   absorbOverrideOk := by intro code h; cases h
   absorbOverrideDepth := by intro code h; cases h
   absorbTaint := absorbTaint

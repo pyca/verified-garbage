@@ -1,13 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Impl.Poly1305.Arm
 public import VerifiedGarbage.Proof.Poly1305.Arm.Init
-import VerifiedGarbage.Proof.Poly1305.Arm.Update
-import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
-import VerifiedGarbage.Proof.Poly1305.Arm.Lit
 public import VerifiedGarbage.Proof.Poly1305.Arm.Frame
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Poly1305 (RFC 8439 §2.5) on 32-bit ARM -/
 
@@ -16,42 +11,22 @@ import Mathlib.Tactic.SplitIfs
 namespace VG.Artifacts.Poly1305.Arm
 
 def artifacts : List Artifact := [
-  { Spec.Poly1305.initApi with
-    target := Arm.target
-    doc := Spec.Poly1305.initApi.doc
+  Spec.Poly1305.initApi.artifact Arm.target {
     code := Impl.Poly1305.Arm.init
-    contract := Spec.Poly1305.initContract Arm.abi
-    verified := Proof.Poly1305.Arm.init_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Poly1305.blocksApi with
-    target := Arm.target
-    doc := Spec.Poly1305.blocksApi.doc
+    verified := Proof.Poly1305.Arm.init_verified },
+  Spec.Poly1305.blocksApi.artifact Arm.target {
     code := Impl.Poly1305.Arm.blocks
-    contract := Spec.Poly1305.blocksContract Arm.abi
-    verified := Proof.Poly1305.Arm.blocks_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Poly1305.updateApi with
-    target := Arm.target
-    doc := Spec.Poly1305.updateApi.doc
+    verified := Proof.Poly1305.Arm.blocks_verified },
+  Spec.Poly1305.updateApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 144 2 Impl.Poly1305.Arm.update
-    contract := Spec.Poly1305.updateContract Arm.abi 144
     stack := 144
-    verified := Proof.Poly1305.Arm.update_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Poly1305.finalizeApi with
-    target := Arm.target
-    doc := Spec.Poly1305.finalizeApi.doc
+    verified := Proof.Poly1305.Arm.update_framed },
+  Spec.Poly1305.finalizeApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 144 1 Impl.Poly1305.Arm.finalize
-    contract := Spec.Poly1305.finalizeContract Arm.abi 144
     stack := 144
-    verified := Proof.Poly1305.Arm.finalize_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Poly1305.finalizeScratchApi with
-    target := Arm.target
-    doc := Spec.Poly1305.finalizeScratchApi.doc
+    verified := Proof.Poly1305.Arm.finalize_framed },
+  Spec.Poly1305.finalizeScratchApi.artifact Arm.target {
     code := Impl.Poly1305.Arm.finalize
-    contract := Spec.Poly1305.finalizeScratchContract Arm.abi
-    verified := Proof.Poly1305.Arm.Fin.finalize_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Poly1305.Arm.Fin.finalize_verified }]
 
 end VG.Artifacts.Poly1305.Arm

@@ -10,10 +10,12 @@ u-coordinate `(1 + y) / (1 - y) = (Z + Y) / (Z - Y)` of `[k] B` on edwards25519
 (RFC 7748 §4.1), with Ed25519's fixed-base comb (`Impl/Ed25519/AArch64/Comb.lean`)
 rather than the ladder.
 
-* Ed25519's base-point multiplication, `scalarBase`, but for two steps: the
+* Ed25519's base-point multiplication, `scalarBase`, but for three steps: the
   scalar's expanded bits (one byte per bit, at `scratch + 768`) are clamped as
   `decodeScalar25519` clamps the scalar (bits 0–2 and 255 cleared, bit 254 set),
-  and the result is encoded as a u-coordinate rather than as a point.
+  the comb absorbs digit 0, which bits 0–2 being clear leave `0` or `-8`, into
+  its start (`combMultiplyClamped`), and the result is encoded as a u-coordinate
+  rather than as a point.
 * The u-coordinate: `X := Z + Y` and `Z := Z - Y` in the point's slots, then
   `pointAffine` (one inversion) makes `X / Z`, which is frozen into `x4`–`x7`;
   `scalarFinish` restores the callee-saved registers and stores it to `out`.
@@ -39,7 +41,7 @@ def uOps : List FieldOp := [.add 0 2 1, .sub 2 2 1]
 def uEncode : Prog isa := .seq (.block (fieldCode uOps)) (.seq pointAffine (.block (freeze 64)))
 
 def engine : Prog isa :=
-  .seq scalarBasePrepare (.seq (.block clampBits) (.seq combMultiply uEncode))
+  .seq scalarBasePrepare (.seq (.block clampBits) (.seq combMultiplyClamped uEncode))
 
 def x25519Base : Prog isa :=
   .seq (.block (scalarSave ++ scalarBaseSetup)) (.seq engine scalarBaseFinish)

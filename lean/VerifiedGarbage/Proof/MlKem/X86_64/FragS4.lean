@@ -1,19 +1,15 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.X86_64.FragS
-meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS
-import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
-meta import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragS
 public import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-meta import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # ML-KEM on x86-64: four entries of the matrix at once

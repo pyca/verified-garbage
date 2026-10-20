@@ -205,6 +205,15 @@ pub enum Error {
     TagMismatch,
 }
 
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid AES key length",
+        InvalidNonceLength => "invalid AES-CCM nonce length",
+        InvalidTextLength => "AES-CCM text is too long for the nonce",
+        TagMismatch => "AES-CCM tag does not match",
+    }
+}
+
 /// An AES-CCM key: its AES key schedule.
 #[derive(Clone)]
 pub struct AesCcm {

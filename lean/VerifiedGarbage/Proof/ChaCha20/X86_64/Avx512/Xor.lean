@@ -1,17 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Setup
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Setup
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # ChaCha20 keystream XOR on x86-64 with AVX-512
@@ -291,6 +291,16 @@ theorem cmp513_ok (s : State) :
     State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left', se]
   exact ⟨trivial, trivial, trivial, trivial, rfl⟩
 
+theorem cmp769_ok (s : State) :
+    WP isa (.block [.alu .cmp .rdx (.imm 769)]) s fun s' =>
+      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.cf = some (decide ((s.gpr .rdx).toNat < 769)) := by
+  have se : BitVec.signExtend 64 (769 : BitVec 32) = 769 := by decide
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, arithFlags,
+    State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left', se]
+  exact ⟨trivial, trivial, trivial, trivial, rfl⟩
+
 /-- The offsets in `buf` and values of the quadwords the prologue stores. -/
 def incPairs : List (Nat × BitVec 64) :=
   [(128, 0x0000000100000000), (136, 0x0000000300000002), (144, 0x0000000500000004),
@@ -355,29 +365,57 @@ theorem tinv_of {s₀ : State} {t : Nat} {s : State} (h : LInv s₀ t s) : Avx51
   ⟨h.rdi, h.rcx, h.rsi, h.rdx, h.le, ⟨16 * t, by omega⟩, h.keep, h.rd, h.wr,
     by rw [h.cnt, show 1024 * t / 64 = 16 * t by omega], h.data, h.tincs, h.frame⟩
 
+/-- The last 513 to 768 bytes, by twelve blocks. -/
+theorem last12_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hgt : 512 < eL s₀ - p) (hle : eL s₀ - p ≤ 768)
+    {s : State} (h : Avx512Tail.TInv s₀ p s) :
+    WP isa last12 s fun s' =>
+      (gprPreserved s₀ s' ∧ xorAvx2X86_64.post s₀ s') ∧ s'.gpr .rsi = s₀.gpr .rcx := by
+  unfold last12
+  refine WP.seq (WP.mono (Avx512Last.mov_ok s) fun s₁ ⟨r9₁, g₁, m₁, rd₁, wr₁, _⟩ => ?_)
+  have h₁ : Avx512Tail.TInv s₀ p s₁ :=
+    ⟨by rw [g₁ _ (by decide)]; exact h.rdi, by rw [g₁ _ (by decide)]; exact h.rcx,
+      by rw [g₁ _ (by decide)]; exact h.rsi, by rw [g₁ _ (by decide)]; exact h.rdx, h.le, h.dvd,
+      fun r hr => by rw [g₁ r (Avx512Tail.r9_not_calleeSaved hr).1]; exact h.keep r hr, rd₁.trans h.rd,
+      wr₁.trans h.wr, by rw [m₁]; exact h.cnt, fun k hk => by rw [m₁]; exact h.data k hk,
+      by rw [m₁]; exact h.incs, by rw [m₁]; exact h.frame⟩
+  exact WP.seq (WP.mono (Avx512Tail.part3T_ok hp hgt hle h₁ (by rw [r9₁, h.rcx])) fun _ d =>
+    Avx512Tail.fin_ok (d.fin hp))
+
 /-! ## The whole function -/
 
 theorem xor_eq : Impl.ChaCha20.X86_64.Avx512.xor =
     .seq (.block (Impl.ChaCha20.X86_64.Avx512Tail.consts ++ consts ++ ([.alu .cmp .rdx (.imm 1024)] : List Instr)))
     (.seq (.ite .b (.block []) (.loop body .ae))
-    (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b Impl.ChaCha20.X86_64.Avx512Tail.tail last16))) := rfl
+    (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b Impl.ChaCha20.X86_64.Avx512Tail.tail
+      (.seq (.block [.alu .cmp .rdx (.imm 769)]) (.ite .b last12 last16))))) := rfl
 
-/-- After the loop: the last pass of sixteen blocks, or the tail. -/
+/-- After the loop: the last pass of twelve or sixteen blocks, or the tail. -/
 theorem rest_ok {s₀ : State} (hp : APre s₀) {t : Nat} (ht : eL s₀ - 1024 * t < 1024) {s : State}
     (h : LInv s₀ t s) :
-    WP isa (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b Impl.ChaCha20.X86_64.Avx512Tail.tail last16)) s
+    WP isa (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b Impl.ChaCha20.X86_64.Avx512Tail.tail
+      (.seq (.block [.alu .cmp .rdx (.imm 769)]) (.ite .b last12 last16)))) s
       fun s' => (gprPreserved s₀ s' ∧ xorAvx2X86_64.post s₀ s') ∧ s'.gpr .rsi = s₀.gpr .rcx := by
   have hL := eL_lt s₀
+  have cong : ∀ {s s' : State}, LInv s₀ t s → s'.gpr = s.gpr → s'.mem = s.mem → s'.rd = s.rd →
+      s'.wr = s.wr → LInv s₀ t s' := fun h g m rd wr =>
+    ⟨by rw [g]; exact h.rdi, by rw [g]; exact h.rcx, by rw [g]; exact h.rsi,
+      by rw [g]; exact h.rdx, h.le, fun r hr => by rw [g]; exact h.keep r hr, rd.trans h.rd,
+      wr.trans h.wr, by rw [m]; exact h.cnt, fun k hk => by rw [m]; exact h.data k hk,
+      by rw [m]; exact h.incs, by rw [m]; exact h.tincs, by rw [m]; exact h.frame⟩
   refine WP.seq (WP.mono (cmp513_ok s) fun s₁ ⟨g₁, m₁, rd₁, wr₁, c₁⟩ => ?_)
-  have h₁ : LInv s₀ t s₁ := ⟨by rw [g₁]; exact h.rdi, by rw [g₁]; exact h.rcx, by rw [g₁]; exact h.rsi,
-    by rw [g₁]; exact h.rdx, h.le, fun r hr => by rw [g₁]; exact h.keep r hr, rd₁.trans h.rd,
-    wr₁.trans h.wr, by rw [m₁]; exact h.cnt, fun k hk => by rw [m₁]; exact h.data k hk,
-    by rw [m₁]; exact h.incs, by rw [m₁]; exact h.tincs, by rw [m₁]; exact h.frame⟩
+  have h₁ : LInv s₀ t s₁ := cong h g₁ m₁ rd₁ wr₁
   have hr : (s.gpr .rdx).toNat = eL s₀ - 1024 * t := by rw [h.rdx, toNat_ofNat_lt (by omega)]
   refine WP.ite (decide (eL s₀ - 1024 * t < 513)) (by simp [eval, c₁, hr]) (fun hs => ?_) (fun hs => ?_)
   · exact Avx512Tail.tail_ok hp ht (tinv_of h₁)
   · simp only [decide_eq_false_iff_not] at hs
-    exact Avx512Last.last16_ok hp (by omega) ht (tinv_of h₁) h₁.incs
+    refine WP.seq (WP.mono (cmp769_ok s₁) fun s₂ ⟨g₂, m₂, rd₂, wr₂, c₂⟩ => ?_)
+    have h₂ : LInv s₀ t s₂ := cong h₁ g₂ m₂ rd₂ wr₂
+    have hr₁ : (s₁.gpr .rdx).toNat = eL s₀ - 1024 * t := by rw [g₁]; exact hr
+    refine WP.ite (decide (eL s₀ - 1024 * t < 769)) (by simp [eval, c₂, hr₁]) (fun hs' => ?_) (fun hs' => ?_)
+    · simp only [decide_eq_true_eq] at hs'
+      exact last12_ok hp (by omega) (by omega) (tinv_of h₂)
+    · simp only [decide_eq_false_iff_not] at hs'
+      exact Avx512Last.last16_ok hp (by omega) ht (tinv_of h₂) h₂.incs
 
 theorem correct {s₀ : State} (hp : APre s₀) :
     WP isa Impl.ChaCha20.X86_64.Avx512.xor s₀ fun s' =>

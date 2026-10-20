@@ -1,15 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.ScanField
+import VerifiedGarbage.Proof.Dsa.AArch64.ScanField
 public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeFrame
 public import VerifiedGarbage.Proof.Dsa.AArch64.WidthChoice
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Proof.Dsa.DomainShape
+import VerifiedGarbage.Proof.Framework.Block
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # The two public width scans and supported-size selection -/
 

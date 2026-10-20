@@ -1,11 +1,19 @@
 module
+public import VerifiedGarbage.Proof.AesSiv.X86.CtrCT
+public import VerifiedGarbage.Proof.AesSiv.X86.Enc
 
-public import VerifiedGarbage.Proof.AesSiv.X86.Dec
+import VerifiedGarbage.Proof.AesSiv.X86.Dec
+import VerifiedGarbage.Proof.AesSiv.X86.FinishCT
+import VerifiedGarbage.Proof.AesSiv.X86.Finish
+import VerifiedGarbage.Proof.AesSiv.X86.Run
+meta import VerifiedGarbage.Proof.AesSiv.X86.CtrCT
+meta import VerifiedGarbage.Proof.AesSiv.X86.Enc
 meta import VerifiedGarbage.Proof.AesSiv.X86.Dec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.AesSiv.X86.FinishCT
+meta import VerifiedGarbage.Proof.AesSiv.X86.Finish
+meta import VerifiedGarbage.Proof.AesSiv.X86.Run
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-SIV on x86: `encrypt` and `decrypt` are constant time

@@ -71,6 +71,12 @@ pub trait HashFunction: Clone {
 /// `_FEATURES` constants), best first. An object uses the first
 /// that the CPU can run, chosen when it is created (see `crate::cpu`).
 ///
+/// `digests`, on the targets its `cfg` names, gives every implementation's
+/// one-shot `digest(data: *const u8, len: usize, out: *mut [u8; OUTPUT])`,
+/// which `digest` calls: the match is exhaustive, so on those targets an
+/// implementation without one does not compile. Other targets compute
+/// `digest` with the streaming functions.
+///
 /// Every region is a distinct Rust object, so none overlaps another or the
 /// return address, and none wraps around the end of the address space; the
 /// length is kept exactly (`update` panics rather than let it reach 2⁶⁴
@@ -87,7 +93,10 @@ macro_rules! streaming_hash {
                 $base:ident => ($update:path, $finalize:path)
                 $(, $(#[$attr:meta])* $variant:ident if [$($req:path),*] => ($vupdate:path, $vfinalize:path))*
                 $(,)?
-            } $(,)?
+            }
+            $(, digests: #[cfg($dcfg:meta)] {
+                $($(#[$dattr:meta])* $dvariant:ident => $digest:path),* $(,)?
+            })? $(,)?
         }
     ) => {
         /// The implementations of the streaming primitives.
@@ -157,6 +166,24 @@ macro_rules! streaming_hash {
                     }
                 }
             }
+
+            $(
+            /// The one-shot `digest` of the `len` bytes at `data` into `out`.
+            ///
+            /// # Safety
+            ///
+            /// As for the artifacts; the CPU must have the features of the
+            /// implementation (as `select` guarantees).
+            #[cfg($dcfg)]
+            pub(crate) unsafe fn digest(self, data: *const u8, len: usize, out: &mut [u8; $output]) {
+                // SAFETY: the caller's obligations.
+                unsafe {
+                    match self {
+                        $($(#[$dattr])* Self::$dvariant => $digest(data, len, out),)*
+                    }
+                }
+            }
+            )?
         }
 
         $(#[$doc])*
@@ -252,8 +279,26 @@ macro_rules! streaming_hash {
                 out
             }
 
-            /// The digest of `data`.
+            /// The digest of `data`: in one call on the targets with one-shot
+            /// `digests`, else by streaming.
+            #[allow(unreachable_code)]
             pub fn digest(data: &[u8]) -> [u8; $output] {
+                $(
+                #[cfg($dcfg)]
+                {
+                    let mut out = [0; $output];
+                    // SAFETY: `data` is valid for reads of `data.len()` bytes
+                    // and `out` for writes of its size; they are distinct
+                    // objects, so they do not overlap each other or the
+                    // return address, and do not wrap around the end of the
+                    // address space. The backend is selected for this CPU's
+                    // features.
+                    unsafe {
+                        $backend::select($crate::cpu::detected()).digest(data.as_ptr(), data.len(), &mut out)
+                    };
+                    return out;
+                }
+                )?
                 let mut h = Self::new();
                 h.update(data);
                 h.finalize()
@@ -263,7 +308,6 @@ macro_rules! streaming_hash {
             /// represent a message of `length` bytes (for HMAC, whose
             /// `init` makes such states), and which runs the implementation
             /// `backend` (which must have been selected for this CPU).
-            #[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm", target_arch = "x86"))]
             #[allow(dead_code)]
             pub(crate) fn from_state(state: [u8; $state], length: u64, backend: $backend) -> Self {
                 $name { state, length, backend }
@@ -271,7 +315,6 @@ macro_rules! streaming_hash {
 
             /// The implementation this computation runs, selected for this
             /// CPU, which functions built on it (e.g. HMAC's) follow.
-            #[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm", target_arch = "x86"))]
             #[allow(dead_code)]
             pub(crate) fn backend(&self) -> $backend {
                 self.backend
@@ -279,7 +322,6 @@ macro_rules! streaming_hash {
 
             /// The streaming state, in place, and the length of the message
             /// it represents.
-            #[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm", target_arch = "x86"))]
             #[allow(dead_code)]
             pub(crate) fn state_mut(&mut self) -> (&mut [u8; $state], u64) {
                 (&mut self.state, self.length)

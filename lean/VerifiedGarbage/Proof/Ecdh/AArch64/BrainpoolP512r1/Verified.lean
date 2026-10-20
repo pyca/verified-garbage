@@ -1,26 +1,26 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP512r1.Main
-meta import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP512r1.Main
+import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP512r1.Main
 public import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP512r1.Contract
-meta import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP512r1.Contract
-public import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP512r1.Lit
-meta import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP512r1.Lit
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP512r1.Lit
+public import VerifiedGarbage.Impl.Ecdh.BrainpoolP512r1.AArch64
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP512r1.Main
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP512r1.Contract
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.Main
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP512r1.Lit
+meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP512r1.AArch64
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 
 /-!

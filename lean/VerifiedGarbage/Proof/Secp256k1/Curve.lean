@@ -1,14 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Weierstrass.Complete
+public import VerifiedGarbage.Spec.Secp256k1
 import VerifiedGarbage.Proof.Secp256k1.Prime
-public import VerifiedGarbage.Proof.Secp256k1.Point
 import VerifiedGarbage.Proof.Weierstrass.Group
-public import VerifiedGarbage.Proof.Weierstrass.Cubic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Weierstrass.Cubic
 
 /-!
 # secp256k1 is a curve the proofs apply to

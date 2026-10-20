@@ -1,23 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.Arm.Words
-public import VerifiedGarbage.Impl.Modes.Arm.Seq
-public import VerifiedGarbage.Spec.Cbc
-public import VerifiedGarbage.Proof.Modes.Arm.Counter
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Frame
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
-import VerifiedGarbage.Proof.AesCbc.Spec
+public import VerifiedGarbage.Spec.Ctr
+import VerifiedGarbage.Proof.Modes.Arm.Counter
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.CmacAes.Arm.Words
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # A mode's block operations on ARMv7, and what they compute

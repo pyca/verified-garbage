@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Normalize
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Normalized bookkeeping depends only on the public limb count -/
 

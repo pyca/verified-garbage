@@ -1,10 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Frame
 
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Reduce
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Reduce
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillLoops
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
+import VerifiedGarbage.Proof.Argon2.Arm.Compress
 
 /-!
 # Argon2 on ARMv7: the derivation is correct

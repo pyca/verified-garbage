@@ -4,10 +4,6 @@ import VerifiedGarbage.Proof.Divstep.WordBasic
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
 public import VerifiedGarbage.Proof.Divstep.WordDef
 public import Mathlib.Data.BitVec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Divsteps on 64-bit words

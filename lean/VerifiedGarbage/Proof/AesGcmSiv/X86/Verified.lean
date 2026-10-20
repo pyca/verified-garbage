@@ -1,13 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.X86.FnCT
+import VerifiedGarbage.Proof.AesGcmSiv.X86.FnCT
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.GcmSiv.Contract
 public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Seal
+import VerifiedGarbage.Proof.AesGcmSiv.X86.Open
+import VerifiedGarbage.Proof.AesGcm.X86.Contract
 
 /-!
 # AES-GCM-SIV on x86: `Verified`

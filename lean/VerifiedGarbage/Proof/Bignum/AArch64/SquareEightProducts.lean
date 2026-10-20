@@ -1,15 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightWord
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEight
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Ed25519.Word64
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.TCB.AArch64.Isa
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight
@@ -23,7 +21,7 @@ theorem multiplyPair_ok (s : State) (lo hi a b : Reg)
       (t.gpr lo = s.gpr a * s.gpr b ∧
         t.gpr hi = BitVec.ofNat 64 ((s.gpr a).toNat * (s.gpr b).toNat / 2 ^ 64) ∧
         t.mem = s.mem) ∧ Keep [lo, hi] s t := by
-  refine WP.keep [lo, hi] ?_ (by simp [writesOnly, Code.allInstrs, dstOf]) rfl rfl
+  refine WP.keep [lo, hi] ?_ (by simp [writesOnly, Code.allInstrs, dsts, dstOf, Option.toList]) rfl rfl
   brun [hd, ha, hb]
 
 theorem productWord_value {s t : State} {lo hi a b : Reg}

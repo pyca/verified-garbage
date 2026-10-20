@@ -1,35 +1,47 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sha512.X86_64.Shared
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Shared
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
+public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseCallee
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Hash
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Spec.Weierstrass
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.BaseCallee
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Hash
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
+meta import Mathlib.Tactic.NormNum.Prime
+meta import Mathlib.Data.Nat.Totient
+meta import Mathlib.Tactic.Positivity.Finset
+meta import Mathlib.Algebra.Order.Field.Basic
+meta import Mathlib.Tactic.NormNum.GCD
+meta import Mathlib.Data.Sym.Sym2.Init
+meta import Mathlib.Tactic.ContinuousFunctionalCalculus
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Proof.Ed25519.Recode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
-import VerifiedGarbage.Spec.EcKey.Generic
-import VerifiedGarbage.Spec.Ecdsa.Generic
-meta import VerifiedGarbage.Proof.Ed25519.Recode
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
-meta import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
-meta import VerifiedGarbage.Spec.EcKey.Generic
-meta import VerifiedGarbage.Spec.Ecdsa.Generic
+import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
 
 /-! Merged from `Proof.Ed25519.X86_64.PublicKey.CT`. -/
 

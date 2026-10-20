@@ -3,22 +3,17 @@ module
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Proof.Sm3.X86.Compress
-public import VerifiedGarbage.Proof.Sm3.X86.Stream.Init
+import VerifiedGarbage.Proof.Sm3.X86.Stream.Init
 public import VerifiedGarbage.Proof.Sm3.X86.Stream.Md
-public import VerifiedGarbage.Spec.Sm3.Contract
 public import VerifiedGarbage.Proof.Sm3.X86.Lit
 public import VerifiedGarbage.Proof.Sm3.Scratch
-public import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.StackScratch.X86
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.MdStream.X86.ArgWord
-public import VerifiedGarbage.Proof.MdStream.X86.Words
-public import VerifiedGarbage.Proof.Sm3.StateMem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.CallWith
 
 /-!
 # SM3 on x86: the shared contracts

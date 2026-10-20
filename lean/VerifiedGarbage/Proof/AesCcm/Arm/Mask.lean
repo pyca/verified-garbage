@@ -1,11 +1,12 @@
 module
+public import VerifiedGarbage.Proof.AesCcm.Arm.Crypt
 
-public import VerifiedGarbage.Proof.AesCcm.Arm.Seal
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesCcm.BytesAt
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
+import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
 
 /-!
 # AES-CCM on ARMv7: masking the data (`mask`)

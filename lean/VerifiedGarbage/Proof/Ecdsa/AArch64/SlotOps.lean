@@ -1,11 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # ECDSA on AArch64: field operations on numbered slots

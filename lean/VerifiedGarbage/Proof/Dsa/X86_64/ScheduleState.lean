@@ -1,13 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Dsa.X86_64.BufferFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # State and operand preservation between complete DSA schedules -/

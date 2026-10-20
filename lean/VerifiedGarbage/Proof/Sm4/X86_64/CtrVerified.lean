@@ -1,35 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.ModeCore
-meta import VerifiedGarbage.Proof.Sm4.X86_64.ModeCore
-public import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
-meta import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
-public import VerifiedGarbage.Proof.Modes.X86_64.Ctr
-meta import VerifiedGarbage.Proof.Modes.X86_64.Ctr
+import VerifiedGarbage.Proof.Modes.X86_64.Ctr
 public import VerifiedGarbage.Proof.Sm4.Scratch
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
+meta import VerifiedGarbage.Proof.Sm4.X86_64.ModeCore
+meta import VerifiedGarbage.Proof.Modes.X86_64.Ctr
 meta import VerifiedGarbage.Proof.Sm4.Scratch
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.AesSiv.Ctr32
-public import VerifiedGarbage.Proof.AesSiv.Words
-public import VerifiedGarbage.Proof.Cmac.Stream
-public import VerifiedGarbage.Proof.Gcm.Bits
-public import VerifiedGarbage.Proof.Modes.X86_64.Xor
-meta import VerifiedGarbage.Proof.AesSiv.Ctr32
-meta import VerifiedGarbage.Proof.AesSiv.Words
-meta import VerifiedGarbage.Proof.Cmac.Stream
-meta import VerifiedGarbage.Proof.Gcm.Bits
-meta import VerifiedGarbage.Proof.Modes.X86_64.Xor
+meta import VerifiedGarbage.Impl.StackScratch.X86_64
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+meta import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # SM4-CTR on x86-64 meets its contracts
@@ -39,7 +25,8 @@ meta import VerifiedGarbage.Proof.Modes.X86_64.Xor
 the taint analysis: the pointers, `n` and the stack pointer are public, and
 so is everything the code computes from them; the counter block is secret.
 `ctr_framed` runs it with its working space on the stack, zeroed on return:
-3144 bytes, the 392 words of the scratch buffer and 8 more.
+3208 bytes, the 400 words of the scratch buffer and 8 more, below the 8 bytes
+the call of `vg_sm4_crypt_prepared` uses.
 -/
 
 @[expose] public section
@@ -54,13 +41,15 @@ def ctrX86_64 : Contract X86_64.isa where
     let sched : Region := ⟨s.gpr .rdi, 128⟩
     let ctr : Region := ⟨s.gpr .rsi, 16⟩
     let data : Region := ⟨s.gpr .rdx, 16 * (s.gpr .rcx).toNat⟩
-    let scratch : Region := ⟨s.gpr .r8, 8 * slots⟩
+    let scratch : Region := ⟨s.gpr .r8, 8 * 400⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
+    let stk : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 8, 8⟩
     s.rd = [sched] ∧ s.wr = [ctr, data, scratch] ∧ sched.Disjoint ctr ∧ sched.Disjoint data ∧
       sched.Disjoint scratch ∧ ctr.Disjoint data ∧ ctr.Disjoint scratch ∧ data.Disjoint scratch ∧
       ret.Disjoint ctr ∧ ret.Disjoint data ∧ ret.Disjoint scratch ∧
+      stk.Disjoint ctr ∧ stk.Disjoint data ∧ stk.Disjoint scratch ∧ 8 ≤ (s.gpr .rsp).toNat ∧
       (s.gpr .rdi).toNat + 128 ≤ 2 ^ 64 ∧ (s.gpr .rsi).toNat + 16 ≤ 2 ^ 64 ∧
-      (s.gpr .rdx).toNat + 16 * (s.gpr .rcx).toNat ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 8 * slots ≤ 2 ^ 64
+      (s.gpr .rdx).toNat + 16 * (s.gpr .rcx).toNat ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 8 * 400 ≤ 2 ^ 64
   post s s' :=
     Spec.Cbc.blocksAt s'.mem (s.gpr .rdx) (s.gpr .rcx).toNat =
         Spec.Ctr.crypt (Spec.Sm4.cipher (Spec.Sm4.scheduleAt s.mem (s.gpr .rdi))) (Spec.Aes.bytesAt s.mem (s.gpr .rsi) 16)
@@ -85,8 +74,8 @@ theorem cipher_eq (k : Spec.Sm4.Schedule) : modeCoreSpec.cipher k = Spec.Sm4.cip
 
 theorem ctr_wp {s₀ : State} (hp : ctrX86_64.pre s₀) :
     WP isa ctr s₀ fun s' => gprPreserved s₀ s' ∧ ctrX86_64.post s₀ s' := by
-  obtain ⟨hrd, hwr, dKC, dKD, dKS, dCD, dCS, dDS, dRC, dRD, dRS, fitK, fitC, fitD, fitB⟩ := hp
-  have hwS : (⟨s₀.gpr .r8, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  obtain ⟨hrd, hwr, dKC, dKD, dKS, dCD, dCS, dDS, dRC, dRD, dRS, dTC, dTD, dTS, hst, fitK, fitC, fitD, fitB⟩ := hp
+  have hwS : (⟨s₀.gpr .r8, 8 * 400⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
   refine WP.mono (Proof.Modes.X86_64.ctr_wp modeCoreSpec (r := ⟨.rsi, .rdx, .rcx, .r8⟩) ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .r8) (P := s₀.gpr .rsi) (D := s₀.gpr .rdx) (n := (s₀.gpr .rcx).toNat)
     (k := Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .rdi)) rfl rfl rfl rfl ⟨hwS, fitB⟩
@@ -95,28 +84,87 @@ theorem ctr_wp {s₀ : State} (hp : ctrX86_64.pre s₀) :
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact dKS
-      · exact dKC⟩) fun s' ⟨hcs, hdata, hctr, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, ?_, hctr⟩
+      · exact dKC, hst, fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact dTS
+      · exact dTC⟩
+    (hstk := .inr ⟨hst, fun w hw => by
+      rw [hwr] at hw
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl | rfl
+      · exact dTC
+      · exact dTD
+      · exact dTS⟩)) fun s' ⟨hcs, hdata, hctr, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, ?_, hctr⟩
   swap
   · rw [cipher_eq] at hdata; exact hdata
+  rw [stkList_dirCore] at hf
   refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
   · exact dRS
   · exact dRC
   · exact dRD
+  · exact VG.Offset.base_disjoint_below _ (by decide)
 
-/-- The initial taint: the registers of the arguments and the stack pointer are
-public. It knows nothing of the writable regions: the code never reads a public
-value back from them, and tracking them would cost the kernel at every store. -/
-def ctrTaint : X86_64.Taint.T := Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .rsp]
+/-- The initial taint: the registers of the arguments and the stack pointer
+are public, and `r8` is the scratch buffer's base, so that the registers
+`vg_sm4_crypt_prepared` saves in its slots and restores (the buffer's base
+the core keeps in `r12`) stay public. -/
+def ctrTaint : X86_64.Taint.T :=
+  { regs := .ofList [.rdi, .rsi, .rdx, .rcx, .r8, .rsp], flags := false,
+    lens := [16, 0, 8 * 400], bases := [(.r8, 2, 0)] }
 
-theorem ctrTaint_agree (s t : State) (_ : ctrX86_64.pre s) (_ : ctrX86_64.pre t)
+theorem ctrTaint_wf (s : State) (hs : ctrX86_64.pre s) : Taint.Wf ctrTaint s := by
+  obtain ⟨_, hwr, _, _, _, dCD, dCS, dDS, _, _, _, _, _, _, _, _, fitC, fitD, fitB⟩ := hs
+  refine ⟨fun _ => ?_, ?_⟩
+  · rw [hwr]
+    refine ⟨?_, ?_, ?_⟩
+    · exact List.Forall₂.cons (by change 16 ≤ 16; omega) (List.Forall₂.cons (by change 0 ≤ _; omega)
+        (List.Forall₂.cons (by change 8 * 400 ≤ 8 * 400; omega) List.Forall₂.nil))
+    · refine List.Pairwise.cons (fun r hr => ?_) (List.Pairwise.cons (fun r hr => ?_)
+        (List.Pairwise.cons (by simp) List.Pairwise.nil))
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact dCD
+        · exact dCS
+      · obtain rfl := List.mem_singleton.mp hr; exact dDS
+    · intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · change 16 ≤ 2 ^ 64; omega
+      · change 16 * (s.gpr .rcx).toNat ≤ 2 ^ 64; omega
+      · change 8 * 400 ≤ 2 ^ 64; omega
+  · intro p hp
+    simp only [ctrTaint, List.mem_singleton] at hp
+    subst p
+    unfold Taint.region
+    rw [hwr]
+    change s.gpr .r8 = s.gpr .r8 + (0 : BitVec 64)
+    exact (BitVec.add_zero _).symm
+
+theorem ctrTaint_agree (s t : State) (hs : ctrX86_64.pre s) (ht : ctrX86_64.pre t)
     (hp : ctrX86_64.pub s t) : X86_64.Taint.Agree ctrTaint s t := by
   obtain ⟨p1, p2, p3, p4, p5, p6⟩ := hp
-  refine Taint.agree_ofRegs fun r hr => ?_
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  exacts [p1, p2, p3, p4, p5, p6]
+  refine ⟨?_, ?_, ctrTaint_wf s hs, ctrTaint_wf t ht, ?_, ?_, ?_, X86_64.Taint.noXr⟩
+  · constructor
+    · intro r hr
+      simp only [ctrTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+      exacts [p1, p2, p3, p4, p5, p6]
+    · intro h
+      change false = true at h
+      contradiction
+  · intro _
+    rw [hs.2.1, ht.2.1, p2, p3, p4, p5]
+  · intro slot hslot
+    change slot ∈ ([] : List (Nat × Nat × Nat)) at hslot
+    exact False.elim (List.not_mem_nil hslot)
+  · intro slot hslot
+    change slot ∈ ([] : List (Nat × Nat × Nat)) at hslot
+    exact False.elim (List.not_mem_nil hslot)
+  · intro r hr
+    simp only [ctrTaint, RegSet.not_mem_empty] at hr
 
 theorem ctr_ct : ConstantTime isa ctrX86_64.pre ctrX86_64.pub ctr :=
   VG.Taint.constantTime (A := taint) ctrTaint ctrTaint_agree (by taint_decide)
@@ -136,21 +184,21 @@ def ctrSat : State where
   of := none
   mem _ := 0
   rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩, ⟨0x4000, 8 * 392⟩]
+  wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩, ⟨0x4000, 8 * 400⟩]
 
 theorem ctr_verified :
-    Verified X86_64.target ctr (Proof.Sm4.ctrScratchContract X86_64.abi slots) :=
+    Verified X86_64.target ctr (Proof.Sm4.ctrScratchContract X86_64.abi 400 8) :=
   Verified.of_correct ctr_correct ctr_ct (by
     sig_implies [Proof.Sm4.ctrScratchContract, Proof.Sm4.ctrScratchSig, Proof.Sm4.ctrPost, ctrX86_64,
       X86_64.abi, X86_64.argRegs, slots, savedSlot, tableEnd, tableSlot] [ctrSat] using ctrSat)
 
 /-- CTR with its working space on the stack. -/
 theorem ctr_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3144 .r8 392 ctr)
-      (Spec.Sm4.ctrContract X86_64.abi 3144) :=
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3208 .r8 400 ctr)
+      (Spec.Sm4.ctrContract X86_64.abi 3216) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.Sm4.ctrSig) (nm := "scratch") (e := .u64)
-    (n := 392) (post := Proof.Sm4.ctrPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 3144) ctr_verified (by decide) (by decide) (by decide)
+    (n := 400) (post := Proof.Sm4.ctrPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 3208) ctr_verified (by decide) (by decide) (by decide)
     (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Sm4.ctrPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by lit_decide) (by rw [Curry.apply_const]; trivial))

@@ -1,15 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
-meta import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
 public import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
+public import VerifiedGarbage.Impl.TripleDes.Arm.Ecb
+public import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
+meta import VerifiedGarbage.Impl.TripleDes.Arm.Ecb
+meta import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant-time Triple DES block and key-expansion programs -/
 

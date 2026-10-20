@@ -2,23 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Backend
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
+public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
-public import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Verified
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Verified
+public import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
 
 /-!
 # ML-DSA on x86-64: what the callers of the polynomial arithmetic need of it

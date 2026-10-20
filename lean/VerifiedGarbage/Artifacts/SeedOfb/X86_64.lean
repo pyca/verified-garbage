@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.X86_64.FbVerified
-public import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
 
 /-! # SEED-OFB artifacts on baseline x86-64 -/
 
@@ -19,13 +18,10 @@ def note : String :=
   per call. The mode is the generic OFB of `Impl/Modes/X86_64/`."
 
 def artifacts : List Artifact := [
-  { Spec.Seed.ofbApi with
-    target := X86_64.target
-    doc := Spec.Seed.ofbApi.doc (notes := [note])
+  Spec.Seed.ofbApi.artifact X86_64.target {
+    notes := [note]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 1512 .r8 188 Impl.Seed.X86_64.ofb
-    contract := Spec.Seed.ofbContract X86_64.abi 1512
     stack := 1512
-    verified := Proof.Seed.X86_64.ofb_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Seed.X86_64.ofb_framed }]
 
 end VG.Artifacts.SeedOfb.X86_64

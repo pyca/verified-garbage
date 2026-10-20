@@ -1,15 +1,33 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
-
-public import VerifiedGarbage.Proof.Idea.X86.CbcVerified
-meta import VerifiedGarbage.Proof.Idea.X86.CbcVerified
 public import VerifiedGarbage.Proof.Idea.FbScratch
+public import VerifiedGarbage.Proof.Idea.X86.ModeCore
+import VerifiedGarbage.Proof.Modes.X86.Modes
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Spec.Idea.Cfb
+public import VerifiedGarbage.Proof.Modes.X86.Seq
+import VerifiedGarbage.Proof.Idea.X86.ModesLit
+import VerifiedGarbage.Proof.Idea.KeyLit32
 meta import VerifiedGarbage.Proof.Idea.FbScratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Idea.X86.ModeCore
+meta import VerifiedGarbage.Proof.Modes.X86.Modes
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Impl.StackScratch.X86
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Spec.Idea.Cfb
+meta import VerifiedGarbage.Proof.Modes.X86.Seq
+meta import VerifiedGarbage.Proof.Idea.X86.ModesLit
+meta import VerifiedGarbage.Proof.Idea.KeyLit32
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Idea.ModeBytes
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Idea.ModeBytes
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # IDEA-OFB and IDEA-CFB64 on x86 (32-bit) meet their contracts
@@ -25,6 +43,25 @@ their working space on the stack, zeroed on return.
 -/
 
 @[expose] public section
+
+namespace VG.Proof.Idea.X86
+
+open VG VG.X86 VG.Impl.Idea.X86
+open VG.Proof.Idea (bytesAt_eq)
+
+theorem disjoint_empty (r : Region) (a : Addr) : Region.Disjoint ⟨a, 0⟩ r := fun _ h => by
+  simp only [Region.Contains] at h; omega
+
+theorem scr_eq (s : State) : Modes.X86.scrR s modeCore = ⟨(arg s 4).setWidth 64, 8 * 23⟩ := by
+  simp [Modes.X86.scrR, modeCore, coreSlots, bufSlot, Impl.Idea.X86.slots]
+
+/-- The data in blocks, as the modes' steps. -/
+theorem cbcBlocksAt_chunks (m : Mem) (p : Addr) (n : Nat) :
+    Spec.Idea.cbcBlocksAt m p n = Proof.Modes.chunksAt 8 m p n := by
+  simp only [Spec.Idea.cbcBlocksAt, Spec.Idea.blocksAt, Proof.Modes.chunksAt, List.map_map]
+  exact List.map_congr_left fun i _ => (bytesAt_eq m _).symm
+
+end VG.Proof.Idea.X86
 
 namespace VG.Proof.Idea.X86.Fb
 

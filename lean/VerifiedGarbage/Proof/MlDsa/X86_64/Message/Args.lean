@@ -1,14 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Layout
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
 /-!
 # ML-DSA on x86-64, `sign_message` and `verify_message`: the moves of a call's arguments

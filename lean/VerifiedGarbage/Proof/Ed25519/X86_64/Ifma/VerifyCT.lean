@@ -1,15 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyWin
+public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
+import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
+import VerifiedGarbage.Proof.Ed25519.X86_64.WindowDigits
+import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyLit
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyWin
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyLit
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyLit
-public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.WindowDigits
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyLit
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Ed25519 verification with AVX512_IFMA: the windows' trace

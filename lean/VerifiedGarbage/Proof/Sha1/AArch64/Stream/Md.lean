@@ -1,25 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.AArch64.Update
-meta import VerifiedGarbage.Proof.MdStream.AArch64.Update
 public import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
-meta import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
 import VerifiedGarbage.Proof.MdStream.AArch64.Words
-meta import VerifiedGarbage.Proof.MdStream.AArch64.Words
 public import VerifiedGarbage.Proof.Sha1.Md
-meta import VerifiedGarbage.Proof.Sha1.Md
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha1.AArch64.Compress
-meta import VerifiedGarbage.Proof.Sha1.AArch64.Compress
 public import VerifiedGarbage.Impl.Sha1.AArch64.Stream
-meta import VerifiedGarbage.Impl.Sha1.AArch64.Stream
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Sha1.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Update
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Words
+meta import VerifiedGarbage.Proof.Sha1.Md
+meta import VerifiedGarbage.Proof.Sha1.AArch64.Compress
+meta import VerifiedGarbage.Impl.Sha1.AArch64.Stream
 meta import VerifiedGarbage.Proof.Sha1.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming SHA-1 on AArch64: `update` and `finalize`

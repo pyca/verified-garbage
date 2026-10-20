@@ -1,12 +1,10 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Power2Round
-import VerifiedGarbage.Proof.MlDsa.Arm.Round.Bits
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.NormLt
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.MakeHint
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.UseHint
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-DSA (FIPS 204) on 32-bit ARM: rounding and hints -/
 
@@ -17,55 +15,31 @@ namespace VG.Artifacts.MlDsaRound.Arm
 open VG.Proof.MlDsa.Arm.Round
 
 def artifacts : List Artifact := [
-  { Spec.MlDsa.power2RoundApi with
-    target := Arm.target
-    doc := Spec.MlDsa.power2RoundApi.doc
-      (notes := ["The function saves `r4` on the stack (the 4 bytes below the stack pointer)."])
+  Spec.MlDsa.power2RoundApi.artifact Arm.target {
+    notes := ["The function saves `r4` on the stack (the 4 bytes below the stack pointer)."]
     code := Impl.MlDsa.Arm.Round.power2Round
-    contract := Spec.MlDsa.power2RoundContract Arm.abi 4
     stack := 4
-    verified := P2R.verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.highBitsApi with
-    target := Arm.target
-    doc := Spec.MlDsa.highBitsApi.doc
+    verified := P2R.verified },
+  Spec.MlDsa.highBitsApi.artifact Arm.target {
     code := Impl.MlDsa.Arm.Round.highBits
-    contract := Spec.MlDsa.highBitsContract Arm.abi
-    verified := Bits.high_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.lowBitsApi with
-    target := Arm.target
-    doc := Spec.MlDsa.lowBitsApi.doc
+    verified := Bits.high_verified },
+  Spec.MlDsa.lowBitsApi.artifact Arm.target {
     code := Impl.MlDsa.Arm.Round.lowBits
-    contract := Spec.MlDsa.lowBitsContract Arm.abi
-    verified := Bits.low_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.normLtApi with
-    target := Arm.target
-    doc := Spec.MlDsa.normLtApi.doc
-      (notes := ["The function saves `r4` on the stack (the 4 bytes below the stack pointer)."])
+    verified := Bits.low_verified },
+  Spec.MlDsa.normLtApi.artifact Arm.target {
+    notes := ["The function saves `r4` on the stack (the 4 bytes below the stack pointer)."]
     code := Impl.MlDsa.Arm.Round.normLt
-    contract := Spec.MlDsa.normLtContract Arm.abi 4
     stack := 4
-    verified := NormLt.verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.makeHintApi with
-    target := Arm.target
-    doc := Spec.MlDsa.makeHintApi.doc
-      (notes := ["The function saves `r4`–`r6` on the stack (the 12 bytes below the stack pointer)."])
+    verified := NormLt.verified },
+  Spec.MlDsa.makeHintApi.artifact Arm.target {
+    notes := ["The function saves `r4`–`r6` on the stack (the 12 bytes below the stack pointer)."]
     code := Impl.MlDsa.Arm.Round.makeHint
-    contract := Spec.MlDsa.makeHintContract Arm.abi 12
     stack := 12
-    verified := MakeHint.verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.useHintApi with
-    target := Arm.target
-    doc := Spec.MlDsa.useHintApi.doc
-      (notes := ["The function saves `r4`–`r6` on the stack (the 12 bytes below the stack pointer)."])
+    verified := MakeHint.verified },
+  Spec.MlDsa.useHintApi.artifact Arm.target {
+    notes := ["The function saves `r4`–`r6` on the stack (the 12 bytes below the stack pointer)."]
     code := Impl.MlDsa.Arm.Round.useHint
-    contract := Spec.MlDsa.useHintContract Arm.abi 12
     stack := 12
-    verified := UseHint.verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := UseHint.verified }]
 
 end VG.Artifacts.MlDsaRound.Arm

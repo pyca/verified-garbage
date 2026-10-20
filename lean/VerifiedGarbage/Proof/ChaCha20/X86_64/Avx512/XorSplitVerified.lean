@@ -1,25 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitFn
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitFn
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitFn
 public import VerifiedGarbage.Spec.ChaCha20.OutOfPlace
-meta import VerifiedGarbage.Spec.ChaCha20.OutOfPlace
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplit
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
 import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-meta import Mathlib.Data.List.Induction
-meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitFn
+meta import VerifiedGarbage.Spec.ChaCha20.OutOfPlace
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplit
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
 meta import VerifiedGarbage.Proof.Aes.KeyExp
-meta import VerifiedGarbage.Proof.Aes.SboxSpec
-meta import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # `vg_chacha20_xor_split_avx512` verified

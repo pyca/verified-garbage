@@ -1,14 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Call
-import VerifiedGarbage.Proof.MlKem.X86_64.KCall
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-DSA verification on x86-64: entry to a callee
@@ -136,8 +133,7 @@ theorem Lay.whintAt {p : Ptr} (h : inB (rbs ++ wbs) p 1024 = true) (v : BitVec 6
   subst this
   apply Vector.ext
   intro j hj
-  simp only [Vector.getElem_ofFn, Nat.mul_zero, Nat.zero_add]
-  rw [L.wcoeffAt h v hj]
+  rw [Vector.getElem_ofFn, Vector.getElem_ofFn, Nat.mul_zero, Nat.zero_add, L.wcoeffAt h v hj]
 
 theorem Lay.wreduced {p : Ptr} (h : inB (rbs ++ wbs) p 1024 = true) (v : BitVec 64) (hr : Reduced s.mem (pa s p)) :
     Reduced (s.mem.writeW (s.gpr .rsp - 8) v) (pa s p) :=

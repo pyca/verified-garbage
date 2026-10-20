@@ -1,15 +1,12 @@
 module
 
 public import VerifiedGarbage.Spec.TripleDes.Ofb
-public import VerifiedGarbage.Spec.TripleDes.Cfb
 public import VerifiedGarbage.Spec.TripleDes.Cfb8
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Spec.Cfb
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.TripleDes.CbcBlocks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Triple DES-OFB, -CFB64 and -CFB8 with their working space as an argument

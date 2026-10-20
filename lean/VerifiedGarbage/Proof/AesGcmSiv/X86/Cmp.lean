@@ -1,11 +1,13 @@
 module
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Env
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 
-public import VerifiedGarbage.Proof.AesGcmSiv.X86.Crypt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM-SIV on x86: comparing the tags and masking the data

@@ -1,13 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalField
-public import VerifiedGarbage.Proof.MlDsa.Arith.VectorNtt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.MlDsa.Arith.VectorNtt
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

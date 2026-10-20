@@ -1,11 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Sha3.X86_64.Permute
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
 public import VerifiedGarbage.Proof.Sha3.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SHA-3 and SHAKE (FIPS 202) on x86-64 -/
 
@@ -14,60 +10,32 @@ public import VerifiedGarbage.Proof.Sha3.X86_64.Frame
 namespace VG.Artifacts.Sha3.X86_64
 
 def artifacts : List Artifact := [
-  { Spec.Sha3.permuteApi with
-    target := X86_64.target
-    doc := Spec.Sha3.permuteApi.doc
+  Spec.Sha3.permuteApi.artifact X86_64.target {
     code := Impl.Sha3.X86_64.permute
-    contract := Spec.Sha3.permuteContract X86_64.abi
-    verified := Proof.Sha3.X86_64.permute_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha3.absorbApi with
-    target := X86_64.target
-    doc := Spec.Sha3.absorbApi.doc
+    verified := Proof.Sha3.X86_64.permute_verified },
+  Spec.Sha3.absorbApi.artifact X86_64.target {
     code := Impl.StackScratch.X86_64.withStackScratch 648 .r9 Impl.Sha3.X86_64.Stream.absorb
-    contract := Spec.Sha3.absorbContract X86_64.abi 656
     stack := 656
-    verified := Proof.Sha3.X86_64.Frame.absorb_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha3.absorbScratchApi with
-    target := X86_64.target
-    doc := Spec.Sha3.absorbScratchApi.doc
+    verified := Proof.Sha3.X86_64.Frame.absorb_framed },
+  Spec.Sha3.absorbScratchApi.artifact X86_64.target {
     code := Impl.Sha3.X86_64.Stream.absorb
-    contract := Spec.Sha3.absorbScratchContract X86_64.abi 8
     stack := 8
-    verified := Proof.Sha3.X86_64.Stream.Absorb.absorb_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha3.padApi with
-    target := X86_64.target
-    doc := Spec.Sha3.padApi.doc
+    verified := Proof.Sha3.X86_64.Stream.Absorb.absorb_verified },
+  Spec.Sha3.padApi.artifact X86_64.target {
     code := Impl.StackScratch.X86_64.withStackScratch 648 .r8 Impl.Sha3.X86_64.Stream.pad
-    contract := Spec.Sha3.padContract X86_64.abi 656
     stack := 656
-    verified := Proof.Sha3.X86_64.Frame.pad_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha3.padScratchApi with
-    target := X86_64.target
-    doc := Spec.Sha3.padScratchApi.doc
+    verified := Proof.Sha3.X86_64.Frame.pad_framed },
+  Spec.Sha3.padScratchApi.artifact X86_64.target {
     code := Impl.Sha3.X86_64.Stream.pad
-    contract := Spec.Sha3.padScratchContract X86_64.abi 8
     stack := 8
-    verified := Proof.Sha3.X86_64.Stream.Pad.pad_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha3.squeezeApi with
-    target := X86_64.target
-    doc := Spec.Sha3.squeezeApi.doc
+    verified := Proof.Sha3.X86_64.Stream.Pad.pad_verified },
+  Spec.Sha3.squeezeApi.artifact X86_64.target {
     code := Impl.StackScratch.X86_64.withStackScratch 648 .r9 Impl.Sha3.X86_64.Stream.squeeze
-    contract := Spec.Sha3.squeezeContract X86_64.abi 656
     stack := 656
-    verified := Proof.Sha3.X86_64.Frame.squeeze_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha3.squeezeScratchApi with
-    target := X86_64.target
-    doc := Spec.Sha3.squeezeScratchApi.doc
+    verified := Proof.Sha3.X86_64.Frame.squeeze_framed },
+  Spec.Sha3.squeezeScratchApi.artifact X86_64.target {
     code := Impl.Sha3.X86_64.Stream.squeeze
-    contract := Spec.Sha3.squeezeScratchContract X86_64.abi 8
     stack := 8
-    verified := Proof.Sha3.X86_64.Stream.Squeeze.squeeze_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Sha3.X86_64.Stream.Squeeze.squeeze_verified }]
 
 end VG.Artifacts.Sha3.X86_64

@@ -2,10 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Step
 public import VerifiedGarbage.Impl.AesXts.X86_64AesNi
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # One-pass XTS-AES with AES-NI on x86-64: a tweak in the buffer times `α⁸`

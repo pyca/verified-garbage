@@ -1,14 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Sm4.Arm.Core
 
-public import VerifiedGarbage.Proof.Sm4.Arm.Crypt8
-public import VerifiedGarbage.Proof.Aes.Bitsliced
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
 import VerifiedGarbage.Proof.Sm4.Layout
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
 
 /-!
 # The table of bitsliced round keys on ARMv7
@@ -121,7 +122,7 @@ theorem keyOne_step {s : State} {b sched : BitVec 32} {e i : Nat} (hp : SchedPre
       entry_addr] at h
     rw [entryW, h]
   have hall₂ : ([Reg.r1, .r2, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r12, .lr].all fun r =>
-      keyPlanes.all fun i => dstOf i != some r) = true := by decide +kernel
+      keyPlanes.all fun i => !clobbers i r) = true := by decide +kernel
   refine ⟨s₂, ?_, fun r h0 h3 h11 => ?_, by rw [rd₂, rd₁], by rw [wr₂, wr₁], by rw [sp₂, sp₁], ?_, ?_⟩
   · rw [keyOne, runBlock_app, e₁, Option.bind_some, e₂]
   · rw [o₂ r (List.all_eq_true.mp hall₂ r (by revert h0 h3 h11; cases r <;> decide)), o₁ r h0]

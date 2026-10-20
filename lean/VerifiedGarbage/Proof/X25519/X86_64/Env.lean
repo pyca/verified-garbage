@@ -3,10 +3,9 @@ module
 public import VerifiedGarbage.Proof.X25519.X86_64.Small
 import VerifiedGarbage.Proof.X25519.X86_64.Sqr
 public import Mathlib.Logic.Function.Basic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.X86_64.AddSub
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X25519 on x86-64: the working space as slots
@@ -133,6 +132,8 @@ def opAdd (o a b : Fin 128) (e : Env) : Env := Function.update e o (e a + e b)
 def opSub (o a b : Fin 128) (e : Env) : Env := Function.update e o (e a - e b)
 def opA24Add (o b a : Fin 128) (e : Env) : Env :=
   Function.update e o (e b + Spec.X25519.a24 * e a)
+def opMux (o x y : Fin 128) (zf : Bool) (e : Env) : Env :=
+  Function.update e o (if zf then e y else e x)
 def opSwap (x y : Fin 128) (sw : Bool) (e : Env) : Env :=
   Function.update (Function.update e x (if sw then e y else e x)) y (if sw then e x else e y)
 
@@ -242,5 +243,17 @@ theorem cswapEB {s : State} {base : Addr} (hs : Scr s base) (x y : Fin 128) (hx 
   rw [E_update o₂, E_update o₁]
   simp only [F, f₁, fy]
   cases sw <;> rfl
+
+theorem muxEB {s : State} {base : Addr} (hs : Scr s base) (o x y : Fin 128) (ho : LSlot o)
+    {zf : Bool} (hz : s.zf = some zf) :
+    WP isa (.block (mux (32 * o.val) (32 * x.val) (32 * y.val))) s fun s' =>
+      Keep base s s' ∧ E s'.mem base = opMux o x y zf (E s.mem base) ∧
+        Outside base (32 * o.val) 32 s.mem s'.mem ∧
+        fe s'.mem base (32 * o.val) =
+          (if zf then fe s.mem base (32 * y.val) else fe s.mem base (32 * x.val)) ∧
+        s'.zf = s.zf :=
+  WP.mono (mux_ok hs (by omega) (by omega) (by omega) hz) fun _ ⟨h, f, z⟩ =>
+    ⟨h.keep (by omega) (by omega), by rw [E_update h.mem]; simp only [F, f]; cases zf <;> rfl,
+      h.mem, f, z⟩
 
 end VG.Proof.X25519.X86_64

@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCallee
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
+import VerifiedGarbage.Proof.Framework.Sig
+import Mathlib.Data.List.Basic
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: `vg_aes_gcm_seal_split_prepared` called

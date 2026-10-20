@@ -1,14 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Zero
 public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-!
 # ML-DSA on AArch64: the loop of `vg_mldsa_rej_ntt_poly`

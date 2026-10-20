@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 public import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
 meta import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # P-521 on x86-64: the templates of the field operations

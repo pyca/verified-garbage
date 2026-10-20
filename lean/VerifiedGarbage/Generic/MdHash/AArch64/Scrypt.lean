@@ -1,9 +1,7 @@
 module
 
-import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Scrypt.AArch64.Whole.Verified
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # scrypt (RFC 7914 §6) on AArch64, over SHA-256
@@ -28,19 +26,16 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
   match v.sha256 with
   | none => []
   | some c => [
-    { Spec.Scrypt.scryptApi with
-      name := Spec.Scrypt.scryptApi.name ++ c.suffix
-      target := AArch64.target
-      doc := Spec.Scrypt.scryptApi.doc (notes := ["Derives both keys with `" ++ pbkName c ++ "` and \
+    Spec.Scrypt.scryptApi.artifact AArch64.target {
+      suffix := c.suffix
+      notes := ["Derives both keys with `" ++ pbkName c ++ "` and \
         runs scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the \
         working space of each. The return address is saved in a 16-byte stack frame, and the \
         password, its length, `r`, `b`, `blen`, `v` and the next block in a 64-byte one below it; \
-        the calls use the 16 bytes below that."])
+        the calls use the 16 bytes below that."]
       code := Impl.Scrypt.AArch64.scrypt (pbkName c) (pbkOf c)
-      contract := Spec.Scrypt.scryptContract AArch64.abi 96
       stack := 96
       verified := scrypt_verified c
-      spSafe := Code.all_of_forall (fun _ => rfl) _
       features := c.features }]
 
 end VG.Generic.MdHash.AArch64.Scrypt

@@ -7,10 +7,6 @@ public import VerifiedGarbage.Impl.Blowfish.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
 
@@ -68,9 +64,7 @@ theorem Keep.trans_sub {rs rs' : List Reg} {s₁ s₂ s₃ : State} (h₁ : Keep
 
 /-- Whether every instruction of `is` writes only registers of `rs`. -/
 def writesOnly (rs : List Reg) (is : List Instr) : Bool :=
-  is.all fun i => match dstOf i with
-    | some r => rs.contains r
-    | none => true
+  is.all fun i => (dsts i).all rs.contains
 
 theorem WP.keep {is : List Instr} {s : State} {Q : State → Prop} (rs : List Reg)
     (h : WP isa (.block is) s Q) (hc : writesOnly rs is = true) :
@@ -78,23 +72,19 @@ theorem WP.keep {is : List Instr} {s : State} {Q : State → Prop} (rs : List Re
   obtain ⟨t, s', he, hq⟩ := h
   have he' := Exec.block_iff.mp he
   obtain ⟨r, w, p, -⟩ := execBlock_regions he'
-  refine ⟨t, s', he, hq, fun r' hr => execBlock_gpr (fun i hi e => hr ?_) he', r, w, p⟩
-  have := List.all_eq_true.mp hc i hi
-  simp only [e, List.contains_iff_mem] at this
-  exact this
+  exact ⟨t, s', he, hq, fun r' hr => execBlock_gpr (fun i hi =>
+    clobbers_eq_false_of_contains (List.all_eq_true.mp hc i hi) hr) he', r, w, p⟩
 
 /-- Code that calls nothing keeps the registers it never writes, its
 regions and the stack pointer. -/
 theorem WP.keepCode {c : Prog isa} {s : State} {Q : State → Prop} (rs : List Reg)
-    (h : WP isa c s Q) (hc : (instrs c).all (fun i => (dstOf i).all rs.contains) = true)
+    (h : WP isa c s Q) (hc : (instrs c).all (fun i => (dsts i).all rs.contains) = true)
     (hn : c.noCalls = true) :
     WP isa c s fun s' => Q s' ∧ Keep rs s s' := by
   obtain ⟨t, s', he, hq⟩ := h
   obtain ⟨hrd, hwr, hsp⟩ := Exec.rdwr he
-  refine ⟨t, s', he, hq, fun r' hr => Exec.gpr (fun i hi e => hr ?_) he (.inl hn), hrd, hwr, hsp⟩
-  have := List.all_eq_true.mp hc i hi
-  simp only [e, Option.all_some, List.contains_iff_mem] at this
-  exact this
+  exact ⟨t, s', he, hq, fun r' hr => Exec.gpr (fun i hi =>
+    clobbers_eq_false_of_contains (List.all_eq_true.mp hc i hi) hr) he (.inl hn), hrd, hwr, hsp⟩
 
 theorem WP.reassoc {a b c : Prog isa} {s : State} {Q : State → Prop}
     (h : WP isa (.seq (.seq a b) c) s Q) : WP isa (.seq a (.seq b c)) s Q :=

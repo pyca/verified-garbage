@@ -1,12 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.VerifyEq
-public import VerifiedGarbage.Proof.Ed448.Recover
-public import Mathlib.Tactic.Abel
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed448.VerifyEq
+public import VerifiedGarbage.Proof.Ed448.Group.Projective
+import VerifiedGarbage.Proof.Ed448.Group.Decode
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.Abel
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Ed448: the reference computations agree with the specification
@@ -20,7 +25,8 @@ The facts `Ref.lean` states, which every target's proofs take as hypotheses:
 * `verifyEq_ok`: `vladder` represents `[S >> n]B + [k >> n]a` the same way,
   and the equation follows (`verifyEquation_some`).
 
-Only registration files import this module.
+Only registration files, and the modules that pass its facts to them
+(`X86/ScalarBaseOk.lean`, `X86/VerifyEquationOk.lean`), import this module.
 -/
 
 @[expose] public section

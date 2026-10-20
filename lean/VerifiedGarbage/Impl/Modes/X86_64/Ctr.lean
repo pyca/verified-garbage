@@ -57,7 +57,8 @@ slots at `sb`, `prepare` makes the key, given by the registers `keyRegs`,
 ready in the core's slots `[0, slots)`, and `crypt` replaces the `G`
 blocks of `bw` words of the buffer at slot `buf` (`bw G` slots) with their
 encryptions. Both keep `dataReg` and `leftReg`. A mode keeps its own slots
-in `[slots, total)`. -/
+in `[slots, total)`. The core's code may use the `stack` bytes below `rsp`
+(for its calls), and none for a core of no `stack`. -/
 structure Core where
   prepare : Prog isa
   crypt : Prog isa
@@ -71,6 +72,8 @@ structure Core where
   /-- The number of 8-byte words in a block (2 for 16-byte blocks, as CTR
   needs, or 1). -/
   bw : Nat := 2
+  /-- The bytes below `rsp` the core's code uses. -/
+  stack : Nat := 0
 
 /-- Where a mode's arguments are: the counter block's address, the data's
 address, the number of blocks and the scratch buffer's address. -/

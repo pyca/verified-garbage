@@ -2,20 +2,59 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Args
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
+public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Tactic.NormNum.Prime
+public import VerifiedGarbage.Impl.Ed25519.X86.VerifyMessage
+public import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyLit
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
-public import VerifiedGarbage.Proof.Ed25519.X86.VerifyVerified
+import VerifiedGarbage.Proof.Ed25519.X86.VerifyVerified
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Count
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.TaintSum
-import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Sha512.Stream
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Impl.Sha256.X86.Stream
+import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.ScalarBytes
+import VerifiedGarbage.Proof.Ed25519.Window
+import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
+import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
+import VerifiedGarbage.Proof.Ed25519.X86.InputBits
+import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
+import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
+import VerifiedGarbage.Proof.Ed25519.X86.PointMul
+import VerifiedGarbage.Proof.Ed25519.X86.Power
+import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
+import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarStep
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarVerified
+import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
+import VerifiedGarbage.Proof.Ed25519.X86.VerifyTables
+import VerifiedGarbage.Proof.Ed25519.X86.WindowTables
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.Framework.X86.TaintMono
 import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Proof.Sha512.Stream
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha512.Spec
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+import VerifiedGarbage.Proof.X25519.X86.Fold
+import VerifiedGarbage.Proof.X25519.X86.Freeze
 import VerifiedGarbage.Spec.Rc2
 
 /-! Merged from `Proof.Ed25519.X86.VerifyMessage.Hash`. -/

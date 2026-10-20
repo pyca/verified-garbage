@@ -1,29 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.AArch64.Update
-meta import VerifiedGarbage.Proof.MdStream.AArch64.Update
 public import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
-meta import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
 import VerifiedGarbage.Proof.MdStream.AArch64.Words
-meta import VerifiedGarbage.Proof.MdStream.AArch64.Words
+import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Out
 public import VerifiedGarbage.Proof.Sha256.Md
-meta import VerifiedGarbage.Proof.Sha256.Md
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sha256.AArch64.Compress
-meta import VerifiedGarbage.Proof.Sha256.AArch64.Compress
-import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha256.AArch64.Compress
 public import VerifiedGarbage.Impl.Sha256.AArch64.Stream
-meta import VerifiedGarbage.Impl.Sha256.AArch64.Stream
+public import VerifiedGarbage.Proof.Sha256.AArch64.Contract
 import VerifiedGarbage.Proof.Sha256.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Update
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Words
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Out
+meta import VerifiedGarbage.Proof.Sha256.Md
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Compress
+meta import VerifiedGarbage.Impl.Sha256.AArch64.Stream
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Contract
 meta import VerifiedGarbage.Proof.Sha256.AArch64.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming SHA-256 on AArch64: `update` and `finalize`
@@ -51,7 +51,7 @@ theorem shape : Shape (P := params) md where
   outKeepsV := by decide +kernel
   len _ hout := len64_ok (d := params.N + params.B - params.L) (be := true) (by decide) hout
   out _ hin hout hd := by
-    refine (out32_ok (n := 8) true (by decide) hin hout hd).mono fun s' ⟨g, rd, wr, sp, m⟩ =>
+    refine (out256_ok hin hout).mono fun s' ⟨g, rd, wr, sp, m⟩ =>
       ⟨g, rd, wr, sp, ?_⟩
     rw [m, digest_eq]
 

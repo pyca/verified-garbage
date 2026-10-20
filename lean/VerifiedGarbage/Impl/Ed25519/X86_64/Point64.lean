@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.X86_64.Field
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Cached
 public import VerifiedGarbage.Spec.Ed25519.Point64
 
@@ -75,7 +74,7 @@ def addAffineFn (fld : Arith) : Prog isa := fn fld pointAddAffineOps
 
 /-- The doubling's name, with the field multiplications' suffix `fs`. -/
 def doubleName (t : Bool) (fs : String) : String :=
-  (if t then Spec.Ed25519.Point64.doubleExtApi.name else Spec.Ed25519.Point64.doubleProjApi.name) ++ fs
+  (if t then Spec.Ed25519.Point64.doubleExtApi.name else "vg_ed25519_r64_double_proj") ++ fs
 
 /-- The cached addition's name, with the field multiplications' suffix `fs`. -/
 def addName (t : Bool) (fs : String) : String :=

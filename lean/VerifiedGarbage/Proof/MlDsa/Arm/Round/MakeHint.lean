@@ -1,25 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Hb
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Round.Hb
 public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Loop
+import VerifiedGarbage.Proof.MlKem.Arm.Common
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Basic
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Round.Hb
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Round.Loop
+meta import VerifiedGarbage.Proof.MlKem.Arm.Common
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_make_hint`

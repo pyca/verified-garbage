@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.RandomSignRemaining
-public import VerifiedGarbage.Proof.Dsa.RandomTrace
+import VerifiedGarbage.Proof.Dsa.RandomSignResult
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Separate each sampling trace from its following signing-result marker. -/
@@ -67,6 +67,21 @@ theorem random_sign_trace_draw (p : RandomSignInput) (used fuel : Nat) :
     · exact take_marker _ [] 5 (by decide) (random_sample_trace_small _ _ _)
     · simp only [List.append_assoc, List.cons_append, List.nil_append]
       exact take_marker (randomSignDraw p used).trace _ 6 (by decide) (random_sample_trace_small _ _ _)
+
+theorem random_sign_trace_none (p : RandomSignInput) (used fuel : Nat)
+    (hd : (randomSignDraw p used).scalar = none) :
+    randomSigningTrace (randomSignRemaining p used (fuel + 1)).trace = [] := by
+  unfold randomSignRemaining
+  rw [randomSignLoop]
+  change randomSigningTrace ((match (randomSignDraw p used).scalar with
+    | none => _ | some k => _ : RandomSignResult).trace) = _
+  simp only [hd]
+  have hh := List.dropWhile_append_of_pos (p := fun x => decide (x < 5)) (l₂ := [])
+    (l₁ := (randomSignDraw p used).trace)
+    (fun x hx => decide_eq_true (random_sample_trace_small _ _ _ x hx))
+  unfold randomSigningTrace
+  simp only [List.append_nil, List.dropWhile_nil] at hh
+  exact hh
 
 theorem random_sign_trace_success (p : RandomSignInput) (used fuel k : Nat) {sig : List VG.Byte}
     (hd : (randomSignDraw p used).scalar = some k)

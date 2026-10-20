@@ -1,13 +1,92 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCT
-import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import Mathlib.Tactic.Finiteness.Attr
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Bignum.LazyMath
+public import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+public import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+public import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+public import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+public import VerifiedGarbage.Proof.Bignum.X86_64.Double
+public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
+public import VerifiedGarbage.Proof.Bignum.X86_64.PdExp
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2aStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2aSub
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2aWord
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2wAdd
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.Reduce
+public import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
+public import VerifiedGarbage.Proof.Bignum.X86_64.Row
+public import VerifiedGarbage.Proof.Bignum.X86_64.Setup
+public import VerifiedGarbage.Proof.Bignum.X86_64.Store
+public import VerifiedGarbage.Proof.Bignum.X86_64.Valid
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Rsa.Octets
+public import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivOutcome
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
+import VerifiedGarbage.Proof.Bignum.LazyMath
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+import VerifiedGarbage.Proof.Bignum.X86_64.Double
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
+import VerifiedGarbage.Proof.Bignum.X86_64.PdExp
+import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
+import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.R2aStep
+import VerifiedGarbage.Proof.Bignum.X86_64.R2aSub
+import VerifiedGarbage.Proof.Bignum.X86_64.R2aWord
+import VerifiedGarbage.Proof.Bignum.X86_64.R2wAdd
+import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
+import VerifiedGarbage.Proof.Bignum.X86_64.Reduce
+import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Bignum.X86_64.Setup
+import VerifiedGarbage.Proof.Bignum.X86_64.Store
+import VerifiedGarbage.Proof.Bignum.X86_64.Valid
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivOutcome
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
 
 /-!
 # RSASSA-PKCS1-v1_5 signing on x86-64
@@ -27,17 +106,15 @@ open VG.Proof.Rsa.X86_64 (CrtImpl)
 open VG.Proof.RsaPkcs1Sig.X86_64
 
 def artifacts (v : CrtImpl) : List Artifact := [
-  { Spec.RsaPkcs1Sig.signApi with
-    name := Spec.RsaPkcs1Sig.signApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.RsaPkcs1Sig.signApi.doc (notes := ["This implementation writes EMSA-PKCS1-v1_5's \
+  Spec.RsaPkcs1Sig.signApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := ["This implementation writes EMSA-PKCS1-v1_5's \
       encoding of `digest` into its frame, signs it with `" ++ Sgn.privName v ++ "`, which checks the \
       signature against `e`, and then overwrites the encoding with zeros. Only the lengths, `hash` and \
       the public key decide a branch or an address. It uses 4456 bytes of stack: a frame of 1192 bytes, \
       which holds the encoding and the stack arguments of the call, the call's return address, and the \
-      3256 bytes its callee uses."])
+      3256 bytes its callee uses."]
     code := Impl.RsaPkcs1Sig.X86_64.Sign.code (Sgn.privName v) (Sgn.privCode v)
-    contract := Spec.RsaPkcs1Sig.signContract X86_64.abi sigStack
     stack := sigStack
     verified := Sgn.code_verified v
     spSafe := Sgn.code_spSafe v

@@ -2,10 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Hint
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Samp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
+import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.MlKem.X86.Pack
+import VerifiedGarbage.Proof.MlKem.X86.Table
 
 /-!
 # ML-DSA verification on x86 (32-bit): the samplers

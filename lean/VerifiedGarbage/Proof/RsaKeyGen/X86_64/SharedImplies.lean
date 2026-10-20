@@ -3,12 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedContract
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Implies
-import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The existing shared contract grants room for the nested call -/
 

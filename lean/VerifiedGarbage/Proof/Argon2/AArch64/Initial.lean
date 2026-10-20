@@ -3,13 +3,15 @@ module
 public import VerifiedGarbage.Proof.Argon2.AArch64.InitialStart
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Output
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Finalize
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupSteps
+import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
+import VerifiedGarbage.Proof.Argon2.HPrime
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
+import Mathlib.Tactic.Conv
 
 /-! Merged from `Proof.Argon2.AArch64.InitialFinish`. -/
 

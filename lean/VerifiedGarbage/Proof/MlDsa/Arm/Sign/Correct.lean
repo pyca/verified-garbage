@@ -1,11 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseO
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.MlKem.Arm.Lay
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseL
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 
 /-!
 # ML-DSA signing on ARMv7: correctness

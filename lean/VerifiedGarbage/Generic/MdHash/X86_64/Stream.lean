@@ -1,8 +1,6 @@
 module
 
-import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # Streaming Merkle–Damgård hash functions on X86_64
@@ -15,7 +13,7 @@ in its registration file.
 
 The variant supplies each function's `Api` and its verified code
 (`MdHash.stream`, a `StreamFn`), whose contract is the one the `Api` gives it
-(`StreamFn.ofApi`, which this file passes on as the artifact's `ofApi`).
+(`StreamFn.ofApi`).
 -/
 
 @[expose] public section
@@ -23,18 +21,6 @@ The variant supplies each function's `Api` and its verified code
 namespace VG.Generic.MdHash.X86_64.Stream
 
 def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact := v.stream.map fun f =>
-  { f.api with
-    name := f.api.name ++ v.suffix
-    target := X86_64.target
-    doc := f.api.doc
-    code := f.code
-    contract := f.contract
-    stack := f.stack
-    verified := f.verified
-    consts := []
-    ofSig := f.ofSig
-    ofApi := f.ofApi
-    spSafe := f.spSafe
-    features := v.features }
+  f.api.artifact X86_64.target { f.reg with suffix := v.suffix, features := v.features }
 
 end VG.Generic.MdHash.X86_64.Stream

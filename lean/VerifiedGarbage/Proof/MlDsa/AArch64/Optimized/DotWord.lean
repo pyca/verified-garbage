@@ -1,13 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Word
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductWord
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.MlKem
-import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductWord
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Arithmetic
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

@@ -1,13 +1,14 @@
 module
+public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Precomputed
+public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCall
+public import VerifiedGarbage.Spec.RsaPkcs1Enc.Precomputed
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcCall
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcCall
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 
 /-!
 # RSAES-PKCS1-v1_5 encryption with a precomputed public key on x86-64: correctness

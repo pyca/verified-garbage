@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86.InvMemory
+public import VerifiedGarbage.Impl.Weierstrass.X86.Inv
 
 /-! # Batched inversion for 256-bit moduli on 32-bit x86
 

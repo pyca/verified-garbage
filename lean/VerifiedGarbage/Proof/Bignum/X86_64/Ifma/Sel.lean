@@ -1,18 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Spec
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: reading an entry of the table
 
-`select l p` reads the top 4 bits `v` of the
-quadword at `oV` of prime `p`'s region and copies entry `v` of the table
+`select l p` reads the digit `v` (below `T = 2^w`), the
+quadword at `oV` of prime `p`'s region, and copies entry `v` of the table
 (`NB` bytes at `oTab + NB v`) to `oS`, reading every entry and keeping entry
 `v` under a mask (`select_ok`). The vector part of an iteration is run by
 `ESym` and checked for each layout (`checkSel`).
@@ -25,7 +20,7 @@ namespace VG.Proof.Bignum.X86_64.Ifma
 open VG VG.X86_64 VG.Proof.Bignum.Amm52
 open VG.Proof.Bignum (off word ofs Outside off_off)
 open VG.Impl.Rsa.X86_64.CrtIfma
-open VG.Proof.Bignum.X86_64.AmmSym (Ctx Keeps selMask selMask_ok selMask_and zero_or64 or_zero64 shr60
+open VG.Proof.Bignum.X86_64.AmmSym (Ctx Keeps selMask selMask_ok selMask_and zero_or64 or_zero64
   wrList wrList_outside' word_wrList_unique off_add setOff)
 open VG.Proof.MlKem.X86_64 (Keep)
 
@@ -52,8 +47,7 @@ theorem qv_lo {s s' : State} (hx : s'.xmm = s.xmm) (hy : s'.ymmHi = s.ymmHi) {k 
 def selVec (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : List Instr :=
   [.eop (.vmovq (vreg l.R) .rax), .eop (.vpbroadcastq (vreg l.R) (vreg l.R))] ++
   ((List.range l.R).flatMap fun k => [.evLoad (vreg (l.R + 1)) (at_ .r8 (32 * k)),
-    .eop (.bin .vpandq (vreg (l.R + 1)) (vreg (l.R + 1)) (vreg l.R)),
-    .eop (.bin .vporq (vreg k) (vreg k) (vreg (l.R + 1)))])
+    .eop (.vpternlogq (vreg k) (vreg (l.R + 1)) (vreg l.R) 0xF8)])
 
 def selLim (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Reg → Nat := fun b => if b = .r8 then l.NB else 0
 
@@ -89,24 +83,31 @@ theorem selVec_ok (hl : LayOk l) {s : State} (hc : Ctx (selLim l) s) :
 theorem NB_lt (hl : LayOk l) : l.NB < 2 ^ 31 := by
   have := hl.D_bounds; omega
 
+/-- The table's entries: `T = 2^w`, 16 or 32. -/
+theorem LayOk.T_bounds (hl : LayOk l) : 16 ≤ l.T ∧ l.T ≤ 32 := by
+  rcases hl with rfl | rfl | rfl <;> decide
+
 /-- The entry's end: the next entry, `ZF` after the last. -/
-theorem selTail_ok (hl : LayOk l) {s : State} {base : Addr} {i : Nat} (hi : i < 16)
+theorem selTail_ok (hl : LayOk l) {s : State} {base : Addr} {i : Nat} (hi : i < l.T)
     (h8 : s.gpr .r8 = base + BitVec.ofNat 64 (l.NB * i)) (hc : s.gpr .rcx = BitVec.ofNat 64 i) :
-    WP isa (.block [.alu .add .r8 (.imm (BitVec.ofNat 32 l.NB)), .alu .add .rcx (.imm 1), .alu .cmp .rcx (.imm 16)])
+    WP isa (.block [.alu .add .r8 (.imm (BitVec.ofNat 32 l.NB)), .alu .add .rcx (.imm 1),
+        .alu .cmp .rcx (.imm (BitVec.ofNat 32 l.T))])
       s fun s' =>
       s'.gpr .r8 = base + BitVec.ofNat 64 (l.NB * (i + 1)) ∧ s'.gpr .rcx = BitVec.ofNat 64 (i + 1) ∧
-      s'.zf = some (decide (i + 1 = 16)) ∧ Keep [.r8, .rcx] s s' ∧
+      s'.zf = some (decide (i + 1 = l.T)) ∧ Keep [.r8, .rcx] s s' ∧
       s'.mem = s.mem ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi ∧ s'.mxcsr = s.mxcsr := by
   have sx := AmmSym.se_ofNat (NB_lt hl)
+  have hT := hl.T_bounds
+  have tx := AmmSym.se_ofNat (show l.T < 2 ^ 31 by omega)
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.r8, .rcx] (Q := fun s' =>
     s'.gpr .r8 = base + BitVec.ofNat 64 (l.NB * (i + 1)) ∧ s'.gpr .rcx = BitVec.ofNat 64 (i + 1) ∧
-      s'.zf = some (decide (i + 1 = 16)) ∧ s'.mem = s.mem ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi ∧
+      s'.zf = some (decide (i + 1 = l.T)) ∧ s'.mem = s.mem ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi ∧
       s'.mxcsr = s.mxcsr) (by
-    xrun [h8, hc, sx, ofNat_add_one]
+    xrun [h8, hc, sx, tx, ofNat_add_one]
     and_intros
     any_goals rfl
     · rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.mul_succ]
-    · rw [show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, ofNat_sub_beq (by omega) (by decide)]) rfl)
+    · rw [ofNat_sub_beq (by omega) (by omega)]) rfl)
     fun s' ⟨⟨a, b, c, d, e, f, g⟩, k⟩ => ⟨a, b, c, k, d, e, f, g⟩
 
 /-- After entries below `i` of the table at `base`, `v` the entry to read. -/
@@ -125,24 +126,24 @@ def selBody (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : List Instr :=
   [.mov .rax (.reg .rcx), .alu .xor .rax (.reg .rdx), .alu .cmp .rax (.imm 1), .alu .sbb .rax (.reg .rax),
     .eop (.vmovq (vreg l.R) .rax), .eop (.vpbroadcastq (vreg l.R) (vreg l.R))] ++
   ((List.range l.R).flatMap fun k => [.evLoad (vreg (l.R + 1)) (at_ .r8 (32 * k)),
-    .eop (.bin .vpandq (vreg (l.R + 1)) (vreg (l.R + 1)) (vreg l.R)),
-    .eop (.bin .vporq (vreg k) (vreg k) (vreg (l.R + 1)))]) ++
-  [.alu .add .r8 (.imm (BitVec.ofNat 32 l.NB)), .alu .add .rcx (.imm 1), .alu .cmp .rcx (.imm 16)]
+    .eop (.vpternlogq (vreg k) (vreg (l.R + 1)) (vreg l.R) 0xF8)]) ++
+  [.alu .add .r8 (.imm (BitVec.ofNat 32 l.NB)), .alu .add .rcx (.imm 1), .alu .cmp .rcx (.imm (BitVec.ofNat 32 l.T))]
 
 /-- Entry `i`. -/
-theorem selIter_ok (hl : LayOk l) {t₀ t : State} {base : Addr} {v i : Nat} (hv : v < 16) (hi : i < 16)
+theorem selIter_ok (hl : LayOk l) {t₀ t : State} {base : Addr} {v i : Nat} (hv : v < l.T) (hi : i < l.T)
     (hd : t₀.gpr .rdx = BitVec.ofNat 64 v)
-    (hin : ∀ i < 16, ∀ d n, 0 < n → d + n ≤ l.NB →
+    (hin : ∀ i < l.T, ∀ d n, 0 < n → d + n ≤ l.NB →
       InRegions (t₀.rd ++ t₀.wr) (base + BitVec.ofNat 64 (l.NB * i + d)) n)
     (h : SelInv l t₀ base v i t) :
-    WP isa (.block (selBody l)) t fun t' => SelInv l t₀ base v (i + 1) t' ∧ t'.zf = some (decide (i + 1 = 16)) := by
+    WP isa (.block (selBody l)) t fun t' => SelInv l t₀ base v (i + 1) t' ∧ t'.zf = some (decide (i + 1 = l.T)) := by
   obtain ⟨_, hR10⟩ := hl.bounds
+  have hT := hl.T_bounds
   rw [show selBody l = [.mov .rax (.reg .rcx), .alu .xor .rax (.reg .rdx), .alu .cmp .rax (.imm 1),
     .alu .sbb .rax (.reg .rax)] ++ (selVec l ++ [.alu .add .r8 (.imm (BitVec.ofNat 32 l.NB)), .alu .add .rcx (.imm 1),
-      .alu .cmp .rcx (.imm 16)]) by simp only [selBody, selVec, List.cons_append, List.nil_append],
+      .alu .cmp .rcx (.imm (BitVec.ofNat 32 l.T))]) by simp only [selBody, selVec, List.cons_append, List.nil_append],
     WP.block_append_iff]
   have hdx : t.gpr .rdx = BitVec.ofNat 64 v := (h.gpr _ (by decide) (by decide) (by decide)).trans hd
-  refine WP.mono (selMask_ok hi hv h.rcx hdx) fun t₁ ⟨m₁, k₁, me₁, x₁, y₁, mx₁⟩ => ?_
+  refine WP.mono (selMask_ok (by omega) (by omega) h.rcx hdx) fun t₁ ⟨m₁, k₁, me₁, x₁, y₁, mx₁⟩ => ?_
   have r8₁ : t₁.gpr .r8 = base + BitVec.ofNat 64 (l.NB * i) := by rw [k₁.gpr (by decide)]; exact h.r8
   have hc : Ctx (selLim l) t₁ := fun b d n hn hdn => by
     by_cases b8 : b = .r8
@@ -173,23 +174,24 @@ theorem selIter_ok (hl : LayOk l) {t₀ t : State} {base : Addr} {v i : Nat} (hv
       · simp only [hlt, show v < i + 1 by omega, ite_true]
       · simp only [hlt, show ¬ v < i + 1 by omega, ite_false]
 
-/-- The loop over the sixteen entries, from entry `16 - n`. -/
-theorem selLoop_ok (hl : LayOk l) {t₀ : State} {base : Addr} {v : Nat} (hv : v < 16)
+/-- The loop over the `T` entries, from entry `T - n`. -/
+theorem selLoop_ok (hl : LayOk l) {t₀ : State} {base : Addr} {v : Nat} (hv : v < l.T)
     (hd : t₀.gpr .rdx = BitVec.ofNat 64 v)
-    (hin : ∀ i < 16, ∀ d n, 0 < n → d + n ≤ l.NB →
+    (hin : ∀ i < l.T, ∀ d n, 0 < n → d + n ≤ l.NB →
       InRegions (t₀.rd ++ t₀.wr) (base + BitVec.ofNat 64 (l.NB * i + d)) n) :
-    ∀ n t, 1 ≤ n → n ≤ 16 → SelInv l t₀ base v (16 - n) t →
-      WP isa (.loop (.block (selBody l)) .ne) t (SelInv l t₀ base v 16) := by
+    ∀ n t, 1 ≤ n → n ≤ l.T → SelInv l t₀ base v (l.T - n) t →
+      WP isa (.loop (.block (selBody l)) .ne) t (SelInv l t₀ base v l.T) := by
   intro n t h1 h16 hI
-  refine WP.loop (M := isa) (body := .block (selBody l)) (c := .ne) (Q := SelInv l t₀ base v 16)
-    (fun n t => 1 ≤ n ∧ n ≤ 16 ∧ SelInv l t₀ base v (16 - n) t) ?_ n t ⟨h1, h16, hI⟩
+  refine WP.loop (M := isa) (body := .block (selBody l)) (c := .ne) (Q := SelInv l t₀ base v l.T)
+    (fun n t => 1 ≤ n ∧ n ≤ l.T ∧ SelInv l t₀ base v (l.T - n) t) ?_ n t ⟨h1, h16, hI⟩
   intro n t ⟨h1, h16, hI⟩
   refine WP.mono (selIter_ok hl hv (by omega) hd hin hI) fun t' ⟨hI', hz⟩ => ?_
   simp only [eval, hz, Option.map_some]
   rcases Nat.eq_or_lt_of_le h1 with rfl | hn
-  · exact .inl ⟨by simp, hI'⟩
-  · refine .inr ⟨by simp only [decide_eq_false (show ¬ (16 - n + 1 = 16) by omega), Bool.not_false], n - 1,
-      by omega, by omega, by omega, by rw [show 16 - (n - 1) = 16 - n + 1 by omega]; exact hI'⟩
+  · rw [show l.T - 1 + 1 = l.T by omega] at hI'
+    exact .inl ⟨by simp only [show l.T - 1 + 1 = l.T by omega, decide_true, Bool.not_true], hI'⟩
+  · refine .inr ⟨by simp only [decide_eq_false (show ¬ (l.T - n + 1 = l.T) by omega), Bool.not_false], n - 1,
+      by omega, by omega, by omega, by rw [show l.T - (n - 1) = l.T - n + 1 by omega]; exact hI'⟩
 
 /-! ## The whole selection -/
 
@@ -218,18 +220,15 @@ theorem zerosR_ok (hl : LayOk l) {s : State} :
     rw [hs.reg _ t ht, vi_vreg r (by omega), h r hr]; rfl
   · cases h
 
-/-- The nibble `select` reads: the top 4 bits of the quadword at `oV`. -/
-def nib (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (B : Addr) (p : Nat) : Nat := (word m B (l.D * p + l.oV)).toNat / 2 ^ 60
+/-- The digit `select` reads: the quadword at `oV`. -/
+def nib (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (B : Addr) (p : Nat) : Nat := (word m B (l.D * p + l.oV)).toNat
 
-theorem nib_lt (m : Mem) (B : Addr) (p : Nat) : nib l m B p < 16 := by
-  unfold nib; have := (word m B (l.D * p + l.oV)).isLt; omega
-
-theorem oV_bounds (hl : LayOk l) : l.oTab + 16 * l.NB ≤ l.oV ∧ l.oS + l.NB ≤ l.oTab ∧ l.oV + 8 ≤ l.D := by
+theorem oV_bounds (hl : LayOk l) : l.oTab + l.T * l.NB ≤ l.oV ∧ l.oS + l.NB ≤ l.oTab ∧ l.oV + 8 ≤ l.D := by
   rcases hl with rfl | rfl | rfl <;> decide
 
 /-- `[S] := T_v` for prime `p`. -/
 theorem select_ok (hl : LayOk l) {s : State} {B : Addr} {p : Nat} (hp : p < 2) (hB : s.gpr .rbx = B)
-    (hs : Scr s B (2 * l.D)) :
+    (hs : Scr s B (2 * l.D)) (hv : nib l s.mem B p < l.T) :
     WP isa (VG.Impl.Bignum.X86_64.seqs (select l p)) s fun s' =>
       (∀ q < l.L, limb l s'.mem B (l.D * p + l.oS) q = limb l s.mem B (l.D * p + l.oTab + l.NB * nib l s.mem B p) q) ∧
       Outside B (l.D * p + l.oS) l.NB s.mem s'.mem ∧
@@ -243,13 +242,13 @@ theorem select_ok (hl : LayOk l) {s : State} {B : Addr} {p : Nat} (hp : p < 2) (
   have rdS : ∀ d n, 0 < n → d + n ≤ 2 * l.D → InRegions (s.rd ++ s.wr) (off B d) n := fun d n hn hd =>
     let ⟨_, h, c⟩ := hs.region hd hn; ⟨_, List.mem_append_right _ h, c⟩
   let v := nib l s.mem B p
-  have hv : v < 16 := nib_lt _ _ _
+  have hT := hl.T_bounds
   let base := off B (l.D * p + l.oTab)
   refine WP.seq ?_
   rw [List.append_assoc]
   refine setOff (c := l.D * p + l.oTab) (by omega) fun s₁ u₁ => ?_
   rw [hB] at u₁
-  change WP isa (.block (([.mov .rdx (.mem (at_ .rbx (l.D * p + l.oV))), .shift .shr .rdx 60,
+  change WP isa (.block (([.mov .rdx (.mem (at_ .rbx (l.D * p + l.oV))),
     .mov32 .rcx (.imm 0)] : List Instr) ++ zerosR l)) s₁ _
   rw [WP.block_append_iff]
   have rbx₁ : s₁.gpr .rbx = B := by rw [u₁.other _ (by decide), hB]
@@ -257,23 +256,24 @@ theorem select_ok (hl : LayOk l) {s : State} {B : Addr} {p : Nat} (hp : p < 2) (
       t.gpr .rcx = BitVec.ofNat 64 0 ∧ t.mem = s.mem ∧ t.xmm = s₁.xmm ∧ t.ymmHi = s₁.ymmHi ∧ t.mxcsr = s.mxcsr) (by
     have hld : InRegions (s₁.rd ++ s₁.wr) (B + BitVec.ofNat 64 (l.D * p + l.oV)) 8 := by
       rw [u₁.rd, u₁.wr]; exact rdS _ 8 (by decide) (by omega)
-    xrun [ea_rG rbx₁, hld, u₁.mem, shr60]
+    xrun [ea_rG rbx₁, hld, u₁.mem]
     and_intros
     any_goals rfl
+    · simp only [v, nib, word, off, BitVec.ofNat_toNat, BitVec.setWidth_eq]
     · exact u₁.mxcsr) rfl) fun s₂ ⟨⟨dx₂, cx₂, me₂, x₂, y₂, mx₂⟩, k₂⟩ => ?_
   refine WP.mono (zerosR_ok hl) fun s₃ ⟨z₃, k₃⟩ => ?_
-  have hin : ∀ i < 16, ∀ d n, 0 < n → d + n ≤ l.NB →
+  have hin : ∀ i < l.T, ∀ d n, 0 < n → d + n ≤ l.NB →
       InRegions (s₃.rd ++ s₃.wr) (base + BitVec.ofNat 64 (l.NB * i + d)) n := fun i hi d n hn hdn => by
     rw [k₃.rd, k₃.wr, k₂.2.1, k₂.2.2, u₁.rd, u₁.wr, off_add]
-    have : l.NB * i + d + n ≤ l.NB * 16 := by
-      have := Nat.mul_le_mul_left l.NB (show i ≤ 15 by omega); omega
+    have : l.NB * i + l.NB ≤ l.T * l.NB := by
+      rw [Nat.mul_comm l.T, ← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi
     exact rdS _ n hn (by omega)
   have dx₃ : s₃.gpr .rdx = BitVec.ofNat 64 v := by rw [k₃.gpr _ (by decide)]; exact dx₂
-  have i₀ : SelInv l s₃ base v (16 - 16) s₃ := ⟨by
+  have i₀ : SelInv l s₃ base v (l.T - l.T) s₃ := Nat.sub_self l.T ▸ ⟨by
       rw [k₃.gpr _ (by decide), k₂.gpr (by decide), u₁.self]; exact (BitVec.add_zero _).symm,
     by rw [k₃.gpr _ (by decide)]; exact cx₂, fun _ _ _ _ => rfl, rfl, rfl, rfl, rfl,
     fun k hk j hj => by rw [z₃ k hk j hj]; simp⟩
-  refine WP.seq (WP.mono (selLoop_ok hl hv dx₃ hin 16 s₃ (by decide) (Nat.le_refl _) i₀) fun s₄ h₄ => ?_)
+  refine WP.seq (WP.mono (selLoop_ok hl hv dx₃ hin l.T s₃ (by omega) (Nat.le_refl _) i₀) fun s₄ h₄ => ?_)
   let Ls : List (Nat × VReg) := (List.range l.R).map fun k => (l.D * p + l.oS + 32 * k, vreg k)
   have rbx₄ : s₄.gpr .rbx = B := by
     rw [h₄.gpr _ (by decide) (by decide) (by decide), k₃.gpr _ (by decide), k₂.gpr (by decide), rbx₁]
@@ -314,7 +314,7 @@ theorem select_ok (hl : LayOk l) {s : State} {B : Addr} {p : Nat} (hp : p < 2) (
       unfold Lay.off; omega, e]
     refine congrArg BitVec.toNat (qq.trans ?_)
     rw [k₃.mem, me₂, off_add]
-    exact congrArg (fun d => s.mem.readW (off B d) 64) (by unfold Lay.off; dsimp only [v]; omega)
+    exact congrArg (fun d => s.mem.readW (off B d) 64) (by unfold Lay.off; omega)
   · have o := wrList_outside' B (o := l.D * p + l.oS) (n := l.NB) (by omega)
       (Ls.map fun x => (x.1, s₄.vy x.2)) s₄.mem fun x hx => by
         obtain ⟨y, hy, rfl⟩ := List.mem_map.1 hx

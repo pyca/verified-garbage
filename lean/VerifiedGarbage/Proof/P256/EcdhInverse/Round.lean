@@ -2,18 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.P256.EcdhInverse.Step
 public import VerifiedGarbage.Proof.P256.EcdhInverse.Bounds
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.BitVec
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Mont.AArch64.Row
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
 import VerifiedGarbage.Proof.Divstep.WordBasic
-import VerifiedGarbage.Proof.Divstep.WordDef
 import VerifiedGarbage.Proof.P256.EcdhInverse.Shift
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
+import VerifiedGarbage.Proof.Framework.Block
+import Mathlib.Tactic.NormNum.Pow
+import Mathlib.Tactic.NormNum.Inv
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 
 @[expose] public section
 

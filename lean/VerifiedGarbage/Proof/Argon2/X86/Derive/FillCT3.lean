@@ -1,15 +1,29 @@
 module
+public import VerifiedGarbage.Proof.Argon2.FillStep
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillLoops
+public import VerifiedGarbage.Proof.Argon2.Slices
 
-public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT2
-meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT2
-public import VerifiedGarbage.Proof.Argon2.IterationsIndices
-meta import VerifiedGarbage.Proof.Argon2.IterationsIndices
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT2
+import VerifiedGarbage.Proof.Argon2.IterationsIndices
 import VerifiedGarbage.Proof.Argon2.SegmentIndices
+import VerifiedGarbage.Proof.Argon2.X86.Derive.FillBlock
+import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Argon2.FillStep
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillLoops
+meta import VerifiedGarbage.Proof.Argon2.Slices
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT2
+meta import VerifiedGarbage.Proof.Argon2.IterationsIndices
 meta import VerifiedGarbage.Proof.Argon2.SegmentIndices
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillBlock
+meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # Argon2 on x86 (32-bit): the filling loops, in two runs

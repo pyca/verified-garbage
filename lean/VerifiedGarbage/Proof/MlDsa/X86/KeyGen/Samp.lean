@@ -1,13 +1,17 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inv
 
-public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Mask32
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
+import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA key generation on x86 (32-bit): the samplers

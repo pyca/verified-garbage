@@ -1,13 +1,25 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.StagesCT
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.R2CT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.OutputCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.R2CT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.OutputCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Correct
+import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.StagesCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.R2CT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.OutputCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Correct
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH exchange on x86-64: constant time -/
 

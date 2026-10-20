@@ -155,6 +155,98 @@ fn nist_ecb() {
     assert_eq!(total, 2138);
 }
 
+/// The known-answer files' vectors with the same key and direction, in
+/// runs, each transformed in one call: for every length up to 41 blocks (two
+/// of the VAES code's groups of sixteen, one of eight and one more), and the
+/// whole run (up to the 128 vectors of `ECBVarTxt`'s).
+#[test]
+fn nist_ecb_runs() {
+    let files = [
+        include_str!("../../vectors/nist-cavp/aes/ECBGFSbox128.rsp"),
+        include_str!("../../vectors/nist-cavp/aes/ECBGFSbox192.rsp"),
+        include_str!("../../vectors/nist-cavp/aes/ECBGFSbox256.rsp"),
+        include_str!("../../vectors/nist-cavp/aes/ECBKeySbox128.rsp"),
+        include_str!("../../vectors/nist-cavp/aes/ECBKeySbox192.rsp"),
+        include_str!("../../vectors/nist-cavp/aes/ECBKeySbox256.rsp"),
+        include_str!("../../vectors/nist-cavp/aes/ECBVarKey128.rsp"),
+        include_str!("../../vectors/nist-cavp/aes/ECBVarKey192.rsp"),
+        include_str!("../../vectors/nist-cavp/aes/ECBVarKey256.rsp"),
+        include_str!("../../vectors/nist-cavp/aes/ECBVarTxt128.rsp"),
+        include_str!("../../vectors/nist-cavp/aes/ECBVarTxt192.rsp"),
+        include_str!("../../vectors/nist-cavp/aes/ECBVarTxt256.rsp"),
+    ];
+    struct Run {
+        key: Vec<u8>,
+        encrypt: bool,
+        input: Vec<u8>,
+        output: Vec<u8>,
+    }
+    let mut runs: Vec<Run> = Vec::new();
+    for text in files {
+        let mut encrypt = true;
+        for record in text.replace('\r', "").split("\n\n") {
+            match record.trim() {
+                "[ENCRYPT]" => encrypt = true,
+                "[DECRYPT]" => encrypt = false,
+                _ => {}
+            }
+            let fields: BTreeMap<_, _> = record
+                .lines()
+                .filter_map(|line| line.trim().split_once(" = "))
+                .collect();
+            if !fields.contains_key("COUNT") {
+                continue;
+            }
+            let key = unhex(fields["KEY"]);
+            let (plaintext, ciphertext) = (unhex(fields["PLAINTEXT"]), unhex(fields["CIPHERTEXT"]));
+            let (input, output) = if encrypt {
+                (plaintext, ciphertext)
+            } else {
+                (ciphertext, plaintext)
+            };
+            match runs.last_mut() {
+                Some(run) if run.key == key && run.encrypt == encrypt => {
+                    run.input.extend(input);
+                    run.output.extend(output);
+                }
+                _ => runs.push(Run {
+                    key,
+                    encrypt,
+                    input,
+                    output,
+                }),
+            }
+        }
+    }
+    let mut vectors = 0;
+    for Run {
+        key,
+        encrypt,
+        input,
+        output,
+    } in &runs
+    {
+        let ctx = AesEcb::new(key).unwrap();
+        let operation = if *encrypt {
+            AesEcb::encrypt as Operation
+        } else {
+            AesEcb::decrypt as Operation
+        };
+        let n = input.len() / 16;
+        for m in (0..=n.min(41)).chain([n]) {
+            let mut data = input.clone();
+            operation(&ctx, &mut data[..16 * m]).unwrap();
+            assert_eq!(data[..16 * m], output[..16 * m]);
+            assert_eq!(data[16 * m..], input[16 * m..]);
+        }
+        vectors += n;
+    }
+    // Every vector of the twelve files.
+    assert_eq!(vectors, 2078);
+    assert_eq!(runs.iter().map(|run| run.input.len() / 16).max(), Some(128));
+    assert!(runs.iter().any(|run| !run.encrypt));
+}
+
 #[test]
 fn limits_and_empty_input() {
     for len in 0..=40 {

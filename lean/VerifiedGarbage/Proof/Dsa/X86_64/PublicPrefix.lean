@@ -1,16 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
+public import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
 import VerifiedGarbage.Proof.Dsa.Zero
-public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.RsaPss
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
+import VerifiedGarbage.Proof.Dsa.X86_64.CallOperands
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # DSA validation before the public subgroup exponentiations -/
 

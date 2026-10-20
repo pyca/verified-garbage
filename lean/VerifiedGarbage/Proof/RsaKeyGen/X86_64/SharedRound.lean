@@ -1,12 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedMid
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrRound
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.SharedCandidate
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # RSA's witness policy around the callable shared round -/
 
@@ -23,7 +19,7 @@ def sharedRoundRanges (w : Nat) : List (Nat × Nat) :=
   sharedMidRanges w ++ [(8 * kI, 8), (8 * kUni, 8), (8 * kStat, 8)]
 
 /-- `mrRound`. -/
-theorem sharedRound_ok (M : Mont) (R : Kernel) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm : Nat} {sp : Addr}
+theorem sharedRound_ok (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : MmCalls M mm) (R : Kernel) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm : Nat} {sp : Addr}
     (hd : MrDims B Z w) (hZ : slot w 28 ≤ Z) (henv : SharedEnv B Z sp s) (hc : MrCtx s B Z w mi c bm) (hE : ECtx s.mem B w c)
     (hR2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c) (hc1 : 1 < c)
     (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c)
@@ -33,7 +29,7 @@ theorem sharedRound_ok (M : Mont) (R : Kernel) {s : State} {B : Addr} {Z w : Nat
     {i uni ch : Nat} (hI : word s.mem B (8 * kI) = BitVec.ofNat 64 i)
     (hN : word s.mem B (8 * kUni) = BitVec.ofNat 64 uni) (hC : word s.mem B (8 * kChecks) = BitVec.ofNat 64 ch)
     (hi : i < 2 ^ 61) (huni : uni < 2 ^ 61) (hch : ch < 2 ^ 62) :
-    WP isa (seqs (mrRoundWith M.mm R.run)) s fun t =>
+    WP isa (seqs (mrRoundWith mm R.run)) s fun t =>
       (∃ bm', MrCtx t B Z w mi c bm') ∧ ECtx t.mem B w c ∧
       wv t.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c ∧
       word t.mem B (8 * kUsed) = BitVec.ofNat 64 (used + 8 * w) ∧
@@ -52,7 +48,7 @@ theorem sharedRound_ok (M : Mont) (R : Kernel) {s : State} {B : Addr} {Z w : Nat
   have hn := hc.good.scr.nowrap
   rw [mrRoundWith]
   refine wp_seqs_append (by simp [mrWitness]) (by simp) ?_
-  refine WP.mono (sharedMid_ok M R hd hZ henv hc hE hR2 hc1 hsh hR hU hK hsrc hlen hI hN hC)
+  refine WP.mono (sharedMid_ok M hmc R hd hZ henv hc hE hR2 hc1 hsh hR hU hK hsrc hlen hI hN hC)
     fun s₂ ⟨⟨bm₂, hc₂⟩, he₂, hfl₂, hI₂, hN₂, hC₂, hU₂, hUs₂, hR2₂, hf02, k₁₂⟩ => ?_
   simp only [wtOf, passOf] at hU₂ hfl₂
   generalize hwt : Spec.RsaKeyGen.witness (c - 1) (Spec.Rsa.os2ip (VG.Proof.RsaKeyGen.seg r used (8 * w))) = wt

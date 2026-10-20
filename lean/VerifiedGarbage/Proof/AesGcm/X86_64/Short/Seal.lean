@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Front
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Layout
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bytes
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # AES-GCM's short path on x86-64: `seal`
@@ -44,10 +46,12 @@ abbrev SealPost (s₀ : State) (Ctx W SP D : Addr) (n R al : Nat) (H J : Block) 
       [ofBytes (lensBlock al n)] ^^^ ctxCiph s₀.mem Ctx R J)
 
 /-- After `front_ok`: the text, `G`'s lengths block, `GHASH` and the tag. -/
-theorem sealBack_ok (hF : ShortFacts) {k : Nat} {s₀ s : State} {Ctx W SP Np A D : Addr} {nl al n R : Nat} {J : Block} {tl : BitVec 64}
+theorem sealBack_ok (hF : ShortFacts) {gh : Prog isa} {tm : Mem → Mem} {k : Nat} {s₀ s : State}
+    {Ctx W SP Np A D : Addr} {nl al n R : Nat} {J : Block} {tl : BitVec 64}
+    (hgh : GhFrom gh tm s₀ Ctx W SP) (htv : TabView tm W D n)
     (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hal5 : al < 512) (hn5 : n < 512) (h32 : nb16 al + nb16 n < 32)
-    (F : Front s₀ Ctx W SP A D R al n J tl (bytesAt s₀.mem A al) s) :
-    WP isa (.seq (.seq (.block textArgs) (xorText true)) (.seq sealShort.ghash' (.block (tagK 0)))) s
+    (F : Front tm s₀ Ctx W SP A D R al n J tl (bytesAt s₀.mem A al) s) :
+    WP isa (.seq (.seq (.block textArgs) (xorText true)) (.seq (sealShort.ghash' gh) (.block (tagK 0)))) s
       (SealPost s₀ Ctx W SP D n R al (ctxH s₀.mem Ctx) J (bytesAt s₀.mem A al)) := by
   have L := C.lay
   have dD := C.dE
@@ -104,8 +108,9 @@ theorem sealBack_ok (hF : ShortFacts) {k : Nat} {s₀ s : State} {Ctx W SP Np A 
   -- `GHASH` of `G`.
   have zz : ∀ r, r ≠ .xmm4 → ∀ l < 4, s₃.zlane r l = s.zlane r l := fun r h l hl => by
     rw [z₃ r l, z₂ r (by simp [h]) l hl, z₁ r l]
-  refine WP.mono (ghash_ok s₃ S₃.env.r15 S₃.r288 hg1 hg8 S₃.env.perm.w
-    (fun l hl => by rw [zz _ (by decide) l hl, F.z0 l hl]) (fun l hl => by rw [zz _ (by decide) l hl, F.z1 l hl]))
+  refine WP.mono (hgh s₃ S₃.env S₃.r288 hg1 hg8
+    (fun l hl => by rw [zz _ (by decide) l hl, F.z0 l hl]) (fun l hl => by rw [zz _ (by decide) l hl, F.z1 l hl])
+    S₃.rd S₃.wr)
     fun s₄ ⟨y0, y1, g₄, m₄, rd₄, wr₄, z₄⟩ => ?_
   have S₄ := S₃.keep dD (rs := []) (by rw [m₄]; exact Frame.refl _ _) (by simp)
     (fun r hr => by
@@ -154,16 +159,22 @@ theorem sealBack_ok (hF : ShortFacts) {k : Nat} {s₀ s : State} {Ctx W SP Np A 
     exact Fks (b + 1) (by omega)
   refine ⟨S₅.env, S₅.rd, S₅.wr, S₅.saved, S₅.frame, by rw [hct, hcg], ?_⟩
   rw [hct, bytesAt_toBytes']
-  have T₁ : TabOk s₁.mem (W + BitVec.ofNat 64 1536) (ctxH s₀.mem Ctx) g := by rw [m₁]; exact Ftab
-  have T₃ : TabOk s₃.mem (W + BitVec.ofNat 64 1536) (ctxH s₀.mem Ctx) g :=
-    (T₁.keep hg8 fX fun r hr => by
+  have T₁ : TabOk (tm s₁.mem) (W + BitVec.ofNat 64 1536) (ctxH s₀.mem Ctx) g := by rw [m₁]; exact Ftab
+  have T₃ : TabOk (tm s₃.mem) (W + BitVec.ofNat 64 1536) (ctxH s₀.mem Ctx) g :=
+    TabOk.view htv (TabOk.view htv T₁ hg8 fX fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact (dWD (by decide)).symm
-      · exact Offset.disjoint W (.inr (by omega)) (by omega) (by omega)).keep hg8 fL fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint W (.inr (by omega)) (by omega) (by omega)
+      · exact ⟨(dWD (by decide)).symm, .inr fun _ h => h⟩
+      · exact ⟨Offset.disjoint W (.inr (by omega)) (by omega) (by omega), .inl (Offset.sub_base W (by omega))⟩)
+      hg8 fL fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨Offset.disjoint W (.inr (by omega)) (by omega) (by omega), .inl (Offset.sub_base W (by omega))⟩
+  have hGv : blocksAt (tm s₃.mem) (W + BitVec.ofNat 64 512) (4 * g) = blocksAt s₃.mem (W + BitVec.ofNat 64 512) (4 * g) := by
+    rw [Proof.Gcm.blocksAt_eq, Proof.Gcm.blocksAt_eq, bytesAt_frame (htv.out s₃.mem) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact Offset.disjoint W (.inl (by omega)) (by omega) (by omega)) (by omega)]
   have hx2 : s₄.xmm .xmm2 = ghashFrom (ctxH s₀.mem Ctx) 0 (blocksAt s₃.mem (W + BitVec.ofNat 64 512) (4 * g)) := by
-    rw [show s₄.xmm .xmm2 = s₄.zlane .xmm2 0 from rfl, y0, hF.ghash T₃]
+    rw [show s₄.xmm .xmm2 = s₄.zlane .xmm2 0 from rfl, y0, hF.ghash T₃, hGv]
   have hK₀ : blockAt s₄.mem (W + BitVec.ofNat 64 1024) = ctxCiph s₀.mem Ctx R J := by
     rw [m₄, blockAt_frame fL (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint W (.inr (by omega)) (by omega) (by omega)),
@@ -209,15 +220,16 @@ theorem sealBack_ok (hF : ShortFacts) {k : Nat} {s₀ s : State} {Ctx W SP Np A 
 
 /-- The short `seal`, after the entry, for a 12-byte nonce and at most 32
 blocks to hash: what `sealRun_ok` leaves. -/
-theorem sealShort_ok (hF : ShortFacts) {pw : Prog isa} {k : Nat} {s₀ s₁ : State} {Ctx W SP Np A D : Addr}
-    {nl al n : Nat} (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hpw : PowFrom pw s₀ Ctx W SP D n)
+theorem sealShort_ok (hF : ShortFacts) {pw gh : Prog isa} {tm : Mem → Mem} {k : Nat} {s₀ s₁ : State}
+    {Ctx W SP Np A D : Addr}
+    {nl al n : Nat} (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hpw : PowFrom pw gh tm s₀ Ctx W SP D n)
     (E : OneEntry s₀ Ctx W SP A D n s₁)
     (hNp : s₀.gpr .rdx = Np) (hnl' : (s₀.gpr .rcx).toNat = nl) (hal' : (s₀.gpr .r9).toNat = al)
     (hnl : nl = 12) (hal5 : al < 512) (hn5 : n < 512) (h32 : nb16 al + nb16 n < 32) :
-    WP isa (sealShort pw) s₁ (SealPost s₀ Ctx W SP D n (s₀.gpr .rsi).toNat al (ctxH s₀.mem Ctx)
+    WP isa (sealShort pw gh) s₁ (SealPost s₀ Ctx W SP D n (s₀.gpr .rsi).toNat al (ctxH s₀.mem Ctx)
       (Spec.Gcm.j0 (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl)) (bytesAt s₀.mem A al)) := by
   subst hnl
   exact WP.seq (WP.mono (shortStart_ok C E hNp hnl' rfl hal' hal5 hn5) fun s₂ ⟨S, haad, hdat⟩ =>
-    front_ok C hpw rfl hal5 hn5 h32 S haad hdat fun t F => sealBack_ok hF C hal5 hn5 h32 F)
+    front_ok C hpw rfl hal5 hn5 h32 S haad hdat fun t F => sealBack_ok hF hpw.gh hpw.view C hal5 hn5 h32 F)
 
 end VG.Proof.AesGcm.X86_64.Short

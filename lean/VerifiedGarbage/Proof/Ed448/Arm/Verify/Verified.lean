@@ -4,13 +4,10 @@ public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Entry
 import VerifiedGarbage.Proof.Ed448.Arm.Verify.CT
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
-import VerifiedGarbage.Proof.X448.Arm.Ops
+import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 verification on ARMv7: constant time, and `Verified`

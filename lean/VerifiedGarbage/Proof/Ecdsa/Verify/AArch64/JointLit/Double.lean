@@ -1,15 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Spec.Ecdsa.Generic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 
 /-! The forwarded point doubling of P-256 verification (`VerifyDouble.double`) as a
 literal, checked once for the joint and allocated verifications, which call it

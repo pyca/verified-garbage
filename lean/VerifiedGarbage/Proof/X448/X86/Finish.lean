@@ -1,14 +1,14 @@
 module
+public import VerifiedGarbage.Proof.X448.X86.Env
+public import VerifiedGarbage.Proof.X448.X86.Frame
+public import VerifiedGarbage.Proof.X448.X86.Save
 
-public import VerifiedGarbage.Proof.X448.X86.Restore
-import VerifiedGarbage.Proof.X448.X86.Setup
+import VerifiedGarbage.Proof.X448.X86.Restore
 import VerifiedGarbage.Proof.X448.X86.Output
 import VerifiedGarbage.Proof.X448.X86.Freeze
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # X448 on x86 (32-bit): the result and restored registers

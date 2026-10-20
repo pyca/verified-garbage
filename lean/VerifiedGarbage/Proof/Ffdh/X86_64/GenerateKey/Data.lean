@@ -1,13 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Context
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Smear
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Data
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # FFDH key-generation attempts on x86-64: retained inputs -/
 

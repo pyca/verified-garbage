@@ -2,11 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckDomain
-public import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.Template
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallTemplate
 
 /-! # Instruction safety of the x86-64 FFDH domain validator -/
 
@@ -17,6 +14,7 @@ namespace VG.Proof.Ffdh.X86_64.CheckDomain
 open VG VG.X86_64 VG.Proof.MillerRabin.X86_64
 open VG.Impl.Bignum.X86_64 VG.Impl.Ffdh.X86_64.Domain
 open VG.Impl.Rsa.X86_64
+open VG.Proof.Bignum.X86_64 (inlineOk_seqs inline_seqs inline_of_noCalls map_inline_of_noCalls allInstrs_inline)
 
 private def codeWith (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   VG.Impl.Ffdh.X86_64.Domain.CheckDomain.code mul (Crt.expLoop mul Crt.tabSelect)
@@ -61,17 +59,72 @@ private theorem template_instrs (p : Instr → Bool) (mul : Nat → Nat → Nat 
   repeat' rw [i_empty] at hp
   exact hp
 
-def domainCode (v : RoundImpl) : Prog isa :=
+private theorem k_seq (a b : Prog isa) : (Code.seq a b).InlineOk = (a.InlineOk && b.InlineOk) := rfl
+private theorem k_ite (c : Cond) (a b : Prog isa) : (Code.ite c a b).InlineOk = (a.InlineOk && b.InlineOk) := rfl
+private theorem k_loop (a : Prog isa) (c : Cond) : (Code.loop a c).InlineOk = a.InlineOk := rfl
+private theorem k_empty : (Code.block ([] : List Instr) : Prog isa).InlineOk = true := rfl
+
+/-- The template's calls can be inlined if `mul`'s can. -/
+private theorem template_inlineOk (mul : Nat → Nat → Nat → Prog isa)
+    (hp : (codeWith (fun _ _ _ => .block [])).InlineOk = true)
+    (hm : ∀ o a b, (mul o a b).InlineOk = true) :
+    (codeWith mul).InlineOk = true := by
+  unfold codeWith VG.Impl.Ffdh.X86_64.Domain.CheckDomain.code
+    VG.Impl.Ffdh.X86_64.Domain.CheckDomain.body VG.Impl.Ffdh.X86_64.Domain.CheckDomain.main
+    VG.Impl.Ffdh.X86_64.Domain.CheckDomain.withQ VG.Impl.Ffdh.X86_64.Domain.CheckDomain.divides
+    VG.Impl.Ffdh.X86_64.Domain.CheckDomain.subgroup VG.Impl.Ffdh.X86_64.Domain.CheckDomain.qRange
+    VG.Impl.Ffdh.X86_64.Domain.CheckDomain.pMinus1 Crt.redc pow Crt.expLoop Crt.expLoopS Crt.expWin
+    Crt.tabBuild Crt.tabBuildN R2Words.choice R2Words.fast R2Words.old at hp ⊢
+  repeat' first
+    | rw [inlineOk_seqs] at *
+    | rw [k_seq] at *
+    | rw [k_ite] at *
+    | rw [k_loop] at *
+    | rw [List.all_append] at *
+    | rw [List.all_cons] at *
+  repeat' rw [hm]
+  repeat' rw [k_empty] at hp
+  exact hp
+
+/-- The template has no calls of its own: it commutes with inlining. -/
+private theorem template_inline (mul : Nat → Nat → Nat → Prog isa) :
+    (codeWith mul).inline = codeWith (fun o a b => (mul o a b).inline) := by
+  unfold codeWith VG.Impl.Ffdh.X86_64.Domain.CheckDomain.code
+    VG.Impl.Ffdh.X86_64.Domain.CheckDomain.body VG.Impl.Ffdh.X86_64.Domain.CheckDomain.main
+    VG.Impl.Ffdh.X86_64.Domain.CheckDomain.withQ VG.Impl.Ffdh.X86_64.Domain.CheckDomain.divides
+    VG.Impl.Ffdh.X86_64.Domain.CheckDomain.subgroup VG.Impl.Ffdh.X86_64.Domain.CheckDomain.qRange
+    VG.Impl.Ffdh.X86_64.Domain.CheckDomain.pMinus1 Crt.redc pow Crt.expLoop Crt.expLoopS Crt.expWin
+    Crt.tabBuild Crt.tabBuildN R2Words.choice R2Words.fast R2Words.old
+  simp only [Code.inline, inline_seqs, List.map_append, List.map_cons, List.map_nil]
+  simp (disch := decide) only [inline_of_noCalls, map_inline_of_noCalls]
+
+/-- The validator as proven: `mont.mm` inline. -/
+def domainInline (v : RoundImpl) : Prog isa :=
   VG.Impl.Ffdh.X86_64.Domain.CheckDomain.code v.mont.mm (Crt.expLoop v.mont.mm Crt.tabSelect)
     (.seq (.block r2Head) (R2Words.choice v.mont.mm))
 
+/-- The validator as emitted: `mm`, which inlines to `domainInline`. -/
+def domainCode (v : RoundImpl) : Prog isa :=
+  VG.Impl.Ffdh.X86_64.Domain.CheckDomain.code v.mm (Crt.expLoop v.mm Crt.tabSelect)
+    (.seq (.block r2Head) (R2Words.choice v.mm))
+
+theorem domainCode_inline (v : RoundImpl) : (domainCode v).inline = domainInline v := by
+  have h := template_inline v.mm
+  simp only [v.mmInline] at h
+  exact h
+
+theorem domainCode_inlineOk (v : RoundImpl) : (domainCode v).InlineOk = true :=
+  template_inlineOk v.mm (by decide +kernel) v.mmOk
+
 private theorem domainCode_safe (v : RoundImpl) :
     (domainCode v).allInstrs (fun i => !loadsMxcsr i && !isa.writesSp i) = true := by
+  rw [← allInstrs_inline, domainCode_inline]
   exact template_instrs _ _ (by decide +kernel) v.arithSafe
 
-theorem domainCode_mx (v : RoundImpl) :
-    (domainCode v).allInstrs (fun i => !loadsMxcsr i) = true := by
+theorem domainInline_mx (v : RoundImpl) :
+    (domainInline v).allInstrs (fun i => !loadsMxcsr i) = true := by
   have h := domainCode_safe v
+  rw [← allInstrs_inline, domainCode_inline] at h
   rw [Code.allInstrs_eq] at h ⊢
   exact List.all_eq_true.mpr fun i hi => ((Bool.and_eq_true _ _).mp (List.all_eq_true.mp h i hi)).1
 

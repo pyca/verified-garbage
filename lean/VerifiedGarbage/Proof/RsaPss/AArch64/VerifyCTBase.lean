@@ -1,21 +1,27 @@
 module
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignChecks
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyMain
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
 
-public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyTop
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyTop
-public import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
-import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
 import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyParts
+import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyBody
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignBody
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignChecks
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyMain
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyParts
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyBody
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignBody
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 
 /-!
 # RSASSA-PSS verification on AArch64: constant time, the public data and the checks

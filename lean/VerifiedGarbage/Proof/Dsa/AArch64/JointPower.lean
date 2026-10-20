@@ -1,13 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Joint
+public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.JointRun
+import VerifiedGarbage.Proof.Dsa.AArch64.JointRun
 import VerifiedGarbage.Proof.Dsa.AArch64.JointPrepare
-import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+import VerifiedGarbage.Proof.Dsa.Arithmetic
 
 /-! # Loading and preparing both bases for joint DSA exponentiation -/
 

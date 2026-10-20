@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Finish
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraPairTiming
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Impl.MlKem.AArch64.Paired
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraPairTiming
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Finish
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraPairTiming
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.TCB.Axioms
+public import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! # Public completion flags and fixed-address restoration -/
 @[expose] public section
@@ -18,15 +20,15 @@ theorem restore_ct : ConstantTime isa (fun _=>True) (VG.AArch64.Taint.Agree (Tai
     (.block (Impl.MlKem.AArch64.Paired.saved.zipIdx.reverse.map fun (r,i)=>.ldr .x r .x19 (1800+8*i))) :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.x19]) (fun _ _ _ _ h=>h) (by taint_decide)
 
-theorem finish_relCT {A B : Spec.Sha3.State} {p a b c : Addr} {s u : State}
-    (ps : Progress A B 3 p a b c s) (pu : Progress A B 3 p a b c u)
+theorem finish_relCT {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s u : State}
+    (ps : ProgressW w16 A B 3 p a b c s) (pu : ProgressW w16 A B 3 p a b c u)
     (ss : s.syms "VG_MLKEM_REJ_SHUFFLE"=c) (us : u.syms "VG_MLKEM_REJ_SHUFFLE"=c)
     (fs : (s.gpr .x6).toNat=if (accepted A 3).length=256 ∧ (accepted B 3).length=256 then 1 else 0)
     (fu : (u.gpr .x6).toNat=if (accepted A 3).length=256 ∧ (accepted B 3).length=256 then 1 else 0)
     (sp : s.sp=u.sp) :
-    RelCT isa (fun t v=>t=s ∧ v=u) finishCode (fun _ _=>True) := by
+    RelCT isa (fun t v=>t=s ∧ v=u) (finishCode w16) (fun _ _=>True) := by
   have branch : RelCT isa (fun t v=>t=s ∧ v=u)
-      (.ite (.zero .x .x6) Impl.MlKem.AArch64.Paired.extraPair (.block []))
+      (.ite (.zero .x .x6) (Impl.MlKem.AArch64.Paired.extraPair w16) (.block []))
       (fun t v=>t.sp=v.sp ∧ t.gpr .x19=v.gpr .x19) := by
     refine RelCT.ite ?_ ?_ (RelCT.block_nil ?_)
     · intro t v h

@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.TCB.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 
 /-!
 # The `zmm` comb: what the vector instructions keep

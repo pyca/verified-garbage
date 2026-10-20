@@ -1,19 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailCoreState
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed66
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed66
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailInitial
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailSqueezeRate
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRounds
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## The core loop -/
 

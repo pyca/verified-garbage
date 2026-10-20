@@ -1,15 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.Arm.Add
-meta import VerifiedGarbage.Proof.MlKem.Arm.Add
+import VerifiedGarbage.Proof.MlKem.Arm.Add
 public import VerifiedGarbage.Proof.MlKem.EkCheck
+public import VerifiedGarbage.Impl.MlKem.Arm.Poly
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.MlKem.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.Arm.Add
 meta import VerifiedGarbage.Proof.MlKem.EkCheck
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Impl.MlKem.Arm.Poly
+meta import VerifiedGarbage.Proof.Framework.Semantics
+meta import VerifiedGarbage.Spec.MlKem.Contract
+meta import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.Proof.MlKem.Arith
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM-768 on 32-bit ARM: `vg_mlkem768_check_ek`

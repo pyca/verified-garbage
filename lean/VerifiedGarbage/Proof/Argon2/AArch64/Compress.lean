@@ -1,29 +1,33 @@
 module
 
 import VerifiedGarbage.Proof.Argon2.AArch64.Finish
-meta import VerifiedGarbage.Proof.Argon2.AArch64.Finish
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Argon2.Permutation
-meta import VerifiedGarbage.Proof.Argon2.Permutation
 public import VerifiedGarbage.Proof.Argon2.AArch64.Words
-meta import VerifiedGarbage.Proof.Argon2.AArch64.Words
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Argon2.AArch64.Finish
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Argon2.Permutation
+meta import VerifiedGarbage.Proof.Argon2.AArch64.Words
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Argon2.Contract
-import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Impl.Argon2.AArch64.Compress
-meta import VerifiedGarbage.Impl.Argon2.AArch64.Compress
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 
@@ -307,7 +311,7 @@ theorem compress_correct (s : State) (hs : compressLocal.pre s) :
     lit_decide
   intro i hi
   have h := List.all_eq_true.mp (List.all_eq_true.mp (instrs_keeps hk) i hi) r hr
-  simpa only [bne_iff_ne] using h
+  simpa using h
 
 theorem compress_verified : Verified AArch64.target Impl.Argon2.AArch64.compress
     (Spec.Argon2.compressContract AArch64.abi) :=

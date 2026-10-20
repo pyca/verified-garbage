@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideGeneral
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideGeneral
 public import VerifiedGarbage.Proof.Bignum.Square
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRow
 
 /-! The rows of the off-diagonal part of an ADX square. -/
 
@@ -40,13 +40,13 @@ theorem crossTail_ok {s : State} {B : Addr} {Z e i w : Nat} (hs : Scr s B Z)
     hs.st hZ, off_add8, ofNat_add_one, ofNat_sub_beq hi hw]
 
 /-- One row of cross products, with its carry included in the result. -/
-theorem crossRow_ok {s : State} {B : Addr} {Z e eb i w : Nat} (hs : Scr s B Z)
-    (h8 : s.gpr .r8 = off B e) (h9 : s.gpr .r9 = off B eb)
+theorem crossRowWith_ok {row : Prog isa} (hr : RowOk row) {s : State} {B : Addr} {Z e eb i w : Nat}
+    (hs : Scr s B Z) (h8 : s.gpr .r8 = off B e) (h9 : s.gpr .r9 = off B eb)
     (hbp : s.gpr .rbp = BitVec.ofNat 64 i) (h10 : s.gpr .r10 = BitVec.ofNat 64 w)
-    (hi : i < w) (hw : w < 2 ^ 60)
+    (hi0 : 0 < i) (hi : i < w) (hw : w < 2 ^ 60)
     (hZ : e + 8 * (i + 1) ≤ Z) (hZb : eb + 8 * (i + 1) ≤ Z)
     (sb : eb + 8 * (i + 1) ≤ e ∨ e + 8 * (i + 1) ≤ eb) :
-    WP isa AdxSquare.crossRow s fun t =>
+    WP isa (AdxSquare.crossRowWith row) s fun t =>
       wv t.mem B e (i + 1) = wv s.mem B e i +
         (word s.mem B (eb + 8 * i)).toNat * wv s.mem B eb i ∧
       Outside B e (8 * (i + 1)) s.mem t.mem ∧
@@ -56,10 +56,10 @@ theorem crossRow_ok {s : State} {B : Addr} {Z e eb i w : Nat} (hs : Scr s B Z)
   have hn := hs.nowrap
   have rd : readSrc s (.mem (ix .r9 .rbp)) = some (word s.mem B (eb + 8 * i)) :=
     readSrc_word hs (by simpa using ea_ixk s h9 hbp 0) (by omega)
-  unfold AdxSquare.crossRow
+  unfold AdxSquare.crossRowWith
   refine WP.seq (WP.mono (movMem_ok s (dst := .rdx) rd) fun s₁ ⟨hdx, _, _, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (AdxSquareWide.generalRow_ok (hs.congr k₁.2.2.2) ((k₁.gpr (by decide)).trans h8)
-    ((k₁.gpr (by decide)).trans h9) ((k₁.gpr (by decide)).trans hbp) (by omega)
+  refine WP.seq (WP.mono (hr.ok (hs.congr k₁.2.2.2) ((k₁.gpr (by decide)).trans h8)
+    ((k₁.gpr (by decide)).trans h9) ((k₁.gpr (by decide)).trans hbp) hi0 (by omega)
     (by omega) (by omega) (by omega)) fun s₂ ⟨hv, ho, h14, k₂⟩ => ?_)
   have k12 := k₁.keep.trans k₂
   refine WP.mono (crossTail_ok (hs.congr k12.2.2) ((k12.gpr (by decide)).trans h8) h14
@@ -121,18 +121,18 @@ structure CrossInv (s₀ : State) (B : Addr) (Z A eb w : Nat) (i : Nat) (t : Sta
   zero : ∀ k, 2 * i ≤ k → k < 2 * w + 2 → word t.mem B (A + 8 * k) = 0
 
 /-- Each row computes new cross products without changing earlier ones. -/
-theorem crossStep_ok {s₀ t : State} {B : Addr} {Z A eb w i : Nat}
+theorem crossStep_ok {row : Prog isa} (hr : RowOk row) {s₀ t : State} {B : Addr} {Z A eb w i : Nat}
     (h9 : s₀.gpr .r9 = off B eb) (h10 : s₀.gpr .r10 = BitVec.ofNat 64 w)
-    (hw : w < 2 ^ 60) (hi : i < w)
+    (hw : w < 2 ^ 60) (hi0 : 0 < i) (hi : i < w)
     (hA : A + 8 * (2 * w + 2) ≤ Z) (hb : eb + 8 * w ≤ Z)
     (sb : eb + 8 * w ≤ A ∨ A + 8 * (2 * w + 2) ≤ eb)
     (hI : CrossInv s₀ B Z A eb w i t) :
-    WP isa AdxSquare.crossRow t fun t' =>
+    WP isa (AdxSquare.crossRowWith row) t fun t' =>
       t'.zf = some (decide (i + 1 = w)) ∧ CrossInv s₀ B Z A eb w (i + 1) t' := by
   have hn := hI.scr.nowrap
   have kp := hI.keep
-  refine WP.mono (crossRow_ok hI.scr hI.r8 ((kp.gpr (by decide)).trans h9)
-    hI.rbp ((kp.gpr (by decide)).trans h10) hi hw (by omega) (by omega) (by omega))
+  refine WP.mono (crossRowWith_ok hr hI.scr hI.r8 ((kp.gpr (by decide)).trans h9)
+    hI.rbp ((kp.gpr (by decide)).trans h10) hi0 hi hw (by omega) (by omega) (by omega))
     fun t' ⟨hv, ho, h8', hbp', hz, kt⟩ => ⟨hz, ?_⟩
   have rB : wv t.mem B eb i = wv s₀.mem B eb i := hI.out.wv (by omega) (by omega)
   have rX : word t.mem B (eb + 8 * i) = word s₀.mem B (eb + 8 * i) := hI.out.word (by omega) (by omega)
@@ -163,18 +163,19 @@ theorem crossValue_congr {m m' : Mem} {B : Addr} {eb w : Nat}
       wv_congr (fun j hj => h j (by omega))]
 
 /-- All off-diagonal products are accumulated once, preserving the input. -/
-theorem cross_ok {s : State} {B : Addr} {Z A eb w : Nat} (hs : Scr s B Z)
+theorem crossWith_ok {row : Prog isa} (hr : RowOk row) {s : State} {B : Addr} {Z A eb w : Nat}
+    (hs : Scr s B Z)
     (h8 : s.gpr .r8 = off B A) (h9 : s.gpr .r9 = off B eb)
     (hbx : s.gpr .rbx = BitVec.ofNat 64 w) (hw1 : 2 ≤ w) (hw : w < 2 ^ 60)
     (hA : A + 8 * (2 * w + 2) ≤ Z) (hb : eb + 8 * w ≤ Z)
     (sb : eb + 8 * w ≤ A ∨ A + 8 * (2 * w + 2) ≤ eb) :
-    WP isa AdxSquare.cross s fun t =>
+    WP isa (AdxSquare.crossWith row) s fun t =>
       wv t.mem B A (2 * w + 2) = crossValue s.mem B eb w ∧
       Outside B A (8 * (2 * w + 2)) s.mem t.mem ∧
       (∀ k, 2 * w ≤ k → k < 2 * w + 2 → word t.mem B (A + 8 * k) = 0) ∧
       Keep [.rax, .rcx, .r14, .r10, .rbp, .r8, .rsi, .rdx, .r11, .r12, .r13, .r15, .rbx] s t := by
   have hn := hs.nowrap
-  unfold AdxSquare.cross
+  unfold AdxSquare.crossWith
   refine WP.seq (WP.mono (zeroWin_ok hs h8 hbx hw hA) fun s₁ ⟨hz₁, ho₁, k₁⟩ => ?_)
   have h8₁ : s₁.gpr .r8 = off B A := (k₁.gpr (by decide)).trans h8
   have hbx₁ : s₁.gpr .rbx = BitVec.ofNat 64 w := (k₁.gpr (by decide)).trans hbx
@@ -194,7 +195,7 @@ theorem cross_ok {s : State} {B : Addr} {Z A eb w : Nat} (hs : Scr s B Z)
     ⟨hs₂, Keep.refl _ _, h8₂, hbp₂, Outside.refl _ _ _ _, by
       rw [hm₂, wv_zero hz₁]; simp [crossValue, Square.cross, Square.value], fun k _ hk => by rw [hm₂]; exact hz₁ k hk⟩
   refine WP.mono (wp_upto (a := 1) (N := w) (by omega) (CrossInv s₂ B Z A eb w)
-    (fun i _ hi t hI => crossStep_ok h9₂ h10₂ hw hi hA hb sb hI) (fun _ h => h) hI)
+    (fun i h1 hi t hI => crossStep_ok hr h9₂ h10₂ hw (by omega) hi hA hb sb hI) (fun _ h => h) hI)
     fun t h => ⟨?_, ?_, h.zero, (k12.trans h.keep).mono (by decide)⟩
   · rw [h.val]
     apply crossValue_congr
@@ -204,5 +205,17 @@ theorem cross_ok {s : State} {B : Addr} {Z A eb w : Nat} (hs : Scr s B Z)
   · have ho := h.out
     rw [hm₂] at ho
     exact ho₁.trans ho
+
+theorem cross_ok {s : State} {B : Addr} {Z A eb w : Nat} (hs : Scr s B Z)
+    (h8 : s.gpr .r8 = off B A) (h9 : s.gpr .r9 = off B eb)
+    (hbx : s.gpr .rbx = BitVec.ofNat 64 w) (hw1 : 2 ≤ w) (hw : w < 2 ^ 60)
+    (hA : A + 8 * (2 * w + 2) ≤ Z) (hb : eb + 8 * w ≤ Z)
+    (sb : eb + 8 * w ≤ A ∨ A + 8 * (2 * w + 2) ≤ eb) :
+    WP isa AdxSquare.cross s fun t =>
+      wv t.mem B A (2 * w + 2) = crossValue s.mem B eb w ∧
+      Outside B A (8 * (2 * w + 2)) s.mem t.mem ∧
+      (∀ k, 2 * w ≤ k → k < 2 * w + 2 → word t.mem B (A + 8 * k) = 0) ∧
+      Keep [.rax, .rcx, .r14, .r10, .rbp, .r8, .rsi, .rdx, .r11, .r12, .r13, .r15, .rbx] s t :=
+  crossWith_ok AdxSquareWide.generalRow_rowOk hs h8 h9 hbx hw1 hw hA hb sb
 
 end VG.Proof.Bignum.X86_64.AdxSquare

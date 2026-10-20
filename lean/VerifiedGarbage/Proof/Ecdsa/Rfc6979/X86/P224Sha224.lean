@@ -4,11 +4,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.P224
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha224
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P224Sha224
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # Deterministic ECDSA over P-224 with HMAC-SHA-224 on x86 (32-bit)

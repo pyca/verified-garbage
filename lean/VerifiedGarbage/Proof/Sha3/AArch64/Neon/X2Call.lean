@@ -2,17 +2,17 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MlKem.AArch64.Wp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import Std.Tactic.BVDecide.Normalize.BitVec
+import Std.Tactic.BVDecide.Normalize.Prop
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.TCB.Axioms
 
 /-!
 # Calls of `vg_keccak_f1600_x2` on AArch64
@@ -49,15 +49,11 @@ structure CallKeep (s t : State) : Prop where
 /-- The caller's part of a call: the function's working space and the return address. -/
 def callR (q : Addr) : Region := ⟨q, 136⟩
 
-theorem code_writes (sha3 : Bool) : ∀ r, r ≠ .x16 → ∀ i ∈ instrs (code sha3), dstOf i ≠ some r := by
-  have h : ∀ sha3, ((instrs (code sha3)).all fun i => dstOf i == none || dstOf i == some .x16) = true := by
+theorem code_writes (sha3 : Bool) : ∀ r, r ≠ .x16 → ∀ i ∈ instrs (code sha3), clobbers i r = false := by
+  have h : ∀ sha3, ((instrs (code sha3)).all fun i => (dsts i).all (· == .x16)) = true := by
     intro sha3; cases sha3 <;> (rw [← Code.allInstrs_eq]; lit_decide)
-  intro r hr i hi he
-  have := List.all_eq_true.mp (h sha3) i hi
-  rw [he, Bool.or_eq_true, beq_iff_eq, beq_iff_eq] at this
-  rcases this with h' | h'
-  · exact absurd h' (Option.some_ne_none r)
-  · exact hr (Option.some.inj h')
+  intro r hr i hi
+  exact clobbers_eq_false_of_all (List.all_eq_true.mp (h sha3) i hi) (by simpa using hr)
 
 theorem code_noFrames (sha3 : Bool) : (code sha3).noFrames = true := by
   cases sha3 <;> lit_decide

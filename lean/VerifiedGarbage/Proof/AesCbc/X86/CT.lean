@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.AesCbc.X86.Body
-meta import VerifiedGarbage.Proof.AesCbc.X86.Body
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
+import VerifiedGarbage.Proof.MdStream.X86.Common
+meta import VerifiedGarbage.Proof.AesCbc.X86.Body
 meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.MdStream.X86.Common
 
 /-!
 # AES-CBC on x86: constant time

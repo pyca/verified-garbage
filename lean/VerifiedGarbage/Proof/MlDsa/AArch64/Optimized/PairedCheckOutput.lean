@@ -1,13 +1,6 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalMemory
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSource
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
 
 /-! ## From `PairedCheckRead.lean` -/
 

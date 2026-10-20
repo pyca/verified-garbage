@@ -1,25 +1,41 @@
 module
 
 public import VerifiedGarbage.Impl.X25519.X86_64.Base
-meta import VerifiedGarbage.Impl.X25519.X86_64.Base
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedCT
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedCT
 import VerifiedGarbage.Proof.X25519.Edwards.Base
-meta import VerifiedGarbage.Proof.X25519.Edwards.Base
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
-meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
-import VerifiedGarbage.Proof.Ed25519.Recode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
 import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
-meta import VerifiedGarbage.Proof.Ed25519.Recode
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+import VerifiedGarbage.Proof.X25519.Edwards.Ladder
+import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointEncode
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointAffine
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+import VerifiedGarbage.Proof.X25519.X86_64.Bits
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+meta import VerifiedGarbage.Impl.X25519.X86_64.Base
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedCT
+meta import VerifiedGarbage.Proof.X25519.Edwards.Base
+meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.X25519.Edwards.Ladder
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointEncode
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointAffine
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+meta import VerifiedGarbage.Proof.X25519.X86_64.Bits
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
 
 /-! Clamped scalar bits, fixed-base multiplication, and Montgomery encoding. -/
 

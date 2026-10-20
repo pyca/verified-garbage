@@ -1,11 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86.Derive.CTBase
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCall
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillState
+import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCache
+import VerifiedGarbage.Proof.Argon2.X86.Derive.FillInput
+import VerifiedGarbage.Proof.Argon2.X86.Derive.FillDep
+import VerifiedGarbage.Proof.Argon2.X86.Derive.HCall
+import VerifiedGarbage.Proof.Argon2.X86.Derive.Initial
+import VerifiedGarbage.Proof.Argon2.X86.HPrime.Verified
+import VerifiedGarbage.Proof.Argon2.X86.CompressVerified
+import VerifiedGarbage.Proof.Argon2.Dimensions
 meta import VerifiedGarbage.Proof.Argon2.X86.Derive.CTBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCall
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillState
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCache
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillInput
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillDep
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.HCall
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.Initial
+meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.Verified
+meta import VerifiedGarbage.Proof.Argon2.X86.CompressVerified
+meta import VerifiedGarbage.Proof.Argon2.Dimensions
 
 @[expose] public section
 

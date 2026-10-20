@@ -1,18 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPoints
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMulTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.TaintMap
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64.Joint
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitLayout
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMulTiming
 import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointGenerator
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointInput
 
 /-! The two-scalar multiplication leaks only the public verification inputs. -/
 

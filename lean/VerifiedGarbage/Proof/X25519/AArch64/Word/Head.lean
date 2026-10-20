@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Memory
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! Load a scalar bit and turn the old/new swap XOR into a selection mask. -/
 
@@ -70,11 +68,12 @@ theorem loadBit_ok {base : Addr} {s : State} (hs : Scratch s base) {i kt : Nat}
 theorem storeSwap_ok {base : Addr} {s : State} (hs : Scratch s base) :
     WP isa (.block [VG.Impl.Ed25519.AArch64.st .x2 768]) s fun t =>
       LoopKeep base s t ∧ env t.mem base = env s.mem base ∧
-      word t.mem base 768 = s.gpr .x2 ∧ t.gpr = s.gpr := by
+      word t.mem base 768 = s.gpr .x2 ∧ t.gpr = s.gpr ∧ Outside base 768 8 s.mem t.mem := by
   refine WP.block_cons_iff.mpr ⟨_, store_sc hs (d := 768) (by decide) (by decide) .x2, WP.block_nil ?_⟩
   exact ⟨⟨fun _ _ _ => rfl, rfl, rfl, rfl,
     (writeW_outside s.mem base (s.gpr .x2) (by decide : 768+8<2^64)).mono (by decide) (by decide)⟩,
-    env_swap_store _ _ _, Mem.readW_writeW_self64 _ _ _, rfl⟩
+    env_swap_store _ _ _, Mem.readW_writeW_self64 _ _ _, rfl,
+    writeW_outside s.mem base (s.gpr .x2) (by decide : 768+8<2^64)⟩
 
 theorem swapMask_ok {s : State} {sw kt : Nat} (hsw : sw ≤ 1) (hkt : kt ≤ 1)
     (h3 : s.gpr .x3 = BitVec.ofNat 64 sw) (h2 : s.gpr .x2 = BitVec.ofNat 64 kt) :
@@ -101,7 +100,7 @@ theorem prefix_ok {base : Addr} {s : State} (hs : Scratch s base) {i sw kt : Nat
     WP isa (.block VG.Impl.X25519.AArch64.Word.stepPrefix) s fun t =>
       LoopKeep base s t ∧ env t.mem base = env s.mem base ∧
       t.gpr .x19 = BitVec.ofNat 64 i ∧ t.gpr .x3 = mask ((sw ^^^ kt) == 1) ∧
-      word t.mem base 768 = BitVec.ofNat 64 kt := by
+      word t.mem base 768 = BitVec.ofNat 64 kt ∧ Outside base 768 8 s.mem t.mem := by
   change WP isa (.block (([.subImm .x .x19 .x19 1, .add .x .x8 .x0 .x19,
     .ldrb .x2 .x8 bitOffset] : List Instr) ++
     ([VG.Impl.Ed25519.AArch64.ld .x3 768] ++
@@ -115,13 +114,15 @@ theorem prefix_ok {base : Addr} {s : State} (hs : Scratch s base) {i sw kt : Nat
     fun b ⟨bs, kb⟩ => ?_
   have klb : LoopKeep base s b := kla.trans (LoopKeep.of_keeps kb (by decide))
   rw [WP.block_append_iff]
-  refine WP.mono (storeSwap_ok (klb.scratch hs)) fun c ⟨klc, ec, sc, gc⟩ => ?_
+  refine WP.mono (storeSwap_ok (klb.scratch hs)) fun c ⟨klc, ec, sc, gc, oc⟩ => ?_
   have ck : c.gpr .x2 = BitVec.ofNat 64 kt := by rw [gc, kb.gpr _ (by decide), ak]
   have cs : c.gpr .x3 = BitVec.ofNat 64 sw := by rw [gc, bs, ka.mem, hswap]
   refine WP.mono (swapMask_ok hsw hkt cs ck) fun t ⟨tm, km⟩ => ?_
-  refine ⟨(klb.trans klc).trans (LoopKeep.of_keeps km (by decide)), ?_, ?_, tm, ?_⟩
+  refine ⟨(klb.trans klc).trans (LoopKeep.of_keeps km (by decide)), ?_, ?_, tm, ?_, ?_⟩
   · rw [km.mem, ec, kb.mem, ka.mem]
   · rw [km.gpr _ (by decide), gc, kb.gpr _ (by decide), ac]
   · rw [km.mem, sc, kb.gpr _ (by decide), ak]
+  · rw [km.mem, ← ka.mem, ← kb.mem]
+    exact oc
 
 end VG.Proof.X25519.AArch64.Word

@@ -4,13 +4,10 @@ import VerifiedGarbage.Proof.Weierstrass.X86.InvHalf
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
 import VerifiedGarbage.Proof.Divstep.Word32
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Weierstrass.X86.Loop
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 
 /-! ## `InvStart` -/
 

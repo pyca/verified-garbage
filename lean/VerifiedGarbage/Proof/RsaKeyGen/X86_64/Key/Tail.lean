@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Main
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Crt
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.NFin
+public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # An RSA key from its primes on x86-64: the key

@@ -1,14 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJInvariant
+public import VerifiedGarbage.Impl.Weierstrass.X86.TCombJ
+public import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
 import VerifiedGarbage.Proof.Weierstrass.CombFrame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Weierstrass.X86.FprogJ
+import VerifiedGarbage.Proof.Weierstrass.X86.TCombJEntry
+import VerifiedGarbage.Proof.Weierstrass.X86.TCombJDigit
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 @[expose] public section
 

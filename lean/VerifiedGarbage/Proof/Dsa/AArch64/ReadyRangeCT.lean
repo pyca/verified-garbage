@@ -1,14 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.OneScanCT
+import VerifiedGarbage.Proof.Dsa.AArch64.OneScanCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCallCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.RsaPss
+import VerifiedGarbage.Proof.Dsa.AArch64.EnterLeave
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Range-check timing in the complete DSA workspace -/
 

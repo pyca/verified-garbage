@@ -1,9 +1,26 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Inst
+import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Inst
 import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.Inst
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
+public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Call
+public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Inst
+public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+public import VerifiedGarbage.Proof.MlDsa.DecideAt
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Mask
+public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.RestRow
+public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Samp4
+public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Top
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Mask
+import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.RestRow
+import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Samp4
+import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Top
 
 /-!
 # ML-DSA (FIPS 204) on x86-64: key generation
@@ -30,33 +47,27 @@ def notes : List String :=
     depend on whether key generation fails."]
 
 def artifacts (v : ArithImpl) : List Artifact := [
-  { Spec.MlDsa.keyGen44Api with
-    name := Spec.MlDsa.keyGen44Api.name ++ v.code.sfx
+  Spec.MlDsa.keyGen44Api.artifact X86_64.target {
+    suffix := v.code.sfx
     features := v.features
-    target := X86_64.target
-    doc := Spec.MlDsa.keyGen44Api.doc (notes := notes)
+    notes := notes
     code := keyGen (primsWith v.code) Spec.MlDsa.mlDsa44
-    contract := Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa44 X86_64.abi 32
     stack := 32
     verified := Proof.MlDsa.X86_64.KeyGen.keyGen_verifiedWith v (.inl rfl)
     spSafe := Proof.MlDsa.X86_64.KeyGen.keyGen_spSafe v (.inl rfl) },
-  { Spec.MlDsa.keyGen65Api with
-    name := Spec.MlDsa.keyGen65Api.name ++ v.code.sfx
+  Spec.MlDsa.keyGen65Api.artifact X86_64.target {
+    suffix := v.code.sfx
     features := v.features
-    target := X86_64.target
-    doc := Spec.MlDsa.keyGen65Api.doc (notes := notes)
+    notes := notes
     code := keyGen (primsWith v.code) Spec.MlDsa.mlDsa65
-    contract := Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa65 X86_64.abi 32
     stack := 32
     verified := Proof.MlDsa.X86_64.KeyGen.keyGen_verifiedWith v (.inr (.inl rfl))
     spSafe := Proof.MlDsa.X86_64.KeyGen.keyGen_spSafe v (.inr (.inl rfl)) },
-  { Spec.MlDsa.keyGen87Api with
-    name := Spec.MlDsa.keyGen87Api.name ++ v.code.sfx
+  Spec.MlDsa.keyGen87Api.artifact X86_64.target {
+    suffix := v.code.sfx
     features := v.features
-    target := X86_64.target
-    doc := Spec.MlDsa.keyGen87Api.doc (notes := notes)
+    notes := notes
     code := keyGen (primsWith v.code) Spec.MlDsa.mlDsa87
-    contract := Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa87 X86_64.abi 32
     stack := 32
     verified := Proof.MlDsa.X86_64.KeyGen.keyGen_verifiedWith v (.inr (.inr rfl))
     spSafe := Proof.MlDsa.X86_64.KeyGen.keyGen_spSafe v (.inr (.inr rfl)) }]

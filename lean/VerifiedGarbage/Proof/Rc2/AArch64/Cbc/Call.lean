@@ -2,13 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Rc2.AArch64.Block
 public import VerifiedGarbage.Impl.Rc2.AArch64.Cbc
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Rc2.AArch64.Lit
 
 /-! # Calling the verified block primitive from CBC -/
 
@@ -23,7 +22,7 @@ def savedAcrossCall : List Reg := [.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x2
 def kept : List Reg := [.x0, .x1, .x2, .x23, .x24]
 
 theorem block_keeps (d : Spec.Rc2.Direction) :
-    ((instrs (.block (blockCode d) : Prog isa)).all fun i => kept.all fun r => decide (dstOf i ≠ some r)) = true := by
+    ((instrs (.block (blockCode d) : Prog isa)).all fun i => kept.all fun r => decide (clobbers i r = false)) = true := by
   cases d
   · change ((instrs encryptBlock).all _) = true
     rw [← Code.allInstrs_eq]; lit_decide
@@ -31,7 +30,7 @@ theorem block_keeps (d : Spec.Rc2.Direction) :
     rw [← Code.allInstrs_eq]; lit_decide
 
 theorem block_keeps_reg (d : Spec.Rc2.Direction) {r : Reg} (hr : r ∈ kept) :
-    ∀ i ∈ instrs (.block (blockCode d) : Prog isa), dstOf i ≠ some r := by
+    ∀ i ∈ instrs (.block (blockCode d) : Prog isa), clobbers i r = false := by
   intro i hi
   have h := List.all_eq_true.mp (List.all_eq_true.mp (block_keeps d) i hi) r hr
   simpa using h

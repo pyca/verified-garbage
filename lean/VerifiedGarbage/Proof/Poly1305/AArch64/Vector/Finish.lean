@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Loop
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Buffer
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
+import VerifiedGarbage.Proof.Poly1305.AArch64.Buffer
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Blocks
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Steps
+public import VerifiedGarbage.Spec.Poly1305
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Step
+import VerifiedGarbage.Proof.Poly1305.Limbs64
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: the last group and the end

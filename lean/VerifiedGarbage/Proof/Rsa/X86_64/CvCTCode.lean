@@ -1,17 +1,21 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvCT
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvCode
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
-meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
 import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
+import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+import VerifiedGarbage.Proof.Bignum.X86_64.Valid
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCT
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCode
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Valid
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
 # `vg_rsa_crt_values` on x86-64: constant time but for `n`

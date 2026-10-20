@@ -1,13 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Precomputed
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCT
-public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Precomputed
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncFrame
 
 /-!
 # RSAES-PKCS1-v1_5 encryption with a precomputed public key on x86-64: the precondition
@@ -60,7 +54,7 @@ theorem pre_of {s : State}
   have ha : Region.Sub ⟨stackArgAddr s 0, 48⟩ ⟨stackArgAddr s 0, 64⟩ := Region.sub_prefix (by decide)
   refine ⟨⟨sp1, by omega, ?_, hwr, dOn, dOe, dOm, dOp, dOs, dOa.sub_right ha, dns, des, dms, dps,
     dsa.sub_right ha, dRo, dRs, dKo, dKn, dKe, dKm, dKp, dKs, dKa.sub_right ha, wO, wN, wE, wM, wP, wS,
-    k1, k2, hsi, L1, L2, hml, hpl, by unfold Spec.Rsa.scratchWords at hsl; omega⟩,
+    k1, k2, hsi, L1, L2, hml, hpl, hsl⟩,
     sp3, ?_, ?_, dOa.symm, dsa.symm, dKa.symm, dOq.symm, dsq.symm, dKq.symm, wQ, pl⟩
   · rw [hrd]
     apply Covers.of_sub

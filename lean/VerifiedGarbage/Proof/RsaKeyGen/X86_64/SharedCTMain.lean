@@ -3,14 +3,15 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCTRound
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedMain
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrLoop
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedRanges
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCTRound
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedMain
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrLoop
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedRanges
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant time of RSA's loop with a callable shared round -/
 
@@ -105,12 +106,12 @@ def SharedLoopEnd (a : SharedLPub) (s : State) : Prop :=
 
 /-- Miller–Rabin's loop leaks the same in runs that agree on the public data
 and on the shape of the result. -/
-theorem sharedMrLoop_ct (M : Mont) (R : Kernel) :
+theorem sharedMrLoop_ct (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : MmCalls M mm) (R : Kernel) :
     RelCT isa (Two fun (a : SharedLPub) s => 0 < a.N ∧ SharedLoopI a 0 s)
       (.loop (seqs [
         .block [.mov .rcx (.mem (hdr kRandLen)), .mov .rax (.mem (hdr kUsed)), .alu .sub .rcx (.reg .rax),
           .mov .rax (.mem (hdr kLen)), .alu .cmp .rcx (.reg .rax)],
-        .ite .b (.block [.mov32 .rax (.imm 0), .store (hdr kStat) .rax]) (seqs (mrRoundWith M.mm R.run)),
+        .ite .b (.block [.mov32 .rax (.imm 0), .store (hdr kStat) .rax]) (seqs (mrRoundWith mm R.run)),
         .block [.mov .rax (.mem (hdr kStat)), .alu .cmp .rax (.imm 4)]]) .e) (Two SharedLoopEnd) := by
   refine two_loop (Φ := SharedLoopI) SharedLPub.N ?_ ?_
   · simp only [seqs]
@@ -131,19 +132,19 @@ theorem sharedMrLoop_ct (M : Mont) (R : Kernel) :
     · refine RelCT.seq (R := Two fun (p : SharedLPub × Nat) s => KW p.1.p.B p.1.p.wr ∧ HP p.1.p.B p.1.p.wr [] s)
         (two_post (two_map (fun p : SharedLPub × Nat =>
           ((⟨p.1.p, p.2 + 1, p.1.u p.2, passS (8 * p.1.p.w) p.1.p.rl p.1.S (p.1.u p.2)⟩ : RPub), p.1.sp))
-          (fun _ _ h => sharedAvI_r0 h.1 h.2) (sharedRound_ct M R)) ?_)
+          (fun _ _ h => sharedAvI_r0 h.1 h.2) (sharedRound_ct M hmc R)) ?_)
         (kt_ct (fun p : SharedLPub × Nat => p.1.p.B) (fun p => p.1.p.wr) [] (fun _ => []) [] (by decide)
           (fun _ => rfl) (fun _ _ h => h) (pins_nil _) (by taint_decide))
       rintro p s ⟨h, hb⟩
       have hr := sharedAvI_r0 h hb
       obtain ⟨⟨hk, hp, hd, mi, c, bm, r, uni, hc, hE, hR2, hc1, hsh, hsrc, -, hlen, hun, hi, huni, hch, -⟩, hz, henv⟩ := hr
       have hm := (hp0 hp).mrh
-      exact WP.mono (sharedRound_ok M R hd hz henv hc hE hR2 hc1 hsh hm.rand hm.used hm.len hsrc hlen hm.ki hun hm.chk hi huni hch)
+      exact WP.mono (sharedRound_ok M hmc R hd hz henv hc hE hR2 hc1 hsh hm.rand hm.used hm.len hsrc hlen hm.ki hun hm.chk hi huni hch)
         fun t ⟨⟨_, hc'⟩, _, _, _, _, _, _, k⟩ => ⟨hk, hc'.good.rdi, k.2.2.trans hp.wr, fun _ he => absurd he (List.not_mem_nil)⟩
   · rintro a j s hj ⟨hk, hd, hch, hrl, mi, c, r, s₀, res, uni, hI, hS, hrlen, hc1, hsh, ho, hu, hl0, hw, hit⟩
     have hw4 := hd.w4
     obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega) hsh
-    refine WP.mono (sharedMrIter_ok M R hd a.z28 hc1 hsh (by omega) hch s hI) fun t ht => ?_
+    refine WP.mono (sharedMrIter_ok M hmc R hd a.z28 hc1 hsh (by omega) hch s hI) fun t ht => ?_
     rcases ht with ⟨he, hend, hnone, hsome⟩ | ⟨he, uni', hI'⟩
     · have h1 : itersOf (8 * a.p.w) a.p.rl a.S (a.u j) = 1 := by
         rcases hres : res with _ | ⟨b, rest⟩
@@ -178,11 +179,11 @@ def SharedMrPre (a : SharedLPub) (s : State) : Prop :=
 
 /-- `millerRabin` leaks the same in runs that agree on the public data and on
 the shape of the result. -/
-theorem sharedMillerRabin_ct (M : Mont) (R : Kernel) : RelCT isa (Two SharedMrPre) (seqs (millerRabinWith M.mm R.run)) (Two SharedLoopEnd) := by
+theorem sharedMillerRabin_ct (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : MmCalls M mm) (R : Kernel) : RelCT isa (Two SharedMrPre) (seqs (millerRabinWith mm R.run)) (Two SharedLoopEnd) := by
   unfold millerRabinWith
   simp only [seqs]
   refine RelCT.seq (kt_piece (fun a : SharedLPub => a.p.B) (fun a => a.p.wr) [] (fun _ => []) [] (by decide)
-    (fun _ => rfl) (fun _ _ h => ⟨h.1, h.2.1⟩) (pins_nil _) (by taint_decide) ?_) (sharedMrLoop_ct M R)
+    (fun _ => rfl) (fun _ _ h => ⟨h.1, h.2.1⟩) (pins_nil _) (by taint_decide) ?_) (sharedMrLoop_ct M hmc R)
   rintro a s ⟨hk, hp, hd, hch, hrl, mi, c, bm, r, hc, hE, hr2, hc1, hsh, ho, hup, hR, hK, hRL, hrlen, hC, hsrc, hU, hu1,
     hu2, hS, henv⟩
   have hw4 := hd.w4

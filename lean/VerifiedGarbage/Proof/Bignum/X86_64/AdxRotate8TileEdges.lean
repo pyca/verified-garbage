@@ -3,16 +3,14 @@ module
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Accumulate
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Frame
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tail
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Head
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Math
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! ## AdxRotate8Product -/
 
@@ -74,16 +72,17 @@ theorem middleBody_ok {s : State} {B : Addr} {Z eU eO eN : Nat}
     (hs : Scr s B Z) (hc : s.gpr .rcx = off B eU) (hp : s.gpr .rbp = off B eN)
     (ho : s.gpr .rsi = off B eO) (he : 8 ≤ eU) (huZ : eU + 64 ≤ Z)
     (hoZ : eO + 64 ≤ Z) (hnZ : eN + 64 ≤ Z)
-    (hsepU : eU + 64 ≤ eO) (hsepN : eN + 64 ≤ eU - 8) :
+    (hsepU : eU + 64 ≤ eO) (hsepN : eN + 64 ≤ eU - 8)
+    (hb : (word s.mem B (eU - 8)).toNat ≤ 1) :
     WP isa AdxRotate8.middleBody s fun t =>
       wv t.mem B eO 8 + 2 ^ 512 * (cols t + (word t.mem B (eU - 8)).toNat) =
         cols s + (word s.mem B (eU - 8)).toNat + wv s.mem B eO 8 +
           wv s.mem B eU 8 * wv s.mem B eN 8 ∧
-      (word t.mem B (eU - 8)).toNat ≤ 2 ∧ BlockOut B (eU - 8) eO 64 s.mem t.mem ∧
+      (word t.mem B (eU - 8)).toNat ≤ 1 ∧ BlockOut B (eU - 8) eO 64 s.mem t.mem ∧
       Keep [.rdx, .rax, .rbx, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t := by
   have hn := hs.nowrap
   unfold AdxRotate8.middleBody
-  refine WP.seq (WP.mono (accumulate_ok hs hc ho he (by omega_arith) hoZ) fun a ⟨va, ba, oa, ka⟩ => ?_)
+  refine WP.seq (WP.mono (accumulate_ok hs hc ho he (by omega_arith) hoZ hb) fun a ⟨va, ba, oa, ka⟩ => ?_)
   refine WP.mono (productN_ok (hs.congr ka.2.2) ((ka.gpr (by decide)).trans hc)
     ((ka.gpr (by decide)).trans hp) ((ka.gpr (by decide)).trans ho) huZ hoZ hnZ hsepU (by omega_arith))
     fun t ⟨vt, ot, kt⟩ => ?_
@@ -164,6 +163,7 @@ structure MiddleInv (s₀ : State) (B : Addr) (Z w e i : Nat) (mi : BitVec 64) (
   rsi : s.gpr .rsi = off B (e + 64 * (i + 1))
   keep : Keep mmRegs s₀ s
   out : BlockOut B (e - 8) (e + 64) (64 * i) s₀.mem s.mem
+  bit : (word s.mem B (e - 8)).toNat ≤ 1
   val : wv s.mem B (e + 64) (8 * i) + 2 ^ (512 * i) * (cols s + (word s.mem B (e - 8)).toNat) =
     cols s₀ + (word s₀.mem B (e - 8)).toNat + wv s₀.mem B (e + 64) (8 * i) +
       wv s₀.mem B e 8 * wv s₀.mem B (slot w aN + 64) (8 * i)
@@ -178,7 +178,7 @@ theorem middleStep_ok {s₀ s : State} {B : Addr} {Z w e n i : Nat} {mi : BitVec
   have hNs := slot_le (w := w) (show aN < 8 by decide)
   unfold AdxRotate8.middle
   refine WP.seq (WP.mono (middleBody_ok h.scr h.rcx h.rbp h.rsi (by omega_arith)
-    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)) fun a ⟨va, _, oa, ka⟩ => ?_)
+    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) h.bit) fun a ⟨va, ba, oa, ka⟩ => ?_)
   have hha : Hdr a.mem B w mi := h.hdr.of_outside
     (oa.outside (a := e - 8) (b := 64 * (i + 2) + 8) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)) (by omega_arith)
   have haP : a.gpr .rbp = off B (slot w aN + 8 * (8 * (i + 1))) := by
@@ -200,7 +200,7 @@ theorem middleStep_ok {s₀ s : State} {B : Addr} {Z w e n i : Nat} {mi : BitVec
   refine ⟨?_, ⟨h.scr.congr ((ka.trans kt).2.2), hm ▸ hha,
     ((ka.trans kt).gpr (by decide)).trans h.rdi,
     ((ka.trans kt).gpr (by decide)).trans h.rcx, ?_, ?_,
-    (h.keep.trans (ka.trans kt)).mono (by decide), ?_, ?_⟩⟩
+    (h.keep.trans (ka.trans kt)).mono (by decide), ?_, by rw [hm]; exact ba, ?_⟩⟩
   · rw [hz]; exact congrArg some (decide_eq_decide.mpr (by omega_arith))
   · rw [hp]; congr 1; omega_arith
   · rw [ho]; congr 1; omega_arith
@@ -229,6 +229,7 @@ theorem middles_ok {s : State} {B : Addr} {Z w e n : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hH : Hdr s.mem B w mi) (hdi : s.gpr .rdi = B)
     (hc : s.gpr .rcx = off B e) (hp : s.gpr .rbp = off B (slot w aN + 64))
     (ho : s.gpr .rsi = off B (e + 64)) (hz : s.zf = some (decide (n = 0)))
+    (h0b : word s.mem B (e - 8) = 0)
     (hZ : slot w 8 ≤ Z) (hw : w = 8 * (n + 1))
     (he : hdrBytes + 16 ≤ e) (heZ : e + 8 * (w + 8) ≤ Z)
     (hsep : slot w aN + 8 * w ≤ e - 8) :
@@ -236,7 +237,7 @@ theorem middles_ok {s : State} {B : Addr} {Z w e n : Nat} {mi : BitVec 64}
   have h0 : MiddleInv s B Z w e 0 mi s := ⟨hs, hH, hdi, hc,
     by simpa only [Nat.zero_add, Nat.mul_one] using hp,
     by simpa only [Nat.zero_add, Nat.mul_one] using ho,
-    Keep.refl _ _, BlockOut.refl _ _ _ _ _, by
+    Keep.refl _ _, BlockOut.refl _ _ _ _ _, by rw [h0b]; decide, by
       simp only [wv, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.add_zero]⟩
   by_cases hn : n = 0
   · refine WP.ite false (by simp [eval, hz, hn]) (by simp) (fun _ => WP.block_nil ?_)

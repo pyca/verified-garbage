@@ -1,15 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Points
 
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveArithmetic
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFlags
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFlags
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Final
+import VerifiedGarbage.Proof.Ecdsa.Projective
 
 @[expose] public section
 

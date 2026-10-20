@@ -1,15 +1,15 @@
 module
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+public import VerifiedGarbage.Proof.Blowfish.Scratch
 
-import VerifiedGarbage.Proof.Blowfish.X86_64.Verified
-public import VerifiedGarbage.Proof.Blowfish.X86_64.KeyVerified
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Blowfish.X86_64.KeyVerified
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Impl.Blowfish.X86_64
+import VerifiedGarbage.Proof.Blowfish.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Blowfish on x86-64, with its working space on the stack
@@ -61,7 +61,8 @@ theorem expandKey_framed :
 working space as an argument and no stack, in its frame. -/
 theorem ecb_framed {c : Prog isa} {d : Spec.Blowfish.Direction}
     (h : Verified X86_64.target c (Proof.Blowfish.ecbScratchContract X86_64.abi d 0))
-    (hsp : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth ≤ 0) :
+    (hsp : c.all (fun i => !isa.writesSp i) = true := by exact Code.all_of_allInstrs (by lit_decide))
+    (hd : c.x86_64Depth ≤ 0 := by lit_decide) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 264 .rcx 2 c)
       (Spec.Blowfish.ecbContract X86_64.abi d 264) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.Blowfish.ecbSig) (nm := "scratch") (e := .u64)

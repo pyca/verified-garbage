@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.Invert
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The addition chain to `z^(2^250 - 1)` and `z^11`

@@ -3,12 +3,12 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.MulFn
 import VerifiedGarbage.Proof.Weierstrass.AArch64.P192Literals
 public import VerifiedGarbage.Impl.Ecdsa.P192.AArch64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Weierstrass.CombLay
 
 /-! # p192 multiplication by the base point, by a call of `vg_p192_mul` -/
 

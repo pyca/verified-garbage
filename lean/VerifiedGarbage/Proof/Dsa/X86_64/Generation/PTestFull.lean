@@ -1,0 +1,60 @@
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCall
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateWidth
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
+
+/-! # A full-width p candidate enters the complete shared primality routine -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+open VG.Proof.Rsa.X86_64 VG.Proof.RsaOaep.X86_64 VG.Proof.MillerRabin.X86_64
+
+theorem pTest_full_ok (M : Mont) (K : Kernel) {p : PrimeCallPlan} {used : Nat} {s : State}
+    {V : Nat → Byte} {bs : List Byte} {pp : Addr}
+    (L : Lay s p.prime.sp p.hash) (R : Rep s.mem p.prime.sp p.hash V p.W)
+    (h : Ws s p.prime.B p.prime.Z p.prime.w)
+    (hptr : word s.mem p.prime.B 160 = pp)
+    (hbound : p.prime.N < 256 ^ p.prime.len)
+    (hbytes : Spec.Rsa.bytesAt s.mem pp p.prime.len = Spec.Dsa.encodeBE p.prime.len p.prime.N)
+    (hrd : InRegions (s.rd ++ s.wr) pp 1) (hfull : ¬ p.prime.N < 2 ^ (8 * p.prime.len - 1))
+    (hwords : p.prime.w = p.prime.len / 8) (hdraw : p.prime.drawBytes = p.prime.len)
+    (hchecks : p.prime.checks = if p.prime.len ≤ 256 then 64 else 128)
+    (hcandidate : p.candidate = Impl.Dsa.Generation.Layout.p)
+    (hused : p.W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.prime.rand.length)
+    (htape : Src s p.prime.B p.prime.Z p.prime.rp p.prime.rand)
+    (hout : ∀ i < p.prime.len, InRegions s.wr (off p.prime.p i) 1)
+    (hlen : bs.length = p.prime.len) (hvalue : Spec.Rsa.os2ip bs = p.prime.N)
+    (hsrc : Src s p.prime.B p.prime.Z (p.W 5 + BitVec.ofNat 64 p.candidate) bs) :
+    WP isa (Impl.Dsa.X86_64.Generation.pTest M.mm K.run p.prime.len) s fun t =>
+      let res := Spec.Dsa.probablePrime p.prime.N (p.prime.rand.drop used)
+      ∃ used' status, used' ≤ p.prime.rand.length ∧ Lay t p.prime.sp p.hash ∧
+        Rep t.mem p.prime.sp p.hash V (upd (upd p.W 16 (BitVec.ofNat 64 used')) 19 status) ∧
+        (res = none → status = BitVec.ofNat 64 0) ∧
+        (∀ b rest, res = some (b, rest) → status = BitVec.ofNat 64 (if b then 1 else 3) ∧
+          used' = p.prime.rand.length - rest.length) ∧
+        Frame p.changed s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  unfold Impl.Dsa.X86_64.Generation.pTest
+  refine WP.seq (WP.mono (candidateWidth_ok h hptr (by have := p.prime.len2; omega)
+    hbound hbytes hrd) fun u ⟨hcf, hm, ku⟩ => ?_)
+  have Ru : Rep u.mem p.prime.sp p.hash V p.W := hm ▸ R
+  have Lu := lay_of_rep L R Ru rfl (ku.gpr (by decide)) ku.2.2
+  refine WP.ite false (by simp [eval, hcf, hfull]) (fun he => Bool.noConfusion he) (fun _ => ?_)
+  have hcode : Impl.Dsa.X86_64.Generation.checkPrime M.mm K.run (p.prime.len / 8)
+      Impl.Dsa.Generation.Layout.p p.prime.len p.prime.len (if p.prime.len ≤ 256 then 64 else 128) =
+      Impl.Dsa.X86_64.Generation.checkPrime M.mm K.run p.prime.w p.candidate p.prime.len
+        p.prime.drawBytes p.prime.checks := by rw [hwords, hdraw, hchecks, hcandidate]
+  rw [hcode]
+  refine WP.mono (primeCall_ok M K Lu Ru (h.scr.congr ku.2.2)
+    ((ku.gpr (by decide)).trans h.rdi) hused hu
+    (htape.congrK (fun a _ => by rw [hm]) ku)
+    (fun i hi => by rw [ku.2.2]; exact hout i hi) hlen hvalue
+    (hsrc.congrK (fun a _ => by rw [hm]) ku))
+    fun t ⟨used', status, hb, Lt, Rt, he, hr, ft, rdt, wrt⟩ => ?_
+  exact ⟨used', status, hb, Lt, Rt, he, hr, hm ▸ ft, rdt.trans ku.2.1, wrt.trans ku.2.2⟩
+
+end VG.Proof.Dsa.X86_64.Generation

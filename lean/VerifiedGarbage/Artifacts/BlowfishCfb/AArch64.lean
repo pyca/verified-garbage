@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.AArch64.FbVerified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Blowfish-CFB64 artifacts on baseline AArch64 -/
 
@@ -18,21 +17,15 @@ def note : String :=
   `Impl/Modes/AArch64/`."
 
 def artifacts : List Artifact := [
-  { Spec.Blowfish.cfbEncryptApi with
-    target := AArch64.target
-    doc := Spec.Blowfish.cfbEncryptApi.doc (notes := [note])
+  Spec.Blowfish.cfbEncryptApi.artifact AArch64.target {
+    notes := [note]
     code := Impl.StackScratch.AArch64.withStackScratchWiped 224 .x4 28 Impl.Blowfish.AArch64.cfbEncrypt
-    contract := Spec.Blowfish.cfbEncryptContract AArch64.abi 224
     stack := 224
-    verified := Proof.Blowfish.AArch64.cfbEncrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Blowfish.cfbDecryptApi with
-    target := AArch64.target
-    doc := Spec.Blowfish.cfbDecryptApi.doc (notes := [note])
+    verified := Proof.Blowfish.AArch64.cfbEncrypt_framed },
+  Spec.Blowfish.cfbDecryptApi.artifact AArch64.target {
+    notes := [note]
     code := Impl.StackScratch.AArch64.withStackScratchWiped 224 .x4 28 Impl.Blowfish.AArch64.cfbDecrypt
-    contract := Spec.Blowfish.cfbDecryptContract AArch64.abi 224
     stack := 224
-    verified := Proof.Blowfish.AArch64.cfbDecrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Blowfish.AArch64.cfbDecrypt_framed }]
 
 end VG.Artifacts.BlowfishCfb.AArch64

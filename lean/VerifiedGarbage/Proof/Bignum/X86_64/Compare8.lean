@@ -3,11 +3,8 @@ module
 public import VerifiedGarbage.Impl.Rsa.X86_64.Compare8
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 public import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 @[expose] public section
 

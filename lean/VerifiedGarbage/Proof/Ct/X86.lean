@@ -1,25 +1,19 @@
 module
 
 public import VerifiedGarbage.Impl.Ct.X86
-meta import VerifiedGarbage.Impl.Ct.X86
-public import VerifiedGarbage.Proof.Ct.Common32
-meta import VerifiedGarbage.Proof.Ct.Common32
+import VerifiedGarbage.Proof.Ct.Common32
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
-meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
-meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
-import VerifiedGarbage.Proof.Framework.X86.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86.RelCT
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Ct.Contract
+public import VerifiedGarbage.Proof.Ct.Common
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Impl.Ct.X86
+meta import VerifiedGarbage.Proof.Ct.Common32
+meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
+meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 meta import VerifiedGarbage.Spec.Ct.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Ct.Common
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

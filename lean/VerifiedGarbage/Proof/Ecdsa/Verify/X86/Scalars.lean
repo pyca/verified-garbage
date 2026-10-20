@@ -1,14 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.X86.Inv
-public import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Front
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.X25519.X86.Column
 import VerifiedGarbage.Proof.Ecdsa.X86.Scalar
+import VerifiedGarbage.Proof.Ecdsa.X86.Middle
+import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
 
 /-!
 # ECDSA verification on x86 (32-bit): `u` and `v`

@@ -1,11 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.Arm.FbVerified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Triple DES-OFB artifacts on baseline ARMv7 -/
 
@@ -20,13 +16,10 @@ def note : String :=
   space on the stack, zeroed on return."
 
 def artifacts : List Artifact := [
-  { Spec.TripleDes.ofbApi with
-    target := Arm.target
-    doc := Spec.TripleDes.ofbApi.doc (notes := [note])
+  Spec.TripleDes.ofbApi.artifact Arm.target {
+    notes := [note]
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.ofb
-    contract := Spec.TripleDes.ofbContract Arm.abi 1088
     stack := 1088
-    verified := Proof.TripleDes.Arm.ofb_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.TripleDes.Arm.ofb_framed }]
 
 end VG.Artifacts.TripleDesOfb.Arm

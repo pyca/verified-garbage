@@ -484,7 +484,16 @@ pub fn bench(c: &mut Criterion) {
 /// record's 5 bytes of additional data; sealed out of place from two pieces
 /// (the payload and its content type byte), and opened in place. aws-lc-rs
 /// seals in place (the payload and the content type already in the record
-/// buffer), and OpenSSL streams the pieces through one context.
+/// buffer), and OpenSSL streams the pieces through one context. A
+/// connection's records are also measured from its key's setup on
+/// (`aes-*-gcm-tls-connection`), so that the cost of a key used for a few
+/// records, and the point where the powers are computed, are counted too.
+///
+/// Each record's buffers sit at fixed offsets from a 4 KiB boundary
+/// (`Offsets::DEFAULT`, where rustls puts them), the same at every size and
+/// in every build: where an
+/// allocator puts them otherwise depends on what was allocated before, and
+/// moves some sizes' times by several percent on some cores (Apple's).
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
@@ -492,6 +501,138 @@ pub fn bench(c: &mut Criterion) {
     target_arch = "x86"
 ))]
 fn tls_records(c: &mut Criterion) {
+    /// The payloads: a full record, a common web record, and smaller ones,
+    /// each next to sizes that are not a multiple of 16 (as most records'
+    /// are), since the end of a record costs differently from its blocks;
+    /// and records of 16, 64 and 255 bytes with their content type (alerts,
+    /// handshake messages, small requests), shorter than the messages the
+    /// library computes its keys' powers for; and a 2048-byte record, where
+    /// VAES's `seal` changes paths.
+    const TLS_SIZES: [usize; 19] = [
+        15, 63, 254, 255, 256, 257, 1023, 1024, 1025, 2047, 4095, 4096, 4097, 9999, 10000, 10001,
+        16383, 16384, 16385,
+    ];
+
+    tls_record_rows(c, &TLS_SIZES, Offsets::DEFAULT, "");
+    tls_connection_rows(c);
+}
+
+/// Where a record's buffers start, in bytes past a 4 KiB boundary: the
+/// plaintext the record is sealed from (and the record opened in place, or
+/// sealed in place by aws-lc-rs), the ciphertext sealed into, and the
+/// additional data.
+#[derive(Clone, Copy)]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
+struct Offsets {
+    input: usize,
+    output: usize,
+    aad: usize,
+}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
+impl Offsets {
+    /// The rows' offsets: where rustls puts a record's payload, 5 bytes (the
+    /// TLS record header) past the start of an allocation (`PrefixedPayload`,
+    /// sealed in place; and the first record in the receive buffer,
+    /// `DeframerIter`, opened in place), and the output half a page from the
+    /// input, so that sealing out of place never loads and stores at the same
+    /// address modulo 4 KiB.
+    const DEFAULT: Offsets = Offsets {
+        input: 5,
+        output: 2048 + 5,
+        aad: 0,
+    };
+}
+
+/// A copy of some bytes at a given offset past a 4 KiB boundary.
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
+struct Aligned {
+    raw: Vec<u8>,
+    start: usize,
+    len: usize,
+}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
+impl Aligned {
+    fn new(bytes: &[u8], offset: usize) -> Self {
+        let raw = vec![0u8; bytes.len() + offset + 4096];
+        let start = raw.as_ptr().align_offset(4096) + offset;
+        let mut a = Aligned {
+            raw,
+            start,
+            len: bytes.len(),
+        };
+        a.copy_from_slice(bytes);
+        a
+    }
+}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
+impl std::ops::Deref for Aligned {
+    type Target = [u8];
+    fn deref(&self) -> &[u8] {
+        &self.raw[self.start..self.start + self.len]
+    }
+}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
+impl std::ops::DerefMut for Aligned {
+    fn deref_mut(&mut self) -> &mut [u8] {
+        &mut self.raw[self.start..self.start + self.len]
+    }
+}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
+impl AsRef<[u8]> for Aligned {
+    fn as_ref(&self) -> &[u8] {
+        self
+    }
+}
+
+/// Sealing and opening one record of each of `sizes` bytes, with the
+/// buffers at `offsets` (each group's name ends with `label`).
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
+fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: &str) {
     use std::hint::black_box;
 
     use aws_lc_rs::aead::{AES_128_GCM, AES_256_GCM, Aad, LessSafeKey, Nonce, UnboundKey};
@@ -502,15 +643,8 @@ fn tls_records(c: &mut Criterion) {
 
     use crate::{AWS_LC, OPENSSL, VG};
 
-    /// The payloads: a full record, a common web record, and smaller ones,
-    /// each next to sizes that are not a multiple of 16 (as most records'
-    /// are), since the end of a record costs differently from its blocks.
-    const TLS_SIZES: [usize; 15] = [
-        255, 256, 257, 1023, 1024, 1025, 4095, 4096, 4097, 9999, 10000, 10001, 16383, 16384, 16385,
-    ];
-
     let nonce = [0x24; 12];
-    let aad = [0x17, 0x03, 0x03, 0x40, 0x11];
+    let aad = Aligned::new(&[0x17, 0x03, 0x03, 0x40, 0x11], offsets.aad);
     let ty = [0x17u8];
     for (bits, key) in [(128, &[0x42u8; 16][..]), (256, &[0x42u8; 32][..])] {
         let (alg, ossl_alg) = if bits == 128 {
@@ -519,6 +653,15 @@ fn tls_records(c: &mut Criterion) {
             (&AES_256_GCM, OsslCipher::aes_256_gcm())
         };
         let vg_key = AesGcm::new(key).unwrap();
+        // A connection's key has sealed and opened many records before its
+        // short ones: seal more long records than the library's
+        // `POWERS_AFTER` (at most 32), so that short records find its powers
+        // ready, as they do in a connection, rather than measuring a key
+        // that has not computed them.
+        let mut warm = vec![0u8; 1024];
+        for _ in 0..64 {
+            vg_key.encrypt_in_place(&nonce, &aad, &mut warm).unwrap();
+        }
         let aws_lc_key = LessSafeKey::new(UnboundKey::new(alg, key).unwrap());
         let mut ossl = CipherCtx::new().unwrap();
         ossl.encrypt_init(Some(ossl_alg), Some(key), None).unwrap();
@@ -526,26 +669,26 @@ fn tls_records(c: &mut Criterion) {
         ossl_dec
             .decrypt_init(Some(ossl_alg), Some(key), None)
             .unwrap();
-        for size in TLS_SIZES {
-            let data = vec![0u8; size];
-            let mut out = vec![0u8; size + 1];
+        for &size in sizes {
+            let data = Aligned::new(&vec![0u8; size], offsets.input);
+            let mut out = Aligned::new(&vec![0u8; size + 1], offsets.output);
             let mut t = [0u8; 16];
-            let mut ossl_out = vec![0u8; size + 1 + 16];
+            let mut ossl_out = Aligned::new(&vec![0u8; size + 1 + 16], offsets.output);
             let tag = vg_key
                 .encrypt(&nonce, &aad, &[&data, &ty], &mut out)
                 .unwrap();
-            let ct = out.clone();
-            let mut record = [&data[..], &ty].concat();
+            let ct = Aligned::new(&out, offsets.input);
+            let mut record = Aligned::new(&[&data[..], &ty].concat(), offsets.input);
             let aws_lc_tag = aws_lc_key
                 .seal_in_place_separate_tag(
                     Nonce::assume_unique_for_key(nonce),
-                    Aad::from(aad),
+                    Aad::from(&aad[..]),
                     &mut record,
                 )
                 .unwrap();
-            assert_eq!((&record, aws_lc_tag.as_ref()), (&ct, &tag[..]));
+            assert_eq!((&record[..], aws_lc_tag.as_ref()), (&ct[..], &tag[..]));
 
-            let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-seal"));
+            let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-seal") + label);
             g.throughput(Throughput::Bytes(size as u64 + 1));
             g.bench_function(BenchmarkId::new(VG, size), |b| {
                 b.iter(|| {
@@ -589,8 +732,8 @@ fn tls_records(c: &mut Criterion) {
             g.finish();
 
             // Each iteration opens the record again from its ciphertext.
-            let mut buf = ct.clone();
-            let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-open"));
+            let mut buf = Aligned::new(&ct, offsets.input);
+            let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-open") + label);
             g.throughput(Throughput::Bytes(size as u64 + 1));
             g.bench_function(BenchmarkId::new(VG, size), |b| {
                 b.iter(|| {
@@ -633,6 +776,101 @@ fn tls_records(c: &mut Criterion) {
             });
             g.finish();
         }
+    }
+}
+
+/// A new connection: see `tls_records`.
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
+fn tls_connection_rows(c: &mut Criterion) {
+    use std::hint::black_box;
+
+    use aws_lc_rs::aead::{AES_128_GCM, AES_256_GCM, Aad, LessSafeKey, Nonce, UnboundKey};
+    use criterion::{BenchmarkId, Throughput};
+    use openssl::cipher::Cipher as OsslCipher;
+    use openssl::cipher_ctx::CipherCtx;
+    use verified_garbage::aes_gcm::AesGcm;
+
+    use crate::{AWS_LC, OPENSSL, VG};
+
+    let nonce = [0x24; 12];
+    let aad = [0x17, 0x03, 0x03, 0x40, 0x11];
+    let ty = [0x17u8];
+    for (bits, key) in [(128, &[0x42u8; 16][..]), (256, &[0x42u8; 32][..])] {
+        let (alg, ossl_alg) = if bits == 128 {
+            (&AES_128_GCM, OsslCipher::aes_128_gcm())
+        } else {
+            (&AES_256_GCM, OsslCipher::aes_256_gcm())
+        };
+        // A new connection: its key set up, then `CONNECTION_RECORDS`
+        // records of 255 bytes and their content type sealed with it, which
+        // crosses the point where this library computes the key's powers of
+        // the hash subkey (8 such records on AArch64).
+        const CONNECTION_RECORDS: usize = 16;
+        let data = [0u8; 255];
+        let mut out = [0u8; 256];
+        let mut record = [0u8; 256];
+        let mut ossl_out = [0u8; 256 + 16];
+        let mut t = [0u8; 16];
+        let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-connection"));
+        g.throughput(Throughput::Bytes((CONNECTION_RECORDS * 256) as u64));
+        g.bench_function(BenchmarkId::new(VG, CONNECTION_RECORDS), |b| {
+            b.iter(|| {
+                let k = AesGcm::new(black_box(key)).unwrap();
+                for _ in 0..CONNECTION_RECORDS {
+                    black_box(
+                        k.encrypt(
+                            black_box(&nonce),
+                            black_box(&aad),
+                            &[black_box(&data[..]), black_box(&ty[..])],
+                            black_box(&mut out),
+                        )
+                        .unwrap(),
+                    );
+                }
+            })
+        });
+        g.bench_function(BenchmarkId::new(OPENSSL, CONNECTION_RECORDS), |b| {
+            b.iter(|| {
+                let mut ossl = CipherCtx::new().unwrap();
+                ossl.encrypt_init(Some(ossl_alg), Some(black_box(key)), None)
+                    .unwrap();
+                for _ in 0..CONNECTION_RECORDS {
+                    ossl.encrypt_init(None, None, Some(black_box(&nonce)))
+                        .unwrap();
+                    ossl.cipher_update(black_box(&aad), None).unwrap();
+                    let n = ossl
+                        .cipher_update(black_box(&data), Some(&mut ossl_out))
+                        .unwrap();
+                    let n = n + ossl
+                        .cipher_update(black_box(&ty), Some(&mut ossl_out[n..]))
+                        .unwrap();
+                    ossl.cipher_final(&mut ossl_out[n..]).unwrap();
+                    ossl.tag(&mut t).unwrap();
+                    black_box(t);
+                }
+            })
+        });
+        g.bench_function(BenchmarkId::new(AWS_LC, CONNECTION_RECORDS), |b| {
+            b.iter(|| {
+                let k = LessSafeKey::new(UnboundKey::new(alg, black_box(key)).unwrap());
+                for _ in 0..CONNECTION_RECORDS {
+                    let _tag = black_box(
+                        k.seal_in_place_separate_tag(
+                            Nonce::assume_unique_for_key(*black_box(&nonce)),
+                            Aad::from(black_box(&aad)),
+                            black_box(&mut record),
+                        )
+                        .unwrap(),
+                    );
+                }
+            })
+        });
+        g.finish();
     }
 }
 

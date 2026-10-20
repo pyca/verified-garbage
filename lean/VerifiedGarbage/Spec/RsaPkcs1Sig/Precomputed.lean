@@ -19,7 +19,7 @@ and the timing guarantee still apply. Existing contracts are unchanged.
 
 namespace VG.Spec.RsaPkcs1Sig
 
-open Rsa (bytesAt lenValid scratchWords)
+open Rsa (bytesAt lenValid publicScratchWords)
 
 /-- `verifySig` with a final read-only slice of precomputed `u64` words. -/
 def verifyPrecomputedSig : Sig where
@@ -36,7 +36,7 @@ def verifyPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contrac
   verifyPrecomputedSig.contract A
     (pre := fun _n nLen _e eLen _hash _digest _digestLen _sig _sigLen _scratch scratchLen _pre preLen _ =>
       lenValid nLen.toNat ∧ 1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
-        scratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        publicScratchWords nLen.toNat ≤ scratchLen.toNat ∧
         preLen.toNat = Rsa.precomputedWords nLen.toNat)
     (post := fun n nLen e eLen hash digest digestLen sig sigLen _scratch _scratchLen pre preLen m _m' r =>
       Rsa.publicPrecompute (bytesAt m n nLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) →
@@ -54,14 +54,14 @@ def verifyPrecomputedApi : Api where
   sig := verifyPrecomputedSig
   writeArgs := true
   contracts := some fun A stack => verifyPrecomputedContract A stack
-  summary := verifyApi.summary ++ "\n\n\
+  summary := verifySummary ++ "\n\n\
     This entry point also takes `pre`, the `pre_len` words written by \
     `vg_rsa_public_precompute` for `n` (returning 1). With those values, it \
     returns exactly the result specified above. If `pre` does not hold those \
     values, the result is unspecified; memory safety and the timing guarantee \
     still apply. Timing may additionally depend on the contents of `pre`.\n\n\
     Contract: `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`."
-  safety := verifyApi.safety ++
+  safety := verifySafety ++
     ["`pre_len` must be `2 * ⌈n_len / 8⌉`.",
       "For the result to be signature verification's, `pre` must hold what \
         `vg_rsa_public_precompute` wrote for `n` (returning 1)."]
@@ -85,7 +85,7 @@ def recoverPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contra
     (pre := fun _out outLen _n nLen _e eLen hash _sig _sigLen _scratch scratchLen _pre preLen _ =>
       lenValid nLen.toNat ∧ 1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
         (∃ h, Hash.ofId hash.toNat = some h ∧ outLen.toNat = h.len) ∧
-        scratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        publicScratchWords nLen.toNat ≤ scratchLen.toNat ∧
         preLen.toNat = Rsa.precomputedWords nLen.toNat)
     (post := fun out outLen n nLen e eLen hash sig sigLen _scratch _scratchLen pre preLen m m' r =>
       Rsa.publicPrecompute (bytesAt m n nLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) →
@@ -105,14 +105,14 @@ def recoverPrecomputedApi : Api where
   sig := recoverPrecomputedSig
   writeArgs := true
   contracts := some fun A stack => recoverPrecomputedContract A stack
-  summary := recoverApi.summary ++ "\n\n\
+  summary := recoverSummary ++ "\n\n\
     This entry point also takes `pre`, the `pre_len` words written by \
     `vg_rsa_public_precompute` for `n` (returning 1). With those values, it \
     writes and returns exactly what is specified above. If `pre` does not hold \
     those values, what it writes and returns is unspecified; memory safety \
     still applies.\n\n\
     Contract: `VG.Spec.RsaPkcs1Sig.recoverPrecomputedContract`."
-  safety := recoverApi.safety ++
+  safety := recoverSafety ++
     ["`pre_len` must be `2 * ⌈n_len / 8⌉`.",
       "For the result to be recovery's, `pre` must hold what \
         `vg_rsa_public_precompute` wrote for `n` (returning 1)."]

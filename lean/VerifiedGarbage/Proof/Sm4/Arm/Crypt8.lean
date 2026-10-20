@@ -2,12 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.Core
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sm4.Layout
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
 
 /-!
 # The transposes, and eight blocks of bitsliced SM4 on ARMv7
@@ -112,7 +112,7 @@ theorem fromBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s�
     (fun kv hkv => by simp at hkv)
     (fun j hj => by simp [bsCfg] at hj)
   simp only [bsCfg] at hb' hso hkeep
-  have hall : (fromBs.all fun i => dstOf i != some kp) = true := by decide +kernel
+  have hall : (fromBs.all fun i => !clobbers i kp) = true := by decide +kernel
   refine ⟨s', h', hc.bs rd' wr' sp' hb' f', o' kp hall, fun w hw => (hX w hw).congr fun j hj => ?_, fun b hb => ?_⟩
   · show slotW s' (stateSlot w j) = slotW s (stateSlot w j)
     have hm : stateSlot w j ∈ stateSlots := by

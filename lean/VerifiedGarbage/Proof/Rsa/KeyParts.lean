@@ -1,10 +1,7 @@
 module
+public import VerifiedGarbage.Spec.Rsa
+import VerifiedGarbage.Proof.Framework.PowLit
 
-public import VerifiedGarbage.Proof.Rsa.Octets
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # RSA: `keyValid` from its parts
@@ -41,9 +38,9 @@ theorem factor_ge_two {n p q B : Nat} (h : p * q = n) (hq : q < B) (hB : B ≤ n
 theorem keyValid_parts {k n e d p q dP dQ qInv : Nat} (hm : modulusValid n k = true) (he : exponentValid e = true)
     (hp : p < 256 ^ (k - 1)) (hq : q < 256 ^ (k - 1)) {Mp Mq Rp1 Rp2 Rq1 Rq2 Rpq : Nat}
     (hMp : 0 < p → Mp = p - 1) (hMq : 0 < q → Mq = q - 1)
-    (hR1 : 0 < Mp → Rp1 = e * d % Mp) (hR2 : 0 < Mp → Rp2 = e * dP % Mp)
-    (hR3 : 0 < Mq → Rq1 = e * d % Mq) (hR4 : 0 < Mq → Rq2 = e * dQ % Mq)
-    (hR5 : 0 < p → Rpq = qInv * q % p) :
+    (hR1 : 0 < Mp → Rp1 = e * d % Mp) (hR2 : 0 < p → dP < Mp → Rp2 = e * dP % Mp)
+    (hR3 : 0 < Mq → Rq1 = e * d % Mq) (hR4 : 0 < q → dQ < Mq → Rq2 = e * dQ % Mq)
+    (hR5 : 0 < p → qInv < p → Rpq = qInv * q % p) :
     keyValid k n e d p q dP dQ qInv = keyBits n d p q dP dQ qInv Mp Mq Rp1 Rp2 Rq1 Rq2 Rpq := by
   have hn : 256 ^ (k - 1) ≤ n := by
     simp only [modulusValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hm; exact hm.2
@@ -55,15 +52,46 @@ theorem keyValid_parts {k n e d p q dP dQ qInv : Nat} (hm : modulusValid n k = t
     have hq2 := factor_ge_two (n := n) (q := p) (by rw [Nat.mul_comm]; exact hpq) hp hn
     have eMp := hMp (by omega)
     have eMq := hMq (by omega)
-    rw [hR1 (by omega), hR2 (by omega), hR3 (by omega), hR4 (by omega), hR5 (by omega), eMp, eMq,
-      Nat.mul_comm e d, Nat.mul_comm qInv q]
-    constructor
-    · rintro ⟨h1, -, -, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩
-      exact ⟨h1, h4, h7, h5, h8, h9, h6, h10, h11, h12⟩
-    · rintro ⟨h1, h4, h7, h5, h8, h9, h6, h10, h11, h12⟩
-      exact ⟨h1, by omega, by omega, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩
+    by_cases hdP : dP < Mp
+    · by_cases hdQ : dQ < Mq
+      · by_cases hqi : qInv < p
+        · rw [hR1 (by omega), hR2 (by omega) hdP, hR3 (by omega), hR4 (by omega) hdQ, hR5 (by omega) hqi, eMp, eMq,
+            Nat.mul_comm e d, Nat.mul_comm qInv q]
+          constructor
+          · rintro ⟨h1, -, -, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩
+            exact ⟨h1, h4, h7, h5, h8, h9, h6, h10, h11, h12⟩
+          · rintro ⟨h1, h4, h7, h5, h8, h9, h6, h10, h11, h12⟩
+            exact ⟨h1, by omega, by omega, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩
+        · simp only [hqi, false_and, and_false]
+      · have hbad : ¬dQ < q - 1 := by simpa only [eMq] using hdQ
+        simp only [hdQ, hbad, false_and, and_false]
+    · have hbad : ¬dP < p - 1 := by simpa only [eMp] using hdP
+      simp only [hdP, hbad, false_and, and_false]
   · constructor
     · rintro ⟨-, -, -, h, -⟩; exact absurd h hpq
     · rintro ⟨-, h, -⟩; exact absurd h hpq
+
+/-- Full-exponent remainders need only be correct when the preceding range
+and factor-product checks succeed. -/
+theorem keyValid_bounded_parts {k n e d p q dP dQ qInv : Nat} (hm : modulusValid n k = true) (he : exponentValid e = true)
+    (hp : p < 256 ^ (k - 1)) (hq : q < 256 ^ (k - 1)) {Mp Mq Rp1 Rp2 Rq1 Rq2 Rpq : Nat}
+    (hMp : 0 < p → Mp = p - 1) (hMq : 0 < q → Mq = q - 1)
+    (hR1 : 2 ≤ p → d < n → p * q = n → Rp1 = e * d % Mp) (hR2 : 0 < p → dP < Mp → Rp2 = e * dP % Mp)
+    (hR3 : 2 ≤ q → d < n → q * p = n → Rq1 = e * d % Mq) (hR4 : 0 < q → dQ < Mq → Rq2 = e * dQ % Mq)
+    (hR5 : 0 < p → qInv < p → Rpq = qInv * q % p) :
+    keyValid k n e d p q dP dQ qInv = keyBits n d p q dP dQ qInv Mp Mq Rp1 Rp2 Rq1 Rq2 Rpq := by
+  by_cases hd : d < n
+  · by_cases hpq : p * q = n
+    · have hn : 256 ^ (k - 1) ≤ n := by
+        simp only [modulusValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hm
+        exact hm.2
+      have hp2 := factor_ge_two hpq hq hn
+      have hqp : q * p = n := by rw [Nat.mul_comm]; exact hpq
+      have hq2 := factor_ge_two hqp hp hn
+      exact keyValid_parts hm he hp hq hMp hMq (fun _ => hR1 hp2 hd hpq) hR2
+        (fun _ => hR3 hq2 hd hqp) hR4 hR5
+    · have hf : (p * q == n) = false := by simpa only [beq_eq_false_iff_ne] using hpq
+      simp only [keyValid, keyBits, hf, hpq, decide_false, Bool.and_false, Bool.false_and]
+  · simp only [keyValid, keyBits, hd, decide_false, Bool.and_false, Bool.false_and]
 
 end VG.Proof.Rsa

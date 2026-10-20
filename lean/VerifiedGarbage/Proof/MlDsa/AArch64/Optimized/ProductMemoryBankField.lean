@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductPassMemory
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductRepresentation
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankField
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
+public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
 
 @[expose] public section
 

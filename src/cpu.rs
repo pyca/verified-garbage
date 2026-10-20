@@ -7,7 +7,9 @@
 //! called on a CPU that has all of them. They are detected once: with `cpuid` on x86 and x86-64; on AArch64,
 //! by asking the operating system with the `std` feature (which links
 //! `std`, and which `cpu-features-env` enables), and otherwise from the
-//! target features the code was compiled for. Each object that can use such a function chooses its
+//! target features the code was compiled for; on ARMv7, from the operating
+//! system the code was compiled for (`umaal`, on those that run on A-profile
+//! cores alone). Each object that can use such a function chooses its
 //! implementation when it is created, from the features detected. A feature
 //! detection does not know ([`NAMES`]) cannot be checked for:
 //! [`Features::of`] panics on it, so a generated constant naming one fails
@@ -29,7 +31,7 @@ use core::sync::atomic::{AtomicU32, Ordering};
 
 /// The features detection knows, by their Rust `target_feature` names: bit
 /// `i` of a [`Features`] is `NAMES[i]`.
-pub(crate) const NAMES: [&str; 20] = [
+pub(crate) const NAMES: [&str; 21] = [
     "ssse3",
     "sha",
     "aes",
@@ -50,26 +52,87 @@ pub(crate) const NAMES: [&str; 20] = [
     "vaes",
     "vpclmulqdq",
     "avx512bw",
+    "umaal",
 ];
+
+/// The bit of the feature `name` in a [`Features`]: its index in [`NAMES`],
+/// which [`Features::of`] checks. A `match`, which the compiler evaluates in
+/// a few steps, rather than a search of [`NAMES`]: evaluating the generated
+/// `_FEATURES` constants by searching took a second of every build of the
+/// crate.
+#[cfg_attr(
+    not(any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        all(
+            target_arch = "arm",
+            any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            )
+        )
+    )),
+    allow(dead_code)
+)]
+const fn bit(name: &str) -> usize {
+    match name.as_bytes() {
+        b"ssse3" => 0,
+        b"sha" => 1,
+        b"aes" => 2,
+        b"pclmulqdq" => 3,
+        b"avx" => 4,
+        b"avx2" => 5,
+        b"bmi1" => 6,
+        b"bmi2" => 7,
+        b"avx512f" => 8,
+        b"sha512" => 9,
+        b"sha2" => 10,
+        b"sha3" => 11,
+        b"adx" => 12,
+        b"avx512ifma" => 13,
+        b"avx512vl" => 14,
+        b"neon" => 15,
+        b"sve2" => 16,
+        b"vaes" => 17,
+        b"vpclmulqdq" => 18,
+        b"avx512bw" => 19,
+        b"umaal" => 20,
+        _ => panic!("a CPU feature this library does not know"),
+    }
+}
 
 /// Whether two names are equal (`==` on strings, which is not `const`).
 #[cfg_attr(
-    not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")),
+    not(any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        all(
+            target_arch = "arm",
+            any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            )
+        )
+    )),
     allow(dead_code)
 )]
 const fn eq(a: &str, b: &str) -> bool {
     let (a, b) = (a.as_bytes(), b.as_bytes());
-    if a.len() != b.len() {
-        return false;
-    }
+    let mut same = a.len() == b.len();
     let mut i = 0;
-    while i < a.len() {
-        if a[i] != b[i] {
-            return false;
-        }
+    while same && i < a.len() {
+        same = a[i] == b[i];
         i += 1;
     }
-    true
+    same
 }
 
 /// A set of CPU features.
@@ -87,18 +150,29 @@ impl Features {
     /// know. In a constant (`const { Features::of(…) }`), that fails to
     /// compile, rather than quietly never choosing the code that needs it.
     #[cfg_attr(
-        not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")),
+        not(any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            target_arch = "aarch64",
+            all(
+                target_arch = "arm",
+                any(
+                    target_os = "linux",
+                    target_os = "android",
+                    target_os = "freebsd",
+                    target_os = "netbsd",
+                    target_os = "openbsd"
+                )
+            )
+        )),
         allow(dead_code)
     )]
     pub(crate) const fn of(names: &[&str]) -> Features {
         let mut acc = 0;
         let mut i = 0;
         while i < names.len() {
-            let mut j = 0;
-            while !eq(names[i], NAMES[j]) {
-                j += 1;
-                assert!(j < NAMES.len(), "a CPU feature this library does not know");
-            }
+            let j = bit(names[i]);
+            assert!(eq(names[i], NAMES[j]));
             acc |= 1 << j;
             i += 1;
         }
@@ -107,7 +181,21 @@ impl Features {
 
     /// The features in any of `sets`.
     #[cfg_attr(
-        not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")),
+        not(any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            target_arch = "aarch64",
+            all(
+                target_arch = "arm",
+                any(
+                    target_os = "linux",
+                    target_os = "android",
+                    target_os = "freebsd",
+                    target_os = "netbsd",
+                    target_os = "openbsd"
+                )
+            )
+        )),
         allow(dead_code)
     )]
     pub(crate) const fn all(sets: &[Features]) -> Features {
@@ -122,7 +210,21 @@ impl Features {
 
     /// Whether every feature of `other` is in `self`.
     #[cfg_attr(
-        not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")),
+        not(any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            target_arch = "aarch64",
+            all(
+                target_arch = "arm",
+                any(
+                    target_os = "linux",
+                    target_os = "android",
+                    target_os = "freebsd",
+                    target_os = "netbsd",
+                    target_os = "openbsd"
+                )
+            )
+        )),
         allow(dead_code)
     )]
     pub(crate) fn contains(self, other: Features) -> bool {
@@ -230,65 +332,73 @@ fn parse(names: &str) -> Option<u32> {
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 fn runtime() -> u32 {
     #[cfg(target_arch = "x86")]
-    use core::arch::x86::{__cpuid, __cpuid_count, _xgetbv};
+    use core::arch::x86::{__cpuid_count, _xgetbv};
     #[cfg(target_arch = "x86_64")]
-    use core::arch::x86_64::{__cpuid, __cpuid_count, _xgetbv};
+    use core::arch::x86_64::{__cpuid_count, _xgetbv};
     // SAFETY: the i686 and x86-64 target baselines have `cpuid`, and leaves
-    // 0 and 1; leaf 7 is read only if leaf 0 says it exists (and its
+    // 0 and 1; `decode` reads leaf 7 only if leaf 0 says it exists (and its
     // sub-leaf 1 only if sub-leaf 0 says that exists), and `xgetbv` only if
     // OSXSAVE says the operating system has enabled it.
     #[allow(unused_unsafe)]
-    unsafe {
-        let max = __cpuid(0).eax;
-        let ecx = __cpuid(1).ecx;
-        let ssse3 = (ecx >> 9) & 1;
-        let aes = (ecx >> 25) & 1;
-        let pclmulqdq = (ecx >> 1) & 1;
-        let osxsave = (ecx >> 27) & 1 == 1;
-        let xcr0 = if osxsave { _xgetbv(0) } else { 0 };
-        let ymm = u32::from(xcr0 & 0b110 == 0b110);
-        let zmm = u32::from(xcr0 & 0b1110_0110 == 0b1110_0110);
-        let avx = (ecx >> 28) & ymm;
-        let (sub, ebx, ecx7) = if max >= 7 {
-            let l = __cpuid_count(7, 0);
-            (l.eax, l.ebx, l.ecx)
-        } else {
-            (0, 0, 0)
-        };
-        let eax1 = if max >= 7 && sub >= 1 {
-            __cpuid_count(7, 1).eax
-        } else {
-            0
-        };
-        let sha = (ebx >> 29) & 1;
-        let avx2 = (ebx >> 5) & avx;
-        let bmi1 = (ebx >> 3) & 1;
-        let bmi2 = (ebx >> 8) & 1;
-        let avx512f = (ebx >> 16) & avx & zmm;
-        let sha512 = eax1 & avx;
-        let adx = (ebx >> 19) & 1;
-        let avx512ifma = (ebx >> 21) & avx & zmm;
-        let avx512vl = (ebx >> 31) & avx & zmm;
-        let vaes = (ecx7 >> 9) & avx;
-        let vpclmulqdq = (ecx7 >> 10) & avx;
-        let avx512bw = (ebx >> 30) & avx & zmm;
-        ssse3
-            | (sha << 1)
-            | (aes << 2)
-            | (pclmulqdq << 3)
-            | (avx << 4)
-            | (avx2 << 5)
-            | (bmi1 << 6)
-            | (bmi2 << 7)
-            | (avx512f << 8)
-            | (sha512 << 9)
-            | (adx << 12)
-            | (avx512ifma << 13)
-            | (avx512vl << 14)
-            | (vaes << 17)
-            | (vpclmulqdq << 18)
-            | (avx512bw << 19)
-    }
+    decode(
+        |leaf, sub| {
+            let r = unsafe { __cpuid_count(leaf, sub) };
+            [r.eax, r.ebx, r.ecx, r.edx]
+        },
+        || unsafe { _xgetbv(0) },
+    )
+}
+
+/// The features of a CPU whose `cpuid` (of a leaf and sub-leaf, as `[eax,
+/// ebx, ecx, edx]`) and `xgetbv(0)` return these, as [`runtime`] reads
+/// them: apart from the instructions, so that the tests run it on CPUs
+/// without leaf 7 too.
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+fn decode(cpuid: impl Fn(u32, u32) -> [u32; 4], xgetbv: impl Fn() -> u64) -> u32 {
+    let max = cpuid(0, 0)[0];
+    let ecx = cpuid(1, 0)[2];
+    let ssse3 = (ecx >> 9) & 1;
+    let aes = (ecx >> 25) & 1;
+    let pclmulqdq = (ecx >> 1) & 1;
+    let osxsave = (ecx >> 27) & 1 == 1;
+    let xcr0 = if osxsave { xgetbv() } else { 0 };
+    let ymm = u32::from(xcr0 & 0b110 == 0b110);
+    let zmm = u32::from(xcr0 & 0b1110_0110 == 0b1110_0110);
+    let avx = (ecx >> 28) & ymm;
+    let [sub, ebx, ecx7, _] = if max >= 7 { cpuid(7, 0) } else { [0; 4] };
+    let eax1 = if max >= 7 && sub >= 1 {
+        cpuid(7, 1)[0]
+    } else {
+        0
+    };
+    let sha = (ebx >> 29) & 1;
+    let avx2 = (ebx >> 5) & avx;
+    let bmi1 = (ebx >> 3) & 1;
+    let bmi2 = (ebx >> 8) & 1;
+    let avx512f = (ebx >> 16) & avx & zmm;
+    let sha512 = eax1 & avx;
+    let adx = (ebx >> 19) & 1;
+    let avx512ifma = (ebx >> 21) & avx & zmm;
+    let avx512vl = (ebx >> 31) & avx & zmm;
+    let vaes = (ecx7 >> 9) & avx;
+    let vpclmulqdq = (ecx7 >> 10) & avx;
+    let avx512bw = (ebx >> 30) & avx & zmm;
+    ssse3
+        | (sha << 1)
+        | (aes << 2)
+        | (pclmulqdq << 3)
+        | (avx << 4)
+        | (avx2 << 5)
+        | (bmi1 << 6)
+        | (bmi2 << 7)
+        | (avx512f << 8)
+        | (sha512 << 9)
+        | (adx << 12)
+        | (avx512ifma << 13)
+        | (avx512vl << 14)
+        | (vaes << 17)
+        | (vpclmulqdq << 18)
+        | (avx512bw << 19)
 }
 
 /// AArch64 feature groups, using the same Rust names as the generated
@@ -358,8 +468,44 @@ fn aarch64_sve2() -> bool {
     cfg!(target_feature = "sve2")
 }
 
-/// No features are detected on the other targets yet.
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
+/// ARMv7's `umaal`: every ARMv7-A (and ARMv8-A AArch32) core has it, and
+/// the operating systems the emitter compiles code needing it for
+/// (`TCB/Arm/Print.lean`'s `featureCfg`) run on those alone; the Cortex-M3,
+/// which `target_arch = "arm"` also covers, lacks it (ARMv7-M has it only
+/// with the DSP extension) and its long multiplies take a time that depends
+/// on their operands.
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+fn runtime() -> u32 {
+    Features::of(&["umaal"]).0
+}
+
+/// No features are detected on the other targets: on ARMv7 without an
+/// operating system that runs on A-profile cores alone, `umaal` is not
+/// assumed.
+#[cfg(not(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    all(
+        target_arch = "arm",
+        any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        )
+    )
+)))]
 fn runtime() -> u32 {
     0
 }
@@ -392,6 +538,7 @@ mod tests {
         assert_eq!(Features::of(&["sha3"]), Features(1 << 11));
         assert_eq!(Features::of(&["neon"]), Features(1 << 15));
         assert_eq!(Features::of(&["sve2"]), Features(1 << 16));
+        assert_eq!(Features::of(&["umaal"]), Features(1 << 20));
         assert_eq!(
             Features::of(&["vpclmulqdq", "vaes"]),
             Features((1 << 18) | (1 << 17))
@@ -406,10 +553,71 @@ mod tests {
         );
     }
 
+    /// Each name's bit is its index in `NAMES`.
+    #[test]
+    fn bits_are_indices() {
+        for (j, name) in NAMES.iter().enumerate() {
+            assert_eq!(bit(name), j);
+        }
+    }
+
+    #[test]
+    fn eq_names() {
+        assert!(eq("avx2", "avx2"));
+        assert!(!eq("avx", "avx2"));
+        assert!(!eq("avx2", "avx"));
+        assert!(!eq("aes", "adx"));
+    }
+
     #[test]
     #[should_panic(expected = "a CPU feature this library does not know")]
     fn of_unknown() {
         Features::of(&["sha", "avx512vbmi"]);
+    }
+
+    /// A CPU without leaf 7 (the oldest x86-64 ones; no runner's CPU lacks
+    /// it) has none of its features, and leaf 7 is not read: whatever the
+    /// runners' CPUs, every architecture tests each branch of `decode`.
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[test]
+    fn decode_without_leaf_7() {
+        // Leaf 1: SSSE3, AES, PCLMULQDQ, OSXSAVE and AVX.
+        let leaves = [
+            [1, 0, 0, 0],
+            [0, 0, 1 << 9 | 1 << 25 | 1 << 1 | 1 << 27 | 1 << 28, 0],
+        ];
+        let f = decode(|leaf, _| leaves[leaf as usize], || 0b111);
+        assert_eq!(
+            Features(f),
+            Features::of(&["ssse3", "aes", "pclmulqdq", "avx"])
+        );
+    }
+
+    /// Leaf 7's sub-leaf 1 is read if, and only if, sub-leaf 0 says it
+    /// exists.
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[test]
+    fn decode_sub_leaf_1() {
+        for subs in [0, 1] {
+            let mut leaves = [[[0; 4]; 2]; 8];
+            leaves[0][0][0] = 7;
+            leaves[1][0][2] = 1 << 27 | 1 << 28;
+            // Sub-leaf 0: the last sub-leaf, SHA and AVX2; sub-leaf 1: SHA512.
+            leaves[7] = [[subs, 1 << 29 | 1 << 5, 0, 0], [1, 0, 0, 0]];
+            let f = decode(
+                |leaf, sub| {
+                    assert!(sub <= subs);
+                    leaves[leaf as usize][sub as usize]
+                },
+                || 0b111,
+            );
+            let want = if subs == 1 {
+                Features::of(&["sha", "avx", "avx2", "sha512"])
+            } else {
+                Features::of(&["sha", "avx", "avx2"])
+            };
+            assert_eq!(Features(f), want);
+        }
     }
 
     /// Detection returns the CPU's features, restricted as
@@ -453,6 +661,7 @@ mod tests {
         assert_eq!(parse("sha2,sha3"), Some((1 << 10) | (1 << 11)));
         assert_eq!(parse("adx"), Some(1 << 12));
         assert_eq!(parse("avx512bw"), Some(1 << 19));
+        assert_eq!(parse("umaal"), Some(1 << 20));
         for bad in ["avx512vbmi", "aes,", "aes,none", " aes", "AES"] {
             assert_eq!(parse(bad), None, "{bad}");
         }

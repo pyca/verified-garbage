@@ -1,14 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
 public import VerifiedGarbage.Impl.Ecdh.X86_64
-import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 
 /-!
 # P-521 on x86-64: what the summaries of the shared loops start from

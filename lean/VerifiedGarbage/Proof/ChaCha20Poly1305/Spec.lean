@@ -1,12 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.Keystream
-import VerifiedGarbage.Proof.Poly1305.Spec
 public import VerifiedGarbage.Spec.ChaCha20Poly1305
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Facts about the ChaCha20-Poly1305 specification

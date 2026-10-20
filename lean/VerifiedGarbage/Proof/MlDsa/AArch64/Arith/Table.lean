@@ -1,12 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
 import VerifiedGarbage.Proof.Framework.Range
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # ML-DSA on AArch64: tables of constants in the working space

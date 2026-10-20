@@ -1,45 +1,31 @@
 module
 
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Spec.Poly1305
-meta import VerifiedGarbage.Spec.Poly1305
-public import VerifiedGarbage.Proof.Framework.PowLit
-meta import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Impl.Poly1305.AArch64
-meta import VerifiedGarbage.Impl.Poly1305.AArch64
 import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
-meta import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
 public import VerifiedGarbage.Proof.Poly1305.Spec
-meta import VerifiedGarbage.Proof.Poly1305.Spec
-public import VerifiedGarbage.Proof.Framework.Mem
-meta import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Poly1305.Contract
-meta import VerifiedGarbage.Spec.Poly1305.Contract
 
 -- Formerly the module `VerifiedGarbage.Proof.Poly1305.AArch64.Steps`.
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Impl.Poly1305.AArch64
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
+meta import VerifiedGarbage.Proof.Poly1305.Spec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import VerifiedGarbage.Spec.Poly1305.Contract
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 
@@ -1594,10 +1580,10 @@ theorem storeHm_acc (m : Mem) (st : Addr) (w0 w1 w2 : BitVec 64) :
     Mem.readW_writeW_self64]
 
 /-- No instruction of `c` writes a callee-saved register. -/
-def Untouched (c : Prog isa) : Prop := ∀ r ∈ preserved, ∀ i ∈ instrs c, dstOf i ≠ some r
+def Untouched (c : Prog isa) : Prop := ∀ r ∈ preserved, ∀ i ∈ instrs c, clobbers i r = false
 
 theorem Untouched.of_all {c : Prog isa}
-    (h : ((instrs c).all fun i => preserved.all fun r => dstOf i != some r) = true) : Untouched c := by
+    (h : ((instrs c).all fun i => preserved.all fun r => !clobbers i r) = true) : Untouched c := by
   intro r hr i hi
   have := List.all_eq_true.mp (List.all_eq_true.mp h i hi) r hr
   simpa using this

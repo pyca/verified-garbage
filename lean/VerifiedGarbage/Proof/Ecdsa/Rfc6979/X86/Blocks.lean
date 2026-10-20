@@ -1,13 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hash
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Regs
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Copy
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hmac
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Copy
 import VerifiedGarbage.Proof.Weierstrass.Words32
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): the blocks between the calls
@@ -145,11 +145,11 @@ abbrev kArg {dn : Nat} (L : Lay dn) : BitVec 32 :=
   if L.wide then L.F + BitVec.ofNat 32 fKb else L.F + BitVec.ofNat 32 fV
 
 theorem coreArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
-    WP isa (.block (Cfg.coreArgs L.wide)) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .edi = L.a0 ∧
+    WP isa (.block (Cfg.coreArgs L.wide L.hHigh)) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .edi = L.a0 ∧
       t'.gpr .esi = L.a1 ∧ t'.gpr .edx = dgArg L ∧ t'.gpr .ecx = kArg L ∧ t'.gpr .ebp = L.a3 := by
   rcases Bool.eq_false_or_eq_true L.wide with hw | hw
-  · rw [show Cfg.coreArgs L.wide = [.mov .edi (argM L.wide 0)] ++ ([.mov .esi (argM L.wide 1)] ++
-      (Cfg.fr .edx fX ++ (Cfg.fr .ecx fKb ++ [.mov .ebp (argM L.wide 3)]))) by rw [Cfg.coreArgs, hw]; rfl]
+  · rw [show Cfg.coreArgs L.wide L.hHigh = [.mov .edi (argM L.wide L.hHigh 0)] ++ ([.mov .esi (argM L.wide L.hHigh 1)] ++
+      (Cfg.fr .edx fX ++ (Cfg.fr .ecx fKb ++ [.mov .ebp (argM L.wide L.hHigh 3)]))) by rw [Cfg.coreArgs, hw]; rfl]
     refine WP.block_append (WP.mono (arg_ok hL hc (d := .edi) (by decide) (i := 0) (by omega_arith)) fun u₁ h₁ => ?_)
     refine WP.block_append (WP.mono (arg_ok hL h₁.ctx (d := .esi) (by decide) (i := 1) (by omega_arith)) fun u₂ h₂ => ?_)
     refine WP.block_append (WP.mono (fr_ok hL h₂.ctx (d := .edx) (by decide) fX) fun u₃ h₃ => ?_)
@@ -160,8 +160,8 @@ theorem coreArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.val]; rfl
     · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.val, dgArg, hw]; rfl
     · rw [h₅.keep _ (by decide), h₄.val, kArg, hw]; rfl
-  · rw [show Cfg.coreArgs L.wide = [.mov .edi (argM L.wide 0)] ++ ([.mov .esi (argM L.wide 1)] ++
-      ([.mov .edx (argM L.wide 2)] ++ (Cfg.fr .ecx fV ++ [.mov .ebp (argM L.wide 3)]))) by rw [Cfg.coreArgs, hw]; rfl]
+  · rw [show Cfg.coreArgs L.wide L.hHigh = [.mov .edi (argM L.wide L.hHigh 0)] ++ ([.mov .esi (argM L.wide L.hHigh 1)] ++
+      ([.mov .edx (argM L.wide L.hHigh 2)] ++ (Cfg.fr .ecx fV ++ [.mov .ebp (argM L.wide L.hHigh 3)]))) by rw [Cfg.coreArgs, hw]; rfl]
     refine WP.block_append (WP.mono (arg_ok hL hc (d := .edi) (by decide) (i := 0) (by omega_arith)) fun u₁ h₁ => ?_)
     refine WP.block_append (WP.mono (arg_ok hL h₁.ctx (d := .esi) (by decide) (i := 1) (by omega_arith)) fun u₂ h₂ => ?_)
     refine WP.block_append (WP.mono (arg_ok hL h₂.ctx (d := .edx) (by decide) (i := 2) (by omega_arith)) fun u₃ h₃ => ?_)
@@ -306,7 +306,7 @@ theorem zeroH_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) : ∀ k ≤ L.e,
 /-- `K`, `V` and `h` cleared, and the words at the frame's top (`eax`
 kept), and our caller's registers back. -/
 theorem wipe_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
-    WP isa (.block (Cfg.wipe L.wide)) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .eax = t.gpr .eax ∧
+    WP isa (.block (Cfg.wipe L.wide L.hHigh)) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .eax = t.gpr .eax ∧
       Frame [⟨L.B + BitVec.ofNat 64 76, 176⟩, ⟨L.B + BitVec.ofNat 64 272, 4 * L.e⟩] t.mem t'.mem ∧
       ∀ p ∈ saved, t'.gpr p.1 = g p.1 := by
   rw [Cfg.wipe, ← L.ew]

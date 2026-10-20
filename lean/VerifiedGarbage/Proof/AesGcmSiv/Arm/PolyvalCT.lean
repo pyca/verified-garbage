@@ -1,13 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Fn
-meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Fn
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Absorb
+import VerifiedGarbage.Proof.AesGcmSiv.Arm.Polyval
+import VerifiedGarbage.Proof.AesGcmSiv.Arm.Keys
+import VerifiedGarbage.Proof.AesGcmSiv.Arm.Derive
+import VerifiedGarbage.Proof.AesGcm.Arm.Entry
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Absorb
+meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Polyval
+meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Keys
+meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Derive
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Impl.AesGcmSiv.Arm
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.TCB.Arm.Isa
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM-SIV on ARMv7: relating two runs, the keys and POLYVAL

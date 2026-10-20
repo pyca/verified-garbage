@@ -1,25 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
-import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.KeyGen
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.KeyGen
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.ExpandMask
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.ExpandMask
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-!
 # Constant time of ML-DSA's calls of the sponge, for any Keccak backend

@@ -1,19 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Args
-import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.HashFrame
-import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Reduce
-import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Base
-import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.MulAdd
-public import VerifiedGarbage.Impl.Ed25519.Arm.SignCached
 public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Secret
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.Signing
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.Arm.SignCached.PrimitiveSteps`. -/
 

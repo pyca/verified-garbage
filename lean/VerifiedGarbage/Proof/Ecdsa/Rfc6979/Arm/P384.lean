@@ -1,17 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
+import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
-public import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Lit
-public import VerifiedGarbage.Proof.Framework.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: P-384
@@ -40,7 +40,7 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
   inst := Spec.Ecdsa.P384.inst
   curve := rfl
   wide := false
-  sizes := ⟨.inr (.inr rfl), .inl rfl, p384_nBits, by decide +kernel⟩
+  sizes := ⟨.inr (.inr (.inl rfl)), .inl rfl, p384_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 48 - Spec.Ecdsa.nBits Spec.P384.curve = 0; rw [p384_nBits]

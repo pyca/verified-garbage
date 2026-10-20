@@ -2,12 +2,25 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.VArith
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Impl.MlKem.X86_64.Vec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Proof.Framework.X86_64.Words
 
 /-!
 # ML-KEM on x86-64: coefficients in the words of SSE registers
@@ -32,6 +45,17 @@ open W (qW qinvW)
 
 /-- The words of `x` are the values of the coefficients `f 0, …, f 7`. -/
 def Lanes (x : BitVec 128) (f : Nat → Zq) : Prop := ∀ i < 8, (word x i).toNat = (f i).val
+
+/-- The words of `x` are related by `R` to `f 0, …, f 7`: `Lanes` is
+`LanesR canW`, and lazy reduction keeps other values in words. -/
+def LanesR {α : Type} (R : BitVec 16 → α → Prop) (x : BitVec 128) (f : Nat → α) : Prop :=
+  ∀ i < 8, R (word x i) (f i)
+
+/-- Transports a relation along an equality of its second argument. -/
+theorem rel_of_eq {α β : Type} {R : α → β → Prop} {a : α} {u v : β} (h : R a u) (e : u = v) : R a v := e ▸ h
+
+/-- The word holds the canonical value of the coefficient. -/
+def canW (w : BitVec 16) (v : Zq) : Prop := w.toNat = v.val
 
 /-- The words of `x` are the zetas `ζ i · 2¹⁶ mod q` (Montgomery form). -/
 def ZLanes (x : BitVec 128) (ζ : Nat → Zq) : Prop :=
@@ -75,15 +99,14 @@ theorem xmm_setXmm (s : State) (d : XReg) (v : BitVec 128) (r : XReg) :
 theorem mxcsr_setXmm (s : State) (d : XReg) (v : BitVec 128) : (s.setXmm d v).mxcsr = s.mxcsr := rfl
 
 /-- Runs a block of SSE instructions. -/
-syntax "vrun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| vrun) => `(tactic| vrun [])
-  | `(tactic| vrun [$ls,*]) => `(tactic| plain_simp_names (
+tactic_template "vrun" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                        apply WP.of_runBlock
                        set_option linter.unusedSimpArgs false in
                        simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
                          Option.some.injEq, exists_eq_left', RegUpd.gpr_setXmm, RegUpd.mem_setXmm, RegUpd.rd_setXmm,
                          RegUpd.wr_setXmm, mxcsr_setXmm, xmm_setXmm, ite_true, ite_false, reduceCtorEq, $ls,*]))
+
+tactic_template "vrun" : tactic => `(tactic| vrun [])
 
 /-! ## Montgomery products and conditional additions, word by word -/
 
@@ -114,9 +137,7 @@ theorem XOnly.setXmm {rs : List XReg} {s s' : State} {d : XReg} (hd : d ∈ rs) 
       rw [xmm_setXmm, ifn (fun (e : r = d) => hr (e ▸ hd))]; exact h.xmm r hr }
 
 /-- `XOnly` of a chain of `setXmm` of the registers `rs`. -/
-syntax "xonly" : tactic
-macro_rules
-  | `(tactic| xonly) => `(tactic| (repeat (refine XOnly.setXmm (by simp) ?_ _)) <;> exact XOnly.refl _ _)
+tactic_template "xonly" : tactic => `(tactic| (repeat (refine XOnly.setXmm (by simp) ?_ _)) <;> exact XOnly.refl _ _)
 
 theorem VConsts.setXmm {s : State} (hc : VConsts s) {d : XReg} (h14 : XReg.xmm14 ≠ d)
     (h15 : XReg.xmm15 ≠ d) (v : BitVec 128) : VConsts (s.setXmm d v) :=

@@ -1,11 +1,8 @@
 module
+public import Mathlib.Tactic.Tauto
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hash
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.CT
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.CT
 
 /-!
 # Deterministic ECDSA on x86-64: `Verified`
@@ -34,7 +31,8 @@ theorem cfgOf_len : (cfgOf P).len = P.Q := rfl
 theorem cfgOf_w : (cfgOf P).w = P.w := rfl
 theorem cfgOf_sh : (cfgOf P).sh = P.R.sh := rfl
 theorem cfgOf_wide : (cfgOf P).wide = P.R.wide := rfl
-theorem reduce_eq : (cfgOf P).reduce = (cfgC P.R.E).reduce := rfl
+theorem reduce_eq : (cfgOf P).reduce = (cfgC P.R.E P.R.hHigh).reduce := rfl
+theorem cfgOf_hHigh : (cfgOf P).hHigh = P.R.hHigh := rfl
 /-- A property of every instruction holds of the count's initial store if it
 holds of its two instructions, whatever the count. -/
 theorem initCnt_all (p : Instr → Bool) (h₁ : ∀ x, p (.mov32 .rax (.imm x)) = true)
@@ -59,17 +57,19 @@ theorem sign_mx : (cfgOf P).sign.allInstrs (fun i => !loadsMxcsr i) = true := by
     simp only [Cfg.sign, Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac,
       Cfg.coreArgs, Cfg.wipe, Cfg.extra, Cfg.digestPtr, Cfg.keepV, Cfg.candTop, Cfg.coreDigest, Cfg.conv,
       hC, Code.allInstrs, cfgOf_wide, cfgOf_len, cfgOf_w, cfgOf_sh, reduce_eq, cfgOf_H, coreC_eq,
+      cfgOf_hHigh, fHo_q P hw, hHigh_q P hw,
       Bool.false_eq_true, ite_false, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreMx] at hR ⊢
     simp only [hR, Bool.true_and]
-    rcases P.sizesQ hw with hq | hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
+    rcases P.sizesQ hw with hq | hq | hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
       first
       | (exfalso; rw [hq, h] at hQD; omega)
-      | (simp only [hq, h, h']; decide +kernel)
+      | (simp only [hq, h, h', Nat.reduceEqDiff, decide_true, decide_false, ite_true, ite_false,
+          Bool.false_eq_true]; decide +kernel)
   · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
     simp only [Cfg.sign, Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac,
       Cfg.coreArgs, Cfg.wipe, Cfg.extra, Cfg.digestPtr, Cfg.keepV, Cfg.candTop, Cfg.coreDigest, Cfg.conv,
       hC, Code.allInstrs, cfgOf_wide, cfgOf_len, cfgOf_w, cfgOf_sh, reduce_eq, cfgOf_H, coreC_eq,
-      ite_true, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreMx, hQ66, hw9, sh7 hw]
+      ite_true, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreMx, hQ66, hw9, sh7 hw, fHo_wide P hw]
     simp only [hD64, hB]
     decide +kernel
 
@@ -87,17 +87,19 @@ theorem sign_spSafe : (cfgOf P).sign.all (fun i => !isa.writesSp i) = true := by
     simp only [Cfg.sign, Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac,
       Cfg.coreArgs, Cfg.wipe, Cfg.extra, Cfg.digestPtr, Cfg.keepV, Cfg.candTop, Cfg.coreDigest, Cfg.conv,
       hC, Code.allInstrs, cfgOf_wide, cfgOf_len, cfgOf_w, cfgOf_sh, reduce_eq, cfgOf_H, coreC_eq,
+      cfgOf_hHigh, fHo_q P hw, hHigh_q P hw,
       Bool.false_eq_true, ite_false, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreSp] at hR ⊢
     simp only [hR, Bool.true_and]
-    rcases P.sizesQ hw with hq | hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
+    rcases P.sizesQ hw with hq | hq | hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
       first
       | (exfalso; rw [hq, h] at hQD; omega)
-      | (simp only [hq, h, h']; decide +kernel)
+      | (simp only [hq, h, h', Nat.reduceEqDiff, decide_true, decide_false, ite_true, ite_false,
+          Bool.false_eq_true]; decide +kernel)
   · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
     simp only [Cfg.sign, Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac,
       Cfg.coreArgs, Cfg.wipe, Cfg.extra, Cfg.digestPtr, Cfg.keepV, Cfg.candTop, Cfg.coreDigest, Cfg.conv,
       hC, Code.allInstrs, cfgOf_wide, cfgOf_len, cfgOf_w, cfgOf_sh, reduce_eq, cfgOf_H, coreC_eq,
-      ite_true, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreSp, hQ66, hw9, sh7 hw]
+      ite_true, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreSp, hQ66, hw9, sh7 hw, fHo_wide P hw]
     simp only [hD64, hB]
     decide +kernel
 
@@ -108,15 +110,17 @@ theorem sign_x86 (s : State) (h : (rfcX86_64 P.R.E.combConsts P.I (240 + 8 * P.e
   exact ⟨t, s', he, abiPreserved_of_exec (sign_mx P) he hg, hp⟩
 
 /-- The notes on the implementation, for the documentation of the function
-with the hash function `H`, for scalars of `q` bytes signed by `core`. -/
-def signNotes (H : Impl.Pbkdf2.Md.X86_64.Hash) (q : Nat) (core : String) : String :=
+with the hash function `H`, for scalars of `q` bytes signed by `core`, in a
+stack frame of `frame` bytes. -/
+def signNotes (H : Impl.Pbkdf2.Md.X86_64.Hash) (q : Nat) (core : String) (frame : Nat := 216) : String :=
   "Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost " ++
   toString q ++ " bytes, and each HMAC with `" ++ H.hmacInitN ++ "`, `" ++ H.updN ++ "` and `" ++ H.hmacFinN ++ "`, \
   using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, \
   the leftmost " ++ toString q ++ " bytes of `V`, is tried with `" ++ core ++ "`, which uses all of `scratch`; \
   whether to try another is computed without branches from its result and the count of candidates left, so \
-  the code branches only on that. `K`, `V`, `h`, the count and the pointers are kept in a 216-byte stack \
-  frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it."
+  the code branches only on that. `K`, `V`, `h`, the count and the pointers are kept in a " ++
+  toString frame ++ "-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 \
+  bytes below it."
 
 /-- The notes of an instance whose scalars are longer than the hash
 (`wide`): `q` bytes of `nb` bits, from a `D`-byte hash. -/

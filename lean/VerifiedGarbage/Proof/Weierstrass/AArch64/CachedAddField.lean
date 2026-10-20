@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedField
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.CachedJac
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticCachedHead
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 
 @[expose] public section
 

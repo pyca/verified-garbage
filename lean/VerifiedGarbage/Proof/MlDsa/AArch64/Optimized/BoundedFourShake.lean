@@ -1,14 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFinish
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitialized
+import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! ## From `BoundedFourCore.lean` -/
 

@@ -1,10 +1,15 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Save
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.AArch64.Crypt
+import VerifiedGarbage.Proof.AesGcm.AArch64.Flush
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_init`
@@ -28,17 +33,22 @@ theorem rounds_of_len {L : Nat} (hL : L = 16 ∨ L = 24 ∨ L = 32) :
     BitVec.ofNat 64 L >>> 2 + BitVec.ofNat 64 6 = BitVec.ofNat 64 (Spec.Aes.rounds (L / 4)) := by
   rcases hL with rfl | rfl | rfl <;> decide
 
-/-- `vg_aes_gcm_init`. -/
-theorem init_wp (v : GcmImpl) {s : State} (hp : initAArch64.pre s) :
-    WP isa (init v.callees) s fun s' => GprAbi s s' ∧ initAArch64.post s s' := by
-  simp only [initAArch64] at hp ⊢
-  obtain ⟨hrd, hwr, d_kc, d_ks, d_cs, wc, ws, hL⟩ := hp
-  generalize hK : s.gpr .x0 = K at *
-  generalize hLn : (s.gpr .x1).toNat = L at *
-  generalize hCtx : s.gpr .x2 = Ctx at *
-  generalize hW : s.gpr .x3 = W at *
+/-- Key setup up to the hash subkey, with a context of `cl` bytes, then `fin`
+from a state with the key context written and our caller's registers saved. -/
+theorem initWith_wp (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 256 ≤ cl) {s : State}
+    {K Ctx W : Addr} {L : Nat} (hK : s.gpr .x0 = K) (hLn : (s.gpr .x1).toNat = L) (hCtx : s.gpr .x2 = Ctx)
+    (hW : s.gpr .x3 = W) (hrd : s.rd = [⟨K, L⟩]) (hwr : s.wr = [⟨Ctx, cl⟩, ⟨W, 2560⟩])
+    (d_kc : (⟨K, L⟩ : Region).Disjoint ⟨Ctx, cl⟩) (d_ks : (⟨K, L⟩ : Region).Disjoint ⟨W, 2560⟩)
+    (d_cs : (⟨Ctx, cl⟩ : Region).Disjoint ⟨W, 2560⟩) (wc : Ctx.toNat + 256 ≤ 2 ^ 64)
+    (hL : L = 16 ∨ L = 24 ∨ L = 32) {Q : State → Prop}
+    (hfin : ∀ s₅ : State, s₅.gpr .x19 = W → s₅.gpr .x21 = Ctx → s₅.sp = s.sp → s₅.rd = s.rd →
+      s₅.wr = s.wr → SavedAt s₅.mem W s → KeyRepr s₅.mem Ctx (bytesAt s.mem K L) → WP isa fin s₅ Q) :
+    WP isa (initWith v.callees fin) s Q := by
   have pW : Covers [⟨W, 2560⟩] s.wr := by rw [hwr]; exact covers_of_mem (by simp)
-  have pC : Covers [⟨Ctx, 256⟩] s.wr := by rw [hwr]; exact covers_of_mem (by simp)
+  have pC : Covers [⟨Ctx, 256⟩] s.wr := by
+    rw [hwr]; exact covers_prefix (covers_of_mem (by simp)) hcl
+  replace d_kc : (⟨K, L⟩ : Region).Disjoint ⟨Ctx, 256⟩ := d_kc.sub_right (Region.sub_prefix hcl)
+  replace d_cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, 2560⟩ := d_cs.sub_left (Region.sub_prefix hcl)
   obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok s .x3 hW pW
   have hsi : s.gpr .x1 = BitVec.ofNat 64 L := by rw [← hLn, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   obtain ⟨s₂, run₂, x19₂, x21₂, x22₂, x3₂, x0₂, x1₂, x2₂, sp₂, m₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa
@@ -175,10 +185,8 @@ theorem init_wp (v : GcmImpl) {s : State} (hp : initAArch64.pre s) :
   have hsv₁ : SavedAt s₁.mem W s := by rw [m₁]; exact savedAt_save _ _ _
   have hsv₅ : SavedAt s₅.mem W s :=
     (((hsv₁.frame (by rw [← m₂]; exact g.frame) dSv).frame f₄ dSv₄).frame c.frame dSv₅)
-  refine WP.mono (exit_ok c19 (by rw [c.sp, sp₄, g.sp, sp₂, sp₁])
-    (by rw [c.rd, c.wr, wr₄']; exact covers_left pW) hsv₅) fun s' ⟨hg, hm, _⟩ => ⟨hg, ?_⟩
-  rw [hm]
-  refine ⟨?_, ?_⟩
+  have c21 : s₅.gpr .x21 = Ctx := by rw [c.saved .x21 (by decide) (by decide), og₄ _ (by decide), g21]
+  refine hfin s₅ c19 c21 (by rw [c.sp, sp₄, g.sp, sp₂, sp₁]) (by rw [c.rd, rd₄']) (by rw [c.wr, wr₄']) hsv₅ ⟨?_, ?_⟩
   · rw [length_bytesAt, hRd, bytesAt_frame c.frame (fun r hr => ?_) (by omega), hk₄]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -188,5 +196,16 @@ theorem init_wp (v : GcmImpl) {s : State} (hp : initAArch64.pre s) :
   · show blockAt s₅.mem (Ctx + BitVec.ofNat 64 240) = _
     rw [gout.1, Spec.Gcm.aes, length_bytesAt, hRd]
     simp
+
+/-- `vg_aes_gcm_init`. -/
+theorem init_wp (v : GcmImpl) {s : State} (hp : initAArch64.pre s) :
+    WP isa (init v.callees) s fun s' => GprAbi s s' ∧ initAArch64.post s s' := by
+  simp only [initAArch64] at hp ⊢
+  obtain ⟨hrd, hwr, d_kc, d_ks, d_cs, wc, ws, hL⟩ := hp
+  refine initWith_wp v _ (Nat.le_refl _) rfl rfl rfl rfl hrd hwr d_kc d_ks d_cs wc hL
+    fun s₅ c19 _ csp crd cwr hsv hk => ?_
+  have pW : Covers [⟨s.gpr .x3, 2560⟩] s.wr := by rw [hwr]; exact covers_of_mem (by simp)
+  refine WP.mono (exit_ok c19 csp (by rw [crd, cwr]; exact covers_left pW) hsv) fun s' ⟨hg, hm, _⟩ => ⟨hg, ?_⟩
+  rw [hm]; exact hk
 
 end VG.Proof.AesGcm.AArch64

@@ -8,9 +8,9 @@ public meta import Lean
 **Trusted.** `#assert_standard_axioms c` fails unless the constant `c` (and so
 everything it depends on, transitively) uses only Lean's three standard
 axioms. In particular this rejects `sorry` (`sorryAx`) and anything proven by
-`native_decide`/`bv_decide`, which rely on `Lean.ofReduceBool` and thus trust
-the compiler. It refuses to run in a module, which sees the theorems it
-imports without their proofs.
+`native_decide`/`bv_decide`, which add an auxiliary axiom asserting the
+result of compiled code and thus trust the compiler. It refuses to run in a
+module, which sees the theorems it imports without their proofs.
 -/
 
 public meta section

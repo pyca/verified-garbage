@@ -1,13 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.SignCompute
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.AcceptedSpec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.AcceptedSpec
 import VerifiedGarbage.Proof.Dsa.SizeBounds
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import Mathlib.Tactic.Convert
 
 /-! # The computed scalars and rejection mask implement the packed signing spec -/
 

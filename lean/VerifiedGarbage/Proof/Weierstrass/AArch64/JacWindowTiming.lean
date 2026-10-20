@@ -1,16 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoopTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinishTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoopTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinishTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStepTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacFinishTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinish
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindow
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 
 @[expose] public section
 
@@ -20,7 +18,7 @@ open VG.Proof.Mont.AArch64 VG.Proof.Mont Spec.Weierstrass
 
 structure JacWindowChecks (K : WinCfg) : Prop where
   tree : JacTreeChecks K
-  treeCopy : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), dstOf i≠some r
+  treeCopy : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), clobbers i r = false
   step : JacStepChecks K
   infinity : FieldCT (.block (Jacobian.infinity K K.R))
   counter : FieldCT (.block [.movz .x .x19 52 0])

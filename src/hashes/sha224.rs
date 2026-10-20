@@ -34,6 +34,9 @@ use crate::arch::sha256::{vg_sha224_finalize_sha2, vg_sha256_update_sha2};
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::sha256::{vg_sha224_finalize_shani, vg_sha256_update_shani};
 
+#[cfg(target_arch = "aarch64")]
+use crate::arch::sha256::{vg_sha224_digest, vg_sha224_digest_sha2};
+
 super::streaming_hash!(
     /// An incremental SHA-224 computation (FIPS 180-4 §6.3).
     Sha224 {
@@ -52,6 +55,10 @@ super::streaming_hash!(
             #[cfg(target_arch = "x86_64")]
             Avx2 if [VG_SHA256_UPDATE_AVX2_FEATURES, VG_SHA224_FINALIZE_AVX2_FEATURES] =>
                 (vg_sha256_update_avx2, vg_sha224_finalize_avx2),
+        },
+        digests: #[cfg(target_arch = "aarch64")] {
+            Scalar => vg_sha224_digest,
+            Sha2 => vg_sha224_digest_sha2,
         },
     }
 );

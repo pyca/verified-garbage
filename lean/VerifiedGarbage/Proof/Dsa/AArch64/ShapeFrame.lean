@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeMasks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 import Mathlib.Order.RelClasses
 import VerifiedGarbage.Proof.Dsa.Layout
+import Mathlib.Tactic.Push
+import Mathlib.Data.Nat.Basic
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Memory changed by the public DSA domain-shape check -/
 

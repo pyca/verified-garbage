@@ -1,10 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Idx
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Idx
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lane
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # ML-KEM's 16-bit inverse NTT on AArch64: lanes

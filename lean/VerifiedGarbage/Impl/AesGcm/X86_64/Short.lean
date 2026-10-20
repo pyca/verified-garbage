@@ -39,7 +39,8 @@ nothing, the callees' working space too:
 * `[512, 1024)`: `G`, the blocks hashed (`gO`);
 * `[1024, 1536)`: `K`, the keystream (`kO`);
 * `[1536, 2048)`: the powers, four by four: `H'⁴ʲ⁺⁴`, `H'⁴ʲ⁺³`, `H'⁴ʲ⁺²`,
-  `H'⁴ʲ⁺¹` at `+ 64 j` (`tbO`).
+  `H'⁴ʲ⁺¹` at `+ 64 j` (`tbO`), but with a prepared key context, whose
+  powers `ghashP` reads where the context holds them.
 
 Only the lengths, the pointers and `rounds` (and for `open`, whether the
 tag is right) affect timing.
@@ -101,17 +102,16 @@ def sizes : List Instr :=
 def zeroG : List Instr :=
   .zop (.zbin .vpxord .xmm2 .xmm2 .xmm2) :: (List.range 8).map fun i => .vmovdqu32Store (at_ .r15 (gO + 64 * i)) .xmm2
 
-/-- The `rcx` bytes at `rsi` copied to `rdi`: 16 at a time (to `r8 = 16 ⌊rcx / 16⌋`, through
-`xmm4`), then one at a time, from `r10 = 0`. -/
+/-- The `rcx` bytes at `rsi` copied to `rdi`: 64 at a time (to `r8 = 64 ⌊rcx / 64⌋`, through
+`zmm4`, from `r10 = 0`), then the `rcx mod 64` left in one masked move, with the mask
+`2 ^ (rcx mod 64) - 1` in `rax` (`shl` takes the count modulo 64). -/
 def copyBytes : Prog isa :=
-  .seq (.block [.mov32 .r10 (imm 0), .mov .r8 (.reg .rcx), .shift .shr .r8 4, .shift .shl .r8 4, .alu .cmp .r8 (imm 0)])
+  .seq (.block [.mov32 .r10 (imm 0), .mov .r8 (.reg .rcx), .shift .shr .r8 6, .shift .shl .r8 6, .alu .cmp .r8 (imm 0)])
   (.seq (.ite .e (.block [])
-      (.loop (.block [.vmovdquLoad .l128 .xmm4 srcB, .vmovdquStore .l128 dstB .xmm4, .alu .add .r10 (imm 16),
+      (.loop (.block [.vmovdqu32Load .xmm4 srcB, .vmovdqu32Store dstB .xmm4, .alu .add .r10 (imm 64),
         .alu .cmp .r10 (.reg .r8)]) .ne))
-  (.seq (.block [.alu .cmp .r10 (.reg .rcx)])
-    (.ite .e (.block [])
-      (.loop (.block [.movzx8 .rax srcB, .store8 dstB .rax, .alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rcx)])
-        .ne))))
+    (.block [.mov32 .rax (imm 1), .shiftCl .shl .rax, .alu .sub .rax (imm 1), .kLoad8 .rax .xmm4 srcB,
+      .kStore8 dstB .rax .xmm4]))
 
 /-- The additional data copied to `G`, after the zero blocks. -/
 def copyA : Prog isa :=
@@ -164,18 +164,12 @@ def powers : Prog isa :=
   .seq (.block (powSse ++ ptr .r11 .r15 tbO ++ pow4 ++ ([.mov .rax (.mem (at_ .r15 mpO))] : List Instr))) powMore
 
 /-- With a prepared key context (`VG.Spec.Gcm.PreparedPowersRepr`), the
-constants in every lane of `zmm0` and `zmm1`, and the table of powers copied
-from the context, whose 64 bytes at `ctx + 256 + 64 j` hold `H'⁴ʲ⁺²`,
-`H'⁴ʲ⁺¹`, `H'⁴ʲ⁺⁴`, `H'⁴ʲ⁺³`: each group swapped by halves into the table's
-`H'⁴ʲ⁺⁴`–`H'⁴ʲ⁺¹`, all eight groups. -/
+constants in every lane of `zmm0` and `zmm1`: `ghashP` reads the powers from
+the context itself. -/
 def powersP : Prog isa :=
   .block (Gcm.X86_64.Pclmul.const .xmm0 revMask ++ Gcm.X86_64.Pclmul.const .xmm1 poly ++
     ([.vop (.vinserti128 .xmm0 .xmm0 .xmm0 1), .zop (.vshufi32x4 .xmm0 .xmm0 .xmm0 0x44),
-      .vop (.vinserti128 .xmm1 .xmm1 .xmm1 1), .zop (.vshufi32x4 .xmm1 .xmm1 .xmm1 0x44)] : List Instr) ++
-    ptr .r11 .r15 tbO ++
-    (List.range 8).flatMap fun j =>
-      [.vmovdqu32Load .xmm8 (at_ .r13 (256 + 64 * j)), .zop (.vshufi32x4 .xmm8 .xmm8 .xmm8 0x4E),
-        .vmovdqu32Store (at_ .r11 (64 * j)) .xmm8])
+      .vop (.vinserti128 .xmm1 .xmm1 .xmm1 1), .zop (.vshufi32x4 .xmm1 .xmm1 .xmm1 0x44)] : List Instr))
 
 /-! ## The keystream -/
 
@@ -229,6 +223,31 @@ def ghBody : List Instr :=
 (`StitchZ.fin`). -/
 def ghash : Prog isa :=
   .seq (.block ghSetup) (.seq (.loop (.block ghBody) .ne) (.block Gcm.X86_64.StitchZ.fin))
+
+/-- `ghSetup` for a prepared key context: `r11` 128 bytes before the powers
+of `G`'s first group in the context (`ctx + 256 + 64 (g - 1)`). -/
+def ghSetupP : List Instr :=
+  ptr .rdx .r15 (gO - 128) ++
+  ([.mov .r9 (.mem (at_ .r15 mpO)), .shift .shr .r9 2, .mov .r11 (.reg .r9), .shift .shl .r11 6,
+   .alu .add .r11 (.reg .r13), .alu .add .r11 (imm 64),
+   .zop (.zbin .vpxord .xmm8 .xmm8 .xmm8), .zop (.zbin .vpxord .xmm9 .xmm9 .xmm9),
+   .zop (.zbin .vpxord .xmm10 .xmm10 .xmm10)] : List Instr)
+
+/-- `StitchZ.ghLoad 2` with the powers from a prepared key context, whose
+groups hold them in the table's order swapped by halves: swapped back by
+`vshufi32x4` with `0x4E`. -/
+def ghLoadP : List Instr :=
+  ([.vmovdqu32Load .xmm12 (at_ .r11 128), .zop (.vshufi32x4 .xmm12 .xmm12 .xmm12 0x4E),
+   .vmovdqu32Load .xmm7 (at_ .rdx 128), .zop (.zbin .vpshufb .xmm7 .xmm7 .xmm0)] : List Instr) ++
+  Gcm.X86_64.StitchZ.acc .xmm7 .xmm12
+
+/-- `ghBody` with the powers from a prepared key context. -/
+def ghBodyP : List Instr :=
+  ghLoadP ++ ([.alu .add .rdx (imm 64), .alu .sub .r11 (imm 64), .alu .sub .r9 (imm 1)] : List Instr)
+
+/-- `ghash` with the powers from a prepared key context. -/
+def ghashP : Prog isa :=
+  .seq (.block ghSetupP) (.seq (.loop (.block ghBodyP) .ne) (.block Gcm.X86_64.StitchZ.fin))
 
 /-- The tag, `GHASH ⊕ K[0]`, at `W + o`. -/
 def tagK (o : Nat) : List Instr :=
@@ -286,10 +305,10 @@ def textArgs : List Instr :=
 
 /-! ## `seal` and `open` -/
 
-/-- The short `seal`, with the table of powers from `pw` (`powers`, or
-`powersP` with a prepared key context): the ciphertext written to the data
-and `G`, and the tag at `W`. -/
-def sealShort (pw : Prog isa := powers) : Prog isa :=
+/-- The short `seal`, with the table of powers from `pw` and GHASH by `gh`
+(`powers` and `ghash`, or `powersP` and `ghashP` with a prepared key
+context): the ciphertext written to the data and `G`, and the tag at `W`. -/
+def sealShort (pw : Prog isa := powers) (gh : Prog isa := ghash) : Prog isa :=
   .seq (.block (j012 ++ sizes))
   (.seq pw
   (.seq (.block zeroG)
@@ -297,15 +316,15 @@ def sealShort (pw : Prog isa := powers) : Prog isa :=
   (.seq keystream
   (.seq (.seq (.block textArgs) (xorText true))
   (.seq ghash' (.block (tagK 0))))))))
-where ghash' : Prog isa := .seq (.block lens) ghash
+where ghash' : Prog isa := .seq (.block lens) gh
 
 /-- The ciphertext copied to `G`, its tag at `W + uO`, compared with the
 received one (`rbx` its length, at `tlO`): `rax`, kept at `auxO`, 1 if they
 are equal and 0 if not, and ZF set if not. -/
-def openChk : Prog isa :=
+def openChk (gh : Prog isa := ghash) : Prog isa :=
   .seq copyC
   (.seq (.block lens)
-  (.seq ghash
+  (.seq gh
   (.seq (.block (tagK uO ++ ([.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))] : List Instr)))
   (.seq recv
   (.seq (cmp uO)
@@ -314,9 +333,9 @@ def openChk : Prog isa :=
 /-- The short `open`, after `tagLenOk` (with `rbx` the tag's length, kept
 at `tlO`): the tag compared with the received one (`openChk`), and the data
 decrypted only if they are equal; `rax` as `open` returns it. -/
-def openShort (pw : Prog isa := powers) : Prog isa :=
+def openShort (pw : Prog isa := powers) (gh : Prog isa := ghash) : Prog isa :=
   .seq (.block (j012 ++ sizes))
-  (.seq (.seq pw (.seq (.block zeroG) (.seq copyA (.seq keystream openChk))))
+  (.seq (.seq pw (.seq (.block zeroG) (.seq copyA (.seq keystream (openChk gh)))))
   (.seq (.ite .e (.block []) (.seq (.block textArgs) (xorText false)))
     (.block [.mov .rax (.mem (at_ .r15 auxO))])))
 
@@ -431,12 +450,15 @@ def finKsA : Prog isa :=
 
 variable (c : Callees)
 
-/-- `seal` with the short path (`cond`), with the table of powers from `pw`,
-or else the other instances' body. -/
-def «seal» (pw : Prog isa := powers) : Prog isa :=
+/-- The other instances' body of `seal`, after the entry: the tag at `W`. -/
+def sealLong : Prog isa := .seq (oneAad c) (.seq (oneBlocks c.enc) finish)
+
+/-- `seal` with the short path (`cond`), with the table of powers from `pw`
+and GHASH by `gh`, or else `lng` (the other instances' body, `sealLong`, by
+default). -/
+def «seal» (pw : Prog isa := powers) (gh : Prog isa := ghash) (lng : Prog isa := sealLong c) : Prog isa :=
   .seq (.block (oneEntry 32))
-    (.seq (.seq cond (.ite .e
-        (.seq (oneAad c) (.seq (oneBlocks c.enc) finish)) (sealShort pw)))
+    (.seq (.seq cond (.ite .e lng (sealShort pw gh)))
       (.seq (.block (tagOut (at_ .rsp 24))) (.block restore)))
 
 /-- The other instances' body of `open`, after the entry and `tagLenOk`. -/
@@ -451,13 +473,14 @@ def openLong : Prog isa :=
   (.seq (.ite .e (oneUndo c) (oneCrypt c))
     (.block [.mov .rax (.mem (at_ .r15 auxO))]))))))))
 
-/-- `open` with the short path (`cond`), with the table of powers from `pw`,
-or else `lng` (the other instances' body, `openLong`, by default). -/
-def «open» (pw : Prog isa := powers) (lng : Prog isa := openLong c) : Prog isa :=
+/-- `open` with the short path (`cond`), with the table of powers from `pw`
+and GHASH by `gh`, or else `lng` (the other instances' body, `openLong`, by
+default). -/
+def «open» (pw : Prog isa := powers) (lng : Prog isa := openLong c) (gh : Prog isa := ghash) : Prog isa :=
   .seq (.block (oneEntry 40 ++ ([.mov .rbx (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rbx] : List Instr)))
   (.seq tagLenOk
   (.seq (.ite .e (.block [.mov32 .rax (imm 0)])
-      (.seq cond (.ite .e lng (openShort pw))))
+      (.seq cond (.ite .e lng (openShort pw gh))))
     (.block restore)))
 
 end VG.Impl.AesGcm.X86_64.Short

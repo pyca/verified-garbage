@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.X86_64.Round
+import VerifiedGarbage.Proof.Seed.X86_64.Round
 public import VerifiedGarbage.Impl.Seed.X86_64.ExpandKey
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Seed.X86_64.Lanes
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # A round of the key schedule on x86-64

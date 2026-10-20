@@ -1,11 +1,13 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Ntt
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Bfly
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # ML-DSA on x86 (32-bit): writing a table of constants

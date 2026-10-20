@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Front
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
+import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
+import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
+import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
+import VerifiedGarbage.Proof.X25519.Arm.Limbs
 
 /-!
 # ECDSA verification on 32-bit ARM: `u` and `v`

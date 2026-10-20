@@ -4,14 +4,12 @@ import VerifiedGarbage.Proof.TripleDes.Arm.Bytes
 import VerifiedGarbage.Proof.TripleDes.Arm.Initial
 public import VerifiedGarbage.Proof.TripleDes.Arm.Body
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Rc2.Arm.Save
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## `BlockIO` -/
 
@@ -77,7 +75,7 @@ theorem blockLoad_ok (s : State)
   · exact sp₂.trans sp₁
   · intro r hr
     have checks : ∀ r ∈ loadKept,
-        ((instrs initialPermutation.lit).all fun op => dstOf op != some r) = true := by decide +kernel
+        ((instrs initialPermutation.lit).all fun op => !clobbers op r) = true := by decide +kernel
     have unused : ∀ r ∈ loadKept, r ≠ .r4 ∧ r ≠ .r5 := by decide
     exact (reg₂ r (checks r hr)).trans (reg₁ r (unused r hr).1 (unused r hr).2)
 

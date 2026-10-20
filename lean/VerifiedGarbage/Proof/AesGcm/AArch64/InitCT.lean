@@ -1,13 +1,23 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Init
+import VerifiedGarbage.Proof.AesGcm.AArch64.Init
+import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Init
-import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
-meta import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_init` is constant time
@@ -29,16 +39,19 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt)
 
 /-- The block before the call of `vg_aes_expand_key_scratch`. -/
-theorem init1_ok {s : State} {K Ctx W : Addr} {L : Nat} (hK : s.gpr .x0 = K) (hLn : (s.gpr .x1).toNat = L)
-    (hCtx : s.gpr .x2 = Ctx) (hW : s.gpr .x3 = W) (hrd : s.rd = [⟨K, L⟩])
-    (hwr : s.wr = [⟨Ctx, 256⟩, ⟨W, 2560⟩]) (d_kc : (⟨K, L⟩ : Region).Disjoint ⟨Ctx, 256⟩)
-    (d_ks : (⟨K, L⟩ : Region).Disjoint ⟨W, 2560⟩) (d_cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, 2560⟩)
+theorem init1_ok {cl : Nat} (hcl : 256 ≤ cl) {s : State} {K Ctx W : Addr} {L : Nat} (hK : s.gpr .x0 = K)
+    (hLn : (s.gpr .x1).toNat = L) (hCtx : s.gpr .x2 = Ctx) (hW : s.gpr .x3 = W) (hrd : s.rd = [⟨K, L⟩])
+    (hwr : s.wr = [⟨Ctx, cl⟩, ⟨W, 2560⟩]) (d_kc : (⟨K, L⟩ : Region).Disjoint ⟨Ctx, cl⟩)
+    (d_ks : (⟨K, L⟩ : Region).Disjoint ⟨W, 2560⟩) (d_cs : (⟨Ctx, cl⟩ : Region).Disjoint ⟨W, 2560⟩)
     (hL : L = 16 ∨ L = 24 ∨ L = 32) :
     WP isa (.block initSeg1) s fun s₂ => KeyCall s₂ K Ctx (W + BitVec.ofNat 64 512) L ∧ s₂.gpr .x19 = W ∧
       s₂.gpr .x21 = Ctx ∧ s₂.gpr .x22 = BitVec.ofNat 64 (Spec.Aes.rounds (L / 4)) ∧ s₂.sp = s.sp ∧
       s₂.rd = s.rd ∧ s₂.wr = s.wr := by
   have pW : Covers [⟨W, 2560⟩] s.wr := by rw [hwr]; exact covers_of_mem (by simp)
-  have pC : Covers [⟨Ctx, 256⟩] s.wr := by rw [hwr]; exact covers_of_mem (by simp)
+  have pC : Covers [⟨Ctx, 256⟩] s.wr := by
+    rw [hwr]; exact covers_prefix (covers_of_mem (by simp)) hcl
+  replace d_kc : (⟨K, L⟩ : Region).Disjoint ⟨Ctx, 256⟩ := d_kc.sub_right (Region.sub_prefix hcl)
+  replace d_cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, 2560⟩ := d_cs.sub_left (Region.sub_prefix hcl)
   obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok s .x3 hW pW
   have hsi : s.gpr .x1 = BitVec.ofNat 64 L := by rw [← hLn, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   obtain ⟨s₂, run₂, x19₂, x21₂, x22₂, x3₂, x0₂, x1₂, x2₂, sp₂, m₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa
@@ -75,7 +88,7 @@ theorem init2_ok {s : State} {Ctx W : Addr} {R : Nat} (h19 : s.gpr .x19 = W) (h2
     (wc : Ctx.toNat + 256 ≤ 2 ^ 64) :
     WP isa (.block initSeg2) s fun s₄ =>
       CtrCall s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240) (W + BitVec.ofNat 64 512) R 1 ∧
-      s₄.gpr .x19 = W ∧ s₄.sp = s.sp := by
+      s₄.gpr .x19 = W ∧ s₄.gpr .x21 = Ctx ∧ s₄.sp = s.sp := by
   have w₁ := in_off pC (show 240 + 8 ≤ 256 by decide) (by decide)
   have w₂ := in_off pC (show 248 + 8 ≤ 256 by decide) (by decide)
   have w₃ := in_off pW (show 96 + 8 ≤ 2560 by decide) (by decide)
@@ -93,7 +106,7 @@ theorem init2_ok {s : State} {Ctx W : Addr} {R : Nat} (h19 : s.gpr .x19 = W) (h2
     · simp [gpr_write, h21]
     · simp [gpr_write]
     · simp [gpr_write, h19]
-  refine WP.of_runBlock ⟨s₄, run₄, ?_, by rw [og₄ _ (by decide), h19], sp₄⟩
+  refine WP.of_runBlock ⟨s₄, run₄, ?_, by rw [og₄ _ (by decide), h19], by rw [og₄ _ (by decide), h21], sp₄⟩
   have dCW : ∀ d n, d + n ≤ 256 → ∀ e k, e + k ≤ 2560 →
       (⟨Ctx + BitVec.ofNat 64 d, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 e, k⟩ := fun d n hd e k he =>
     (d_cs.sub_left (Offset.sub_base _ hd)).sub_right (Lay.wSub he)
@@ -114,12 +127,22 @@ theorem init2_ok {s : State} {Ctx W : Addr} {R : Nat} (h19 : s.gpr .x19 = W) (h2
   · exact covers_cons (covers_off pW' (by decide) (by decide)) (covers_cons (covers_off pC' (by decide) (by decide))
       (covers_off pW' (by decide) (by decide)))
 
-theorem init_ct (v : GcmImpl) : ConstantTime isa initAArch64.pre initAArch64.pub (init v.callees) := by
+/-- Key setup up to the hash subkey, then `fin`, which the taint analysis
+checks with `x19` (the working space) and `x21` (the context) public. -/
+theorem initWith_ct (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 256 ≤ cl) {pre : State → Prop}
+    (hpre : ∀ s, pre s → s.rd = [⟨s.gpr .x0, (s.gpr .x1).toNat⟩] ∧ s.wr = [⟨s.gpr .x2, cl⟩, ⟨s.gpr .x3, 2560⟩] ∧
+      (⟨s.gpr .x0, (s.gpr .x1).toNat⟩ : Region).Disjoint ⟨s.gpr .x2, cl⟩ ∧
+      (⟨s.gpr .x0, (s.gpr .x1).toNat⟩ : Region).Disjoint ⟨s.gpr .x3, 2560⟩ ∧
+      (⟨s.gpr .x2, cl⟩ : Region).Disjoint ⟨s.gpr .x3, 2560⟩ ∧ (s.gpr .x2).toNat + 256 ≤ 2 ^ 64 ∧
+      ((s.gpr .x1).toNat = 16 ∨ (s.gpr .x1).toNat = 24 ∨ (s.gpr .x1).toNat = 32))
+    (hT : ∃ h, (taint.check (Taint.ofRegs [.x19, .x21]) fin h).isSome = true) :
+    ConstantTime isa pre initAArch64.pub (initWith v.callees fin) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q0, q1, q2, q3, qsp⟩ := hq
-  simp only [initAArch64] at h₁ h₂
+  replace h₁ := hpre _ h₁
+  replace h₂ := hpre _ h₂
   rw [← q0, ← q1, ← q2, ← q3] at h₂
-  obtain ⟨hrd₁, hwr₁, d_kc, d_ks, d_cs, wc, ws, hL⟩ := h₁
+  obtain ⟨hrd₁, hwr₁, d_kc, d_ks, d_cs, wc, hL⟩ := h₁
   obtain ⟨hrd₂, hwr₂, -⟩ := h₂
   generalize hK : σ₁.gpr .x0 = K at *
   generalize hLn : (σ₁.gpr .x1).toNat = L at *
@@ -127,32 +150,42 @@ theorem init_ct (v : GcmImpl) : ConstantTime isa initAArch64.pre initAArch64.pub
   generalize hW : σ₁.gpr .x3 = W at *
   have hR' : Spec.Aes.rounds (L / 4) = 10 ∨ Spec.Aes.rounds (L / 4) = 12 ∨ Spec.Aes.rounds (L / 4) = 14 := by
     rcases hL with rfl | rfl | rfl <;> decide
+  have d_cs' : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, 2560⟩ := d_cs.sub_left (Region.sub_prefix hcl)
   refine rel_seq (rel_taint [.x0, .x1, .x2, .x3] qsp (by agree_tac [hK, hCtx, hW, ← q0, q1, ← q2, ← q3])
       ⟨_, by taint_decide⟩)
-    (init1_ok hK hLn hCtx hW hrd₁ hwr₁ d_kc d_ks d_cs hL)
-    (init1_ok q0.symm (by rw [← q1, hLn]) q2.symm q3.symm hrd₂ hwr₂ d_kc d_ks d_cs hL)
+    (init1_ok hcl hK hLn hCtx hW hrd₁ hwr₁ d_kc d_ks d_cs hL)
+    (init1_ok hcl q0.symm (by rw [← q1, hLn]) q2.symm q3.symm hrd₂ hwr₂ d_kc d_ks d_cs hL)
     fun τ₁ τ₂ ⟨k₁, x19₁, x21₁, x22₁, sp₁, rd₁, wr₁⟩ ⟨k₂, x19₂, x21₂, x22₂, sp₂, rd₂, wr₂⟩ => ?_
   refine rel_seq (rel_key v.key k₁ k₂ (by rw [sp₁, sp₂, qsp])) (key_call v.key k₁) (key_call v.key k₂)
     fun τ₁' τ₂' g₁ g₂ => ?_
-  have pv : ∀ {σ τ τ' : State}, σ.wr = [⟨Ctx, 256⟩, ⟨W, 2560⟩] → τ.wr = σ.wr →
+  have pv : ∀ {σ τ τ' : State}, σ.wr = [⟨Ctx, cl⟩, ⟨W, 2560⟩] → τ.wr = σ.wr →
       KeyPost τ K Ctx (W + BitVec.ofNat 64 512) L τ' → τ.gpr .x19 = W → τ.gpr .x21 = Ctx →
       τ.gpr .x22 = BitVec.ofNat 64 (Spec.Aes.rounds (L / 4)) →
       WP isa (.block initSeg2) τ' fun s₄ => CtrCall s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240)
-        (W + BitVec.ofNat 64 512) (Spec.Aes.rounds (L / 4)) 1 ∧ s₄.gpr .x19 = W ∧ s₄.sp = τ'.sp :=
+        (W + BitVec.ofNat 64 512) (Spec.Aes.rounds (L / 4)) 1 ∧ s₄.gpr .x19 = W ∧ s₄.gpr .x21 = Ctx ∧
+        s₄.sp = τ'.sp :=
     fun hwr wr g h19 h21 h22 => init2_ok (by rw [g.saved .x19 (by decide) (by decide), h19])
       (by rw [g.saved .x21 (by decide) (by decide), h21]) (by rw [g.saved .x22 (by decide) (by decide), h22]) hR'
-      (by rw [g.wr, wr, hwr]; exact covers_of_mem (by simp)) (by rw [g.wr, wr, hwr]; exact covers_of_mem (by simp))
-      d_cs wc
+      (by rw [g.wr, wr, hwr]; exact covers_prefix (covers_of_mem (by simp)) hcl)
+      (by rw [g.wr, wr, hwr]; exact covers_of_mem (by simp)) d_cs' wc
   refine rel_seq (rel_taint [.x19, .x21, .x22] (by rw [g₁.sp, g₂.sp, sp₁, sp₂, qsp])
       (by agree_tac [g₁.saved .x19 (by decide) (by decide), g₂.saved .x19 (by decide) (by decide),
         g₁.saved .x21 (by decide) (by decide), g₂.saved .x21 (by decide) (by decide),
         g₁.saved .x22 (by decide) (by decide), g₂.saved .x22 (by decide) (by decide), x19₁, x19₂, x21₁, x21₂,
         x22₁, x22₂]) ⟨_, by taint_decide⟩)
-    (pv hwr₁ wr₁ g₁ x19₁ x21₁ x22₁) (pv hwr₂ wr₂ g₂ x19₂ x21₂ x22₂) fun τ₁ τ₂ ⟨c₁, y₁, s₁'⟩ ⟨c₂, y₂, s₂'⟩ => ?_
+    (pv hwr₁ wr₁ g₁ x19₁ x21₁ x22₁) (pv hwr₂ wr₂ g₂ x19₂ x21₂ x22₂)
+    fun τ₁ τ₂ ⟨c₁, y₁, z₁, s₁'⟩ ⟨c₂, y₂, z₂, s₂'⟩ => ?_
   refine rel_seq (rel_ctr v.ctr c₁ c₂ (by rw [s₁', s₂', g₁.sp, g₂.sp, sp₁, sp₂, qsp]))
     (ctr_call v.ctr c₁) (ctr_call v.ctr c₂) fun τ₁ τ₂ e₁ e₂ => ?_
-  exact rel_taint [.x19] (by rw [e₁.sp, e₂.sp, s₁', s₂', g₁.sp, g₂.sp, sp₁, sp₂, qsp])
-    (by agree_tac [e₁.saved .x19 (by decide) (by decide), e₂.saved .x19 (by decide) (by decide), y₁, y₂])
+  exact rel_taint [.x19, .x21] (by rw [e₁.sp, e₂.sp, s₁', s₂', g₁.sp, g₂.sp, sp₁, sp₂, qsp])
+    (by agree_tac [e₁.saved .x19 (by decide) (by decide), e₂.saved .x19 (by decide) (by decide), y₁, y₂,
+      e₁.saved .x21 (by decide) (by decide), e₂.saved .x21 (by decide) (by decide), z₁, z₂]) hT
+
+theorem init_ct (v : GcmImpl) : ConstantTime isa initAArch64.pre initAArch64.pub (init v.callees) :=
+  initWith_ct v _ (Nat.le_refl _) (fun s h => by
+      simp only [initAArch64] at h
+      obtain ⟨hrd, hwr, d_kc, d_ks, d_cs, wc, -, hL⟩ := h
+      exact ⟨hrd, hwr, d_kc, d_ks, d_cs, wc, hL⟩)
     ⟨_, by taint_decide⟩
 
 end VG.Proof.AesGcm.AArch64

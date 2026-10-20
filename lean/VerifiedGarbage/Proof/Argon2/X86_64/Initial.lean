@@ -3,13 +3,13 @@ module
 public import VerifiedGarbage.Proof.Argon2.X86_64.InitialStart
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Output
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Finalize
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Argon2.HPrime
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Merged from `Proof.Argon2.X86_64.InitialFinish`. -/
 

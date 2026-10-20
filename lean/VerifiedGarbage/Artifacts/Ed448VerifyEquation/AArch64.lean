@@ -1,8 +1,15 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyVerified
 public import VerifiedGarbage.Proof.Ed448.Facts
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # Ed448 verification's equation on AArch64
@@ -17,9 +24,8 @@ proof here, so that only registration files import it.
 namespace VG.Artifacts.Ed448VerifyEquation.AArch64
 
 def artifacts : List Artifact := [
-  { Spec.Ed448.verifyEquationApi with
-    target := AArch64.target
-    doc := Spec.Ed448.verifyEquationApi.doc (notes := ["Uses baseline integer instructions, \
+  Spec.Ed448.verifyEquationApi.artifact AArch64.target {
+    notes := ["Uses baseline integer instructions, \
       and runs the same operations whatever the inputs: the checks (the encodings of A and R, \
       S < L, and the comparison) are accumulated in `x20`, 0 exactly when all pass. Decodes A \
       with RFC 8032's square root (X448's addition chain up to z^(2^223 - 1), then 223 \
@@ -30,12 +36,9 @@ def artifacts : List Artifact := [
       in `scratch`. Then compares [4]([S]B + [k](-A)) with [4]R projectively. Field elements \
       are eight 56-bit limbs, multiplied as `vg_x448`'s are; comparisons and low bits use the \
       fully reduced value. The function copies the challenge into `scratch`, and saves its \
-      caller's callee-saved registers there."])
+      caller's callee-saved registers there."]
     consts := Impl.X448.AArch64.Base.combConsts
     code := Impl.Ed448.AArch64.verifyEquation
-    contract := Spec.Ed448.verifyEquationContract
-      (AArch64.abi.withConsts Impl.X448.AArch64.Base.combConsts)
-    verified := Proof.Ed448.AArch64.verifyEquation_verified Proof.Ed448.recover_ok
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Ed448.AArch64.verifyEquation_verified Proof.Ed448.recover_ok }]
 
 end VG.Artifacts.Ed448VerifyEquation.AArch64

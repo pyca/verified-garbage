@@ -2,13 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.X448.Edwards.URep
 public import VerifiedGarbage.Proof.Ed448.Group.Projective
-public import VerifiedGarbage.Proof.X448.Bytes
-public import VerifiedGarbage.Proof.Framework.PowLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X448.Bytes
+public import VerifiedGarbage.Proof.X448.Ladder
 import VerifiedGarbage.Proof.Framework.Pratt
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.Positivity.Finset
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ed448.Group.Projective
 
 /-!
 # X448 of the base point is the u-coordinate of a multiple of Ed448's

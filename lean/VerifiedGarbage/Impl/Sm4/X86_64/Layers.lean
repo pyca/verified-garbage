@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Sm4.X86_64.Sbox
 public import VerifiedGarbage.Impl.Sm4.Lin
-import VerifiedGarbage.Impl.Aes.X86_64.Linear
 public import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
 
 /-!
@@ -25,8 +24,8 @@ masks of the round keys' planes (48–50), the planes of the state's four
 words (64–95), the tail buffer (96–127, sixteen blocks), the table of the
 32 bitsliced round keys, eight planes each, in the order the rounds use
 them (128–383), and the callee-saved registers (384–389). The modes
-(`Impl/Modes/X86_64/`), which use slots 0–383 as SM4's core, keep their
-own state in 384–391 (`Ctr.lean`).
+(`Impl/Modes/X86_64/`), which use slots 0–391 as SM4's core, keep their
+own state in 392–399 (`Ctr.lean`).
 -/
 
 @[expose] public section
@@ -56,7 +55,7 @@ def tableEnd : Nat := tableSlot + 8 * 32
 
 def savedSlot : Nat := tableEnd
 
-/-- The number of slots: ECB's, and the modes' 8 after the core's. -/
+/-- The number of slots: ECB's, the callee-saved registers' after the table's. -/
 def slots : Nat := tableEnd + 8
 
 def keyMasks : List (Nat × BitVec 64) :=

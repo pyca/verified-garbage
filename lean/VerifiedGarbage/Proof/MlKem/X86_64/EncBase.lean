@@ -1,13 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
 public import VerifiedGarbage.Impl.MlKem.X86_64.Encrypt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgA
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 
 /-!
 # ML-KEM on x86-64: K-PKE.Encrypt, its context and the matrix
@@ -47,8 +42,8 @@ theorem RelCT.stepL {rbs wbs : List (Reg × Nat)} (hcs : ∀ b ∈ rbs ++ wbs, b
 /-- The compression and decompression the parameter set `L` calls, verified
 for widths `wc` and `wd` that include `d_u` and `d_v`. -/
 structure KemCalls (L : Kem) (wc wd : List Nat) : Prop where
-  ce : CEImpl L.ceN L.ce wc
-  dd : DDImpl L.ddN L.dd wd
+  ce : ∀ cs, CEImpl (L.ceN cs) (L.ce cs) wc
+  dd : ∀ cs, DDImpl (L.ddN cs) (L.dd cs) wd
   du : L.du ∈ wc ∧ L.du ∈ wd
   dv : L.dv ∈ wc ∧ L.dv ∈ wd
 

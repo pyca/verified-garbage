@@ -1,15 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLoop
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Restore
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Store
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+import Std.Tactic.BVDecide.Normalize.Prop
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.TCB.Axioms
 
 @[expose] public section
 
@@ -73,12 +73,12 @@ theorem functional (b : State) (hp : BulkPre b) : WP isa bulk b (Finished b) := 
   · exact loop.mono fun s ⟨⟨c,A,h⟩,hg⟩ => finish_ok b hp s₀ hs c A s h
       ((hg .x0 (by simp)).trans (hs.gpr .x0 (by simp)))
       ((hg .x1 (by simp)).trans (hs.gpr .x1 (by simp)))
-  · change body.allInstrs (fun i => [.x0,.x1].all fun r => dstOf i != some r) = true
+  · change body.allInstrs (fun i => [.x0,.x1].all fun r => !clobbers i r) = true
     lit_decide
 
 theorem bulk_correct (b : State) (hp : BulkPre b) : WP isa bulk b (BulkPost b) := by
   have hc : bulk.allInstrs (fun i => (VG.AArch64.preserved ++ [Reg.x0,Reg.x1,Reg.x2,Reg.x5,Reg.x6]).all
-      fun r => dstOf i != some r) = true := by lit_decide
+      fun r => !clobbers i r) = true := by lit_decide
   obtain ⟨t,s,he,⟨c,hf⟩,hg⟩ := VG.AArch64.WP.gprs (functional b hp) hc (by lit_decide)
   have hh := Exec.regions he (by lit_decide)
   refine ⟨t,s,he,c,⟨hf.c_le,hf.aligned,⟨fun r hr => hg r (by simp [hr]),hh.2.2.1,hf.vcs⟩,

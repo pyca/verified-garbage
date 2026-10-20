@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Args
+public import VerifiedGarbage.Proof.MlKem.Arm.Keccak
 import VerifiedGarbage.Proof.MlKem.Arm.Sample
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: SHAKE256 through the sponge functions

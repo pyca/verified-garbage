@@ -2,12 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Env
 public import VerifiedGarbage.Proof.Framework.AArch64.StoreFrame
-public import VerifiedGarbage.Spec.Ed448.Point56
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Spec.X448.Field56
 
 /-!
 # Ed448 on AArch64: the specification's elements and the proofs'

@@ -86,6 +86,10 @@ def pcmpeqd (x : BitVec 128) : BitVec 128 :=
 #guard pcmpeqd 0x89abcdef81234567fedcba9876543211#128 == 0xffffffff00000000ffffffff00000000#128
 #guard bin .pmullw == 0x765532118000000001244568f110d780#128
 #guard bin .pmulhw == 0x00000000ff6e0000ff6e0000086910e8#128
+#guard bin .pmaddwd == 0x0000a866ff6e8000ff6e468c1952c890#128
+#guard bin .pmulhrsw == 0x00010000fedd0000fedc000110d421d2#128
+#guard bin .pcmpgtw == 0x00000000ffffffff00000000ffff0000#128
+#guard bin .packsswb == 0xffff80007fff7f7f80807f7f80807f7f#128
 #guard bin .packssdw == 0xffff80007fff7fff80007fff80007fff#128
 #guard bin .punpcklwd == 0x7ffffedcffffba981234765456783210#128
 #guard bin .punpckhwd == 0xffff89abffffcdef8000012300004567#128
@@ -99,6 +103,24 @@ def binOf (op : XBinOp) (dst src : XReg) : BitVec 128 := ((XOp.bin op dst src).e
 -- The signed products of small words, and of `-0x8000` by itself (`0x40000000`).
 #guard binOf .pmulhw .xmm3 .xmm1 == 0x0000ffff000000000000ffffffffff9d#128
 #guard binOf .pmullw .xmm3 .xmm1 == 0x00008001800000000000edccedcc5f20#128
+#guard binOf .pmaddwd .xmm3 .xmm1 == 0xffff800100008000ffffedccff9d4cec#128
+#guard binOf .pmaddwd .xmm3 .xmm3 == 0x3fff000140000001014b5a9000014d11#128
+-- The one sum that overflows: two products `-0x8000 * -0x8000` wrap to `0x80000000`.
+#guard XBinOp.eval .pmaddwd 0x80008000800080008000800080008000#128
+    0x80008000800080008000800080008000#128 == 0x80000000800000008000000080000000#128
+#guard binOf .pmulhrsw .xmm3 .xmm1 == 0x0000ffff00010000000000000000ff3b#128
+-- `-0x8000 * -0x8000` rounds to `0x8000` (bits 16:1 of `2^16 + 1`).
+#guard XBinOp.eval .pmulhrsw 0x80008000800080008000800080008000#128
+    0x80008000800080008000800080008000#128 == 0x80008000800080008000800080008000#128
+-- Signed: `0x7fff > -1 > -0x8000`, and no word is greater than itself.
+#guard binOf .pcmpgtw .xmm3 .xmm1 == 0xffffffffffff00000000ffff00000000#128
+#guard binOf .pcmpgtw .xmm1 .xmm1 == 0#128
+-- `packsswb d, e`: the words of `d` saturate (`0x7fff`, `-0x8000`, `0x1234`, `-0x124`) or
+-- not (`0`, `-1`); those of `e` (`0x7f`, `-0x80`, `0x12`, `-0x10`, `1`, `0`, `-1`, `0x42`) fit.
+#guard XBinOp.eval .packsswb d 0x007fff800012fff000000001ffff0042#128 ==
+    0x7f8012f00001ff42007fff80007fff80#128
+-- `pblendw xmm0, xmm1, 0xa5` takes words 0, 2, 5 and 7 of `xmm1`.
+#guard ((XOp.pblendw .xmm0 .xmm1 0xa5).exec s).xmm .xmm0 == 0xffffcdef80004567fedcffff76545678#128
 
 /-- `xmm1` after `op xmm1, xmm0`. -/
 def binRev (op : XBinOp) : BitVec 128 := ((XOp.bin op .xmm1 .xmm0).exec s).xmm .xmm1
@@ -321,6 +343,10 @@ def stored (v : BitVec 32) : State :=
 #guard printer.instr (.xop (.bin .pcmpeqd .xmm5 .xmm6)) == ["pcmpeqd xmm5, xmm6"]
 #guard printer.instr (.xop (.bin .pmullw .xmm7 .xmm8)) == ["pmullw xmm7, xmm8"]
 #guard printer.instr (.xop (.bin .pmulhw .xmm9 .xmm10)) == ["pmulhw xmm9, xmm10"]
+#guard printer.instr (.xop (.bin .pmaddwd .xmm9 .xmm10)) == ["pmaddwd xmm9, xmm10"]
+#guard printer.instr (.xop (.bin .pmulhrsw .xmm1 .xmm2)) == ["pmulhrsw xmm1, xmm2"]
+#guard printer.instr (.xop (.bin .pcmpgtw .xmm3 .xmm15)) == ["pcmpgtw xmm3, xmm15"]
+#guard printer.instr (.xop (.pblendw .xmm4 .xmm5 165)) == ["pblendw xmm4, xmm5, 165"]
 #guard printer.instr (.xop (.bin .packssdw .xmm11 .xmm12)) == ["packssdw xmm11, xmm12"]
 #guard printer.instr (.xop (.bin .punpcklwd .xmm13 .xmm14)) == ["punpcklwd xmm13, xmm14"]
 #guard printer.instr (.xop (.bin .punpckhwd .xmm15 .xmm0)) == ["punpckhwd xmm15, xmm0"]
@@ -350,7 +376,8 @@ def stored (v : BitVec 32) : State :=
 #guard isa.requires (.xop (.sha1rnds4 .xmm1 .xmm2 0)) == ["sha"]
 #guard [XBinOp.pand, .pandn, .paddq, .psubq, .pmuludq, .pcmpeqd].all fun op =>
   isa.requires (.xop (.bin op .xmm1 .xmm2)) == []
-#guard [XBinOp.paddw, .psubw, .psubd, .pmullw, .pmulhw, .packssdw, .punpcklwd, .punpckhwd].all
+#guard [XBinOp.paddw, .psubw, .psubd, .pmullw, .pmulhw, .packssdw, .punpcklwd, .punpckhwd,
+    .pmaddwd, .pcmpgtw].all
   fun op => isa.requires (.xop (.bin op .xmm1 .xmm2)) == []
 #guard [XShiftOp.psllq, .psrlq, .pslldq, .psrldq, .psllw, .psrlw, .psraw, .psrad].all fun op =>
   isa.requires (.xop (.shift op .xmm1 1)) == []
@@ -358,6 +385,8 @@ def stored (v : BitVec 32) : State :=
   isa.requires (.xop (.bin op .xmm1 .xmm2)) == ["aes"]
 #guard isa.requires (.xop (.aeskeygenassist .xmm1 .xmm2 1)) == ["aes"]
 #guard isa.requires (.xop (.pclmulqdq .xmm1 .xmm2 0)) == ["pclmulqdq"]
+#guard isa.requires (.xop (.bin .pmulhrsw .xmm1 .xmm2)) == ["ssse3"]
+#guard isa.requires (.xop (.pblendw .xmm1 .xmm2 0)) == ["sse4.1"]
 -- SSE (`ldmxcsr`, `stmxcsr`) and SSE2 (`lfence`) are in the x86-64 baseline.
 #guard isa.requires (.stmxcsr { base := .rsp }) == []
 #guard isa.requires (.ldmxcsr { base := .rsp }) == []

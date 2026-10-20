@@ -1,16 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrLoop
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrLoop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontRest
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Copy
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
+import VerifiedGarbage.Proof.Bignum.X86_64.Double
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrLoop
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontRest
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Copy
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Double
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # A candidate on x86-64: constant time of `montSetup`

@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86.RestTag
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesOcb.X86.Whole
 import VerifiedGarbage.Proof.Ocb.State
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.AesOcb.X86.Hash
+import VerifiedGarbage.Proof.AesOcb.X86.NonceBlock
+import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-OCB on x86: the data (`body`)

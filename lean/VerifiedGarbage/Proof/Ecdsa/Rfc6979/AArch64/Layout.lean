@@ -1,17 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.AArch64
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Deterministic ECDSA on AArch64: where everything is
@@ -23,7 +17,8 @@ the frame of `224 + e` bytes, from `B + 16`: `K` and `V` (64 bytes each), `h`
 (48 bytes, of which `q` are used), the number of candidates left, the
 pointers to `scratch`, `digest`, `d` and `out`, a word unused, and `e` more
 bytes (`HIGH`, 144 if two `V`s make a candidate: the digest for `core` and
-the candidate); then the frame holding our return address (`B + 240 + e`).
+the candidate; 64 if `hHigh`: `h`, for 64-byte scalars); then the frame
+holding our return address (`B + 240 + e`).
 `Ctx` is what holds between the frames' pushes and pops: the permissions,
 `sp`, the callee-saved registers, the return address and the pointers in the
 frames, and that memory changed only in `out`, `scratch` and the stack. Code
@@ -51,12 +46,14 @@ structure Lay (dn : Nat) (E : Impl.Ecdsa.AArch64.Cfg) where
   T : Addr
   /-- Whether two `V`s make a candidate. -/
   wide : Bool
+  /-- Whether `h` is at the frame's top. -/
+  hHigh : Bool
   /-- The bytes at the frame's top. -/
   e : Nat
-  ew : e = extra wide
+  ew : e = extra wide hHigh
 
 theorem Lay.he {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) : L.e ≤ 144 := by
-  rw [L.ew, extra]; split <;> omega
+  rw [L.ew, extra]; split <;> (try split) <;> omega
 
 namespace Lay
 
@@ -348,48 +345,48 @@ end Ctx
 
 /-- The layout of a call from `s`, with a digest of `dn` bytes, scalars of
 `q`, and two `V`s making a candidate if `wide`. -/
-def lay (dn q : Nat) (E : Impl.Ecdsa.AArch64.Cfg) (wide : Bool) (s : State) : Lay dn E :=
-  ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, s.gpr .x3, s.sp - BitVec.ofNat 64 (256 + extra wide), q, tableAddr E s.syms,
-    wide, _, rfl⟩
+def lay (dn q : Nat) (E : Impl.Ecdsa.AArch64.Cfg) (wide hHigh : Bool) (s : State) : Lay dn E :=
+  ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, s.gpr .x3, s.sp - BitVec.ofNat 64 (256 + extra wide hHigh), q, tableAddr E s.syms,
+    wide, hHigh, _, rfl⟩
 
-theorem lay_top (dn q : Nat) (E : Impl.Ecdsa.AArch64.Cfg) (wide : Bool) (s : State) :
-    (lay dn q E wide s).B + BitVec.ofNat 64 (256 + extra wide) = s.sp :=
+theorem lay_top (dn q : Nat) (E : Impl.Ecdsa.AArch64.Cfg) (wide hHigh : Bool) (s : State) :
+    (lay dn q E wide hHigh s).B + BitVec.ofNat 64 (256 + extra wide hHigh) = s.sp :=
   BitVec.sub_add_cancel _ _
 
-theorem lay_ok {E : Impl.Ecdsa.AArch64.Cfg} {I : Spec.Ecdsa.Rfc6979.Instance} {wide : Bool} {s : State}
-    (h : (rfcAArch64 E I (256 + extra wide)).pre s) :
-    (lay I.hashLen I.ecdsa.curve.len E wide s).Ok := by
+theorem lay_ok {E : Impl.Ecdsa.AArch64.Cfg} {I : Spec.Ecdsa.Rfc6979.Instance} {wide hHigh : Bool} {s : State}
+    (h : (rfcAArch64 E I (256 + extra wide hHigh)).pre s) :
+    (lay I.hashLen I.ecdsa.curve.len E wide hHigh s).Ok := by
   obtain ⟨-, -, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, hsp, -, nT, hdw⟩ := h
-  have nB : (lay I.hashLen I.ecdsa.curve.len E wide s).B.toNat + (256 + extra wide) ≤ 2 ^ 64 := by
+  have nB : (lay I.hashLen I.ecdsa.curve.len E wide hHigh s).B.toNat + (256 + extra wide hHigh) ≤ 2 ^ 64 := by
     simp only [lay]
-    rw [Offset.toNat_sub_ofNat s.sp (256 + extra wide)]
+    rw [Offset.toNat_sub_ofNat s.sp (256 + extra wide hHigh)]
     omega
   exact ⟨od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, nB, hdw _ (List.mem_cons_self ..),
     hdw _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)),
     hdw _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))), nT⟩
 
 /-- The state in which the inner frame's body starts. -/
-def entered (wide : Bool) (s : State) : State :=
-  allocated (Impl.Ecdsa.Rfc6979.AArch64.frameBytes wide) (pushed .x30 s)
+def entered (wide hHigh : Bool) (s : State) : State :=
+  allocated (Impl.Ecdsa.Rfc6979.AArch64.frameBytes wide hHigh) (pushed .x30 s)
 
-@[simp] theorem entered_rd (wide : Bool) (s : State) : (entered wide s).rd = s.rd := rfl
-@[simp] theorem entered_gpr (wide : Bool) (s : State) : (entered wide s).gpr = s.gpr := rfl
+@[simp] theorem entered_rd (wide hHigh : Bool) (s : State) : (entered wide hHigh s).rd = s.rd := rfl
+@[simp] theorem entered_gpr (wide hHigh : Bool) (s : State) : (entered wide hHigh s).gpr = s.gpr := rfl
 
-theorem entered_sp (dn q : Nat) (E : Impl.Ecdsa.AArch64.Cfg) (wide : Bool) (s : State) :
-    (entered wide s).sp = (lay dn q E wide s).B + BitVec.ofNat 64 16 := by
-  show s.sp - 16 - BitVec.ofNat 64 (224 + extra wide) = s.sp - BitVec.ofNat 64 (256 + extra wide) + BitVec.ofNat 64 16
-  cases wide <;> simp only [extra] <;> bv_omega
+theorem entered_sp (dn q : Nat) (E : Impl.Ecdsa.AArch64.Cfg) (wide hHigh : Bool) (s : State) :
+    (entered wide hHigh s).sp = (lay dn q E wide hHigh s).B + BitVec.ofNat 64 16 := by
+  show s.sp - 16 - BitVec.ofNat 64 (224 + extra wide hHigh) = s.sp - BitVec.ofNat 64 (256 + extra wide hHigh) + BitVec.ofNat 64 16
+  cases wide <;> cases hHigh <;> simp only [extra] <;> bv_omega
 
-theorem lr_slot (dn q : Nat) (E : Impl.Ecdsa.AArch64.Cfg) (wide : Bool) (s : State) :
-    s.sp - 16 = (lay dn q E wide s).B + BitVec.ofNat 64 (240 + (lay dn q E wide s).e) := by
-  show s.sp - 16 = s.sp - BitVec.ofNat 64 (256 + extra wide) + BitVec.ofNat 64 (240 + extra wide)
-  cases wide <;> simp only [extra] <;> bv_omega
+theorem lr_slot (dn q : Nat) (E : Impl.Ecdsa.AArch64.Cfg) (wide hHigh : Bool) (s : State) :
+    s.sp - 16 = (lay dn q E wide hHigh s).B + BitVec.ofNat 64 (240 + (lay dn q E wide hHigh s).e) := by
+  show s.sp - 16 = s.sp - BitVec.ofNat 64 (256 + extra wide hHigh) + BitVec.ofNat 64 (240 + extra wide hHigh)
+  cases wide <;> cases hHigh <;> simp only [extra] <;> bv_omega
 
-theorem entered_wr (dn q : Nat) (E : Impl.Ecdsa.AArch64.Cfg) (wide : Bool) (s : State) :
-    (entered wide s).wr = (lay dn q E wide s).FR :: (lay dn q E wide s).LR :: s.wr := by
-  show (⟨s.sp - 16 - BitVec.ofNat 64 (224 + extra wide), 224 + extra wide⟩ : Region) :: ⟨s.sp - 16, 16⟩ :: s.wr = _
-  rw [show s.sp - 16 - BitVec.ofNat 64 (224 + extra wide) = (lay dn q E wide s).B + BitVec.ofNat 64 16 from
-    entered_sp dn q E wide s, lr_slot dn q E wide]
+theorem entered_wr (dn q : Nat) (E : Impl.Ecdsa.AArch64.Cfg) (wide hHigh : Bool) (s : State) :
+    (entered wide hHigh s).wr = (lay dn q E wide hHigh s).FR :: (lay dn q E wide hHigh s).LR :: s.wr := by
+  show (⟨s.sp - 16 - BitVec.ofNat 64 (224 + extra wide hHigh), 224 + extra wide hHigh⟩ : Region) :: ⟨s.sp - 16, 16⟩ :: s.wr = _
+  rw [show s.sp - 16 - BitVec.ofNat 64 (224 + extra wide hHigh) = (lay dn q E wide hHigh s).B + BitVec.ofNat 64 16 from
+    entered_sp dn q E wide hHigh s, lr_slot dn q E wide hHigh]
   rfl
 
 /-- A 64-bit `write` is a `writeW`. -/
@@ -399,9 +396,9 @@ theorem write8 (m : Mem) (a : Addr) (v : BitVec 64) : m.write a 8 v = m.writeW a
 theorem read8 (m : Mem) (a : Addr) : m.read a 8 = m.readW a 64 := by
   simp only [Mem.readW, Nat.reduceDiv, BitVec.setWidth_eq]
 
-theorem entered_mem (dn q : Nat) (E : Impl.Ecdsa.AArch64.Cfg) (wide : Bool) (s : State) :
-    (entered wide s).mem =
-      s.mem.writeW ((lay dn q E wide s).B + BitVec.ofNat 64 (240 + (lay dn q E wide s).e)) (s.gpr .x30) := by
+theorem entered_mem (dn q : Nat) (E : Impl.Ecdsa.AArch64.Cfg) (wide hHigh : Bool) (s : State) :
+    (entered wide hHigh s).mem =
+      s.mem.writeW ((lay dn q E wide hHigh s).B + BitVec.ofNat 64 (240 + (lay dn q E wide hHigh s).e)) (s.gpr .x30) := by
   show s.mem.write (s.sp - 16) 8 (s.gpr .x30) = _
   rw [lr_slot dn q E wide, write8]
 
@@ -434,16 +431,16 @@ theorem four_ok (B : Addr) (m : Mem) (a b c d : BitVec 64) :
   · rw [Mem.readW_writeW_self64]
 
 /-- The arguments saved in the frame: `Ctx` holds. -/
-theorem entry_ok {E : Impl.Ecdsa.AArch64.Cfg} {I : Spec.Ecdsa.Rfc6979.Instance} {wide : Bool} {s : State}
-    (h : (rfcAArch64 E I (256 + extra wide)).pre s) :
-    WP isa (.block Impl.Ecdsa.Rfc6979.AArch64.Cfg.saveArgs) (entered wide s)
-      (Ctx (lay I.hashLen I.ecdsa.curve.len E wide s) s.gpr s.mem) := by
+theorem entry_ok {E : Impl.Ecdsa.AArch64.Cfg} {I : Spec.Ecdsa.Rfc6979.Instance} {wide hHigh : Bool} {s : State}
+    (h : (rfcAArch64 E I (256 + extra wide hHigh)).pre s) :
+    WP isa (.block Impl.Ecdsa.Rfc6979.AArch64.Cfg.saveArgs) (entered wide hHigh s)
+      (Ctx (lay I.hashLen I.ecdsa.curve.len E wide hHigh s) s.gpr s.mem) := by
   have hL := lay_ok h
   have hnB := hL.nB
   have hw : ∀ d, 16 ≤ d → d + 8 ≤ 240 →
-      InRegions (entered wide s).wr ((lay I.hashLen I.ecdsa.curve.len E wide s).B + BitVec.ofNat 64 d) 8 :=
-    fun d h₁ h₂ => ⟨(lay I.hashLen I.ecdsa.curve.len E wide s).FR,
-      by rw [entered_wr I.hashLen I.ecdsa.curve.len E wide]; simp, Offset.contains _ h₁ (by omega) (by omega)⟩
+      InRegions (entered wide hHigh s).wr ((lay I.hashLen I.ecdsa.curve.len E wide hHigh s).B + BitVec.ofNat 64 d) 8 :=
+    fun d h₁ h₂ => ⟨(lay I.hashLen I.ecdsa.curve.len E wide hHigh s).FR,
+      by rw [entered_wr I.hashLen I.ecdsa.curve.len E wide hHigh]; simp, Offset.contains _ h₁ (by omega) (by omega)⟩
   have w200 := hw 200 (by omega) (by omega)
   have w208 := hw 208 (by omega) (by omega)
   have w216 := hw 216 (by omega) (by omega)
@@ -457,12 +454,12 @@ theorem entry_ok {E : Impl.Ecdsa.AArch64.Cfg} {I : Spec.Ecdsa.Rfc6979.Instance} 
     entered_sp I.hashLen I.ecdsa.curve.len E wide,
     Offset.add_add, Nat.reduceAdd, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self, w200, w208, w216, w224,
     write8, Option.some.injEq, exists_eq_left', BitVec.add_zero, entered_gpr]
-  obtain ⟨f, k224, k216, k208, k200⟩ := four_ok (lay I.hashLen I.ecdsa.curve.len E wide s).B (entered wide s).mem
+  obtain ⟨f, k224, k216, k208, k200⟩ := four_ok (lay I.hashLen I.ecdsa.curve.len E wide hHigh s).B (entered wide hHigh s).mem
     (s.gpr .x0) (s.gpr .x1) (s.gpr .x2) (s.gpr .x3)
-  rw [entered_mem I.hashLen I.ecdsa.curve.len E wide] at f k224 k216 k208 k200
-  rw [entered_mem I.hashLen I.ecdsa.curve.len E wide]
+  rw [entered_mem I.hashLen I.ecdsa.curve.len E wide hHigh] at f k224 k216 k208 k200
+  rw [entered_mem I.hashLen I.ecdsa.curve.len E wide hHigh]
   have hT := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
-  have he := (lay I.hashLen I.ecdsa.curve.len E wide s).he
+  have he := (lay I.hashLen I.ecdsa.curve.len E wide hHigh s).he
   refine ⟨?_, ?_, rfl, ?_, k200, k208, k216, k224, ?_, ?_, rfl, hT.1⟩
   · simp only [entered_rd]; rw [h.1]; rfl
   · rw [entered_wr I.hashLen I.ecdsa.curve.len E wide, h.2.1]; rfl
@@ -472,9 +469,9 @@ theorem entry_ok {E : Impl.Ecdsa.AArch64.Cfg} {I : Spec.Ecdsa.Rfc6979.Instance} 
       simp only [List.mem_singleton] at hR; subst hR
       exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by decide)]
     exact Mem.readW_writeW_self64 _ _ _
-  · refine Frame.trans (Frame.writeW (Frame.refl _ _) (r := (lay I.hashLen I.ecdsa.curve.len E wide s).STK) (by simp) _
+  · refine Frame.trans (Frame.writeW (Frame.refl _ _) (r := (lay I.hashLen I.ecdsa.curve.len E wide hHigh s).STK) (by simp) _
       (Offset.contains_base _ (by omega) (by omega))) (Frame.sub f fun r hr => ?_)
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨(lay I.hashLen I.ecdsa.curve.len E wide s).STK, by simp, Offset.sub_base _ (by omega)⟩
+    exact ⟨(lay I.hashLen I.ecdsa.curve.len E wide hHigh s).STK, by simp, Offset.sub_base _ (by omega)⟩
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

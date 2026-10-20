@@ -22,8 +22,8 @@ registers it does not save itself (`Proof/Ecdsa/AArch64/Abi.lean`).
 
 namespace VG.AArch64
 
-/-- Whether `i` writes no register but those of `dstOf`, other than `r`. -/
-def keepsReg (r : Reg) (i : Instr) : Bool := (dstOf i).all (· != r)
+/-- Whether `i` does not write `r`. -/
+def keepsReg (r : Reg) (i : Instr) : Bool := !clobbers i r
 
 /-- Whether `i` keeps lane `l` (64 bits) of `v`: it writes another vector
 register, or another lane of `v` by `ins`. -/
@@ -82,10 +82,7 @@ theorem keepsReg_ok {r : Reg} : ∀ {is : List Instr}, is.all (keepsReg r) = tru
     ∀ {s s' : State} {t : List Leak}, execBlock isa is s = some (s', t) → s'.gpr r = s.gpr r := by
   intro is h s s' t e
   refine execBlock_keep (fun s : State => s.gpr r) (ok := fun i => keepsReg r i = true)
-    (fun hi he => exec_gpr ?_ he) (List.all_eq_true.mp h) e
-  intro hd
-  simp only [keepsReg, hd, Option.all_some, bne_self_eq_false] at hi
-  exact absurd hi (by decide)
+    (fun hi he => exec_gpr (by simpa [keepsReg] using hi) he) (List.all_eq_true.mp h) e
 
 /-- The lane `l` of `v`. -/
 abbrev laneOf (s : State) (v : VReg) (l : Nat) : BitVec 64 := (s.v v).extractLsb' (64 * l) 64
@@ -181,11 +178,8 @@ theorem restores_ok {r : Reg} : ∀ {is : List Instr}, restores r is = true →
         subst he
         simp only [laneOf, RegUpd.v_setV, ite_true]
         rw [extract_setLane64 _ _ hl hl]; simp
-      · rw [restores_ok h e₂, exec_gpr (by simp [dstOf]) he]
+      · rw [restores_ok h e₂, exec_gpr (by simp [clobbers, dstOf]) he]
     · simp only [Bool.and_eq_true] at h
-      rw [restores_ok h.2 e₂, exec_gpr ?_ he]
-      intro hd
-      simp only [keepsReg, hd, Option.all_some, bne_self_eq_false] at h
-      exact absurd h.1 (by decide)
+      rw [restores_ok h.2 e₂, exec_gpr (by simpa [keepsReg] using h.1) he]
 
 end VG.AArch64

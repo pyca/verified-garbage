@@ -1,17 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.AArch64.MulOk
-public import VerifiedGarbage.Proof.P256.EcdhJac.Extra
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Proof.P256.EcdhJac.State
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
-import VerifiedGarbage.Proof.Weierstrass.Booth
+import Mathlib.Tactic.ClearExcept
 
 @[expose] public section
 

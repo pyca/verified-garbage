@@ -1,13 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Entry
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.TCB.Arm.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.MlDsa.Arm.Message
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Layout
+import VerifiedGarbage.Proof.Framework.Sig
+import Mathlib.Tactic.Linter.Style
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.MlKem.Arm.Common
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: the preconditions and the layouts

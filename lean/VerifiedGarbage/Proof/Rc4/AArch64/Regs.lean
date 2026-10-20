@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 public import VerifiedGarbage.Impl.Rc4.AArch64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-!
@@ -37,7 +33,8 @@ theorem treg_ne : ∀ a < 16, treg a ≠ .v0 ∧ treg a ≠ .v1 ∧ treg a ≠ .
 /-- A register outside the table. -/
 def NotTable (r : VReg) : Prop := ∀ a < 16, treg a ≠ r
 
-instance (r : VReg) : Decidable (NotTable r) := inferInstanceAs (Decidable (∀ a < 16, treg a ≠ r))
+-- Given directly: `inferInstanceAs` searches for it for seconds.
+instance (r : VReg) : Decidable (NotTable r) := Nat.decidableBallLT 16 fun a _ => treg a ≠ r
 
 theorem treg_of_ge {n : Nat} (h : 16 ≤ n) : treg n = .v16 := by
   simp only [treg, List.getD_eq_getElem?_getD]

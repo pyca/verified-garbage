@@ -1,20 +1,23 @@
 module
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Crypt
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Correct
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Correct
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.List.Induction
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Correct
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitVerified
+import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
 import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-meta import Mathlib.Data.List.Induction
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Crypt
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Correct
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitVerified
+meta import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
 meta import VerifiedGarbage.Proof.Aes.KeyExp
-meta import VerifiedGarbage.Proof.Aes.SboxSpec
-meta import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+meta import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+meta import VerifiedGarbage.Proof.Aes.X86_64.Lit
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # ChaCha20-Poly1305 with the data's first bytes from `src`, x86-64: constant time

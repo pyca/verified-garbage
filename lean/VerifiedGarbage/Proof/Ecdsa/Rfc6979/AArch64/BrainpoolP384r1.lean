@@ -1,20 +1,24 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Contract
+import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Verified
+import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Lit
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Order.RelClasses
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Lit
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import Mathlib.Order.RelClasses
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 
 /-!
@@ -53,7 +57,7 @@ def brainpoolp384r1 (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (hI : Weie
   inst := Spec.Ecdsa.BrainpoolP384r1.inst
   curve := rfl
   wide := false
-  sizes := ⟨.inr rfl, .inl rfl, Proof.Ecdsa.AArch64.BrainpoolP384r1.brainpoolp384r1_nBits, by decide +kernel⟩
+  sizes := ⟨.inr (.inl rfl), .inl rfl, Proof.Ecdsa.AArch64.BrainpoolP384r1.brainpoolp384r1_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := Proof.Ecdsa.AArch64.BrainpoolP384r1.brainpoolp384r1_sh

@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.CkPhase
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkPhaseCore
 public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyTop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Impl.Rsa.AArch64.CheckKey
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # `vg_rsa_check_crt_key` on AArch64: the phases

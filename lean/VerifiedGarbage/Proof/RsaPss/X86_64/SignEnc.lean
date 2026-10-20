@@ -1,14 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Loops
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
-public import VerifiedGarbage.Proof.RsaPss.X86_64.Params
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Spec.RsaPss
+import VerifiedGarbage.Proof.RsaPss.X86_64.CtHash
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
 # RSASSA-PSS on x86-64: the blocks of the encoding

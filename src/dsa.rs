@@ -1,20 +1,27 @@
-//! DSA signing and verification of prehashed messages, with fixed-width
-//! big-endian `r || s` signatures (FIPS 186-4).
+//! DSA parameter and key generation, and signing and verification of prehashed messages,
+//! with fixed-width big-endian `r || s` signatures (FIPS 186-4).
 //!
 //! The verified operations check domain and key algebraic consistency and
 //! scalar ranges. As with this crate's RSA operations, they do not prove
 //! primality: callers must obtain domain parameters from a trusted source
-//! or validate them separately. FIPS 186-5 retains DSA for legacy verification.
+//! or validate them separately. On x86-64 and AArch64, `Parameters::generate` runs
+//! probable-prime parameter generation entirely in verified assembly. FIPS 186-5 retains DSA for legacy verification.
 //!
-//! Supported `(p, q)` encoding widths are `(128, 20)`, `(256, 28)`,
-//! `(256, 32)` and `(384, 32)` bytes. Leading-zero padding is accepted;
+//! Supported `(p, q)` encoding widths are `(128, 20)`, `(256, 20)`, `(256, 28)`,
+//! `(256, 32)` and `(384, 32)` bytes. The 2048/160 pair is a legacy
+//! interoperability extension to the FIPS 186-4 sizes. Leading-zero padding is accepted;
 //! the actual domain must have one of the supported bit lengths. Digests
 //! may have any length and are truncated to the subgroup's actual bit length.
 //! Keys own their components, so each operation's buffers are disjoint.
 //! Private keys, nonces and scratch are wiped when their owners are dropped.
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64"),
+    any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "arm"
+    ),
     feature = "alloc"
 ))]
 
@@ -27,8 +34,8 @@ use crate::arch::dsa::vg_dsa_sign;
 use crate::arch::dsa::vg_dsa_sign_adx;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dsa::{
-    VG_DSA_SIGN_RANDOM_ADX_FEATURES, VG_DSA_VERIFY_ADX_FEATURES, vg_dsa_sign_random_adx,
-    vg_dsa_verify_adx,
+    VG_DSA_GENERATE_KEY_ADX_FEATURES, VG_DSA_SIGN_RANDOM_ADX_FEATURES, VG_DSA_VERIFY_ADX_FEATURES,
+    vg_dsa_sign_random_adx, vg_dsa_verify_adx,
 };
 use crate::arch::dsa::{vg_dsa_sign_random, vg_dsa_verify};
 use crate::cpu::{Features, detected};
@@ -46,6 +53,7 @@ impl Backend {
         #[cfg(target_arch = "x86_64")]
         if _features.contains(VG_DSA_SIGN_RANDOM_ADX_FEATURES)
             && _features.contains(VG_DSA_VERIFY_ADX_FEATURES)
+            && _features.contains(VG_DSA_GENERATE_KEY_ADX_FEATURES)
         {
             return Self::Adx;
         }
@@ -66,7 +74,7 @@ impl<T: Int> Drop for Secret<T> {
 pub enum Error {
     /// A component has an unsupported or inconsistent encoding width.
     Length,
-    /// The key is inconsistent, or bounded nonce/signature retries failed.
+    /// The domain or key is inconsistent, or bounded draws or retries failed.
     InvalidKeyOrNonce,
     /// The operating system's random number generator failed.
     Randomness,
@@ -76,7 +84,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
             Self::Length => "invalid DSA component length",
-            Self::InvalidKeyOrNonce => "invalid DSA key or exhausted nonce attempts",
+            Self::InvalidKeyOrNonce => "invalid DSA domain or key, or exhausted attempts",
             Self::Randomness => "the random number generator failed",
         })
     }
@@ -98,8 +106,10 @@ impl PublicKey {
     /// Import big-endian `p`, `q`, `g` and `y`. `g` and `y` must have the
     /// same width as `p`, including any leading-zero padding.
     pub fn from_components(p: &[u8], q: &[u8], g: &[u8], y: &[u8]) -> Result<Self, Error> {
-        if !matches!((p.len(), q.len()), (128, 20) | (256, 28 | 32) | (384, 32))
-            || g.len() != p.len()
+        if !matches!(
+            (p.len(), q.len()),
+            (128, 20) | (256, 20 | 28 | 32) | (384, 32)
+        ) || g.len() != p.len()
             || y.len() != p.len()
         {
             return Err(Error::Length);
@@ -306,6 +316,12 @@ impl PrivateKey {
         result == 1
     }
 }
+
+mod keygen;
+mod parameters;
+
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+pub use parameters::Parameters;
 
 #[cfg(test)]
 #[path = "dsa/tests.rs"]

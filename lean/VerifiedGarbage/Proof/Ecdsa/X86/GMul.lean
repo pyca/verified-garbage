@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombLays
-public import VerifiedGarbage.Proof.Weierstrass.X86.Rep
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Weierstrass.X86.Rep
+import VerifiedGarbage.Proof.Weierstrass.X86.TCombJ
+import VerifiedGarbage.Proof.Ecdsa.X86.Stages
+import VerifiedGarbage.Proof.Ecdsa.X86.Lays
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 
 /-!
 # ECDSA on x86 (32-bit): `[k]G`

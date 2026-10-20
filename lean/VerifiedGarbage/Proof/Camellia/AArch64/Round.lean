@@ -2,13 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.Linear
 public import VerifiedGarbage.Proof.Camellia.AArch64.Sbox
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Camellia.AArch64.Fl
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # A round of bitsliced Camellia on AArch64
@@ -88,8 +83,8 @@ theorem round_ok {off d : Nat}
   have hcode : round off d = (keyXor off ++ inSel) ++ (Impl.Camellia.AArch64.sboxCode ++
       ((outSel ++ pLayer) ++ feistel d)) := by simp only [round, List.append_assoc]
   have hsb : ∀ is : List Instr, ∀ s₁ s₂ : State,
-      (∀ r, (is.all fun i => dstOf i != some r) = true → s₂.gpr r = s₁.gpr r) →
-      (is.all fun i => dstOf i != some sb) = true → s₂.gpr sb = s₁.gpr sb := fun _ _ _ h h' => h _ h'
+      (∀ r, (is.all fun i => !clobbers i r) = true → s₂.gpr r = s₁.gpr r) →
+      (is.all fun i => !clobbers i sb) = true → s₂.gpr sb = s₁.gpr sb := fun _ _ _ h h' => h _ h'
   -- The subkey XOR and input selection.
   let W₁ : Nat → BitVec 64 := fun i =>
     if i < 8 then Qs s i else if i < 24 then keyW s (i - 8) else slotW s (d1Slot + (i - 24))
@@ -229,8 +224,8 @@ theorem round_ok {off d : Nat}
       simp only [layerCfg] at this
       rw [slotW, b₄, this, hfe j hj p hp, Bool.xor_comm]
   have keep_any : ∀ r, r ∉ layerWrites → ∀ is : List Instr,
-      (layerKeep.all fun r => is.all fun i => dstOf i != some r) = true →
-      (is.all fun i => dstOf i != some r) = true := fun r hr is h =>
+      (layerKeep.all fun r => is.all fun i => !clobbers i r) = true →
+      (is.all fun i => !clobbers i r) = true := fun r hr is h =>
     List.all_eq_true.mp h r (not_layerWrites r hr)
   refine ⟨s₄, ?_, hD, hS, ?_, ?_, by rw [rd₄, rd₃, rd₂, rd₁], by rw [wr₄, wr₃, wr₂, wr₁],
     by rw [sp₄, sp₃, sp₂, sp₁], ?_, ?_⟩

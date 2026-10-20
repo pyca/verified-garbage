@@ -1,9 +1,44 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.AesGcm.X86.Frame
 public import VerifiedGarbage.Proof.AesGcm.X86.GhashImpls
 public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
+public import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
+public import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
+public import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
+public import VerifiedGarbage.Proof.AesGcm.X86.Flush
+public import VerifiedGarbage.Proof.AesGcm.X86.Gather.CT
+public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Fn
+public import VerifiedGarbage.Proof.AesGcm.X86.Init
+public import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+public import VerifiedGarbage.Proof.Gcm.SealGather
+import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
+import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
+import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
+import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
+import VerifiedGarbage.Proof.AesGcm.X86.Flush
+import VerifiedGarbage.Proof.AesGcm.X86.Gather.CT
+import VerifiedGarbage.Proof.AesGcm.X86.Gather.Fn
+import VerifiedGarbage.Proof.AesGcm.X86.Init
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import VerifiedGarbage.Proof.Gcm.SealGather
 
 /-!
 # AES-GCM (NIST SP 800-38D) on x86
@@ -46,95 +81,77 @@ def callNote (v : GcmImpl) : String :=
 
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
-  { Spec.Gcm.initApi with
-    name := Spec.Gcm.initApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Gcm.initApi.doc (notes := [callNote v])
+  Spec.Gcm.initApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [callNote v]
     code := Impl.StackScratch.X86.withStackScratch 2580 3 (Impl.AesGcm.X86.init v.callees)
-    contract := Spec.Gcm.initContract X86.abi 2608
     stack := 2608
     verified := init_framed v
-    spSafe := withStackScratch_spSafe (by decide) (init_spSafe v)
+    spSafe := withStackScratch_spSafe (init_spSafe v)
     features := (v.ctr.features) },
-  { Spec.Gcm.streamAadApi with
-    name := Spec.Gcm.streamAadApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Gcm.streamAadApi.doc (notes := [callNote v])
+  Spec.Gcm.streamAadApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [callNote v]
     code := Impl.StackScratch.X86.withStackScratch 2592 6 (Impl.AesGcm.X86.streamAad v.callees)
-    contract := Spec.Gcm.streamAadContract X86.abi 2616
     stack := 2616
     verified := streamAad_framed v
-    spSafe := withStackScratch_spSafe (by decide) (streamAad_spSafe v)
+    spSafe := withStackScratch_spSafe (streamAad_spSafe v)
     features := v.gh.features },
-  { Spec.Gcm.streamInitApi with
-    name := Spec.Gcm.streamInitApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Gcm.streamInitApi.doc (notes := [callNote v])
+  Spec.Gcm.streamInitApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [callNote v]
     code := Impl.StackScratch.X86.withStackScratch 2584 4 (Impl.AesGcm.X86.streamInit v.callees)
-    contract := Spec.Gcm.streamInitContract X86.abi 2608
     stack := 2608
     verified := streamInit_framed v
-    spSafe := withStackScratch_spSafe (by decide) (streamInit_spSafe v)
+    spSafe := withStackScratch_spSafe (streamInit_spSafe v)
     features := v.gh.features },
-  { Spec.Gcm.streamEncryptApi with
-    name := Spec.Gcm.streamEncryptApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Gcm.streamEncryptApi.doc (notes := [callNote v])
+  Spec.Gcm.streamEncryptApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [callNote v]
     code := Impl.StackScratch.X86.withStackScratch 2604 9 (Impl.AesGcm.X86.streamEncrypt v.callees)
-    contract := Spec.Gcm.streamEncryptContract X86.abi 2632
     stack := 2632
     verified := streamEncrypt_framed v
-    spSafe := withStackScratch_spSafe (by decide) (streamEncrypt_spSafe v)
+    spSafe := withStackScratch_spSafe (streamEncrypt_spSafe v)
     features := v.features },
-  { Spec.Gcm.streamDecryptApi with
-    name := Spec.Gcm.streamDecryptApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Gcm.streamDecryptApi.doc (notes := [callNote v])
+  Spec.Gcm.streamDecryptApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [callNote v]
     code := Impl.StackScratch.X86.withStackScratch 2604 9 (Impl.AesGcm.X86.streamDecrypt v.callees)
-    contract := Spec.Gcm.streamDecryptContract X86.abi 2632
     stack := 2632
     verified := streamDecrypt_framed v
-    spSafe := withStackScratch_spSafe (by decide) (streamDecrypt_spSafe v)
+    spSafe := withStackScratch_spSafe (streamDecrypt_spSafe v)
     features := v.features },
-  { Spec.Gcm.streamFinishApi with
-    name := Spec.Gcm.streamFinishApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Gcm.streamFinishApi.doc (notes := [callNote v])
+  Spec.Gcm.streamFinishApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [callNote v]
     code := Impl.StackScratch.X86.withStackScratch 2600 8 (Impl.AesGcm.X86.streamFinish v.callees)
-    contract := Spec.Gcm.streamFinishContract X86.abi 2628
     stack := 2628
     verified := streamFinish_framed v
-    spSafe := withStackScratch_spSafe (by decide) (streamFinish_spSafe v)
+    spSafe := withStackScratch_spSafe (streamFinish_spSafe v)
     features := v.features },
-  { Spec.Gcm.streamVerifyApi with
-    name := Spec.Gcm.streamVerifyApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Gcm.streamVerifyApi.doc (notes := [callNote v])
+  Spec.Gcm.streamVerifyApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [callNote v]
     code := Impl.StackScratch.X86.withStackScratch 2604 9 (Impl.AesGcm.X86.streamVerify v.callees)
-    contract := Spec.Gcm.streamVerifyContract X86.abi 2632
     stack := 2632
     verified := streamVerify_framed v
-    spSafe := withStackScratch_spSafe (by decide) (streamVerify_spSafe v)
+    spSafe := withStackScratch_spSafe (streamVerify_spSafe v)
     features := v.features },
-  { Spec.Gcm.sealApi with
-    name := Spec.Gcm.sealApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Gcm.sealApi.doc (notes := [callNote v])
+  Spec.Gcm.sealApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [callNote v]
     code := Impl.StackScratch.X86.withStackScratch 2604 9 (Impl.AesGcm.X86.«seal» v.callees)
-    contract := Spec.Gcm.sealContract X86.abi 2632
     stack := 2632
     verified := seal_framed v
-    spSafe := withStackScratch_spSafe (by decide) (seal_spSafe v)
+    spSafe := withStackScratch_spSafe (seal_spSafe v)
     features := v.features },
-  { Spec.Gcm.openApi with
-    name := Spec.Gcm.openApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Gcm.openApi.doc (notes := [callNote v])
+  Spec.Gcm.openApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [callNote v]
     code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesGcm.X86.«open» v.callees)
-    contract := Spec.Gcm.openContract X86.abi 2636
     stack := 2636
     verified := open_framed v
-    spSafe := withStackScratch_spSafe (by decide) (open_spSafe v)
+    spSafe := withStackScratch_spSafe (open_spSafe v)
     features := v.features }]
 
 /-- How `seal_gather` is built. -/
@@ -144,12 +161,10 @@ def gatherNote (fn : String) : String :=
 
 /-- `vg_aes_gcm_seal_gather`, calling the instance of `vg_aes_gcm_seal` of the implementations `v`. -/
 def artifactsGather (v : GcmImpl) : List Artifact := [
-  { Spec.Gcm.sealGatherApi with
-    name := Spec.Gcm.sealGatherApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Gcm.sealGatherApi.doc (notes := [gatherNote (Gather.sealFn v).name])
+  Spec.Gcm.sealGatherApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [gatherNote (Gather.sealFn v).name]
     code := Impl.AesGcm.X86.SealGather.sealGather (Gather.sealFn v).name (Gather.sealFn v).code
-    contract := Spec.Gcm.sealGatherContract X86.abi 2684
     stack := 2684
     verified := Gather.sealGather_verified (Gather.sealFn v)
     spSafe := Gather.sealGather_spSafe v

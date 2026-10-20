@@ -1,15 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CTSetup
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+import VerifiedGarbage.Proof.Bignum.X86_64.Valid
+import VerifiedGarbage.Proof.Bignum.X86_64.Store
+import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTSetup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Valid
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Store
+meta import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
 # `vg_rsa_public` on x86-64: constant time but for `n` and `e`

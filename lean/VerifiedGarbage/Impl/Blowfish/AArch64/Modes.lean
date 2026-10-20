@@ -1,17 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Blowfish.AArch64
-public import VerifiedGarbage.Impl.Modes.AArch64.Cbc
-public import VerifiedGarbage.Impl.Modes.AArch64.CbcEnc
-public import VerifiedGarbage.Impl.Modes.AArch64.Fb
+public import VerifiedGarbage.Impl.Modes.AArch64.CbcChained
 
 /-!
 # Blowfish-CBC, -OFB and -CFB64 on AArch64
 
-`cbcEncrypt`, `cbcDecrypt`, `ofb`, `cfbEncrypt` and `cfbDecrypt`
+`cbcEncryptChained`, `cbcDecryptChained`, `ofb`, `cfbEncrypt` and `cfbDecrypt`
 (schedule = x0, iv = x1, data = x2, n = x3, scratch = x4): the modes'
-generic CBC, OFB and CFB (`Impl/Modes/AArch64/Cbc.lean`, `CbcEnc.lean`,
-`Fb.lean`) over `vg_blowfish_ecb_{en,de}crypt`'s batch of sixteen blocks
+generic CBC that updates the chaining value, OFB and CFB
+(`Impl/Modes/AArch64/CbcChained.lean`, `Fb.lean`) over `vg_blowfish_ecb_{en,de}crypt`'s batch of sixteen blocks
 (`batch`), with the working space in the scratch buffer, which the artifact
 allocates on the stack. CBC decryption deciphers sixteen blocks at a time;
 the other modes encipher one block per batch, of which the other fifteen
@@ -26,7 +24,7 @@ runs it. The batch writes `x5`–`x7` and most vector registers, `v8`–`v15`
 among them, whose low halves the calling convention preserves: `crypt` keeps them in `x8`–`x15`, which the batch does not write,
 and puts them back (`dup`), so that every run of `crypt` keeps them. It
 keeps `x23` and `x24`, which carry the data's address and the blocks left,
-and `x25`, where the feedback modes keep the IV's address.
+and `x25`, where CBC encryption and the feedback modes keep the IV's address.
 -/
 
 @[expose] public section
@@ -80,11 +78,11 @@ def dirCore (up : Bool) : Impl.Modes.AArch64.Core where
 /-- The registers of the arguments. -/
 def modeRegs : Impl.Modes.AArch64.CtrRegs := ⟨.x1, .x2, .x3, .x4⟩
 
-/-- `vg_blowfish_cbc_encrypt`. -/
-def cbcEncrypt : Prog isa := (dirCore true).cbcEncrypt modeRegs
+/-- `vg_blowfish_cbc_encrypt_chained`. -/
+def cbcEncryptChained : Prog isa := (dirCore true).cbcEncryptChained modeRegs .x25
 
-/-- `vg_blowfish_cbc_decrypt`. -/
-def cbcDecrypt : Prog isa := (dirCore false).cbcDecrypt modeRegs
+/-- `vg_blowfish_cbc_decrypt_chained`. -/
+def cbcDecryptChained : Prog isa := (dirCore false).cbcDecryptChained modeRegs
 
 /-- `vg_blowfish_ofb`. -/
 def ofb : Prog isa := (dirCore true).fb .ofb modeRegs .x25

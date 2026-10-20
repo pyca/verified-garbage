@@ -1,14 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.Arm.FbVerified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Blowfish.Arm.Run
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Proof.Framework.TaintSum
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
-import VerifiedGarbage.Spec.Rc4
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Blowfish-CFB128 artifacts on baseline ARMv7 -/
 
@@ -23,21 +16,15 @@ def note : String :=
   stack, zeroed on return."
 
 def artifacts : List Artifact := [
-  { Spec.Blowfish.cfbEncryptApi with
-    target := Arm.target
-    doc := Spec.Blowfish.cfbEncryptApi.doc (notes := [note])
+  Spec.Blowfish.cfbEncryptApi.artifact Arm.target {
+    notes := [note]
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cfbEncrypt
-    contract := Spec.Blowfish.cfbEncryptContract Arm.abi 320
     stack := 320
-    verified := Proof.Blowfish.Arm.cfbEncrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Blowfish.cfbDecryptApi with
-    target := Arm.target
-    doc := Spec.Blowfish.cfbDecryptApi.doc (notes := [note])
+    verified := Proof.Blowfish.Arm.cfbEncrypt_framed },
+  Spec.Blowfish.cfbDecryptApi.artifact Arm.target {
+    notes := [note]
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cfbDecrypt
-    contract := Spec.Blowfish.cfbDecryptContract Arm.abi 320
     stack := 320
-    verified := Proof.Blowfish.Arm.cfbDecrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Blowfish.Arm.cfbDecrypt_framed }]
 
 end VG.Artifacts.BlowfishCfb.Arm

@@ -1,19 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Loop
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Loop
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Loop
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Contracts
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Stream
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Loop
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Contracts
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Stream
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_simple_bit_pack`

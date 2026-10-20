@@ -3,11 +3,8 @@ module
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Setup
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Finish
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Inv
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
 
 /-!
 # X448 of the base point on AArch64: `Y² / X²`, encoded

@@ -1,14 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMul
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMul
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WindowTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.PrepTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.PubNaf
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points
+import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 
 /-!
 # Timing of verification with `[v]Q` by the public NAF
@@ -73,10 +72,12 @@ theorem NafWinPublic.fields {base : Addr} {P : Point c.C} {k : Nat} {s t : State
 
 /-- The recoding of `v` and `[v]Q` use only the public `v` and `Q`. -/
 theorem pubNafMul_relCT (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) (hC : Law c.C)
+    (hO : PrimeOrder c.C) (hn17 : 17 ≤ c.C.n)
     (hprep : PubNaf.PrepChecks (winQ c) (c.sl V)) (hwin : PubNaf.WindowChecks (winQ c))
-    {base : Addr} {P : Point c.C} {k : Nat} (hP : onCurve c.C P = true) :
+    {base : Addr} {dd : Option (Prog isa)} (hD : PubNaf.NafDblOk (winQ c) c.C base size dd)
+    (hT : PubNaf.NafDblCT dd) {P : Point c.C} {k : Nat} (hP : onCurve c.C P = true) :
     RelCT isa (NafWinPublic c base P k)
-      (.seq (PubNaf.prep (winQ c) (c.sl V)) (PubNaf.window (winQ c)))
+      (.seq (PubNaf.prep (winQ c) (c.sl V)) (PubNaf.window (winQ c) dd))
       (AArch64.Taint.Agree (Taint.ofRegs [.x0])) := by
   have h7 := hc.n10
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by have := hc.p_ge; omega_arith)
@@ -92,10 +93,10 @@ theorem pubNafMul_relCT (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) (hC :
     (sl_le c h7 (i := V) (by decide)) (sl_mod8 c _) (by omega_arith)
     (by show c.sl WB + (64 * c.n + 1) ≤ size; omega_arith) hprep _ _ _ _ _ _
     ⟨hp.left.scr, hp.right.scr, hp.sp, hp.left.scalar.trans hp.right.scalar.symm⟩ ps pt).1
-  obtain ⟨_, _, xs, ss, ms, Fs, vs, sps, -, -, -, -⟩ :=
+  obtain ⟨_, _, xs, ss, ms, Fs, vs, sps, -, -, -, -, zs⟩ :=
     pubNafPrep_ok hc hn6 hC hp.left.scr fs hp.left.px hp.left.py hp.left.rep
   obtain ⟨_, rfl⟩ := Exec.det ps xs
-  obtain ⟨_, _, xt, st, mt, Ft, vt, spt, -, -, -, -⟩ :=
+  obtain ⟨_, _, xt, st, mt, Ft, vt, spt, -, -, -, -, -⟩ :=
     pubNafPrep_ok hc hn6 hC hp.right.scr ft hp.right.px hp.right.py hp.right.rep
   obtain ⟨_, rfl⟩ := Exec.det pt xt
   rw [hp.left.scalar] at Fs
@@ -111,7 +112,7 @@ theorem pubNafMul_relCT (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) (hC :
     rw [← hp.left.scalar]; exact wordsVal_lt _ _ _ _
   obtain ⟨hw, post⟩ := PubNaf.window_relCT (nafLayQ hc hn4 hn6) (unitMod_pow_two hc.p_odd (64 * c.n))
     hC hc.am3 hc.p_lt (hmont 1) (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl)
-    hwin hP hk _ _ _ _ _ _ ⟨pair, ⟨ss, ms, Fs⟩, ⟨st, mt, Ft⟩⟩ ws wt
+    hwin hO hn17 hP hk zs hD hT _ _ _ _ _ _ ⟨pair, ⟨ss, ms, Fs⟩, ⟨st, mt, Ft⟩⟩ ws wt
   exact ⟨by rw [he, hw], post⟩
 
 /-- What the comb and `save` leave for the recoding of `v`. -/
@@ -161,20 +162,20 @@ theorem combSave_ok (hc : CfgOk c) (hC : Law c.C)
     eqv (by decide) (by decide), kd.sp.trans kb.sp⟩
 
 /-- The recoding of `v` and `[v]Q`. -/
-def pubNafVariable (c : Cfg) : Prog isa :=
-  .seq (PubNaf.prep (winQ c) (c.sl V)) (PubNaf.window (winQ c))
+def pubNafVariable (c : Cfg) (dd : Option (Prog isa)) : Prog isa :=
+  .seq (PubNaf.prep (winQ c) (c.sl V)) (PubNaf.window (winQ c) dd)
 
 /-- The sum and the comparison. -/
 def pubNafTail (c : Cfg) : Prog isa :=
   .seq (Impl.Ecdsa.Verify.AArch64.Cfg.sum c) (Impl.Ecdsa.Verify.AArch64.Cfg.tail c)
 
 /-- Cut the public comb and the public NAF out of the verifier's trace. -/
-theorem pubNafVerify_cut {s s' : State} {t : List Leak}
-    (he : Exec isa (Impl.Ecdsa.Verify.AArch64.Cfg.pubNafVerify c) s t s') :
+theorem pubNafVerify_cut {dd : Option (Prog isa)} {s s' : State} {t : List Leak}
+    (he : Exec isa (Impl.Ecdsa.Verify.AArch64.Cfg.pubNafVerify c dd) s t s') :
     ∃ a b d e tp tc ts tw tf, Exec isa (verifyPrefix c) s tp a ∧
       Exec isa (TCombCfg.comb c.combCfg true) a tc b ∧
       Exec isa (.block (Impl.Ecdsa.Verify.AArch64.Cfg.save c)) b ts d ∧
-      Exec isa (pubNafVariable c) d tw e ∧ Exec isa (pubNafTail c) e tf s' ∧
+      Exec isa (pubNafVariable c dd) d tw e ∧ Exec isa (pubNafTail c) e tf s' ∧
       t = tp ++ tc ++ ts ++ tw ++ tf := by
   cases he with
   | seq e0 h => cases h with
@@ -212,8 +213,11 @@ structure PubNafVerifyChecks (c : Cfg) : Prop where
 lookups on the public `v` and key: the verifier leaks nothing more than the
 contract's public inputs. -/
 theorem pubNafVerify_public_ct (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) (hC : Law c.C)
-    (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start) (checks : PubNafVerifyChecks c) :
-    ConstantTime isa (VPre c) (JacPublic c) (Impl.Ecdsa.Verify.AArch64.Cfg.pubNafVerify c) := by
+    (hO : PrimeOrder c.C) (hn17 : 17 ≤ c.C.n)
+    (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start) (checks : PubNafVerifyChecks c)
+    {dd : Option (Prog isa)} (hD : ∀ base, PubNaf.NafDblOk (winQ c) c.C base size dd)
+    (hDT : PubNaf.NafDblCT dd) :
+    ConstantTime isa (VPre c) (JacPublic c) (Impl.Ecdsa.Verify.AArch64.Cfg.pubNafVerify c dd) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
   obtain ⟨a₁, b₁, d₁, f₁, tp₁, tc₁, ts₁, tw₁, tf₁, ep₁, ec₁, es₁, ew₁, ef₁, et₁⟩ := pubNafVerify_cut e₁
   obtain ⟨a₂, b₂, d₂, f₂, tp₂, tc₂, ts₂, tw₂, tf₂, ep₂, ec₂, es₂, ew₂, ef₂, et₂⟩ := pubNafVerify_cut e₂
@@ -266,7 +270,7 @@ theorem pubNafVerify_public_ct (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6
       change Rep _ _ _ _ (peerPt c _ _ _)
       rw [pub.peerPoint]; exact ms₂.peer_rep hc hC
     · exact vs₂.v.trans ((mid_publicV ms₂).trans pub.v.symm)
-  obtain ⟨hwTrace, tailpub⟩ := pubNafMul_relCT hc hn4 hn6 hC checks.prep checks.window hp
+  obtain ⟨hwTrace, tailpub⟩ := pubNafMul_relCT hc hn4 hn6 hC hO hn17 checks.prep checks.window (hD _) hDT hp
     _ _ _ _ _ _ wins ew₁ ew₂
   have hfTrace := checks.tail _ _ _ _ _ _ trivial trivial tailpub ef₁ ef₂
   rw [et₁, et₂, ht, hh.1, hsTrace, hwTrace, hfTrace]

@@ -1,13 +1,15 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalMemory
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstMemory
+public import VerifiedGarbage.Spec.MlDsa.PairedResponse
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZStoredField
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintSpec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZStoredField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintSpec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPassOutput
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCoordinates
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRawField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
 
 @[expose] public section
 

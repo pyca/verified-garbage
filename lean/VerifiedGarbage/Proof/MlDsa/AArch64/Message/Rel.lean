@@ -1,17 +1,20 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Args
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallResident
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCorrect
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
+import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-!
 # ML-DSA on AArch64, `sign_message` and `verify_message`: two runs
@@ -38,7 +41,7 @@ open VG.Proof.MlKem.AArch64 (Only)
 pointer, which it keeps. -/
 def XOnly (i : Instr) : Prop :=
   (∀ s₁ s₂ : State, s₁.gpr .x28 = s₂.gpr .x28 → s₁.sp = s₂.sp → isa.addrs i s₁ = isa.addrs i s₂) ∧
-    dstOf i ≠ some .x28
+    clobbers i .x28 = false
 
 theorem execBlock_x28_tr : ∀ {is : List Instr}, (∀ i ∈ is, XOnly i) →
     ∀ {s₁ s₂ s₁' s₂' : State} {t₁ t₂ : List Leak}, s₁.gpr .x28 = s₂.gpr .x28 → s₁.sp = s₂.sp →
@@ -72,7 +75,7 @@ theorem arg_xOnly (d : Reg) (hd : d ≠ .x28) (a : Arg) : ∀ i ∈ a.mov d, XOn
   intro i hi
   cases a <;> simp only [Arg.mov, List.mem_cons, List.not_mem_nil, or_false] at hi <;>
     rcases hi with rfl | rfl <;>
-    exact ⟨fun s₁ s₂ h _ => by simp [addrs, h], by simpa [dstOf] using hd⟩
+    exact ⟨fun s₁ s₂ h _ => by simp [addrs, h], by simpa [clobbers, dstOf] using hd⟩
 
 theorem setArgs_xOnly {as : List (Reg × Arg)} (h : argsOk as = true) : ∀ i ∈ setArgs as, XOnly i := by
   induction as with

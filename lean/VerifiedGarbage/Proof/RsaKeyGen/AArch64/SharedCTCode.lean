@@ -1,16 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTCode
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedCTFront
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
 
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Code
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Code
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 
 /-! # Constant time of the RSA candidate calling shared Miller–Rabin -/
 

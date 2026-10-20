@@ -1,13 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.RandomSourcePrepare
-public import VerifiedGarbage.Proof.Argon2.X86_64.DependentWord
+public import VerifiedGarbage.Proof.Argon2.FillStep
+import VerifiedGarbage.Proof.Argon2.X86_64.DependentWord
 import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelStable
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Argon2.X86_64.DependentWordState`. -/
 

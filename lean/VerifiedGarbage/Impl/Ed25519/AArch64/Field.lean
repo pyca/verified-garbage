@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Word
-public import VerifiedGarbage.Spec.Ed25519
+public import VerifiedGarbage.Spec.X25519
 
 /-! Extended Edwards formulas on the four-word field representation.
 Slots 0–21 occupy bytes 64–767 of the eight-KiB workspace. -/
@@ -43,7 +43,37 @@ def FieldOp.code : FieldOp → List Instr
   | .add o a b => fieldAdd (offset o) (offset a) (offset b)
   | .sub o a b => fieldSub (offset o) (offset a) (offset b)
 
-def fieldCode (ops : List FieldOp) : List Instr := ops.flatMap FieldOp.code
+/-- The slot `op` writes. -/
+def FieldOp.out : FieldOp → Slot
+  | .copy o _ | .const o _ | .mul o _ _ | .sqr o _ | .add o _ _ | .sub o _ _ => o
+
+/-- The slots holding values below `2²⁵⁵ + 2¹³⁶` after `op`, if `S` did before
+it: products and squares (`reduceWide` stores them below `2²⁵⁵ + 2¹³⁵`),
+constants, and copies of such slots. -/
+def FieldOp.small (op : FieldOp) (S : Slot → Bool) : Slot → Bool :=
+  match op with
+  | .copy o a => fun i => if i = o then S a else S i
+  | .const o _ | .mul o _ _ | .sqr o _ => fun i => if i = o then true else S i
+  | .add o _ _ | .sub o _ _ => fun i => if i = o then false else S i
+
+/-- `op`, adding or subtracting with one fold of the carry when the slots `S`
+hold small values: both operands of an addition (their sum is below
+`2²⁵⁷ − 38`), the subtrahend of a subtraction (below `2²⁵⁶ − 38`). -/
+def FieldOp.codeS (S : Slot → Bool) : FieldOp → List Instr
+  | .add o a b => if S a && S b then fieldAdd1 (offset o) (offset a) (offset b)
+      else fieldAdd (offset o) (offset a) (offset b)
+  | .sub o a b => if S b then fieldSub1 (offset o) (offset a) (offset b)
+      else fieldSub (offset o) (offset a) (offset b)
+  | op => op.code
+
+/-- `ops`, with the slots `S` small before them. -/
+def fieldCodeFrom : (Slot → Bool) → List FieldOp → List Instr
+  | _, [] => []
+  | S, op :: ops => op.codeS S ++ fieldCodeFrom (op.small S) ops
+
+/-- `ops`: an addition or subtraction of values its earlier operations
+multiplied, squared or set folds the carry once (`FieldOp.codeS`). -/
+def fieldCode (ops : List FieldOp) : List Instr := fieldCodeFrom (fun _ => false) ops
 
 /-- Add the points in slots 0–3 and 4–7 into slots 0–3. The coordinates
 are X,Y,Z,T. Slot 16 holds d; slots 8–15 are temporary. Both points are

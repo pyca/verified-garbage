@@ -1,12 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarIO
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.X448.Radix16
 
-public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
-public import VerifiedGarbage.Proof.X448.Arm.MulLoop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X448.Arm.MulLoop
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.X448.Arm.Init
+import VerifiedGarbage.Proof.X448.Arm.RowPass
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Ed448 scalar multiply-add on ARMv7

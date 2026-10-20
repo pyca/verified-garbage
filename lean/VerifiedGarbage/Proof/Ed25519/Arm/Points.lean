@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.FieldMemory
-public import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Ed25519.Arm.Point16
+public import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
+import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Exact extended-coordinate operations, by calls of the functions of point
 arithmetic, and the slots they preserve. -/

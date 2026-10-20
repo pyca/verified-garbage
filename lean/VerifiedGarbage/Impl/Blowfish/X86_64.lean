@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Spec.Blowfish
 public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.Impl.Blowfish.Table
 

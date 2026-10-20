@@ -1,13 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyChecks
 
-public import VerifiedGarbage.Proof.Ed448.X86.VerifyDecodeY
 import VerifiedGarbage.Proof.Ed448.X86.BaseEncode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.X448.X86.Freeze
+import VerifiedGarbage.Proof.X448.X86.Copy
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): the sign of a decoded point

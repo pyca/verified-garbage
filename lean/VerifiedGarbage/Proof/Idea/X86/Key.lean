@@ -1,27 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.X86.Lit
-meta import VerifiedGarbage.Proof.Idea.X86.Lit
 import VerifiedGarbage.Proof.Idea.X86.Round
-meta import VerifiedGarbage.Proof.Idea.X86.Round
 import VerifiedGarbage.Proof.Idea.KeyBits32
-meta import VerifiedGarbage.Proof.Idea.KeyBits32
 public import VerifiedGarbage.Proof.Framework.X86.Linear
-meta import VerifiedGarbage.Proof.Framework.X86.Linear
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Idea.Contract
-meta import VerifiedGarbage.Spec.Idea.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Idea.KeyLit32
-meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Idea.KeyBits
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Idea.X86.Lit
+public import VerifiedGarbage.Impl.Idea.X86
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Idea.X86.Round
+meta import VerifiedGarbage.Proof.Idea.KeyBits32
+meta import VerifiedGarbage.Proof.Framework.X86.Linear
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Spec.Idea.Contract
 meta import VerifiedGarbage.Proof.Idea.KeyLit32
+meta import VerifiedGarbage.Proof.Idea.KeyBits
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Idea.X86.Lit
+meta import VerifiedGarbage.Impl.Idea.X86
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # IDEA key expansion on x86 (32-bit)

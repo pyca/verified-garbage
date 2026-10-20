@@ -1,13 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The ABI of the curve functions on AArch64
@@ -44,28 +39,20 @@ def topAll (p : Instr → Bool) : Prog isa → Bool
 /-- Whether no instruction outside the functions `c` calls writes a register
 of `untouched`. -/
 abbrev KeepsUntouched (c : Prog isa) : Prop :=
-  topAll (fun i => (dstOf i).all fun r => !untouched.contains r) c = true
+  topAll (fun i => (dsts i).all fun r => !untouched.contains r) c = true
 
 /-- Whether every function `c` calls keeps the registers of `untouched`:
 code none of whose instructions writes them (checked first, in one pass over
 the code), straight-line code that restores them (`restores`), or code that
 keeps each of them. -/
 abbrev CallsKeep (c : Prog isa) : Prop :=
-  (c.calls.all fun nb => nb.2.allInstrs (fun i => (dstOf i).all fun r => !untouched.contains r) ||
+  (c.calls.all fun nb => nb.2.allInstrs (fun i => (dsts i).all fun r => !untouched.contains r) ||
     (((straight nb.2).any fun is => untouched.all fun r => restores r is) ||
       untouched.all fun r => nb.2.allInstrs (keepsReg r))) = true
 
 theorem keepsReg_of_untouched {i : Instr} {r : Reg} (hr : r ∈ untouched)
-    (h : ((dstOf i).all fun r => !untouched.contains r) = true) : keepsReg r i = true := by
-  unfold keepsReg
-  cases hd : dstOf i with
-  | none => rfl
-  | some d =>
-    rw [hd] at h
-    simp only [Option.all_some, Bool.not_eq_true', List.contains_eq_mem, decide_eq_false_iff_not] at h
-    simp only [Option.all_some, bne_iff_ne, ne_eq]
-    rintro rfl
-    exact h hr
+    (h : ((dsts i).all fun r => !untouched.contains r) = true) : keepsReg r i = true := by
+  simpa [keepsReg] using clobbers_eq_false_of_all h (by simp only [List.contains_iff_mem.mpr hr, Bool.not_true])
 
 /-- A register that no instruction outside the functions `c` calls writes,
 and that those functions keep, is kept. -/
@@ -76,7 +63,7 @@ theorem gpr_top {r : Reg} (hr : r ∉ linkRegs) {c : Prog isa} {s s' : State} {t
   induction h with
   | block h =>
     exact execBlock_keep (fun s : State => s.gpr r) (ok := fun i => keepsReg r i = true)
-      (fun hi he => exec_gpr (fun hd => by simp [keepsReg, hd] at hi) he)
+      (fun hi he => exec_gpr (by simpa [keepsReg] using hi) he)
       (List.all_eq_true.mp (by simpa only [topAll] using hc)) h
   | seq _ _ ih₁ ih₂ =>
     simp only [topAll, Bool.and_eq_true] at hc
@@ -98,14 +85,14 @@ theorem gpr_top {r : Reg} (hr : r ∉ linkRegs) {c : Prog isa} {s s' : State} {t
     · obtain ⟨is, his, hres⟩ := (Option.any_eq_true _ _).mp hb
       obtain ⟨_, eb⟩ := straight_exec his e
       rw [ret_eq hr', restores_ok hres eb, (call_eq hc₁).2.2.2.2 r hr]
-    · rw [ret_eq hr', Exec.gpr (fun i hi hd => by
+    · rw [ret_eq hr', Exec.gpr (fun i hi => by
           have := List.all_eq_true.mp ((Code.allInstrs_eq _ _) ▸ hb) i hi
-          simp [keepsReg, hd] at this) e (.inr hr), (call_eq hc₁).2.2.2.2 r hr]
+          simpa [keepsReg] using this) e (.inr hr), (call_eq hc₁).2.2.2.2 r hr]
   | frame hp _ hq ih =>
     simp only [topAll, Bool.and_eq_true] at hc
     simp only [Code.calls] at hb
     obtain ⟨-, -, -, hg, -⟩ := push_eq hp
-    rw [(pop_eq hq).2.2.2.1 r (fun hd => by simp [keepsReg, hd] at hc), ih hc.1.2 hb, hg]
+    rw [(pop_eq hq).2.2.2.1 r (dstOf_ne_of_clobbers (by simpa [keepsReg] using hc.2)), ih hc.1.2 hb, hg]
 
 /-- A run that writes no register of `untouched` outside the functions it
 calls, which keep them, keeps them. -/

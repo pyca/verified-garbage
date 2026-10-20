@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Point64.Verified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Mont.Mod
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Ed25519's point doubling and affine addition, in radix `2^64`, on AArch64 -/
 
@@ -20,23 +18,17 @@ def notes (what : String) : List String := ["Uses baseline integer instructions,
   multiplied by rows and folded with `2^256 = 38`."]
 
 def artifacts : List Artifact := [
-  { doubleExtApi with
-    target := AArch64.target
-    doc := doubleExtApi.doc (notes := notes "RFC 8032's doubling formula (§5.1.4): four \
-      squarings and four products")
+  doubleExtApi.artifact AArch64.target {
+    notes := notes "RFC 8032's doubling formula (§5.1.4): four \
+      squarings and four products"
     code := doubleFn
-    contract := doubleContract AArch64.abi true
     verified := doubleFn_verified
-    stack := 0
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { addAffineExtApi with
-    target := AArch64.target
-    doc := addAffineExtApi.doc (notes := notes "RFC 8032's complete addition formula of the point \
-      in slots 4–6, with `Z₁ · 2Z₂ = Z₁ + Z₁`: seven products")
+    stack := 0 },
+  addAffineExtApi.artifact AArch64.target {
+    notes := notes "RFC 8032's complete addition formula of the point \
+      in slots 4–6, with `Z₁ · 2Z₂ = Z₁ + Z₁`: seven products"
     code := affFn
-    contract := addAffineContract AArch64.abi true
     verified := affFn_verified
-    stack := 0
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    stack := 0 }]
 
 end VG.Artifacts.Ed25519R64.AArch64

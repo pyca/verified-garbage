@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.Iterations
 public import VerifiedGarbage.Proof.Argon2.SlicesIndices
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Recover each pass's reviewed reference log from the complete filling log. -/
 

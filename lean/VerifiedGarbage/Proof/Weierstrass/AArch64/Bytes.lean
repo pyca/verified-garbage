@@ -1,13 +1,21 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+public import VerifiedGarbage.Proof.Framework.Bswap
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Impl.Mont.AArch64
+import VerifiedGarbage.Proof.Mont.AArch64.Words
+import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Impl.Weierstrass.AArch64
+import VerifiedGarbage.Impl.Weierstrass.Slots
 
 /-!
 # Short Weierstrass curves on AArch64: words to and from big-endian bytes

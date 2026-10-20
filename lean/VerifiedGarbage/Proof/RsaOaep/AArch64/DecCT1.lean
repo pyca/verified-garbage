@@ -1,15 +1,37 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCTBase
-meta import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCTBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecPriv
 import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
-meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCorrect
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
+import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCTBase
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.DecPriv
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCorrect
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
+meta import VerifiedGarbage.Proof.Mgf1.Bytes
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSAES-OAEP decryption on AArch64: constant time, to the decoding

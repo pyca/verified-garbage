@@ -1,38 +1,42 @@
 module
 
 public import VerifiedGarbage.Proof.Scrypt.AArch64.Common
-meta import VerifiedGarbage.Proof.Scrypt.AArch64.Common
 public import VerifiedGarbage.Proof.Scrypt.RoMix
-meta import VerifiedGarbage.Proof.Scrypt.RoMix
 public import VerifiedGarbage.Impl.Scrypt.AArch64.RoMix
-meta import VerifiedGarbage.Impl.Scrypt.AArch64.RoMix
-public import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.Set
-meta import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Scrypt.AArch64.BlockMixVerified
-meta import VerifiedGarbage.Proof.Scrypt.AArch64.BlockMixVerified
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import Mathlib.Tactic.DefEqTransformations
-meta import Mathlib.Tactic.DefEqTransformations
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Scrypt.Contract
-meta import VerifiedGarbage.Spec.Scrypt.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
-meta import VerifiedGarbage.Proof.Framework.AArch64.Spill
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
-meta import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import all Init.Data.Nat.Power2.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Scrypt.Memory
+import Mathlib.Tactic.DefEqTransformations
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Scrypt.AArch64.Common
+meta import VerifiedGarbage.Proof.Scrypt.RoMix
+meta import VerifiedGarbage.Impl.Scrypt.AArch64.RoMix
+meta import VerifiedGarbage.Proof.Scrypt.AArch64.BlockMixVerified
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.Spill
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
+meta import Init.Data.Nat.Power2.Basic
 meta import VerifiedGarbage.Proof.Scrypt.Memory
+meta import Mathlib.Tactic.DefEqTransformations
+meta import Mathlib.Tactic.Set
+meta import Mathlib.Tactic.Conv
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # scryptROMix on AArch64: the precondition
@@ -1386,7 +1390,7 @@ theorem KR.keep {s₀ : State} {bp q : Addr} {s s' : State} (h : KR s₀ bp q s)
     (hk _ (by decide)).trans h.x23, (hk _ (by decide)).trans h.x24⟩
 
 /-- Whether an instruction writes none of `kRegs`. -/
-def kFree (i : Instr) : Bool := kRegs.all fun r => dstOf i != some r
+def kFree (i : Instr) : Bool := kRegs.all fun r => !clobbers i r
 
 /-- `KR` survives code that writes none of its registers. -/
 theorem KR.exec {c : Prog isa} (hc : c.allInstrs kFree = true) {s₀ : State} {bp q : Addr}
@@ -1395,8 +1399,8 @@ theorem KR.exec {c : Prog isa} (hc : c.allInstrs kFree = true) {s₀ : State} {b
   rw [Code.allInstrs_eq, List.all_eq_true] at hc
   refine h.keep rd wr sp fun r hr => Exec.gpr (fun i hi => ?_) he (.inr (kRegs_pres r hr).2.2)
   have := hc i hi
-  simp only [kFree, List.all_eq_true, bne_iff_ne, ne_eq] at this
-  exact this r hr
+  simp only [kFree, List.all_eq_true] at this
+  simpa using this r hr
 
 theorem Inv2.kr {s₀ : State} {i : Nat} {s : State} (h : Inv2 s₀ i s) :
     KR s₀ (vAt s₀ i) (BitVec.ofNat 64 (NN s₀ - i)) s :=
@@ -1794,7 +1798,7 @@ theorem pubEq_of {s₁ s₂ : State} (h : Proof.Scrypt.roMixAArch64.pub s₁ s�
 /-- No instruction of ROMix, or of the functions it calls, writes `x25`–`x29`. -/
 theorem others_kept :
     (instrs Impl.Scrypt.AArch64.roMix).all
-      (fun i => [Reg.x25, .x26, .x27, .x28].all fun r => dstOf i != some r) = true := by
+      (fun i => [Reg.x25, .x26, .x27, .x28].all fun r => !clobbers i r) = true := by
   rw [← Code.allInstrs_eq]; decide +kernel
 
 theorem preserved_cases :
@@ -1822,8 +1826,8 @@ theorem roMix_correct (s : State) (hs : Proof.Scrypt.roMixAArch64.pre s) :
     rw [List.all_eq_true] at hc
     refine Exec.gpr (fun i hi => ?_) he (.inr (by revert h; revert r; decide))
     have := hc i hi
-    simp only [List.all_eq_true, bne_iff_ne, ne_eq] at this
-    exact this r h
+    simp only [List.all_eq_true] at this
+    simpa using this r h
 
 theorem roMix_ct : ConstantTime isa Proof.Scrypt.roMixAArch64.pre Proof.Scrypt.roMixAArch64.pub
     Impl.Scrypt.AArch64.roMix := by

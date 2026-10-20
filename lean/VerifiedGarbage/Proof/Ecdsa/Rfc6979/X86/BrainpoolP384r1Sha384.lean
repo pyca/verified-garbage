@@ -4,12 +4,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.BrainpoolP384r1
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.BrainpoolP384r1Sha384
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Sha256.X86.Shared
-import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # Deterministic ECDSA over brainpoolP384r1 with HMAC-SHA-384 on x86 (32-bit)

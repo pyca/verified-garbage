@@ -1,15 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!
 # ML-KEM on AArch64: the matrix `Â` of `encaps` and `decaps`
@@ -61,21 +57,28 @@ abbrev bW (P : KemLay) (L : Layout) (s₀ : State) : List Region :=
 /-- Entry `e` of `Â`. -/
 abbrev aP (L : Layout) (s₀ : State) (e : Nat) : Addr := sA L s₀ (AH + 1024 * e)
 
-/-- After `n` entries of `Â`, from memory `mA`. -/
-structure BInv (P : KemLay) (L : Layout) (s₀ : State) (mA : Mem) (ρ : List Byte) (n : Nat) (s : State) :
-    Prop where
+/-- `BInv` with `Â` stored with 16-bit coefficients (`w16`) or 32-bit ones. -/
+structure BInvW (w16 : Bool) (P : KemLay) (L : Layout) (s₀ : State) (mA : Mem) (ρ : List Byte) (n : Nat)
+    (s : State) : Prop where
   kb : KB P L s₀ s
   fr : Frame (bW P L s₀) mA s.mem
   rho : bytesAt s.mem (sA L s₀ SB) 32 = ρ
   acc : s.gpr .x24 = if okR P ρ n then 1 else 0
-  red : ∀ e < n, Reduced s.mem (aP L s₀ e)
+  red : ∀ e < n, ReducedW (cw w16) s.mem (aP L s₀ e)
   res : ∀ e < n, sampleNTT 280 (matSeed ρ (e / P.k) (e % P.k)) = none ∨
-    sampleNTT 280 (matSeed ρ (e / P.k) (e % P.k)) = some (polyAt s.mem (aP L s₀ e))
+    sampleNTT 280 (matSeed ρ (e / P.k) (e % P.k)) = some (polyAtW (cw w16) s.mem (aP L s₀ e))
+
+/-- After `n` entries of `Â`, from memory `mA`. -/
+abbrev BInv := BInvW false
+
+theorem BInvW.zero {w16 : Bool} {s₀ s : State} {ρ : List Byte} (hk : KB P L s₀ s) (h24 : s.gpr .x24 = 1)
+    (hρ : bytesAt s.mem (sA L s₀ SB) 32 = ρ) : BInvW w16 P L s₀ s.mem ρ 0 s :=
+  ⟨hk, Frame.refl _ _, hρ, by rw [h24, ite_eq_left (show okR P ρ 0 from fun e he => absurd he (Nat.not_lt_zero e))],
+    fun e he => absurd he (Nat.not_lt_zero e), fun e he => absurd he (Nat.not_lt_zero e)⟩
 
 theorem BInv.zero {s₀ s : State} {ρ : List Byte} (hk : KB P L s₀ s) (h24 : s.gpr .x24 = 1)
     (hρ : bytesAt s.mem (sA L s₀ SB) 32 = ρ) : BInv P L s₀ s.mem ρ 0 s :=
-  ⟨hk, Frame.refl _ _, hρ, by rw [h24, ite_eq_left (show okR P ρ 0 from fun e he => absurd he (Nat.not_lt_zero e))],
-    fun e he => absurd he (Nat.not_lt_zero e), fun e he => absurd he (Nat.not_lt_zero e)⟩
+  BInvW.zero hk h24 hρ
 
 /-- Before `SampleNTT(ρ ‖ j ‖ i)`: its seed, and its arguments. -/
 structure Mid (P : KemLay) (L : Layout) (s₀ : State) (mA : Mem) (ρ : List Byte) (i j : Nat) (s : State) :
@@ -136,7 +139,7 @@ theorem setup_ok {s₀ : State} (hp : Pre P L s₀) {mA : Mem} {ρ : List Byte} 
   refine ⟨⟨kb₇, h.fr.trans (f₇.mono (by simp)), by rw [bytesAt_congr sd]; exact h.rho,
     by rw [k₇.get .x24]; exact h.acc, fun e he => reduced_frame f₇ (ae he) (h.red e he), fun e he => ?_⟩,
     ?_, ?_, ?_, ?_⟩
-  · rw [polyAt_frame f₇ (ae he)]; exact h.res e he
+  · rw [polyAtW_frame f₇ (ae he)]; exact h.res e he
   · refine seed_eq (by rw [bytesAt_congr sd]; exact h.rho) ?_ ?_
     · rw [m₇, ptr_add, writeW8_apply, ite_eq_right (addr_ne _ (by decide) (by decide) (by decide)),
         writeW8_apply, ite_eq_left rfl, e₁]
@@ -227,12 +230,12 @@ theorem call_ok {s₀ : State} (hp : Pre P L s₀) {mA : Mem} {ρ : List Byte} {
       rw [ite_eq_right hA', ite_eq_right hA]
   · rcases (by omega : e < P.k * i + j ∨ e = P.k * i + j) with he | rfl
     · exact reduced_frame fr (ae he) (h.b.red e he)
-    · rw [h₉.mem]; simpa only [aOff] using r₈
+    · rw [h₉.mem]; show Reduced _ _; simpa only [aOff] using r₈
   · rcases (by omega : e < P.k * i + j ∨ e = P.k * i + j) with he | rfl
-    · rw [polyAt_frame fr (ae he)]; exact h.b.res e he
+    · rw [polyAtW_frame fr (ae he)]; exact h.b.res e he
     · rw [hke.1, hke.2, h₉.mem]
       rcases o₈ with ⟨-, h2⟩ | ⟨-, h2⟩
-      · exact .inr (by simpa only [aOff] using h2)
+      · exact .inr (show _ = some (polyAt _ _) by simpa only [aOff] using h2)
       · exact .inl h2
 
 theorem sample_step {s₀ : State} (hp : Pre P L s₀) {mA : Mem} {ρ : List Byte} {i j : Nat} (hi : i < P.k)
@@ -249,6 +252,26 @@ theorem matrix_ok {s₀ : State} (hp : Pre P L s₀) {mA : Mem} {ρ : List Byte}
 
 /-- `SampleNTT` succeeds on every entry exactly when `x24` is 1; then its
 entries are `Â`'s. -/
+theorem BInvW.outcome {w16 : Bool} {s₀ : State} {mA : Mem} {ρ : List Byte} {s : State}
+    (h : BInvW w16 P L s₀ mA ρ (P.k * P.k) s) :
+    (s.gpr .x24 = 1 ∧ ∀ i < P.k, ∀ j < P.k,
+      sampleNTT 280 (matSeed ρ i j) = some (polyAtW (cw w16) s.mem (sA L s₀ (aOff P i j)))) ∨
+    (s.gpr .x24 = 0 ∧ ∃ i < P.k, ∃ j < P.k, sampleNTT 280 (matSeed ρ i j) = none) := by
+  by_cases hA : okR P ρ (P.k * P.k)
+  · refine .inl ⟨by rw [h.acc, ite_eq_left hA], fun i hi j hj => ?_⟩
+    have he : P.k * i + j < P.k * P.k := ij_lt hi hj
+    have hke := ij_div (i := i) hj
+    have r := h.res (P.k * i + j) he
+    have ok := hA (P.k * i + j) he
+    rw [hke.1, hke.2] at r ok
+    rcases r with r | r
+    · rw [r] at ok; simp at ok
+    · exact r
+  · refine .inr ⟨by rw [h.acc, ite_eq_right hA], ?_⟩
+    obtain ⟨e, he, hn⟩ : ∃ e, e < P.k * P.k ∧ ¬ (sampleNTT 280 (matSeed ρ (e / P.k) (e % P.k))).isSome :=
+      Classical.byContradiction fun hc => hA fun e he => Classical.byContradiction fun hn => hc ⟨e, he, hn⟩
+    exact ⟨e / P.k, div_lt he, e % P.k, mod_lt he, Option.not_isSome_iff_eq_none.mp hn⟩
+
 theorem BInv.outcome {s₀ : State} {mA : Mem} {ρ : List Byte} {s : State}
     (h : BInv P L s₀ mA ρ (P.k * P.k) s) :
     (s.gpr .x24 = 1 ∧ ∀ i < P.k, ∀ j < P.k,
@@ -268,6 +291,11 @@ theorem BInv.outcome {s₀ : State} {mA : Mem} {ρ : List Byte} {s : State}
     obtain ⟨e, he, hn⟩ : ∃ e, e < P.k * P.k ∧ ¬ (sampleNTT 280 (matSeed ρ (e / P.k) (e % P.k))).isSome :=
       Classical.byContradiction fun hc => hA fun e he => Classical.byContradiction fun hn => hc ⟨e, he, hn⟩
     exact ⟨e / P.k, div_lt he, e % P.k, mod_lt he, Option.not_isSome_iff_eq_none.mp hn⟩
+
+theorem BInvW.reduced {w16 : Bool} {s₀ : State} {mA : Mem} {ρ : List Byte} {s : State}
+    (h : BInvW w16 P L s₀ mA ρ (P.k * P.k) s) {i j : Nat} (hi : i < P.k) (hj : j < P.k) :
+    ReducedW (cw w16) s.mem (sA L s₀ (aOff P i j)) :=
+  h.red (P.k * i + j) (ij_lt hi hj)
 
 theorem BInv.reduced {s₀ : State} {mA : Mem} {ρ : List Byte} {s : State} (h : BInv P L s₀ mA ρ (P.k * P.k) s)
     {i j : Nat} (hi : i < P.k) (hj : j < P.k) : Reduced s.mem (sA L s₀ (aOff P i j)) :=

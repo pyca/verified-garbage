@@ -1,10 +1,13 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+public import VerifiedGarbage.Proof.Gcm.Ctr
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Gcm.Stream
 
 /-!
 # AES-GCM on x86-64: counter mode over a piece (`crypt`)

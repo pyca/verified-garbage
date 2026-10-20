@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.Whole.Wipe
-public import VerifiedGarbage.Impl.Ed25519.X86.Whole.Setup
 public import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
 public import VerifiedGarbage.Impl.Sha512.X86.Stream
 public import VerifiedGarbage.Spec.Sha512.Contract

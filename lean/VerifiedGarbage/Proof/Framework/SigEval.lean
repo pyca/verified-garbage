@@ -67,9 +67,11 @@ def canUnfold (u : NameSet) (c : Name) : CoreM Bool := do
 /-- The value of a closed decidable proposition. -/
 def decide? (c i : Expr) : MetaM (Option (Bool × Expr)) := do
   if c.hasFVar || c.hasMVar || c.hasLooseBVars then return none
-  match_expr ← whnfD i with
-  | Decidable.isTrue _ h => return some (true, h)
-  | Decidable.isFalse _ h => return some (false, h)
+  -- `Decidable.intro b h`, with `h : b.Reflects c` (`c` or `¬c`, by `abbrev`).
+  let_expr Decidable.intro _ b h := (← whnfD i) | return none
+  match_expr ← whnfD b with
+  | true => return some (true, h)
+  | false => return some (false, h)
   | _ => return none
 
 def isClosed (e : Expr) : Bool := !(e.hasFVar || e.hasMVar || e.hasLooseBVars)

@@ -2,13 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Rows of a four-by-four word product with the words of one
 operand in registers (`rowFirst`, `rowAcc`), and the instances the field
@@ -201,19 +198,61 @@ theorem rowAcc3_ok (s : State) (hz : s.gpr .x10 = 0) :
     exact h
   · reg_keeps
 
-/-- 38 times the high half of a product added to its low half: x4–x7 and x20. -/
-theorem rowAccReduce_ok (s : State) (hz : s.gpr .x10 = 0) :
-    WP isa (.block (rowAcc .x11 .x21 .x22 .x23 .x24 .x4 .x5 .x6 .x7 .x20)) s fun t =>
-      val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) + 2 ^ 256 * (t.gpr .x20).toNat =
+/-- The carry chains of `reduceLo`, on natural numbers. -/
+theorem reduceLo_arith {T0 T1 T2 T3 L0 L1 L2 L3 H0 H1 H2 H3 W0 W1 W2 W3 A
+    S0 S1 S2 S3 U R3 R4 C0 C1 C2 C3 C4 D3 D4 : Nat}
+    (e0 : S0 + 2 ^ 64 * C0 = T0 + L0 + 0) (e1 : S1 + 2 ^ 64 * C1 = T1 + L1 + C0)
+    (e2 : S2 + 2 ^ 64 * C2 = T2 + L2 + C1) (e3 : S3 + 2 ^ 64 * C3 = T3 + L3 + C2)
+    (e4 : U + 2 ^ 64 * C4 = 0 + 0 + C3)
+    (f3 : R3 + 2 ^ 64 * D3 = S3 + H2 + 0) (f4 : R4 + 2 ^ 64 * D4 = U + H3 + D3)
+    (m0 : L0 + 2 ^ 64 * H0 = A * W0) (m1 : L1 + 2 ^ 64 * H1 = A * W1)
+    (m2 : L2 + 2 ^ 64 * H2 = A * W2) (m3 : L3 + 2 ^ 64 * H3 = A * W3)
+    (ha : A ≤ 38) (w3 : W3 < 2 ^ 64) (c3 : C3 ≤ 1) (d3 : D3 ≤ 1) :
+    S0 + 2 ^ 64 * S1 + 2 ^ 128 * S2 + 2 ^ 192 * R3 + 2 ^ 256 * R4 + 2 ^ 64 * H0 + 2 ^ 128 * H1 =
+      T0 + 2 ^ 64 * T1 + 2 ^ 128 * T2 + 2 ^ 192 * T3 +
+        (A * W0 + 2 ^ 64 * (A * W1) + 2 ^ 128 * (A * W2) + 2 ^ 192 * (A * W3)) := by
+  have hw : A * W3 ≤ 38 * (2 ^ 64 - 1) := Nat.mul_le_mul ha (by omega)
+  omega
+
+theorem reduceLo_value (a b0 b1 b2 b3 t0 t1 t2 t3 : Word) (ha : a.toNat ≤ 38) :
+    let c0 := carryOut t0 (a * b0) false
+    let c1 := carryOut t1 (a * b1) c0
+    let c2 := carryOut t2 (a * b2) c1
+    let c3 := carryOut t3 (a * b3) c2
+    let s3 := addCarry t3 (a * b3) c2
+    let u := addCarry 0 0 c3
+    let d3 := carryOut s3 (mulHi a b2) false
+    val4 (addCarry t0 (a * b0) false) (addCarry t1 (a * b1) c0) (addCarry t2 (a * b2) c1)
+        (addCarry s3 (mulHi a b2) false) + 2 ^ 256 * (addCarry u (mulHi a b3) d3).toNat +
+        2 ^ 64 * (mulHi a b0).toNat + 2 ^ 128 * (mulHi a b1).toNat =
+      val4 t0 t1 t2 t3 + a.toNat * val4 b0 b1 b2 b3 := by
+  intro c0 c1 c2 c3 s3 u d3
+  simp only [val4]
+  rw [mul_val4]
+  exact reduceLo_arith (addCarry_value t0 (a * b0) false) (addCarry_value t1 (a * b1) c0)
+    (addCarry_value t2 (a * b2) c1) (addCarry_value t3 (a * b3) c2) (addCarry_value 0 0 c3)
+    (addCarry_value s3 (mulHi a b2) false) (addCarry_value u (mulHi a b3) d3)
+    (mul_lo_hi a b0) (mul_lo_hi a b1) (mul_lo_hi a b2) (mul_lo_hi a b3)
+    ha b3.isLt (Bool.toNat_le c3) (Bool.toNat_le d3)
+
+/-- `reduceLo`: 38 times the high half of a product added to its low half, the
+high words of the first two products left in x2 and x8. -/
+theorem reduceLo_ok (s : State) (hz : s.gpr .x10 = 0) (ha : (s.gpr .x11).toNat ≤ 38) :
+    WP isa (.block reduceLo) s fun t =>
+      val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) + 2 ^ 256 * (t.gpr .x20).toNat +
+          2 ^ 64 * (t.gpr .x2).toNat + 2 ^ 128 * (t.gpr .x8).toNat =
         val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) +
           (s.gpr .x11).toNat * val4 (s.gpr .x21) (s.gpr .x22) (s.gpr .x23) (s.gpr .x24) ∧
+      t.gpr .x2 = mulHi (s.gpr .x11) (s.gpr .x21) ∧ t.gpr .x8 = mulHi (s.gpr .x11) (s.gpr .x22) ∧
       Keeps [.x2, .x8, .x9, .x16, .x4, .x5, .x6, .x7, .x20] s t := by
+  rw [reduceLo]
   reg_exec hz
-  refine ⟨?_, ⟨?_, by simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry],
+  refine ⟨?_, trivial, trivial, ⟨?_, by simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry],
       by simp only [RegUpd.rd_write, RegUpd.rd_addWithCarry],
       by simp only [RegUpd.wr_write, RegUpd.wr_addWithCarry],
       by simp only [RegUpd.sp_write, RegUpd.sp_addWithCarry]⟩⟩
-  · have h := rowAcc_value (s.gpr .x11) (s.gpr .x21) (s.gpr .x22) (s.gpr .x23) (s.gpr .x24) (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7)
+  · have h := reduceLo_value (s.gpr .x11) (s.gpr .x21) (s.gpr .x22) (s.gpr .x23) (s.gpr .x24)
+      (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) ha
     dsimp only [addCarry, carryOut, mulHi, Size.bits] at h ⊢
     exact h
   · reg_keeps

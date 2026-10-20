@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.AArch64.Common
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Streaming Merkle–Damgård hash functions on AArch64: `finalize`
@@ -678,7 +677,7 @@ theorem epilogue_ok (hd : Dims P) (hDN : D ≤ P.N) {s₀ : State} (hp : PreD P 
 
 /-- `finalize` without its frame: the callee-saved registers but `x30` are kept. -/
 theorem correctMain (hd : Dims P) (hs : ShapeD H D) {name : String} {code : Prog isa} (hf : CalleeOk H code)
-    (hu : ∀ r ∈ untouched, ∀ i ∈ instrs (finalizeMain P name code), dstOf i ≠ some r) {s₀ : State}
+    (hu : ∀ r ∈ untouched, ∀ i ∈ instrs (finalizeMain P name code), clobbers i r = false) {s₀ : State}
     (hp : PreD P D s₀) :
     WP isa (finalizeMain P name code) s₀ fun s' => (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s₀.gpr r) ∧
       s'.sp = s₀.sp ∧ (finKD H D).post s₀ s' := by
@@ -712,7 +711,7 @@ abbrev inner (s₀ : State) : State :=
   { s₀ with sp := s₀.sp - 16, mem := s₀.mem.write (s₀.sp - 16) 8 (s₀.gpr .x30) }
 
 theorem correctD (hd : Dims P) (hs : ShapeD H D) {name : String} {code : Prog isa} (hf : CalleeOk H code)
-    (hu : ∀ r ∈ untouched, ∀ i ∈ instrs (finalizeMain P name code), dstOf i ≠ some r)
+    (hu : ∀ r ∈ untouched, ∀ i ∈ instrs (finalizeMain P name code), clobbers i r = false)
     (hn : 16 * (finalizeMain P name code).aarch64Depth + 16 < 2 ^ 64) {s₀ : State} (hp : PreD P D s₀)
     (hst : StackD P D s₀) :
     WP isa (finalize P name code) s₀ fun s' => abiPreserved s₀ s' ∧ (finKD H D).post s₀ s' := by
@@ -735,7 +734,7 @@ theorem correctD (hd : Dims P) (hs : ShapeD H D) {name : String} {code : Prog is
         (by have := hd.N; have := hd.B; show P.N + P.B < 2 ^ 64; omega_arith) hi) hm) hok hc
 
 theorem correct (hd : Dims P) (hs : Shape H) {name : String} {code : Prog isa} (hf : CalleeOk H code)
-    (hu : ∀ r ∈ untouched, ∀ i ∈ instrs (finalizeMain P name code), dstOf i ≠ some r)
+    (hu : ∀ r ∈ untouched, ∀ i ∈ instrs (finalizeMain P name code), clobbers i r = false)
     (hn : 16 * (finalizeMain P name code).aarch64Depth + 16 < 2 ^ 64) {s₀ : State} (hp : Pre P s₀)
     (hst : Stack P s₀) :
     WP isa (finalize P name code) s₀ fun s' => abiPreserved s₀ s' ∧ (finK H).post s₀ s' :=
@@ -765,11 +764,11 @@ analysis proves of each hash function's code), never writes `untouched`, and
 fits its frames in the address space. -/
 theorem verifiedD (hd : Dims P) (hs : ShapeD H D) {name : String} {code : Prog isa} (hf : CalleeOk H code)
     (hct : ConstantTime isa (finKD H D).pre (finKD H D).pub (finalize P name code))
-    (hu : ((instrs (finalizeMain P name code)).all fun i => untouched.all fun r => dstOf i != some r) = true)
+    (hu : ((instrs (finalizeMain P name code)).all fun i => untouched.all fun r => !clobbers i r) = true)
     (hn : 16 * (finalizeMain P name code).aarch64Depth + 16 < 2 ^ 64) :
     Verified AArch64.target (finalize P name code) (finKD H D) := by
   have := hd.N; have := hd.so; have := hd.B; have := hs.le
-  have hu' : ∀ r ∈ untouched, ∀ i ∈ instrs (finalizeMain P name code), dstOf i ≠ some r := by
+  have hu' : ∀ r ∈ untouched, ∀ i ∈ instrs (finalizeMain P name code), clobbers i r = false := by
     intro r hr i hi
     have := List.all_eq_true.mp (List.all_eq_true.mp hu i hi) r hr
     simpa using this
@@ -790,7 +789,7 @@ analysis proves of each hash function's code), never writes `untouched`, and
 fits its frames in the address space. -/
 theorem verified (hd : Dims P) (hs : Shape H) {name : String} {code : Prog isa} (hf : CalleeOk H code)
     (hct : ConstantTime isa (finK H).pre (finK H).pub (finalize P name code))
-    (hu : ((instrs (finalizeMain P name code)).all fun i => untouched.all fun r => dstOf i != some r) = true)
+    (hu : ((instrs (finalizeMain P name code)).all fun i => untouched.all fun r => !clobbers i r) = true)
     (hn : 16 * (finalizeMain P name code).aarch64Depth + 16 < 2 ^ 64) :
     Verified AArch64.target (finalize P name code) (finK H) :=
   have h := verifiedD hd hs.toD hf hct hu hn

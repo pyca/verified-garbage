@@ -1,9 +1,5 @@
 module
 
-import VerifiedGarbage.Spec.Sha3
-import VerifiedGarbage.Impl.Sha3.Tables
-public import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.Impl.Sha3.X86_64
 public import VerifiedGarbage.Impl.Sha3.X86_64.X4Reg
 
 /-!
@@ -21,14 +17,18 @@ the four states, one in each 64-bit element.
 end. As the scalar implementation (`Impl/Sha3/X86_64.lean`), a round reads
 one buffer (`src`, `rdi`) and writes the other (`dst`, `rsi`), then swaps
 them; the loop runs two rounds per iteration, so that after the 24 rounds
-the result is back at `rdi`. A round computes the five column parities
-`C[x]` (θ) into `ymm0`–`ymm4`, then `D[x]` into `ymm5`–`ymm9`; then, for
-each plane `y` of the output, the five lanes `B[x]` of `π(ρ(θ(A)))` in that
-plane into `ymm0`–`ymm4` (a rotation left by `n` is `vpsllq`, `vpsrlq` by
-`64 - n` and `vpor`, with `ymm10`), and stores `B[x] ⊕ (¬B[x+1] ∧ B[x+2])`
-(χ, `vpandn`, and ι for lane 0, with `ymm11`), computed in `ymm10`, to
-`dst`. It (`permute4M`) writes only `rax`, `rdx`, `rdi`, `rsi`, the flags and
-`ymm0`–`ymm11`.
+the result is back at `rdi`. A round starts with the five column parities
+`C[x]` (θ) of its input in `ymm11`–`ymm15`: `cols` computes those of the
+first round's from memory, and each round those of the next's as it writes
+them. It computes `D[x]` into `ymm5`–`ymm9`; then, for each plane `y` of the
+output, the five lanes `B[x]` of `π(ρ(θ(A)))` in that plane into
+`ymm0`–`ymm4` (a rotation left by `n` is `vpsllq`, `vpsrlq` by `64 - n` and
+`vpor`, with `ymm10`), and stores `B[x] ⊕ (¬B[x+1] ∧ B[x+2])` (χ, `vpandn`,
+and ι for lane 0, from the table) to `dst`: for plane 0 computed in the
+register of `C[x]`, which then accumulates the column parity of the output,
+and for the others in `ymm10`, which it adds to that parity. It
+(`permute4M`) writes only `rax`, `rdx`, `rdi`, `rsi`, the flags and
+`ymm0`–`ymm15`.
 
 `permute4 true` is `X4R.permute4R` (`X4Reg.lean`) instead, with the same
 interface, which keeps the four states in the thirty-two registers of
@@ -63,20 +63,28 @@ def creg (x : Nat) : XReg := [XReg.xmm0, .xmm1, .xmm2, .xmm3, .xmm4].getD x .xmm
 /-- The register of `D[x]`. -/
 def dreg (x : Nat) : XReg := [XReg.xmm5, .xmm6, .xmm7, .xmm8, .xmm9].getD x .xmm5
 
-/-- The temporaries. -/
-def T : XReg := .xmm10
-def U : XReg := .xmm11
+/-- The register of the column parity `C[x]` of a round's input, and then
+of its output. -/
+def preg (x : Nat) : XReg := [XReg.xmm11, .xmm12, .xmm13, .xmm14, .xmm15].getD x .xmm11
 
-/-- `C[x] = A[x, 0] ⊕ … ⊕ A[x, 4]`. -/
+/-- The temporary. -/
+def T : XReg := .xmm10
+
+/-- `op d, a, [b + 32 i]` on 256 bits. -/
+def vbl (op : VBinOp) (d a : XReg) (b : Reg) (i : Nat) : Instr := .vbinLoad op .l256 d a (at_ b (32 * i))
+
+/-- `C[x] = A[x, 0] ⊕ … ⊕ A[x, 4]`, from the states at `rdi`. -/
 def column (x : Nat) : List Instr :=
-  [ld (creg x) .rdi x, ld T .rdi (x + 5), vb .vpxor (creg x) (creg x) T, ld T .rdi (x + 10),
-    vb .vpxor (creg x) (creg x) T, ld T .rdi (x + 15), vb .vpxor (creg x) (creg x) T, ld T .rdi (x + 20),
-    vb .vpxor (creg x) (creg x) T]
+  [ld (preg x) .rdi x, vbl .vpxor (preg x) (preg x) .rdi (x + 5), vbl .vpxor (preg x) (preg x) .rdi (x + 10),
+    vbl .vpxor (preg x) (preg x) .rdi (x + 15), vbl .vpxor (preg x) (preg x) .rdi (x + 20)]
+
+/-- The column parities of the first round's input. -/
+def cols : List Instr := (List.range 5).flatMap column
 
 /-- `D[x] = ROTL¹(C[x + 1]) ⊕ C[x - 1]`. -/
 def dcol (x : Nat) : List Instr :=
-  [vsh .psllq T (creg ((x + 1) % 5)) 1, vsh .psrlq U (creg ((x + 1) % 5)) 63, vb .vpor T T U,
-    vb .vpxor (dreg x) T (creg ((x + 4) % 5))]
+  [vsh .psllq T (preg ((x + 1) % 5)) 1, vsh .psrlq (dreg x) (preg ((x + 1) % 5)) 63, vb .vpor (dreg x) (dreg x) T,
+    vb .vpxor (dreg x) (dreg x) (preg ((x + 4) % 5))]
 
 /-- `B[x] = ROTL^ρ(A[piSrc x y] ⊕ D[(x + 3y) mod 5])` for plane `y`. -/
 def laneB (x y : Nat) : List Instr :=
@@ -86,11 +94,15 @@ def laneB (x y : Nat) : List Instr :=
       vb .vpor (creg x) (creg x) T]
 
 /-- Lane `(x, y)` of the output: `B[x] ⊕ (¬B[x+1] ∧ B[x+2])`, and for lane 0
-the round constant at `rdx`. -/
+the round constant at `rdx`; for plane 0 computed in the register of `C[x]`,
+and for the others in `T` and added to it. -/
 def chi (x y : Nat) : List Instr :=
-  [vb .vpandn T (creg ((x + 1) % 5)) (creg ((x + 2) % 5)), vb .vpxor T T (creg x)] ++
-    (if x = 0 ∧ y = 0 then [ld U .rdx 0, vb .vpxor T T U] else []) ++
-    [st .rsi (x + 5 * y) T]
+  if y = 0 then
+    [vb .vpandn (preg x) (creg ((x + 1) % 5)) (creg ((x + 2) % 5)), vb .vpxor (preg x) (preg x) (creg x)] ++
+      (if x = 0 then [vbl .vpxor (preg x) (preg x) .rdx 0] else []) ++ [st .rsi x (preg x)]
+  else
+    [vb .vpandn T (creg ((x + 1) % 5)) (creg ((x + 2) % 5)), vb .vpxor T T (creg x), st .rsi (x + 5 * y) T,
+      vb .vpxor (preg x) (preg x) T]
 
 /-- Plane `y` of the output. -/
 def plane (y : Nat) : List Instr :=
@@ -99,13 +111,13 @@ def plane (y : Nat) : List Instr :=
 /-- One round from `rdi` to `rsi`; then swap them, and advance to the next
 round constant (setting ZF after the last). -/
 def round : List Instr :=
-  (List.range 5).flatMap column ++ (List.range 5).flatMap dcol ++ (List.range 5).flatMap plane ++
+  (List.range 5).flatMap dcol ++ (List.range 5).flatMap plane ++
     ([.mov .rax (.reg .rdi), .mov .rdi (.reg .rsi), .mov .rsi (.reg .rax),
       .alu .add .rdx (.imm 32), .alu .cmp .rdx (.reg .rcx)] : List Instr)
 
 /-- The 24 rounds, from `rdi` (and back to it), with the table at `rdx`
 and its end in `rcx`. -/
-def permute4M : Prog isa := .loop (.block (round ++ round)) .ne
+def permute4M : Prog isa := .seq (.block cols) (.loop (.block (round ++ round)) .ne)
 
 /-- `permute4M`, or with `fast` (AVX-512VL) `X4R.permute4R`. -/
 def permute4 (fast : Bool := false) : Prog isa := bif fast then X4R.permute4R else permute4M

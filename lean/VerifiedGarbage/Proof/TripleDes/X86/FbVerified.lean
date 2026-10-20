@@ -1,19 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
-
-public import VerifiedGarbage.Proof.TripleDes.X86.CbcVerified
-meta import VerifiedGarbage.Proof.TripleDes.X86.CbcVerified
 public import VerifiedGarbage.Proof.TripleDes.FbScratch
+public import VerifiedGarbage.Proof.TripleDes.X86.ModeCore
+import VerifiedGarbage.Proof.Modes.X86.Modes
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Spec.TripleDes.Cfb
+public import VerifiedGarbage.Proof.Modes.X86.Seq
+import VerifiedGarbage.Proof.TripleDes.X86.BlockSum
+import VerifiedGarbage.Proof.TripleDes.X86.FbLit
+public import VerifiedGarbage.Impl.TripleDes.X86.Fb
 meta import VerifiedGarbage.Proof.TripleDes.FbScratch
-public import VerifiedGarbage.Proof.TripleDes.X86.FbLit
-meta import VerifiedGarbage.Proof.TripleDes.X86.FbLit
-public import VerifiedGarbage.Proof.TripleDes.X86.BlockSum
+meta import VerifiedGarbage.Proof.TripleDes.X86.ModeCore
+meta import VerifiedGarbage.Proof.Modes.X86.Modes
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Impl.StackScratch.X86
+meta import VerifiedGarbage.Spec.TripleDes.Cfb
+meta import VerifiedGarbage.Proof.Modes.X86.Seq
 meta import VerifiedGarbage.Proof.TripleDes.X86.BlockSum
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.TripleDes.X86.FbLit
+meta import VerifiedGarbage.Impl.TripleDes.X86.Fb
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Triple DES-OFB, -CFB64 and -CFB8 on x86 (32-bit) meet their contracts
@@ -30,6 +38,39 @@ run them with their working space on the stack, zeroed on return.
 -/
 
 @[expose] public section
+
+namespace VG.Proof.TripleDes.X86.Cbc
+
+open VG VG.X86 VG.Impl.TripleDes.X86 VG.Impl.Modes
+open VG.Proof.Modes.X86 (stkRegion)
+open VG.Proof.TripleDes (bytesAt_eq)
+
+theorem scr_eq (s : State) (d : Spec.TripleDes.Direction) :
+    Modes.X86.scrR s (dirCore d) = ⟨(arg s 4).setWidth 64, 8 * 118⟩ := by
+  simp [Modes.X86.scrR, dirCore, schedSlot]
+
+/-- The data in blocks, as the modes' steps. -/
+theorem cbcBlocksAt_eq (m : Mem) (p : Addr) (n : Nat) :
+    Spec.TripleDes.cbcBlocksAt m p n = Proof.Modes.chunksAt 8 m p n := by
+  simp only [Spec.TripleDes.cbcBlocksAt, Spec.TripleDes.blocksAt, Proof.Modes.chunksAt, List.map_map]
+  exact List.map_congr_left fun i _ => (bytesAt_eq m _).symm
+
+/-- The stack below `esp` is apart from the arguments and the return address. -/
+theorem stk_apart {s : State} (hfit : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32) (hlo : 16 ≤ (s.gpr .esp).toNat) :
+    Region.Disjoint (stkRegion (s.gpr .esp) 16) ⟨argAddr s 0, 20⟩ ∧
+      Region.Disjoint (stkRegion (s.gpr .esp) 16) ⟨(s.gpr .esp).setWidth 64, 4⟩ := by
+  have e : (s.gpr .esp - BitVec.ofNat 32 16).setWidth 64 = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 16 :=
+    VG.X86.Taint.sub_setWidth hlo
+  have ea : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega)
+  refine ⟨?_, ?_⟩
+  · show Region.Disjoint ⟨(s.gpr .esp - BitVec.ofNat 32 16).setWidth 64, 16⟩ _
+    rw [e, ea]; exact VG.Offset.disjoint_below_above _ (by decide)
+  · show Region.Disjoint ⟨(s.gpr .esp - BitVec.ofNat 32 16).setWidth 64, 16⟩ _
+    have := VG.Offset.disjoint_below_above ((s.gpr .esp).setWidth 64) (m := 16) (a := 0) (l := 4) (by decide)
+    rw [BitVec.add_zero] at this
+    rw [e]; exact this
+
+end VG.Proof.TripleDes.X86.Cbc
 
 namespace VG.Proof.TripleDes.X86.Fb
 
@@ -89,10 +130,11 @@ def fbX86 (st : Nat) (post : State → State → Prop) : Contract X86.isa where
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 5, arg s₁ i = arg s₂ i
 
 /-- `fbX86`'s precondition gives the modes'. -/
-theorem seqPre_of {st : Nat} {post : State → State → Prop} {M : Mode} (hstep : M.step = st) (hst : 0 < st)
-    (hst8 : st ≤ 8) {s : State} (h : (fbX86 st post).pre s) : SeqPre (dirCore .encrypt) M s := by
+theorem seqPre_of {st : Nat} {post : State → State → Prop} {M : Mode} (d : Spec.TripleDes.Direction)
+    (hstep : M.step = st) (hst : 0 < st) (hst8 : st ≤ 8) {s : State} (h : (fbX86 st post).pre s) :
+    SeqPre (dirCore d) M s := by
   obtain ⟨hrd, hwr, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, dSD, dSV, dSS, fK, fV, fD, fS, fE, fLo⟩ := h
-  have hL := (dirCoreSpec .encrypt).layout
+  have hL := (dirCoreSpec d).layout
   obtain ⟨sA, sR⟩ := stk_apart fE fLo
   refine ⟨(by rw [hrd]; simp [dirCore]), fE, ⟨(by rw [hwr]; simp [dirCore, schedSlot]),
       (by simp only [dirCore, schedSlot]; omega)⟩, (by rw [hwr]; simp [dirCore]),
@@ -109,8 +151,8 @@ theorem seqPre_of {st : Nat} {post : State → State → Prop} {M : Mode} (hstep
   · rw [hstep]; exact dRD
   · exact dSS.sub_right (VG.Offset.sub_base _ (by simp only [dirCore, schedSlot]; omega))
 
-theorem keyArgs_of {st : Nat} {post : State → State → Prop} {s : State} (h : (fbX86 st post).pre s) :
-    KeyArgs s [Modes.X86.scrR s (dirCore .encrypt)]
+theorem keyArgs_of {st : Nat} {post : State → State → Prop} (d : Spec.TripleDes.Direction) {s : State}
+    (h : (fbX86 st post).pre s) : KeyArgs s [Modes.X86.scrR s (dirCore d)]
       (Spec.TripleDes.scheduleAt s.mem ((arg s 0).setWidth 64)) := by
   obtain ⟨hrd, -, dKS, -, -, -, -, -, dAS, -, -, -, -, -, dSS, fK, -, -, -, -, -⟩ := h
   refine ⟨arg s 0, ⟨⟨argAddr s 0, 20⟩, by rw [hrd]; simp, ?_⟩, rfl, rfl, by rw [hrd]; simp, fK,
@@ -124,11 +166,11 @@ theorem keyArgs_of {st : Nat} {post : State → State → Prop} {s : State} (h :
 
 theorem dirCore_ka (d : Spec.TripleDes.Direction) : (dirCore d).ka = 1 := rfl
 
-theorem data_eq (m : Mem) (s : State) :
-    Proof.Modes.chunksAt (4 * (dirCore .encrypt).bw) m ((arg s 2).setWidth 64) (arg s 3).toNat = dataAt m s :=
+theorem data_eq (d : Spec.TripleDes.Direction) (m : Mem) (s : State) :
+    Proof.Modes.chunksAt (4 * (dirCore d).bw) m ((arg s 2).setWidth 64) (arg s 3).toNat = dataAt m s :=
   (cbcBlocksAt_eq _ _ _).symm
-theorem iv_eq (m : Mem) (s : State) :
-    Spec.Aes.bytesAt m ((arg s 1).setWidth 64) (4 * (dirCore .encrypt).bw) = ivAt m s := rfl
+theorem iv_eq (d : Spec.TripleDes.Direction) (m : Mem) (s : State) :
+    Spec.Aes.bytesAt m ((arg s 1).setWidth 64) (4 * (dirCore d).bw) = ivAt m s := rfl
 theorem bytes_eq (m : Mem) (s : State) :
     Spec.Aes.bytesAt m ((arg s 2).setWidth 64) (arg s 3).toNat = bytesOf m s := rfl
 theorem cipher_eq (s : State) :
@@ -141,27 +183,27 @@ tactic_template "tdes_post_eq" h:ident h':ident : tactic =>
 
 theorem ofb_wp_x86 {s₀ : State} (hp : (fbX86 8 ofbPost).pre s₀) :
     WP isa ofb s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 8 ofbPost).post s₀ s' :=
-  WP.mono (ofb_wp (dirCoreSpec .encrypt) (seqPre_of rfl (by decide) (by decide) hp) (keyArgs_of hp))
+  WP.mono (ofb_wp (dirCoreSpec .encrypt) (seqPre_of .encrypt rfl (by decide) (by decide) hp) (keyArgs_of .encrypt hp))
     fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem cfbEncrypt_wp {s₀ : State} (hp : (fbX86 8 cfbEncPost).pre s₀) :
     WP isa cfbEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 8 cfbEncPost).post s₀ s' :=
-  WP.mono (cfbEnc_wp (dirCoreSpec .encrypt) (seqPre_of rfl (by decide) (by decide) hp) (keyArgs_of hp))
+  WP.mono (cfbEnc_wp (dirCoreSpec .encrypt) (seqPre_of .encrypt rfl (by decide) (by decide) hp) (keyArgs_of .encrypt hp))
     fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem cfbDecrypt_wp {s₀ : State} (hp : (fbX86 8 cfbDecPost).pre s₀) :
     WP isa cfbDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 8 cfbDecPost).post s₀ s' :=
-  WP.mono (cfbDec_wp (dirCoreSpec .encrypt) (seqPre_of rfl (by decide) (by decide) hp) (keyArgs_of hp))
+  WP.mono (cfbDec_wp (dirCoreSpec .encrypt) (seqPre_of .encrypt rfl (by decide) (by decide) hp) (keyArgs_of .encrypt hp))
     fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem cfb8Encrypt_wp {s₀ : State} (hp : (fbX86 1 cfb8EncPost).pre s₀) :
     WP isa cfb8Encrypt s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 1 cfb8EncPost).post s₀ s' :=
-  WP.mono (cfb8Enc_wp (dirCoreSpec .encrypt) (seqPre_of rfl (by decide) (by decide) hp) (keyArgs_of hp))
+  WP.mono (cfb8Enc_wp (dirCoreSpec .encrypt) (seqPre_of .encrypt rfl (by decide) (by decide) hp) (keyArgs_of .encrypt hp))
     fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem cfb8Decrypt_wp {s₀ : State} (hp : (fbX86 1 cfb8DecPost).pre s₀) :
     WP isa cfb8Decrypt s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 1 cfb8DecPost).post s₀ s' :=
-  WP.mono (cfb8Dec_wp (dirCoreSpec .encrypt) (seqPre_of rfl (by decide) (by decide) hp) (keyArgs_of hp))
+  WP.mono (cfb8Dec_wp (dirCoreSpec .encrypt) (seqPre_of .encrypt rfl (by decide) (by decide) hp) (keyArgs_of .encrypt hp))
     fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq h2 h3; exact ⟨h1, h2, h3⟩
 
 /-! ## Constant time -/

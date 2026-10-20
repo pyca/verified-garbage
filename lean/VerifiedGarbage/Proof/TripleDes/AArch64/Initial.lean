@@ -1,12 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Permutation
-public import VerifiedGarbage.Proof.TripleDes.Core
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.TripleDes.AArch64.Permutation
+import VerifiedGarbage.Proof.TripleDes.Core
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 
@@ -18,7 +17,7 @@ theorem initial_ok (s : State) :
       s'.gpr .x10 = (Spec.TripleDes.permute Spec.TripleDes.ip
         ((s.gpr .x3).setWidth 64)).zeroExtend 64 ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
-      (∀ r, ((instrs initialPermutation.lit).all fun op => dstOf op != some r) = true →
+      (∀ r, ((instrs initialPermutation.lit).all fun op => !clobbers op r) = true →
         s'.gpr r = s.gpr r) :=
   fixedPermutation_ok Spec.TripleDes.ip (by decide) (by decide)
     VG.Proof.TripleDes.ip_bounds .x3 .x10 (instrs initialPermutation.lit) initialPermutation_check s
@@ -30,7 +29,7 @@ theorem initial_raw_ok (s : State) :
     ∃ s', runBlock isa (permuteCode Spec.TripleDes.ip 64 .x10 .x3 .x11 .x12) s = some s' ∧
       s'.gpr .x10 = Spec.TripleDes.permute Spec.TripleDes.ip (s.gpr .x3) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
-      (∀ r, ((instrs initialPermutation.lit).all fun op => dstOf op != some r) = true →
+      (∀ r, ((instrs initialPermutation.lit).all fun op => !clobbers op r) = true →
         s'.gpr r = s.gpr r) := by
   obtain ⟨s', run, word, rd, wr, sp, mem, regs⟩ := initial_ok s
   have hcode : permuteCode Spec.TripleDes.ip 64 .x10 .x3 .x11 .x12 =
@@ -47,7 +46,7 @@ theorem final_ok (s : State) :
       s'.gpr .x10 = (Spec.TripleDes.permute Spec.TripleDes.fp
         ((s.gpr .x3).setWidth 64)).zeroExtend 64 ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
-      (∀ r, ((instrs finalPermutation.lit).all fun op => dstOf op != some r) = true →
+      (∀ r, ((instrs finalPermutation.lit).all fun op => !clobbers op r) = true →
         s'.gpr r = s.gpr r) :=
   fixedPermutation_ok Spec.TripleDes.fp (by decide) (by decide)
     VG.Proof.TripleDes.fp_bounds .x3 .x10 (instrs finalPermutation.lit) finalPermutation_check s
@@ -56,7 +55,7 @@ theorem final_raw_ok (s : State) :
     ∃ s', runBlock isa (permuteCode Spec.TripleDes.fp 64 .x10 .x3 .x11 .x12) s = some s' ∧
       s'.gpr .x10 = Spec.TripleDes.permute Spec.TripleDes.fp (s.gpr .x3) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
-      (∀ r, ((instrs finalPermutation.lit).all fun op => dstOf op != some r) = true →
+      (∀ r, ((instrs finalPermutation.lit).all fun op => !clobbers op r) = true →
         s'.gpr r = s.gpr r) := by
   obtain ⟨s', run, word, rd, wr, sp, mem, regs⟩ := final_ok s
   have hcode : permuteCode Spec.TripleDes.fp 64 .x10 .x3 .x11 .x12 =

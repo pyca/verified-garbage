@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.Linear
 public import VerifiedGarbage.Impl.Camellia.X86_64.Ecb
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Moving the blocks and halves of bitsliced Camellia on x86-64, by evaluation

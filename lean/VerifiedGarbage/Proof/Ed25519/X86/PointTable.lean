@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.CopyWords
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ed25519.X86.Field
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Saving and loading four consecutive field coordinates. -/
 

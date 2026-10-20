@@ -1,25 +1,31 @@
 module
 
+import VerifiedGarbage.Proof.Framework.AArch64.LaneCaller
+
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
-meta import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 public import VerifiedGarbage.Proof.Ecdh.AArch64.P521.Contract
-meta import VerifiedGarbage.Proof.Ecdh.AArch64.P521.Contract
-public import VerifiedGarbage.Proof.Ecdh.AArch64.P521.Lit
-meta import VerifiedGarbage.Proof.Ecdh.AArch64.P521.Lit
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ecdh.AArch64.P521.Lit
+public import VerifiedGarbage.Impl.Ecdh.P521.AArch64
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+meta import VerifiedGarbage.Proof.Framework.AArch64.LaneCaller
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.Main
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.P521.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.P521.Lit
+meta import VerifiedGarbage.Impl.Ecdh.P521.AArch64
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+import Mathlib.Tactic.ToExpr
+meta import Mathlib.Tactic.ToExpr
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # ECDH over P-521 on AArch64: `Verified`
@@ -67,7 +73,7 @@ theorem ecdh_a64 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch6
   exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, post_of hpost⟩
 
 theorem ecdh_ct : ConstantTime isa ecdhAArch64.pre ecdhAArch64.pub exchangeP521 :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
+  LaneTaint.constantTime (Taint.ofRegs [.x0, .x1, .x2, .x3])
     (fun _ _ _ _ ⟨h0, h1, h2, h3, hsp⟩ => ⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl

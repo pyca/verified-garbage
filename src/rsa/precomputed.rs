@@ -4,7 +4,7 @@
 //! AWS-LC set up their Montgomery values at a key's first operation: loading
 //! a key only checks it.
 
-use super::{Backend, scratch_words};
+use super::{Backend, public_scratch_words};
 use alloc::{boxed::Box, vec, vec::Vec};
 use core::{
     fmt, ptr,
@@ -32,21 +32,32 @@ pub(super) fn modulus_valid(n: &[u8]) -> bool {
 }
 
 /// What `vg_rsa_public_precompute` writes for `n` and returns, computed in
-/// `scratch`, which has at least `scratch_words(n.len())` words.
+/// `scratch`, which has at least `public_scratch_words(n.len())` words.
 fn precompute(n: &[u8], scratch: &mut [u64]) -> (Vec<u64>, u32) {
     let k = n.len();
-    assert!((64..=1024).contains(&k) && scratch.len() >= scratch_words(k));
+    assert!((64..=1024).contains(&k) && scratch.len() >= public_scratch_words(k));
     let mut pre = vec![0u64; precomputed_words(k)];
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_rsa_public_precompute,
         // `select` chose it because the CPU has the features it needs.
         #[cfg(target_arch = "x86_64")]
         Backend::Adx | Backend::Ifma => vg_rsa_public_precompute_adx,
+        #[cfg(all(
+            target_arch = "arm",
+            any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            )
+        ))]
+        Backend::Umaal => vg_rsa_public_precompute,
     };
     // SAFETY: each pointer is valid for its length (`pre` and `scratch` for
     // writes), and none overlaps another or wraps around, as they are
     // distinct Rust allocations (`scratch` borrowed exclusively); the check
-    // above gives `64 ≤ n_len ≤ 1024` and `scratch_len ≥ 16 n_len + 32`, and
+    // above gives `64 ≤ n_len ≤ 1024` and `scratch_len ≥ 8 ⌈n_len / 8⌉ + 48`, and
     // `pre_len = 2 ⌈n_len / 8⌉`; and the CPU has the features of the
     // function `select` chose.
     let r = unsafe {
@@ -73,7 +84,7 @@ impl Precomputed {
 
     /// The values of `n`, a modulus that `modulus_valid` accepts and the
     /// same at every call, computed in `scratch` (at least
-    /// `scratch_words(n.len())` words, left holding only values of `n`) if
+    /// `public_scratch_words(n.len())` words, left holding only values of `n`) if
     /// no call has yet.
     pub(crate) fn get(&self, n: &[u8], scratch: &mut [u64]) -> &[u64] {
         let pointer = self.0.load(Ordering::Acquire);
@@ -183,7 +194,7 @@ mod tests {
         ];
         for (n, valid) in cases {
             assert_eq!(modulus_valid(&n), valid);
-            let mut scratch = vec![0; scratch_words(n.len())];
+            let mut scratch = vec![0; public_scratch_words(n.len())];
             let (pre, r) = precompute(&n, &mut scratch);
             assert_eq!(r, u32::from(valid));
             assert_eq!(pre.iter().any(|&w| w != 0), valid);
@@ -196,7 +207,7 @@ mod tests {
     #[test]
     fn computed_once_and_shared_by_clones() {
         let n = number(64, 0x80);
-        let mut scratch = vec![0; scratch_words(64)];
+        let mut scratch = vec![0; public_scratch_words(64)];
         let pre = Precomputed::new();
         let empty = pre.clone();
         assert!(empty.0.load(Ordering::Relaxed).is_null());
@@ -224,13 +235,13 @@ mod tests {
     #[test]
     fn concurrent_first_operations_agree() {
         let n = number(128, 0xc5);
-        let mut scratch = vec![0; scratch_words(128)];
+        let mut scratch = vec![0; public_scratch_words(128)];
         let expected = precompute(&n, &mut scratch).0;
         let pre = Precomputed::new();
         std::thread::scope(|scope| {
             for _ in 0..4 {
                 scope.spawn(|| {
-                    let mut scratch = vec![0; scratch_words(128)];
+                    let mut scratch = vec![0; public_scratch_words(128)];
                     assert_eq!(pre.get(&n, &mut scratch), &expected[..]);
                 });
             }

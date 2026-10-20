@@ -1,11 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Verified
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inv
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Run
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ML-DSA (FIPS 204) signing on x86
@@ -31,29 +27,20 @@ def notes : List String :=
     is the only place an iteration's outcome affects timing."]
 
 def artifacts : List Artifact := [
-  { Spec.MlDsa.sign44Api with
-    target := X86.target
-    doc := Spec.MlDsa.sign44Api.doc (notes := notes)
+  Spec.MlDsa.sign44Api.artifact X86.target {
+    notes := notes
     code := Impl.MlDsa.X86.Sign.sign prims Spec.MlDsa.mlDsa44
-    contract := Spec.MlDsa.signContract Spec.MlDsa.mlDsa44 X86.abi 96
     stack := 96
-    verified := Proof.MlDsa.X86.Sign.sign44_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlDsa.sign65Api with
-    target := X86.target
-    doc := Spec.MlDsa.sign65Api.doc (notes := notes)
+    verified := Proof.MlDsa.X86.Sign.sign44_verified },
+  Spec.MlDsa.sign65Api.artifact X86.target {
+    notes := notes
     code := Impl.MlDsa.X86.Sign.sign prims Spec.MlDsa.mlDsa65
-    contract := Spec.MlDsa.signContract Spec.MlDsa.mlDsa65 X86.abi 96
     stack := 96
-    verified := Proof.MlDsa.X86.Sign.sign65_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlDsa.sign87Api with
-    target := X86.target
-    doc := Spec.MlDsa.sign87Api.doc (notes := notes)
+    verified := Proof.MlDsa.X86.Sign.sign65_verified },
+  Spec.MlDsa.sign87Api.artifact X86.target {
+    notes := notes
     code := Impl.MlDsa.X86.Sign.sign prims Spec.MlDsa.mlDsa87
-    contract := Spec.MlDsa.signContract Spec.MlDsa.mlDsa87 X86.abi 96
     stack := 96
-    verified := Proof.MlDsa.X86.Sign.sign87_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    verified := Proof.MlDsa.X86.Sign.sign87_verified }]
 
 end VG.Artifacts.MlDsaSign.X86

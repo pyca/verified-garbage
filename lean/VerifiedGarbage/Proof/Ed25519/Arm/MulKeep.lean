@@ -1,13 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.Arm.PointPowers
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointPowers
 public import VerifiedGarbage.Proof.Ed25519.Arm.AccumulateStep
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointBatch
-import VerifiedGarbage.Proof.Ed25519.Arm.BatchBits
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.Arm.Points
+import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Ed25519.Arm.PointPowersLoop`. -/
 

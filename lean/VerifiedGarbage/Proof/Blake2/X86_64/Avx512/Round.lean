@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Blake2.X86_64.Avx2.Round
 public import VerifiedGarbage.Impl.Blake2.X86_64.Avx512
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Argon2.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # BLAKE2b on x86-64 with AVX-512: a round

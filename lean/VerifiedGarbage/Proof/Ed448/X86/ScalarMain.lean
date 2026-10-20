@@ -1,13 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarIO
-public import VerifiedGarbage.TCB.X86.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.X448.X86.Ops
+import VerifiedGarbage.Proof.X448.X86.Frame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Ed448 scalar reduction on x86 (32-bit): the whole function

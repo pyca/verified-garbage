@@ -2,24 +2,15 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedRest
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedFinish
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPackSecret
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedNtt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.TCB.Axioms
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSqueezeApart
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRow
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Main
 
 @[expose] public section
 

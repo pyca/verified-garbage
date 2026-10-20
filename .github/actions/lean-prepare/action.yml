@@ -3,7 +3,9 @@ description: >
   Restores this project's last build into `lean/.lake/build` (Lake rebuilds
   only what changed since: mostly extraction), installing Lean meanwhile,
   then installs Mathlib (`lean-setup`, `lean-mathlib`). Every job that
-  builds the proofs starts with it, after checking out the repository.
+  builds the proofs starts with it, after checking out the repository. The
+  cache holds `lean/.lake/ltar`, a module archive per module
+  (`ci/lean_cache.py store`), which it unpacks once Lean is installed.
 
 inputs:
   key:
@@ -12,6 +14,12 @@ inputs:
   restore-keys:
     description: Fallbacks, one per line, most preferred first.
     required: true
+  modules:
+    description: >
+      A file of the project's modules (`lean_shards.py closure`) to unpack
+      alone, for a shard; empty for every module.
+    required: false
+    default: ""
 
 outputs:
   cache-hit:
@@ -29,8 +37,8 @@ runs:
   steps:
     # Installing elan and the toolchain, and listing the modules the proofs
     # import from outside the project, need nothing restored: they run in
-    # the background while the build restores (writing about 10 GB, which
-    # takes a minute), and `lean-setup` waits for them. A process started in
+    # the background while the build's archives restore, and `lean-setup`
+    # waits for them. A process started in
     # a step outlives it; the runner stops what is left at the end of the
     # job. Its output goes to a file: holding the step's open would make the
     # step wait for it.
@@ -110,7 +118,7 @@ runs:
       id: lean-build
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
-        path: lean/.lake/build
+        path: lean/.lake/ltar
         key: ${{ inputs.key }}
         restore-keys: ${{ inputs.restore-keys }}
     # A download that fails partway (a stalled connection, aborted) is only
@@ -121,13 +129,30 @@ runs:
       if: ${{ steps.lean-build.outputs.cache-matched-key == '' }}
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
-        path: lean/.lake/build
+        path: lean/.lake/ltar
         key: ${{ inputs.key }}
         restore-keys: ${{ inputs.restore-keys }}
     - uses: ./.github/actions/lean-setup
       id: lean-setup
+    # With the toolchain's `leantar`, so after `lean-setup`. The archives
+    # stay, for the next `store` (lean-assemble).
+    - name: Unpack this project's build
+      if: ${{ hashFiles('lean/.lake/ltar/index.json') != '' }}
+      shell: bash
+      env:
+        MODULES: ${{ inputs.modules }}
+      run: python3 ci/lean_cache.py restore lean ${MODULES:+--modules "$MODULES"}
     - uses: ./.github/actions/lean-mathlib
       with:
         mods: ${{ steps.lean-setup.outputs.mods }}
         cache-hit: ${{ steps.lean-setup.outputs.cache-hit }}
         cache-key: ${{ steps.lean-setup.outputs.cache-key }}
+    # Saved with the next project build, so publishing can fetch the exact
+    # dependency cache without installing Lean to parse the imports again.
+    - name: Record the dependency cache key
+      shell: bash
+      env:
+        KEY: ${{ steps.lean-setup.outputs.cache-key }}
+      run: |
+        mkdir -p lean/.lake/ltar
+        printf '%s\n' "$KEY" > lean/.lake/ltar/mathlib-cache-key

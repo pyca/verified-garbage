@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Aes.X86.Sbox
 public import VerifiedGarbage.Proof.Aes.SboxSpec
 public import VerifiedGarbage.Proof.Aes.Ct32.Bitsliced
 public import VerifiedGarbage.Proof.Framework.X86.Straight
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The bitsliced S-box on x86 (32-bit)

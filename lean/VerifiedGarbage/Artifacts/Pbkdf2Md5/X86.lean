@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Md5
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Md5
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
+import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
 
 /-!
 # PBKDF2-HMAC-MD5 (RFC 8018) on x86: the iteration and the whole derivation
@@ -30,25 +35,15 @@ namespace VG.Artifacts.Pbkdf2Md5.X86
 open VG.Proof.Pbkdf2.Stream.X86
 
 def artifacts : List Artifact := [
-  { Spec.Hmac.md5I.iterateApi with
-    target := X86.target
-    doc := Spec.Hmac.md5I.iterateApi.doc
+  Spec.Hmac.md5I.iterateApi.artifact X86.target {
     code := Proof.Pbkdf2.Md.X86.md5M.iterate
-    contract := Spec.Hmac.md5I.iterateContract X86.abi 48
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩)
     stack := 48
-    verified := Proof.Pbkdf2.Md.X86.Instances.md5_iterate
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Hmac.md5I.pbkdf2Api with
-    target := X86.target
-    doc := Spec.Hmac.md5I.pbkdf2Api.doc
+    verified := Proof.Pbkdf2.Md.X86.Instances.md5_iterate },
+  Spec.Hmac.md5I.pbkdf2Api.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.md5I) 7
       Proof.Pbkdf2.Whole.X86.md5F.pbkdf2
-    contract := Spec.Hmac.md5I.pbkdf2Contract X86.abi (76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.md5I)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩)
     stack := 76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.md5I
-    verified := Proof.Pbkdf2.Whole.X86.pbkFramed Proof.Pbkdf2.Whole.X86.md5 (by decide) (by lit_decide)
-      (by lit_decide) Proof.Pbkdf2.Whole.X86.md5_pbkFrameSat
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Pbkdf2.Whole.X86.pbkFramed Proof.Pbkdf2.Whole.X86.md5
+      Proof.Pbkdf2.Whole.X86.md5_pbkFrameSat }]
 
 end VG.Artifacts.Pbkdf2Md5.X86

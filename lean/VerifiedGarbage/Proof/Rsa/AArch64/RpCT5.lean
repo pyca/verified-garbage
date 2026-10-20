@@ -1,17 +1,35 @@
 module
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT1
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpExp
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT4
-meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT4
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Rsa.AArch64.RpCT4
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
+import VerifiedGarbage.Proof.Rsa.AArch64.RpSkip
+import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT1
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpExp
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT4
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpSkip
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+meta import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+meta import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: constant time, the exponentiation

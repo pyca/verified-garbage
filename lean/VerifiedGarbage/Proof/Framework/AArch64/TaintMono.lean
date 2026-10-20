@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 public import VerifiedGarbage.Proof.Framework.TaintSum
 public import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+meta import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
 
 /-!
 # The AArch64 taint analyses are monotone
@@ -49,7 +52,8 @@ theorem step_mono {τ σ τ' : T} (i : Instr) (h : τ.subset σ = true) (hs : st
        exact ⟨⟨pub_mono h hp.1.1, pub_mono h hp.1.2⟩, pub_mono h hp.2⟩)
     | (split at hs <;> [rename_i hn; cases hs]
        cases hs
-       exact ⟨_, by simp only [pub_mono h hn, ↓reduceIte]; rfl, (by first | exact set_mono h _ id | exact h)⟩)
+       exact ⟨_, by simp only [pub_mono h hn, ↓reduceIte]; rfl,
+         (by first | exact set_mono h _ id | exact h | exact set_mono (set_mono h _ id) _ id)⟩)
 
 theorem condPub_mono {τ σ : T} (c : Cond) (h : τ.subset σ = true)
     (hc : AArch64.taint.condPub τ c = true) : AArch64.taint.condPub σ c = true := by
@@ -76,15 +80,18 @@ def gprDst : Instr → Option Reg
   | .bicRor _ d .. | .extr _ d .. | .mul _ d .. | .umulh d .. | .umaddl d .. | .umull d .. | .adcs _ d .. | .sbcs _ d ..
   | .adc _ d .. | .sbc _ d .. | .csel _ d .. | .cselc _ d .. | .csneg _ d .. | .adrSym d _
   | .madd _ d .. | .addImm _ d .. | .subImm _ d .. | .ror _ d .. | .lsr _ d .. | .lsl _ d ..
-  | .rev32 d _ | .rev d _ | .addSp d _ | .movz _ d .. | .movk _ d .. | .ldr _ d .. | .ldrb d ..
+  | .rev32 d _ | .rev d _ | .clz _ d _ | .rbit _ d _ | .addSp d _ | .movz _ d .. | .movk _ d .. | .ldr _ d .. | .ldrb d ..
   | .ldrSp d _ | .umov _ d .. | .pop d => some d
   | _ => none
 
 /-- `i` writes no register of `F`. -/
 def keepsI (F : T) (i : Instr) : Bool :=
-  match gprDst i with
-  | some d => !F.mem d
-  | none => true
+  match i with
+  | .ldp t1 t2 _ _ => !F.mem t1 && !F.mem t2
+  | _ =>
+    match gprDst i with
+    | some d => !F.mem d
+    | none => true
 
 theorem set_keeps {Φ F σ : T} (hΦF : Φ.subset F = true) (hΦ : Φ.subset σ = true) {d : Reg}
     (hd : F.mem d = false) (p : Bool) : Φ.subset (set σ d p) = true := by
@@ -97,6 +104,11 @@ theorem step_keeps {F Φ σ σ' : T} (i : Instr) (hk : keepsI F i = true) (hΦF 
     (hΦ : Φ.subset σ = true) (hs : step σ i = some σ') : Φ.subset σ' = true := by
   cases i <;> simp only [step, stepFn, reduceCtorEq] at hs <;>
     simp only [keepsI, gprDst, Bool.not_eq_true'] at hk
+  case ldp =>
+    split at hs <;> [skip; cases hs]
+    cases hs
+    simp only [Bool.and_eq_true, Bool.not_eq_true'] at hk
+    exact set_keeps hΦF (set_keeps hΦF hΦ hk.1 _) hk.2 _
   all_goals first
     | (cases hs; exact set_keeps hΦF hΦ hk _)
     | (cases hs; exact hΦ)
@@ -147,15 +159,18 @@ theorem step_mono {τ σ τ' : T} (i : Instr) (h : taint.le τ σ = true) (hs : 
   | umov sz d n k =>
     simp only [step, Option.some.injEq] at hs; subst hs
     exact ⟨_, rfl, le_iff.mpr ⟨Taint.set_mono h.1 d (RegSet.mem_mono h.2), h.2⟩⟩
+  | ldrqTbl t n off name ws =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    exact ⟨_, rfl, le_iff.mpr ⟨h.1, setV_mono h.2 t fun _ => rfl⟩⟩
   | _ => exact ordinary hs
 
 theorem le_refl (τ : T) : taint.le τ τ = true := le_iff.mpr ⟨RegSet.subset_refl _, RegSet.subset_refl _⟩
 
-/-- What of the vector registers `F` an instruction keeps public: a `dup` all
-but its destination, a `umov` and a scalar instruction all of them, any other
+/-- What of the vector registers `F` an instruction keeps public: a `dup` and
+an `ldrqTbl` all but its destination, a `umov` and a scalar instruction all of them, any other
 instruction none. -/
 def vkeeps (F : RegSet VReg) : Instr → Bool
-  | .vop (.dup _ d _) => !F.mem d
+  | .vop (.dup _ d _) | .ldrqTbl d .. => !F.mem d
   | .umov .. => true
   | i => scalar i
 
@@ -215,6 +230,15 @@ theorem step_keeps {F Φ σ σ' : T} (i : Instr) (hk : keeps F i = true) (hΦF :
     simp only [Taint.keepsI, Taint.gprDst, Bool.not_eq_true'] at hg
     exact le_iff.mpr ⟨Taint.set_keeps hΦF' hΦ' hg _, hΦv⟩
   | ldrq => exact ordinary hs (none rfl)
+  | ldrqTbl t n off name ws =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    refine le_iff.mpr ⟨hΦ', ?_⟩
+    rcases hk' with h0 | hv
+    · exact vec_sub hΦF h0 _
+    · simp only [vkeeps, Bool.not_eq_true'] at hv
+      unfold setV; split
+      · exact RegSet.subset_insert_of hΦv t
+      · exact RegSet.subset_erase_of (le_iff.mp hΦF).2 hΦv hv
   | _ => exact ordinary hs (keepsAll rfl)
 
 /-- A call writes `x16`, `x17` and `x30`. -/
@@ -278,8 +302,10 @@ instance : VG.Taint.LeFrame taint where
       simp [RegSet.mem, RegSet.empty]
     simp only [keeps, Taint.keepsI]
     split
-    · rw [h]; rfl
-    · rfl
+    · rw [h, h]; rfl
+    · split
+      · rw [h]; rfl
+      · rfl
   keepsCall_bot := rfl
   step_keeps i hk hΦF hΦ hs := step_keeps i hk hΦF hΦ hs
   call_keeps {F Φ σ σ'} hk hΦF hΦ hs := by

@@ -1,13 +1,24 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.PolyvalCT
-meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.PolyvalCT
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
 import VerifiedGarbage.Proof.Framework.X86_64.Narrow
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.PolyvalCT
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
 meta import VerifiedGarbage.Proof.Framework.X86_64.Narrow
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM-SIV on x86-64: `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open` are constant time

@@ -1,15 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTimingInit
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTimingStep
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTimingStep
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
 
 @[expose] public section
 
@@ -23,7 +18,7 @@ theorem nafTable_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     (hL : JacWinLay K size) (hJ : K.J=52) (hAl : Aligned K.M (·∈jacWinSlots K))
     (hm : UnitMod C.p (2^(64*K.M.n))) (ht : K.tbl<4096) (hOne : K.one<C.p)
     (hc : NafTableChecks K)
-    (hcopy : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), dstOf i≠some r)
+    (hcopy : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), clobbers i r = false)
     {E : Nat → Fe C} :
     RelCT isa (FieldPair K.M base size C.p (·∈jacWinSlots K) (winRo K) E)
       (Naf.table K)

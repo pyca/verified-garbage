@@ -3,12 +3,12 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Stream
 public import VerifiedGarbage.Proof.MlDsa.Pack.Bits
 public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
-public import VerifiedGarbage.Proof.MlKem.Encode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.Bits
+import VerifiedGarbage.Proof.MlKem.Encode
 
 /-!
 # ML-DSA on x86-64: the loops over the groups

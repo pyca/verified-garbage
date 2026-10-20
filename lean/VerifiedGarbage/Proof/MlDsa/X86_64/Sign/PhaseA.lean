@@ -3,16 +3,13 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inv
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsB
 public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Blocks
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-DSA signing on x86-64: `ExpandA`

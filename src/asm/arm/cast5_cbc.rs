@@ -2,344 +2,356 @@
 //! Verified `cast5_cbc` functions for `arm`.
 #![allow(dead_code)]
 
-/// CAST5-CBC encryption (NIST SP 800-38A §6.2, RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on return. `CIPH_K` is CAST-128 encryption with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`. No padding is added.
+/// CAST5-CBC encryption (NIST SP 800-38A §6.2, RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is CAST-128 encryption with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`. No padding is added.
 ///
-/// Contract: `VG.Spec.Cast5.cbcEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
+/// Contract: `VG.Spec.Cast5.cbcEncryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
 /// Baseline ARMv7: the generic CBC of `Impl/Modes/Arm/`, one block at a time, calling the verified `vg_cast5_ecb_encrypt` or `vg_cast5_ecb_decrypt` (which scans the S-boxes in the static `VG_CAST5_S1234`, so no secret is an address) on each block with the number of rounds and, as its stack argument, the end of a 312-byte working space on the stack (the mode's 56 bytes, then the 256 the ECB function works in), zeroed on return.
+///
+/// The chaining value, the last ciphertext block, goes back to the IV at the end.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads of 8 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
-/// * `data` must not overlap `schedule`, `iv` or the arguments on the stack (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_cast5_cbc_encrypt(schedule: *const [u8; 128], rounds: usize, iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_cast5_cbc_encrypt_chained(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #328",
-        "add r12, sp, #0",
-        "str lr, [r12, #8]",
-        "ldr lr, [sp, #328]",
-        "str lr, [r12, #0]",
-        "add lr, sp, #12",
-        "str lr, [r12, #4]",
-        "ldr lr, [sp, #8]",
-        "ldr r12, [sp, #4]",
-        "str r4, [r12, #0]",
-        "str r5, [r12, #4]",
-        "str r6, [r12, #8]",
-        "str r7, [r12, #12]",
-        "str r9, [r12, #20]",
-        "str r10, [r12, #24]",
-        "str r11, [r12, #28]",
-        "str lr, [r12, #32]",
-        "str r8, [r12, #16]",
-        "mov r4, r0",
-        "mov r11, r1",
-        "mov r5, r2",
-        "mov r6, r3",
-        "ldr r7, [sp, #0]",
-        "mov r8, r12",
-        "ldr r9, [r5, #0]",
-        "str r9, [r8, #40]",
-        "ldr r9, [r5, #4]",
-        "str r9, [r8, #44]",
-        "cmp r7, #0",
-        "beq 20f",
-        "22:",
-        "ldr r9, [r8, #40]",
-        "ldr r10, [r6, #0]",
-        "eor r9, r9, r10",
-        "str r9, [r8, #40]",
-        "ldr r9, [r8, #44]",
-        "ldr r10, [r6, #4]",
-        "eor r9, r9, r10",
-        "str r9, [r8, #44]",
-        "mov r0, r4",
-        "mov r1, r11",
-        "add r2, r8, #40",
-        "mov r3, #1",
-        "add r12, r8, #56",
-        "push {{r12, lr}}",
-        "bl {vg_cast5_ecb_encrypt}",
-        "ldr r12, [sp], #8",
-        "ldr r9, [r8, #40]",
-        "str r9, [r6, #0]",
-        "ldr r9, [r8, #44]",
-        "str r9, [r6, #4]",
-        "add r6, r6, #8",
-        "subs r7, r7, #1",
-        "bne 22b",
-        "b 21f",
-        "20:",
-        "21:",
-        "ldr r4, [r8, #0]",
-        "ldr r5, [r8, #4]",
-        "ldr r6, [r8, #8]",
-        "ldr r7, [r8, #12]",
-        "ldr r9, [r8, #20]",
-        "ldr r10, [r8, #24]",
-        "ldr r11, [r8, #28]",
-        "ldr lr, [r8, #32]",
-        "ldr r8, [r8, #16]",
-        "add r12, sp, #12",
-        "mov r2, #0",
-        "str r2, [r12, #0]",
-        "str r2, [r12, #4]",
-        "str r2, [r12, #8]",
-        "str r2, [r12, #12]",
-        "str r2, [r12, #16]",
-        "str r2, [r12, #20]",
-        "str r2, [r12, #24]",
-        "str r2, [r12, #28]",
-        "str r2, [r12, #32]",
-        "str r2, [r12, #36]",
-        "str r2, [r12, #40]",
-        "str r2, [r12, #44]",
-        "str r2, [r12, #48]",
-        "str r2, [r12, #52]",
-        "str r2, [r12, #56]",
-        "str r2, [r12, #60]",
-        "str r2, [r12, #64]",
-        "str r2, [r12, #68]",
-        "str r2, [r12, #72]",
-        "str r2, [r12, #76]",
-        "str r2, [r12, #80]",
-        "str r2, [r12, #84]",
-        "str r2, [r12, #88]",
-        "str r2, [r12, #92]",
-        "str r2, [r12, #96]",
-        "str r2, [r12, #100]",
-        "str r2, [r12, #104]",
-        "str r2, [r12, #108]",
-        "str r2, [r12, #112]",
-        "str r2, [r12, #116]",
-        "str r2, [r12, #120]",
-        "str r2, [r12, #124]",
-        "str r2, [r12, #128]",
-        "str r2, [r12, #132]",
-        "str r2, [r12, #136]",
-        "str r2, [r12, #140]",
-        "str r2, [r12, #144]",
-        "str r2, [r12, #148]",
-        "str r2, [r12, #152]",
-        "str r2, [r12, #156]",
-        "str r2, [r12, #160]",
-        "str r2, [r12, #164]",
-        "str r2, [r12, #168]",
-        "str r2, [r12, #172]",
-        "str r2, [r12, #176]",
-        "str r2, [r12, #180]",
-        "str r2, [r12, #184]",
-        "str r2, [r12, #188]",
-        "str r2, [r12, #192]",
-        "str r2, [r12, #196]",
-        "str r2, [r12, #200]",
-        "str r2, [r12, #204]",
-        "str r2, [r12, #208]",
-        "str r2, [r12, #212]",
-        "str r2, [r12, #216]",
-        "str r2, [r12, #220]",
-        "str r2, [r12, #224]",
-        "str r2, [r12, #228]",
-        "str r2, [r12, #232]",
-        "str r2, [r12, #236]",
-        "str r2, [r12, #240]",
-        "str r2, [r12, #244]",
-        "str r2, [r12, #248]",
-        "str r2, [r12, #252]",
-        "str r2, [r12, #256]",
-        "str r2, [r12, #260]",
-        "str r2, [r12, #264]",
-        "str r2, [r12, #268]",
-        "str r2, [r12, #272]",
-        "str r2, [r12, #276]",
-        "str r2, [r12, #280]",
-        "str r2, [r12, #284]",
-        "str r2, [r12, #288]",
-        "str r2, [r12, #292]",
-        "str r2, [r12, #296]",
-        "str r2, [r12, #300]",
-        "str r2, [r12, #304]",
-        "str r2, [r12, #308]",
-        "add sp, sp, #328",
-        "bx lr",
+        r"sub sp, sp, #328
+add r12, sp, #0
+str lr, [r12, #8]
+ldr lr, [sp, #328]
+str lr, [r12, #0]
+add lr, sp, #12
+str lr, [r12, #4]
+ldr lr, [sp, #8]
+ldr r12, [sp, #4]
+str r4, [r12, #0]
+str r5, [r12, #4]
+str r6, [r12, #8]
+str r7, [r12, #12]
+str r9, [r12, #20]
+str r10, [r12, #24]
+str r11, [r12, #28]
+str lr, [r12, #32]
+str r8, [r12, #16]
+mov r4, r0
+mov r11, r1
+mov r5, r2
+mov r6, r3
+ldr r7, [sp, #0]
+mov r8, r12
+ldr r9, [r5, #0]
+str r9, [r8, #40]
+ldr r9, [r5, #4]
+str r9, [r8, #44]
+cmp r7, #0
+beq 20f
+22:
+ldr r9, [r8, #40]
+ldr r10, [r6, #0]
+eor r9, r9, r10
+str r9, [r8, #40]
+ldr r9, [r8, #44]
+ldr r10, [r6, #4]
+eor r9, r9, r10
+str r9, [r8, #44]
+mov r0, r4
+mov r1, r11
+add r2, r8, #40
+mov r3, #1
+add r12, r8, #56
+push {{r12, lr}}
+bl {vg_cast5_ecb_encrypt}
+ldr r12, [sp], #8
+ldr r9, [r8, #40]
+str r9, [r6, #0]
+ldr r9, [r8, #44]
+str r9, [r6, #4]
+add r6, r6, #8
+subs r7, r7, #1
+bne 22b
+b 21f
+20:
+21:
+ldr r9, [r8, #40]
+str r9, [r5, #0]
+ldr r9, [r8, #44]
+str r9, [r5, #4]
+ldr r4, [r8, #0]
+ldr r5, [r8, #4]
+ldr r6, [r8, #8]
+ldr r7, [r8, #12]
+ldr r9, [r8, #20]
+ldr r10, [r8, #24]
+ldr r11, [r8, #28]
+ldr lr, [r8, #32]
+ldr r8, [r8, #16]
+add r12, sp, #12
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+str r2, [r12, #128]
+str r2, [r12, #132]
+str r2, [r12, #136]
+str r2, [r12, #140]
+str r2, [r12, #144]
+str r2, [r12, #148]
+str r2, [r12, #152]
+str r2, [r12, #156]
+str r2, [r12, #160]
+str r2, [r12, #164]
+str r2, [r12, #168]
+str r2, [r12, #172]
+str r2, [r12, #176]
+str r2, [r12, #180]
+str r2, [r12, #184]
+str r2, [r12, #188]
+str r2, [r12, #192]
+str r2, [r12, #196]
+str r2, [r12, #200]
+str r2, [r12, #204]
+str r2, [r12, #208]
+str r2, [r12, #212]
+str r2, [r12, #216]
+str r2, [r12, #220]
+str r2, [r12, #224]
+str r2, [r12, #228]
+str r2, [r12, #232]
+str r2, [r12, #236]
+str r2, [r12, #240]
+str r2, [r12, #244]
+str r2, [r12, #248]
+str r2, [r12, #252]
+str r2, [r12, #256]
+str r2, [r12, #260]
+str r2, [r12, #264]
+str r2, [r12, #268]
+str r2, [r12, #272]
+str r2, [r12, #276]
+str r2, [r12, #280]
+str r2, [r12, #284]
+str r2, [r12, #288]
+str r2, [r12, #292]
+str r2, [r12, #296]
+str r2, [r12, #300]
+str r2, [r12, #304]
+str r2, [r12, #308]
+add sp, sp, #328
+bx lr",
         vg_cast5_ecb_encrypt = sym super::cast5::vg_cast5_ecb_encrypt,
     )
 }
 
-/// CAST5-CBC decryption (NIST SP 800-38A §6.2, RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on entry. `CIPH⁻¹_K` is CAST-128 decryption with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`. No padding is removed.
+/// CAST5-CBC decryption (NIST SP 800-38A §6.2, RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is CAST-128 decryption with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`. No padding is removed.
 ///
-/// Contract: `VG.Spec.Cast5.cbcDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
+/// Contract: `VG.Spec.Cast5.cbcDecryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
 /// Baseline ARMv7: the generic CBC of `Impl/Modes/Arm/`, one block at a time, calling the verified `vg_cast5_ecb_encrypt` or `vg_cast5_ecb_decrypt` (which scans the S-boxes in the static `VG_CAST5_S1234`, so no secret is an address) on each block with the number of rounds and, as its stack argument, the end of a 312-byte working space on the stack (the mode's 56 bytes, then the 256 the ECB function works in), zeroed on return.
+///
+/// The chaining value, the last ciphertext block, goes back to the IV at the end.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads of 8 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
-/// * `data` must not overlap `schedule`, `iv` or the arguments on the stack (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_cast5_cbc_decrypt(schedule: *const [u8; 128], rounds: usize, iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_cast5_cbc_decrypt_chained(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #328",
-        "add r12, sp, #0",
-        "str lr, [r12, #8]",
-        "ldr lr, [sp, #328]",
-        "str lr, [r12, #0]",
-        "add lr, sp, #12",
-        "str lr, [r12, #4]",
-        "ldr lr, [sp, #8]",
-        "ldr r12, [sp, #4]",
-        "str r4, [r12, #0]",
-        "str r5, [r12, #4]",
-        "str r6, [r12, #8]",
-        "str r7, [r12, #12]",
-        "str r9, [r12, #20]",
-        "str r10, [r12, #24]",
-        "str r11, [r12, #28]",
-        "str lr, [r12, #32]",
-        "str r8, [r12, #16]",
-        "mov r4, r0",
-        "mov r11, r1",
-        "mov r5, r2",
-        "mov r6, r3",
-        "ldr r7, [sp, #0]",
-        "mov r8, r12",
-        "ldr r9, [r5, #0]",
-        "str r9, [r8, #40]",
-        "ldr r9, [r5, #4]",
-        "str r9, [r8, #44]",
-        "cmp r7, #0",
-        "beq 20f",
-        "22:",
-        "ldr r9, [r6, #0]",
-        "str r9, [r8, #48]",
-        "ldr r9, [r6, #4]",
-        "str r9, [r8, #52]",
-        "mov r0, r4",
-        "mov r1, r11",
-        "add r2, r6, #0",
-        "mov r3, #1",
-        "add r12, r8, #56",
-        "push {{r12, lr}}",
-        "bl {vg_cast5_ecb_decrypt}",
-        "ldr r12, [sp], #8",
-        "ldr r9, [r6, #0]",
-        "ldr r10, [r8, #40]",
-        "eor r9, r9, r10",
-        "str r9, [r6, #0]",
-        "ldr r9, [r6, #4]",
-        "ldr r10, [r8, #44]",
-        "eor r9, r9, r10",
-        "str r9, [r6, #4]",
-        "ldr r9, [r8, #48]",
-        "str r9, [r8, #40]",
-        "ldr r9, [r8, #52]",
-        "str r9, [r8, #44]",
-        "add r6, r6, #8",
-        "subs r7, r7, #1",
-        "bne 22b",
-        "b 21f",
-        "20:",
-        "21:",
-        "ldr r4, [r8, #0]",
-        "ldr r5, [r8, #4]",
-        "ldr r6, [r8, #8]",
-        "ldr r7, [r8, #12]",
-        "ldr r9, [r8, #20]",
-        "ldr r10, [r8, #24]",
-        "ldr r11, [r8, #28]",
-        "ldr lr, [r8, #32]",
-        "ldr r8, [r8, #16]",
-        "add r12, sp, #12",
-        "mov r2, #0",
-        "str r2, [r12, #0]",
-        "str r2, [r12, #4]",
-        "str r2, [r12, #8]",
-        "str r2, [r12, #12]",
-        "str r2, [r12, #16]",
-        "str r2, [r12, #20]",
-        "str r2, [r12, #24]",
-        "str r2, [r12, #28]",
-        "str r2, [r12, #32]",
-        "str r2, [r12, #36]",
-        "str r2, [r12, #40]",
-        "str r2, [r12, #44]",
-        "str r2, [r12, #48]",
-        "str r2, [r12, #52]",
-        "str r2, [r12, #56]",
-        "str r2, [r12, #60]",
-        "str r2, [r12, #64]",
-        "str r2, [r12, #68]",
-        "str r2, [r12, #72]",
-        "str r2, [r12, #76]",
-        "str r2, [r12, #80]",
-        "str r2, [r12, #84]",
-        "str r2, [r12, #88]",
-        "str r2, [r12, #92]",
-        "str r2, [r12, #96]",
-        "str r2, [r12, #100]",
-        "str r2, [r12, #104]",
-        "str r2, [r12, #108]",
-        "str r2, [r12, #112]",
-        "str r2, [r12, #116]",
-        "str r2, [r12, #120]",
-        "str r2, [r12, #124]",
-        "str r2, [r12, #128]",
-        "str r2, [r12, #132]",
-        "str r2, [r12, #136]",
-        "str r2, [r12, #140]",
-        "str r2, [r12, #144]",
-        "str r2, [r12, #148]",
-        "str r2, [r12, #152]",
-        "str r2, [r12, #156]",
-        "str r2, [r12, #160]",
-        "str r2, [r12, #164]",
-        "str r2, [r12, #168]",
-        "str r2, [r12, #172]",
-        "str r2, [r12, #176]",
-        "str r2, [r12, #180]",
-        "str r2, [r12, #184]",
-        "str r2, [r12, #188]",
-        "str r2, [r12, #192]",
-        "str r2, [r12, #196]",
-        "str r2, [r12, #200]",
-        "str r2, [r12, #204]",
-        "str r2, [r12, #208]",
-        "str r2, [r12, #212]",
-        "str r2, [r12, #216]",
-        "str r2, [r12, #220]",
-        "str r2, [r12, #224]",
-        "str r2, [r12, #228]",
-        "str r2, [r12, #232]",
-        "str r2, [r12, #236]",
-        "str r2, [r12, #240]",
-        "str r2, [r12, #244]",
-        "str r2, [r12, #248]",
-        "str r2, [r12, #252]",
-        "str r2, [r12, #256]",
-        "str r2, [r12, #260]",
-        "str r2, [r12, #264]",
-        "str r2, [r12, #268]",
-        "str r2, [r12, #272]",
-        "str r2, [r12, #276]",
-        "str r2, [r12, #280]",
-        "str r2, [r12, #284]",
-        "str r2, [r12, #288]",
-        "str r2, [r12, #292]",
-        "str r2, [r12, #296]",
-        "str r2, [r12, #300]",
-        "str r2, [r12, #304]",
-        "str r2, [r12, #308]",
-        "add sp, sp, #328",
-        "bx lr",
+        r"sub sp, sp, #328
+add r12, sp, #0
+str lr, [r12, #8]
+ldr lr, [sp, #328]
+str lr, [r12, #0]
+add lr, sp, #12
+str lr, [r12, #4]
+ldr lr, [sp, #8]
+ldr r12, [sp, #4]
+str r4, [r12, #0]
+str r5, [r12, #4]
+str r6, [r12, #8]
+str r7, [r12, #12]
+str r9, [r12, #20]
+str r10, [r12, #24]
+str r11, [r12, #28]
+str lr, [r12, #32]
+str r8, [r12, #16]
+mov r4, r0
+mov r11, r1
+mov r5, r2
+mov r6, r3
+ldr r7, [sp, #0]
+mov r8, r12
+ldr r9, [r5, #0]
+str r9, [r8, #40]
+ldr r9, [r5, #4]
+str r9, [r8, #44]
+cmp r7, #0
+beq 20f
+22:
+ldr r9, [r6, #0]
+str r9, [r8, #48]
+ldr r9, [r6, #4]
+str r9, [r8, #52]
+mov r0, r4
+mov r1, r11
+add r2, r6, #0
+mov r3, #1
+add r12, r8, #56
+push {{r12, lr}}
+bl {vg_cast5_ecb_decrypt}
+ldr r12, [sp], #8
+ldr r9, [r6, #0]
+ldr r10, [r8, #40]
+eor r9, r9, r10
+str r9, [r6, #0]
+ldr r9, [r6, #4]
+ldr r10, [r8, #44]
+eor r9, r9, r10
+str r9, [r6, #4]
+ldr r9, [r8, #48]
+str r9, [r8, #40]
+ldr r9, [r8, #52]
+str r9, [r8, #44]
+add r6, r6, #8
+subs r7, r7, #1
+bne 22b
+b 21f
+20:
+21:
+ldr r9, [r8, #40]
+str r9, [r5, #0]
+ldr r9, [r8, #44]
+str r9, [r5, #4]
+ldr r4, [r8, #0]
+ldr r5, [r8, #4]
+ldr r6, [r8, #8]
+ldr r7, [r8, #12]
+ldr r9, [r8, #20]
+ldr r10, [r8, #24]
+ldr r11, [r8, #28]
+ldr lr, [r8, #32]
+ldr r8, [r8, #16]
+add r12, sp, #12
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+str r2, [r12, #128]
+str r2, [r12, #132]
+str r2, [r12, #136]
+str r2, [r12, #140]
+str r2, [r12, #144]
+str r2, [r12, #148]
+str r2, [r12, #152]
+str r2, [r12, #156]
+str r2, [r12, #160]
+str r2, [r12, #164]
+str r2, [r12, #168]
+str r2, [r12, #172]
+str r2, [r12, #176]
+str r2, [r12, #180]
+str r2, [r12, #184]
+str r2, [r12, #188]
+str r2, [r12, #192]
+str r2, [r12, #196]
+str r2, [r12, #200]
+str r2, [r12, #204]
+str r2, [r12, #208]
+str r2, [r12, #212]
+str r2, [r12, #216]
+str r2, [r12, #220]
+str r2, [r12, #224]
+str r2, [r12, #228]
+str r2, [r12, #232]
+str r2, [r12, #236]
+str r2, [r12, #240]
+str r2, [r12, #244]
+str r2, [r12, #248]
+str r2, [r12, #252]
+str r2, [r12, #256]
+str r2, [r12, #260]
+str r2, [r12, #264]
+str r2, [r12, #268]
+str r2, [r12, #272]
+str r2, [r12, #276]
+str r2, [r12, #280]
+str r2, [r12, #284]
+str r2, [r12, #288]
+str r2, [r12, #292]
+str r2, [r12, #296]
+str r2, [r12, #300]
+str r2, [r12, #304]
+str r2, [r12, #308]
+add sp, sp, #328
+bx lr",
         vg_cast5_ecb_decrypt = sym super::cast5::vg_cast5_ecb_decrypt,
     )
 }

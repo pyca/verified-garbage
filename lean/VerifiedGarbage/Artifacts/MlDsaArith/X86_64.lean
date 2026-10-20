@@ -2,13 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNtt
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomeryInv
-public import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMul
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YAddSub
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomery
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-DSA (FIPS 204) on x86-64: the arithmetic of polynomials -/
 
@@ -17,141 +16,89 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YAddSub
 namespace VG.Artifacts.MlDsaArith.X86_64
 
 def artifacts : List Artifact := [
-  { Spec.MlDsa.nttApi with
-    target := X86_64.target
-    doc := Spec.MlDsa.nttApi.doc
-      (notes := ["The function computes on four coefficients at a time in SSE2 registers, with a table of \
+  Spec.MlDsa.nttApi.artifact X86_64.target {
+    notes := ["The function computes on four coefficients at a time in SSE2 registers, with a table of \
         the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications \
         (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back \
-        before returning."])
+        before returning."]
     code := Impl.MlDsa.X86_64.Arith.ntt
-    contract := Spec.MlDsa.nttContract X86_64.abi
-    verified := Proof.MlDsa.X86_64.Arith.ntt_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.MlDsa.nttContract Spec.MlDsa.inPlaceContract; rfl⟩) },
-  { Spec.MlDsa.nttInvApi with
-    target := X86_64.target
-    doc := Spec.MlDsa.nttInvApi.doc
-      (notes := ["The function computes on four coefficients at a time in SSE2 registers, with a table of \
+    verified := Proof.MlDsa.X86_64.Arith.ntt_verified },
+  Spec.MlDsa.nttInvApi.artifact X86_64.target {
+    notes := ["The function computes on four coefficients at a time in SSE2 registers, with a table of \
         the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications \
         (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back \
-        before returning."])
+        before returning."]
     code := Impl.MlDsa.X86_64.Arith.nttInv
-    contract := Spec.MlDsa.nttInvContract X86_64.abi
-    verified := Proof.MlDsa.X86_64.Arith.nttInv_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.MlDsa.nttInvContract Spec.MlDsa.inPlaceContract; rfl⟩) },
-  { Spec.MlDsa.mulApi with
-    target := X86_64.target
-    doc := Spec.MlDsa.mulApi.doc
-      (notes := ["The function computes on four coefficients at a time in SSE2 registers. It sets MXCSR to \
+    verified := Proof.MlDsa.X86_64.Arith.nttInv_verified },
+  Spec.MlDsa.mulApi.artifact X86_64.target {
+    notes := ["The function computes on four coefficients at a time in SSE2 registers. It sets MXCSR to \
         `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing), \
         through the last 8 bytes of `h`, which it stores last, and loads the caller's MXCSR back before \
-        returning."])
+        returning."]
     code := Impl.MlDsa.X86_64.Arith.mul
-    contract := Spec.MlDsa.mulContract X86_64.abi
-    verified := Proof.MlDsa.X86_64.Arith.mul_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlDsa.mulAddApi with
-    target := X86_64.target
-    doc := Spec.MlDsa.mulAddApi.doc
-      (notes := ["The function computes on four coefficients at a time in SSE2 registers. It sets MXCSR to \
+    verified := Proof.MlDsa.X86_64.Arith.mul_verified },
+  Spec.MlDsa.mulAddApi.artifact X86_64.target {
+    notes := ["The function computes on four coefficients at a time in SSE2 registers. It sets MXCSR to \
         `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing), \
         through the last 8 bytes of `h`, which it stores last, and loads the caller's MXCSR back before \
-        returning."])
+        returning."]
     code := Impl.MlDsa.X86_64.Arith.mulAdd
-    contract := Spec.MlDsa.mulAddContract X86_64.abi
-    verified := Proof.MlDsa.X86_64.Arith.mulAdd_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlDsa.addApi with
-    target := X86_64.target
-    doc := Spec.MlDsa.addApi.doc
-      (notes := ["The function computes on four coefficients at a time in SSE2 registers."])
+    verified := Proof.MlDsa.X86_64.Arith.mulAdd_verified },
+  Spec.MlDsa.addApi.artifact X86_64.target {
+    notes := ["The function computes on four coefficients at a time in SSE2 registers."]
     code := Impl.MlDsa.X86_64.Arith.add
-    contract := Spec.MlDsa.addContract X86_64.abi
-    verified := Proof.MlDsa.X86_64.Arith.add_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlDsa.subApi with
-    target := X86_64.target
-    doc := Spec.MlDsa.subApi.doc
-      (notes := ["The function computes on four coefficients at a time in SSE2 registers."])
+    verified := Proof.MlDsa.X86_64.Arith.add_verified },
+  Spec.MlDsa.subApi.artifact X86_64.target {
+    notes := ["The function computes on four coefficients at a time in SSE2 registers."]
     code := Impl.MlDsa.X86_64.Arith.sub
-    contract := Spec.MlDsa.subContract X86_64.abi
-    verified := Proof.MlDsa.X86_64.Arith.sub_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlDsa.nttApi with
-    name := Spec.MlDsa.nttApi.name ++ "_avx2"
-    target := X86_64.target
-    doc := Spec.MlDsa.nttApi.doc
-      (notes := ["The function computes on eight coefficients at a time in AVX2 registers, with a table of \
+    verified := Proof.MlDsa.X86_64.Arith.sub_verified },
+  Spec.MlDsa.nttApi.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["The function computes on eight coefficients at a time in AVX2 registers, with a table of \
         the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications \
         (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back \
-        before returning."])
+        before returning."]
     code := Impl.MlDsa.X86_64.Arith.lazyNtt
-    contract := Spec.MlDsa.nttContract X86_64.abi
     verified := Proof.MlDsa.X86_64.Arith.Lazy.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide)
-    features := ["avx", "avx2"]
-    ofSig := by exact (⟨_, _, _, by unfold Spec.MlDsa.nttContract Spec.MlDsa.inPlaceContract; rfl⟩) },
-  { Spec.MlDsa.montgomeryNttInvApi with
-    name := Spec.MlDsa.montgomeryNttInvApi.name ++ "_avx2"
-    target := X86_64.target
-    doc := Spec.MlDsa.montgomeryNttInvApi.doc
-      (notes := ["The function computes on eight coefficients at a time in AVX2 registers, with a table of \
+    features := ["avx", "avx2"] },
+  Spec.MlDsa.montgomeryNttInvApi.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["The function computes on eight coefficients at a time in AVX2 registers, with a table of \
         the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications \
         (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back \
-        before returning."])
+        before returning."]
     code := Impl.MlDsa.X86_64.Arith.montNttInvAvx2
-    contract := Spec.MlDsa.montgomeryNttInvContract X86_64.abi
     verified := Proof.MlDsa.X86_64.Arith.MontgomeryInv.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide)
-    features := ["avx", "avx2"]
-    ofSig := by exact (⟨_, _, _, by unfold Spec.MlDsa.montgomeryNttInvContract Spec.MlDsa.inPlaceContract; rfl⟩) },
-  { Spec.MlDsa.montgomeryMulApi with
-    name := Spec.MlDsa.montgomeryMulApi.name ++ "_avx2"
-    target := X86_64.target
-    doc := Spec.MlDsa.montgomeryMulApi.doc
-      (notes := ["The function computes on eight coefficients at a time in AVX2 registers. It sets MXCSR to \
+    features := ["avx", "avx2"] },
+  Spec.MlDsa.montgomeryMulApi.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["The function computes on eight coefficients at a time in AVX2 registers. It sets MXCSR to \
         `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing), \
         through the last 8 bytes of `h`, which it stores last, and loads the caller's MXCSR back before \
-        returning."])
+        returning."]
     code := Impl.MlDsa.X86_64.Arith.montMulAvx2
-    contract := Spec.MlDsa.montgomeryMulContract X86_64.abi
     verified := Proof.MlDsa.X86_64.Arith.montMulY_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx2"] },
-  { Spec.MlDsa.montgomeryMulAddApi with
-    name := Spec.MlDsa.montgomeryMulAddApi.name ++ "_avx2"
-    target := X86_64.target
-    doc := Spec.MlDsa.montgomeryMulAddApi.doc
-      (notes := ["The function computes on eight coefficients at a time in AVX2 registers. It sets MXCSR to \
+  Spec.MlDsa.montgomeryMulAddApi.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["The function computes on eight coefficients at a time in AVX2 registers. It sets MXCSR to \
         `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing), \
         through the last 8 bytes of `h`, which it stores last, and loads the caller's MXCSR back before \
-        returning."])
+        returning."]
     code := Impl.MlDsa.X86_64.Arith.montMulAddAvx2
-    contract := Spec.MlDsa.montgomeryMulAddContract X86_64.abi
     verified := Proof.MlDsa.X86_64.Arith.montMulAddY_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx2"] },
-  { Spec.MlDsa.addApi with
-    name := Spec.MlDsa.addApi.name ++ "_avx2"
-    target := X86_64.target
-    doc := Spec.MlDsa.addApi.doc
-      (notes := ["The function computes on eight coefficients at a time in AVX2 registers."])
+  Spec.MlDsa.addApi.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["The function computes on eight coefficients at a time in AVX2 registers."]
     code := Impl.MlDsa.X86_64.Arith.addAvx2
-    contract := Spec.MlDsa.addContract X86_64.abi
     verified := Proof.MlDsa.X86_64.Arith.addY_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx2"] },
-  { Spec.MlDsa.subApi with
-    name := Spec.MlDsa.subApi.name ++ "_avx2"
-    target := X86_64.target
-    doc := Spec.MlDsa.subApi.doc
-      (notes := ["The function computes on eight coefficients at a time in AVX2 registers."])
+  Spec.MlDsa.subApi.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["The function computes on eight coefficients at a time in AVX2 registers."]
     code := Impl.MlDsa.X86_64.Arith.subAvx2
-    contract := Spec.MlDsa.subContract X86_64.abi
     verified := Proof.MlDsa.X86_64.Arith.subY_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx2"] }]
 
 end VG.Artifacts.MlDsaArith.X86_64

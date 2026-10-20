@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Loop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.X86_64.Divstep.ARow
+import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Step
+import VerifiedGarbage.Proof.X25519.X86_64.Ops
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # X25519 on x86-64, inversion by divsteps: a batch

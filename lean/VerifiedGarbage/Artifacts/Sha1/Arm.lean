@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Sha1.Arm.Shared
-import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SHA-1 (FIPS 180-4) on ARMv7 -/
 
@@ -11,49 +10,25 @@ import VerifiedGarbage.Proof.Framework.Arm.Lit
 namespace VG.Artifacts.Sha1.Arm
 
 def artifacts : List Artifact := [
-  { Spec.Sha1.compressApi with
-    target := Arm.target
-    doc := Spec.Sha1.compressApi.doc
+  Spec.Sha1.compressApi.artifact Arm.target {
     code := Impl.Sha1.Arm.compress
-    contract := Spec.Sha1.compressContract Arm.abi
-    verified := Proof.Sha1.Arm.Shared.compress
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha1.initApi with
-    target := Arm.target
-    doc := Spec.Sha1.initApi.doc
+    verified := Proof.Sha1.Arm.Shared.compress },
+  Spec.Sha1.initApi.artifact Arm.target {
     code := Impl.Sha1.Arm.Stream.init
-    contract := Spec.Sha1.initContract Arm.abi
-    verified := Proof.Sha1.Arm.Shared.init
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha1.updateApi with
-    target := Arm.target
-    doc := Spec.Sha1.updateApi.doc
+    verified := Proof.Sha1.Arm.Shared.init },
+  Spec.Sha1.updateApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 176 2 Impl.Sha1.Arm.Stream.update
-    contract := Spec.Sha1.updateContract Arm.abi 176
     stack := 176
-    verified := Proof.Sha1.Arm.Shared.update
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha1.finalizeApi with
-    target := Arm.target
-    doc := Spec.Sha1.finalizeApi.doc
+    verified := Proof.Sha1.Arm.Shared.update },
+  Spec.Sha1.finalizeApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 176 1 Impl.Sha1.Arm.Stream.finalize
-    contract := Spec.Sha1.finalizeContract Arm.abi 176
     stack := 176
-    verified := Proof.Sha1.Arm.Shared.finalize
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha1.updateScratchApi with
-    target := Arm.target
-    doc := Spec.Sha1.updateScratchApi.doc
+    verified := Proof.Sha1.Arm.Shared.finalize },
+  Spec.Sha1.updateScratchApi.artifact Arm.target {
     code := Impl.Sha1.Arm.Stream.update
-    contract := Spec.Sha1.updateScratchContract Arm.abi
-    verified := Proof.Sha1.Arm.Shared.updateScratch
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha1.finalizeScratchApi with
-    target := Arm.target
-    doc := Spec.Sha1.finalizeScratchApi.doc
+    verified := Proof.Sha1.Arm.Shared.updateScratch },
+  Spec.Sha1.finalizeScratchApi.artifact Arm.target {
     code := Impl.Sha1.Arm.Stream.finalize
-    contract := Spec.Sha1.finalizeScratchContract Arm.abi
-    verified := Proof.Sha1.Arm.Shared.finalizeScratch
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Sha1.Arm.Shared.finalizeScratch }]
 
 end VG.Artifacts.Sha1.Arm

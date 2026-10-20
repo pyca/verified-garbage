@@ -1,15 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
 public import VerifiedGarbage.Proof.Framework.AArch64.StraightV
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Bitslice.Vars
-public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # The AdvSIMD machine state of a batch
@@ -100,7 +98,7 @@ theorem varsRun {is : List Instr} (regs : List VReg) {post : Env Nat → Bool}
     ∃ e' s', post e' = true ∧ runBlock isa is s = some s' ∧
       Post (fun q => VarRel (varVals s regs q) (varN regs)) stateCfg e' s s'
         (fun r => (is.all fun i => vdstOf i != some r) = false)
-        (fun r => (is.all fun i => dstOf i != some r) = false) := by
+        (fun r => (is.all fun i => !clobbers i r) = false) := by
   obtain ⟨e', he, hpost⟩ := of_check _ _ hchk
   obtain ⟨s', hs', p⟩ := run (fun q _ => vars_sound _ _) h (varEnv_rel regs) he
   exact ⟨e', s', hpost, hs', p⟩

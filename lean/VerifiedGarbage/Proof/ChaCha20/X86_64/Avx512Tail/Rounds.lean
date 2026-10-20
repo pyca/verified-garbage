@@ -1,11 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Sym
-public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512Tail
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ChaCha20 on x86-64 with AVX-512, the last bytes: the rounds
@@ -123,6 +119,16 @@ def half2H (r₁ r₂ : BitVec 8) : List HI :=
 
 theorem half2_eq (r₁ r₂ : BitVec 8) : half2 r₁ r₂ = (half2H r₁ r₂).map HI.instr := rfl
 
+def half3H (r₁ r₂ : BitVec 8) : List HI :=
+  [.add .xmm0 .xmm0 .xmm1, .add .xmm4 .xmm4 .xmm5, .add .xmm8 .xmm8 .xmm9,
+   .xor .xmm3 .xmm3 .xmm0, .xor .xmm7 .xmm7 .xmm4, .xor .xmm11 .xmm11 .xmm8,
+   .rol .xmm3 .xmm3 r₁, .rol .xmm7 .xmm7 r₁, .rol .xmm11 .xmm11 r₁,
+   .add .xmm2 .xmm2 .xmm3, .add .xmm6 .xmm6 .xmm7, .add .xmm10 .xmm10 .xmm11,
+   .xor .xmm1 .xmm1 .xmm2, .xor .xmm5 .xmm5 .xmm6, .xor .xmm9 .xmm9 .xmm10,
+   .rol .xmm1 .xmm1 r₂, .rol .xmm5 .xmm5 r₂, .rol .xmm9 .xmm9 r₂]
+
+theorem half3_eq (r₁ r₂ : BitVec 8) : half3 r₁ r₂ = (half3H r₁ r₂).map HI.instr := rfl
+
 /-- The column round, and the diagonal round with the rotations around it,
 of the first set and of both. -/
 def colsH : List HI := halfH .xmm0 .xmm1 .xmm2 .xmm3 16 12 ++ halfH .xmm0 .xmm1 .xmm2 .xmm3 8 7
@@ -133,11 +139,21 @@ def diags2H : List HI :=
   (rotH .xmm1 .xmm2 .xmm3 0x39 0x4e 0x93 ++ rotH .xmm5 .xmm6 .xmm7 0x39 0x4e 0x93) ++ cols2H ++
     (rotH .xmm1 .xmm2 .xmm3 0x93 0x4e 0x39 ++ rotH .xmm5 .xmm6 .xmm7 0x93 0x4e 0x39)
 
+def cols3H : List HI := half3H 16 12 ++ half3H 8 7
+def diags3H : List HI :=
+  (rotH .xmm1 .xmm2 .xmm3 0x39 0x4e 0x93 ++ rotH .xmm5 .xmm6 .xmm7 0x39 0x4e 0x93 ++
+      rotH .xmm9 .xmm10 .xmm11 0x39 0x4e 0x93) ++ cols3H ++
+    (rotH .xmm1 .xmm2 .xmm3 0x93 0x4e 0x39 ++ rotH .xmm5 .xmm6 .xmm7 0x93 0x4e 0x39 ++
+      rotH .xmm9 .xmm10 .xmm11 0x93 0x4e 0x39)
+
 theorem doubleRound_eq : doubleRound = (colsH ++ diagsH).map HI.instr := by
   simp only [doubleRound, colsH, diagsH, half_eq, rot_eq, List.map_append, List.append_assoc]
 
 theorem doubleRound2_eq : doubleRound2 = (cols2H ++ diags2H).map HI.instr := by
   simp only [doubleRound2, cols2H, diags2H, half2_eq, rot2, rot_eq, List.map_append, List.append_assoc]
+
+theorem doubleRound3_eq : doubleRound3 = (cols3H ++ diags3H).map HI.instr := by
+  simp only [doubleRound3, cols3H, diags3H, half3_eq, rot3, rot_eq, List.map_append, List.append_assoc]
 
 /-! ## The rounds on the words, by terms -/
 
@@ -226,6 +242,17 @@ theorem RelS.of_rel {w₀ : W} {f g : Nat → HE} {w : W} (h : Rel w₀ f w) (e 
   rw [← h, e _ (by omega)]
   exact hg i hi
 
+/-- Two term states agree on the words of the three sets. -/
+def eq48 (f g : Nat → HE) : Bool := (List.range 48).all fun k => f k == g k
+
+theorem RelS.of_rel48 {w₀ : W} {f g : Nat → HE} {w : W} (h : Rel w₀ f w) (e : eq48 f g = true)
+    {k : Nat} (hk : k < 3) {v : CState} (hg : RelS w₀ g k v) : blk w k = v := by
+  simp only [eq48, List.all_eq_true, List.mem_range, beq_iff_eq] at e
+  apply Vector.ext; intro i hi
+  simp only [blk, Vector.getElem_ofFn]
+  rw [← h, e _ (by omega)]
+  exact hg i hi
+
 /-- The column round on the terms of set `k`. -/
 def colsE (f : Nat → HE) (k : Nat) : Nat → HE :=
   qroundE (qroundE (qroundE (qroundE f (16 * k + 0) (16 * k + 4) (16 * k + 8) (16 * k + 12))
@@ -266,6 +293,11 @@ theorem diags1_check : eq32 (diagsH.foldl hstepE vars) (diagsE vars 0) = true :=
 theorem cols2_check : eq32 (cols2H.foldl hstepE vars) (colsE (colsE vars 0) 1) = true := by
   decide +kernel
 theorem diags2_check : eq32 (diags2H.foldl hstepE vars) (diagsE (diagsE vars 0) 1) = true := by
+  decide +kernel
+
+theorem cols3_check : eq48 (cols3H.foldl hstepE vars) (colsE (colsE (colsE vars 0) 1) 2) = true := by
+  decide +kernel
+theorem diags3_check : eq48 (diags3H.foldl hstepE vars) (diagsE (diagsE (diagsE vars 0) 1) 2) = true := by
   decide +kernel
 
 /-! ## The double rounds on the words of a lane -/
@@ -312,6 +344,32 @@ theorem dr2_words (w : W) {k : Nat} (hk : k < 2) :
       RelS.of_rel ((rel_vars w).foldl cols2H) cols2_check (by decide) c0, innerBlock_eq]
   · rw [RelS.of_rel ((rel_vars w').foldl diags2H) diags2_check (by decide) d1,
       RelS.of_rel ((rel_vars w).foldl cols2H) cols2_check (by decide) c1, innerBlock_eq]
+
+theorem dr3_words (w : W) {k : Nat} (hk : k < 3) :
+    blk ((cols3H ++ diags3H).foldl hstep w) k = innerBlock (blk w k) := by
+  rw [List.foldl_append]
+  let w' := cols3H.foldl hstep w
+  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2) with rfl | rfl | rfl
+  · have c : RelS w (colsE (colsE (colsE vars 0) 1) 2) 0 _ :=
+      (relS_vars w 0).cols.congr fun i hi => by rw [colsE_other _ (by omega), colsE_other _ (by omega)]
+    have d : RelS w' (diagsE (diagsE (diagsE vars 0) 1) 2) 0 _ :=
+      (relS_vars w' 0).diags.congr fun i hi => by rw [diagsE_other _ (by omega), diagsE_other _ (by omega)]
+    rw [RelS.of_rel48 ((rel_vars w').foldl diags3H) diags3_check hk d,
+      RelS.of_rel48 ((rel_vars w).foldl cols3H) cols3_check hk c, innerBlock_eq]
+  · have c : RelS w (colsE (colsE (colsE vars 0) 1) 2) 1 _ :=
+      ((relS_vars w 1).congr fun i hi => colsE_other _ (by omega)).cols.congr fun i hi =>
+        colsE_other _ (by omega)
+    have d : RelS w' (diagsE (diagsE (diagsE vars 0) 1) 2) 1 _ :=
+      ((relS_vars w' 1).congr fun i hi => diagsE_other _ (by omega)).diags.congr fun i hi =>
+        diagsE_other _ (by omega)
+    rw [RelS.of_rel48 ((rel_vars w').foldl diags3H) diags3_check hk d,
+      RelS.of_rel48 ((rel_vars w).foldl cols3H) cols3_check hk c, innerBlock_eq]
+  · have c : RelS w (colsE (colsE (colsE vars 0) 1) 2) 2 _ :=
+      ((relS_vars w 2).congr fun i hi => by rw [colsE_other _ (by omega), colsE_other _ (by omega)]).cols
+    have d : RelS w' (diagsE (diagsE (diagsE vars 0) 1) 2) 2 _ :=
+      ((relS_vars w' 2).congr fun i hi => by rw [diagsE_other _ (by omega), diagsE_other _ (by omega)]).diags
+    rw [RelS.of_rel48 ((rel_vars w').foldl diags3H) diags3_check hk d,
+      RelS.of_rel48 ((rel_vars w).foldl cols3H) cols3_check hk c, innerBlock_eq]
 
 /-! ## The rounds on the registers -/
 
@@ -369,5 +427,17 @@ theorem rounds2_ok {vs : Nat → CState} {s₀ : State} (h : HB 2 vs s₀) :
   | 0 => WP.block_nil ⟨h, rfl, rfl, rfl, rfl⟩
   | n + 1 => WP.seq (WP.mono (rounds2_ok h n) fun _ ⟨h₁, hs⟩ =>
       WP.mono (doubleRound2_ok h₁) fun _ ⟨h₂, hs'⟩ => ⟨h₂, hs.trans hs'⟩)
+
+theorem doubleRound3_ok {vs : Nat → CState} {s : State} (h : HB 3 vs s) :
+    WP isa (.block doubleRound3) s fun s' => HB 3 (fun j => innerBlock (vs j)) s' ∧ Same s s' := by
+  rw [doubleRound3_eq]
+  refine WP.mono (block_ok _ (hh_wordsOf s)) fun s' ⟨h', hs⟩ => ⟨hb_of h' (fun k hk l hl => ?_) (by decide), hs⟩
+  rw [dr3_words _ hk, blk_wordsOf h hk hl]
+
+theorem rounds3_ok {vs : Nat → CState} {s₀ : State} (h : HB 3 vs s₀) :
+    ∀ n, WP isa (rounds3 n) s₀ fun s => HB 3 (fun j => Nat.repeat innerBlock n (vs j)) s ∧ Same s₀ s
+  | 0 => WP.block_nil ⟨h, rfl, rfl, rfl, rfl⟩
+  | n + 1 => WP.seq (WP.mono (rounds3_ok h n) fun _ ⟨h₁, hs⟩ =>
+      WP.mono (doubleRound3_ok h₁) fun _ ⟨h₂, hs'⟩ => ⟨h₂, hs.trans hs'⟩)
 
 end VG.Proof.ChaCha20.X86_64.Avx512Tail

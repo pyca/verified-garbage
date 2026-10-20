@@ -2,14 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCtx
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
-public import VerifiedGarbage.Impl.RsaPss.X86_64.Precomputed
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCall
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
+import Mathlib.Order.Defs.PartialOrder
+import Mathlib.Data.Int.GCD
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
 
 @[expose] public section
 
@@ -93,7 +95,7 @@ theorem call_pre {s t : State} (hp : Pre G s) (hsp : t.gpr .rsp = fb s)
     (hp.dKs.sub_left sRet).sub_right sI, hp.preStack.symm.sub_left sRet, hp.dKe.sub_left sRet, dKsg.sub_left sRet,
     (hp.dKs.sub_left sRet).sub_right sR, dRA,
     by rw [toNat_off (by omega)]; omega, hp.preWrap, hp.wE, wSg, by rw [toNat_off (by omega), hsc]; omega,
-    ⟨hk1, hk2⟩, hp.preLen, trivial, hp.L1, hp.L2, by unfold Spec.Rsa.scratchWords; rw [hsc]; omega⟩
+    ⟨hk1, hk2⟩, hp.preLen, trivial, hp.L1, hp.L2, by unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords; rw [hsc]; omega⟩
 
 theorem call_covers {s t : State} (hp : Pre G s) (hrd : t.rd = s.rd) (hwr : t.wr = frR s :: s.wr) :
     Covers (callRd s ++ vWr s) (t.rd ++ t.wr) ∧ Covers (vWr s) t.wr := by

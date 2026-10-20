@@ -1,15 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Final
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Final
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Final
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Lit
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 
 /-!
 # Poly1305 on x86-64 with AVX-512 IFMA: `vg_poly1305_blocks_ifma`

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Spec.Sha512
 public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.GetElem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # SHA-512: lemmas about the specification

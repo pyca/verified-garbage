@@ -1,5 +1,5 @@
 name = "DSA"
-family = "Signatures"
+family = "DSA"
 specs = ["Dsa"]
 modules = ["src/dsa.rs"]
 asm = ["dsa"]

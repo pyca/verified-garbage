@@ -1,15 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.LoopFrame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Slice
 import VerifiedGarbage.Proof.Rc2.AArch64.KeyLoop
 import VerifiedGarbage.Proof.Rc2.CbcMemory
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Rc2.AArch64.Lit
 
 /-! # Correctness of the CBC loop on complete blocks -/
 

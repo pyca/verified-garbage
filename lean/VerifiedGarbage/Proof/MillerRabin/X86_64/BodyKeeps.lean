@@ -1,12 +1,13 @@
 module
+public import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
+public import VerifiedGarbage.Spec.MillerRabin
 
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Body
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Keeps
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Body
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Keeps
 import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # The saved round body preserves the reusable caller's workspace -/
 

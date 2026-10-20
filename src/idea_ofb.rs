@@ -24,8 +24,7 @@ use crate::arch::idea_ofb::vg_idea_ofb;
 use crate::zeroize::zeroize;
 
 /// The key does not contain 16 bytes.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct InvalidKeyLength;
+pub use crate::error::InvalidKeyLength;
 
 /// An expanded IDEA key for OFB, whose encryption and decryption are the
 /// same operation.

@@ -1,17 +1,27 @@
 module
+public import VerifiedGarbage.Impl.AesXts.X86_64AesNi
+public import VerifiedGarbage.Proof.AesCbc.X86_64.Call
+public import VerifiedGarbage.Proof.AesXts.Spec
+public import VerifiedGarbage.Spec.Xts.Contract
 
-public import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Loop
-meta import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Loop
+import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Loop
 import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Dec
-meta import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Dec
 import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
+import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Enc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.AesXts.X86_64AesNi
+meta import VerifiedGarbage.Proof.AesCbc.X86_64.Call
+meta import VerifiedGarbage.Proof.AesXts.Spec
+meta import VerifiedGarbage.Spec.Xts.Contract
+meta import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Loop
+meta import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Dec
 meta import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Enc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # One-pass XTS-AES with AES-NI on x86-64: correctness and `Verified`

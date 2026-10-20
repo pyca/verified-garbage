@@ -1,13 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.Arm.KeyStore
-import VerifiedGarbage.Proof.Camellia.Arm.Prologue
+public import VerifiedGarbage.Proof.Camellia.Common
 import VerifiedGarbage.Proof.Camellia.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Camellia.Arm.KaKb
+import VerifiedGarbage.Proof.Camellia.Arm.KeyLoad
+import VerifiedGarbage.Proof.Camellia.Arm.KeyInit
+import VerifiedGarbage.Proof.Camellia.Planes32
+import VerifiedGarbage.Proof.Camellia.Arm.Copy
+import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
+import VerifiedGarbage.Proof.Camellia.Arm.Fl
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Camellia's key schedule on ARMv7: the whole function

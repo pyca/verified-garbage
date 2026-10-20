@@ -1,21 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMul
-meta import VerifiedGarbage.Proof.MlKem.X86_64.VMul
 import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
-meta import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
-public import VerifiedGarbage.Proof.MlKem.Ntt
-meta import VerifiedGarbage.Proof.MlKem.Ntt
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlKem.X86_64.VMem
 import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VMul
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VMem
 meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_multiply_ntts`

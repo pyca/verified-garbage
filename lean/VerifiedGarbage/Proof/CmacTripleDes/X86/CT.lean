@@ -1,17 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
-meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
 import VerifiedGarbage.Proof.CmacTripleDes.X86.Init
-meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Init
-public import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize
-meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize
+import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize
 public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.Contract
+import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
+public import VerifiedGarbage.Impl.CmacTripleDes.X86
+import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Init
+meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Contract
+meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
+meta import VerifiedGarbage.Impl.CmacTripleDes.X86
+meta import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # TDEA-CMAC on x86: constant time

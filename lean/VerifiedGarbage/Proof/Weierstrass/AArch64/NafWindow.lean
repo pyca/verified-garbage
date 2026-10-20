@@ -1,16 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindow
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafFinish
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+public import VerifiedGarbage.Proof.Weierstrass.Naf5
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafFinish
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafLoop
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafCore
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-! The full public Jacobian variable-point multiplication. -/
 

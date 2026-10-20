@@ -1,22 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Verified
+import VerifiedGarbage.Proof.MlDsa.X86.Verify.Verified
 public import VerifiedGarbage.Impl.MlDsa.X86.Verify.Inst
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Base
 import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
 import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
 import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
 import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
 import VerifiedGarbage.Proof.MlDsa.X86.Sample.BallTop
-public import VerifiedGarbage.Proof.MlDsa.X86.Round.NormLt
+import VerifiedGarbage.Proof.MlDsa.X86.Round.NormLt
 import VerifiedGarbage.Proof.MlDsa.X86.Round.HintF
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.SimpleBitPack
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.Unpack
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackEnd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86 (32-bit), with this library's primitives

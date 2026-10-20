@@ -1,15 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseMath
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseWord
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackMath
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseWord
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

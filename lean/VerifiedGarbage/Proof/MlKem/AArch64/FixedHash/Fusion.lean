@@ -1,5 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.CallFill
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.Mem
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.FixedHash.Fusion
 open VG
@@ -130,5 +132,111 @@ theorem normalize_same (a : Prog M) : Same a (normalize a) := by
 /-- Equality of normal forms certifies exact state and leakage equivalence. -/
 theorem of_normalize_eq {a b : Prog M} (h : normalize a=normalize b) : Same a b :=
  (normalize_same a).trans (h ▸ (normalize_same b).symm)
+
+/-! ## Code with its holes filled
+
+`append` and `normalize` look at blocks and sequences only, which filling
+holes (`Code.fillHoles`) keeps, so they commute with it: two programs whose
+code with holes has the same normal form are the same with the holes filled
+by any callee (`Same.of_fillHoles`). -/
+
+/-- Filling holes keeps blocks, and makes no block of anything else. -/
+theorem fillHoles_block {n : String} {b : Prog M} {a : Prog M} {xs : List M.Instr}
+    (h : Code.fillHoles n b a = .block xs) : a = .block xs := by
+  cases a with
+  | block is => exact h
+  | call m body =>
+    cases body with
+    | block is => cases is <;> cases h
+    | _ => cases h
+  | _ => cases h
+
+/-- Filling holes keeps sequences, and makes no sequence of anything else. -/
+theorem fillHoles_seq {n : String} {b : Prog M} {a x y : Prog M}
+    (h : Code.fillHoles n b a = .seq x y) : ∃ a₁ a₂, a = .seq a₁ a₂ := by
+  cases a with
+  | seq a₁ a₂ => exact ⟨a₁, a₂, rfl⟩
+  | call m body =>
+    cases body with
+    | block is => cases is <;> cases h
+    | _ => cases h
+  | _ => cases h
+
+theorem fillHoles_append (n : String) (b : Prog M) (a c : Prog M) :
+    Code.fillHoles n b (append a c) = append (Code.fillHoles n b a) (Code.fillHoles n b c) := by
+  induction a generalizing c with
+  | seq a₁ a₂ ih₁ ih₂ => simp only [append, Code.fillHoles, ih₁, ih₂]
+  | block xs =>
+    cases xs with
+    | nil => rfl
+    | cons x xs =>
+      cases c with
+      | block ys => rfl
+      | seq c₁ c₂ =>
+        cases c₁ with
+        | block ys => rfl
+        | call m body =>
+          cases body with
+          | block is => cases is <;> rfl
+          | _ => rfl
+        | _ => rfl
+      | call m body =>
+        cases body with
+        | block is => cases is <;> rfl
+        | _ => rfl
+      | _ => rfl
+  | call m body =>
+    cases body with
+    | block is =>
+      cases is with
+      | nil =>
+        cases c with
+        | block ys => cases ys <;> rfl
+        | call m' body' =>
+          cases body' with
+          | block is' => cases is' <;> rfl
+          | _ => rfl
+        | _ => rfl
+      | cons i is =>
+        cases c with
+        | block ys => cases ys <;> rfl
+        | call m' body' =>
+          cases body' with
+          | block is' => cases is' <;> rfl
+          | _ => rfl
+        | _ => rfl
+    | _ =>
+      cases c with
+      | block ys => cases ys <;> rfl
+      | call m' body' =>
+        cases body' with
+        | block is' => cases is' <;> rfl
+        | _ => rfl
+      | _ => rfl
+  | _ =>
+    cases c with
+    | block ys => cases ys <;> rfl
+    | call m' body' =>
+      cases body' with
+      | block is' => cases is' <;> rfl
+      | _ => rfl
+    | _ => rfl
+
+theorem normalize_fillHoles (n : String) (b : Prog M) (a : Prog M) :
+    normalize (Code.fillHoles n b a) = Code.fillHoles n b (normalize a) := by
+  induction a with
+  | seq x y ihx ihy => simp only [Code.fillHoles, normalize, ihx, ihy, fillHoles_append]
+  | call m body =>
+    cases body with
+    | block is => cases is <;> rfl
+    | _ => rfl
+  | _ => rfl
+
+/-- `a` and `b` are the code with holes `a₀` and `b₀` with the holes filled:
+if `a₀` and `b₀` have the same normal form, `a` and `b` are the same. -/
+theorem Same.of_fillHoles {a b a₀ b₀ : Prog M} {n : String} {body : Prog M}
+    (ha : a = Code.fillHoles n body a₀) (hb : b = Code.fillHoles n body b₀)
+    (h : normalize a₀ = normalize b₀) : Same a b :=
+  of_normalize_eq (by rw [ha, hb, normalize_fillHoles, normalize_fillHoles, h])
 
 end VG.Proof.MlKem.AArch64.FixedHash.Fusion

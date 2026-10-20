@@ -1,6 +1,6 @@
-//! RSASSA-PKCS1-v1_5 of a SHA-256 hash value: signing, verifying and
-//! recovering the hash value, beside OpenSSL and (signing and verifying)
-//! aws-lc-rs.
+//! RSASSA-PKCS1-v1_5 of a SHA-256 hash value: signing (with a loaded key,
+//! and with a key loaded for one signature), verifying and recovering the
+//! hash value, beside OpenSSL and (signing and verifying) aws-lc-rs.
 
 use criterion::Criterion;
 
@@ -14,7 +14,12 @@ pub const USES: &[&str] = &["rsa_pkcs1_sig", "rsa"];
 /// through `KeyPair::sign_digest` and `ParsedPublicKey::verify_digest_sig`,
 /// which set up an `EVP_PKEY_CTX` in every operation, from a key loaded from
 /// its components). aws-lc-rs has no recovery of the hash value.
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
@@ -24,6 +29,7 @@ pub fn bench(c: &mut Criterion) {
         RSA_PKCS1_2048_8192_SHA256, RSA_PKCS1_SHA256, RsaKeyPair, RsaPublicKeyComponents,
     };
     use criterion::BenchmarkId;
+    use openssl::bn::BigNum;
     use openssl::md::Md;
     use openssl::pkey::PKey;
     use openssl::pkey_ctx::PkeyCtx;
@@ -108,6 +114,77 @@ pub fn bench(c: &mut Criterion) {
     }
     g.finish();
 
+    let mut g = c.benchmark_group("rsa_pkcs1_sign_once");
+    // The same signatures, each made with a key loaded from its components
+    // in the measurement, as a key used once is: the key's check and setup
+    // (its precomputed values, at its first operation) are counted.
+    for (pkey, _, _, sig, _, _) in &keys {
+        let k = sig.len();
+        let rsa = pkey.rsa().unwrap();
+        let v: Vec<Vec<u8>> = [
+            rsa.n(),
+            rsa.e(),
+            rsa.d(),
+            rsa.p().unwrap(),
+            rsa.q().unwrap(),
+            rsa.dmp1().unwrap(),
+            rsa.dmq1().unwrap(),
+            rsa.iqmp().unwrap(),
+        ]
+        .iter()
+        .map(|x| x.to_vec())
+        .collect();
+        g.bench_function(BenchmarkId::new(VG, k), |b| {
+            b.iter(|| {
+                let v = black_box(&v);
+                let key =
+                    PrivateKey::from_crt(&v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7])
+                        .unwrap();
+                sign(&key, black_box(&digest), Hash::Sha256).unwrap()
+            })
+        });
+        let mut out = vec![0; k];
+        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+            b.iter(|| {
+                let v = black_box(&v);
+                let bn = |i: usize| BigNum::from_slice(&v[i]).unwrap();
+                let key = Rsa::from_private_components(
+                    bn(0),
+                    bn(1),
+                    bn(2),
+                    bn(3),
+                    bn(4),
+                    bn(5),
+                    bn(6),
+                    bn(7),
+                )
+                .unwrap();
+                let pkey = PKey::from_rsa(key).unwrap();
+                let mut c = ctx(&pkey, |c| c.sign_init().unwrap());
+                c.sign(black_box(&digest), Some(&mut out)).unwrap()
+            })
+        });
+        g.bench_function(BenchmarkId::new(AWS_LC, k), |b| {
+            b.iter(|| {
+                let v = black_box(&v);
+                let key = RsaKeyPair::from_components(&KeyPairComponents {
+                    public_key: RsaPublicKeyComponents { n: &v[0], e: &v[1] },
+                    d: &v[2][..],
+                    p: &v[3][..],
+                    q: &v[4][..],
+                    dP: &v[5][..],
+                    dQ: &v[6][..],
+                    qInv: &v[7][..],
+                })
+                .unwrap();
+                let digest = Digest::import_less_safe(black_box(&digest), &SHA256).unwrap();
+                key.sign_digest(&RSA_PKCS1_SHA256, &digest, &mut out)
+                    .unwrap()
+            })
+        });
+    }
+    g.finish();
+
     let mut g = c.benchmark_group("rsa_pkcs1_verify");
     for (pkey, _, vg_public, sig, _, aws_public) in &keys {
         let k = sig.len();
@@ -136,6 +213,51 @@ pub fn bench(c: &mut Criterion) {
     }
     g.finish();
 
+    let mut g = c.benchmark_group("rsa_pkcs1_verify_once");
+    // The same signatures, each verified with a key loaded from `(n, e)` in
+    // the measurement, as a TLS client verifies a certificate's signature
+    // with the key it has just parsed: the key's setup (its Montgomery
+    // values, at its first operation) is counted.
+    for (pkey, _, _, sig, _, _) in &keys {
+        let k = sig.len();
+        let rsa = pkey.rsa().unwrap();
+        let (n, e) = (rsa.n().to_vec(), rsa.e().to_vec());
+        g.bench_function(BenchmarkId::new(VG, k), |b| {
+            b.iter(|| {
+                let key = PublicKey::new(black_box(&n), black_box(&e)).unwrap();
+                assert!(verify(&key, black_box(sig), &digest, Hash::Sha256))
+            })
+        });
+        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+            b.iter(|| {
+                let key = Rsa::from_public_components(
+                    BigNum::from_slice(black_box(&n)).unwrap(),
+                    BigNum::from_slice(black_box(&e)).unwrap(),
+                )
+                .unwrap();
+                let pkey = PKey::from_rsa(key).unwrap();
+                let mut c = PkeyCtx::new(&pkey).unwrap();
+                c.verify_init().unwrap();
+                c.set_rsa_padding(Padding::PKCS1).unwrap();
+                c.set_signature_md(Md::sha256()).unwrap();
+                assert!(c.verify(black_box(&digest), black_box(sig)).unwrap())
+            })
+        });
+        g.bench_function(BenchmarkId::new(AWS_LC, k), |b| {
+            b.iter(|| {
+                let key = RsaPublicKeyComponents {
+                    n: black_box(&n),
+                    e: black_box(&e),
+                }
+                .to_parsed_public_key(&RSA_PKCS1_2048_8192_SHA256)
+                .unwrap();
+                let digest = Digest::import_less_safe(black_box(&digest), &SHA256).unwrap();
+                key.verify_digest_sig(&digest, black_box(sig)).unwrap()
+            })
+        });
+    }
+    g.finish();
+
     let mut g = c.benchmark_group("rsa_pkcs1_recover");
     for (pkey, _, vg_public, sig, _, _) in &keys {
         let k = sig.len();
@@ -151,5 +273,10 @@ pub fn bench(c: &mut Criterion) {
     g.finish();
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+)))]
 pub fn bench(_: &mut Criterion) {}

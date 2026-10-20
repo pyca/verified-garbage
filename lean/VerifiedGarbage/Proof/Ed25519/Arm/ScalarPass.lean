@@ -1,14 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.Ed25519.Scalar
-public import VerifiedGarbage.Proof.X25519.Arm.Limbs
 public import VerifiedGarbage.Impl.Ed25519.Arm.Scalar
 public import VerifiedGarbage.Proof.Ed25519.Arm.Field
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.X25519.Arm.Pass
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarNat`. -/
 

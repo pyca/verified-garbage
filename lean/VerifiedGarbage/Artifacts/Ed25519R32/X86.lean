@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Impl.Ed25519.X86.Point32
 public import VerifiedGarbage.Proof.Ed25519.X86.Point32.Verified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Ed25519's point additions and doubling, in radix `2^32`, on x86 (32-bit) -/
 
@@ -38,29 +36,17 @@ def doubleNotes : List String := ["Uses baseline integer instructions. The funct
   575. It then restores the registers."]
 
 def artifacts : List Artifact := [
-  { addApi with
-    target := X86.target
-    doc := addApi.doc (notes := notes)
+  addApi.artifact X86.target {
+    notes := notes
     code := addFn
-    contract := addContract X86.abi
-    verified := addFn_verified
-    ofSig := by unfold addContract; exact ⟨_, _, _, rfl⟩
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { addAffineApi with
-    target := X86.target
-    doc := addAffineApi.doc (notes := affNotes)
+    verified := addFn_verified },
+  addAffineApi.artifact X86.target {
+    notes := affNotes
     code := affFn
-    contract := addAffineContract X86.abi
-    verified := affFn_verified
-    ofSig := by unfold addAffineContract; exact ⟨_, _, _, rfl⟩
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { doubleApi with
-    target := X86.target
-    doc := doubleApi.doc (notes := doubleNotes)
+    verified := affFn_verified },
+  doubleApi.artifact X86.target {
+    notes := doubleNotes
     code := doubleFn
-    contract := doubleContract X86.abi
-    verified := doubleFn_verified
-    ofSig := by unfold doubleContract; exact ⟨_, _, _, rfl⟩
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := doubleFn_verified }]
 
 end VG.Artifacts.Ed25519R32.X86

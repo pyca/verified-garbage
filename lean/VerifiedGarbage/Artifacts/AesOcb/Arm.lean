@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.AesOcb.Arm.Init
 public import VerifiedGarbage.Proof.AesOcb.Arm.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-OCB (RFC 7253) on ARMv7
@@ -34,31 +34,22 @@ def initNote : String := "This implementation calls `vg_aes_expand_key_scratch` 
   `vg_aes_ctr32` to encrypt the zero block into `L_*`."
 
 def artifacts : List Artifact := [
-  { Spec.Ocb.initApi with
-    target := Arm.target
-    doc := Spec.Ocb.initApi.doc (notes := [initNote])
+  Spec.Ocb.initApi.artifact Arm.target {
+    notes := [initNote]
     code := Impl.StackScratch.Arm.withRegScratch 2560 .r3 Impl.AesGcm.Arm.init
-    contract := Spec.Ocb.initContract Arm.abi 2568
     stack := 2568
-    verified := init_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Ocb.sealApi with
-    target := Arm.target
-    doc := Spec.Ocb.sealApi.doc (notes := ["This implementation enciphers with `vg_aes_encrypt_blocks`."])
+    verified := init_framed },
+  Spec.Ocb.sealApi.artifact Arm.target {
+    notes := ["This implementation enciphers with `vg_aes_encrypt_blocks`."]
     code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesOcb.Arm.«seal»
-    contract := Spec.Ocb.sealContract Arm.abi 2600
     stack := 2600
-    verified := seal_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Ocb.openApi with
-    target := Arm.target
-    doc := Spec.Ocb.openApi.doc (notes := [
+    verified := seal_framed },
+  Spec.Ocb.openApi.artifact Arm.target {
+    notes := [
       "This implementation enciphers with `vg_aes_encrypt_blocks`, and deciphers with `vg_aes_decrypt_blocks`.",
-      "It compares the tags and overwrites the data with zeros without a branch on the result."])
+      "It compares the tags and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesOcb.Arm.«open»
-    contract := Spec.Ocb.openContract Arm.abi 2600
     stack := 2600
-    verified := open_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := open_framed }]
 
 end VG.Artifacts.AesOcb.Arm

@@ -1,21 +1,25 @@
 module
 
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
+public import VerifiedGarbage.Proof.X25519.X86_64.Main
+import VerifiedGarbage.Proof.X25519.X86_64.Verified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
+public import VerifiedGarbage.Impl.X25519.X86_64.Adx
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
-public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
-public import VerifiedGarbage.Proof.X25519.X86_64.Verified
+meta import VerifiedGarbage.Proof.X25519.X86_64.Main
 meta import VerifiedGarbage.Proof.X25519.X86_64.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-meta import VerifiedGarbage.Impl.Mont.Mod
-meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
+meta import VerifiedGarbage.Impl.X25519.X86_64.Adx
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # X25519 on x86-64 with BMI2 and ADX: `Verified`

@@ -1,13 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKeyCore
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCtx
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.KeyMod
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Rsa.X86_64.KeySteps
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 
 /-!
 # `vg_rsa_check_key` on x86-64: the checks but those modulo `X - 1`

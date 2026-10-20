@@ -16,10 +16,12 @@ public import VerifiedGarbage.TCB.Artifact
   `(p, q, d)` (`Rsa.crtKey`), for `vg_rsa_private_crt`;
 * `vg_rsa_recover_primes`: the prime factors `(p, q)` of the modulus of the
   private key `(n, e, d)` (`Rsa.primesKey`), for `vg_rsa_crt_values`;
-* `vg_rsa_public_checked` and `vg_rsa_public_precomputed_checked`: RSAEP
-  and RSAVP1 (`Rsa.publicOp`) within BoringSSL's limits on the public
-  exponent (`Rsa.publicOpChecked`), the second from the values
-  `vg_rsa_public_precompute` computed, without computing them again;
+* `vg_rsa_public_precomputed_checked`: RSAEP and RSAVP1 (`Rsa.publicOp`)
+  within BoringSSL's limits on the public exponent (`Rsa.publicOpChecked`),
+  from the values `vg_rsa_public_precompute` computed, without computing
+  them again (`publicCheckedContract` states the same operation given the
+  modulus itself, for the code of the RSA padding functions that call it;
+  it is not a function of the module);
 * `vg_rsa_private_checked`: `vg_rsa_private_crt` given the public exponent
   too, releasing a result only if it passes BoringSSL's check against it
   (`Rsa.privateChecked`);
@@ -53,8 +55,10 @@ may also leak how many candidates it tried, which is 1 or 2 for most keys
 value depends on secrets (whether the input is below `n`, and whether the
 private key is consistent).
 
-`scratch` is working space of at least `16 n_len + 32` `u64`s, whose contents on
-return are unspecified. `stack` is the number of bytes below the stack
+`scratch` is working space of at least `16 n_len + 32` `u64`s, or, for the
+public-key functions (`vg_rsa_public_precompute`, `vg_rsa_public_checked`
+and `vg_rsa_public_precomputed_checked`), `8 ⌈n_len / 8⌉ + 48`, whose
+contents on return are unspecified. `stack` is the number of bytes below the stack
 pointer that an implementation's calls and frames use. The functions may
 overwrite their arguments passed in memory, where the calling convention
 allows it (`writeArgs`).
@@ -70,6 +74,11 @@ def bytesAt (m : Mem) (p : Addr) (n : Nat) : List Byte :=
 
 /-- The least working space, in `u64`s, for a modulus of `nLen` octets. -/
 def scratchWords (nLen : Nat) : Nat := 16 * nLen + 32
+
+/-- The least working space, in `u64`s, of the public-key functions for a
+modulus of `nLen` octets: a header of 32 words and 8 numbers of
+`⌈nLen / 8⌉ + 2` words. -/
+def publicScratchWords (nLen : Nat) : Nat := 8 * modulusWords nLen + 48
 
 /-- The bounds on the modulus' length, in octets. -/
 def lenValid (nLen : Nat) : Prop := 64 ≤ nLen ∧ nLen ≤ 1024
@@ -101,6 +110,12 @@ def scratchSafety : List String :=
     "The contents of `scratch` on return are unspecified and may contain secrets; the caller \
       must destroy them after use."]
 
+/-- The `# Safety` items on the working space of the public-key functions. -/
+def publicScratchSafety : List String :=
+  ["`scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.",
+    "The contents of `scratch` on return are unspecified and may contain secrets; the caller \
+      must destroy them after use."]
+
 /-! ## The public-key operation's signature -/
 
 /-- `vg_rsa_public_checked(out: *mut u8, out_len: usize, n: *const u8, n_len: usize,
@@ -127,7 +142,7 @@ def publicPrecomputeContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract
   publicPrecomputeSig.contract A
     (pre := fun _pre preLen _n nLen _scratch scratchLen _ =>
       lenValid nLen.toNat ∧ preLen.toNat = precomputedWords nLen.toNat ∧
-        scratchWords nLen.toNat ≤ scratchLen.toNat)
+        publicScratchWords nLen.toNat ≤ scratchLen.toNat)
     (post := fun pre preLen n nLen _scratch _scratchLen m m' r =>
       match publicPrecompute (bytesAt m n nLen.toNat) with
       | some ws => r = 1 ∧ wordsAt m' pre preLen.toNat = ws
@@ -151,7 +166,7 @@ def publicPrecomputeApi : Api where
     Contract: `VG.Spec.Rsa.publicPrecomputeContract`. Timing may depend on the pointers, \
     the lengths and the contents of `n`."
   safety := ["`n_len` must be in 64..=1024.", "`pre_len` must be `2 * ⌈n_len / 8⌉`."] ++
-    scratchSafety
+    publicScratchSafety
 
 /-! ## The signature of the public-key operation from precomputed values -/
 
@@ -351,7 +366,7 @@ def publicCheckedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M 
   publicSig.contract A
     (pre := fun _out outLen _n nLen _e eLen _input inputLen _scratch scratchLen _ =>
       lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ inputLen.toNat = nLen.toNat ∧
-        1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧ scratchWords nLen.toNat ≤ scratchLen.toNat)
+        1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧ publicScratchWords nLen.toNat ≤ scratchLen.toNat)
     (post := fun out _outLen n nLen e eLen input _inputLen _scratch _scratchLen m m' r =>
       written m' out nLen.toNat r
         (publicOpChecked (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat)
@@ -376,7 +391,7 @@ def publicCheckedApi : Api where
     timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on \
     the input."
   safety := ["`n_len` must be in 64..=1024.", "`out_len` and `input_len` must be `n_len`.",
-    "`e_len` must be in 1..=`n_len`."] ++ scratchSafety
+    "`e_len` must be in 1..=`n_len`."] ++ publicScratchSafety
 
 /-! ### `vg_rsa_public_precomputed_checked` -/
 
@@ -391,7 +406,7 @@ def publicPrecomputedCheckedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : 
     (pre := fun _out outLen _pre preLen _e eLen _input inputLen _scratch scratchLen _ =>
       lenValid outLen.toNat ∧ preLen.toNat = precomputedWords outLen.toNat ∧
         inputLen.toNat = outLen.toNat ∧ 1 ≤ eLen.toNat ∧ eLen.toNat ≤ outLen.toNat ∧
-        scratchWords outLen.toNat ≤ scratchLen.toNat)
+        publicScratchWords outLen.toNat ≤ scratchLen.toNat)
     (post := fun out outLen pre preLen e eLen input _inputLen _scratch _scratchLen m m' r =>
       ∀ nB : List Byte, nB.length = outLen.toNat →
         publicPrecompute nB = some (wordsAt m pre preLen.toNat) →
@@ -407,8 +422,9 @@ def publicPrecomputedCheckedApi : Api where
   sig := publicPrecomputedSig
   writeArgs := true
   contracts := some fun A stack => publicPrecomputedCheckedContract A stack
-  summary := s!"The RSA public-key operation, as `vg_rsa_public_checked`, with the modulus \
-    given by the values `vg_rsa_public_precompute` wrote for it to `pre`. With those values \
+  summary := s!"The RSA public-key operation: RSAEP (RFC 8017 §5.1.1), which is also RSAVP1 \
+    (§5.2.2), for a public key within BoringSSL's limits, with the modulus given by the \
+    values `vg_rsa_public_precompute` wrote for it to `pre`. With those values \
     of a modulus `n` of `out_len` bytes and {exponentDoc}, writes `input^e mod n` \
     (`out_len` bytes, most significant first) to `out` and returns 1; or writes zeros and \
     returns 0 if `e` is not such a number or the input (`out_len` bytes, most significant \
@@ -420,7 +436,7 @@ def publicPrecomputedCheckedApi : Api where
     "`pre_len` must be `2 * ⌈out_len / 8⌉`.", "`e_len` must be in 1..=`out_len`.",
     "For the result to be RSAEP's, `pre` must hold what `vg_rsa_public_precompute` wrote \
       for a modulus of `out_len` bytes (returning 1); otherwise it is unspecified."] ++
-    scratchSafety
+    publicScratchSafety
 
 /-! ### `vg_rsa_private_checked` -/
 

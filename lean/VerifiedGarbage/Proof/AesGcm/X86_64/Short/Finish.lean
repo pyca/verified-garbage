@@ -1,14 +1,20 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Xor
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
 
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
-public import VerifiedGarbage.Proof.AesGcm.X86_64.SealBody
-public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Gcm.Be64
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+import VerifiedGarbage.Proof.AesGcm.X86_64.SealBody
 
 /-!
 # AES-GCM on x86-64 with AVX-512: the end of a long `seal`

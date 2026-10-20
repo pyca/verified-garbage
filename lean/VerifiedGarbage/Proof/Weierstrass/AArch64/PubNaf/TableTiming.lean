@@ -1,15 +1,20 @@
 module
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CoZField
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.DigitTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.DigitTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
-import VerifiedGarbage.Proof.Weierstrass.JacMul
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
+import VerifiedGarbage.Proof.Weierstrass.CoZTable
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-!
 # Timing of the public NAF's table
@@ -17,7 +22,7 @@ import VerifiedGarbage.Proof.Weierstrass.JacMul
 From two runs with the same values of `P` and of the slots read only, the
 table's construction leaks the same trace and leaves the same values in the
 table (`table_relCT`): the stores' addresses are public (`x20`), and the
-additions' branches depend on those values only.
+co-Z programs do not branch.
 -/
 
 @[expose] public section
@@ -109,10 +114,17 @@ theorem store_relCT {K : WinCfg} {base : Addr} {size m : Nat} {C : Curve}
     · simpa only [F, qxy, ite_false, ite_true] using ht.2.1
     · simpa only [F, qxz, qyz, ite_false] using ht.2.2
 
-/-- The pieces of the table whose timing taint tracking checks, and the
-registers its point operations do not write. -/
+/-- A public control register may be saved and restored inside a called kernel. -/
+theorem relCT_keepGprExec {P Q : State → State → Prop} {c : Prog isa} {r : Reg} {v : BitVec 64}
+    (h : RelCT isa P c Q) (hk : ∀ {s t tr}, Exec isa c s tr t → t.gpr r = s.gpr r) :
+    RelCT isa (fun s t => P s t ∧ s.gpr r=v ∧ t.gpr r=v) c
+      (fun s t => Q s t ∧ s.gpr r=v ∧ t.gpr r=v) := by
+  intro s t ts tt s' t' ⟨hp,ps,pt⟩ es et
+  obtain ⟨he,hq⟩ := h _ _ _ _ _ _ hp es et
+  exact ⟨he,hq,(hk es).trans ps,(hk et).trans pt⟩
+
+/-- Timing certificates and semantic preservation of table control registers. -/
 structure TableChecks (K : WinCfg) : Prop where
-  dbl : FieldCT (fprogB K.M (dblJ K.S K.P K.E))
   copyP : FieldCT (.block (copyPt K.M.n K.R K.P))
   ptr : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0]))
     (.block [.addImm .x .x20 .x0 0])
@@ -120,44 +132,31 @@ structure TableChecks (K : WinCfg) : Prop where
     (.block (store K))
   set : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0, .x20]))
     (.block [.addImm .x .x20 .x20 (stride K), .movz .x .x19 7 0])
-  add : JacAddChecks K K.R K.E K.D
-  copyD : FieldCT (.block (copyPt K.M.n K.R K.D))
+  dblu : FieldCT (fprogB K.M (dbluOps K))
+  zaddu : FieldCT (fprogB K.M (zadduOps K))
   bump : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0, .x19, .x20]))
     (.block [.addImm .x .x20 .x20 (stride K), decCounter])
-  keep : ∀ r ∈ [Reg.x19, .x20], ∀ i ∈ instrs (.seq (Jacobian.jacAdd K K.R K.E K.D)
-    (.block (copyPt K.M.n K.R K.D)) : Prog isa), dstOf i ≠ some r
+  keepD : ∀ r ∈ [Reg.x19, .x20], ∀ {s t tr}, Exec isa (fprogB K.M (dbluOps K)) s tr t → t.gpr r = s.gpr r
+  keep : ∀ r ∈ [Reg.x19, .x20], ∀ {s t tr}, Exec isa (fprogB K.M (zadduOps K)) s tr t → t.gpr r = s.gpr r
 
 /-- The slots the construction reads after `m` entries. -/
 def tblLive (K : WinCfg) (m : Nat) : List Nat :=
-  winRo K ++ jacCoords K.R ++ jacCoords K.E ++ (List.range (3 * m)).map (K.tbl + 8 * K.M.n * ·)
-
-theorem tblLive_slots (K : WinCfg) {m : Nat} (hm : m ≤ 8) : ∀ x ∈ tblLive K m, x ∈ winSlots K := by
-  intro x hx
-  simp only [tblLive, List.mem_append] at hx
-  rcases hx with ((hx | hx) | hx) | hx
-  · exact winRo_slots K x hx
-  · exact winOther_mem (R_other K x (by simpa [jacCoords] using hx))
-  · exact winOther_mem (E_other K x (by simpa [jacCoords] using hx))
-  · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-    simp only [winSlots, List.mem_append]
-    exact Or.inr (winTbl_mem K (by have := List.mem_range.mp hi; omega))
+  winRo K ++ jacCoords K.R ++ [K.E.x, K.E.y] ++ (List.range (3 * m)).map (K.tbl + 8 * K.M.n * ·)
 
 theorem tblLive_succ (K : WinCfg) {m : Nat} :
-    ∀ x ∈ tblLive K (m + 1), x ∈ jacCoords (K.tblPt (m + 1)) ++ (jacCoords K.R ++ (jacCoords K.D ++
-      tblLive K m)) := by
+    ∀ x ∈ tblLive K (m + 1), x ∈ jacCoords (K.tblPt (m + 1)) ++ tblLive K m := by
   intro x hx
   simp only [tblLive, List.mem_append] at hx
   rcases hx with ((hx | hx) | hx) | hx
-  · exact List.mem_append_right _ (List.mem_append_right _ (List.mem_append_right _
-      (List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _ hx)))))
-  · exact List.mem_append_right _ (List.mem_append_left _ hx)
-  · exact List.mem_append_right _ (List.mem_append_right _ (List.mem_append_right _
-      (List.mem_append_left _ (List.mem_append_right _ hx))))
+  · exact List.mem_append_right _ (by simp only [tblLive, List.mem_append]; exact Or.inl (Or.inl (Or.inl hx)))
+  · exact List.mem_append_right _ (by simp only [tblLive, List.mem_append]; exact Or.inl (Or.inl (Or.inr hx)))
+  · exact List.mem_append_right _ (by simp only [tblLive, List.mem_append]; exact Or.inl (Or.inr hx))
   · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
     have hi := List.mem_range.mp hi
     rcases Nat.lt_or_ge i (3 * m) with h | h
-    · exact List.mem_append_right _ (List.mem_append_right _ (List.mem_append_right _
-        (List.mem_append_right _ (List.mem_map.mpr ⟨i, List.mem_range.mpr h, rfl⟩))))
+    · exact List.mem_append_right _ (by
+        simp only [tblLive, List.mem_append]
+        exact Or.inr (List.mem_map.mpr ⟨i, List.mem_range.mpr h, rfl⟩))
     · apply List.mem_append_left
       simp only [jacCoords, tblPt_x, tblPt_y, tblPt_z, Nat.add_sub_cancel, List.mem_cons,
         List.not_mem_nil, or_false]
@@ -166,14 +165,25 @@ theorem tblLive_succ (K : WinCfg) {m : Nat} :
       · exact Or.inr (Or.inl rfl)
       · exact Or.inr (Or.inr rfl)
 
+/-- A co-Z program on the window method's slots, for the values it computes. -/
+theorem coZ_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : NafLay K size)
+    (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {σ : Nat → Nat} (hσ : Ren K σ) {N : List FOp}
+    (hout : ∀ op ∈ N, op.out < 11) {Rd : List Nat} (hR : readsOk N Rd = true) {V : List Nat}
+    {E : Nat → Fe C} (hv : ∀ i ∈ Rd, σ i ∈ V) (hct : FieldCT (fprogB K.M (N.map (CoZ.rename σ)))) :
+    RelCT isa (FieldPair K.M base size C.p (· ∈ winSlots K) V E) (fprogB K.M (N.map (CoZ.rename σ)))
+      (FieldPair K.M base size C.p (· ∈ winSlots K) (validAfter (N.map (FOp.rename σ)) V)
+        (runOps (N.map (FOp.rename σ)) E)) :=
+  fieldWP_relCT hct fun _ hi =>
+    WP.mono (coZ_ok hL hp hσ hout hR hi hv) fun _ ⟨hk, _, hI, _⟩ => ⟨hI, hk.sp⟩
+
 /-- Storing an entry writes only `x4`. -/
 theorem store_dst (K : WinCfg) {r : Reg} (hr : r = .x19 ∨ r = .x20) :
-    ∀ i ∈ instrs (.block (store K) : Prog isa), dstOf i ≠ some r := by
+    ∀ i ∈ instrs (.block (store K) : Prog isa), clobbers i r = false := by
   intro i hi
   simp only [store, instrs, List.mem_flatMap, List.mem_range] at hi
   obtain ⟨j, _, hj⟩ := hi
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-  rcases hj with rfl | rfl <;> rcases hr with rfl | rfl <;> simp [dstOf, ld]
+  rcases hj with rfl | rfl <;> rcases hr with rfl | rfl <;> simp [clobbers, dstOf, ld]
 
 /-- Moving to the next entry and counting it. -/
 theorem bump_ok {K : WinCfg} {size : Nat} (hL : NafLay K size) (a : State) {j : Nat} (hj : 1 ≤ j)
@@ -192,7 +202,7 @@ theorem bump_ok {K : WinCfg} {size : Nat} (hL : NafLay K size) (a : State) {j : 
 
 /-- An iteration of the construction, for the values it computes. -/
 theorem tableStepRaw_relCT {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
-    (hL : NafLay K size) (hp : UnitMod C.p (2^(64*K.M.n))) (hone : K.one < C.p) (hc : TableChecks K)
+    (hL : NafLay K size) (hp : UnitMod C.p (2^(64*K.M.n))) (hc : TableChecks K)
     (hm1 : 1 ≤ m) (hm : m < 8) :
     RelCT isa (fun s t => (∃ E, FieldPair K.M base size C.p (· ∈ winSlots K) (tblLive K m) E s t) ∧
       s.gpr .x20 = off base (stride K * m) ∧ t.gpr .x20 = off base (stride K * m) ∧
@@ -202,33 +212,22 @@ theorem tableStepRaw_relCT {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
         s.gpr .x20 = off base (stride K * (m + 1)) ∧ t.gpr .x20 = off base (stride K * (m + 1)) ∧
         s.gpr .x19 = BitVec.ofNat 64 (8 - (m + 1)) ∧ t.gpr .x19 = BitVec.ofNat 64 (8 - (m + 1))) := by
   have hW := hL.win
-  have h6 := hL.n6
-  obtain ⟨-, -, -, -, -, a6, -, -⟩ := rcbApart_naf hW
-  have sR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ winRo K ++ winOther K :=
-    fun x hx => List.mem_append_right _ (R_other K x hx)
-  have sE : ∀ x ∈ [K.E.x, K.E.y, K.E.z], x ∈ winRo K ++ winOther K :=
-    fun x hx => List.mem_append_right _ (E_other K x hx)
-  have sl := winJ_sl (o := K.D) (p := K.R) (q := K.E) (D_other K) sR sE
-  have hRV : ∀ x ∈ rcbR K.S K.R K.E, x ∈ tblLive K m := by
-    intro x hx
-    simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with h | h | h | h | h | h | h | h <;> subst h <;> simp [tblLive, jacCoords, winRo]
+  let V' := validAfter (CoZ.zaddu.map (FOp.rename (coZσ K))) (tblLive K m)
+  have hV' : ∀ x ∈ tblLive K m, x ∈ V' := fun x hx => (mem_validAfter _ _).mpr (Or.inl hx)
   have add : RelCT isa (fun s t => (∃ E, FieldPair K.M base size C.p (· ∈ winSlots K) (tblLive K m) E s t))
-      (.seq (Jacobian.jacAdd K K.R K.E K.D) (.block (copyPt K.M.n K.R K.D)))
-      (fun s t => ∃ E', FieldPair K.M base size C.p (· ∈ winSlots K)
-        (jacCoords K.R ++ (jacCoords K.D ++ tblLive K m)) E' s t) := by
+      (fprogB K.M (zadduOps K))
+      (fun s t => ∃ E', FieldPair K.M base size C.p (· ∈ winSlots K) V' E' s t) := by
     apply RelCT.exists_
     intro E
-    apply RelCT.seq (jacAddB_relCT hW.lay hL.al.al hL.n4 hp a6 sl.1 (hL.al.low sl.2.2) hRV hone hc.add)
-    apply RelCT.exists_
-    intro E'
-    have os : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ winSlots K := fun x hx => winOther_mem (R_other K x hx)
-    have dv : ∀ x ∈ [K.D.x, K.D.y, K.D.z], x ∈ [K.D.x, K.D.y, K.D.z] ++ tblLive K m :=
-      fun x hx => List.mem_append_left _ hx
-    exact (copyPoint_relCT hW.lay hL.al.al os dv hc.copyD).mono (fun _ _ h => h) (fun _ _ h => ⟨_, h⟩)
-  have add' := relCT_keepGpr (r := .x19) (v := BitVec.ofNat 64 (8 - m))
-    (relCT_keepGpr (r := .x20) (v := off base (stride K * m)) add (hc.keep .x20 (by simp)) (by decide))
-    (hc.keep .x19 (by simp)) (by decide)
+    have hv : ∀ i ∈ [0, 1, 8, 9, 10], coZσ K i ∈ tblLive K m := by
+      intro i hi
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+      rcases hi with rfl | rfl | rfl | rfl | rfl <;> simp [tblLive, coZσ, jacCoords]
+    exact (coZ_relCT hL hp (coZσ_ren hW) CoZTable.zaddu_out CoZTable.zaddu_reads hv hc.zaddu).mono
+      (fun _ _ h => h) (fun _ _ h => ⟨_, h⟩)
+  have add' := relCT_keepGprExec (r := .x19) (v := BitVec.ofNat 64 (8 - m))
+    (relCT_keepGprExec (r := .x20) (v := off base (stride K * m)) add (hc.keep .x20 (by simp)))
+    (hc.keep .x19 (by simp))
   rw [tableStep]
   refine RelCT.seq (add'.mono (fun _ _ ⟨h, a, b, c, d⟩ => ⟨⟨h, a, b⟩, c, d⟩) (fun _ _ h => h)) ?_
   apply RelCT.block_append
@@ -237,8 +236,8 @@ theorem tableStepRaw_relCT {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
   | seq es₁ es₂ =>
     cases et with
     | seq et₁ et₂ =>
-      have hRv : ∀ x ∈ jacCoords K.R, x ∈ jacCoords K.R ++ (jacCoords K.D ++ tblLive K m) :=
-        fun x hx => List.mem_append_left _ hx
+      have hRv : ∀ x ∈ jacCoords K.R, x ∈ V' :=
+        fun x hx => hV' x (by simp only [tblLive, List.mem_append]; exact Or.inl (Or.inl (Or.inr hx)))
       obtain ⟨he₁, E', pair⟩ := store_relCT hL hm hRv hc.store _ _ _ _ _ _ ⟨hp, s20, t20⟩ es₁ et₁
       -- The pointer and the count.
       have s20' := (Exec.gpr (store_dst K (Or.inr rfl)) es₁ (.inr (by decide))).trans s20
@@ -268,68 +267,33 @@ theorem tableStepRaw_relCT {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
       obtain ⟨mt, spt, x0t, wrt, t20'', t19''⟩ := mem t19' t20' et₂
       refine ⟨by rw [he₁, he₂], ⟨E', ?_⟩, s20'', t20'', s19'', t19''⟩
       have keepI : ∀ {a a' : State}, a'.mem = a.mem → a'.gpr .x0 = a.gpr .x0 → a'.wr = a.wr →
-          Inv K.M base size C.p (· ∈ winSlots K)
-            (jacCoords (K.tblPt (m + 1)) ++ (jacCoords K.R ++ (jacCoords K.D ++ tblLive K m))) E' a →
-          Inv K.M base size C.p (· ∈ winSlots K)
-            (jacCoords (K.tblPt (m + 1)) ++ (jacCoords K.R ++ (jacCoords K.D ++ tblLive K m))) E' a' :=
+          Inv K.M base size C.p (· ∈ winSlots K) (jacCoords (K.tblPt (m + 1)) ++ V') E' a →
+          Inv K.M base size C.p (· ∈ winSlots K) (jacCoords (K.tblPt (m + 1)) ++ V') E' a' :=
         fun hm h0 hw hi => ⟨⟨h0.trans hi.scr.x0, hw ▸ hi.scr.wr, hi.scr.nowrap, hi.scr.enc⟩,
           hm ▸ hi.mod, hi.sl, hm ▸ hi.lt, hm ▸ hi.val⟩
       exact (⟨keepI ms x0s wrs pair.left, keepI mt x0t wrt pair.right,
-        sps.trans (pair.sp.trans spt.symm)⟩ : FieldPair _ _ _ _ _ _ _ _ _).sub (tblLive_succ K)
+        sps.trans (pair.sp.trans spt.symm)⟩ : FieldPair _ _ _ _ _ _ _ _ _).sub fun x hx => by
+          rcases List.mem_append.mp (tblLive_succ K x hx) with h | h
+          · exact List.mem_append_left _ h
+          · exact List.mem_append_right _ (hV' x h)
 
-theorem tblLive_one (K : WinCfg) :
-    ∀ x ∈ tblLive K 1, x ∈ jacCoords (K.tblPt (0 + 1)) ++
-      ([K.R.x, K.R.y, K.R.z] ++ ([K.E.x, K.E.y, K.E.z] ++ winRo K)) := by
-  intro x hx
-  have h := tblLive_succ K (m := 0) x hx
-  simp only [tblLive, List.mem_append] at hx
-  rcases hx with ((hx | hx) | hx) | hx
-  · exact List.mem_append_right _ (List.mem_append_right _ (List.mem_append_right _ hx))
-  · exact List.mem_append_right _ (List.mem_append_left _ (by simpa [jacCoords] using hx))
-  · exact List.mem_append_right _ (List.mem_append_right _
-      (List.mem_append_left _ (by simpa [jacCoords] using hx)))
-  · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-    have hi := List.mem_range.mp hi
-    apply List.mem_append_left
-    simp only [jacCoords, tblPt_x, tblPt_y, tblPt_z, Nat.add_sub_cancel, List.mem_cons,
-      List.not_mem_nil, or_false]
-    rcases (show i = 3 * 0 ∨ i = 3 * 0 + 1 ∨ i = 3 * 0 + 2 by omega) with rfl | rfl | rfl
-    · exact Or.inl rfl
-    · exact Or.inr (Or.inl rfl)
-    · exact Or.inr (Or.inr rfl)
-
-/-- `E = 2P`, `R = P` into the first entry, and the count of the others. -/
+/-- `R = P` into the first entry, and the count of the others. -/
 theorem tableInit_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
-    (hL : NafLay K size) (hp : UnitMod C.p (2^(64*K.M.n))) (hc : TableChecks K) {E : Nat → Fe C} :
+    (hL : NafLay K size) (hc : TableChecks K) {E : Nat → Fe C} :
     RelCT isa (FieldPair K.M base size C.p (· ∈ winSlots K) (winRo K) E)
-      (.seq (fprogB K.M (dblJ K.S K.P K.E)) (.block (copyPt K.M.n K.R K.P ++
-        ([.addImm .x .x20 .x0 0] : List Instr) ++ store K ++
-        ([.addImm .x .x20 .x20 (stride K), .movz .x .x19 7 0] : List Instr))))
-      (fun s t => (∃ E', FieldPair K.M base size C.p (· ∈ winSlots K) (tblLive K (8 - 7)) E' s t) ∧
-        s.gpr .x20 = off base (stride K * (8 - 7)) ∧ t.gpr .x20 = off base (stride K * (8 - 7)) ∧
+      (.block (copyPt K.M.n K.R K.P ++ ([.addImm .x .x20 .x0 0] : List Instr) ++ store K ++
+        ([.addImm .x .x20 .x20 (stride K), .movz .x .x19 7 0] : List Instr)))
+      (fun s t => (∃ E', FieldPair K.M base size C.p (· ∈ winSlots K)
+          (jacCoords (K.tblPt (0 + 1)) ++ ([K.R.x, K.R.y, K.R.z] ++ winRo K)) E' s t) ∧
+        s.gpr .x20 = off base (stride K * 1) ∧ t.gpr .x20 = off base (stride K * 1) ∧
         s.gpr .x19 = BitVec.ofNat 64 7 ∧ t.gpr .x19 = BitVec.ofNat 64 7) := by
   have hW := hL.win
-  obtain ⟨a1, -, -, -, -, -, -, -⟩ := rcbApart_naf hW
-  have sP : ∀ x ∈ [K.P.x, K.P.y, K.P.z], x ∈ winRo K ++ winOther K := by
-    intro x hx; apply List.mem_append_left
-    rcases mem3 hx with rfl | rfl | rfl <;> simp [winRo]
-  have sl := winJ_sl (o := K.E) (p := K.P) (q := K.P) (E_other K) sP sP
-  have hPV : ∀ x ∈ rcbR K.S K.P K.P, x ∈ winRo K := by
-    intro x hx
-    simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with h | h | h | h | h | h | h | h <;> subst h <;> simp [winRo]
-  have e : dblJ K.S K.P K.E = ofN (dblJChoiceN false) K.S K.P K.P K.E := dblJChoice_eq false _ _ _
-  have hdc := hc.dbl
-  rw [e] at hdc
-  rw [e]
-  refine RelCT.seq (ofNB_relCT hW.lay hL.al.al hp (dblJChoiceN_ok false) a1 sl.1
-    (hL.al.low sl.2.2) hPV hdc) ?_
   -- `R = P`.
   rw [List.append_assoc, List.append_assoc]
   apply RelCT.block_append
   have os : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ winSlots K := fun x hx => winOther_mem (R_other K x hx)
-  have pv : ∀ x ∈ [K.P.x, K.P.y, K.P.z], x ∈ [K.E.x, K.E.y, K.E.z] ++ winRo K := by
-    intro x hx; apply List.mem_append_right
+  have pv : ∀ x ∈ [K.P.x, K.P.y, K.P.z], x ∈ winRo K := by
+    intro x hx
     rcases mem3 hx with rfl | rfl | rfl <;> simp [winRo]
   refine RelCT.seq (copyPoint_relCT hW.lay hL.al.al os pv hc.copyP) ?_
   -- `x20 = base`.
@@ -338,22 +302,21 @@ theorem tableInit_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
   have ptr := keepsField_relCT (M := K.M) (base := base) (size := size) (m := C.p)
     (Sl := (· ∈ winSlots K)) (pub := [.x0]) (rs := [.x20]) (Pre := fun _ => True)
     (Post := fun a => a.gpr .x20 = off base (stride K * 0)) (by decide) hc.ptr
-    (V := [K.R.x, K.R.y, K.R.z] ++ ([K.E.x, K.E.y, K.E.z] ++ winRo K))
-    (E := copyPointEnv (runOps (ofN (dblJChoiceN false) K.S K.P K.P K.E) E) K.R K.P)
+    (V := [K.R.x, K.R.y, K.R.z] ++ winRo K) (E := copyPointEnv E K.R K.P)
     (fun a b hp _ _ => ⟨hp.sp, fun q hq => pub_x0 hp (Taint.mem_ofRegs.mp hq)⟩)
     (fun a hi _ => WP.mono (addImm_ok a (d := .x20) (n := .x0) (imm := 0) (by decide))
       fun a' ⟨v, k⟩ => ⟨by rw [v, hi.scr.x0]; simp [off], k⟩)
   refine RelCT.seq (ptr.mono (fun _ _ h => ⟨h, trivial, trivial⟩) (fun _ _ h => h)) ?_
   -- Entry 1.
   apply RelCT.block_append
-  have hR : ∀ x ∈ jacCoords K.R, x ∈ [K.R.x, K.R.y, K.R.z] ++ ([K.E.x, K.E.y, K.E.z] ++ winRo K) :=
+  have hR : ∀ x ∈ jacCoords K.R, x ∈ [K.R.x, K.R.y, K.R.z] ++ winRo K :=
     fun x hx => List.mem_append_left _ hx
   have st := relCT_keepGpr (r := .x20) (v := off base (stride K * 0))
     (store_relCT hL (base := base) (C := C) (m := 0) (by decide) hR hc.store
-      (E := copyPointEnv (runOps (ofN (dblJChoiceN false) K.S K.P K.P K.E) E) K.R K.P)) (store_dst K (Or.inr rfl)) (by decide)
+      (E := copyPointEnv E K.R K.P)) (store_dst K (Or.inr rfl)) (by decide)
   refine RelCT.seq (st.mono (fun _ _ ⟨h, a, b⟩ => ⟨⟨h, a, b⟩, a, b⟩) (fun _ _ h => h)) ?_
   refine RelCT.mono (P := fun (s t : State) => ∃ E', FieldPair K.M base size C.p (· ∈ winSlots K)
-      (jacCoords (K.tblPt (0 + 1)) ++ ([K.R.x, K.R.y, K.R.z] ++ ([K.E.x, K.E.y, K.E.z] ++ winRo K)))
+      (jacCoords (K.tblPt (0 + 1)) ++ ([K.R.x, K.R.y, K.R.z] ++ winRo K))
       E' s t ∧ s.gpr .x20 = off base (stride K * 0) ∧ t.gpr .x20 = off base (stride K * 0))
     ?_ (fun _ _ ⟨⟨E', h⟩, a, b⟩ => ⟨E', h, a, b⟩) (fun _ _ h => h)
   apply RelCT.exists_
@@ -362,8 +325,8 @@ theorem tableInit_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     (Sl := (· ∈ winSlots K)) (pub := [.x0, .x20]) (rs := [.x20, .x19])
     (Pre := fun a => a.gpr .x20 = off base (stride K * 0))
     (Post := fun a => a.gpr .x20 = off base (stride K * 1) ∧ a.gpr .x19 = BitVec.ofNat 64 7)
-    (by decide) hc.set (V := jacCoords (K.tblPt (0 + 1)) ++
-      ([K.R.x, K.R.y, K.R.z] ++ ([K.E.x, K.E.y, K.E.z] ++ winRo K))) (E := E')
+    (by decide) hc.set (V := jacCoords (K.tblPt (0 + 1)) ++ ([K.R.x, K.R.y, K.R.z] ++ winRo K))
+    (E := E')
     (fun a b hp pa pb => agree_of hp (pa.trans pb.symm))
     (fun a _ pa => by
       rw [show ([.addImm .x .x20 .x20 (stride K), .movz .x .x19 7 0] : List Instr) =
@@ -378,13 +341,66 @@ theorem tableInit_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
       congr 2)
   refine (set.mono (fun _ _ ⟨h, a, b⟩ => ⟨h, a, b⟩) ?_)
   intro a b ⟨h, ⟨a20, a19⟩, ⟨b20, b19⟩⟩
-  exact ⟨⟨_, h.sub (tblLive_one K)⟩, a20, b20, a19, b19⟩
+  exact ⟨⟨_, h⟩, a20, b20, a19, b19⟩
+
+/-- DBLU, for the values it computes: the slots of the first iteration. -/
+theorem dblu_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
+    (hL : NafLay K size) (hp : UnitMod C.p (2^(64*K.M.n))) (hc : TableChecks K) :
+    RelCT isa (fun s t => (∃ E, FieldPair K.M base size C.p (· ∈ winSlots K)
+          (jacCoords (K.tblPt (0 + 1)) ++ ([K.R.x, K.R.y, K.R.z] ++ winRo K)) E s t) ∧
+        s.gpr .x20 = off base (stride K * 1) ∧ t.gpr .x20 = off base (stride K * 1) ∧
+        s.gpr .x19 = BitVec.ofNat 64 7 ∧ t.gpr .x19 = BitVec.ofNat 64 7)
+      (fprogB K.M (dbluOps K))
+      (fun s t => (∃ E', FieldPair K.M base size C.p (· ∈ winSlots K) (tblLive K (8 - 7)) E' s t) ∧
+        s.gpr .x20 = off base (stride K * (8 - 7)) ∧ t.gpr .x20 = off base (stride K * (8 - 7)) ∧
+        s.gpr .x19 = BitVec.ofNat 64 7 ∧ t.gpr .x19 = BitVec.ofNat 64 7) := by
+  have hW := hL.win
+  let V := jacCoords (K.tblPt (0 + 1)) ++ ([K.R.x, K.R.y, K.R.z] ++ winRo K)
+  let ops := CoZ.dblu.map (FOp.rename (dbluσ K))
+  have hv : ∀ i ∈ [13, 14, 15], dbluσ K i ∈ V := by
+    intro i hi
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with rfl | rfl | rfl <;> simp [V, winRo, dbluσ]
+  have hout : ∀ i ∈ [4, 5, 8, 9, 10], dbluσ K i ∈ ops.map FOp.out := by
+    intro i hi
+    exact out_mem (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+      rcases hi with rfl | rfl | rfl | rfl | rfl <;> decide)
+  have d : RelCT isa (fun s t => ∃ E, FieldPair K.M base size C.p (· ∈ winSlots K) V E s t)
+      (fprogB K.M (dbluOps K))
+      (fun s t => ∃ E', FieldPair K.M base size C.p (· ∈ winSlots K) (tblLive K 1) E' s t) := by
+    apply RelCT.exists_
+    intro E
+    refine (coZ_relCT hL hp (dbluσ_ren hW) CoZTable.dblu_out CoZTable.dblu_reads hv hc.dblu).mono
+      (fun _ _ h => h) (fun _ _ h => ⟨_, h.sub fun x hx => ?_⟩)
+    rw [mem_validAfter]
+    simp only [tblLive, List.mem_append] at hx
+    rcases hx with ((hx | hx) | hx) | hx
+    · exact Or.inl (List.mem_append_right _ (List.mem_append_right _ hx))
+    · simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl | rfl
+      exacts [Or.inr (hout 5 (by simp)), Or.inr (hout 4 (by simp)), Or.inr (hout 10 (by simp))]
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl
+      exacts [Or.inr (hout 8 (by simp)), Or.inr (hout 9 (by simp))]
+    · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+      have hi := List.mem_range.mp hi
+      refine Or.inl (List.mem_append_left _ ?_)
+      simp only [jacCoords, tblPt_x, tblPt_y, tblPt_z, Nat.add_sub_cancel, List.mem_cons,
+        List.not_mem_nil, or_false]
+      rcases (show i = 3 * 0 ∨ i = 3 * 0 + 1 ∨ i = 3 * 0 + 2 by omega) with rfl | rfl | rfl
+      · exact Or.inl rfl
+      · exact Or.inr (Or.inl rfl)
+      · exact Or.inr (Or.inr rfl)
+  exact (relCT_keepGprExec (r := .x19) (v := BitVec.ofNat 64 7)
+    (relCT_keepGprExec (r := .x20) (v := off base (stride K * 1)) d (hc.keepD .x20 (by simp)))
+    (hc.keepD .x19 (by simp))).mono (fun _ _ ⟨h, a, b, c, d⟩ => ⟨⟨h, a, b⟩, c, d⟩)
+    (fun _ _ ⟨⟨h, a, b⟩, c, d⟩ => ⟨h, a, b, c, d⟩)
 
 /-- The table's construction, for the values it computes: two runs from the
 same values of the slots read only leak the same trace. -/
 theorem table_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
-    (hL : NafLay K size) (hp : UnitMod C.p (2^(64*K.M.n))) (hone : K.one < C.p)
-    (hc : TableChecks K) {E : Nat → Fe C} :
+    (hL : NafLay K size) (hp : UnitMod C.p (2^(64*K.M.n))) (hc : TableChecks K) {E : Nat → Fe C} :
     RelCT isa (FieldPair K.M base size C.p (· ∈ winSlots K) (winRo K) E) (table K)
       (fun s t => ∃ E', FieldPair K.M base size C.p (· ∈ winSlots K) (tblLive K 8) E' s t) := by
   let I := fun j s t => 1 ≤ j ∧ j ≤ 7 ∧
@@ -400,7 +416,7 @@ theorem table_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     by_cases hj : 1 ≤ j
     · by_cases hj7 : j ≤ 7
       · have e8 : 8 - (8 - j) = j := by omega
-        refine (tableStepRaw_relCT (base := base) (C := C) hL hp hone hc (m := 8 - j) (by omega)
+        refine (tableStepRaw_relCT (base := base) (C := C) hL hp hc (m := 8 - j) (by omega)
           (by omega)).mono (P' := I j) (fun _ _ h => by rw [e8]; exact h.2.2) ?_
         intro s t ⟨e, s20, t20, s19, t19⟩
         have cn : 8 - (8 - j + 1) = j - 1 := by omega
@@ -429,8 +445,8 @@ theorem table_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
       · exact RelCT.of_false (fun _ _ h => hj7 h.2.1)
     · exact RelCT.of_false (fun _ _ h => hj h.1)
   rw [table]
-  apply RelCT.assoc
-  apply RelCT.seq (tableInit_relCT hL hp hc)
+  apply RelCT.seq (tableInit_relCT hL hc)
+  apply RelCT.seq (dblu_relCT hL hp hc)
   exact (RelCT.loop I step 7).mono (fun _ _ h => ⟨by decide, by decide, h⟩) (fun _ _ h => h)
 
 end VG.Proof.Weierstrass.AArch64.PubNaf

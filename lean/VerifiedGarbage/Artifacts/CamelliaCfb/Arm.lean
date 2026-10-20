@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.Arm.FbVerified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Camellia-CFB128 artifacts on baseline ARMv7 -/
 
@@ -18,21 +16,15 @@ def note : String :=
   value with the number of rounds, in a 72-byte working space on the stack, zeroed on return."
 
 def artifacts : List Artifact := [
-  { Spec.Camellia.cfbEncryptApi with
-    target := Arm.target
-    doc := Spec.Camellia.cfbEncryptApi.doc (notes := [note])
+  Spec.Camellia.cfbEncryptApi.artifact Arm.target {
+    notes := [note]
     code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbEncrypt
-    contract := Spec.Camellia.cfbEncryptContract Arm.abi 2904
     stack := 2904
-    verified := Proof.Camellia.Arm.cfbEncrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Camellia.cfbDecryptApi with
-    target := Arm.target
-    doc := Spec.Camellia.cfbDecryptApi.doc (notes := [note])
+    verified := Proof.Camellia.Arm.cfbEncrypt_framed },
+  Spec.Camellia.cfbDecryptApi.artifact Arm.target {
+    notes := [note]
     code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbDecrypt
-    contract := Spec.Camellia.cfbDecryptContract Arm.abi 2904
     stack := 2904
-    verified := Proof.Camellia.Arm.cfbDecrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Camellia.Arm.cfbDecrypt_framed }]
 
 end VG.Artifacts.CamelliaCfb.Arm

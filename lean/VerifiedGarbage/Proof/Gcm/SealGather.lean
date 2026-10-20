@@ -1,15 +1,11 @@
 module
 
 import VerifiedGarbage.Proof.Gcm.Compose
-import VerifiedGarbage.Proof.Gcm.Ctr
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.List.Induction
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # GCM: one-shot encryption out of place, from a list of slices

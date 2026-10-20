@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part2
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part2
 public import VerifiedGarbage.Proof.X25519.X86_64.Iter
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lanes
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: the ladder's loop
@@ -80,8 +80,8 @@ structure VInv (base : Addr) (k : Nat) (u : Fe) (x1 : Nat → Nat) (s₀ s : Sta
   x3 : fe5 (lanes s 0 2) = (ladderAfter k u n).x3
   z3 : fe5 (lanes s 0 3) = (ladderAfter k u n).z3
 
-theorem vstep_eq : vstep = stepPre ++ (vsw ++ ((stage1 ++ mul4 OPL) ++ ((stage2 ++ mul4 OPV) ++
-    ((stage3 ++ mul4 OPG) ++ ([.alu .test .rbx (.reg .rbx)] : List Instr))))) := by
+theorem vstep_eq : vstep = stepPre ++ (vsw ++ ((stage1 ++ mul4H) ++ ((stage2 ++ mul4H) ++
+    ((stage3 ++ mul4H) ++ ([.alu .test .rbx (.reg .rbx)] : List Instr))))) := by
   simp only [vstep, stepPre, vsw, List.append_assoc, List.cons_append, List.nil_append]
 
 theorem lanes_of_vec {s s' : State} (hx : s'.xmm = s.xmm) (hy : s'.ymmHi = s.ymmHi) (r l i : Nat) :

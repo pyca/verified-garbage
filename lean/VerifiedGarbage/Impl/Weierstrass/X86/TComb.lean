@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86
-public import VerifiedGarbage.Impl.Weierstrass.TCombWords
+import VerifiedGarbage.Impl.Weierstrass.TCombWords
 
 /-!
 # Short Weierstrass curves on x86 (32-bit): a fixed-base comb from tables in memory

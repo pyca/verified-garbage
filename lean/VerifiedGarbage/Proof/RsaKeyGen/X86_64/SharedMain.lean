@@ -1,16 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedRanges
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedRanges
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrMain
-import VerifiedGarbage.Proof.RsaKeyGen.Bits
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedRound
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # RSA's witness loop with an actual callable prepared round -/
 
@@ -57,14 +50,14 @@ abbrev SharedMrEnd (B sp : Addr) (Z w : Nat) (mi : BitVec 64) (c : Nat) (r : Lis
   SharedFrame B sp (sharedRoundRanges w) s₀.mem s.mem ∧ Keep mmRegs s₀ s
 
 /-- One iteration of `millerRabin`'s loop. -/
-theorem sharedMrIter_ok (M : Mont) (R : Kernel) {B sp : Addr} {Z w : Nat} {mi : BitVec 64} {c ch : Nat} {rp : Addr} {r : List Byte}
+theorem sharedMrIter_ok (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : MmCalls M mm) (R : Kernel) {B sp : Addr} {Z w : Nat} {mi : BitVec 64} {c ch : Nat} {rp : Addr} {r : List Byte}
     {s₀ : State} {res : Option (Bool × List Byte)} (hd : MrDims B Z w) (hZ28 : slot w 28 ≤ Z) (hc1 : 1 < c)
     (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c) (hrl : r.length < 2 ^ 64) (hch : ch < 2 ^ 62)
     {i uni used : Nat} (s : State) (hI : SharedMrSt B sp Z w mi c ch rp r s₀ res i uni used s) :
     WP isa (seqs [
       .block [.mov .rcx (.mem (hdr kRandLen)), .mov .rax (.mem (hdr kUsed)), .alu .sub .rcx (.reg .rax),
         .mov .rax (.mem (hdr kLen)), .alu .cmp .rcx (.reg .rax)],
-      .ite .b (.block [.mov32 .rax (.imm 0), .store (hdr kStat) .rax]) (seqs (mrRoundWith M.mm R.run)),
+      .ite .b (.block [.mov32 .rax (.imm 0), .store (hdr kStat) .rax]) (seqs (mrRoundWith mm R.run)),
       .block [.mov .rax (.mem (hdr kStat)), .alu .cmp .rax (.imm 4)]]) s fun s' =>
       (isa.eval .e s' = some false ∧ SharedMrEnd B sp Z w mi c r s₀ res s' ∧ (res = none → r.length < used + 8 * w) ∧
         (∀ b rest, res = some (b, rest) → rest.length + (used + 8 * w) = r.length)) ∨
@@ -122,7 +115,7 @@ theorem sharedMrIter_ok (M : Mont) (R : Kernel) {B sp : Addr} {Z w : Nat} {mi : 
     have hi61 : i < 2 ^ 61 := by
       have : 32 * i ≤ 8 * w * i := Nat.mul_le_mul_right _ (by omega_arith)
       omega_arith
-    refine WP.mono (sharedRound_ok (rp := rp) (used := used) (r := r) (i := i) (uni := uni) (ch := ch) M R hd hZ28 (henv.kept k₁ (by decide)) hc₁
+    refine WP.mono (sharedRound_ok (rp := rp) (used := used) (r := r) (i := i) (uni := uni) (ch := ch) M hmc R hd hZ28 (henv.kept k₁ (by decide)) hc₁
       (by rw [hm₁]; exact hE) (by rw [hm₁]; exact hr2) hc1 hsh (by rw [hm₁]; exact hrp)
       (by rw [hm₁]; exact hus) (by rw [hm₁]; exact hlen) (hsrc.congrK (by rw [hm₁]; exact InScr.refl _ _ _) k₁) h
       (by rw [hm₁]; exact hi) (by rw [hm₁]; exact hun) (by rw [hm₁]; exact hchk) hi61 (by omega_arith) hch)
@@ -251,7 +244,7 @@ theorem sharedMrInit_ok {B sp : Addr} {Z w : Nat} {mi : BitVec 64} {c ch bm : Na
 
 /-- `millerRabin`: the witnesses from offset `used`, as `primalityTest`'s
 loop from `(1, 0)`. -/
-theorem sharedMillerRabin_ok (M : Mont) (R : Kernel) {B sp : Addr} {Z w : Nat} {mi : BitVec 64} {c ch bm : Nat} {rp : Addr}
+theorem sharedMillerRabin_ok (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : MmCalls M mm) (R : Kernel) {B sp : Addr} {Z w : Nat} {mi : BitVec 64} {c ch bm : Nat} {rp : Addr}
     {r : List Byte} {s : State} {used : Nat} (hd : MrDims B Z w) (hZ28 : slot w 28 ≤ Z) (hc1 : 1 < c)
     (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c) (hrl : r.length < 2 ^ 64) (hch : ch < 2 ^ 62)
     (henv : SharedEnv B Z sp s) (hc : MrCtx s B Z w mi c bm) (hE : ECtx s.mem B w c)
@@ -260,12 +253,12 @@ theorem sharedMillerRabin_ok (M : Mont) (R : Kernel) {B sp : Addr} {Z w : Nat} {
     (hrlen : word s.mem B (8 * kRandLen) = BitVec.ofNat 64 r.length)
     (hchk : word s.mem B (8 * kChecks) = BitVec.ofNat 64 ch) (hsrc : Src s B Z rp r)
     (hus : word s.mem B (8 * kUsed) = BitVec.ofNat 64 used) (hu1 : 8 * w ≤ used) (hu2 : used ≤ r.length) :
-    WP isa (seqs (millerRabinWith M.mm R.run)) s (SharedMrEnd B sp Z w mi c r s (mrRest c ch r 1 0 used)) := by
+    WP isa (seqs (millerRabinWith mm R.run)) s (SharedMrEnd B sp Z w mi c r s (mrRest c ch r 1 0 used)) := by
   unfold millerRabinWith
   simp only [seqs]
   refine WP.seq (WP.mono (sharedMrInit_ok hd hZ28 henv hc hE hr2 hrp hlen hrlen hchk hsrc hus hu1 hu2) fun s₁ h => ?_)
   exact WP.loop (fun n t => ∃ i uni u, n = r.length - u ∧ SharedMrSt B sp Z w mi c ch rp r s (mrRest c ch r 1 0 used) i uni u t)
-    (fun n t ⟨i, uni, u, hn, hI⟩ => WP.mono (sharedMrIter_ok M R hd hZ28 hc1 hsh hrl hch t hI) fun t' h => h.imp (fun h => ⟨h.1, h.2.1⟩)
+    (fun n t ⟨i, uni, u, hn, hI⟩ => WP.mono (sharedMrIter_ok M hmc R hd hZ28 hc1 hsh hrl hch t hI) fun t' h => h.imp (fun h => ⟨h.1, h.2.1⟩)
       fun ⟨he, uni', hI'⟩ => ⟨he, r.length - (u + 8 * w), by have := hI'.ul; have := hd.w4; omega_arith,
         i + 1, uni', u + 8 * w, rfl, hI'⟩) (r.length - used) s₁ ⟨1, 0, used, rfl, h⟩
 

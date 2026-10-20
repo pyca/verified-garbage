@@ -1,11 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceByteCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import Mathlib.Tactic.Finiteness.Attr
 
 /-! # Constant time of nonempty streaming reduction -/
 

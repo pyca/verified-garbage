@@ -1,43 +1,58 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86.ModeCore
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Cast5.X86.ModeCore
 public import VerifiedGarbage.Proof.Cast5.X86.ModesLit
 meta import VerifiedGarbage.Proof.Cast5.X86.ModesLit
 public import VerifiedGarbage.Proof.Cast5.ModeScratch
 meta import VerifiedGarbage.Proof.Cast5.ModeScratch
-public import VerifiedGarbage.Proof.Modes.X86.Modes
-meta import VerifiedGarbage.Proof.Modes.X86.Modes
+import VerifiedGarbage.Proof.Modes.X86.CbcChained
+meta import VerifiedGarbage.Proof.Modes.X86.CbcChained
 public import VerifiedGarbage.Proof.Framework.X86.TaintSym
 meta import VerifiedGarbage.Proof.Framework.X86.TaintSym
-public import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Cast5.X86.EcbVerified
+import VerifiedGarbage.Proof.Cast5.X86.EcbVerified
 meta import VerifiedGarbage.Proof.Cast5.X86.EcbVerified
 public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Proof.Modes.X86.Seq
 meta import VerifiedGarbage.Proof.Framework.ConstMem
-public import VerifiedGarbage.Proof.Framework.X86.StackScratchConsts
+import VerifiedGarbage.Proof.Framework.X86.StackScratchConsts
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchConsts
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.Cast5.Memory
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.ReadHalves
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Modes.StepsChained
+meta import VerifiedGarbage.Proof.AesCtr.Inc
 meta import VerifiedGarbage.Proof.Cast5.Memory
+meta import VerifiedGarbage.Proof.Framework.CallLay
+meta import VerifiedGarbage.Proof.Framework.ReadHalves
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Sse
+meta import VerifiedGarbage.Proof.Framework.X86.SseDword
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Proof.Modes.StepsChained
+meta import VerifiedGarbage.Proof.Modes.X86.Counter
+meta import VerifiedGarbage.Proof.Modes.X86.Ops
 
 /-!
 # CAST5-CBC, -OFB and -CFB64 on x86 (32-bit): correctness
 
-`cbcEncrypt_wp`, …, `cfbDecrypt_wp`: the modes' CBC, OFB and CFB
-(`Proof.Modes.X86.cbcEnc_wp`, …) over CAST5's core (`Mode.dirCoreSpec`),
-with the working space as a sixth argument (`modeX ivw post`: the
-chaining value is writable if `ivw`, for OFB and CFB). The table of S-boxes
-is readable, where the static `VG_CAST5_S1234` puts it, and holds the
-S-boxes (`Held`).
+`cbcEncryptChained_wp`, …, `cfbDecrypt_wp`: the modes' CBC that updates
+the chaining value, OFB and CFB (`Proof.Modes.X86.cbcEncChained_wp`, …)
+over CAST5's core (`Mode.dirCoreSpec`), with the working space as a sixth
+argument (`modeX ivw post`: the chaining value is writable if `ivw`, as it
+is for all of them). The table of S-boxes is readable, where the static
+`VG_CAST5_S1234` puts it, and holds the S-boxes (`Held`).
 -/
 
 @[expose] public section
@@ -46,7 +61,7 @@ namespace VG.Proof.Cast5.X86.ModeFns
 
 open VG VG.X86 VG.Impl.Cast5.X86.Modes VG.Impl.Modes
 open VG.Impl.Cast5 (s1234Sym s1234)
-open VG.Proof.Modes.X86 (SeqPre stkRegion cbcEnc_wp cbcDec_wp ofb_wp cfbEnc_wp cfbDec_wp)
+open VG.Proof.Modes.X86 (SeqPre stkRegion cbcEncChained_wp cbcDecChained_wp ofb_wp cfbEnc_wp cfbDec_wp)
 open VG.Proof.Cast5.X86.Mode (dirCoreSpec KeyArgs Base)
 open VG.Proof.Cast5 (Held)
 
@@ -207,9 +222,11 @@ abbrev invCiph (s : State) : Spec.Cbc.Cipher :=
 
 /-- The functions' postconditions. -/
 def cbcEncPost (s s' : State) : Prop :=
-  dataAt s'.mem s = Spec.Cbc.encrypt (ciph s) (ivAt s.mem s) (dataAt s.mem s)
+  dataAt s'.mem s = Spec.Cbc.encrypt (ciph s) (ivAt s.mem s) (dataAt s.mem s) ∧
+    ivAt s'.mem s = Spec.Cbc.next (ivAt s.mem s) (Spec.Cbc.encrypt (ciph s) (ivAt s.mem s) (dataAt s.mem s))
 def cbcDecPost (s s' : State) : Prop :=
-  dataAt s'.mem s = Spec.Cbc.decrypt (invCiph s) (ivAt s.mem s) (dataAt s.mem s)
+  dataAt s'.mem s = Spec.Cbc.decrypt (invCiph s) (ivAt s.mem s) (dataAt s.mem s) ∧
+    ivAt s'.mem s = Spec.Cbc.next (ivAt s.mem s) (dataAt s.mem s)
 def ofbPost (s s' : State) : Prop :=
   dataAt s'.mem s = Spec.Ofb.crypt (ciph s) (ivAt s.mem s) (dataAt s.mem s) ∧
     ivAt s'.mem s = Spec.Ofb.next (ciph s) (ivAt s.mem s) (arg s 4).toNat
@@ -238,15 +255,15 @@ tactic_template "post_eq_cast5_x86_modesverified" h:ident : tactic =>
                      Proof.Modes.X86.P, Proof.Modes.X86.N, dirCore_ka, Mode.dirCore_bw, Nat.reduceMul, Nat.reduceAdd,
                      data_eq, iv_eq, cipher_eq, invCipher_eq] at $h:ident)
 
-theorem cbcEncrypt_wp {s₀ : State} (hp : (modeX false cbcEncPost).pre s₀) :
-    WP isa cbcEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ (modeX false cbcEncPost).post s₀ s' :=
-  WP.mono (cbcEnc_wp (dirCoreSpec true) (seqPre_of true rfl rfl hp) (keyArgs_of true hp))
-    fun _ ⟨h1, h2⟩ => by post_eq_cast5_x86_modesverified h2; exact ⟨h1, h2⟩
+theorem cbcEncryptChained_wp {s₀ : State} (hp : (modeX true cbcEncPost).pre s₀) :
+    WP isa cbcEncryptChained s₀ fun s' => abiPreserved s₀ s' ∧ (modeX true cbcEncPost).post s₀ s' :=
+  WP.mono (cbcEncChained_wp (dirCoreSpec true) (seqPre_of true rfl rfl hp) (keyArgs_of true hp))
+    fun _ ⟨h1, h2, h3⟩ => by post_eq_cast5_x86_modesverified h2; post_eq_cast5_x86_modesverified h3; exact ⟨h1, h2, h3⟩
 
-theorem cbcDecrypt_wp {s₀ : State} (hp : (modeX false cbcDecPost).pre s₀) :
-    WP isa cbcDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ (modeX false cbcDecPost).post s₀ s' :=
-  WP.mono (cbcDec_wp (dirCoreSpec false) (seqPre_of false rfl rfl hp) (keyArgs_of false hp))
-    fun _ ⟨h1, h2⟩ => by post_eq_cast5_x86_modesverified h2; exact ⟨h1, h2⟩
+theorem cbcDecryptChained_wp {s₀ : State} (hp : (modeX true cbcDecPost).pre s₀) :
+    WP isa cbcDecryptChained s₀ fun s' => abiPreserved s₀ s' ∧ (modeX true cbcDecPost).post s₀ s' :=
+  WP.mono (cbcDecChained_wp (dirCoreSpec false) (seqPre_of false rfl rfl hp) (keyArgs_of false hp))
+    fun _ ⟨h1, h2, h3⟩ => by post_eq_cast5_x86_modesverified h2; post_eq_cast5_x86_modesverified h3; exact ⟨h1, h2, h3⟩
 
 theorem ofb_wp_x86 {s₀ : State} (hp : (modeX true ofbPost).pre s₀) :
     WP isa ofb s₀ fun s' => abiPreserved s₀ s' ∧ (modeX true ofbPost).post s₀ s' :=
@@ -265,15 +282,9 @@ theorem cfbDecrypt_wp {s₀ : State} (hp : (modeX true cfbDecPost).pre s₀) :
 
 /-! ## Constant time -/
 
-/-- The initial taint of CBC: `esp` public, the words holding `data` and
-`scratch` known to be the base addresses of the writable regions, and room
-for the core's word below `esp`. -/
-def τCbc : VG.X86.Taint.T :=
-  { regs := .ofList [.esp], flags := false, lens := [0, 304], argLen := 28, argBases := [(16, 0), (24, 1)],
-    room := 4 }
-
-/-- The initial taint of OFB and CFB: as `τCbc`, with the chaining value's
-word too. -/
+/-- The initial taint of the modes: `esp` public, the words holding `data`,
+`iv` and `scratch` known to be the base addresses of the writable regions,
+and room for the core's word below `esp`. -/
 def τFb : VG.X86.Taint.T :=
   { regs := .ofList [.esp], flags := false, lens := [0, 8, 304], argLen := 28,
     argBases := [(16, 0), (12, 1), (24, 2)], room := 4 }
@@ -282,34 +293,6 @@ theorem stk_eq (s : State) (h : 4 ≤ (s.gpr .esp).toNat) :
     (⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 4, 4⟩ : Region) = stkA s := by
   show _ = (⟨(s.gpr .esp - BitVec.ofNat 32 4).setWidth 64, 4⟩ : Region)
   rw [VG.X86.Taint.sub_setWidth h]
-
-theorem τCbc_wf {s : State} (h : MPre false s) : VG.X86.Taint.Wf τCbc s := by
-  have hw := h.wrEq
-  simp only [wrL] at hw
-  have mD := h.mem_wr_data
-  have mS := h.mem_wr_scr
-  refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨?_, ?_, ?_⟩, fun _ h => (List.not_mem_nil h).elim,
-    fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨by simp only [τCbc]; have := h.espFit; omega, ?_⟩, ?_⟩ ?_
-  · rw [hw]
-    exact .cons (Nat.zero_le _) (.cons (Nat.le_refl _) .nil)
-  · simp only [hw, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq, List.Pairwise.nil,
-      and_true]
-    exact ⟨h.dDS, fun _ h => h.elim⟩
-  · simp only [hw, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl)
-    · simp only [toNat_setWidth]; exact h.fitD
-    · simp only [toNat_setWidth]; exact h.fitS
-  · intro r hr
-    exact VG.X86.Taint.frame_disjoint (n := 24) (by have := h.espFit; omega) (h.dRw r hr) (h.dAw r hr)
-  · intro p hp
-    simp only [τCbc, List.mem_cons, List.not_mem_nil, or_false] at hp
-    rcases hp with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
-      simp [VG.X86.Taint.region, hw, addr, arg, argAddr]
-  · intro _
-    refine ⟨h.sp, fun r hr => ?_⟩
-    simp only [τCbc]
-    rw [stk_eq s h.sp]
-    exact h.dSw r hr
 
 theorem τFb_wf {s : State} (h : MPre true s) : VG.X86.Taint.Wf τFb s := by
   have hw := h.wrEq
@@ -349,20 +332,6 @@ theorem argBytes_agree {τ : VG.X86.Taint.T} (hl : τ.argLen = 28) (hstk : τ.st
     Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
   exact congrArg _ (ha _ (by omega))
 
-theorem τCbc_agree {post : State → State → Prop} {s₁ s₂ : State} (h₁ : (modeX false post).pre s₁)
-    (h₂ : (modeX false post).pre s₂) (hp : (modeX false post).pub s₁ s₂) :
-    VG.X86.Taint.AgreeS [s1234Sym] τCbc s₁ s₂ := by
-  obtain ⟨sp, args, sy⟩ := hp
-  refine ⟨⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, τCbc_wf h₁, τCbc_wf h₂,
-    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => sp,
-    fun k h4 hk => argBytes_agree rfl rfl h₁.espFit h₂.espFit args h4 hk⟩, fun n hn => ?_⟩
-  · simp only [τCbc, RegSet.mem_ofList, List.mem_singleton] at hr
-    subst r; exact sp
-  · rw [h₁.wrEq, h₂.wrEq]
-    simp only [wrL, dataA, scrA, args 3 (by decide), args 4 (by decide), args 5 (by decide)]
-  · simp only [List.mem_singleton] at hn
-    subst hn; exact sy
-
 theorem τFb_agree {post : State → State → Prop} {s₁ s₂ : State} (h₁ : (modeX true post).pre s₁)
     (h₂ : (modeX true post).pre s₂) (hp : (modeX true post).pub s₁ s₂) :
     VG.X86.Taint.AgreeS [s1234Sym] τFb s₁ s₂ := by
@@ -378,12 +347,14 @@ theorem τFb_agree {post : State → State → Prop} {s₁ s₂ : State} (h₁ :
   · simp only [List.mem_singleton] at hn
     subst hn; exact sy
 
-theorem cbcEncrypt_ct : ConstantTime isa (modeX false cbcEncPost).pre (modeX false cbcEncPost).pub cbcEncrypt :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) τCbc (fun _ _ h₁ h₂ hp => τCbc_agree h₁ h₂ hp)
+theorem cbcEncryptChained_ct :
+    ConstantTime isa (modeX true cbcEncPost).pre (modeX true cbcEncPost).pub cbcEncryptChained :=
+  VG.Taint.constantTime (A := taintSym [s1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)
     (by taint_decide)
 
-theorem cbcDecrypt_ct : ConstantTime isa (modeX false cbcDecPost).pre (modeX false cbcDecPost).pub cbcDecrypt :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) τCbc (fun _ _ h₁ h₂ hp => τCbc_agree h₁ h₂ hp)
+theorem cbcDecryptChained_ct :
+    ConstantTime isa (modeX true cbcDecPost).pre (modeX true cbcDecPost).pub cbcDecryptChained :=
+  VG.Taint.constantTime (A := taintSym [s1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)
     (by taint_decide)
 
 theorem ofb_ct : ConstantTime isa (modeX true ofbPost).pre (modeX true ofbPost).pub ofb :=
@@ -402,90 +373,6 @@ theorem cfbDecrypt_ct : ConstantTime isa (modeX true cfbDecPost).pre (modeX true
 
 open VG.Impl.Cast5 (ecbConsts)
 open VG.Proof.Cast5.X86 (ecbConsts_eq s1234_length)
-
-/-- CBC's contract with the working space as a sixth argument, under the
-calling convention with the table. -/
-abbrev cbcK (post : Spec.Cast5.cbcSig.Post X86.abi.ptrBits) : Contract isa :=
-  Sig.scratchContract (X86.abi.withConsts ecbConsts) Spec.Cast5.cbcSig "scratch" .u64 38
-    (Spec.Cast5.cbcPre X86.abi.ptrBits) post true 4
-
-theorem cbc_pre {post : Spec.Cast5.cbcSig.Post X86.abi.ptrBits} (s : State) (h : (cbcK post).pre s) :
-    MPre false (s.withRegions (rdL false s) (wrL false s)) ∧ s.rd = [keyA s, ivA s, tabA s] ∧
-      s.wr = [⟨(arg s 3).setWidth 64, (arg s 4).toNat * 8⟩, scrA s, argsA s] := by
-  sig_pre [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cbcSig, Spec.Cast5.cbcPre, X86.abi, X86.argSlots,
-    X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
-    s1234_length, Curry.withScratch] at h
-  obtain ⟨h4, hsp, hdrop, held, fitT, dTw, -, dTB, htake, hwr, dKD, dKS, -, dVD, dVS, -, dDS, dDA, dSA,
-    -, -, dRD, dRS, -, dBK, -, dBD, dBS, -, fK, fV, fD, fS, nv⟩ := h
-  have hrd : s.rd = [keyA s, ivA s, tabA s] := by
-    rw [← List.take_append_drop (s.rd.length - 1) s.rd, htake, hdrop]; rfl
-  have be : below (s.gpr .esp) 4 = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 4, 4⟩ := by
-    simp only [below, VG.X86.Taint.sub_setWidth h4]
-  have e8 : (arg s 4).toNat * 8 = 8 * (arg s 4).toNat := Nat.mul_comm _ _
-  rw [e8] at hwr dKD dVD dDS dDA dRD dBD fD
-  have mD : dataA s ∈ s.wr := by rw [hwr]; exact List.mem_cons_self
-  have mS : scrA s ∈ s.wr := by rw [hwr]; exact List.mem_cons_of_mem _ List.mem_cons_self
-  refine ⟨⟨rfl, rfl, h4, (by show (s.gpr .esp).toNat + 28 ≤ 2 ^ 32; omega), nv, fK, fV, fD, fS, fitT,
-    (fun i hi => held i (by rw [s1234_length] at hi; exact hi)), dDS, dVS, (fun h => nomatch h),
-    (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_),
-    (by show Region.Disjoint _ (below (s.gpr .esp) 4); rw [be]; exact dBK.symm),
-    (by show Region.Disjoint _ (below (s.gpr .esp) 4); rw [be]; exact dTB)⟩, hrd,
-    (by rw [← e8] at hwr; exact hwr)⟩
-  all_goals
-    simp only [State.withRegions_wr, wrL, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-  · exact dKD
-  · exact dKS
-  · exact dTw _ mD
-  · exact dTw _ mS
-  · exact dDA.symm
-  · exact dSA.symm
-  · exact dRD
-  · exact dRS
-  · show Region.Disjoint (below (s.gpr .esp) 4) _; rw [be]; exact dBD
-  · show Region.Disjoint (below (s.gpr .esp) 4) _; rw [be]; exact dBS
-
-theorem cbc_pub {post : Spec.Cast5.cbcSig.Post X86.abi.ptrBits} {postX : State → State → Prop} (s₁ s₂ : State)
-    (_ : (cbcK post).pre s₁) (_ : (cbcK post).pre s₂) (h : (cbcK post).pub s₁ s₂) :
-    (modeX false postX).pub (s₁.withRegions (rdL false s₁) (wrL false s₁))
-      (s₂.withRegions (rdL false s₂) (wrL false s₂)) := by
-  sig_pub [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cbcSig, X86.abi, X86.argSlots, X86.argVal,
-    X86.argBytes, ecbConsts_eq, Abi.withConsts, Curry.withScratch] at h
-  obtain ⟨hsp, hsy, h0, h1, h2, h3, h4, h5⟩ := h
-  refine ⟨hsp, fun i hi => ?_, hsy⟩
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact h0
-  · exact h1
-  · exact h2
-  · exact h3
-  · exact h4
-  · exact h5
-
-theorem cbc_verified {post : Spec.Cast5.cbcSig.Post X86.abi.ptrBits} {postX : State → State → Prop}
-    {c : Prog isa}
-    (hwp : ∀ s, (modeX false postX).pre s → WP isa c s fun s' => abiPreserved s s' ∧ (modeX false postX).post s s')
-    (hct : ConstantTime isa (modeX false postX).pre (modeX false postX).pub c)
-    (hpost : ∀ s s', (cbcK post).pre s →
-      postX (s.withRegions (rdL false s) (wrL false s)) (s'.withRegions (rdL false s) (wrL false s)) →
-        (cbcK post).post s s')
-    (hsat : ∃ s, (cbcK post).pre s) : Verified X86.target c (cbcK post) := by
-  have narrowSat : ∃ s, (modeX false postX).pre s := by
-    obtain ⟨s, hs⟩ := hsat
-    exact ⟨_, (cbc_pre s hs).1⟩
-  refine Verified.narrowTo (Verified.of_correct hwp hct (.refl narrowSat)) (rdL false) (wrL false)
-    (fun s h => (cbc_pre s h).1) (fun s h => ?_) (fun s h => ?_) hpost cbc_pub hsat
-  · obtain ⟨-, hrd, hwr⟩ := cbc_pre s h
-    rw [hrd, hwr]
-    refine Covers.of_mem fun r hr => ?_
-    simp only [rdL, wrL, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-    rw [Nat.mul_comm]
-    rcases hr with h | h | h | h | h | h <;> simp only [h, true_or, or_true]
-  · obtain ⟨-, -, hwr⟩ := cbc_pre s h
-    rw [hwr]
-    refine Covers.of_mem fun r hr => ?_
-    simp only [wrL, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-    rw [Nat.mul_comm]
-    rcases hr with h | h <;> simp only [h, true_or, or_true]
 
 /-! ## Satisfiability -/
 
@@ -540,42 +427,6 @@ theorem sat_arg (ivw : Bool) (j : Nat) (hj : j < 6) : arg (satState ivw) j = sat
     cases ivw <;> decide
   rw [ite_eq_right (this j hj b (by omega))]
 
-theorem cbc_sat {post : Spec.Cast5.cbcSig.Post X86.abi.ptrBits} : (cbcK post).pre (satState false) := by
-  have a0 : arg (satState false) 0 = 0x1000 := (sat_arg false 0 (by decide)).trans (by decide)
-  have a1 : arg (satState false) 1 = 16 := (sat_arg false 1 (by decide)).trans (by decide)
-  have a2 : arg (satState false) 2 = 0x2000 := (sat_arg false 2 (by decide)).trans (by decide)
-  have a3 : arg (satState false) 3 = 0x3000 := (sat_arg false 3 (by decide)).trans (by decide)
-  have a4 : arg (satState false) 4 = 0 := (sat_arg false 4 (by decide)).trans (by decide)
-  have a5 : arg (satState false) 5 = 0x4000 := (sat_arg false 5 (by decide)).trans (by decide)
-  have held := satMem_held
-  generalize e : satState false = s
-  sig_pre [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cbcSig, Spec.Cast5.cbcPre, X86.abi, X86.argSlots,
-    X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
-    s1234_length, Curry.withScratch]
-  subst s
-  rw [a0, a1, a2, a3, a4, a5]
-  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [s1234_length]; exact hi), by decide, ?_, ?_⟩
-  · intro r hr
-    change r ∈ [⟨0x3000, 0⟩, ⟨0x4000, 304⟩, ⟨0x8004, 24⟩] at hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
-  · repeat' apply And.intro
-    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
-
-theorem cbcEncrypt_verified :
-    Verified X86.target cbcEncrypt (cbcK (Proof.Cast5.cbcEncPost X86.abi.ptrBits)) :=
-  cbc_verified (fun _ hs => cbcEncrypt_wp hs) cbcEncrypt_ct (fun s s' _ h => by
-      sig_post [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cbcSig, Proof.Cast5.cbcEncPost, X86.abi,
-        X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Curry.withScratch]
-      exact h) ⟨_, cbc_sat⟩
-
-theorem cbcDecrypt_verified :
-    Verified X86.target cbcDecrypt (cbcK (Proof.Cast5.cbcDecPost X86.abi.ptrBits)) :=
-  cbc_verified (fun _ hs => cbcDecrypt_wp hs) cbcDecrypt_ct (fun s s' _ h => by
-      sig_post [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cbcSig, Proof.Cast5.cbcDecPost, X86.abi,
-        X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Curry.withScratch]
-      exact h) ⟨_, cbc_sat⟩
-
 /-! ## The functions with their working space on the stack -/
 
 /-- A state satisfying the functions' precondition, with `336` bytes of
@@ -603,55 +454,10 @@ theorem frameSat_arg (ivw : Bool) (j : Nat) (hj : j < 5) :
     cases ivw <;> decide
   rw [ite_eq_right (this j hj b (by omega))]
 
-theorem cbcFrame_sat (post : Spec.Cast5.cbcSig.Post X86.abi.ptrBits) :
-    ∃ s, (Spec.Cast5.cbcSig.contract (X86.abi.withConsts ecbConsts) (Spec.Cast5.cbcPre X86.abi.ptrBits) post true
-      336).pre s := by
-  refine ⟨frameSat false, ?_⟩
-  have a0 : arg (frameSat false) 0 = 0x1000 := (frameSat_arg false 0 (by decide)).trans (by decide)
-  have a1 : arg (frameSat false) 1 = 16 := (frameSat_arg false 1 (by decide)).trans (by decide)
-  have a2 : arg (frameSat false) 2 = 0x2000 := (frameSat_arg false 2 (by decide)).trans (by decide)
-  have a3 : arg (frameSat false) 3 = 0x3000 := (frameSat_arg false 3 (by decide)).trans (by decide)
-  have a4 : arg (frameSat false) 4 = 0 := (frameSat_arg false 4 (by decide)).trans (by decide)
-  have held := satMem_held
-  generalize e : frameSat false = s
-  sig_pre [Spec.Cast5.cbcSig, Spec.Cast5.cbcPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq,
-    Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s1234_length]
-  subst s
-  rw [a0, a1, a2, a3, a4]
-  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [s1234_length]; exact hi), by decide, ?_, ?_⟩
-  · intro r hr
-    change r ∈ [⟨0x3000, 0⟩, ⟨0x8004, 20⟩] at hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
-  · repeat' apply And.intro
-    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
+/-! ## OFB, CFB64 and CBC -/
 
-/-- `cbcEncrypt` with its working space on the stack. -/
-theorem cbcEncrypt_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 332 5 76 cbcEncrypt)
-      (Spec.Cast5.cbcEncryptContract (X86.abi.withConsts ecbConsts) 336) :=
-  X86.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcSig)
-    (nm := "scratch") (e := .u64) (n := 38) (pre := Spec.Cast5.cbcPre X86.abi.ptrBits)
-    (post := Proof.Cast5.cbcEncPost X86.abi.ptrBits) (wa := true) (stack := 4) (bytes := 332)
-    cbcEncrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
-    (fun vs m₁ m₂ hl _ h => Proof.Cast5.modePre_local _ vs m₁ m₂ hl h)
-    (Proof.Cast5.cbcEncPost_local _) (Proof.Cast5.cbcEncPostOut_local _) (cbcFrame_sat _)
-
-/-- `cbcDecrypt` with its working space on the stack. -/
-theorem cbcDecrypt_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 332 5 76 cbcDecrypt)
-      (Spec.Cast5.cbcDecryptContract (X86.abi.withConsts ecbConsts) 336) :=
-  X86.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcSig)
-    (nm := "scratch") (e := .u64) (n := 38) (pre := Spec.Cast5.cbcPre X86.abi.ptrBits)
-    (post := Proof.Cast5.cbcDecPost X86.abi.ptrBits) (wa := true) (stack := 4) (bytes := 332)
-    cbcDecrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
-    (fun vs m₁ m₂ hl _ h => Proof.Cast5.modePre_local _ vs m₁ m₂ hl h)
-    (Proof.Cast5.cbcDecPost_local _) (Proof.Cast5.cbcDecPostOut_local _) (cbcFrame_sat _)
-
-/-! ## OFB and CFB64 -/
-
-/-- OFB's or CFB's contract (`sig`, `ofbSig` or `cfbSig`) with the working
-space as a sixth argument, under the calling convention with the table. -/
+/-- OFB's, CFB's or CBC's contract (`sig`, `ofbSig`, `cfbSig` or `cbcChainedSig`)
+with the working space as a sixth argument, under the calling convention with the table. -/
 abbrev fbK (sig : Sig) (pre : Curry (sig.words X86.abi.ptrBits) (Mem → Prop)) (post : sig.Post X86.abi.ptrBits) :
     Contract isa :=
   Sig.scratchContract (X86.abi.withConsts ecbConsts) sig "scratch" .u64 38 pre post true 4
@@ -983,5 +789,182 @@ theorem cfbDecrypt_framed :
     cfbDecrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun vs m₁ m₂ hl _ h => Proof.Cast5.modePre_local _ vs m₁ m₂ hl h)
     (Proof.Cast5.cfbDecPost_local _) (Proof.Cast5.cfbDecPostOut_local _) (cfb_frameSat _)
+
+/-! ## CBC -/
+
+theorem cbcC_pre {post : Spec.Cast5.cbcChainedSig.Post X86.abi.ptrBits} (s : State)
+    (h : (fbK Spec.Cast5.cbcChainedSig (Proof.Cast5.cbcChainedPre X86.abi.ptrBits) post).pre s) :
+    MPre true (s.withRegions (rdL true s) (wrL true s)) ∧ s.rd = [keyA s, tabA s] ∧
+      s.wr = [ivA s, ⟨(arg s 3).setWidth 64, (arg s 4).toNat * 8⟩, scrA s, argsA s] := by
+  sig_pre [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cbcChainedSig, Proof.Cast5.cbcChainedPre, X86.abi, X86.argSlots,
+    X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
+    s1234_length, Curry.withScratch] at h
+  obtain ⟨h4, hsp, hdrop, held, fitT, dTw, -, dTB, htake, hwr, dKV, dKD, dKS, -, dVD, dVS, dVA, dDS, dDA, dSA,
+    -, dRV, dRD, dRS, -, dBK, dBV, dBD, dBS, -, fK, fV, fD, fS, nv⟩ := h
+  have hrd : s.rd = [keyA s, tabA s] := by
+    rw [← List.take_append_drop (s.rd.length - 1) s.rd, htake, hdrop]; rfl
+  have be : below (s.gpr .esp) 4 = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 4, 4⟩ := by
+    simp only [below, VG.X86.Taint.sub_setWidth h4]
+  have e8 : (arg s 4).toNat * 8 = 8 * (arg s 4).toNat := Nat.mul_comm _ _
+  rw [e8] at hwr dKD dVD dDS dDA dRD dBD fD
+  have mV : ivA s ∈ s.wr := by rw [hwr]; exact List.mem_cons_self
+  have mD : dataA s ∈ s.wr := by rw [hwr]; exact List.mem_cons_of_mem _ List.mem_cons_self
+  have mS : scrA s ∈ s.wr := by
+    rw [hwr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)
+  refine ⟨⟨rfl, rfl, h4, (by show (s.gpr .esp).toNat + 28 ≤ 2 ^ 32; omega), nv, fK, fV, fD, fS, fitT,
+    (fun i hi => held i (by rw [s1234_length] at hi; exact hi)), dDS, dVS, (fun _ => dVD),
+    (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_), (fun r hr => ?_),
+    (by show Region.Disjoint _ (below (s.gpr .esp) 4); rw [be]; exact dBK.symm),
+    (by show Region.Disjoint _ (below (s.gpr .esp) 4); rw [be]; exact dTB)⟩, hrd,
+    (by rw [← e8] at hwr; exact hwr)⟩
+  all_goals
+    simp only [State.withRegions_wr, wrL, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+  · exact dKD
+  · exact dKV
+  · exact dKS
+  · exact dTw _ mD
+  · exact dTw _ mV
+  · exact dTw _ mS
+  · exact dDA.symm
+  · exact dVA.symm
+  · exact dSA.symm
+  · exact dRD
+  · exact dRV
+  · exact dRS
+  · show Region.Disjoint (below (s.gpr .esp) 4) _; rw [be]; exact dBD
+  · show Region.Disjoint (below (s.gpr .esp) 4) _; rw [be]; exact dBV
+  · show Region.Disjoint (below (s.gpr .esp) 4) _; rw [be]; exact dBS
+
+theorem cbcC_pub {post : Spec.Cast5.cbcChainedSig.Post X86.abi.ptrBits} {postX : State → State → Prop} (s₁ s₂ : State)
+    (_ : (fbK Spec.Cast5.cbcChainedSig (Proof.Cast5.cbcChainedPre X86.abi.ptrBits) post).pre s₁)
+    (_ : (fbK Spec.Cast5.cbcChainedSig (Proof.Cast5.cbcChainedPre X86.abi.ptrBits) post).pre s₂)
+    (h : (fbK Spec.Cast5.cbcChainedSig (Proof.Cast5.cbcChainedPre X86.abi.ptrBits) post).pub s₁ s₂) :
+    (modeX true postX).pub (s₁.withRegions (rdL true s₁) (wrL true s₁))
+      (s₂.withRegions (rdL true s₂) (wrL true s₂)) := by
+  sig_pub [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cbcChainedSig, X86.abi, X86.argSlots, X86.argVal,
+    X86.argBytes, ecbConsts_eq, Abi.withConsts, Curry.withScratch] at h
+  obtain ⟨hsp, hsy, h0, h1, h2, h3, h4, h5⟩ := h
+  refine ⟨hsp, fun i hi => ?_, hsy⟩
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+  · exact h0
+  · exact h1
+  · exact h2
+  · exact h3
+  · exact h4
+  · exact h5
+
+theorem cbcK_verified {post : Spec.Cast5.cbcChainedSig.Post X86.abi.ptrBits} {postX : State → State → Prop}
+    {c : Prog isa}
+    (hwp : ∀ s, (modeX true postX).pre s → WP isa c s fun s' => abiPreserved s s' ∧ (modeX true postX).post s s')
+    (hct : ConstantTime isa (modeX true postX).pre (modeX true postX).pub c)
+    (hpost : ∀ s s', (fbK Spec.Cast5.cbcChainedSig (Proof.Cast5.cbcChainedPre X86.abi.ptrBits) post).pre s →
+      postX (s.withRegions (rdL true s) (wrL true s)) (s'.withRegions (rdL true s) (wrL true s)) →
+        (fbK Spec.Cast5.cbcChainedSig (Proof.Cast5.cbcChainedPre X86.abi.ptrBits) post).post s s')
+    (hsat : ∃ s, (fbK Spec.Cast5.cbcChainedSig (Proof.Cast5.cbcChainedPre X86.abi.ptrBits) post).pre s) :
+    Verified X86.target c (fbK Spec.Cast5.cbcChainedSig (Proof.Cast5.cbcChainedPre X86.abi.ptrBits) post) := by
+  have narrowSat : ∃ s, (modeX true postX).pre s := by
+    obtain ⟨s, hs⟩ := hsat
+    exact ⟨_, (cbcC_pre s hs).1⟩
+  refine Verified.narrowTo (Verified.of_correct hwp hct (.refl narrowSat)) (rdL true) (wrL true)
+    (fun s h => (cbcC_pre s h).1) (fun s h => ?_) (fun s h => ?_) hpost cbcC_pub hsat
+  · obtain ⟨-, hrd, hwr⟩ := cbcC_pre s h
+    rw [hrd, hwr]
+    refine Covers.of_mem fun r hr => ?_
+    simp only [rdL, wrL, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+    rw [Nat.mul_comm]
+    rcases hr with h | h | h | h | h | h <;> simp only [h, true_or, or_true]
+  · obtain ⟨-, -, hwr⟩ := cbcC_pre s h
+    rw [hwr]
+    refine Covers.of_mem fun r hr => ?_
+    simp only [wrL, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+    rw [Nat.mul_comm]
+    rcases hr with h | h | h <;> simp only [h, true_or, or_true]
+
+theorem cbcC_sat {post : Spec.Cast5.cbcChainedSig.Post X86.abi.ptrBits} :
+    (fbK Spec.Cast5.cbcChainedSig (Proof.Cast5.cbcChainedPre X86.abi.ptrBits) post).pre (satState true) := by
+  have a0 : arg (satState true) 0 = 0x1000 := (sat_arg true 0 (by decide)).trans (by decide)
+  have a1 : arg (satState true) 1 = 16 := (sat_arg true 1 (by decide)).trans (by decide)
+  have a2 : arg (satState true) 2 = 0x2000 := (sat_arg true 2 (by decide)).trans (by decide)
+  have a3 : arg (satState true) 3 = 0x3000 := (sat_arg true 3 (by decide)).trans (by decide)
+  have a4 : arg (satState true) 4 = 0 := (sat_arg true 4 (by decide)).trans (by decide)
+  have a5 : arg (satState true) 5 = 0x4000 := (sat_arg true 5 (by decide)).trans (by decide)
+  have held := satMem_held
+  generalize e : satState true = s
+  sig_pre [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cbcChainedSig, Proof.Cast5.cbcChainedPre, X86.abi, X86.argSlots,
+    X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
+    s1234_length, Curry.withScratch]
+  subst s
+  rw [a0, a1, a2, a3, a4, a5]
+  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [s1234_length]; exact hi), by decide, ?_, ?_⟩
+  · intro r hr
+    change r ∈ [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x4000, 304⟩, ⟨0x8004, 24⟩] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+  · repeat' apply And.intro
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
+
+theorem cbcC_frameSat (post : Spec.Cast5.cbcChainedSig.Post X86.abi.ptrBits) :
+    ∃ s, (Spec.Cast5.cbcChainedSig.contract (X86.abi.withConsts ecbConsts) (Proof.Cast5.cbcChainedPre X86.abi.ptrBits) post true
+      336).pre s := by
+  refine ⟨frameSat true, ?_⟩
+  have a0 : arg (frameSat true) 0 = 0x1000 := (frameSat_arg true 0 (by decide)).trans (by decide)
+  have a1 : arg (frameSat true) 1 = 16 := (frameSat_arg true 1 (by decide)).trans (by decide)
+  have a2 : arg (frameSat true) 2 = 0x2000 := (frameSat_arg true 2 (by decide)).trans (by decide)
+  have a3 : arg (frameSat true) 3 = 0x3000 := (frameSat_arg true 3 (by decide)).trans (by decide)
+  have a4 : arg (frameSat true) 4 = 0 := (frameSat_arg true 4 (by decide)).trans (by decide)
+  have held := satMem_held
+  generalize e : frameSat true = s
+  sig_pre [Spec.Cast5.cbcChainedSig, Proof.Cast5.cbcChainedPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq,
+    Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s1234_length]
+  subst s
+  rw [a0, a1, a2, a3, a4]
+  refine ⟨by decide, by decide, rfl, fun i hi => held i (by rw [s1234_length]; exact hi), by decide, ?_, ?_⟩
+  · intro r hr
+    change r ∈ [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x8004, 20⟩] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+  · repeat' apply And.intro
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
+
+theorem cbcEncryptChained_verified :
+    Verified X86.target cbcEncryptChained
+      (fbK Spec.Cast5.cbcChainedSig (Proof.Cast5.cbcChainedPre X86.abi.ptrBits)
+        (Proof.Cast5.cbcEncChainedPost X86.abi.ptrBits)) :=
+  cbcK_verified (fun _ hs => cbcEncryptChained_wp hs) cbcEncryptChained_ct (fun s s' _ h => by
+      sig_post [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cbcChainedSig, Proof.Cast5.cbcEncChainedPost,
+        X86.abi, X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Curry.withScratch]
+      exact h) ⟨_, cbcC_sat⟩
+
+/-- `cbcEncryptChained` with its working space on the stack. -/
+theorem cbcEncryptChained_framed :
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 332 5 76 cbcEncryptChained)
+      (Spec.Cast5.cbcEncryptChainedContract (X86.abi.withConsts ecbConsts) 336) :=
+  X86.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcChainedSig)
+    (nm := "scratch") (e := .u64) (n := 38) (pre := Proof.Cast5.cbcChainedPre X86.abi.ptrBits)
+    (post := Proof.Cast5.cbcEncChainedPost X86.abi.ptrBits) (wa := true) (stack := 4) (bytes := 332)
+    cbcEncryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (fun vs m₁ m₂ hl _ h => Proof.Cast5.modePre_local _ vs m₁ m₂ hl h)
+    (Proof.Cast5.cbcEncChainedPost_local _) (Proof.Cast5.cbcEncChainedPostOut_local _) (cbcC_frameSat _)
+
+theorem cbcDecryptChained_verified :
+    Verified X86.target cbcDecryptChained
+      (fbK Spec.Cast5.cbcChainedSig (Proof.Cast5.cbcChainedPre X86.abi.ptrBits)
+        (Proof.Cast5.cbcDecChainedPost X86.abi.ptrBits)) :=
+  cbcK_verified (fun _ hs => cbcDecryptChained_wp hs) cbcDecryptChained_ct (fun s s' _ h => by
+      sig_post [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cbcChainedSig, Proof.Cast5.cbcDecChainedPost,
+        X86.abi, X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Curry.withScratch]
+      exact h) ⟨_, cbcC_sat⟩
+
+/-- `cbcDecryptChained` with its working space on the stack. -/
+theorem cbcDecryptChained_framed :
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 332 5 76 cbcDecryptChained)
+      (Spec.Cast5.cbcDecryptChainedContract (X86.abi.withConsts ecbConsts) 336) :=
+  X86.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcChainedSig)
+    (nm := "scratch") (e := .u64) (n := 38) (pre := Proof.Cast5.cbcChainedPre X86.abi.ptrBits)
+    (post := Proof.Cast5.cbcDecChainedPost X86.abi.ptrBits) (wa := true) (stack := 4) (bytes := 332)
+    cbcDecryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (fun vs m₁ m₂ hl _ h => Proof.Cast5.modePre_local _ vs m₁ m₂ hl h)
+    (Proof.Cast5.cbcDecChainedPost_local _) (Proof.Cast5.cbcDecChainedPostOut_local _) (cbcC_frameSat _)
 
 end VG.Proof.Cast5.X86.ModeFns

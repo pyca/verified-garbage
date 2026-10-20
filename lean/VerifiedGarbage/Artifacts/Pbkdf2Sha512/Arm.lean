@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Hmac.Generic.Implies
+public import VerifiedGarbage.Proof.Pbkdf2.Memory
+public import VerifiedGarbage.Proof.Pbkdf2.Scratch
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+import VerifiedGarbage.Proof.Pbkdf2.Memory
+import VerifiedGarbage.Proof.Pbkdf2.Scratch
 
 /-!
 # PBKDF2-HMAC-SHA-512 (RFC 8018) on ARMv7: the iteration and the whole derivation
@@ -27,25 +33,15 @@ runs in a frame holding its working space
 namespace VG.Artifacts.Pbkdf2Sha512.Arm
 
 def artifacts : List Artifact := [
-  { Spec.Hmac.sha512I.iterateApi with
-    target := Arm.target
-    doc := Spec.Hmac.sha512I.iterateApi.doc
+  Spec.Hmac.sha512I.iterateApi.artifact Arm.target {
     code := Proof.Pbkdf2.Md.Arm.sha512Md'.iterate
-    contract := Spec.Hmac.sha512I.iterateContract Arm.abi 16
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩)
     stack := 16
-    verified := Proof.Pbkdf2.Md.Arm.Instances.sha512_iterate
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Hmac.sha512I.pbkdf2Api with
-    target := Arm.target
-    doc := Spec.Hmac.sha512I.pbkdf2Api.doc
+    verified := Proof.Pbkdf2.Md.Arm.Instances.sha512_iterate },
+  Spec.Hmac.sha512I.pbkdf2Api.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha512I) 3
       Proof.Pbkdf2.Whole.Arm.sha512F.pbkdf2
-    contract := Spec.Hmac.sha512I.pbkdf2Contract Arm.abi (24 + Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha512I)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩)
     stack := 24 + Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha512I
-    verified := Proof.Pbkdf2.Whole.Arm.pbkFramed Proof.Pbkdf2.Whole.Arm.sha512 (by decide)
-      Proof.Pbkdf2.Whole.Arm.sha512_pbkFrameSat
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Pbkdf2.Whole.Arm.pbkFramed Proof.Pbkdf2.Whole.Arm.sha512
+      Proof.Pbkdf2.Whole.Arm.sha512_pbkFrameSat }]
 
 end VG.Artifacts.Pbkdf2Sha512.Arm

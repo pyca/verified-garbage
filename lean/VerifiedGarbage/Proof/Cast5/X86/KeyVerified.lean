@@ -1,15 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86.Key
-meta import VerifiedGarbage.Proof.Cast5.X86.Key
-public import VerifiedGarbage.Proof.Cast5.X86.EcbVerified
-meta import VerifiedGarbage.Proof.Cast5.X86.EcbVerified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.TaintSym
+public import VerifiedGarbage.Spec.Cast5.Contract
 import VerifiedGarbage.Proof.Cast5.X86.KeyGroup
+meta import VerifiedGarbage.Proof.Cast5.X86.Key
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.X86.TaintSym
+meta import VerifiedGarbage.Spec.Cast5.Contract
 meta import VerifiedGarbage.Proof.Cast5.X86.KeyGroup
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # CAST5 key expansion on 32-bit x86: verified against the shared contract

@@ -1,14 +1,16 @@
 """Chooses which architectures' benchmarks a change needs.
 
-    git diff --name-only BASE HEAD | python3 ci/bench_arches.py
+    git diff --name-only BASE HEAD | python3 ci/bench_arches.py [--base BASE]
     python3 ci/bench_arches.py --all [--arches ARCHES] [--cpu-features CONFIGS] [--modules MODULES]
     python3 ci/bench_arches.py --choices
 
 Prints a JSON list of platforms (see `PLATFORMS`) for the Benchmarks
-workflow's matrix: an architecture is benchmarked when its own assembly
-(`src/asm/<arch>/`) changed, or anything shared by every architecture (the
-rest of `src/`, the benchmarks, the dependencies, the comparison). Changes
-to other files (e.g. Lean that leaves `src/asm/` as it was) need none.
+workflow's matrix. Given a change, it prints what the change needs, to scope
+a manual run of the workflow by: an architecture is benchmarked when its own
+assembly (`src/asm/<arch>/`) changed, or anything shared by every
+architecture (the rest of `src/`, the benchmarks, the dependencies, the
+comparison). Changes to other files (e.g. Lean that leaves `src/asm/` as it
+was) need none.
 
 A Rust file outside `src/asm/<arch>/` counts as changed on an architecture
 only if what that architecture compiles of it changed: without comments,
@@ -61,6 +63,17 @@ A change to a manifest (`Cargo.toml`, `bench/Cargo.toml`) only inside its
 `[target.'cfg(…)'.*]` tables needs every benchmark on the architectures
 where a changed table's `cfg` can hold, and nothing elsewhere.
 
+The benchmarks are a package of their own, a workspace with its own
+lockfile (`bench/Cargo.toml`'s `[workspace]`, `bench/Cargo.lock`), which
+depends on the library by path: Cargo resolves and builds them from
+`bench/Cargo.lock` and the library's `[dependencies]`, never from the
+library's lockfile (`Cargo.lock`) or its `[dev-dependencies]`, which only
+its own tests use. So a change to `Cargo.lock`, or to the library's
+`[dev-dependencies]` (and `[target.*.dev-dependencies]`) alone, needs
+nothing; one to `bench/Cargo.lock`, or to the benchmarks' own
+`[dev-dependencies]`, which their benchmarks compile with, needs every
+benchmark.
+
 The benchmarks run those that use any of them, and all of them for a module
 none uses (e.g. `lib`, or the generated `src/asm/<arch>/mod.rs`). Any
 other shared change (e.g. executable code in benchmarks' `main.rs`, or a benchmark whose
@@ -91,9 +104,10 @@ With a `BENCHMARKS_PER_JOB`, each configuration is split into jobs of at most
 that many of the benchmarks it runs (`shard` is `i/n`, empty for one):
 `bench_compare.py --shard` runs that share of them.
 
-A pull request never runs every benchmark of an architecture, which takes
-dozens of jobs: `--base` leaves out the architectures a change needs every
-benchmark on (`modules` empty), and names them on stderr, for a manual run.
+A run of every benchmark of an architecture takes dozens of jobs: `--base`
+leaves out the architectures a change needs every benchmark on (`modules`
+empty), and names them on stderr, to run only if the change must be measured
+there.
 
 `--all` (the workflow's manual runs) runs every benchmark in every
 configuration of every architecture, or, for a targeted run, only those of
@@ -125,9 +139,13 @@ import re
 import sys
 import tomllib
 
-# The architectures benchmarked, and where each one runs natively (as in
-# ci.yml's `rust` job: the 32-bit ones in a 32-bit userspace container, built
-# by ci/runner.Dockerfile, on the 64-bit host of the same family).
+# The architectures benchmarked, and where each one runs natively, in the
+# images ci/runner.Dockerfile builds, as ci.yml's `rust` job tests them (so
+# that its build of the dependencies is the cache bench.yml restores): x86 in
+# a 32-bit userspace on the x86-64 host, and ARMv7 cross-compiled on the
+# ARM64 host, in armv7-cross, whose binaries run natively. bench_compare.py
+# runs them itself, not through ci/arm32-run, so on a host without AArch32
+# they fail rather than time QEMU.
 PLATFORMS = {
     "x86_64": {"os": "ubuntu-26.04"},
     "aarch64": {"os": "ubuntu-26.04-arm"},
@@ -141,8 +159,7 @@ PLATFORMS = {
     },
     "arm": {
         "os": "ubuntu-26.04-arm",
-        "image": "ghcr.io/pyca/verified-garbage-runner:armv7l",
-        "options": "--platform linux/arm/v7",
+        "image": "ghcr.io/pyca/verified-garbage-runner:armv7-cross",
     },
 }
 
@@ -199,7 +216,7 @@ CPU_FEATURES = {
         "avx,avx2,avx512f,avx512vl",
         "none",
     ],
-    "aarch64": ["neon", "sha3", "none"],
+    "aarch64": ["neon", "aes", "sha3", "none"],
     "x86": ["aes", "pclmulqdq,ssse3", "none"],
 }
 
@@ -249,6 +266,10 @@ INCLUDE = re.compile(r'\binclude(?:_str|_bytes)?!\s*\(\s*"([^"]+)"')
 INCLUSION = re.compile(r"#\[\s*path\b|\binclude(?:_str|_bytes)?!")
 # The manifests whose `[target.'cfg(…)']` tables apply to some architectures.
 MANIFESTS = ("Cargo.toml", "bench/Cargo.toml")
+# The library's manifest and lockfile, which the benchmarks' own workspace
+# does not use but for the library's `[dependencies]` (see above).
+LIBRARY_MANIFEST = "Cargo.toml"
+LIBRARY_LOCK = "Cargo.lock"
 TARGET_CFG = re.compile(r"cfg\((.*)\)", re.S)
 QUOTED = re.compile(r'"([a-z0-9_]+)"')
 # A generated variant's CPU features (a `Features` constant, or a list of
@@ -258,8 +279,9 @@ FEATURES = re.compile(
     r"_FEATURES: (?:&\[&str\] = &\[|crate::cpu::Features = crate::cpu::Features::of\(&\[)([^\]]*)\]")
 NAMES = re.compile(r"const NAMES: \[&str; \d+\] = \[([^\]]*)\];")
 # Each architecture's feature detection in `src/cpu.rs`: its `cfg`, and the
-# body, which names each feature in quotes or as a `let`.
-RUNTIME = re.compile(r"(#\[cfg\([^\n]*\)\])\nfn runtime\(\) -> u32 \{\n(.*?)\n\}\n", re.S)
+# body, which names each feature in quotes or as a `let`; on x86 and x86-64,
+# `runtime` reads the CPU and `decode` (under the same `cfg`) names them.
+RUNTIME = re.compile(r"(#\[cfg\([^\n]*\)\])\nfn (?:runtime\(\)|decode\([^\n]*\)) -> u32 \{\n(.*?)\n\}\n", re.S)
 LET = re.compile(r"\blet ([a-z0-9_]+) =")
 # A top-level module only tests compile: from its `#[cfg(test)]` to the `}`
 # closing it, alone in column 0 as rustfmt writes it.
@@ -643,6 +665,13 @@ def manifest_arches(path, base):
     except tomllib.TOMLDecodeError:
         return list(PLATFORMS)
     targets = [old.pop("target", {}), new.pop("target", {})]
+    if path == LIBRARY_MANIFEST:
+        # Only the library's own tests build with its dev-dependencies.
+        for table in [old, new]:
+            table.pop("dev-dependencies", None)
+        targets = [{key: kept for key, table in t.items()
+                    if (kept := {k: v for k, v in table.items() if k != "dev-dependencies"})}
+                   for t in targets]
     if old != new or not base:
         return list(PLATFORMS)
     arches = set()
@@ -810,6 +839,20 @@ def asm_users(arch, module, root="."):
         elif (m := ASM.match(path)) and m[2] not in ("mod", module) and sibling.search(text):
             names.add(m[2])
     return names or None
+
+
+def own_uses(name, catalog):
+    """The modules of the benchmark `name`'s `USES` that select it alone:
+    those no other benchmark uses, or all of them if every one is shared.
+    A change to the benchmark changes only its own measurements, so its
+    other modules' benchmarks (e.g. every hash's, for RSA-PSS) need not run;
+    `run_requirements` still chooses the configurations from all of them.
+    None if it has no `USES`."""
+    uses = bench_uses(f"bench/benches/primitives/{name}.rs")
+    if not uses:
+        return None
+    others = set().union(*(u for n, u in (catalog or {}).items() if n != name))
+    return (uses - others) or uses
 
 
 def helper_uses(name, catalog):
@@ -990,11 +1033,14 @@ def arches(changed, base=None):
                 for name in names:
                     need(a, name)
         elif (bench := BENCH.match(path) or BENCH_TEST.match(path)) and (
-                uses := bench_uses(f"bench/benches/primitives/{bench[1]}.rs")
+                uses := own_uses(bench[1], catalogs[-1])
                 or helper_uses(bench[1], catalogs[-1])):
             for a in targets:
                 for m in uses:
                     need(a, m)
+        elif path == LIBRARY_LOCK:
+            # The benchmarks build from `bench/Cargo.lock`.
+            pass
         elif path in MANIFESTS:
             for a in manifest_arches(path, base):
                 needed[a] = ALL
@@ -1098,9 +1144,9 @@ def without_full_runs(matrix):
     if not full:
         return matrix, None
     return [p for p in matrix if p["arch"] not in full], (
-        f"This change needs every benchmark on {', '.join(full)}, which pull requests never run:"
-        " run the Benchmarks workflow by hand (workflow_dispatch) with base_commit set to the"
-        f" base and arches='{' '.join(full)}' to compare them, or narrow the change.")
+        f"This change needs every benchmark on {', '.join(full)}, dozens of jobs: only if it must"
+        " be measured there, run the Benchmarks workflow by hand (workflow_dispatch) with"
+        f" base_commit set to the base and arches='{' '.join(full)}', or narrow the change.")
 
 
 def run_requirements(arch, modules, catalogs, revisions):

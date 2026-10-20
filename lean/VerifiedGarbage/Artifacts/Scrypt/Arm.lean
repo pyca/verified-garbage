@@ -1,13 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Impl.Scrypt.Arm.Salsa
-import VerifiedGarbage.Impl.Scrypt.Arm.BlockMix
-import VerifiedGarbage.Impl.Scrypt.Arm.RoMix
-import VerifiedGarbage.Proof.Scrypt.Arm.BlockMixVerified
-import VerifiedGarbage.Proof.Scrypt.Arm.RoMixCT
-import VerifiedGarbage.Proof.Scrypt.Arm.Lit
 public import VerifiedGarbage.Proof.Scrypt.Arm.Whole.Verified
+public import VerifiedGarbage.Proof.Scrypt.Arm.RoMixCT
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # scrypt (RFC 7914): Salsa20/8, scryptBlockMix, scryptROMix and scrypt on 32-bit ARM
@@ -23,40 +18,25 @@ of PBKDF2's stack arguments and PBKDF2's own frames use.
 namespace VG.Artifacts.Scrypt.Arm
 
 def artifacts : List Artifact := [
-  { Spec.Scrypt.salsaApi with
-    target := Arm.target
-    doc := Spec.Scrypt.salsaApi.doc
+  Spec.Scrypt.salsaApi.artifact Arm.target {
     code := Impl.Scrypt.Arm.salsa
-    contract := Spec.Scrypt.salsaContract Arm.abi
-    verified := Proof.Scrypt.Arm.salsa_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Scrypt.blockMixApi with
-    target := Arm.target
-    doc := Spec.Scrypt.blockMixApi.doc
-      (notes := ["The function uses no stack: it saves its return address in `scratch`."])
+    verified := Proof.Scrypt.Arm.salsa_verified },
+  Spec.Scrypt.blockMixApi.artifact Arm.target {
+    notes := ["The function uses no stack: it saves its return address in `scratch`."]
     code := Impl.Scrypt.Arm.blockMix
-    contract := Spec.Scrypt.blockMixContract Arm.abi
-    verified := Proof.Scrypt.Arm.BlockMix.blockMix_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Scrypt.roMixApi with
-    target := Arm.target
-    doc := Spec.Scrypt.roMixApi.doc
-      (notes := ["The function uses no stack: it saves its return address in `scratch`."])
+    verified := Proof.Scrypt.Arm.BlockMix.blockMix_verified },
+  Spec.Scrypt.roMixApi.artifact Arm.target {
+    notes := ["The function uses no stack: it saves its return address in `scratch`."]
     code := Impl.Scrypt.Arm.roMix
-    contract := Spec.Scrypt.roMixContract Arm.abi
-    verified := Proof.Scrypt.Arm.RoMix.roMix_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Scrypt.scryptApi with
-    target := Arm.target
-    doc := Spec.Scrypt.scryptApi.doc (notes := ["Derives both keys with `vg_pbkdf2_hmac_sha256_scratch` and runs \
+    verified := Proof.Scrypt.Arm.RoMix.roMix_verified },
+  Spec.Scrypt.scryptApi.artifact Arm.target {
+    notes := ["Derives both keys with `vg_pbkdf2_hmac_sha256_scratch` and runs \
       scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the working \
       space of each. The function has no stack frame of its own: the caller's `r4`–`r11` and the return \
       address are saved in the last of the `r + 16` chunks of `scratch`, which neither callee uses; each \
-      call's stack arguments are pushed in a frame of their own."])
+      call's stack arguments are pushed in a frame of their own."]
     code := Impl.Scrypt.Arm.scrypt Spec.Hmac.sha256I.pbkdf2ScratchApi.name Proof.Scrypt.Arm.Whole.pbkC
-    contract := Spec.Scrypt.scryptContract Arm.abi 40
     stack := 40
-    verified := Proof.Scrypt.Arm.Whole.scrypt_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Scrypt.Arm.Whole.scrypt_verified }]
 
 end VG.Artifacts.Scrypt.Arm

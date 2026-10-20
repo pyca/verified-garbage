@@ -1,12 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Sha1.AArch64.Shared
 public import VerifiedGarbage.Proof.Sha1.AArch64.Sha2.Compress
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SHA-1 (FIPS 180-4) on AArch64 -/
 
@@ -15,30 +11,19 @@ import VerifiedGarbage.Proof.MdStream.Spec
 namespace VG.Artifacts.Sha1.AArch64
 
 def artifacts : List Artifact := [
-  { Spec.Sha1.compressApi with
-    target := AArch64.target
-    doc := Spec.Sha1.compressApi.doc
+  Spec.Sha1.compressApi.artifact AArch64.target {
     code := Impl.Sha1.AArch64.compress
-    contract := Spec.Sha1.compressContract AArch64.abi
-    verified := Proof.Sha1.AArch64.Shared.compress
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha1.initApi with
-    target := AArch64.target
-    doc := Spec.Sha1.initApi.doc
+    verified := Proof.Sha1.AArch64.Shared.compress },
+  Spec.Sha1.initApi.artifact AArch64.target {
     code := Impl.Sha1.AArch64.Stream.init
-    contract := Spec.Sha1.initContract AArch64.abi
-    verified := Proof.Sha1.AArch64.Shared.init
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha1.compressApi with
-    name := "vg_sha1_compress_sha2"
-    target := AArch64.target
-    doc := Spec.Sha1.compressApi.doc (notes := ["Uses the AArch64 SHA-1 instructions. \
+    verified := Proof.Sha1.AArch64.Shared.init },
+  Spec.Sha1.compressApi.artifact AArch64.target {
+    suffix := "_sha2"
+    notes := ["Uses the AArch64 SHA-1 instructions. \
       The four round constants are built in AdvSIMD registers once, before the first block, \
-      and the state stays in registers between blocks."])
+      and the state stays in registers between blocks."]
     code := Impl.Sha1.AArch64.Sha2.compress
-    contract := Spec.Sha1.compressContract AArch64.abi
     verified := Proof.Sha1.AArch64.Shared.compress_of Proof.Sha1.AArch64.Sha2.compress_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := ["sha2"] }]
 
 end VG.Artifacts.Sha1.AArch64

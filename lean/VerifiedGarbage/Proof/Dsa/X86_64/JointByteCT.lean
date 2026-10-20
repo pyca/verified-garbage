@@ -1,14 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointHeadCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.JointByte
+import VerifiedGarbage.Proof.Dsa.X86_64.JointWindowCT
+import VerifiedGarbage.Proof.Dsa.X86_64.JointByteHead
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
+import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointHeadCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Spec.Dsa
-meta import VerifiedGarbage.Spec.Dsa
+meta import VerifiedGarbage.Proof.Dsa.X86_64.JointByte
+meta import VerifiedGarbage.Proof.Dsa.X86_64.JointWindowCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.JointByteHead
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant-time scanning of two equal-length exponents -/
 

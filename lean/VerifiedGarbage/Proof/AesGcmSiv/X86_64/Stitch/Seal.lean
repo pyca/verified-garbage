@@ -1,11 +1,21 @@
 module
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Crypt
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Polyval
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ok
 
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Open
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Open
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ctr
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM-SIV on x86-64: `vg_aes_gcm_siv_seal` with the loops

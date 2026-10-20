@@ -1,17 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.CT
-meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.CT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
 public import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Sha1.Arm.Lit
+import VerifiedGarbage.Proof.Sha512.Arm.Lit
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.CT
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Sha1.Arm.Lit
+meta import VerifiedGarbage.Proof.Sha512.Arm.Lit
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: the instances

@@ -1,35 +1,29 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
 import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
 import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
 import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
 meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.Mont.Read
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
 meta import VerifiedGarbage.Proof.Mont.Read
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Spec.Rc2
-meta import VerifiedGarbage.Proof.X25519.X86.Arith
-meta import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # Montgomery arithmetic modulo the curves' `p` and `n`, as functions, on x86 (32-bit): verified

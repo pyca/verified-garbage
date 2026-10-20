@@ -1,12 +1,10 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Sha512.X86_64.Shared
-public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
-public import VerifiedGarbage.Proof.Sha512.X86_64.Lit
-public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
-import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-!
 # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on x86-64
@@ -21,61 +19,36 @@ once for each implementation of it, by SHA-512's variants of `MdHash`
 namespace VG.Artifacts.Sha512.X86_64
 
 def artifacts : List Artifact := [
-  { Spec.Sha512.compressApi with
-    target := X86_64.target
-    doc := Spec.Sha512.compressApi.doc
-    code := Impl.Sha512.X86_64.compress
-    contract := Spec.Sha512.compressContract X86_64.abi
-    verified := Proof.Sha512.X86_64.Shared.compress
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha512.compressApi with
-    name := "vg_sha512_compress_avx2"
-    target := X86_64.target
-    doc := Spec.Sha512.compressApi.doc
-      (notes := ["This implementation computes the message schedules of two blocks at a time in \
-        the two lanes of the AVX2 registers, and the rounds with BMI1 and BMI2."])
-    code := Impl.Sha512.X86_64.Avx2.compress
-    contract := Spec.Sha512.compressContract X86_64.abi
+  Spec.Sha512.compressApi.artifact X86_64.target {
+    notes := ["This implementation runs rounds 16–79 sixteen to an iteration of a loop, adding the \
+        round constants from a table."]
+    code := Impl.Sha512.X86_64.Rolled.compress
+    verified := Proof.Sha512.X86_64.Shared.compress },
+  Spec.Sha512.compressApi.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["This implementation computes the message schedules of two blocks at a time in \
+        the two lanes of the AVX2 registers, and the rounds with BMI1 and BMI2, sixteen to an \
+        iteration of a loop, adding the round constants from a table."]
+    code := Impl.Sha512.X86_64.Avx2Rolled.compress
     verified := Proof.Sha512.X86_64.Shared.compress_avx2
-    features := ["avx", "avx2", "bmi1", "bmi2"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha512.compressApi with
-    name := "vg_sha512_compress_shani"
-    target := X86_64.target
-    doc := Spec.Sha512.compressApi.doc
-      (notes := ["This implementation uses the SHA512 extension."])
+    features := ["avx", "avx2", "bmi1", "bmi2"] },
+  Spec.Sha512.compressApi.artifact X86_64.target {
+    suffix := "_shani"
+    notes := ["This implementation uses the SHA512 extension."]
     code := Impl.Sha512.X86_64.ShaNi.compress
-    contract := Spec.Sha512.compressContract X86_64.abi
     verified := Proof.Sha512.X86_64.Shared.compress_shani
-    features := ["avx", "avx2", "sha512"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha512.init384Api with
-    target := X86_64.target
-    doc := Spec.Sha512.init384Api.doc
+    features := ["avx", "avx2", "sha512"] },
+  Spec.Sha512.init384Api.artifact X86_64.target {
     code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_384
-    contract := Spec.Sha512.initContract X86_64.abi Spec.Sha512.H0_384
-    verified := Proof.Sha512.X86_64.Shared.init Spec.Sha512.H0_384
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha512.init512Api with
-    target := X86_64.target
-    doc := Spec.Sha512.init512Api.doc
+    verified := Proof.Sha512.X86_64.Shared.init Spec.Sha512.H0_384 },
+  Spec.Sha512.init512Api.artifact X86_64.target {
     code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512
-    contract := Spec.Sha512.initContract X86_64.abi Spec.Sha512.H0_512
-    verified := Proof.Sha512.X86_64.Shared.init Spec.Sha512.H0_512
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha512.init512_224Api with
-    target := X86_64.target
-    doc := Spec.Sha512.init512_224Api.doc
+    verified := Proof.Sha512.X86_64.Shared.init Spec.Sha512.H0_512 },
+  Spec.Sha512.init512_224Api.artifact X86_64.target {
     code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512_224
-    contract := Spec.Sha512.initContract X86_64.abi Spec.Sha512.H0_512_224
-    verified := Proof.Sha512.X86_64.Shared.init Spec.Sha512.H0_512_224
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha512.init512_256Api with
-    target := X86_64.target
-    doc := Spec.Sha512.init512_256Api.doc
+    verified := Proof.Sha512.X86_64.Shared.init Spec.Sha512.H0_512_224 },
+  Spec.Sha512.init512_256Api.artifact X86_64.target {
     code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512_256
-    contract := Spec.Sha512.initContract X86_64.abi Spec.Sha512.H0_512_256
-    verified := Proof.Sha512.X86_64.Shared.init Spec.Sha512.H0_512_256
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Sha512.X86_64.Shared.init Spec.Sha512.H0_512_256 }]
 
 end VG.Artifacts.Sha512.X86_64

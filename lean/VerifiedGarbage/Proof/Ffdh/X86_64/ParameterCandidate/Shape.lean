@@ -1,12 +1,19 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Shape
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ShapeOctets
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LowByte
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LowByte
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Copy
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeByte
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Masks
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! # FFDH parameter candidates on x86-64: complete shaping and its buffer frame -/
 
@@ -20,7 +27,7 @@ open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.Ffdh.ParameterCandidate
 
 theorem shape_ok {s : State} {rp op : Addr} {bs : List Byte} {bits : Nat}
-    (hb1 : 512 ≤ bits) (hb2 : bits ≤ 8192) (hlen : bs.length = (bits + 7) / 8)
+    (hb1 : 9 ≤ bits) (hb2 : bits ≤ 8192) (hlen : bs.length = (bits + 7) / 8)
     (hrp : s.gpr .rsi = rp) (hop : s.gpr .rdi = op)
     (hn : s.gpr .rcx = BitVec.ofNat 64 bs.length) (hbits : s.gpr .rdx = BitVec.ofNat 64 bits)
     (hrd : ∀ i < bs.length, InRegions (s.rd ++ s.wr) (off rp i) 1)
@@ -82,6 +89,7 @@ theorem shape_ok {s : State} {rp op : Addr} {bs : List Byte} {bits : Nat}
       by_cases hx : i + 1 = bs.length
       · have hi0 : i = bs.length - 1 := by omega
         rw [ite_eq_left hx, hi0, ite_eq_left rfl]
+        rfl
       · have hni : i ≠ bs.length - 1 := by omega
         rw [ite_eq_right hx, ite_eq_right (out_ne (by omega) (by omega) hni)]
         exact ht.bytes i hil

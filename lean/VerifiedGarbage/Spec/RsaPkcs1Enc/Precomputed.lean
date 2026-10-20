@@ -19,7 +19,7 @@ unchanged.
 
 namespace VG.Spec.RsaPkcs1Enc
 
-open Rsa (bytesAt lenValid scratchWords written)
+open Rsa (bytesAt lenValid publicScratchWords written)
 
 /-- `encryptSig` with a final read-only slice of precomputed `u64` words. -/
 def encryptPrecomputedSig : Sig where
@@ -38,7 +38,7 @@ def encryptPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contra
     (pre := fun _out outLen _n nLen _e eLen _msg msgLen _ps psLen _scratch scratchLen _pre preLen _ =>
       lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ 1 ≤ eLen.toNat ∧
         eLen.toNat ≤ nLen.toNat ∧ msgLen.toNat + 11 ≤ nLen.toNat ∧
-        psLen.toNat = nLen.toNat - msgLen.toNat - 3 ∧ scratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        psLen.toNat = nLen.toNat - msgLen.toNat - 3 ∧ publicScratchWords nLen.toNat ≤ scratchLen.toNat ∧
         preLen.toNat = Rsa.precomputedWords nLen.toNat)
     (post := fun out _outLen n nLen e eLen msg msgLen ps psLen _scratch _scratchLen pre preLen m m' r =>
       Rsa.publicPrecompute (bytesAt m n nLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) →
@@ -58,7 +58,7 @@ def encryptPrecomputedApi : Api where
   sig := encryptPrecomputedSig
   writeArgs := true
   contracts := some fun A stack => encryptPrecomputedContract A stack
-  summary := encryptApi.summary ++ "\n\n\
+  summary := encryptSummary ++ "\n\n\
     This entry point also takes `pre`, the `pre_len` words written by \
     `vg_rsa_public_precompute` for `n` (returning 1). With those values, it \
     writes and returns exactly what is specified above. If `pre` does not hold \
@@ -66,7 +66,7 @@ def encryptPrecomputedApi : Api where
     the timing guarantee still apply. Timing may additionally depend on the \
     contents of `pre`.\n\n\
     Contract: `VG.Spec.RsaPkcs1Enc.encryptPrecomputedContract`."
-  safety := encryptApi.safety ++
+  safety := encryptSafety ++
     ["`pre_len` must be `2 * ⌈n_len / 8⌉`.",
       "For the result to be encryption's, `pre` must hold what \
         `vg_rsa_public_precompute` wrote for `n` (returning 1)."]

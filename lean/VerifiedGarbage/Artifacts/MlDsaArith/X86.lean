@@ -1,11 +1,9 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
 public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
 public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
 public import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ML-DSA (FIPS 204) on x86: the arithmetic of polynomials
@@ -19,57 +17,31 @@ frame of 16 bytes below the return address (`stack := 16`).
 namespace VG.Artifacts.MlDsaArith.X86
 
 def artifacts : List Artifact := [
-  { Spec.MlDsa.nttApi with
-    target := X86.target
-    doc := Spec.MlDsa.nttApi.doc
-      (notes := ["The function stores a table of the 256 zetas, in Montgomery form, in `scratch`."])
+  Spec.MlDsa.nttApi.artifact X86.target {
+    notes := ["The function stores a table of the 256 zetas, in Montgomery form, in `scratch`."]
     code := Impl.MlDsa.X86.Arith.ntt
-    contract := Spec.MlDsa.nttContract X86.abi 16
     stack := 16
-    verified := Proof.MlDsa.X86.Arith.NttFwd.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.MlDsa.nttContract Spec.MlDsa.inPlaceContract; rfl⟩) },
-  { Spec.MlDsa.nttInvApi with
-    target := X86.target
-    doc := Spec.MlDsa.nttInvApi.doc
-      (notes := ["The function stores a table of the 256 negated zetas, in Montgomery form, in `scratch`."])
+    verified := Proof.MlDsa.X86.Arith.NttFwd.verified },
+  Spec.MlDsa.nttInvApi.artifact X86.target {
+    notes := ["The function stores a table of the 256 negated zetas, in Montgomery form, in `scratch`."]
     code := Impl.MlDsa.X86.Arith.nttInv
-    contract := Spec.MlDsa.nttInvContract X86.abi 16
     stack := 16
-    verified := Proof.MlDsa.X86.Arith.NttInvP.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.MlDsa.nttInvContract Spec.MlDsa.inPlaceContract; rfl⟩) },
-  { Spec.MlDsa.mulApi with
-    target := X86.target
-    doc := Spec.MlDsa.mulApi.doc
+    verified := Proof.MlDsa.X86.Arith.NttInvP.verified },
+  Spec.MlDsa.mulApi.artifact X86.target {
     code := Impl.MlDsa.X86.Arith.mul
-    contract := Spec.MlDsa.mulContract X86.abi 16
     stack := 16
-    verified := Proof.MlDsa.X86.Arith.mul_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlDsa.mulAddApi with
-    target := X86.target
-    doc := Spec.MlDsa.mulAddApi.doc
+    verified := Proof.MlDsa.X86.Arith.mul_verified },
+  Spec.MlDsa.mulAddApi.artifact X86.target {
     code := Impl.MlDsa.X86.Arith.mulAdd
-    contract := Spec.MlDsa.mulAddContract X86.abi 16
     stack := 16
-    verified := Proof.MlDsa.X86.Arith.mulAdd_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlDsa.addApi with
-    target := X86.target
-    doc := Spec.MlDsa.addApi.doc
+    verified := Proof.MlDsa.X86.Arith.mulAdd_verified },
+  Spec.MlDsa.addApi.artifact X86.target {
     code := Impl.MlDsa.X86.Arith.add
-    contract := Spec.MlDsa.addContract X86.abi 16
     stack := 16
-    verified := Proof.MlDsa.X86.Arith.add_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlDsa.subApi with
-    target := X86.target
-    doc := Spec.MlDsa.subApi.doc
+    verified := Proof.MlDsa.X86.Arith.add_verified },
+  Spec.MlDsa.subApi.artifact X86.target {
     code := Impl.MlDsa.X86.Arith.sub
-    contract := Spec.MlDsa.subContract X86.abi 16
     stack := 16
-    verified := Proof.MlDsa.X86.Arith.sub_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.MlDsa.X86.Arith.sub_verified }]
 
 end VG.Artifacts.MlDsaArith.X86

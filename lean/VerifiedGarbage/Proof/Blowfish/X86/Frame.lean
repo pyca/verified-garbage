@@ -1,12 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Blowfish.X86.Contract
+public import VerifiedGarbage.Impl.StackScratch.X86
 
-public import VerifiedGarbage.Proof.Blowfish.X86.Verified
-public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Blowfish.X86.Verified
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.Impl.Blowfish.X86
+import VerifiedGarbage.Proof.Blowfish.X86.Run
 
 /-!
 # Blowfish on x86 (32-bit), with the working space on the stack

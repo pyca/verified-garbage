@@ -1,11 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifyChecks
+public import VerifiedGarbage.Spec.Ed448.Contract
 
-public import VerifiedGarbage.Proof.Ed448.Arm.VerifyDecode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Ed448.Arm.VerifyDecode
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.X448.Arm.Copy
+import VerifiedGarbage.Proof.X448.Arm.Carry
 
 /-!
 # Ed448 verification's equation on ARMv7: decoding `R` and `A`

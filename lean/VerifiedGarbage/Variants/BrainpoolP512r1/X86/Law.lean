@@ -1,7 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.BrainpoolP512r1.Curve
-import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.Positivity.Finset
+public import VerifiedGarbage.Proof.BrainpoolP512r1.Point
+public import VerifiedGarbage.Proof.Weierstrass.Cubic
+import VerifiedGarbage.Proof.BrainpoolP512r1.Point
+import VerifiedGarbage.Proof.Weierstrass.Cubic
 
 /-!
 # brainpoolP512r1's group law, on x86 (32-bit)

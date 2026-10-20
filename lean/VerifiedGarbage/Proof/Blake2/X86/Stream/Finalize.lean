@@ -2,12 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
 import VerifiedGarbage.Proof.Framework.Range
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Blake2.Spec
+import VerifiedGarbage.Proof.MdStream.X86.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Set
 
 /-!
 # Streaming BLAKE2 on x86 (32-bit): `finalize`

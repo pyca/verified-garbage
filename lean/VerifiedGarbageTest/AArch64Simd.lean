@@ -127,6 +127,11 @@ def xrun (k : Nat) (i : Instr) : Option (BitVec 64) := (exec i (s k)).map (·.gp
 #guard vrun 0 (.umull true .v0 .v1 .v2) == some 0x143aac04d7189c24b762ad9299ca8d54#128
 #guard vrun 0 (.umlal false .v0 .v1 .v2) == some 0x72edd9eb17c4f9e1924cf398d7f2b3df#128
 #guard vrun 0 (.umlal true .v0 .v1 .v2) == some 0x5bf90148bd9ce22f440da9ec49c3a3b7#128
+#guard vrun 0 (.umullH false .v0 .v1 .v2) == some 0x2b2efa3c640ab3d605a17e10a21c9d7c#128
+#guard vrun 0 (.umullH true .v0 .v1 .v2) == some 0x143a0841660c9c24b761ba6843968d54#128
+#guard vrun 0 (.umlalH false .v0 .v1 .v2) == some 0x72ed4f7f4a8ef9e1924c7a695215b3df#128
+#guard vrun 0 (.umlalH true .v0 .v1 .v2) == some 0x5bf85d844c90e22f440cb6c1f38fa3b7#128
+#guard vrun 0 (.umullH false .v0 .v0 .v3) == some 0x08cb2caa1c980db20e77acac01eef4d4#128
 #guard vrun 0 (.pmull false .v0 .v1 .v2) == some 0x1741493c224e681a0d98ad159b352e7c#128
 #guard vrun 0 (.pmull true .v0 .v1 .v2) == some 0x0be6e7a8b9d9791a2b96e51a9bd89254#128
 #guard vrun 0 (.aese .v0 .v1) == some 0xcc5087fd6ed31c8ac0d7671b4f9c93b5#128
@@ -161,6 +166,7 @@ def xrun (k : Nat) (i : Instr) : Option (BitVec 64) := (exec i (s k)).map (·.gp
 #guard vrun 0 (.sha512h .v0 .v0 .v0) == some 0xf4c536bb530108a80bd37236a4cc101d#128
 #guard vrun 0 (.tbl .v0 .v0 .v3) == some 0x0047160043afaa00001600f900430000#128
 #guard vrun 0 (.umlal true .v0 .v0 .v0) == some 0x5bd97611bc5dd5945c3cee8dc27b1adc#128
+#guard vrun 0 (.umlalH true .v0 .v0 .v0) == some 0x5bd9464702e9d5945c3c7069c3231adc#128
 #guard vrun 0 (.eor3 .v0 .v0 .v1 .v0) == some 0xd5b39162c1984cc4c9c6de1db050fcb1#128
 #guard xrun 0 (.umov .w .x0 .v1 0) == some 0x00000000b050fcb1#64
 #guard xrun 0 (.umov .w .x0 .v1 1) == some 0x00000000c9c6de1d#64
@@ -241,6 +247,11 @@ def xrun (k : Nat) (i : Instr) : Option (BitVec 64) := (exec i (s k)).map (·.gp
 #guard vrun 1 (.umull true .v0 .v1 .v2) == some 0x3030297ec326ee68098edea60238eb5a#128
 #guard vrun 1 (.umlal false .v0 .v1 .v2) == some 0xeae1c71d5a0b5c247420ff227528331f#128
 #guard vrun 1 (.umlal true .v0 .v1 .v2) == some 0x861b0497b9f8c67e53619de4f2a6a9c9#128
+#guard vrun 1 (.umullH false .v0 .v1 .v2) == some 0x94f62ace17ca840e2a4dc7aa381674b0#128
+#guard vrun 1 (.umullH true .v0 .v1 .v2) == some 0x302fa8fc4e3cee68098eb5d011beeb5a#128
+#guard vrun 1 (.umlalH false .v0 .v1 .v2) == some 0xeae105e60e9c5c24742086e82884331f#128
+#guard vrun 1 (.umlalH true .v0 .v1 .v2) == some 0x861a8414450ec67e5361750e022ca9c9#128
+#guard vrun 1 (.umullH false .v0 .v0 .v3) == some 0x0000000014377de014b2c2420b2cf79a#128
 #guard vrun 1 (.pmull false .v0 .v1 .v2) == some 0x7c193c7b7397c25d5a1bf2afa5a486b0#128
 #guard vrun 1 (.pmull true .v0 .v1 .v2) == some 0x103e08f3c079d0fc76eefe90abc383a2#128
 #guard vrun 1 (.aese .v0 .v1) == some 0x2e29c163f63459ff864b8296194f6f62#128
@@ -275,6 +286,7 @@ def xrun (k : Nat) (i : Instr) : Option (BitVec 64) := (exec i (s k)).map (·.gp
 #guard vrun 1 (.sha512h .v0 .v0 .v0) == some 0x31d5206fb8a283ba6b40f2af7ed8989f#128
 #guard vrun 1 (.tbl .v0 .v0 .v3) == some 0x0000006f55eaf0006f6f000000d155d2#128
 #guard vrun 1 (.umlal true .v0 .v0 .v0) == some 0x72c0a80c2a33ea5637cab68bc2bee053#128
+#guard vrun 1 (.umlalH true .v0 .v0 .v0) == some 0x72c014fcb253ea5637c915dfa6d2e053#128
 #guard vrun 1 (.eor3 .v0 .v0 .v1 .v0) == some 0xdb26ce183543c96b9f9eb90b2c4563c4#128
 #guard xrun 1 (.umov .w .x0 .v1 0) == some 0x000000002c4563c4#64
 #guard xrun 1 (.umov .w .x0 .v1 1) == some 0x000000009f9eb90b#64
@@ -296,6 +308,7 @@ def others (i : Instr) : Bool :=
 #guard others (.vop (.sha256h .v0 .v1 .v2))
 #guard others (.vop (.ins .s4 .v0 1 .x1))
 #guard others (.vop (.umlal true .v0 .v1 .v2))
+#guard others (.vop (.umlalH true .v0 .v1 .v2))
 #guard others (.umov .x .x0 .v1 1)
 #guard (exec (.vop (.aese .v0 .v1)) (s 0)).map (·.gpr .x0) == some 0xdeadbeefdeadbeef
 
@@ -410,6 +423,12 @@ def bytesAt (o : Nat) : BitVec 128 :=
 #guard printer.instr (.vop (.umull true .v0 .v1 .v2)) == ["umull2 v0.2d, v1.4s, v2.4s"]
 #guard printer.instr (.vop (.umlal false .v0 .v1 .v2)) == ["umlal v0.2d, v1.2s, v2.2s"]
 #guard printer.instr (.vop (.umlal true .v0 .v1 .v2)) == ["umlal2 v0.2d, v1.4s, v2.4s"]
+#guard printer.instr (.vop (.umullH false .v0 .v1 .v2)) == ["umull v0.4s, v1.4h, v2.4h"]
+#guard printer.instr (.vop (.umullH true .v0 .v1 .v2)) == ["umull2 v0.4s, v1.8h, v2.8h"]
+#guard printer.instr (.vop (.umlalH false .v0 .v1 .v2)) == ["umlal v0.4s, v1.4h, v2.4h"]
+#guard printer.instr (.vop (.umlalH true .v0 .v1 .v2)) == ["umlal2 v0.4s, v1.8h, v2.8h"]
+#guard printer.instr (.vop (.umullH false .v0 .v0 .v3)) == ["umull v0.4s, v0.4h, v3.4h"]
+#guard printer.instr (.vop (.umlalH true .v0 .v0 .v0)) == ["umlal2 v0.4s, v0.8h, v0.8h"]
 #guard printer.instr (.vop (.pmull false .v0 .v1 .v2)) == ["pmull v0.1q, v1.1d, v2.1d"]
 #guard printer.instr (.vop (.pmull true .v0 .v1 .v2)) == ["pmull2 v0.1q, v1.2d, v2.2d"]
 #guard printer.instr (.vop (.aese .v0 .v1)) == ["aese v0.16b, v1.16b"]
@@ -468,6 +487,8 @@ def bytesAt (o : Nat) : BitVec 128 :=
 #guard isa.requires (.vop (.eor3 .v0 .v1 .v2 .v3)) == ["sha3"]
 #guard isa.requires (.vop (.xar .v0 .v1 .v2 3)) == ["sha3"]
 #guard isa.requires (.vop (.tbl .v0 .v1 .v2)) == []
+#guard isa.requires (.vop (.umullH true .v0 .v1 .v2)) == []
+#guard isa.requires (.vop (.umlalH false .v0 .v1 .v2)) == []
 #guard isa.requires (.vop (.umull false .v0 .v1 .v2)) == []
 #guard isa.requires (.ldrq .v0 .x1 0) == []
 #guard isa.requires (.umov .x .x0 .v1 0) == []
@@ -637,5 +658,155 @@ Computed as above, under `qemu-aarch64 -cpu max`. -/
 /- Both lanes `-2^15`: SQDMULH and SQRDMULH saturate there, which the model makes a fault. -/
 #guard (VOp.eval { s 0 with v := fun _ => 0x8000#128 } (.mulH .sqdmulh .v0 .v1 .v2)).isNone
 #guard (VOp.eval { s 0 with v := fun _ => 0x8000#128 } (.mulH .sqrdmulh .v0 .v1 .v2)).isNone
+
+
+/-! ### CMHI, CMHS, ADDV and UADDLV
+
+Computed as above, under `qemu-aarch64 -cpu max`; the printed text was also
+assembled by `llvm-mc -triple=aarch64`. Each comparison is run with its
+sources both ways round, against itself (CMHI all zeros, CMHS all ones), and
+with the destination as a source. ADDV and UADDLV write a scalar register:
+the rest of `v0`, which held the input, is zero, also when `v0` is the
+source. -/
+
+#guard vrun 0 (.cmp .hi .b16 .v0 .v1 .v2) == some 0xffff000000ff00ffff00ff00ffffffff#128
+#guard vrun 0 (.cmp .hi .b16 .v0 .v2 .v1) == some 0x0000ffffff00ff0000ff00ff00000000#128
+#guard vrun 0 (.cmp .hi .b16 .v0 .v1 .v1) == some 0x00000000000000000000000000000000#128
+#guard vrun 0 (.cmp .hi .b16 .v0 .v0 .v3) == some 0xffffffffffffff00ffffffffffff00ff#128
+#guard vrun 0 (.cmp .hs .b16 .v0 .v1 .v2) == some 0xffff000000ff00ffff00ff00ffffffff#128
+#guard vrun 0 (.cmp .hs .b16 .v0 .v2 .v1) == some 0x0000ffffff00ff0000ff00ff00000000#128
+#guard vrun 0 (.cmp .hs .b16 .v0 .v1 .v1) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 0 (.cmp .hs .b16 .v0 .v0 .v3) == some 0xffffffffffffff00ffffffffffffffff#128
+#guard vrun 0 (.cmp .hi .h8 .v0 .v1 .v2) == some 0xffff000000000000ffffffffffffffff#128
+#guard vrun 0 (.cmp .hi .h8 .v0 .v2 .v1) == some 0x0000ffffffffffff0000000000000000#128
+#guard vrun 0 (.cmp .hi .h8 .v0 .v1 .v1) == some 0x00000000000000000000000000000000#128
+#guard vrun 0 (.cmp .hi .h8 .v0 .v0 .v3) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 0 (.cmp .hs .h8 .v0 .v1 .v2) == some 0xffff000000000000ffffffffffffffff#128
+#guard vrun 0 (.cmp .hs .h8 .v0 .v2 .v1) == some 0x0000ffffffffffff0000000000000000#128
+#guard vrun 0 (.cmp .hs .h8 .v0 .v1 .v1) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 0 (.cmp .hs .h8 .v0 .v0 .v3) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 0 (.cmp .hi .s4 .v0 .v1 .v2) == some 0xffffffff00000000ffffffffffffffff#128
+#guard vrun 0 (.cmp .hi .s4 .v0 .v2 .v1) == some 0x00000000ffffffff0000000000000000#128
+#guard vrun 0 (.cmp .hi .s4 .v0 .v1 .v1) == some 0x00000000000000000000000000000000#128
+#guard vrun 0 (.cmp .hi .s4 .v0 .v0 .v3) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 0 (.cmp .hs .s4 .v0 .v1 .v2) == some 0xffffffff00000000ffffffffffffffff#128
+#guard vrun 0 (.cmp .hs .s4 .v0 .v2 .v1) == some 0x00000000ffffffff0000000000000000#128
+#guard vrun 0 (.cmp .hs .s4 .v0 .v1 .v1) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 0 (.cmp .hs .s4 .v0 .v0 .v3) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 0 (.cmp .hi .d2 .v0 .v1 .v2) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 0 (.cmp .hi .d2 .v0 .v2 .v1) == some 0x00000000000000000000000000000000#128
+#guard vrun 0 (.cmp .hi .d2 .v0 .v1 .v1) == some 0x00000000000000000000000000000000#128
+#guard vrun 0 (.cmp .hi .d2 .v0 .v0 .v3) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 0 (.cmp .hs .d2 .v0 .v1 .v2) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 0 (.cmp .hs .d2 .v0 .v2 .v1) == some 0x00000000000000000000000000000000#128
+#guard vrun 0 (.cmp .hs .d2 .v0 .v1 .v1) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 0 (.cmp .hs .d2 .v0 .v0 .v3) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 0 (.addv .b16 .v0 .v1) == some 0x0000000000000000000000000000001b#128
+#guard vrun 0 (.addv .b16 .v0 .v0) == some 0x00000000000000000000000000000004#128
+#guard vrun 0 (.uaddlv .b16 .v0 .v1) == some 0x00000000000000000000000000000a1b#128
+#guard vrun 0 (.uaddlv .b16 .v0 .v0) == some 0x00000000000000000000000000000804#128
+#guard vrun 0 (.addv .h8 .v0 .v1) == some 0x0000000000000000000000000000ca55#128
+#guard vrun 0 (.addv .h8 .v0 .v0) == some 0x000000000000000000000000000018ef#128
+#guard vrun 0 (.uaddlv .h8 .v0 .v1) == some 0x0000000000000000000000000005ca55#128
+#guard vrun 0 (.uaddlv .h8 .v0 .v0) == some 0x000000000000000000000000000418ef#128
+#guard vrun 0 (.addv .s4 .v0 .v1) == some 0x0000000000000000000000001163b8f4#128
+#guard vrun 0 (.addv .s4 .v0 .v0) == some 0x0000000000000000000000006ae6ae0a#128
+#guard vrun 0 (.uaddlv .s4 .v0 .v1) == some 0x0000000000000000000000031163b8f4#128
+#guard vrun 0 (.uaddlv .s4 .v0 .v0) == some 0x0000000000000000000000026ae6ae0a#128
+#guard vrun 1 (.cmp .hi .b16 .v0 .v1 .v2) == some 0xff00ff00ff00ff000000ff0000000000#128
+#guard vrun 1 (.cmp .hi .b16 .v0 .v2 .v1) == some 0x00ff00ff00ff00ffffff00ffffffffff#128
+#guard vrun 1 (.cmp .hi .b16 .v0 .v1 .v1) == some 0x00000000000000000000000000000000#128
+#guard vrun 1 (.cmp .hi .b16 .v0 .v0 .v3) == some 0xffffffffffffff00ffffffffffffffff#128
+#guard vrun 1 (.cmp .hs .b16 .v0 .v1 .v2) == some 0xff00ff00ff00ff000000ff0000000000#128
+#guard vrun 1 (.cmp .hs .b16 .v0 .v2 .v1) == some 0x00ff00ff00ff00ffffff00ffffffffff#128
+#guard vrun 1 (.cmp .hs .b16 .v0 .v1 .v1) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 1 (.cmp .hs .b16 .v0 .v0 .v3) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 1 (.cmp .hi .h8 .v0 .v1 .v2) == some 0xffffffffffffffff0000ffff00000000#128
+#guard vrun 1 (.cmp .hi .h8 .v0 .v2 .v1) == some 0x0000000000000000ffff0000ffffffff#128
+#guard vrun 1 (.cmp .hi .h8 .v0 .v1 .v1) == some 0x00000000000000000000000000000000#128
+#guard vrun 1 (.cmp .hi .h8 .v0 .v0 .v3) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 1 (.cmp .hs .h8 .v0 .v1 .v2) == some 0xffffffffffffffff0000ffff00000000#128
+#guard vrun 1 (.cmp .hs .h8 .v0 .v2 .v1) == some 0x0000000000000000ffff0000ffffffff#128
+#guard vrun 1 (.cmp .hs .h8 .v0 .v1 .v1) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 1 (.cmp .hs .h8 .v0 .v0 .v3) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 1 (.cmp .hi .s4 .v0 .v1 .v2) == some 0xffffffffffffffff0000000000000000#128
+#guard vrun 1 (.cmp .hi .s4 .v0 .v2 .v1) == some 0x0000000000000000ffffffffffffffff#128
+#guard vrun 1 (.cmp .hi .s4 .v0 .v1 .v1) == some 0x00000000000000000000000000000000#128
+#guard vrun 1 (.cmp .hi .s4 .v0 .v0 .v3) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 1 (.cmp .hs .s4 .v0 .v1 .v2) == some 0xffffffffffffffff0000000000000000#128
+#guard vrun 1 (.cmp .hs .s4 .v0 .v2 .v1) == some 0x0000000000000000ffffffffffffffff#128
+#guard vrun 1 (.cmp .hs .s4 .v0 .v1 .v1) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 1 (.cmp .hs .s4 .v0 .v0 .v3) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 1 (.cmp .hi .d2 .v0 .v1 .v2) == some 0xffffffffffffffff0000000000000000#128
+#guard vrun 1 (.cmp .hi .d2 .v0 .v2 .v1) == some 0x0000000000000000ffffffffffffffff#128
+#guard vrun 1 (.cmp .hi .d2 .v0 .v1 .v1) == some 0x00000000000000000000000000000000#128
+#guard vrun 1 (.cmp .hi .d2 .v0 .v0 .v3) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 1 (.cmp .hs .d2 .v0 .v1 .v2) == some 0xffffffffffffffff0000000000000000#128
+#guard vrun 1 (.cmp .hs .d2 .v0 .v2 .v1) == some 0x0000000000000000ffffffffffffffff#128
+#guard vrun 1 (.cmp .hs .d2 .v0 .v1 .v1) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 1 (.cmp .hs .d2 .v0 .v0 .v3) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 1 (.addv .b16 .v0 .v1) == some 0x0000000000000000000000000000002c#128
+#guard vrun 1 (.addv .b16 .v0 .v0) == some 0x00000000000000000000000000000089#128
+#guard vrun 1 (.uaddlv .b16 .v0 .v1) == some 0x0000000000000000000000000000072c#128
+#guard vrun 1 (.uaddlv .b16 .v0 .v0) == some 0x00000000000000000000000000000989#128
+#guard vrun 1 (.addv .h8 .v0 .v1) == some 0x0000000000000000000000000000909e#128
+#guard vrun 1 (.addv .h8 .v0 .v0) == some 0x0000000000000000000000000000b7d5#128
+#guard vrun 1 (.uaddlv .h8 .v0 .v1) == some 0x0000000000000000000000000004909e#128
+#guard vrun 1 (.uaddlv .h8 .v0 .v0) == some 0x0000000000000000000000000005b7d5#128
+#guard vrun 1 (.addv .s4 .v0 .v1) == some 0x000000000000000000000000dc4eb452#128
+#guard vrun 1 (.addv .s4 .v0 .v0) == some 0x00000000000000000000000086fd30db#128
+#guard vrun 1 (.uaddlv .s4 .v0 .v1) == some 0x000000000000000000000001dc4eb452#128
+#guard vrun 1 (.uaddlv .s4 .v0 .v0) == some 0x00000000000000000000000286fd30db#128
+
+#guard printer.instr (.vop (.cmp .hi .b16 .v0 .v1 .v2)) == ["cmhi v0.16b, v1.16b, v2.16b"]
+#guard printer.instr (.vop (.cmp .hi .b16 .v0 .v2 .v1)) == ["cmhi v0.16b, v2.16b, v1.16b"]
+#guard printer.instr (.vop (.cmp .hi .b16 .v0 .v1 .v1)) == ["cmhi v0.16b, v1.16b, v1.16b"]
+#guard printer.instr (.vop (.cmp .hi .b16 .v0 .v0 .v3)) == ["cmhi v0.16b, v0.16b, v3.16b"]
+#guard printer.instr (.vop (.cmp .hs .b16 .v0 .v1 .v2)) == ["cmhs v0.16b, v1.16b, v2.16b"]
+#guard printer.instr (.vop (.cmp .hs .b16 .v0 .v2 .v1)) == ["cmhs v0.16b, v2.16b, v1.16b"]
+#guard printer.instr (.vop (.cmp .hs .b16 .v0 .v1 .v1)) == ["cmhs v0.16b, v1.16b, v1.16b"]
+#guard printer.instr (.vop (.cmp .hs .b16 .v0 .v0 .v3)) == ["cmhs v0.16b, v0.16b, v3.16b"]
+#guard printer.instr (.vop (.cmp .hi .h8 .v0 .v1 .v2)) == ["cmhi v0.8h, v1.8h, v2.8h"]
+#guard printer.instr (.vop (.cmp .hi .h8 .v0 .v2 .v1)) == ["cmhi v0.8h, v2.8h, v1.8h"]
+#guard printer.instr (.vop (.cmp .hi .h8 .v0 .v1 .v1)) == ["cmhi v0.8h, v1.8h, v1.8h"]
+#guard printer.instr (.vop (.cmp .hi .h8 .v0 .v0 .v3)) == ["cmhi v0.8h, v0.8h, v3.8h"]
+#guard printer.instr (.vop (.cmp .hs .h8 .v0 .v1 .v2)) == ["cmhs v0.8h, v1.8h, v2.8h"]
+#guard printer.instr (.vop (.cmp .hs .h8 .v0 .v2 .v1)) == ["cmhs v0.8h, v2.8h, v1.8h"]
+#guard printer.instr (.vop (.cmp .hs .h8 .v0 .v1 .v1)) == ["cmhs v0.8h, v1.8h, v1.8h"]
+#guard printer.instr (.vop (.cmp .hs .h8 .v0 .v0 .v3)) == ["cmhs v0.8h, v0.8h, v3.8h"]
+#guard printer.instr (.vop (.cmp .hi .s4 .v0 .v1 .v2)) == ["cmhi v0.4s, v1.4s, v2.4s"]
+#guard printer.instr (.vop (.cmp .hi .s4 .v0 .v2 .v1)) == ["cmhi v0.4s, v2.4s, v1.4s"]
+#guard printer.instr (.vop (.cmp .hi .s4 .v0 .v1 .v1)) == ["cmhi v0.4s, v1.4s, v1.4s"]
+#guard printer.instr (.vop (.cmp .hi .s4 .v0 .v0 .v3)) == ["cmhi v0.4s, v0.4s, v3.4s"]
+#guard printer.instr (.vop (.cmp .hs .s4 .v0 .v1 .v2)) == ["cmhs v0.4s, v1.4s, v2.4s"]
+#guard printer.instr (.vop (.cmp .hs .s4 .v0 .v2 .v1)) == ["cmhs v0.4s, v2.4s, v1.4s"]
+#guard printer.instr (.vop (.cmp .hs .s4 .v0 .v1 .v1)) == ["cmhs v0.4s, v1.4s, v1.4s"]
+#guard printer.instr (.vop (.cmp .hs .s4 .v0 .v0 .v3)) == ["cmhs v0.4s, v0.4s, v3.4s"]
+#guard printer.instr (.vop (.cmp .hi .d2 .v0 .v1 .v2)) == ["cmhi v0.2d, v1.2d, v2.2d"]
+#guard printer.instr (.vop (.cmp .hi .d2 .v0 .v2 .v1)) == ["cmhi v0.2d, v2.2d, v1.2d"]
+#guard printer.instr (.vop (.cmp .hi .d2 .v0 .v1 .v1)) == ["cmhi v0.2d, v1.2d, v1.2d"]
+#guard printer.instr (.vop (.cmp .hi .d2 .v0 .v0 .v3)) == ["cmhi v0.2d, v0.2d, v3.2d"]
+#guard printer.instr (.vop (.cmp .hs .d2 .v0 .v1 .v2)) == ["cmhs v0.2d, v1.2d, v2.2d"]
+#guard printer.instr (.vop (.cmp .hs .d2 .v0 .v2 .v1)) == ["cmhs v0.2d, v2.2d, v1.2d"]
+#guard printer.instr (.vop (.cmp .hs .d2 .v0 .v1 .v1)) == ["cmhs v0.2d, v1.2d, v1.2d"]
+#guard printer.instr (.vop (.cmp .hs .d2 .v0 .v0 .v3)) == ["cmhs v0.2d, v0.2d, v3.2d"]
+#guard printer.instr (.vop (.addv .b16 .v0 .v1)) == ["addv b0, v1.16b"]
+#guard printer.instr (.vop (.addv .b16 .v0 .v0)) == ["addv b0, v0.16b"]
+#guard printer.instr (.vop (.uaddlv .b16 .v0 .v1)) == ["uaddlv h0, v1.16b"]
+#guard printer.instr (.vop (.uaddlv .b16 .v0 .v0)) == ["uaddlv h0, v0.16b"]
+#guard printer.instr (.vop (.addv .h8 .v0 .v1)) == ["addv h0, v1.8h"]
+#guard printer.instr (.vop (.addv .h8 .v0 .v0)) == ["addv h0, v0.8h"]
+#guard printer.instr (.vop (.uaddlv .h8 .v0 .v1)) == ["uaddlv s0, v1.8h"]
+#guard printer.instr (.vop (.uaddlv .h8 .v0 .v0)) == ["uaddlv s0, v0.8h"]
+#guard printer.instr (.vop (.addv .s4 .v0 .v1)) == ["addv s0, v1.4s"]
+#guard printer.instr (.vop (.addv .s4 .v0 .v0)) == ["addv s0, v0.4s"]
+#guard printer.instr (.vop (.uaddlv .s4 .v0 .v1)) == ["uaddlv d0, v1.4s"]
+#guard printer.instr (.vop (.uaddlv .s4 .v0 .v0)) == ["uaddlv d0, v0.4s"]
+#guard isa.requires (.vop (.cmp .hi .b16 .v0 .v1 .v2)) == []
+#guard isa.requires (.vop (.addv .b16 .v0 .v1)) == []
+#guard isa.requires (.vop (.uaddlv .s4 .v0 .v1)) == []
+/- `.2d` has no ADDV or UADDLV (`size = '11'` is reserved): the model faults. -/
+#guard vrun 0 (.addv .d2 .v0 .v1) == none
+#guard vrun 0 (.uaddlv .d2 .v0 .v1) == none
 
 end VG.Test.AArch64Simd

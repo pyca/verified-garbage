@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Impl.Argon2.AArch64.AddressHeader
 public import VerifiedGarbage.Impl.Argon2.AArch64.ClearBlock
 public import VerifiedGarbage.Spec.Argon2.Contract

@@ -1,23 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.Arm.Ecb
-meta import VerifiedGarbage.Proof.Cast5.Arm.Ecb
-public import VerifiedGarbage.Proof.Cast5.Arm.Lit
-meta import VerifiedGarbage.Proof.Cast5.Arm.Lit
 public import VerifiedGarbage.Proof.Framework.Arm.TaintSym
-meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 public import VerifiedGarbage.Proof.Framework.ConstMem
-meta import VerifiedGarbage.Proof.Framework.ConstMem
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Cast5.Contract
+import VerifiedGarbage.Proof.Cast5.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Cast5.Arm.Ecb
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Cast5.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Cast5.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # CAST5 ECB on ARMv7: verified

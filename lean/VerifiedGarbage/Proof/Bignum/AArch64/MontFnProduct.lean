@@ -1,16 +1,25 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontFnVerified
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.MontFnSquare
+import VerifiedGarbage.Proof.Bignum.AArch64.MontFnSquare
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
-meta import VerifiedGarbage.Proof.Bignum.AArch64.MontFnSquare
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCT
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.MontFnVerified
+meta import VerifiedGarbage.Proof.Bignum.AArch64.MontFnSquare
+meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
 meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! The callable Montgomery primitive shares RSA's eight-limb product kernel.
 The dispatch depends only on the three public, 32-bit array indices. -/

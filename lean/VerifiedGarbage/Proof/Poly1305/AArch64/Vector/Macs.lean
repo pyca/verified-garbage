@@ -1,15 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Lanes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.Semantics
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: rows of products

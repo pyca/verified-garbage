@@ -3,12 +3,9 @@ module
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
 public import VerifiedGarbage.Proof.RsaPss.CtPad
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
 
 /-!
 # RSASSA-PSS on x86-64: hashing a message of secret length

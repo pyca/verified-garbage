@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86.FbVerified
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.TripleDes.X86.FbLit
 
 /-! # Triple DES-CFB64 artifacts on baseline x86 (32-bit) -/
 
@@ -15,21 +17,15 @@ def note : String :=
   The mode is the generic CFB of `Impl/Modes/X86/`."
 
 def artifacts : List Artifact := [
-  { Spec.TripleDes.cfbEncryptApi with
-    target := X86.target
-    doc := Spec.TripleDes.cfbEncryptApi.doc (notes := [note])
+  Spec.TripleDes.cfbEncryptApi.artifact X86.target {
+    notes := [note]
     code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbEncrypt
-    contract := Spec.TripleDes.cfbEncryptContract X86.abi 984
     stack := 984
-    verified := Proof.TripleDes.X86.Fb.cfbEncrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.TripleDes.cfbDecryptApi with
-    target := X86.target
-    doc := Spec.TripleDes.cfbDecryptApi.doc (notes := [note])
+    verified := Proof.TripleDes.X86.Fb.cfbEncrypt_framed },
+  Spec.TripleDes.cfbDecryptApi.artifact X86.target {
+    notes := [note]
     code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbDecrypt
-    contract := Spec.TripleDes.cfbDecryptContract X86.abi 984
     stack := 984
-    verified := Proof.TripleDes.X86.Fb.cfbDecrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.TripleDes.X86.Fb.cfbDecrypt_framed }]
 
 end VG.Artifacts.TripleDesCfb.X86

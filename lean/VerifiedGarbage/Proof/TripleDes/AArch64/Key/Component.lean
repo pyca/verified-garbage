@@ -1,13 +1,12 @@
 module
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Load
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Loop
+import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Loop
 import VerifiedGarbage.Proof.TripleDes.Schedule
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
 
 @[expose] public section
 

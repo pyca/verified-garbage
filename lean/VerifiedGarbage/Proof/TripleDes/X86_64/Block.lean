@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Head
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Body
 import VerifiedGarbage.Proof.TripleDes.X86_64.Tail
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.TripleDes.X86_64.RoundLit
 
 @[expose] public section
 

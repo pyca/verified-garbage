@@ -2,16 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.P256.Linear.Complement
 public import VerifiedGarbage.Proof.P256.Linear.Scale
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.P256.Linear.Arithmetic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Impl.NatPairs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.P256.VerifyArithmetic
 
 @[expose] public section
 

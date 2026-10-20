@@ -1,29 +1,29 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
-meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
 public import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
-import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
-meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
-import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
 import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
-meta import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
+public import VerifiedGarbage.Impl.Ed25519.X86.RecoverSign
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.X25519.X86.Lit
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
+meta import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
+meta import VerifiedGarbage.Impl.Ed25519.X86.RecoverSign
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Spec.Rc2
-meta import VerifiedGarbage.Impl.Mont.Mod
-meta import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.X25519.X86.Lit
 
 /-! Fixed-trace arithmetic blocks used in point recovery. -/
 

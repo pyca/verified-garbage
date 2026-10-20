@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Cast5.AArch64.EcbVerified
 public import VerifiedGarbage.Proof.Cast5.AArch64.KeyVerified
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! CAST5 key expansion and ECB on baseline AArch64. -/
 
@@ -28,35 +28,23 @@ def keyNote : String :=
   of bytes copied."
 
 def artifacts : List Artifact := [
-  { Spec.Cast5.expandKeyApi with
-    target := AArch64.target
-    doc := Spec.Cast5.expandKeyApi.doc (notes := [keyNote])
+  Spec.Cast5.expandKeyApi.artifact AArch64.target {
+    notes := [keyNote]
     consts := Impl.Cast5.keyConsts
     code := Impl.Cast5.AArch64.expandKey
-    contract := Spec.Cast5.expandKeyContract (AArch64.abi.withConsts Impl.Cast5.keyConsts)
     stack := 0
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Cast5.expandKeyContract; rfl⟩)
-    verified := Proof.Cast5.AArch64.expandKey_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Cast5.ecbEncryptApi with
-    target := AArch64.target
-    doc := Spec.Cast5.ecbEncryptApi.doc (notes := [scanNote])
+    verified := Proof.Cast5.AArch64.expandKey_verified },
+  Spec.Cast5.ecbEncryptApi.artifact AArch64.target {
+    notes := [scanNote]
     consts := Impl.Cast5.ecbConsts
     code := Impl.Cast5.AArch64.ecbEncrypt
-    contract := Spec.Cast5.ecbEncryptContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts)
     stack := 0
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Cast5.ecbEncryptContract Spec.Cast5.ecbContract; rfl⟩)
-    verified := Proof.Cast5.AArch64.ecbEncrypt_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Cast5.ecbDecryptApi with
-    target := AArch64.target
-    doc := Spec.Cast5.ecbDecryptApi.doc (notes := [scanNote])
+    verified := Proof.Cast5.AArch64.ecbEncrypt_verified },
+  Spec.Cast5.ecbDecryptApi.artifact AArch64.target {
+    notes := [scanNote]
     consts := Impl.Cast5.ecbConsts
     code := Impl.Cast5.AArch64.ecbDecrypt
-    contract := Spec.Cast5.ecbDecryptContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts)
     stack := 0
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Cast5.ecbDecryptContract Spec.Cast5.ecbContract; rfl⟩)
-    verified := Proof.Cast5.AArch64.ecbDecrypt_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Cast5.AArch64.ecbDecrypt_verified }]
 
 end VG.Artifacts.Cast5.AArch64

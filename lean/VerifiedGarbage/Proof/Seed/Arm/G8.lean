@@ -2,12 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Seed.Arm.G8
 public import VerifiedGarbage.Proof.Seed.G8
-public import VerifiedGarbage.Proof.Framework.Arm.Linear
 public import VerifiedGarbage.Proof.Aes.Arm.Sbox
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # `g8` on ARMv7
@@ -75,7 +71,7 @@ theorem outWordC_rel {k : Nat} {W : Nat → BitVec 32} {g : Nat → List Nat} {c
   rw [h.2 p hp, par_mk hp (Nat.le_refl _) _ (fun q hq => hg q hq), xorA_assign W (hg p hp)]
   simp [hp]
 
-theorem g8_keeps : layerKeep.all (fun r => g8.all fun i => dstOf i != some r) = true := by
+theorem g8_keeps : layerKeep.all (fun r => g8.all fun i => !clobbers i r) = true := by
   decide +kernel
 
 theorem runBlock_append (a b : List Instr) (s : State) :
@@ -89,8 +85,8 @@ theorem runBlock_append (a b : List Instr) (s : State) :
     | some s' => rw [runStep_some, runStep_some]; exact ih s'
 
 theorem dst_append (a b : List Instr) (r : Reg) :
-    ((a ++ b).all fun i => dstOf i != some r) =
-      ((a.all fun i => dstOf i != some r) && (b.all fun i => dstOf i != some r)) := List.all_append
+    ((a ++ b).all fun i => !clobbers i r) =
+      ((a.all fun i => !clobbers i r) && (b.all fun i => !clobbers i r)) := List.all_append
 
 /-- `g8`: `G` of every word. -/
 theorem g8_ok {s : State} (hok : Ok gCfg s) :

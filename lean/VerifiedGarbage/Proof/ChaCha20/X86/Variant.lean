@@ -2,14 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86.Xor
 public import VerifiedGarbage.Impl.ChaCha20.X86.Callee
+import VerifiedGarbage.Proof.ChaCha20.X86.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.ChaCha20.X86.Lit
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86.Sse
 
 /-!
 # Implementations of `vg_chacha20_xor` on x86 (32-bit)

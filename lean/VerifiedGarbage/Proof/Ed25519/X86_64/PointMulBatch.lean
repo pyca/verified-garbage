@@ -1,13 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! One checkpoint batch advances the exact scalar-multiplication invariant. -/
 

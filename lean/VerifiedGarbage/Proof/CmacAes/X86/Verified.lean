@@ -1,19 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.CmacAes.X86.UpdateCT
-meta import VerifiedGarbage.Proof.CmacAes.X86.UpdateCT
 import VerifiedGarbage.Proof.CmacAes.X86.FinalizeCT
-meta import VerifiedGarbage.Proof.CmacAes.X86.FinalizeCT
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Cmac.Contract
-meta import VerifiedGarbage.Spec.Cmac.Contract
 public import VerifiedGarbage.Proof.CmacAes.X86.Subkeys
+public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
+import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.CmacAes.X86.FinalizeCT
+meta import VerifiedGarbage.Spec.Cmac.Contract
 meta import VerifiedGarbage.Proof.CmacAes.X86.Subkeys
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
+meta import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # PBKDF2-HMAC-SHA-256 (RFC 8018) on ARMv7: the iteration and the whole derivation
@@ -27,36 +27,20 @@ runs in a frame holding its working space
 namespace VG.Artifacts.Pbkdf2Sha256.Arm
 
 def artifacts : List Artifact := [
-  { Spec.Hmac.sha256I.iterateApi with
-    target := Arm.target
-    doc := Spec.Hmac.sha256I.iterateApi.doc
+  Spec.Hmac.sha256I.iterateApi.artifact Arm.target {
     code := Proof.Pbkdf2.Md.Arm.sha256Md.iterate
-    contract := Spec.Hmac.sha256I.iterateContract Arm.abi 16
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩)
-    writeArgs := true
     stack := 16
-    verified := Proof.Pbkdf2.Md.Arm.Instances.sha256_iterate
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Hmac.sha256I.pbkdf2Api with
-    target := Arm.target
-    doc := Spec.Hmac.sha256I.pbkdf2Api.doc
+    verified := Proof.Pbkdf2.Md.Arm.Instances.sha256_iterate },
+  Spec.Hmac.sha256I.pbkdf2Api.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha256I) 3
       Proof.Pbkdf2.Whole.Arm.sha256F.pbkdf2
-    contract := Spec.Hmac.sha256I.pbkdf2Contract Arm.abi (24 + Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha256I)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩)
     stack := 24 + Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha256I
-    verified := Proof.Pbkdf2.Whole.Arm.pbkFramed Proof.Pbkdf2.Whole.Arm.sha256 (by decide)
-      Proof.Pbkdf2.Whole.Arm.sha256_pbkFrameSat
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    verified := Proof.Pbkdf2.Whole.Arm.pbkFramed Proof.Pbkdf2.Whole.Arm.sha256
+      Proof.Pbkdf2.Whole.Arm.sha256_pbkFrameSat },
   -- Scrypt's code calls `pbkdf2` with its own working space.
-  { Spec.Hmac.sha256I.pbkdf2ScratchApi with
-    target := Arm.target
-    doc := Spec.Hmac.sha256I.pbkdf2ScratchApi.doc
+  Spec.Hmac.sha256I.pbkdf2ScratchApi.artifact Arm.target {
     code := Proof.Pbkdf2.Whole.Arm.sha256F.pbkdf2
-    contract := Spec.Hmac.sha256I.pbkdf2ScratchContract Arm.abi 24
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2ScratchContract; rfl⟩)
     stack := 24
-    verified := Proof.Pbkdf2.Whole.Arm.sha256
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Pbkdf2.Whole.Arm.sha256 }]
 
 end VG.Artifacts.Pbkdf2Sha256.Arm

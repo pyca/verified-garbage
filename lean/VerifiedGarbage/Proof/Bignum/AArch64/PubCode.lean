@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
+import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+import VerifiedGarbage.Proof.Bignum.AArch64.Mont
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
 # RSAEP from the modulus on AArch64: correctness
@@ -45,7 +47,7 @@ def pubContract : Contract isa where
       (stackArg s 0).toNat + (stackArg s 1).toNat * 8 ≤ 2 ^ 64 ∧
       Spec.Rsa.lenValid (s.gpr .x3).toNat ∧ (s.gpr .x1).toNat = (s.gpr .x3).toNat ∧
       (s.gpr .x7).toNat = (s.gpr .x3).toNat ∧ 1 ≤ (s.gpr .x5).toNat ∧
-      (s.gpr .x5).toNat ≤ (s.gpr .x3).toNat ∧ Spec.Rsa.scratchWords (s.gpr .x3).toNat ≤ (stackArg s 1).toNat
+      (s.gpr .x5).toNat ≤ (s.gpr .x3).toNat ∧ Spec.Rsa.publicScratchWords (s.gpr .x3).toNat ≤ (stackArg s 1).toNat
   post s s' :=
     Spec.Rsa.written s'.mem (s.gpr .x0) (s.gpr .x3).toNat ((s'.gpr .x0).setWidth 32)
       (Spec.Rsa.publicOp (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)
@@ -69,7 +71,7 @@ structure PubCtx (s : State) : Prop where
   hk2 : (s.gpr .x3).toNat ≤ 1024
   hL1 : 1 ≤ (s.gpr .x5).toNat
   hL2 : (s.gpr .x5).toNat ≤ (s.gpr .x3).toNat
-  hZ : 128 * (s.gpr .x3).toNat ≤ (stackArg s 1).toNat * 8
+  hZ : 64 * (((s.gpr .x3).toNat + 7) / 8) + 384 ≤ (stackArg s 1).toNat * 8
   hs : Scr s (stackArg s 0) ((stackArg s 1).toNat * 8)
   ha0 : InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 8
   hnb : Src s (stackArg s 0) ((stackArg s 1).toNat * 8) (s.gpr .x2)
@@ -86,7 +88,7 @@ theorem pubCtx_of {s : State} (h : pubContract.pre s) : PubCtx s := by
   obtain ⟨hsp, hrd, hwr, dOn, dOe, dOi, dOs, dOa, dns, des, dis, dsa,
     wO, wN, wE, wI, wS, hk, hol, hil, hL1, hL2, hsl⟩ := h
   obtain ⟨hk1, hk2⟩ := hk
-  unfold Spec.Rsa.scratchWords at hsl
+  unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords at hsl
   have hs : Scr s (stackArg s 0) ((stackArg s 1).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
   have hn := hs.nowrap
   refine ⟨hk1, hk2, hL1, hL2, by omega, hs,

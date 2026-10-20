@@ -2,12 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtx
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import Mathlib.Tactic.Set
+import Mathlib.Data.Int.GCD
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
 
 /-!
 # RSASSA-PSS verification on x86-64: the precondition by name, the frame
@@ -63,7 +64,7 @@ structure VPre (s : State) : Prop where
   L1 : 1 ≤ (s.gpr .rcx).toNat
   L2 : (s.gpr .rcx).toNat ≤ (s.gpr .rsi).toNat
   hsg : (stackArg s 0).toNat = (s.gpr .rsi).toNat
-  hsl : 16 * (s.gpr .rsi).toNat + 32 + 1024 ≤ (stackArg s 4).toNat
+  hsl : 8 * (((s.gpr .rsi).toNat + 7) / 8) + 48 + 1024 ≤ (stackArg s 4).toNat
 
 theorem VPre.of {s : State} (h : (verifyK G).pre s) : VPre G s := by
   simp only [verifyK] at h
@@ -71,7 +72,7 @@ theorem VPre.of {s : State} (h : (verifyK G).pre s) : VPre G s := by
     dKa, wN, wE, wDg, wSg, wS, ⟨k1, k2⟩, L1, L2, hsg, hsl⟩ := h
   exact ⟨sp1, sp2, by rw [hrd]; exact Covers.refl _, hwr, dns, des, ddgs, dsgs, dsa, dRn, dRe, dRdg, dRsg, dRs, dRa, dKn, dKe, dKdg, dKsg, dKs,
     dKa, wN, wE, wDg, wSg, wS, k1, k2, L1, L2, hsg,
-    by unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hsl; omega⟩
+    by unfold Spec.RsaPss.publicScratchWords Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords at hsl; omega⟩
 
 /-! ## The frame -/
 

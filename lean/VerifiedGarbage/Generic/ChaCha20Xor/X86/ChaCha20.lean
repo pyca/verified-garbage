@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.ChaCha20.X86.Stream.ApplyCT
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86.Sse
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # Streaming ChaCha20 (RFC 8439) on x86: `vg_chacha20_apply`
@@ -29,13 +27,11 @@ it uses.
 namespace VG.Generic.ChaCha20Xor.X86.ChaCha20
 
 def artifacts (v : Proof.ChaCha20.X86.XorImpl) : List Artifact := [
-  { Spec.ChaCha20.applyApi with
-    name := Spec.ChaCha20.applyApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.ChaCha20.applyApi.doc (notes := ["This implementation XORs the whole blocks with `" ++
-      v.callee.name ++ "`."])
+  Spec.ChaCha20.applyApi.artifact X86.target {
+    suffix := v.suffix
+    notes := ["This implementation XORs the whole blocks with `" ++
+      v.callee.name ++ "`."]
     code := Impl.ChaCha20.X86.Stream.apply v.callee
-    contract := Spec.ChaCha20.applyContract X86.abi 32
     stack := 32
     verified := Proof.ChaCha20.X86.Stream.apply_verified v
     spSafe := Proof.ChaCha20.X86.Stream.apply_spSafe v

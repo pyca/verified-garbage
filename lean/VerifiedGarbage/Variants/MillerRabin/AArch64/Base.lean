@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.Backend
-public import VerifiedGarbage.Proof.Bignum.AArch64.Mont
+public import VerifiedGarbage.Proof.Variants.MillerRabin.AArch64.Base
 
 /-! # The baseline shared round -/
 
@@ -11,10 +10,6 @@ namespace VG.Variants.MillerRabin.AArch64.Base
 
 open VG.Proof.MillerRabin.AArch64 VG.Proof.Bignum.AArch64
 
-def variant : RoundImpl where
-  mont := Mont.base
-  noFrames := by decide +kernel
-  suffix := ""
-  features := []
+def variant : RoundImpl := Proof.Variants.MillerRabin.AArch64.Base.variant
 
 end VG.Variants.MillerRabin.AArch64.Base

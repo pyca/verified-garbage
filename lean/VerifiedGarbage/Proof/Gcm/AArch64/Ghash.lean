@@ -1,41 +1,37 @@
 module
 
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Impl.Gcm.AArch64
-meta import VerifiedGarbage.Impl.Gcm.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Gcm.Spec
-meta import VerifiedGarbage.Proof.Gcm.Spec
-public import VerifiedGarbage.Proof.Framework.PowLit
-meta import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Spec.Gcm.Powers8
 import VerifiedGarbage.Proof.Gcm.Bits
+public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Spec.Gcm.Prepared8
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Impl.Gcm.AArch64
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Gcm.Spec
+meta import VerifiedGarbage.Spec.Gcm.Powers8
 meta import VerifiedGarbage.Proof.Gcm.Bits
-import VerifiedGarbage.Spec.Gcm
-meta import VerifiedGarbage.Spec.Gcm
-import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Gcm.Contract
-meta import VerifiedGarbage.Spec.Gcm.Contract
-public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Spec.Gcm.Prepared8
+meta import VerifiedGarbage.Proof.Framework.Semantics
 meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 -- Formerly the module `VerifiedGarbage.Proof.Gcm.AArch64.Step`.
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 @[expose] public section
 
@@ -306,6 +302,62 @@ def ghashAArch64 : Contract AArch64.isa where
   pub s₁ s₂ :=
     s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
     s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.sp = s₂.sp
+
+/-- `vg_ghash_prepared(h = x0, y = x1, data = x2, n = x3, scratch = x4)`:
+`ghashAArch64`, with `h` the 144 bytes from byte 240 of a 384-byte key
+context with the eight prepared powers (`Spec.Gcm.PreparedPowers8Repr`). -/
+def ghashPreparedAArch64 : Contract AArch64.isa where
+  pre s :=
+    let h : Region := ⟨s.gpr .x0, 144⟩
+    let y : Region := ⟨s.gpr .x1, 16⟩
+    let data : Region := ⟨s.gpr .x2, 16 * (s.gpr .x3).toNat⟩
+    let scratch : Region := ⟨s.gpr .x4, 256⟩
+    s.rd = [h, data] ∧ s.wr = [y, scratch] ∧
+    h.Disjoint y ∧ h.Disjoint scratch ∧ y.Disjoint data ∧ y.Disjoint scratch ∧
+    data.Disjoint scratch ∧ Spec.Gcm.PreparedPowers8Repr s.mem (s.gpr .x0 - 240)
+  post := ghashAArch64.post
+  pub := ghashAArch64.pub
+
+section
+open Spec.Gcm
+
+open VG.AArch64 in
+/-- `vg_ghash_with_powers(h = x0, y = x1, data = x2, n = x3, scratch = x4,
+pw = x5)`: `ghashAArch64`, with the 8 prepared powers of the hash subkey at
+`pw` (`Spec.Gcm.Powers8Repr`), which the code may read (128 bytes). -/
+def ghashWithAArch64 : Contract AArch64.isa where
+  pre s :=
+    let h : Region := ⟨s.gpr .x0, 16⟩
+    let y : Region := ⟨s.gpr .x1, 16⟩
+    let data : Region := ⟨s.gpr .x2, 16 * (s.gpr .x3).toNat⟩
+    let scratch : Region := ⟨s.gpr .x4, 256⟩
+    let pw : Region := ⟨s.gpr .x5, 128⟩
+    s.rd = [h, data, pw] ∧ s.wr = [y, scratch] ∧
+    h.Disjoint y ∧ h.Disjoint scratch ∧ y.Disjoint data ∧ y.Disjoint scratch ∧
+    y.Disjoint pw ∧ data.Disjoint scratch ∧ scratch.Disjoint pw ∧
+    Powers8Repr s.mem (s.gpr .x5) (blockAt s.mem (s.gpr .x0))
+  post := ghashAArch64.post
+  pub s₁ s₂ := ghashAArch64.pub s₁ s₂ ∧ s₁.gpr .x5 = s₂.gpr .x5
+
+open VG.AArch64 in
+/-- `vg_ghash_store_powers(h = x0, y = x1, data = x2, n = x3, scratch = x4,
+pw = x5)`: `ghashAArch64`, and the 8 prepared powers of the hash subkey
+written to `pw` (`Spec.Gcm.Powers8Repr`, 128 bytes). -/
+def ghashStoreAArch64 : Contract AArch64.isa where
+  pre s :=
+    let h : Region := ⟨s.gpr .x0, 16⟩
+    let y : Region := ⟨s.gpr .x1, 16⟩
+    let data : Region := ⟨s.gpr .x2, 16 * (s.gpr .x3).toNat⟩
+    let scratch : Region := ⟨s.gpr .x4, 256⟩
+    let pw : Region := ⟨s.gpr .x5, 128⟩
+    s.rd = [h, data] ∧ s.wr = [y, scratch, pw] ∧
+    h.Disjoint y ∧ h.Disjoint scratch ∧ h.Disjoint pw ∧ y.Disjoint data ∧ y.Disjoint scratch ∧
+    y.Disjoint pw ∧ data.Disjoint scratch ∧ data.Disjoint pw ∧ scratch.Disjoint pw
+  post s s' := ghashAArch64.post s s' ∧
+    Powers8Repr s'.mem (s.gpr .x5) (blockAt s.mem (s.gpr .x0))
+  pub s₁ s₂ := ghashAArch64.pub s₁ s₂ ∧ s₁.gpr .x5 = s₂.gpr .x5
+
+end
 
 end VG.Proof.Gcm
 

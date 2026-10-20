@@ -1,21 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTQ
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTQ
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTQ
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
 meta import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSA with AVX512_IFMA on x86-64: constant time, before the vector code

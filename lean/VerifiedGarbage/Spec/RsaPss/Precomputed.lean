@@ -39,7 +39,7 @@ def verifyPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contrac
   (verifyPrecomputedSig H).contract A
     (pre := fun _n nLen _e eLen _digest _sig sigLen _saltLen _anySaltLen _scratch scratchLen _pre preLen _ =>
       lenValid nLen.toNat ∧ 1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
-        sigLen.toNat = nLen.toNat ∧ scratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        sigLen.toNat = nLen.toNat ∧ publicScratchWords nLen.toNat ≤ scratchLen.toNat ∧
         preLen.toNat = Rsa.precomputedWords nLen.toNat)
     (post := fun n nLen e eLen digest sig _sigLen saltLen anySaltLen _scratch _scratchLen pre preLen m _m'
         r =>
@@ -59,14 +59,14 @@ def verifyPrecomputedApi : Api where
   sig := verifyPrecomputedSig H
   writeArgs := true
   contracts := some fun A stack => verifyPrecomputedContract H G A stack
-  summary := (verifyApi H G).summary ++ "\n\n\
+  summary := verifySummary H G ++ "\n\n\
     This entry point also takes `pre`, the `pre_len` words written by \
     `vg_rsa_public_precompute` for `n` (returning 1). With those values, it \
     returns exactly the result specified above. If `pre` does not hold those \
     values, the result is unspecified; memory safety and the timing guarantee \
     still apply. Timing may additionally depend on the contents of `pre`.\n\n\
     Contract: `VG.Spec.RsaPss.verifyPrecomputedContract`."
-  safety := (verifyApi H G).safety ++
+  safety := verifySafety ++
     ["`pre_len` must be `2 * ⌈n_len / 8⌉`.",
       "For the result to be signature verification's, `pre` must hold what \
         `vg_rsa_public_precompute` wrote for `n` (returning 1)."]

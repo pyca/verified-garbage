@@ -5,12 +5,17 @@ public import VerifiedGarbage.Proof.X448.X86.Inv
 import VerifiedGarbage.Proof.X448.X86.Freeze
 import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.X448.X86.FnLit
 import VerifiedGarbage.Proof.X448.X86.Output
+import VerifiedGarbage.Proof.X448.X86.Restore
+import VerifiedGarbage.Proof.X448.X86.Frame
+import VerifiedGarbage.Proof.X448.X86.ByteMem
+import VerifiedGarbage.Proof.X448.X86.Iter
+import VerifiedGarbage.Proof.X448.X86.Copy
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit): the encoding

@@ -1,13 +1,23 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86.OneEntry
+public import VerifiedGarbage.Proof.AesGcm.X86.Tag
 
-public import VerifiedGarbage.Proof.AesGcm.X86.OneAad
+import VerifiedGarbage.Proof.AesGcm.X86.OneAad
+meta import VerifiedGarbage.Proof.AesGcm.X86.OneEntry
+meta import VerifiedGarbage.Proof.AesGcm.X86.Tag
 meta import VerifiedGarbage.Proof.AesGcm.X86.OneAad
-public import VerifiedGarbage.Proof.AesGcm.X86.Cmp
-meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+meta import VerifiedGarbage.Impl.AesGcm.X86
+meta import VerifiedGarbage.Proof.AesGcm.X86.Crypt
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86.Call
+meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+meta import VerifiedGarbage.TCB.X86.State
+import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
+public import VerifiedGarbage.Proof.AesGcm.X86.Crypt
+meta import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
 
 /-!
 # AES-GCM on x86: the data and the tag of `seal` and `open`

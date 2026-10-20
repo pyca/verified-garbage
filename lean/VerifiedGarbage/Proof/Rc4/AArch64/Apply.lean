@@ -1,12 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.AArch64.ApplyFinish
+import VerifiedGarbage.Proof.Rc4.AArch64.ApplyFinish
 public import VerifiedGarbage.TCB.AArch64.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Rc4.AArch64
+public import VerifiedGarbage.Proof.Rc4.Iterate
+import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
+import VerifiedGarbage.Proof.Rc4.AArch64.Group
+import VerifiedGarbage.Proof.Rc4.Memory
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # The PRGA

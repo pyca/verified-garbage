@@ -1,6 +1,7 @@
-//! The working space of the RSA functions: one exclusively owned, wiped
-//! verification buffer retained per public key, and the cache-line-aligned
-//! working space of each private-key operation.
+//! The working space of the RSA and FFDH functions: one exclusively owned
+//! verification buffer retained per public key, wiped after each use that
+//! put secrets in it, and the cache-line-aligned working space of each
+//! private-key operation, wiped on drop.
 
 use crate::zeroize::zeroize;
 use alloc::{boxed::Box, vec, vec::Vec};
@@ -8,8 +9,10 @@ use core::{
     fmt,
     ops::{Deref, DerefMut},
     ptr, slice,
-    sync::atomic::{AtomicPtr, Ordering},
+    sync::atomic::AtomicPtr,
 };
+
+use core::sync::atomic::Ordering;
 
 /// A cache line of a [`Scratch`].
 #[derive(Clone, Copy)]
@@ -17,7 +20,8 @@ use core::{
 struct Line([u64; 8]);
 
 /// Zeroed working space of a private-key operation, starting at a 64-byte
-/// boundary. The AVX512_IFMA functions (`vg_rsa_private_crt_ifma` and its
+/// boundary and wiped when it is dropped (the functions given it leave
+/// secrets in it). The AVX512_IFMA functions (`vg_rsa_private_crt_ifma` and its
 /// callers) read their numbers as 32-byte vectors at offsets from the start
 /// of the working space that are multiples of 32: a `Vec<u64>`, aligned to
 /// 8 bytes only, splits half of them across cache lines, which made 3072-
@@ -53,6 +57,12 @@ impl DerefMut for Scratch {
     }
 }
 
+impl Drop for Scratch {
+    fn drop(&mut self) {
+        zeroize(self);
+    }
+}
+
 pub(crate) struct VerifyScratch(AtomicPtr<Vec<u64>>);
 
 impl VerifyScratch {
@@ -60,7 +70,12 @@ impl VerifyScratch {
         Self(AtomicPtr::new(ptr::null_mut()))
     }
 
-    pub(crate) fn take(&self, words: usize) -> ScratchLease<'_> {
+    /// The buffer, of at least `words` words, which is wiped on release if
+    /// `wipe`: a caller that puts secrets in it (OAEP encryption, whose input
+    /// is the message) wipes it; signature verification, whose every value
+    /// (the modulus, the signature, the encoded message it recovers and the
+    /// intermediates of a public exponentiation of it) is public, need not.
+    pub(crate) fn take(&self, words: usize, wipe: bool) -> ScratchLease<'_> {
         let pointer = self.0.swap(ptr::null_mut(), Ordering::Acquire);
         let mut buffer = if pointer.is_null() {
             Box::new(vec![0; words])
@@ -73,6 +88,7 @@ impl VerifyScratch {
         ScratchLease {
             pool: self,
             buffer: Some(buffer),
+            wipe,
         }
     }
 }
@@ -113,6 +129,7 @@ pub(crate) struct ScratchLease<'a> {
     // The atomic cache transfers the Vec descriptor through one stable pointer.
     #[allow(clippy::box_collection)]
     buffer: Option<Box<Vec<u64>>>,
+    wipe: bool,
 }
 impl Deref for ScratchLease<'_> {
     type Target = [u64];
@@ -129,8 +146,10 @@ impl Drop for ScratchLease<'_> {
     fn drop(&mut self) {
         let mut buffer = self.buffer.take().unwrap();
         // Wipe before publishing the buffer or freeing a concurrent caller's
-        // surplus buffer, including when unwinding out of verification.
-        zeroize(&mut buffer);
+        // surplus buffer, including when unwinding, if it held secrets.
+        if self.wipe {
+            zeroize(&mut buffer);
+        }
         let pointer = Box::into_raw(buffer);
         if self
             .pool
@@ -173,24 +192,38 @@ mod tests {
     fn wiped_reuse_and_resize() {
         let pool = VerifyScratch::new();
         let pointer = {
-            let mut lease = pool.take(32);
+            let mut lease = pool.take(32, true);
             lease.fill(u64::MAX);
             lease.as_ptr()
         };
-        let lease = pool.take(32);
+        let lease = pool.take(32, true);
         assert_eq!(lease.as_ptr(), pointer);
         assert!(lease.iter().all(|&x| x == 0));
         drop(lease);
-        let lease = pool.take(64);
+        let lease = pool.take(64, true);
         assert_eq!(lease.len(), 64);
         assert!(lease.iter().all(|&x| x == 0));
     }
 
     #[test]
+    fn public_leases_are_reused_unwiped() {
+        let pool = VerifyScratch::new();
+        {
+            let mut lease = pool.take(32, false);
+            lease.fill(5);
+        }
+        let mut lease = pool.take(32, true);
+        assert!(lease.iter().all(|&x| x == 5));
+        lease.fill(9);
+        drop(lease);
+        assert!(pool.take(32, false).iter().all(|&x| x == 0));
+    }
+
+    #[test]
     fn overlapping_leases_are_independent() {
         let pool = VerifyScratch::new();
-        let mut a = pool.take(32);
-        let mut b = pool.take(32);
+        let mut a = pool.take(32, true);
+        let mut b = pool.take(32, true);
         assert_ne!(a.as_ptr(), b.as_ptr());
         a.fill(7);
         b.fill(11);
@@ -198,7 +231,7 @@ mod tests {
         drop(a);
         assert!(b.iter().all(|&x| x == 11));
         drop(b);
-        assert!(pool.take(32).iter().all(|&x| x == 0));
+        assert!(pool.take(32, true).iter().all(|&x| x == 0));
     }
     #[test]
     fn concurrent_leases_are_wiped() {
@@ -208,7 +241,7 @@ mod tests {
                 let pool = &pool;
                 scope.spawn(move || {
                     for _ in 0..100 {
-                        let mut lease = pool.take(32);
+                        let mut lease = pool.take(32, true);
                         assert!(lease.iter().all(|&x| x == 0));
                         lease.fill(id);
                         std::thread::yield_now();
@@ -217,13 +250,13 @@ mod tests {
                 });
             }
         });
-        assert!(pool.take(32).iter().all(|&x| x == 0));
+        assert!(pool.take(32, true).iter().all(|&x| x == 0));
     }
 
     #[test]
     fn cached_storage_does_not_affect_key_traits() {
         let pool = VerifyScratch::new();
-        drop(pool.take(32));
+        drop(pool.take(32, true));
         let cloned = pool.clone();
         assert!(cloned.0.load(Ordering::Relaxed).is_null());
         assert_eq!(pool, cloned);
@@ -234,11 +267,11 @@ mod tests {
     fn unwinding_wipes_before_reuse() {
         let pool = VerifyScratch::new();
         let result = std::panic::catch_unwind(|| {
-            let mut lease = pool.take(32);
+            let mut lease = pool.take(32, true);
             lease.fill(u64::MAX);
             panic!("exercise lease cleanup");
         });
         assert!(result.is_err());
-        assert!(pool.take(32).iter().all(|&x| x == 0));
+        assert!(pool.take(32, true).iter().all(|&x| x == 0));
     }
 }

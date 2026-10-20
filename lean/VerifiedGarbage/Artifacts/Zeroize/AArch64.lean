@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Zeroize.AArch64Wide
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 
@@ -9,11 +13,7 @@ namespace VG.Artifacts.Zeroize.AArch64
 open VG.AArch64
 
 def artifacts : List Artifact := [
-  { Spec.Zeroize.zeroizeApi with
-    target := target
-    doc := Spec.Zeroize.zeroizeApi.doc
+  Spec.Zeroize.zeroizeApi.artifact target {
     code := Impl.Zeroize.AArch64.zeroizeWide
-    contract := Spec.Zeroize.zeroizeContract abi
-    verified := Proof.Zeroize.AArch64.wideVerified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Zeroize.AArch64.wideVerified }]
 end VG.Artifacts.Zeroize.AArch64

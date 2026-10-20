@@ -4,13 +4,13 @@ public import VerifiedGarbage.Impl.Ct.AArch64
 meta import VerifiedGarbage.Impl.Ct.AArch64
 public import VerifiedGarbage.Proof.Ct.Common
 meta import VerifiedGarbage.Proof.Ct.Common
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -20,14 +20,18 @@ public import VerifiedGarbage.Spec.Ct.Contract
 meta import VerifiedGarbage.Spec.Ct.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
 meta import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.Semantics
+meta import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.AArch64.Isa
+meta import VerifiedGarbage.TCB.AArch64.Isa
 
 @[expose] public section
 
@@ -39,18 +43,14 @@ def Keep (s t : State) : Prop :=
 
 theorem keep {c : Prog isa} {s : State} {Q : State → Prop}
     (h : WP isa c s Q)
-    (hc : c.allInstrs (fun i => match dstOf i with
-      | none => true | some r => [.x4, .x5, .x6, .x7, .x8, .x9].contains r) = true)
+    (hc : c.allInstrs (fun i => (dsts i).all [.x4, .x5, .x6, .x7, .x8, .x9].contains) = true)
     (hn : c.noCalls = true := by decide +kernel) :
     WP isa c s fun t => Q t ∧ Keep s t := by
   obtain ⟨tr, t, he, hq⟩ := h
   refine ⟨tr, t, he, hq, fun r hr => Exec.gpr (fun i hi => ?_) he (.inl hn),
     (Exec.rdwr he).1, (Exec.rdwr he).2.1⟩
   rw [Code.allInstrs_eq, List.all_eq_true] at hc
-  have hh := hc i hi
-  intro hd
-  rw [hd] at hh
-  exact hr (List.contains_iff_mem.mp hh)
+  exact clobbers_eq_false_of_all (hc i hi) (by simpa using hr)
 
 theorem Keep.trans {a b c : State} (h : Keep a b) (k : Keep b c) : Keep a c :=
   ⟨fun r hr => (k.1 r hr).trans (h.1 r hr), k.2.1.trans h.2.1, k.2.2.trans h.2.2⟩

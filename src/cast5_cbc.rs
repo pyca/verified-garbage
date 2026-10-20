@@ -3,16 +3,16 @@
 //!
 //! The block cipher work and the chaining are verified assembly:
 //! `vg_cast5_expand_key` (contract `VG.Spec.Cast5.expandKeyContract`) writes
-//! the subkeys, and `vg_cast5_cbc_encrypt` and `vg_cast5_cbc_decrypt`
-//! (`VG.Spec.Cast5.cbcEncryptContract`, `cbcDecryptContract`) replace each
-//! block with its CBC encryption or decryption from the chaining value at
-//! `iv`, in constant time: their timing depends on none of the key, the
-//! chaining value and the data. Both are the modes' generic CBC over CAST5's
-//! table-scanning block code, one block at a time: on x86 and x86-64 over the block code
-//! itself, on ARMv7 calling the verified `vg_cast5_ecb_encrypt` or
-//! `vg_cast5_ecb_decrypt` for each block. This module checks the
-//! lengths, holds the subkeys and keeps the chaining value to continue from:
-//! the last ciphertext block.
+//! the subkeys, and `vg_cast5_cbc_encrypt_chained` and
+//! `vg_cast5_cbc_decrypt_chained` (`VG.Spec.Cast5.cbcEncryptChainedContract`,
+//! `cbcDecryptChainedContract`) replace each block with its CBC encryption or
+//! decryption from the chaining value at `iv`, and the chaining value with the
+//! one to continue from, the last ciphertext block, in constant time: their
+//! timing depends on none of the key, the chaining value and the data. Both are
+//! the modes' generic CBC over CAST5's table-scanning block code, one block at
+//! a time: on x86, x86-64 and AArch64 over the block code itself, on ARMv7
+//! calling the verified `vg_cast5_ecb_encrypt` or `vg_cast5_ecb_decrypt` for
+//! each block. This module checks the lengths and holds the subkeys.
 
 #![cfg(any(
     target_arch = "x86",
@@ -21,7 +21,7 @@
     target_arch = "arm"
 ))]
 
-use crate::arch::cast5_cbc::{vg_cast5_cbc_decrypt, vg_cast5_cbc_encrypt};
+use crate::arch::cast5_cbc::{vg_cast5_cbc_decrypt_chained, vg_cast5_cbc_encrypt_chained};
 use crate::cast5_ecb::Cast5Ecb;
 pub use crate::cast5_ecb::Error;
 
@@ -53,21 +53,18 @@ impl Cast5Cbc {
         }
         // SAFETY: `rounds` is 12 or 16, as `Cast5Ecb::new` chose for the key
         // the schedule was expanded from; the buffer holds `len / 8` whole
-        // blocks, and it, the chaining value and the schedule are separate
-        // valid objects of the sizes of the signature, none of them on the
-        // callee's stack. The function zeroes its working space on its own
-        // stack before returning.
+        // blocks, and it, the chaining value (which the function reads and
+        // replaces) and the schedule are separate valid objects of the sizes of
+        // the signature, none of them on the callee's stack. The function
+        // zeroes its working space on its own stack before returning.
         unsafe {
-            vg_cast5_cbc_encrypt(
+            vg_cast5_cbc_encrypt_chained(
                 self.key.schedule(),
                 self.key.rounds(),
                 iv,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 8,
             );
-        }
-        if let Some(last) = buffer.rchunks_exact(8).next() {
-            iv.copy_from_slice(last);
         }
         Ok(())
     }
@@ -81,13 +78,9 @@ impl Cast5Cbc {
         if !buffer.len().is_multiple_of(8) {
             return Err(Error::IncompleteBlock);
         }
-        let mut next = *iv;
-        if let Some(last) = buffer.rchunks_exact(8).next() {
-            next.copy_from_slice(last);
-        }
         // SAFETY: as in `encrypt`.
         unsafe {
-            vg_cast5_cbc_decrypt(
+            vg_cast5_cbc_decrypt_chained(
                 self.key.schedule(),
                 self.key.rounds(),
                 iv,
@@ -95,7 +88,6 @@ impl Cast5Cbc {
                 buffer.len() / 8,
             );
         }
-        *iv = next;
         Ok(())
     }
 }

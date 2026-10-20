@@ -1,11 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlKem.Arm.Decaps
+public import VerifiedGarbage.Impl.MlKem1024.Arm.Top
+public import VerifiedGarbage.Spec.MlKem.Contract1024
 
-public import VerifiedGarbage.Proof.MlKem.Arm.DecapsCT
-public import VerifiedGarbage.Proof.MlKem1024.Arm.Calls
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.Arm.DecapsCT
+import VerifiedGarbage.Proof.MlKem1024.Arm.Calls
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM-1024 on 32-bit ARM: `vg_mlkem1024_decaps`, `Verified`

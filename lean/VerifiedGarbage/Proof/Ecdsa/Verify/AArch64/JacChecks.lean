@@ -1,63 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStepTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStepTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombTiming
-public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
-meta import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombTiming
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinish
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinish
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPoints
-public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombSum
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStep
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableInit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindow
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
-public import VerifiedGarbage.Proof.Weierstrass.BytesLen
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPoints
-meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombSum
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStep
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableInit
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindow
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
-meta import VerifiedGarbage.Proof.Weierstrass.BytesLen
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 @[expose] public section
 
@@ -99,7 +53,7 @@ tactic_template "jac_reg_ct" rs:term : tactic => `(tactic|
 
 theorem jacTree_copy_preserves : ∀ r∈[Reg.x19,Reg.x20],
     ∀ i∈instrs (.block (VG.Impl.Weierstrass.AArch64.copyPt (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256).M.n
-      (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256).R (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256).D) : Prog isa),dstOf i≠some r := by
+      (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256).R (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256).D) : Prog isa),clobbers i r = false := by
   decide
 
 theorem jacWindow_infinity_ct : FieldCT (.block (Jacobian.infinity

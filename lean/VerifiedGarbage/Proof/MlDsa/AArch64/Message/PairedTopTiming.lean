@@ -1,18 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedCallTiming
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedBodyTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedBodyTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedRoots
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCorrect
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 @[expose] public section
 

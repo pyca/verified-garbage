@@ -1,15 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Impl.Blowfish.X86.Modes
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Impl.Blowfish.X86.Modes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # Blowfish's modes on x86 (32-bit): the code as literals
@@ -23,8 +24,8 @@ than build the code again.
 
 namespace VG.Proof.Blowfish.X86
 
-materialize_flat_code cbcEncryptCode := Impl.Blowfish.X86.cbcEncrypt
-materialize_flat_code cbcDecryptCode := Impl.Blowfish.X86.cbcDecrypt
+materialize_flat_code cbcEncryptChainedCode := Impl.Blowfish.X86.cbcEncryptChained
+materialize_flat_code cbcDecryptChainedCode := Impl.Blowfish.X86.cbcDecryptChained
 materialize_flat_code ofbCode := Impl.Blowfish.X86.ofb
 materialize_flat_code cfbEncryptCode := Impl.Blowfish.X86.cfbEncrypt
 materialize_flat_code cfbDecryptCode := Impl.Blowfish.X86.cfbDecrypt

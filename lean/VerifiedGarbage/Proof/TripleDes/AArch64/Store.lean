@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.BlockIO
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.TripleDes.AArch64.Initial
 import VerifiedGarbage.Proof.TripleDes.AArch64.Word
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.AArch64.RoundLit
+import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 @[expose] public section
 
@@ -49,7 +49,7 @@ theorem storeTail_ok (s : State) :
   · intro r hr; simp only [gpr_write, hr, ite_false]
 
 theorem final_preserves : loadKept.all (fun r =>
-    (instrs finalPermutation.lit).all (fun op => dstOf op != some r)) = true := by
+    (instrs finalPermutation.lit).all (fun op => !clobbers op r)) = true := by
   decide +kernel
 
 theorem blockStore_ok (s : State) (l r : BitVec 32)

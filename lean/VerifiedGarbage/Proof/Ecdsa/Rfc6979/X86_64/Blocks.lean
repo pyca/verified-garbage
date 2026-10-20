@@ -1,14 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hash
 
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hmac
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Mont.X86_64.Row
+import VerifiedGarbage.Proof.Weierstrass.Words
 
 /-!
 # Deterministic ECDSA on x86-64: the blocks between the calls
@@ -294,7 +288,7 @@ theorem wipe_ok (hL : L.Ok) (hLe : L.e = P.e) {t : State} (hc : Ctx L g m₀ t) 
           by rw [hg'', hg, ha]⟩
     rw [← hm]
     exact (hf.sub fun r hr => ⟨r, by simp_all, sub_refl _⟩).trans (hf''.sub fun r hr => ⟨r, by simp_all, sub_refl _⟩)
-  · cases hw : P.R.wide <;> simp only [Cfg.wipe, Cfg.extra, cfgOf, hw, Bool.false_eq_true, ite_true, ite_false] <;>
-      rfl
+  · cases hw : P.R.wide <;> cases hh : P.R.hHigh <;>
+      simp only [Cfg.wipe, Cfg.extra, cfgOf, hw, hh, Bool.false_eq_true, ite_true, ite_false] <;> rfl
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

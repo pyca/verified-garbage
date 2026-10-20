@@ -130,8 +130,37 @@ def copyLoop : Prog isa :=
   .loop (.block [.ldrb .x14 .x12 0, .strb .x14 .x11 0, .addImm .x .x12 .x12 1,
     .addImm .x .x11 .x11 1, .subImm .x .x13 .x13 1]) (.nonzero .x .x13)
 
-/-- Copies the `x13` bytes at `x12` to `x11`. -/
-def copy : Prog isa := .ite (.zero .x .x13) (.block []) copyLoop
+/-- Eight bytes copied from `x12` to `x11`, both advanced, `x13` counted
+down, and `x14 = x13 / 8` for the loop's test. -/
+def copy8 : List Instr :=
+  [.ldr .x .x14 .x12 0, .str .x .x14 .x11 0, .addImm .x .x12 .x12 8, .addImm .x .x11 .x11 8,
+    .subImm .x .x13 .x13 8, .lsr .x .x14 .x13 3]
+
+/-- Four bytes copied, with fewer than eight left. -/
+def copy4 : List Instr :=
+  [.ldr .w .x14 .x12 0, .str .w .x14 .x11 0, .addImm .x .x12 .x12 4, .addImm .x .x11 .x11 4,
+    .subImm .x .x13 .x13 4]
+
+/-- Copies the `x13` bytes at `x12` to `x11`: eight at a time, then four if
+at least four are left, then the last ones (fewer than four) one at a time. -/
+def copyW : Prog isa :=
+  .seq (.block [.lsr .x .x14 .x13 3])
+  (.seq (.ite (.zero .x .x14) (.block []) (.loop (.block copy8) (.nonzero .x .x14)))
+  (.seq (.block [.lsr .x .x14 .x13 2])
+  (.seq (.ite (.zero .x .x14) (.block []) (.block copy4))
+    (.ite (.zero .x .x13) (.block []) copyLoop))))
+
+/-- Copies the `x13` bytes at `x12` to `x11`: none, fewer than four one at a
+time, or `copyW` (so that the short pieces streaming leaves cost no more
+than one test each). -/
+def copy : Prog isa :=
+  .ite (.zero .x .x13) (.block [])
+    (.seq (.block [.lsr .x .x14 .x13 2]) (.ite (.zero .x .x14) copyLoop copyW))
+
+/-- Copies the `x13` bytes at `x12` to `x11` one at a time: for the buffer
+filled before the whole blocks (`absSeg1`), which a stream of short pieces
+fills a few bytes at a time, so that each costs only `copy`'s first test. -/
+def copyB : Prog isa := .ite (.zero .x .x13) (.block []) copyLoop
 
 /-- XORs the `x13` (at least 1) bytes at `x11` into those at `x12`. -/
 def xorLoop : Prog isa :=
@@ -139,8 +168,35 @@ def xorLoop : Prog isa :=
     .strb .x14 .x12 0, .addImm .x .x12 .x12 1, .addImm .x .x11 .x11 1,
     .subImm .x .x13 .x13 1]) (.nonzero .x .x13)
 
-/-- XORs the `x13` bytes at `x11` into those at `x12`. -/
-def xor : Prog isa := .ite (.zero .x .x13) (.block []) xorLoop
+/-- Eight bytes at `x11` XORed into those at `x12`, both advanced, `x13`
+counted down, and `x14 = x13 / 8` for the loop's test. -/
+def xor8 : List Instr :=
+  [.ldr .x .x14 .x12 0, .ldr .x .x15 .x11 0, .logic .eor .x .x14 .x14 .x15, .str .x .x14 .x12 0,
+    .addImm .x .x12 .x12 8, .addImm .x .x11 .x11 8, .subImm .x .x13 .x13 8, .lsr .x .x14 .x13 3]
+
+/-- Four bytes XORed, with fewer than eight left. -/
+def xor4 : List Instr :=
+  [.ldr .w .x14 .x12 0, .ldr .w .x15 .x11 0, .logic .eor .w .x14 .x14 .x15, .str .w .x14 .x12 0,
+    .addImm .x .x12 .x12 4, .addImm .x .x11 .x11 4, .subImm .x .x13 .x13 4]
+
+/-- XORs the `x13` bytes at `x11` into those at `x12`: eight at a time, then
+four if at least four are left, then the last ones one at a time. -/
+def xorW : Prog isa :=
+  .seq (.block [.lsr .x .x14 .x13 3])
+  (.seq (.ite (.zero .x .x14) (.block []) (.loop (.block xor8) (.nonzero .x .x14)))
+  (.seq (.block [.lsr .x .x14 .x13 2])
+  (.seq (.ite (.zero .x .x14) (.block []) (.block xor4))
+    (.ite (.zero .x .x13) (.block []) xorLoop))))
+
+/-- XORs the `x13` bytes at `x11` into those at `x12`: none, fewer than four
+one at a time, or `xorW`. -/
+def xor : Prog isa :=
+  .ite (.zero .x .x13) (.block [])
+    (.seq (.block [.lsr .x .x14 .x13 2]) (.ite (.zero .x .x14) xorLoop xorW))
+
+/-- XORs the `x13` bytes at `x11` into those at `x12` one at a time: for the
+rest of a keystream block (`crSeg1`), as `copyB` is for `absSeg1`. -/
+def xorB : Prog isa := .ite (.zero .x .x13) (.block []) xorLoop
 
 /-- `x10 := min (16 - x25, x24)`, for `x25 < 16`. -/
 def minK : Prog isa :=
@@ -164,7 +220,7 @@ arguments for absorbing it if it is full (`x3` blocks, one or none). -/
 def absSeg1 (yo : Nat) : Prog isa :=
   .seq minK
   (.seq (.block [.add .x .x11 .x20 .x25, ptr .x11 .x11 32, mov .x12 .x23, mov .x13 .x10])
-  (.seq copy
+  (.seq copyB
   (.seq (.block [.add .x .x23 .x23 .x10, .sub .x .x24 .x24 .x10, .add .x .x9 .x25 .x10,
       .subImm .x .x9 .x9 16])
   (.seq (.ite (.zero .x .x9) (.block [imm .x3 1]) (.block [imm .x3 0]))
@@ -222,7 +278,7 @@ def crArgs : List Instr :=
 def crSeg1 : Prog isa :=
   .seq (.ite (.zero .x .x25) (.block [imm .x10 0]) minK)
   (.seq (.block [.add .x .x11 .x20 .x25, ptr .x11 .x11 64, mov .x12 .x23, mov .x13 .x10])
-  (.seq xor
+  (.seq xorB
     (.block (([.add .x .x23 .x23 .x10, .sub .x .x24 .x24 .x10, .lsr .x .x4 .x24 4, mov .x3 .x23] : List Instr) ++
       ctrArgs ++ ([.lsl .x .x9 .x4 4, .add .x .x23 .x23 .x9, .sub .x .x24 .x24 .x9] : List Instr)))))
 
@@ -294,31 +350,43 @@ their difference). -/
 def cmpSeg : Prog isa :=
   .seq (.block [imm .x9 0, .str .x .x9 .x19 vO, .str .x .x9 .x19 (vO + 8), .str .x .x9 .x19 rO,
       .str .x .x9 .x19 (rO + 8), ptr .x11 .x19 rO, mov .x12 .x19, mov .x13 .x28])
-  (.seq copy
+  (.seq copyB
   (.seq (.block [ptr .x11 .x19 vO, ptr .x12 .x19 uO, mov .x13 .x28])
-  (.seq copy
+  (.seq copyB
     (.block [.ldr .x .x9 .x19 vO, .ldr .x .x10 .x19 rO, .logic .eor .x .x9 .x9 .x10,
       .ldr .x .x10 .x19 (vO + 8), .ldr .x .x11 .x19 (rO + 8), .logic .eor .x .x10 .x10 .x11,
       .logic .orr .x .x9 .x9 .x10, imm .x11 0, .subImm .x .x12 .x11 1, .adds .x .x9 .x9 .x12,
       .adcs .x .x10 .x11 .x11]))))
 
-/-- The received tag (the `x28` bytes at `x12`) copied to `W`. -/
-def tagIn : Prog isa := .seq (.block [mov .x11 .x19, mov .x13 .x28]) copy
+/-- `x10` as `cmpSeg` leaves it, for 16-byte tags: the tags compared where
+they are, without copying them. -/
+def cmp16 : List Instr :=
+  [.ldr .x .x9 .x19 uO, .ldr .x .x10 .x19 0, .logic .eor .x .x9 .x9 .x10,
+    .ldr .x .x10 .x19 (uO + 8), .ldr .x .x11 .x19 8, .logic .eor .x .x10 .x10 .x11,
+    .logic .orr .x .x9 .x9 .x10, imm .x11 0, .subImm .x .x12 .x11 1, .adds .x .x9 .x9 .x12,
+    .adcs .x .x10 .x11 .x11]
+
+/-- The tags compared: `cmp16` if they are 16 bytes, else `cmpSeg`. -/
+def cmp : Prog isa :=
+  .seq (.block [.lsr .x .x9 .x28 4]) (.ite (.zero .x .x9) cmpSeg (.block cmp16))
+
+/-- The received tag (the `x28` bytes at `x12`) copied to `W`: with one
+16-byte load and store if it is 16 bytes (`x28 / 16` is then 1, at most 16
+being allowed), else one byte at a time. -/
+def tagIn : Prog isa :=
+  .seq (.block [.lsr .x .x13 .x28 4])
+    (.ite (.zero .x .x13) (.seq (.block [mov .x11 .x19, mov .x13 .x28]) copyB)
+      (.block [.ldrq .v0 .x12 0, .strq .v0 .x19 0]))
 
 /-- The tag at `W` copied to the 16 bytes at `x28`. -/
 def tagOut : List Instr :=
   [.ldr .x .x9 .x19 0, .str .x .x9 .x28 0, .ldr .x .x9 .x19 8, .str .x .x9 .x28 8]
 
-/-- `x9 := 1` if `x28` is `k`. -/
-def tlTest (k : Nat) : Prog isa :=
-  .seq (.block [.subImm .x .x10 .x28 k]) (.ite (.zero .x .x10) (.block [imm .x9 1]) (.block []))
-
-/-- `x9` is 1 if the tag length `x28` is one §5.2.1.2 allows (4, 8 or 12 to
-16), and 0 if not. -/
+/-- `x9` is 1 iff the tag length `x28` is between 4 and 16 bytes.
+The unsigned comparison rejects the wraparound when `x28 < 4`. -/
 def tagLenOk : Prog isa :=
-  .seq (.block [imm .x9 0])
-    (.seq (tlTest 4) (.seq (tlTest 8) (.seq (tlTest 12) (.seq (tlTest 13) (.seq (tlTest 14)
-      (.seq (tlTest 15) (tlTest 16)))))))
+  .block [.subImm .x .x10 .x28 4, imm .x9 13, .subs .x .x10 .x10 .x9,
+    imm .x9 0, imm .x10 1, .csel .x .x9 .x9 .x10]
 
 /-! ## The functions -/
 
@@ -332,12 +400,15 @@ def initSeg2 : List Instr :=
     .str .x .x9 .x19 (tO + 8), mov .x0 .x21, mov .x1 .x22, ptr .x2 .x19 tO, ptr .x3 .x21 240,
     imm .x4 1, ptr .x5 .x19 scrO]
 
-def init : Prog isa :=
+/-- Key setup up to the hash subkey, then `fin` (which restores the registers). -/
+def initWith (fin : Prog isa) : Prog isa :=
   .seq (.block initSeg1)
   (.seq (.call c.key.name c.key.code)
   (.seq (.block initSeg2)
   (.seq (ctrCall c)
-    (.block restore))))
+    fin)))
+
+def init : Prog isa := initWith c (.block restore)
 
 /-- `vg_aes_gcm_stream_init(ctx = x0, nonce = x1, nonce_len = x2, state = x3, scratch = x4)`. -/
 def siEntry : List Instr :=
@@ -419,7 +490,7 @@ def streamVerify : Prog isa :=
   .seq (.block (finEntry .x7 ++ [mov .x28 .x6, mov .x12 .x5]))
   (.seq tagLenOk
   (.seq (.ite (.zero .x .x9) (.block [imm .x0 0])
-      (.seq tagIn (.seq (finBody c uO) (.seq cmpSeg (.block verRet)))))
+      (.seq tagIn (.seq (finBody c uO) (.seq cmp (.block verRet)))))
     (.block restore)))
 
 /-- The entry of `seal` and `open`: `(ctx = x0, rounds = x1, nonce = x2,
@@ -446,10 +517,9 @@ def finPrep : List Instr := [.ldr .x .x26 .x19 alenO, .ldr .x .x27 .x19 lenO]
 /-- The stack argument at `[sp + k]` kept at `W + 248` and in `x28`. -/
 def stashArg (k : Nat) : List Instr := [.ldrSp .x10 k, .str .x .x10 .x19 tlO, mov .x28 .x10]
 
-/-- `vg_aes_gcm_seal`, with `tag = [sp]` (kept at `W + 248`) and `work = [sp + 8]`. -/
-def «seal» : Prog isa :=
-  .seq (.block (oneEntry 8 ++ stashArg 0))
-  (.seq (j0 c)
+/-- `vg_aes_gcm_seal` after its entry. -/
+def sealRest : Prog isa :=
+  .seq (j0 c)
   (.seq (oneAad c)
   (.seq (.block encPrep)
   (.seq (encBody c)
@@ -457,7 +527,10 @@ def «seal» : Prog isa :=
   (.seq (.block [.ldr .x .x28 .x19 tlO])
   (.seq (finBody c 0)
   (.seq (.block tagOut)
-    (.block restore)))))))))
+    (.block restore))))))))
+
+/-- `vg_aes_gcm_seal`, with `tag = [sp]` (kept at `W + 248`) and `work = [sp + 8]`. -/
+def «seal» : Prog isa := .seq (.block (oneEntry 8 ++ stashArg 0)) (sealRest c)
 
 /-- The text decrypted, from the first counter block. -/
 def oneCrypt : Prog isa :=
@@ -472,17 +545,22 @@ def openMain : Prog isa :=
   (.seq (.block finPrep)
   (.seq (finBody c uO)
   (.seq (.block [.ldr .x .x28 .x19 tlO])
-  (.seq cmpSeg
+  (.seq cmp
   (.seq (.block [imm .x27 1, .sub .x .x27 .x27 .x10])
   (.seq (.ite (.zero .x .x27) (.block []) (oneCrypt c))
     (.block [mov .x0 .x27]))))))))))
 
+/-- The entry of `open`: `oneEntry`, `tag_len` stashed, and `tag` in `x12`. -/
+def openEntry : List Instr := oneEntry 16 ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr)
+
+/-- `vg_aes_gcm_open` after its entry. -/
+def openRest : Prog isa :=
+  .seq tagLenOk
+  (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn (openMain c)))
+    (.block restore))
+
 /-- `vg_aes_gcm_open`, with `tag = [sp]` (in `x12` until `tagIn`),
 `tag_len = [sp + 8]` (kept at `W + 248`) and `work = [sp + 16]`. -/
-def «open» : Prog isa :=
-  .seq (.block (oneEntry 16 ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr)))
-  (.seq tagLenOk
-  (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn (openMain c)))
-    (.block restore)))
+def «open» : Prog isa := .seq (.block openEntry) (openRest c)
 
 end VG.Impl.AesGcm.AArch64

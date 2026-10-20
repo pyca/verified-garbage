@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.CombLay
 public import VerifiedGarbage.Proof.Weierstrass.Unch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The fixed-base comb: what its steps leave unchanged

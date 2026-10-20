@@ -1,11 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Divstep.Hull
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Divstep.Steps
+import VerifiedGarbage.Proof.Divstep.Incl
 
 /-!
 # The divstep bound: runs of the relaxed iteration

@@ -1,13 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxMont
 public import VerifiedGarbage.Impl.Bignum.X86_64.MontFnLazy
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # Montgomery multiplication by calls, on x86-64

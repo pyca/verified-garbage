@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Mont.AArch64
 public import VerifiedGarbage.Impl.Mont.AArch64.P256Square
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
 public import VerifiedGarbage.Impl.Weierstrass.Slots
@@ -60,12 +59,20 @@ def mulCall (f : String) (n m o a b : Nat) : Prog isa := callProg f (Mont.mulFn 
 def sqrCall (o a : Nat) : Prog isa :=
   callProg (Spec.Weierstrass.Mont.p384p.fn "sqr") Mont.sqrFn384 o a a
 
+/-- `[o] = [a]^2 R⁻¹ mod p` by the dedicated P-521 square. -/
+def sqrCall521 (o a : Nat) : Prog isa :=
+  callProg (Spec.Weierstrass.Mont.p521p.fn "sqr") Mont.sqrFn521 o a a
+
+/-- Recognize the nine-word field modulus, excluding P-521's scalar order. -/
+def sqr521Ok (n m : Nat) : Bool := n == 9 && m == Spec.Weierstrass.Mont.p521p.m
+
 /-- The code of a field operation: a call for a product modulo a modulus
-whose products are functions (`Mont.callOf`), a square modulo P-384's `p`
-calling its square, else `opCode`. -/
+whose products are functions (`Mont.callOf`), using the dedicated square for
+P-384's or P-521's field prime when both input slots agree, else `opCode`. -/
 def opProg (M : Mod) (op : FOp) : Prog isa :=
   match op, Mont.callOf M with
-  | .mul o a b, some (f, m) => if a == b && sparseOk M.n m then sqrCall o a else mulCall f M.n m o a b
+  | .mul o a b, some (f, m) => if a == b && sparseOk M.n m then sqrCall o a
+      else if a == b && sqr521Ok M.n m then sqrCall521 o a else mulCall f M.n m o a b
   | op, _ => .block (opCode M op)
 
 /-- Programs one after the other. -/

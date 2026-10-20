@@ -3,18 +3,21 @@ module
 public import VerifiedGarbage.Impl.X25519.X86.Base
 import VerifiedGarbage.Proof.X25519.Edwards.Ladder
 import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseEntry
 public import VerifiedGarbage.Spec.X25519.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
 import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
 import VerifiedGarbage.Proof.Ed25519.X86.InputBits
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Ed25519.X86.Power
+import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
+import VerifiedGarbage.Proof.Ed25519.X86.CombLit
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # X25519 of the base point on x86: correctness

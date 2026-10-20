@@ -1,11 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Framework.Pratt
 public import VerifiedGarbage.Spec.BrainpoolP512r1
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import Mathlib.Data.Nat.Prime.Defs
 
 /-!
 # The brainpoolP512r1 field prime is prime

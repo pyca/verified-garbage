@@ -1,15 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentUnpack
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Util.CompileInductive
 import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.TCB.Artifact
 
 @[expose] public section
 

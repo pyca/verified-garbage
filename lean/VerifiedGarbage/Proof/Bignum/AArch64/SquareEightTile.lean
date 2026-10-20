@@ -1,16 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightLoad
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightProducts
-import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightWord
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightPolynomial
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightBound
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightLoad
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

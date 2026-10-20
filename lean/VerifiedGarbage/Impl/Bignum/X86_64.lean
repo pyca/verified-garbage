@@ -86,11 +86,13 @@ def zeroAccLoop : Prog isa :=
       (.block [.store (ix .r8 .r12) .rax, .store (ix .r8 .r12 8) .rax]))
 
 /-- A multiply-accumulate step at word `r14`: the low word of
-`rcx · [src] + rbp + acc` stored at `acc + d` (`d` is 0 or -8), and its
-high word into `rbp`. -/
+`rcx · [src] + acc + rbp` stored at `acc + d` (`d` is 0 or -8), and its
+high word into `rbp`. The accumulator's word is added before the carry, so
+that the carry from one step to the next passes through one addition (`add`,
+`adc`) rather than two. -/
 def mac (src : Reg) (d : Int) : List Instr :=
-  [.mov .rax (.mem (ix src .r14)), .mul .rcx, .alu .add .rax (.reg .rbp), .alu .adc .rdx (.imm 0),
-    .alu .add .rax (.mem (ix .r8 .r14)), .alu .adc .rdx (.imm 0), .store (ix .r8 .r14 d) .rax,
+  [.mov .rax (.mem (ix src .r14)), .mul .rcx, .alu .add .rax (.mem (ix .r8 .r14)), .alu .adc .rdx (.imm 0),
+    .alu .add .rax (.reg .rbp), .alu .adc .rdx (.imm 0), .store (ix .r8 .r14 d) .rax,
     .mov .rbp (.reg .rdx)]
 
 /-- Words `w` and `w + 1` of the accumulator `+= rbp`: `[r8 + 8 r12] += rbp`,

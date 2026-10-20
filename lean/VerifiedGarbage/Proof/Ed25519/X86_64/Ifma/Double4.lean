@@ -2,11 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Stage
 public import VerifiedGarbage.Proof.Ed25519.DblPoint
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointLoop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointLoop
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part1
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Merged from `Proof.Ed25519.X86_64.Ifma.Block`. -/
 
@@ -57,7 +60,7 @@ theorem EConsts.outside {m m' : Mem} {base : Addr} (hk : EConsts m base)
 /-! ## Loading -/
 
 theorem loadB_env {s : State} (ha : s.gpr .rax = 0x7ffffffffffff) : EnvOK s loadB := by
-  refine ⟨fun r k _ => lt64 _, fun g => ?_, fun d k _ => lt64 _, fun _ _ _ => Nat.zero_le _⟩
+  refine ⟨fun r k _ => lt64 _, fun g => ?_, fun d k _ => lt64 _, fun _ _ _ => Nat.zero_le _, fun _ _ _ => lt64 _⟩
   simp only [loadB]
   split
   · subst_vars; rw [ha]; decide

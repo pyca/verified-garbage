@@ -1,14 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.Program
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticCachedHead
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-! The head of the forwarded cached additions of P-256 joint verification, as a
 literal (`Proof/Framework/Lit.lean`): `Forward.ArithmeticCachedHead`'s. -/

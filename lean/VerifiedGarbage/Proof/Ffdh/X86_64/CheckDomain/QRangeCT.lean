@@ -1,12 +1,25 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.StagesCT
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.OddCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.OddCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Range
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Loads
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Work
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.StagesCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.OddCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Range
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Loads
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Work
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH domain validation on x86-64: subgroup range in constant time -/
 

@@ -27,8 +27,7 @@ use crate::arch::camellia_cfb::{vg_camellia_cfb128_decrypt, vg_camellia_cfb128_e
 use crate::zeroize::zeroize;
 
 /// The key is not 16, 24 or 32 bytes long.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct InvalidKeyLength;
+pub use crate::error::InvalidKeyLength;
 
 /// An expanded Camellia key for CFB128 encryption and decryption.
 pub struct CamelliaCfb128 {

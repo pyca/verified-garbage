@@ -1,14 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointRunCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.JointRunCT
-import VerifiedGarbage.Proof.Dsa.X86_64.JointPower
-meta import VerifiedGarbage.Proof.Dsa.X86_64.JointPower
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Dsa.X86_64.JointPrepareCT
+import VerifiedGarbage.Proof.Dsa.X86_64.JointPrepare
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
 
 /-! # Constant time of complete joint DSA exponentiation -/
 

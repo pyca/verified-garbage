@@ -1,12 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Ranges
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpBase
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpHalf
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Impl.Rsa.X86_64.Recover
+import VerifiedGarbage.TCB.X86_64.State
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: what the pieces change

@@ -2,13 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KMain
 public import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
-public import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.PdCTExp
+import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
 
 /-!
 # A candidate on AArch64: constant time, the public data and the stages

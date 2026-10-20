@@ -1,13 +1,17 @@
 module
 
 public import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfPublic
+public import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfTiming
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfPublic
-public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfTiming
+meta import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

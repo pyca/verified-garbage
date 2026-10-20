@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Pointer
+import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Pointer
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Bounds
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.MlKem.AArch64.Dot
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+public import VerifiedGarbage.Spec.MlKem.Poly
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Dot

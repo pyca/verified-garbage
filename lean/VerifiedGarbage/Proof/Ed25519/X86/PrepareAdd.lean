@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.PointAccumulate
-public import VerifiedGarbage.Proof.Ed25519.X86.PointPowers
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ed25519.X86.PointTable
+import VerifiedGarbage.Proof.Ed25519.X86.PointPowers
 import VerifiedGarbage.Proof.Ed25519.X86.Points
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Load a table point while preserving the accumulator for selection. -/
 

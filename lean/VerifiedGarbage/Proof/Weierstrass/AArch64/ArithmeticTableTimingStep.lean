@@ -1,15 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticTable
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticAddTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTimingStep
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.ArithmeticTable
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 @[expose] public section
 
@@ -21,13 +17,13 @@ open VG.Proof.Ed25519.AArch64 (Keeps read_x)
 structure ArithmeticTableChecks (K : WinCfg) : Prop where
   base : NafTableChecks K
   add : ArithmeticAddChecks K K.R (Naf.twice K) K.D
-  keepAdd : ∀ r∈[Reg.x19,Reg.x20],∀ i∈instrs (ArithmeticAdd.add K K.R (Naf.twice K) K.D),dstOf i≠some r
+  keepAdd : ∀ r∈[Reg.x19,Reg.x20],∀ i∈instrs (ArithmeticAdd.add K K.R (Naf.twice K) K.D),clobbers i r = false
 
  theorem arithmeticTable_step_relCT (certs : Forward.Arithmetic.Cases) {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
     (hL : JacWinLay K size) (hJ : K.J=52) (hAl : Aligned K.M (·∈jacWinSlots K))
     (hm : UnitMod C.p (2^(64*K.M.n))) (hsize : 8192≤size) (hOne : K.one<C.p)
     (hm1 : 1≤m) (hm7 : m≤7) (hc : ArithmeticTableChecks K)
-    (hcopy : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), dstOf i≠some r) :
+    (hcopy : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), clobbers i r = false) :
     RelCT isa (NafTablePair K C base size m) (ArithmeticTable.tableStep K) (NafTablePair K C base size (m+1)) := by
   have rs : ∀ x∈jacCoords K.R, x∈jacWinSlots K := by
     intro x hx; apply List.mem_append_left

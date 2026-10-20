@@ -2,17 +2,14 @@ module
 
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
 public import VerifiedGarbage.Impl.EcKey.X86_64
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
+public import VerifiedGarbage.Spec.EcKey
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Middle
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
-public import VerifiedGarbage.Proof.EcKey.PublicKey
-public import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+import VerifiedGarbage.Proof.EcKey.PublicKey
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
+import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Elliptic curve public keys on x86-64: the result, and the whole function

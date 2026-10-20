@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64
 
-public import VerifiedGarbage.Impl.Rsa.X86_64
 
 /-! # FFDH parameter candidates on x86-64: load p or q into the shared workspace -/
 

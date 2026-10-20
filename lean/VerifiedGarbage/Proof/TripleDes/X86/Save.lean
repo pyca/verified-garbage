@@ -1,16 +1,13 @@
 module
 
-public import VerifiedGarbage.Impl.TripleDes.X86.Block
-public import VerifiedGarbage.Proof.TripleDes.X86.Bytes
-import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
+import VerifiedGarbage.Proof.TripleDes.X86.Bytes
 import VerifiedGarbage.Proof.Rc2.X86.Save
 public import VerifiedGarbage.Proof.TripleDes.X86.RoundStep
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.TripleDes.X86.Permutation
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! ## `Initial` -/
 

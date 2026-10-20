@@ -4,11 +4,8 @@ public import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Inv
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
 public import VerifiedGarbage.Proof.Curve448.AArch64.Swap
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # X448 on AArch64: chains of field operations

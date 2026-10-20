@@ -1,14 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafArith
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafArith
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.FastNaf
-import Mathlib.Logic.Function.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSubtract
+public import VerifiedGarbage.Proof.Weierstrass.FastNaf
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafChoose
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Mont.AArch64.Words
 
 @[expose] public section
 

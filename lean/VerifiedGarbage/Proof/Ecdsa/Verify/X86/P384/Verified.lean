@@ -1,27 +1,37 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.Contract
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.Lit
-public import VerifiedGarbage.Proof.Ecdsa.X86.P384.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.X86.P384.Verified
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.X86.Inline
+import VerifiedGarbage.Proof.Ecdsa.X86.P384.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallTaint
+public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+public import VerifiedGarbage.Spec.Ecdsa.P384
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.Lit
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86
+import VerifiedGarbage.Proof.Ecdsa.X86.P384.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.X86.P384.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallTaint
-meta import VerifiedGarbage.Proof.Framework.X86.Inline
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Spec.Ecdsa.P384
+meta import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.Lit
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86
+meta import VerifiedGarbage.Proof.Ecdsa.X86.P384.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ECDSA verification over P-384 on x86 (32-bit): `Verified`

@@ -1,20 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Joint
-public import VerifiedGarbage.Impl.Weierstrass.AArch64.CachedJac
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+public import VerifiedGarbage.Impl.Weierstrass.CachedJac
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 @[expose] public section
 

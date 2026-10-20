@@ -1,25 +1,69 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyStages
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
+import VerifiedGarbage.Proof.Ed448.AArch64.VerifyStages
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.TableInit
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Digit
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.Ed448.Group.Decode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed448.Group.Decode
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBits
-import VerifiedGarbage.Proof.Framework.KernelRfl
-public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
-public import VerifiedGarbage.Proof.Ed448.Recover
-public import VerifiedGarbage.Proof.X448.AArch64.FinalSwap
-public import VerifiedGarbage.Proof.X448.AArch64.Ladder
-public import VerifiedGarbage.Proof.X448.AArch64.Weak.Finish
-public import VerifiedGarbage.Proof.X448.AArch64.Weak.Ladder
+public import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
+import VerifiedGarbage.Proof.Ed448.Recover
+import VerifiedGarbage.Proof.X448.AArch64.FinalSwap
+import VerifiedGarbage.Proof.X448.AArch64.Ladder
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Finish
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Ladder
+import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Arith
+import VerifiedGarbage.Proof.Ed448.AArch64.BaseEncode
+import VerifiedGarbage.Proof.Ed448.AArch64.DecodeOps
+import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBytes
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyEntry
+import VerifiedGarbage.Proof.Ed448.AArch64.VerifySign
+import VerifiedGarbage.Proof.Ed448.DecodeBytes
+import VerifiedGarbage.Proof.Ed448.Scalar
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+import VerifiedGarbage.Proof.Framework.BitByte
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X448.AArch64.BitStep
+import VerifiedGarbage.Proof.X448.AArch64.BitWrite
+import VerifiedGarbage.Proof.X448.AArch64.Bits
+import VerifiedGarbage.Proof.X448.AArch64.Decode
+import VerifiedGarbage.Proof.X448.AArch64.DecodeAll
+import VerifiedGarbage.Proof.X448.AArch64.DecodeStore
+import VerifiedGarbage.Proof.X448.AArch64.Finish
+import VerifiedGarbage.Proof.X448.AArch64.Initial
+import VerifiedGarbage.Proof.X448.AArch64.Inv
+import VerifiedGarbage.Proof.X448.AArch64.Weak.BitStep
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Main
+import VerifiedGarbage.Proof.X448.Bytes
+public import VerifiedGarbage.Impl.X448.AArch64.Fast
+public import VerifiedGarbage.Spec.Ed448
+public import VerifiedGarbage.Impl.Curve448.AArch64.Neon
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+public import VerifiedGarbage.Spec.Ed448.Contract
+public import Mathlib.Algebra.Group.Nat.Defs
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
+public import VerifiedGarbage.Proof.Ed448.Formulas
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Env
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
+public import VerifiedGarbage.Proof.Ed448.AArch64.DecodeSteps
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+public import VerifiedGarbage.Proof.Ed448.Ref
+public import Init.Data.BitVec.Basic
+public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Proof.X448.AArch64.Setup
+public import VerifiedGarbage.Spec.X448
+public import VerifiedGarbage.TCB.Code
 
 /-!
 # Ed448 verification on AArch64: the entry and the decodings

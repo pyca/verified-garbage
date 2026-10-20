@@ -1,15 +1,65 @@
 module
 
-import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.P224.Comb7
-import VerifiedGarbage.Impl.Ecdsa.P224.AArch64
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
+import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P224.AArch64
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Verified
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Lit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P224
+public import Mathlib.Tactic.ClearExcept
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Verified
+import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Impl.Ecdsa.P224.AArch64
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Impl.Ecdh.P224.AArch64
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
+public import VerifiedGarbage.Proof.EcKey.PublicKey
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+public import VerifiedGarbage.Proof.Ecdsa.Projective
+public import VerifiedGarbage.Proof.Ecdsa.Sign
+public import VerifiedGarbage.Proof.Ecdsa.Verify
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.P224.Point
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
+public import VerifiedGarbage.Spec.Weierstrass.Mul
+import VerifiedGarbage.Impl.Ecdh.P224.AArch64
+import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
+import VerifiedGarbage.Proof.EcKey.PublicKey
+import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
+import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+import VerifiedGarbage.Proof.Ecdsa.Projective
+import VerifiedGarbage.Proof.Ecdsa.Sign
+import VerifiedGarbage.Proof.Ecdsa.Verify
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.P224.Point
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
+import VerifiedGarbage.Spec.Weierstrass.Mul
 
 /-!
 # ECDSA over P-224 (FIPS 186-5) on AArch64
@@ -23,9 +73,8 @@ A generic file (see `TCB/Emit.lean`) over P-224's group law `h`, the variant
 namespace VG.Generic.P224.AArch64.EcdsaP224
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P224.curve) : List Artifact := [
-  { Spec.Ecdsa.P224.signApi with
-    target := AArch64.target
-    doc := Spec.Ecdsa.P224.signApi.doc (notes := ["The function saves the callee-saved registers \
+  Spec.Ecdsa.P224.signApi.artifact AArch64.target {
+    notes := ["The function saves the callee-saved registers \
       `x19`–`x25` in `scratch`. Field elements and scalars are four 64-bit words in Montgomery \
       form, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and `umulh` \
       and the multiplicand's words in registers; each reduction step multiplies the \
@@ -45,15 +94,12 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P224.curve) : List A
       divsteps in all, enough for 256-bit moduli by Bernstein and Yang's bound (which the proof \
       checks); then `f = ±1`, and `Z⁻¹` is `a` times a constant or its negation by `f`'s sign. \
       The number of steps is fixed, so the time does not depend on `Z` or `k`. The signature (or \
-      zeros) is selected by a mask, so the time depends only on the pointers."])
+      zeros) is selected by a mask, so the time depends only on the pointers."]
     consts := Impl.Ecdsa.AArch64.p224.combConsts
     code := Impl.Ecdsa.AArch64.signP224
-    contract := Spec.Ecdsa.P224.inst.signContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p224.combConsts)
-    verified := Proof.Ecdsa.AArch64.P224.sign_verified h.law h.inv (Proof.P224.combOk7 h.law)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Ecdsa.P224.verifyApi with
-    target := AArch64.target
-    doc := Spec.Ecdsa.P224.verifyApi.doc (notes := ["The function is `vg_ecdsa_p224_sign`'s \
+    verified := Proof.Ecdsa.AArch64.P224.sign_verified h.law h.inv (Proof.P224.combOk7 h.law) },
+  Spec.Ecdsa.P224.verifyApi.artifact AArch64.target {
+    notes := ["The function is `vg_ecdsa_p224_sign`'s \
       setup, field arithmetic, comb and inversions, with `vg_ecdh_p224`'s checks of the public \
       key: it saves the callee-saved registers `x19`–`x25` in `scratch`; field elements and \
       scalars are four 64-bit words in Montgomery form, multiplied by word-by-word Montgomery \
@@ -70,11 +116,9 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P224.curve) : List A
       `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `X = rZ` or, when `r + n < p`, `X = (r + n)Z`, compared in projective coordinates without inverting `Z`) as a \
       mask, so the \
       comb's addresses depend on `u`, from the digest and the signature, and the rest of the \
-      time only on the pointers."])
+      time only on the pointers."]
     consts := Impl.Ecdsa.AArch64.p224.combConsts
     code := Impl.Ecdsa.Verify.AArch64.verifyP224
-    contract := Spec.Ecdsa.P224.inst.verifyContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p224.combConsts)
-    verified := Proof.Ecdsa.Verify.AArch64.P224.verify_verified h.law h.inv (Proof.P224.combOk7 h.law)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Ecdsa.Verify.AArch64.P224.verify_verified h.law h.inv (Proof.P224.combOk7 h.law) }]
 
 end VG.Generic.P224.AArch64.EcdsaP224

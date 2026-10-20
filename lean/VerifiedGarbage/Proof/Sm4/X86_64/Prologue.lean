@@ -1,13 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.X86_64.Copy
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Sm4.X86_64.Round
 import VerifiedGarbage.Proof.Sm4.Common
+import VerifiedGarbage.Proof.Sm4.X86_64.Core
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
 
 /-!
 # SM4's prologue and epilogue on x86-64

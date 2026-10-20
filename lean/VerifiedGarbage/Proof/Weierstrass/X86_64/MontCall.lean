@@ -1,23 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
+import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFn6
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN6
-import VerifiedGarbage.Proof.Mont.X86_64.Ops
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Impl.Weierstrass.Slots
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
-import VerifiedGarbage.Spec.Ecdsa.Generic
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Mont.X86_64.Ops
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # Products modulo P-521's and P-384's `p` by calls, on x86-64

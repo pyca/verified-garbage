@@ -2,13 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveCore
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Slice
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
-public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Layout
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## From `FiveSlice.lean` -/
 

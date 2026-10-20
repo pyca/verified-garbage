@@ -1,11 +1,14 @@
 module
+public import VerifiedGarbage.Impl.AesXts.Arm
+public import VerifiedGarbage.Spec.Xts.Contract
+public import VerifiedGarbage.TCB.Arm.Target
 
 import VerifiedGarbage.Proof.AesCbc.Arm.Verified
-public import VerifiedGarbage.Proof.AesXts.Arm.Body
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesXts.Arm.Body
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # XTS-AES on ARMv7: `Verified`

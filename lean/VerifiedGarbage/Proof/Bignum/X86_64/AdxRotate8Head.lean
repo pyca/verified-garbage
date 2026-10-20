@@ -1,13 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcRow
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 
 /-! ## AdxRotate8HeadStep -/
 

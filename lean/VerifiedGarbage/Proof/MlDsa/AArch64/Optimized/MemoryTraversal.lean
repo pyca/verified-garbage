@@ -1,16 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveTraversal
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemorySchedule
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemorySchedule
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryOuterPass
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Core
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableMemory
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalCorrect
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## From `MemoryInner.lean` -/
 

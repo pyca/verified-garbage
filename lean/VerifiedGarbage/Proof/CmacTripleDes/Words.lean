@@ -1,12 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.CmacTripleDes.Block
 public import VerifiedGarbage.Proof.CmacTripleDes.Bytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # TDEA-CMAC: 64-bit words as two 32-bit words

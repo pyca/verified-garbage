@@ -1,14 +1,18 @@
 module
+public import VerifiedGarbage.Impl.Aes.X86.ExpandKey
+public import VerifiedGarbage.Spec.Aes.Contract
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Proof.Framework.X86.Call
 
 import VerifiedGarbage.Proof.Aes.X86.ExpandKey
 import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
+import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
 import VerifiedGarbage.Proof.Aes.Scratch
-public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+public import VerifiedGarbage.Impl.Aes.X86.AesNi
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The AES key expansion on x86, with its working space on the stack

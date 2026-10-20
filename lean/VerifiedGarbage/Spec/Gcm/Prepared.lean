@@ -42,41 +42,47 @@ def PreparedPowersRepr (m : Mem) (p : Addr) : Prop :=
     m.readW (p + BitVec.ofNat 64 (272 + 32 * k)) 128 =
       preparedPower (hpow (ctxH m p) (2 * k + 1))
 
-/-- The existing 1024-byte key-setup signature, with a distinct context format. -/
-abbrev initPreparedSig := initPrecomputedSig
+/-- A 1024-byte context, whose first 256 bytes are a key context. -/
+def prepareSig : Sig where
+  params := [("ctx", .array true .u64 128)]
 
-/-- Writes the AES key schedule and hash subkey, and all 48 prepared powers. -/
-def initPreparedPost (pb : Nat) : initPreparedSig.Post pb := fun key keyLen ctx m m' _ =>
-  KeyRepr m' ctx (Aes.bytesAt m key keyLen.toNat) ∧ PreparedPowersRepr m' ctx
+/-- Keeps the first 256 bytes, and writes the 48 prepared powers of the hash
+subkey in its bytes 240–255 (`ctxH`). With those bytes a key context
+(`KeyRepr`, as `vg_aes_gcm_init` writes it), the result is the prepared key
+context of the same key (`KeyRepr` and `PreparedPowersRepr`). -/
+def preparePost (pb : Nat) : prepareSig.Post pb := fun ctx m m' _ =>
+  Aes.bytesAt m' ctx 256 = Aes.bytesAt m ctx 256 ∧ PreparedPowersRepr m' ctx
 
-/-- Key lengths, memory access and public arguments are those of key setup. -/
-def initPreparedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  initPreparedSig.contract A (pre := initPre A.ptrBits)
-    (post := initPreparedPost A.ptrBits) (writeArgs := true) (stack := stack)
+/-- No precondition: the powers are those of whatever hash subkey the
+context holds. -/
+def prepareContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  prepareSig.contract A (post := preparePost A.ptrBits) (writeArgs := true) (stack := stack)
 
-/-- Writes the prepared key context on any target. -/
-def initPreparedApi : Api where
+/-- Prepares a key context in place on any target, without the key. -/
+def prepareApi : Api where
   module := "gcm"
-  name := "vg_aes_gcm_init_prepared"
-  sig := initPreparedSig
+  name := "vg_aes_gcm_prepare"
+  sig := prepareSig
   writeArgs := true
-  contracts := some fun A stack => initPreparedContract A stack
-  summary := "Writes a 1024-byte AES-GCM key context. The first 256 bytes are the key schedule \
-    and hash subkey of `vg_aes_gcm_init`. At byte `256 + 32*k`, for `k` from 0 to 23, \
-    stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two \
-    little-endian 128-bit words. The encoding is `VG.Spec.Gcm.preparedPower`; the \
-    context satisfies `KeyRepr` and `PreparedPowersRepr`. Use only the `*_prepared` \
-    APIs, or APIs that read the first 256 bytes, with this format. Only the pointers \
-    and key length are public. Contract: `VG.Spec.Gcm.initPreparedContract`."
-  safety := initPrecomputedApi.safety
+  contracts := some fun A stack => prepareContract A stack
+  summary := "Makes the 1024-byte `*ctx`, whose first 256 bytes are a key context of \
+    `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first \
+    256 bytes and, at byte `256 + 32*k`, for `k` from 0 to 23, stores \
+    `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian \
+    128-bit words, `H` being the hash subkey in its bytes 240–255. Use only the \
+    `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. \
+    Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context \
+    satisfies `PreparedPowersRepr`. Constant time: only the pointer may affect timing, not \
+    the hash subkey."
+  safety := []
 
 /-- Prepared-context validity, in addition to each API's existing safety requirements. -/
 def preparedSafety : String :=
-  "`*ctx` must have the prepared format written by `vg_aes_gcm_init_prepared` (not the format of `vg_aes_gcm_init_precomputed`)."
+  "`*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`)."
 
 /-- Common documentation for the prepared APIs. -/
 def preparedSummary (name contract : String) : String :=
-  "`" ++ name ++ "` with a 1024-byte context from `vg_aes_gcm_init_prepared`. " ++
+  "`" ++ name ++ "` with a 1024-byte context from `vg_aes_gcm_prepare`. " ++
   "Computes the same result, using the AES key schedule and hash subkey in its first " ++
   "256 bytes, and may read the 48 prepared powers. The powers remain secret; all " ++
   "other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm." ++

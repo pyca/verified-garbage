@@ -1,12 +1,11 @@
 module
+public import VerifiedGarbage.Impl.RsaPss.X86_64
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCtx
+public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSASSA-PSS signing on x86-64: the calling convention

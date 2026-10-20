@@ -1,11 +1,8 @@
 module
-
-public import VerifiedGarbage.Proof.MlDsa.Verify.Norm
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.Verify.Spec
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
+
 
 /-!
 # ML-DSA: when verification fails

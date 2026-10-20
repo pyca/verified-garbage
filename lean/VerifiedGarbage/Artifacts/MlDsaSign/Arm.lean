@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Verified
-import VerifiedGarbage.Proof.MlKem.Arm.Prf
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
 
 /-! # ML-DSA (FIPS 204) signing on 32-bit ARM -/
 
@@ -22,29 +22,20 @@ def notes : List String :=
     is the only place an iteration's outcome affects timing."]
 
 def artifacts : List Artifact := [
-  { Spec.MlDsa.sign44Api with
-    target := Arm.target
-    doc := Spec.MlDsa.sign44Api.doc (notes := notes)
+  Spec.MlDsa.sign44Api.artifact Arm.target {
+    notes := notes
     code := Impl.MlDsa.Arm.Sign.sign prims Spec.MlDsa.mlDsa44
-    contract := Spec.MlDsa.signContract Spec.MlDsa.mlDsa44 Arm.abi 28
     stack := 28
-    verified := Proof.MlDsa.Arm.Sign.sign44_verified'
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.sign65Api with
-    target := Arm.target
-    doc := Spec.MlDsa.sign65Api.doc (notes := notes)
+    verified := Proof.MlDsa.Arm.Sign.sign44_verified' },
+  Spec.MlDsa.sign65Api.artifact Arm.target {
+    notes := notes
     code := Impl.MlDsa.Arm.Sign.sign prims Spec.MlDsa.mlDsa65
-    contract := Spec.MlDsa.signContract Spec.MlDsa.mlDsa65 Arm.abi 28
     stack := 28
-    verified := Proof.MlDsa.Arm.Sign.sign65_verified'
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.sign87Api with
-    target := Arm.target
-    doc := Spec.MlDsa.sign87Api.doc (notes := notes)
+    verified := Proof.MlDsa.Arm.Sign.sign65_verified' },
+  Spec.MlDsa.sign87Api.artifact Arm.target {
+    notes := notes
     code := Impl.MlDsa.Arm.Sign.sign prims Spec.MlDsa.mlDsa87
-    contract := Spec.MlDsa.signContract Spec.MlDsa.mlDsa87 Arm.abi 28
     stack := 28
-    verified := Proof.MlDsa.Arm.Sign.sign87_verified'
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.MlDsa.Arm.Sign.sign87_verified' }]
 
 end VG.Artifacts.MlDsaSign.Arm

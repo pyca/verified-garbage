@@ -2,14 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.PdCode
 public import VerifiedGarbage.Proof.Bignum.X86_64.PdCTExp
-public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
+import VerifiedGarbage.Proof.Bignum.PdRanges
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.Math
+public import Mathlib.Logic.Relator
+import Mathlib.Data.Int.GCD
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_public_precomputed` on x86-64: constant time but for `pre` and `e`
@@ -59,7 +63,7 @@ theorem PdPre.mem {s t : State} {B : Addr} {Z k : Nat} {op ep ip : Addr} {L : Na
     (hr : .rdi ∉ regs) : PdPre t B Z k op ep ip L eb xb N R :=
   { scr := h.scr.congr kp.2.2, rdi := (kp.gpr hr).trans h.rdi, z := h.z, k1 := h.k1, k2 := h.k2,
     hO := hm ▸ h.hO, hK := hm ▸ h.hK, hE := hm ▸ h.hE, hL := hm ▸ h.hL, hIn := hm ▸ h.hIn, hW := hm ▸ h.hW,
-    hb := hm ▸ h.hb, n := hm ▸ h.n, r := hm ▸ h.r, odd := h.odd, n1 := h.n1, rlt := h.rlt,
+    hb := hm ▸ h.hb, n := hm ▸ h.n, r := hm ▸ h.r, odd := h.odd, n1 := h.n1, big := h.big, rlt := h.rlt,
     x := h.x.congrK (by rw [hm]; exact InScr.refl _ _ _) kp, e := h.e.congrK (by rw [hm]; exact InScr.refl _ _ _) kp,
     xl := h.xl, el := h.el, L1 := h.L1, L2 := h.L2, out := fun j hj => by rw [kp.2.2]; exact h.out j hj,
     outSep := h.outSep,
@@ -99,19 +103,46 @@ theorem arrays_pdAll {B : Addr} {w : Nat} {m m' : Mem} (h : Arrays B w [aAcc, aT
     Frm B (pdAll w) m m' :=
   Frm.of_arrays h (by simp [pdAll, pExpRanges, pBitRanges, bitRanges])
 
+/-- After the setup, without the registers it leaves: what the
+exponentiation needs. -/
+def DAw (q : DPub × BitVec 64) (t : State) : Prop :=
+  ∃ xb σ, DG q.1 xb σ t ∧ Good t q.1.B q.1.Z ((q.1.k + 7) / 8) q.2 ∧
+    wv t.mem q.1.B (slot ((q.1.k + 7) / 8) aN) ((q.1.k + 7) / 8) = q.1.N ∧
+    ((word t.mem q.1.B (slot ((q.1.k + 7) / 8) aN)).toNat * q.2.toNat + 1) % 2 ^ 64 = 0 ∧
+    wv t.mem q.1.B (slot ((q.1.k + 7) / 8) aX) ((q.1.k + 7) / 8) = Spec.Rsa.os2ip xb ∧
+    wv t.mem q.1.B (slot ((q.1.k + 7) / 8) aOne) ((q.1.k + 7) / 8) = 1 ∧
+    wv t.mem q.1.B (slot ((q.1.k + 7) / 8) aR2) ((q.1.k + 7) / 8) = q.1.R
+
+theorem DA.weak {q : DPub × BitVec 64} {t : State} (h : DA q t) : DAw q t :=
+  let ⟨xb, σ, g, so, hR⟩ := h
+  ⟨xb, σ, g, so.good, so.n, so.inv, so.x, so.one, hR⟩
+
+/-- `DAw` through code that writes registers only. -/
+theorem DAw.regs {q : DPub × BitVec 64} {s t : State} (h : DAw q s) (hm : t.mem = s.mem) {rs : List Reg}
+    (k : Keep rs s t) (hrs : ∀ r ∈ rs, r ∈ mmRegs) : DAw q t := by
+  obtain ⟨xb, σ, g, hg, hn, hinv, hx, hone, hR⟩ := h
+  exact ⟨xb, σ, g.step (by rw [hm]; exact Frm.refl _ _ _) (k.mono hrs) (by rw [hm]),
+    ⟨hg.scr.congr k.2.2, (k.gpr (fun h => by have := hrs _ h; simp [mmRegs] at this)).trans hg.rdi,
+      by rw [hm]; exact hg.hdr⟩, by rw [hm]; exact hn, by rw [hm]; exact hinv, by rw [hm]; exact hx,
+    by rw [hm]; exact hone, by rw [hm]; exact hR⟩
+
 /-- `X := input R` leaks the same in runs with the same public data. -/
-theorem pdMm_ct : RelCT isa (Two DA) (M.mm aXm aX aR2) (Two DB) := by
-  refine two_post (two_map DPub.L (fun _ _ ⟨_, σ, g, so, _⟩ => ⟨so.good, g.1.z⟩)
+theorem pdMm_ctw : RelCT isa (Two DAw) (M.mm aXm aX aR2) (Two DB) := by
+  refine two_post (two_map DPub.L (fun _ _ ⟨_, σ, g, hg, _⟩ => ⟨hg, g.1.z⟩)
     (M.ctL (by unfold MmUse; decide))) ?_
-  rintro q t ⟨xb, σ, g, so, hR⟩
+  rintro q t ⟨xb, σ, g, hg₀, hN₀, hinv₀, -, hone₀, hR⟩
   have hk1 := g.1.k1
   have hk2 := g.1.k2
   have hn : q.1.B.toNat + slot ((q.1.k + 7) / 8) 8 ≤ 2 ^ 64 := by have := g.1.scr.nowrap; have := g.1.z; omega_arith
-  refine WP.mono (mmN_ok M (o := aXm) (a := aX) (b := aR2) so.good g.1.z (by omega_arith)
+  refine WP.mono (mmN_ok M (o := aXm) (a := aX) (b := aR2) hg₀ g.1.z (by omega_arith)
     (by omega_arith) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) so.n so.inv (by rw [hR]; exact g.1.rlt)) fun t' ⟨hg, hn', hinv, hlt, _, ha, k⟩ =>
+    (by decide) hN₀ hinv₀ (by rw [hR]; exact g.1.rlt)) fun t' ⟨hg, hn', hinv, hlt, _, ha, k⟩ =>
     ⟨xb, σ, g.step (arrays_pdAll ha) k (ha.hslot (by decide)), hg, hn', hinv, hlt, ?_⟩
-  rw [ha.wv_of_not_mem (by decide) (by decide) hn]; exact so.one
+  rw [ha.wv_of_not_mem (by decide) (by decide) hn]; exact hone₀
+
+/-- `X := input R` leaks the same in runs with the same public data. -/
+theorem pdMm_ct : RelCT isa (Two DA) (M.mm aXm aX aR2) (Two DB) :=
+  two_map id (fun _ _ h => h.weak) pdMm_ctw
 
 /-- The exponentiation's public data. -/
 def DPub.E (q : DPub × BitVec 64) : EPub := ⟨DPub.L q, q.1.N, q.1.ep, q.1.len, q.1.eb⟩
@@ -319,7 +350,7 @@ theorem cl_rest {p : CPubD} {t : State} (h : CL p t) (he : isa.eval .e t = some 
     rw [hN, hR]; simp only [eval, hz, Option.some.injEq] at he; simpa using he
   rw [← chk_eq (by omega_arith)] at hchk
   obtain ⟨hodd, hN1, hRN⟩ := checks_facts (by omega_arith) hchk
-  have hp := pdPre_of c hdi hO hK hE hL hIn ho₁ k₁ hW hb f k₂ hodd hN1 hRN hev
+  have hp := pdPre_of c hdi hO hK hE hL hIn ho₁ k₁ hW hb f k₂ hodd hN1 (checks_big (by omega_arith) hchk) hRN hev
   rw [hN, hR] at hp
   exact ⟨_, hp⟩
 

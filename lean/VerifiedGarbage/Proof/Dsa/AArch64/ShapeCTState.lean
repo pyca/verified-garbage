@@ -1,16 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeFrame
+public import VerifiedGarbage.Proof.Dsa.DomainShape
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.DomainShape
-public import VerifiedGarbage.Proof.Dsa.AArch64.ScanFieldCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.BoundaryCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.ScanFieldCT
 import VerifiedGarbage.Proof.Dsa.AArch64.ScanField
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Public state carried through DSA domain-shape validation -/
 

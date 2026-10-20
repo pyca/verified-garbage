@@ -1,17 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.SampleSqueeze
-meta import VerifiedGarbage.Proof.MlKem.AArch64.SampleSqueeze
 public import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.MlKem.Bits
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.AArch64.SampleSqueeze
 meta import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+meta import VerifiedGarbage.Proof.MlKem.Bits
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem_sample_ntt`
@@ -100,7 +102,7 @@ theorem done_ok {s₀ : State} (hp : Pre s₀) {u : State} (h : FastPost s₀ u)
   have hc := h.coeffs.full hf
   rw [hf] at hc
   refine ⟨⟨hfin.cs, hfin.sp, hfin.vcs⟩, ?_, .inl ⟨h0, ?_⟩⟩
-  · rw [hm]; exact reduced_of_coeffs (L := LA (Bs s₀) 168) (by rw [hf]; exact hc)
+  · rw [hm]; exact reduced_of_coeffs (w16 := false) (L := LA (Bs s₀) 168) (by rw [hf]; exact hc)
   · rw [sampleNTT_of_full (by decide : 168 ≤ 280) hf]
     refine congrArg some ?_
     exact ((CoeffsUpTo.polyIs (by rw [hm]; exact hc) fun i hi => cv_toPoly hi).2).symm

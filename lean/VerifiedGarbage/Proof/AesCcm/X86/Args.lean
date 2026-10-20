@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.X86.Entry
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesCcm.X86.Contract
+public import VerifiedGarbage.Proof.AesCcm.X86.Absorb
+public import VerifiedGarbage.Proof.AesCcm.X86.Crypt
+public import VerifiedGarbage.Proof.AesGcm.X86.Fn
+import VerifiedGarbage.Proof.AesGcm.X86.Top
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.VariantProof
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CCM on x86: the arguments

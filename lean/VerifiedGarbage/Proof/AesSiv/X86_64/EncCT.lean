@@ -1,17 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.X86_64.Enc
-meta import VerifiedGarbage.Proof.AesSiv.X86_64.Enc
 import VerifiedGarbage.Proof.AesSiv.X86_64.CryptCT
-meta import VerifiedGarbage.Proof.AesSiv.X86_64.CryptCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesSiv.X86_64.Finish
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.AesSiv.X86_64.CmacOf
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.AesSiv.X86_64.Enc
+meta import VerifiedGarbage.Proof.AesSiv.X86_64.CryptCT
 meta import VerifiedGarbage.Proof.AesSiv.X86_64.Finish
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.AesSiv.X86_64.CmacOf
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-SIV on x86-64: `encrypt` and `decrypt` are constant time

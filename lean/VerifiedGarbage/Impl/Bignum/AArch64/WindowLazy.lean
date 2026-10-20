@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.Core
 
-public import VerifiedGarbage.Impl.Bignum.AArch64.FastFinish
 
 /-! One-pass final reduction for internal Montgomery squares. The enclosing
 window restores a canonical residue with its last multiplication. -/

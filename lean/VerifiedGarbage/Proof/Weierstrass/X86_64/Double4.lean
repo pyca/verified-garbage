@@ -1,16 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86_64.Double4
+import VerifiedGarbage.Proof.Mont.X86_64.Double4
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Mont.X86_64.Double4
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! Register-only doubling preserves the field-program invariant. -/
 

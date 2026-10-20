@@ -1,18 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointPowerCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointPowerCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.CallHeadCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.CallHeadCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Dsa.X86_64.JointPower
-import VerifiedGarbage.Spec.Dsa.SignVerify
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointPower
-meta import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Constant-time binding, execution and storage of a joint call -/
 

@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.TCombJ
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelect
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelect
 public import VerifiedGarbage.Proof.Weierstrass.Booth
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Weierstrass.CombLay
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # The comb with Booth's digits on x86-64: digits and masks

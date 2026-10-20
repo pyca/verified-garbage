@@ -1,10 +1,7 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejDone
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdaptive
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdaptive
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 

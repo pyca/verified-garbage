@@ -1,14 +1,18 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Omega
 
 public import VerifiedGarbage.Proof.Sm4.AArch64.Prologue
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Sm4.Common
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Sm4.AArch64.Core
+import VerifiedGarbage.Proof.Sm4.AArch64.Copy
+import VerifiedGarbage.Proof.Sm4.AArch64.Keys
+import VerifiedGarbage.Proof.Sm4.AArch64.Crypt16
+import VerifiedGarbage.Proof.Sm4.Layout
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
 
 /-!
 # A group of blocks of SM4 ECB on AArch64

@@ -1,12 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Seed.AArch64.Lanes
 
-public import VerifiedGarbage.Proof.Seed.AArch64.Rounds
-import VerifiedGarbage.Proof.Seed.G
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Seed.AArch64.Rounds
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Copying blocks into the arrays and back

@@ -1,14 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Relational equality through a public Jacobian table load. -/
 

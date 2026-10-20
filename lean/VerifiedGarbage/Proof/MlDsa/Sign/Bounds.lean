@@ -1,11 +1,8 @@
 module
+public import VerifiedGarbage.Spec.MlDsa.Poly
 
 import VerifiedGarbage.Proof.Sha3.Stream
-public import VerifiedGarbage.Spec.MlDsa.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ML-DSA: the samplers are monotone in their bounds

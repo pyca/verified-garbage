@@ -1,22 +1,24 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Callee
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Contract
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Contract
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Loop
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Gcm.SealGather
+import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: the function

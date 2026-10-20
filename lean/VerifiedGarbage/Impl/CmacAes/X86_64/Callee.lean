@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Impl.CmacAes.X86_64
 
-public import VerifiedGarbage.Impl.CmacAes.X86_64
-public import VerifiedGarbage.Impl.CmacAes.X86_64.AesNi
 
 /-!
 # The implementations of `vg_cmac_aes_update` on x86-64

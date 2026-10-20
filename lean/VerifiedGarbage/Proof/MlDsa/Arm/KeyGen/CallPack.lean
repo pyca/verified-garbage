@@ -1,10 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Call
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Contracts
 
 /-!
 # ML-DSA on 32-bit ARM: calling `Power2Round` and the encodings of key generation

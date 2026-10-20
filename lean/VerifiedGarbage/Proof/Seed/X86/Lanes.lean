@@ -3,11 +3,7 @@ module
 public import VerifiedGarbage.Impl.Seed.X86.Ecb
 public import VerifiedGarbage.Proof.Seed.X86.G8
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
-public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The arrays of 32-bit words in the scratch buffer

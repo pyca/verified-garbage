@@ -2,12 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.AArch64.Sbox
 public import VerifiedGarbage.Proof.Blowfish.F
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Planes
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Blowfish.Schedule
+import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # F on sixteen words
@@ -99,15 +102,6 @@ theorem combine_run (s : State) (j : Nat) :
 def lane (v : VReg → BitVec 128) (R : Nat → VReg) (n : Nat) : Word := vword (v (R (n / 4))) (n % 4)
 
 def stepRegs : List VReg := lookupRegs ++ wordsRegs ++ fRegs
-
-theorem fAcc_step (K : Schedule) (x : Word) {j : Nat} (hj : j < 4) (prev : Word)
-    (hp : 0 < j → prev = fAcc K x (j - 1)) :
-    (if j = 0 then sq K x j else if j = 2 then prev ^^^ sq K x j else prev + sq K x j) = fAcc K x j := by
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
-  · rfl
-  · rw [hp (by decide)]; rfl
-  · rw [hp (by decide)]; rfl
-  · rw [hp (by decide)]; rfl
 
 theorem fReg_notin : ∀ k < 4, fReg k ∉ lookupRegs ∧ fReg k ∉ wordsRegs := by decide
 

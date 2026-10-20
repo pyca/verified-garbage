@@ -1,23 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Front
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.PowLit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Spec.Dsa.SignVerify
-meta import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Ffdh.X86_64.Front
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
 
 /-!
 # FFDH on X86_64: the front in constant time

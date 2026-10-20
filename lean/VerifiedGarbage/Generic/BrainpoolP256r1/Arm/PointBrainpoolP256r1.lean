@@ -2,11 +2,41 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Proof.Weierstrass.Arm.PointBrainpoolP256r1
+import VerifiedGarbage.Proof.Weierstrass.Arm.PointBrainpoolP256r1
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Impl.Weierstrass.Arm.Point
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
+public import VerifiedGarbage.Proof.Weierstrass.Arm.PointBrainpoolP256r1
 import VerifiedGarbage.Spec.Rc2
 import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Mont.Arm.Csub
+public import VerifiedGarbage.Proof.Mont.Arm.Row
+public import VerifiedGarbage.Proof.Mont.Arm.Step
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
+public import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Mont.Arm.Csub
+import VerifiedGarbage.Proof.Mont.Arm.Row
+import VerifiedGarbage.Proof.Mont.Arm.Step
+import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
+import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
 
 /-!
 # brainpoolP256r1's point addition and doubling on 32-bit ARM
@@ -31,19 +61,13 @@ def notes : List String := ["The function saves `lr` in its own working space an
   `r1`–`r3`. It writes no register but `r0`–`r3`, `r12` and `lr`."]
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP256r1.curve) : List Artifact := [
-  { Spec.Weierstrass.Point.brainpoolp256r1.addApi with
-    target := Arm.target
-    doc := Spec.Weierstrass.Point.brainpoolp256r1.addApi.doc (notes := notes)
+  Spec.Weierstrass.Point.brainpoolp256r1.addApi.artifact Arm.target {
+    notes := notes
     code := Impl.Weierstrass.Arm.Point.pointAdd Spec.Weierstrass.Point.brainpoolp256r1
-    contract := Spec.Weierstrass.Point.brainpoolp256r1.addContract Arm.abi
-    verified := brainpoolp256r1_add_verified (fermat_of_law h.law)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Weierstrass.Point.brainpoolp256r1.doubleApi with
-    target := Arm.target
-    doc := Spec.Weierstrass.Point.brainpoolp256r1.doubleApi.doc (notes := notes)
+    verified := brainpoolp256r1_add_verified (fermat_of_law h.law) },
+  Spec.Weierstrass.Point.brainpoolp256r1.doubleApi.artifact Arm.target {
+    notes := notes
     code := Impl.Weierstrass.Arm.Point.pointDouble Spec.Weierstrass.Point.brainpoolp256r1
-    contract := Spec.Weierstrass.Point.brainpoolp256r1.doubleContract Arm.abi
-    verified := brainpoolp256r1_double_verified (fermat_of_law h.law)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := brainpoolp256r1_double_verified (fermat_of_law h.law) }]
 
 end VG.Generic.BrainpoolP256r1.Arm.PointBrainpoolP256r1

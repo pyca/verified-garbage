@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Inst
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Basic
-import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Sponge
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-DSA (FIPS 204) verification on 32-bit ARM -/
 
@@ -20,29 +18,20 @@ def notes : List String :=
     on the signature (whether its hint is well formed and its `z` small enough)."]
 
 def artifacts : List Artifact := [
-  { Spec.MlDsa.verify44Api with
-    target := Arm.target
-    doc := Spec.MlDsa.verify44Api.doc (notes := notes)
+  Spec.MlDsa.verify44Api.artifact Arm.target {
+    notes := notes
     code := Impl.MlDsa.Arm.Verify.verify44
-    contract := Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa44 Arm.abi 36
     stack := 36
-    verified := Proof.MlDsa.Arm.Verify.verify44_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.verify65Api with
-    target := Arm.target
-    doc := Spec.MlDsa.verify65Api.doc (notes := notes)
+    verified := Proof.MlDsa.Arm.Verify.verify44_verified },
+  Spec.MlDsa.verify65Api.artifact Arm.target {
+    notes := notes
     code := Impl.MlDsa.Arm.Verify.verify65
-    contract := Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa65 Arm.abi 36
     stack := 36
-    verified := Proof.MlDsa.Arm.Verify.verify65_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.verify87Api with
-    target := Arm.target
-    doc := Spec.MlDsa.verify87Api.doc (notes := notes)
+    verified := Proof.MlDsa.Arm.Verify.verify65_verified },
+  Spec.MlDsa.verify87Api.artifact Arm.target {
+    notes := notes
     code := Impl.MlDsa.Arm.Verify.verify87
-    contract := Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa87 Arm.abi 36
     stack := 36
-    verified := Proof.MlDsa.Arm.Verify.verify87_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.MlDsa.Arm.Verify.verify87_verified }]
 
 end VG.Artifacts.MlDsaVerify.Arm

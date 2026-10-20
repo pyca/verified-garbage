@@ -1,17 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Correct
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Correct
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Correct
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # Deterministic ECDSA on x86-64: constant time, up to the number of candidates
@@ -94,9 +94,10 @@ abbrev TaintOk (rs : List Reg) (is : List Instr) : Prop :=
 abbrev msgRegs (wide : Bool) : List Reg := [.rsp, .rdi, .rsi] ++ (if wide then [.rdx] else [])
 
 /-- The blocks that depend on the hash function's output size `D` and block
-size `B`, and on the scalars' `Q` bytes, each of which addresses memory only
-from `rsp` (and the message's from the pointers it is given). -/
-structure Blks (Q D B : Nat) (wide : Bool) : Prop where
+size `B`, and on the scalars' `Q` bytes (and `h`'s place `ho` in the frame),
+each of which addresses memory only from `rsp` (and the message's from the
+pointers it is given). -/
+structure Blks (Q D B : Nat) (wide : Bool) (ho : Nat) : Prop where
   init : TaintOk [.rsp] (Cfg.hmacArgs₁ D)
   vUpd : TaintOk [.rsp] (Cfg.hmacArgs₂ B (Cfg.fr .rdx fV) D)
   vFin : TaintOk [.rsp] (Cfg.hmacArgs₃ B D fV)
@@ -105,8 +106,8 @@ structure Blks (Q D B : Nat) (wide : Bool) : Prop where
   kUpdF : TaintOk [.rsp] (Cfg.hmacArgs₂ B (Cfg.scr .rdx sMsg) (D + 2 * Q + 1))
   kFinF : TaintOk [.rsp] (Cfg.hmacArgs₃ B (D + 2 * Q + 1) fK)
   msg₀ : TaintOk [.rsp, .rdi, .rsi] (Cfg.msg Q D 0 false false)
-  msg₀f : TaintOk (msgRegs wide) (Cfg.msg Q D 0 true wide)
-  msg₁f : TaintOk (msgRegs wide) (Cfg.msg Q D 1 true wide)
+  msg₀f : TaintOk (msgRegs wide) (Cfg.msg Q D 0 true wide ho)
+  msg₁f : TaintOk (msgRegs wide) (Cfg.msg Q D 1 true wide ho)
 
 /-- The blocks of `Blks` that depend only on `D` and `B`: checked once for each
 pair of sizes, rather than again for each size of the scalars. -/
@@ -120,23 +121,39 @@ theorem hmacBlks {D B : Nat} (h : (D = 32 ∧ B = 64) ∨ (D = 48 ∧ B = 128) �
   exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
     ⟨_, by taint_decide⟩⟩
 
-theorem blks (P : RfcHash) : Blks P.Q P.H.D P.H.P.B P.R.wide := by
+/-- `h`'s place in the frame, unless two `V`s make a candidate: above the
+pointers for 64-byte scalars. -/
+theorem fHo_q (P : RfcHash) (hw : P.R.wide = false) : (cfgOf P).fHo = if P.Q = 64 then 216 else 128 := by
+  have hh := P.R.hHigh_eq
+  have hF := P.hFits hw
+  rw [fHo_eq]
+  by_cases h8 : P.R.E.n = 8
+  · have hq := hF.1 h8
+    simp only [h8, decide_true] at hh
+    simp only [RfcHash.hB, hh, ite_true, show P.Q = 64 from hq]
+  · have hq := hF.2 h8
+    simp only [h8, decide_false] at hh
+    simp only [RfcHash.hB, hh, Bool.false_eq_true, ite_false, show P.Q ≠ 64 by omega]
+
+theorem blks (P : RfcHash) : Blks P.Q P.H.D P.H.P.B P.R.wide (cfgOf P).fHo := by
   obtain ⟨i, vu, vf, ku, kf⟩ := hmacBlks P.hDB
   suffices h : TaintOk [.rsp] (Cfg.hmacArgs₂ P.H.P.B (Cfg.scr .rdx sMsg) (P.H.D + 2 * P.Q + 1)) ∧
       TaintOk [.rsp] (Cfg.hmacArgs₃ P.H.P.B (P.H.D + 2 * P.Q + 1) fK) ∧
       TaintOk [.rsp, .rdi, .rsi] (Cfg.msg P.Q P.H.D 0 false false) ∧
-      TaintOk (msgRegs P.R.wide) (Cfg.msg P.Q P.H.D 0 true P.R.wide) ∧
-      TaintOk (msgRegs P.R.wide) (Cfg.msg P.Q P.H.D 1 true P.R.wide) from
+      TaintOk (msgRegs P.R.wide) (Cfg.msg P.Q P.H.D 0 true P.R.wide (cfgOf P).fHo) ∧
+      TaintOk (msgRegs P.R.wide) (Cfg.msg P.Q P.H.D 1 true P.R.wide (cfgOf P).fHo) from
     ⟨i, vu, vf, ku, kf, h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2⟩
   cases hw : P.R.wide
   · obtain ⟨-, -, hQD⟩ := P.sizesA hw
-    rcases P.sizesQ hw with hq | hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rw [hq, h, h'] <;>
+    rw [fHo_q P hw]
+    rcases P.sizesQ hw with hq | hq | hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
+    rw [hq, h, h'] <;> simp only [Nat.reduceEqDiff, ite_true, ite_false] <;>
     first
     | (exfalso; rw [hq, h] at hQD; omega)
     | exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
         ⟨_, by taint_decide⟩⟩
-  · obtain ⟨-, hQ66, hD64, hB⟩ := P.sizesW hw
-    rw [hQ66, hD64, hB]
+  · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
+    rw [fHo_wide P hw, hQ66, hD64, hB]
     exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
       ⟨_, by taint_decide⟩⟩
 
@@ -151,7 +168,11 @@ theorem coreArgs_blk (P : RfcHash) : TaintOk [.rsp] (cfgOf P).coreArgs := by
 theorem wipe_blk (P : RfcHash) : TaintOk [.rsp] (cfgOf P).wipe := by
   cases hw : P.R.wide
   · have e : (cfgOf P).wide = false := hw
-    simp only [Cfg.wipe, Cfg.extra, e, Bool.false_eq_true, ite_false]; exact ⟨_, by taint_decide⟩
+    cases hh : P.R.hHigh
+    · have e' : (cfgOf P).hHigh = false := hh
+      simp only [Cfg.wipe, Cfg.extra, e, e', Bool.false_eq_true, ite_false]; exact ⟨_, by taint_decide⟩
+    · have e' : (cfgOf P).hHigh = true := hh
+      simp only [Cfg.wipe, Cfg.extra, e, e', Bool.false_eq_true, ite_true, ite_false]; exact ⟨_, by taint_decide⟩
   · have e : (cfgOf P).wide = true := hw
     simp only [Cfg.wipe, Cfg.extra, e, ite_true]; exact ⟨_, by taint_decide⟩
 
@@ -336,12 +357,12 @@ theorem msgPtrs_blk (wd : Bool) : TaintOk [.rsp] (Cfg.msgPtrs wd) := by
 
 /-- `K = HMAC_K(m)`, then `V = HMAC_K(V)`, for the message `m = V ‖ b (‖ d ‖ h)`. -/
 theorem rekey_gen_ct {Φ : Lay P.I.hashLen → Mem → State → Prop} {b : Nat} {full wd : Bool}
-    (hwd : full = true → wd = P.R.wide) {len : Nat}
+    (hwd : full = true → wd = P.R.wide) {ho : Nat} (hho : full = true → ho = P.hB - 24) {len : Nat}
     (hlen : len = if full then P.H.D + 2 * P.Q + 1 else P.H.D + 1)
-    (t₁ : TaintOk (msgRegs wd) (Cfg.msg P.Q P.H.D b full wd))
+    (t₁ : TaintOk (msgRegs wd) (Cfg.msg P.Q P.H.D b full wd ho))
     (t₂ : TaintOk [.rsp] (Cfg.hmacArgs₂ P.H.P.B (Cfg.scr .rdx sMsg) len))
     (t₃ : TaintOk [.rsp] (Cfg.hmacArgs₃ P.H.P.B len fK)) :
-    RelCT isa (Two P Φ) (.seq (.block (Cfg.msgPtrs wd)) (.seq (.block (Cfg.msg P.Q P.H.D b full wd))
+    RelCT isa (Two P Φ) (.seq (.block (Cfg.msgPtrs wd)) (.seq (.block (Cfg.msg P.Q P.H.D b full wd ho))
       (.seq ((cfgOf P).hmac (Cfg.scr .rdx sMsg) len fK) (cfgOf P).hmacV))) fun _ _ => True := by
   have hlen' : len ≤ 256 := by cases full <;> simp only [hlen, Bool.false_eq_true, ite_true, ite_false] <;> nums
   refine (two_wp (Ψ := PtrsIn wd) (two_blk [.rsp] rspOnly (msgPtrs_blk wd)) fun _ _ _ _ hL hk hc _ =>
@@ -361,10 +382,14 @@ theorem rekey_gen_ct {Φ : Lay P.I.hashLen → Mem → State → Prop} {b : Nat}
         · exact f₁.1.trans f₂.1.symm
         · exact f₁.2.1.trans f₂.2.1.symm
         · exact (f₁.2.2 rfl).trans (f₂.2.2 rfl).symm) t₁) fun _ _ _ _ hL hk hc hp =>
-    WP.mono (msg_ok hL hc hp.1 hp.2.1 b full wd hp.2.2 (D := P.H.D) (Q := P.Q) (by nums) (by nums) (by nums)
+    WP.mono (msg_ok hL hc hp.1 hp.2.1 b full wd ho hp.2.2 (D := P.H.D) (Q := P.Q) (by nums) (by nums) (by nums)
       (by nums) (by rw [hk.1])
       (fun hf hw => by
-        have := P.sizesA (hw ▸ hwd hf).symm; omega)
+        have hA := (hw ▸ hwd hf).symm
+        have := P.sizesA hA
+        obtain ⟨-, -, hb₃, -, -, -⟩ := hb_facts hA hk.2.2.1
+        have := hB_ge P
+        rw [hho hf]; exact ⟨by omega, by omega⟩)
       (fun hf hw => by
         have := P.sizesW (hw ▸ hwd hf).symm; exact ⟨by omega, by omega, by rw [P.len], by omega⟩))
       fun _ h => ⟨h.1, trivial⟩).seq ?_
@@ -374,13 +399,14 @@ theorem rekey_gen_ct {Φ : Lay P.I.hashLen → Mem → State → Prop} {b : Nat}
 theorem rekeyFull_ct {Φ : Lay P.I.hashLen → Mem → State → Prop} (b : Nat) (hb : b < 2) :
     RelCT isa (Two P Φ) ((cfgOf P).rekeyFull b) fun _ _ => True := by
   obtain rfl | rfl : b = 0 ∨ b = 1 := by omega
-  · exact rekey_gen_ct (full := true) (fun _ => rfl) (len := P.H.D + 2 * P.Q + 1) rfl (blks P).msg₀f
-      (blks P).kUpdF (blks P).kFinF
-  · exact rekey_gen_ct (full := true) (fun _ => rfl) (len := P.H.D + 2 * P.Q + 1) rfl (blks P).msg₁f
-      (blks P).kUpdF (blks P).kFinF
+  · exact rekey_gen_ct (full := true) (fun _ => rfl) (ho := (cfgOf P).fHo) (fun _ => fHo_eq P)
+      (len := P.H.D + 2 * P.Q + 1) rfl (blks P).msg₀f (blks P).kUpdF (blks P).kFinF
+  · exact rekey_gen_ct (full := true) (fun _ => rfl) (ho := (cfgOf P).fHo) (fun _ => fHo_eq P)
+      (len := P.H.D + 2 * P.Q + 1) rfl (blks P).msg₁f (blks P).kUpdF (blks P).kFinF
 
 theorem rekey_ct {Φ : Lay P.I.hashLen → Mem → State → Prop} : RelCT isa (Two P Φ) (cfgOf P).rekey fun _ _ => True :=
-  rekey_gen_ct (b := 0) (full := false) (wd := false) (fun h => absurd h (by decide)) (len := P.H.D + 1) rfl
+  rekey_gen_ct (b := 0) (full := false) (wd := false) (fun h => absurd h (by decide)) (ho := fH)
+    (fun h => absurd h (by decide)) (len := P.H.D + 1) rfl
     (blks P).msg₀ (blks P).kUpd₁ (blks P).kFin₁
 
 /-! ## One candidate -/

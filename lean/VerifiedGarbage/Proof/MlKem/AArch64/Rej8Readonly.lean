@@ -1,11 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Table
+public import VerifiedGarbage.Proof.MlKem.Mem
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Table
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Table
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Rej8
@@ -13,8 +15,39 @@ open VG VG.AArch64 VG.Impl.MlKem.AArch64.Rej8 VG.Proof.MlKem
 
 theorem tableWords_length : tableWords.length=512 := by decide +kernel
 
+/-- Entry `i` of block `b` of a list of blocks of `k` entries. -/
+theorem flatMap_range_getD {α : Type} (f : Nat → List α) {k : Nat} (hf : ∀ b, (f b).length = k) (d : α) :
+    ∀ n b i, b < n → i < k → ((List.range n).flatMap f).getD (k * b + i) d = (f b).getD i d := by
+  have hl : ∀ n, ((List.range n).flatMap f).length = k * n := fun n => by
+    induction n with
+    | zero => rfl
+    | succ n ih =>
+      rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, List.length_append, ih, hf,
+        Nat.mul_succ]
+  intro n
+  induction n with
+  | zero => intro b i hb; omega
+  | succ n ih =>
+    intro b i hb hi
+    rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
+    simp only [List.getD_eq_getElem?_getD, List.getElem?_append, hl]
+    by_cases h : b < n
+    · have : k * b + i < k * n := by
+        have := Nat.mul_le_mul_left k (show b + 1 ≤ n by omega); rw [Nat.mul_succ] at this; omega
+      rw [ite_eq_left this, ← List.getD_eq_getElem?_getD, ← List.getD_eq_getElem?_getD]
+      exact ih b i h hi
+    · have : b = n := by omega
+      subst this
+      rw [ite_eq_right (by omega), show k * b + i - k * b = i by omega]
+
+/-- An entry of the table, from its blocks of two words: by the list's shape,
+not by evaluating all 512 entries. -/
 theorem tableWords_entry : ∀mask<256, ∀j<2,
-    tableWords.getD (2*mask+j) 0=tableWord mask j := by decide +kernel
+    tableWords.getD (2*mask+j) 0=tableWord mask j := by
+  intro mask hm j hj
+  rw [tableWords, flatMap_range_getD _ (k := 2) (fun _ => by simp) 0 256 mask j hm hj]
+  match j, hj with
+  | 0, _ | 1, _ => rfl
 
 def TableArtifact (m : Mem) (p : Addr) : Prop :=
   ∀i<512,m.readW (p+BitVec.ofNat 64 (8*i)) 64=tableWords.getD i 0

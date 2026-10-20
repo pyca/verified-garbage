@@ -1,12 +1,10 @@
 module
 
-import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.MulVerified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # brainpoolP384r1's point multiplication on AArch64
@@ -37,12 +35,9 @@ def note : String :=
   `k` or `Q` but through masks. It writes no vector register."
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.BrainpoolP384r1.curve) : List Artifact :=
-  [{ C.mulApi with
-      target := AArch64.target
-      doc := C.mulApi.doc (notes := [note])
+  [C.mulApi.artifact AArch64.target {
+      notes := [note]
       code := brainpoolp384r1.mulFn
-      contract := C.mulContract AArch64.abi
-      verified := mul_verified h.law h.inv
-      spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+      verified := mul_verified h.law h.inv }]
 
 end VG.Generic.BrainpoolP384r1.AArch64.MulBrainpoolP384r1

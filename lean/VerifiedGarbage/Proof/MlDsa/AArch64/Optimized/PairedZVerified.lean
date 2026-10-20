@@ -1,8 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecPre
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecPre
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecFrame
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZStoredField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMaskSemantic
@@ -10,14 +10,20 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntry
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckCoverage
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSatMemory
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMaskInvariant
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedAbi
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCoordinates
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRawField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `PairedZContractTiming.lean` -/
 

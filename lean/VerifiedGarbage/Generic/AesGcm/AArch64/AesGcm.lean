@@ -1,10 +1,101 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Instances
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Instances
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenVerified
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealPw
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenPw
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealStore
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenStore
 import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+public import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Entry
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenCT
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Pad
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Run
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Seal
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.CT
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Fn
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Init
+public import VerifiedGarbage.Proof.AesGcm.AArch64.OpenCT
+public import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Open
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.OpenCT
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.OpenPw
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Run
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.SealPw
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Verified
+public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCryptCT
+public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamFinish
+public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
+public import VerifiedGarbage.Proof.AesGcm.CtxFrame
+public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
+public import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Final
+public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Loop
+public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ok
+public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Steps
+public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Weave
+public import VerifiedGarbage.Proof.Gcm.Bits
+public import VerifiedGarbage.Proof.Gcm.Powers
+public import VerifiedGarbage.Proof.Gcm.SealGather
+import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Entry
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Pad
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Run
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Seal
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.CT
+import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Fn
+import VerifiedGarbage.Proof.AesGcm.AArch64.Init
+import VerifiedGarbage.Proof.AesGcm.AArch64.OpenCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Open
+import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.OpenCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.OpenPw
+import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Run
+import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.SealPw
+import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Verified
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCryptCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamFinish
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
+import VerifiedGarbage.Proof.AesGcm.CtxFrame
+import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Final
+import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Loop
+import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ok
+import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Steps
+import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Weave
+import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Gcm.Powers
+import VerifiedGarbage.Proof.Gcm.SealGather
 
 /-!
 # AES-GCM (NIST SP 800-38D) on AArch64
@@ -21,7 +112,9 @@ target (`Sig.layoutDoc`), from `stack` and `writeArgs`, which `ofSig` checks
 against the contract.
 
 Each function needs the CPU features of the implementations it calls:
-`init` calls only AES's, `stream_init` and `stream_aad` only GHASH's.
+`init` calls only AES's, `stream_init` and `stream_aad` only GHASH's. With
+the interleaved loops (`GcmImpl.stitch`), the functions with the powers also
+need `FEAT_SHA3`.
 
 The functions' calls (`bl`) keep the return address in `x30`, which they
 save in the working space. `seal` and `open` read their last arguments from
@@ -41,129 +134,173 @@ def note (v : GcmImpl) : String :=
   "This implementation encrypts with `" ++ v.ctr.callee.name ++ "` (and expands keys with `" ++
     v.key.fn.name ++ "`) and hashes with `" ++ v.gh.fn.name ++ "`."
 
+/-- How `seal` takes the records of TLS, for the implementations with PMULL. -/
+def fastNote (v : GcmImpl) : List String :=
+  if v.gh.pmull then ["For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes \
+    the hash subkey's `H · x⁻¹` once and multiplies the additional data, the last bytes of the ciphertext and \
+    the lengths block into the hash with PMULL in registers, calling `" ++ v.gh.fn.name ++ "` once, on the \
+    whole blocks of the ciphertext."] else []
+
+/-- How `open` takes the records of TLS, for the implementations with PMULL. -/
+def fastOpenNote (v : GcmImpl) : List String :=
+  if v.gh.pmull then ["For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes \
+    the tag as `seal` does on that path, calling `" ++ v.gh.fn.name ++ "` once, on the whole blocks of the \
+    ciphertext, and decrypts only if it matches."] else []
+
+/-- How the functions with the powers take the whole chunks of 128 bytes of a
+TLS record, with the interleaved loops. -/
+def stitchNote (v : GcmImpl) : List String :=
+  if v.stitch then ["With the interleaved loops, it encrypts or decrypts the first 128 ⌊n / 128⌋ bytes of the \
+    text and hashes them eight blocks at a time, in one loop that interleaves the AES rounds with the PMULL \
+    products and their reduction (with `eor3`, which needs `FEAT_SHA3`), from a table of the powers, and \
+    hashes the rest's whole blocks with the call."] else []
+
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
-  { Spec.Gcm.initApi with
-    name := Spec.Gcm.initApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Gcm.initApi.doc (notes := [note v])
+  Spec.Gcm.initApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x3 (Impl.AesGcm.AArch64.init v.callees)
-    contract := Spec.Gcm.initContract AArch64.abi 2560
     stack := 2560
     verified := init_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.ctr.features },
-  { Spec.Gcm.sealApi with
-    name := Spec.Gcm.sealApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Gcm.sealApi.doc (notes := [note v])
-    code := Impl.StackScratch.AArch64.withStackArgScratch 2576 1
-      (Impl.AesGcm.AArch64.«seal» v.callees)
-    contract := Spec.Gcm.sealContract AArch64.abi 2576
+  Spec.Gcm.sealApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v] ++ fastNote v
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (sealCode v)
     stack := 2576
-    verified := seal_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
+    verified := sealCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV
     features := v.features },
-  { Spec.Gcm.openApi with
-    name := Spec.Gcm.openApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Gcm.openApi.doc (notes := [note v])
-    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2
-      (Impl.AesGcm.AArch64.«open» v.callees)
-    contract := Spec.Gcm.openContract AArch64.abi 2592
+  Spec.Gcm.openApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v] ++ fastOpenNote v
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (openCode v)
     stack := 2592
-    verified := open_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
+    verified := openCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV
     features := v.features },
-  { Spec.Gcm.streamInitApi with
-    name := Spec.Gcm.streamInitApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Gcm.streamInitApi.doc (notes := [note v])
+  Spec.Gcm.streamInitApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x4 (Impl.AesGcm.AArch64.streamInit v.callees)
-    contract := Spec.Gcm.streamInitContract AArch64.abi 2560
     stack := 2560
     verified := streamInit_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.gh.features },
-  { Spec.Gcm.streamAadApi with
-    name := Spec.Gcm.streamAadApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Gcm.streamAadApi.doc (notes := [note v])
+  Spec.Gcm.streamAadApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x5 (Impl.AesGcm.AArch64.streamAad v.callees)
-    contract := Spec.Gcm.streamAadContract AArch64.abi 2560
     stack := 2560
     verified := streamAad_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.gh.features },
-  { Spec.Gcm.streamEncryptApi with
-    name := Spec.Gcm.streamEncryptApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Gcm.streamEncryptApi.doc (notes := [note v])
+  Spec.Gcm.streamEncryptApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x7 (Impl.AesGcm.AArch64.streamEncrypt v.callees)
-    contract := Spec.Gcm.streamEncryptContract AArch64.abi 2560
     stack := 2560
     verified := streamEncrypt_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
-  { Spec.Gcm.streamDecryptApi with
-    name := Spec.Gcm.streamDecryptApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Gcm.streamDecryptApi.doc (notes := [note v])
+  Spec.Gcm.streamDecryptApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x7 (Impl.AesGcm.AArch64.streamDecrypt v.callees)
-    contract := Spec.Gcm.streamDecryptContract AArch64.abi 2560
     stack := 2560
     verified := streamDecrypt_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
-  { Spec.Gcm.streamFinishApi with
-    name := Spec.Gcm.streamFinishApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Gcm.streamFinishApi.doc (notes := [note v])
+  Spec.Gcm.streamFinishApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x6
       (Impl.AesGcm.AArch64.streamFinish v.callees)
-    contract := Spec.Gcm.streamFinishContract AArch64.abi 2560
     stack := 2560
     verified := streamFinish_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
-  { Spec.Gcm.streamVerifyApi with
-    name := Spec.Gcm.streamVerifyApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Gcm.streamVerifyApi.doc (notes := [note v])
+  Spec.Gcm.streamVerifyApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x7
       (Impl.AesGcm.AArch64.streamVerify v.callees)
-    contract := Spec.Gcm.streamVerifyContract AArch64.abi 2560
     stack := 2560
     verified := streamVerify_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features }]
 
 /-- What `vg_aes_gcm_seal_gather` does: it calls `vg_aes_gcm_seal`. -/
 def gatherNote (fn : String) : String :=
-  "This implementation copies the slices, 16 bytes at a time, one after the other to `dst`, and \
-    encrypts them there in place with `" ++ fn ++ "`."
-
-/-- The instance of `vg_aes_gcm_seal` calling the implementations `v`. -/
-def sealFn (v : GcmImpl) : Proof.AesGcm.AArch64.Gather.SealFn where
-  fn := ⟨Spec.Gcm.sealApi.name ++ v.suffix,
-    Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (Impl.AesGcm.AArch64.«seal» v.callees)⟩
-  verified := seal_framed v
-  depth := Proof.AesGcm.AArch64.Gather.seal_depth v
+  "This implementation copies the slices one after the other to `dst`, 16 bytes at a time and then \
+    the last bytes of each eight, four and one at a time, and encrypts them there in place with `" ++
+    fn ++ "`."
 
 /-- `vg_aes_gcm_seal_gather`, calling the instance of `vg_aes_gcm_seal` of the implementations `v`. -/
 def artifactsGather (v : GcmImpl) : List Artifact := [
-  { Spec.Gcm.sealGatherApi with
-    name := Spec.Gcm.sealGatherApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Gcm.sealGatherApi.doc (notes := [gatherNote (sealFn v).fn.name])
-    code := Impl.AesGcm.AArch64.SealGather.sealGather (sealFn v).fn
-    contract := Spec.Gcm.sealGatherContract AArch64.abi 2592
+  Spec.Gcm.sealGatherApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [gatherNote (Proof.AesGcm.AArch64.sealFn v Proof.Gcm.AArch64.Pmull.mulV_keyV).fn.name]
+    code := Impl.AesGcm.AArch64.SealGather.sealGather (Proof.AesGcm.AArch64.sealFn v Proof.Gcm.AArch64.Pmull.mulV_keyV).fn
     stack := 2592
-    verified := Proof.AesGcm.AArch64.Gather.sealGather_verified (sealFn v)
-    spSafe := Code.all_of_forall (fun _ => rfl) _
+    verified := Proof.AesGcm.AArch64.Gather.sealGather_verified (Proof.AesGcm.AArch64.sealFn v Proof.Gcm.AArch64.Pmull.mulV_keyV)
     features := v.features }]
 
+/-- How the `*_with_powers` functions use the powers. -/
+def withPowersNote (v : GcmImpl) (g : GhashWithImpl) (name : String) : String :=
+  "For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the tag as `" ++
+    name ++ v.suffix ++ "` does, calling `" ++ g.fn.name ++ "` once, on the whole blocks of the text, which reads \
+    the powers of `H` from `pw`. Otherwise it never reads `pw`, and computes as `" ++ name ++ v.suffix ++ "` does."
+
+/-- How the interleaved `*_with_powers` functions take a short TLS record. -/
+def shortNote (v : GcmImpl) (isSeal : Bool) : List String :=
+  if v.stitch then ["On the path for TLS records, a text of " ++
+    (if isSeal then "17 to " else "at most ") ++ toString Impl.AesGcm.AArch64.Stitch.shortMax ++
+    " bytes is " ++ (if isSeal then "sealed" else "opened") ++ " without the call: its blocks, the additional data \
+    and the lengths are laid out in `work`, encrypted in one pass of the loop's AES rounds and hashed in one \
+    pass of its products, from the table of the powers read from `pw`."] else []
+
+/-- `vg_aes_gcm_seal_with_powers` and `vg_aes_gcm_open_with_powers`, calling
+`g` on the path for TLS records. -/
+def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
+  [Spec.Gcm.sealWithPowersApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v, withPowersNote v g Spec.Gcm.sealApi.name] ++ stitchNote v ++ shortNote v true
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (sealPwCode v g)
+    stack := 2592
+    verified := sealPwCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok g
+    features := v.stitchFeatures },
+  Spec.Gcm.openWithPowersApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v, withPowersNote v g Spec.Gcm.openApi.name] ++ stitchNote v ++ shortNote v false
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (openPwCode v g)
+    stack := 2592
+    verified := openPwCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok g
+    features := v.stitchFeatures }]
+
+/-- How the `*_store_powers` functions store the powers. -/
+def storePowersNote (v : GcmImpl) (g : GhashStoreImpl) (name : String) : String :=
+  "It computes as `" ++ name ++ v.suffix ++ "` does on the path for TLS records (a 12-byte nonce and at most \
+    16 bytes of additional data), calling `" ++ g.fn.name ++ "` once, on the whole blocks of the text, which \
+    also stores the powers of `H` to `pw`."
+
+/-- `vg_aes_gcm_seal_store_powers` and `vg_aes_gcm_open_store_powers`, calling
+`g` on the path for TLS records, the only one their contracts allow. -/
+def storePowersArtifacts (v : GcmImpl) (g : GhashStoreImpl) : List Artifact :=
+  [Spec.Gcm.sealStorePowersApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v, storePowersNote v g Spec.Gcm.sealApi.name] ++ stitchNote v
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (sealStCode v g)
+    stack := 2592
+    verified := sealStCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Pmull.prepPow
+      Proof.Gcm.AArch64.Stitch.gh8Ok g
+    features := v.stitchFeatures },
+  Spec.Gcm.openStorePowersApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v, storePowersNote v g Spec.Gcm.openApi.name] ++ stitchNote v
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (openStCode v g)
+    stack := 2592
+    verified := openStCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Pmull.prepPow
+      Proof.Gcm.AArch64.Stitch.gh8Ok g
+    features := v.stitchFeatures }]
+
 /-- The artifacts of a variant, from the implementations it names. -/
-def artifacts (v : GcmVariant) : List Artifact := artifactsOf v.impl ++ artifactsGather v.impl
+def artifacts (v : GcmVariant) : List Artifact :=
+  artifactsOf v.impl ++ artifactsGather v.impl ++
+    (v.impl.gh.withPowers.map (withPowersArtifacts v.impl)).getD [] ++
+    (v.impl.gh.storePowers.map (storePowersArtifacts v.impl)).getD []
 
 end VG.Generic.AesGcm.AArch64.AesGcm

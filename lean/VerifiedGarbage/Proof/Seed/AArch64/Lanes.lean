@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Seed.AArch64.Ecb
-public import VerifiedGarbage.Proof.Seed.AArch64.G16
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Seed.AArch64.G16
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The arrays of 32-bit words in the scratch buffer

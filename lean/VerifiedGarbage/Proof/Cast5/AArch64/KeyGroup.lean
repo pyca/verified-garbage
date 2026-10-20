@@ -1,11 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Cast5.AArch64.Scan
+public import VerifiedGarbage.Proof.Cast5.KeyMem
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 
-public import VerifiedGarbage.Proof.Cast5.AArch64.KeyLine
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Cast5.AArch64.Block
+import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Cast5.AArch64.KeyLine
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
 # CAST5 key expansion on AArch64: groups of four lines

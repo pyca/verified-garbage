@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
 # x86-64: code that does not touch the vector registers
@@ -18,11 +18,12 @@ about it need not state.
 
 namespace VG.X86_64
 
-/-- The instructions that read and write only general-purpose registers, flags and memory. -/
+/-- The instructions that write only general-purpose registers, flags and memory, and
+read nothing else but, for `movq r64, xmm`, an SSE register. -/
 def scalarI : Instr → Bool
-  | .mov .. | .store .. | .alu .. | .mov32 .. | .movzx8 .. | .movImm64 .. | .leaSym .. | .mul ..
+  | .mov .. | .store .. | .alu .. | .mov32 .. | .movzx8 .. | .movzx16 .. | .movImm64 .. | .leaSym .. | .mul ..
   | .store8 .. | .shift .. | .mulx .. | .adcx .. | .adox .. | .cmov .. | .alu32 .. | .imul .. | .bswap ..
-  | .store32 .. | .bswap32 .. => true
+  | .store32 .. | .store16 .. | .bswap32 .. | .movqR .. => true
   | _ => false
 
 theorem execAlu32_vec {op : AluOp} {d : Reg} {src : Src} {s t : State} (h : execAlu32 op d src s = some t) :
@@ -77,7 +78,7 @@ theorem exec_vec {i : Instr} (hi : scalarI i = true) {s t : State} (h : exec i s
     | exact ⟨(execCmov_vec h).1, (execCmov_vec h).2.1⟩
     | (obtain ⟨v, -, rfl⟩ := h; exact ⟨rfl, rfl⟩)
     | (simp only [Option.some.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
-    | (simp only [State.store64, State.store8, State.store32] at h; split at h <;> [(cases h; exact ⟨rfl, rfl⟩); cases h])
+    | (simp only [State.store64, State.store8, State.store16, State.store32] at h; split at h <;> [(cases h; exact ⟨rfl, rfl⟩); cases h])
     | (unfold execAlu at h
        simp only [Option.bind_eq_some_iff] at h
        obtain ⟨b, -, h⟩ := h
@@ -88,12 +89,15 @@ theorem exec_vec {i : Instr} (hi : scalarI i = true) {s t : State} (h : exec i s
        · split at h <;> (cases h; exact ⟨rfl, rfl⟩)
        · cases h)
 
-/-- Whether every instruction of `c` is in `scalarI`, with no calls or frames. -/
+/-- Whether every instruction of `c`, and of the functions it calls, is in
+`scalarI`, with no frames: a call and its return change only `rsp` and
+memory. -/
 def scalCode : Prog isa → Bool
   | .block is => is.all scalarI
   | .seq a b => scalCode a && scalCode b
   | .ite _ a b => scalCode a && scalCode b
   | .loop b _ => scalCode b
+  | .call _ b => scalCode b
   | _ => false
 
 theorem execBlock_vec : ∀ {is : List Instr}, is.all scalarI = true → ∀ {s s' : State} {t : List Leak},
@@ -130,7 +134,14 @@ theorem exec_scal {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c 
     intro hc
     obtain ⟨a, b⟩ := ih₁ hc; obtain ⟨a', b'⟩ := ih₂ hc
     exact ⟨a'.trans a, b'.trans b⟩
-  | call => intro hc; simp only [scalCode, Bool.false_eq_true] at hc
+  | call hc₁ _ hr ih =>
+    intro hc
+    obtain ⟨a, b⟩ := ih hc
+    simp only [isa, call, Option.some.injEq] at hc₁
+    subst hc₁
+    simp only [isa, ret] at hr
+    split at hr <;> cases hr
+    exact ⟨a, b⟩
   | frame => intro hc; simp only [scalCode, Bool.false_eq_true] at hc
 
 /-- Scalar code keeps the vector registers. -/

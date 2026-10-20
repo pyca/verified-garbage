@@ -1,19 +1,23 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ks
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ks
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopOneD
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.RemPair
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchR
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopOne
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.RemPair
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemSetup
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Ks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGD
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # The 256-bit decryption loop: the blocks after the last group

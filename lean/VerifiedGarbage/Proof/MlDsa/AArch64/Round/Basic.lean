@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Round.Round
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Proof.MlDsa.Round.Decompose
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.MlDsa.Round.Mem
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # ML-DSA on AArch64: what the rounding proofs share
@@ -180,7 +179,7 @@ theorem onGamma_ok {gr t : Reg} (ht : t ≠ gr) {arm : Nat → Prog isa} {s : St
   refine WP.mono (movW_ok t _ s) fun s₁ ⟨⟨h1, hm₁⟩, k₁⟩ => ?_
   have hgr : s₁.gpr gr = s.gpr gr := k₁.get gr (by simpa using ht.symm)
   refine WP.mono (VG.Proof.MlDsa.AArch64.Arith.WP.keep [t] (Q := fun s' => s'.gpr t = s₁.gpr gr - s₁.gpr t ∧ s'.mem = s₁.mem)
-    (by arun) (by simp [writesOnly, Code.allInstrs, dstOf]) (hv := rfl)) fun s₂ ⟨⟨h2, hm₂⟩, k₂⟩ => ?_
+    (by arun) (by simp [writesOnly, Code.allInstrs, dsts, dstOf, Option.toList]) (hv := rfl)) fun s₂ ⟨⟨h2, hm₂⟩, k₂⟩ => ?_
   have k := k₁.trans k₂
   have hk : Keep [t] s s₂ := k.mono (by simp)
   have hm : s₂.mem = s.mem := by rw [hm₂, hm₁]
@@ -322,7 +321,7 @@ theorem loop_ok {s₀ : State} {ins outs ptrs fixed clob : List Reg} {cnt : Reg}
         Keep clob s s') :
     WP isa (mapLoop ptrs cnt body) s₀ (Inv s₀ ptrs fixed outs V J 256) := by
   refine WP.seq (WP.mono (VG.Proof.MlDsa.AArch64.Arith.WP.keep [cnt] (Q := fun s => s.mem = s₀.mem ∧ s.gpr cnt = BitVec.ofNat 64 256)
-    (by arun) (by simp [writesOnly, Code.allInstrs, dstOf]) (hv := rfl))
+    (by arun) (by simp [writesOnly, Code.allInstrs, dsts, dstOf, Option.toList]) (hv := rfl))
     fun s₁ ⟨⟨hm, hc⟩, hk⟩ => ?_)
   have h0 : Inv s₀ ptrs fixed outs V J 0 s₁ := by
     refine ⟨fun p hp => ?_, fun r hr => hk.get r (by simp only [List.mem_singleton]; rintro rfl; exact hfc hr), hk.rd, hk.wr, ?_,

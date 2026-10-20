@@ -29,6 +29,8 @@ mod rfc2144;
 mod rfc2202;
 #[path = "rfc3686/main.rs"]
 mod rfc3686;
+#[path = "rfc4231/main.rs"]
+mod rfc4231;
 #[path = "rfc5528/main.rs"]
 mod rfc5528;
 #[path = "rfc6229/main.rs"]

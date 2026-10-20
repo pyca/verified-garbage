@@ -1,14 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-public import VerifiedGarbage.Proof.Dsa.X86_64.PublicSelect
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicSelect
 public import VerifiedGarbage.Impl.Dsa.X86_64.PublicPower
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Correctness of public windows and zero-digit skipping -/
 

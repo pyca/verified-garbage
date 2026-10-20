@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P521Sha512
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-521 with HMAC-SHA-512 on ARMv7
@@ -26,15 +26,12 @@ open VG.Proof.Ecdsa.Rfc6979.Arm (cfgOf signNotesWide)
 open VG.Proof.Ecdsa.Rfc6979.Arm.P521Sha512 (pack sign_verified)
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := [
-  { Spec.Ecdsa.Rfc6979.P521Sha512.signApi with
-    target := Arm.target
-    doc := Spec.Ecdsa.Rfc6979.P521Sha512.signApi.doc (notes := [signNotesWide
+  Spec.Ecdsa.Rfc6979.P521Sha512.signApi.artifact Arm.target {
+    notes := [signNotesWide
       Proof.Pbkdf2.Whole.Arm.sha512F.hiN Proof.Pbkdf2.Whole.Arm.sha512F.H.updN
-      Proof.Pbkdf2.Whole.Arm.sha512F.hfN 66 521 64 Spec.Ecdsa.P521.signApi.name])
+      Proof.Pbkdf2.Whole.Arm.sha512F.hfN 66 521 64 Spec.Ecdsa.P521.signApi.name]
     code := (cfgOf (pack h.law)).sign
-    contract := Spec.Ecdsa.Rfc6979.P521Sha512.inst.signContract Arm.abi 384
     stack := 384
-    verified := sign_verified h.law
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := sign_verified h.law }]
 
 end VG.Generic.P521.Arm.EcdsaP521Sha512

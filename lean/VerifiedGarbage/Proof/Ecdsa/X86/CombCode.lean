@@ -1,23 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86.CombSign
-meta import VerifiedGarbage.Proof.Ecdsa.X86.CombSign
-public import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+public import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
+public import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
+import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+meta import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
+meta import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import Mathlib.Tactic.Attr.Core
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
-import VerifiedGarbage.Proof.Framework.X86.TaintSym
-meta import VerifiedGarbage.Proof.Framework.X86.TaintSym
-import VerifiedGarbage.Proof.Framework.X86.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86.RelCT
-public import VerifiedGarbage.Proof.Framework.X86.Inline
-meta import VerifiedGarbage.Proof.Framework.X86.Inline
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import VerifiedGarbage.Proof.Framework.X86.Sse
-meta import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
+meta import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # ECDSA over P-256 on x86 (32-bit): the comb's code and the taints of its constant-time checks

@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.TaintSum
-public import VerifiedGarbage.Proof.Framework.X86.TaintMono
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-!
 # ECDSA verification on x86 (32-bit): what the field functions' summaries start from

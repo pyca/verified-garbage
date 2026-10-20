@@ -1,16 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Absorb
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Zero
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
-public import VerifiedGarbage.Proof.MlDsa.Sample.Hash
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
+public import VerifiedGarbage.Proof.Sha3.Seed34
+public import VerifiedGarbage.Spec.MlDsa.Poly
 import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
+import VerifiedGarbage.Proof.Framework.Covers
 
 @[expose] public section
 

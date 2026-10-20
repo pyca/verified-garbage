@@ -1,21 +1,31 @@
 module
 
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Store
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Store
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Group
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.VKeep
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Group
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.VKeep
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Poly1305 on x86-64 with AVX-512: `vg_poly1305_blocks_avx512`

@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
+import Mathlib.Tactic.NormNum.Pow
+import Mathlib.Tactic.NormNum.Inv
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_poly1305_blocks_avx2` as an implementation of `vg_poly1305_blocks`

@@ -1,12 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.X86.Field32.Chain
+import VerifiedGarbage.Proof.X25519.X86.Field32.Chain
 public import VerifiedGarbage.TCB.X86.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.X25519.X86.Field32
+public import VerifiedGarbage.Proof.X25519.Invert
+public import VerifiedGarbage.Proof.X25519.X86.Ops
 
 /-!
 # `vg_gf25519_r32_pow250` on x86 (32-bit): what it computes

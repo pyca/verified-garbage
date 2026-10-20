@@ -3,10 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTSmall
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTTail
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTFront
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTOut
 
 /-!
 # `vg_rsa_keygen_key` on AArch64: constant time

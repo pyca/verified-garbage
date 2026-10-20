@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.J0
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.J0
 import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.J0
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM on x86-64: `j0` in two runs

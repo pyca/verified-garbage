@@ -1,11 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inst
-import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttLoop
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.Setup
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ML-DSA (FIPS 204) key generation on x86 (32-bit)
@@ -29,29 +25,20 @@ def notes : List String :=
     depend on whether key generation fails."]
 
 def artifacts : List Artifact := [
-  { Spec.MlDsa.keyGen44Api with
-    target := X86.target
-    doc := Spec.MlDsa.keyGen44Api.doc (notes := notes)
+  Spec.MlDsa.keyGen44Api.artifact X86.target {
+    notes := notes
     code := Impl.MlDsa.X86.KeyGen.keyGen44
-    contract := Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa44 X86.abi 96
     stack := 96
-    verified := Proof.MlDsa.X86.KeyGen.keyGen44_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlDsa.keyGen65Api with
-    target := X86.target
-    doc := Spec.MlDsa.keyGen65Api.doc (notes := notes)
+    verified := Proof.MlDsa.X86.KeyGen.keyGen44_verified },
+  Spec.MlDsa.keyGen65Api.artifact X86.target {
+    notes := notes
     code := Impl.MlDsa.X86.KeyGen.keyGen65
-    contract := Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa65 X86.abi 96
     stack := 96
-    verified := Proof.MlDsa.X86.KeyGen.keyGen65_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlDsa.keyGen87Api with
-    target := X86.target
-    doc := Spec.MlDsa.keyGen87Api.doc (notes := notes)
+    verified := Proof.MlDsa.X86.KeyGen.keyGen65_verified },
+  Spec.MlDsa.keyGen87Api.artifact X86.target {
+    notes := notes
     code := Impl.MlDsa.X86.KeyGen.keyGen87
-    contract := Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa87 X86.abi 96
     stack := 96
-    verified := Proof.MlDsa.X86.KeyGen.keyGen87_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    verified := Proof.MlDsa.X86.KeyGen.keyGen87_verified }]
 
 end VG.Artifacts.MlDsaKeyGen.X86

@@ -1,20 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Verified
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P224
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha224
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P224Sha224
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hash
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.EcKey.Generic
 
 /-!
 # Deterministic ECDSA over P-224 with HMAC-SHA-224 on x86-64

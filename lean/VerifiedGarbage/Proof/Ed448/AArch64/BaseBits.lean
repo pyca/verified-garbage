@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
 public import VerifiedGarbage.Proof.X448.AArch64.BitBody
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.X448.AArch64.Finish
-public import VerifiedGarbage.Proof.Ed448.Scalar
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Ed448.Scalar
+import VerifiedGarbage.Proof.X448.AArch64.BitWrite
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Ed448 base-point multiplication on AArch64: the scalar's bits

@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Bytes
-import VerifiedGarbage.Proof.ChaCha20.Stream
+public import VerifiedGarbage.Proof.ChaCha20.Stream
+public import VerifiedGarbage.Proof.ChaCha20.Arm.Xor
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.ChaCha20.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Impl.ChaCha20.Arm.Stream
 
 /-!
 # Streaming ChaCha20 on ARMv7: the entry state and the calls

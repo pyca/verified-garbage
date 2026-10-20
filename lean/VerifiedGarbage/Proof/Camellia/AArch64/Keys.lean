@@ -1,14 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.AArch64.Crypt8
+import VerifiedGarbage.Proof.Camellia.AArch64.Crypt8
 public import VerifiedGarbage.Proof.Camellia.AArch64.KeyChecks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Camellia.AArch64.Core
 import VerifiedGarbage.Proof.Camellia.Common
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The table of bitsliced subkeys on AArch64
@@ -103,9 +102,9 @@ theorem keyOne_step {s : State} {b : Addr} {d e : Nat} (hd : d = 0 ∨ d = 8)
       simp only [keyCfg]; exact hm kv hkv⟩)
     (fun j hj => ⟨by simp only [keyCfg] at hj; omega, by simp only [keyCfg, Nat.zero_add]⟩)
   simp only [keyCfg] at hb₁ hkp₁ f₁
-  have hall₁ : ∀ r, r ∉ layerWrites → ((keyLoad d).all fun i => dstOf i != some r) = true := fun r hr => by
+  have hall₁ : ∀ r, r ∉ layerWrites → ((keyLoad d).all fun i => !clobbers i r) = true := fun r hr => by
     have h := not_layerWrites r hr
-    have : (layerKeep.all fun r => (keyLoad d).all fun i => dstOf i != some r) = true := by
+    have : (layerKeep.all fun r => (keyLoad d).all fun i => !clobbers i r) = true := by
       rcases hd with rfl | rfl <;> decide +kernel
     exact List.all_eq_true.mp this r h
   have k₁ : ∀ r, r ∉ layerWrites → s₁.gpr r = s.gpr r := fun r hr => o₁ r (hall₁ r hr)
@@ -138,8 +137,8 @@ theorem keyOne_step {s : State} {b : Addr} {d e : Nat} (hd : d = 0 ∨ d = 8)
     (fun j i hji => by simp at hji) (fun kv hkv => by simp at hkv)
     (fun j hj => by simp [entryCfg] at hj)
   simp only [entryCfg] at hb₂ hso₂ f₂
-  have hall₂ : ∀ r, (keyStore.all fun i => dstOf i != some r) = true := fun r => by
-    simp [keyStore, dstOf]
+  have hall₂ : ∀ r, (keyStore.all fun i => !clobbers i r) = true := fun r => by
+    simp [keyStore, clobbers, dstOf]
   have k₂ : ∀ r, s₂.gpr r = s₁.gpr r := fun r => o₂ r (hall₂ r)
   obtain ⟨s₃, e₃, kp₃, o₃, m₃, rd₃, wr₃⟩ := addKp_ok s₂ 64 (by decide)
   have he₂ : ∀ j < 8, entryW s₂.mem b e j = Qs s₁ j := fun j hj => BitVec.eq_of_getLsbD_eq fun p hp => by

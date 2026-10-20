@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Code
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Code
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTCode
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Implies
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Implies
 public import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Key
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # `vg_rsa_keygen_key` on AArch64: verified against the shared contract

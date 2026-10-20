@@ -1,29 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.P521.X86_64.JacTiming
-meta import VerifiedGarbage.Proof.P521.X86_64.JacTiming
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTiming
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.TaintMap
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
 import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Mont.X86_64.MulPX
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Weierstrass.CombLay
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import VerifiedGarbage.Proof.P521.X86_64.JacTiming
 meta import VerifiedGarbage.Proof.Framework.TaintMap
-meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
-meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
 meta import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Mont.X86_64.MulPX
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
 meta import VerifiedGarbage.Proof.Weierstrass.CombLay
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-! Baseline and ADX taint checks for P-521's verifier's odd-multiple table.
 

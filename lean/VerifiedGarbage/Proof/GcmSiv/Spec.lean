@@ -1,14 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Cmac.Mem
 public import VerifiedGarbage.Proof.Cmac.Mem32
 public import VerifiedGarbage.Spec.GcmSiv
-import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.Proof.GcmSiv.MulX
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # AES-GCM-SIV: lemmas on the specification

@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.AesSiv.Arm.Frame
+public import VerifiedGarbage.Proof.AesSiv.Arm.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-SIV (RFC 5297) on ARMv7
@@ -37,30 +38,21 @@ def callNote : String := "This implementation computes S2V's CMACs with `vg_cmac
   `vg_cmac_aes_finalize`, and encrypts with `vg_aes_ctr32`."
 
 def artifacts : List Artifact := [
-  { Spec.Siv.initApi with
-    target := Arm.target
-    doc := Spec.Siv.initApi.doc (notes := [initNote])
+  Spec.Siv.initApi.artifact Arm.target {
+    notes := [initNote]
     code := Impl.StackScratch.Arm.withRegScratch 2560 .r3 Impl.AesSiv.Arm.init
-    contract := Spec.Siv.initContract Arm.abi 2568
     stack := 2568
-    verified := init_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Siv.encryptApi with
-    target := Arm.target
-    doc := Spec.Siv.encryptApi.doc (notes := [callNote])
+    verified := init_framed },
+  Spec.Siv.encryptApi.artifact Arm.target {
+    notes := [callNote]
     code := Impl.StackScratch.Arm.withStackScratch 2608 3 Impl.AesSiv.Arm.encrypt
-    contract := Spec.Siv.encryptContract Arm.abi 2624
     stack := 2624
-    verified := encrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Siv.decryptApi with
-    target := Arm.target
-    doc := Spec.Siv.decryptApi.doc (notes := [callNote,
-      "It compares the synthetic IVs and overwrites the data with zeros without a branch on the result."])
+    verified := encrypt_framed },
+  Spec.Siv.decryptApi.artifact Arm.target {
+    notes := [callNote,
+      "It compares the synthetic IVs and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.Arm.withStackScratch 2608 3 Impl.AesSiv.Arm.decrypt
-    contract := Spec.Siv.decryptContract Arm.abi 2624
     stack := 2624
-    verified := decrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := decrypt_framed }]
 
 end VG.Artifacts.AesSiv.Arm

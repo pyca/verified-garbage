@@ -1,12 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Final
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Pre
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.Pre
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # ML-DSA signing on x86 (32-bit): `vg_mldsa{44,65,87}_sign`

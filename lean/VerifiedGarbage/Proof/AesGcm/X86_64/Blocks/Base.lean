@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksContract
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Run
-import VerifiedGarbage.Impl.AesGcm.X86_64.Blocks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 
 /-!
 # AES-GCM on whole blocks, x86-64: the setting

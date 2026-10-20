@@ -1,17 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyCorrect
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.CachedVerify
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyPre
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyCall
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashCT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCorrect
 
 /-! ## From `CachedVerifyRel.lean` -/
 

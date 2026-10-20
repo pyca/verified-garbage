@@ -29,6 +29,12 @@ pub enum Error {
     InvalidKeyLength,
 }
 
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid RC4 key length",
+    }
+}
+
 /// An incremental raw RC4 encryptor or decryptor.
 pub struct Rc4 {
     /// The permutation and two indices. Initialization writes every byte

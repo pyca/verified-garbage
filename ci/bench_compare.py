@@ -70,6 +70,29 @@ reported it up to 46% slower, so they run from copies as well. So do
 AES-GCM's (not AES-GCM-SIV's): eight copies of one binary on an x86-64
 runner spread by up to 35% (`aes-256-gcm-tls-open` at 1025 bytes), 29%
 (`aes-128-gcm-encrypt-out-of-place` at 64) and 28% (the TLS seal at 4095).
+So do the SHA-512 family's digests and PBKDF2's: eight copies of one binary
+on an EPYC 9V74 spread by up to 9% (`pbkdf2-hmac-sha512-256`, 23.33–25.49 µs
+at 64 bytes; `pbkdf2-hmac-sha384` 6.9%, `sha512` at 64 bytes 11%), and one
+run of each side of unchanged PBKDF2 code reported it 5% slower on an EPYC
+7763, three times out of three, where the fastest copies of the two sides
+were within 0.1%. So do ML-KEM's: eight copies of one binary spread by
+up to 9.4% on an EPYC 9V74 and 4.6% on an EPYC 7763 for
+`mlkem1024_keygen` (17.18–18.81 µs), and up to 14% for `mlkem768_decaps`,
+and one run of each side of a change that left `keygen_mul` byte for byte
+the same reported ML-KEM-1024's key generation 4–5% slower or faster,
+where the fastest copies of the two sides were within 0.3%. So do SHA-256's
+and SHA-224's digests, HMACs and PBKDF2's: eight copies of one binary on an
+Arm Neoverse N2 spread by up to 3.5% for `sha256` at 32 bytes
+(47.22–48.85 ns), 2.1% for `sha224` at 32, 8.6% for `pbkdf2-hmac-sha224`
+at 64 (5.16–5.60 µs) and 1.6% for `hmac-sha256` at 32, more than the 0.7%
+by which a pull request's code layout already moves them. So do HMAC's
+with the SHA-512 family's hashes, which run the same compression function
+as their digests: on an EPYC 9V45, one function's 16 KiB time (HMAC-SHA-384,
+-512, -512/224 or -512/256) sat at 13.55–13.64 µs from some call sites and
+at 14.00–14.28 µs from others in one binary, and the other side's binary
+drew only the slower level (14.04–14.18 µs at every call site), 3–4% slower,
+where the PBKDF2 groups' fastest copies were within 0.4%; in a second run
+on an EPYC 9V45 every call site of both sides was within 1%.
 
 `--modules` runs only the benchmarks of those library modules (see
 `bench_arches.py`), and `--shard i/n` only the i-th of n shares of them,
@@ -102,15 +125,21 @@ TARGET = pathlib.Path("bench-target").resolve()
 
 # The benchmark groups (`<primitive>`s) whose time depends on the physical
 # pages that hold the binary (see the module docstring): those that read a
-# comb's table of hundreds of kilobytes, ChaCha20-Poly1305's and AES-GCM's.
+# comb's table of hundreds of kilobytes, ChaCha20-Poly1305's, AES-GCM's,
+# the SHA-512 family's digests, HMAC's and PBKDF2's, ML-KEM's, and SHA-256's and
+# SHA-224's digests, HMACs and PBKDF2's.
 # They run from `--copies` copies of each binary.
-FRESH_COPIES = re.compile(r"^(?:ec_p521_public_key|ecdsa_p521_|chacha20poly1305|aes-(?:128|256)-gcm-(?!siv))")
+FRESH_COPIES = re.compile(
+    r"^(?:ec_p521_public_key|ecdsa_p521_|chacha20poly1305|aes-(?:128|256)-gcm-(?!siv)"
+    r"|pbkdf2-hmac-sha(?:384|512)|sha(?:384|512)(?:-224|-256)?$|mlkem(?:768|1024)_"
+    r"|hmac-sha(?:384|512)(?:-224|-256)?(?:-verify)?$"
+    r"|sha(?:224|256)$|(?:hmac|pbkdf2-hmac)-sha(?:224|256)(?:-verify)?$)")
 # The `VG_BENCH_MODULES` of the copies' runs when the sides are not
 # interleaved (which select each benchmark by `VG_BENCHES`): the modules
 # whose benchmarks hold those groups. The binary sets up every selected
 # benchmark before criterion's filter applies (RSA keys of up to 4096 bits
 # among them), which took about 110 s of each copy's run with every module.
-FRESH_COPIES_MODULES = "ecdsa_p521 chacha20poly1305 aes_gcm"
+FRESH_COPIES_MODULES = "ecdsa_p521 chacha20poly1305 aes_gcm sha512 mlkem sha256"
 
 # How src/cpu.rs stops a run whose `VG_CPU_FEATURES` names features this CPU
 # does not have.
@@ -171,6 +200,36 @@ def build(checkout, bench=None):
                 shutil.copy2(msg["executable"], binary)
                 return str(binary)
     raise RuntimeError(f"no benchmark binary built for {checkout}")
+
+
+# The executable format of each `--arch` (ci/bench_arches.py's platforms):
+# ELF's class (32 or 64 bits) and `e_machine`, or Mach-O's `cputype`.
+EXECUTABLES = {
+    "x86_64": ("ELF", 64, 62),
+    "aarch64": ("ELF", 64, 183),
+    "x86": ("ELF", 32, 3),
+    "arm": ("ELF", 32, 40),
+    "aarch64-apple": ("Mach-O", 64, 0x0100000C),
+}
+
+
+def executable(binary):
+    """`binary`'s format, word size and machine, as in `EXECUTABLES`."""
+    with open(binary, "rb") as f:
+        header = f.read(20)
+    if header[:4] == b"\x7fELF":
+        return "ELF", 32 * header[4], int.from_bytes(header[18:20], "little")
+    if header[:4] == b"\xcf\xfa\xed\xfe":
+        return "Mach-O", 64, int.from_bytes(header[4:8], "little")
+    return None
+
+
+def check_arch(binary, arch):
+    """Stops unless `binary` is code of `arch`: ARMv7's benchmarks are
+    cross-compiled on an AArch64 host (ci/bench_arches.py), so a build that
+    lost its target would otherwise measure AArch64's code as ARMv7's."""
+    if executable(binary) != EXECUTABLES[arch]:
+        raise SystemExit(f"{binary} is {executable(binary)}, not {arch}'s {EXECUTABLES[arch]}")
 
 
 def fresh_copy(binary, i):
@@ -404,6 +463,7 @@ def main():
     p.add_argument("--work-dir", type=pathlib.Path, default=pathlib.Path("bench-compare"))
     p.add_argument("--modules", default="", help="space-separated; only benchmark these modules")
     p.add_argument("--shard", default="", help="i/n: only the i-th of n shares of the benchmarks")
+    p.add_argument("--arch", choices=EXECUTABLES, help="fail unless the binaries are this architecture's")
     args = p.parse_args()
     shard, shards = map(int, (args.shard or "1/1").split("/"))
     if not 1 <= shard <= shards:
@@ -421,6 +481,9 @@ def main():
         binaries["base"], note, source = build_base(base, head)
         if binaries["base"] is not None:
             modules["base"] = selected_modules(source, args.modules)
+    if args.arch:
+        for binary in filter(None, binaries.values()):
+            check_arch(binary, args.arch)
 
     # Both sides run the same groups, which head's list of them decides. It
     # also says which benchmark has each group, so that the sides can run
@@ -535,7 +598,7 @@ def main():
         f"{runs} on this runner; a slowdown of more than {args.threshold:.0%} fails."
         + (" OpenSSL (through rust-openssl) and aws-lc-rs ran once, for reference." if with_references
            else " OpenSSL and aws-lc-rs ran only in the configuration without VG_CPU_FEATURES." if cpu_features
-           else " OpenSSL and aws-lc-rs did not run (they do with `--openssl`, as in the workflow's manual runs)."),
+           else " OpenSSL and aws-lc-rs did not run (they do with `--openssl`, the workflow's `openssl` input)."),
         *(
             [
                 f"Changed modules: {args.modules}. Only the benchmarks that use them ran"

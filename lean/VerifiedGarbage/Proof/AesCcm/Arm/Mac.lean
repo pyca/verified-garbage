@@ -1,11 +1,13 @@
 module
+public import VerifiedGarbage.Proof.AesCcm.Arm.Aad
 
-public import VerifiedGarbage.Proof.AesCcm.Arm.B0
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesCcm.Arm.B0
 import VerifiedGarbage.Proof.AesCcm.Bytes
+import VerifiedGarbage.Proof.AesCcm.BytesAt
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
 
 /-!
 # AES-CCM on ARMv7: the MAC (`mac y`)

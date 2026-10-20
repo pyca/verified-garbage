@@ -1,15 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.JointByteHead
-meta import VerifiedGarbage.Proof.Dsa.AArch64.JointByteHead
+import VerifiedGarbage.Proof.Dsa.AArch64.JointByteHead
 public import VerifiedGarbage.Proof.Dsa.AArch64.JointWindowCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.JointByte
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.JointByteHead
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointWindowCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Dsa.AArch64.JointByte
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant-time scanning of two equal-length exponents
 

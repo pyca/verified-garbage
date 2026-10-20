@@ -2,11 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverFrame
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # `vg_rsa_pkcs1_recover` on x86-64: the call of `vg_rsa_public_checked`

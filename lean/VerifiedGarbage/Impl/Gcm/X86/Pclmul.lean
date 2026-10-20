@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.TCB.X86.Isa
 
 /-!

@@ -1,14 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Math
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tail
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Head
 
 /-! ## AdxRotate8Front -/
 
@@ -94,13 +92,13 @@ theorem compute_ok {s : State} {B : Addr} {Z w e n : Nat} {mi : BitVec 64}
     fun a ⟨va, za, pa, oa, zfa, outa, ka⟩ => ?_)
   have ha := hH.of_outside outa (by omega)
   refine WP.seq (WP.mono (middles_ok (hs.congr ka.2.2) ha ((ka.gpr (by decide)).trans hdi)
-    ((ka.gpr (by decide)).trans hc) pa oa zfa hZ hw he heZ hsep) fun b hb => ?_)
+    ((ka.gpr (by decide)).trans hc) pa oa zfa za hZ hw he heZ hsep) fun b hb => ?_)
   have ob : Outside B (e - 8) (8 * (w + 9)) a.mem b.mem :=
     hb.out.outside (by omega) (by omega) (by omega) (by omega)
   have outab : Outside B (e - 8) (8 * (w + 9)) s.mem b.mem :=
     (outa.mono (by omega) (by omega)).trans ob
   have hbO : b.gpr .rsi = off B (e + 8 * w) := by rw [hb.rsi]; congr 1; omega
-  refine WP.mono (tailCore_ok hb.scr hb.rcx hbO (by omega) (by omega) (by omega))
+  refine WP.mono (tailCore_ok hb.scr hb.rcx hbO (by omega) (by omega) (by omega) hb.bit)
     fun t ⟨vt, bt, outt, kt⟩ => ?_
   refine ⟨?_, bt, outab.trans (outt.mono (by omega) (by omega)),
     (kt.gpr (by decide)).trans hb.rcx, (ka.trans (hb.keep.trans kt)).mono (by decide)⟩

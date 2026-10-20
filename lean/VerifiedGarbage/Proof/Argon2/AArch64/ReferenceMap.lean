@@ -4,11 +4,10 @@ import VerifiedGarbage.Proof.Argon2.AArch64.Wrap
 import VerifiedGarbage.Proof.Argon2.AArch64.Relative
 public import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapLane
 import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceStart
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-! Merged from `Proof.Argon2.AArch64.ReferenceMapWindow`. -/
 

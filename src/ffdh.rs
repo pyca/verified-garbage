@@ -4,29 +4,32 @@
 //! Exchange secret exponentiation follows a fixed schedule over the public encoding
 //! length supplied at import, or the public sampling bound for generated keys.
 //! All domain arithmetic and secret exponentiation run in verified code.
-//! Private-key generation samples and validates the scalar in verified code.
-//! Rust obtains random bytes, retries rejected attempts and packs inputs and
-//! results. Parameter-generation policy remains outside the Lean proof boundary.
-//! Parameter generation uses the shared verified windowed Miller–Rabin round;
-//! Rust currently prepares its workspace and selects independent witnesses.
+//! Private-key generation samples and validates the scalar in verified code,
+//! which also retries rejected attempts and asks for the random bytes they
+//! need. Rust obtains random bytes and packs inputs and results. Parameter
+//! generation runs entirely in verified code, including its attempt limit
+//! and entropy requests; Rust allocates and fills the random tape it asks
+//! for. Parameter generation is currently available on x86-64 and AArch64.
 //! Imported parameters receive structural and algebraic checks; callers must
 //! establish primality/provenance. Optional q enables subgroup checks.
 //! Exchange returns exactly ceil(bits(p)/8) bytes, without applying a KDF.
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64"),
+    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
     feature = "alloc"
 ))]
 
-mod aarch64;
 mod arithmetic;
+mod domain;
 mod generation;
-mod x86_64;
+#[cfg(test)]
+mod vetted_tests;
 
 use crate::zeroize::zeroize;
 use alloc::vec::Vec;
 use arithmetic::{canonical, scalar};
 use core::fmt;
+use domain::Domain;
 
 /// Minimum supported modulus size, including legacy cryptography keys.
 pub const MIN_BITS: usize = 512;
@@ -64,13 +67,22 @@ impl fmt::Display for Error {
 impl core::error::Error for Error {}
 
 /// Imported, checked domain components.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Parameters {
     p: Vec<u8>,
     g: Vec<u8>,
     q: Option<Vec<u8>>,
-    #[cfg(target_arch = "aarch64")]
-    domain: aarch64::Domain,
+    // The components laid out for the verified operations.
+    domain: Domain,
+}
+impl fmt::Debug for Parameters {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Parameters")
+            .field("p", &self.p)
+            .field("g", &self.g)
+            .field("q", &self.q)
+            .finish()
+    }
 }
 impl PartialEq for Parameters {
     fn eq(&self, other: &Self) -> bool {
@@ -86,17 +98,11 @@ impl Parameters {
     /// primality-test imported parameters.
     pub fn from_components(p: &[u8], g: &[u8], q: Option<&[u8]>) -> Result<Self, Error> {
         let (p, g, q) = (canonical(p), canonical(g), q.map(canonical));
-        #[cfg(target_arch = "aarch64")]
-        let domain = aarch64::Domain::new(p, g, q).ok_or(Error::InvalidParameters)?;
-        #[cfg(target_arch = "x86_64")]
-        if !x86_64::check_domain(p, g, q) {
-            return Err(Error::InvalidParameters);
-        }
+        let domain = Domain::new(p, g, q).ok_or(Error::InvalidParameters)?;
         Ok(Self {
             p: p.to_vec(),
             g: g.to_vec(),
             q: q.map(<[u8]>::to_vec),
-            #[cfg(target_arch = "aarch64")]
             domain,
         })
     }
@@ -105,6 +111,7 @@ impl Parameters {
     /// generator 2 or 5. The result omits q, as PKCS #3/OpenSSL does.
     /// Miller–Rabin uses 64 independent uniform witnesses through 2048 bits
     /// and 128 above. There is no primality certificate.
+    #[cfg(not(target_arch = "arm"))]
     pub fn generate(bits: usize, generator: u32) -> Result<Self, Error> {
         generation::parameters(bits, generator, getrandom::fill)
     }
@@ -119,72 +126,39 @@ impl Parameters {
         arithmetic::bits(&self.p)
     }
 
-    /// Generate a private key with a uniform scalar in 1..q or 1..p-1
-    /// when q is absent. Reject degenerate public keys and retry.
+    /// Generate a private key, rejecting degenerate public values and retrying.
+    /// On ARM, exact RFC 3526/7919 safe-prime groups with generator 2 use
+    /// the RFC 7919 shorter-exponent bounds. Other domains and architectures
+    /// sample uniformly in 1..q, or 1..p-1 when q is absent.
     pub fn generate_private_key(&self) -> Result<PrivateKey, Error> {
         self.generate_with(getrandom::fill)
     }
 
-    /// Verified code draws and checks the scalar and its public value.
-    /// Retry up to 128 times for an in-range scalar and up to 128 times
-    /// for a public value that is not degenerate.
+    /// Verified code runs the whole search: it draws and checks each scalar
+    /// and its public value, retries up to 128 times for an in-range scalar
+    /// and up to 128 times for a public value that is not degenerate, and
+    /// asks for the random bytes each attempt needs.
     fn generate_with<E>(
         &self,
-        mut fill: impl FnMut(&mut [u8]) -> Result<(), E>,
+        fill: impl FnMut(&mut [u8]) -> Result<(), E>,
     ) -> Result<PrivateKey, Error> {
         let len = self.p.len();
         let exponent_len = self.q.as_ref().map_or(len, Vec::len);
-        let mut rand = alloc::vec![0; len];
         let mut x = alloc::vec![0; len];
         let mut y = alloc::vec![0; len];
-        let mut result = Err(Error::TooManyIterations);
-        'keys: for _ in 0..128 {
-            for _ in 0..128 {
-                if fill(&mut rand).is_err() {
-                    result = Err(Error::Randomness);
-                    break 'keys;
-                }
-                #[cfg(target_arch = "aarch64")]
-                let status = self.domain.generate_key(&rand, &mut x, &mut y);
-                #[cfg(target_arch = "x86_64")]
-                let status = x86_64::generate_key(
-                    &self.p,
-                    &self.g,
-                    self.q.as_deref(),
-                    &rand,
-                    &mut x,
-                    &mut y,
-                );
-                match status {
-                    1 => {
-                        result = Ok(PrivateKey {
-                            public: PublicKey {
-                                params: self.clone(),
-                                y: canonical(&y).to_vec(),
-                            },
-                            x: core::mem::take(&mut x),
-                            exponent_len,
-                        });
-                        break 'keys;
-                    }
-                    2 => continue,
-                    _ => continue 'keys,
-                }
-            }
-            break;
-        }
-        zeroize(&mut rand);
-        result
-    }
-
-    #[cfg(target_arch = "aarch64")]
-    fn public_valid(&self, y: &[u8]) -> bool {
-        self.domain.check_public(y)
-    }
-
-    #[cfg(not(target_arch = "aarch64"))]
-    fn public_valid(&self, y: &[u8]) -> bool {
-        x86_64::check_public(&self.p, &self.g, self.q.as_deref(), y)
+        let mut state = self.domain.key_state();
+        let result = generation::serve(state[3] as usize, fill, |tape| {
+            self.domain.key_search(&mut state, tape, &mut x, &mut y)
+        });
+        zeroize(&mut state);
+        result.map(|()| PrivateKey {
+            public: PublicKey {
+                params: self.clone(),
+                y: canonical(&y).to_vec(),
+            },
+            x,
+            exponent_len,
+        })
     }
 }
 
@@ -198,7 +172,7 @@ impl PublicKey {
     /// Import an unsigned big-endian y, accepting leading zeros.
     pub fn from_components(params: &Parameters, y: &[u8]) -> Result<Self, Error> {
         let y = canonical(y);
-        if !params.public_valid(y) {
+        if !params.domain.check_public(y) {
             return Err(Error::InvalidKey);
         }
         Ok(Self {
@@ -237,6 +211,26 @@ impl Drop for PrivateKey {
     }
 }
 impl PrivateKey {
+    /// Import an unsigned big-endian `x`, deriving `y = g^x mod p`.
+    /// This accepts private components from PKCS#8, which omits `y`.
+    /// Checks the scalar range and the derived public value. Parsing and
+    /// the exponentiation schedule follow [`Self::from_components`].
+    pub fn from_private_components(params: &Parameters, x: &[u8]) -> Result<Self, Error> {
+        let exponent_len = x.len().min(params.p.len());
+        let (zeros, scalar) = x.split_at(x.len() - exponent_len);
+        if scalar.is_empty() || zeros.iter().any(|&b| b != 0) {
+            return Err(Error::InvalidKey);
+        }
+        let mut y = alloc::vec![0; params.p.len()];
+        // A checked domain's generator is a valid public value. Exchange
+        // computes g^x, rejecting degenerate results; from_components then
+        // checks the scalar range and the resulting key pair.
+        if !params.domain.exchange(scalar, &params.g, &mut y) {
+            return Err(Error::InvalidKey);
+        }
+        Self::from_components(params, &y, x)
+    }
+
     /// Import y and x with variable-time parsing; check range and y=g^x mod p.
     /// The encoding length of x is public and determines the fixed
     /// exponentiation schedule, capped at the modulus width. Leading zeros
@@ -250,11 +244,7 @@ impl PrivateKey {
         if zeros.iter().any(|&b| b != 0) {
             return Err(Error::InvalidKey);
         }
-        #[cfg(target_arch = "aarch64")]
-        let ok = params.domain.check_private(y, x);
-        #[cfg(target_arch = "x86_64")]
-        let ok = x86_64::check_private(&params.p, &params.g, params.q.as_deref(), y, x);
-        if !ok {
+        if !params.domain.check_private(y, x) {
             return Err(Error::InvalidKey);
         }
         Ok(Self {
@@ -285,18 +275,7 @@ impl PrivateKey {
         }
         let mut z = alloc::vec![0; params.p.len()];
         let x = &self.x[self.x.len() - self.exponent_len..];
-        #[cfg(target_arch = "aarch64")]
-        let ok = params.domain.exchange(x, &peer.y, &mut z);
-        #[cfg(target_arch = "x86_64")]
-        let ok = x86_64::exchange(
-            &params.p,
-            &params.g,
-            params.q.as_deref(),
-            x,
-            &peer.y,
-            &mut z,
-        );
-        if ok {
+        if params.domain.exchange(x, &peer.y, &mut z) {
             Ok(z)
         } else {
             Err(Error::InvalidSharedSecret)
@@ -325,18 +304,15 @@ mod tests {
         let k = PrivateKey::from_components(&params, &y, &[2]).unwrap();
         assert_eq!(k.exchange(k.public_key()), Err(Error::InvalidSharedSecret));
         let mut x = vec![2];
-        let k = PrivateKey::from_components(&params, &y, &x).unwrap();
+        let mut k = PrivateKey::from_components(&params, &y, &x).unwrap();
         x[0] = 0;
         assert_eq!(k.private_component()[63], 2);
         assert!(k.private_component()[..63].iter().all(|&b| b == 0));
-        let mut k = core::mem::ManuallyDrop::new(k);
-        // Keep the allocation alive while exercising the same wipe as Drop;
-        // then dropping runs the verified wipe once more and frees it.
+        // Exercise the same wipe as Drop while the allocation is alive;
+        // dropping then runs the verified wipe once more and frees it.
         zeroize(&mut k.x);
         assert!(k.x.iter().all(|&b| b == 0));
-        unsafe {
-            core::mem::ManuallyDrop::drop(&mut k);
-        }
+        drop(k);
         assert!(format!("{:?}", params.clone()).contains("Parameters"));
     }
     #[test]
@@ -378,6 +354,86 @@ mod tests {
         assert_eq!(key.private_component()[63], 3);
     }
     #[test]
+    fn key_search_consumes_rejected_attempts() {
+        let params = composite_domain();
+        let domain = &params.domain;
+        // Scalars 0 (out of range), 4 (degenerate: g^4 = 1) and 3, one
+        // attempt of 64 bytes each, in one tape.
+        let mut tape = vec![0; 3 * 64];
+        tape[63] = 0;
+        tape[127] = 4;
+        tape[191] = 3;
+        let (mut x, mut y) = (vec![0xa5; 64], vec![0x5a; 64]);
+        let mut state = domain.key_state();
+        assert_eq!(&state[..4], &[128, 128, 64, 64]);
+        // Only the budgets and width constrain a call. The incoming
+        // request and private controller workspace may hold arbitrary
+        // u64 words, including nonzero upper halves on a 32-bit target.
+        state[3..].fill(u64::MAX);
+        assert_eq!(
+            domain.key_search(&mut state, &tape, &mut x, &mut y),
+            (1, 192, 0)
+        );
+        assert_eq!(&state[..4], &[0, 0, 64, 0]);
+        assert_eq!(x, tape[128..]);
+        assert_eq!(y[15], 1);
+        // A tape that ends inside the second attempt: the first is
+        // consumed, and the controller asks for one attempt's bytes again,
+        // with the scalar budget one smaller.
+        let mut state = domain.key_state();
+        state[3..].fill(u64::MAX);
+        let (status, used, request) = domain.key_search(&mut state, &tape[..100], &mut x, &mut y);
+        assert_eq!((status, used, request), (0, 64, 64));
+        assert_eq!(&state[..4], &[128, 127, 64, 64]);
+        assert!(x.iter().chain(&y).all(|&b| b == 0));
+        // A degenerate value resets the scalar budget.
+        let (status, used, _) = domain.key_search(&mut state, &tape[64..128], &mut x, &mut y);
+        assert_eq!((status, used), (0, 64));
+        assert_eq!(&state[..2], &[127, 128]);
+        // Out-of-range scalars until the scalar budget runs out.
+        let mut state = domain.key_state();
+        state[1] = 2;
+        let zeros = vec![0; 3 * 64];
+        assert_eq!(
+            domain.key_search(&mut state, &zeros, &mut x, &mut y),
+            (3, 128, 0)
+        );
+        assert_eq!(&state[..4], &[0, 0, 64, 0]);
+        assert!(x.iter().chain(&y).all(|&b| b == 0));
+    }
+    #[test]
+    fn partial_limb_moduli_and_short_exponents() {
+        // Algebraic regression fixtures, with no claim of primality:
+        // p = leading * 256^(len-1) + 1, g = 2. With x = 3 and
+        // peer exponent 7, the public values are 8 and 128 and the
+        // shared value is 2^21, below each modulus. These widths cross
+        // byte, native-word, and packed-u64 workspace boundaries.
+        for len in [65, 71, 129, 1024] {
+            for leading in [1, 128] {
+                let mut p = vec![0; len];
+                p[0] = leading;
+                p[len - 1] = 1;
+                let params = Parameters::from_components(&p, &[2], None).unwrap();
+                let key = PrivateKey::from_components(&params, &[8], &[3]).unwrap();
+                let peer = PublicKey::from_components(&params, &[128]).unwrap();
+                let out = key.exchange(&peer).unwrap();
+                assert!(out[..len - 3].iter().all(|&b| b == 0));
+                assert_eq!(&out[len - 3..], &[32, 0, 0]);
+                let generated = params
+                    .generate_with(|out| {
+                        out.fill(0);
+                        *out.last_mut().unwrap() = 3;
+                        Ok::<_, ()>(())
+                    })
+                    .unwrap();
+                assert_eq!(
+                    generated.public_key().component(),
+                    key.public_key().component()
+                );
+            }
+        }
+    }
+    #[test]
     fn generated_attempt_masks_failed_outputs() {
         let params = composite_domain();
         // In this algebraic fixture g has order 4. Scalars 0 and p are
@@ -391,38 +447,13 @@ mod tests {
             }
             let mut x = vec![0xa5; 64];
             let mut y = vec![0x5a; 64];
-            #[cfg(target_arch = "aarch64")]
-            let actual = params.domain.generate_key(&rand, &mut x, &mut y);
-            #[cfg(target_arch = "x86_64")]
-            let actual = x86_64::generate_key(
-                &params.p,
-                &params.g,
-                params.q.as_deref(),
-                &rand,
-                &mut x,
-                &mut y,
-            );
-            assert_eq!(actual, status);
+            assert_eq!(params.domain.generate_key(&rand, &mut x, &mut y), status);
             if status == 1 {
                 assert_eq!(x, rand);
                 assert_eq!(y[15], 1);
                 assert!(y[..15].iter().chain(&y[16..]).all(|&b| b == 0));
             } else {
                 assert!(x.iter().chain(&y).all(|&b| b == 0));
-            }
-        }
-    }
-    #[test]
-    fn selection_is_by_low_bit() {
-        for a in [0, 1, u64::MAX, 0x123456789abcdef0] {
-            for b in [0, 1, u64::MAX, 0xfedcba9876543210] {
-                for bit in [0, 1, 2, 3, u64::MAX] {
-                    // SAFETY: no preconditions.
-                    assert_eq!(
-                        unsafe { crate::arch::ffdh::vg_ffdh_choose(a, b, bit) },
-                        if bit & 1 == 0 { a } else { b }
-                    );
-                }
             }
         }
     }

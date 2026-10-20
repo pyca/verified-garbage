@@ -1,11 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.Arm.FbVerified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Triple DES-CFB8 artifacts on baseline ARMv7 -/
 
@@ -20,21 +16,15 @@ def note : String :=
   space on the stack, zeroed on return."
 
 def artifacts : List Artifact := [
-  { Spec.TripleDes.cfb8EncryptApi with
-    target := Arm.target
-    doc := Spec.TripleDes.cfb8EncryptApi.doc (notes := [note])
+  Spec.TripleDes.cfb8EncryptApi.artifact Arm.target {
+    notes := [note]
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfb8Encrypt
-    contract := Spec.TripleDes.cfb8EncryptContract Arm.abi 1088
     stack := 1088
-    verified := Proof.TripleDes.Arm.cfb8Encrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.TripleDes.cfb8DecryptApi with
-    target := Arm.target
-    doc := Spec.TripleDes.cfb8DecryptApi.doc (notes := [note])
+    verified := Proof.TripleDes.Arm.cfb8Encrypt_framed },
+  Spec.TripleDes.cfb8DecryptApi.artifact Arm.target {
+    notes := [note]
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfb8Decrypt
-    contract := Spec.TripleDes.cfb8DecryptContract Arm.abi 1088
     stack := 1088
-    verified := Proof.TripleDes.Arm.cfb8Decrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.TripleDes.Arm.cfb8Decrypt_framed }]
 
 end VG.Artifacts.TripleDesCfb8.Arm

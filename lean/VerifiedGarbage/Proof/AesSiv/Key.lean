@@ -1,13 +1,13 @@
 module
+public import VerifiedGarbage.Spec.Siv
 
-public import VerifiedGarbage.Proof.AesSiv.CtrPart
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.List.Induction
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesSiv.CtrPart
 import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # AES-SIV: the key context

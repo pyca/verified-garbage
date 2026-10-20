@@ -3,14 +3,13 @@ module
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRowMath
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightColumns
+public import VerifiedGarbage.Proof.Bignum.Layout
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcColumns
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMath
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.ProductEight

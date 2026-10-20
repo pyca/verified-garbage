@@ -1,15 +1,14 @@
 module
 
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.Bignum.X86_64.Words
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-!
 # `vg_rsa_pkcs1_verify` on x86-64: the contract on the registers
@@ -58,7 +57,7 @@ def verContract : Contract isa where
       (stackArg s 1).toNat + (stackArg s 2).toNat ≤ 2 ^ 64 ∧
       (stackArg s 3).toNat + (stackArg s 4).toNat * 8 ≤ 2 ^ 64 ∧
       Spec.Rsa.lenValid (s.gpr .rsi).toNat ∧ 1 ≤ (s.gpr .rcx).toNat ∧ (s.gpr .rcx).toNat ≤ (s.gpr .rsi).toNat ∧
-      Spec.Rsa.scratchWords (s.gpr .rsi).toNat ≤ (stackArg s 4).toNat
+      Spec.Rsa.publicScratchWords (s.gpr .rsi).toNat ≤ (stackArg s 4).toNat
   post s s' :=
     (s'.gpr .rax).setWidth 32 = if Spec.RsaPkcs1Sig.verifyId (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
       (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) ((s.gpr .r8).setWidth 32).toNat

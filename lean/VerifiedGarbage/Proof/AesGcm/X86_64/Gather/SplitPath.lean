@@ -1,12 +1,20 @@
 module
 
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyPath
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Scratch
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Calls
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Steps
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: a short copy, to `vg_aes_gcm_seal_split`

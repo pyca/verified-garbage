@@ -16,10 +16,11 @@ values of them (and of `r14`) in `scratch`.
 1. `(ρ, σ) = G(d ‖ k)` to `G`, and `ρ` to `SB`, the seed of `SampleNTT`.
 2. `Â[i, j] = SampleNTT(ρ ‖ j ‖ i)` for the `k²` entries `(i, j)`
    (`samples`). If one of them failed (`r15 = 0`), it returns 0 at once.
-3. `PRF₂(σ, N)` for `N < 2k` (`c.prfs`, to `PR`), and `ŝ[j]` (polynomial
-   `j`) and `ê[i]` (polynomial `k + i`): `NTT(SamplePolyCBD₂(PRF₂(σ, N)))`.
-4. `t̂[i] = Â[i, 0] ŝ[0] + ⋯ + Â[i, k - 1] ŝ[k - 1] + ê[i]` (polynomial 15),
-   and `ByteEncode₁₂(t̂[i])` to `ek`; `ByteEncode₁₂(ŝ[j])` to `dk`.
+3. `PRF₂(σ, N)` for `N < 2k` (`c.prfs`, to `PR`), and `s[j]` (polynomial
+   `j`) and `e[i]` (polynomial `k + i`): `SamplePolyCBD₂(PRF₂(σ, N))`.
+4. `ŝ = NTT(s)` in place and `t̂ = Â ∘ ŝ + NTT(e)` to polynomials `pU`, …
+   (`vg_mlkem*_keygen_mul`, with `pZ` as its working space), and
+   `ByteEncode₁₂(t̂[i])` to `ek`; `ByteEncode₁₂(ŝ[j])` to `dk`.
 5. `ρ` to `ek`, `ek` to `dk`, `H(ek)` to `dk`, and `z` to `dk`.
 
 Only the calls of `vg_mlkem_sample_ntt`, and the branch on their results,
@@ -44,15 +45,14 @@ def gRho : Prog isa :=
   .seq (.block (setB (sc oNB) L.k)) (.seq (hashAt [((.rbp, 0), 32), (sc oNB, 1)] 72 6 (sc oG) 64)
     (copy (sc oSB) (sc oG) 32))
 
-/-- `ŝ[N]` or `ê[N - k]`, from `PRF₂(σ, N)`. -/
-def se (A : Arith) (N : Nat) : Prog isa := .seq (cbd2At A (sc (L.oPR + 128 * N)) (pS N)) (nttAt A (pS N))
+/-- `s[N]` or `e[N - k]`, from `PRF₂(σ, N)`. -/
+def se (A : Arith) (N : Nat) : Prog isa := cbd2At A (sc (L.oPR + 128 * N)) (pS N)
 
 /-- `t̂[i]`, encoded to `ek`. -/
-def row (A : Arith) (i : Nat) : Prog isa :=
-  .seq (dotN A (fun j => L.aS i j) pS L.k) (.seq (addAt A (pS 15) (pS (L.k + i))) (enc12At (pS 15) (.r12, 384 * i)))
+def encT (A : Arith) (i : Nat) : Prog isa := enc12At A (pS (L.pU + i)) (.r12, 384 * i)
 
 /-- `ŝ[j]`, encoded to `dk`. -/
-def encS (j : Nat) : Prog isa := enc12At (pS j) (.r13, 384 * j)
+def encS (A : Arith) (j : Nat) : Prog isa := enc12At A (pS j) (.r13, 384 * j)
 
 /-- `ρ` to `ek`, `ek` to `dk`, `H(ek)` and `z` to `dk`. -/
 def fin : Prog isa :=
@@ -62,7 +62,8 @@ def fin : Prog isa :=
 
 def rest (c : Callee4) : Prog isa :=
   .seq (c.prfs 0 (2 * L.k) L.oPR L.lPW) (.seq (seqR (se L c.arith) 0 (2 * L.k))
-    (.seq (seqR (row L c.arith) 0 L.k) (.seq (seqR encS 0 L.k) (fin L))))
+    (.seq (L.kgMulAt c.arith (pS L.pU) (pS 0) (pS L.pA) (pS L.k) (pS L.pZ))
+      (.seq (seqR (encT L c.arith) 0 L.k) (.seq (seqR (encS c.arith) 0 L.k) (fin L)))))
 
 end KeyGen
 
@@ -71,7 +72,5 @@ open KeyGen in
 def kemKeyGen (L : Kem) (c : Callee4) : Prog isa :=
   .seq (.block pro) (.seq (gRho L) (.seq (L.samples c) (.seq (ifOk (rest L c)) (.block topEpi))))
 
-/-- `vg_mlkem768_keygen`. -/
-abbrev keyGen (c : Callee4) : Prog isa := kemKeyGen kem768 c
 
 end VG.Impl.MlKem.X86_64

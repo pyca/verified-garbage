@@ -7,43 +7,43 @@
 # Usage: python ci/merge_rust_coverage.py <dir of .lcov files>
 #
 # Merges the lcov files written by ci/export_rust_coverage.py on every CI
-# platform, reports the combined line coverage, and fails (writing an HTML
-# report to htmlcov/) if it is under 100%. Lines between `// NO-COVERAGE-START`
-# and `// NO-COVERAGE-END` are excluded.
+# platform that ran its tests, and fails if any line they built is not
+# covered: first each architecture's files alone (`<arch>-<uuid>.lcov`), each
+# of which must cover every line its architecture builds, so that a run that
+# tests only some architectures checks their coverage; then all of them
+# together, reporting the combined line coverage (and writing an HTML report
+# to htmlcov/ if it is under 100%). Lines between `// NO-COVERAGE-START` and
+# `// NO-COVERAGE-END` are excluded.
 
+import collections
 import collections.abc
 import pathlib
 import sys
 
-import coverage
-
 CoverageData = collections.abc.Mapping[str, collections.abc.Mapping[int, int]]
 
 
-class RustCoveragePlugin(coverage.CoveragePlugin):
-    def __init__(
-        self,
-        coverage_data: CoverageData,
-    ) -> None:
-        super().__init__()
-        self._data = coverage_data
+def plugin(coverage, coverage_data: CoverageData):
+    """A plugin of the `coverage` module that reports `coverage_data`."""
 
-    def file_reporter(self, filename: str) -> coverage.FileReporter:
-        return RustCoverageFileReporter(filename, self._data[filename])
+    class RustCoverageFileReporter(coverage.FileReporter):
+        def __init__(
+            self, filename: str, coverage_data: collections.abc.Mapping[int, int]
+        ) -> None:
+            super().__init__(filename)
+            self._data = coverage_data
 
+        def lines(self) -> set[int]:
+            return set(self._data)
 
-class RustCoverageFileReporter(coverage.FileReporter):
-    def __init__(
-        self, filename: str, coverage_data: collections.abc.Mapping[int, int]
-    ) -> None:
-        super().__init__(filename)
-        self._data = coverage_data
+        def arcs(self) -> set[tuple[int, int]]:
+            return {(-1, line) for line in self._data}
 
-    def lines(self) -> set[int]:
-        return set(self._data)
+    class RustCoveragePlugin(coverage.CoveragePlugin):
+        def file_reporter(self, filename: str) -> coverage.FileReporter:
+            return RustCoverageFileReporter(filename, coverage_data[filename])
 
-    def arcs(self) -> set[tuple[int, int]]:
-        return {(-1, line) for line in self._data}
+    return RustCoveragePlugin()
 
 
 def get_excluded_lines(filename: str) -> list[int]:
@@ -65,16 +65,26 @@ def get_excluded_lines(filename: str) -> list[int]:
     return excluded
 
 
+def arch_of(lcov: pathlib.Path) -> str:
+    """The architecture whose tests wrote `lcov`, `<arch>-<uuid>.lcov`."""
+    return lcov.name.split("-", 1)[0]
+
+
 def parse_lcovs(
     path: pathlib.Path,
+    arch: str | None = None,
 ) -> tuple[
     CoverageData,
     dict[str, set[tuple[int, int]]],
 ]:
+    """The lines of every lcov file in `path` (or only `arch`'s), with their
+    counts summed, and the covered ones."""
     # {filename: {line_number: count}}
     raw_data = collections.defaultdict(lambda: collections.defaultdict(int))
     current_file = None
-    for p in path.glob("*.lcov"):
+    for p in sorted(path.glob("*.lcov")):
+        if arch is not None and arch_of(p) != arch:
+            continue
         with p.open() as f:
             for line in f:
                 line = line.strip()
@@ -121,8 +131,40 @@ def parse_lcovs(
     return raw_data, covered_lines
 
 
+def uncovered(raw_data: CoverageData) -> list[tuple[str, int]]:
+    """The lines of `raw_data` that no test ran."""
+    return [
+        (file_name, line)
+        for file_name, lines in sorted(raw_data.items())
+        for line, count in sorted(lines.items())
+        if count == 0
+    ]
+
+
+def check_arches(path: pathlib.Path) -> bool:
+    """Whether each architecture's lcov files in `path` alone cover every
+    line they have, printing those they do not."""
+    ok = True
+    for arch in sorted({arch_of(p) for p in path.glob("*.lcov")}):
+        raw_data, _ = parse_lcovs(path, arch)
+        missing = uncovered(raw_data)
+        total = sum(len(lines) for lines in raw_data.values())
+        print(f"{arch}: {total - len(missing)} of {total} lines covered")
+        for file_name, line in missing:
+            print(f"  {file_name}:{line}")
+        ok = ok and not missing
+    if not ok:
+        print("+++ An architecture's tests leave lines it builds uncovered +++")
+    return ok
+
+
 def main(coverage_loc: str):
+    import coverage
+
     path = pathlib.Path(coverage_loc)
+    print("Checking each architecture")
+    arches_ok = check_arches(path)
+
     coverage_data = coverage.CoverageData(suffix="rust")
 
     print("Parsing LCOVs")
@@ -135,9 +177,7 @@ def main(coverage_loc: str):
     coverage_data.write()
 
     cov = coverage.Coverage(
-        plugins=[
-            lambda reg: reg.add_file_tracer(RustCoveragePlugin(raw_data))
-        ],
+        plugins=[lambda reg: reg.add_file_tracer(plugin(coverage, raw_data))],
     )
     print("Combining Coverage")
     cov.combine(
@@ -148,6 +188,8 @@ def main(coverage_loc: str):
     if coverage_percent < 100:
         print("+++ Combined coverage under 100% +++")
         cov.html_report()
+        sys.exit(1)
+    if not arches_ok:
         sys.exit(1)
 
 

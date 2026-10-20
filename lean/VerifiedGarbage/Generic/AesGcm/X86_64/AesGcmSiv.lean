@@ -1,12 +1,27 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Verified
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Verified
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealVerified
-public import VerifiedGarbage.Generic.AesGcm.X86_64.AesGcm
-import VerifiedGarbage.Proof.Framework.X86_64.HighRegs
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopOne
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Instances
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Instances
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+public import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ctr
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Gh
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealCT
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Setup
+public import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
+import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ctr
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Gh
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealCT
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Setup
+import VerifiedGarbage.Proof.Ocb.Spec
 
 /-!
 # AES-GCM-SIV (RFC 8452) on x86-64
@@ -45,66 +60,21 @@ def note (v : GcmImpl) : String :=
   "This implementation encrypts with `" ++ (ecbOf v).enc.name ++ "` and `" ++ v.ctr.callee.name ++
     "` (and expands keys with `" ++ v.key.fn.name ++ "`) and computes POLYVAL with `" ++ v.gh.fn.name ++ "`."
 
-/-- The implementation of `vg_aes_encrypt_blocks` they call. -/
-def ecbFn (v : GcmImpl) : Impl.AesGcm.X86_64.Fn := ⟨(ecbOf v).enc.name, (ecbOf v).enc.code⟩
-
-/-- Whether `open` interleaves counter mode and POLYVAL: with VAES and
-VPCLMULQDQ (and so AVX2) in `v`'s callees. -/
-def sivStitch (v : GcmImpl) : Bool := v.ctr.features.contains "vaes" && v.gh.features.contains "vpclmulqdq"
-
-/-- The code of `open` for `v`. -/
-def openCode (v : GcmImpl) : Prog X86_64.isa :=
-  if sivStitch v then Impl.AesGcmSiv.X86_64Stitch.«open» v.callees (ecbFn v) (sivWide v)
-  else Impl.AesGcmSiv.X86_64.«open» v.callees (ecbFn v) (sivWide v)
-
-/-- The code of `seal` for `v`. -/
-def sealCode (v : GcmImpl) : Prog X86_64.isa :=
-  if sivStitch v then Impl.AesGcmSiv.X86_64Stitch.«seal» v.callees (ecbFn v) (sivWide v)
-  else Impl.AesGcmSiv.X86_64.«seal» v.callees (ecbFn v) (sivWide v)
-
-theorem sealCode_framed (v : GcmImpl) :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (sealCode v))
-      (Spec.GcmSiv.sealContract X86_64.abi 3856) := by
-  unfold sealCode; split
-  · exact sealS_framed v (ecbOf v) (sivWide v)
-  · exact seal_framed v (ecbOf v) (sivWide v)
-
-theorem sealCode_spSafe (v : GcmImpl) : (sealCode v).all (fun i => !X86_64.isa.writesSp i) = true := by
-  unfold sealCode; split
-  · exact sealS_spSafe v (ecbOf v) (sivWide v)
-  · exact seal_spSafe v (ecbOf v) (sivWide v)
-
-theorem openCode_framed (v : GcmImpl) :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (openCode v))
-      (Spec.GcmSiv.openContract X86_64.abi 3856) := by
-  unfold openCode; split
-  · exact openS_framed v (ecbOf v) (sivWide v)
-  · exact open_framed v (ecbOf v) (sivWide v)
-
-theorem openCode_spSafe (v : GcmImpl) : (openCode v).all (fun i => !X86_64.isa.writesSp i) = true := by
-  unfold openCode; split
-  · exact openS_spSafe v (ecbOf v) (sivWide v)
-  · exact open_spSafe v (ecbOf v) (sivWide v)
-
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
-  { Spec.GcmSiv.sealApi with
-    name := Spec.GcmSiv.sealApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.GcmSiv.sealApi.doc (notes := [note v])
+  Spec.GcmSiv.sealApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (sealCode v)
-    contract := Spec.GcmSiv.sealContract X86_64.abi 3856
     stack := 3856
     verified := sealCode_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v)
     features := features v },
-  { Spec.GcmSiv.openApi with
-    name := Spec.GcmSiv.openApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.GcmSiv.openApi.doc (notes := [note v,
-      "It compares the tags and overwrites the data with zeros without a branch on the result."])
+  Spec.GcmSiv.openApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [note v,
+      "It compares the tags and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (openCode v)
-    contract := Spec.GcmSiv.openContract X86_64.abi 3856
     stack := 3856
     verified := openCode_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v)

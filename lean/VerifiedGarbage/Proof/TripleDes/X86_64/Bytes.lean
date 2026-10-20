@@ -1,13 +1,11 @@
 module
+public import VerifiedGarbage.Spec.TripleDes
+public import VerifiedGarbage.TCB.X86_64.Gpr
 
-public import VerifiedGarbage.Proof.TripleDes.Bytes
-public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.GetElem
 
 @[expose] public section
 

@@ -1,20 +1,15 @@
 module
 
-import VerifiedGarbage.Impl.CmacTripleDes.Arm
-public import VerifiedGarbage.Spec.Cmac.TripleDesContract
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Spec.Cmac
 
 /-!
 # TDEA-CMAC on ARMv7: the contracts the proofs are written against
 
-Untrusted: everything here is checked by Lean. The artifacts' contracts are
-the shared ones of `Spec/Cmac/TripleDesContract.lean`, which imply these
-(`Implies.lean`). The functions call nothing and use no stack; `update` and
+Untrusted: everything here is checked by Lean. These are the contracts of
+the code the streaming functions run inline
+(`Proof/CmacTripleDes/Stream/Arm/Inline.lean`). The functions call nothing and use no stack; `update` and
 `finalize` take `scratch` on the stack.
 -/
 

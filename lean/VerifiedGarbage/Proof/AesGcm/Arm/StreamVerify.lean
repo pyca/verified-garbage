@@ -1,12 +1,14 @@
 module
+public import VerifiedGarbage.Impl.AesGcm.Arm
+public import VerifiedGarbage.Proof.AesGcm.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 import VerifiedGarbage.Proof.AesGcm.Arm.StreamFinish
-public import VerifiedGarbage.Proof.AesGcm.Arm.Compare
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.Arm.Compare
 import VerifiedGarbage.Proof.AesGcm.Arm.StreamCrypt
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Cmac.Frame
 
 /-!
 # AES-GCM on ARMv7: `vg_aes_gcm_stream_verify`
@@ -33,7 +35,7 @@ theorem bytesAt_take (m : Mem) (p : Addr) {k n : Nat} (h : k ≤ n) : bytesAt m 
   rw [show n = k + (n - k) by omega, bytesAt_add, List.take_left' (length_bytesAt _ _ _)]
 
 theorem tagLenOk_bounds {tl : Nat} (h : Spec.Gcm.tagLenOk tl = true) : 1 ≤ tl ∧ tl ≤ 16 := by
-  simp only [Spec.Gcm.tagLenOk, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true, decide_eq_true_eq] at h
+  simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at h
   omega
 
 /-- What `verify` promises, for the additional data `a` and the text `ct`. -/

@@ -3,21 +3,14 @@ module
 import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
 public import VerifiedGarbage.Proof.Blake2.X86.Contract
 public import VerifiedGarbage.Proof.Blake2.X86.CompressS.Round
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.X86.Spill
-import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.MdStream.X86.Common
-import VerifiedGarbage.Proof.Blake2.Spec
-public import VerifiedGarbage.Impl.Blake2.X86.CompressS
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.SseDword
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

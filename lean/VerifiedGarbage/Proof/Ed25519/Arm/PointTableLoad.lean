@@ -1,12 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
+public import VerifiedGarbage.Impl.Ed25519.Arm.Packed
+public import VerifiedGarbage.Proof.Ed25519.Arm.Packed
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.PackField
+import VerifiedGarbage.Proof.Ed25519.Arm.PackField
 import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
-public import VerifiedGarbage.Proof.Ed25519.Arm.Points
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Ed25519.Arm.PointTable`. -/
 

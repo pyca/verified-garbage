@@ -1,23 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.Arm.Group
-meta import VerifiedGarbage.Proof.Aes.Arm.Group
-import VerifiedGarbage.Spec.Gcm
-meta import VerifiedGarbage.Spec.Gcm
-public import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Spec.Gcm.Contract
-meta import VerifiedGarbage.Spec.Gcm.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Aes.Arm.Keys
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Aes.Arm.Group
+meta import VerifiedGarbage.Spec.Gcm.Contract
+meta import VerifiedGarbage.Proof.Aes.Arm.Keys
 meta import VerifiedGarbage.Proof.Framework.Arm.Bytes
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES counter mode on ARMv7: the whole function
@@ -146,8 +146,8 @@ theorem save_ok {s : State} {b : BitVec 32} {br : Reg} {L : Nat} (hL : 4 * 41 �
     simp only [saveCfg, hb] at h
     rw [← slot_addr' hfit (by omega_arith)]
     exact h
-  · have : ((saveRegs br).all fun i => dstOf i != some r) = true := by
-      simp [saveRegs, savedRegs, dstOf]
+  · have : ((saveRegs br).all fun i => !clobbers i r) = true := by
+      simp [saveRegs, savedRegs, clobbers, dstOf]
     simp [this]
   · have := p.frame
     simpa [slotRegion, saveCfg, hb] using this

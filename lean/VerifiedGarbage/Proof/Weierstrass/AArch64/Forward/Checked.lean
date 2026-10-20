@@ -1,17 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Build
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Double
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Certificate
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Run
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
-import VerifiedGarbage.Spec.Ecdsa.Generic
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 The scheduler is untrusted. A certificate runs both instruction lists through

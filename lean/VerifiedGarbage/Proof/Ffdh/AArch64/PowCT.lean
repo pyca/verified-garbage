@@ -1,17 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Pow
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExpCT
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowHeadCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExp
+import VerifiedGarbage.Proof.Ffdh.AArch64.Ws
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExpCT
 
 /-!
 # FFDH on AArch64: an exponentiation in constant time

@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.Group
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Camellia ECB on x86-64: the whole function
@@ -227,8 +228,6 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86_64 dir).pre s₀) :
   have hz₃ : s₃.zf = some (decide (n = 0)) := by
     rw [z₃, r8₂]
     congr 1
-    rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
-    exact ⟨fun h => by simp [n, h], fun h => BitVec.eq_of_toNat_eq (by simpa [n] using h)⟩
   refine WP.seq (WP.mono (M := isa) (Q := GDone s₀ b D n g E)
     (WP.ite (decide (n = 0)) (by simp [X86_64.eval, hz₃]) (fun h0 => ?_) (fun h0 => ?_)) fun s₄ d₄ => ?_)
   · have hn0 : n = 0 := by simpa using h0

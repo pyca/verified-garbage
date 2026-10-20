@@ -1,12 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.JointWindow
 public import VerifiedGarbage.Proof.Dsa.AArch64.Product
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtTab
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
 
 /-! # Frames for construction of the joint exponentiation table -/
 

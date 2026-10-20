@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.BackendAvx2
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # ML-DSA's polynomial arithmetic on x86-64: AVX2

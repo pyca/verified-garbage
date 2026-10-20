@@ -29,18 +29,29 @@ open VG.Impl.Sha256.AArch64 (compress)
 /-- `mov d, n` (as `add d, n, #0`). -/
 def mov (d n : Reg) : Instr := .addImm .x d n 0
 
-/-- Stores the initial hash value `iv`. -/
-def initWith (iv : Spec.Sha256.HashValue) : Prog isa :=
-  .block ((List.range 8).flatMap fun k =>
-    [.movz .w .x9 (iv[k]!.extractLsb' 0 16) 0,
-     .movk .w .x9 (iv[k]!.extractLsb' 16 16) 1,
-     .str .w .x9 .x0 (4 * k)])
+/-- The table of the initial hash value `iv`: its words in pairs, as `ldr q`
+loads them, word `0` lowest. -/
+def ivTable (iv : Spec.Sha256.HashValue) : List (BitVec 64) :=
+  [iv[1] ++ iv[0], iv[3] ++ iv[2], iv[5] ++ iv[4], iv[7] ++ iv[6]]
+
+/-- The name of the table of `iv`: SHA-224's initial hash value's, or SHA-256's. -/
+def ivName (iv : Spec.Sha256.HashValue) : String :=
+  if iv = Spec.Sha256.H0_224 then "VG_SHA224_H0" else "VG_SHA256_H0"
+
+/-- Stores the initial hash value `iv`, sixteen bytes at a time, loaded from
+its table (`ldrqTbl`) through `v0` and `v1`: six instructions, where building
+it in general registers took two (`movz`, `movk`) for each word. The SHA-2
+compression function loads the hash value the same way (`ldr q`), so the
+one-shot digests' first compression finds it right away. -/
+def initQ (iv : Spec.Sha256.HashValue) : Prog isa :=
+  .block [.adrSym .x9 (ivName iv), .ldrqTbl .v0 .x9 0 (ivName iv) (ivTable iv),
+    .ldrqTbl .v1 .x9 16 (ivName iv) (ivTable iv), .strq .v0 .x0 0, .strq .v1 .x0 16]
 
 /-- `vg_sha256_init`. -/
-def init : Prog isa := initWith Spec.Sha256.H0
+def init : Prog isa := initQ Spec.Sha256.H0
 
 /-- `vg_sha224_init`. -/
-def init224 : Prog isa := initWith Spec.Sha256.H0_224
+def init224 : Prog isa := initQ Spec.Sha256.H0_224
 
 /-- The callee-saved registers we use, and where they are saved in `scratch`. -/
 def saved : List (Reg × Nat) :=
@@ -62,13 +73,20 @@ def compressAt : Prog isa :=
 
 The generic streaming code (`Impl/MdStream/AArch64.lean`). -/
 
+/-- The digest: the 8 words of the hash value at `x19`, written to `x21`
+big-endian, sixteen bytes at a time through `v0` and `v1` (`ldr q`, `rev32`,
+`str q`), where `out32 8 true` takes three instructions a word. -/
+def out256 : List Instr :=
+  [.ldrq .v0 .x19 0, .ldrq .v1 .x19 16, .vop (.rev .rev32b .v0 .v0), .vop (.rev .rev32b .v1 .v1),
+   .strq .v0 .x21 0, .strq .v1 .x21 16]
+
 def params : MdStream.AArch64.Params where
   N := 32
   B := 64
   L := 8
   so := 112
   len := MdStream.AArch64.len64 88 true
-  out := MdStream.AArch64.out32 8 true
+  out := out256
 
 def update : Prog isa := MdStream.AArch64.update params "vg_sha256_compress" compress
 

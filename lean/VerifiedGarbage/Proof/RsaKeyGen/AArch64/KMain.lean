@@ -1,18 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KTail
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdE
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Trial
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialTable
-public import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KTail
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdE
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Trial
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Front
+public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
 
 /-!
 # A candidate on AArch64: once `rand` has the candidate's octets

@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafEntry
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.X86.WinQuad
@@ -14,6 +10,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Words32
 public import VerifiedGarbage.Proof.Weierstrass.X86.JacDouble
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
 public import VerifiedGarbage.Proof.Weierstrass.X86.WinFinish
+import VerifiedGarbage.Proof.Weierstrass.X86.JacState
 
 /-! Adding a signed digit to the doubled accumulator. -/
 

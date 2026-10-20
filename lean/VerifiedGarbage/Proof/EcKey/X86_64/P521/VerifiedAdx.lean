@@ -1,35 +1,39 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.X86_64.P521.Verified
-meta import VerifiedGarbage.Proof.EcKey.X86_64.P521.Verified
-public import VerifiedGarbage.Proof.EcKey.X86_64.P521.LitAdx
-meta import VerifiedGarbage.Proof.EcKey.X86_64.P521.LitAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CodeErase
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CodeErase
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-public import VerifiedGarbage.Proof.Framework.LitShare
-meta import VerifiedGarbage.Proof.Framework.LitShare
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.P521.X86_64.TaintSumsAdx
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.EcKey.X86_64.P521.LitAdx
+public import VerifiedGarbage.Impl.EcKey.P521.X86_64
+public import VerifiedGarbage.Proof.EcKey.X86_64.P521.Contract
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import VerifiedGarbage.Proof.Framework.LitShare
+public import VerifiedGarbage.Proof.EcKey.X86_64.Main
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.EcKey.X86_64.P521.Lit
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CodeErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsAdx
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.EcKey.X86_64.P521.LitAdx
+meta import VerifiedGarbage.Proof.EcKey.X86_64.P521.Verified
+meta import VerifiedGarbage.Impl.EcKey.P521.X86_64
+meta import VerifiedGarbage.Proof.EcKey.X86_64.P521.Contract
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.EcKey.X86_64.Main
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.EcKey.X86_64.P521.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.EcKey.X86_64.P521.Verified
 
 /-!
 # P-521 public keys on x86-64 with BMI2 and ADX: `Verified`

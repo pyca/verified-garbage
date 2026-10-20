@@ -1,12 +1,11 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Sponge
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttLoop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttLoop
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly`, correctness

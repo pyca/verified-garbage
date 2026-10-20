@@ -1,19 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Body
-meta import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Body
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.CT
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha512.X86.Lit
+meta import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Body
 meta import VerifiedGarbage.Proof.Ed448.X86.Shake.CT
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-!
 # Ed448 public-key derivation on x86 (32-bit): constant time, and `Verified`

@@ -1,19 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
-import VerifiedGarbage.Impl.Aes.X86_64.Linear
 public import VerifiedGarbage.Proof.Framework.X86_64.Linear
-import VerifiedGarbage.Impl.Aes.X86_64.Sbox
 public import VerifiedGarbage.Proof.Aes.SboxSpec
 public import VerifiedGarbage.Proof.Aes.Bitsliced
-public import VerifiedGarbage.Proof.Framework.X86_64.Straight
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

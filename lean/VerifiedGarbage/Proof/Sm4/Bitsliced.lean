@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Sm4.SboxTable
 public import VerifiedGarbage.Proof.Aes.Bitsliced
 public import VerifiedGarbage.Impl.Sm4.Lin
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Bitsliced SM4: the layout and the layers

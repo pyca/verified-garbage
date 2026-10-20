@@ -199,12 +199,26 @@ theorem exec_sp {i : Instr} {s s' : State} (h : exec i s = some s') : s'.sp = s.
   | ldr sz t n off | ldrb t n off | ldrq t n off =>
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h; rfl
+  | ldrqTbl t n off name ws => simp only [exec] at h; split at h <;> cases h; rfl
   | vop op =>
     simp only [exec, Option.map_eq_some_iff] at h
     obtain ⟨⟨_, _⟩, -, rfl⟩ := h; rfl
   | ldrSp t off =>
     obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
     obtain ⟨_, _, rfl⟩ := Option.map_eq_some_iff.mp h; rfl
+  | strSp t off =>
+    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
+    simp only [State.store] at h
+    split at h <;> cases h; rfl
+  | ldp t1 t2 n off =>
+    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
+    simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    obtain ⟨_, -, _, -, rfl⟩ := h; rfl
+  | stp t1 t2 n off =>
+    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
+    simp only [Option.bind_eq_some_iff, State.store] at h
+    obtain ⟨_, h₁, h₂⟩ := h
+    split at h₁ <;> cases h₁; split at h₂ <;> cases h₂; rfl
   | ccmp sz n imm nzcv cond =>
     obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h; obtain rfl := Option.some.inj h
     split <;> rfl

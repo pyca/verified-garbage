@@ -1,7 +1,15 @@
-# The 32-bit Linux userspaces CI runs its x86 (i386) and ARMv7 (armhf) jobs
-# in, natively on a 64-bit runner: built for linux/386 on an x86-64 runner and
-# for linux/arm/v7 on an ARM64 one by .github/workflows/runner-images.yml.
-FROM debian:trixie-slim
+# The Linux userspaces CI runs its 32-bit jobs in, built by
+# .github/workflows/runner-images.yml, each natively on a 64-bit runner:
+# * linux/386 (i686), on an x86-64 runner: x86's tests, natively;
+# * linux/arm64 (armv7-cross), on an ARM64 runner: ARMv7's and Thumb's tests,
+#   cross-compiled for armhf and run by ci/arm32-run, natively when the CPU
+#   has AArch32 and under QEMU when it doesn't (as some runners' cores have
+#   none, and can start no 32-bit container at all), and ARMv7's
+#   benchmarks, cross-compiled and run natively.
+ARG TARGETARCH
+ARG TARGETVARIANT
+
+FROM debian:trixie-slim AS base
 
 # Increment this to blow away the docker cache
 ENV CACHE_BUSTER=1
@@ -34,8 +42,11 @@ RUN printf '%s\n' \
     > /etc/dpkg/dpkg.cfg.d/excludes-unused-dev-files
 
 # Only what the jobs use:
-# * the runner's (64-bit) libc and libstdc++, so that the Node binary GitHub
-#   Actions injects into the container for JS actions can run;
+# * in the 32-bit image, the runner's (64-bit) libc and libstdc++, so that
+#   the Node binary GitHub Actions injects into the container for JS actions
+#   can run;
+# * in armv7-cross, the armhf cross-compiler, libc and OpenSSL, and qemu-arm
+#   (see ci/arm32-run);
 # * gcc and libc6-dev, rustc's linker (with binutils' readelf);
 # * git and ca-certificates, for actions/checkout;
 # * python3, for the coverage export and the benchmark comparison;
@@ -43,14 +54,13 @@ RUN printf '%s\n' \
 # * libssl-dev, pkg-config and openssl, for the benchmarks, which link
 #   OpenSSL (rust-openssl) and record its version.
 RUN case "$(dpkg --print-architecture)" in \
-        i386) runner_arch=amd64 ;; \
-        armhf) runner_arch=arm64 ;; \
+        i386) foreign=amd64; packages="libc6:amd64 libstdc++6:amd64" ;; \
+        arm64) foreign=armhf; packages="gcc-arm-linux-gnueabihf libc6-dev:armhf libssl-dev:armhf qemu-user" ;; \
         *) echo "unsupported architecture: $(dpkg --print-architecture)" >&2; exit 1 ;; \
     esac && \
-    dpkg --add-architecture "$runner_arch" && \
+    dpkg --add-architecture "$foreign" && \
     apt-get -qq update && apt-get install -qq -y --no-install-recommends \
-        "libc6:$runner_arch" \
-        "libstdc++6:$runner_arch" \
+        $packages \
         gcc \
         libc6-dev \
         git \
@@ -77,7 +87,7 @@ ENV RUSTUP_HOME=/usr/local/rustup \
     PATH=/usr/local/cargo/bin:$PATH
 RUN case "$(dpkg --print-architecture)" in \
         i386) host=i686-unknown-linux-gnu; targets= ;; \
-        armhf) host=armv7-unknown-linux-gnueabihf; targets=thumbv7neon-unknown-linux-gnueabihf ;; \
+        arm64) host=aarch64-unknown-linux-gnu; targets=armv7-unknown-linux-gnueabihf,thumbv7neon-unknown-linux-gnueabihf ;; \
     esac && \
     url="https://static.rust-lang.org/rustup/dist/$host/rustup-init" && \
     python3 -c 'import sys, urllib.request; urllib.request.urlretrieve(sys.argv[1], sys.argv[2])' "$url" /tmp/rustup-init && \
@@ -103,3 +113,21 @@ RUN case "$(dpkg --print-architecture)" in \
         if [ -f "$f" ]; then bin/llvm-strip --strip-all "$f"; fi; \
     done && \
     rustc -vV && cargo -V
+
+# Each platform's image is the stage named after it (by BuildKit's
+# TARGETARCH and TARGETVARIANT): armv7-cross's Cargo builds for ARMv7 unless
+# told otherwise (the Thumb job sets CARGO_BUILD_TARGET), links with the
+# cross-compiler, and runs the 32-bit programs through ci/arm32-run;
+# pkg-config finds the armhf OpenSSL for openssl-sys (the benchmarks).
+FROM base AS image-386
+FROM base AS image-arm64
+COPY arm32-run /usr/local/bin/arm32-run
+ENV CARGO_BUILD_TARGET=armv7-unknown-linux-gnueabihf \
+    CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER=arm-linux-gnueabihf-gcc \
+    CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_RUNNER=/usr/local/bin/arm32-run \
+    CARGO_TARGET_THUMBV7NEON_UNKNOWN_LINUX_GNUEABIHF_LINKER=arm-linux-gnueabihf-gcc \
+    CARGO_TARGET_THUMBV7NEON_UNKNOWN_LINUX_GNUEABIHF_RUNNER=/usr/local/bin/arm32-run \
+    PKG_CONFIG_ALLOW_CROSS=1 \
+    PKG_CONFIG_LIBDIR_armv7_unknown_linux_gnueabihf=/usr/lib/arm-linux-gnueabihf/pkgconfig:/usr/share/pkgconfig
+
+FROM image-${TARGETARCH}${TARGETVARIANT}

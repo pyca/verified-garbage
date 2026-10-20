@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Camellia.Circuit
 meta import VerifiedGarbage.Impl.Camellia.Circuit
 public import VerifiedGarbage.Impl.Aes.Arm.Sbox
 meta import VerifiedGarbage.Impl.Aes.Arm.Sbox
+meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
 
 /-!
 # The bitsliced Camellia S-box on ARMv7

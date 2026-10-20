@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCtx
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Bignum.X86_64.Words
 
 /-!
 # `vg_rsa_pkcs1_recover` on x86-64: the contract on the registers
@@ -51,7 +52,7 @@ def recContract : Contract isa where
       Spec.Rsa.lenValid (s.gpr .rcx).toNat ∧ 1 ≤ (s.gpr .r9).toNat ∧ (s.gpr .r9).toNat ≤ (s.gpr .rcx).toNat ∧
       (∃ h, Spec.RsaPkcs1Sig.Hash.ofId ((stackArg s 0).setWidth 32).toNat = some h ∧
         (s.gpr .rsi).toNat = h.len) ∧
-      Spec.Rsa.scratchWords (s.gpr .rcx).toNat ≤ (stackArg s 4).toNat
+      Spec.Rsa.publicScratchWords (s.gpr .rcx).toNat ≤ (stackArg s 4).toNat
   post s s' := ∀ h, Spec.RsaPkcs1Sig.Hash.ofId ((stackArg s 0).setWidth 32).toNat = some h →
     Spec.Rsa.written s'.mem (s.gpr .rdi) (s.gpr .rsi).toNat ((s'.gpr .rax).setWidth 32)
       (Spec.RsaPkcs1Sig.recover (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)

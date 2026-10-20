@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Body
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CallCT
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseVerified
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarMulAddVerified
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarVerified
+public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Args
+public import VerifiedGarbage.Proof.Sha512.Arm.Lit
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
 
 @[expose] public section
 

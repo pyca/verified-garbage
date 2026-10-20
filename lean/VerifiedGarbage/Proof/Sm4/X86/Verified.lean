@@ -10,22 +10,40 @@ public import VerifiedGarbage.Proof.Sm4.X86.Lit
 meta import VerifiedGarbage.Proof.Sm4.X86.Lit
 public import VerifiedGarbage.Proof.Sm4.Scratch
 meta import VerifiedGarbage.Proof.Sm4.Scratch
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.StackScratch.X86
 meta import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Impl.Sm4.X86.Modes
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Sm4.Layout
+import VerifiedGarbage.Proof.Sm4.X86.Copy
+import VerifiedGarbage.Proof.Sm4.X86.Crypt8
+import VerifiedGarbage.Spec.Ctr.Contract
+meta import VerifiedGarbage.Impl.Sm4.X86.Modes
+meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Sm4.Layout
+meta import VerifiedGarbage.Proof.Sm4.X86.Copy
+meta import VerifiedGarbage.Proof.Sm4.X86.Crypt8
+meta import VerifiedGarbage.Spec.Ctr.Contract
 
 /-!
 # SM4 ECB on x86 (32-bit) meets its contracts

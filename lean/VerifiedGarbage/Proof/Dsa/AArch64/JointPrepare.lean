@@ -1,12 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
+public import VerifiedGarbage.Proof.Dsa.AArch64.JointWindow
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Proof.Dsa.AArch64.JointBuildContext
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.JointEncode
-public import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+import VerifiedGarbage.Proof.Dsa.AArch64.JointEncode
+import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
+import VerifiedGarbage.Proof.Dsa.AArch64.JointBuild
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # Loading and preparing both bases for joint DSA exponentiation -/
 

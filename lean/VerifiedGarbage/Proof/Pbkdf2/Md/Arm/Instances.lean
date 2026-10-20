@@ -1,35 +1,31 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.IterateCT
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.IterateCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacFinCT
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacFinCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacInitCT
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacInitCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha512
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha512
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hashes
-meta import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hashes
-public import VerifiedGarbage.Proof.Hmac.Generic.Implies
-meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Sha1.Arm.Stream.Md
-meta import VerifiedGarbage.Proof.Sha1.Arm.Stream.Md
-public import VerifiedGarbage.Proof.Md5.Arm.Stream.Md
-meta import VerifiedGarbage.Proof.Md5.Arm.Stream.Md
-public import VerifiedGarbage.Proof.Sha1.Arm.Lit
-meta import VerifiedGarbage.Proof.Sha1.Arm.Lit
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
 import VerifiedGarbage.Proof.Sha512.Arm.Lit
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Sha1.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Sha512.Arm.Shared
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.IterateCT
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacFinCT
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacInitCT
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha512
+meta import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hashes
+meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
+meta import VerifiedGarbage.Spec.Pbkdf2.Generic
 meta import VerifiedGarbage.Proof.Sha512.Arm.Lit
-public import VerifiedGarbage.Proof.Sha512.Arm.Shared
-meta import VerifiedGarbage.Proof.Sha512.Arm.Shared
-public import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Sha1.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Sha512.Arm.Shared
 
 /-!
 # HMAC and PBKDF2-HMAC over Merkle–Damgård hash functions on ARMv7: the instances

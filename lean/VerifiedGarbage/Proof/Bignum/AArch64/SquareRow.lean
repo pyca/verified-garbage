@@ -2,12 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Bignum.AArch64.SquarePrefix
 public import VerifiedGarbage.Proof.Bignum.AArch64.Row
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Bignum.AArch64.Square
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Four-word steps preserve the existing row invariant. -/
 

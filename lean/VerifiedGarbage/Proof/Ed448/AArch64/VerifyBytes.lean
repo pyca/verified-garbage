@@ -1,13 +1,18 @@
 module
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChunks
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
+public import VerifiedGarbage.Spec.Ed448.Contract
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChecks
+import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChecks
 import VerifiedGarbage.Proof.Ed448.Scalar
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Main
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.X448.AArch64.Init
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Ed448 verification's equation on AArch64: checks of the encodings' bytes

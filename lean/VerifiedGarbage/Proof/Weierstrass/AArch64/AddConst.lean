@@ -1,11 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
+public import VerifiedGarbage.Proof.Mont.AArch64.Ops
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 
 /-!
 # The window method on AArch64: the recoded scalar

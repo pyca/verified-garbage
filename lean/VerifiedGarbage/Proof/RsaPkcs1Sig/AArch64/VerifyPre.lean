@@ -2,12 +2,13 @@ module
 
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Verify
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # `vg_rsa_pkcs1_verify` on AArch64: the precondition
@@ -69,7 +70,7 @@ structure PreV (K : Nat) (s : State) : Prop where
   k2 : (s.gpr .x1).toNat ≤ 1024
   e1 : 1 ≤ (s.gpr .x3).toNat
   e2 : (s.gpr .x3).toNat ≤ (s.gpr .x1).toNat
-  hs : 16 * (s.gpr .x1).toNat + 32 ≤ (stackArg s 2).toNat
+  hs : Spec.Rsa.publicScratchWords (s.gpr .x1).toNat ≤ (stackArg s 2).toNat
 
 theorem preV_of {K : Nat} {s : State}
     (h : (Spec.RsaPkcs1Sig.verifyContract abi (stk K)).pre s) : PreV K s := by
@@ -83,6 +84,6 @@ theorem preV_of {K : Nat} {s : State}
     e1, e2, hs⟩ := h
   rw [← e] at sp1 kn ke kd kg ks ka
   exact ⟨sp1, sp2, by rw [hrd]; exact Covers.refl _, by rw [hwr]; simp, ns, es, ds, gs, sa, kn, ke, kd, kg,
-    ks, ka, wn, we, wd, wg, ws, k1, k2, e1, e2, by unfold Spec.Rsa.scratchWords at hs; omega⟩
+    ks, ka, wn, we, wd, wg, ws, k1, k2, e1, e2, hs⟩
 
 end VG.Proof.RsaPkcs1Sig.AArch64.Ver

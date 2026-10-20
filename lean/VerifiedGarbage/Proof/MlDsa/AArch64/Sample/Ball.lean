@@ -1,19 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.BallLoop
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.BallLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 import VerifiedGarbage.Proof.MlKem.AArch64.Sample
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Zero
+import VerifiedGarbage.Proof.MlKem.Bits
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.BallLoop
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Sample
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Zero
+meta import VerifiedGarbage.Proof.MlKem.Bits
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_sample_in_ball`

@@ -1,11 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.InitCall
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Reinit
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Reinit
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Preserve the outer flags while restarting a singleton stream -/
 @[expose] public section

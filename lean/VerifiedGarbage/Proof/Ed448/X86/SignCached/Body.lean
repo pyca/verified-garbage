@@ -1,14 +1,17 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
+public import VerifiedGarbage.Proof.Ed448.X86.Callee
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
+public import VerifiedGarbage.Proof.Ed448.X86.SignCached.Hash
 
-public import VerifiedGarbage.Proof.Ed448.X86.SignCached.Calls
+import VerifiedGarbage.Proof.Ed448.X86.SignCached.Calls
 import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
 import VerifiedGarbage.Proof.Ed448.Signing
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.X448.X86.Ops
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Ed448 signing with a cached key on x86 (32-bit): correctness

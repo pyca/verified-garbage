@@ -3,15 +3,9 @@ module
 public import VerifiedGarbage.Impl.Argon2.X86_64.FillFinish
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillIterations
 public import VerifiedGarbage.Proof.Argon2.X86_64.FinishReady
-import VerifiedGarbage.Impl.Argon2.X86_64.Finish
-import VerifiedGarbage.Proof.Argon2.X86_64.FinalOutputReady
-public import VerifiedGarbage.Proof.Argon2.Serialization
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Argon2.Serialization
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Argon2.X86_64.ReductionLoopState
 
 /-! Merged from `Proof.Argon2.X86_64.FinishStage`. -/
 

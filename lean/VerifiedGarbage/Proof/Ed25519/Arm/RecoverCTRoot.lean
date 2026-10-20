@@ -1,23 +1,29 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
+public import VerifiedGarbage.Proof.Ed25519.Recover
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
-meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
-import VerifiedGarbage.Proof.Ed25519.Arm.RecoverAdjust
-meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverAdjust
-import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
-meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
-public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint
-meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
+import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint
 import VerifiedGarbage.Proof.Ed25519.Arm.Freeze
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
+public import VerifiedGarbage.Impl.Ed25519.Arm.RecoverSign
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
+meta import VerifiedGarbage.Proof.Ed25519.Recover
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
+meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint
 meta import VerifiedGarbage.Proof.Ed25519.Arm.Freeze
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
+meta import VerifiedGarbage.Impl.Ed25519.Arm.RecoverSign
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Ed25519.Arm.RecoverCTSign`. -/
 

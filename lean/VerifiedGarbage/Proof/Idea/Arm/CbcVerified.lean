@@ -1,34 +1,35 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.Arm.ModeCore
-meta import VerifiedGarbage.Proof.Idea.Arm.ModeCore
 public import VerifiedGarbage.Proof.Idea.CbcScratch
+public import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+import VerifiedGarbage.Proof.Modes.Arm.CbcChained
+import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+import VerifiedGarbage.Proof.Modes.Arm.Cbc
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Idea.Arm.ModeCore
 meta import VerifiedGarbage.Proof.Idea.CbcScratch
-public import VerifiedGarbage.Proof.Modes.Arm.Cbc
-meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+meta import VerifiedGarbage.Proof.Modes.Arm.CbcChained
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-meta import VerifiedGarbage.Proof.Aes.SboxSpec
-meta import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
-meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
+meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # IDEA-CBC on ARMv7 meets its contracts
 
-`cbcEncrypt_verified`, `cbcDecrypt_verified`: the generic CBC encryption and
-decryption one block at a time over IDEA's ECB function
-(`Proof.Modes.Arm.seq_wp`, `seq_ct` with `ecbSpec`) meet IDEA-CBC's contracts
-with a scratch buffer of 7 words (`Proof.Idea.cbcEncScratchContract`), with
-the 32 bytes of stack the ECB function uses. `cbcEncrypt_framed` and
-`cbcDecrypt_framed` keep the buffer on the stack, zeroed on return: 64 bytes
-more.
+`cbcEncryptChained_verified`, `cbcDecryptChained_verified`: the generic CBC
+encryption and decryption one block at a time, which return the chaining
+value in the IV (`Impl/Modes/Arm/CbcChained.lean`), over IDEA's ECB
+function (`Proof.Modes.Arm.seq_verified` with `ecbSpec`, decryption under
+the decryption subkeys its caller passes) meet the chained
+contracts with a scratch buffer, as OFB and CFB do (`FbVerified.lean`), whose
+IV is also read and written; the `_framed` theorems keep the buffer on the
+stack, zeroed on return.
 -/
 
 @[expose] public section
@@ -37,10 +38,9 @@ namespace VG.Proof.Idea.Arm
 
 open VG VG.Arm VG.Impl.Idea.Arm VG.Impl.Modes.Arm VG.Proof.Modes.Arm
 
-/-- A state satisfying the precondition with the scratch buffer (one
-block): the schedule at `0x1000`, the IV at `0x2000`, the block at `0x3000`,
-the scratch buffer at `0` (the stack argument, in memory that is zero). -/
-def cbcSat : State where
+/-- A state satisfying the precondition with the scratch buffer (one block at
+`0x3000`), the IV read and written. -/
+def cbcSat (len : Nat) : State where
   gpr r := match r with
     | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | .r3 => 1 | _ => 0
   sp := 0x8000
@@ -49,98 +49,86 @@ def cbcSat : State where
   c := false
   v := false
   mem _ := 0
-  rd := [⟨0x1000, 104⟩, ⟨0x2000, 8⟩, ⟨0x8000, 4⟩]
-  wr := [⟨0x3000, 8⟩, ⟨0, 56⟩]
+  rd := [⟨0x1000, 104⟩, ⟨0x8000, 4⟩]
+  wr := [⟨0x2000, 8⟩, ⟨0x3000, len⟩, ⟨0, 56⟩]
 
-theorem encTaint : SeqTaint (ecbCore) cbcEnc :=
+/-- A state satisfying the functions' precondition. -/
+def cbcFrameSat (len : Nat) : State := { cbcSat len with rd := [⟨0x1000, 104⟩], wr := [⟨0x2000, 8⟩, ⟨0x3000, len⟩] }
+
+theorem cbcEncryptChainedTaint : SeqTaint (ecbCore) cbcEncChained :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
-theorem decTaint : SeqTaint (ecbCore) cbcDec :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
-
-theorem enc_implies : (seqArm (ecbCore) (ecbSpec) cbcEnc).Implies
-    (Proof.Idea.cbcEncScratchContract Arm.abi 7 32) where
-  pre s h := seqArm_pre_ro rfl rfl rfl (by
-    sig_pre [Proof.Idea.cbcEncScratchContract, Proof.Idea.cbcScratchSig, Spec.Idea.cbcSig, Arm.abi, Arm.argRegs,
-      Arm.reduceClassify, Arm.Loc.val] at h
+theorem cbcEncryptChained_implies : (seqArm (ecbCore) (ecbSpec) cbcEncChained).Implies
+    (Proof.Idea.cbcEncChainedScratchContract Arm.abi 7 32) where
+  pre s h := seqArm_pre_rw rfl (len := (· * 8)) (fun n => rfl) (by
+    sig_pre [Proof.Idea.cbcEncChainedScratchContract, Proof.Idea.cbcChainedScratchSig, Spec.Idea.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
     exact h)
   post s s' _ h := by
-    sig_post [Proof.Idea.cbcEncScratchContract, Proof.Idea.cbcScratchSig, Proof.Idea.cbcEncPost, Spec.Idea.cbcSig,
-      Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-    have e := cbcEnc_post h
+    sig_post [Proof.Idea.cbcEncChainedScratchContract, Proof.Idea.cbcChainedScratchSig, Proof.Idea.cbcEncChainedPost, Spec.Idea.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+    have e := cbcEncChained_post h
     obtain ⟨e1, e2, e3, -, -⟩ := args_plain (c := ecbCore) rfl s
-    rw [show (ecbCore).bs = 8 from rfl, e1, e2, e3] at e
+    simp only [show (ecbCore).bs = 8 from rfl, e1, e2, e3] at e
     simp only [ecbSpec, State.addr, blocksOf_eq] at e
     exact e
   pub s₁ s₂ _ _ h := by
-    sig_pub [Proof.Idea.cbcEncScratchContract, Proof.Idea.cbcScratchSig, Spec.Idea.cbcSig, Arm.abi, Arm.argRegs,
-      Arm.reduceClassify, Arm.Loc.val] at h
+    sig_pub [Proof.Idea.cbcEncChainedScratchContract, Proof.Idea.cbcChainedScratchSig, Spec.Idea.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
     exact seqArm_pub rfl h
   sat := by
-    sig_implies_sat [Proof.Idea.cbcEncScratchContract, Proof.Idea.cbcScratchSig, Spec.Idea.cbcSig, Arm.abi,
-      Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [cbcSat, stackArg, stackArgAddr, Mem.readW,
-      Mem.read] using cbcSat
+    sig_implies_sat [Proof.Idea.cbcEncChainedScratchContract, Proof.Idea.cbcChainedScratchSig, Spec.Idea.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
+      Arm.State.addr] [cbcSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using cbcSat 8
 
-theorem dec_implies : (seqArm (ecbCore) (ecbSpec) cbcDec).Implies
-    (Proof.Idea.cbcDecScratchContract Arm.abi 7 32) where
-  pre s h := seqArm_pre_ro rfl rfl rfl (by
-    sig_pre [Proof.Idea.cbcDecScratchContract, Proof.Idea.cbcScratchSig, Spec.Idea.cbcSig, Arm.abi, Arm.argRegs,
-      Arm.reduceClassify, Arm.Loc.val] at h
+theorem cbcEncryptChained_verified : Verified Arm.target cbcEncryptChained (Proof.Idea.cbcEncChainedScratchContract Arm.abi 7 32) :=
+  seq_verified (ecbSpec) (cbcEncChained_ok _) cbcEncryptChainedTaint cbcEncryptChained_implies
+
+theorem cbcEncryptChainedFrameSat : ∃ s, (Spec.Idea.cbcEncryptChainedContract Arm.abi 96).pre s := by
+  implies_sat [Spec.Idea.cbcEncryptChainedContract, Spec.Idea.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
+    Arm.State.addr] [cbcFrameSat, cbcSat] using cbcFrameSat 8
+
+/-- `cbcEncryptChained`, with its scratch buffer on the stack (zeroed on return). -/
+theorem cbcEncryptChained_framed :
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 cbcEncryptChained) (Spec.Idea.cbcEncryptChainedContract Arm.abi 96) :=
+  Arm.Verified.stackScratchWiped (sig := Spec.Idea.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 7)
+    (post := Proof.Idea.cbcEncChainedPost Arm.abi.ptrBits) (wa := true) (stack := 32) (m := 0) (bytes := 64)
+    cbcEncryptChained_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Idea.cbcEncChainedPost_local _)
+    (Proof.Idea.cbcEncChainedPostOut_local _) cbcEncryptChainedFrameSat
+
+theorem cbcDecryptChainedTaint : SeqTaint (ecbCore) cbcDecChained :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem cbcDecryptChained_implies : (seqArm (ecbCore) (ecbSpec) cbcDecChained).Implies
+    (Proof.Idea.cbcDecChainedScratchContract Arm.abi 7 32) where
+  pre s h := seqArm_pre_rw rfl (len := (· * 8)) (fun n => rfl) (by
+    sig_pre [Proof.Idea.cbcDecChainedScratchContract, Proof.Idea.cbcChainedScratchSig, Spec.Idea.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
     exact h)
   post s s' _ h := by
-    sig_post [Proof.Idea.cbcDecScratchContract, Proof.Idea.cbcScratchSig, Proof.Idea.cbcDecPost, Spec.Idea.cbcSig,
-      Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-    have e := cbcDec_post h
+    sig_post [Proof.Idea.cbcDecChainedScratchContract, Proof.Idea.cbcChainedScratchSig, Proof.Idea.cbcDecChainedPost, Spec.Idea.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+    have e := cbcDecChained_post h
     obtain ⟨e1, e2, e3, -, -⟩ := args_plain (c := ecbCore) rfl s
-    rw [show (ecbCore).bs = 8 from rfl, e1, e2, e3] at e
+    simp only [show (ecbCore).bs = 8 from rfl, e1, e2, e3] at e
     simp only [ecbSpec, State.addr, blocksOf_eq] at e
     exact e
   pub s₁ s₂ _ _ h := by
-    sig_pub [Proof.Idea.cbcDecScratchContract, Proof.Idea.cbcScratchSig, Spec.Idea.cbcSig, Arm.abi, Arm.argRegs,
-      Arm.reduceClassify, Arm.Loc.val] at h
+    sig_pub [Proof.Idea.cbcDecChainedScratchContract, Proof.Idea.cbcChainedScratchSig, Spec.Idea.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
     exact seqArm_pub rfl h
   sat := by
-    sig_implies_sat [Proof.Idea.cbcDecScratchContract, Proof.Idea.cbcScratchSig, Spec.Idea.cbcSig, Arm.abi,
-      Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [cbcSat, stackArg, stackArgAddr, Mem.readW,
-      Mem.read] using cbcSat
+    sig_implies_sat [Proof.Idea.cbcDecChainedScratchContract, Proof.Idea.cbcChainedScratchSig, Spec.Idea.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
+      Arm.State.addr] [cbcSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using cbcSat 8
 
-theorem cbcEncrypt_verified : Verified Arm.target cbcEncrypt (Proof.Idea.cbcEncScratchContract Arm.abi 7 32) :=
-  seq_verified (ecbSpec) (cbcEnc_ok _) encTaint enc_implies
+theorem cbcDecryptChained_verified : Verified Arm.target cbcDecryptChained (Proof.Idea.cbcDecChainedScratchContract Arm.abi 7 32) :=
+  seq_verified (ecbSpec) (cbcDecChained_ok _) cbcDecryptChainedTaint cbcDecryptChained_implies
 
-theorem cbcDecrypt_verified : Verified Arm.target cbcDecrypt (Proof.Idea.cbcDecScratchContract Arm.abi 7 32) :=
-  seq_verified (ecbSpec) (cbcDec_ok _) decTaint dec_implies
+theorem cbcDecryptChainedFrameSat : ∃ s, (Spec.Idea.cbcDecryptChainedContract Arm.abi 96).pre s := by
+  implies_sat [Spec.Idea.cbcDecryptChainedContract, Spec.Idea.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
+    Arm.State.addr] [cbcFrameSat, cbcSat] using cbcFrameSat 8
 
-/-- A state satisfying the functions' precondition (one block). -/
-def cbcFrameSat : State := { cbcSat with rd := [⟨0x1000, 104⟩, ⟨0x2000, 8⟩], wr := [⟨0x3000, 8⟩] }
-
-theorem cbcEncFrameSat : ∃ s, (Spec.Idea.cbcEncryptContract Arm.abi 96).pre s := by
-  implies_sat [Spec.Idea.cbcEncryptContract, Spec.Idea.cbcSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
-    Arm.Loc.val, Arm.State.addr] [cbcFrameSat, cbcSat] using cbcFrameSat
-
-theorem cbcDecFrameSat : ∃ s, (Spec.Idea.cbcDecryptContract Arm.abi 96).pre s := by
-  implies_sat [Spec.Idea.cbcDecryptContract, Spec.Idea.cbcSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
-    Arm.Loc.val, Arm.State.addr] [cbcFrameSat, cbcSat] using cbcFrameSat
-
-/-- IDEA-CBC encryption, with its scratch buffer on the stack (zeroed on
-return). -/
-theorem cbcEncrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 cbcEncrypt)
-      (Spec.Idea.cbcEncryptContract Arm.abi 96) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Idea.cbcSig) (nm := "scratch") (e := .u64) (n := 7)
-    (post := Proof.Idea.cbcEncPost Arm.abi.ptrBits) (wa := true) (stack := 32) (m := 0) (bytes := 64)
-    cbcEncrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Idea.cbcEncPost_local _)
-    (Proof.Idea.cbcEncPostOut_local _) cbcEncFrameSat
-
-/-- IDEA-CBC decryption, with its scratch buffer on the stack (zeroed on
-return). -/
-theorem cbcDecrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 cbcDecrypt)
-      (Spec.Idea.cbcDecryptContract Arm.abi 96) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Idea.cbcSig) (nm := "scratch") (e := .u64) (n := 7)
-    (post := Proof.Idea.cbcDecPost Arm.abi.ptrBits) (wa := true) (stack := 32) (m := 0) (bytes := 64)
-    cbcDecrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Idea.cbcDecPost_local _)
-    (Proof.Idea.cbcDecPostOut_local _) cbcDecFrameSat
+/-- `cbcDecryptChained`, with its scratch buffer on the stack (zeroed on return). -/
+theorem cbcDecryptChained_framed :
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 cbcDecryptChained) (Spec.Idea.cbcDecryptChainedContract Arm.abi 96) :=
+  Arm.Verified.stackScratchWiped (sig := Spec.Idea.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 7)
+    (post := Proof.Idea.cbcDecChainedPost Arm.abi.ptrBits) (wa := true) (stack := 32) (m := 0) (bytes := 64)
+    cbcDecryptChained_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Idea.cbcDecChainedPost_local _)
+    (Proof.Idea.cbcDecChainedPostOut_local _) cbcDecryptChainedFrameSat
 
 end VG.Proof.Idea.Arm

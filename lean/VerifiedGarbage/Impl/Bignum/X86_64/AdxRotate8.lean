@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxDualAdd
+public import VerifiedGarbage.Impl.Bignum.X86_64
 
 /-! Eight register-resident columns of a multiply-add, shifted by one word. -/
 
@@ -77,7 +78,16 @@ def nextBlock : List Instr :=
     .mov .rax (.mem (hdr sW)), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
     .alu .add .rax (.mem (hdr (sArr Public.aN))), .alu .cmp .rbp (.reg .rax)]
 
-def addInputCarry : List Instr := ([.mov .rdx (.mem blockCarry)] : List Instr) ++ AdxDualAdd.addInput
+/-- The block carry, a bit, into CF: `rdx + 2⁶⁴ - 1` carries exactly when the
+bit is set, and never overflows (OF clear). -/
+def carryIn : List Instr := [.mov .rdx (.mem blockCarry), .alu .add .rdx (.imm (BitVec.ofInt 32 (-1)))]
+
+/-- Add an input block to the columns by one `adcx` chain, from CF. -/
+def addChainC : List Instr := addChain (fun k => .mem (at_ .rsi (8 * k)))
+
+/-- Add the input block and the block carry (a bit, by CF), the new bit into `rax`. -/
+def addInputCarry : List Instr :=
+  carryIn ++ addChainC ++ ([.mov32 .rax (.imm 0), .adcx .rax (.reg .rax)] : List Instr)
 
 def accumulate : Prog isa :=
   .seq (.block addInputCarry) (.block [.store blockCarry .rax])
@@ -91,8 +101,15 @@ def tileBegin : Prog isa :=
 
 def clearCarry : List Instr := [.mov32 .rax (.imm 0), .store blockCarry .rax]
 
+/-- The last input block: the block carry (a bit) by CF with the input block,
+and the tile carry (a word) by OF, from the first column. -/
+def tailAdd : List Instr :=
+  carryIn ++ ([.mov32 .rax (.imm 0), .mov .rdx (.mem tileCarry)] : List Instr) ++
+    AdxDualAdd.chain (fun k => .mem (at_ .rsi (8 * k))) (fun k => .reg (if k = 0 then .rdx else .rax)) ++
+    AdxDualAdd.close
+
 def tailCore : Prog isa :=
-  .seq (.block addInputCarry) (.seq (.block (addWord tileCarry)) (.block storeCols))
+  .seq (.block tailAdd) (.block storeCols)
 
 def tileEnd : List Instr :=
   [.store (at_ .rcx 48) .rax, .alu .add .rcx (.imm 64),

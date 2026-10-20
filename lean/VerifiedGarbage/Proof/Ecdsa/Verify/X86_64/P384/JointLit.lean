@@ -1,17 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifyLit
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifyLit
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifyLit
 import VerifiedGarbage.Proof.P384.X86_64.JointPartsLit
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.P384Literals
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifyLit
 meta import VerifiedGarbage.Proof.P384.X86_64.JointPartsLit
-import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P384Literals
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # ECDSA verification over P-384 on x86-64: the code as a literal

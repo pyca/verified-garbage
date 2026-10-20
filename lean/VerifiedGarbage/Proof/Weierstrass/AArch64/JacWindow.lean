@@ -1,14 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStep
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeInvariant
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinish
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinish
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoop
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowCore
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-! The full public Jacobian variable-point multiplication. -/
 

@@ -1,24 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.SigningVerified
-public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingVerified
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
-import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyMinusCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyRangeCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
-import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generate
+public import VerifiedGarbage.Spec.Dsa.Derive
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-! # Arithmetic variants for the complete DSA entry points
 
 A backend supplies Montgomery arithmetic, its stack allowance and proofs of
-both complete callers. This admits both inline arithmetic and calls to a
+the complete callers. This admits both inline arithmetic and calls to a
 shared kernel. The generic registration emits both callers for every backend.
 -/
 
@@ -38,6 +34,12 @@ structure Backend where
   signSp : (SignVerify.sign sq mul).all (fun i => !isa.writesSp i) = true
   verifySp : (SignVerify.verify sq mul).all (fun i => !isa.writesSp i) = true
   signDepth : (SignVerify.sign sq mul).x86_64Depth ≤ stack
+  parametersVerified : Verified target (Generate.checkParameters sq mul) (Spec.Dsa.checkParametersContract abi stack)
+  deriveVerified : Verified target (Generate.deriveKey sq mul) (Spec.Dsa.deriveKeyContract abi stack)
+  parametersSp : (Generate.checkParameters sq mul).all (fun i => !isa.writesSp i) = true
+  deriveSp : (Generate.deriveKey sq mul).all (fun i => !isa.writesSp i) = true
+  parametersDepth : (Generate.checkParameters sq mul).x86_64Depth ≤ stack
+  deriveDepth : (Generate.deriveKey sq mul).x86_64Depth ≤ stack
   stackBound : stack < 2 ^ 32
 
 end VG.Proof.Dsa.X86_64

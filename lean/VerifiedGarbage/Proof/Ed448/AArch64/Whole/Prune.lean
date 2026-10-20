@@ -1,15 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.AArch64.Whole
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Ed448.Contract
+import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 import VerifiedGarbage.Proof.Ed448.Prune
-public import VerifiedGarbage.Proof.Ed448.ScalarWords
-import VerifiedGarbage.Spec.Sha3
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed448.ScalarWords
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Ed448's complete operations on AArch64: pruning a hash in the frame

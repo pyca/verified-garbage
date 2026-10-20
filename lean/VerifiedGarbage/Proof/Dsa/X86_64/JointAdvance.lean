@@ -1,11 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointBuildContext
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.Dsa.X86_64.Joint
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 
 /-! # Advancing the row or column of the joint power table -/

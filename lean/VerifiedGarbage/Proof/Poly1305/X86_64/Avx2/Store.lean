@@ -1,12 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Final
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Mul
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import Mathlib.Tactic.NormNum.Pow
+import Mathlib.Tactic.NormNum.Inv
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Poly1305 on x86-64 with AVX2: storing the accumulator

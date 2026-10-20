@@ -1,12 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Out
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
 import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # ChaCha20 on x86-64 with AVX-512, the last bytes
@@ -473,6 +472,148 @@ theorem partT_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hgt : 256 < eL s₀ 
     rcases hr with rfl | rfl
     · exact ⟨Avx2.bufR (ebp s₀), by simp, Region.sub_prefix (by omega_arith)⟩
     · exact ⟨edR s₀, by simp, win_sub (by omega_arith)⟩
+
+/-! ## Twelve blocks -/
+
+/-- The offsets in `buf` and values of the quadwords of the third set's lane
+increments (`inc3Q`). -/
+def p3Pairs : List (Nat × BitVec 64) :=
+  [(0, 8), (8, 0), (16, 9), (24, 0), (32, 10), (40, 0), (48, 11), (56, 0)]
+
+theorem p3_eq : Impl.ChaCha20.X86_64.Avx2.storeQ inc3Off inc3Q = Avx2.pairsCode p3Pairs := rfl
+
+theorem p3Pairs_le : ∀ p ∈ p3Pairs, p.1 + 8 ≤ 64 := by decide
+
+/-- Stores into `buf[0, 64)` keep the rest of memory. -/
+theorem storeLo_frame {buf : Addr} (ps : List (Nat × BitVec 64)) (hps : ∀ p ∈ ps, p.1 + 8 ≤ 64) (m : Mem) :
+    Frame [⟨buf, 64⟩] m (Avx2.storeAll buf ps m) := by
+  induction ps generalizing m with
+  | nil => exact Frame.refl _ _
+  | cons p ps ih =>
+    rw [Avx2.storeAll, List.foldl_cons, ← Avx2.storeAll]
+    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
+      (Offset.contains_base buf (hps p (List.mem_cons_self ..)) (by have := hps p (List.mem_cons_self ..); omega))).trans
+      (ih (fun q hq => hps q (List.mem_cons_of_mem _ hq)) _)
+
+theorem incs3_mem {s₀ : State} {m : Mem} (h : Incs m (ebp s₀)) :
+    Incs3 (Avx2.storeAll (ebp s₀) p3Pairs m) (ebp s₀) := by
+  intro k hk p hp
+  rcases (by omega : k < 2 ∨ k = 2) with hk2 | rfl
+  · exact incs_frame h (storeLo_frame p3Pairs p3Pairs_le m) (by
+      intro r hr; simp only [List.mem_singleton] at hr; subst hr
+      exact Offset.disjoint_base _ (by decide) (by decide)) k hk2 p hp
+  · have H : ∀ j < 16, Avx2.readsTo [] p3Pairs (incB 2 + j)
+        (if j % 4 = 0 then BitVec.ofNat 32 (4 * 2 + j / 4) else 0) = true := by decide +kernel
+    exact Avx2.storeAll_readW32 (H p hp) m
+
+theorem part3_eq : part3 = .seq (.block (Avx2.pairsCode p3Pairs ++ setup3)) (.seq (rounds3 10) (.seq
+    (.block (finish3 ++ ([.alu .add .rsi (.imm 512), .alu .sub .rdx (.imm 512)] : List Instr))) fromBuf)) := by
+  rw [part3, p3_eq]
+
+theorem adv512_ok {s₀ : State} {p : Nat} (hge : 512 ≤ eL s₀ - p) {s : State}
+    (hrsi : s.gpr .rsi = edp s₀ + BitVec.ofNat 64 p)
+    (hrdx : s.gpr .rdx = BitVec.ofNat 64 (eL s₀ - p)) :
+    WP isa (.block [.alu .add .rsi (.imm 512), .alu .sub .rdx (.imm 512)]) s fun s' =>
+      s'.gpr .rsi = edp s₀ + BitVec.ofNat 64 (p + 512) ∧
+      s'.gpr .rdx = BitVec.ofNat 64 (eL s₀ - (p + 512)) ∧
+      (∀ r, r ≠ .rsi → r ≠ .rdx → s'.gpr r = s.gpr r) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have hL := eL_lt s₀
+  have se : BitVec.signExtend 64 (512 : BitVec 32) = 512 := by decide
+  apply WP.of_runBlock
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    execAlu, arithFlags, State.setReg, State.setFlags, Option.bind_some, Option.some.injEq,
+    exists_eq_left', se]
+  refine ⟨by rw [hrsi]; bv_omega, by rw [hrdx]; bv_omega, fun r h₁ h₂ => by simp [h₁, h₂], by simp⟩
+
+theorem part3T_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hgt : 512 < eL s₀ - p) (hle : eL s₀ - p ≤ 768)
+    {s : State} (h : TInv s₀ p s) (hr9 : s.gpr .r9 = ebp s₀) :
+    WP isa part3 s (Done s₀) := by
+  have hL := eL_lt s₀
+  have hw : p + 4 * 128 ≤ eL s₀ := by omega_arith
+  rw [part3_eq]
+  -- The third set's increments, then the input states.
+  refine WP.seq (WP.block_append (WP.mono (Avx2.pairs_ok (buf := ebp s₀) p3Pairs
+    (fun q hq => by have := p3Pairs_le q hq; omega) (s := s) h.rcx (by rw [h.wr]; exact hp.w_b))
+    fun s₀' ⟨m₀, g₀, rd₀, wr₀⟩ => ?_))
+  have gk₀ : ∀ r, r ≠ .rax → s₀'.gpr r = s.gpr r := g₀
+  have hc₀ : Ctx 128 s₀' := ctx_of hp hw (by decide) (by rw [gk₀ _ (by decide)]; exact h.rdi)
+    (by rw [gk₀ _ (by decide)]; exact hr9) (by rw [gk₀ _ (by decide)]; exact h.rsi) (wr₀.trans h.wr)
+  have hi₀ : Incs3 s₀'.mem (s₀'.gpr .r9) := by rw [m₀, gk₀ _ (by decide), hr9]; exact incs3_mem h.incs
+  have F₀ : Frame [Avx2.bufR (ebp s₀)] s.mem s₀'.mem := by
+    rw [m₀]; exact Avx2.storeAll_frame (List.mem_singleton_self _) _ (fun q hq => by have := p3Pairs_le q hq; omega) _
+  refine WP.mono (setup3_ok hc₀ hi₀) fun s₁ ⟨hz₁, m₁, g₁, rd₁, wr₁⟩ => ?_
+  refine WP.seq (WP.mono (rounds3_ok hz₁ 10) fun s₂ ⟨hz₂, sm₂⟩ => ?_)
+  have g₂ : s₂.gpr = s₀'.gpr := sm₂.gpr.trans g₁
+  have m₂ : s₂.mem = s₀'.mem := sm₂.mem.trans m₁
+  have wr₂ : s₂.wr = s₀'.wr := sm₂.wr.trans wr₁
+  have rd₂ : s₂.rd = s₀'.rd := sm₂.rd.trans rd₁
+  have rdi₂ : s₂.gpr .rdi = est s₀ := by rw [g₂, gk₀ _ (by decide)]; exact h.rdi
+  have r9₂ : s₂.gpr .r9 = ebp s₀ := by rw [g₂, gk₀ _ (by decide)]; exact hr9
+  have rsi₂ : s₂.gpr .rsi = edp s₀ + BitVec.ofNat 64 p := by rw [g₂, gk₀ _ (by decide)]; exact h.rsi
+  have hc₂ : Ctx 128 s₂ := ctx_of hp hw (by decide) rdi₂ r9₂ rsi₂ (by rw [wr₂, wr₀]; exact h.wr)
+  have hi₂ : Incs3 s₂.mem (s₂.gpr .r9) := by rw [m₂, g₂]; exact hi₀
+  refine WP.seq (WP.block_append (WP.mono (part3_ok hc₂ hi₂ hz₂) fun s₃ ⟨d₃, b₃, f₃, g₃, rd₃, wr₃⟩ => ?_))
+  have g₃' : s₃.gpr = s₀'.gpr := g₃.trans g₂
+  refine WP.mono (adv512_ok (s₀ := s₀) (p := p) (by omega_arith) (by rw [g₃', gk₀ _ (by decide)]; exact h.rsi)
+    (by rw [g₃', gk₀ _ (by decide)]; exact h.rdx)) fun s₄ ⟨e₁, e₂, e₃, m₄, rd₄, wr₄⟩ => ?_
+  have g₄ : ∀ r, r ≠ .rsi → r ≠ .rdx → r ≠ .rax → s₄.gpr r = s.gpr r := fun r a b c => by
+    rw [e₃ r a b, g₃', gk₀ r c]
+  have ws : wregs 128 s₂ = [⟨ebp s₀, 256⟩, win s₀ p 512] := by
+    simp only [wregs, win, r9₂, rsi₂, Nat.reduceMul]
+  rw [ws, m₂] at f₃
+  have nst : ∀ r ∈ [Avx2.bufR (ebp s₀)], (Avx2.stR (est s₀)).Disjoint r := by
+    intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact hp.st_b
+  have hS : S0 s₂ = ctr (Avx2.S0 s₀) (p / 64) := by
+    simp only [S0, rdi₂, m₂]
+    rw [Xor.stateAt_frame F₀ nst]; exact h.cnt
+  have hS' : S0 s = ctr (Avx2.S0 s₀) (p / 64) := by simp only [S0, h.rdi]; exact h.cnt
+  have hS₀ : S0 s₀' = ctr (Avx2.S0 s₀) (p / 64) := by
+    simp only [S0, gk₀ _ (by decide : Reg.rdi ≠ .rax), h.rdi]
+    rw [Xor.stateAt_frame F₀ nst]; exact h.cnt
+  have nb : ∀ k < eL s₀, ¬ (Avx2.bufR (ebp s₀)).Contains (edp s₀ + BitVec.ofNat 64 k) 1 :=
+    fun k hk hc => hp.d_b _ (in_dR hk) hc
+  have nb' : ∀ k < eL s₀, ¬ (⟨ebp s₀, 256⟩ : Region).Contains (edp s₀ + BitVec.ofNat 64 k) 1 :=
+    fun k hk hc => hp.d_b _ (in_dR hk) (Region.sub_prefix (by omega_arith) _ hc)
+  have hD : ∀ k < eL s₀, s₀'.mem (edp s₀ + BitVec.ofNat 64 k) = s.mem (edp s₀ + BitVec.ofNat 64 k) :=
+    fun k hk => F₀ _ fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact nb k hk
+  refine fromBuf_ok hp (p := p + 512) (n := eL s₀ - (p + 512)) (by omega_arith) (by omega_arith) e₁
+    (by rw [g₄ _ (by decide) (by decide) (by decide)]; exact hr9) e₂
+    (rd₄.trans (rd₃.trans (rd₂.trans (rd₀.trans h.rd))))
+    (wr₄.trans (wr₃.trans (wr₂.trans (wr₀.trans h.wr))))
+    (fun r hr => by
+      obtain ⟨_, a, b⟩ := calleeSaved_ne hr
+      rw [g₄ r a b (calleeSaved_ne hr).1]; exact h.keep r hr)
+    (fun k hk => ?_) (fun k hk => ?_) (fun k hk => ?_) ?_
+  · rw [m₄]
+    by_cases hkp : k < p
+    · rw [f₃ _ (by
+        intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact nb' k (by omega_arith)
+        · exact not_win (by omega_arith) (by omega_arith) (.inl hkp)), hD k (by omega_arith),
+        h.data k (by omega_arith), ite_eq_left hkp]
+    · have x := d₃ (k - p) (by omega_arith)
+      rw [rsi₂, m₂, hS, hS₀, ← ea_win (by omega_arith)] at x
+      rw [x, hD k (by omega_arith), h.data k (by omega_arith), ite_eq_right hkp,
+        ks_at h.dvd (by omega_arith) (by omega_arith), ← hS']
+  · rw [m₄, add_ofNat, f₃ _ (by
+      intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact nb' _ (by omega_arith)
+      · exact not_win (by omega_arith) (by omega_arith) (.inr (by omega_arith))), hD _ (by omega_arith),
+      h.data _ (by omega_arith), ite_eq_right (by omega_arith)]
+  · rw [m₄, show ebp s₀ + BitVec.ofNat 64 k = s₂.gpr .r9 + BitVec.ofNat 64 k by rw [r9₂], b₃ k (by omega_arith),
+      hS, hS₀, ks_at h.dvd (by omega_arith) (by omega_arith), ← hS',
+      show (p + 512 + k - p) / 64 = 8 + k / 64 by omega_arith, show (p + 512 + k - p) % 64 = k % 64 by omega_arith]
+  · rw [m₄]
+    refine h.frame.trans ((F₀.sub fun r hr => ?_).trans (f₃.sub fun r hr => ?_))
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨Avx2.bufR (ebp s₀), by simp, fun _ h => h⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨Avx2.bufR (ebp s₀), by simp, Region.sub_prefix (by omega_arith)⟩
+      · exact ⟨edR s₀, by simp, win_sub (by omega_arith)⟩
 
 /-! ## The whole tail -/
 

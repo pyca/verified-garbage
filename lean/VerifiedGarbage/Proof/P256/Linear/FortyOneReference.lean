@@ -1,15 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.P256.Linear.FortyOneCore
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Mont.AArch64.Ops
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.P256.Linear.FortyOneValue
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Impl.NatPairs
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.P256.VerifyArithmetic
 
 @[expose] public section
 

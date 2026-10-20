@@ -1,10 +1,8 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Compute
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Row
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Control
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
 
 /-!
 # ML-DSA verification on 32-bit ARM: `c̃′ = H(μ ‖ w1Encode(w′₁), λ/4)`

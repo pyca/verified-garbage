@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 import VerifiedGarbage.Proof.Bignum.Math
 import Mathlib.Data.Fintype.Card
 import Mathlib.Data.Fintype.Fin
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # A canonical Montgomery word represents an ordinary witness
 

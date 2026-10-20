@@ -2,13 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Sieve
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
-public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieve
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Spec.Ffdh
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieve
+import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! # FFDH parameter candidates on x86-64: reuse RSA's proven trial reductions -/
 
@@ -108,7 +105,7 @@ theorem sieve_shape_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg
   simpa only [VG.Proof.Ffdh.ParameterCandidate.primeShape_sieve hp ho, anyPre] using
     sieve_ok hg hZ hTZ hw hw'
 
-private theorem oddTest_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
+theorem oddTest_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     (hg : Good s B Z w minv) (hZ : slot w 8 ≤ Z) (hw : 1 ≤ w) :
     WP isa (.block oddTest) s fun t =>
       t.zf = some (decide (wv s.mem B (slot w aN) w % 2 = 1)) ∧ t.mem = s.mem ∧ Keep [.rax] s t := by

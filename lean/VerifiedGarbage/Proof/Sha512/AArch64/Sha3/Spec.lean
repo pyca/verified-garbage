@@ -1,11 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 public import VerifiedGarbage.Proof.Sha512.Spec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! The two-round SHA512H/H2 pair and the SHA512SU0/SU1 schedule. -/
 

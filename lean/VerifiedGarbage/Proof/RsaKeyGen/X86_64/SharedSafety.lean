@@ -3,10 +3,7 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.SharedCandidate
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Caller
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.Template
 
 /-! # Instruction safety of generic RSA candidate callers -/
 
@@ -89,20 +86,23 @@ private theorem template_all (p : Instr → Bool) (mul : Nat → Nat → Nat →
   exact hp
 
 private theorem arith_mx (v : RoundImpl) (o a b : Nat) :
-    (v.mont.mm o a b).allInstrs (fun i => !loadsMxcsr i) = true := by
+    (v.mm o a b).allInstrs (fun i => !loadsMxcsr i) = true := by
   have h := v.arithSafe o a b
-  rw [Code.allInstrs_eq] at h ⊢
+  rw [← VG.Proof.Bignum.X86_64.allInstrs_inline, v.mmInline, Code.allInstrs_eq]
+  rw [Code.allInstrs_eq] at h
   exact List.all_eq_true.mpr fun i hi => ((Bool.and_eq_true _ _).mp (List.all_eq_true.mp h i hi)).1
 
 private theorem arith_sp (v : RoundImpl) (o a b : Nat) :
-    (v.mont.mm o a b).all (fun i => !isa.writesSp i) = true := by
+    (v.mm o a b).all (fun i => !isa.writesSp i) = true := by
   apply Code.all_of_allInstrs
   have h := v.arithSafe o a b
-  rw [Code.allInstrs_eq] at h ⊢
+  rw [← VG.Proof.Bignum.X86_64.allInstrs_inline, v.mmInline, Code.allInstrs_eq]
+  rw [Code.allInstrs_eq] at h
   exact List.all_eq_true.mpr fun i hi => ((Bool.and_eq_true _ _).mp (List.all_eq_true.mp h i hi)).2
 
+/-- The candidate as emitted: its products call `v.mm`'s function. -/
 def sharedCandidateCode (v : RoundImpl) : Prog isa :=
-  codeWith v.mont.mm (VG.Impl.MillerRabin.X86_64.Caller.call v.name v.code)
+  codeWith v.mm (VG.Impl.MillerRabin.X86_64.Caller.call v.name v.code)
 
 theorem sharedCandidate_mx (v : RoundImpl) :
     (sharedCandidateCode v).allInstrs (fun i => !loadsMxcsr i) = true := by

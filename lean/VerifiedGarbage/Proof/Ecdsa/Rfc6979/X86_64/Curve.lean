@@ -1,30 +1,20 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.X86_64
-public import VerifiedGarbage.Spec.Ecdsa.Generic
-public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86_64
 public import VerifiedGarbage.Impl.Sha256.X86_64.Stream
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 
 /-!
 # Deterministic ECDSA on x86-64: the curve
 
 What the proof needs of the curve (`RfcCurve`): the code of
 `vg_ecdsa_<curve>_sign` for curves of `n` words (`Impl.Ecdsa.X86_64.Cfg`),
-the instance of ECDSA it is, its sizes: scalars of `Q` bytes in 4 or 6 words
-(32 or 48 bytes, or P-224's 28 in 4) whose order `n` has exactly `8 Q` bits
+the instance of ECDSA it is, its sizes: scalars of `Q` bytes in 4, 6 or 8 words
+(32, 48 or 64 bytes, or P-224's 28 in 4) whose order `n` has exactly `8 Q` bits
 and `2^(8 Q) < 2 n` (so that one `V` makes a candidate and `bits2octets` is
 one conditional subtraction), or, if `wide`,
 P-521's (9 words, 66 bytes, 521 bits: two `V`s make a candidate); the bits
@@ -75,8 +65,9 @@ def coreK (E : Impl.Ecdsa.X86_64.Cfg) : Contract X86_64.isa where
     ∀ c ∈ E.combConsts, s₁.syms c.1 = s₂.syms c.1
 
 /-- The code's blocks that depend on neither the hash function nor the
-compression function, for scalars of `E`. -/
-def cfgC (E : Impl.Ecdsa.X86_64.Cfg) : Impl.Ecdsa.Rfc6979.X86_64.Cfg where
+compression function, for scalars of `E` (with `h` above the frame's
+pointers if `hHigh`). -/
+def cfgC (E : Impl.Ecdsa.X86_64.Cfg) (hHigh : Bool := false) : Impl.Ecdsa.Rfc6979.X86_64.Cfg where
   H := ⟨Impl.Sha256.X86_64.Stream.params, 32, 104, "", .block [], "", .block [], "", "", "", "", ""⟩
   w := E.n
   len := E.C.len
@@ -84,6 +75,7 @@ def cfgC (E : Impl.Ecdsa.X86_64.Cfg) : Impl.Ecdsa.Rfc6979.X86_64.Cfg where
   tries := 8
   coreN := ""
   coreC := .block []
+  hHigh := hHigh
 
 /-- A curve, for RFC 6979 on x86-64. -/
 structure RfcCurve where
@@ -95,13 +87,17 @@ structure RfcCurve where
   /-- Whether the scalars are longer than any hash function's output, so
   that two `V`s make a candidate (`Impl.Ecdsa.Rfc6979.X86_64.Cfg.wide`). -/
   wide : Bool
-  /-- Scalars of 4 or 6 words, `8 n` bytes (or 24 or 28 in 4 words), and `n` of
+  /-- Scalars of 4, 6 or 8 words, `8 n` bytes (or 24 or 28 in 4 words), and `n` of
   exactly `8 len` bits, with `2^(8 len) < 2 n`; or, if `wide`, of 9 words and
   66 bytes, and `n` of 521 bits. -/
   sizes : if wide then E.n = 9 ∧ E.C.len = 66 ∧ nBits E.C = 521
-    else (E.n = 4 ∨ E.n = 6) ∧ (E.C.len = 8 * E.n ∨ E.n = 4 ∧ (E.C.len = 28 ∨ E.C.len = 24)) ∧ nBits E.C = 8 * E.C.len ∧
+    else (E.n = 4 ∨ E.n = 6 ∨ E.n = 8) ∧ (E.C.len = 8 * E.n ∨ E.n = 4 ∧ (E.C.len = 28 ∨ E.C.len = 24)) ∧ nBits E.C = 8 * E.C.len ∧
       2 ^ (8 * E.C.len) < 2 * E.C.n
   n_lt : E.C.n < 2 ^ (64 * E.n)
+  /-- Whether `h` is kept above the frame's pointers
+  (`Impl.Ecdsa.Rfc6979.X86_64.Cfg.hHigh`): for scalars of 8 words. -/
+  hHigh : Bool := false
+  hHigh_eq : hHigh = decide (E.n = 8) := by decide
   /-- The bits the signature drops from its digest, `8 len - nBits`. -/
   sh : Nat
   sh_eq : E.sh = sh
@@ -123,13 +119,13 @@ structure RfcCurve where
   memory only from `rsp` and `rsi` (the taint analysis, of the block for
   `n`'s words). -/
   reduceT : wide = false → ∃ hc, (taint.check (Taint.ofRegs [.rsp, .rsi])
-    (.block ((cfgC E).reduce ++ Impl.Ecdsa.Rfc6979.X86_64.Cfg.initKV)) hc).isSome = true
+    (.block ((cfgC E hHigh).reduce ++ Impl.Ecdsa.Rfc6979.X86_64.Cfg.initKV)) hc).isSome = true
   /-- None of its instructions writes `rsp` or loads MXCSR. -/
   reduceSp : wide = false →
-    (Code.block ((cfgC E).reduce ++ Impl.Ecdsa.Rfc6979.X86_64.Cfg.initKV) : Prog isa).allInstrs
+    (Code.block ((cfgC E hHigh).reduce ++ Impl.Ecdsa.Rfc6979.X86_64.Cfg.initKV) : Prog isa).allInstrs
       (fun i => !isa.writesSp i) = true
   reduceMx : wide = false →
-    (Code.block ((cfgC E).reduce ++ Impl.Ecdsa.Rfc6979.X86_64.Cfg.initKV) : Prog isa).allInstrs
+    (Code.block ((cfgC E hHigh).reduce ++ Impl.Ecdsa.Rfc6979.X86_64.Cfg.initKV) : Prog isa).allInstrs
       (fun i => !loadsMxcsr i) = true
 
 namespace RfcCurve
@@ -137,7 +133,7 @@ namespace RfcCurve
 variable (R : RfcCurve)
 
 theorem sizesA (h : R.wide = false) :
-    (R.E.n = 4 ∨ R.E.n = 6) ∧ (R.E.C.len = 8 * R.E.n ∨ R.E.n = 4 ∧ (R.E.C.len = 28 ∨ R.E.C.len = 24)) ∧
+    (R.E.n = 4 ∨ R.E.n = 6 ∨ R.E.n = 8) ∧ (R.E.C.len = 8 * R.E.n ∨ R.E.n = 4 ∧ (R.E.C.len = 28 ∨ R.E.C.len = 24)) ∧
       nBits R.E.C = 8 * R.E.C.len ∧ 2 ^ (8 * R.E.C.len) < 2 * R.E.C.n := by
   have := R.sizes; rw [h] at this; exact this
 
@@ -146,12 +142,12 @@ theorem sizesW (h : R.wide = true) : R.E.n = 9 ∧ R.E.C.len = 66 ∧ nBits R.E.
 
 theorem n4 : 4 ≤ R.E.n := by
   cases h : R.wide
-  · rcases (R.sizesA h).1 with h | h <;> omega
+  · rcases (R.sizesA h).1 with h | h | h <;> omega
   · rw [(R.sizesW h).1]; omega
 
 theorem n9 : R.E.n ≤ 9 := by
   cases h : R.wide
-  · rcases (R.sizesA h).1 with h | h <;> omega
+  · rcases (R.sizesA h).1 with h | h | h <;> omega
   · rw [(R.sizesW h).1]
 
 /-- The scalars' bytes fill their words, the last possibly zero. -/

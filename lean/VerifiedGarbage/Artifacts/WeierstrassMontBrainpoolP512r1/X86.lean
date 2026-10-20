@@ -1,11 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Impl.Weierstrass.X86.Mont
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontBrainpoolP512r1
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP512r1
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP512r1
 
 /-! # Montgomery arithmetic modulo brainpoolP512r1's `p` and `n` on x86 (32-bit)
 
@@ -27,47 +24,29 @@ def notes : List String := ["The function saves `ebp` (and the product `ebx`, `e
   a mask."]
 
 def artifacts : List Artifact := [
-  { brainpoolp512r1p.mulApi with
-    target := X86.target
-    doc := brainpoolp512r1p.mulApi.doc (notes := notes)
+  brainpoolp512r1p.mulApi.artifact X86.target {
+    notes := notes
     code := mulFn brainpoolp512r1p.k brainpoolp512r1p.m
-    contract := brainpoolp512r1p.mulContract X86.abi
-    verified := brainpoolp512r1p_mul_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { brainpoolp512r1p.addApi with
-    target := X86.target
-    doc := brainpoolp512r1p.addApi.doc (notes := notes)
+    verified := brainpoolp512r1p_mul_verified },
+  brainpoolp512r1p.addApi.artifact X86.target {
+    notes := notes
     code := addFn brainpoolp512r1p.k brainpoolp512r1p.m
-    contract := brainpoolp512r1p.addContract X86.abi
-    verified := brainpoolp512r1p_add_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { brainpoolp512r1p.subApi with
-    target := X86.target
-    doc := brainpoolp512r1p.subApi.doc (notes := notes)
+    verified := brainpoolp512r1p_add_verified },
+  brainpoolp512r1p.subApi.artifact X86.target {
+    notes := notes
     code := subFn brainpoolp512r1p.k brainpoolp512r1p.m
-    contract := brainpoolp512r1p.subContract X86.abi
-    verified := brainpoolp512r1p_sub_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { brainpoolp512r1n.mulApi with
-    target := X86.target
-    doc := brainpoolp512r1n.mulApi.doc (notes := notes)
+    verified := brainpoolp512r1p_sub_verified },
+  brainpoolp512r1n.mulApi.artifact X86.target {
+    notes := notes
     code := mulFn brainpoolp512r1n.k brainpoolp512r1n.m
-    contract := brainpoolp512r1n.mulContract X86.abi
-    verified := brainpoolp512r1n_mul_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { brainpoolp512r1n.addApi with
-    target := X86.target
-    doc := brainpoolp512r1n.addApi.doc (notes := notes)
+    verified := brainpoolp512r1n_mul_verified },
+  brainpoolp512r1n.addApi.artifact X86.target {
+    notes := notes
     code := addFn brainpoolp512r1n.k brainpoolp512r1n.m
-    contract := brainpoolp512r1n.addContract X86.abi
-    verified := brainpoolp512r1n_add_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { brainpoolp512r1n.subApi with
-    target := X86.target
-    doc := brainpoolp512r1n.subApi.doc (notes := notes)
+    verified := brainpoolp512r1n_add_verified },
+  brainpoolp512r1n.subApi.artifact X86.target {
+    notes := notes
     code := subFn brainpoolp512r1n.k brainpoolp512r1n.m
-    contract := brainpoolp512r1n.subContract X86.abi
-    verified := brainpoolp512r1n_sub_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := brainpoolp512r1n_sub_verified }]
 
 end VG.Artifacts.WeierstrassMontBrainpoolP512r1.X86

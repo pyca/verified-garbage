@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.Arm.FbVerified
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # IDEA-CFB64 artifacts on baseline ARMv7 -/
 
@@ -18,21 +19,15 @@ def note : String :=
   stack, zeroed on return."
 
 def artifacts : List Artifact := [
-  { Spec.Idea.cfbEncryptApi with
-    target := Arm.target
-    doc := Spec.Idea.cfbEncryptApi.doc (notes := [note])
+  Spec.Idea.cfbEncryptApi.artifact Arm.target {
+    notes := [note]
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cfbEncrypt
-    contract := Spec.Idea.cfbEncryptContract Arm.abi 96
     stack := 96
-    verified := Proof.Idea.Arm.cfbEncrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Idea.cfbDecryptApi with
-    target := Arm.target
-    doc := Spec.Idea.cfbDecryptApi.doc (notes := [note])
+    verified := Proof.Idea.Arm.cfbEncrypt_framed },
+  Spec.Idea.cfbDecryptApi.artifact Arm.target {
+    notes := [note]
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cfbDecrypt
-    contract := Spec.Idea.cfbDecryptContract Arm.abi 96
     stack := 96
-    verified := Proof.Idea.Arm.cfbDecrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Idea.Arm.cfbDecrypt_framed }]
 
 end VG.Artifacts.IdeaCfb.Arm

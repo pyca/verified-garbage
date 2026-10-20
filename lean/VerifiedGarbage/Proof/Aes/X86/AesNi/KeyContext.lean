@@ -1,11 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyArith
+public import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
 
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyPrologue
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 @[expose] public section
 

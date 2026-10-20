@@ -1,27 +1,35 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Block
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Block
-public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Block
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRowsChoiceCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRowsChoiceCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquare
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Sum
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRowsChoiceCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderCT
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Value
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Row0
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledInit
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8RowCore
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Block
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
+meta import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquare
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Sum
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRowsChoiceCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Value
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Row0
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledInit
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8RowCore
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## AdxTri8RowCT -/
 
@@ -48,8 +56,8 @@ def HeadState (L : CtLayout) (s : State) : Prop :=
   ∃ mi, Good s L.B L.Z L.w mi ∧ word s.mem L.B (8*sFn 12)=BitVec.ofNat 64 L.I
 
 /-- The rows' state before `clearEnds` sets the output base. -/
-def Pre (n : Nat) (rs : List Reg) (L : CtLayout) (s : State) : Prop :=
-  HeadState L s ∧ s.gpr .rbp=off L.B L.e ∧ value s rs<2^(64*n)
+def Pre (_n : Nat) (_rs : List Reg) (L : CtLayout) (s : State) : Prop :=
+  HeadState L s ∧ s.gpr .rbp=off L.B L.e
 
 /-- The block's output base, in `rcx` through the rows. -/
 def Based (L : CtLayout) (s : State) : Prop :=
@@ -72,37 +80,36 @@ theorem storeHead_ct (i : Nat) (lo hi : Reg)
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
   subst r; exact hs.2.trans ht.2.symm
 
-theorem rowCore_head {i n : Nat} {rs : List Reg} (hr : Regs rs) (hlen : rs.length=n+1)
-    (hi : i+n+1≤8) (L : CtLayout) (s : State) (h : Stage n rs L s) :
-    WP isa (.block (AdxTri8.rowCore i rs)) s (Based L) := by
-  obtain ⟨⟨⟨mi,hg,hI⟩,hp,hv⟩,hc⟩ := h
+theorem rowCore_head {i n : Nat} {col : Reg} {rest : List Reg} (hr : Regs (col::rest))
+    (hlen : (col::rest).length=n+1) (hn : rest≠[])
+    (hi : i+n+1≤8) (L : CtLayout) (s : State) (h : Stage n (col::rest) L s) :
+    WP isa (.block (AdxTri8.rowCore i col rest)) s (Based L) := by
+  obtain ⟨⟨⟨mi,hg,hI⟩,hp⟩,hc⟩ := h
   have he := L.he
-  refine WP.mono (rowCore_ok rs hg.scr hp (by rw [hlen]; omega) (by intro eq; rw [eq] at hlen; simp at hlen)
-    hr.1 (fun r h => let q := hr.2 r h; ⟨q.1,q.2.1,q.2.2.1,q.2.2.2.1⟩)
-    (by rw [hlen,Nat.add_sub_cancel]; exact hv)) fun t ⟨_,kt⟩ => ?_
+  refine WP.mono (rowCore_ok col rest hg.scr hp (by rw [hlen]; omega) hn
+    hr.1 (fun r h => let q := hr.2 r h; ⟨q.1,q.2.1,q.2.2.1,q.2.2.2.1⟩)) fun t ⟨_,kt⟩ => ?_
   have dr : t.gpr .rdi=s.gpr .rdi := kt.gpr (by
     simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
-    exact ⟨by decide,fun h => (hr.2 .rdi h).2.2.2.2 rfl⟩)
+    exact ⟨by decide,fun h => (hr.2 .rdi (List.mem_cons.mpr (Or.inl h))).2.2.2.2 rfl,
+      fun h => (hr.2 .rdi (List.mem_cons.mpr (Or.inr h))).2.2.2.2 rfl⟩)
   have cr : t.gpr .rcx=s.gpr .rcx := kt.gpr (by
     simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
-    exact ⟨by decide,fun h => (hr.2 .rcx h).2.2.2.1 rfl⟩)
+    exact ⟨by decide,fun h => (hr.2 .rcx (List.mem_cons.mpr (Or.inl h))).2.2.2.1 rfl,
+      fun h => (hr.2 .rcx (List.mem_cons.mpr (Or.inr h))).2.2.2.1 rfl⟩)
   exact ⟨⟨mi,⟨hg.scr.congr kt.2.2.2,dr.trans hg.rdi,kt.2.1 ▸ hg.hdr⟩,kt.2.1 ▸ hI⟩,cr.trans hc⟩
 
 theorem rowStep_ct {i n : Nat} {lo hi : Reg} {tail : List Reg}
     (hr : Regs (lo::hi::tail)) (hlen : (lo::hi::tail).length=n+2) (hi8 : i+n+2≤8)
-    {hint htail hmov : VG.Taint.Hint VG.X86_64.Taint.T}
+    {hint htail : VG.Taint.Hint VG.X86_64.Taint.T}
     (hT : (taint.check (Taint.ofRegs [.rcx]) (AdxTri8.storeHead i lo hi) htail).isSome=true)
-    (hM : (taint.check (Taint.ofRegs []) (.block [.mov32 lo (.imm 0)]) hmov).isSome=true)
-    (hC : (taint.check (Taint.ofRegs [.rbp]) (.block (AdxTri8.rowCore i (lo::hi::tail))) hint).isSome=true) :
+    (hC : (taint.check (Taint.ofRegs [.rbp]) (.block (AdxTri8.rowCore i lo (hi::tail))) hint).isSome=true) :
     RelCT isa (Two (Stage (n+1) (lo::hi::tail))) (AdxTri8.rowStep i lo hi tail) (fun _ _ => True) := by
   unfold AdxTri8.rowStep
-  refine RelCT.seq (two_piece [.rbp] ?_ hC (rowCore_head hr hlen hi8)) ?_
+  refine RelCT.seq (two_piece [.rbp] ?_ hC (rowCore_head hr hlen (by simp) hi8)) ?_
   · intro L s t hs ht r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    subst r; exact hs.1.2.1.trans ht.1.2.1.symm
-  refine RelCT.seq (storeHead_ct i lo hi hT) ?_
-  exact RelCT.taint (A := taint) (Taint.ofRegs [])
-    (fun _ _ _ => Taint.agree_ofRegs (by simp)) hM
+    subst r; exact hs.1.2.trans ht.1.2.symm
+  exact storeHead_ct i lo hi hT
 
 end VG.Proof.Bignum.X86_64.AdxTri8
 
@@ -119,13 +126,13 @@ theorem rowStep_stage {i n : Nat} {lo hi : Reg} {tail : List Reg}
     (hr : Regs (lo::hi::tail)) (hlen : (lo::hi::tail).length=n+2) (hi8 : i+n+2≤8)
     (L : CtLayout) (s : State) (h : Stage (n+1) (lo::hi::tail) L s) :
     WP isa (AdxTri8.rowStep i lo hi tail) s (Stage n (tail++[lo]) L) := by
-  obtain ⟨⟨⟨mi,hg,hI⟩,hp,hv⟩,hc⟩ := h
+  obtain ⟨⟨⟨mi,hg,hI⟩,hp⟩,hc⟩ := h
   have he := L.he; have hiL := L.hi; have hZ := L.hZ
   have bound : slot L.w aAcc+16*L.I+(16+8*(2*i+2))+8≤L.Z := by
     unfold slot aAcc at *; omega
   refine WP.mono (rowStep_ok hg.scr hc hp (by rw [hlen]; omega)
-    bound hr.1 hr.2 (by rw [hlen,show n+2-1=n+1 by omega]; exact hv))
-    fun t ⟨_,zt,ot,kt⟩ => ?_
+    bound hr.1 hr.2)
+    fun t ⟨_,ot,kt⟩ => ?_
   have dr : t.gpr .rdi=L.B := (kt.gpr (by
     simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
     exact ⟨by decide,⟨(hr.2 lo (by simp)).2.2.2.2.symm,(hr.2 hi (by simp)).2.2.2.2.symm,
@@ -142,16 +149,13 @@ theorem rowStep_stage {i n : Nat} {lo hi : Reg} {tail : List Reg}
     simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
     exact ⟨by decide,⟨(hr.2 lo (by simp)).2.2.2.1.symm,(hr.2 hi (by simp)).2.2.2.1.symm,
       fun h => (hr.2 .rcx (by simp [h])).2.2.2.1 rfl⟩⟩)
-  refine ⟨⟨⟨mi,⟨hg.scr.congr kt.2.2,dr,ht⟩,it⟩,pr,?_⟩,cr.trans hc⟩
-  have h := value_zero_top (rs := tail) zt
-  simpa only [List.length_append,List.length_cons,List.length_nil,len,Nat.zero_add,Nat.add_sub_cancel] using h
+  exact ⟨⟨⟨mi,⟨hg.scr.congr kt.2.2,dr,ht⟩,it⟩,pr⟩,cr.trans hc⟩
 
 /-- Closed hints for each unrolled row; the loop itself is proved relationally. -/
 def RowChecks (i : Nat) (lo hi : Reg) (tail : List Reg) : Prop :=
-  ∃ ht hm hc : VG.Taint.Hint VG.X86_64.Taint.T,
+  ∃ ht hc : VG.Taint.Hint VG.X86_64.Taint.T,
     (taint.check (Taint.ofRegs [.rcx]) (AdxTri8.storeHead i lo hi) ht).isSome=true ∧
-    (taint.check (Taint.ofRegs []) (.block [.mov32 lo (.imm 0)]) hm).isSome=true ∧
-    (taint.check (Taint.ofRegs [.rbp]) (.block (AdxTri8.rowCore i (lo::hi::tail))) hc).isSome=true
+    (taint.check (Taint.ofRegs [.rbp]) (.block (AdxTri8.rowCore i lo (hi::tail))) hc).isSome=true
 
 def Checks : Nat → Nat → List Reg → Prop
   | 0, _, _ => True
@@ -169,21 +173,21 @@ theorem rows_ct (n i : Nat) (rs : List Reg) (hr : Regs rs) (hlen : rs.length=n+1
       cases rs with
       | nil => simp only [List.length_cons,List.length_nil] at hlen; omega
       | cons h tail =>
-        obtain ⟨⟨ht,hm,hcore,htc,hmc,hcc⟩,next⟩ := hc
+        obtain ⟨⟨ht,hcore,htc,hcc⟩,next⟩ := hc
         change RelCT isa (Two (Stage (n+1) (lo::h::tail)))
           (.seq (AdxTri8.rowStep i lo h tail) (AdxTri8.rows n (i+1) (tail++[lo]))) _
-        refine RelCT.seq (two_post (rowStep_ct hr hlen hi htc hmc hcc) (rowStep_stage hr hlen hi)) ?_
+        refine RelCT.seq (two_post (rowStep_ct hr hlen hi htc hcc) (rowStep_stage hr hlen hi)) ?_
         apply ih (i+1) (tail++[lo]) (rotate_regs hr) _ (by omega) next
         simp only [List.length_cons] at hlen
         simp only [List.length_append,List.length_cons,List.length_nil]; omega
 
 theorem checks_six : Checks 6 1 (AdxTri8.rotate AdxTri8.columns) := by
-  refine ⟨⟨_,_,_,by taint_decide,by taint_decide,by taint_decide⟩,?_⟩
-  refine ⟨⟨_,_,_,by taint_decide,by taint_decide,by taint_decide⟩,?_⟩
-  refine ⟨⟨_,_,_,by taint_decide,by taint_decide,by taint_decide⟩,?_⟩
-  refine ⟨⟨_,_,_,by taint_decide,by taint_decide,by taint_decide⟩,?_⟩
-  refine ⟨⟨_,_,_,by taint_decide,by taint_decide,by taint_decide⟩,?_⟩
-  exact ⟨⟨_,_,_,by taint_decide,by taint_decide,by taint_decide⟩,True.intro⟩
+  refine ⟨⟨_,_,by taint_decide,by taint_decide⟩,?_⟩
+  refine ⟨⟨_,_,by taint_decide,by taint_decide⟩,?_⟩
+  refine ⟨⟨_,_,by taint_decide,by taint_decide⟩,?_⟩
+  refine ⟨⟨_,_,by taint_decide,by taint_decide⟩,?_⟩
+  refine ⟨⟨_,_,by taint_decide,by taint_decide⟩,?_⟩
+  exact ⟨⟨_,_,by taint_decide,by taint_decide⟩,True.intro⟩
 
 end VG.Proof.Bignum.X86_64.AdxTri8
 
@@ -252,9 +256,8 @@ theorem row0Core_head (L : CtLayout) (s : State) (h : Ready0 L s) :
   exact ⟨⟨mi,⟨hg.scr.congr kt.2.2.2,dr.trans hg.rdi,kt.2.1 ▸ hg.hdr⟩,kt.2.1 ▸ hI⟩,cr.trans hc⟩
 
 theorem rowStep0_ct
-    {hint htail hmov : VG.Taint.Hint VG.X86_64.Taint.T}
+    {hint htail : VG.Taint.Hint VG.X86_64.Taint.T}
     (hT : (taint.check (Taint.ofRegs [.rcx]) (AdxTri8.storeHead 0 .r8 .r9) htail).isSome=true)
-    (hM : (taint.check (Taint.ofRegs []) (.block [.mov32 .r8 (.imm 0)]) hmov).isSome=true)
     (hC : (taint.check (Taint.ofRegs [.rbp])
       (.block (AdxTri8.row0Core [.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15])) hint).isSome=true) :
     RelCT isa (Two Ready0) (AdxTri8.rowStep0 .r8 .r9 [.r10,.r11,.r12,.r13,.r14,.r15])
@@ -264,9 +267,7 @@ theorem rowStep0_ct
   · intro L s t hs ht r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     subst r; exact hs.1.2.trans ht.1.2.symm
-  refine RelCT.seq (storeHead_ct 0 .r8 .r9 hT) ?_
-  exact RelCT.taint (A := taint) (Taint.ofRegs [])
-    (fun _ _ _ => Taint.agree_ofRegs (by simp)) hM
+  exact storeHead_ct 0 .r8 .r9 hT
 
 theorem rowStep0_stage (L : CtLayout) (s : State) (h : Ready0 L s) :
     WP isa (AdxTri8.rowStep0 .r8 .r9 [.r10,.r11,.r12,.r13,.r14,.r15]) s
@@ -277,16 +278,14 @@ theorem rowStep0_stage (L : CtLayout) (s : State) (h : Ready0 L s) :
   have bound : slot L.w aAcc+16*L.I+(16+8*(2*0+2))+8≤L.Z := by
     unfold slot aAcc at *; omega
   refine WP.mono (rowStep0_ok hg.scr hc hp (by simp only [List.length_cons,List.length_nil]; omega)
-    bound hr.1 hr.2) fun t ⟨_,zt,ot,kt⟩ => ?_
+    bound hr.1 hr.2) fun t ⟨_,ot,kt⟩ => ?_
   have dr : t.gpr .rdi=L.B := (kt.gpr (by decide)).trans hg.rdi
   have pr : t.gpr .rbp=off L.B L.e := (kt.gpr (by decide)).trans hp
   have ht := hg.hdr.of_outside ot (by unfold slot; omega)
   have it : word t.mem L.B (8*sFn 12)=BitVec.ofNat 64 L.I := by
     rw [ot.word (by unfold slot hdrBytes sFn; omega) (by decide)]; exact hI
   have cr : t.gpr .rcx=s.gpr .rcx := kt.gpr (by decide)
-  refine ⟨⟨⟨mi,⟨hg.scr.congr kt.2.2,dr,ht⟩,it⟩,pr,?_⟩,cr.trans hc⟩
-  have h := value_zero_top (rs := [.r10,.r11,.r12,.r13,.r14,.r15]) zt
-  rwa [show ([Reg.r10,.r11,.r12,.r13,.r14,.r15]++[Reg.r8]).length-1=6 from rfl] at h
+  exact ⟨⟨⟨mi,⟨hg.scr.congr kt.2.2,dr,ht⟩,it⟩,pr⟩,cr.trans hc⟩
 
 theorem block_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps)
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
@@ -297,7 +296,7 @@ theorem block_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps)
   · intro L s t hs ht
     exact head_pins L s t hs.1 ht.1
   exact RelCT.seq (clearEnds_ct (by taint_decide))
-    (RelCT.seq (two_post (rowStep0_ct (by taint_decide) (by taint_decide) (by taint_decide)) rowStep0_stage)
+    (RelCT.seq (two_post (rowStep0_ct (by taint_decide) (by taint_decide)) rowStep0_stage)
       (rows_ct 6 1 (AdxTri8.rotate AdxTri8.columns) (rotate_regs columns_regs) (by decide) (by decide)
         checks_six))
 

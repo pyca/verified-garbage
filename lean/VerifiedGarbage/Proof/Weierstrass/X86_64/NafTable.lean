@@ -1,20 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableState
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableInit
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableInit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableStep
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.CombLay
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.Ecdsa.X86_64
 
 /-! Construction of the eight odd multiples used by the public verifier. -/
 

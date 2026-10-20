@@ -2,12 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
 public import VerifiedGarbage.Impl.MlKem.X86_64.EncapsH
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 
 /-!
 # ML-KEM on x86-64: encapsulation, its contract, layout, entry and hashes
@@ -105,7 +101,7 @@ def eckChk (ws : List (Ptr × Nat)) : Bool := ecChk L ws && keepB (ecB L) ws (sc
 abbrev hW₃ : List (Ptr × Nat) := [(sc 0, 200), (sc 200, 640), (sc oG, 64)]
 
 /-- What every piece of encapsulation needs of the layout, evaluated for each parameter set. -/
-structure EcWf : Prop extends KemWf L where
+structure EcWfB : Prop extends KemWf L where
   scr : 888 ≤ L.scr ∧ L.scr < 2 ^ 32
   small : ∀ b ∈ ecB L, b.2 < 2 ^ 32
   smallH : ∀ b ∈ ecRH L ++ ecW L, b.2 < 2 ^ 32
@@ -119,14 +115,9 @@ structure EcWf : Prop extends KemWf L where
   h₃ : hashChk (ecB L) (ecW L) [(sc oM, 32), (sc oH, 32)] 72 (sc oG) 64 = true
   h₃K : ecChk L (hW₃) = true
   h₃M : keepB (ecB L) (hW₃) (sc oM) 32 = true
-  enc : Enc.encChk L (ecB L) (ecW L) (eckChk L) (.r14, 0) = true
   -- the outputs
   o₁ : copyChk (ecB L) (ecW L) (.r12, 0) (sc oG) 32 = true
   o₁K : ecChk L [((.r12, 0), 32)] = true
-  o₁C : keepB (ecB L) [((.r12, 0), 32)] (sc L.oCT) L.ctLen = true
-  o₂ : copyChk (ecB L) (ecW L) (.r13, 0) (sc L.oCT) L.ctLen = true
-  o₂K : ecChk L [((.r13, 0), L.ctLen)] = true
-  o₂G : keepB (ecB L) [((.r13, 0), L.ctLen)] (.r12, 0) 32 = true
   sv : ∀ k < 6, inB (ecB L) (sc (oSV + 8 * k)) 8 = true
   -- constant time
   inBs : inB (ecB L) (sc 0) 1 = true ∧ inB (ecB L) (.r12, 0) 1 = true ∧ inB (ecB L) (.r13, 0) 1 = true ∧
@@ -135,10 +126,20 @@ structure EcWf : Prop extends KemWf L where
     h).isSome = true
   oT₁ : ∃ h, (taint.check (X86_64.Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14]) (copy (.r12, 0) (sc oG) 32)
     h).isSome = true
-  oT₂ : ∃ h, (taint.check (X86_64.Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14]) (copy (.r13, 0) (sc L.oCT) L.ctLen)
-    h).isSome = true
   rhoT : ∃ h, (taint.check (X86_64.Taint.ofRegs [.rbx, .r14]) (copy (sc oSB) (.r14, 0 + 384 * L.k) 32)
     h).isSome = true
+
+/-- What every piece of encapsulation with polynomials of `u32`s needs of the layout. -/
+structure EcWf : Prop extends EcWfB L where
+  enc : Enc.encChk L (ecB L) (ecW L) (eckChk L) (.r14, 0) = true
+  o₁C : keepB (ecB L) [((.r12, 0), 32)] (sc L.oCT) L.ctLen = true
+  o₂ : copyChk (ecB L) (ecW L) (.r13, 0) (sc L.oCT) L.ctLen = true
+  o₂K : ecChk L [((.r13, 0), L.ctLen)] = true
+  o₂G : keepB (ecB L) [((.r13, 0), L.ctLen)] (.r12, 0) 32 = true
+  oT₂ : ∃ h, (taint.check (X86_64.Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14]) (copy (.r13, 0) (sc L.oCT) L.ctLen)
+    h).isSome = true
+
+instance : CoeOut (EcWf L) (EcWfB L) := ⟨EcWf.toEcWfB⟩
 
 theorem ecM_bases : ∀ p ∈ ecM, p.1 ∈ bases := by decide
 
@@ -146,7 +147,7 @@ section
 variable {L : Kem} {σ : State}
 
 /-- The layout, with `h` at `rsi` (before it is copied). -/
-theorem ecLayH (W : EcWf L) (hp : (encapsK L).pre σ) {s : State} (h : Top ecM σ s) (hsi : s.gpr .rsi = σ.gpr .rsi) :
+theorem ecLayH (W : EcWfB L) (hp : (encapsK L).pre σ) {s : State} (h : Top ecM σ s) (hsi : s.gpr .rsi = σ.gpr .rsi) :
     Lay (ecRH L) (ecW L) s := by
   obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12, r1, r2, r3, r4, r5, r6, k1, k2, k3, k4, k5,
     k6, n1, n2, n3, n4, n5, n6, _⟩ := hp
@@ -184,7 +185,7 @@ theorem ecLayH (W : EcWf L) (hp : (encapsK L).pre σ) {s : State} (h : Top ecM �
     ⟨_, by rw [h.wr, hwr]; simp, Region.contains_self _ _⟩, r1, r3, r2, r6, r4, r5]
 
 /-- The layout of encapsulation. -/
-theorem ecLay (W : EcWf L) (hp : (encapsK L).pre σ) {s : State} (h : Top ecM σ s) : Lay (ecR L) (ecW L) s := by
+theorem ecLay (W : EcWfB L) (hp : (encapsK L).pre σ) {s : State} (h : Top ecM σ s) : Lay (ecR L) (ecW L) s := by
   obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12, r1, r2, r3, r4, r5, r6, k1, k2, k3, k4, k5,
     k6, n1, n2, n3, n4, n5, n6, _⟩ := hp
   have e1 : s.gpr .rbx = σ.gpr .r9 := h.regs (.rbx, .r9) (by decide)
@@ -227,7 +228,7 @@ structure EC (L : Kem) (σ s : State) : Prop where
   m : bytesAt s.mem (pa s (.rbp, 0)) 32 = ecMs σ
 
 section
-variable {L : Kem} (W : EcWf L) {σ : State} (hp : (encapsK L).pre σ)
+variable {L : Kem} (W : EcWfB L) {σ : State} (hp : (encapsK L).pre σ)
 include W hp
 
 theorem EC.lay {s : State} (h : EC L σ s) : Lay (ecR L) (ecW L) s := ecLay W hp h.top
@@ -246,13 +247,13 @@ structure ECK (L : Kem) (σ s : State) : Prop where
   ec : EC L σ s
   k : bytesAt s.mem (pa s (sc oG)) 32 = (ecG L σ).1
 
-theorem ECK.step {L : Kem} (W : EcWf L) {σ : State} (hp : (encapsK L).pre σ) {s s' : State} (h : ECK L σ s)
+theorem ECK.step {L : Kem} (W : EcWfB L) {σ : State} (hp : (encapsK L).pre σ) {s s' : State} (h : ECK L σ s)
     {ws : List (Ptr × Nat)} (hP : PPostB s s' ws) (hc : eckChk L ws = true) : ECK L σ s' := by
   simp only [eckChk, Bool.and_eq_true] at hc
   exact ⟨h.ec.step W hp hP hc.1, by rw [(h.ec.lay W hp).keepBytes hP hc.2]; exact h.k⟩
 
 /-- The context of `K-PKE.Encrypt` in a run from `σ`. -/
-def ecC {L : Kem} (W : EcWf L) (σ : State) : Ctx (ecR L) (ecW L) where
+def ecC {L : Kem} (W : EcWfB L) (σ : State) : Ctx (ecR L) (ecW L) where
   Out s := (encapsK L).pre σ ∧ ECK L σ s
   chk := eckChk L
   bs := ecB_bases L
@@ -260,7 +261,7 @@ def ecC {L : Kem} (W : EcWf L) (σ : State) : Ctx (ecR L) (ecW L) where
   step h hP hc := ⟨h.1, h.2.step W h.1 hP hc⟩
 
 /-- The context of `K-PKE.Encrypt` in any run. -/
-def ecCA {L : Kem} (W : EcWf L) : Ctx (ecR L) (ecW L) where
+def ecCA {L : Kem} (W : EcWfB L) : Ctx (ecR L) (ecW L) where
   Out s := ∃ σ, (encapsK L).pre σ ∧ ECK L σ s
   chk := eckChk L
   bs := ecB_bases L
@@ -279,7 +280,7 @@ structure ProOut (L : Kem) (σ s : State) : Prop where
   h : bytesAt s.mem (σ.gpr .rsi) 32 = H (ecEk L σ)
   r15 : s.gpr .r15 = 1
 
-theorem pro_ok {L : Kem} (W : EcWf L) {σ : State} (hp : (encapsK L).pre σ) :
+theorem pro_ok {L : Kem} (W : EcWfB L) {σ : State} (hp : (encapsK L).pre σ) :
     WP isa (.block pro) σ (ProOut L σ) := by
   have hp' := hp
   obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12, r1, r2, r3, r4, r5, r6, k1, k2, k3, k4, k5,
@@ -319,7 +320,7 @@ theorem pro_ok {L : Kem} (W : EcWf L) {σ : State} (hp : (encapsK L).pre σ) :
   · rw [bytesAt_frame hf (by simpa using d6) (by decide)]; exact hh
 
 /-- `h` copied to `H`. -/
-theorem hCopy_ok {L : Kem} (W : EcWf L) {σ : State} (hp : (encapsK L).pre σ) {s : State}
+theorem hCopy_ok {L : Kem} (W : EcWfB L) {σ : State} (hp : (encapsK L).pre σ) {s : State}
     (h : ProOut L σ s) :
     WP isa hCopy s fun s' => EC L σ s' ∧ bytesAt s'.mem (pa s' (sc oH)) 32 = H (ecEk L σ) ∧ s'.gpr .r15 = 1 := by
   have L₀ := ecLayH W hp h.ec.top h.rsi
@@ -332,10 +333,10 @@ theorem hCopy_ok {L : Kem} (W : EcWf L) {σ : State} (hp : (encapsK L).pre σ) {
 /-! ## `G(m ‖ H(ek))` -/
 
 /-- The inputs of `K-PKE.Encrypt`, and `r15 = 1`. -/
-abbrev EncI {L : Kem} (W : EcWf L) (σ s : State) : Prop :=
+abbrev EncI {L : Kem} (W : EcWfB L) (σ s : State) : Prop :=
   Enc.EIn L (ecC W σ) (.r14, 0) (ecEk L σ) (ecMs σ) (ecG L σ).2 s ∧ s.gpr .r15 = 1
 
-theorem hashes_ok {L : Kem} (W : EcWf L) {σ : State} (hp : (encapsK L).pre σ) {s : State}
+theorem hashes_ok {L : Kem} (W : EcWfB L) {σ : State} (hp : (encapsK L).pre σ) {s : State}
     (h : EC L σ s) (hH : bytesAt s.mem (pa s (sc oH)) 32 = H (ecEk L σ)) (h15 : s.gpr .r15 = 1) :
     WP isa hashes s (EncI W σ) := by
   have L₀ := h.lay W hp

@@ -6,11 +6,13 @@ trustworthy. Read `lean/README.md` first.
 For a fast Lean bootstrap on Linux x86-64, restore the prebuilt GHCR cache
 before compiling proofs; see [Restoring the CI build cache](lean/README.md#restoring-the-ci-build-cache).
 The README streams it straight from the registry API with
-`ci/fetch_lean_cache.py`, which resumes a dropped connection, and needs
-`zstd` to decompress it; without the command, `pip install zstandard` and use
+`ci/fetch_lean_cache.py`, which resumes a dropped connection, into
+`ci/lean_cache.py unpack`, which unpacks its per-module archives with the
+toolchain's `leantar` (install the toolchain first); it needs `zstd` to
+decompress the stream; without the command, `pip install zstandard` and use
 the README's Python one-liner.
-Restoring takes the whole cache (about 10.5 GB unpacked), since optimizing a
-proof means rebuilding it.
+Restoring takes the whole cache (about 1 GB to download, 13 GB unpacked),
+since optimizing a proof means rebuilding it.
 
 After rebasing a long-running session onto `main`, consider pulling and
 restoring the latest cache again to avoid rebuilding upstream Lean changes.
@@ -41,9 +43,17 @@ Lake rebuilds your changes and anything not yet cached.
   own, and an implementation is only ever proven against a spec and TCB that
   have already been reviewed and merged.
 * **100% test coverage.** CI merges the line coverage of the Rust code
-  (`src/` and `tests/`) from every platform and fails below 100%. Add tests
-  or delete dead code; only exclude lines that genuinely cannot run, between
-  `// NO-COVERAGE-START` and `// NO-COVERAGE-END`, with a comment saying why.
+  (`src/` and `tests/`) from every platform and fails below 100%, and each
+  architecture's jobs alone must cover every line that architecture builds
+  (`ci/merge_rust_coverage.py`). Add tests or delete dead code; only exclude
+  lines that genuinely cannot run, between `// NO-COVERAGE-START` and
+  `// NO-COVERAGE-END`, with a comment saying why. A branch that only one
+  pointer width or architecture takes is a `cfg`, not a test at run time,
+  and a test helper only some architectures call is built only for them.
+  A pull request starts the Rust jobs (`ci/rust_matrix.toml`) of only the
+  architectures its changes reach (`ci/rust_arches.py`: an architecture's
+  `src/asm/<target>/`, or shared code for all), and checks their coverage;
+  the merge queue always runs every job.
 * **Known-answer tests need clear provenance.** Never type test vectors into
   a test. Use Wycheproof (`tests/wycheproof/`), or vendor the published
   files byte for byte into a directory under `vectors/`, with a new
@@ -51,12 +61,10 @@ Lake rebuilds your changes and anything not yet cached.
   from (`ci/check_vectors.py` checks it), and read them from there.
 * **Every public API has a benchmark** in `bench/benches/primitives/`,
   next to OpenSSL's equivalent, and aws-lc-rs's if it has one. The
-  Benchmarks check compares each pull request that changes an
-  architecture's code with its base, and fails on a slowdown; an
-  optimization's speedup is shown in its run summary. A pull request never
-  runs every benchmark of an architecture: a change that needs that (e.g.
-  to `Cargo.lock` or the benchmarks' shared code) is measured by a manual
-  run.
+  Benchmarks workflow runs only by hand, never on pull requests: a change
+  that could make code slower, or claims to make it faster, is measured by
+  a manual run scoped to what it changed (see "Measuring a change's
+  speed"), and its pull request links the run.
 * **An optimized implementation reaches everything built on it.** An
   implementation of a function for CPU features (or any other faster
   version) is a *variant*: named `<function>_<suffix>` (`_shani`, `_avx2`),
@@ -70,9 +78,15 @@ Lake rebuilds your changes and anything not yet cached.
   several, like Argon2, matches on each of their enums together): a new
   backend does not compile until everything built on it handles it.
   `ci/check_variants.py` checks the generated code: each caller of a
-  function with a variant has that variant, calling it, and each variant is
-  used by the Rust code. There are no exceptions: never add a caller that
-  calls only the baseline implementation, or a way to excuse one.
+  function with a variant has that variant, which calls it or does its work
+  itself but never calls the baseline (a helper needs none if its callers'
+  variants all do its work themselves), some implementation of each caller
+  calls every implementation of its callee whose features the caller has
+  but the one it calls lacks (a variant chosen by hand, such as a field
+  naming the callee, still follows the features), and each variant is used by the
+  Rust code outside its tests (never emit one only a test calls). There are
+  no exceptions: never add a caller that calls only the baseline
+  implementation, or a way to excuse one.
   A variant is chosen by the CPU's features; only when no feature tells
   apart the CPUs it is faster on may the choice also depend on the
   compilation target (`vg_poly1305_update_neon`, faster on Apple's cores and
@@ -96,11 +110,11 @@ Lake rebuilds your changes and anything not yet cached.
   the namespace `VG.Spec`. The emitter refuses both (`TCB/Audit.lean`).
 * Never add instructions with operand-dependent timing (e.g. `div`) to an ISA
   model.
-* On x86-64, `pmuludq`, `pmullw`, `pmulhw`, their VEX forms, `vpmadd52luq`
-  and `vpmadd52huq` may only take
-  secret operands between Intel's MXCSR prologue and epilogue (`stmxcsr`,
-  `ldmxcsr` of `0x1FBF`, `lfence`, … `lfence`, `ldmxcsr` of the saved
-  value), which the proofs do not check: see "MCDT" in
+* On x86-64, `pmuludq`, `pmullw`, `pmulhw`, `pmaddwd`, `pmulhrsw`, their VEX
+  forms, `vpmadd52luq` and `vpmadd52huq` may only take secret operands
+  between Intel's MXCSR prologue and epilogue (`stmxcsr`, `ldmxcsr` of
+  `0x1FBF`, `lfence`, … `lfence`, `ldmxcsr` of the saved value), which the
+  proofs do not check: see "MCDT" in
   `lean/VerifiedGarbage/TCB/X86_64/Isa.lean`. `ci/check_mcdt.py` checks the
   generated code instead: every instruction on Intel's MCDT list must be
   inside that exact sequence in its function, entered only through the
@@ -136,21 +150,38 @@ instructions in an ISA model) go in their own PR before either.
 4. An `Artifact` in the registration file `Artifacts/<Alg>/<Target>.lean`,
    which defines `VG.Artifacts.<Alg>.<Target>.artifacts` (a new file for a
    new algorithm or target; see `Artifacts/Selftest/X86_64.lean`; never
-   `Artifacts.lean`, whose list is empty), made from the function's `Api`:
-   `{ Spec.<Alg>.fooApi with target := …, doc := Spec.<Alg>.fooApi.doc, … }`,
-   passing `doc` any notes on the implementation (`(notes := […])`). The
-   artifact takes the `Api`'s `contracts`, and `ofApi` checks that its
-   `contract` is `contracts` on its target for its `stack`: never set
+   `Artifacts.lean`, whose list is empty), made from the function's `Api`
+   by `Api.artifact` (`TCB/Registration.lean`), with the file importing
+   `Proof/Framework/Registration.lean` for its default proofs:
+
+   ```lean
+     Spec.<Alg>.fooApi.artifact X86_64.target {
+       stack := 8
+       code := Impl.<Alg>.X86_64.foo
+       verified := Proof.<Alg>.X86_64.foo_verified },
+   ```
+
+   A registration states only what the implementation chooses: the Rust
+   module, name, signature, `writeArgs`, documentation and contract come
+   from the `Api`, so never restate them. Give a variant's name its
+   `suffix` (`suffix := "_avx2"`), any notes on the implementation in
+   `notes` (`notes := […]`), the stack its calls and frames use in `stack`,
+   the tables of constants it reads in `consts`, and, where a caller wipes a
+   writable array the function uses as working space, how much of it the
+   function writes in `written` (`written := [("scratch", 1024)]`, proven by
+   `writtenOk`), which the emitter exports as `<NAME>_<PARAM>_WRITTEN` for
+   the caller to wipe only that much. Its contract is found
+   from `verified`'s type, and must be the `Api`'s on the target for
+   `consts` and `stack` (`ofApi`, by `rfl`): give `contract` only when
+   `verified`'s type does not determine it. `of_sig` proves `ofSig`, and
+   `sp_safe` proves `spSafe`: by `Code.all_of_forall` on ARMv7 and AArch64,
+   which evaluates nothing, and by `Code.all_of_allInstrs (by lit_decide)`
+   on x86 and x86-64 (see "Code the kernel evaluates" below), falling back
+   to `decide +kernel` where `lit_decide` exceeds the recursion limit, and
+   for code that depends on a `Bool` or an enumeration (`adx`, a field
+   variant), by cases on it. Never set
    `contracts` outside `Spec/` (the emitter refuses an artifact without
-   them). Set
-   `stack` to the contract's (and `writeArgs`, if the artifact is not made
-   from an `Api`): the default proof of `ofSig` checks both against the
-   contract, and the emitter documents what they imply. Set its `spSafe`
-   to `Code.all_of_forall (fun _ => rfl) _` on ARMv7 and AArch64, which
-   evaluates nothing, and to `Code.all_of_allInstrs (by decide +kernel)`
-   on x86 and x86-64, which runs in the registration file twice as fast as
-   the default, `decide +kernel` (`by lit_decide` if the code has a literal:
-   see "Code the kernel evaluates" below). If its code uses instructions outside
+   them). If its code uses instructions outside
    the target's baseline ISA, list the CPU features they require in
    `features` (the emitter rejects anything but the exact set).
    A function that calls another one with several implementations (e.g.
@@ -172,6 +203,21 @@ instructions in an ISA model) go in their own PR before either.
    interface append the suffix alone. Never list the
    implementations in the caller: a new implementation is a new variant
    file, and its callers follow.
+   Registration files (`Artifacts/`, `Generic/`) and variant files
+   (`Variants/`) are reviewed by hand, so they only bind: no theorems, no
+   tactic proofs beyond the defaults (not even a `(by decide)` argument),
+   and no definitions but the artifacts, the variant and notes. A lemma
+   whose side conditions a registration would decide takes them as
+   `autoParam`s (`(hd : stackUse c ≤ 48 := by lit_decide)`), or the
+   algorithm's proofs state the instance as a theorem
+   (`Proof/Rsa/X86_64/Instances.lean`); `ci/check_registrations.py` checks
+   it. Build a variant with its proofs under `Proof/`
+   (`Proof/Variants/<Iface>/<Target>/<Name>.lean`, as the variant file's
+   path) and bind it in the variant file
+   (`def variant : … := Proof.Variants.<Iface>.<Target>.<Name>.variant`);
+   put what a generic caller's artifacts are built from (instances of the
+   functions it calls, lemmas about its code) in a module of the
+   algorithm's proofs, as `Proof/AesGcm/X86_64/Instances.lean` does.
    A function whose proof takes a Weierstrass curve's group law (`Law`,
    `Proof/Weierstrass/Law.lean`) is registered generic over it the same
    way: the law is the one variant of the interface `<Curve>` on each target
@@ -227,7 +273,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Md5
-import all Init.Data.Array.Basic        -- proofs only: see below
 
 /-! # What the file is -/
 
@@ -237,10 +282,46 @@ namespace VG.Proof.Md5.X86_64
 …
 ```
 
-* `public import` what the file's statements and definitions mention
+* `public import` only what the file's statements and definitions mention
   (importers see it too); a plain `import` gives the file something for its
   proofs only, and importers do not see it. `@[expose] public section`
   keeps every definition unfoldable by importers, as the proofs need.
+  Import privately whatever only proofs use: it is what keeps builds short.
+  Lake rebuilds a module when a module it reads changes its `.olean`, and a
+  module reads its imports and what they `public import`, transitively
+  (`ci/lean_shards.py`'s `reads`). A change to a lemma's statement rebuilds
+  the modules importing it, but those that import it privately produce the
+  `.olean` they did, and nothing beyond them rebuilds; through a
+  `public import` it rebuilds everything above it. (A change to a proof
+  alone changes no `.olean` but its own module's private part, and rebuilds
+  nothing else.) So import what a file uses directly, not through another
+  module that happens to pass it on. Before pushing, after building the
+  modules you edited, run `ci/check_lean_public_imports.py` on them (see
+  "Checks to run before pushing"; CI does not run it, since `lake shake`
+  alone takes most of a minute): it names each `public import` you added of
+  a module of the project that the file uses only privately, with the
+  modules importing it that used what it passed on (they must import that
+  themselves), and each import you added that the file does not use at all;
+  `--fix` makes those changes, after which build and run it again. It counts
+  as public what Lean does: statements, and the bodies of exposed
+  definitions with the proofs inside them (a structure value's proof
+  fields), which `lake shake` alone counts as private. It never asks to
+  make private or remove a module whose effect no declaration records (an
+  `attribute [...]`, a `macro_rules`, a `seal`, an instance priority, a
+  `materialize_*` literal: its `SIDE_EFFECTS`), nor a dependency's, and when
+  making an import private would stop passing such a module on, it names
+  the `public import`s that keep doing so. Mark an import that must stay as
+  it is for another reason `-- shake: keep`, saying why. Shake does not see
+  uses that leave nothing in the `.olean` (an `open` of a namespace, what
+  `#guard`, `materialize_*` or `taint_decide` evaluate): import what those
+  need directly. For a change the check does not cover (more than 3,000
+  modules, a refactor of many headers) or a sweep of the library,
+  `ci/trim_lean_imports.py` (`-m`, `--base REV` or `--all`) does the same
+  for every import of those modules, in rounds until nothing is left: it
+  never edits registrations or variants, keeps what it found by Lake's hash
+  of each module's build, and does not retry what it undid
+  (`lean/.lake/trim-imports.json`). `--batch` bounds the memory `lake shake`
+  takes, about 3 GB per 1,000 modules.
 * A file that only defines tactics, elaborators or commands is a
   `public meta section`, and imports each module both ways
   (`public import X` and `public meta import X`; `Lean` only as
@@ -251,12 +332,14 @@ namespace VG.Proof.Md5.X86_64
   `run_cmd`, `materialize_*`, `taint_decide`, `taint_summary`) also has a
   `meta import` of each of its imports, so that what it evaluates is
   available to the compiler.
-* A proof (under `Proof/`, not the framework) has `import all` of the core
-  modules whose definitions proofs evaluate (`decide`, `rfl`, the kernel)
-  but core does not expose to modules: `Init.Data.Array.Basic`,
-  `Init.Data.Array.DecidableEq`, `Init.Data.Nat.Bitwise.Basic` and
-  `Init.Data.Vector.Basic`, and `Init.Data.Nat.Power2.Basic` if it unfolds
-  `Nat.isPowerOfTwo`.
+* Never `import all` a core module, but two, each only in a proof that
+  needs it: `Init.Data.Nat.Bitwise.Basic` when the kernel evaluates `Nat`'s
+  bitwise operations (bit vectors' `0#8`, `Mem.read`'s equations, a
+  `taint_decide` over them) and fails with an "application type mismatch"
+  or a failed `rfl` without it; `Init.Data.Nat.Power2.Basic` when the proof
+  unfolds `Nat.isPowerOfTwo`. The kernel evaluates core's arrays and
+  vectors without `import all`, which makes a module up to a quarter slower
+  to build (`ci/check_lean_speed.py` checks it).
 * The audits (`#assert_standard_axioms`, `#assert_no_compiler_overrides`,
   `#assert_spec_origin`) run only in files that are not modules (the
   emitter's drivers, `Artifacts.lean`, `VerifiedGarbageTest/`), and refuse
@@ -472,6 +555,14 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   `Proof/Blake2/X86_64/Avx/Round.lean`), prove it `:= (rfl)`. Keep the
   framework's `RegUpd` lemmas `rfl`: as propositional rewrites they measured
   slower.
+* **Concrete data under `rfl`:** never close a goal holding a large concrete
+  value (a key schedule read from memory, a table) by `rfl`, `decide` or
+  `change`, nor split a case on an index (`rcases … with rfl | rfl`) in a
+  context that holds one: the kernel may evaluate the value to compare the
+  two sides (Blowfish's `step_run`: a minute in the kernel, after an
+  unrelated upgrade of Lean). Prove the step once with the value a
+  variable, and apply it (`fAcc_step`, `Proof/Blowfish/F.lean`), or
+  `generalize` the value before `rfl`.
 * **Tables of constants:** the kernel evaluates a table's whole length
   (seconds for a comb's tables) when it compares `8 * words.length` with
   another form of it, such as a `Region`'s `len` projection. Never unfold
@@ -564,9 +655,17 @@ linters, 5–8% of the build: never turn them back on in a module), but not
 its profiler:
 
 ```sh
+lake setup-file --log-level=warning VerifiedGarbage/Proof/….lean > .lake/setup.json
 opts=$(grep -oE "^weak\.[A-Za-z_.]+ = (true|false)" lakefile.toml | sed -E 's/ = /=/; s/^/-D/' | tr '\n' ' ')
-perf stat -e instructions:u -x, lake env lean $opts VerifiedGarbage/Proof/….lean
+perf stat -e instructions:u -x, lake env lean --setup .lake/setup.json $opts -Dprofiler=false VerifiedGarbage/Proof/….lean
+perf stat -e instructions:u -x, lake env true   # Lake's own startup: subtract it
 ```
+
+`--setup` loads the precompiled libraries (`Native*` in the lakefile) as
+`lake build` does; without it the interpreter runs their tactics, many
+times slower. The setup file serves edited copies of the module too.
+`lake env` starts Lake for every command (about 3.5e9 instructions), which
+a build does once: subtract it before quoting a relative change.
 
 `set_option diagnostics true in` before a slow theorem lists the
 definitions unfolded while elaborating it, which finds failing unfoldings.
@@ -667,14 +766,46 @@ compares the fastest of each; add a group there when its code reads such a
 table.
 
 For another architecture, or features this CPU lacks, run the Benchmarks
-workflow by hand on a pushed branch (`workflow_dispatch` on `bench.yml`)
-with `base_commit` (empty to run the branch alone, next to OpenSSL and
-aws-lc-rs), `arches`, `cpu_features` (space-separated configurations, `-`
-for none; empty for those choosing among the modules' implementations) and
-`modules`; the results are in each job's summary. Leaving all three empty
-runs every benchmark in about thirty jobs: never do that for one change,
-except one that needs every benchmark (which pull requests skip, naming the
-architectures in the Benchmarks run's summary): then pass those `arches`.
+workflow by hand: it never runs on its own (not on pull requests, not on
+`main`). Its runners are the ones CI waits for, so scope every run as
+narrowly as the change allows. First ask which jobs the change needs:
+
+```sh
+git diff --name-only origin/main HEAD | python3 ci/bench_arches.py --base origin/main
+```
+
+prints a JSON list, one entry per job, each with its `arch`, `cpu-features`
+and `modules` (empty: every benchmark; such architectures it leaves out,
+naming them on stderr). Then run the workflow on the pushed branch with
+those values, one run per architecture when they differ between
+architectures:
+
+```sh
+gh workflow run bench.yml --ref my-branch -f base_commit=$(git rev-parse origin/main) \
+  -f arches=aarch64 -f cpu_features='- none sha3' -f modules=ecdsa_p256
+```
+
+`--ref` is the branch (or tag) measured, at its tip; `base_commit` is any
+commit to compare it with (empty to run the branch alone, next to OpenSSL
+and aws-lc-rs). `arches`, `cpu_features` (space-separated configurations,
+`-` for none; empty for those choosing among the modules' implementations)
+and `modules` narrow the run (`python3 ci/bench_arches.py --choices` lists
+their values); `openssl=true` adds OpenSSL's and aws-lc-rs's times to a
+comparison, which only costs time: leave it off. To measure a commit that
+is no branch's tip, push a branch at it
+(`git push origin <sha>:refs/heads/bench/<name>`) and delete it after. The
+results are in each job's summary.
+
+Never run every benchmark (`modules` empty: leaving `arches`,
+`cpu_features` and `modules` all empty runs every benchmark of every
+architecture in about thirty jobs, and `arches` alone every benchmark of
+that architecture) unless the change truly needs it and cannot be measured
+otherwise: a change to the benchmarks' shared code or `bench/Cargo.lock`,
+whose architectures `bench_arches.py` names on stderr. Even then, run only
+the architectures it names, and prefer a module or two that show the
+change's effect over all of them. Never rerun a benchmark to get a better
+number, and never run one for a change that cannot affect speed (Lean
+proofs that leave `src/asm/` as it was, tests, docs, CI).
 
 ## Checks to run before pushing
 
@@ -682,12 +813,15 @@ architectures in the Benchmarks run's summary): then pass those `arches`.
 (cd lean && lake build --log-level=warning && lake env lean --run Emit.lean --check)
 python3 ci/check_lean_imports.py
 python3 ci/check_lean_modules.py
+git diff --name-only origin/main -- lean/VerifiedGarbage | sed -n 's#^lean/\(.*\)\.lean$#\1#p' | tr / . \
+  | xargs -r python3 ci/check_lean_public_imports.py --base origin/main -m   # after building them; --fix applies it
+python3 ci/check_registrations.py
 python3 ci/check_lean_speed.py
 python3 ci/check_vectors.py
 python3 ci/check_arch_gates.py
 python3 ci/check_variants.py
 python3 ci/check_mcdt.py
-python3 ci/cpu_tests.py lint .github/workflows/ci.yml
+python3 ci/cpu_tests.py lint ci/rust_matrix.toml
 cargo fmt --check && cargo clippy --all-targets -- -D warnings
 WYCHEPROOF_ROOT=/path/to/wycheproof cargo test
 ```
@@ -697,11 +831,12 @@ benchmarked) end to end in each configuration, never through a special API:
 the `cpu-features-env` Cargo feature lets `VG_CPU_FEATURES` restrict the
 features detected (see `src/cpu.rs`). CI tests each configuration that
 chooses differently on a CPU that has those features: the runner's, or one
-Intel SDE presents (`rust-cpu-features` in `ci.yml`; SDE runs the SHA
+Intel SDE presents (`rust-cpu-features` in `ci.yml`, whose CPUs are the
+`cpu` entries of `ci/rust_matrix.toml`; SDE runs the SHA
 extensions' code very slowly, so the chips that have them run only the
 tests that need them); and benchmarks each with
 `VG_CPU_FEATURES` (`CPU_FEATURES` in `ci/bench_arches.py`). A configuration
-to test is a line of a CPU's `runs` in `rust-cpu-features`
+to test is a line of a CPU's `runs` in `ci/rust_matrix.toml`
 (`<VG_CPU_FEATURES> | <groups>`), never a step or job of its own, and
 each CPU has one line per value of `VG_CPU_FEATURES` (CI checks both), so
 a run never repeats another: add groups to a CPU's line for those features.
@@ -711,8 +846,8 @@ and in `tests/main.rs`; a line runs exactly those tests, so a new test of a
 primitive that varies by CPU feature goes into its group (or a new group),
 never into a line by matching part of its name. CI fails a path that
 selects no test on any CPU, and a group that selects none on a line's CPU.
-A CPU whose lines take long runs as shards (matrix entries with a `shard`
-of `i/n` and the first entry's `runs` as a YAML alias), which deal out its
+A CPU whose lines take long runs as shards (its `shards = n`: n jobs, each
+with a `shard` of `i/n`), which deal out its
 lines by the CPU time each took on `main` (`ci/cpu_shards.py`): to speed
 one up, add a shard, never split its lines by hand.
 To test the baseline ISA's implementations:
@@ -727,6 +862,6 @@ Coverage on this platform (CI merges it across all of them; the merge needs
 ```sh
 export RUSTFLAGS=-Cinstrument-coverage LLVM_PROFILE_FILE='.rust-cov/cov-%p-%m.profraw'
 WYCHEPROOF_ROOT=/path/to/wycheproof cargo test
-python3 ci/export_rust_coverage.py .rust-cov   # writes <uuid>.lcov
+python3 ci/export_rust_coverage.py .rust-cov   # writes <arch>-<uuid>.lcov
 python3 ci/merge_rust_coverage.py .            # reports; fails under 100%
 ```

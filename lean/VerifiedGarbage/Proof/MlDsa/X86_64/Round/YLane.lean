@@ -3,12 +3,7 @@ module
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Avx2
 public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VArith
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Words
 
 /-!
 # ML-DSA on x86-64: what the AVX2 rounding code computes in a doubleword

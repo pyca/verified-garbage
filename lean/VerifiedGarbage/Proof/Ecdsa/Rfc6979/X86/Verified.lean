@@ -1,13 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hash
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.CT
-public import VerifiedGarbage.Proof.Framework.X86.Inline
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.CT
 import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): `Verified`
@@ -78,15 +73,16 @@ theorem wide_pre (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) (cs : List (String 
 
 /-- The notes on the implementation, for the documentation of the function
 with HMAC's `init` `hiN`, the streaming `update` `updN` and HMAC's
-`finalize` `hfN`, for scalars of `q` bytes signed by `core`. -/
-def signNotes (hiN updN hfN : String) (q : Nat) (core : String) : String :=
+`finalize` `hfN`, for scalars of `q` bytes signed by `core`, in a stack
+frame of `frame` bytes. -/
+def signNotes (hiN updN hfN : String) (q : Nat) (core : String) (frame : Nat := 196) : String :=
   "Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost " ++
   toString q ++ " bytes, and each HMAC with `" ++ hiN ++ "`, `" ++ updN ++ "` and `" ++ hfN ++ "`, using \
   the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the \
   leftmost " ++ toString q ++ " bytes of `V`, is tried with `" ++ core ++ "`, which uses all of `scratch`; \
   whether to try another is computed without branches from its result and the count of candidates left, \
-  so the code branches only on that. `K`, `V`, `h`, the count and our caller's registers are kept in a \
-  196-byte stack frame, whose secrets are cleared before it is released; the calls use the 76 bytes \
+  so the code branches only on that. `K`, `V`, `h`, the count and our caller's registers are kept in a " ++
+  toString frame ++ "-byte stack frame, whose secrets are cleared before it is released; the calls use the 76 bytes \
   below it."
 
 /-- The notes of an instance whose scalars are longer than the hash

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86.ModesVerified
+import VerifiedGarbage.Proof.Cast5.X86.ModesLit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # CAST5-OFB artifacts on baseline x86 (32-bit) -/
 
@@ -15,14 +17,11 @@ def note : String :=
   so no secret is an address. The subkeys and the number of rounds are reloaded from the arguments for each block."
 
 def artifacts : List Artifact := [
-  { Spec.Cast5.ofbApi with
-    target := X86.target
-    doc := Spec.Cast5.ofbApi.doc (notes := [note])
+  Spec.Cast5.ofbApi.artifact X86.target {
+    notes := [note]
     consts := Impl.Cast5.ecbConsts
     code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.ofb
-    contract := Spec.Cast5.ofbContract (X86.abi.withConsts Impl.Cast5.ecbConsts) 336
     stack := 336
-    verified := Proof.Cast5.X86.ModeFns.ofb_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Cast5.X86.ModeFns.ofb_framed }]
 
 end VG.Artifacts.Cast5Ofb.X86

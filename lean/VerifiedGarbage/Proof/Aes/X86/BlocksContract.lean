@@ -1,13 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.Common
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Spec.Aes.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES on whole blocks on x86 (32-bit): the contract

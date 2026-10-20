@@ -1,12 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Pass2
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Pass2
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+public import VerifiedGarbage.Proof.MlKem.AArch64.NttCommon
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Pass2
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+meta import VerifiedGarbage.Proof.MlKem.AArch64.NttCommon
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM's 16-bit NTT on AArch64: `vg_mlkem_ntt`

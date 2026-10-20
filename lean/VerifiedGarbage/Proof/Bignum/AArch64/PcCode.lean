@@ -1,13 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_public_precompute` on AArch64: correctness
@@ -38,7 +38,7 @@ def pcContract : Contract isa where
       (s.gpr .x0).toNat + (s.gpr .x1).toNat * 8 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
       (s.gpr .x4).toNat + (s.gpr .x5).toNat * 8 ≤ 2 ^ 64 ∧ Spec.Rsa.lenValid (s.gpr .x3).toNat ∧
       (s.gpr .x1).toNat = Spec.Rsa.precomputedWords (s.gpr .x3).toNat ∧
-      Spec.Rsa.scratchWords (s.gpr .x3).toNat ≤ (s.gpr .x5).toNat
+      Spec.Rsa.publicScratchWords (s.gpr .x3).toNat ≤ (s.gpr .x5).toNat
   post s s' :=
     match Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) with
     | some ws => (s'.gpr .x0).setWidth 32 = 1 ∧ Spec.Rsa.wordsAt s'.mem (s.gpr .x0) (s.gpr .x1).toNat = ws
@@ -91,7 +91,7 @@ structure PcCtx (s : State) : Prop where
   hk1 : 64 ≤ (s.gpr .x3).toNat
   hk2 : (s.gpr .x3).toNat ≤ 1024
   hpl : (s.gpr .x1).toNat = 2 * (((s.gpr .x3).toNat + 7) / 8)
-  hZ : 128 * (s.gpr .x3).toNat ≤ (s.gpr .x5).toNat * 8
+  hZ : 64 * (((s.gpr .x3).toNat + 7) / 8) + 384 ≤ (s.gpr .x5).toNat * 8
   hs : Scr s (s.gpr .x4) ((s.gpr .x5).toNat * 8)
   hnb : Src s (s.gpr .x4) ((s.gpr .x5).toNat * 8) (s.gpr .x2)
     (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)
@@ -103,7 +103,7 @@ theorem pcCtx_of {s : State} (h : pcContract.pre s) : PcCtx s := by
   simp only [pcContract] at h
   obtain ⟨hrd, hwr, dPn, dPs, dns, wP, wN, wS, hk, hpl, hsl⟩ := h
   obtain ⟨hk1, hk2⟩ := hk
-  unfold Spec.Rsa.scratchWords at hsl
+  unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords at hsl
   unfold Spec.Rsa.precomputedWords Spec.Rsa.modulusWords at hpl
   have hs : Scr s (s.gpr .x4) ((s.gpr .x5).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
   have hpre : (⟨s.gpr .x0, (s.gpr .x1).toNat * 8⟩ : Region) ∈ s.wr := by rw [hwr]; simp

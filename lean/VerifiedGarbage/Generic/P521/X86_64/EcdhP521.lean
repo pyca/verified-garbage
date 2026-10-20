@@ -1,19 +1,59 @@
 module
 
-import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Impl.Ecdh.P521.X86_64
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Verified
-import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Lit
-public import VerifiedGarbage.Proof.Ecdh.X86_64.P521.VerifiedAdx
-import VerifiedGarbage.Proof.Ecdh.X86_64.P521.LitAdx
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Lit
+import VerifiedGarbage.Proof.Ecdh.X86_64.P521.VerifiedAdx
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P521.LitAdx
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWin
+public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWinAdx
+public import VerifiedGarbage.Spec.Ecdh.P521
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Verified
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P521.VerifiedAdx
+import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.EcKey.PublicKey
+public import VerifiedGarbage.Proof.Ecdh.X86_64.MulJ4
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
+public import VerifiedGarbage.Proof.Ecdsa.Sign
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+public import VerifiedGarbage.Proof.P521.Point
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Bytes
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FprogJ
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
+import VerifiedGarbage.Proof.EcKey.PublicKey
+import VerifiedGarbage.Proof.Ecdh.X86_64.MulJ4
+import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
+import VerifiedGarbage.Proof.Ecdsa.Sign
+import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+import VerifiedGarbage.Proof.P521.Point
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Bytes
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FprogJ
+import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
 
 /-!
 # ECDH over P-521 (SP 800-56A) on x86-64
@@ -34,11 +74,10 @@ instruction writing `rsp` (`hsp`). -/
 def exchange (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86_64.abi 8))
-    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
-  { Spec.Ecdh.P521.exchangeApi with
-    name := Spec.Ecdh.P521.exchangeApi.name ++ (if adx then "_adx" else "")
-    target := X86_64.target
-    doc := Spec.Ecdh.P521.exchangeApi.doc (notes := ["The function is `vg_ecdsa_p521_sign" ++ (if adx then "_adx" else "") ++ "`'s setup, \
+    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
+  Spec.Ecdh.P521.exchangeApi.artifact X86_64.target {
+    suffix := (if adx then "_adx" else "")
+    notes := ["The function is `vg_ecdsa_p521_sign" ++ (if adx then "_adx" else "") ++ "`'s setup, \
       field arithmetic and inversion, with the peer's point in place of `G`: it saves its \
       caller's callee-saved registers in `scratch`; field elements are nine 64-bit words in \
       Montgomery form, " ++ Proof.Ecdsa.X86_64.P521.mulNote adx ++ ". The peer's key is checked without branches (its first byte, both \
@@ -57,9 +96,8 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
       `n`, so the operands are never equal or opposite otherwise; the last digit's is by the \
       complete addition formulas of Renes, Costello and Batina for `a = -3` (Algorithm 4), in \
       projective coordinates. `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of the checks, `d` \
-      in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
+      in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."]
     code
-    contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86_64.abi 8
     stack := 8
     verified := hv
     spSafe := hsp
@@ -67,8 +105,8 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P521.curve) : List Artifact := [
   exchange false Impl.Ecdh.X86_64.exchangeP521
-    (Proof.Ecdh.X86_64.P521.ecdh_verified h.law h.inv h.prime) (Code.all_of_allInstrs (by lit_decide)),
+    (Proof.Ecdh.X86_64.P521.ecdh_verified h.law h.inv h.prime),
   exchange true Impl.Ecdh.X86_64.exchangeP521Adx
-    (Proof.Ecdh.X86_64.P521.ecdh_verified_adx h.law h.inv h.prime) (Code.all_of_allInstrs (by lit_decide))]
+    (Proof.Ecdh.X86_64.P521.ecdh_verified_adx h.law h.inv h.prime)]
 
 end VG.Generic.P521.X86_64.EcdhP521

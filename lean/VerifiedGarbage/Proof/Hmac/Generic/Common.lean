@@ -2,14 +2,25 @@ module
 
 public import VerifiedGarbage.Proof.Hmac.Common
 public import VerifiedGarbage.Spec.Pbkdf2
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.StateMem
+import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Spec.Sha1
 import VerifiedGarbage.Spec.Md5
 import VerifiedGarbage.Spec.Sha512
-public import VerifiedGarbage.Proof.Framework.OmegaLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+import Batteries.Tactic.Init
+import Batteries.Tactic.PermuteGoals
+import Batteries.Tactic.SeqFocus
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # HMAC over any streaming hash function: lemmas shared by every target

@@ -1,14 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-public import VerifiedGarbage.Proof.Dsa.X86_64.PublicExponent
-public import VerifiedGarbage.Proof.Dsa.X86_64.Power
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Impl.Dsa.X86_64.PublicPower
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicExponent
+import VerifiedGarbage.Proof.Dsa.X86_64.EncodePower
+import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
+import VerifiedGarbage.Proof.Dsa.X86_64.Load
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 
 /-! # Public exponentiation through Montgomery encoding and decoding -/
 

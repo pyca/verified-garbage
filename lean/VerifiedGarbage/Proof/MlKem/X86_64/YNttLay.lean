@@ -1,11 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
-public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 
@@ -56,6 +51,10 @@ theorem GOnly.lane {rs : List Reg} {s s' : State} (h : GOnly rs s s') (hy : s'.y
 theorem Lanes.congr {x : BitVec 128} {f g : Nat → Zq} (h : Lanes x f) (e : ∀ i < 8, f i = g i) : Lanes x g :=
   fun i hi => by rw [h i hi, e i hi]
 
+theorem LanesR.congr {α : Type} {R : BitVec 16 → α → Prop} {x : BitVec 128} {f g : Nat → α} (h : LanesR R x f)
+    (e : ∀ i < 8, f i = g i) : LanesR R x g :=
+  fun i hi => e i hi ▸ h i hi
+
 theorem ZLanes.congr {x : BitVec 128} {f g : Nat → Zq} (h : ZLanes x f) (e : ∀ i < 8, f i = g i) : ZLanes x g :=
   fun i hi => by rw [h i hi, e i hi]
 
@@ -70,21 +69,22 @@ theorem sel_55 {j : Nat} (hj : j < 4) : sel 0x55 j = 1 := by
   rcases (by bdd_omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide
 
 section
-variable {bf : List Instr} {op : Zq → Zq → Zq → Zq × Zq} (hbf : VBflyOk bf op)
-  (hY : laneSseBlock (toY bf) = some bf)
-  {blk : Poly → Nat → Nat → Nat → Nat → Poly} (hblk : BlkOk blk op)
+variable {α : Type} [Inhabited α] {R : BitVec 16 → α → Prop} {bf : List Instr} {op : α → α → Zq → α × α}
+  (hbf : VBflyOk R bf op) (hY : laneSseBlock (toY bf) = some bf)
+  {blk : Vector α n → Nat → Nat → Nat → Nat → Vector α n} (hblk : BlkOk blk op)
 include hbf hY
 
+omit [Inhabited α] in
 /-- The butterflies of `bf` in each lane, from the words `x` and `y` of the
 lanes of `ymm0` and `ymm1` and the zetas `ζ` of those of `ymm13`. -/
-theorem ybf_ok {s : State} (hc : YConsts s) {x y ζ : Nat → Nat → Zq} (hx : ∀ l < 2, Lanes (s.lane .xmm0 l) (x l))
-    (hy : ∀ l < 2, Lanes (s.lane .xmm1 l) (y l)) (hz : ∀ l < 2, ZLanes (s.lane .xmm13 l) (ζ l)) :
+theorem ybf_ok {s : State} (hc : YConsts s) {x y : Nat → Nat → α} {ζ : Nat → Nat → Zq} (hx : ∀ l < 2, LanesR R (s.lane .xmm0 l) (x l))
+    (hy : ∀ l < 2, LanesR R (s.lane .xmm1 l) (y l)) (hz : ∀ l < 2, ZLanes (s.lane .xmm13 l) (ζ l)) :
     WP isa (.block (toY bf)) s fun s' =>
-      (∀ l < 2, Lanes (s'.lane .xmm0 l) (fun i => (op (x l i) (y l i) (ζ l i)).1) ∧
-        Lanes (s'.lane .xmm3 l) (fun i => (op (x l i) (y l i) (ζ l i)).2)) ∧
+      (∀ l < 2, LanesR R (s'.lane .xmm0 l) (fun i => (op (x l i) (y l i) (ζ l i)).1) ∧
+        LanesR R (s'.lane .xmm3 l) (fun i => (op (x l i) (y l i) (ζ l i)).2)) ∧
       YOnly [.xmm1, .xmm2, .xmm0, .xmm3] s s' :=
-  ylanes hY (P := fun l t => Lanes (t.xmm .xmm0) (fun i => (op (x l i) (y l i) (ζ l i)).1) ∧
-      Lanes (t.xmm .xmm3) (fun i => (op (x l i) (y l i) (ζ l i)).2))
+  ylanes hY (P := fun l t => LanesR R (t.xmm .xmm0) (fun i => (op (x l i) (y l i) (ζ l i)).1) ∧
+      LanesR R (t.xmm .xmm3) (fun i => (op (x l i) (y l i) (ζ l i)).2))
     fun l hl => WP.mono (hbf _ (hc l hl) _ _ _ (hx l hl) (hy l hl) (hz l hl)) fun _ ⟨a, b, c⟩ => ⟨⟨a, b⟩, c⟩
 
 include hblk
@@ -96,12 +96,12 @@ abbrev ybody (bf : List Instr) (len : Nat) : List Instr :=
       .alu .add .rdx (.imm 32)] : List Instr) ++ ([.alu .sub .rcx (.imm 1)] : List Instr)
 
 theorem ystep {Sp : Addr} {len st u k : Nat} (hl : 16 ≤ len) (hl' : len ≤ 128) (hs : st + 2 * len ≤ 256)
-    (hu : 16 * u + 16 ≤ len) {G : Poly} {s : State} (hc : YConsts s)
+    (hu : 16 * u + 16 ≤ len) {G : Vector α n} {s : State} (hc : YConsts s)
     (hz : ∀ l < 2, ZLanes (s.lane .xmm13 l) (fun _ => zeta k))
-    (hdx : s.gpr .rdx = wAddr Sp (st + 16 * u)) (hS : S16 s.mem Sp (blk G len k st (16 * u)))
+    (hdx : s.gpr .rdx = wAddr Sp (st + 16 * u)) (hS : S16R R s.mem Sp (blk G len k st (16 * u)))
     (hin : ∀ j, j + 16 ≤ 256 → InRegions s.wr (wAddr Sp j) 32) :
     WP isa (.block (ybody bf len)) s fun s' =>
-      S16 s'.mem Sp (blk G len k st (16 * (u + 1))) ∧ s'.gpr .rdx = wAddr Sp (st + 16 * (u + 1)) ∧
+      S16R R s'.mem Sp (blk G len k st (16 * (u + 1))) ∧ s'.gpr .rdx = wAddr Sp (st + 16 * (u + 1)) ∧
         Frame [sR Sp] s.mem s'.mem ∧ YConsts s' ∧ (∀ l < 2, s'.lane .xmm13 l = s.lane .xmm13 l) ∧
         Keep [.rdx, .rcx] s s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) ∧
         s'.mxcsr = s.mxcsr := by
@@ -123,9 +123,9 @@ theorem ystep {Sp : Addr} {len st u k : Nat} (hl : 16 ≤ len) (hl' : len ≤ 12
     (x := fun l e => P[st + 16 * u + 8 * l + e]!) (y := fun l e => P[st + 16 * u + len + 8 * l + e]!)
     (ζ := fun _ _ => zeta k)
     (fun l hl => by
-      rw [o2.lane _ (by decide) l hl, L1 l hl, hdx, add_ofNat_zero]; exact lanes_loadY hS j0 hl)
+      rw [o2.lane _ (by decide) l hl, L1 l hl, hdx, add_ofNat_zero]; exact lanes_loadYR hS j0 hl)
     (fun l hl => by
-      rw [L2 l hl, o1.gpr, o1.mem, hdx, a1]; exact lanes_loadY hS j1 hl)
+      rw [L2 l hl, o1.gpr, o1.mem, hdx, a1]; exact lanes_loadYR hS j1 hl)
     (fun l hl => by rw [o12.lane _ (by decide) l hl]; exact hz l hl)) fun s3 ⟨B3, o3⟩ => ?_
   have o13 := o12.trans o3
   have w0 : InRegions s3.wr (s3.gpr .rdx) 32 := by rw [o13.wr, o13.gpr, hdx]; exact hin _ j0
@@ -136,17 +136,19 @@ theorem ystep {Sp : Addr} {len st u k : Nat} (hl : 16 ≤ len) (hl' : len ≤ 12
   have g3 : s3.gpr .rdx = wAddr Sp (st + 16 * u) := by rw [o13.gpr, hdx]
   rw [g3, a1, o13.mem]
   refine ⟨?_, ?_, ?_, ?_, ?_, ⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
-  · refine s16_write2Y (s := s3) hS j0 j1 (by bdd_omega)
+  · refine s16_write2YR (s := s3) hS j0 j1 (by bdd_omega)
       (a := fun e => (op P[st + 16 * u + e]! P[st + 16 * u + len + e]! (zeta k)).1)
       (b := fun e => (op P[st + 16 * u + e]! P[st + 16 * u + len + e]! (zeta k)).2)
       (fun l hl i hi => by
-        rw [(B3 l hl).1 i hi]; dsimp only
-        rw [show st + 16 * u + 8 * l + i = st + 16 * u + (8 * l + i) by bdd_omega,
-          show st + 16 * u + len + 8 * l + i = st + 16 * u + len + (8 * l + i) by bdd_omega])
+        dsimp only
+        rw [show st + 16 * u + (8 * l + i) = st + 16 * u + 8 * l + i by bdd_omega,
+          show st + 16 * u + len + (8 * l + i) = st + 16 * u + len + 8 * l + i by bdd_omega]
+        exact (B3 l hl).1 i hi)
       (fun l hl i hi => by
-        rw [(B3 l hl).2 i hi]; dsimp only
-        rw [show st + 16 * u + 8 * l + i = st + 16 * u + (8 * l + i) by bdd_omega,
-          show st + 16 * u + len + 8 * l + i = st + 16 * u + len + (8 * l + i) by bdd_omega]) fun i hi => ?_
+        dsimp only
+        rw [show st + 16 * u + (8 * l + i) = st + 16 * u + 8 * l + i by bdd_omega,
+          show st + 16 * u + len + (8 * l + i) = st + 16 * u + len + 8 * l + i by bdd_omega]
+        exact (B3 l hl).2 i hi) fun i hi => ?_
     rw [← hP, show 16 * (u + 1) = 16 * u + 16 by bdd_omega, hblk.add, hblk.get _ _ _ _ _ (by bdd_omega) (by bdd_omega)
       (by rw [n_eq]; omega) _ (by rw [n_eq]; exact hi)]
     rw [hP]
@@ -185,10 +187,10 @@ abbrev yblk (bf : List Instr) (len : Nat) : Prog isa :=
       (.block [.alu .add .rdx (.imm (BitVec.ofNat 32 (2 * len))), .alu .sub .rax (.imm 1)]))
 
 theorem yblock_ok {sP : Addr} {len st kz k : Nat} (h16 : 16 ≤ len) (hl16 : len % 16 = 0) (hl : len ≤ 128)
-    (hs : st + 2 * len ≤ 256) (hkz : kz < 128) {z : Nat → Zq} (hzk : z kz = zeta k) {G : Poly} {s : State}
+    (hs : st + 2 * len ≤ 256) (hkz : kz < 128) {z : Nat → Zq} (hzk : z kz = zeta k) {G : Vector α n} {s : State}
     (hc : YConsts s) (hdx : s.gpr .rdx = wAddr (spW sP) st) (h8r : s.gpr .r8 = wAddr sP kz)
-    (hS : S16 s.mem (spW sP) G) (hT : TZ s.mem sP z) (hw : pR sP ∈ s.wr) :
-    WP isa (yblk bf len) s fun s' => S16 s'.mem (spW sP) (blk G len k st len) ∧
+    (hS : S16R R s.mem (spW sP) G) (hT : TZ s.mem sP z) (hw : pR sP ∈ s.wr) :
+    WP isa (yblk bf len) s fun s' => S16R R s'.mem (spW sP) (blk G len k st len) ∧
       s'.gpr .rdx = wAddr (spW sP) (st + 2 * len) ∧ s'.gpr .r8 = wAddr sP (kz + 1) ∧
       s'.gpr .rax = s.gpr .rax - 1 ∧ s'.zf = some (s.gpr .rax - 1 == 0) ∧ BInvY sP s s' := by
   -- the zeta
@@ -210,7 +212,7 @@ theorem yblock_ok {sP : Addr} {len st kz k : Nat} (h16 : 16 ≤ len) (hl16 : len
   have hw2 : pR sP ∈ s2.wr := by rw [o2.keep.2.2, o1.wr]; exact hw
   have m2 : s2.mem = s.mem := by rw [o2.mem, o1.mem]
   refine WP.seq (WP.mono (wp_rcxLoopY (N := len / 16) (by bdd_omega) (by bdd_omega)
-    (fun u w => S16 w.mem (spW sP) (blk G len k st (16 * u)) ∧ w.gpr .rdx = wAddr (spW sP) (st + 16 * u) ∧
+    (fun u w => S16R R w.mem (spW sP) (blk G len k st (16 * u)) ∧ w.gpr .rdx = wAddr (spW sP) (st + 16 * u) ∧
       YConsts w ∧ (∀ l < 2, w.lane .xmm13 l = s2.lane .xmm13 l) ∧ Keep [.rcx, .rdx] s2 w ∧
       Frame [sR (spW sP)] s2.mem w.mem ∧ w.mxcsr = s2.mxcsr)
     (fun w o hy _ => ⟨by rw [hblk.zero, o.mem, m2]; exact hS, by rw [o.keep.gpr (by decide), dx2]; rfl,
@@ -242,9 +244,9 @@ theorem yblock_ok {sP : Addr} {len st kz k : Nat} (h16 : 16 ≤ len) (hl16 : len
 
 theorem ylay_ok {sP : Addr} {len t : Nat} (hlen : len ∈ [16, 32, 64, 128]) (zi : Nat → Nat) {z : Nat → Zq}
     (hzi : ∀ c < 128 / len, t + c < 128 ∧ z (t + c) = zeta (zi c))
-    {F : Poly} {s : State} (hc : YConsts s) (hsi : s.gpr .rsi = sP) (hS : S16 s.mem (spW sP) F)
+    {F : Vector α n} {s : State} (hc : YConsts s) (hsi : s.gpr .rsi = sP) (hS : S16R R s.mem (spW sP) F)
     (hT : TZ s.mem sP z) (hw : pR sP ∈ s.wr) :
-    WP isa (ylay bf len t) s fun s' => S16 s'.mem (spW sP) (layF blk F len zi (128 / len)) ∧
+    WP isa (ylay bf len t) s fun s' => S16R R s'.mem (spW sP) (layF blk F len zi (128 / len)) ∧
       BInvY sP s s' := by
   have hl : 16 ≤ len ∧ len % 16 = 0 ∧ len ≤ 128 ∧ 2 * len * (128 / len) = 256 ∧ 0 < 128 / len ∧
       128 / len ≤ 8 := by
@@ -265,7 +267,7 @@ theorem ylay_ok {sP : Addr} {len t : Nat} (hlen : len ∈ [16, 32, 64, 128]) (zi
   have hw' : pR sP ∈ w.wr := by rw [o.keep.2.2]; exact hw
   have cw : YConsts w := lanes_gpr (s := s) (GOnly.lane o hy) (YOnly.refl [] s) hc (by decide) (by decide)
   refine WP.mono (wp_countdown (cnt := .rax) (N := 128 / len) (by bdd_omega) hpos
-    (fun c u => S16 u.mem (spW sP) (layF blk F len zi c) ∧ u.gpr .rdx = wAddr (spW sP) (2 * len * c) ∧
+    (fun c u => S16R R u.mem (spW sP) (layF blk F len zi c) ∧ u.gpr .rdx = wAddr (spW sP) (2 * len * c) ∧
       u.gpr .r8 = wAddr sP (t + c) ∧ BInvY sP w u ∧ TZ u.mem sP z)
     (fun c hc u ⟨hS', hdx', h8', hb', hT'⟩ _ => ?_) (fun u h => h)
     ⟨by rw [o.mem]; exact hS, by rw [hdx, wAddr, Nat.mul_zero, Nat.mul_zero, add_ofNat_zero],
@@ -292,11 +294,11 @@ abbrev ybody8 (bf : List Instr) : List Instr :=
       .alu .sub .rcx (.imm 1)] : List Instr)))))))))
 
 theorem ystep8 {sP : Addr} {m t : Nat} (hm : m < 8) (zi : Nat → Nat) {z : Nat → Zq}
-    (hz : ∀ c < 16, t + c < 128 ∧ z (t + c) = zeta (zi c)) {F : Poly} {s : State} (hc : YConsts s)
+    (hz : ∀ c < 16, t + c < 128 ∧ z (t + c) = zeta (zi c)) {F : Vector α n} {s : State} (hc : YConsts s)
     (hdx : s.gpr .rdx = wAddr (spW sP) (32 * m)) (h8 : s.gpr .r8 = wAddr sP (t + 2 * m))
-    (hS : S16 s.mem (spW sP) (layF blk F 8 zi (2 * m))) (hT : TZ s.mem sP z) (hw : pR sP ∈ s.wr) :
+    (hS : S16R R s.mem (spW sP) (layF blk F 8 zi (2 * m))) (hT : TZ s.mem sP z) (hw : pR sP ∈ s.wr) :
     WP isa (.block (ybody8 bf)) s fun s' =>
-      S16 s'.mem (spW sP) (layF blk F 8 zi (2 * (m + 1))) ∧ s'.gpr .rdx = wAddr (spW sP) (32 * (m + 1)) ∧
+      S16R R s'.mem (spW sP) (layF blk F 8 zi (2 * (m + 1))) ∧ s'.gpr .rdx = wAddr (spW sP) (32 * (m + 1)) ∧
       s'.gpr .r8 = wAddr sP (t + 2 * (m + 1)) ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
       s'.zf = some (s.gpr .rcx - 1 == 0) ∧ BInvY sP s s' := by
   have j0 : 32 * m + 16 ≤ 256 := by bdd_omega
@@ -343,16 +345,16 @@ theorem ystep8 {sP : Addr} {m t : Nat} (hm : m < 8) (zi : Nat → Nat) {z : Nat 
       rw [o6.lane _ (by decide) l hl, P5 l hl, perm20 _ _ hl]
       rcases lane01 hl with rfl | rfl
       · rw [ifp rfl, q4 0 (by decide)]
-        exact (lanes_loadY hS j0 (by decide)).congr fun e _ => rfl
+        exact (lanes_loadYR hS j0 (by decide)).congr fun e _ => rfl
       · rw [ifn (by decide), q5 0 (by decide)]
-        exact (lanes_loadY hS j1 (by decide)).congr fun e _ => by congr 2)
+        exact (lanes_loadYR hS j1 (by decide)).congr fun e _ => by congr 2)
     (fun l hl => by
       rw [P6 l hl, perm31 _ _ hl, o5.lane .xmm4 (by decide) 1 (by decide), o5.lane .xmm5 (by decide) 1 (by decide)]
       rcases lane01 hl with rfl | rfl
       · rw [ifp rfl, q4 1 (by decide)]
-        exact (lanes_loadY hS j0 (by decide)).congr fun e _ => by congr 2
+        exact (lanes_loadYR hS j0 (by decide)).congr fun e _ => by congr 2
       · rw [ifn (by decide), q5 1 (by decide)]
-        exact (lanes_loadY hS j1 (by decide)).congr fun e _ => by congr 2)
+        exact (lanes_loadYR hS j1 (by decide)).congr fun e _ => by congr 2)
     (fun l hl => by
       rw [(o5.trans o6).lane _ (by decide) l hl, l4]
       rcases lane01 hl with rfl | rfl
@@ -380,8 +382,8 @@ theorem ystep8 {sP : Addr} {m t : Nat} (hm : m < 8) (zi : Nat → Nat) {z : Nat 
   rw [dx9, a1, m9]
   refine ⟨?_, ?_, ?_, ?_, ?_, ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, ?_⟩⟩
   · -- the words stored
-    have v0 : ∀ l < 2, ∀ e < 8, (P[32 * m + 16 * l + e]! : Zq) = P[32 * m + 16 * l + e]! := fun _ _ _ _ => rfl
-    refine s16_write2Y (s := s9) hS j0 j1 (by bdd_omega)
+    have v0 : ∀ l < 2, ∀ e < 8, (P[32 * m + 16 * l + e]! : α) = P[32 * m + 16 * l + e]! := fun _ _ _ _ => rfl
+    refine s16_write2YR (s := s9) hS j0 j1 (by bdd_omega)
       (a := fun e => if e < 8 then (op P[32 * m + e]! P[32 * m + 8 + e]! (zeta (zi (2 * m)))).1
         else (op P[32 * m + (e - 8)]! P[32 * m + 8 + (e - 8)]! (zeta (zi (2 * m)))).2)
       (b := fun e => if e < 8 then (op P[32 * m + 16 + e]! P[32 * m + 16 + 8 + e]! (zeta (zi (2 * m + 1)))).1
@@ -389,18 +391,18 @@ theorem ystep8 {sP : Addr} {m t : Nat} (hm : m < 8) (zi : Nat → Nat) {z : Nat 
       (fun l hl i hi => ?_) (fun l hl i hi => ?_) (fun i hi => ?_)
     · rw [o9.lane .xmm4 (by decide) l hl, P8 l hl, perm20 _ _ hl]
       rcases lane01 hl with rfl | rfl
-      · rw [ifp rfl, (B7 0 (by decide)).1 i hi]; dsimp only; rw [ite_eq_left_of_eq_true _ _ (eq_true (by bdd_omega))]
-        try simp only [Nat.mul_zero, Nat.add_zero, Nat.zero_add]
-      · rw [ifn (by decide), (B7 0 (by decide)).2 i hi]; dsimp only
+      · rw [ifp rfl]; dsimp only; rw [ite_eq_left_of_eq_true _ _ (eq_true (by bdd_omega))]
+        simpa only [Nat.mul_zero, Nat.add_zero, Nat.zero_add] using (B7 0 (by decide)).1 i hi
+      · rw [ifn (by decide)]; dsimp only
         rw [ite_eq_right_of_eq_false _ _ (eq_false (by bdd_omega)), show 8 * 1 + i - 8 = i by bdd_omega]
-        try simp only [Nat.mul_zero, Nat.add_zero]
+        exact (B7 0 (by decide)).2 i hi
     · rw [P9 l hl, perm31 _ _ hl, o8.lane .xmm0 (by decide) 1 (by decide), o8.lane .xmm3 (by decide) 1 (by decide)]
       rcases lane01 hl with rfl | rfl
-      · rw [ifp rfl, (B7 1 (by decide)).1 i hi]; dsimp only; rw [ite_eq_left_of_eq_true _ _ (eq_true (by bdd_omega))]
-        try simp only [Nat.mul_zero, Nat.zero_add, Nat.mul_one]
-      · rw [ifn (by decide), (B7 1 (by decide)).2 i hi]; dsimp only
+      · rw [ifp rfl]; dsimp only; rw [ite_eq_left_of_eq_true _ _ (eq_true (by bdd_omega))]
+        simpa only [Nat.mul_zero, Nat.zero_add, Nat.mul_one] using (B7 1 (by decide)).1 i hi
+      · rw [ifn (by decide)]; dsimp only
         rw [ite_eq_right_of_eq_false _ _ (eq_false (by bdd_omega)), show 8 * 1 + i - 8 = i by bdd_omega]
-        try simp only [Nat.mul_one]
+        exact (B7 1 (by decide)).2 i hi
     · -- the specification: two blocks
       rw [show 2 * (m + 1) = 2 * m + 2 by omega, layF_two hblk F (by decide) zi (st := 32 * m) (st' := 32 * m + 16)
         (en := 32 * m + 16 + 16) (by omega) (by omega) (by omega) (by omega) hi, hP]
@@ -449,14 +451,14 @@ theorem ypre_ok {sP : Addr} (t : Nat) (ht : t < 128) {s : State} (hsi : s.gpr .r
 
 theorem ylay8_ok {sP : Addr} {t : Nat} (zi : Nat → Nat) {z : Nat → Zq}
     (hz : ∀ c < 16, t + c < 128 ∧ z (t + c) = zeta (zi c))
-    {F : Poly} {s : State} (hc : YConsts s) (hsi : s.gpr .rsi = sP) (hS : S16 s.mem (spW sP) F)
+    {F : Vector α n} {s : State} (hc : YConsts s) (hsi : s.gpr .rsi = sP) (hS : S16R R s.mem (spW sP) F)
     (hT : TZ s.mem sP z) (hw : pR sP ∈ s.wr) :
-    WP isa (ylay8 bf t) s fun s' => S16 s'.mem (spW sP) (layF blk F 8 zi 16) ∧ BInvY sP s s' := by
+    WP isa (ylay8 bf t) s fun s' => S16R R s'.mem (spW sP) (layF blk F 8 zi 16) ∧ BInvY sP s s' := by
   have ht : t < 128 := by have := (hz 0 (by decide)).1; omega
   refine WP.seq (WP.mono (ypre_ok t ht hsi) fun w ⟨hdx, h8, og, hy⟩ => ?_)
   have cw : YConsts w := lanes_gpr (s := s) (GOnly.lane og hy) (YOnly.refl [] s) hc (by decide) (by decide)
   refine WP.mono (wp_rcxLoopY (N := 8) (by decide) (by decide)
-    (fun i u => S16 u.mem (spW sP) (layF blk F 8 zi (2 * i)) ∧ u.gpr .rdx = wAddr (spW sP) (32 * i) ∧
+    (fun i u => S16R R u.mem (spW sP) (layF blk F 8 zi (2 * i)) ∧ u.gpr .rdx = wAddr (spW sP) (32 * i) ∧
       u.gpr .r8 = wAddr sP (t + 2 * i) ∧ BInvY sP w u)
     (fun u ou hu _ => ⟨by rw [ou.mem, og.mem]; exact hS,
       by rw [ou.keep.gpr (by decide), hdx, Nat.mul_zero, wAddr, Nat.mul_zero, add_ofNat_zero],

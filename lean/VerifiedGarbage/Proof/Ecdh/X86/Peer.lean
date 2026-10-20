@@ -1,16 +1,15 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.X86.Setup
 public import VerifiedGarbage.Impl.Ecdh.X86
 import VerifiedGarbage.Proof.Ecdsa.X86.Finish
 public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.X25519.X86.Column
 import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
+import VerifiedGarbage.Proof.Ecdsa.X86.Scalar
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ECDH on x86 (32-bit): reading and checking the peer's key

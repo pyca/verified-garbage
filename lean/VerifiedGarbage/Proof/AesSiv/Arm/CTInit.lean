@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.Arm.Init
-meta import VerifiedGarbage.Proof.AesSiv.Arm.Init
 public import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.AesSiv.Arm.Init
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-SIV on ARMv7: `init` is constant time

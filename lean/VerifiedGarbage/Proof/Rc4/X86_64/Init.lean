@@ -1,11 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Rc4.Memory
 
-public import VerifiedGarbage.Proof.Rc4.X86_64.Schedule
+import VerifiedGarbage.Proof.Rc4.X86_64.Schedule
 import VerifiedGarbage.Proof.Rc4.Stream
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Rc4.X86_64.Lookup
+public import VerifiedGarbage.Impl.Rc4.X86_64
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-! # RC4 on x86-64: checked initialization -/
 

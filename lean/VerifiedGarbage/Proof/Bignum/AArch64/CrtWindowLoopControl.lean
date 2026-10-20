@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! All outer-loop tests depend only on the public exponent length and index. -/
 

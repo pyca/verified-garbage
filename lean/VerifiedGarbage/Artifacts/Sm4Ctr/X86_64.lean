@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.CtrVerified
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
 
 /-! # SM4-CTR artifacts on baseline x86-64 -/
 
@@ -10,14 +11,10 @@ import Mathlib.Tactic.SplitIfs
 namespace VG.Artifacts.Sm4Ctr.X86_64
 
 def artifacts : List Artifact := [
-  { Spec.Sm4.ctrApi with
-    target := X86_64.target
-    doc := Spec.Sm4.ctrApi.doc
-      (notes := ["Baseline x86-64: sixteen counter blocks at a time, encrypted bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; the key schedule's table of round keys is built once per call."])
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 3144 .r8 392 Impl.Sm4.X86_64.ctr
-    contract := Spec.Sm4.ctrContract X86_64.abi 3144
-    stack := 3144
-    verified := Proof.Sm4.X86_64.ctr_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+  Spec.Sm4.ctrApi.artifact X86_64.target {
+    notes := ["Baseline x86-64: sixteen counter blocks at a time, encrypted bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; the key schedule's table of round keys is built once per call, inline, and each batch is a call of `vg_sm4_crypt_prepared`."]
+    code := Impl.StackScratch.X86_64.withStackScratchWiped 3208 .r8 400 Impl.Sm4.X86_64.ctr
+    stack := 3216
+    verified := Proof.Sm4.X86_64.ctr_framed }]
 
 end VG.Artifacts.Sm4Ctr.X86_64

@@ -1,14 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.AesCtr.Inc
+import VerifiedGarbage.Proof.AesCtr.Inc
 
 public import VerifiedGarbage.Proof.Framework.X86.Exec
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Impl.Modes.X86.Counter
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Spec.Ctr
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # CTR on x86: the increment

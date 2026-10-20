@@ -36,6 +36,16 @@ pub enum Error {
     OutputTooSmall,
 }
 
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid RC2 key length",
+        InvalidEffectiveBits => "invalid RC2 effective key size",
+        InvalidIvLength => "invalid RC2-CBC IV length",
+        IncompleteBlock => "RC2-CBC input is not a whole number of blocks",
+        OutputTooSmall => "RC2-CBC output buffer is too small",
+    }
+}
+
 /// A streaming RC2-CBC encryption (or, if `DECRYPT`, decryption), which
 /// [`Rc2CbcEncryptor`] and [`Rc2CbcDecryptor`] wrap.
 struct Cbc<const DECRYPT: bool> {

@@ -1,15 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.X86.Finish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X25519.X86.Finish
 public import VerifiedGarbage.Proof.X25519.X86.Invert
+public import VerifiedGarbage.Proof.X25519.X86.Contract
 import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.X25519.X86.Freeze
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.X25519.X86.Setup
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
 
 /-!
 # X25519 on x86 (32-bit): the whole function

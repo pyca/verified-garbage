@@ -1,16 +1,17 @@
 module
 
-public import VerifiedGarbage.Impl.Gcm.X86_64.StitchR
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
-public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
-public import VerifiedGarbage.Proof.Gcm.Powers
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
+import VerifiedGarbage.Proof.Gcm.Powers
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Rem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.SetupFin
+public import VerifiedGarbage.Proof.Gcm.Poly
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
+import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # The 256-bit interleaved loops with prepared powers meet their contracts
@@ -116,5 +117,9 @@ theorem setupTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) :
 /-- The out-of-place loop, for a prepared key context. -/
 theorem stitchTo_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchR.encTo := fun _ hp hm =>
   WP.seq (WP.mono (setupTo_ok hp) fun _ ⟨_, hR, hpw⟩ => encTailTo_ok hp hm (finE hpw) hR)
+
+/-- The setup's powers give the products of an encryption body. -/
+theorem setupFin : SetupFin := fun hp =>
+  WP.mono (setupTo_ok hp) fun _ ⟨P, hR, hpw⟩ => ⟨P, hR, finE hpw⟩
 
 end VG.Proof.Gcm.X86_64.StitchR

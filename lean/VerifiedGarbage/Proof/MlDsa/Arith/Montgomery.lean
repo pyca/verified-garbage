@@ -2,10 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
 public import VerifiedGarbage.Spec.MlDsa.Montgomery
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.Arith.Zq
 
 /-! # Representation identities for Montgomery-scaled ML-DSA callers -/
 

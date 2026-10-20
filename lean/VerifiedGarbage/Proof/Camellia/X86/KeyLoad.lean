@@ -1,11 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Camellia.X86.KeyPair
 
-public import VerifiedGarbage.Proof.Camellia.X86.KeyInit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Camellia.X86.Prologue
+import VerifiedGarbage.Proof.Camellia.X86.Fl
+import VerifiedGarbage.Proof.Camellia.Layout32
+import VerifiedGarbage.Proof.Camellia.Common
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Camellia's key schedule on x86 (32-bit): `KL` and `KR`

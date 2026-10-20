@@ -4,17 +4,13 @@ public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.CmacTripleDes.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on AArch64: the shared contracts imply ours
 
 The shared contracts with the working space as an argument
-(`Proof/CmacTripleDes/Scratch.lean`), which `Frame.lean` moves to the
-shared contracts of `Spec/Cmac/TripleDesContract.lean`.
+(`Proof/CmacTripleDes/Scratch.lean`), under which the streaming functions
+run this code inline (`Proof/CmacTripleDes/Stream/AArch64/Inline.lean`).
 -/
 
 @[expose] public section

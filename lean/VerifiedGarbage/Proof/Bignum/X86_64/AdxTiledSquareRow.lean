@@ -1,14 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquare
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRow
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowS
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledInit
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowS
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTail
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! ## AdxTiledSquareInit -/
 

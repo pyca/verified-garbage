@@ -1,31 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.CTReady
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.CTReady
-public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Args
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Args
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
-import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Body
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Body
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
-import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverParity
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverParity
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Sha512.Word64
-meta import VerifiedGarbage.Proof.Framework.KernelRfl
-meta import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
-meta import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
+import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.CTReady
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 meta import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! Merged from `Proof.Ed25519.AArch64.VerifyMessage.CTHashPipeline`. -/
 

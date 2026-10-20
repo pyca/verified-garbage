@@ -1,16 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedRestCorrect
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Correct
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopEnd
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
 
 @[expose] public section
 

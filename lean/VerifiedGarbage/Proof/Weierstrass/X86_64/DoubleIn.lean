@@ -3,16 +3,7 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleIn
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacState
-public import VerifiedGarbage.Proof.Weierstrass.Jac
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.Ecdsa.X86_64
 
 /-!
 # Doubling a Jacobian point in place, on x86-64

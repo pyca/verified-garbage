@@ -1,19 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
-meta import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
 public import VerifiedGarbage.Proof.MlKem.Arm.KemLay
-meta import VerifiedGarbage.Proof.MlKem.Arm.KemLay
 public import VerifiedGarbage.Proof.MlKem1024.Arm.CompressEncode
-meta import VerifiedGarbage.Proof.MlKem1024.Arm.CompressEncode
 public import VerifiedGarbage.Proof.MlKem1024.Arm.Decompress
-meta import VerifiedGarbage.Proof.MlKem1024.Arm.Decompress
 public import VerifiedGarbage.Impl.MlKem1024.Arm.Top
+import VerifiedGarbage.Proof.MlKem.Arm.HashTop
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+meta import VerifiedGarbage.Proof.MlKem.Arm.KemLay
+meta import VerifiedGarbage.Proof.MlKem1024.Arm.CompressEncode
+meta import VerifiedGarbage.Proof.MlKem1024.Arm.Decompress
 meta import VerifiedGarbage.Impl.MlKem1024.Arm.Top
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.MlKem.Arm.HashTop
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM-1024 on 32-bit ARM: the parameter set

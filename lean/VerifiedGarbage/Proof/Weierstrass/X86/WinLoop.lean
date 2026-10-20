@@ -1,13 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinQuad
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.WinFinish
+import VerifiedGarbage.Proof.Weierstrass.X86.WinFinish
 import VerifiedGarbage.Proof.Weierstrass.X86.WinEntry
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Weierstrass.X86.WinSelect
+import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+import VerifiedGarbage.Proof.Weierstrass.X86.Loop
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-!
 # The window method on x86 (32-bit)

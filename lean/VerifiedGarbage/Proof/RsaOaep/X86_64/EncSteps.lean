@@ -1,16 +1,12 @@
 module
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.CtBase
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
 
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCorrect
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
+import VerifiedGarbage.Proof.RsaOaep.X86_64.EncEm
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSAES-OAEP encryption on x86-64: the points between the pieces

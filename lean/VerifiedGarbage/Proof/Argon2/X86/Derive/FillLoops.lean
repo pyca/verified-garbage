@@ -1,13 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillBlock
+import VerifiedGarbage.Proof.Argon2.X86.Derive.FillBlock
 public import VerifiedGarbage.Proof.Argon2.SegmentStart
-public import VerifiedGarbage.Proof.Argon2.Slices
+import VerifiedGarbage.Proof.Argon2.Slices
 public import VerifiedGarbage.Proof.Argon2.Iterations
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillState
+public import VerifiedGarbage.Proof.Argon2.Lanes
+import VerifiedGarbage.Proof.Argon2.X86.Derive.FillPtr
+import VerifiedGarbage.Proof.Argon2.X86.Derive.Initial
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCache
 
 /-!
 # Argon2 on x86 (32-bit): the filling loops

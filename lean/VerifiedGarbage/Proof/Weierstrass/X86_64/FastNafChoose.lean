@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.FastNaf
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafSubtract
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafChoose
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Weierstrass.FastNaf
+public import VerifiedGarbage.Proof.X25519.X86_64.Step
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Width-five and width-seven public digit selection on x86-64. -/
 

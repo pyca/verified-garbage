@@ -2,11 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Gh
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
-public import VerifiedGarbage.Spec.Gcm.Precomputed
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.SetupFin
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PhaseOne
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Framework.X86_64.Straight
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Framework.SigEval
 
 /-!
 # AES-GCM's short path on x86-64: the table of powers, without the field
@@ -113,5 +115,11 @@ structure ShortFacts : Prop where
   /-- The prepared powers `H'` and `H'²` (`Spec.Gcm.preparedPower`) multiply as `H` and `H²`. -/
   pp1 : ∀ H : Block, IsH1 H (hInvF (hpow H 1))
   pp2 : ∀ H : Block, IsH2 H (hInvF (hpow H 1)) (hInvF (hpow H 2))
+  /-- The powers the 256-bit loop's out-of-place setup stores give the
+  products of an encryption body (for `seal_split`'s one pass). -/
+  setupFin : VG.Proof.Gcm.X86_64.StitchR.SetupFin
+  /-- What the 512-bit loops leave over the groups at `src` (for
+  `seal_split`'s one pass). -/
+  phaseOneZ : VG.Proof.Gcm.X86_64.StitchZHTo.PhaseOne
 
 end VG.Proof.AesGcm.X86_64.Short

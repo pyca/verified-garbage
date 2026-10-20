@@ -2,12 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecArgs
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCall
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: two runs

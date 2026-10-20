@@ -1,11 +1,12 @@
 module
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Step
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Setup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Setup
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Finish
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: the ladder
@@ -212,8 +213,8 @@ theorem vladder_ok {s₀ : State} {base : Addr} {k : Nat} {u : Fe} (hs : Scr s�
     simp only [X2] at this
     rw [show 32 * (3 + m) = 96 + 32 * m by omega]
     exact this
-  refine ⟨⟨by rw [g₈]; exact hs₆.rdi, by rw [k₈.wr]; exact hs₆.wr, hs.nowrap⟩, fun r hr hb => ?_, ?_, ?_, ?_,
-    ?_, ?_, ?_, ?_, ?_⟩
+  refine LPost.of ⟨by rw [g₈]; exact hs₆.rdi, by rw [k₈.wr]; exact hs₆.wr, hs.nowrap⟩
+    (fun r hr hb => ?_) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
   · have h1 : r ∉ cregs := fun h => hr (by simp only [cregs, clob, List.mem_cons] at h ⊢; grind)
     have h2 : r ≠ .r11 := fun h => hr (by subst h; decide)
     have h3 : r ≠ .rax := fun h => hr (by subst h; decide)

@@ -1,16 +1,30 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowMainCT
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTCode
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTCode
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinCT
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTNSetup
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupFix
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExpCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetup
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowMainCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTNSetup
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupFix
-import Mathlib.Data.Int.ModEq
-meta import Mathlib.Data.Int.ModEq
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExpCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetup
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! Complete constant-time composition of the wider-window CRT computation. -/
 

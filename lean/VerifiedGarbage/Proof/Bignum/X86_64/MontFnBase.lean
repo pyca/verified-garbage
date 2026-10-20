@@ -1,21 +1,21 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.MontFn
-meta import VerifiedGarbage.Impl.Bignum.X86_64.MontFn
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
-meta import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+public import VerifiedGarbage.Proof.Bignum.X86_64.BaseSquareMont
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Bignum.X86_64.MontFn
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Proof.Bignum.X86_64.BaseSquareMont
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 
@@ -56,6 +56,13 @@ def Saved (s t : State) : Prop :=
 
 theorem Saved.of_xmm {s t t' : State} (h : Saved s t) (hx : t'.xmm = t.xmm) : Saved s t' := by
   unfold Saved at *; rw [hx]; exact h
+
+theorem Saved.of_stashed {s t t' : State} (h : Saved s t) (hx : ∀ x, x ∉ BaseSquare.stashed → t'.xmm x = t.xmm x) :
+    Saved s t' := by
+  unfold Saved at *
+  rw [hx .xmm8 (by decide), hx .xmm9 (by decide), hx .xmm10 (by decide), hx .xmm11 (by decide),
+    hx .xmm12 (by decide), hx .xmm13 (by decide)]
+  exact h
 
 theorem Saved.of_keep {s s' t : State} {rs : List Reg} (h : Saved s' t) (hk : Keep rs s s')
     (hr : ∀ r ∈ [Reg.rbx, .rbp, .r12, .r13, .r14, .r15], r ∉ rs) : Saved s t := by
@@ -169,7 +176,7 @@ only `aAcc`, `aTmp` and `o`; and the callee-saved registers as they were. -/
 theorem mulBase_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
     (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
     {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8) (ho1 : o ≠ aAcc) (ho2 : o ≠ aTmp) (ha1 : a ≠ aAcc)
-    (hb1 : b ≠ aAcc) (hdx : (s.gpr .rdx).setWidth 32 = BitVec.ofNat 32 o)
+    (ha2 : a ≠ aTmp) (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp) (hdx : (s.gpr .rdx).setWidth 32 = BitVec.ofNat 32 o)
     (hcx : (s.gpr .rcx).setWidth 32 = BitVec.ofNat 32 a) (h8 : (s.gpr .r8).setWidth 32 = BitVec.ofNat 32 b)
     (hinv : ((word s.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
     (hB : wv s.mem B (slot w b) w < wv s.mem B (slot w aN) w) :
@@ -185,10 +192,10 @@ theorem mulBase_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : S
     fun s₁ ⟨hbx, h11, h9, h10, h8₁, h12, h15, hsi₁, hm₁, k₁, sv⟩ => ?_)
   rw [← hm₁] at hinv hB
   have hs₁ := hs.congr k₁.2.2
-  refine WP.seq (WP.mono (WP.keep [.rax, .rcx, .rdx, .rbp, .r13, .r14] (WP.vecKeep (by decide) (mmTail_ok hs₁ hZ hw hw' (by decide) (by decide) (by decide) ho ha hb
-    (by decide) (by decide) (Ne.symm ho1) (Ne.symm ha1) (Ne.symm hb1) (by decide) (Ne.symm ho2) hbx h11 h9 h10
-    h8₁ h12 h15 hsi₁ hinv hB)) (by decide)) fun s₂ ⟨⟨⟨hlt, heq, har, k₂⟩, hx₂, _⟩, _⟩ => ?_)
-  refine WP.mono (unsaves_ok (sv.of_xmm hx₂)) fun t ⟨rs, mt, _, k₃⟩ => ?_
+  refine WP.seq (WP.mono (BaseSquare.tail_ok hs₁ hZ hw hw' ho ha hb ho1 ho2 ha1 ha2 hb1 hb2 hbx h11 h9 h10 h8₁ h12
+    h15 hsi₁ hinv) fun s₂ ⟨_, hlt, heq, har, k₂, hx₂⟩ => ?_)
+  refine WP.mono (unsaves_ok (sv.of_stashed hx₂)) fun t ⟨rs, mt, _, k₃⟩ => ?_
+  have hlt := hlt hB
   rw [hm₁] at hlt heq har
   rw [← mt] at hlt heq har
   exact ⟨hlt, heq, har, ((k₁.trans k₂).trans k₃).mono (by decide), rs⟩
@@ -214,7 +221,7 @@ theorem mmFnBase_ct {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8)
     {hc₁ hc₂ : VG.Taint.Hint VG.X86_64.Taint.T}
     (h₁ : (taint.check (Taint.ofRegs [.rdi]) (.seq (.block (args o a b)) (.block (enter ++ basesR))) hc₁).isSome = true)
     (h₂ : (taint.check (Taint.ofRegs [.rbx, .r11, .r9, .r10, .r8, .r12, .rsi])
-      (.seq (.seq zeroAccLoop (.seq rounds (.seq subMod selectAcc))) (.block leave)) hc₂).isSome = true) :
+      (.seq BaseSquare.mulTail (.block leave)) hc₂).isSome = true) :
     RelCT isa (Two GoodW) (mmFnBase o a b) fun _ _ => True := by
   rw [mmFnBase_eq]
   unfold mulBase
@@ -228,12 +235,12 @@ theorem mmFnBase_ct {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8)
 /-- Montgomery multiplication by calls of `vg_rsa_mont_mul`, as inlined code. -/
 def Mont.fnBase : Mont where
   mm := mmFnBase
-  ok hg hZ hw hw' _ _ _ ho ha hb d1 d2 d3 _ d4 _ hinv hB := by
+  ok hg hZ hw hw' _ _ _ ho ha hb d1 d2 d3 d5 d4 d6 hinv hB := by
     rw [mmFnBase_eq]
     refine WP.seq (WP.mono (fnArgs_ok _ _ _ _) fun t ⟨hdx, hcx, h8, hm, k⟩ => ?_)
     rw [← hm] at hinv hB ⊢
     refine WP.mono (mulBase_ok (hg.scr.congr k.2.2) ((k.gpr (by decide)).trans hg.rdi) (hm ▸ hg.hdr) hZ hw hw'
-      ho ha hb d1 d2 d3 d4 hdx hcx h8 hinv hB) fun t' ⟨h1, h2, h3, k', _⟩ => ?_
+      ho ha hb d1 d2 d3 d5 d4 d6 hdx hcx h8 hinv hB) fun t' ⟨h1, h2, h3, k', _⟩ => ?_
     exact ⟨⟨hg.scr.congr ((k.trans k').2.2), ((k.trans k').gpr (by decide)).trans hg.rdi, h3.hdr (hm ▸ hg.hdr)⟩,
       h1, h2, h3, (k.trans k').mono (by decide)⟩
   ct := by

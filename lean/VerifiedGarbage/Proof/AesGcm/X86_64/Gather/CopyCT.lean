@@ -1,17 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CT
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyLoop
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CT
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyLoop
+import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: constant time of the whole function
@@ -141,6 +147,41 @@ theorem copySeal_rel (S : SealFn M) (hL : L s₀ < 2 ^ 63) {σ₁ σ₂ : State}
 
 end
 
+/-- `sealGatherG_ct`, in two runs from states the entry states are but for
+`rax`, `r10`, `r11` and the flags (`Same`). -/
+theorem sealGatherG_rel {M : CtxMode} {q : Nat} {quick fast test short : Prog isa} (go : State → Bool)
+    (hgo : ∀ {s₀ s₀' : State}, SG M s₀ → SG M s₀' → Pub s₀ s₀' → go s₀' = go s₀)
+    (hquick : ∀ {s₀ s₀' : State}, SG M s₀ → SG M s₀' → Pub s₀ s₀' →
+      RelCT isa (fun s₁ s₂ => E2 s₀ s₁ ∧ E2 s₀' s₂) quick fun s₁ s₂ =>
+        (E2 s₀ s₁ ∧ s₁.gpr .r11 = W s₀ ∧ s₁.cf = some (decide (L s₀ < q))) ∧
+        (E2 s₀' s₂ ∧ s₂.gpr .r11 = W s₀' ∧ s₂.cf = some (decide (L s₀' < q))))
+    (hfast : ∀ {s₀ s₀' : State}, SG M s₀ → SG M s₀' → Pub s₀ s₀' → L s₀ < q → ∀ {σ₁ σ₂ : State},
+      E2 s₀ σ₁ → σ₁.gpr .r11 = W s₀ → E2 s₀' σ₂ → σ₂.gpr .r11 = W s₀' → RelCT isa (Eq2 σ₁ σ₂) fast TT)
+    (htest : ∀ {s₀ s₀' : State}, SG M s₀ → SG M s₀' → Pub s₀ s₀' →
+      RelCT isa (fun s₁ s₂ => E2 s₀ s₁ ∧ E2 s₀' s₂) test fun s₁ s₂ =>
+        (E2 s₀ s₁ ∧ s₁.gpr .r11 = W s₀ ∧ s₁.cf = some (go s₀)) ∧
+        (E2 s₀' s₂ ∧ s₂.gpr .r11 = W s₀' ∧ s₂.cf = some (go s₀')))
+    (hshort : ∀ {s₀ s₀' : State}, SG M s₀ → SG M s₀' → Pub s₀ s₀' → go s₀ = true → ∀ {σ₁ σ₂ : State},
+      E2 s₀ σ₁ → σ₁.gpr .r11 = W s₀ → E2 s₀' σ₂ → σ₂.gpr .r11 = W s₀' → RelCT isa (Eq2 σ₁ σ₂) short TT)
+    (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn)
+    {s₀ s₀' : State} (hp : SG M s₀) (hp' : SG M s₀') (pb : Pub s₀ s₀') :
+    RelCT isa (fun a b => Same s₀ a ∧ Same s₀' b) (sealGather quick fast test short I.fn A.fn T.fn F.fn)
+      fun _ _ => True := by
+  have eg := hgo hp hp' pb
+  unfold sealGather gatherRest
+  refine RelCT.seq (entry1_rel hp hp' pb) (RelCT.seq (entry2_rel hp hp' pb) (RelCT.seq (hquick hp hp' pb)
+    (RelCT.ite (fun _ _ h => by simp only [eval, h.1.2.2, h.2.2.2, pb.eL]) ?_
+      ((RelCT.seq (htest hp hp' pb)
+        (RelCT.ite (fun _ _ h => by simp only [eval, h.1.2.2, h.2.2.2, eg]) ?_
+          ((stream_rel hp hp' pb I A T F).mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h))).mono
+        (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h))))
+  · refine rel_of_eq2 fun σ₁ σ₂ ⟨⟨⟨E₁, r₁, c₁⟩, ⟨E₂, r₂, c₂⟩⟩, ev⟩ => ?_
+    have e : L s₀ < q := by simp only [eval, c₁] at ev; simpa using ev
+    exact hfast hp hp' pb e E₁ r₁ E₂ r₂
+  refine rel_of_eq2 fun σ₁ σ₂ ⟨⟨⟨E₁, r₁, c₁⟩, ⟨E₂, r₂, c₂⟩⟩, ev⟩ => ?_
+  have e : go s₀ = true := by simp only [eval, c₁] at ev; simpa using ev
+  exact hshort hp hp' pb e E₁ r₁ E₂ r₂
+
 /-- `vg_aes_gcm_seal_gather`, running `fast` for a text shorter than `q`
 bytes (as `quick` sets `CF`), and otherwise `short` when `test` sets `CF` (to
 `go` of the arguments, which two runs with the same public data agree on), is
@@ -161,25 +202,10 @@ theorem sealGatherG_ct {M : CtxMode} {q : Nat} {quick fast test short : Prog isa
       E2 s₀ σ₁ → σ₁.gpr .r11 = W s₀ → E2 s₀' σ₂ → σ₂.gpr .r11 = W s₀' → RelCT isa (Eq2 σ₁ σ₂) short TT)
     (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn) :
     ConstantTime isa (Proof.AesGcm.sealGatherX86_64M M).pre Proof.AesGcm.sealGatherPub
-      (sealGather quick fast test short I.fn A.fn T.fn F.fn) := by
-  refine ct_of_rel (k := Proof.AesGcm.sealGatherX86_64M M) fun s₀ s₀' h h' hq => ?_
-  have hp := SG.ofM h
-  have hp' := SG.ofM h'
-  have pb := Pub.of hq
-  have eg := hgo hp hp' pb
-  unfold sealGather gatherRest
-  refine RelCT.seq (entry1_rel hp hp' pb) (RelCT.seq (entry2_rel hp hp' pb) (RelCT.seq (hquick hp hp' pb)
-    (RelCT.ite (fun _ _ h => by simp only [eval, h.1.2.2, h.2.2.2, pb.eL]) ?_
-      ((RelCT.seq (htest hp hp' pb)
-        (RelCT.ite (fun _ _ h => by simp only [eval, h.1.2.2, h.2.2.2, eg]) ?_
-          ((stream_rel hp hp' pb I A T F).mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h))).mono
-        (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h))))
-  · refine rel_of_eq2 fun σ₁ σ₂ ⟨⟨⟨E₁, r₁, c₁⟩, ⟨E₂, r₂, c₂⟩⟩, ev⟩ => ?_
-    have e : L s₀ < q := by simp only [eval, c₁] at ev; simpa using ev
-    exact hfast hp hp' pb e E₁ r₁ E₂ r₂
-  refine rel_of_eq2 fun σ₁ σ₂ ⟨⟨⟨E₁, r₁, c₁⟩, ⟨E₂, r₂, c₂⟩⟩, ev⟩ => ?_
-  have e : go s₀ = true := by simp only [eval, c₁] at ev; simpa using ev
-  exact hshort hp hp' pb e E₁ r₁ E₂ r₂
+      (sealGather quick fast test short I.fn A.fn T.fn F.fn) :=
+  ct_of_rel (k := Proof.AesGcm.sealGatherX86_64M M) fun _ _ h h' hq =>
+    (sealGatherG_rel go hgo hquick hfast htest hshort I A T F (SG.ofM h) (SG.ofM h') (Pub.of hq)).mono
+      (fun _ _ e => by obtain ⟨rfl, rfl⟩ := e; exact ⟨Same.refl _, Same.refl _⟩) fun _ _ e => e
 
 /-- The short path of `copySeal S` below `t` bytes, in two runs. -/
 theorem sealShort_rel {M : CtxMode} (S : SealFn M) {t : Nat} {s₀ s₀' : State} (hp : SG M s₀) (hp' : SG M s₀')

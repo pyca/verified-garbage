@@ -1,21 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulFn
-meta import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulFn
+import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulFn
 import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Conv
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Field
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.X448.AArch64.Field56
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+public import VerifiedGarbage.Proof.X448.Field
+public import VerifiedGarbage.Proof.X448.Wide.Limbs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Ed448
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulFn
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Conv
+meta import VerifiedGarbage.Impl.X448.AArch64.Field56
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.X448.AArch64.Mem
+meta import VerifiedGarbage.Proof.X448.Field
+meta import VerifiedGarbage.Proof.X448.Wide.Limbs
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.TCB.AArch64.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Spec.Ed448
+meta import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Field
 
 /-!
 # `vg_gf448_r56_mul` on AArch64, verified

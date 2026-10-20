@@ -1,17 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Impl.CmacTripleDes.AArch64
-meta import VerifiedGarbage.Impl.CmacTripleDes.AArch64
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.KeysLit
-meta import VerifiedGarbage.Proof.CmacTripleDes.AArch64.KeysLit
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Impl.CmacTripleDes.AArch64
+meta import VerifiedGarbage.Proof.CmacTripleDes.AArch64.KeysLit
 meta import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-! # TDEA-CMAC's AArch64 code as literals, for kernel-evaluated checks -/
 

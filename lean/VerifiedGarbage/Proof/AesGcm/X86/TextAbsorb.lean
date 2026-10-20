@@ -1,11 +1,17 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86.CtrCall
+public import VerifiedGarbage.Proof.AesGcm.X86.Flush
 
-public import VerifiedGarbage.Proof.AesGcm.X86.Top
+import VerifiedGarbage.Proof.AesGcm.X86.Top
+meta import VerifiedGarbage.Proof.AesGcm.X86.CtrCall
+meta import VerifiedGarbage.Proof.AesGcm.X86.Flush
 meta import VerifiedGarbage.Proof.AesGcm.X86.Top
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on x86: the ciphertext into GHASH (`textAbsorb`)

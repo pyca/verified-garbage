@@ -1,13 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Pbkdf2.Scratch
-public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Md5.X86.Lit
+import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-!
 # PBKDF2 on x86, with its working space on the stack
@@ -36,9 +33,11 @@ argument slots and the working space. -/
 def pbkFrame (I : Spec.Hmac.Instance) : Nat := 8 + 28 + 8 * I.pbkdf2Scratch
 
 theorem pbkFramed {I : Spec.Hmac.Instance} {c : Prog isa}
-    (h : Verified X86.target c (I.pbkdf2ScratchContract X86.abi 76)) (hs : 8 * I.pbkdf2Scratch < 4060)
-    (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true) (hd : stackUse c ≤ 76)
-    (hsat : ∃ s, (I.pbkdf2Contract X86.abi (76 + pbkFrame I)).pre s) :
+    (h : Verified X86.target c (I.pbkdf2ScratchContract X86.abi 76))
+    (hsat : ∃ s, (I.pbkdf2Contract X86.abi (76 + pbkFrame I)).pre s)
+    (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true := by lit_decide)
+    (hd : stackUse c ≤ 76 := by lit_decide)
+    (hs : 8 * I.pbkdf2Scratch < 4060 := by decide) :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch (pbkFrame I) 7 c)
       (I.pbkdf2Contract X86.abi (76 + pbkFrame I)) :=
   X86.Verified.stackScratch (sig := Spec.Pbkdf2.pbkdf2Sig) (nm := "scratch") (e := .u64)

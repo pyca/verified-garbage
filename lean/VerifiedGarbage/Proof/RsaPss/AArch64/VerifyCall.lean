@@ -1,14 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyFrame
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RSASSA-PSS verification on AArch64: the call of the public operation
@@ -320,7 +318,7 @@ theorem pdOk_of (c : PdChecked) {D K : Nat} {s t : State} (hp : PreV D K s) (hcK
   case h7 => rw [ha.x7, ha.x1]
   case he1 => rw [ha.x5]; exact hp.e1
   case he2 => rw [ha.x5, ha.x1]; exact hp.e2
-  case hs => rw [ha.a1, ha.x1, hsc]; unfold Spec.Rsa.scratchWords; omega
+  case hs => rw [ha.a1, ha.x1, hsc]; unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords; omega
 
 theorem call_ok (c : PdChecked) {D K : Nat} {s t : State} (hp : PreV D K s) (hcK : c.stack ≤ K)
     {lo : Nat} {cb : Byte} (ha : AtCall D s lo cb t) :

@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Inst
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Basic
-import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Sponge
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-DSA (FIPS 204) key generation on 32-bit ARM -/
 
@@ -20,29 +18,20 @@ def notes : List String :=
     depend on whether key generation fails."]
 
 def artifacts : List Artifact := [
-  { Spec.MlDsa.keyGen44Api with
-    target := Arm.target
-    doc := Spec.MlDsa.keyGen44Api.doc (notes := notes)
+  Spec.MlDsa.keyGen44Api.artifact Arm.target {
+    notes := notes
     code := Impl.MlDsa.Arm.KeyGen.keyGen44
-    contract := Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa44 Arm.abi 36
     stack := 36
-    verified := Proof.MlDsa.Arm.KeyGen.keyGen44_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.keyGen65Api with
-    target := Arm.target
-    doc := Spec.MlDsa.keyGen65Api.doc (notes := notes)
+    verified := Proof.MlDsa.Arm.KeyGen.keyGen44_verified },
+  Spec.MlDsa.keyGen65Api.artifact Arm.target {
+    notes := notes
     code := Impl.MlDsa.Arm.KeyGen.keyGen65
-    contract := Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa65 Arm.abi 36
     stack := 36
-    verified := Proof.MlDsa.Arm.KeyGen.keyGen65_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.keyGen87Api with
-    target := Arm.target
-    doc := Spec.MlDsa.keyGen87Api.doc (notes := notes)
+    verified := Proof.MlDsa.Arm.KeyGen.keyGen65_verified },
+  Spec.MlDsa.keyGen87Api.artifact Arm.target {
+    notes := notes
     code := Impl.MlDsa.Arm.KeyGen.keyGen87
-    contract := Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa87 Arm.abi 36
     stack := 36
-    verified := Proof.MlDsa.Arm.KeyGen.keyGen87_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.MlDsa.Arm.KeyGen.keyGen87_verified }]
 
 end VG.Artifacts.MlDsaKeyGen.Arm

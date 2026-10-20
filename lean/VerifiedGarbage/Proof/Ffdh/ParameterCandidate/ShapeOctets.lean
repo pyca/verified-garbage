@@ -1,15 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.HalveOctets
+public import VerifiedGarbage.Spec.Ffdh
 
-public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
-public import VerifiedGarbage.Proof.Ffdh.KeyScalar
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
+import VerifiedGarbage.Proof.Ffdh.KeyScalar
 import Mathlib.Data.List.Induction
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH parameter candidates: the shaped big-endian encoding -/
 

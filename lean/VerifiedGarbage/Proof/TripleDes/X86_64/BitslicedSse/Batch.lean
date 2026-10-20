@@ -1,15 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Passes
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Passes
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Batch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Pass
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Bytes
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 
 /-!
 # An SSE2 batch

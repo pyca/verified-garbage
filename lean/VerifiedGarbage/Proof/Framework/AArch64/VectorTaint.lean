@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Public scalar values held in vector registers
@@ -31,7 +30,7 @@ def setV (τ : RegSet VReg) (v : VReg) (p : Bool) : RegSet VReg :=
 
 /-- Instructions that leave every vector register unchanged. -/
 def scalar : Instr → Bool
-  | .vop _ | .ldrq .. | .umov .. => false
+  | .vop _ | .ldrq .. | .ldrqTbl .. | .umov .. => false
   | _ => true
 
 def afterV (τ : RegSet VReg) (i : Instr) : RegSet VReg :=
@@ -40,11 +39,16 @@ def afterV (τ : RegSet VReg) (i : Instr) : RegSet VReg :=
 def step (τ : T) : Instr → Option T
   | .vop (.dup _ d n) => some (τ.1, setV τ.2 d (Taint.pub τ.1 n))
   | .umov _ d n _ => some (Taint.set τ.1 d (τ.2.mem n), τ.2)
+  -- Words of a table of constants, the same in every run: public. Its
+  -- offset in the table, an immediate, is observed.
+  | .ldrqTbl t .. => some (τ.1, setV τ.2 t true)
   | i => (Taint.step τ.1 i).map (fun g => (g, afterV τ.2 i))
 
 private theorem scalar_vectors {i : Instr} {s s' : State}
     (hi : scalar i = true) (he : exec i s = some s') : s'.v = s.v := by
   cases i <;> simp only [scalar, Bool.false_eq_true] at hi
+  case ldp => obtain ⟨_, _, rfl⟩ := exec_ldp_eq he; rfl
+  case stp => obtain ⟨_, rfl⟩ := exec_stp_eq he; rfl
   all_goals
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at he
   all_goals
@@ -110,6 +114,13 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State}
     subst e₁; subst e₂
     refine ⟨rfl, ha.1.write sz d (fun hp => ?_), fun v hv => ha.2 v hv⟩
     rw [ha.2 n hp]
+  | ldrqTbl t n off name ws =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [exec] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    exact ⟨rfl, ⟨ha.1.1, ha.1.2⟩, vectors_set ha.2 t fun _ => rfl⟩
   | _ =>
     exact ordinary_sound ha hs e₁ e₂
 

@@ -1,11 +1,17 @@
 module
+public import VerifiedGarbage.Impl.CmacTripleDes.X86
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.Contract
+public import VerifiedGarbage.Proof.Framework.Semantics
 
-public import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize
 import VerifiedGarbage.Proof.CmacTripleDes.Words
+import VerifiedGarbage.Proof.CmacTripleDes.Cmac
+import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
 
 /-!
 # TDEA-CMAC on x86: `vg_cmac_triple_des_finalize` is correct

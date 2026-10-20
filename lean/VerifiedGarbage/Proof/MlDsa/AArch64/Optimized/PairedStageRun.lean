@@ -1,18 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedGroupRun
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseStage
 public import VerifiedGarbage.Proof.MlDsa.Arith.Pairs
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPackedRoot
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRun
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRoots
-import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! ## From `PairedStage.lean` -/
 

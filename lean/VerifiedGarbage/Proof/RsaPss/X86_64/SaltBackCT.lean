@@ -1,15 +1,13 @@
 module
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtBack
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltCT
+import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltCT
+meta import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtBack
 meta import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
+meta import VerifiedGarbage.Proof.Bignum.Math
+meta import VerifiedGarbage.Proof.Sha256.StateMem
 
 /-! Constant-time public dispatch for PSS salt verification. -/
 

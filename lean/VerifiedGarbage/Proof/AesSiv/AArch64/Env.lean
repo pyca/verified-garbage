@@ -1,15 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.AArch64.Init
 public import VerifiedGarbage.Proof.CmacAes.AArch64.Finalize
 public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Finish
-public import VerifiedGarbage.Proof.Cmac.Block
-public import VerifiedGarbage.Proof.AesSiv.Words
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.AesSiv.AArch64
+public import VerifiedGarbage.Spec.Siv
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-SIV on AArch64: the regions of `encrypt` and `decrypt`

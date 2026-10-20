@@ -1,19 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+public import VerifiedGarbage.Proof.Ecdsa.X86.P192.Contract
+public import VerifiedGarbage.Spec.Ecdsa.P192
+import VerifiedGarbage.Proof.Ecdsa.X86.P192.Lit
+public import VerifiedGarbage.Impl.Ecdsa.P192.X86
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
-public import VerifiedGarbage.Proof.Ecdsa.X86.P192.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86.P192.Contract
+meta import VerifiedGarbage.Spec.Ecdsa.P192
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P192.Verified
-public import VerifiedGarbage.Proof.Ecdsa.X86.P192.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P192.Lit
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Impl.Ecdsa.P192.X86
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
+public import VerifiedGarbage.Proof.Ecdsa.X86.P192.Verified
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): P-192

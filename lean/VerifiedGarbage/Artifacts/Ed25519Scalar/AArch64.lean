@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # Ed25519 scalar reduction on AArch64
@@ -17,16 +16,13 @@ instructions as part of the complete AArch64 signing and verification implementa
 namespace VG.Artifacts.Ed25519Scalar.AArch64
 
 def artifacts : List Artifact := [
-  { Spec.Ed25519.scalarReduceApi with
-    target := AArch64.target
-    doc := Spec.Ed25519.scalarReduceApi.doc (notes := ["Processes the eight input words \
+  Spec.Ed25519.scalarReduceApi.artifact AArch64.target {
+    notes := ["Processes the eight input words \
       from the top into a four-word remainder: each step folds the bits above 2^252 back as \
       multiples of `2^252 - L` with `mul` and `umulh`, then subtracts the subgroup order and \
       selects with a borrow mask. Callee-saved registers are saved in the first 48 bytes of \
-      `scratch`."])
+      `scratch`."]
     code := Impl.Ed25519.AArch64.scalarReduce
-    contract := Spec.Ed25519.scalarReduceContract AArch64.abi
-    verified := Proof.Ed25519.AArch64.scalarReduce_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Ed25519.AArch64.scalarReduce_verified }]
 
 end VG.Artifacts.Ed25519Scalar.AArch64

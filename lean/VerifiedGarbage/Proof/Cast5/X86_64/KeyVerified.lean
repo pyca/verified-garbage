@@ -1,23 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86_64.Key
-meta import VerifiedGarbage.Proof.Cast5.X86_64.Key
-public import VerifiedGarbage.Proof.Cast5.X86_64.Lit
-meta import VerifiedGarbage.Proof.Cast5.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.ConstMem
-meta import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 public import VerifiedGarbage.Spec.Cast5.Contract
+import VerifiedGarbage.Proof.Cast5.Table
+import VerifiedGarbage.Proof.Cast5.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Cast5.X86_64.Key
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 meta import VerifiedGarbage.Spec.Cast5.Contract
-import VerifiedGarbage.TCB.X86_64.Target
-meta import VerifiedGarbage.TCB.X86_64.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Cast5.Table
+meta import VerifiedGarbage.Proof.Cast5.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # CAST5 key expansion on x86-64: verified against the shared contract

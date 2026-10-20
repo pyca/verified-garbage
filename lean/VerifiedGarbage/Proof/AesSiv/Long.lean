@@ -1,12 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.CtrPart
+import VerifiedGarbage.Proof.AesSiv.CtrPart
 public import VerifiedGarbage.Proof.Cmac.Block
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Spec.Siv
 import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # AES-SIV: finishing S2V with a string of a block or more

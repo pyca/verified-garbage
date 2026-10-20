@@ -3,10 +3,12 @@ module
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
 public import VerifiedGarbage.Proof.Argon2.PermuteRows
 public import VerifiedGarbage.Impl.Argon2.X86_64.CompressAvx2
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Argon2 on x86-64 with AVX2: P on four registers

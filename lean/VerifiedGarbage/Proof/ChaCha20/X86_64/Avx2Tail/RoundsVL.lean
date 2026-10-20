@@ -1,11 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds3
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # ChaCha20 on x86-64 with AVX2 and AVX-512VL, the last bytes: the rounds with `vprold`

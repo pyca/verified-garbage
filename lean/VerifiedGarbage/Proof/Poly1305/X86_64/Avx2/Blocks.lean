@@ -1,27 +1,33 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Store
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Store
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Group
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Group
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Gpr
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Gpr
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
-import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
-import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
+import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Final
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
+import Mathlib.Tactic.NormNum.Pow
+import Mathlib.Tactic.NormNum.Inv
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Store
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Group
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Gpr
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-public import VerifiedGarbage.Proof.Framework.X86_64.Inline
-meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Final
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
+meta import Mathlib.Tactic.NormNum.Pow
+meta import Mathlib.Tactic.NormNum.Inv
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Poly1305 on x86-64 with AVX2: `vg_poly1305_blocks_avx2`

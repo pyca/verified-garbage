@@ -1,14 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNaf
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStore
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombPublic
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # The public NAF's table: loads and stores through a pointer and an offset
@@ -138,6 +135,48 @@ theorem entryAddr_ok (K : WinCfg) {s : State} {base : Addr} {a : Nat}
   refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
   · simp only [Nat.mul_zero, BitVec.shiftLeft_zero]
     rw [BitVec.ofNat_sub_ofNat_of_le a 1 (by decide) ha]
+    have hw : BitVec.setWidth 64 (BitVec.ofNat 16 (stride K)) = BitVec.ofNat 64 (stride K) := by
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+      omega_using [hst]
+    rw [hw, ← BitVec.ofNat_mul, Nat.mul_comm]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2, ite_false]
+
+/-- The cache's entry `a` (in `x2`, `1 … 8`), at `x16`: `x2 = a - 1`. -/
+theorem cacheAddr_ok {s : State} {base : Addr} {a c : Nat}
+    (h0 : s.gpr .x0 = base) (h2 : s.gpr .x2 = BitVec.ofNat 64 a) (ha : 1 ≤ a) (hc : c < 65536) :
+    WP isa (.block [.subImm .x .x2 .x2 1, .movz .x .x17 (BitVec.ofNat 16 c) 0,
+      .mul .x .x17 .x2 .x17, .add .x .x16 .x0 .x17]) s fun t =>
+      t.gpr .x16 = off base (c * (a - 1)) ∧ t.gpr .x2 = BitVec.ofNat 64 (a - 1) ∧
+      Keeps [.x2, .x16, .x17] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, RegUpd.gpr_write,
+    BitVec.setWidth_eq, Size.bits, show 16 * 0 < 64 from by decide, show 1 < 4096 from by decide,
+    ite_true, ite_false, reduceCtorEq, h0, h2, Option.some.injEq, exists_eq_left']
+  have hw : BitVec.setWidth 64 (BitVec.ofNat 16 c) = BitVec.ofNat 64 c := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    omega_using [hc]
+  refine ⟨?_, ?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
+  · simp only [Nat.mul_zero, BitVec.shiftLeft_zero]
+    rw [BitVec.ofNat_sub_ofNat_of_le a 1 (by decide) ha, hw, ← BitVec.ofNat_mul, Nat.mul_comm]
+  · rw [BitVec.ofNat_sub_ofNat_of_le a 1 (by decide) ha]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2, ite_false]
+
+/-- Entry `a` of the table at `x16`, from `x2 = a - 1`. -/
+theorem entryAddr2_ok (K : WinCfg) {s : State} {base : Addr} {a : Nat}
+    (h0 : s.gpr .x0 = base) (h2 : s.gpr .x2 = BitVec.ofNat 64 (a - 1)) (hst : stride K < 65536) :
+    WP isa (.block [.movz .x .x17 (BitVec.ofNat 16 (stride K)) 0,
+      .mul .x .x2 .x2 .x17, .add .x .x16 .x0 .x2]) s fun t =>
+      t.gpr .x16 = off base (stride K * (a - 1)) ∧ Keeps [.x2, .x16, .x17] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, RegUpd.gpr_write,
+    BitVec.setWidth_eq, Size.bits, show 16 * 0 < 64 from by decide,
+    ite_true, ite_false, reduceCtorEq, h0, h2, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
+  · simp only [Nat.mul_zero, BitVec.shiftLeft_zero]
     have hw : BitVec.setWidth 64 (BitVec.ofNat 16 (stride K)) = BitVec.ofNat 64 (stride K) := by
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]

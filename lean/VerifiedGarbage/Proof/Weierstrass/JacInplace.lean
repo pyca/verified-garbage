@@ -1,10 +1,7 @@
 module
+public import VerifiedGarbage.Impl.Weierstrass.JacMul
+public import VerifiedGarbage.Proof.Weierstrass.Jac
 
-public import VerifiedGarbage.Proof.Weierstrass.JacMul
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! The direct-product doubling schedule permits its input and output to coincide. -/
 

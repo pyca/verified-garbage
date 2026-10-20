@@ -1,34 +1,29 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Gcm.Arm.Step
-meta import VerifiedGarbage.Proof.Gcm.Arm.Step
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
-meta import VerifiedGarbage.Proof.Framework.Arm.Bytes
 public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
-meta import VerifiedGarbage.Proof.Framework.Bitslice.Sym
 import VerifiedGarbage.Proof.Aes.Blocks
-meta import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Spec.Gcm
-meta import VerifiedGarbage.Spec.Gcm
-public import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Spec.Gcm.Contract
-meta import VerifiedGarbage.Spec.Gcm.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.Arm.Straight
-import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.Arm.Straight
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Gcm.Arm.Step
+meta import VerifiedGarbage.Proof.Framework.Arm.Bytes
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Sym
+meta import VerifiedGarbage.Proof.Aes.Blocks
+meta import VerifiedGarbage.Spec.Gcm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Straight
 meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # GHASH on ARMv7: the whole function
@@ -245,8 +240,8 @@ theorem gsave_ok {s : State} {b : BitVec 32} (hw : (⟨State.addr b, 256⟩ : Re
     simp only [gCfg, hb] at h
     rw [← slot_addr hfit (by omega_arith)]
     exact h
-  · have : (gsaves.all fun i => dstOf i != some r) = true := by
-      simp [gsaves, savedRegs, dstOf]
+  · have : (gsaves.all fun i => !clobbers i r) = true := by
+      simp [gsaves, savedRegs, clobbers, dstOf]
     simp [this]
   · have := p.frame
     simpa [Straight.slotRegion, gCfg, hb] using this

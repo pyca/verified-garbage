@@ -1,22 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Head
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Pre
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Correct
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
-public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.List.Induction
-import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-meta import Mathlib.Data.List.Induction
-meta import VerifiedGarbage.Proof.Aes.KeyExp
-meta import VerifiedGarbage.Proof.Aes.SboxSpec
-meta import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Crypt
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
+import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 
 /-!
@@ -53,9 +50,10 @@ theorem sealSplitBody_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1
   have hx : v.callee.code.x86_64Depth ≤ 16 := v.xdepth
   have hb := blocks_xdepth b
   have hs := xorSplit_xdepth
-  simp only [sealSplitBody, bigCallee, prologue, prologueA, prologueB, foldM, zeroKs, macPad, macPadLengths, wholeBlocks,
-    padTail, cryptSplit, cryptBigSplit, cryptPre, absorbLengths, finalizeTag, finalizeWith, Code.x86_64Depth,
-    xorBuf_xdepth, splitM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hx ⊢
+  have hc := padRest_xdepth (dataCopy b) b 2
+  simp only [sealSplitBody, bigCallee, prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks,
+    padRest, Bool.cond_true, padCopy, padTail, cryptSplit, cryptBigSplit, cryptPre, absorbLengths, finalizeTag, finalizeWith, Code.x86_64Depth,
+    xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hx hc ⊢
   omega
 
 /-! ## The frame -/

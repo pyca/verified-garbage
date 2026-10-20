@@ -1,12 +1,18 @@
 module
 
 public import VerifiedGarbage.Impl.Rc4.X86_64
-public import VerifiedGarbage.Proof.Rc4.Qword
+import VerifiedGarbage.Proof.Rc4.Qword
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Rc4.Memory
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Rc4.Table
+public import VerifiedGarbage.TCB.Mem
+public import Init.Data.BitVec.Basic
+public import VerifiedGarbage.TCB.X86_64.State
 
 /-! # RC4 on x86-64: the table lookup, a quadword at a time -/
 

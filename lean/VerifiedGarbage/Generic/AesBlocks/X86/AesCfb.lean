@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.AesCfb.X86.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-CFB128 (NIST SP 800-38A §6.3) on x86
@@ -23,24 +23,20 @@ namespace VG.Generic.AesBlocks.X86.AesCfb
 open VG.Proof.AesCfb.X86
 
 def artifacts (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
-  { Spec.Cfb.aesEncryptApi with
-    name := Spec.Cfb.aesEncryptApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Cfb.aesEncryptApi.doc (notes := ["This implementation enciphers one block at a time with `" ++
-      v.enc.name ++ "`."])
+  Spec.Cfb.aesEncryptApi.artifact X86.target {
+    suffix := v.suffix
+    notes := ["This implementation enciphers one block at a time with `" ++
+      v.enc.name ++ "`."]
     code := Impl.AesCfb.X86.encrypt v.enc
-    contract := Spec.Cfb.aesEncryptContract X86.abi 24
     stack := 24
     verified := encrypt_verified v
     spSafe := encrypt_spSafe v
     features := v.features },
-  { Spec.Cfb.aesDecryptApi with
-    name := Spec.Cfb.aesDecryptApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Cfb.aesDecryptApi.doc (notes := ["This implementation enciphers one block at a time with `" ++
-      v.enc.name ++ "`."])
+  Spec.Cfb.aesDecryptApi.artifact X86.target {
+    suffix := v.suffix
+    notes := ["This implementation enciphers one block at a time with `" ++
+      v.enc.name ++ "`."]
     code := Impl.AesCfb.X86.decrypt v.enc
-    contract := Spec.Cfb.aesDecryptContract X86.abi 24
     stack := 24
     verified := decrypt_verified v
     spSafe := decrypt_spSafe v

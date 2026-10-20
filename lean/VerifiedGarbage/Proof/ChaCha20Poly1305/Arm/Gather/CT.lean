@@ -1,13 +1,29 @@
 module
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.Arm.SealGather
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Callee
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Contract
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Fn
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Fn
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Fn
 import VerifiedGarbage.Proof.AesGcm.Arm.Gather.LoopCT
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Impl.ChaCha20Poly1305.Arm.SealGather
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Callee
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Contract
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Fn
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.LoopCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Aes.KeyExp
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, ARMv7: constant time

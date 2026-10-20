@@ -1,8 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Compress
-public import VerifiedGarbage.Proof.Argon2.X86_64.CompressImpl
-public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Lit
+public import VerifiedGarbage.Proof.Variants.Argon2Compress.X86_64.Avx512
 
 /-!
 # Argon2's G on x86-64 with AVX-512
@@ -18,15 +16,6 @@ namespace VG.Variants.Argon2Compress.X86_64.Avx512
 
 open VG VG.X86_64 VG.Proof.Argon2.X86_64
 
-@[instance_reducible] def variant : CompressImpl where
-  suffix := "_avx512"
-  features := ["avx", "avx512f"]
-  code := Impl.Argon2.X86_64.Avx512.compress
-  correct := Avx512.compress_correct
-  ct := Avx512.compress_ct
-  noSp := noSp_of_allInstrs (by lit_decide)
-  depth := by lit_decide
-  ctl := Avx512.compress_ctl
-  spSafe := by lit_decide
+@[instance_reducible] def variant : CompressImpl := Proof.Variants.Argon2Compress.X86_64.Avx512.variant
 
 end VG.Variants.Argon2Compress.X86_64.Avx512

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.Whole.Setup
-import VerifiedGarbage.Impl.Ed25519.X86.Whole.Wipe
 public import VerifiedGarbage.Impl.Sha3.X86.Stream
 public import VerifiedGarbage.Spec.Sha3.Contract
 

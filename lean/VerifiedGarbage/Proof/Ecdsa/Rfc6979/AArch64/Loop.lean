@@ -1,17 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Steps
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Core
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Wide
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Blocks
 import Mathlib.Logic.Function.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Copy
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on AArch64: the candidates
@@ -146,8 +142,7 @@ theorem dg_apart (hL : L.Ok) (hk : CoreOk P L) {r : Region} (h : DgApart P L r) 
   have nB := hL.nB
   cases hw : P.R.wide
   · have hLw : L.wide = false := hk.2.2.trans hw
-    have hn := hk.2.1 hLw
-    have he : L.e = 0 := by rw [L.ew, hLw]; rfl
+    have hn := hk.2.1.1 hLw
     simp only [dgAddr, hLw, Bool.false_eq_true, ite_false]
     have hD : Region.Sub ⟨L.dg, P.Q⟩ L.DG := Region.sub_prefix hn
     rcases h with rfl | rfl | rfl | rfl | ⟨h, -⟩

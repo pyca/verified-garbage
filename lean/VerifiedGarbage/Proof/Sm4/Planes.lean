@@ -1,12 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Sm4.Planes
-import VerifiedGarbage.Proof.Sm4.Bitsliced
 public import VerifiedGarbage.Proof.Sm4.Bitsliced32
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # The bits of the key schedule's constant planes -/
 

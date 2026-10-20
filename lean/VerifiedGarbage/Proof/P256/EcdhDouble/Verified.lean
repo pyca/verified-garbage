@@ -1,14 +1,10 @@
 module
+public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
+public import VerifiedGarbage.Proof.P256.EcdhDouble.MacroField
 
-public import VerifiedGarbage.Proof.P256.EcdhDouble.Field
+import VerifiedGarbage.Proof.P256.EcdhDouble.Field
 import VerifiedGarbage.Proof.P256.Linear.Linear129
 import VerifiedGarbage.Proof.P256.Linear.Linear38
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.Booth
 
 /-! The selected scheduled doubling implements the original Jacobian contract. -/
 

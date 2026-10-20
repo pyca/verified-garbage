@@ -1,12 +1,20 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.BaseTable
+public import VerifiedGarbage.Proof.Ed25519.Group.Extended
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Entry
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Select
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Consts
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.Recode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Consts
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLoop
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Halves
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part1
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # The `zmm` comb: `32 A + B`

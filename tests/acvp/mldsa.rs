@@ -7,10 +7,15 @@
 //! by verifying its signatures, and against Wycheproof's seed vectors
 //! (`tests/wycheproof/mldsa*.rs`).
 
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
+
 /// Defines the tests of the parameter set named `$name` (`"ML-DSA-44"`), of
 /// the module `$module` and its key types.
-// Used by the parameter sets' files, on the architectures they support.
-#[allow(unused_macros)]
 macro_rules! mldsa_tests {
     ($name:literal, $module:ident, $SigningKey:ident, $VerifyingKey:ident) => {
         use serde::Deserialize;
@@ -122,7 +127,7 @@ macro_rules! mldsa_tests {
                             h.finalize(&mut mu);
                             mu
                         };
-                        pk.verify_internal(&mu, &sig)
+                        pk.verify_mu(&mu, &sig)
                     };
                     let expected = if t.passed {
                         Ok(())
@@ -151,6 +156,26 @@ macro_rules! mldsa_tests {
             let sig2 = key.sign_deterministic(b"message", b"").unwrap();
             assert_eq!(sig2, key.sign_deterministic(b"message", b"").unwrap());
             assert_eq!(pk.verify(b"message", b"", &sig2), Ok(()));
+            // External mu must agree with the message API's key binding
+            // and context formatting, not merely round-trip with itself.
+            let mut tr = [0; 64];
+            Shake256::digest(pk.as_bytes(), &mut tr);
+            let mut h = Shake256::new();
+            h.update(&tr);
+            h.update(&[0, 7]);
+            h.update(b"context");
+            h.update(b"message");
+            let mut mu = [0; 64];
+            h.finalize(&mut mu);
+            let mu_sig = key.sign_mu(&mu, &[0; 32]).unwrap();
+            assert_eq!(
+                mu_sig,
+                key.sign_deterministic(b"message", b"context").unwrap()
+            );
+            assert_eq!(pk.verify_mu(&mu, &sig), Ok(()));
+            assert_eq!(pk.verify_mu(&mu, &mu_sig), Ok(()));
+            mu[0] ^= 1;
+            assert_eq!(pk.verify_mu(&mu, &mu_sig), Err(Error::InvalidSignature));
             let long = [0u8; 256];
             assert_eq!(key.sign(b"message", &long), Err(Error::ContextTooLong));
             assert_eq!(
@@ -169,6 +194,4 @@ macro_rules! mldsa_tests {
     };
 }
 
-// Used by the parameter sets' files, on the architectures they support.
-#[allow(unused_imports)]
 pub(crate) use mldsa_tests;

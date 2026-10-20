@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.Ed25519
 import VerifiedGarbage.Proof.X25519.Invert
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! Intermediate values in RFC 8032 point decoding. -/
 

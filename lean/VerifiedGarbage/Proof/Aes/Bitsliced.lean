@@ -1,12 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Aes
-import VerifiedGarbage.Proof.Framework.Bitslice.Table
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Bitsliced AES: the layout and the round transformations

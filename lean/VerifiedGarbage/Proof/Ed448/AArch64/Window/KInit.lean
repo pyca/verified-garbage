@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.KLoop
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
 import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.Digit
 
 /-!
 # Ed448 verification on AArch64: the windows

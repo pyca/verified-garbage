@@ -1,14 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.KgB
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgA
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!
 # ML-KEM on AArch64: `keygen`, the calls of phase C

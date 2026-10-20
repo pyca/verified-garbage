@@ -1,13 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.TCB.Arm.Target
 
-public import VerifiedGarbage.Proof.AesCcm.Arm.Contract
-import VerifiedGarbage.Proof.AesCcm.Ctr
-public import VerifiedGarbage.Proof.AesGcm.Arm.Fn
-import VerifiedGarbage.Impl.AesCcm.Arm
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CCM on ARMv7: where everything is

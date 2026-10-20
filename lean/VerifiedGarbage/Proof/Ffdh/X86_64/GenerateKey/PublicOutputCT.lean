@@ -1,14 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.MaskCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.OutputCT
-meta import VerifiedGarbage.Impl.Ffdh.X86_64.GenerateKey
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Arithmetic
+import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.OutputCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Outputs
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.ArithmeticBridge
+import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.MaskCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Arithmetic
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.OutputCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Outputs
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.ArithmeticBridge
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH on x86-64: public-key encoding reuses exchange's timing proof -/
 

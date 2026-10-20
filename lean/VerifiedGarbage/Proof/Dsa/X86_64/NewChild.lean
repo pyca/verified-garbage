@@ -2,13 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ChildBases
 public import VerifiedGarbage.Proof.Dsa.X86_64.ChildCount
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Creating a linked arithmetic child from its public operand length -/
 

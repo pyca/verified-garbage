@@ -1,14 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Permute
-public import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Unrolled
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
-import Mathlib.Tactic.IntervalCases
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
+import Mathlib.Data.Finset.Attr
+import Mathlib.Data.Rat.Cast.Order
+import Mathlib.Tactic.NormNum.Abs
+import Mathlib.Tactic.NormNum.DivMod
+import Mathlib.Tactic.NormNum.OfScientific
+import Mathlib.Tactic.NormNum.Pow
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SHA-3 and SHAKE (FIPS 202) on AArch64 -/
 
@@ -17,23 +17,17 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
 namespace VG.Artifacts.Sha3.AArch64
 
 def artifacts : List Artifact := [
-  { Spec.Sha3.permuteApi with
-    name := "vg_keccak_f1600_sha3"
-    target := AArch64.target
-    doc := Spec.Sha3.permuteApi.doc (notes := ["Uses the Arm SHA-3 instructions."])
+  Spec.Sha3.permuteApi.artifact AArch64.target {
+    suffix := "_sha3"
+    notes := ["Uses the Arm SHA-3 instructions."]
     code := Impl.Sha3.AArch64.Sha3.Vector.permute
-    contract := Spec.Sha3.permuteContract AArch64.abi
     verified := Proof.Sha3.AArch64.Sha3.Vector.permute_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := ["sha3"] },
-  { Spec.Sha3.permuteApi with
-    target := AArch64.target
-    doc := Spec.Sha3.permuteApi.doc (notes := ["The 25 lanes are in general registers, \
+  Spec.Sha3.permuteApi.artifact AArch64.target {
+    notes := ["The 25 lanes are in general registers, \
       two of them moved to AdvSIMD registers while theta needs their registers. The 24 rounds \
-      are unrolled, each round constant XORed into lane 0 from immediates."])
+      are unrolled, each round constant XORed into lane 0 from immediates."]
     code := Impl.Sha3.AArch64.Scalar.unrolledPermute
-    contract := Spec.Sha3.permuteContract AArch64.abi
-    verified := Proof.Sha3.AArch64.Scalar.unrolled_permute_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Sha3.AArch64.Scalar.unrolled_permute_verified }]
 
 end VG.Artifacts.Sha3.AArch64

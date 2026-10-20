@@ -1,12 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
 
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
+import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # ECDSA on 32-bit ARM: the checks, and `s = k⁻¹ (e + r d) mod n`

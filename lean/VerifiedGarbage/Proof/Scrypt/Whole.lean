@@ -1,12 +1,12 @@
 module
+public import VerifiedGarbage.Spec.Scrypt.Contract
 
-public import VerifiedGarbage.Proof.Scrypt.RoMix
-public import VerifiedGarbage.Proof.Scrypt.Memory
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Scrypt.RoMix
+import VerifiedGarbage.Proof.Scrypt.Memory
 import all Init.Data.Nat.Power2.Basic
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # scrypt: facts about the specification of the whole function

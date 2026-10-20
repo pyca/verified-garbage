@@ -1,13 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay42
-public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
 import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: the NTT and its inverse on AVX2 registers, before and after the layers
@@ -279,7 +277,7 @@ theorem zlanes_512Y : ZLanes (ofDwords 0x02000200 0x02000200 0x02000200 0x020002
 theorem yscale_ok {sP : Addr} {F : Poly} {s : State} (hc : YConsts s) (hsi : s.gpr .rsi = sP)
     (hS : S16 s.mem (spW sP) F) (hw : pR sP ∈ s.wr) :
     WP isa yscale s fun s' => S16 s'.mem (spW sP) (F.map (· * 3303)) ∧ BInvY sP s s' := by
-  simp only [yscale]
+  simp only [yscale, ymulc]
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (Q := fun (w : State) => w.gpr .rdx = spW sP ∧ GOnly [.rdx] s w ∧ w.ymmHi = s.ymmHi)

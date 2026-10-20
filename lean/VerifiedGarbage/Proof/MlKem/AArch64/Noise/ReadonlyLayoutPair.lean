@@ -1,16 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyPair
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Pair
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Call
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyPair
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Offsets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Execute a pair using only the public scratch allocation -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Noise
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
+open VG.Spec.MlKem (PolyIsW)
+open VG.Proof.MlKem (cw)
 open VG.Proof.Sha3.AArch64.Neon
 
 
@@ -24,13 +29,13 @@ theorem readonly_noisePair_layout {s : State} {L : KemLay} (wf : L.Wf) (room : R
     (hfar : ∀r∈pairWrites (B+BitVec.ofNat 64 (scratchOff kg))
       (B+BitVec.ofNat 64 (outOff L kg n)) (B+BitVec.ofNat 64 (outOff L kg (n+1)))
       (B+BitVec.ofNat 64 (nttOff kg)), (Region.mk (s.syms "VG_MLKEM_NTT16_ZETAS") 512).Disjoint r) :
-    WP isa (Impl.MlKem.AArch64.Noise.noisePairWith Ntt16.Readonly.nttAtWith L kg n) s fun t =>
+    WP isa (Impl.MlKem.AArch64.Noise.noisePairWith Ntt16.Readonly.nttAtWithW L kg n) s fun t =>
       Kept (pairWrites (B+BitVec.ofNat 64 (scratchOff kg))
         (B+BitVec.ofNat 64 (outOff L kg n)) (B+BitVec.ofNat 64 (outOff L kg (n+1)))
         (B+BitVec.ofNat 64 (nttOff kg))) s t ∧
-      Spec.MlKem.PolyIs t.mem (B+BitVec.ofNat 64 (outOff L kg n))
+      PolyIsW (cw true) t.mem (B+BitVec.ofNat 64 (outOff L kg n))
         (sampled s.mem (B+BitVec.ofNat 64 (seedOff kg)) n (transformed L kg n)) ∧
-      Spec.MlKem.PolyIs t.mem (B+BitVec.ofNat 64 (outOff L kg (n+1)))
+      PolyIsW (cw true) t.mem (B+BitVec.ofNat 64 (outOff L kg (n+1)))
         (sampled s.mem (B+BitVec.ofNat 64 (seedOff kg)) (n+1) (transformed L kg (n+1))) := by
   have lim := layout_limits wf kg
   have fit0 := outOff_fits wf room kg (by omega : n<2*L.k)

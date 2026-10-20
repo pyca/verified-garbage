@@ -1,17 +1,23 @@
 module
+public import VerifiedGarbage.Impl.MdStream.Arm
+public import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Words
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Words
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.MdStream.Arm.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.MdStream.Arm
+meta import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Proof.Framework.Arm.Call
+meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.MdStream.Arm.Common
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # A Merkle–Damgård compression function on ARMv7, called on one block
@@ -64,7 +70,7 @@ structure CompOk (code : Prog isa) : Prop where
   verified : ∀ s, (compK H so).pre s → ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ (compK H so).post s s'
   ct : ConstantTime isa (compK H so).pre (compK H so).pub code
   noCalls : code.noCalls = true
-  keeps : ((instrs code).all fun i => dstOf i != some .r0 && dstOf i != some .r3) = true
+  keeps : ((instrs code).all fun i => !clobbers i .r0 && !clobbers i .r3) = true
 
 end
 
@@ -134,10 +140,10 @@ theorem compressBlock_ok {name : String} {code : Prog isa} (hf : CompOk H so cod
       H.stateAt s'.mem (State.addr st) =
         H.compress (H.stateAt s.mem (State.addr st)) (H.blockAt s.mem (State.addr src)) → Q s') :
     WP isa (compressBlock name code) s Q := by
-  have hk : ∀ i ∈ instrs code, dstOf i ≠ some .r0 ∧ dstOf i ≠ some .r3 := by
+  have hk : ∀ i ∈ instrs code, clobbers i .r0 = false ∧ clobbers i .r3 = false := by
     intro i hi
     have := List.all_eq_true.mp hf.keeps i hi
-    simp only [Bool.and_eq_true, bne_iff_ne, ne_eq] at this
+    simp only [Bool.and_eq_true, Bool.not_eq_true'] at this
     exact this
   refine csetup_ok s fun t hs => ?_
   refine WP.call (k := compK H so) hf.verified (call_pre h hs) ?_ ?_ ?_ hf.noCalls

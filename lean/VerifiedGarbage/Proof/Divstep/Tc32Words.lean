@@ -7,10 +7,6 @@ public import Mathlib.Algebra.Order.Ring.Abs
 public import Mathlib.Tactic.Linarith
 public import Mathlib.Tactic.NormNum
 public import Mathlib.Tactic.Ring
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Signed 32-bit words, shifts, and matrix combinations -/
 

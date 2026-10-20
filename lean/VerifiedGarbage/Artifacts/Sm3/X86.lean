@@ -1,8 +1,8 @@
 module
 
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Sm3.X86.Shared
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sm3.X86.Lit
 
 /-! # SM3 (GB/T 32905-2016) on x86 -/
 
@@ -11,35 +11,19 @@ import Mathlib.Tactic.SplitIfs
 namespace VG.Artifacts.Sm3.X86
 
 def artifacts : List Artifact := [
-  { Spec.Sm3.compressApi with
-    target := X86.target
-    doc := Spec.Sm3.compressApi.doc
+  Spec.Sm3.compressApi.artifact X86.target {
     code := Impl.Sm3.X86.compress
-    contract := Spec.Sm3.compressContract X86.abi
-    verified := Proof.Sm3.X86.Shared.compress
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sm3.initApi with
-    target := X86.target
-    doc := Spec.Sm3.initApi.doc
+    verified := Proof.Sm3.X86.Shared.compress },
+  Spec.Sm3.initApi.artifact X86.target {
     code := Impl.Sm3.X86.Stream.init
-    contract := Spec.Sm3.initContract X86.abi
-    verified := Proof.Sm3.X86.Shared.init
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sm3.updateApi with
-    target := X86.target
-    doc := Spec.Sm3.updateApi.doc
+    verified := Proof.Sm3.X86.Shared.init },
+  Spec.Sm3.updateApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch 188 5 Impl.Sm3.X86.Stream.update
-    contract := Spec.Sm3.updateContract X86.abi (20 + 188)
     stack := 20 + 188
-    verified := Proof.Sm3.X86.Shared.update
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sm3.finalizeApi with
-    target := X86.target
-    doc := Spec.Sm3.finalizeApi.doc
+    verified := Proof.Sm3.X86.Shared.update },
+  Spec.Sm3.finalizeApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch 184 4 Impl.Sm3.X86.Stream.finalize
-    contract := Spec.Sm3.finalizeContract X86.abi (20 + 184)
     stack := 20 + 184
-    verified := Proof.Sm3.X86.Shared.finalize
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Sm3.X86.Shared.finalize }]
 
 end VG.Artifacts.Sm3.X86

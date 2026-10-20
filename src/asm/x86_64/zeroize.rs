@@ -13,49 +13,49 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_zeroize(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "mov rax, 0",
-        "mov rdx, rsi",
-        "shr rdx, 5",
-        "cmp rdx, 0",
-        "je 20f",
-        "22:",
-        "mov QWORD PTR [rdi], rax",
-        "mov QWORD PTR [rdi+8], rax",
-        "mov QWORD PTR [rdi+16], rax",
-        "mov QWORD PTR [rdi+24], rax",
-        "add rdi, 32",
-        "sub rdx, 1",
-        "jne 22b",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "mov rdx, rsi",
-        "shr rdx, 3",
-        "and rdx, 3",
-        "cmp rdx, 0",
-        "je 23f",
-        "25:",
-        "mov QWORD PTR [rdi], rax",
-        "add rdi, 8",
-        "sub rdx, 1",
-        "jne 25b",
-        "jmp 24f",
-        "23:",
-        "24:",
-        "mov rdx, rsi",
-        "and rdx, 7",
-        "cmp rdx, 0",
-        "je 26f",
-        "28:",
-        "mov BYTE PTR [rdi], al",
-        "add rdi, 1",
-        "sub rdx, 1",
-        "jne 28b",
-        "jmp 27f",
-        "26:",
-        "27:",
-        "ret",
-        ".p2align 6",
+        r"mov rax, 0
+mov rdx, rsi
+shr rdx, 5
+cmp rdx, 0
+je 20f
+22:
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+8], rax
+mov QWORD PTR [rdi+16], rax
+mov QWORD PTR [rdi+24], rax
+add rdi, 32
+sub rdx, 1
+jne 22b
+jmp 21f
+20:
+21:
+mov rdx, rsi
+shr rdx, 3
+and rdx, 3
+cmp rdx, 0
+je 23f
+25:
+mov QWORD PTR [rdi], rax
+add rdi, 8
+sub rdx, 1
+jne 25b
+jmp 24f
+23:
+24:
+mov rdx, rsi
+and rdx, 7
+cmp rdx, 0
+je 26f
+28:
+mov BYTE PTR [rdi], al
+add rdi, 1
+sub rdx, 1
+jne 28b
+jmp 27f
+26:
+27:
+ret
+.p2align 6",
     )
 }
 
@@ -76,48 +76,48 @@ pub(crate) const VG_ZEROIZE_AVX_FEATURES: crate::cpu::Features = crate::cpu::Fea
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_zeroize_avx(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "vpxor xmm0, xmm0, xmm0",
-        "mov rax, 0",
-        "mov rdx, rsi",
-        "shr rdx, 6",
-        "cmp rdx, 0",
-        "je 20f",
-        "22:",
-        "vmovdqu YMMWORD PTR [rdi], ymm0",
-        "vmovdqu YMMWORD PTR [rdi+32], ymm0",
-        "add rdi, 64",
-        "sub rdx, 1",
-        "jne 22b",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "mov rdx, rsi",
-        "shr rdx, 3",
-        "and rdx, 7",
-        "cmp rdx, 0",
-        "je 23f",
-        "25:",
-        "mov QWORD PTR [rdi], rax",
-        "add rdi, 8",
-        "sub rdx, 1",
-        "jne 25b",
-        "jmp 24f",
-        "23:",
-        "24:",
-        "mov rdx, rsi",
-        "and rdx, 7",
-        "cmp rdx, 0",
-        "je 26f",
-        "28:",
-        "mov BYTE PTR [rdi], al",
-        "add rdi, 1",
-        "sub rdx, 1",
-        "jne 28b",
-        "jmp 27f",
-        "26:",
-        "27:",
-        "vzeroupper",
-        "ret",
-        ".p2align 6",
+        r"vpxor xmm0, xmm0, xmm0
+mov rax, 0
+mov rdx, rsi
+shr rdx, 6
+cmp rdx, 0
+je 20f
+22:
+vmovdqu YMMWORD PTR [rdi], ymm0
+vmovdqu YMMWORD PTR [rdi+32], ymm0
+add rdi, 64
+sub rdx, 1
+jne 22b
+jmp 21f
+20:
+21:
+mov rdx, rsi
+shr rdx, 3
+and rdx, 7
+cmp rdx, 0
+je 23f
+25:
+mov QWORD PTR [rdi], rax
+add rdi, 8
+sub rdx, 1
+jne 25b
+jmp 24f
+23:
+24:
+mov rdx, rsi
+and rdx, 7
+cmp rdx, 0
+je 26f
+28:
+mov BYTE PTR [rdi], al
+add rdi, 1
+sub rdx, 1
+jne 28b
+jmp 27f
+26:
+27:
+vzeroupper
+ret
+.p2align 6",
     )
 }

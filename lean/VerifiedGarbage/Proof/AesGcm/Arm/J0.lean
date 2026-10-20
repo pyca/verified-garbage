@@ -1,12 +1,15 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.Arm.Absorb
+public import VerifiedGarbage.Proof.AesGcm.Arm.Flush
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.Tag
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesGcm.Arm.Words
 import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on ARMv7: the pre-counter block (`j0`)

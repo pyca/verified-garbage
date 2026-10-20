@@ -1,23 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCallCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCallCT
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleReduceCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleReduceCT
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleJointCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleReduceCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleJointCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.RsaPss
-meta import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Spec.RsaPss
-import VerifiedGarbage.Proof.Dsa.AArch64.JointCallCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.JointCallCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant time of the complete DSA verification arithmetic schedule -/
 

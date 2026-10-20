@@ -2,17 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Calls
 import VerifiedGarbage.Proof.Sha512.Stream
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.Ed25519.Arm.Field
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.Spill
 
 @[expose] public section
 

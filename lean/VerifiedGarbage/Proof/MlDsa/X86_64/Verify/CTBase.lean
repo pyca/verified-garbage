@@ -1,21 +1,23 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Correct
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Correct
-import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Blocks
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.HashCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Top
+import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Blocks
-meta import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.HashCT
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Top
+meta import Init.Data.Nat.Bitwise.Basic
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA verification on x86-64: constant time, the pieces without calls

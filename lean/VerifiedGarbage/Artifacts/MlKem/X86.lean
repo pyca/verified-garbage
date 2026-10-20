@@ -1,21 +1,20 @@
 module
 
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.MlKem.X86.AddSub
-import VerifiedGarbage.Proof.MlKem.X86.Encode12
-import VerifiedGarbage.Proof.MlKem.X86.Decode12
-import VerifiedGarbage.Proof.MlKem.X86.Cbd
-import VerifiedGarbage.Proof.MlKem.X86.CompressEncode
-import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
-import VerifiedGarbage.Proof.MlKem.X86.NttInv
-import VerifiedGarbage.Proof.MlKem.X86.Mul
 public import VerifiedGarbage.Proof.MlKem.X86.CheckEk
-import VerifiedGarbage.Proof.MlKem.X86.Sample
 public import VerifiedGarbage.Proof.MlKem.X86.KeyGen
 public import VerifiedGarbage.Proof.MlKem.X86.Encaps
 public import VerifiedGarbage.Proof.MlKem.X86.Decaps
 import VerifiedGarbage.Proof.Sha3.X86.Lit
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.X86.AddSub
+public import VerifiedGarbage.Proof.MlKem.X86.Cbd
+public import VerifiedGarbage.Proof.MlKem.X86.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.X86.Decode12
+public import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem.X86.Encode12
+public import VerifiedGarbage.Proof.MlKem.X86.Mul
+public import VerifiedGarbage.Proof.MlKem.X86.NttInv
+public import VerifiedGarbage.Proof.MlKem.X86.Sample
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ML-KEM (FIPS 203) on x86
@@ -36,127 +35,65 @@ other calls use less.
 namespace VG.Artifacts.MlKem.X86
 
 def artifacts : List Artifact := [
-  { Spec.MlKem.addApi with
-    target := X86.target
-    doc := Spec.MlKem.addApi.doc
+  Spec.MlKem.addApi.artifact X86.target {
     code := Impl.MlKem.X86.add
-    contract := Spec.MlKem.addContract X86.abi 16
     stack := 16
-    verified := Proof.MlKem.X86.add_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.subApi with
-    target := X86.target
-    doc := Spec.MlKem.subApi.doc
+    verified := Proof.MlKem.X86.add_verified },
+  Spec.MlKem.subApi.artifact X86.target {
     code := Impl.MlKem.X86.sub
-    contract := Spec.MlKem.subContract X86.abi 16
     stack := 16
-    verified := Proof.MlKem.X86.sub_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.encode12Api with
-    target := X86.target
-    doc := Spec.MlKem.encode12Api.doc
+    verified := Proof.MlKem.X86.sub_verified },
+  Spec.MlKem.encode12Api.artifact X86.target {
     code := Impl.MlKem.X86.encode12
-    contract := Spec.MlKem.encode12Contract X86.abi 16
     stack := 16
-    verified := Proof.MlKem.X86.Encode12.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.decode12Api with
-    target := X86.target
-    doc := Spec.MlKem.decode12Api.doc
+    verified := Proof.MlKem.X86.Encode12.verified },
+  Spec.MlKem.decode12Api.artifact X86.target {
     code := Impl.MlKem.X86.decode12
-    contract := Spec.MlKem.decode12Contract X86.abi 16
     stack := 16
-    verified := Proof.MlKem.X86.Decode12.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.cbd2Api with
-    target := X86.target
-    doc := Spec.MlKem.cbd2Api.doc
+    verified := Proof.MlKem.X86.Decode12.verified },
+  Spec.MlKem.cbd2Api.artifact X86.target {
     code := Impl.MlKem.X86.cbd2
-    contract := Spec.MlKem.cbd2Contract X86.abi 16
     stack := 16
-    verified := Proof.MlKem.X86.Cbd.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.compressEncodeApi with
-    target := X86.target
-    doc := Spec.MlKem.compressEncodeApi.doc
+    verified := Proof.MlKem.X86.Cbd.verified },
+  Spec.MlKem.compressEncodeApi.artifact X86.target {
     code := Impl.MlKem.X86.compressEncode
-    contract := Spec.MlKem.compressEncodeContract X86.abi 16
     stack := 16
-    verified := Proof.MlKem.X86.CompressEncode.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.decodeDecompressApi with
-    target := X86.target
-    doc := Spec.MlKem.decodeDecompressApi.doc
+    verified := Proof.MlKem.X86.CompressEncode.verified },
+  Spec.MlKem.decodeDecompressApi.artifact X86.target {
     code := Impl.MlKem.X86.decodeDecompress
-    contract := Spec.MlKem.decodeDecompressContract X86.abi 16
     stack := 16
-    verified := Proof.MlKem.X86.DecodeDecompress.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.nttApi with
-    target := X86.target
-    doc := Spec.MlKem.nttApi.doc
+    verified := Proof.MlKem.X86.DecodeDecompress.verified },
+  Spec.MlKem.nttApi.artifact X86.target {
     code := Impl.MlKem.X86.ntt
-    contract := Spec.MlKem.nttContract X86.abi 16
     stack := 16
-    verified := Proof.MlKem.X86.NttFwd.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; rfl⟩) },
-  { Spec.MlKem.nttInvApi with
-    target := X86.target
-    doc := Spec.MlKem.nttInvApi.doc
+    verified := Proof.MlKem.X86.NttFwd.verified },
+  Spec.MlKem.nttInvApi.artifact X86.target {
     code := Impl.MlKem.X86.nttInv
-    contract := Spec.MlKem.nttInvContract X86.abi 16
     stack := 16
-    verified := Proof.MlKem.X86.NttInvP.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttInvContract Spec.MlKem.inPlaceContract; rfl⟩) },
-  { Spec.MlKem.mulApi with
-    target := X86.target
-    doc := Spec.MlKem.mulApi.doc
+    verified := Proof.MlKem.X86.NttInvP.verified },
+  Spec.MlKem.mulApi.artifact X86.target {
     code := Impl.MlKem.X86.multiplyNTTs
-    contract := Spec.MlKem.mulContract X86.abi 16
     stack := 16
-    verified := Proof.MlKem.X86.Mul.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.checkEkApi with
-    target := X86.target
-    doc := Spec.MlKem.checkEkApi.doc
+    verified := Proof.MlKem.X86.Mul.verified },
+  Spec.MlKem.checkEkApi.artifact X86.target {
     code := Impl.MlKem.X86.checkEk
-    contract := Spec.MlKem.checkEkContract X86.abi 16
     stack := 16
-    verified := Proof.MlKem.X86.CheckEk.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.sampleNTTApi with
-    target := X86.target
-    doc := Spec.MlKem.sampleNTTApi.doc
+    verified := Proof.MlKem.X86.CheckEk.verified },
+  Spec.MlKem.sampleNTTApi.artifact X86.target {
     code := Impl.MlKem.X86.sampleNTT
-    contract := Spec.MlKem.sampleNTTContract X86.abi 56
     stack := 56
-    verified := Proof.MlKem.X86.Sample.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.keyGenApi with
-    target := X86.target
-    doc := Spec.MlKem.keyGenApi.doc
+    verified := Proof.MlKem.X86.Sample.verified },
+  Spec.MlKem.keyGenApi.artifact X86.target {
     code := Impl.MlKem.X86.keyGen
-    contract := Spec.MlKem.keyGenContract X86.abi 88
     stack := 88
-    verified := Proof.MlKem.X86.KeyGen.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.encapsApi with
-    target := X86.target
-    doc := Spec.MlKem.encapsApi.doc
+    verified := Proof.MlKem.X86.KeyGen.verified },
+  Spec.MlKem.encapsApi.artifact X86.target {
     code := Impl.MlKem.X86.encaps
-    contract := Spec.MlKem.encapsContract X86.abi 88
     stack := 88
-    verified := Proof.MlKem.X86.Encaps.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.decapsApi with
-    target := X86.target
-    doc := Spec.MlKem.decapsApi.doc
+    verified := Proof.MlKem.X86.Encaps.verified },
+  Spec.MlKem.decapsApi.artifact X86.target {
     code := Impl.MlKem.X86.decaps
-    contract := Spec.MlKem.decapsContract X86.abi 88
     stack := 88
-    verified := Proof.MlKem.X86.Decaps.verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.MlKem.X86.Decaps.verified }]
 
 end VG.Artifacts.MlKem.X86

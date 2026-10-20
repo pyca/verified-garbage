@@ -4,10 +4,6 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Util.CompileInductive
 
 /-!
@@ -64,7 +60,7 @@ def pubK (S : Nat) : Contract isa where
       (stackArg s 0).toNat + (stackArg s 1).toNat * 8 ≤ 2 ^ 64 ∧
       Spec.Rsa.lenValid (s.gpr .x3).toNat ∧ (s.gpr .x1).toNat = (s.gpr .x3).toNat ∧
       (s.gpr .x7).toNat = (s.gpr .x3).toNat ∧ 1 ≤ (s.gpr .x5).toNat ∧
-      (s.gpr .x5).toNat ≤ (s.gpr .x3).toNat ∧ Spec.Rsa.scratchWords (s.gpr .x3).toNat ≤ (stackArg s 1).toNat
+      (s.gpr .x5).toNat ≤ (s.gpr .x3).toNat ∧ Spec.Rsa.publicScratchWords (s.gpr .x3).toNat ≤ (stackArg s 1).toNat
   post s s' :=
     Spec.Rsa.written s'.mem (s.gpr .x0) (s.gpr .x3).toNat ((s'.gpr .x0).setWidth 32)
       (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)

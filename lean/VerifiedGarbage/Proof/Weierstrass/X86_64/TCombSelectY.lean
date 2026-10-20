@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectPass
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Weierstrass.CombLay
 import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Mont.Words128
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import Mathlib.Tactic.ToDual
 
 /-!
 # The comb from tables in memory on x86-64: the selection's pass with AVX2

@@ -1,10 +1,8 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Optimized
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
+import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Taints
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Maximum stack depth of optimized prefixes and matrix sampling -/
 @[expose] public section
@@ -13,22 +11,10 @@ open VG VG.AArch64 VG.Impl.MlKem.AArch64
 
 theorem kgA768_depth : (KemLay.kgAWith lay768 Sha3.AArch64.Sha3.callee).aarch64Depth≤1 := by decide
 
-theorem enA768_depth : (KemLay.enAWith lay768 Sha3.AArch64.Sha3.callee).aarch64Depth≤1 := by decide
-
 theorem deStart768_depth : (Impl.MlKem.AArch64.Optimized.deStart Sha3.AArch64.Sha3.callee lay768).aarch64Depth≤1 := by decide
-
-theorem kgMatrix768_depth : (Paired.matrix lay768 true).aarch64Depth≤1 := by decide
-
-theorem kemMatrix768_depth : (Paired.matrix lay768 false).aarch64Depth≤1 := by decide
 
 theorem kgA1024_depth : (KemLay.kgAWith Impl.MlKem1024.AArch64.lay1024 Sha3.AArch64.Sha3.callee).aarch64Depth≤1 := by decide
 
-theorem enA1024_depth : (KemLay.enAWith Impl.MlKem1024.AArch64.lay1024 Sha3.AArch64.Sha3.callee).aarch64Depth≤1 := by decide
-
 theorem deStart1024_depth : (Impl.MlKem.AArch64.Optimized.deStart Sha3.AArch64.Sha3.callee Impl.MlKem1024.AArch64.lay1024).aarch64Depth≤1 := by decide
-
-theorem kgMatrix1024_depth : (Paired.matrix Impl.MlKem1024.AArch64.lay1024 true).aarch64Depth≤1 := by decide
-
-theorem kemMatrix1024_depth : (Paired.matrix Impl.MlKem1024.AArch64.lay1024 false).aarch64Depth≤1 := by decide
 
 end VG.Proof.MlKem.AArch64.Optimized

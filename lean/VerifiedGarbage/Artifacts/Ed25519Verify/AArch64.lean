@@ -1,8 +1,64 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyVerified
-import VerifiedGarbage.Impl.Mont.Mod
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
+public import VerifiedGarbage.Impl.Ed25519.AArch64.PointSelect
+public import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointEqual
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulCounter
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Points
+public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
+public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarWord
+public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
+public import VerifiedGarbage.Proof.Ed25519.Bytes
+public import VerifiedGarbage.Proof.Ed25519.Decode
+public import VerifiedGarbage.Proof.Ed25519.Field64
+public import VerifiedGarbage.Proof.Ed25519.Scalar
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.Pratt
+public import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+public import VerifiedGarbage.Proof.Mont.AArch64.Chain
+public import VerifiedGarbage.Proof.Mont.AArch64.Csub
+public import VerifiedGarbage.Proof.Mont.AArch64.Rounds
+import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
+import VerifiedGarbage.Impl.Ed25519.AArch64.PointSelect
+import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointEqual
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulCounter
+import VerifiedGarbage.Proof.Ed25519.AArch64.Points
+import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
+import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarWord
+import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
+import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.Decode
+import VerifiedGarbage.Proof.Ed25519.Field64
+import VerifiedGarbage.Proof.Ed25519.Scalar
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Mont.AArch64.Csub
+import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 
 /-! Complete strict Ed25519 equation verification with a caller-supplied SHA-512 challenge. -/
 
@@ -11,20 +67,17 @@ import VerifiedGarbage.Impl.Mont.Mod
 namespace VG.Artifacts.Ed25519Verify.AArch64
 
 def artifacts : List Artifact := [
-  { Spec.Ed25519.verifyEquationApi with
-    target := AArch64.target
-    doc := Spec.Ed25519.verifyEquationApi.doc (notes := ["Uses baseline integer and AdvSIMD instructions. \
+  Spec.Ed25519.verifyEquationApi.artifact AArch64.target {
+    notes := ["Uses baseline integer and AdvSIMD instructions. \
       Checks canonical point encodings and S < L, then evaluates the uncofactored equation \
       using all 512 challenge bits. No additional subgroup or small-order policy is imposed. \
       Computes [k]A - [S]B with one chain of doublings and 4-bit windows of the public \
       scalars, split into nibbles with AdvSIMD instructions, from a table of [1]A to [15]A \
       and one of -[1]B to -[15]B, cached as [Y - X, Y + X, 2dT, 2Z] and copied into \
       `scratch` from the static `VG_ED25519_VERIFY_NEG_BASE`, skipping the leading zero \
-      nibbles of k above its low 64, and compares it with -R projectively."])
+      nibbles of k above its low 64, and compares it with -R projectively."]
     consts := Impl.Ed25519.AArch64.bConsts
     code := Impl.Ed25519.AArch64.verifyEquation
-    contract := Spec.Ed25519.verifyEquationContract (AArch64.abi.withConsts Impl.Ed25519.AArch64.bConsts)
-    verified := Proof.Ed25519.AArch64.verify_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Ed25519.AArch64.verify_verified }]
 
 end VG.Artifacts.Ed25519Verify.AArch64

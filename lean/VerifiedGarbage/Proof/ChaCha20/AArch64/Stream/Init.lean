@@ -1,19 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.Stream
-meta import VerifiedGarbage.Proof.ChaCha20.Stream
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
-meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Stream
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Spec.ChaCha20.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.ChaCha20.Stream
 meta import VerifiedGarbage.Impl.ChaCha20.AArch64.Stream
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import VerifiedGarbage.Spec.ChaCha20.Contract
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming ChaCha20 on AArch64: `init` and `set_nonce`
@@ -59,7 +65,7 @@ open VG VG.AArch64 VG.Impl.ChaCha20.AArch64.Stream
 open VG.Spec.ChaCha20 (keyAt restAt keystreamOf bytesAt leftAt wordLE)
 
 /-- No instruction of `c` writes a callee-saved register. -/
-def Untouched (c : Prog isa) : Prop := ∀ r ∈ preserved, ∀ i ∈ instrs c, dstOf i ≠ some r
+def Untouched (c : Prog isa) : Prop := ∀ r ∈ preserved, ∀ i ∈ instrs c, clobbers i r = false
 
 /-- What `set_nonce` needs of the state it runs from. -/
 structure NPre (s : State) (st np : Addr) : Prop where
@@ -195,7 +201,7 @@ theorem nonceMem_frame (m : Mem) (st np : Addr) : Frame [⟨st, 768⟩] m (nonce
 
 theorem setNonce_untouched : Untouched setNonce :=
   fun r hr i hi => by
-    have : ((instrs setNonce).all fun i => preserved.all fun r => dstOf i != some r) = true := by
+    have : ((instrs setNonce).all fun i => preserved.all fun r => !clobbers i r) = true := by
       rw [← Code.allInstrs_eq]; decide +kernel
     simpa using List.all_eq_true.mp (List.all_eq_true.mp this i hi) r hr
 

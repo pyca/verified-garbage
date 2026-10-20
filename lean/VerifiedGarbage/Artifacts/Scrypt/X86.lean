@@ -1,14 +1,8 @@
 module
 
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Impl.Scrypt.X86.Salsa
-import VerifiedGarbage.Impl.Scrypt.X86.BlockMix
-import VerifiedGarbage.Impl.Scrypt.X86.RoMix
 public import VerifiedGarbage.Proof.Scrypt.X86.BlockMixVerified
 public import VerifiedGarbage.Proof.Scrypt.X86.RoMixCT
-public import VerifiedGarbage.Proof.Scrypt.X86.Salsa
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # scrypt (RFC 7914): Salsa20/8, scryptBlockMix and scryptROMix on x86 -/
 
@@ -17,28 +11,16 @@ import VerifiedGarbage.Proof.Framework.Omega
 namespace VG.Artifacts.Scrypt.X86
 
 def artifacts : List Artifact := [
-  { Spec.Scrypt.salsaApi with
-    target := X86.target
-    doc := Spec.Scrypt.salsaApi.doc
+  Spec.Scrypt.salsaApi.artifact X86.target {
     code := Impl.Scrypt.X86.salsa
-    contract := Spec.Scrypt.salsaContract X86.abi
-    verified := Proof.Scrypt.X86.salsa_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Scrypt.blockMixApi with
-    target := X86.target
-    doc := Spec.Scrypt.blockMixApi.doc
+    verified := Proof.Scrypt.X86.salsa_verified },
+  Spec.Scrypt.blockMixApi.artifact X86.target {
     code := Impl.Scrypt.X86.blockMix
-    contract := Spec.Scrypt.blockMixContract X86.abi 12
     stack := 12
-    verified := Proof.Scrypt.X86.BlockMix.blockMix_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Scrypt.roMixApi with
-    target := X86.target
-    doc := Spec.Scrypt.roMixApi.doc
+    verified := Proof.Scrypt.X86.BlockMix.blockMix_verified },
+  Spec.Scrypt.roMixApi.artifact X86.target {
     code := Impl.Scrypt.X86.roMix
-    contract := Spec.Scrypt.roMixContract X86.abi 36
     stack := 36
-    verified := Proof.Scrypt.X86.RoMix.roMix_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Scrypt.X86.RoMix.roMix_verified }]
 
 end VG.Artifacts.Scrypt.X86

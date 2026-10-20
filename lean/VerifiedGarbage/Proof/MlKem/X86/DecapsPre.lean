@@ -1,12 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86.EncV
-public import VerifiedGarbage.Impl.MlKem.X86.Decaps
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.MlKem.X86.EncRow
+import VerifiedGarbage.Impl.MlKem.X86.Decaps
 
 /-!
 # ML-KEM on x86 (32-bit): the setting of decapsulation
@@ -73,6 +70,6 @@ theorem addr0 (s₀ : State) (i l : Nat) : Buf.addr s₀ ⟨i, 0, l⟩ = (arg s�
   simp only [Buf.addr, Buf.ptr, BitVec.add_zero]
 
 /-- `sc_taint`, for code with `scratch` at `(Y L).sc`. -/
-macro "yd_taint" : tactic => `(tactic| plain_simp_names ((try simp only [show ∀ L, (Y L).sc = 3 from fun _ => rfl]); sc_taint))
+tactic_template "yd_taint" : tactic => `(tactic| ((try simp only [show ∀ L, (Y L).sc = 3 from fun _ => rfl]); sc_taint))
 
 end VG.Proof.MlKem.X86.Decaps

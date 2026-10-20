@@ -4,14 +4,11 @@ public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Machine
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.TripleDes.Bitslice.TransposeIdx
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Bitsliced
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
 
 /-!
 # The transposition of the AdvSIMD state
@@ -82,7 +79,7 @@ theorem group_run {n K : Nat} {is : List Instr} {g : Nat → Nat → Nat} {s : S
     ∃ s', runBlock isa is s = some s' ∧
       (∀ q < 2, ∀ j < n, ∀ p < 64, (laneAt s'.mem (s.gpr .x4) q j).getLsbD p =
         (laneAt s.mem (s.gpr .x4) q (g j p / 64)).getLsbD (g j p % 64)) ∧
-      (∀ r, (is.all fun i => dstOf i != some r) = true → s'.gpr r = s.gpr r) ∧
+      (∀ r, (is.all fun i => !clobbers i r) = true → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ Frame [⟨s.gpr .x4, 16 * n⟩] s.mem s'.mem := by
   obtain ⟨e', he, hpost⟩ := of_check _ _ hchk
   have hrel : Rel (fun q => LaneRel K (assign (laneW s q) (2 ^ K))) ⟨.x4, n⟩ (envIn n) s := by
@@ -135,21 +132,17 @@ theorem gA_lt : ∀ j < 57, ∀ p < 64, gA j p < 64 * 57 := by
 
 theorem gB_lt : ∀ j < 8, ∀ p < 64, gB j p < 64 * 8 := by decide +kernel
 
-theorem bodyA_nogpr : bodyA.all (fun op => dstOf op == none || dstOf op == some .x10) = true := by
+theorem bodyA_nogpr : bodyA.all (fun op => (dsts op).all (· == .x10)) = true := by
   decide +kernel
 
-theorem bodyB_nogpr : bodyB.all (fun op => dstOf op == none || dstOf op == some .x10) = true := by
+theorem bodyB_nogpr : bodyB.all (fun op => (dsts op).all (· == .x10)) = true := by
   decide +kernel
 
-theorem keeps_of_nogpr {is : List Instr} (h : is.all (fun op => dstOf op == none || dstOf op == some .x10) = true)
-    {r : Reg} (hr : r ≠ .x10) : (is.all fun i => dstOf i != some r) = true := by
+theorem keeps_of_nogpr {is : List Instr} (h : is.all (fun op => (dsts op).all (· == .x10)) = true)
+    {r : Reg} (hr : r ≠ .x10) : (is.all fun i => !clobbers i r) = true := by
   rw [List.all_eq_true] at h ⊢
   intro op hop
-  have := h op hop
-  simp only [Bool.or_eq_true, beq_iff_eq] at this
-  rcases this with h0 | h0
-  · simp [h0]
-  · simp only [h0, bne_iff_ne, ne_eq, Option.some.injEq]; exact fun h => hr h.symm
+  simpa using clobbers_eq_false_of_all (h op hop) (by simpa using hr)
 
 /-! ## Where a group is, in the state -/
 

@@ -2,11 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.AesOcb.X86.HashFill
 public import VerifiedGarbage.Proof.Ocb.Sum
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesOcb.X86.Nonce
 import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesOcb.X86.Calls
+import VerifiedGarbage.Proof.AesOcb.X86.Blk
+import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-OCB on x86: a chunk of `HASH` (`hashChunk`)

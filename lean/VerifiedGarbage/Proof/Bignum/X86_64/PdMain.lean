@@ -1,14 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.PdExp
-public import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
-public import Mathlib.Data.Int.GCD
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import VerifiedGarbage.Impl.Rsa.X86_64
+import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import Mathlib.Data.Int.GCD
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-!
 # `vg_rsa_public_precomputed` on x86-64: the computation
@@ -214,6 +213,8 @@ structure PdPre (s : State) (B : Addr) (Z k : Nat) (op ep ip : Addr) (L : Nat) (
   r : wv s.mem B (slot ((k + 7) / 8) aR2) ((k + 7) / 8) = R
   odd : N % 2 = 1
   n1 : 1 < N
+  /-- The checks find the modulus' top word nonzero. -/
+  big : 2 ^ (64 * ((k + 7) / 8 - 1)) ≤ N
   rlt : R < N
   x : Src s B Z ip xb
   e : Src s B Z ep eb

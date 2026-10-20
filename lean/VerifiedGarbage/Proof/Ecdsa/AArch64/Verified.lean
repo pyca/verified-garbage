@@ -1,31 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Contract
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
+public import VerifiedGarbage.Proof.Weierstrass.CombW
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
 import VerifiedGarbage.Proof.P256.Point
-meta import VerifiedGarbage.Proof.P256.Point
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-public import VerifiedGarbage.Proof.P256.Prime
-meta import VerifiedGarbage.Proof.P256.Prime
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.P256.Prime
 import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
+meta import VerifiedGarbage.Proof.Weierstrass.CombW
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
+meta import VerifiedGarbage.Proof.P256.Point
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+meta import VerifiedGarbage.Proof.P256.Prime
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
-import VerifiedGarbage.Impl.P256.VerifyDouble
-meta import VerifiedGarbage.Impl.P256.VerifyDouble
 
 /-!
 # ECDSA over P-256 on AArch64: `Verified`

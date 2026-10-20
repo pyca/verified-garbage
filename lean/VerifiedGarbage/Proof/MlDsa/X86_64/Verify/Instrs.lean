@@ -2,13 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.PrimsOk
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Verify
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Top
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-DSA verification on x86-64: properties of every instruction

@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.NFin
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Key
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+import VerifiedGarbage.Proof.Rsa.X86_64.Div
+import VerifiedGarbage.Proof.Bignum.X86_64.Setup
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Algebra.GroupWithZero.Nat
+import Mathlib.Tactic.Push
 
 /-!
 # An RSA key from its primes on x86-64: the entry and the head

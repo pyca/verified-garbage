@@ -1,14 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.AArch64.Ecb
 import VerifiedGarbage.Proof.Idea.KeyBits
 public import VerifiedGarbage.Proof.Framework.AArch64.Linear
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Idea.AArch64.ConstantTime
+public import VerifiedGarbage.Spec.Idea.Contract
 import VerifiedGarbage.Proof.Idea.KeyLit
+import VerifiedGarbage.Proof.Idea.AArch64.Mul
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Idea.AArch64.Lit
 
 /-!
 # IDEA key expansion on AArch64
@@ -42,7 +47,7 @@ abbrev expandKept : List Reg :=
   [.x0, .x1, .x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28, .x30]
 
 theorem expand_kept : ∀ q < 13, ∀ r ∈ expandKept,
-    ((expandWord q).all fun i => dstOf i != some r) = true := by
+    ((expandWord q).all fun i => !clobbers i r) = true := by
   lit_decide
 
 theorem expandWord_run (q : Nat) (hq : q < 13) (s : State)

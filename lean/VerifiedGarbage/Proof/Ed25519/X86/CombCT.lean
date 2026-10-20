@@ -1,19 +1,21 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.Comb
-meta import VerifiedGarbage.Impl.Ed25519.X86.Comb
 import VerifiedGarbage.Proof.Ed25519.X86.CombLit
-meta import VerifiedGarbage.Proof.Ed25519.X86.CombLit
 public import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
 import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Impl.Ed25519.X86.Comb
+meta import VerifiedGarbage.Proof.Ed25519.X86.CombLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
 meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-! The comb has a public trace: its loops' counters (`esi`) are public, and every address is
 the workspace pointer `edi` plus a constant or `8 esi`, or the tables' address plus

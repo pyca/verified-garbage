@@ -1,11 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareMac
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBlock
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! Accumulating the ADX square's multiply-add blocks into a row. -/
 
@@ -16,6 +15,19 @@ namespace VG.Proof.Bignum.X86_64.AdxSquare
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep)
+
+/-- A multiply-add row: `[r8] += rdx · [r9]` over `rbp = n > 0` words, its
+carry word into `rcx` and `r14 = n`, as the square's cross products and its
+reduction use it. -/
+structure RowOk (row : Prog isa) : Prop where
+  ok : ∀ {s : State} {B : Addr} {Z e eb n : Nat}, Scr s B Z → s.gpr .r8 = off B e →
+    s.gpr .r9 = off B eb → s.gpr .rbp = BitVec.ofNat 64 n → 0 < n → n < 2 ^ 60 → e + 8 * n ≤ Z →
+    eb + 8 * n ≤ Z → (eb + 8 * n ≤ e ∨ e + 8 * n ≤ eb) →
+    WP isa row s fun t =>
+      wv t.mem B e n + 2 ^ (64 * n) * (t.gpr .rcx).toNat =
+        wv s.mem B e n + (s.gpr .rdx).toNat * wv s.mem B eb n ∧
+      Outside B e (8 * n) s.mem t.mem ∧ t.gpr .r14 = BitVec.ofNat 64 n ∧
+      Keep [.rsi, .rax, .r11, .r12, .r13, .r15, .rcx, .r14, .rbx] s t
 
 /-- A row's processed prefix and its carry equal the original prefix plus
 `rdx` times the input prefix. The scalar stays in its register. -/

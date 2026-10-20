@@ -1,25 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
-public import VerifiedGarbage.Proof.Ecdsa.X86.CombVerified
-meta import VerifiedGarbage.Proof.Ecdsa.X86.CombVerified
+public import VerifiedGarbage.Spec.Ecdsa.P256
+import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
+import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
+public import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
 import VerifiedGarbage.Proof.Ecdsa.X86.Lit
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+meta import VerifiedGarbage.Spec.Ecdsa.P256
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
+meta import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Lit
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Framework.X86.Sse
-meta import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): P-256

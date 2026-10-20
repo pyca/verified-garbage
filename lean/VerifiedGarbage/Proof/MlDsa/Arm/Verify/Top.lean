@@ -1,15 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Cmp
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.SampC
+import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Row
+import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Control
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Cmp
-import VerifiedGarbage.Proof.MlDsa.Verify.Final
-meta import VerifiedGarbage.Proof.MlDsa.Verify.Final
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.SampC
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Row
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Control
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA verification on 32-bit ARM: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`

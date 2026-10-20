@@ -1,11 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.Arm.Rounds
 public import VerifiedGarbage.Spec.Argon2.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Argon2.Arm.Gb
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Argon2 on ARMv7: blocks as 32-bit words

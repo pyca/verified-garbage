@@ -1,25 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Cmp
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Cmp
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Cmp
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp4
+import VerifiedGarbage.Proof.MlDsa.Verify.Final
+import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Cmp
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
-import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
-meta import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp4
+meta import VerifiedGarbage.Proof.MlDsa.Verify.Final
+meta import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
+meta import VerifiedGarbage.Proof.MlDsa.DecideAt
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA verification on AArch64: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`

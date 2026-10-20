@@ -1,24 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourVerified
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section
 
 namespace VG.Artifacts.MlDsaBoundedFour.AArch64
 
 def artifact (sha3 : Bool) (η : Nat) (hη : η=2∨η=4) : Artifact :=
- { Spec.MlDsa.rejBoundedFourApi η with
-   name := (Spec.MlDsa.rejBoundedFourApi η).name ++ if sha3 then "_sha3" else ""
+ (Spec.MlDsa.rejBoundedFourApi η).artifact AArch64.target {
+   suffix := if sha3 then "_sha3" else ""
    features := if sha3 then ["sha3"] else []
-   target := AArch64.target
-   doc := (Spec.MlDsa.rejBoundedFourApi η).doc
    code := Impl.MlDsa.AArch64.Optimized.BoundedFour.sampler sha3 true η
-   contract := Spec.MlDsa.rejBoundedFourContract AArch64.abi η
-   verified := Proof.MlDsa.AArch64.Optimized.BoundedFour.sampler_verified sha3 hη
-   spSafe := Code.all_of_forall (fun _=>rfl) _
-   ofSig := by exact (⟨_,_,_,by unfold Spec.MlDsa.rejBoundedFourContract; rfl⟩) }
+   verified := Proof.MlDsa.AArch64.Optimized.BoundedFour.sampler_verified sha3 hη }
 
 def artifacts : List Artifact :=
  [artifact false 2 (Or.inl rfl),artifact true 2 (Or.inl rfl),

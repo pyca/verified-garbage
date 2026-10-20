@@ -1,17 +1,27 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCT3
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCands
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpCT5
-meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT5
+import VerifiedGarbage.Proof.Rsa.X86_64.RpCT5
 import VerifiedGarbage.Proof.Rsa.RecoverTries
+import VerifiedGarbage.Proof.Rsa.X86_64.RpCT4
+import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT3
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCands
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT5
 meta import VerifiedGarbage.Proof.Rsa.RecoverTries
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT4
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Bignum.Math
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: constant time, the candidates

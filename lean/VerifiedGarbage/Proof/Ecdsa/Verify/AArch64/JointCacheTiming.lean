@@ -2,26 +2,17 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCache
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCache
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCache
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedInit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! ## `JointBoundaryChecks` -/
 

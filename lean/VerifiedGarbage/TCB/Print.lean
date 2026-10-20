@@ -41,6 +41,16 @@ assembler inserts at the directive comes after the return that ends the
 function (`Printer.function`), so it is never executed: the printed code is
 the same instructions, at the same distances from one another.
 
+A cold branch (`Code.iteCold c t e`, an `ite` whose `then` branch is
+marked by two empty blocks) is laid out out of line: `if c` branches to
+`t`'s code after the function's return, `e` falls through to the code after
+the `ite`, and `t`'s code ends with a jump back to it. So the instructions
+of the code around the `ite` and of `e`, which the hot path runs, are the
+same, at the same addresses, whatever `t` is. The cold code comes before the
+`funcAlign` directives. The printer keys on exactly that shape: a `then`
+branch `.seq (.seq (.block []) (.block [])) t` is reserved for cold branches
+(`Emit.lean --check` shows no other code has it).
+
 Together with each ISA's instruction printer this is part of the trusted
 base; it is small enough to check by inspection and is covered by the golden
 tests in `VerifiedGarbageTest/Print.lean`.
@@ -89,12 +99,22 @@ structure Printer (M : ISA) where
   /-- The lines of an instruction that names a `static` (`Line.sym`); `none`
   for the others, whose lines are `instr`'s text. -/
   symLines : M.Instr → Option (List Line) := fun _ => none
+  /-- The tables of constants an instruction reads by carrying them (x86-64's
+  `aluTbl`): each a `static`'s name and its words, which the emitter writes
+  (`TCB/Rust.lean`). -/
+  tables : M.Instr → List (String × List (BitVec 64)) := fun _ => []
   /-- Assembler directives before, and after, the body of a function that
   needs the CPU feature `f` (`Artifact.features`), for an assembler that
   rejects the instructions of a feature the target does not enable: they
   enable it for that function only. -/
   enableFeature : String → List String := fun _ => []
   disableFeature : String → List String := fun _ => []
+  /-- The Rust `cfg` predicate under which code needing the CPU feature `f`
+  may be compiled, for a feature that some of the target's configurations
+  cannot assemble or must never run (e.g. ARMv7's `umaal`, which the
+  Cortex-M3 lacks); `none` for a feature every configuration may compile.
+  The emitter compiles a function needing `f` only under it. -/
+  featureCfg : String → Option String := fun _ => none
   /-- Why the assembler cannot encode an instruction as the model describes
   it (e.g. an x86-64 displacement too wide for its field, which some
   assemblers silently truncate), or `none` if it can. The emitter refuses
@@ -110,33 +130,53 @@ variable {M : ISA} (P : Printer M)
 /-- The number of the `n`-th label of a function. -/
 def labelNum (n : Nat) : String := s!"2{n}"
 
-/-- Lower code to lines of assembly, using labels `labelNum n`; returns the
-next unused label number. -/
-def Printer.lower : Code M.Instr M.Cond → Nat → List Line × Nat
-  | .block is, n => (is.flatMap fun i => (P.symLines i).getD ((P.instr i).map .text), n)
+/-- Lower code to lines of assembly, using labels `labelNum n`: the lines in
+place, the lines of its cold branches (`Code.iteCold`), placed after the
+function's return, and the next unused label number. -/
+def Printer.lower : Code M.Instr M.Cond → Nat → List Line × List Line × Nat
+  | .block is, n => (is.flatMap fun i => (P.symLines i).getD ((P.instr i).map .text), [], n)
   | .seq c₁ c₂, n =>
-    let (l₁, n) := lower c₁ n
-    let (l₂, n) := lower c₂ n
-    (l₁ ++ l₂, n)
+    let (l₁, k₁, n) := lower c₁ n
+    let (l₂, k₂, n) := lower c₂ n
+    (l₁ ++ l₂, k₁ ++ k₂, n)
+  | .ite c (.seq (.seq (.block []) (.block [])) t) e, n =>
+    let lCold := labelNum n
+    let lBack := labelNum (n + 1)
+    let (le, ke, n) := lower e (n + 2)
+    let (lt, kt, n) := lower t n
+    ([.text (P.branch c (lCold ++ "f"))] ++ le ++ [.text (lBack ++ ":")],
+      ke ++ [.text (lCold ++ ":")] ++ lt ++ [.text (P.jump (lBack ++ "b"))] ++ kt, n)
   | .ite c t e, n =>
     let lThen := labelNum n
     let lEnd := labelNum (n + 1)
-    let (le, n) := lower e (n + 2)
-    let (lt, n) := lower t n
+    let (le, ke, n) := lower e (n + 2)
+    let (lt, kt, n) := lower t n
     ([.text (P.branch c (lThen ++ "f"))] ++ le ++ [.text (P.jump (lEnd ++ "f")), .text (lThen ++ ":")] ++
-      lt ++ [.text (lEnd ++ ":")], n)
+      lt ++ [.text (lEnd ++ ":")], ke ++ kt, n)
   | .loop body c, n =>
     let lTop := labelNum n
-    let (lb, n) := lower body (n + 1)
-    ([.text (lTop ++ ":")] ++ lb ++ [.text (P.branch c (lTop ++ "b"))], n)
-  | .call name _, n => ([.call name], n)
+    let (lb, kb, n) := lower body (n + 1)
+    ([.text (lTop ++ ":")] ++ lb ++ [.text (P.branch c (lTop ++ "b"))], kb, n)
+  | .call name _, n => ([.call name], [], n)
   | .frame i body j, n =>
-    let (lb, n) := lower body n
+    let (lb, kb, n) := lower body n
     ((P.symLines i).getD ((P.instr i).map .text) ++ lb ++
-      (P.symLines j).getD ((P.instr j).map .text), n)
+      (P.symLines j).getD ((P.instr j).map .text), kb, n)
 
-/-- The complete body of a function: the lowered code followed by the return. -/
+/-- The tables of constants the instructions of `c` carry (`tables`), but
+not those of the functions it calls, which are emitted with them. -/
+def Printer.codeTables : Code M.Instr M.Cond → List (String × List (BitVec 64))
+  | .block is => is.flatMap P.tables
+  | .seq c₁ c₂ => codeTables c₁ ++ codeTables c₂
+  | .ite _ t e => codeTables t ++ codeTables e
+  | .loop body _ => codeTables body
+  | .call .. => []
+  | .frame i body j => P.tables i ++ codeTables body ++ P.tables j
+
+/-- The complete body of a function: the lowered code, the return, and the
+cold branches' code after it. -/
 def Printer.function (body : Code M.Instr M.Cond) : List Line :=
-  (P.lower body 0).1 ++ P.ret.map .text
+  let (l, k, _) := P.lower body 0
+  l ++ P.ret.map .text ++ k
 
 end VG

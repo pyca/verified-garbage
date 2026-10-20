@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.CT
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealGather
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Callee
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Contract
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.CT
+public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: `Verified`

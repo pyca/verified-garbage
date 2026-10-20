@@ -4,14 +4,6 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Pow
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import Mathlib.Data.Nat.Prime.Defs
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # Inversion by divsteps on x86-64: what it computes

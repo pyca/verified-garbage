@@ -1,11 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Exp
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -31,51 +26,52 @@ open VG.Proof.Bignum.X86_64.AmmSym (wp_seqs_app ofs_off0 and_ffff_hi mont_into0 
 variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 
 /-- The prologue's first half: the caller's MXCSR, bits 31:16 cleared, at `oMx`. -/
-theorem mxSave_ok {s : State} {B : Addr} (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D + 8)) :
-    WP isa (.block [.stmxcsr (at_ .rbx l.oMx), .mov32 .r11 (.mem (at_ .rbx l.oMx)), .alu32 .and .r11 (.imm 0xFFFF),
-        .store32 (at_ .rbx l.oMx) .r11]) s fun s' =>
-      s'.mem = (s.mem.writeW (off B l.oMx) s.mxcsr).writeW (off B l.oMx) (s.mxcsr &&& 0xFFFF) ∧
+theorem mxSave_ok {s : State} {B : Addr} {d Z : Nat} (hB : s.gpr .rbx = B) (hs : Scr s B Z) (hd : d + 8 ≤ Z) :
+    WP isa (.block [.stmxcsr (at_ .rbx d), .mov32 .r11 (.mem (at_ .rbx d)), .alu32 .and .r11 (.imm 0xFFFF),
+        .store32 (at_ .rbx d) .r11]) s fun s' =>
+      s'.mem = (s.mem.writeW (off B d) s.mxcsr).writeW (off B d) (s.mxcsr &&& 0xFFFF) ∧
       VG.Proof.MlKem.X86_64.Keep [.r11] s s' ∧ s'.mxcsr = s.mxcsr := by
-  have hst : InRegions s.wr (B + BitVec.ofNat 64 l.oMx) 4 :=
-    let ⟨_, h, c⟩ := hs.region (d := l.oMx) (n := 4) (by simp only [Lay.oMx]; omega_using []) (by decide); ⟨_, h, c⟩
-  have hld : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 l.oMx) 4 :=
-    let ⟨_, h, c⟩ := hs.region (d := l.oMx) (n := 4) (by simp only [Lay.oMx]; omega_using []) (by decide);
+  have hst : InRegions s.wr (B + BitVec.ofNat 64 d) 4 :=
+    let ⟨_, h, c⟩ := hs.region (d := d) (n := 4) (by omega_using [hd]) (by decide); ⟨_, h, c⟩
+  have hld : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 d) 4 :=
+    let ⟨_, h, c⟩ := hs.region (d := d) (n := 4) (by omega_using [hd]) (by decide);
     ⟨_, List.mem_append_right _ h, c⟩
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.r11] (Q := fun s' =>
-    s'.mem = (s.mem.writeW (off B l.oMx) s.mxcsr).writeW (off B l.oMx) (s.mxcsr &&& 0xFFFF) ∧
+    s'.mem = (s.mem.writeW (off B d) s.mxcsr).writeW (off B d) (s.mxcsr &&& 0xFFFF) ∧
       s'.mxcsr = s.mxcsr) (by
     xrun [eaG', hB, hst, hld, Mem.readW_writeW_self32]
     and_intros <;> rfl) rfl)
     fun s' ⟨⟨a, b⟩, k⟩ => ⟨a, k, b⟩
 
 /-- The prologue's second half: `MXCSR := 0x1FBF`. -/
-theorem mxSet_ok {s : State} {B : Addr} (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D + 8)) :
-    WP isa (.block [.mov32 .rax (.imm 0x1FBF), .store32 (at_ .rbx (l.oMx + 4)) .rax,
-        .ldmxcsr (at_ .rbx (l.oMx + 4)), .lfence]) s fun s' =>
-      s'.mem = s.mem.writeW (off B (l.oMx + 4)) (0x1FBF : BitVec 32) ∧
+theorem mxSet_ok {s : State} {B : Addr} {d Z : Nat} (hB : s.gpr .rbx = B) (hs : Scr s B Z) (hd : d + 8 ≤ Z) :
+    WP isa (.block [.mov32 .rax (.imm 0x1FBF), .store32 (at_ .rbx (d + 4)) .rax,
+        .ldmxcsr (at_ .rbx (d + 4)), .lfence]) s fun s' =>
+      s'.mem = s.mem.writeW (off B (d + 4)) (0x1FBF : BitVec 32) ∧
       VG.Proof.MlKem.X86_64.Keep [.rax] s s' ∧ s'.mxcsr = 0x1FBF := by
-  have hst : InRegions s.wr (B + BitVec.ofNat 64 (l.oMx + 4)) 4 :=
-    let ⟨_, h, c⟩ := hs.region (d := l.oMx + 4) (n := 4) (by simp only [Lay.oMx]; omega_using []) (by decide); ⟨_, h, c⟩
-  have hld : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 (l.oMx + 4)) 4 :=
-    let ⟨_, h, c⟩ := hs.region (d := l.oMx + 4) (n := 4) (by simp only [Lay.oMx]; omega_using []) (by decide);
+  have hst : InRegions s.wr (B + BitVec.ofNat 64 (d + 4)) 4 :=
+    let ⟨_, h, c⟩ := hs.region (d := d + 4) (n := 4) (by omega_using [hd]) (by decide); ⟨_, h, c⟩
+  have hld : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 (d + 4)) 4 :=
+    let ⟨_, h, c⟩ := hs.region (d := d + 4) (n := 4) (by omega_using [hd]) (by decide);
     ⟨_, List.mem_append_right _ h, c⟩
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rax] (Q := fun s' =>
-    s'.mem = s.mem.writeW (off B (l.oMx + 4)) (0x1FBF : BitVec 32) ∧ s'.mxcsr = 0x1FBF) (by
+    s'.mem = s.mem.writeW (off B (d + 4)) (0x1FBF : BitVec 32) ∧ s'.mxcsr = 0x1FBF) (by
     xrun [eaG', hB, hst, hld, Mem.readW_writeW_self32]) rfl)
     fun s' ⟨⟨a, b⟩, k⟩ => ⟨a, k, b⟩
 
 /-- The epilogue: the saved MXCSR. -/
-theorem mxRestore_ok {s : State} {B : Addr} {v : BitVec 32} (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D + 8))
-    (hv : s.mem.readW (off B l.oMx) 32 = v &&& 0xFFFF) :
-    WP isa (.block [.ldmxcsr (at_ .rbx l.oMx), .vop .vzeroupper]) s fun s' =>
+theorem mxRestore_ok {s : State} {B : Addr} {d Z : Nat} {v : BitVec 32} (hB : s.gpr .rbx = B) (hs : Scr s B Z)
+    (hd : d + 8 ≤ Z)
+    (hv : s.mem.readW (off B d) 32 = v &&& 0xFFFF) :
+    WP isa (.block [.ldmxcsr (at_ .rbx d), .vop .vzeroupper]) s fun s' =>
       s'.mem = s.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = v &&& 0xFFFF := by
-  have hld : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 l.oMx) 4 :=
-    let ⟨_, h, c⟩ := hs.region (d := l.oMx) (n := 4) (by simp only [Lay.oMx]; omega_using []) (by decide);
+  have hld : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 d) 4 :=
+    let ⟨_, h, c⟩ := hs.region (d := d) (n := 4) (by omega_using [hd]) (by decide);
     ⟨_, List.mem_append_right _ h, c⟩
   rw [WP.block_cons_iff]
   refine ⟨{ s with mxcsr := v &&& 0xFFFF }, ?_, ?_⟩
   · simp only [exec, eaG', hB, State.load32, hld, ite_true, Option.bind_some]
-    rw [show s.mem.readW (B + BitVec.ofNat 64 l.oMx) 32 = v &&& 0xFFFF from hv, and_ffff_hi]; rfl
+    rw [show s.mem.readW (B + BitVec.ofNat 64 d) 32 = v &&& 0xFFFF from hv, and_ffff_hi]; rfl
   · rw [WP.block_cons_iff]
     exact ⟨_, rfl, WP.block_nil ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
 
@@ -95,33 +91,27 @@ theorem OutE.toOutside {B : Addr} {m m' : Mem} (h : OutE l B m m') : Outside B 0
       exact ⟨.inr (by omega_using [o2, o10, ha, this]), .inr (by omega_using [o4, o10, ha, this]), .inr
           (by omega_using [o8, o10, ha, this]), .inr (by omega_using [o5, o10, ha, this])⟩
 
-theorem Out2.byte (hl : LayOk l) {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 l B o n m m') {p i : Nat}
-    (hp : p < 2) (hi : i < l.E) (ho : o + n ≤ l.oE ∨ l.oE + l.E ≤ o) (hoD : o + n ≤ l.D) :
-    m' (off B (l.D * p + l.oE + i)) = m (off B (l.D * p + l.oE + i)) := by
-  obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  have hD := hl.D_bounds
-  refine h _ fun p' hp' => ?_
-  rw [ofs_off0 B (by rcases D_mul (l := l) hp with h | h <;> omega_using [hi, o6, o10, hD, h])]
-  rcases D_mul (l := l) hp with h1 | h1 <;> rcases D_mul (l := l) hp' with h2 | h2 <;> omega_using [hi, ho, h1, h2, o6, o10, hoD]
-
 /-- The vector code inside the MXCSR prologue and epilogue. -/
-theorem vecBody_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} (hB : s.gpr .rbx = B)
+theorem vecBody_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {e : Nat → Nat}
+    (hB : s.gpr .rbx = B)
     (hs : Scr s B (2 * l.D)) (ar : Ar l s.mem B M k) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p))
     (gx : ∀ p < 2, Good l s.mem B M l.oX p) (gy : ∀ p < 2, Good l s.mem B M l.oY p)
     (gk : ∀ p < 2, Good l s.mem B M l.oK1 p) (gf : ∀ p < 2, Good l s.mem B M l.oFin p)
     (vx : Q → ∀ p < 2, val52 l s.mem B (l.D * p + l.oX) % M p = x p * 2 ^ (64 * l.W) % M p)
     (vy : Q → ∀ p < 2, val52 l s.mem B (l.D * p + l.oY) % M p = 1 * 2 ^ (64 * l.W) % M p)
-    (vk : Q → ∀ p < 2, val52 l s.mem B (l.D * p + l.oK1) % M p = 2 ^ (104 * l.S - 64 * l.W) % M p) :
+    (vk : Q → ∀ p < 2, val52 l s.mem B (l.D * p + l.oK1) % M p = 2 ^ (104 * l.S - 64 * l.W) % M p)
+    (he : ∀ p < 2, e p < 2 ^ (8 * l.E)) (hd : ∀ p < 2, ∀ i < l.ND, dig l s.mem B p i = digit l (e p) i) :
     WP isa (VG.Impl.Bignum.X86_64.seqs (expLoop l)) s fun s' =>
       (∀ p < 2, Good l s'.mem B M l.oY p ∧
         (Q → val52 l s'.mem B (l.D * p + l.oY) % M p =
-          x p ^ ev l s.mem B p l.E * val52 l s.mem B (l.D * p + l.oFin) % M p)) ∧
+          x p ^ e p * val52 l s.mem B (l.D * p + l.oFin) % M p)) ∧
       Outside B 0 (2 * l.D) s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
         r ≠ .r13 → r ≠ .r14 → r ≠ .r15 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr :=
-  WP.mono (expLoop_ok hl ⟨hB, hs, ar, hR, gx, gy, gk, vx, vy, vk⟩ gf)
-    fun _ ⟨v, f, g, rd, wr, x⟩ => ⟨v, f.toOutside, g, rd, wr, x⟩
+  WP.mono (expLoop_ok hl ⟨hB, hs, ar, hR, gx, gy, gk, vx, vy, vk⟩ gf he hd)
+    fun _ ⟨v, f, g, rd, wr, x⟩ => ⟨v, f.toOutside, fun r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 _ r12 =>
+      g r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r12, rd, wr, x⟩
 
 /-! ## Writes above both regions -/
 
@@ -157,27 +147,30 @@ theorem Ar.of_hi {M k : Nat → Nat} (a : Ar l m B M k) : Ar l m' B M k := by
   · rw [Nat.add_assoc, hi_word hl h hp (by omega_using [o1, o10, ht]), ← Nat.add_assoc]; exact a.kw p hp t ht
   · rw [hi_limb hl h hp (by simp only [oM]; omega_using [o10]) (by simp only [Lay.L]; omega_using [this])]; exact a.k0 p hp
 
-theorem ev_of_hi {p : Nat} (hp : p < 2) : ev l m' B p l.E = ev l m B p l.E := by
+theorem dig_of_hi {p i : Nat} (hp : p < 2) (hi : i < l.ND) : dig l m' B p i = dig l m B p i := by
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
+  obtain ⟨d1, d2⟩ := lay_dAt hl hi
   have := hl.D_bounds
-  exact ev_congr l.E fun i hi => h _ (.inl (by
-    rw [ofs_off0 B (by rcases D_mul (l := l) hp with h | h <;> omega_using [o6, o10, this, hi, h])]
-    rcases D_mul (l := l) hp with h | h <;> omega_using [o6, o10, hi, h]))
+  exact congrArg (fun b : BitVec 8 => nibOf l i b.toNat) (h _ (.inl (by
+    rw [ofs_off0 B (by rcases D_mul (l := l) hp with h | h <;> omega_using [d2, o7, o10, this, h])]
+    rcases D_mul (l := l) hp with h | h <;> omega_using [d2, o7, o10, h])))
 
 end
 
 /-- The vector code: `Y ≡ x^e Fin` for each prime. -/
-theorem vec_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} (hB : s.gpr .rbx = B)
+theorem vec_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {e : Nat → Nat}
+    (hB : s.gpr .rbx = B)
     (hs : Scr s B (2 * l.D + 8)) (ar : Ar l s.mem B M k) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p))
     (gx : ∀ p < 2, Good l s.mem B M l.oX p) (gy : ∀ p < 2, Good l s.mem B M l.oY p)
     (gk : ∀ p < 2, Good l s.mem B M l.oK1 p) (gf : ∀ p < 2, Good l s.mem B M l.oFin p)
     (vx : Q → ∀ p < 2, val52 l s.mem B (l.D * p + l.oX) % M p = x p * 2 ^ (64 * l.W) % M p)
     (vy : Q → ∀ p < 2, val52 l s.mem B (l.D * p + l.oY) % M p = 1 * 2 ^ (64 * l.W) % M p)
-    (vk : Q → ∀ p < 2, val52 l s.mem B (l.D * p + l.oK1) % M p = 2 ^ (104 * l.S - 64 * l.W) % M p) :
+    (vk : Q → ∀ p < 2, val52 l s.mem B (l.D * p + l.oK1) % M p = 2 ^ (104 * l.S - 64 * l.W) % M p)
+    (he : ∀ p < 2, e p < 2 ^ (8 * l.E)) (hd : ∀ p < 2, ∀ i < l.ND, dig l s.mem B p i = digit l (e p) i) :
     WP isa (vec l) s fun s' =>
       (∀ p < 2, Good l s'.mem B M l.oY p ∧
         (Q → val52 l s'.mem B (l.D * p + l.oY) % M p =
-          x p ^ ev l s.mem B p l.E * val52 l s.mem B (l.D * p + l.oFin) % M p)) ∧
+          x p ^ e p * val52 l s.mem B (l.D * p + l.oFin) % M p)) ∧
       Outside B 0 (2 * l.D + 8) s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
         r ≠ .r13 → r ≠ .r14 → r ≠ .r15 → s'.gpr r = s.gpr r) ∧
@@ -186,9 +179,9 @@ theorem vec_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : 
   have hD := hl.D_bounds
   have hn := hs.nowrap
   have hM : l.oMx = 2 * l.D := rfl
-  refine WP.seq (WP.mono (mxSave_ok hB hs) fun s₁ ⟨m₁, k₁, x₁⟩ => ?_)
+  refine WP.seq (WP.mono (mxSave_ok (d := l.oMx) hB hs (by simp only [Lay.oMx]; omega_using [])) fun s₁ ⟨m₁, k₁, x₁⟩ => ?_)
   have hB₁ : s₁.gpr .rbx = B := by rw [k₁.gpr (by decide)]; exact hB
-  refine WP.seq (WP.seq (WP.mono (mxSet_ok hB₁ (hs.congr k₁.2.2)) fun s₂ ⟨m₂, k₂, x₂⟩ => ?_))
+  refine WP.seq (WP.seq (WP.mono (mxSet_ok (d := l.oMx) hB₁ (hs.congr k₁.2.2) (by simp only [Lay.oMx]; omega_using [])) fun s₂ ⟨m₂, k₂, x₂⟩ => ?_))
   have hB₂ : s₂.gpr .rbx = B := by rw [k₂.gpr (by decide)]; exact hB₁
   have hs₂ : Scr s₂ B (2 * l.D + 8) := hs.congr (by rw [k₂.2.2, k₁.2.2])
   have O₁ : Outside B (2 * l.D) 4 s.mem s₁.mem := by
@@ -203,7 +196,8 @@ theorem vec_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : 
     (fun p hp => (gk p hp).of_hi hl O hp (by omega_using [o7, o10])) (fun p hp => (gf p hp).of_hi hl O hp (by omega_using [o9, o10]))
     (fun hq p hp => by rw [hi_val hl O hp (by omega_using [o3, o10])]; exact vx hq p hp)
     (fun hq p hp => by rw [hi_val hl O hp (by omega_using [o2, o10])]; exact vy hq p hp)
-    (fun hq p hp => by rw [hi_val hl O hp (by omega_using [o7, o10])]; exact vk hq p hp))
+    (fun hq p hp => by rw [hi_val hl O hp (by omega_using [o7, o10])]; exact vk hq p hp) he
+    (fun p hp i hi => by rw [dig_of_hi hl O hp hi]; exact hd p hp i hi))
     fun s₃ ⟨v₃, O₃, g₃, rd₃, wr₃, x₃⟩ => ?_)
   rw [WP.block_cons_iff]
   refine ⟨s₃, rfl, WP.block_nil ?_⟩
@@ -213,12 +207,12 @@ theorem vec_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : 
   have hv : s₃.mem.readW (off B l.oMx) 32 = s.mxcsr &&& 0xFFFF := by
     rw [Outside.readW32 O₃ (.inr (by omega_using [hM])) (by omega_using [hn, hM]),
       Outside.readW32 O₂ (.inl (by omega_using [hM])) (by omega_using [hn, hM]), m₁, Mem.readW_writeW_self32]
-  refine WP.mono (mxRestore_ok hB₃ (hs₂.congr wr₃) hv) fun s₄ ⟨m₄, g₄, rd₄, wr₄, x₄⟩ =>
+  refine WP.mono (mxRestore_ok (d := l.oMx) hB₃ (hs₂.congr wr₃) (by simp only [Lay.oMx]; omega_using []) hv) fun s₄ ⟨m₄, g₄, rd₄, wr₄, x₄⟩ =>
     ⟨fun p hp => ?_, ?_, fun r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 => ?_, by rw [rd₄, rd₃, k₂.2.1, k₁.2.1],
       by rw [wr₄, wr₃, k₂.2.2, k₁.2.2], x₄⟩
   · rw [m₄]
     refine ⟨(v₃ p hp).1, fun hq => ?_⟩
-    rw [(v₃ p hp).2 hq, ev_of_hi hl O hp, hi_val hl O hp (by omega_using [o9, o10])]
+    rw [(v₃ p hp).2 hq, hi_val hl O hp (by omega_using [o9, o10])]
   · rw [m₄]; exact (O.mono (by omega_using []) (by omega_using [])).trans (O₃.mono (by omega_using []) (by omega_using []))
   · rw [g₄, g₃ r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12, k₂.gpr (by simp [r1]), k₁.gpr (by simp [r8])]
 

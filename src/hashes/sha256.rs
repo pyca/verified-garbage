@@ -39,6 +39,9 @@ use crate::arch::sha256::{
 };
 use crate::arch::sha256::{vg_sha256_finalize, vg_sha256_init, vg_sha256_update};
 
+#[cfg(target_arch = "aarch64")]
+use crate::arch::sha256::{vg_sha256_digest, vg_sha256_digest_sha2};
+
 super::streaming_hash!(
     /// An incremental SHA-256 computation.
     Sha256 {
@@ -57,6 +60,10 @@ super::streaming_hash!(
             #[cfg(target_arch = "x86_64")]
             Avx2 if [VG_SHA256_UPDATE_AVX2_FEATURES, VG_SHA256_FINALIZE_AVX2_FEATURES] =>
                 (vg_sha256_update_avx2, vg_sha256_finalize_avx2),
+        },
+        digests: #[cfg(target_arch = "aarch64")] {
+            Scalar => vg_sha256_digest,
+            Sha2 => vg_sha256_digest_sha2,
         },
     }
 );

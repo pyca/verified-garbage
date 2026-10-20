@@ -1,13 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Fn
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Keeps
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Keeps
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # The point operations a caller runs

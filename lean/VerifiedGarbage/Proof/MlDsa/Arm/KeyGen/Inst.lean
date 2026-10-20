@@ -1,19 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Top
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Top
 public import VerifiedGarbage.Impl.MlDsa.Arm.KeyGen.Inst
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Samp
 import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttInv
 import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
 import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNttCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejBounded
 import VerifiedGarbage.Proof.MlDsa.Arm.Round.Power2Round
 import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
 import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on 32-bit ARM, with this library's primitives

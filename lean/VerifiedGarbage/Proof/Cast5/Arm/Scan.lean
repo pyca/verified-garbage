@@ -2,12 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Cast5.Arm.Run
 public import VerifiedGarbage.Proof.Cast5.Table
-import VerifiedGarbage.Proof.Framework.Arm.Syms
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Cast5.Arm
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # CAST5 on ARMv7: the scan of a table

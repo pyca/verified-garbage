@@ -28,7 +28,12 @@
 //! functions work in.
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64"),
+    any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "arm"
+    ),
     feature = "alloc"
 ))]
 
@@ -36,16 +41,28 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+use crate::arch::rsa_pkcs1_sig::vg_rsa_pkcs1_sign_umaal;
 use crate::arch::rsa_pkcs1_sig::{
     vg_rsa_pkcs1_recover_precomputed, vg_rsa_pkcs1_sign, vg_rsa_pkcs1_verify_precomputed,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_pkcs1_sig::{
-    vg_rsa_pkcs1_recover_precomputed_adx, vg_rsa_pkcs1_sign_adx, vg_rsa_pkcs1_sign_ifma,
-    vg_rsa_pkcs1_verify_precomputed_adx,
+    vg_rsa_pkcs1_recover_precomputed_adx, vg_rsa_pkcs1_recover_precomputed_ifma,
+    vg_rsa_pkcs1_sign_adx, vg_rsa_pkcs1_sign_ifma, vg_rsa_pkcs1_verify_precomputed_adx,
+    vg_rsa_pkcs1_verify_precomputed_ifma,
 };
 use crate::cpu::detected;
-use crate::rsa::{Backend, PrivateKey, PublicKey, scratch_words};
+use crate::rsa::{Backend, PrivateKey, PublicKey, public_scratch_words, scratch_words};
 
 /// The hash function of a hash value (`VG.Spec.RsaPkcs1Sig.Hash`), each with
 /// the number the verified functions take (`VG.Spec.RsaPkcs1Sig.Hash.ofId`).
@@ -138,6 +155,17 @@ pub fn sign(key: &PrivateKey, digest: &[u8], hash: Hash) -> Result<Vec<u8>, Erro
         Backend::Adx => vg_rsa_pkcs1_sign_adx,
         #[cfg(target_arch = "x86_64")]
         Backend::Ifma => vg_rsa_pkcs1_sign_ifma,
+        #[cfg(all(
+            target_arch = "arm",
+            any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            )
+        ))]
+        Backend::Umaal => vg_rsa_pkcs1_sign_umaal,
     };
     // SAFETY: each pointer is valid for its length (`out` for writes,
     // `scratch` too), and none overlaps another or wraps around, as they are
@@ -171,8 +199,6 @@ pub fn sign(key: &PrivateKey, digest: &[u8], hash: Hash) -> Result<Vec<u8>, Erro
             scratch.len(),
         )
     };
-    // The working space holds the private key and powers of the encoding.
-    crate::zeroize::zeroize(&mut scratch);
     // `PrivateKey::from_crt` checked the key and the length of `digest` is
     // checked above, so a refusal means the encoding does not fit.
     match r {
@@ -185,20 +211,34 @@ pub fn sign(key: &PrivateKey, digest: &[u8], hash: Hash) -> Result<Vec<u8>, Erro
 /// RSASSA-PKCS1-V1_5-VERIFY (RFC 8017 §8.2.2): whether `signature` is a
 /// valid signature of the hash value `digest` of the hash function `hash`.
 ///
-/// Reuses the public key's verification buffer, wiping it after each call.
+/// Reuses the public key's verification buffer, which holds only public
+/// values and is not wiped.
 pub fn verify(key: &PublicKey, signature: &[u8], digest: &[u8], hash: Hash) -> bool {
     let k = key.n.len();
-    let mut scratch = key.verify_scratch.take(scratch_words(k));
+    let mut scratch = key.verify_scratch.take(public_scratch_words(k), false);
     let pre = key.pre(&mut scratch);
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_rsa_pkcs1_verify_precomputed,
         #[cfg(target_arch = "x86_64")]
-        Backend::Adx | Backend::Ifma => vg_rsa_pkcs1_verify_precomputed_adx,
+        Backend::Adx => vg_rsa_pkcs1_verify_precomputed_adx,
+        #[cfg(target_arch = "x86_64")]
+        Backend::Ifma => vg_rsa_pkcs1_verify_precomputed_ifma,
+        #[cfg(all(
+            target_arch = "arm",
+            any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            )
+        ))]
+        Backend::Umaal => vg_rsa_pkcs1_verify_precomputed,
     };
     // SAFETY: each pointer is valid for its length (`scratch` for writes),
     // and none overlaps another or wraps around, as they are distinct Rust
     // allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024` and
-    // `1 ≤ e_len ≤ 5 ≤ n_len`; `scratch_len = 16 n_len + 32`; and `pre`
+    // `1 ≤ e_len ≤ 5 ≤ n_len`; `scratch_len = 8 ⌈n_len / 8⌉ + 48`; and `pre`
     // holds the verified precomputation for `key.n`, with `2 * ceil(n_len / 8)`
     // words. The CPU supports the selected function's features.
     let r = unsafe {
@@ -227,19 +267,32 @@ pub fn verify(key: &PublicKey, signature: &[u8], digest: &[u8], hash: Hash) -> b
 pub fn recover(key: &PublicKey, signature: &[u8], hash: Hash) -> Result<Vec<u8>, Error> {
     let k = key.n.len();
     let mut out = vec![0; hash.digest_len()];
-    let mut scratch = vec![0u64; scratch_words(k)];
+    let mut scratch = vec![0u64; public_scratch_words(k)];
     let pre = key.pre(&mut scratch);
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_rsa_pkcs1_recover_precomputed,
         // `select` chose it because the CPU has the features it needs.
         #[cfg(target_arch = "x86_64")]
-        Backend::Adx | Backend::Ifma => vg_rsa_pkcs1_recover_precomputed_adx,
+        Backend::Adx => vg_rsa_pkcs1_recover_precomputed_adx,
+        #[cfg(target_arch = "x86_64")]
+        Backend::Ifma => vg_rsa_pkcs1_recover_precomputed_ifma,
+        #[cfg(all(
+            target_arch = "arm",
+            any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd"
+            )
+        ))]
+        Backend::Umaal => vg_rsa_pkcs1_recover_precomputed,
     };
     // SAFETY: each pointer is valid for its length (`out` and `scratch` for
     // writes), and none overlaps another or wraps around, as they are
     // distinct Rust allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024`
     // and `1 ≤ e_len ≤ 5 ≤ n_len`; `hash` is in `0..=11` and `out_len` is the
-    // length of its values; `scratch_len = 16 n_len + 32`; `pre` holds the
+    // length of its values; `scratch_len = 8 ⌈n_len / 8⌉ + 48`; `pre` holds the
     // verified precomputation for `key.n`, with `2 * ceil(n_len / 8)` words;
     // and the CPU supports the selected function's features.
     let r = unsafe {

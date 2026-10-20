@@ -2,14 +2,16 @@ module
 
 public import VerifiedGarbage.Impl.Sm4.Arm.Ecb
 public import VerifiedGarbage.Impl.StackScratch.Arm
-public import VerifiedGarbage.Impl.Modes.Arm.Seq
+public import VerifiedGarbage.Impl.Modes.Arm.CbcChained
 public import VerifiedGarbage.Spec.Sm4.Contract
 
 /-!
 # SM4-CBC on ARMv7
 
-`vg_sm4_cbc_encrypt` and `vg_sm4_cbc_decrypt` are the generic modes one
-block at a time (`Impl/Modes/Arm/Seq.lean`) over SM4's ECB functions,
+`vg_sm4_cbc_encrypt_chained` and `vg_sm4_cbc_decrypt_chained` are the
+generic modes one block at a time (`Impl/Modes/Arm/Seq.lean`), which return
+the chaining value in the IV (`Impl/Modes/Arm/CbcChained.lean`), over SM4's
+ECB functions,
 `vg_sm4_ecb_encrypt` and `vg_sm4_ecb_decrypt`, which they call once per
 block (`ecbCore`). Those call `vg_sm4_ecb` (`ecbCall`).
 -/
@@ -46,8 +48,10 @@ def ecbCore (dir : Dir) : Core where
   code := ecbCode dir
   bw := 4
 
-def cbcEncrypt : Prog isa := (ecbCore .encrypt).seq cbcEnc
+/-- `vg_sm4_cbc_encrypt_chained`. -/
+def cbcEncryptChained : Prog isa := (ecbCore .encrypt).seq cbcEncChained
 
-def cbcDecrypt : Prog isa := (ecbCore .decrypt).seq cbcDec
+/-- `vg_sm4_cbc_decrypt_chained`. -/
+def cbcDecryptChained : Prog isa := (ecbCore .decrypt).seq cbcDecChained
 
 end VG.Impl.Sm4.Arm

@@ -1,17 +1,12 @@
 module
 
-import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.P384.Comb7
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P384Sha384
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Verified
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-384 with HMAC-SHA-384 on x86-64
@@ -45,16 +40,12 @@ multiplication with BMI2 and ADX (`adx`, `_adx`, calling
 `vg_ecdsa_p384_sign_adx`) or not. -/
 def withMul (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P384.curve) (c : Proof.Sha512.X86_64.Compress)
     (adx : Bool) : Artifact :=
-  { Spec.Ecdsa.Rfc6979.P384Sha384.signApi with
-    name := Spec.Ecdsa.Rfc6979.P384Sha384.signApi.name ++ c.suffix ++ (if adx then "_adx" else "")
-    target := X86_64.target
-    doc := Spec.Ecdsa.Rfc6979.P384Sha384.signApi.doc
-      (notes := [signNotes (cfgOf (pack adx h.law (Proof.P384.combOk7 h.law) h.inv c)).H 48
-        (Spec.Ecdsa.P384.signApi.name ++ (if adx then "_adx" else ""))])
+  Spec.Ecdsa.Rfc6979.P384Sha384.signApi.artifact X86_64.target {
+    suffix := c.suffix ++ (if adx then "_adx" else "")
+    notes := [signNotes (cfgOf (pack adx h.law (Proof.P384.combOk7 h.law) h.inv c)).H 48
+        (Spec.Ecdsa.P384.signApi.name ++ (if adx then "_adx" else ""))]
     code := (cfgOf (pack adx h.law (Proof.P384.combOk7 h.law) h.inv c)).sign
     consts := Impl.Ecdsa.X86_64.p384.combConsts
-    contract := Spec.Ecdsa.Rfc6979.P384Sha384.inst.signContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts) 240
     stack := 240
     verified := sign_verified adx h.law (Proof.P384.combOk7 h.law) h.inv c
     spSafe := sign_spSafe (pack adx h.law (Proof.P384.combOk7 h.law) h.inv c)

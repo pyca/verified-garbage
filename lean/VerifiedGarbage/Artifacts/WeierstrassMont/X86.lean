@@ -1,15 +1,11 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Impl.Weierstrass.X86.Mont
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontVerified
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
 
 /-! # Montgomery arithmetic modulo the curves' `p` and `n` on x86 (32-bit) -/
 
@@ -28,174 +24,98 @@ def notes : List String := ["The function saves `ebp` (and the product `ebx`, `e
   a conditional subtraction selected by a mask."]
 
 def artifacts : List Artifact := [
-  { p224p.mulApi with
-    target := X86.target
-    doc := p224p.mulApi.doc (notes := notes)
+  p224p.mulApi.artifact X86.target {
+    notes := notes
     code := mulFn p224p.k p224p.m
-    contract := p224p.mulContract X86.abi
-    verified := p224p_mul_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p224p.addApi with
-    target := X86.target
-    doc := p224p.addApi.doc (notes := notes)
+    verified := p224p_mul_verified },
+  p224p.addApi.artifact X86.target {
+    notes := notes
     code := addFn p224p.k p224p.m
-    contract := p224p.addContract X86.abi
-    verified := p224p_add_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p224p.subApi with
-    target := X86.target
-    doc := p224p.subApi.doc (notes := notes)
+    verified := p224p_add_verified },
+  p224p.subApi.artifact X86.target {
+    notes := notes
     code := subFn p224p.k p224p.m
-    contract := p224p.subContract X86.abi
-    verified := p224p_sub_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p224n.mulApi with
-    target := X86.target
-    doc := p224n.mulApi.doc (notes := notes)
+    verified := p224p_sub_verified },
+  p224n.mulApi.artifact X86.target {
+    notes := notes
     code := mulFn p224n.k p224n.m
-    contract := p224n.mulContract X86.abi
-    verified := p224n_mul_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p224n.addApi with
-    target := X86.target
-    doc := p224n.addApi.doc (notes := notes)
+    verified := p224n_mul_verified },
+  p224n.addApi.artifact X86.target {
+    notes := notes
     code := addFn p224n.k p224n.m
-    contract := p224n.addContract X86.abi
-    verified := p224n_add_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p224n.subApi with
-    target := X86.target
-    doc := p224n.subApi.doc (notes := notes)
+    verified := p224n_add_verified },
+  p224n.subApi.artifact X86.target {
+    notes := notes
     code := subFn p224n.k p224n.m
-    contract := p224n.subContract X86.abi
-    verified := p224n_sub_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p256p.mulApi with
-    target := X86.target
-    doc := p256p.mulApi.doc (notes := notes ++ ["Equal public operand offsets select a \
-      dedicated Comba square with 36 word products and eight full-product sparse REDC rounds."])
+    verified := p224n_sub_verified },
+  p256p.mulApi.artifact X86.target {
+    notes := notes ++ ["Equal public operand offsets select a \
+      dedicated Comba square with 36 word products and eight full-product sparse REDC rounds."]
     code := mulFn p256p.k p256p.m
-    contract := p256p.mulContract X86.abi
-    verified := p256p_mul_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p256p.addApi with
-    target := X86.target
-    doc := p256p.addApi.doc (notes := notes)
+    verified := p256p_mul_verified },
+  p256p.addApi.artifact X86.target {
+    notes := notes
     code := addFn p256p.k p256p.m
-    contract := p256p.addContract X86.abi
-    verified := p256p_add_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p256p.subApi with
-    target := X86.target
-    doc := p256p.subApi.doc (notes := notes)
+    verified := p256p_add_verified },
+  p256p.subApi.artifact X86.target {
+    notes := notes
     code := subFn p256p.k p256p.m
-    contract := p256p.subContract X86.abi
-    verified := p256p_sub_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p256n.mulApi with
-    target := X86.target
-    doc := p256n.mulApi.doc (notes := notes)
+    verified := p256p_sub_verified },
+  p256n.mulApi.artifact X86.target {
+    notes := notes
     code := mulFn p256n.k p256n.m
-    contract := p256n.mulContract X86.abi
-    verified := p256n_mul_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p256n.addApi with
-    target := X86.target
-    doc := p256n.addApi.doc (notes := notes)
+    verified := p256n_mul_verified },
+  p256n.addApi.artifact X86.target {
+    notes := notes
     code := addFn p256n.k p256n.m
-    contract := p256n.addContract X86.abi
-    verified := p256n_add_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p256n.subApi with
-    target := X86.target
-    doc := p256n.subApi.doc (notes := notes)
-    code := subFn p256n.k p256n.m
-    contract := p256n.subContract X86.abi
-    verified := p256n_sub_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p384p.mulApi with
-    target := X86.target
-    doc := p384p.mulApi.doc (notes := notes)
+    verified := p256n_add_verified },
+  p384p.mulApi.artifact X86.target {
+    notes := notes
     code := mulFn p384p.k p384p.m
-    contract := p384p.mulContract X86.abi
-    verified := p384p_mul_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p384p.addApi with
-    target := X86.target
-    doc := p384p.addApi.doc (notes := notes)
+    verified := p384p_mul_verified },
+  p384p.addApi.artifact X86.target {
+    notes := notes
     code := addFn p384p.k p384p.m
-    contract := p384p.addContract X86.abi
-    verified := p384p_add_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p384p.subApi with
-    target := X86.target
-    doc := p384p.subApi.doc (notes := notes)
+    verified := p384p_add_verified },
+  p384p.subApi.artifact X86.target {
+    notes := notes
     code := subFn p384p.k p384p.m
-    contract := p384p.subContract X86.abi
-    verified := p384p_sub_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p384n.mulApi with
-    target := X86.target
-    doc := p384n.mulApi.doc (notes := notes)
+    verified := p384p_sub_verified },
+  p384n.mulApi.artifact X86.target {
+    notes := notes
     code := mulFn p384n.k p384n.m
-    contract := p384n.mulContract X86.abi
-    verified := p384n_mul_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p384n.addApi with
-    target := X86.target
-    doc := p384n.addApi.doc (notes := notes)
+    verified := p384n_mul_verified },
+  p384n.addApi.artifact X86.target {
+    notes := notes
     code := addFn p384n.k p384n.m
-    contract := p384n.addContract X86.abi
-    verified := p384n_add_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p384n.subApi with
-    target := X86.target
-    doc := p384n.subApi.doc (notes := notes)
+    verified := p384n_add_verified },
+  p384n.subApi.artifact X86.target {
+    notes := notes
     code := subFn p384n.k p384n.m
-    contract := p384n.subContract X86.abi
-    verified := p384n_sub_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p521p.mulApi with
-    target := X86.target
-    doc := p521p.mulApi.doc (notes := notes)
+    verified := p384n_sub_verified },
+  p521p.mulApi.artifact X86.target {
+    notes := notes
     code := mulFn p521p.k p521p.m
-    contract := p521p.mulContract X86.abi
-    verified := p521p_mul_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p521p.addApi with
-    target := X86.target
-    doc := p521p.addApi.doc (notes := notes)
+    verified := p521p_mul_verified },
+  p521p.addApi.artifact X86.target {
+    notes := notes
     code := addFn p521p.k p521p.m
-    contract := p521p.addContract X86.abi
-    verified := p521p_add_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p521p.subApi with
-    target := X86.target
-    doc := p521p.subApi.doc (notes := notes)
+    verified := p521p_add_verified },
+  p521p.subApi.artifact X86.target {
+    notes := notes
     code := subFn p521p.k p521p.m
-    contract := p521p.subContract X86.abi
-    verified := p521p_sub_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p521n.mulApi with
-    target := X86.target
-    doc := p521n.mulApi.doc (notes := notes)
+    verified := p521p_sub_verified },
+  p521n.mulApi.artifact X86.target {
+    notes := notes
     code := mulFn p521n.k p521n.m
-    contract := p521n.mulContract X86.abi
-    verified := p521n_mul_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p521n.addApi with
-    target := X86.target
-    doc := p521n.addApi.doc (notes := notes)
+    verified := p521n_mul_verified },
+  p521n.addApi.artifact X86.target {
+    notes := notes
     code := addFn p521n.k p521n.m
-    contract := p521n.addContract X86.abi
-    verified := p521n_add_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { p521n.subApi with
-    target := X86.target
-    doc := p521n.subApi.doc (notes := notes)
+    verified := p521n_add_verified },
+  p521n.subApi.artifact X86.target {
+    notes := notes
     code := subFn p521n.k p521n.m
-    contract := p521n.subContract X86.abi
-    verified := p521n_sub_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := p521n_sub_verified }]
 
 end VG.Artifacts.WeierstrassMont.X86

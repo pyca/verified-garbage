@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86.Key.ConstantTime
-public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.TripleDes.X86.Key.ConstantTime
 public import VerifiedGarbage.Proof.TripleDes.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.TripleDes.X86.ExpandKey
+public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
 
 @[expose] public section
 

@@ -9,7 +9,7 @@
 //! function is not supported, so nothing verifies with it.
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64"),
+    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
     feature = "alloc"
 ))]
 
@@ -73,6 +73,24 @@ struct MsgCase {
 /// `x` without its leading zero bytes.
 fn trim(x: &[u8]) -> &[u8] {
     &x[x.iter().take_while(|&&b| b == 0).count()..]
+}
+
+/// The CRT key `k` of the vector file `name`, and its public key.
+fn keys(name: &str, k: &Crt) -> (PrivateKey, PublicKey) {
+    let n = trim(&k.modulus.0);
+    let private = PrivateKey::from_crt(
+        n,
+        &k.public_exponent.0,
+        &k.private_exponent.0,
+        &k.prime1.0,
+        &k.prime2.0,
+        &k.exponent1.0,
+        &k.exponent2.0,
+        &k.coefficient.0,
+    )
+    .unwrap_or_else(|e| panic!("{name}: {e}"));
+    let public = PublicKey::new(n, &k.public_exponent.0).unwrap();
+    (private, public)
 }
 
 const HASHES: [(&str, Hash); 8] = [
@@ -160,28 +178,19 @@ fn rsa_pss_test() {
 /// the hash value's length: the signature verifies with its salt length and
 /// with any, and not with another; and two signatures with random salts
 /// differ. Every size of key, even where the other RSA tests leave out
-/// those of 3072 and 4096 bits (`harness::rsa_bits_tested`).
+/// those of 3072 and 4096 bits (`harness::rsa_bits_signed`).
 #[test]
 fn rsa_pss_sign_test() {
     require_vectors!();
-    for bits in [2048, 3072, 4096] {
+    for bits in [2048, 3072, 4096]
+        .into_iter()
+        .filter(|&b| harness::rsa_bits_signed(b))
+    {
         let name = format!("rsa_pkcs1_{bits}_test.json");
         let file = harness::load::<CrtGroup, MsgCase>(&name);
         harness::par_each(&file.test_groups, |group| {
-            let k = &group.params.private_key;
-            let n = trim(&k.modulus.0);
-            let private = PrivateKey::from_crt(
-                n,
-                &k.public_exponent.0,
-                &k.private_exponent.0,
-                &k.prime1.0,
-                &k.prime2.0,
-                &k.exponent1.0,
-                &k.exponent2.0,
-                &k.coefficient.0,
-            )
-            .unwrap_or_else(|e| panic!("{name}: {e}"));
-            let public = PublicKey::new(n, &k.public_exponent.0).unwrap();
+            let (private, public) = keys(&name, &group.params.private_key);
+            let n = trim(&group.params.private_key.modulus.0);
             for (test, (_, h)) in group.tests.iter().take(8).zip(HASHES.iter()) {
                 let id = test.tc_id;
                 let d = digest(*h, &test.case.msg.0);

@@ -1,15 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
-import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
 
 /-!
 # RSA with AVX512_IFMA on x86-64: the bases in the primes' workspaces

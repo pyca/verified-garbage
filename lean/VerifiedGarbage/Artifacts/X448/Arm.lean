@@ -1,11 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Impl.X448.Arm
 public import VerifiedGarbage.Proof.X448.Arm.Verified
-import VerifiedGarbage.Proof.X448.Arm.Lit
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # X448 (RFC 7748) on ARMv7 -/
 
@@ -14,15 +10,12 @@ import VerifiedGarbage.Proof.Framework.Arm.Call
 namespace VG.Artifacts.X448.Arm
 
 def artifacts : List Artifact := [
-  { Spec.X448.x448Api with
-    target := Arm.target
-    doc := Spec.X448.x448Api.doc (notes := ["The function saves its caller's callee-saved \
+  Spec.X448.x448Api.artifact Arm.target {
+    notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements are twenty-eight 16-bit limbs; multiplications, \
       additions, subtractions and the multiplication by a24 are calls of the `vg_gf448_r16_*` \
-      functions on `scratch`. Inversion uses an addition chain for `p - 2`."])
+      functions on `scratch`. Inversion uses an addition chain for `p - 2`."]
     code := Impl.X448.Arm.x448
-    contract := Spec.X448.x448Contract Arm.abi
-    verified := Proof.X448.Arm.x448_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.X448.Arm.x448_verified }]
 
 end VG.Artifacts.X448.Arm

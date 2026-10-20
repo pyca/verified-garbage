@@ -1,13 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Mont.X86_64.CsubS
-public import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Mont.X86_64.CsubS
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 public import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Mont.X86_64.Csub
+import VerifiedGarbage.Proof.Mont.X86_64.Chain
+import VerifiedGarbage.Proof.Mont.X86_64.Friendly
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Montgomery arithmetic on x86-64: P-256's products with BMI2 and ADX

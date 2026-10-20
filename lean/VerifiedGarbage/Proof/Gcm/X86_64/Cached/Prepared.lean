@@ -1,12 +1,19 @@
 module
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
-public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Loop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Loop
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
+import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Load
+import VerifiedGarbage.Proof.Framework.X86_64.HighKeep
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Prepared tables and the cached-key loop setup -/
 

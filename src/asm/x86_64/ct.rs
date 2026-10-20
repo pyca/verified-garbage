@@ -14,30 +14,30 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ct_eq(a: *const u8, a_len: usize, b: *const u8, b_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, 0",
-        "mov r8, rsi",
-        "cmp r8, rcx",
-        "je 20f",
-        "jmp 21f",
-        "20:",
-        "mov r8, 0",
-        "cmp r8, rsi",
-        "je 22f",
-        "24:",
-        "movzx r9d, BYTE PTR [rdi+r8*1]",
-        "movzx r10d, BYTE PTR [rdx+r8*1]",
-        "xor r9, r10",
-        "or rax, r9",
-        "add r8, 1",
-        "cmp r8, rsi",
-        "jne 24b",
-        "jmp 23f",
-        "22:",
-        "23:",
-        "sub rax, 1",
-        "shr rax, 63",
-        "21:",
-        "ret",
-        ".p2align 6",
+        r"mov rax, 0
+mov r8, rsi
+cmp r8, rcx
+je 20f
+jmp 21f
+20:
+mov r8, 0
+cmp r8, rsi
+je 22f
+24:
+movzx r9d, BYTE PTR [rdi+r8*1]
+movzx r10d, BYTE PTR [rdx+r8*1]
+xor r9, r10
+or rax, r9
+add r8, 1
+cmp r8, rsi
+jne 24b
+jmp 23f
+22:
+23:
+sub rax, 1
+shr rax, 63
+21:
+ret
+.p2align 6",
     )
 }

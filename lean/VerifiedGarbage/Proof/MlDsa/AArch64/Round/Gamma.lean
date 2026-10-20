@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # ML-DSA on AArch64: the functions with `γ₂`
@@ -73,7 +72,7 @@ theorem hbConsts_ok (g : Nat) (hg : IsG g) (rm ra : Reg) (hr : rm ≠ ra) (s : S
       (s'.gpr rm = BitVec.ofNat 64 (hbMul g) ∧ s'.gpr ra = BitVec.ofNat 64 (hbAdd g) ∧ s'.mem = s.mem) ∧
         Keep [rm, ra] s s' := by
   refine VG.Proof.MlDsa.AArch64.Arith.WP.keep _ ?_ (by simp [VG.Proof.MlDsa.AArch64.Arith.writesOnly,
-    Code.allInstrs, hbConsts, dstOf]) (hv := by simp [Code.allInstrs, hbConsts, keepsV, vdstOf])
+    Code.allInstrs, hbConsts, dsts, dstOf, Option.toList]) (hv := by simp [Code.allInstrs, hbConsts, keepsV, vdstOf])
   unfold hbConsts
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Size.bits, show 16 * 0 < 64 by decide,

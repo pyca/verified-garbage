@@ -1,14 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafLoop
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinish
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombOut
 
 @[expose] public section
 

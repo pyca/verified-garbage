@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.AesOfb.AArch64.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-OFB (NIST SP 800-38A §6.4) on AArch64
@@ -22,15 +22,12 @@ namespace VG.Generic.AesBlocks.AArch64.AesOfb
 open VG.Proof.AesOfb.AArch64
 
 def artifacts (v : Proof.Aes.AArch64.BlocksImpl) : List Artifact := [
-  { Spec.Ofb.aesApi with
-    name := Spec.Ofb.aesApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Ofb.aesApi.doc (notes := ["This implementation enciphers one block at a time with `" ++
-      v.enc.name ++ "`."])
+  Spec.Ofb.aesApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := ["This implementation enciphers one block at a time with `" ++
+      v.enc.name ++ "`."]
     code := Impl.AesOfb.AArch64.crypt v.enc
-    contract := Spec.Ofb.aesContract AArch64.abi
     verified := crypt_verified v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features }]
 
 end VG.Generic.AesBlocks.AArch64.AesOfb

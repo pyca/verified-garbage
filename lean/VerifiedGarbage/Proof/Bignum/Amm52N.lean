@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Amm52
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Almost Montgomery multiplication in radix `2⁵²`, of any number of limbs
@@ -102,14 +98,14 @@ theorem step_val {N : Nat} (hN : 2 ≤ N) {o : Ops} (ho : Ok N o) (L : Nat → N
   omega
 
 /-- A bound on the limbs kept by a step: below `S` before, below `S + 2⁵⁶`
-after, while `S ≤ 2⁶²`. -/
-theorem step_lt {N : Nat} {o : Ops} {L : Nat → Nat} {b S : Nat} (hS : S ≤ 2 ^ 62)
+after, while `S ≤ 2⁶³`. -/
+theorem step_lt {N : Nat} {o : Ops} {L : Nat → Nat} {b S : Nat} (hS : S ≤ 2 ^ 63)
     (hL : ∀ j < N, L j < S) : ∀ j < N, step N o L b j < S + 2 ^ 56 := by
   intro j hj
   have hl : ∀ j < N, low o L b j < S + 2 ^ 53 := fun j hj => by
     have := hL j hj; have := lo_lt (o.a j) b; have := lo_lt (o.m j) (stepU o L b)
     unfold low; omega
-  have hc : low o L b 0 / 2 ^ 52 ≤ 2 ^ 11 := by
+  have hc : low o L b 0 / 2 ^ 52 ≤ 2 ^ 12 := by
     have := hl 0 (by omega)
     exact Nat.le_of_lt_succ (Nat.div_lt_of_lt_mul (by omega))
   have := hi_lt (o.a j) b
@@ -149,7 +145,7 @@ theorem steps_val {N : Nat} (hN : 2 ≤ N) {o : Ops} (ho : Ok N o) {b : Nat → 
       lval_succ (stepsU N o b L) n, hu]
     exact Amm52.steps_alg e (ih (by omega))
 
-theorem steps_lt {N : Nat} {o : Ops} {b : Nat → Nat} {L : Nat → Nat} (hN : N ≤ 63)
+theorem steps_lt {N : Nat} {o : Ops} {b : Nat → Nat} {L : Nat → Nat} (hN : N ≤ 127)
     (hL : ∀ j < N, L j < 2 ^ 56) :
     ∀ n ≤ N, ∀ j < N, steps N o b n L j < (n + 1) * 2 ^ 56 := by
   intro n

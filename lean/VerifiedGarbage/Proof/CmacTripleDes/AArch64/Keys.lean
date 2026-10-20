@@ -1,13 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Framework.AArch64.Linear
 
-public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Round
 import VerifiedGarbage.Proof.CmacTripleDes.KeySchedule
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.KeysLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.CmacTripleDes.AArch64.Round
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
+import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # DES's key schedule on AArch64
@@ -44,19 +43,12 @@ def kWrites : List Reg := [.x6, .x7, .x11]
 
 /-- Every register `roundKeys` writes is one of `kWrites`: checked once
 for every instruction, rather than once for every other register. -/
-theorem roundKeys_writes : roundKeys.all (fun i => (dstOf i).all kWrites.contains) = true := by
+theorem roundKeys_writes : roundKeys.all (fun i => (dsts i).all kWrites.contains) = true := by
   rw [roundKeys_eq]; lit_decide
 
-theorem roundKeys_kept {r : Reg} (hr : r ∉ kWrites) : roundKeys.all (fun i => dstOf i != some r) = true :=
+theorem roundKeys_kept {r : Reg} (hr : r ∉ kWrites) : roundKeys.all (fun i => !clobbers i r) = true :=
   List.all_eq_true.mpr fun i hi => by
-    have h := List.all_eq_true.mp roundKeys_writes i hi
-    cases hd : dstOf i with
-    | none => rfl
-    | some d =>
-      rw [hd, Option.all_some] at h
-      have hd' : d ∈ kWrites := by simpa using h
-      have hne : d ≠ r := fun e => hr (e ▸ hd')
-      simpa using hne
+    simpa using clobbers_eq_false_of_all (List.all_eq_true.mp roundKeys_writes i hi) (by simpa using hr)
 
 /-- The round keys of the DES key in `x5`, in `[x2 + 8 j]`. -/
 theorem roundKeys_ok {s : State} (hok : Ok kCfg s) :

@@ -2,16 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mul
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Field
 import VerifiedGarbage.Proof.Ed25519.AArch64.Sub
 public import VerifiedGarbage.Spec.Ed25519
 public import Mathlib.Logic.Function.Basic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! Merged from `Proof.Ed25519.AArch64.Sqr`. -/
 
@@ -78,10 +75,11 @@ theorem sqrWide_ok {s : State} {base : Addr} (hs : Scr s base large) {a : Nat}
   omega_using [e4, hlt]
 
 /-- Squaring modulo p, allowing the output to alias the input. -/
-theorem sqr_ok {s : State} {base : Addr} (hs : Scr s base large) {o a : Nat}
+theorem sqr_okB {s : State} {base : Addr} (hs : Scr s base large) {o a : Nat}
     (ho : FieldRange o large) (ha : FieldRange a large) :
     WP isa (.block (fieldSqr o a)) s fun t =>
-      Op base o s t ∧ F t.mem base o = F s.mem base a * F s.mem base a := by
+      Op base o s t ∧ F t.mem base o = F s.mem base a * F s.mem base a ∧
+        fe t.mem base o < 2 ^ 255 + 2 ^ 135 := by
   have _hcap := workSize_le large
   have _hmin := workSize_ge large
   rw [fieldSqr, List.append_assoc, List.append_assoc, WP.block_append_iff]
@@ -91,9 +89,87 @@ theorem sqr_ok {s : State} {base : Addr} (hs : Scr s base large) {o a : Nat}
   refine WP.mono (sqrWide_ok hs₀ ha hz) fun s₁ ⟨e1, k1⟩ => ?_
   refine WP.mono (fieldFinish_ok (hs₀.of_keeps k1 (by decide)) ho
     ((k1.gpr _ (by decide)).trans hz) ((k0.mono (by decide)).trans (k1.mono (by decide))))
-    fun t ⟨hop, ht⟩ => ⟨hop, ?_⟩
+    fun t ⟨hop, ht, hb⟩ => ⟨hop, ?_, hb⟩
   rw [ht, e1, k0.mem]
   exact toFe_mul rfl
+
+theorem sqr_ok {s : State} {base : Addr} (hs : Scr s base large) {o a : Nat}
+    (ho : FieldRange o large) (ha : FieldRange a large) :
+    WP isa (.block (fieldSqr o a)) s fun t =>
+      Op base o s t ∧ F t.mem base o = F s.mem base a * F s.mem base a :=
+  WP.mono (sqr_okB hs ho ha) fun _ ⟨h, e, _⟩ => ⟨h, e⟩
+
+theorem movReg_ok (s : State) (d n : Reg) :
+    WP isa (.block [mov d n]) s fun t => t.gpr d = s.gpr n ∧ Keeps [d] s t := by
+  refine WP.block_cons_iff.mpr ⟨_, exec_addImm_x (imm := 0) (by decide), WP.block_nil_iff.mpr
+    ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩⟩
+  · rw [RegUpd.gpr_write_self, BitVec.setWidth_eq]
+    simp only [State.read, BitVec.setWidth_eq, BitVec.add_zero]
+  · exact RegUpd.gpr_write_of_ne _ _ _ (by simpa using hr)
+
+/-- `movB`: x4–x7 into x12–x15. -/
+theorem movB_ok (s : State) :
+    WP isa (.block movB) s fun t =>
+      val4 (t.gpr .x12) (t.gpr .x13) (t.gpr .x14) (t.gpr .x15) =
+        val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) ∧
+      Keeps [.x12, .x13, .x14, .x15] s t := by
+  rw [show movB = ([mov .x12 .x4] : List Instr) ++ (([mov .x13 .x5] : List Instr) ++
+    (([mov .x14 .x6] : List Instr) ++ ([mov .x15 .x7] : List Instr))) from rfl,
+    WP.block_append_iff]
+  refine WP.mono (movReg_ok s .x12 .x4) fun s₁ ⟨e1, k1⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (movReg_ok s₁ .x13 .x5) fun s₂ ⟨e2, k2⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (movReg_ok s₂ .x14 .x6) fun s₃ ⟨e3, k3⟩ => ?_
+  refine WP.mono (movReg_ok s₃ .x15 .x7) fun t ⟨e4, k4⟩ => ⟨?_, ?_⟩
+  · rw [e4, k4.gpr .x12 (by decide), k4.gpr .x13 (by decide), k4.gpr .x14 (by decide),
+      k3.gpr .x12 (by decide), k3.gpr .x13 (by decide), e3, k2.gpr .x12 (by decide), e2, e1,
+      k3.gpr .x7 (by decide), k2.gpr .x7 (by decide), k1.gpr .x7 (by decide),
+      k2.gpr .x6 (by decide), k1.gpr .x6 (by decide), k1.gpr .x5 (by decide)]
+  · exact ((k1.mono (by decide)).trans (k2.mono (by decide))).trans
+      ((k3.mono (by decide)).trans (k4.mono (by decide)))
+
+/-- `[o] := [a] · [b]²`, allowing the output to alias either input; the result is
+stored below `2²⁵⁵ + 2¹³⁵`. -/
+theorem sqrMul_okB {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
+    (ho : FieldRange o large) (ha : FieldRange a large) (hb : FieldRange b large) :
+    WP isa (.block (fieldSqrMul o a b)) s fun t =>
+      Op base o s t ∧ F t.mem base o = F s.mem base a * (F s.mem base b * F s.mem base b) ∧
+        fe t.mem base o < 2 ^ 255 + 2 ^ 135 := by
+  have _hcap := workSize_le large
+  have _hmin := workSize_ge large
+  simp only [fieldSqrMul, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (zeroReg_ok s .x10) fun s₀ ⟨hz, k0⟩ => ?_
+  have hs₀ := hs.of_keeps k0 (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (sqrWide_ok hs₀ hb hz) fun s₁ ⟨e1, k1⟩ => ?_
+  have hs₁ := hs₀.of_keeps k1 (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (reduceWide_ok s₁ ((k1.gpr _ (by decide)).trans hz)) fun s₂ ⟨e2, z2, k2, _⟩ => ?_
+  have hs₂ := hs₁.of_keeps k2 (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (movB_ok s₂) fun s₃ ⟨e3, k3⟩ => ?_
+  have hs₃ := hs₂.of_keeps k3 (by decide)
+  have z3 : s₃.gpr .x10 = 0 := (k3.gpr _ (by decide)).trans z2
+  rw [WP.block_append_iff]
+  refine WP.mono (mulRows_ok hs₃ ha z3 e3) fun s₄ ⟨e4, k4⟩ => ?_
+  refine WP.mono (fieldFinish_ok (hs₃.of_keeps k4 (by decide)) ho
+    ((k4.gpr _ (by decide)).trans z3)
+    ((((k0.mono (by decide)).trans (k1.mono (by decide))).trans (k2.mono (by decide))).trans
+      ((k3.mono (by decide)).trans (k4.mono (by decide)))))
+    fun t ⟨hop, ht, hb⟩ => ⟨hop, ?_, hb⟩
+  have m3 : s₃.mem = s.mem := by rw [k3.mem, k2.mem, k1.mem, k0.mem]
+  rw [ht, e4, m3]
+  rw [toFe_mul rfl, e2, e1, k0.mem]
+  exact congrArg _ (toFe_mul rfl)
+
+/-- `[o] := [a] · [b]²`, allowing the output to alias either input. -/
+theorem sqrMul_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
+    (ho : FieldRange o large) (ha : FieldRange a large) (hb : FieldRange b large) :
+    WP isa (.block (fieldSqrMul o a b)) s fun t =>
+      Op base o s t ∧ F t.mem base o = F s.mem base a * (F s.mem base b * F s.mem base b) :=
+  WP.mono (sqrMul_okB hs ho ha hb) fun _ ⟨h, e, _⟩ => ⟨h, e⟩
 
 end VG.Proof.Ed25519.AArch64
 end
@@ -203,6 +279,78 @@ theorem add_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
     exact (fold256 _ _).symm
   exact hm.trans (toFe_add rfl)
 
+
+theorem carry38Once_ok (s : State) (hz : s.gpr .x10 = 0) :
+    WP isa (.block carry38Once) s fun t =>
+      ∃ c : Bool, val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) + 2 ^ 256 * c.toNat =
+        val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) + (s.gpr .x8).toNat ∧
+      Keeps [.x4, .x5, .x6, .x7] s t := by
+  rw [carry38Once]
+  reg_exec hz
+  refine ⟨carryOut (s.gpr .x7) 0 (carryOut (s.gpr .x6) 0
+      (carryOut (s.gpr .x5) 0 (carryOut (s.gpr .x4) (s.gpr .x8) false))), ?_,
+    ⟨?_, by simp only [RegUpd.mem_addWithCarry], by simp only [RegUpd.rd_addWithCarry],
+      by simp only [RegUpd.wr_addWithCarry], by simp only [RegUpd.sp_addWithCarry]⟩⟩
+  · have e0 := addCarry_value (s.gpr .x4) (s.gpr .x8) false
+    have e1 := addCarry_value (s.gpr .x5) 0 (carryOut (s.gpr .x4) (s.gpr .x8) false)
+    have e2 := addCarry_value (s.gpr .x6) 0 (carryOut (s.gpr .x5) 0 (carryOut (s.gpr .x4) (s.gpr .x8) false))
+    have e3 := addCarry_value (s.gpr .x7) 0 (carryOut (s.gpr .x6) 0
+      (carryOut (s.gpr .x5) 0 (carryOut (s.gpr .x4) (s.gpr .x8) false)))
+    dsimp only [addCarry, carryOut, Size.bits] at e0 e1 e2 e3 ⊢
+    have z : (0 : BitVec 64).toNat = 0 := rfl
+    simp only [val4, Bool.toNat_false, Nat.add_zero, z] at e0 e1 e2 e3 ⊢
+    omega
+  · reg_keeps
+
+/-- Addition modulo p with one fold of the carry, for operands that sum below
+`2²⁵⁷ − 38`. -/
+theorem add1_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
+    (ho : FieldRange o large) (ha : FieldRange a large) (hb : FieldRange b large)
+    (hab : fe s.mem base a + fe s.mem base b < 2 ^ 257 - 38) :
+    WP isa (.block (fieldAdd1 o a b)) s fun t =>
+      Op base o s t ∧ F t.mem base o = F s.mem base a + F s.mem base b := by
+  have _hcap := workSize_le large
+  have _hmin := workSize_ge large
+  rw [fieldAdd1, List.append_assoc, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (fieldInit_ok s) fun s₀ ⟨hz, h38, k0⟩ => ?_
+  have hs₀ := hs.of_keeps k0 (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (addWords_ok hs₀ ha hb hz h38) fun s₁ ⟨c, e1, x1, k1⟩ => ?_
+  have hs₁ := hs₀.of_keeps k1 (by decide)
+  rw [WP.block_append_iff]
+  have hz1 : s₁.gpr .x10 = 0 := (k1.gpr _ (by decide)).trans hz
+  refine WP.mono (carry38Once_ok s₁ hz1) fun s₂ ⟨c', e2, k2⟩ => ?_
+  have hs₂ := hs₁.of_keeps k2 (by decide)
+  refine WP.mono (store4_ok hs₂ ho) fun s₃ heq => ?_
+  subst s₃
+  have k0' : Keeps clob s s₀ := k0.mono (by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> decide)
+  have k1' : Keeps clob s₀ s₁ := k1.mono (by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
+  have k2' : Keeps clob s₁ s₂ := k2.mono (by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> decide)
+  refine ⟨Op.of_store ho (k0'.trans (k1'.trans k2')) _ _ _ _, ?_⟩
+  simp only [F]
+  rw [fe_st4 _ _ (by have := ho.2; omega)]
+  rw [k0.mem] at e1
+  have hl := val4_lt (s₂.gpr .x4) (s₂.gpr .x5) (s₂.gpr .x6) (s₂.gpr .x7)
+  have hl1 := val4_lt (s₁.gpr .x4) (s₁.gpr .x5) (s₁.gpr .x6) (s₁.gpr .x7)
+  have hc := Bool.toNat_le c
+  have hc' := Bool.toNat_le c'
+  have hsum : fe s.mem base a + fe s.mem base b =
+      val4 (s₂.gpr .x4) (s₂.gpr .x5) (s₂.gpr .x6) (s₂.gpr .x7) + VG.Spec.X25519.P * (2 * c.toNat) := by
+    simp only [VG.Spec.X25519.P]
+    rw [x1] at e2
+    omega
+  apply toFe_add
+  rw [hsum, Nat.add_mul_mod_self_left]
+
 end VG.Proof.Ed25519.AArch64
 end
 
@@ -246,17 +394,24 @@ theorem constWords_ok (s : State) (v : Spec.X25519.Fe) :
     k4.gpr .x5 (by decide), k3.gpr .x5 (by decide), e2, k4.gpr .x6 (by decide), e3, e4]
   exact limbs_nat _ (by have := v.isLt; simp only [Spec.X25519.P] at this; omega)
 
-theorem constField_op {s : State} {base : Addr} (hs : Scr s base large) (o : Slot) (v : Spec.X25519.Fe) :
+theorem constField_opB {s : State} {base : Addr} (hs : Scr s base large) (o : Slot) (v : Spec.X25519.Fe) :
     WP isa (.block (constField o v)) s fun t =>
-      Op base (offset o) s t ∧ F t.mem base (offset o) = v := by
+      Op base (offset o) s t ∧ F t.mem base (offset o) = v ∧ fe t.mem base (offset o) = v.val := by
   have _hcap := workSize_le large
   have _hmin := workSize_ge large
   rw [constField, WP.block_append_iff]
   refine WP.mono (constWords_ok s v) fun t ⟨hv, hk⟩ => ?_
   refine WP.mono (store4_ok (hs.of_keeps hk (by decide)) (slot_rangeWith (large := large) o)) fun u heq => ?_
   subst u
-  refine ⟨Op.of_store (slot_rangeWith (large := large) o) (hk.mono (by decide)) _ _ _ _, ?_⟩
-  rw [F, fe_st4 _ _ (by have := (slot_rangeWith (large := large) o).2; omega), hv, toFe_self]
+  have hf := fe_st4 t.mem base (o := offset o) (by have := (slot_rangeWith (large := large) o).2; omega)
+    (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7)
+  refine ⟨Op.of_store (slot_rangeWith (large := large) o) (hk.mono (by decide)) _ _ _ _, ?_, hf.trans hv⟩
+  rw [F, hf, hv, toFe_self]
+
+theorem constField_op {s : State} {base : Addr} (hs : Scr s base large) (o : Slot) (v : Spec.X25519.Fe) :
+    WP isa (.block (constField o v)) s fun t =>
+      Op base (offset o) s t ∧ F t.mem base (offset o) = v :=
+  WP.mono (constField_opB hs o v) fun _ ⟨h, e, _⟩ => ⟨h, e⟩
 
 theorem loadsField_ok {s : State} {base : Addr} (hs : Scr s base large) (a : Slot) :
     WP isa (.block (loads (offset a) .x4 .x5 .x6 .x7)) s fun t =>
@@ -267,9 +422,9 @@ theorem loadsField_ok {s : State} {base : Addr} (hs : Scr s base large) (a : Slo
   refine WP.mono (loads_ok hs (slot_rangeWith (large := large) a) (by decide)) fun t ⟨e1, e2, e3, e4, k⟩ => ?_
   exact ⟨by rw [e1, e2, e3, e4], k⟩
 
-theorem copyField_op {s : State} {base : Addr} (hs : Scr s base large) (o a : Slot) :
+theorem copyField_opB {s : State} {base : Addr} (hs : Scr s base large) (o a : Slot) :
     WP isa (.block (copyField o a)) s fun t =>
-      Op base (offset o) s t ∧ F t.mem base (offset o) = F s.mem base (offset a) := by
+      Op base (offset o) s t ∧ fe t.mem base (offset o) = fe s.mem base (offset a) := by
   have _hcap := workSize_le large
   have _hmin := workSize_ge large
   rw [copyField, WP.block_append_iff]
@@ -277,7 +432,12 @@ theorem copyField_op {s : State} {base : Addr} (hs : Scr s base large) (o a : Sl
   refine WP.mono (store4_ok (hs.of_keeps hk (by decide)) (slot_rangeWith (large := large) o)) fun u heq => ?_
   subst u
   refine ⟨Op.of_store (slot_rangeWith (large := large) o) (hk.mono (by decide)) _ _ _ _, ?_⟩
-  rw [F, fe_st4 _ _ (by have := (slot_rangeWith (large := large) o).2; omega), hv]
+  rw [fe_st4 _ _ (by have := (slot_rangeWith (large := large) o).2; omega), hv]
+
+theorem copyField_op {s : State} {base : Addr} (hs : Scr s base large) (o a : Slot) :
+    WP isa (.block (copyField o a)) s fun t =>
+      Op base (offset o) s t ∧ F t.mem base (offset o) = F s.mem base (offset a) :=
+  WP.mono (copyField_opB hs o a) fun _ ⟨h, e⟩ => ⟨h, congrArg toFe e⟩
 
 theorem Outside_F {base : Addr} {o n : Nat} {m m' : Mem}
     (h : Outside base o n m m') {d : Nat} (hd : d + 32 < 2 ^ 64)
@@ -361,42 +521,125 @@ theorem op_keep {base : Addr} {o : Slot} {s t : State} (h : Op base (offset o) s
   ⟨h.gpr, h.rd, h.wr, h.sp, h.mem.mono (by simp only [offset]; omega)
     (by simp only [offset]; omega)⟩
 
-theorem fieldOp_ok {s : State} {base : Addr} (hs : Scr s base large) (op : FieldOp) :
-    WP isa (.block op.code) s fun t => Keep base s t ∧ env t.mem base = evalOp op (env s.mem base) := by
+/-- The slots `S` hold values below `2²⁵⁵ + 2¹³⁶`, as `fieldAdd1` and `fieldSub1` need. -/
+def Small (m : Mem) (base : Addr) (S : Slot → Bool) : Prop :=
+  ∀ i, S i = true → fe m base (offset i) < 2 ^ 255 + 2 ^ 136
+
+theorem Small.none (m : Mem) (base : Addr) : Small m base fun _ => false := fun _ h => nomatch h
+
+/-- Writing slot `o` alone, small if `b`. -/
+theorem Small.update {base : Addr} {m m' : Mem} {S : Slot → Bool} {o : Slot} (h : Outside base (offset o) 32 m m')
+    (hS : Small m base S) (b : Bool) (hb : b = true → fe m' base (offset o) < 2 ^ 255 + 2 ^ 136) :
+    Small m' base fun i => if i = o then b else S i := by
+  intro i hi
+  by_cases ho : i = o
+  · subst ho
+    simp only [ite_true] at hi
+    exact hb hi
+  · simp only [ho, ite_false] at hi
+    have hne : i.val ≠ o.val := fun h => ho (Fin.ext h)
+    rw [h.fe (by simp only [offset]; omega) (by simp only [offset]; omega)]
+    exact hS i hi
+
+theorem Small.mono {base : Addr} {m : Mem} {S S' : Slot → Bool} (h : ∀ i, S i = true → S' i = true)
+    (hS : Small m base S') : Small m base S := fun i hi => hS i (h i hi)
+
+/-- Writing memory outside the slots. -/
+theorem Small.frame {base : Addr} {m m' : Mem} {S : Slot → Bool} {o n : Nat} (h : Outside base o n m m')
+    (ho : 64 + 32 * 22 ≤ o) (hS : Small m base S) : Small m' base S := by
+  intro i hi
+  have := i.isLt
+  rw [h.fe (by simp only [offset]; omega) (by simp only [offset]; omega)]
+  exact hS i hi
+
+def smallAfterOps (ops : List FieldOp) (S : Slot → Bool) : Slot → Bool :=
+  ops.foldl (fun S op => op.small S) S
+
+theorem small_mono (op : FieldOp) {C S : Slot → Bool} (h : ∀ i, C i = true → S i = true) :
+    ∀ i, op.small C i = true → op.small S i = true := by
+  intro i hi
+  cases op <;> simp only [FieldOp.small] at hi ⊢ <;> split <;> simp_all
+
+/-- One operation, lowered with the slots `C` known small, where the slots `S` are. -/
+theorem fieldOpS_ok {s : State} {base : Addr} (hs : Scr s base large) (op : FieldOp) {C S : Slot → Bool}
+    (hCS : ∀ i, C i = true → S i = true) (hS : Small s.mem base S) :
+    WP isa (.block (op.codeS C)) s fun t => Keep base s t ∧ env t.mem base = evalOp op (env s.mem base) ∧
+      Small t.mem base (op.small S) ∧ Outside base (offset op.out) 32 s.mem t.mem := by
   have _hcap := workSize_le large
   have _hmin := workSize_ge large
+  have hP : VG.Spec.X25519.P < 2 ^ 255 + 2 ^ 136 := by simp only [VG.Spec.X25519.P]; omega
   cases op with
   | copy o a =>
-    refine WP.mono (copyField_op hs o a) fun t ⟨h, e⟩ => ?_
-    exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl⟩
+    refine WP.mono (copyField_opB hs o a) fun t ⟨h, e⟩ => ?_
+    refine ⟨op_keep h, by rw [env_update o h.mem]; simp only [F]; rw [e]; rfl, ?_, h.mem⟩
+    exact hS.update h.mem (S a) fun ha => by rw [e]; exact hS a ha
   | const o v =>
-    refine WP.mono (constField_op hs o v) fun t ⟨h, e⟩ => ?_
-    exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl⟩
+    refine WP.mono (constField_opB hs o v) fun t ⟨h, e, r⟩ => ?_
+    exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl,
+      hS.update h.mem true fun _ => by rw [r]; exact Nat.lt_trans v.isLt hP, h.mem⟩
   | mul o a b =>
-    refine WP.mono (mul_ok hs (slot_rangeWith (large := large) o) (slot_rangeWith (large := large) a) (slot_rangeWith (large := large) b)) fun t ⟨h, e⟩ => ?_
-    exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl⟩
+    refine WP.mono (mul_okB hs (slot_rangeWith (large := large) o) (slot_rangeWith (large := large) a)
+      (slot_rangeWith (large := large) b)) fun t ⟨h, e, r⟩ => ?_
+    exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, hS.update h.mem true fun _ => by omega, h.mem⟩
   | sqr o a =>
-    refine WP.mono (sqr_ok hs (slot_rangeWith (large := large) o) (slot_rangeWith (large := large) a)) fun t ⟨h, e⟩ => ?_
-    exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl⟩
+    refine WP.mono (sqr_okB hs (slot_rangeWith (large := large) o) (slot_rangeWith (large := large) a))
+      fun t ⟨h, e, r⟩ => ?_
+    exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, hS.update h.mem true fun _ => by omega, h.mem⟩
   | add o a b =>
-    refine WP.mono (add_ok hs (slot_rangeWith (large := large) o) (slot_rangeWith (large := large) a) (slot_rangeWith (large := large) b)) fun t ⟨h, e⟩ => ?_
-    exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl⟩
+    show WP isa (.block (if (C a && C b) = true then fieldAdd1 (offset o) (offset a) (offset b)
+      else fieldAdd (offset o) (offset a) (offset b))) s _
+    split
+    · next hc =>
+      rw [Bool.and_eq_true] at hc
+      have := hS a (hCS a hc.1)
+      have := hS b (hCS b hc.2)
+      refine WP.mono (add1_ok hs (slot_rangeWith (large := large) o) (slot_rangeWith (large := large) a)
+        (slot_rangeWith (large := large) b) (by omega)) fun t ⟨h, e⟩ => ?_
+      exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, hS.update h.mem false nofun, h.mem⟩
+    · refine WP.mono (add_ok hs (slot_rangeWith (large := large) o) (slot_rangeWith (large := large) a)
+        (slot_rangeWith (large := large) b)) fun t ⟨h, e⟩ => ?_
+      exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, hS.update h.mem false nofun, h.mem⟩
   | sub o a b =>
-    refine WP.mono (sub_ok hs (slot_rangeWith (large := large) o) (slot_rangeWith (large := large) a) (slot_rangeWith (large := large) b)) fun t ⟨h, e⟩ => ?_
-    exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl⟩
+    show WP isa (.block (if C b = true then fieldSub1 (offset o) (offset a) (offset b)
+      else fieldSub (offset o) (offset a) (offset b))) s _
+    split
+    · next hc =>
+      have := hS b (hCS b hc)
+      refine WP.mono (sub1_ok hs (slot_rangeWith (large := large) o) (slot_rangeWith (large := large) a)
+        (slot_rangeWith (large := large) b) (by omega)) fun t ⟨h, e⟩ => ?_
+      exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, hS.update h.mem false nofun, h.mem⟩
+    · refine WP.mono (sub_ok hs (slot_rangeWith (large := large) o) (slot_rangeWith (large := large) a)
+        (slot_rangeWith (large := large) b)) fun t ⟨h, e⟩ => ?_
+      exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, hS.update h.mem false nofun, h.mem⟩
+
+/-- A field program lowered with the slots `C` known small, where the slots `S`
+are: what it computes, the slots it leaves small, and that it writes only its
+results' slots. -/
+theorem fieldCodeFrom_ok (ops : List FieldOp) {s : State} {base : Addr} (hs : Scr s base large)
+    {C S : Slot → Bool} (hCS : ∀ i, C i = true → S i = true) (hS : Small s.mem base S) :
+    WP isa (.block (fieldCodeFrom C ops)) s fun t =>
+      Keep base s t ∧ env t.mem base = evalOps ops (env s.mem base) ∧ Small t.mem base (smallAfterOps ops S) ∧
+      ∀ x, (∀ op ∈ ops, ofs base x < offset op.out ∨ offset op.out + 32 ≤ ofs base x) → t.mem x = s.mem x := by
+  induction ops generalizing s C S with
+  | nil => exact WP.block_nil ⟨Keep.refl _ _, rfl, hS, fun _ _ => rfl⟩
+  | cons op ops ih =>
+    rw [fieldCodeFrom, WP.block_append_iff]
+    refine WP.mono (fieldOpS_ok hs op hCS hS) fun t ⟨ht, et, st, ot⟩ => ?_
+    refine WP.mono (ih (ht.scr hs) (small_mono op hCS) st) fun u ⟨hu, eu, su, mu⟩ => ?_
+    exact ⟨ht.trans hu, by rw [eu, et]; rfl, su, fun x hx =>
+      (mu x fun o ho => hx o (List.mem_cons_of_mem _ ho)).trans (ot x (hx op List.mem_cons_self))⟩
+
+/-- `fieldCode`, with the slots `S` small before it: the slots it leaves small. -/
+theorem fieldCode_okS (ops : List FieldOp) {s : State} {base : Addr} (hs : Scr s base large)
+    {S : Slot → Bool} (hS : Small s.mem base S) :
+    WP isa (.block (fieldCode ops)) s fun t =>
+      Keep base s t ∧ env t.mem base = evalOps ops (env s.mem base) ∧ Small t.mem base (smallAfterOps ops S) :=
+  WP.mono (fieldCodeFrom_ok ops hs (C := fun _ => false) nofun hS) fun _ ⟨k, e, sm, _⟩ => ⟨k, e, sm⟩
 
 theorem fieldCode_ok (ops : List FieldOp) {s : State} {base : Addr} (hs : Scr s base large) :
     WP isa (.block (fieldCode ops)) s fun t =>
-      Keep base s t ∧ env t.mem base = evalOps ops (env s.mem base) := by
-  have _hcap := workSize_le large
-  have _hmin := workSize_ge large
-  induction ops generalizing s with
-  | nil => exact WP.block_nil ⟨Keep.refl _ _, rfl⟩
-  | cons op ops ih =>
-    rw [fieldCode, List.flatMap_cons, WP.block_append_iff]
-    refine WP.mono (fieldOp_ok hs op) fun t ⟨ht, et⟩ => ?_
-    refine WP.mono (ih (ht.scr hs)) fun u ⟨hu, eu⟩ => ?_
-    exact ⟨ht.trans hu, by rw [eu, et]; rfl⟩
+      Keep base s t ∧ env t.mem base = evalOps ops (env s.mem base) :=
+  WP.mono (fieldCode_okS ops hs (Small.none s.mem base)) fun _ ⟨k, e, _⟩ => ⟨k, e⟩
 
 theorem constField_ok {s : State} {base : Addr} (hs : Scr s base large) (o : Slot) (v : Spec.X25519.Fe) :
     WP isa (.block (constField o v)) s fun t =>
@@ -413,6 +656,17 @@ theorem copyField_ok {s : State} {base : Addr} (hs : Scr s base large) (o a : Sl
   have _hmin := workSize_ge large
   refine WP.mono (copyField_op hs o a) fun t ⟨hk, hv⟩ => ?_
   exact ⟨op_keep hk, by rw [env_update o hk.mem, hv]; rfl⟩
+
+/-- `[o] := [a] · [b]²` on slots. -/
+theorem sqrMulField_ok {s : State} {base : Addr} (hs : Scr s base large) (o a b : Slot) :
+    WP isa (.block (fieldSqrMul (offset o) (offset a) (offset b))) s fun t =>
+      Keep base s t ∧ env t.mem base = Function.update (env s.mem base) o
+        (env s.mem base a * (env s.mem base b * env s.mem base b)) := by
+  have _hcap := workSize_le large
+  have _hmin := workSize_ge large
+  refine WP.mono (sqrMul_ok hs (slot_rangeWith (large := large) o) (slot_rangeWith (large := large) a)
+    (slot_rangeWith (large := large) b)) fun t ⟨h, e⟩ => ?_
+  exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl⟩
 
 /-- Coordinates in four consecutive slots. -/
 def point (e : Env) (x y z t : Slot) : Spec.Ed25519.Point := ⟨e x, e y, e z, e t⟩

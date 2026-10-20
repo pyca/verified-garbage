@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Math
-public import Mathlib.Data.Int.ModEq
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Spec.Rsa
+public import Mathlib.Tactic.Basic
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.PowLit
+public import Mathlib.Data.Nat.Init
+public import Mathlib.Order.Defs.Prop
+import Mathlib.Tactic.Conv
+import Mathlib.Data.Int.ModEq
 
 /-!
 # RSA keys: the mathematics of the constant-time algorithms

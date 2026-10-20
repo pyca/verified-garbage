@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.X86.CbcVerified
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Idea.X86.ModesLit
 
 /-! # IDEA-CBC artifacts on baseline x86 (32-bit) -/
 
@@ -15,21 +20,15 @@ def note : String :=
   over IDEA's ECB block."
 
 def artifacts : List Artifact := [
-  { Spec.Idea.cbcEncryptApi with
-    target := X86.target
-    doc := Spec.Idea.cbcEncryptApi.doc (notes := [note])
-    code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.cbcEncrypt
-    contract := Spec.Idea.cbcEncryptContract X86.abi 208
+  Spec.Idea.cbcEncryptChainedApi.artifact X86.target {
+    notes := [note, "The chaining value, the last ciphertext block, goes back to the IV at the end."]
+    code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.cbcEncryptChained
     stack := 208
-    verified := Proof.Idea.X86.cbcEncrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Idea.cbcDecryptApi with
-    target := X86.target
-    doc := Spec.Idea.cbcDecryptApi.doc (notes := [note])
-    code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.cbcDecrypt
-    contract := Spec.Idea.cbcDecryptContract X86.abi 208
+    verified := Proof.Idea.X86.Cbc.cbcEncryptChained_framed },
+  Spec.Idea.cbcDecryptChainedApi.artifact X86.target {
+    notes := [note, "The chaining value, the last ciphertext block, goes back to the IV at the end."]
+    code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.cbcDecryptChained
     stack := 208
-    verified := Proof.Idea.X86.cbcDecrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Idea.X86.Cbc.cbcDecryptChained_framed }]
 
 end VG.Artifacts.IdeaCbc.X86

@@ -1,16 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalLoop
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChainTile
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCount
+import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChainTile
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareCount
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
-public import VerifiedGarbage.Proof.Bignum.AArch64.Row
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Bignum.AArch64.DiagonalChain
+public import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChainMath
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! The single-carry diagonal pass retains the existing full-width postcondition. -/
 

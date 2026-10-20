@@ -1,12 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Work
+public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Data
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Outputs
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.OutputBytes
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.MaskOutput
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # FFDH on x86-64: rejected scalars zero both key outputs -/
 

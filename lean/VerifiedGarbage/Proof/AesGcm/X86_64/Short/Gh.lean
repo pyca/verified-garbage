@@ -1,10 +1,21 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Copy
+public import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
+public import VerifiedGarbage.Proof.Framework.X86_64.ZLaneSse
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Ks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Gh
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # AES-GCM's short path on x86-64: GHASH of the buffer

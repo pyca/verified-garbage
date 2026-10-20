@@ -1,223 +1,180 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Link
-meta import VerifiedGarbage.Proof.TripleDes.AArch64.Link
-public import VerifiedGarbage.Proof.TripleDes.AArch64.BlockSum
-meta import VerifiedGarbage.Proof.TripleDes.AArch64.BlockSum
-import VerifiedGarbage.Proof.Modes.AArch64.CbcDecrypt
-meta import VerifiedGarbage.Proof.Modes.AArch64.CbcDecrypt
-import VerifiedGarbage.Proof.Modes.AArch64.CbcEncrypt
-meta import VerifiedGarbage.Proof.Modes.AArch64.CbcEncrypt
+public import VerifiedGarbage.Proof.TripleDes.AArch64.FbVerified
+import VerifiedGarbage.Proof.Modes.AArch64.CbcDecChained
+import VerifiedGarbage.Proof.Modes.AArch64.CbcEncChained
 public import VerifiedGarbage.Proof.TripleDes.CbcScratch
-meta import VerifiedGarbage.Proof.TripleDes.CbcScratch
 import VerifiedGarbage.Proof.TripleDes.AArch64.CbcLit
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+public import VerifiedGarbage.Proof.TripleDes.AArch64.ModeCore
+import VerifiedGarbage.Proof.TripleDes.AArch64.Link
+import VerifiedGarbage.Proof.TripleDes.AArch64.BlockSum
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.TripleDes.AArch64.SboxTable
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.FbVerified
+meta import VerifiedGarbage.Proof.Modes.AArch64.CbcDecChained
+meta import VerifiedGarbage.Proof.Modes.AArch64.CbcEncChained
+meta import VerifiedGarbage.Proof.TripleDes.CbcScratch
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.CbcLit
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
-meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.ModeCore
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.Link
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.BlockSum
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.SboxTable
+import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-!
 # Triple DES-CBC on AArch64 meets its contracts
 
-`cbcEncrypt_wp`, `cbcDecrypt_wp`: the modes' CBC encryption and decryption
-over Triple DES's core for each direction (`Proof.Modes.AArch64.cbcEncrypt_wp`
-and `cbcDecrypt_wp` with `dirCoreSpec`). `cbcEncrypt_verified`,
-`cbcDecrypt_verified`: each is correct and constant time, by the taint
-analysis: the pointers, `n` and the stack pointer are public, and so is
-everything the code computes from them, which it keeps in registers; the IV
-is secret. `cbcEncrypt_framed` and `cbcDecrypt_framed` run them with their
-working space on the stack, zeroed on return: 1008 bytes, the 125 words of
-the scratch buffer rounded up to the stack's alignment.
+`cbcEncryptChained_wp`, `cbcDecryptChained_wp`: the modes' CBC that updates
+the chaining value (`Proof.Modes.AArch64.cbcEncryptChained_wp` and
+`cbcDecryptChained_wp`) over Triple DES's core for each direction
+(`dirCoreSpec`, calling the block function), with the feedback modes'
+precondition (`fbPre`, as the IV is written too); encryption keeps the IV's
+address in `x25`, which the core keeps (`keeps_x25`), as those modes do.
+`cbcEncryptChained_verified`, `cbcDecryptChained_verified`: each is correct
+and constant time, by the taint analysis with public values in vector
+registers (`VectorTaint`) and the block functions' summaries (`encSum`,
+`decSum`): the pointers, `n` and the stack pointer are public, and so is
+everything the code computes from them; the IV is secret.
+`cbcEncryptChained_framed` and `cbcDecryptChained_framed` run them with
+their working space on the stack, zeroed on return: 1008 bytes, the 125
+words of the scratch buffer and 8 more.
 -/
 
 @[expose] public section
 
-namespace VG.Proof.TripleDes
-
-open VG VG.AArch64 VG.Impl.TripleDes.AArch64
-
-/-- CBC decryption on AArch64 with its working space at `x4`. -/
-def cbcDecAArch64 : Contract AArch64.isa where
-  pre s :=
-    let sched : Region := ⟨s.gpr .x0, 384⟩
-    let iv : Region := ⟨s.gpr .x1, 8⟩
-    let data : Region := ⟨s.gpr .x2, 8 * (s.gpr .x3).toNat⟩
-    let scratch : Region := ⟨s.gpr .x4, 8 * 125⟩
-    s.rd = [sched, iv] ∧ s.wr = [data, scratch] ∧ sched.Disjoint data ∧ sched.Disjoint scratch ∧
-      iv.Disjoint data ∧ iv.Disjoint scratch ∧ data.Disjoint scratch ∧
-      (s.gpr .x0).toNat + 384 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 8 ≤ 2 ^ 64 ∧
-      (s.gpr .x2).toNat + 8 * (s.gpr .x3).toNat ≤ 2 ^ 64 ∧ (s.gpr .x4).toNat + 8 * 125 ≤ 2 ^ 64
-  post s s' :=
-    Spec.TripleDes.cbcBlocksAt s'.mem (s.gpr .x2) (s.gpr .x3).toNat =
-      Spec.Cbc.decrypt (Spec.TripleDes.invCipher (Spec.TripleDes.scheduleAt s.mem (s.gpr .x0)))
-        (Spec.TripleDes.bytesAt s.mem (s.gpr .x1) 8)
-        (Spec.TripleDes.cbcBlocksAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)
-  pub s₁ s₂ :=
-    s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
-      s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.sp = s₂.sp
-
-/-- CBC encryption on AArch64 with its working space at `x4`: as decryption,
-with encryption's result. -/
-def cbcEncAArch64 : Contract AArch64.isa where
-  pre := cbcDecAArch64.pre
-  post s s' :=
-    Spec.TripleDes.cbcBlocksAt s'.mem (s.gpr .x2) (s.gpr .x3).toNat =
-      Spec.Cbc.encrypt (Spec.TripleDes.cipher (Spec.TripleDes.scheduleAt s.mem (s.gpr .x0)))
-        (Spec.TripleDes.bytesAt s.mem (s.gpr .x1) 8)
-        (Spec.TripleDes.cbcBlocksAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)
-  pub := cbcDecAArch64.pub
-
-end VG.Proof.TripleDes
-
 namespace VG.Proof.TripleDes.AArch64
 
 open VG VG.AArch64 VG.Impl.TripleDes.AArch64
-open VG.Proof.TripleDes (cbcDecAArch64 cbcEncAArch64)
+
+/-- CBC decryption on AArch64 that updates the chaining value. -/
+def cbcDecAArch64 : Contract isa where
+  pre := fbPre blkLen
+  post s s' := blocksOf s s'.mem =
+      Spec.Cbc.decrypt (Spec.TripleDes.invCipher (Spec.TripleDes.scheduleAt s.mem (s.gpr .x0))) (ivOf s)
+        (blocksOf s s.mem) ∧
+    Spec.TripleDes.bytesAt s'.mem (s.gpr .x1) 8 = Spec.Cbc.next (ivOf s) (blocksOf s s.mem)
+  pub := fbPub
+
+/-- CBC encryption on AArch64 that updates the chaining value. -/
+def cbcEncAArch64 : Contract isa where
+  pre := fbPre blkLen
+  post s s' := blocksOf s s'.mem = Spec.Cbc.encrypt (ciphOf s) (ivOf s) (blocksOf s s.mem) ∧
+    Spec.TripleDes.bytesAt s'.mem (s.gpr .x1) 8 =
+      Spec.Cbc.next (ivOf s) (Spec.Cbc.encrypt (ciphOf s) (ivOf s) (blocksOf s s.mem))
+  pub := fbPub
 
 /-- The core's cipher is the contract's. -/
 theorem invCipher_eq (k : Spec.TripleDes.Schedule) : (dirCoreSpec .decrypt).cipher k = Spec.TripleDes.invCipher k := rfl
 
-/-- The core's cipher is the contract's. -/
-theorem encCipher_eq (k : Spec.TripleDes.Schedule) : (dirCoreSpec .encrypt).cipher k = Spec.TripleDes.cipher k := rfl
-
-theorem cbcTaint_agree (s₁ s₂ : State) (_ : cbcDecAArch64.pre s₁) (_ : cbcDecAArch64.pre s₂)
-    (hp : cbcDecAArch64.pub s₁ s₂) : VG.AArch64.Taint.Agree (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) s₁ s₂ := by
-  obtain ⟨h1, h2, h3, h4, h5, hsp⟩ := hp
-  refine ⟨hsp, fun r hr => ?_⟩
-  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
-
-/-- A state satisfying the precondition (one block). -/
-def cbcSat : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x3000 | .x3 => 1 | .x4 => 0x4000 | _ => 0
-  sp := 0x8000
-  mem _ := 0
-  rd := [⟨0x1000, 384⟩, ⟨0x2000, 8⟩]
-  wr := [⟨0x3000, 8⟩, ⟨0x4000, 8 * 125⟩]
-
-/-- A state satisfying `vg_triple_des_cbc_encrypt`'s and
-`vg_triple_des_cbc_decrypt`'s precondition: the schedule at `0x1000`, the IV
-at `0x2000`, one block at `0x3000`. -/
-def cbcFrameSat : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x3000 | .x3 => 1 | _ => 0
-  sp := 0x8000
-  mem _ := 0
-  rd := [⟨0x1000, 384⟩, ⟨0x2000, 8⟩]
-  wr := [⟨0x3000, 8⟩]
-
 /-! ## Decryption -/
 
-theorem cbcDecrypt_wp {s₀ : State} (hp : cbcDecAArch64.pre s₀) :
-    WP isa cbcDecrypt s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
+theorem cbcDecryptChained_wp {s₀ : State} (hp : cbcDecAArch64.pre s₀) :
+    WP isa cbcDecryptChained s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cbcDecAArch64.post s₀ s' := by
-  obtain ⟨hrd, hwr, dKD, dKS, dVD, dVS, dDS, fitK, fitV, fitD, fitB⟩ := hp
+  obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, fitK, fitV, fitD, fitB⟩ := hp
   have hwS : (⟨s₀.gpr .x4, 8 * 125⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  refine WP.mono (Proof.Modes.AArch64.cbcDecrypt_wp (dirCoreSpec .decrypt) (r := ⟨.x1, .x2, .x3, .x4⟩)
+  refine WP.mono (Proof.Modes.AArch64.cbcDecryptChained_wp (dirCoreSpec .decrypt) (r := fbRegs)
     ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .x4) (P := s₀.gpr .x1) (D := s₀.gpr .x2) (n := (s₀.gpr .x3).toNat)
     (k := Spec.TripleDes.scheduleAt s₀.mem (s₀.gpr .x0)) rfl rfl rfl rfl ⟨hwS, fitB⟩
-    (by rw [hrd]; simp) (by rw [hwr]; simp) dVS dDS fitD
-    ⟨s₀.gpr .x0, rfl, rfl, by rw [hrd]; simp, fitK, fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dKS⟩) fun s' ⟨hcs, hdata, _, _, _⟩ => ⟨hcs, ?_⟩
-  rw [dirCore_bw, Nat.mul_one, invCipher_eq] at hdata
-  change Spec.TripleDes.cbcBlocksAt _ _ _ = Spec.Cbc.decrypt _ _ (Spec.TripleDes.cbcBlocksAt _ _ _)
-  rw [cbcBlocksAt_eq, cbcBlocksAt_eq]; exact hdata
-
-theorem cbcDecrypt_ct : ConstantTime isa cbcDecAArch64.pre cbcDecAArch64.pub cbcDecrypt :=
-  VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
-    (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
-    (fun s₁ s₂ h₁ h₂ hp => ⟨cbcTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
-      simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [decSum])
-
-theorem cbcDecrypt_correct (s : State) (hs : cbcDecAArch64.pre s) :
-    ∃ t s', Exec isa cbcDecrypt s t s' ∧ abiPreserved s s' ∧ cbcDecAArch64.post s s' := by
-  obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cbcDecrypt_keeps_x30 (cbcDecrypt_wp hs)
-  exact ⟨t, s', he, ⟨Proof.Modes.AArch64.preserved_of h₁ h₃, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
-
-theorem cbcDecrypt_verified :
-    Verified AArch64.target cbcDecrypt (Proof.TripleDes.cbcDecScratchContract AArch64.abi 125) :=
-  Verified.of_correct cbcDecrypt_correct cbcDecrypt_ct (by
-    sig_implies [Proof.TripleDes.cbcDecScratchContract, Proof.TripleDes.cbcScratchSig, Spec.TripleDes.cbcSig,
-      Proof.TripleDes.cbcDecPost, cbcDecAArch64, AArch64.abi, AArch64.argRegs] [cbcSat] using cbcSat)
-
-theorem cbcFrameSat_pre : ∃ s, (Spec.TripleDes.cbcDecryptContract AArch64.abi 1008).pre s := by
-  implies_sat [Spec.TripleDes.cbcDecryptContract, Spec.TripleDes.cbcSig, AArch64.abi, AArch64.argRegs]
-    [cbcFrameSat] using cbcFrameSat
-
-/-- CBC decryption with its working space on the stack. -/
-theorem cbcDecrypt_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 cbcDecrypt)
-      (Spec.TripleDes.cbcDecryptContract AArch64.abi 1008) :=
-  AArch64.Verified.stackScratchWiped (sig := Spec.TripleDes.cbcSig) (nm := "scratch") (e := .u64)
-    (n := 125) (post := Proof.TripleDes.cbcDecPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1008) cbcDecrypt_verified
-    (by decide) (by decide) (by decide) (Proof.TripleDes.cbcDecPostOut_local _) cbcFrameSat_pre
-
-/-! ## Encryption -/
-
-theorem cbcEncrypt_wp {s₀ : State} (hp : cbcEncAArch64.pre s₀) :
-    WP isa cbcEncrypt s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
-      s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cbcEncAArch64.post s₀ s' := by
-  obtain ⟨hrd, hwr, dKD, dKS, dVD, dVS, dDS, fitK, fitV, fitD, fitB⟩ := hp
-  have hwS : (⟨s₀.gpr .x4, 8 * 125⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  refine WP.mono (Proof.Modes.AArch64.cbcEncrypt_wp (dirCoreSpec .encrypt) (r := ⟨.x1, .x2, .x3, .x4⟩)
-    ⟨by decide, by decide, by decide⟩ (by decide)
-    (B := s₀.gpr .x4) (P := s₀.gpr .x1) (D := s₀.gpr .x2) (n := (s₀.gpr .x3).toNat)
-    (k := Spec.TripleDes.scheduleAt s₀.mem (s₀.gpr .x0)) rfl rfl rfl rfl ⟨hwS, fitB⟩
-    (by rw [hrd]; simp) (by rw [hwr]; simp) dVS dDS dVD fitD
+    (by rw [hwr]; simp) (by rw [hwr]; simp [Nat.mul_comm]) dVS dDS dVD fitD
     ⟨s₀.gpr .x0, rfl, rfl, by rw [hrd]; simp, fitK, fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact dKS
-      · exact dKD⟩) fun s' ⟨hcs, hdata, _, _, _⟩ => ⟨hcs, ?_⟩
-  rw [dirCore_bw, Nat.mul_one, encCipher_eq] at hdata
-  change Spec.TripleDes.cbcBlocksAt _ _ _ = Spec.Cbc.encrypt _ _ (Spec.TripleDes.cbcBlocksAt _ _ _)
-  rw [cbcBlocksAt_eq, cbcBlocksAt_eq]; exact hdata
+      · exact dKV⟩)
+    fun s' ⟨hcs, hdata, hiv, _, _, _⟩ => ⟨hcs, ?_⟩
+  rw [dirCore_bw, Nat.mul_one] at hdata hiv
+  rw [invCipher_eq] at hdata
+  refine ⟨?_, ?_⟩
+  · change Spec.TripleDes.cbcBlocksAt _ _ _ = Spec.Cbc.decrypt _ _ (Spec.TripleDes.cbcBlocksAt _ _ _)
+    rw [cbcBlocksAt_eq, cbcBlocksAt_eq]; exact hdata
+  · change _ = Spec.Cbc.next _ (Spec.TripleDes.cbcBlocksAt _ _ _)
+    rw [cbcBlocksAt_eq]; exact hiv
 
-theorem cbcEncrypt_ct : ConstantTime isa cbcEncAArch64.pre cbcEncAArch64.pub cbcEncrypt :=
-  VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
-    (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
-    (fun s₁ s₂ h₁ h₂ hp => ⟨cbcTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
-      simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [encSum])
+theorem cbcDecryptChained_verified :
+    Verified AArch64.target cbcDecryptChained (Proof.TripleDes.cbcDecChainedScratchContract AArch64.abi 125) :=
+  Verified.of_correct (fun s hs => by
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cbcDecryptChained_keeps_x30 (cbcDecryptChained_wp hs)
+      exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
+    (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+        (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+      (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
+        simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [decSum])) (by
+    sig_implies [Proof.TripleDes.cbcDecChainedScratchContract, Proof.TripleDes.cbcChainedScratchSig,
+      Spec.TripleDes.cbcChainedSig, Proof.TripleDes.cbcDecChainedPost, cbcDecAArch64, fbPre, fbPub, AArch64.abi,
+      AArch64.argRegs] [fbSat] using fbSat)
 
-theorem cbcEncrypt_correct (s : State) (hs : cbcEncAArch64.pre s) :
-    ∃ t s', Exec isa cbcEncrypt s t s' ∧ abiPreserved s s' ∧ cbcEncAArch64.post s s' := by
-  obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cbcEncrypt_keeps_x30 (cbcEncrypt_wp hs)
-  exact ⟨t, s', he, ⟨Proof.Modes.AArch64.preserved_of h₁ h₃, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
+theorem cbcDecFrameSat_pre : ∃ s, (Spec.TripleDes.cbcDecryptChainedContract AArch64.abi 1008).pre s := by
+  implies_sat [Spec.TripleDes.cbcDecryptChainedContract, Spec.TripleDes.cbcChainedSig, AArch64.abi,
+    AArch64.argRegs] [fbFrameSat] using fbFrameSat
 
-theorem cbcEncrypt_verified :
-    Verified AArch64.target cbcEncrypt (Proof.TripleDes.cbcEncScratchContract AArch64.abi 125) :=
-  Verified.of_correct cbcEncrypt_correct cbcEncrypt_ct (by
-    sig_implies [Proof.TripleDes.cbcEncScratchContract, Proof.TripleDes.cbcScratchSig, Spec.TripleDes.cbcSig,
-      Proof.TripleDes.cbcEncPost, cbcEncAArch64, cbcDecAArch64, AArch64.abi, AArch64.argRegs] [cbcSat]
-      using cbcSat)
+/-- CBC decryption with its working space on the stack. -/
+theorem cbcDecryptChained_framed :
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 cbcDecryptChained)
+      (Spec.TripleDes.cbcDecryptChainedContract AArch64.abi 1008) :=
+  AArch64.Verified.stackScratchWiped (sig := Spec.TripleDes.cbcChainedSig) (nm := "scratch") (e := .u64)
+    (n := 125) (post := Proof.TripleDes.cbcDecChainedPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 1008) cbcDecryptChained_verified
+    (by decide) (by decide) (by decide) (Proof.TripleDes.cbcDecChainedPostOut_local _) cbcDecFrameSat_pre
 
-theorem cbcEncFrameSat_pre : ∃ s, (Spec.TripleDes.cbcEncryptContract AArch64.abi 1008).pre s := by
-  implies_sat [Spec.TripleDes.cbcEncryptContract, Spec.TripleDes.cbcSig, AArch64.abi, AArch64.argRegs]
-    [cbcFrameSat] using cbcFrameSat
+/-! ## Encryption -/
+
+theorem cbcEncryptChained_wp {s₀ : State} (hp : cbcEncAArch64.pre s₀) :
+    WP isa cbcEncryptChained s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
+      s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cbcEncAArch64.post s₀ s' := by
+  obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, fitK, fitV, fitD, fitB⟩ := hp
+  have hwS : (⟨s₀.gpr .x4, 8 * 125⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  refine WP.mono (Proof.Modes.AArch64.cbcEncryptChained_wp (dirCoreSpec .encrypt) (r := fbRegs)
+    ⟨by decide, by decide, by decide⟩ (by decide) (ivR := .x25)
+    ⟨by decide, by decide, by decide, by decide, by decide⟩
+    (B := s₀.gpr .x4) (P := s₀.gpr .x1) (D := s₀.gpr .x2) (n := (s₀.gpr .x3).toNat)
+    (k := Spec.TripleDes.scheduleAt s₀.mem (s₀.gpr .x0)) rfl rfl rfl rfl ⟨hwS, fitB⟩
+    (by rw [hwr]; simp) (by rw [hwr]; simp [Nat.mul_comm]) dVS dDS dVD fitD
+    ⟨s₀.gpr .x0, rfl, rfl, by rw [hrd]; simp, fitK, fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact dKS
+      · exact dKD⟩ keeps_x25)
+    fun s' ⟨hcs, hdata, hiv, _, _, _⟩ => ⟨hcs, ?_⟩
+  rw [dirCore_bw, Nat.mul_one] at hdata hiv
+  refine ⟨?_, ?_⟩
+  · change Spec.TripleDes.cbcBlocksAt _ _ _ = Spec.Cbc.encrypt _ _ (Spec.TripleDes.cbcBlocksAt _ _ _)
+    rw [cbcBlocksAt_eq, cbcBlocksAt_eq]; exact hdata
+  · change _ = Spec.Cbc.next _ (Spec.Cbc.encrypt _ _ (Spec.TripleDes.cbcBlocksAt _ _ _))
+    rw [cbcBlocksAt_eq]; exact hiv
+
+theorem cbcEncryptChained_verified :
+    Verified AArch64.target cbcEncryptChained (Proof.TripleDes.cbcEncChainedScratchContract AArch64.abi 125) :=
+  Verified.of_correct (fun s hs => by
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cbcEncryptChained_keeps_x30 (cbcEncryptChained_wp hs)
+      exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
+    (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+        (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+      (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
+        simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [encSum])) (by
+    sig_implies [Proof.TripleDes.cbcEncChainedScratchContract, Proof.TripleDes.cbcChainedScratchSig,
+      Spec.TripleDes.cbcChainedSig, Proof.TripleDes.cbcEncChainedPost, cbcEncAArch64, fbPre, fbPub, AArch64.abi,
+      AArch64.argRegs] [fbSat] using fbSat)
+
+theorem cbcEncFrameSat_pre : ∃ s, (Spec.TripleDes.cbcEncryptChainedContract AArch64.abi 1008).pre s := by
+  implies_sat [Spec.TripleDes.cbcEncryptChainedContract, Spec.TripleDes.cbcChainedSig, AArch64.abi,
+    AArch64.argRegs] [fbFrameSat] using fbFrameSat
 
 /-- CBC encryption with its working space on the stack. -/
-theorem cbcEncrypt_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 cbcEncrypt)
-      (Spec.TripleDes.cbcEncryptContract AArch64.abi 1008) :=
-  AArch64.Verified.stackScratchWiped (sig := Spec.TripleDes.cbcSig) (nm := "scratch") (e := .u64)
-    (n := 125) (post := Proof.TripleDes.cbcEncPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1008) cbcEncrypt_verified
-    (by decide) (by decide) (by decide) (Proof.TripleDes.cbcEncPostOut_local _) cbcEncFrameSat_pre
+theorem cbcEncryptChained_framed :
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 cbcEncryptChained)
+      (Spec.TripleDes.cbcEncryptChainedContract AArch64.abi 1008) :=
+  AArch64.Verified.stackScratchWiped (sig := Spec.TripleDes.cbcChainedSig) (nm := "scratch") (e := .u64)
+    (n := 125) (post := Proof.TripleDes.cbcEncChainedPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 1008) cbcEncryptChained_verified
+    (by decide) (by decide) (by decide) (Proof.TripleDes.cbcEncChainedPostOut_local _) cbcEncFrameSat_pre
 
 end VG.Proof.TripleDes.AArch64

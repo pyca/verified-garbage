@@ -2,13 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Ed448.Group.Decode
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.KLoop
-import VerifiedGarbage.Proof.X448.BaseAdd
 public import Mathlib.Tactic.Abel
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.Digit
 
 /-!
 # Ed448 verification on AArch64: the equation, by the group law

@@ -1,12 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.KemB
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.AArch64.KemB
 
 /-!
 # ML-KEM on AArch64: K-PKE.Encrypt after the matrix
@@ -48,6 +45,10 @@ structure EncArgs (P : KemLay) (L : Layout) (kE eo kC co : Nat) : Prop where
   fC : co + P.ctLen ≤ L.len (L.slot kC)
   sC : L.slot kC ≠ L.sc ∨ co = CB P
 
+/-- `Â` as the matrix left it in `mB`, with 16-bit coefficients (`w16`) or 32-bit ones. -/
+abbrev aMW (w16 : Bool) (P : KemLay) (L : Layout) (s₀ : State) (mB : Mem) (i j : Nat) : Poly :=
+  polyAtW (cw w16) mB (sA L s₀ (aOff P i j))
+
 /-- `Â` as the matrix left it in `mB`. -/
 abbrev aM (P : KemLay) (L : Layout) (s₀ : State) (mB : Mem) (i j : Nat) : Poly :=
   polyAt mB (sA L s₀ (aOff P i j))
@@ -59,19 +60,22 @@ abbrev encW (P : KemLay) (L : Layout) (s₀ : State) (kC co : Nat) : List Region
   [R (kA s₀) L.sc 0 840, R (kA s₀) L.sc (RB + 32) 1, R (kA s₀) L.sc PB (SV P - PB), below s₀.sp 16,
     R (kA s₀) (L.slot kC) co P.ctLen]
 
-/-- After `ŷ[j]` for `j < nY` and `u[i]` for `i < nU`, from memory `mE`. -/
-structure EInv (P : KemLay) (L : Layout) (s₀ : State) (kC co : Nat) (mE mB : Mem) (v : BitVec 64)
-    (rv mv : List Byte) (nY nU : Nat) (s : State) : Prop where
+/-- After `ŷ[j]` for `j < nY` and `u[i]` for `i < nU`, from memory `mE`, with `Â` and `ŷ`
+stored with 16-bit coefficients (`w16`) or 32-bit ones. -/
+structure EInvW (w16 : Bool) (P : KemLay) (L : Layout) (s₀ : State) (kC co : Nat) (mE mB : Mem)
+    (v : BitVec 64) (rv mv : List Byte) (nY nU : Nat) (s : State) : Prop where
   kb : KB P L s₀ s
   x24 : s.gpr .x24 = v
   r : bytesAt s.mem (sA L s₀ RB) 32 = rv
   m : bytesAt s.mem (sA L s₀ MB) 32 = mv
-  a : ∀ i < P.k, ∀ j < P.k, Reduced s.mem (sA L s₀ (aOff P i j)) ∧
-    polyAt s.mem (sA L s₀ (aOff P i j)) = aM P L s₀ mB i j
-  y : ∀ j < nY, PolyIs s.mem (sA L s₀ (yOff P j)) (encY rv j)
+  a : ∀ i < P.k, ∀ j < P.k, ReducedW (cw w16) s.mem (sA L s₀ (aOff P i j)) ∧
+    polyAtW (cw w16) s.mem (sA L s₀ (aOff P i j)) = aMW w16 P L s₀ mB i j
+  y : ∀ j < nY, PolyIsW (cw w16) s.mem (sA L s₀ (yOff P j)) (encY rv j)
   u : ∀ i < nU, bytesAt s.mem (kA s₀ (L.slot kC) + BitVec.ofNat 64 (co + 32 * P.du * i)) (32 * P.du) =
-    compressEncode P.du (KPke.encU P.params (aM P L s₀ mB) rv i)
+    compressEncode P.du (KPke.encU P.params (aMW w16 P L s₀ mB) rv i)
   fr : Frame (encW P L s₀ kC co) mE s.mem
+
+abbrev EInv := EInvW false
 
 /-- A region apart from what `EInv` describes. -/
 def Far (P : KemLay) (L : Layout) (s₀ : State) (kC co nY nU : Nat) (r : Region) : Prop :=
@@ -79,10 +83,10 @@ def Far (P : KemLay) (L : Layout) (s₀ : State) (kC co nY nU : Nat) (r : Region
     (R (kA s₀) L.sc AH (1024 * (P.k * P.k))).Disjoint r ∧ (R (kA s₀) L.sc (YH P) (1024 * nY)).Disjoint r ∧
     (R (kA s₀) (L.slot kC) co (32 * P.du * nU)).Disjoint r ∧ ∃ r' ∈ encW P L s₀ kC co, Region.Sub r r'
 
-theorem EInv.frame {s₀ : State} (hp : Pre P L s₀) {kC co : Nat} {mE mB : Mem} {v : BitVec 64}
-    {rv mv : List Byte} {nY nU : Nat} {s s' : State} (h : EInv P L s₀ kC co mE mB v rv mv nY nU s)
+theorem EInvW.frame {w16 : Bool} {s₀ : State} (hp : Pre P L s₀) {kC co : Nat} {mE mB : Mem} {v : BitVec 64}
+    {rv mv : List Byte} {nY nU : Nat} {s s' : State} (h : EInvW w16 P L s₀ kC co mE mB v rv mv nY nU s)
     (hk : KB P L s₀ s') (hx : s'.gpr .x24 = s.gpr .x24) {W : List Region} (hf : Frame W s.mem s'.mem)
-    (hW : ∀ r ∈ W, Far P L s₀ kC co nY nU r) : EInv P L s₀ kC co mE mB v rv mv nY nU s' := by
+    (hW : ∀ r ∈ W, Far P L s₀ kC co nY nU r) : EInvW w16 P L s₀ kC co mE mB v rv mv nY nU s' := by
   have hw := hp.wf
   refine ⟨hk, by rw [hx, h.x24], ?_, ?_, fun i hi j hj => ?_, fun j hj => ?_, fun i hi => ?_,
     h.fr.trans (hf.sub fun r hr => (hW r hr).2.2.2.2.2)⟩
@@ -91,8 +95,8 @@ theorem EInv.frame {s₀ : State} (hp : Pre P L s₀) {kC co : Nat} {mE mB : Mem
   · have hij := ij_lt hi hj
     have hd : ∀ r ∈ W, (polyRegion (sA L s₀ (aOff P i j))).Disjoint r := fun r hr =>
       (hW r hr).2.2.1.sub_left (R.sub2 (by lom) (by lom))
-    exact ⟨reduced_frame hf hd (h.a i hi j hj).1, by rw [polyAt_frame hf hd]; exact (h.a i hi j hj).2⟩
-  · exact polyIs_frame hf (fun r hr => (hW r hr).2.2.2.1.sub_left
+    exact ⟨reducedW_frame hf hd (h.a i hi j hj).1, by rw [polyAtW_frame hf hd]; exact (h.a i hi j hj).2⟩
+  · exact polyIsW_frame_poly hf (fun r hr => (hW r hr).2.2.2.1.sub_left
       (R.sub2 (by simp only [yOff]; omega) (by simp only [yOff]; omega))) (h.y j hj)
   · rw [bytesAt_frame hf (fun r hr => (hW r hr).2.2.2.2.1.sub_left
       (R.sub2 (by omega) (by have := mul_succ_le (a := 32 * P.du) hi; omega))) (by kom)]
@@ -261,7 +265,9 @@ theorem uprod_ok {s₀ : State} (hp : Pre P L s₀) {kE eo kC co : Nat} (A : Enc
   have ph : PO P h := by rcases hh with rfl | rfl; exacts [po_TP hw, po_PP hw]
   refine WP.mono (mul_ok hp ph (po_a hw hj hi) (po_y hw hj) (.inr (by rcases hh with rfl | rfl <;> lom))
     (.inr (by rcases hh with rfl | rfl <;> lom)) e.kb a₁.1 y₁.1) fun s₂ ⟨kb₂, f₂, t₂, x₂⟩ => ?_
-  rw [a₁.2, y₁.2] at t₂
+  have a₂ : polyAt s.mem (sA L s₀ (aOff P j i)) = aM P L s₀ mB j i := a₁.2
+  have y₂ : polyAt s.mem (sA L s₀ (yOff P j)) = encY rv j := y₁.2
+  rw [a₂, y₂] at t₂
   refine ⟨e.frame hp kb₂ x₂ f₂ (far_mul hp A (Nat.le_refl _) (Nat.le_of_lt hi) (by rcases hh with rfl | rfl <;> lom)
     (by rcases hh with rfl | rfl <;> lom)), fun a ep ta => ?_, t₂⟩
   subst ep
@@ -354,7 +360,8 @@ theorem vprod_ok {s₀ : State} (hp : Pre P L s₀) {kE eo kC co : Nat} (A : Enc
   have ph : PO P h := by rcases hh with rfl | rfl; exacts [po_TP hw, po_PP hw]
   refine WPs.single (WP.mono (mul_ok hp ph (po_TH hw) (po_y hw hj) (.inl (by rcases hh with rfl | rfl <;> lom))
     (.inr (by rcases hh with rfl | rfl <;> lom)) e₁.kb d₁.1 y₁.1) fun s₂ ⟨kb₂, f₂, t₂, x₂⟩ => ?_)
-  rw [d₁.2, y₁.2] at t₂
+  have y₂ : polyAt s₁.mem (sA L s₀ (yOff P j)) = encY rv j := y₁.2
+  rw [d₁.2, y₂] at t₂
   refine ⟨e₁.frame hp kb₂ x₂ f₂ (far_mul hp A (Nat.le_refl _) (Nat.le_refl _)
     (by rcases hh with rfl | rfl <;> lom) (by rcases hh with rfl | rfl <;> lom)), fun a ep ta => ?_, t₂⟩
   subst ep

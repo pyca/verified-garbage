@@ -3,7 +3,13 @@ module
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.TaintSum
 public import VerifiedGarbage.Proof.Framework.RegSetOrder
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Summaries for the ARMv7 taint analysis
@@ -471,6 +477,10 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     simp only [step, Option.some.injEq] at hs ⊢; cases hs
     refine ⟨_, rfl, h.upd (set_mono hw d fun hp => ?_) h.flags (h.killM d)⟩
     simp only [Bool.and_eq_true] at hp ⊢; exact ⟨hw.pubM hp.1, hw.pubM hp.2⟩
+  | mla d n m a =>
+    simp only [step, Option.some.injEq] at hs ⊢; cases hs
+    refine ⟨_, rfl, h.upd (set_mono hw d fun hp => ?_) h.flags (h.killM d)⟩
+    simp only [Bool.and_eq_true] at hp ⊢; exact ⟨⟨hw.pubM hp.1.1, hw.pubM hp.1.2⟩, hw.pubM hp.2⟩
   | ldr t n off =>
     simp only [step] at hs ⊢
     split at hs <;> [rename_i hn; cases hs]
@@ -496,6 +506,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
   | pop _ _ => simp only [step, reduceCtorEq] at hs
   | alloc _ => simp only [step, reduceCtorEq] at hs
   | free _ => simp only [step, reduceCtorEq] at hs
+  | umaal _ _ _ _ => simp only [step, reduceCtorEq] at hs
 
 end
 
@@ -805,7 +816,7 @@ theorem step_bits {σ σ' : T} {i : Instr} (hs : step σ i = some σ') {j : Nat}
     σ'.regs.bits.testBit j = true := by
   cases i
   case str | strb => rw [storeStep_regs hs]; exact hr
-  case push | pop | alloc | free => simp only [step, reduceCtorEq] at hs
+  case push | pop | alloc | free | umaal => simp only [step, reduceCtorEq] at hs
   case cmp => simp only [step, Option.some.injEq] at hs; subst hs; exact hr
   all_goals
     simp only [step] at hs

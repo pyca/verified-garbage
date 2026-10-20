@@ -1,9 +1,35 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Ed25519.Arm.Pow250Verified
 public import VerifiedGarbage.Proof.Ed25519.Arm.MulFnVerified
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
+import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
+import VerifiedGarbage.Proof.Ed25519.Arm.SpecConv
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.Arm.AddSub
+import VerifiedGarbage.Proof.X25519.Arm.Cswap
+import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+public import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
+public import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
+public import VerifiedGarbage.Proof.Ed25519.Arm.SpecConv
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.X25519.Arm.AddSub
+public import VerifiedGarbage.Proof.X25519.Arm.Cswap
 
 /-! # Products and powers in curve25519's field, in radix `2^16`, on ARMv7 -/
 
@@ -29,21 +55,15 @@ def mulNotes : List String := ["Uses baseline integer instructions. The function
   registers; it never writes `r12` or `lr`."]
 
 def artifacts : List Artifact := [
-  { mulApi with
-    target := Arm.target
-    doc := mulApi.doc (notes := mulNotes)
+  mulApi.artifact Arm.target {
+    notes := mulNotes
     code := mulFn
-    contract := mulContract Arm.abi
     verified := Proof.Ed25519.Arm.Mul.mulFn_verified
-    stack := 0
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { pow250Api with
-    target := Arm.target
-    doc := pow250Api.doc (notes := notes)
+    stack := 0 },
+  pow250Api.artifact Arm.target {
+    notes := notes
     code := pow250Fn
-    contract := pow250Contract Arm.abi
     verified := pow250Fn_verified
-    stack := 0
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    stack := 0 }]
 
 end VG.Artifacts.Gf25519R16.Arm

@@ -1,12 +1,11 @@
 module
+public import VerifiedGarbage.Impl.X448.AArch64.Symmetric
+public import VerifiedGarbage.Proof.X448.Wide.CacheRegs
+public import VerifiedGarbage.Proof.X448.Wide.Memory
+public import VerifiedGarbage.Proof.X448.Wide.Product
+public import VerifiedGarbage.Proof.X448.Wide.Representation
 
-import VerifiedGarbage.Proof.Curve448.AArch64.Bounds
-public import VerifiedGarbage.Proof.Curve448.AArch64.SymmetricColumn
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Curve448.AArch64.SymmetricColumn
 import VerifiedGarbage.Proof.Framework.Range
 
 /-! Untrusted: the complete two-word coefficient array of a wide product. -/

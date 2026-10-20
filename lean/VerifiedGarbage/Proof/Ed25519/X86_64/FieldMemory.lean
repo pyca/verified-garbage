@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Field
-public import VerifiedGarbage.Proof.X25519.X86_64.Env
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.X25519.X86_64.Ops
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Field constants and copies, with the surrounding memory preserved. -/
 

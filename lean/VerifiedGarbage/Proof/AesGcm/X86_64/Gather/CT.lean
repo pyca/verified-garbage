@@ -1,15 +1,32 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CallTo
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Calls
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CallTo
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Calls
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
+meta import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Gcm.Stream
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Gcm.Stream
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Impl.Gcm.X86_64
+meta import VerifiedGarbage.Impl.Gcm.X86_64
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: constant time
@@ -265,15 +282,18 @@ theorem rel_base {F₁ F₂ : State → Prop} {l : List Instr}
     (fun _ _ h => let ⟨_, _, _, _, b₁, b₂⟩ := hB _ _ h; base_rsp pb b₁ b₂)
     (fun _ _ h => let ⟨_, _, _, _, b₁, b₂⟩ := hB _ _ h; base_hW hp hp' pb b₁ b₂) hc
 
-theorem entry1_rel : RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (.block entry1) fun s₁ s₂ =>
+theorem entry1_rel : RelCT isa (fun s₁ s₂ => Same s₀ s₁ ∧ Same s₀' s₂) (.block entry1) fun s₁ s₂ =>
     E1 s₀ s₁ ∧ E1 s₀' s₂ := by
-  refine pstep (F₁ := (· = s₀)) (F₂ := (· = s₀')) ?_ (fun _ h => by rw [h]; exact entry1_ok hp)
-    (fun _ h => by rw [h]; exact entry1_ok hp')
+  refine pstep (F₁ := Same s₀) (F₂ := Same s₀') ?_ (fun _ h => entry1_ok hp h) (fun _ h => entry1_ok hp' h)
   rw [show entry1 = .mov .r11 (.mem (at_ .rsp 48)) :: entry1.tail from rfl]
   refine rel_wt [.rsp] (by simp) (fun _ _ h r hr => by
-      obtain ⟨rfl, rfl⟩ := h; simp only [List.mem_singleton] at hr; subst hr; exact pb.rsp.symm)
-    (fun _ _ h => by
-      obtain ⟨rfl, rfl⟩ := h
+      simp only [List.mem_singleton] at hr; subst hr
+      rw [h.1.gpr _ (by decide) (by decide) (by decide), h.2.gpr _ (by decide) (by decide) (by decide)]
+      exact pb.rsp.symm)
+    (fun a b h => by
+      have sa : a.gpr .rsp = s₀.gpr .rsp := h.1.gpr _ (by decide) (by decide) (by decide)
+      have sb : b.gpr .rsp = s₀'.gpr .rsp := h.2.gpr _ (by decide) (by decide) (by decide)
+      rw [sa, sb, h.1.mem, h.2.mem, h.1.rd, h.1.wr, h.2.rd, h.2.wr]
       exact ⟨pb.w.symm, a_in hp (i := 5) (by decide), a_in hp' (i := 5) (by decide)⟩) entry1_check
 
 theorem entry2_rel : RelCT isa (fun s₁ s₂ => E1 s₀ s₁ ∧ E1 s₀' s₂) (.block entry2) fun s₁ s₂ =>

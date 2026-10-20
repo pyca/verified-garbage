@@ -1,16 +1,29 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Correct
-public import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ChecksCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.PowCT
+public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckPrivate
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Work
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.ScalarBound
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.ScalarLess
+import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
-public meta import VerifiedGarbage.Impl.Ffdh.X86_64.CheckPrivate
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ChecksCT
+meta import VerifiedGarbage.Impl.Ffdh.X86_64.CheckPrivate
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Work
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.ScalarBound
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.ScalarLess
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH private-key validation on x86-64: scalar checks in constant time -/
 

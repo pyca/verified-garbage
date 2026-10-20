@@ -2,16 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillIterations
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillIteration
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
-import VerifiedGarbage.Impl.MdStream.AArch64
 import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Argon2.AArch64.FillPassSave`. -/
 

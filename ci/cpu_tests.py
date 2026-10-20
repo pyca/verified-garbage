@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """The tests each line of CI's `rust-cpu-features` runs, named explicitly.
 
-A line of a CPU's `runs` is `<VG_CPU_FEATURES> | <groups>` (see ci.yml):
+A line of a CPU's `runs` is `<VG_CPU_FEATURES> | <groups>` (see ci.yml and
+ci/rust_matrix.toml):
 `all` for every test, or the names of groups in `GROUPS`, each the tests of
 one primitive, or of what is built on it, whose implementation the CPU's
 features choose. A group names its tests by their paths in the library's
@@ -30,14 +31,16 @@ built there too.
   cpu_tests.py check RECORD...
       fails if a path of a group selects no test on any CPU, or if a group
       is not used on any CPU
-  cpu_tests.py lint WORKFLOW
-      fails if a line of a `runs` in WORKFLOW names a group that is not in
-      `GROUPS`
+  cpu_tests.py lint MATRIX
+      fails if a line of a CPU's `runs` in MATRIX (ci/rust_matrix.toml)
+      names a group that is not in `GROUPS`, or a CPU's `runs` have a value
+      of `VG_CPU_FEATURES` twice
 """
 
 import json
 import re
 import sys
+import tomllib
 
 BINARIES = ("lib", "tests")
 
@@ -51,7 +54,7 @@ GROUPS = {
         "tests": ["cavp::aes_ccm", "wycheproof::aes_ccm"],
     },
     "aes_ecb": {
-        "lib": ["aes_ecb", "aes_blocks_tests"],
+        "lib": ["aes_ecb"],
         "tests": ["cavp::aes_ecb"],
     },
     "aes_gcm": {
@@ -91,12 +94,11 @@ GROUPS = {
         "tests": ["wycheproof::aes_siv"],
     },
     "argon2": {
-        "lib": ["argon2", "argon2_compress_tests", "argon2_hprime_tests"],
+        "lib": ["argon2"],
         "tests": [],
     },
     "blake2": {
         "lib": [
-            "argon2_hprime_tests::hprime_matches_blake2b_composition",
             "hashes::blake2",
             "hashes::blake2b",
             "hashes::blake2s",
@@ -126,6 +128,10 @@ GROUPS = {
         "lib": ["cpu"],
         "tests": [],
     },
+    "dsa_parameters": {
+        "lib": ["dsa::parameters"],
+        "tests": [],
+    },
     "dsa": {
         "lib": ["dsa"],
         "tests": ["cavp::dsa", "wycheproof::dsa"],
@@ -142,6 +148,7 @@ GROUPS = {
             "wycheproof::ecdsa_p192",
             "wycheproof::ecdsa_brainpoolp256r1",
             "wycheproof::ecdsa_brainpoolp384r1",
+            "wycheproof::ecdsa_brainpoolp512r1",
         ],
     },
     "ed25519": {
@@ -171,7 +178,7 @@ GROUPS = {
         ],
     },
     "mlkem": {
-        "lib": ["mlkem_common", "mlkem768::sha3_variant_tests", "mlkem1024::sha3_variant_tests"],
+        "lib": ["mlkem_common", "mlkem1024::backend_tests", "mlkem768::backend_tests"],
         "tests": ["acvp::mlkem1024", "acvp::mlkem768", "wycheproof::mlkem1024", "wycheproof::mlkem768"],
     },
     "p224_sha": {
@@ -254,6 +261,13 @@ GROUPS = {
         "lib": ["rsa_oaep"],
         "tests": ["wycheproof::rsa::rsa_oaep_test", "wycheproof::rsa_oaep"],
     },
+    # Each pair of hash functions once, for the lines that are there only
+    # to choose an implementation of RSAES-OAEP's (on the emulated CPUs, on
+    # which the vectors take minutes).
+    "rsa_oaep_pairs": {
+        "lib": [],
+        "tests": ["wycheproof::rsa_oaep::rsa_oaep_every_pair"],
+    },
     "rsa_pkcs1": {
         "lib": ["rsa_pkcs1_enc", "rsa_pkcs1_sig"],
         "tests": [
@@ -282,6 +296,7 @@ GROUPS = {
         "tests": [
             "cavp::sha224",
             "pbkdf2::sha224",
+            "rfc4231::hmac_sha224",
             "rfc6979::p224::p224_sha224",
             "rfc6979::p224::p224_sha224_digest_reduction",
             "wycheproof::ecdsa_p224::ecdsa_secp224r1_sha224_p1363_test",
@@ -300,6 +315,7 @@ GROUPS = {
             "wycheproof::ecdsa_secp256k1",
             "wycheproof::ecdsa_p192",
             "pbkdf2::sha256",
+            "rfc4231::hmac_sha256",
             "rfc6979::p256::p256_sha256",
             "wycheproof::ecdsa_p256::ecdsa_secp256r1_sha256_p1363_test",
             "wycheproof::hmac_sha256",
@@ -312,6 +328,7 @@ GROUPS = {
             "cavp::sha3",
             "cavp::sha384",
             "pbkdf2::sha384",
+            "rfc4231::hmac_sha384",
             "rfc6979::p256::p256_sha384",
             "rfc6979::p384::p384_sha384",
             "rfc7027::brainpoolp384r1::ecdsa_and_invalid_keys",
@@ -326,6 +343,7 @@ GROUPS = {
         "tests": [
             "cavp::sha384",
             "pbkdf2::sha384",
+            "rfc4231::hmac_sha384",
             "rfc6979::p256::p256_sha384",
             "rfc6979::p384::p384_sha384",
             "rfc7027::brainpoolp384r1::ecdsa_and_invalid_keys",
@@ -357,7 +375,10 @@ GROUPS = {
             "pbkdf2::sha512",
             "pbkdf2::sha512_224",
             "pbkdf2::sha512_256",
+            "rfc4231::hmac_sha512",
             "rfc6979::p521::p521_sha512",
+            "rfc7027::brainpoolp512r1_ecdsa::ecdsa_and_invalid_keys",
+            "wycheproof::ecdsa_brainpoolp512r1",
             "wycheproof::ecdsa_p521::ecdsa_secp521r1_sha512_p1363_test",
             "wycheproof::hmac_sha512",
             "wycheproof::hmac_sha512_224",
@@ -453,18 +474,23 @@ def check(records):
     return errors
 
 
-def lint(workflow):
-    """The errors of the `runs` of the workflow's text."""
+def lint(matrix):
+    """The errors of the `runs` of the CPUs of the matrices' text."""
     errors = []
     for name, group in GROUPS.items():
         for b in BINARIES:
             errors += [f"group {name}: {b} path {p!r} is not a path" for p in group[b]
                        if not PATH.fullmatch(p)]
-    block = workflow.split("\n  rust-cpu-features:\n", 1)[1].split("\n  cpu-features-times-save:", 1)[0]
-    for line in re.findall(r"^ +[a-z0-9,_-]+ \| (.*)$", block, re.M):
-        names = line.split()
-        if names != ["all"]:
-            errors += [f"{n}: not a group of ci/cpu_tests.py" for n in names if n not in GROUPS]
+    for cpu in tomllib.loads(matrix)["cpu"]:
+        seen = set()
+        for line in cpu["runs"].splitlines():
+            features, _, tests = line.partition("|")
+            features, names = features.strip(), tests.split()
+            if features in seen:
+                errors.append(f"{cpu['chip']}: VG_CPU_FEATURES={features} twice")
+            seen.add(features)
+            if names != ["all"]:
+                errors += [f"{n}: not a group of ci/cpu_tests.py" for n in names if n not in GROUPS]
     return errors
 
 

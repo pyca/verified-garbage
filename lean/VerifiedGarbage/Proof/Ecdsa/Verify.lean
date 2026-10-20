@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.Exchange
 public import VerifiedGarbage.Spec.Ecdsa.Verify
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.EcKey.PublicKey
+import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # ECDSA signature verification from the values an implementation computes

@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Sum
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Sum
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Secp256k1.Mul
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.AArch64
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # secp256k1 verification: two complete ladders and their sum -/
 

@@ -1,15 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgB
+import VerifiedGarbage.Proof.MlKem.X86_64.FragL
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KgB
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-meta import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragL
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: key generation, constant time of the pieces
@@ -17,7 +15,7 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 Two runs from entry states that agree on the public data (`keyGenK.pub`: the
 pointers, the stack pointer and `ρ`), each at the same step with its invariant
 (`Rel2`), are in the same layout (`kc_lrel`), and each piece leaks the same in
-both (`gRho_tr`, `samples_tr`, `se_tr`, `row_tr`, `encS_tr`, `fin_tr`).
+both (`gRho_tr`, `samples_tr`, `se_tr`, `kgm_tr`, `encT_tr`, `encS_tr`, `fin_tr`).
 -/
 
 @[expose] public section
@@ -39,7 +37,9 @@ namespace KeyGen
 
 open VG.Impl.MlKem.X86_64.KeyGen
 
-variable {L : Kem} (W : KgWf L)
+section
+
+variable {L : Kem} (W : KgWfB L)
 include W
 
 theorem kc_lrel {σ₁ σ₂ x y : State} (p₁ : (keyGenK L).pre σ₁) (p₂ : (keyGenK L).pre σ₂) (pub : (keyGenK L).pub σ₁ σ₂)
@@ -73,6 +73,39 @@ theorem gRho_tr : RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub fun σ s => KC
   rel2_of (gRho_trL W) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => kc_lrel W p₁ p₂ pub h₁.1 h₂.1
 
 /-! ## The matrix -/
+
+theorem fin_trL : RelCT isa (LRel kgR (kgW L)) (fin L) fun _ _ => True := by
+  unfold fin
+  have tr : ∀ {c : Prog isa} {h : VG.Taint.Hint X86_64.Taint.T},
+      (taint.check (X86_64.Taint.ofRegs [.rbx, .rbp, .r12, .r13]) c h).isSome = true →
+      RelCT isa (LRel kgR (kgW L)) c fun _ _ => True := fun ht => taintRel [.rbx, .rbp, .r12, .r13] (fun x y h =>
+    fa4 (h.eq (p := sc 0) (l := 1) W.inBs.1) (h.eq (p := (.rbp, 0)) (l := 1) rfl)
+      (h.eq (p := (.r12, 0)) (l := 1) W.inBs.2.1) (h.eq (p := (.r13, 0)) (l := 1) W.inBs.2.2)) ht
+  obtain ⟨_, t₁⟩ := W.finT₁
+  obtain ⟨_, t₂⟩ := W.finT₂
+  obtain ⟨_, t₄⟩ := W.finT₄
+  refine RelCT.seq (LRel.step (kgB_bases L) (tr t₁) fun x Lx =>
+      WP.mono (copy_okL Lx (dst := (.r12, 384 * L.k)) (src := sc oG) (n := 32) (by decide) W.f₁)
+        fun _ h => ⟨_, h.1⟩)
+    (RelCT.seq (LRel.step (kgB_bases L) (tr t₂) fun x Lx =>
+      WP.mono (copy_okL Lx (dst := (.r13, 384 * L.k)) (src := (.r12, 0)) (n := L.ekLen) (by decide) W.f₂)
+        fun _ h => ⟨_, h.1⟩)
+    (RelCT.seq (LRel.step (kgB_bases L) (hash_tr (kgB_bases L) (ps := [((.r12, 0), L.ekLen)]) (rate := 136)
+      (out := (.r13, 384 * L.k + L.ekLen)) (len := 32) W.f₃ (show 6 < 256 by decide)) fun x Lx =>
+      WP.mono (hash_ok (kgB_bases L) (ps := [((.r12, 0), L.ekLen)]) (rate := 136) (out := (.r13, 384 * L.k + L.ekLen))
+        (len := 32) W.f₃ (show 6 < 256 by decide) Lx) fun _ h => ⟨_, h.1⟩)
+    (tr t₄)))
+
+theorem fin_tr {I : State → State → Prop} (hI : ∀ {σ s}, I σ s → KC σ s) :
+    RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub I) (fin L) fun _ _ => True :=
+  rel2_of (fin_trL W) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => kc_lrel W p₁ p₂ pub (hI h₁) (hI h₂)
+
+end
+
+section
+
+variable {L : Kem} (W : KgWf L)
+include W
 
 theorem sample_tr {e : Nat} (he : e < L.k * L.k) (he' : 4 * (L.k * L.k / 4) ≤ e) :
     RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub (KB L e)) (sampleIJ (pS (L.pA + e)) (e / L.k) (e % L.k))
@@ -118,76 +151,43 @@ theorem se_tr {A : Arith} (hA : ArithOk A) {N : Nat} (hN : N < 2 * L.k) :
     RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub (KRest L N 0 0)) (se L A N) fun _ _ => True := by
   have hc := W.se N hN
   simp only [seChk, Bool.and_eq_true] at hc
-  obtain ⟨⟨htw, hic⟩, _⟩ := hc
   unfold se
-  refine rel2_of (Q := fun x y => LRel kgR (kgW L) x y ∧ True ∧ True)
-    (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS N))) (kgB_bases L)
-      (RelCT.mono (cbd2At_trL hA rbx_na htw) (fun _ _ h => h.1) fun _ _ h => h)
-      (fun x Lx _ => WP.mono (cbd2At_okL hA Lx rbx_na htw) fun x' ⟨hP, hq⟩ =>
-        ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1⟩) (nttAt_tr hA hic))
-    fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ⟨kc_lrel W p₁ p₂ pub h₁.kc h₂.kc, trivial, trivial⟩
+  exact rel2_of (cbd2At_trL hA rbx_na hc.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => kc_lrel W p₁ p₂ pub h₁.kc h₂.kc
+
+/-! ## `ŝ` and `t̂` -/
+
+theorem kgm_tr {A : Arith} (hA : ArithOk A) :
+    RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub (KRest L (2 * L.k) 0 0))
+      (L.kgMulAt A (pS L.pU) (pS 0) (pS L.pA) (pS L.k) (pS L.pZ)) fun _ _ => True := by
+  have red : ∀ {σ s : State}, KRest L (2 * L.k) 0 0 σ s → VecReduced s.mem (pa s (pS 0)) L.k ∧
+      VecReduced s.mem (pa s (pS L.pA)) (L.k * L.k) ∧ VecReduced s.mem (pa s (pS L.k)) L.k := fun h =>
+    ⟨fun j hj => by rw [pS_add, Nat.zero_add]; exact (h.se j (by omega)).1,
+      fun e he => by rw [pS_add]; exact (h.mat e he).1,
+      fun i hi => by rw [pS_add]; exact (h.se (L.k + i) (by omega)).1⟩
+  exact rel2_of (kgMulAt_trL hA W.k34 rbx_na rbx_na rbx_na rbx_na W.km) fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
+    ⟨kc_lrel W p₁ p₂ pub h₁.kc h₂.kc, red h₁, red h₂⟩
 
 /-! ## The rows of `ek` -/
 
-theorem row_tr {A : Arith} (hA : ArithOk A) {i : Nat} (hi : i < L.k) :
-    RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub (KRest L (2 * L.k) i 0)) (row L A i) fun _ _ => True := by
-  have hc := W.row i hi
-  simp only [rowChk, Bool.and_eq_true] at hc
-  obtain ⟨⟨⟨⟨hdc, hac⟩, hk3⟩, htw⟩, _⟩ := hc
-  unfold row
-  refine rel2_of (Q := fun x y => LRel kgR (kgW L) x y ∧ (DotIn (fun j => L.aS i j) pS L.k x ∧
-      Reduced x.mem (pa x (pS (L.k + i)))) ∧ (DotIn (fun j => L.aS i j) pS L.k y ∧
-        Reduced y.mem (pa y (pS (L.k + i)))))
-    (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS 15)) ∧ Reduced x.mem (pa x (pS (L.k + i)))) (kgB_bases L)
-      (RelCT.mono (dotN_tr hA (kgB_bases L) W.k.1 (dotChk_spec hdc)) (fun _ _ ⟨e, h₁, h₂⟩ => ⟨e, h₁.1, h₂.1⟩)
-        fun _ _ h => h)
-      (fun x Lx hx => ?_)
-      (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS 15))) (kgB_bases L) (addAt_tr hA rbx_na hac)
-        (fun x Lx hx => WP.mono (addAt_ok hA Lx rbx_na hac hx.1 hx.2) fun x' ⟨hP, hq⟩ =>
-          ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1⟩) (enc12At_trL r12_na htw)))
-    fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ⟨kc_lrel W p₁ p₂ pub h₁.kc h₂.kc,
-      ⟨fun k hk => ⟨(h₁.matIJ hi hk).1, (h₁.se k (by omega)).1⟩, (h₁.se (L.k + i) (by omega)).1⟩,
-      ⟨fun k hk => ⟨(h₂.matIJ hi hk).1, (h₂.se k (by omega)).1⟩, (h₂.se (L.k + i) (by omega)).1⟩⟩
-  -- The sum of products, from reduced inputs.
-  refine WP.mono (dotN_ok hA (kgB_bases L) W.k.1 (dotChk_spec hdc) Lx (a := fun k => polyAt x.mem (pa x (L.aS i k)))
-    (b := fun k => polyAt x.mem (pa x (pS k))) (fun k hk => ⟨(hx.1 k hk).1, rfl⟩) (fun k hk => ⟨(hx.1 k hk).2, rfl⟩))
-    fun x' ⟨hP, hq⟩ => ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1, Lx.keepRed hP.b hk3 hx.2⟩
+theorem encT_tr {A : Arith} (hA : ArithOk A) {i : Nat} (hi : i < L.k) :
+    RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub (KRestT L i 0)) (encT L A i) fun _ _ => True := by
+  have hc := W.encT i hi
+  simp only [encTChk, Bool.and_eq_true] at hc
+  exact rel2_of (enc12At_trL hA r12_na hc.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
+    ⟨kc_lrel W p₁ p₂ pub h₁.kc h₂.kc, (h₁.that i hi).1, (h₂.that i hi).1⟩
 
 /-! ## The rows of `dk` -/
 
-theorem encS_tr {j : Nat} (hj : j < L.k) :
-    RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub (KRest L (2 * L.k) L.k j)) (encS j) fun _ _ => True := by
+theorem encS_tr {A : Arith} (hA : ArithOk A) {j : Nat} (hj : j < L.k) :
+    RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub (KRestT L L.k j)) (encS A j) fun _ _ => True := by
   have hc := W.encS j hj
   simp only [encSChk, Bool.and_eq_true] at hc
-  exact rel2_of (enc12At_trL r13_na hc.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
-    ⟨kc_lrel W p₁ p₂ pub h₁.kc h₂.kc, (h₁.se j (by omega)).1, (h₂.se j (by omega)).1⟩
+  exact rel2_of (enc12At_trL hA r13_na hc.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
+    ⟨kc_lrel W p₁ p₂ pub h₁.kc h₂.kc, (h₁.shat j hj).1, (h₂.shat j hj).1⟩
 
 /-! ## The rest of the keys -/
 
-theorem fin_trL : RelCT isa (LRel kgR (kgW L)) (fin L) fun _ _ => True := by
-  unfold fin
-  have tr : ∀ {c : Prog isa} {h : VG.Taint.Hint X86_64.Taint.T},
-      (taint.check (X86_64.Taint.ofRegs [.rbx, .rbp, .r12, .r13]) c h).isSome = true →
-      RelCT isa (LRel kgR (kgW L)) c fun _ _ => True := fun ht => taintRel [.rbx, .rbp, .r12, .r13] (fun x y h =>
-    fa4 (h.eq (p := sc 0) (l := 1) W.inBs.1) (h.eq (p := (.rbp, 0)) (l := 1) rfl)
-      (h.eq (p := (.r12, 0)) (l := 1) W.inBs.2.1) (h.eq (p := (.r13, 0)) (l := 1) W.inBs.2.2)) ht
-  obtain ⟨_, t₁⟩ := W.finT₁
-  obtain ⟨_, t₂⟩ := W.finT₂
-  obtain ⟨_, t₄⟩ := W.finT₄
-  refine RelCT.seq (LRel.step (kgB_bases L) (tr t₁) fun x Lx =>
-      WP.mono (copy_okL Lx (dst := (.r12, 384 * L.k)) (src := sc oG) (n := 32) (by decide) W.f₁)
-        fun _ h => ⟨_, h.1⟩)
-    (RelCT.seq (LRel.step (kgB_bases L) (tr t₂) fun x Lx =>
-      WP.mono (copy_okL Lx (dst := (.r13, 384 * L.k)) (src := (.r12, 0)) (n := L.ekLen) (by decide) W.f₂)
-        fun _ h => ⟨_, h.1⟩)
-    (RelCT.seq (LRel.step (kgB_bases L) (hash_tr (kgB_bases L) (ps := [((.r12, 0), L.ekLen)]) (rate := 136)
-      (out := (.r13, 384 * L.k + L.ekLen)) (len := 32) W.f₃ (show 6 < 256 by decide)) fun x Lx =>
-      WP.mono (hash_ok (kgB_bases L) (ps := [((.r12, 0), L.ekLen)]) (rate := 136) (out := (.r13, 384 * L.k + L.ekLen))
-        (len := 32) W.f₃ (show 6 < 256 by decide) Lx) fun _ h => ⟨_, h.1⟩)
-    (tr t₄)))
-
-theorem fin_tr : RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub (KRest L (2 * L.k) L.k L.k)) (fin L) fun _ _ => True :=
-  rel2_of (fin_trL W) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => kc_lrel W p₁ p₂ pub h₁.kc h₂.kc
+end
 
 end KeyGen
 

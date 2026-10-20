@@ -1,10 +1,8 @@
 module
+public import VerifiedGarbage.Spec.MlDsa.Contract
 
-public import VerifiedGarbage.Proof.MlDsa.Sign.Loop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 
 /-!

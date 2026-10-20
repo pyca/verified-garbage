@@ -1,15 +1,14 @@
 module
 
 import VerifiedGarbage.Proof.Sha3.Arm.Shared
-public import VerifiedGarbage.Proof.Sha3.Scratch
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Sha3.Scratch
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
 public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
+public import VerifiedGarbage.Impl.StackScratch.Arm
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # The SHA-3 sponge on ARMv7, with its working space on the stack

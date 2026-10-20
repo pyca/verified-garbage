@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.Arm.Permutation
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
@@ -17,7 +13,7 @@ theorem pc1_ok (s : State) :
       s'.gpr .r11 = ((Spec.TripleDes.permute Spec.TripleDes.pc1 (packedInput 64 32 (s.gpr .r5) (s.gpr .r4))).setWidth 28).setWidth 32 ∧
       s'.gpr .r10 = (((Spec.TripleDes.permute Spec.TripleDes.pc1 (packedInput 64 32 (s.gpr .r5) (s.gpr .r4))) >>> 28).setWidth 28).setWidth 32 ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
-      (∀ r, ((instrs keyPermutation1.lit).all fun op => dstOf op != some r) = true →
+      (∀ r, ((instrs keyPermutation1.lit).all fun op => !clobbers op r) = true →
         s'.gpr r = s.gpr r) := by
   obtain ⟨s', run, lo, hi, rd, wr, sp, mem, regs⟩ :=
     fixedPermutation_ok Spec.TripleDes.pc1 (by decide) 32 28
@@ -34,7 +30,7 @@ theorem pc2_ok (s : State) :
       s'.gpr .r4 = ((Spec.TripleDes.permute Spec.TripleDes.pc2 (packedInput 56 28 (s.gpr .r11) (s.gpr .r10))).setWidth 32).setWidth 32 ∧
       s'.gpr .r5 = (((Spec.TripleDes.permute Spec.TripleDes.pc2 (packedInput 56 28 (s.gpr .r11) (s.gpr .r10))) >>> 32).setWidth 16).setWidth 32 ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
-      (∀ r, ((instrs keyPermutation2.lit).all fun op => dstOf op != some r) = true →
+      (∀ r, ((instrs keyPermutation2.lit).all fun op => !clobbers op r) = true →
         s'.gpr r = s.gpr r) := by
   obtain ⟨s', run, lo, hi, rd, wr, sp, mem, regs⟩ :=
     fixedPermutation_ok Spec.TripleDes.pc2 (by decide) 28 32

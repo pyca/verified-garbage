@@ -1,15 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Layout
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Chain
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8RowCore
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderSave
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Value
-import VerifiedGarbage.Proof.Bignum.Triangular
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8RowCore
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
 /-! ## AdxTri8Store -/
 
@@ -86,18 +83,17 @@ theorem rowStep_ok {s : State} {B : Addr} {Z w I i e : Nat}
     (he : e+8*(i+(lo::hi::tail).length)≤Z)
     (hout : slot w aAcc+16*I+(16+8*(2*i+2))+8≤Z)
     (hr : (lo::hi::tail).Nodup)
-    (hrs : ∀ r ∈ lo::hi::tail, Safe r ∧ r≠.rax ∧ r≠.rbx ∧ r≠.rcx ∧ r≠.rdi)
-    (hv : value s (lo::hi::tail)<2^(64*((lo::hi::tail).length-1))) :
+    (hrs : ∀ r ∈ lo::hi::tail, Safe r ∧ r≠.rax ∧ r≠.rbx ∧ r≠.rcx ∧ r≠.rdi) :
     let out := slot w aAcc+16*I+(16+8*(2*i+1))
     WP isa (AdxTri8.rowStep i lo hi tail) s fun t =>
-      wv t.mem B out 2+2^128*value t (tail++[lo])=
-        value s (lo::hi::tail)+(word s.mem B (e+8*i)).toNat*wv s.mem B (e+8*(i+1)) ((lo::hi::tail).length-1) ∧
-      t.gpr lo=0 ∧ Outside B out 16 s.mem t.mem ∧ Keep (([.rdx,.rax,.rbx,.rsi] : List Reg)++lo::hi::tail) s t := by
+      wv t.mem B out 2+2^128*value t tail=
+        value s (lo::hi::tail).dropLast+(word s.mem B (e+8*i)).toNat*wv s.mem B (e+8*(i+1)) ((lo::hi::tail).length-1) ∧
+      Outside B out 16 s.mem t.mem ∧ Keep (([.rdx,.rax,.rbx,.rsi] : List Reg)++lo::hi::tail) s t := by
   dsimp only
   unfold AdxTri8.rowStep
   have baseSafe : ∀ r ∈ lo::hi::tail, Safe r ∧ r≠.rax ∧ r≠.rbx ∧ r≠.rcx :=
     fun r h => let q := hrs r h; ⟨q.1,q.2.1,q.2.2.1,q.2.2.2.1⟩
-  refine WP.seq (WP.mono (rowCore_ok (lo::hi::tail) hs hp he (by simp) hr baseSafe hv)
+  refine WP.seq (WP.mono (rowCore_ok lo (hi::tail) hs hp he (by simp) hr baseSafe)
     fun a ⟨va,ka⟩ => ?_)
   have sl := hrs lo (by simp)
   have sh := hrs hi (by simp)
@@ -105,32 +101,15 @@ theorem rowStep_ok {s : State} {B : Addr} {Z w I i e : Nat}
     simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
     exact ⟨by decide,⟨sl.2.2.2.1.symm,sh.2.2.2.1.symm,
       fun h => (hrs .rcx (by simp [h])).2.2.2.1 rfl⟩⟩)).trans hc
-  refine WP.seq (WP.mono (storeHead_ok (hs.congr ka.2.2.2) ca hout)
-    fun b ⟨vb,ob,kb⟩ => ?_)
-  refine WP.mono (movZero_ok b lo) fun t ⟨zt,_,_,kt⟩ => ?_
-  have tailA : value b tail=value a tail := value_congr fun r h =>
-    kb.gpr (by simp)
-  have tailT : value t tail=value b tail := value_congr fun r h =>
-    kt.gpr (by
-      have nd := (List.nodup_cons.mp hr).1
-      simp only [List.mem_cons,List.not_mem_nil,or_false]
-      intro eq
-      subst r
-      exact nd (by simp [h]))
-  have rot : value t (tail++[lo])=value a tail := by
-    rw [value_append]
-    simp only [value,zt,show (0 : BitVec 64).toNat=0 from rfl,Nat.mul_zero,Nat.add_zero]
-    exact tailT.trans tailA
-  have outT : wv t.mem B (slot w aAcc+16*I+(16+8*(2*i+1))) 2=
-      (a.gpr lo).toNat+2^64*(a.gpr hi).toNat := by rw [kt.2.1]; exact vb
+  refine WP.mono (storeHead_ok (hs.congr ka.2.2.2) ca hout) fun t ⟨vb,ob,kb⟩ => ?_
+  have tailT : value t tail=value a tail := value_congr fun r h => kb.gpr (by simp)
   rw [ka.2.1] at ob
-  refine ⟨?_,zt,?_,((ka.keep.trans kb).trans kt.keep).mono (by simp; grind only)⟩
-  · rw [outT,rot]
-    simp only [value] at va
-    have mul : (2 : Nat)^128=2^64*2^64 := by rw [← Nat.pow_add]
-    rw [mul]
-    exact split_arith va
-  · rw [kt.2.1]; exact ob
+  refine ⟨?_,ob,(ka.keep.trans kb).mono (by simp)⟩
+  rw [vb,tailT]
+  simp only [value] at va
+  have mul : (2 : Nat)^128=2^64*2^64 := by rw [← Nat.pow_add]
+  rw [mul,show (lo::hi::tail).length-1=(hi::tail).length by simp]
+  exact split_arith va
 
 end VG.Proof.Bignum.X86_64.AdxTri8
 

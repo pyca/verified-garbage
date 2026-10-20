@@ -1,12 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.AArch64.Domain
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
+public import VerifiedGarbage.Spec.Ffdh.Contract
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Exchange.CT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.Stages
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Ffdh.AArch64.Exchange.CT
 
 /-!
 # `vg_ffdh_exchange` on AArch64: verified

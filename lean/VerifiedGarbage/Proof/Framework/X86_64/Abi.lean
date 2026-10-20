@@ -1,7 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
 
 /-!
 # x86-64: the calling-convention obligations
@@ -30,6 +32,11 @@ theorem exec_mxcsr {i : Instr} (hi : loadsMxcsr i = false) {s s' : State} (h : e
   | alu32 op d src =>
     simp only [exec, Taint.execAlu32_eq, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨_, _, _, _, rfl⟩ := h; split <;> rfl
+  | aluTbl op d m n ws =>
+    simp only [exec] at h
+    split at h <;> [skip; cases h]
+    simp only [Taint.execAluW_eq, Option.map_eq_some_iff] at h
+    obtain ⟨_, _, rfl⟩ := h; split <;> rfl
   | shift32 op d n =>
     simp only [exec, execShift32] at h
     split at h <;> [skip; cases h]
@@ -42,6 +49,7 @@ theorem exec_mxcsr {i : Instr} (hi : loadsMxcsr i = false) {s s' : State} (h : e
   | vop op => simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.VOp.exec_eq op s]
   | vmovdquLoad len d m | vbinLoad _ len d _ m =>
     cases len <;> simp only [exec, Option.map_eq_some_iff] at h <;> obtain ⟨_, _, rfl⟩ := h <;> rfl
+  | vmovdquTbl d m n ws | movdquTbl d m n ws => simp only [exec] at h; split at h <;> cases h; rfl
   | vmovdquStore len m r =>
     cases len
     · simp only [exec, State.store128] at h; split at h <;> cases h; rfl
@@ -49,17 +57,19 @@ theorem exec_mxcsr {i : Instr} (hi : loadsMxcsr i = false) {s s' : State} (h : e
   | store m r => simp only [exec, State.store64] at h; split at h <;> cases h; rfl
   | store32 m r => simp only [exec, State.store32] at h; split at h <;> cases h; rfl
   | store8 m r => simp only [exec, State.store8] at h; split at h <;> cases h; rfl
+  | store16 m r => simp only [exec, State.store16] at h; split at h <;> cases h; rfl
   | movdquStore m r => simp only [exec, State.store128] at h; split at h <;> cases h; rfl
   | stmxcsr m => simp only [exec, State.store32] at h; split at h <;> cases h; rfl
   | vmovdqu32Store m r => simp only [exec, State.store512] at h; split at h <;> cases h; rfl
   | evStore m r => simp only [exec, State.store256] at h; split at h <;> cases h; rfl
   | kStore m k r => obtain ⟨_, rfl⟩ := State.storeMasked512_eq h; rfl
+  | kStore8 m k r => obtain ⟨_, rfl⟩ := State.storeMasked512B_eq h; rfl
   | zop op => simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.ZOp.exec_eq op s]
   | eop op => simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.EOp.exec_eq op s]
   | evLoad d | evMadd52Load _ d =>
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; cases d <;> rfl
-  | mov | mov32 | movzx8 | movdquLoad | vbroadcasti128 | vmovdqu32Load | vbroadcasti32x4 | vbroadcasti32x4H | zbcst
-  | vpmadd52Load | kLoad =>
+  | mov | mov32 | movzx8 | movzx16 | movdquLoad | vbroadcasti128 | vmovdqu32Load | vbroadcasti32x4 | vbroadcasti32x4H | zbcst
+  | vpmadd52Load | kLoad | kLoad8 =>
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
   | bswap32 | bswap | movImm64 | leaSym | lfence | mul | imul | andn32 | andn | vpmovmskb | movqR
   | shiftCl | shiftx =>

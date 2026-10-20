@@ -1,15 +1,25 @@
 module
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTLcm
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTTail
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTTail
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTTail
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Implies
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTD
+import VerifiedGarbage.Proof.Rsa.X86_64.CvCT
+import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
+import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTLcm
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTTail
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Implies
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTD
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCT
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! ## CTOut -/
 
@@ -473,7 +483,8 @@ theorem keyCode_correct (hmx : VG.Impl.RsaKeyGen.X86_64.Key.code.allInstrs (fun 
 
 /-- `vg_rsa_keygen_key`, given that its code never loads MXCSR (which the
 registration file evaluates). -/
-theorem key_verified (hmx : VG.Impl.RsaKeyGen.X86_64.Key.code.allInstrs (fun i => !loadsMxcsr i) = true) :
+theorem key_verified
+    (hmx : VG.Impl.RsaKeyGen.X86_64.Key.code.allInstrs (fun i => !loadsMxcsr i) = true := by decide +kernel) :
     Verified target VG.Impl.RsaKeyGen.X86_64.Key.code (Spec.RsaKeyGen.keyContract abi) :=
   Verified.of_correct (keyCode_correct hmx) keyCode_constantTime key_implies
 

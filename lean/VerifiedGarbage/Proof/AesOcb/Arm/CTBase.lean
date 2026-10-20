@@ -1,15 +1,54 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.Arm.Open
-meta import VerifiedGarbage.Proof.AesOcb.Arm.Open
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+public import VerifiedGarbage.Proof.AesOcb.Arm.Callee
+public import VerifiedGarbage.Proof.AesOcb.Arm.Env
+import VerifiedGarbage.Proof.AesOcb.Arm.Calls
+import VerifiedGarbage.Proof.AesGcm.Arm.Entry
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.AesOcb.Arm.Callee
+meta import VerifiedGarbage.Proof.AesOcb.Arm.Env
+meta import VerifiedGarbage.Proof.AesOcb.Arm.Calls
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.TCB.Arm.Isa
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+import Batteries.Logic
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
+import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1
+import VerifiedGarbage.Proof.AesGcm.Arm.Loops
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Bytes
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import Batteries.Logic
+meta import Mathlib.Tactic.Conv
+meta import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Loops
+meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Cmac.Mem
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.Bytes
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # AES-OCB on ARMv7: relating two runs
@@ -215,8 +254,8 @@ theorem exec_of_wp {c : Prog isa} {σ : State} {F : State → Prop} (w : WP isa 
 
 /-- The environment, after code that writes none of its registers. -/
 theorem Env.exec {p : Prm} {c : Prog isa} {τ τ' : State} {t : List Leak} (E : Env p τ) (h : Exec isa c τ t τ')
-    (h9 : ∀ i ∈ instrs c, dstOf i ≠ some .r9) (h10 : ∀ i ∈ instrs c, dstOf i ≠ some .r10)
-    (h11 : ∀ i ∈ instrs c, dstOf i ≠ some .r11) : Env p τ' :=
+    (h9 : ∀ i ∈ instrs c, clobbers i .r9 = false) (h10 : ∀ i ∈ instrs c, clobbers i .r10 = false)
+    (h11 : ∀ i ∈ instrs c, clobbers i .r11 = false) : Env p τ' :=
   have ⟨rd, wr, sp⟩ := Exec.rdwr h
   ⟨by rw [Exec.gpr h9 h, E.r9], by rw [Exec.gpr h10 h, E.r10], by rw [Exec.gpr h11 h, E.r11], by rw [sp, E.sp],
     E.perm.of_eq rd wr⟩
@@ -235,7 +274,7 @@ structure Kept (p : Prm) (rs : List Reg) (τ τ' : State) : Prop where
   gpr : ∀ r ∈ rs, τ'.gpr r = τ.gpr r
 
 theorem kept_of {p : Prm} (L : Lay p) {c : Prog isa} {τ : State} (E : Env p τ) (rs : List Reg)
-    (hk : ∀ r ∈ envRegs ++ rs, ∀ i ∈ instrs c, dstOf i ≠ some r) (hn : c.noFrames = true)
+    (hk : ∀ r ∈ envRegs ++ rs, ∀ i ∈ instrs c, clobbers i r = false) (hn : c.noFrames = true)
     (hc : c.noCalls = true) : ∀ t τ', Exec isa c τ t τ' → Kept p rs τ τ' := fun _ _ h =>
   ⟨E.exec h (hk _ (by simp)) (hk _ (by simp)) (hk _ (by simp)), fun A => A.exec L E h hn,
     fun r hr => Exec.gpr (hk r (List.mem_append_right _ hr)) h (.inl hc)⟩

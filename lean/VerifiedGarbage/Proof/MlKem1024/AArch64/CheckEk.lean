@@ -1,17 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.CheckEk
-meta import VerifiedGarbage.Proof.MlKem.AArch64.CheckEk
 public import VerifiedGarbage.Impl.MlKem1024.AArch64.CheckEk
-meta import VerifiedGarbage.Impl.MlKem1024.AArch64.CheckEk
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Spec.MlKem.Contract1024
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.AArch64.CheckEk
+meta import VerifiedGarbage.Impl.MlKem1024.AArch64.CheckEk
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM-1024 on AArch64: `vg_mlkem1024_check_ek`

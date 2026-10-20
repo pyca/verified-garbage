@@ -1,11 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyFrame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 
 /-!
@@ -134,7 +131,7 @@ theorem pubOk_of (c : PubChecked) {s t : State} (hp : PreV c.stack s) (ha : AtCa
   case h7 => rw [ha.x7, ha.x3]
   case he1 => rw [ha.x5]; exact hp.e1
   case he2 => rw [ha.x5, ha.x3]; exact hp.e2
-  case hs => rw [ha.x3, ha.a1]; unfold Spec.Rsa.scratchWords; exact hp.hs
+  case hs => rw [ha.x3, ha.a1]; exact hp.hs
 
 theorem call_ok (c : PubChecked) {s t : State} (hp : PreV c.stack s) (ha : AtCall s t)
     (hsig : stackArg s 0 = s.gpr .x1) :

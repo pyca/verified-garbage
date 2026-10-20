@@ -1,13 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
-public import VerifiedGarbage.Proof.Ed448.AArch64.CombBase
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
+import VerifiedGarbage.Proof.Ed448.AArch64.CombBase
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
+public import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Select
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
 
 /-!
 # Ed448 verification on AArch64: `[S]B`

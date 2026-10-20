@@ -1,12 +1,8 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
+public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Result
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
-public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Ready
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DotSpec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Core
 
 /-! # Fused polynomial products preserve the KEM call invariant -/
 
@@ -29,19 +25,5 @@ theorem fused_ok {s₀ s : State} (hp : Pre P L s₀) {off : Nat} (ho : PO P off
   rw [e28 hk] at ft pt
   exact ⟨hk.frame kt ft (by decide) (fun r hr => by
     rw [List.mem_singleton.mp hr]; exact ho.safe hp),ft,pt,kt.get .x24 (by decide)⟩
-
-theorem fused_einv {s₀ s : State} (hp : Pre P L s₀) {kE eo kC co : Nat}
-    (A : EncArgs P L kE eo kC co) {mE mB : Mem} {v : BitVec 64} {rv mv : List Byte} {i : Nat}
-    (hi : i ≤ P.k) (h : EInv P L s₀ kC co mE mB v rv mv P.k i s)
-    (terms : List (Nat × Nat)) {F G : (Nat × Nat) → Poly}
-    (hd : Dot.LoopData s (s.gpr .x28+BitVec.ofNat 64 (TP P)) (s.syms "VG_MLKEM_GAMMA") terms
-      (Dot.polyValues F) (Dot.polyValues G) Dot.gammaValues) :
-    WP isa (Impl.MlKem.AArch64.Dot.dot (TP P) terms) s fun t =>
-      EInv P L s₀ kC co mE mB v rv mv P.k i t ∧
-      Frame [R (kA s₀) L.sc (TP P) 1024] s.mem t.mem ∧
-      PolyIs t.mem (sA L s₀ (TP P)) (Dot.polySum terms F G) := by
-  have hw := hp.wf
-  exact WP.mono (fused_ok hp (po_TP hw) h.kb terms hd) fun t ⟨kt,ft,pt,xt⟩ =>
-    ⟨h.frame hp kt xt ft (far_one hp A (Nat.le_refl _) hi (by lom) (by lom)),ft,pt⟩
 
 end VG.Proof.MlKem.AArch64.Kem

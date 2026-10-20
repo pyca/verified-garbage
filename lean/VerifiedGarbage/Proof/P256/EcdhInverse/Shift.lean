@@ -1,12 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
-public import VerifiedGarbage.Proof.Divstep.BatchBasic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Divstep.WordBasic
+public import Mathlib.Algebra.Group.Int.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

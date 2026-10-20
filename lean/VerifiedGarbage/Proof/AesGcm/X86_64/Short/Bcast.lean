@@ -1,11 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+public import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # AES-GCM's short path on x86-64: the constants in every lane

@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Instance
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
+import Mathlib.Tactic.NormNum.Inv
+import Mathlib.Tactic.NormNum.Pow
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
 
 /-!
 # ChaCha20-Poly1305 (RFC 8439 §2.8) on x86-64
@@ -28,8 +29,9 @@ the key, the one-time Poly1305 key and the keystream of the call of
 the code zeroes the keystream it
 keeps after them itself. The code below the frame uses 24 bytes of stack for
 every implementation: the return address of the call of `vg_chacha20_xor`,
-and up to 16 bytes for its own calls; 1744 bytes in all. `seal_split` keeps
-its working space as `seal` does, in a frame of 1736 bytes (which also holds
+and up to 16 bytes for its own calls; 1744 bytes in all. `seal_split`, emitted only with the
+AVX-512 implementations of `vg_poly1305_blocks` (whose `seal_gather` alone
+calls it), keeps its working space as `seal` does, in a frame of 1736 bytes (which also holds
 copies of `dst`, `len` and `tag`), and runs `seal`'s code in a frame of 40
 bytes laid out as `seal`'s entry, whose calls use 24 bytes below it: 1800
 bytes in all. `seal_gather` gathers its slices to its output and calls the
@@ -71,18 +73,15 @@ def gatherNote (v : Proof.ChaCha20.X86_64.XorImpl) : String :=
       its first slice read from where it is, with `" ++ (Gather.sealSplitFn v).name ++ "`."
   | _ => "This implementation " ++ whole ++ "."
 
-/-- What `vg_chacha20_poly1305_seal_split` does: with the AVX-512
-implementations of `vg_poly1305_blocks`, it copies only the bytes of `src`
-the first pass of the keystream covers and reads the rest from `src` as it
-encrypts; otherwise it copies all of `src`. -/
-def splitNote (v : Proof.ChaCha20.X86_64.XorImpl) : String :=
-  match v.poly with
-  | .avx512 | .ifma => "This implementation copies to `dst` the bytes of `src` that the first keystream it \
-      computes covers (all of them for at most 960 bytes of data, else at most 960, as many as the data has \
-      past its last multiple of 1024 bytes, rounded up to 64), and reads the rest of `src` as it encrypts, \
-      in the code of `vg_chacha20_xor_split_avx512`."
-  | _ => "This implementation copies `src` to `dst` and encrypts it there in place, as \
-      `vg_chacha20_poly1305_seal` does."
+/-- What `vg_chacha20_poly1305_seal_split` does (it is emitted only with the
+AVX-512 implementations of `vg_poly1305_blocks`, whose `seal_gather` calls
+it): it copies only the bytes of `src` the first pass of the keystream covers
+and reads the rest from `src` as it encrypts. -/
+def splitNote : String :=
+  "This implementation copies to `dst` the bytes of `src` that the first keystream it \
+    computes covers (all of them for at most 960 bytes of data, else at most 960, as many as the data has \
+    past its last multiple of 1024 bytes, rounded up to 64), and reads the rest of `src` as it encrypts, \
+    with `vg_chacha20_xor_avx512`'s code, inline, loading those blocks from `src`."
 
 /-- What `vg_chacha20_poly1305_seal` does for short data with the AVX-512
 implementation of `vg_poly1305_blocks` (without IFMA): the AVX2 code, whose
@@ -100,49 +99,64 @@ def sealNotes (v : Proof.ChaCha20.X86_64.XorImpl) : List String :=
 def features (v : Proof.ChaCha20.X86_64.XorImpl) : List String :=
   (v.features ++ v.poly.features).eraseDups
 
+/-- What `vg_chacha20_poly1305_open` does in a window of lengths with the IFMA
+implementation of `vg_poly1305_blocks` (`Stitch.openWin`). -/
+def openNotes (v : Proof.ChaCha20.X86_64.XorImpl) : List String :=
+  match v.poly with
+  | .ifma => [xorNote v, "From " ++ toString Impl.ChaCha20Poly1305.X86_64.Stitch.ifmaLo ++ " to " ++
+      toString (Impl.ChaCha20Poly1305.X86_64.Stitch.ifmaHi - 1) ++ " bytes of data, it runs the code \
+      `vg_chacha20_poly1305_open_avx512vl` runs for short data instead: `vg_chacha20_xor_avx512vl`'s \
+      rounds with `vg_poly1305_blocks_avx2`'s Poly1305 inside them, rather than a pass of twelve blocks \
+      and then `vg_poly1305_blocks_ifma`."]
+  | _ => [xorNote v]
+
+/-- The CPU features `open` requires: with the IFMA implementation of
+`vg_poly1305_blocks`, those of `vg_chacha20_xor_avx512vl` too, which its
+window calls (`openNotes`). -/
+def openFeatures (v : Proof.ChaCha20.X86_64.XorImpl) : List String :=
+  match v.poly with
+  | .ifma => (features v ++ Proof.ChaCha20.X86_64.XorImpl.avx512vl.features).eraseDups
+  | _ => features v
+
 def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
-  { Spec.ChaCha20Poly1305.sealApi with
-    name := Spec.ChaCha20Poly1305.sealApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.ChaCha20Poly1305.sealApi.doc (notes := sealNotes v)
+  Spec.ChaCha20Poly1305.sealApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := sealNotes v
     code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1720 1 42
       (Impl.ChaCha20Poly1305.X86_64.Stitch.sealFor v.callee v.poly)
-    contract := Spec.ChaCha20Poly1305.sealContract X86_64.abi 1744
     stack := 1744
     verified := Stitch.sealFor_framed v
     spSafe := X86_64.withStackArgScratchWipedX_spSafe (Stitch.sealFor_spSafe v)
     features := features v },
-  { Spec.ChaCha20Poly1305.openApi with
-    name := Spec.ChaCha20Poly1305.openApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.ChaCha20Poly1305.openApi.doc (notes := [xorNote v])
+  Spec.ChaCha20Poly1305.openApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := openNotes v
     code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1720 1 42
       (Impl.ChaCha20Poly1305.X86_64.Stitch.openFor v.callee v.poly)
-    contract := Spec.ChaCha20Poly1305.openContract X86_64.abi 1744
     stack := 1744
     verified := Stitch.openFor_framed v
     spSafe := X86_64.withStackArgScratchWipedX_spSafe (Stitch.openFor_spSafe v)
-    features := features v },
-  { Spec.ChaCha20Poly1305.sealSplitApi with
-    name := Spec.ChaCha20Poly1305.sealSplitApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.ChaCha20Poly1305.sealSplitApi.doc (notes := [xorNote v, splitNote v])
-    code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1736 3 42
-      (Impl.ChaCha20Poly1305.X86_64.SealSplit.sealSplitFor v.callee v.poly)
-    contract := Spec.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800
-    stack := 1800
-    verified := Split.sealSplit_framed v
-    spSafe := X86_64.withStackArgScratchWipedX_spSafe (Split.sealSplitFor_spSafe v)
-    features := features v },
-  { Spec.ChaCha20Poly1305.sealGatherApi with
-    name := Spec.ChaCha20Poly1305.sealGatherApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.ChaCha20Poly1305.sealGatherApi.doc (notes := [gatherNote v])
+    features := openFeatures v },
+  Spec.ChaCha20Poly1305.sealGatherApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [gatherNote v]
     code := Gather.gatherCode v
-    contract := Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1880
     stack := 1880
     verified := Gather.gather_verified v
     spSafe := Gather.gather_spSafe v
-    features := features v }]
+    features := features v }] ++
+  -- Only the AVX-512 implementations' `seal_gather` calls `seal_split`.
+  match v.poly with
+  | .avx512 | .ifma => [
+    Spec.ChaCha20Poly1305.sealSplitApi.artifact X86_64.target {
+      suffix := v.suffix
+      notes := [xorNote v, splitNote]
+      code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1736 3 42
+        (Impl.ChaCha20Poly1305.X86_64.SealSplit.sealSplitFor v.callee v.poly)
+      stack := 1800
+      verified := Split.sealSplit_framed v
+      spSafe := X86_64.withStackArgScratchWipedX_spSafe (Split.sealSplitFor_spSafe v)
+      features := features v }]
+  | _ => []
 
 end VG.Generic.ChaCha20Xor.X86_64.ChaCha20Poly1305

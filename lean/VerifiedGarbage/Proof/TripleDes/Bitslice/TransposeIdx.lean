@@ -1,6 +1,5 @@
 module
 
-import all Init.Data.Nat.Bitwise.Basic
 
 /-!
 # The indices of the bitsliced state's transposition

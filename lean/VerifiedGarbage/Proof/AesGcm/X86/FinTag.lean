@@ -1,15 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Tag
-meta import VerifiedGarbage.Proof.AesGcm.X86.Tag
 import VerifiedGarbage.Proof.AesGcm.X86.Top
-meta import VerifiedGarbage.Proof.AesGcm.X86.Top
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Gcm.Be64
+meta import VerifiedGarbage.Proof.AesGcm.X86.Tag
+meta import VerifiedGarbage.Proof.AesGcm.X86.Top
 meta import VerifiedGarbage.Proof.Gcm.Be64
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on x86: the tag of a streaming state (`finTag`)

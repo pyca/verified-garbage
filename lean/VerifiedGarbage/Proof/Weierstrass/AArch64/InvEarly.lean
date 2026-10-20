@@ -1,14 +1,18 @@
 module
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.Positivity
+public import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Divstep.Alg
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatchStart
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.InvToM
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyCheck
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyFinish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Divstep.Bound
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyCheck
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyFinish
 import VerifiedGarbage.Proof.Divstep.Iter
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
+import VerifiedGarbage.Proof.Divstep.Tc
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 @[expose] public section
 

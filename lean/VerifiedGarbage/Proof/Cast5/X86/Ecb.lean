@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Cast5.X86.Block
 public import VerifiedGarbage.Proof.Framework.X86.Spill
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # CAST5 on 32-bit x86: ECB
@@ -534,11 +533,6 @@ theorem ecb_correct (up : Bool) (s : State) (h : EPre s) :
   have hz : isa.eval .e s₃ = some (decide (N.toNat = 0)) := by
     simp only [eval, z₃, BitVec.sub_zero]
     congr 1
-    by_cases h0 : N.toNat = 0
-    · rw [decide_eq_true h0, show N = 0 from BitVec.eq_of_toNat_eq h0]; rfl
-    · rw [decide_eq_false h0]
-      simp only [beq_eq_false_iff_ne, ne_eq]
-      exact fun e => h0 (by rw [e]; rfl)
   refine WP.ite (decide (N.toNat = 0)) hz (fun hN0 => ?_) (fun hN0 => ?_)
   · have e : N.toNat = 0 := of_decide_eq_true hN0
     refine WP.block_nil ?_

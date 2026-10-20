@@ -1,14 +1,22 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.Arm.Validate
-public import VerifiedGarbage.Proof.Ecdh.Exchange
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Spec.Ecdh
+import VerifiedGarbage.Proof.Ecdh.Exchange
 import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
 import VerifiedGarbage.Proof.Weierstrass.Arm.BytesLen
 import VerifiedGarbage.Proof.Weierstrass.Arm.Rep
+import VerifiedGarbage.Proof.Ecdh.Arm.Peer
+import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
+import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
+import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
+import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
+import VerifiedGarbage.Proof.EcKey.PublicKey
+import VerifiedGarbage.Proof.Weierstrass.Pow
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.X25519.Arm.Limbs
 
 /-!
 # ECDH on 32-bit ARM: the result, and the whole function

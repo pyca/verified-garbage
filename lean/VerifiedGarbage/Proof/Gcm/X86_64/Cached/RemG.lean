@@ -1,13 +1,23 @@
 module
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGLanes
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 
-import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGKs
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGKs
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Keep
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemSetup
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Ks
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # The blocks after the last group, as a masked group

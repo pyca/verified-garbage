@@ -2,11 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Macs
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Pairs
-public import Mathlib.Algebra.BigOperators.Group.List.Basic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Exec
+import Mathlib.Algebra.BigOperators.Group.List.Basic
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # A half's products are its coefficients

@@ -1,15 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedMain
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedMain
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedEnd
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.SharedCandidate
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCall
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KTail
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedRanges
 
 /-! # Montgomery setup and RSA's shared Miller–Rabin witness loop -/
 
@@ -31,7 +30,7 @@ def SharedTestEnd (s t : State) (B sp : Addr) (Z : Nat) (op up : Addr) (k : Nat)
 
 /-- `montSetup`, `millerRabin` and `mrResult`, for the candidate `c` in
 `aN`, from offset `8 w` of `rand`. -/
-theorem sharedKTail_ok (M : Mont) (R : Kernel) {s : State} {B sp : Addr} {Z w : Nat} {mi : BitVec 64} {c : Nat} {op up rp : Addr}
+theorem sharedKTail_ok (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : MmCalls M mm) (R : Kernel) {s : State} {B sp : Addr} {Z w : Nat} {mi : BitVec 64} {c : Nat} {op up rp : Addr}
     {r : List Byte} (henv : SharedEnv B Z sp s) (hZ28 : slot w 28 ≤ Z) (hg : Good s B Z w mi) (hZ : slot w 8 ≤ Z) (hXZ : slot w aRm1 + 8 * (w + 2) ≤ Z) (hw4 : 4 ≤ w)
     (hw64 : w ≤ 64) (hn : wv s.mem B (slot w aN) w = c) (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c)
     (ho : OutUp s B Z op up (8 * w)) (hO : word s.mem B (8 * kOut) = op)
@@ -39,7 +38,7 @@ theorem sharedKTail_ok (M : Mont) (R : Kernel) {s : State} {B sp : Addr} {Z w : 
     (hrp : word s.mem B (8 * kRand) = rp) (hrlen : word s.mem B (8 * kRandLen) = BitVec.ofNat 64 r.length)
     (hus : word s.mem B (8 * kUsed) = BitVec.ofNat 64 (8 * w)) (hsrc : Src s B Z rp r) (hrl : r.length < 2 ^ 64)
     (hrk : 8 * w ≤ r.length) :
-    WP isa (seqs (montSetup M.mm ++ expSetup ++ millerRabinWith M.mm R.run ++ [mrResult])) s fun t =>
+    WP isa (seqs (montSetup mm ++ expSetup ++ millerRabinWith mm R.run ++ [mrResult])) s fun t =>
       SharedTestEnd s t B sp Z op up (8 * w) r c (Spec.RsaKeyGen.primalityTest c (r.drop (8 * w))) := by
   have hnw := hg.scr.nowrap
   have hd : MrDims B Z w := ⟨hZ, hXZ, hw4, by omega_arith⟩
@@ -52,15 +51,15 @@ theorem sharedKTail_ok (M : Mont) (R : Kernel) {s : State} {B sp : Addr} {Z w : 
     omega_arith
   rw [List.append_assoc, List.append_assoc]
   refine wp_seqs_append (by simp [montSetup]) (by simp [expSetup, lowWord]) ?_
-  refine WP.mono (montSetup_ok M hg hZ hXZ hw4 hw64 hn hodd htop) fun s₀ ⟨mi', hg₀, hinv₀, hr2₀, hr1₀, hrm₀, hch₀,
+  refine WP.mono (montSetup_call_ok M hmc henv hg hZ hXZ hw4 hw64 hn hodd htop) fun s₀ ⟨mi', hg₀, hinv₀, hr2₀, hr1₀, hrm₀, hch₀,
     hf₀, k₀⟩ => ?_
   have hn₀ : wv s₀.mem B (slot w aN) w = c := by
-    rw [hf₀.wv_eq (d := slot w aN) (k := w) (by simp only [msRanges]; rng_disj)
-      (by have := slot_le (w := w) (show aN < 8 by decide); omega_arith)]; exact hn
+    rw [SharedFrame.array hf₀ henv (d := slot w aN) (k := w) (by simp only [msRanges]; rng_disj)
+      (by have := slot_le (w := w) (show aN < 8 by decide); omega_arith) hnw]; exact hn
   refine wp_seqs_append (by simp [expSetup, lowWord]) (by simp [millerRabinWith]) ?_
   refine WP.mono (expSetup_ok hg₀ hd hn₀ hodd hc1) fun s₁ ⟨hE₁, hfE, hg₁, kEx⟩ => ?_
-  have hf₁ : Frm B (msRanges w ++ [(slot w aE, 8 * (w + 1))]) s.mem s₁.mem :=
-    (hf₀.mono fun r hr => List.mem_append_left _ hr).trans (hfE.mono fun r hr => List.mem_append_right _ hr)
+  have hf₁ : SharedFrame B sp (msRanges w ++ [(slot w aE, 8 * (w + 1))]) s.mem s₁.mem :=
+    (hf₀.mono fun r hr => List.mem_append_left _ hr).trans (hfE.work.mono fun r hr => List.mem_append_right _ hr)
   have k₁ : Keep mmRegs s s₁ := (k₀.trans kEx).mono (by decide)
   have hEw : ∀ {d k : Nat}, d + 8 * k ≤ slot w aE ∨ slot w aE + 8 * (w + 1) ≤ d → d + 8 * k ≤ 2 ^ 64 →
       wv s₁.mem B d k = wv s₀.mem B d k := fun h h' => hfE.wv_eq (fun r hr => by
@@ -82,7 +81,7 @@ theorem sharedKTail_ok (M : Mont) (R : Kernel) {s : State} {B sp : Addr} {Z w : 
     have hd : ∀ r ∈ msRanges w ++ [(slot w aE, 8 * (w + 1))], 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := by
       simp only [msRanges, List.cons_append, List.nil_append]
       rcases hk with rfl | rfl | rfl | rfl | rfl | rfl <;> rng_disj
-    exact hf₁.word_eq hd (by omega_arith)
+    exact SharedFrame.word hf₁ henv hd (by have := hdr_lt_slot w 8 hk32; omega_arith) hnw
   have hsl₁ : ∀ r ∈ msRanges w ++ [(slot w aE, 8 * (w + 1))], r.1 + r.2 ≤ Z := fun r hr => by
     have : r.1 + r.2 ≤ slot w aRm1 + 8 * (w + 2) := by
       revert r hr; simp only [msRanges, List.cons_append, List.nil_append]; rng_le
@@ -90,11 +89,11 @@ theorem sharedKTail_ok (M : Mont) (R : Kernel) {s : State} {B sp : Addr} {Z w : 
   have hc₁ : MrCtx s₁ B Z w mi' c (wv s₁.mem B (slot w aB) w) :=
     ⟨hg₁, hinv₁, by rw [hfE.wv_eq (d := slot w aN) (k := w) (by rng_disj)
       (by have := slot_le (w := w) (show aN < 8 by decide); omega_arith)]; exact hn₀, rfl, hr1₁, hrm₁⟩
-  have hsrc₁ := hsrc.congrK (InScr.of_frm hf₁ hsl₁) k₁
+  have hsrc₁ := hsrc.shared henv hf₁ hsl₁ k₁
   have hres : mrRest c (checksW w) r 1 0 (8 * w) = Spec.RsaKeyGen.primalityTest c (r.drop (8 * w)) := by
     rw [VG.Proof.RsaKeyGen.primalityTest_cand (by omega_arith) ⟨hodd, hlo, hhi⟩, checksW_eq w (by omega_arith) hw4]
   refine wp_seqs_append (by simp [millerRabinWith]) (by simp) ?_
-  refine WP.mono (sharedMillerRabin_ok M R hd hZ28 hc1 ⟨hodd, hlo, hhi⟩ hrl (by unfold checksW; split <;> (try split) <;>
+  refine WP.mono (sharedMillerRabin_ok M hmc R hd hZ28 hc1 ⟨hodd, hlo, hhi⟩ hrl (by unfold checksW; split <;> (try split) <;>
       (try split) <;> (try split) <;> (try split) <;> (try split) <;> decide) (henv.kept k₁ (by decide)) hc₁ hE₁ hr2₁
     (by rw [hw₁ (Or.inl rfl)]; exact hrp) (by rw [hw₁ (Or.inr (Or.inl rfl))]; exact hK)
     (by rw [hw₁ (Or.inr (Or.inr (Or.inl rfl)))]; exact hrlen) hch₁ hsrc₁
@@ -118,7 +117,11 @@ theorem sharedKTail_ok (M : Mont) (R : Kernel) {s : State} {B sp : Addr} {Z w : 
       simp only [List.mem_singleton] at hr
       subst r
       exact he) (fun r hr => Or.inr (Nat.le_trans (hsl₂ r hr) hx)))
-    exact InScr.of_frm hf₁ hsl₁ x hx
+    exact hf₁ x (by
+      intro r hr
+      simp only [List.mem_singleton] at hr
+      subst r
+      exact he) (fun r hr => Or.inr (Nat.le_trans (hsl₁ r hr) hx))
   have hout : ∀ j < 8 * w, s₂.mem (op + BitVec.ofNat 64 j) = s.mem (op + BitVec.ofNat 64 j) := by
     intro j hj
     exact hhi _ (henv.clear.miss wr_mem (ho.outw j hj) (by simp)) (ho.outZ j hj)
@@ -129,7 +132,7 @@ theorem sharedKTail_ok (M : Mont) (R : Kernel) {s : State} {B sp : Addr} {Z w : 
     have h1' : ∀ r ∈ msRanges w ++ [(slot w aE, 8 * (w + 1))], 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i := fun r hr => by
       have : 48 ≤ r.1 := by revert r hr; simp only [msRanges, List.cons_append, List.nil_append]; rng_le
       omega_arith
-    rw [SharedFrame.word hf₂ henv h2 (by omega_arith) hnw, hf₁.word_eq h1' (by omega_arith)]
+    rw [SharedFrame.word hf₂ henv h2 (by omega_arith) hnw, SharedFrame.word hf₁ henv h1' (by omega_arith) hnw]
   have k12 : Keep mmRegs s s₂ := (k₁.trans k₂).mono (by decide)
   have ho₂ := ho.congr (k12.2.2)
   refine WP.mono (mrResult_ok (r := r) hc₂.good hZ (by omega_arith) (by omega_arith) hc₂.n ho₂

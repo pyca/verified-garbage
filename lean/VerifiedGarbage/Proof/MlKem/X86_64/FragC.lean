@@ -1,15 +1,8 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragS
-import VerifiedGarbage.Proof.MlKem.KPke
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 
 /-!
 # ML-KEM on x86-64: the input of `PRF`, and sequences in a layout

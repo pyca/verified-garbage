@@ -35,7 +35,7 @@ Modelling choices:
 * The stack pointer is separate. Only frame delimiters (`push`/`pop` and
   `alloc`/`free`) write it. `addSp` computes a stack-relative pointer, and
   `ldrSp` loads a 64-bit word from `[sp, #off]` (including arguments passed
-  on the stack). Register number 31, SP or the zero register, is otherwise
+  on the stack), and `strSp` stores one there (into a frame). Register number 31, SP or the zero register, is otherwise
   never an operand.
   Each operand is a 32-bit (`w`) or a 64-bit (`x`) register; a 32-bit
   result is zero-extended into the 64-bit register (DDI 0487, the pseudocode
@@ -57,7 +57,8 @@ Modelling choices:
   of their data when PSTATE.DIT is 1 (DDI 0487, "About PSTATE.DIT", FEAT_DIT,
   which lists MADD and UBFM, as it does the other modelled data-processing
   instructions that read a register: ADD, SUB, AND, BIC, EOR, ORR, EXTR, REV and
-  MOVK, ADDS, ADCS, SUBS, SBCS, ADC, SBC, CSEL, CSNEG, CCMP, TST and UMULH; the
+  MOVK, ADDS, ADCS, SUBS, SBCS, ADC, SBC, CSEL, CSNEG, CCMP, TST, UMULH, CLZ and
+  RBIT; the
   description of UMADDL, of which UMULL is an alias, says "This instruction is a
   data-independent-time instruction as described in About PSTATE.DIT": DDI
   0602, A64 ISA XML 2025-12, `umaddl.xml`). The code does not set PSTATE.DIT,
@@ -71,6 +72,23 @@ Modelling choices:
   `State.syms name`, where `name` is its name, which `adrSym` (`adrp` and
   `add`, resolved by the linker) puts in a register. No instruction changes
   `syms`: a static's address is fixed for the run of the program.
+* A table of constants an instruction carries (`ldrqTbl`, its name and its
+  words) is the `static` of that name the emitter writes from it
+  (`TCB/Rust.lean`), as x86-64's `aluTbl` and `vmovdquTbl` are
+  (`TCB/X86_64/Isa.lean`): for the whole run of the program it is mapped
+  readable at `State.syms name` and holds exactly those words, 8 bytes each,
+  little-endian, and does not wrap around the address space; and no memory
+  any code writes overlaps it: no region a contract lets a function write,
+  nor the stack. This is what a Rust `static` without interior mutability
+  is: an immutable object, which the linker places in read-only memory,
+  apart from every other object and from the stack, and which no `&mut`
+  (safe Rust cannot make one to it) nor any other pointer the program may
+  write through can reach. So the model reads the words from the
+  instruction rather than from `State.mem`, whose writes never reach it,
+  and no contract states any of this. Unlike x86-64's forms, whose operand
+  the printer writes with the symbol, the printed `ldr q` reads wherever its
+  base register points, so the model faults unless that register holds
+  `State.syms name`: an instruction that executes reads the static.
 * The stack pointer is always 16-byte aligned (AAPCS64 §6.4.5.1, "SP mod 16
   = 0"), and a frame moves it by 16 bytes, so the model does not check the
   stack alignment that the push and pop of a frame require.
@@ -108,16 +126,23 @@ Modelling choices:
   `SCTLR_ELx.A` is 1 (DDI 0487 B2.5.2, "Alignment of data accesses"), which
   Linux, macOS and Windows leave 0 for user code.
 * The AdvSIMD data-processing instructions modelled here (MOV = ORR, MOVI,
-  DUP, INS, UMOV, AND, ORR, EOR, BIC, ORN, NOT, BSL, BIT, BIF, CMEQ, ADD,
-  SUB, SHL, USHR, SSHR, SRI, SLI, EXT, REV32, REV64, ZIP1, ZIP2, TRN1, TRN2,
-  UZP1, UZP2, TBL, TBX, UMULL, UMLAL, PMULL, MUL, MLA, MLS, SQDMULH, UMIN), and the cryptographic ones
+  DUP, INS, UMOV, AND, ORR, EOR, BIC, ORN, NOT, BSL, BIT, BIF, CMEQ, CMHI,
+  CMHS, ADD, SUB, ADDV, UADDLV, SHL, USHR, SSHR, SRI, SLI, EXT, REV32, REV64,
+  ZIP1, ZIP2, TRN1, TRN2, UZP1, UZP2, TBL, TBX, UMULL, UMLAL, PMULL, MUL, MLA, MLS, SQDMULH, UMIN), and the cryptographic ones
   (AESE, AESD, AESMC, AESIMC, SHA1C, SHA1P, SHA1M, SHA1H, SHA1SU0, SHA1SU1,
   SHA256H, SHA256H2, SHA256SU0, SHA256SU1, SHA512H, SHA512H2, SHA512SU0,
   SHA512SU1, EOR3, BCAX, RAX1, XAR), and SVE2's XAR, are all among those whose
   timing Arm specifies to be independent of their data when PSTATE.DIT is 1
   (DDI 0487, "About PSTATE.DIT"; the description of SVE2's XAR says "This
   instruction is a data-independent-time instruction as described in About
-  PSTATE.DIT"). As above, the code does not set PSTATE.DIT.
+  PSTATE.DIT"). CMHI, CMHS, ADDV and UADDLV are in the list of
+  data-independent-time instructions of DDI 0487 M.b C5.2.4, "DIT, Data
+  Independent Timing" (also DDI 0601 2026-09): "Advanced SIMD three same: ADD,
+  ADDP, AND, …, CMEQ, CMGE, CMGT, CMHI, CMHS, …" and "Advanced SIMD across
+  lanes: ADDV, SADDLV, SMAXV, SMINV, UADDLV, UMAXV, and UMINV.", and their
+  descriptions in the A64 ISA XML 2026-09 say "This instruction is a
+  data-independent-time instruction as described in About PSTATE.DIT". As
+  above, the code does not set PSTATE.DIT.
 -/
 
 @[expose] public section
@@ -217,6 +242,11 @@ inductive VRevOp | rev32b | rev32h | rev64b | rev64s
 inductive VMulHOp | mul | mla | mls | sqdmulh | sqrdmulh
   deriving DecidableEq, Repr
 
+/-- The unsigned comparisons of lanes CMHI (higher) and CMHS (higher or
+same). -/
+inductive VCmpOp | hi | hs
+  deriving DecidableEq, Repr
+
 /-- The bitwise selects BSL, BIT and BIF. -/
 inductive VSelOp | bsl | bit | bif
   deriving DecidableEq, Repr
@@ -246,6 +276,9 @@ inductive VOp
   | insE (a : VArr) (d : VReg) (i : Nat) (n : VReg) (j : Nat)
   /-- `cmeq vd.<a>, vn.<a>, vm.<a>` (CMEQ (register)) -/
   | cmeq (a : VArr) (d n m : VReg)
+  /-- `cmhi`/`cmhs vd.<a>, vn.<a>, vm.<a>` (CMHI (register), CMHS (register), DDI 0487
+  C7.2.34, C7.2.35) -/
+  | cmp (op : VCmpOp) (a : VArr) (d n m : VReg)
   /-- `bsl`/`bit`/`bif vd.16b, vn.16b, vm.16b` -/
   | bsel (op : VSelOp) (d n m : VReg)
   /-- `and`/`orr`/`eor`/`bic`/`orn vd.16b, vn.16b, vm.16b` -/
@@ -256,6 +289,13 @@ inductive VOp
   | add (a : VArr) (d n m : VReg)
   /-- `sub vd.<a>, vn.<a>, vm.<a>` (SUB (vector)) -/
   | sub (a : VArr) (d n m : VReg)
+  /-- `addv bd, vn.16b` / `addv hd, vn.8h` / `addv sd, vn.4s` (ADDV): the sum of
+  the lanes, a scalar of the lane size (`.2d` faults: no such form) -/
+  | addv (a : VArr) (d n : VReg)
+  /-- `uaddlv hd, vn.16b` / `uaddlv sd, vn.8h` / `uaddlv dd, vn.4s` (UADDLV): the
+  unsigned sum of the lanes, a scalar of twice the lane size (`.2d` faults: no
+  such form) -/
+  | uaddlv (a : VArr) (d n : VReg)
   /-- `shl`/`ushr`/`sri`/`sli vd.<a>, vn.<a>, #sh` -/
   | shift (op : VShiftOp) (a : VArr) (d n : VReg) (sh : Nat)
   /-- `ext vd.16b, vn.16b, vm.16b, #imm` -/
@@ -273,6 +313,12 @@ inductive VOp
   | umull (hi : Bool) (d n m : VReg)
   /-- `umlal vd.2d, vn.2s, vm.2s`, or `umlal2 vd.2d, vn.4s, vm.4s` if `hi` -/
   | umlal (hi : Bool) (d n m : VReg)
+  /-- `umull vd.4s, vn.4h, vm.4h`, or `umull2 vd.4s, vn.8h, vm.8h` if `hi` (UMULL (vector),
+  `size = 01`) -/
+  | umullH (hi : Bool) (d n m : VReg)
+  /-- `umlal vd.4s, vn.4h, vm.4h`, or `umlal2 vd.4s, vn.8h, vm.8h` if `hi` (UMLAL (vector),
+  `size = 01`) -/
+  | umlalH (hi : Bool) (d n m : VReg)
   /-- `mul vd.4s, vn.4s, vm.4s` (MUL (vector)) -/
   | mul (d n m : VReg)
   /-- `mla vd.4s, vn.4s, vm.4s` (MLA (vector)) -/
@@ -426,6 +472,11 @@ inductive Instr
   /-- `umull xd, wn, wm` (UMULL, the alias of UMADDL with the zero register as
   the addend): `n<31:0> * m<31:0>`, zero-extended -/
   | umull (d n m : Reg)
+  /-- `clz d, n` (CLZ): the number of zero bits of `n` above its highest one
+  bit, `size` if `n` is zero -/
+  | clz (sz : Size) (d n : Reg)
+  /-- `rbit d, n` (RBIT): the bits of `n` in reverse order -/
+  | rbit (sz : Size) (d n : Reg)
   /-- `rev wd, wn` (REV, 32-bit): reverse the bytes of the low 32 bits -/
   | rev32 (d n : Reg)
   /-- `rev xd, xn` (REV, 64-bit): reverse the bytes of all 64 bits -/
@@ -445,6 +496,13 @@ inductive Instr
   /-- `strb wt, [n, #off]` (STRB (immediate), unsigned offset, `off < 4096`):
   the low byte of `t` -/
   | strb (t n : Reg) (off : Nat)
+  /-- `ldp xt1, xt2, [n, #off]` (LDP, 64-bit, signed offset, with a
+  non-negative offset: a multiple of 8, at most 504): the 64-bit words at
+  `n + off` and `n + off + 8` into `t1` and `t2`, which must differ -/
+  | ldp (t1 t2 n : Reg) (off : Nat)
+  /-- `stp xt1, xt2, [n, #off]` (STP, 64-bit, signed offset, as for `ldp`):
+  `t1` at `n + off` and `t2` at `n + off + 8` -/
+  | stp (t1 t2 n : Reg) (off : Nat)
   /-- `str xr, [sp, #-16]!` (STR (immediate), 64-bit, pre-index): the push
   of a frame of 16 bytes (see `push`) -/
   | push (r : Reg)
@@ -454,6 +512,9 @@ inductive Instr
   /-- `ldr xt, [sp, #off]` (LDR (immediate), 64-bit, unsigned offset, base
   register SP: a multiple of 8, less than 32768) -/
   | ldrSp (t : Reg) (off : Nat)
+  /-- `str xt, [sp, #off]` (STR (immediate), 64-bit, unsigned offset, base
+  register SP: a multiple of 8, less than 32768) -/
+  | strSp (t : Reg) (off : Nat)
   /-- `add xd, sp, #imm`, 64-bit ADD (immediate), without shifting. -/
   | addSp (d : Reg) (imm : Nat)
   /-- `sub sp, sp, #bytes`, opening an aligned frame (only `push`). -/
@@ -468,8 +529,18 @@ inductive Instr
   /-- `str qt, [n, #off]` (STR (immediate, SIMD&FP), 128-bit, unsigned offset,
   as for `ldrq`) -/
   | strq (t : VReg) (n : Reg) (off : Nat)
+  /-- `ldr qt, [n, #off]` (as `ldrq`), whose base register holds the address
+  of the `static` `name`, whose words are `words`: the emitter writes that
+  static from this instruction (`TCB/Rust.lean`), as for x86-64's
+  `vmovdquTbl`. -/
+  | ldrqTbl (t : VReg) (n : Reg) (off : Nat) (name : String) (words : List (BitVec 64))
   /-- `umov wd, vn.s[i]` / `umov xd, vn.d[i]` (UMOV) -/
   | umov (sz : Size) (d : Reg) (n : VReg) (i : Nat)
+  /-- Padding to the next multiple of `2 ^ k` bytes with NOPs (NOP, `HINT
+  #0`), printed as `.p2align k` for `k` 4, 5 or 6 only: it has no effect,
+  accesses no memory and requires no feature (DDI 0487 C6.2, "NOP"; see
+  `Print.lean`). -/
+  | align (k : Nat)
   deriving DecidableEq, Repr
 
 /-- Branch conditions. -/
@@ -590,6 +661,18 @@ def VArr.ofLanes (a : VArr) (ls : List (BitVec 128)) : BitVec 128 :=
   | .d2 => ofVDwords ((l 0).setWidth 64) ((l 1).setWidth 64)
   | .b16 => ofVBytes fun e => (l e).setWidth 8
   | .h8 => ofVHalves fun e => (l e).setWidth 16
+
+/-- The test of CMHI (`element1 > element2`) and CMHS (`element1 >=
+element2`) on lanes `x` of `V[n]` and `y` of `V[m]`, as unsigned integers. -/
+def VCmpOp.test {w : Nat} (op : VCmpOp) (x y : BitVec w) : Bool :=
+  match op with
+  | .hi => decide (x.toNat > y.toNat)
+  | .hs => decide (x.toNat ≥ y.toNat)
+
+/-- The sum of the lanes of `x` in the arrangement `a`, each as an unsigned
+integer. -/
+def VArr.laneSum (a : VArr) (x : BitVec 128) : Nat :=
+  ((a.lanes x).map BitVec.toNat).sum
 
 /-- DDI 0487 C7.2, "ZIP1", "ZIP2", "TRN1", "TRN2", "UZP1", "UZP2", with
 `operand1 = V[n]` (lanes `n`) and `operand2 = V[m]` (lanes `m`), and `pairs`
@@ -731,10 +814,21 @@ def Sha1Op.f : Sha1Op → BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32
   dst_index, esize] = element`;
 * "CMEQ (register)": `test_passed = (element1 == element2); Elem[result,
   e, esize] = if test_passed then Ones(esize) else Zeros(esize)`;
+* "CMHI (register)" (DDI 0487 M.b C7.2.34) and "CMHS (register)" (C7.2.35),
+  as in the A64 ISA XML 2026-09: `element1 = UInt(operand1[e*:esize]);
+  element2 = UInt(operand2[e*:esize]); result[e*:esize] = if element1 >
+  element2 then Ones{esize} else Zeros{esize}` (`>=` for CMHS), with
+  `operand1 = V{}(n)`, `operand2 = V{}(m)`, `V{datasize}(d) = result`;
 * "BSL", "BIT", "BIF": `VSelOp.eval`;
 * "AND", "ORR", "EOR", "BIC" (`operand1 AND NOT(operand2)`), "ORN"
   (`operand1 OR NOT(operand2)`) and "NOT" (vector, `.16b`);
 * "ADD (vector)", "SUB (vector)": lane-wise, modulo `2 ^ esize`;
+* "ADDV" (C7.2.6): `V{esize}(d) = IntReduce{esize, datasize}(ReduceOp_ADD,
+  operand)`, the sum of the lanes modulo `2 ^ esize` (`IntReduce` adds the
+  halves recursively, in `bits(esize)`); "UADDLV" (C7.2.408): `sum = UInt` of
+  each lane, added as integers, then `V{2*esize}(d) = sum[2*esize-1:0]`. Each
+  writes a scalar register, so the other bits of `V[d]` are zero (`V[n, width]
+  = value` zero-extends). `size == '11'` is `Decode_UNDEF`, so `.2d` faults;
 * the shifts (`VShiftOp.eval`), the permutations (`VPermOp.eval`) and the
   reversals (`VRevOp.eval`);
 * "EXT": `concat = operand2:operand1; result = concat<position+127:position>`
@@ -752,6 +846,11 @@ def Sha1Op.f : Sha1Op → BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32
   element1 * element2` (unsigned, 64 bits), then `Elem[result, e, 64] =
   product` (UMULL) or `Elem[operand3, e, 64] + product` (UMLAL, `operand3 =
   V[d]`);
+  with `size = 01` (`esize = 16`, `umullH`, `umlalH`), `part` 1 selects the
+  upper 64 bits (`Vpart[n, part]`): `element1 = Elem[operand1, e, 16];
+  element2 = Elem[operand2, e, 16]; product = element1 * element2` (unsigned,
+  32 bits) for each of the 4 elements, then `Elem[result, e, 32] = product`
+  (UMULL) or `Elem[operand3, e, 32] + product` (UMLAL, modulo `2 ^ 32`);
 * "MUL (vector)", "MLA (vector)", "MLS (vector)" (`.4s`): `product =
   (UInt(element1) * UInt(element2))<esize-1:0>`, and `Elem[result, e] =
   product`, `Elem[operand3, e] + product` or `Elem[operand3, e] - product`
@@ -806,6 +905,9 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
     else none
   | .cmeq a d n m =>
     some (d, a.map2 (fun w x y => if x = y then BitVec.allOnes w else 0) (s.v n) (s.v m))
+  | .cmp op a d n m =>
+    some (d, a.map2 (fun w x y =>
+      if op.test x y then BitVec.allOnes w else 0) (s.v n) (s.v m))
   | .bsel op d n m => some (d, op.eval (s.v d) (s.v n) (s.v m))
   | .logic op d n m =>
     let a := s.v n
@@ -816,6 +918,10 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
   | .not d n => some (d, ~~~(s.v n))
   | .add a d n m => some (d, a.map2 (fun _ x y => x + y) (s.v n) (s.v m))
   | .sub a d n m => some (d, a.map2 (fun _ x y => x - y) (s.v n) (s.v m))
+  | .addv a d n =>
+    if a ≠ .d2 then some (d, BitVec.ofNat 128 (a.laneSum (s.v n) % 2 ^ a.esize)) else none
+  | .uaddlv a d n =>
+    if a ≠ .d2 then some (d, BitVec.ofNat 128 (a.laneSum (s.v n) % 2 ^ (2 * a.esize))) else none
   | .shift op a d n sh =>
     if op.ok a.esize sh then some (d, a.map2 (fun w x y => op.eval sh w x y) (s.v d) (s.v n))
     else none
@@ -841,6 +947,17 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
     let prod (e : Nat) : BitVec 64 :=
       (vword (s.v n) (p + e)).setWidth 64 * (vword (s.v m) (p + e)).setWidth 64
     some (d, ofVDwords (vdword (s.v d) 0 + prod 0) (vdword (s.v d) 1 + prod 1))
+  | .umullH hi d n m =>
+    let p := if hi then 4 else 0
+    let prod (e : Nat) : BitVec 32 :=
+      (vhalf (s.v n) (p + e)).setWidth 32 * (vhalf (s.v m) (p + e)).setWidth 32
+    some (d, ofVWords (prod 0) (prod 1) (prod 2) (prod 3))
+  | .umlalH hi d n m =>
+    let p := if hi then 4 else 0
+    let prod (e : Nat) : BitVec 32 :=
+      (vhalf (s.v n) (p + e)).setWidth 32 * (vhalf (s.v m) (p + e)).setWidth 32
+    some (d, ofVWords (vword (s.v d) 0 + prod 0) (vword (s.v d) 1 + prod 1)
+      (vword (s.v d) 2 + prod 2) (vword (s.v d) 3 + prod 3))
   | .mul d n m => some (d, VArr.s4.map2 (fun _ x y => x * y) (s.v n) (s.v m))
   | .mla d n m => some (d, mapWords3 (fun a x y => a + x * y) (s.v d) (s.v n) (s.v m))
   | .mls d n m => some (d, mapWords3 (fun a x y => a - x * y) (s.v d) (s.v n) (s.v m))
@@ -956,9 +1073,24 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
 * "LDR (immediate)" with `n == 31` (`ldrSp`): `address = SP[]`, then as
   above, `address + offset` with `offset = LSL(imm12, 3)`; `data = Mem[address,
   8]`; `X[t, 64] = data`;
+* "STR (immediate)" with `n == 31` (`strSp`): the same address; `data =
+  X[t, 64]`; `Mem[address, 8] = data`;
 * "LDRB (immediate)": `data = Mem[address, 1]; X[t, 32] = ZeroExtend(data,
   32)` (hence zero-extended to 64 bits); "STRB (immediate)": `data = X[t,
   8]; Mem[address, 1] = data`, the low byte of `t`;
+* "LDP" and "STP", 64-bit (`opc = '10'`, `scale = 3`), signed offset
+  (`wback = FALSE`, `postindex = FALSE`): `offset = LSL(SignExtend(imm7,
+  64), scale)`, only the non-negative ones (`imm7 < 64`, so `off = 8 *
+  imm7 ≤ 504`); `address = X[n, 64] + offset`; `dbytes = 8`. STP:
+  `Mem[address, dbytes] = X[t, 64]; Mem[address + dbytes, dbytes] = X[t2,
+  64]`. LDP: `data1 = Mem[address, dbytes]; data2 = Mem[address + dbytes,
+  dbytes]; X[t, 64] = data1; X[t2, 64] = data2`. An LDP with `t == t2` is
+  CONSTRAINED UNPREDICTABLE (`Unpredictable_LDPOVERLAP`: UNKNOWN values,
+  UNDEFINED or a NOP), so it faults. Without writeback, `t` or `t2` may be
+  `n`: the address is computed before either is written. Both are baseline
+  A64 instructions. See Arm DDI 0487 C6.2 "LDP", "STP" and
+  https://developer.arm.com/documentation/ddi0602/2025-09/Base-Instructions/LDP--Load-pair-of-registers-
+  https://developer.arm.com/documentation/ddi0602/2025-09/Base-Instructions/STP--Store-pair-of-registers-;
 * an AdvSIMD or cryptographic instruction: `VOp.eval`;
 * "LDR (immediate, SIMD&FP)", "STR (immediate, SIMD&FP)" (128-bit, unsigned
   offset: `offset = LSL(imm12, 4)`): `V[t] = Mem[address, 16]` and
@@ -1036,6 +1168,13 @@ def exec : Instr → State → Option State
     some (s.write .x d (s.gpr a + (s.read .w n).setWidth 64 * (s.read .w m).setWidth 64))
   | .umull d n m, s =>
     some (s.write .x d ((s.read .w n).setWidth 64 * (s.read .w m).setWidth 64))
+  -- DDI 0487 C6.2, CLZ: result = CountLeadingZeroBits(X[n, datasize]);
+  -- X[d, datasize] = result<datasize-1:0>. CountLeadingZeroBits(x) is
+  -- N - (HighestSetBit(x) + 1) (J1, shared pseudocode), `BitVec.clz`.
+  | .clz sz d n, s => some (s.write sz d (s.read sz n).clz)
+  -- DDI 0487 C6.2, RBIT: for i = 0 to datasize-1,
+  -- result<datasize-1-i> = operand<i>; `BitVec.reverse`.
+  | .rbit sz d n, s => some (s.write sz d (s.read sz n).reverse)
   | .rev32 d n, s => some (s.write .w d (rev32 (s.read .w n)))
   | .rev d n, s => some (s.write .x d (rev64 (s.read .x n)))
   | .movz sz d imm hw, s =>
@@ -1054,18 +1193,49 @@ def exec : Instr → State → Option State
     (addr s 1 n off).bind fun a => (s.load a 1).map fun v => s.write .w t (v.setWidth 32)
   | .strb t n off, s =>
     (addr s 1 n off).bind fun a => s.store a 1 ((s.read .w t).setWidth 8)
+  | .ldp t1 t2 n off, s =>
+    if t1 ≠ t2 ∧ off % 8 = 0 ∧ off ≤ 504 then
+      let a := s.gpr n + BitVec.ofNat 64 off
+      (s.load a 8).bind fun v₁ => (s.load (a + 8) 8).map fun v₂ =>
+        (s.write .x t1 (v₁.setWidth 64)).write .x t2 (v₂.setWidth 64)
+    else none
+  | .stp t1 t2 n off, s =>
+    if off % 8 = 0 ∧ off ≤ 504 then
+      let a := s.gpr n + BitVec.ofNat 64 off
+      (s.store a 8 ((s.read .x t1).setWidth 64)).bind fun s' =>
+        s'.store (a + 8) 8 ((s.read .x t2).setWidth 64)
+    else none
   | .ldrSp t off, s =>
     if off % 8 = 0 ∧ off < 32768 then
       (s.load (s.sp + BitVec.ofNat 64 off) 8).map fun v => s.write .x t (v.setWidth 64)
+    else none
+  | .strSp t off, s =>
+    if off % 8 = 0 ∧ off < 32768 then
+      s.store (s.sp + BitVec.ofNat 64 off) 8 ((s.read .x t).setWidth 64)
     else none
   | .addSp d imm, s =>
     if imm < 4096 then some (s.write .x d (s.sp + BitVec.ofNat 64 imm)) else none
   | .vop op, s => (op.eval s).map fun (d, x) => s.setV d x
   | .ldrq t n off, s => (addr s 16 n off).bind fun a => (s.load a 16).map fun x => s.setV t x
   | .strq t n off, s => (addr s 16 n off).bind fun a => s.store a 16 (s.v t)
+  -- `ldrqTbl`: as `ldrq t n off`, its source the 16 bytes at `n + off`,
+  -- little-endian: when `n` holds the static's address and `off` is an
+  -- offset `ldrq` encodes (a multiple of 16, less than 65536: the scaled
+  -- 12-bit immediate of LDR (immediate, SIMD&FP), DDI 0487 C7.2) with two
+  -- words of the table from there, words `off / 8` and `off / 8 + 1` of the
+  -- static `name` (bits 63:0 the first); otherwise it faults. The static is
+  -- the immutable object of these words the emitter writes (see the module
+  -- docs), so the bytes there are always these.
+  | .ldrqTbl t n off name ws, s =>
+    if s.gpr n = s.syms name ∧ off % 16 = 0 ∧ off < 65536 ∧ off / 8 + 2 ≤ ws.length then
+      some (s.setV t (ws.getD (off / 8 + 1) 0 ++ ws.getD (off / 8) 0))
+    else none
   | .umov sz d n i, s =>
     if i * sz.bits < 128 then some (s.write sz d ((s.v n).extractLsb' (sz.bits * i) sz.bits))
     else none
+  -- DDI 0487 C6.2, "NOP": no effect but on the PC, which the model does not
+  -- have.
+  | .align _, s => some s
   -- Frame delimiters execute only through `push` and `pop`.
   | .push _, _ | .pop _, _ | .alloc _, _ | .free _, _ => none
 
@@ -1074,9 +1244,14 @@ def addrs : Instr → State → List Addr
   | .str _ _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
   | .ldrb _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
   | .strb _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
+  | .ldp _ _ n off, s | .stp _ _ n off, s =>
+    [s.gpr n + BitVec.ofNat 64 off, s.gpr n + BitVec.ofNat 64 off + 8]
   | .ldrq _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
   | .strq _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
-  | .ldrSp _ off, s => [s.sp + BitVec.ofNat 64 off]
+  -- The offset in the table: the static's address does not depend on the
+  -- data (see the module docs).
+  | .ldrqTbl _ _ off .., _ => [BitVec.ofNat 64 off]
+  | .ldrSp _ off, s | .strSp _ off, s => [s.sp + BitVec.ofNat 64 off]
   | .push _, s => [s.sp - 16]
   | .pop _, s => [s.sp]
   | _, _ => []
@@ -1125,9 +1300,12 @@ time, while the model keeps it until a store. This is harmless: the
 contract says nothing of those bytes (they are in the stack below the
 caller's stack pointer, `Abi.reserved`, which no buffer overlaps), so a
 proof holds whatever they contain and learns nothing from reading them;
-it could only rely on two reads agreeing. `ldrSp` can read the frame
-directly, and `addSp` can form a pointer to it. Neither grants permission
-below the currently allocated stack.
+it could only rely on two reads agreeing. `ldrSp` and `strSp` can read
+and write the frame directly, and `addSp` can form a pointer to it. None
+grants permission below the currently allocated stack: `strSp` stores
+through `State.store`, which faults outside the writable regions, so it
+reaches only a frame's bytes (or a writable buffer that happens to lie at
+or above the stack pointer).
 
 DDI 0602, ADD/SUB (immediate), `sf=1`, `sh=0`, `Rn=Rd=31`:
 `operand1 = SP[64]`, and the non-flag-setting result is written to `SP[64]`.
@@ -1210,7 +1388,7 @@ abbrev isa : ISA where
   ret := ret
   retAddrs _ := []
   -- No modelled instruction writes the stack pointer, other than the push
-  -- and pop of a frame (`ldrSp` only reads it).
+  -- and pop of a frame (`ldrSp` and `strSp` only read it).
   writesSp _ := false
   push := push
   pop := pop

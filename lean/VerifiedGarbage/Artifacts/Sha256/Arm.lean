@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Sha256.Arm.Shared
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SHA-256 (FIPS 180-4) on ARMv7 -/
 
@@ -11,49 +10,25 @@ import Mathlib.Tactic.SplitIfs
 namespace VG.Artifacts.Sha256.Arm
 
 def artifacts : List Artifact := [
-  { Spec.Sha256.compressApi with
-    target := Arm.target
-    doc := Spec.Sha256.compressApi.doc
+  Spec.Sha256.compressApi.artifact Arm.target {
     code := Impl.Sha256.Arm.compress
-    contract := Spec.Sha256.compressContract Arm.abi
-    verified := Proof.Sha256.Arm.Shared.compress
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha256.initApi with
-    target := Arm.target
-    doc := Spec.Sha256.initApi.doc
+    verified := Proof.Sha256.Arm.Shared.compress },
+  Spec.Sha256.initApi.artifact Arm.target {
     code := Impl.Sha256.Arm.Stream.init
-    contract := Spec.Sha256.initContract Arm.abi
-    verified := Proof.Sha256.Arm.Shared.init
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha256.updateApi with
-    target := Arm.target
-    doc := Spec.Sha256.updateApi.doc
+    verified := Proof.Sha256.Arm.Shared.init },
+  Spec.Sha256.updateApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 624 2 Impl.Sha256.Arm.Stream.update
-    contract := Spec.Sha256.updateContract Arm.abi 624
     stack := 624
-    verified := Proof.Sha256.Arm.Shared.update
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha256.finalizeApi with
-    target := Arm.target
-    doc := Spec.Sha256.finalizeApi.doc
+    verified := Proof.Sha256.Arm.Shared.update },
+  Spec.Sha256.finalizeApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 624 1 Impl.Sha256.Arm.Stream.finalize
-    contract := Spec.Sha256.finalizeContract Arm.abi 624
     stack := 624
-    verified := Proof.Sha256.Arm.Shared.finalize
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha256.updateScratchApi with
-    target := Arm.target
-    doc := Spec.Sha256.updateScratchApi.doc
+    verified := Proof.Sha256.Arm.Shared.finalize },
+  Spec.Sha256.updateScratchApi.artifact Arm.target {
     code := Impl.Sha256.Arm.Stream.update
-    contract := Spec.Sha256.updateScratchContract Arm.abi
-    verified := Proof.Sha256.Arm.Shared.updateScratch
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha256.finalizeScratchApi with
-    target := Arm.target
-    doc := Spec.Sha256.finalizeScratchApi.doc
+    verified := Proof.Sha256.Arm.Shared.updateScratch },
+  Spec.Sha256.finalizeScratchApi.artifact Arm.target {
     code := Impl.Sha256.Arm.Stream.finalize
-    contract := Spec.Sha256.finalizeScratchContract Arm.abi
-    verified := Proof.Sha256.Arm.Shared.finalizeScratch
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Sha256.Arm.Shared.finalizeScratch }]
 
 end VG.Artifacts.Sha256.Arm

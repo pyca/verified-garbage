@@ -1,16 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Arm
-public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Layout
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.X25519
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: the curve
@@ -18,7 +12,7 @@ import VerifiedGarbage.Spec.X25519
 What the proof needs of the curve (`RfcCurve`), as on x86
 (`Proof/Ecdsa/Rfc6979/X86/Curve.lean`): the code of `vg_ecdsa_<curve>_sign`
 for curves of `n` 64-bit words (`Impl.Ecdsa.Arm.Cfg`), the instance of
-ECDSA it is, its sizes: `n` 3, 4 or 6, the order `n` of its base point of
+ECDSA it is, its sizes: `n` 3, 4, 6 or 8, the order `n` of its base point of
 exactly `64 n` bits and `2^(64 n) < 2 n` (so that `bits2octets` is one
 conditional subtraction), or, if `wide` (P-521), `n` 9, scalars of 66 bytes
 and the order of 521 bits; and what is proven of the code: that it meets the
@@ -71,8 +65,9 @@ def coreK (E : Impl.Ecdsa.Arm.Cfg) : Contract Arm.isa where
     s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0
 
 /-- The code's blocks that depend on neither the hash function nor the
-functions it calls, for scalars of `E`. -/
-def cfgC (E : Impl.Ecdsa.Arm.Cfg) : Impl.Ecdsa.Rfc6979.Arm.Cfg where
+functions it calls, for scalars of `E` (with `h` at the frame's top if
+`hHigh`). -/
+def cfgC (E : Impl.Ecdsa.Arm.Cfg) (hHigh : Bool := false) : Impl.Ecdsa.Rfc6979.Arm.Cfg where
   F := ⟨⟨0, 0, 0, 0, 0, "", .block [], "", .block [], "", .block []⟩, 0, "", .block [], "", .block [], "",
     .block []⟩
   w := 2 * E.n - (if E.C.len = 28 then 1 else 0)
@@ -80,6 +75,7 @@ def cfgC (E : Impl.Ecdsa.Arm.Cfg) : Impl.Ecdsa.Rfc6979.Arm.Cfg where
   tries := 8
   coreN := ""
   coreC := .block []
+  hHigh := hHigh
 
 /-- A curve, for RFC 6979 on 32-bit ARM. -/
 structure RfcCurve where
@@ -91,13 +87,17 @@ structure RfcCurve where
   /-- Whether the scalars are longer than any hash function's output, so
   that two `V`s make a candidate (`Impl.Ecdsa.Rfc6979.Arm.Cfg.wide`). -/
   wide : Bool
-  /-- Scalars of 3, 4 or 6 64-bit words, `8 n` bytes, and `n` of exactly `64 n`
+  /-- Scalars of 3, 4, 6 or 8 64-bit words, `8 n` bytes, and `n` of exactly `64 n`
   bits, with `2^(64 n) < 2 n`; or P-224, 28 bytes in 4 words;
   or, if `wide`, of 9 words and 66 bytes, and
   `n` of 521 bits. -/
   sizes : if wide then E.n = 9 ∧ E.C.len = 66 ∧ nBits E.C = 521
-    else (E.n = 3 ∨ E.n = 4 ∨ E.n = 6) ∧ (E.C.len = 8 * E.n ∨ E.n = 4 ∧ E.C.len = 28) ∧ nBits E.C = 8 * E.C.len ∧ 2 ^ (8 * E.C.len) < 2 * E.C.n
+    else (E.n = 3 ∨ E.n = 4 ∨ E.n = 6 ∨ E.n = 8) ∧ (E.C.len = 8 * E.n ∨ E.n = 4 ∧ E.C.len = 28) ∧ nBits E.C = 8 * E.C.len ∧ 2 ^ (8 * E.C.len) < 2 * E.C.n
   n_lt : E.C.n < 2 ^ (64 * E.n)
+  /-- Whether `h` is kept at the frame's top
+  (`Impl.Ecdsa.Rfc6979.Arm.Cfg.hHigh`): for scalars of 8 words. -/
+  hHigh : Bool := false
+  hHigh_eq : hHigh = decide (E.n = 8) := by decide
   /-- The bits the signature drops from its digest, `8 len - nBits`. -/
   sh : Nat
   sh_eq : E.sh = sh
@@ -112,14 +112,14 @@ structure RfcCurve where
   memory only from the registers that hold the pointers (the taint analysis,
   of the block for `n`'s words). -/
   reduceT : wide = false → ∃ hc, (VG.Taint.check taint (τr ptrRegs)
-    (.block ((cfgC E).reduce ++ Impl.Ecdsa.Rfc6979.Arm.Cfg.initKV)) hc).isSome = true
+    (.block ((cfgC E hHigh).reduce ++ Impl.Ecdsa.Rfc6979.Arm.Cfg.initKV)) hc).isSome = true
 
 namespace RfcCurve
 
 variable (R : RfcCurve)
 
 theorem sizesA (h : R.wide = false) :
-    (R.E.n = 3 ∨ R.E.n = 4 ∨ R.E.n = 6) ∧ (R.E.C.len = 8 * R.E.n ∨ R.E.n = 4 ∧ R.E.C.len = 28) ∧ nBits R.E.C = 8 * R.E.C.len ∧
+    (R.E.n = 3 ∨ R.E.n = 4 ∨ R.E.n = 6 ∨ R.E.n = 8) ∧ (R.E.C.len = 8 * R.E.n ∨ R.E.n = 4 ∧ R.E.C.len = 28) ∧ nBits R.E.C = 8 * R.E.C.len ∧
       2 ^ (8 * R.E.C.len) < 2 * R.E.C.n := by
   have := R.sizes; rw [h] at this; exact this
 
@@ -128,12 +128,12 @@ theorem sizesW (h : R.wide = true) : R.E.n = 9 ∧ R.E.C.len = 66 ∧ nBits R.E.
 
 theorem n3 : 3 ≤ R.E.n := by
   cases h : R.wide
-  · rcases (R.sizesA h).1 with h | h | h <;> omega
+  · rcases (R.sizesA h).1 with h | h | h | h <;> omega
   · rw [(R.sizesW h).1]; omega
 
 theorem n9 : R.E.n ≤ 9 := by
   cases h : R.wide
-  · rcases (R.sizesA h).1 with h | h | h <;> omega
+  · rcases (R.sizesA h).1 with h | h | h | h <;> omega
   · rw [(R.sizesW h).1]
 
 /-- The scalars' bytes fill their words, the last at least in part. -/

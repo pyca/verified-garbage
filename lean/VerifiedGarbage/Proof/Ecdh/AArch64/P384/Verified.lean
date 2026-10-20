@@ -1,32 +1,45 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
-meta import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 public import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Contract
-meta import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Contract
-public import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Lit
-meta import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Lit
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
+import VerifiedGarbage.Proof.Ecdh.AArch64.MulJ4
+import VerifiedGarbage.Proof.P384.EcdhDouble.Verified
+import VerifiedGarbage.Proof.P384.EcdhMadd
+import VerifiedGarbage.Proof.P384.EcdhSelect
+import VerifiedGarbage.Proof.Ecdh.AArch64.WithMul
+import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Lit
+public import VerifiedGarbage.Impl.Ecdh.P384.AArch64
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.Main
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Contract
+meta import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.MulJ4
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.WithMul
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Lit
+meta import VerifiedGarbage.Impl.Ecdh.P384.AArch64
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
+meta import VerifiedGarbage.Proof.P384.EcdhDouble.Verified
+meta import VerifiedGarbage.Proof.P384.EcdhMadd
+meta import VerifiedGarbage.Proof.P384.EcdhSelect
 
 /-!
 # ECDH over P-384 on AArch64: `Verified`
 
 P-384 is a curve the proof supports (`p384_ok`, given the inversions' soundness `InvSounds`, and `Law` for its group
-law, which the registration file supplies: `Proof.P384.law` and `invSound_of_toM`), so `exchange_ok`
-gives the contract's postcondition; `x19`–`x25` are restored, and no
+law, which the registration file supplies: `Proof.P384.law` and `invSound_of_toM`), and of prime order
+(`Proof.P384.primeOrder`), so the windows with a Jacobian accumulator compute `[d]P` (`mulJ4_ok`) and
+`exchangeWith_ok'` gives the contract's postcondition; `x19`–`x25` are restored, and no
 instruction writes the other callee-saved registers, `sp` or a SIMD register
 (`abiPreserved_of`). Constant time by taint tracking: the only branches are on
 loop counters, and every address is an argument plus a constant or a counter,
@@ -56,14 +69,28 @@ theorem post_of {s s' : State} (h : EPost p384 s s') : ecdhAArch64.post s s' := 
       (Spec.Ecdsa.bytesAt s.mem (s.gpr .x2) (1 + 2 * p384.C.len)) = ex s.mem (s.gpr .x1) (s.gpr .x2) from rfl, hq]
   rcases q with _ | z <;> exact id
 
-theorem ecdh_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds) (s : State) (hs : ecdhAArch64.pre s) :
+theorem ecdh_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
+    (hO : Weierstrass.PrimeOrder Spec.P384.curve) (s : State) (hs : ecdhAArch64.pre s) :
     ∃ t s', Exec isa exchangeP384 s t s' ∧ abiPreserved s s' ∧ ecdhAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-384's
   -- terms before the literals' facts are known.
   have hn : CallsKeep exchangeP384 := by lit_decide
   have hu : KeepsUntouched exchangeP384 := by lit_decide
   have hv : exchangeP384.allInstrs keepsV = true := by lit_decide
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p384_ok hI) hL (pre_of hs)
+  have hmc : CallsKeep (Impl.Ecdh.AArch64.Cfg.middle p384) := by lit_decide
+  have hmu : KeepsUntouched (Impl.Ecdh.AArch64.Cfg.middle p384) := by lit_decide
+  have hm : Ecdh.AArch64.MulOk p384 (Cfg.mulJ4 p384
+      (some (.block Impl.P384.EcdhAllocatedCode.doubleRD, .block Impl.P384.EcdhAllocatedCode.doubleDR))
+      (some (.block Impl.P384.EcdhMadd.madd)) (some Impl.P384.EcdhSelect.sel)) :=
+    Ecdh.AArch64.mulJ4_ok (p384_ok hI) hL hO rfl (by decide +kernel) (by decide +kernel)
+      (by decide +kernel) (by decide +kernel)
+      (P384.EcdhDouble.dblsOk P384.EcdhDouble.p384_C_p (Ecdh.AArch64.winLayQ (p384_ok hI)) (Ecdh.AArch64.winAQ (p384_ok hI))
+        (Weierstrass.unitMod_pow_two (p384_ok hI).p_odd _))
+      (P384.EcdhMadd.maddOk P384.EcdhDouble.p384_C_p (Ecdh.AArch64.winLayQ (p384_ok hI))
+        (Ecdh.AArch64.winAQ (p384_ok hI)) (Weierstrass.unitMod_pow_two (p384_ok hI).p_odd _))
+      P384.EcdhSelect.sel_ok
+  obtain ⟨t, s', he, hsv, -, hpost⟩ :=
+    Ecdh.AArch64.exchangeWith_ok' (p384_ok hI) hL hm (by decide +kernel) hmc hmu (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, post_of hpost⟩
 
 theorem ecdh_ct : ConstantTime isa ecdhAArch64.pre ecdhAArch64.pub exchangeP384 :=
@@ -76,9 +103,10 @@ theorem ecdh_ct : ConstantTime isa ecdhAArch64.pre ecdhAArch64.pub exchangeP384 
       · exact h2
       · exact h3⟩) (by taint_decide)
 
-theorem ecdh_verified (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds) :
+theorem ecdh_verified (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
+    (hO : Weierstrass.PrimeOrder Spec.P384.curve) :
     Verified AArch64.target exchangeP384
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst AArch64.abi) :=
-  Verified.of_correct (ecdh_a64 hL hI) ecdh_ct implies
+  Verified.of_correct (ecdh_a64 hL hI hO) ecdh_ct implies
 
 end VG.Proof.Ecdh.AArch64.P384

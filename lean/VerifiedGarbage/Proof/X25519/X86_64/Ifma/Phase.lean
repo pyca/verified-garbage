@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Stage
 public import VerifiedGarbage.Proof.X25519.X86_64.Small
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Carry
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: the blocks of an iteration
@@ -64,10 +65,12 @@ theorem envOf_v (s : State) (r l : Nat) : (envOf s).v r l = (qw s (xr r) l).toNa
 theorem envOK_of {s : State} {base : Addr} (hs : s.gpr .rdi = base) {B : Bnds}
     (hv : ∀ r l, l < 4 → (qw s (xr r) l).toNat ≤ B.v r) (hg : ∀ g, B.g g = 2 ^ 64 - 1)
     (hm : ∀ d l, l < 4 → (mq s.mem base (d + 8 * l)).toNat ≤ B.m d)
-    (hml : ∀ d l, l < 4 → B.ml d ≤ (mq s.mem base (d + 8 * l)).toNat) : EnvOK s B :=
+    (hml : ∀ d l, l < 4 → B.ml d ≤ (mq s.mem base (d + 8 * l)).toNat)
+    (hh : ∀ r l, l < 4 → (qwH s (hr r) l).toNat ≤ B.h r := by intros; exact Nat.le_sub_one_of_lt (BitVec.isLt _)) :
+    EnvOK s B :=
   ⟨hv, fun g => by rw [hg]; exact Nat.le_sub_one_of_lt (BitVec.isLt _),
     fun d k hk => by have := hm d k hk; simpa only [mq, hs] using this,
-    fun d k hk => by have := hml d k hk; simpa only [mq, hs] using this⟩
+    fun d k hk => by have := hml d k hk; simpa only [mq, hs] using this, hh⟩
 
 theorem lt64 (x : BitVec 64) : x.toNat ≤ 2 ^ 64 - 1 := Nat.le_sub_one_of_lt x.isLt
 
@@ -81,6 +84,16 @@ theorem SRel.out {σ : Sym} {s₀ s : State} (h : SRel σ s₀ s) {B : Bnds} (hE
 theorem SRel.keep {σ : Sym} {s₀ s : State} (h : SRel σ s₀ s) {r l : Nat} (hr : r < 16) (hl : l < 4)
     (hk : σ.reg r = .reg r) : qw s (xr r) l = qw s₀ (xr r) l := by
   rw [h.reg _ l hl, xi_xr r hr, hk]; rfl
+
+/-- Limb `i` of lane `l` of `ymm (16 + i)`, as a number. -/
+def hlanes (s : State) (l i : Nat) : Nat := (qwH s (hr i) l).toNat
+
+theorem hidx_hr : ∀ r < 16, hidx (hr r) = r := by decide
+
+/-- The term a block run symbolically leaves in `ymm (16 + r)`. -/
+theorem SRel.hterm {σ : Sym} {s₀ s : State} (h : SRel σ s₀ s) {r l : Nat} (hr16 : r < 16) (hl : l < 4) :
+    qwH s (hr r) l = (σ.hreg r).eval s₀ l := by
+  rw [h.hreg _ l hl, hidx_hr r hr16]
 
 /-! ## Carries -/
 
@@ -235,6 +248,46 @@ theorem mul4_wp {a : Nat} (ha : a % 32 = 0) {σ : Sym}
   have hg : (fun j => (envOf s).v (5 + j) l) = lanes s 5 l := funext fun j => rfl
   rw [e, hnat _ _ i hi, hf, hg]
 
+/-- What `mul4H` leaves: the product of `ymm16–ymm20` and `ymm5–ymm9`, lane by
+lane, in `ymm0–ymm4`. -/
+def MulPostH (s s' : State) : Prop :=
+  vm s s' = s' ∧ s'.mem = s.mem ∧
+    (∀ l < 4, ∀ i < 5, lanes s' 0 l i = mulNat (hlanes s l) (lanes s 5 l) i ∧
+      lanes s' 0 l i < 2 ^ 61) ∧
+    (∀ r < 16, 5 ≤ r → r < 10 ∨ r = 15 → ∀ l < 4, qw s' (xr r) l = qw s (xr r) l)
+
+theorem mul4H_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
+    (hx : ∀ l < 4, ∀ i < 5, hlanes s l i < 2 ^ 52)
+    (hy : ∀ l < 4, ∀ i < 5, lanes s 5 l i < 2 ^ 52) :
+    WP isa (.block mul4H) s (MulPostH s) := by
+  have hE : EnvOK s mulHB := by
+    refine envOK_of hs (fun r l hl => ?_) (fun _ => rfl) (fun _ _ _ => lt64 _) (fun _ _ _ => Nat.zero_le _)
+      (fun r l hl => ?_)
+    · simp only [mulHB]
+      split
+      · rename_i h
+        have := hy l hl (r - 5) (by omega)
+        simp only [lanes, show 5 + (r - 5) = r by omega] at this
+        omega
+      · exact lt64 _
+    · simp only [mulHB]
+      split
+      · rename_i h
+        have := hx l hl r h
+        simp only [hlanes] at this
+        omega
+      · exact lt64 _
+  refine WP.mono (run_ok hc mulHS_eq) fun s' h => ?_
+  refine ⟨h.eq, by rw [h.mem, mulHS_st]; rfl, fun l hl i hi => ?_,
+    fun r hr h1 h2 l hl => h.keep hr hl (mulHS_keep r hr h1 h2)⟩
+  obtain ⟨o, b⟩ := mulHS_ok i hi l hl
+  obtain ⟨e, be⟩ := h.out hE (by omega) hl o
+  simp only [lanes, Nat.zero_add] at e ⊢
+  refine ⟨?_, by omega⟩
+  have hf : (fun i => (envOf s).h i l) = hlanes s l := funext fun j => rfl
+  have hg : (fun j => (envOf s).v (5 + j) l) = lanes s 5 l := funext fun j => rfl
+  rw [e, mulHS_nat _ _ i hi, hf, hg]
+
 /-! ## The stages -/
 
 /-- The bias's limb `j`. -/
@@ -293,21 +346,19 @@ theorem s1a_wp {s : State} {base : Addr} {x1 : Nat → Nat} (hs : s.gpr .rdi = b
     simp only [s1aNat, sumDiff, lanes, Nat.zero_add, envOf_v, kbe, kb_m hk.c (show 1 < 4 by decide),
       kb_m hk.c (show 3 < 4 by decide)]
 
-/-- What `stage1b` leaves: `(A, B, D, C)` in `OPL`, `(A, B, A, B)` in `ymm5–ymm9`. -/
-theorem s1b_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s) :
+/-- What `stage1b` leaves: `(A, B, D, C)` in `ymm16–ymm20`, `(A, B, A, B)` in `ymm5–ymm9`. -/
+theorem s1b_wp {s : State} (base : Addr) (hc : Ctx s) :
     WP isa (.block stage1b) s fun s' => s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       VG.Proof.X25519.X86_64.Outside base OPL 160 s.mem s'.mem ∧
-      (∀ l < 4, ∀ i < 5, slotv s'.mem base OPL l i = lanes s 0 (sel4 (ord 0 1 3 2).toNat l) i ∧
+      (∀ l < 4, ∀ i < 5, hlanes s' l i = lanes s 0 (sel4 (ord 0 1 3 2).toNat l) i ∧
         lanes s' 5 l i = lanes s 0 (sel4 (ord 0 1 0 1).toNat l) i) ∧
-      (∀ r < 16, (r < 5 ∨ 11 ≤ r) → ∀ l < 4, qw s' (xr r) l = qw s (xr r) l) := by
+      (∀ r < 16, (r < 5 ∨ 10 ≤ r) → ∀ l < 4, qw s' (xr r) l = qw s (xr r) l) := by
   have e : Sym.init.run stage1b = some s1b := symOf_eq _ _
   refine WP.mono (run_ok hc e) fun s' h => ?_
   refine ⟨h.gpr, h.rd, h.wr, ?_, fun l hl i hi => ⟨?_, ?_⟩, fun r hr h1 l hl => h.keep hr hl (s1b_keep r hr h1)⟩
-  · rw [h.mem, hs]
-    exact stores_outside _ _ _ (by decide) _ (by rw [s1b_st]; decide)
-  · have hm : ∀ i < 5, ((OPL + 32 * i), T.perm (.reg i) (ord 0 1 3 2).toNat) ∈ s1b.st := by
-      rw [s1b_st]; decide
-    rw [slotv, h.mem, hs, stores_mq _ _ _ _ (hm i hi) hl (by rw [s1b_st]; decide) (by rw [s1b_st]; decide)]
+  · rw [h.mem, s1b_st]
+    exact VG.Proof.X25519.X86_64.Outside.refl _ _ _ _
+  · rw [hlanes, h.hterm (r := i) (by omega) hl, s1b_hregs i hi]
     simp only [T.eval, lanes, Nat.zero_add]
   · have := h.reg (xr (5 + i)) l hl
     rw [xi_xr _ (by omega), s1b_regs i hi] at this
@@ -383,21 +434,25 @@ theorem s2a_wp {s : State} {base : Addr} {x1 : Nat → Nat} (hs : s.gpr .rdi = b
     rw [this]
     simp
 
-/-- What `stage2b` leaves: stage 2's first operand in `OPV`, the second in
-`ymm5–ymm9`. -/
+/-- What `stage2b` leaves: stage 2's first operand in `OPV` and `ymm16–ymm20`,
+the second in `ymm5–ymm9`. -/
 theorem s2b_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s) :
     WP isa (.block stage2b) s fun s' => s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       VG.Proof.X25519.X86_64.Outside base OPV 160 s.mem s'.mem ∧
-      (∀ l < 4, ∀ i < 5, slotv s'.mem base OPV l i = lanes s 5 l i ∧ lanes s' 5 l i = lanes s 0 l i) ∧
+      (∀ l < 4, ∀ i < 5, (slotv s'.mem base OPV l i = lanes s 5 l i ∧ hlanes s' l i = lanes s 5 l i) ∧
+        lanes s' 5 l i = lanes s 0 l i) ∧
       (∀ r < 16, (r < 5 ∨ 10 ≤ r) → ∀ l < 4, qw s' (xr r) l = qw s (xr r) l) := by
   have e : Sym.init.run stage2b = some s2b := symOf_eq _ _
   refine WP.mono (run_ok hc e) fun s' h => ?_
-  refine ⟨h.gpr, h.rd, h.wr, ?_, fun l hl i hi => ⟨?_, ?_⟩, fun r hr h1 l hl => h.keep hr hl (s2b_keep r hr h1)⟩
+  refine ⟨h.gpr, h.rd, h.wr, ?_, fun l hl i hi => ⟨⟨?_, ?_⟩, ?_⟩,
+    fun r hr h1 l hl => h.keep hr hl (s2b_keep r hr h1)⟩
   · rw [h.mem, hs]
     exact stores_outside _ _ _ (by decide) _ (by rw [s2b_st]; decide)
   · have hm : ∀ i < 5, ((OPV + 32 * i), T.reg (5 + i)) ∈ s2b.st := by
       rw [s2b_st]; decide
     rw [slotv, h.mem, hs, stores_mq _ _ _ _ (hm i hi) hl (by rw [s2b_st]; decide) (by rw [s2b_st]; decide)]
+    simp only [T.eval, lanes]
+  · rw [hlanes, h.hterm (r := i) (by omega) hl, s2b_hregs i hi]
     simp only [T.eval, lanes]
   · have := h.reg (xr (5 + i)) l hl
     rw [xi_xr _ (by omega), s2b_regs i hi] at this
@@ -467,21 +522,16 @@ theorem s3a_wp {s : State} {base : Addr} {x1 : Nat → Nat} (hs : s.gpr .rdi = b
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;>
       simp only [s3aG, opG, lanes, Nat.zero_add, envOf_v, envOf_m hs, slotv]
 
-/-- What `stage3b` leaves: stage 3's first operand in `OPG`. -/
-theorem s3b_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s) :
-    WP isa (.block stage3b) s fun s' => vm s s' = s' ∧
-      VG.Proof.X25519.X86_64.Outside base OPG 160 s.mem s'.mem ∧
-      (∀ l < 4, ∀ i < 5, slotv s'.mem base OPG l i = lanes s 0 l i) ∧
+/-- What `stage3b` leaves: stage 3's first operand in `ymm16–ymm20`. -/
+theorem s3b_wp {s : State} (hc : Ctx s) :
+    WP isa (.block stage3b) s fun s' => vm s s' = s' ∧ s'.mem = s.mem ∧
+      (∀ l < 4, ∀ i < 5, hlanes s' l i = lanes s 0 l i) ∧
       (∀ r < 16, ∀ l < 4, qw s' (xr r) l = qw s (xr r) l) := by
   have e : Sym.init.run stage3b = some s3b := symOf_eq _ _
   refine WP.mono (run_ok hc e) fun s' h => ?_
-  refine ⟨h.eq, ?_, fun l hl i hi => ?_, fun r hr l hl => h.keep hr hl (s3b_keep r hr)⟩
-  · rw [h.mem, hs]
-    exact stores_outside _ _ _ (by decide) _ (by rw [s3b_st]; decide)
-  · have hm : ∀ i < 5, ((OPG + 32 * i), T.reg i) ∈ s3b.st := by
-      rw [s3b_st]; decide
-    rw [slotv, h.mem, hs, stores_mq _ _ _ _ (hm i hi) hl (by rw [s3b_st]; decide) (by rw [s3b_st]; decide)]
-    simp only [T.eval, lanes, Nat.zero_add]
+  refine ⟨h.eq, by rw [h.mem, s3b_st]; rfl, fun l hl i hi => ?_, fun r hr l hl => h.keep hr hl (s3b_keep r hr)⟩
+  rw [hlanes, h.hterm (r := i) (by omega) hl, s3b_hregs i hi]
+  simp only [T.eval, lanes, Nat.zero_add]
 
 /-! ## The swap -/
 

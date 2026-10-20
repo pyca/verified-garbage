@@ -1,15 +1,13 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
 public import VerifiedGarbage.Proof.MlKem.Arm.CallF
+public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Frag
 import VerifiedGarbage.Proof.MlKem.Mem
-public import VerifiedGarbage.Proof.MlDsa.Sign.Mem
-public import VerifiedGarbage.Proof.Framework.Offset
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.Sign.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ML-DSA signing on ARMv7: the buffers of the function

@@ -1,9 +1,33 @@
 module
 
 public import VerifiedGarbage.Proof.Blake2.X86_64.Backend
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Blake2.Spec
+public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Init
+public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Blake2.Spec
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Init
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming BLAKE2b on x86-64, for every compression backend
@@ -18,51 +42,36 @@ Initialization is backend-independent and stays in the registration file.
 namespace VG.Generic.Blake2b.X86_64.Stream
 
 def artifacts (v : Proof.Blake2.X86_64.Backend) : List Artifact := [
-  { Spec.Blake2.compressBApi with
-    name := v.compressName
-    target := VG.X86_64.target
-    doc := Spec.Blake2.compressBApi.doc
+  Spec.Blake2.compressBApi.artifact VG.X86_64.target {
+    suffix := v.suffix
     code := v.code
-    contract := Spec.Blake2.compressBContract VG.X86_64.abi
     verified := v.verified
     spSafe := v.spSafe
     features := v.features },
-  { Spec.Blake2.updateBApi with
-    name := Spec.Blake2.updateBApi.name ++ v.suffix
-    target := VG.X86_64.target
-    doc := Spec.Blake2.updateBApi.doc
+  Spec.Blake2.updateBApi.artifact VG.X86_64.target {
+    suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackScratch 584 .r8 v.update
-    contract := Spec.Blake2.updateBContract VG.X86_64.abi (8 + 584)
     stack := 8 + 584
     verified := v.update_framed
-    spSafe := VG.X86_64.withStackScratch_spSafe (by decide) v.updateSpSafe
+    spSafe := X86_64.withStackScratch_spSafe_of v.updateSpSafe
     features := v.features },
-  { Spec.Blake2.finalizeBApi with
-    name := Spec.Blake2.finalizeBApi.name ++ v.suffix
-    target := VG.X86_64.target
-    doc := Spec.Blake2.finalizeBApi.doc
+  Spec.Blake2.finalizeBApi.artifact VG.X86_64.target {
+    suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackScratch 584 .rcx v.finalize
-    contract := Spec.Blake2.finalizeBContract VG.X86_64.abi (8 + 584)
     stack := 8 + 584
     verified := v.finalize_framed
-    spSafe := VG.X86_64.withStackScratch_spSafe (by decide) v.finalizeSpSafe
+    spSafe := X86_64.withStackScratch_spSafe_of v.finalizeSpSafe
     features := v.features },
-  { Spec.Blake2.updateBScratchApi with
-    name := v.updateName
-    target := VG.X86_64.target
-    doc := Spec.Blake2.updateBScratchApi.doc
+  Spec.Blake2.updateBScratchApi.artifact VG.X86_64.target {
+    suffix := v.suffix
     code := v.update
-    contract := Spec.Blake2.updateBScratchContract VG.X86_64.abi 8
     stack := 8
     verified := v.update_verified
     spSafe := v.updateSpSafe
     features := v.features },
-  { Spec.Blake2.finalizeBScratchApi with
-    name := v.finalizeName
-    target := VG.X86_64.target
-    doc := Spec.Blake2.finalizeBScratchApi.doc
+  Spec.Blake2.finalizeBScratchApi.artifact VG.X86_64.target {
+    suffix := v.suffix
     code := v.finalize
-    contract := Spec.Blake2.finalizeBScratchContract VG.X86_64.abi 8
     stack := 8
     verified := v.finalize_verified
     spSafe := v.finalizeSpSafe

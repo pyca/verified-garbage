@@ -1,19 +1,20 @@
 module
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeInvariant
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeFetch
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStep
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-! The public tree carries exact paired field values and fixed loop counters. -/
 
@@ -42,19 +43,17 @@ structure JacTreeChecks (K : WinCfg) : Prop where
   add : JacAddChecks K K.R K.P K.D
   copyStep : FieldCT (.block (copyPt K.M.n K.R K.D))
   advance : RegCT [.x19,.x20] (.block [.addImm .x .x20 .x20 96,decCounter])
-  keepArithmetic : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (Jacobian.jacTreeArithmetic K 16), dstOf i≠some r
+  keepArithmetic : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (Jacobian.jacTreeArithmetic K 16), clobbers i r = false
 
  theorem tableStore_preserves (K : WinCfg) {r : Reg} (hr : r≠.x4) :
-    ∀ i∈instrs (.block (Jacobian.tableStore K) : Prog isa), dstOf i≠some r := by
+    ∀ i∈instrs (.block (Jacobian.tableStore K) : Prog isa), clobbers i r = false := by
   intro i hi
   change i∈(List.range 12).flatMap (fun j => [ld .x4 (K.R.x+8*j),.str .x .x4 .x20 (8*j)]) at hi
   obtain ⟨j,_,hi⟩ := List.mem_flatMap.mp hi
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hi
   rcases hi with rfl | rfl
-  · change some Reg.x4 ≠ some r
-    intro he; exact hr (Option.some.inj he).symm
-  · change none ≠ some r
-    intro he; cases he
+  · exact clobbers_eq_false (by simpa [dsts, dstOf, ld] using hr)
+  · exact clobbers_eq_false (by simp [dsts, dstOf])
 
  theorem jacTree_init_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     (hL : JacWinLay K size) (hAl : Aligned K.M (·∈jacWinSlots K))
@@ -239,7 +238,7 @@ structure JacTreeChecks (K : WinCfg) : Prop where
     s.gpr .x20=off base (K.tbl+96*m) ∧ t.gpr .x20=off base (K.tbl+96*m)
 
  theorem relCT_keepControls {P Q : State → State → Prop} {c : Prog isa} {a b : BitVec 64}
-    (h : RelCT isa P c Q) (hc : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs c, dstOf i≠some r) :
+    (h : RelCT isa P c Q) (hc : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs c, clobbers i r = false) :
     RelCT isa (fun s t => P s t ∧ s.gpr .x19=a ∧ t.gpr .x19=a ∧ s.gpr .x20=b ∧ t.gpr .x20=b) c
       (fun s t => Q s t ∧ s.gpr .x19=a ∧ t.gpr .x19=a ∧ s.gpr .x20=b ∧ t.gpr .x20=b) := by
   intro s t ts tt s' t' ⟨hp,s19,t19,s20,t20⟩ es et
@@ -251,7 +250,7 @@ structure JacTreeChecks (K : WinCfg) : Prop where
     (hL : JacWinLay K size) (hJ : K.J=52) (hAl : Aligned K.M (·∈jacWinSlots K))
     (hm : UnitMod C.p (2^(64*K.M.n))) (ht : K.tbl<4096) (hOne : K.one<C.p)
     (hm1 : 1≤m) (hm15 : m≤15) (hc : JacTreeChecks K)
-    (hcopy : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), dstOf i≠some r) :
+    (hcopy : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), clobbers i r = false) :
     RelCT isa (TreePair K C base size m) (Jacobian.jacTreeStep K 16) (TreePair K C base size (m+1)) := by
   have rs : ∀ x∈jacCoords K.R, x∈jacWinSlots K := by
     intro x hx; apply List.mem_append_left
@@ -328,7 +327,7 @@ theorem jacTree_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     (hL : JacWinLay K size) (hJ : K.J=52) (hAl : Aligned K.M (·∈jacWinSlots K))
     (hm : UnitMod C.p (2^(64*K.M.n))) (ht : K.tbl<4096) (hOne : K.one<C.p)
     (hc : JacTreeChecks K)
-    (hcopy : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), dstOf i≠some r)
+    (hcopy : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), clobbers i r = false)
     {E : Nat → Fe C} :
     RelCT isa (FieldPair K.M base size C.p (·∈jacWinSlots K) (winRo K) E)
       (Jacobian.jacBuildTree K 16)

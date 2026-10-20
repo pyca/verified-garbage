@@ -1,13 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquare
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledInit
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareChoice
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareChoice
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRaw
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRaw
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderFrame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalChoice
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 
 /-! ## AdxTiledSquareCross -/
 

@@ -129,6 +129,87 @@ class Plan(Project):
         (self.lean / "VerifiedGarbage/Spec/A.lean").write_text("-- changed\n")
         self.assertEqual(self.stale(), 3)
 
+    def change_spec_a(self, files):
+        """The modules to rebuild when Spec.A changes, with `files` written
+        over the project and the manifest taken after them."""
+        for name, text in files.items():
+            (self.lean / name).write_text(text)
+        self.manifest["sources"] = {m: shards.digest(f) for m, f in shards.modules().items()}
+        (self.lean / "VerifiedGarbage/Spec/A.lean").write_text("module\n-- changed\n")
+        mods = shards.modules()
+        imps = shards.imports(mods)
+        read = shards.reads(imps, shards.closures(imps), shards.visibilities(mods))
+        return sorted(shards.stale_of({"VerifiedGarbage.Spec.A"}, read))
+
+    def test_a_private_import_stops_the_rebuild(self):
+        # Proof imports Spec.A privately: Proof rebuilds, but Other, which
+        # imports Proof, reads nothing of Spec.A.
+        self.assertEqual(self.change_spec_a({
+            "VerifiedGarbage/Proof.lean": "module\n\nimport VerifiedGarbage.Spec.A\n",
+            "VerifiedGarbage/Other.lean": "module\n\npublic import VerifiedGarbage.Proof\n",
+            "VerifiedGarbage.lean": "module\n\nimport VerifiedGarbage.Other\n",
+        }), ["VerifiedGarbage.Proof", "VerifiedGarbage.Spec.A"])
+
+    def test_a_public_import_passes_it_on(self):
+        self.assertEqual(self.change_spec_a({
+            "VerifiedGarbage/Proof.lean": "module\n\npublic import VerifiedGarbage.Spec.A\n",
+            "VerifiedGarbage/Other.lean": "module\n\nimport VerifiedGarbage.Proof\n",
+            "VerifiedGarbage.lean": "module\n\nimport VerifiedGarbage.Other\n",
+        }), ["VerifiedGarbage.Other", "VerifiedGarbage.Proof", "VerifiedGarbage.Spec.A"])
+
+    def test_meta_imports_are_imports(self):
+        self.assertEqual(self.change_spec_a({
+            "VerifiedGarbage/Proof.lean": "module\n\npublic meta import VerifiedGarbage.Spec.A\n",
+            "VerifiedGarbage/Other.lean": "module\n\nmeta import VerifiedGarbage.Proof\n",
+            "VerifiedGarbage.lean": "module\n\nimport VerifiedGarbage.Other\n",
+        }), ["VerifiedGarbage.Other", "VerifiedGarbage.Proof", "VerifiedGarbage.Spec.A"])
+
+    def test_import_all_reads_private_imports(self):
+        # `import all Proof` reads what Proof imports, privately or not.
+        self.assertEqual(self.change_spec_a({
+            "VerifiedGarbage/Proof.lean": "module\n\nimport VerifiedGarbage.Spec.A\n",
+            "VerifiedGarbage/Other.lean": "module\n\nimport all VerifiedGarbage.Proof\n",
+            "VerifiedGarbage.lean": "module\n\nimport VerifiedGarbage.Other\n",
+        }), ["VerifiedGarbage.Other", "VerifiedGarbage.Proof", "VerifiedGarbage.Spec.A"])
+
+    def test_a_file_that_is_not_a_module_reads_everything(self):
+        # The root, not a module, reads the whole closure; Other, a module
+        # importing Proof (which imports Spec.A privately), reads nothing of it.
+        self.assertEqual(self.change_spec_a({
+            "VerifiedGarbage/Proof.lean": "module\n\nimport VerifiedGarbage.Spec.A\n",
+            "VerifiedGarbage/Other.lean": "module\n\npublic import VerifiedGarbage.Proof\n",
+            "VerifiedGarbage.lean": "import VerifiedGarbage.Other\n",
+        }), ["VerifiedGarbage", "VerifiedGarbage.Proof", "VerifiedGarbage.Spec.A"])
+
+    def test_the_plan_counts_only_what_reads_the_change(self):
+        for name, text in {
+            "VerifiedGarbage/Proof.lean": "module\n\nimport VerifiedGarbage.Spec.A\n",
+            "VerifiedGarbage/Other.lean": "module\n\npublic import VerifiedGarbage.Proof\n",
+            "VerifiedGarbage.lean": "module\n\nimport VerifiedGarbage.Other\n",
+        }.items():
+            (self.lean / name).write_text(text)
+        self.manifest["sources"] = {m: shards.digest(f) for m, f in shards.modules().items()}
+        (self.lean / "VerifiedGarbage/Spec/A.lean").write_text("module\n-- changed\n")
+        self.assertEqual(self.stale(), 2)
+
+    def test_the_edited_modules(self):
+        # Listed whatever the inputs: a toolchain change rebuilds everything,
+        # but only Spec.A's source changed.
+        (self.lean / "VerifiedGarbage/Spec/A.lean").write_text("-- changed\n")
+        (self.lean / "lean-toolchain").write_text("leanprover/lean4:v4.35.0\n")
+        p = shards.plan(self.manifest)
+        self.assertEqual(p["edited"], ["VerifiedGarbage.Spec.A"])
+        self.assertNotIn("edited", shards.plan({}))
+
+    def test_needed_takes_whole_precompiled_libraries(self):
+        self.edit('globs = ["VerifiedGarbage.Spec.A"]', 'globs = ["VerifiedGarbage.Spec.A", "VerifiedGarbage.Spec.B"]')
+        (self.lean / "VerifiedGarbage/UsesA.lean").write_text("import VerifiedGarbage.Spec.A\n")
+        closure = shards.closures(shards.imports(shards.modules()))
+        # Importing Spec.A loads NativeSpec, built from Spec.B too.
+        self.assertEqual(shards.needed(["VerifiedGarbage.UsesA"], closure),
+                         {"VerifiedGarbage.UsesA", "VerifiedGarbage.Spec.A", "VerifiedGarbage.Spec.B"})
+        self.assertEqual(shards.needed(["VerifiedGarbage.Other"], closure), {"VerifiedGarbage.Other"})
+
     def test_a_setting_rebuilds_everything(self):
         self.edit('moreLeanArgs = ["-j2"]', 'moreLeanArgs = ["-j4"]')
         self.assertEqual(self.stale(), 5)
@@ -233,6 +314,46 @@ class Many(Project):
     def count(self, each):
         self.manifest["times"] = {m: (each if m in self.SINKS else 0.0) for m in shards.modules()}
         return len(shards.plan(self.manifest)["targets"])
+
+    @mock.patch.object(shards, "SHARD_OVERHEAD", 0.0)
+    def test_only_sinks_with_something_to_build(self):
+        # Half the sinks changed: the shards build those, and are given no
+        # other sink (the root module, `Other`, the unchanged half).
+        self.manifest["inputs"] = shards.inputs()
+        self.manifest["sources"] = {m: shards.digest(f) for m, f in shards.modules().items()}
+        self.manifest["times"] = {m: 400.0 for m in shards.modules()}
+        changed = self.SINKS[:20]
+        for m in changed:
+            (self.lean / f"{m.replace('.', '/')}.lean").write_text("-- changed\n")
+        p = shards.plan(self.manifest)
+        self.assertGreater(len(p["targets"]), 1)
+        self.assertEqual(sorted(t for ts in p["targets"] for t in ts), sorted(changed))
+        # `closure`: what a shard needs of the last build, its sinks here.
+        plan = self.lean / "plan.json"
+        plan.write_text(json.dumps(p))
+        with mock.patch("sys.stdout", new_callable=io.StringIO) as out:
+            self.assertEqual(shards.main(["closure", str(plan), "1"]), 0)
+        self.assertEqual(out.getvalue().split(), sorted(p["targets"][0]))
+
+    @mock.patch.object(shards, "SHARD_OVERHEAD", 0.0)
+    def test_new_modules(self):
+        # Modules the last build lacks: a new sink, and a new module a
+        # changed sink imports, which the closure of its shard holds.
+        self.manifest["inputs"] = shards.inputs()
+        self.manifest["sources"] = {m: shards.digest(f) for m, f in shards.modules().items()}
+        self.manifest["times"] = {m: 400.0 for m in shards.modules()}
+        changed = self.SINKS[:20]
+        for m in changed:
+            (self.lean / f"{m.replace('.', '/')}.lean").write_text("-- changed\n")
+        (self.lean / "VerifiedGarbage/NewSink.lean").write_text("\n")
+        (self.lean / "VerifiedGarbage/NewDep.lean").write_text("\n")
+        (self.lean / "VerifiedGarbage/Sink0.lean").write_text("import VerifiedGarbage.NewDep\n")
+        p = shards.plan(self.manifest)
+        self.assertEqual(sorted(t for ts in p["targets"] for t in ts),
+                         sorted(changed + ["VerifiedGarbage.NewSink"]))
+        closure = shards.closures(shards.imports(shards.modules()))
+        i = next(i for i, ts in enumerate(p["targets"]) if "VerifiedGarbage.Sink0" in ts)
+        self.assertIn("VerifiedGarbage.NewDep", shards.needed(p["targets"][i], closure))
 
     def test_a_shard_per_work(self):
         # 2000 s of work: three shards (two would be slower).

@@ -2,20 +2,58 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Correct
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Correct
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintErase
 import Mathlib.Logic.Function.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Msg
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Msg
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+import VerifiedGarbage.Proof.MdStream.AArch64.Words
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Mont.AArch64.Csub
+import VerifiedGarbage.Proof.Mont.AArch64.Rounds
+import VerifiedGarbage.Proof.Pbkdf2.AArch64.Copy
+import VerifiedGarbage.Proof.Pbkdf2.Memory
+import VerifiedGarbage.Proof.Sha256.AArch64.Compress
+import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Common
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Spec.Ecdsa.P256
+import VerifiedGarbage.Spec.Weierstrass.Mul
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Hmac.Common
+meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Words
+meta import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+meta import VerifiedGarbage.Proof.Mont.AArch64.Csub
+meta import VerifiedGarbage.Proof.Mont.AArch64.Rounds
+meta import VerifiedGarbage.Proof.Pbkdf2.AArch64.Copy
+meta import VerifiedGarbage.Proof.Pbkdf2.Memory
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Compress
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Common
+meta import VerifiedGarbage.Proof.Weierstrass.Words
+meta import VerifiedGarbage.Spec.Ecdsa.P256
+meta import VerifiedGarbage.Spec.Weierstrass.Mul
 
 /-!
 # Deterministic ECDSA on AArch64: constant time, up to the number of candidates
@@ -98,10 +136,10 @@ abbrev TaintOk (rs : List Reg) (is : List Instr) : Prop :=
 abbrev msgRegs (wide : Bool) : List Reg := if wide then [.x8, .x9, .x10, .x15] else [.x9, .x10, .x15]
 
 /-- The blocks that depend on the hash function's output size `D` and block
-size `B`, and on the scalars' `w` words and `Q` bytes, each of which
-addresses memory only from `sp` (and the message's from the pointers it is
-given). -/
-structure Blks (w Q D B : Nat) (wide : Bool) : Prop where
+size `B`, and on the scalars' `w` words and `Q` bytes (and `h`'s place `ho`
+in the frame), each of which addresses memory only from `sp` (and the
+message's from the pointers it is given). -/
+structure Blks (w Q D B : Nat) (wide : Bool) (ho : Nat) : Prop where
   init : TaintOk [] (Cfg.hmacArgs₁ D)
   vUpd : TaintOk [] (Cfg.hmacArgs₂ B (Cfg.fr .x2 fV) D)
   vFin : TaintOk [] (Cfg.hmacArgs₃ B D fV)
@@ -110,8 +148,8 @@ structure Blks (w Q D B : Nat) (wide : Bool) : Prop where
   kUpdF : TaintOk [] (Cfg.hmacArgs₂ B (Cfg.scr .x2 sMsg) (D + 2 * Q + 1))
   kFinF : TaintOk [] (Cfg.hmacArgs₃ B (D + 2 * Q + 1) fK)
   msg₀ : TaintOk (msgRegs false) (Cfg.msg w Q D 0 false false)
-  msg₀f : TaintOk (msgRegs wide) (Cfg.msg w Q D 0 true wide)
-  msg₁f : TaintOk (msgRegs wide) (Cfg.msg w Q D 1 true wide)
+  msg₀f : TaintOk (msgRegs wide) (Cfg.msg w Q D 0 true wide ho)
+  msg₁f : TaintOk (msgRegs wide) (Cfg.msg w Q D 1 true wide ho)
 
 /-- The blocks of `Blks` that depend only on `D` and `B`: checked once for each
 pair of sizes, rather than again for each size of the scalars. -/
@@ -124,26 +162,42 @@ theorem hmacBlks {D B : Nat} (h : (D = 32 ∧ B = 64) ∨ (D = 48 ∧ B = 128) �
   exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
     ⟨_, by taint_decide⟩⟩
 
-theorem blks (P : RfcHash) : Blks P.w P.Q P.H.D P.H.P.B P.R.wide := by
+/-- `h`'s place in the frame, unless two `V`s make a candidate: at its top
+for 64-byte scalars. -/
+theorem fHo_q (P : RfcHash) (hw : P.R.wide = false) : (cfgOf P).fHo = if P.Q = 64 then 224 else 128 := by
+  have hh := P.R.hHigh_eq
+  have hF := P.hFits hw
+  rw [fHo_eq]
+  by_cases h8 : P.R.E.n = 8
+  · have hq := hF.1 h8
+    simp only [h8, decide_true] at hh
+    simp only [RfcHash.hB, hh, ite_true, show P.Q = 64 from hq]
+  · have hq := hF.2 h8
+    simp only [h8, decide_false] at hh
+    simp only [RfcHash.hB, hh, Bool.false_eq_true, ite_false, show P.Q ≠ 64 by omega]
+
+theorem blks (P : RfcHash) : Blks P.w P.Q P.H.D P.H.P.B P.R.wide (cfgOf P).fHo := by
   obtain ⟨i, vu, vf, ku, kf⟩ := hmacBlks P.hDB
   suffices h : TaintOk [] (Cfg.hmacArgs₂ P.H.P.B (Cfg.scr .x2 sMsg) (P.H.D + 2 * P.Q + 1)) ∧
       TaintOk [] (Cfg.hmacArgs₃ P.H.P.B (P.H.D + 2 * P.Q + 1) fK) ∧
       TaintOk (msgRegs false) (Cfg.msg P.w P.Q P.H.D 0 false false) ∧
-      TaintOk (msgRegs P.R.wide) (Cfg.msg P.w P.Q P.H.D 0 true P.R.wide) ∧
-      TaintOk (msgRegs P.R.wide) (Cfg.msg P.w P.Q P.H.D 1 true P.R.wide) from
+      TaintOk (msgRegs P.R.wide) (Cfg.msg P.w P.Q P.H.D 0 true P.R.wide (cfgOf P).fHo) ∧
+      TaintOk (msgRegs P.R.wide) (Cfg.msg P.w P.Q P.H.D 1 true P.R.wide (cfgOf P).fHo) from
     ⟨i, vu, vf, ku, kf, h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2⟩
   have hw' : P.w = P.R.E.n := rfl
   cases hw : P.R.wide
   · obtain ⟨hQ8, -, hQD⟩ := P.sizesA hw
-    rcases (P.R.sizesA hw).1 with hn | hn <;> rcases P.sizesQ hw with hq | hq | hq | hq <;>
+    rw [fHo_q P hw]
+    rcases (P.R.sizesA hw).1 with hn | hn | hn <;> rcases P.sizesQ hw with hq | hq | hq | hq | hq <;>
       rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
       first
       | (exfalso; omega)
       | (rw [hw', hn, hq, h, h']
+         simp only [Nat.reduceEqDiff, ite_true, ite_false]
          exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
           ⟨_, by taint_decide⟩⟩)
   · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
-    rw [hQ66, hD64, hB, hw9]
+    rw [fHo_wide P hw, hQ66, hD64, hB, hw9]
     exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
       ⟨_, by taint_decide⟩⟩
 
@@ -159,8 +213,10 @@ theorem coreArgs_blk (wide : Bool) : TaintOk [] (Cfg.coreArgs wide) := by
   · exact ⟨_, by taint_decide⟩
   · exact ⟨_, by taint_decide⟩
 
-theorem wipe_blk (wide : Bool) : TaintOk [] (Cfg.wipe wide) := by
-  cases wide
+theorem wipe_blk (wide hHigh : Bool) : TaintOk [] (Cfg.wipe wide hHigh) := by
+  cases wide <;> cases hHigh
+  · exact ⟨_, by taint_decide⟩
+  · exact ⟨_, by taint_decide⟩
   · exact ⟨_, by taint_decide⟩
   · exact ⟨_, by taint_decide⟩
 
@@ -339,11 +395,12 @@ def PtrsIn (wide : Bool) {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) 
 /-- `K = HMAC_K(m)`, then `V = HMAC_K(V)`, for the message `m = V ‖ b (‖ tail)`. -/
 theorem rekey_gen_ct {Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop} {b : Nat} {full wide : Bool}
     (hW : wide = true → full = true ∧ P.R.wide = true) (hA : full = true → wide = false → P.R.wide = false)
+    {ho : Nat} (hho : full = true → wide = false → ho = P.hB - 16)
     {len : Nat} (hlen : len = if full then P.H.D + 2 * P.Q + 1 else P.H.D + 1)
-    (t₁ : TaintOk (msgRegs wide) (Cfg.msg P.w P.Q P.H.D b full wide))
+    (t₁ : TaintOk (msgRegs wide) (Cfg.msg P.w P.Q P.H.D b full wide ho))
     (t₂ : TaintOk [] (Cfg.hmacArgs₂ P.H.P.B (Cfg.scr .x2 sMsg) len))
     (t₃ : TaintOk [] (Cfg.hmacArgs₃ P.H.P.B len fK)) :
-    RelCT isa (Two P Φ) (.seq (.block (Cfg.msgPtrs wide)) (.seq (.block (Cfg.msg P.w P.Q P.H.D b full wide))
+    RelCT isa (Two P Φ) (.seq (.block (Cfg.msgPtrs wide)) (.seq (.block (Cfg.msg P.w P.Q P.H.D b full wide ho))
       (.seq ((cfgOf P).hmac (Cfg.scr .x2 sMsg) len fK) (cfgOf P).hmacV))) fun _ _ => True := by
   have hlen' : len ≤ 256 := by
     have := P.wsizes
@@ -369,7 +426,8 @@ theorem rekey_gen_ct {Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop} {b 
         · exact f₁.1.trans f₂.1.symm
         · exact f₁.2.1.trans f₂.2.1.symm
         · exact f₁.2.2.1.trans f₂.2.2.1.symm) t₁) fun _ _ _ _ hL hk hc hp =>
-    WP.mono (msgAny_ok hL hk.1 P.len hc hp.1 hp.2.1 hp.2.2.1 b full wide hp.2.2.2 hW hA)
+    WP.mono (msgAny_ok hL hk.1 P.len hc hp.1 hp.2.1 hp.2.2.1 b full wide hp.2.2.2 hW hA
+      (fun hf hw => ⟨hho hf hw, hk.e_eq⟩))
       fun _ h => ⟨h.1, trivial⟩).seq ?_
   exact (two_wp (Ψ := fun _ _ _ => True) (hmacK_ct hlen' t₂ t₃) fun _ _ _ _ hL _ hc _ =>
     WP.mono (hmacK_ok (P := P) hL hc hlen') fun _ h => ⟨h.1, trivial⟩).seq hmacV_ct
@@ -378,13 +436,15 @@ theorem rekeyFull_ct {Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop} (b 
     RelCT isa (Two P Φ) ((cfgOf P).rekeyFull b) fun _ _ => True := by
   obtain rfl | rfl : b = 0 ∨ b = 1 := by omega
   · exact rekey_gen_ct (full := true) (wide := P.R.wide) (fun h => ⟨rfl, h⟩) (fun _ h => h)
+      (ho := (cfgOf P).fHo) (fun _ _ => fHo_eq P)
       (len := P.H.D + 2 * P.Q + 1) rfl (blks P).msg₀f (blks P).kUpdF (blks P).kFinF
   · exact rekey_gen_ct (full := true) (wide := P.R.wide) (fun h => ⟨rfl, h⟩) (fun _ h => h)
+      (ho := (cfgOf P).fHo) (fun _ _ => fHo_eq P)
       (len := P.H.D + 2 * P.Q + 1) rfl (blks P).msg₁f (blks P).kUpdF (blks P).kFinF
 
 theorem rekey_ct {Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop} : RelCT isa (Two P Φ) (cfgOf P).rekey fun _ _ => True :=
   rekey_gen_ct (b := 0) (full := false) (wide := false) (fun h => nomatch h) (fun h => nomatch h)
-    (len := P.H.D + 1) rfl (blks P).msg₀ (blks P).kUpd₁ (blks P).kFin₁
+    (ho := fH) (fun h => nomatch h) (len := P.H.D + 1) rfl (blks P).msg₀ (blks P).kUpd₁ (blks P).kFin₁
 
 /-! ## The conversions and the candidate -/
 
@@ -545,7 +605,7 @@ theorem rest_ct :
       (.seq ((cfgOf P).rekeyFull 1)
       (.seq (.block (cfgOf P).initCnt)
       (.seq (.loop (cfgOf P).tryOne (.nonzero .x .x12))
-        (.block (Cfg.wipe (cfgOf P).wide))))))))
+        (.block (Cfg.wipe (cfgOf P).wide (cfgOf P).hHigh))))))))
       (Two P fun L m₀ t => ∃ i, Exit P L m₀ i t) := by
   refine (two_wp (Ψ := DgIn) (two_blk [] spOnly ⟨_, by taint_decide⟩) fun _ _ _ _ hL _ hc _ =>
     WP.mono (digestPtr_ok hL hc) fun _ h => ⟨h.ctx, h.val⟩).seq ?_
@@ -555,7 +615,7 @@ theorem rest_ct :
   refine (two_wp (Ψ := fun L m₀ t => LoopInv P L m₀ 0 t) (two_blk [] spOnly (initCnt_blk _))
     fun _ _ _ _ hL hk hc h => stageE_ok (P := P) hL hk hc h).seq ?_
   refine loop_ct.seq ?_
-  exact two_wp (two_blk [] spOnly (wipe_blk _)) fun _ _ _ _ hL hk hc ⟨i, h⟩ =>
+  exact two_wp (two_blk [] spOnly (wipe_blk _ _)) fun _ _ _ _ hL hk hc ⟨i, h⟩ =>
     WP.mono (stageG_ok hL hk hc h) fun _ ⟨c, x⟩ => ⟨c, i, x⟩
 
 /-! ## The whole function -/
@@ -563,7 +623,8 @@ theorem rest_ct :
 /-- Two calls whose public data agree, in the inner frame. -/
 def Entered (P : RfcHash) (a b : State) : Prop :=
   ∃ s₁ s₂, (rfcAArch64 P.R.E P.I (256 + P.e)).pre s₁ ∧ (rfcAArch64 P.R.E P.I (256 + P.e)).pre s₂ ∧
-    (rfcAArch64 P.R.E P.I (256 + P.e)).pub s₁ s₂ ∧ a = entered P.R.wide s₁ ∧ b = entered P.R.wide s₂
+    (rfcAArch64 P.R.E P.I (256 + P.e)).pub s₁ s₂ ∧ a = entered P.R.wide P.R.hHigh s₁ ∧
+      b = entered P.R.wide P.R.hHigh s₂
 
 theorem save_blk : TaintOk [] Cfg.saveArgs := ⟨_, by taint_decide⟩
 
@@ -574,18 +635,21 @@ theorem save_ct : RelCT isa (Entered P) (.block Cfg.saveArgs) (Two P fun _ _ _ =
   obtain ⟨_, hc⟩ := save_blk
   obtain ⟨ht, -⟩ := RelCT.taint (A := taint) (P := fun x y => x.sp = y.sp) (Taint.ofRegs [])
     (fun _ _ h => ⟨h, fun r hr => absurd (Taint.mem_ofRegs.mp hr) List.not_mem_nil⟩) hc _ _ _ _ _ _
-    (show (entered P.R.wide s₁).sp = (entered P.R.wide s₂).sp by
-      show s₁.sp - 16 - BitVec.ofNat 64 (frameBytes P.R.wide) = s₂.sp - 16 - BitVec.ofNat 64 (frameBytes P.R.wide)
+    (show (entered P.R.wide P.R.hHigh s₁).sp = (entered P.R.wide P.R.hHigh s₂).sp by
+      show s₁.sp - 16 - BitVec.ofNat 64 (frameBytes P.R.wide P.R.hHigh) =
+        s₂.sp - 16 - BitVec.ofNat 64 (frameBytes P.R.wide P.R.hHigh)
       rw [hsp]) e₁ e₂
   obtain ⟨_, u₁, x₁, c₁⟩ := entry_ok h₁
   obtain ⟨_, u₂, x₂, c₂⟩ := entry_ok h₂
   obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
-  have hl : lay P.I.hashLen P.I.ecdsa.curve.len P.R.E P.R.wide s₁ = lay P.I.hashLen P.I.ecdsa.curve.len P.R.E P.R.wide s₂ := by
+  have hl : lay P.I.hashLen P.I.ecdsa.curve.len P.R.E P.R.wide P.R.hHigh s₁ =
+      lay P.I.hashLen P.I.ecdsa.curve.len P.R.E P.R.wide P.R.hHigh s₂ := by
     simp only [lay, hsp, h0, h1, h2, h3, hsy]
   have hr : (result P.I s₁.mem (s₁.gpr .x1) (s₁.gpr .x2)).2 = (result P.I s₂.mem (s₁.gpr .x1) (s₁.gpr .x2)).2 := by
     rw [hres, h1, h2]
-  refine ⟨ht, ⟨lay P.I.hashLen P.I.ecdsa.curve.len P.R.E P.R.wide s₁, s₁.gpr, s₂.gpr, s₁.mem, s₂.mem⟩, lay_ok h₁,
+  refine ⟨ht, ⟨lay P.I.hashLen P.I.ecdsa.curve.len P.R.E P.R.wide P.R.hHigh s₁, s₁.gpr, s₂.gpr, s₁.mem, s₂.mem⟩,
+    lay_ok h₁,
     coreOk_lay P s₁,
     congrArg (fun x => if x = 0 then P.I.tries - 1 else x - 1) hr, c₁, by rw [hl]; exact c₂, trivial, trivial⟩
 

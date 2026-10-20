@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.WindowJ
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # The window method on AArch64: the entry of a digit
@@ -40,8 +39,9 @@ theorem winSelect_eq (K : WinCfg) : WinCfg.select K =
   simp only [WinCfg.select, List.append_assoc]
 
 /-- After the selection and the negation: `E` represents the point of digit
-`i`, and only `E`, `-y` and the temporary area changed. -/
-structure EntryPostW (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Point C) (k i : Nat)
+`i` (by `Rp`), and only `E`, `-y` and the temporary area changed. -/
+structure EntryPostR (K : WinCfg) (C : Curve) (base : Addr) (size : Nat)
+    (Rp : Fe C → Fe C → Fe C → Point C → Prop) (P : Point C) (k i : Nat)
     (s s' : State) : Prop where
   scr : Scr s' base size
   x19 : s'.gpr .x19 = s.gpr .x19
@@ -49,8 +49,12 @@ structure EntryPostW (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Po
   unch : Unch base [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n),
     (K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n)] s.mem s'.mem
   lt : ∀ x ∈ [K.E.x, K.E.y, K.E.z], wordsVal s'.mem base x K.M.n < C.p
-  rep : Rep C (tmv C K.M.n base s' K.E.x) (tmv C K.M.n base s' K.E.y) (tmv C K.M.n base s' K.E.z)
+  rep : Rp (tmv C K.M.n base s' K.E.x) (tmv C K.M.n base s' K.E.y) (tmv C K.M.n base s' K.E.z)
     (winPt C P k i)
+
+/-- `EntryPostR` in projective coordinates. -/
+abbrev EntryPostW (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Point C) (k i : Nat)
+    (s s' : State) : Prop := EntryPostR K C base size (Rep C) P k i s s'
 
 theorem winE_mem {K : WinCfg} : ∀ x ∈ [K.E.x, K.E.y, K.E.z, K.neg], x ∈ winOther K := by
   intro x hx
@@ -60,16 +64,140 @@ theorem winE_mem {K : WinCfg} : ∀ x ∈ [K.E.x, K.E.y, K.E.z, K.neg], x ∈ wi
 theorem mul_zero_pt' {C : Curve} (P : Point C) : mul 0 P = .infinity := by
   rw [Spec.Weierstrass.mul]; simp
 
-/-- The digit's masks, its entry from the table, and its `y` negated for a
-negative digit. -/
-theorem winEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL : WinLay K size)
-    (hA : WinA K) (hC : Law C) {P : Point C} (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
+/-- What the selection of digit `i`'s entry into `E` must do: change only
+`combClob` and `E`, and leave in `E` entry `|d|` of the table (`(0 : R : 0)` for
+`|d| = 0`). -/
+def SelOk (K : WinCfg) (size : Nat) (sel : List Instr) : Prop :=
+  ∀ {base : Addr} {k i : Nat} {s : State}, WinLay K size → WinA K → Scr s base size → i < K.J →
+    s.gpr .x19 = BitVec.ofNat 64 i →
+    (∀ t < 4 * K.J, s.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0) →
+    WP isa (.block sel) s fun t => KeepRegs (combClob K.M.n) s t ∧ t.gpr .x0 = s.gpr .x0 ∧
+      t.gpr .x19 = s.gpr .x19 ∧
+      Unch base [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n)] s.mem t.mem ∧
+      wordsVal t.mem base K.E.x K.M.n = (if mag (nib k i) = 0 then 0 else
+        wordsVal s.mem base (tblSlot K 0 (mag (nib k i) - 1)) K.M.n) ∧
+      wordsVal t.mem base K.E.y K.M.n = (if mag (nib k i) = 0 then K.one else
+        wordsVal s.mem base (tblSlot K 1 (mag (nib k i) - 1)) K.M.n) ∧
+      wordsVal t.mem base K.E.z K.M.n = (if mag (nib k i) = 0 then 0 else
+        wordsVal s.mem base (tblSlot K 2 (mag (nib k i) - 1)) K.M.n)
+
+/-- The digit's masks and the masked loads (`select`) select the entry. -/
+theorem selOk_default {K : WinCfg} {size : Nat} (h1 : K.one < 2 ^ (64 * K.M.n)) :
+    SelOk K size (WinCfg.selOf K none) := by
+  intro base k i s hL hA hs hi hx hbits
+  have hn := hs.nowrap
+  have hJ := hL.J
+  have h0 := hL.n0
+  have hmag := mag_le (nib_lt k i)
+  obtain ⟨-, -, -, -, exy, exz, eyz, hEo, -, -⟩ := hL.other_ne
+  have wE : ∀ x ∈ [K.E.x, K.E.y, K.E.z, K.neg], x ∈ winWs K := fun x hx => winOther_ws K x (winE_mem x hx)
+  have le : ∀ x ∈ [K.E.x, K.E.y, K.E.z, K.neg], x + 8 * K.M.n ≤ size := fun x hx =>
+    hL.lay.le x (winOther_mem (winE_mem x hx))
+  have al : ∀ x ∈ [K.E.x, K.E.y, K.E.z, K.neg], x % 8 = 0 := fun x hx =>
+    hA.sl x (winOther_mem (winE_mem x hx))
+  have xy := hL.apart₂ (wE K.E.x (by simp)) (wE K.E.y (by simp)) exy
+  have xz := hL.apart₂ (wE K.E.x (by simp)) (wE K.E.z (by simp)) exz
+  have yz := hL.apart₂ (wE K.E.y (by simp)) (wE K.E.z (by simp)) eyz
+  have neN : ∀ x ∈ [K.E.x, K.E.y, K.E.z], x ≠ K.neg := fun x hx e => hEo x hx (by rw [e]; simp)
+  have xneg := hL.apart₂ (wE K.E.x (by simp)) (wE K.neg (by simp)) (neN _ (by simp))
+  have yneg := hL.apart₂ (wE K.E.y (by simp)) (wE K.neg (by simp)) (neN _ (by simp))
+  have zneg := hL.apart₂ (wE K.E.z (by simp)) (wE K.neg (by simp)) (neN _ (by simp))
+  -- The table's slots, apart from `E`.
+  have hslot : ∀ c < 3, ∀ i' < 8, tblSlot K c i' + 8 * K.M.n ≤ size ∧ tblSlot K c i' % 8 = 0 := by
+    intro c hc i' hi'
+    rw [tblSlot_eq]
+    have hm : K.tbl + 8 * K.M.n * (3 * i' + c) ∈ winSlots K := by
+      simp only [winSlots, List.mem_append]; exact Or.inr (winTbl_mem K (by omega_using [hc, hi']))
+    exact ⟨hL.lay.le _ hm, hA.sl _ hm⟩
+  have hsep : ∀ x ∈ [K.E.x, K.E.y, K.E.z, K.neg], ∀ c < 3, ∀ i' < 8,
+      tblSlot K c i' + 8 * K.M.n ≤ x ∨ x + 8 * K.M.n ≤ tblSlot K c i' := by
+    intro x hx c hc i' hi'
+    rw [tblSlot_eq]
+    exact (hL.tbl_apart (List.mem_append_right _ (winE_mem x hx)) (i := 3 * i' + c) (by omega_using [hc, hi'])).symm
+  have sub3 : ∀ o ∈ [K.E.x, K.E.y, K.E.z], o ∈ [K.E.x, K.E.y, K.E.z, K.neg] := by
+    intro o ho; simp only [List.mem_cons, List.not_mem_nil, or_false] at ho ⊢
+    rcases ho with h | h | h <;> simp [h]
+  have hd : ∀ c < 3, ∀ o ∈ [K.E.x, K.E.y, K.E.z], ∀ i' < 8, tblSlot K c i' + 8 * K.M.n ≤ size ∧
+      tblSlot K c i' % 8 = 0 ∧ (tblSlot K c i' + 8 * K.M.n ≤ o ∨ o + 8 * K.M.n ≤ tblSlot K c i') :=
+    fun c hc o ho i' hi' => ⟨(hslot c hc i' hi').1, (hslot c hc i' hi').2,
+      hsep o (sub3 o ho) c hc i' hi'⟩
+  -- The digit's masks.
+  show WP isa (.block (digit K.bits ++ WinCfg.select K)) s _
+  rw [WP.block_append_iff]
+  refine WP.mono (digit_ok hs K.bits (k := k) (j := i) (N := 4 * K.J) (by omega_using [hi]) hL.bits hA.bits4 hx
+    hbits) fun s₁ ⟨m₁, k₁⟩ => ?_
+  have hs₁ := hs.of_keeps k₁ (by decide)
+  have hm₁ : MasksOf s₁ (mag (nib k i)) := m₁
+  -- The entry.
+  rw [winSelect_eq, WP.block_append_iff]
+  have W2 := selectCoord_ok hs₁ K hmag hm₁ (c := 0) (o := K.E.x) (al _ (by simp)) (le _ (by simp))
+    (hd 0 (by decide) K.E.x (by simp)) h1
+  refine WP.mono W2 fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
+  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  rw [WP.block_append_iff]
+  have W3 := selectCoord_ok hs₂ K hmag (hm₁.keepRegs k₂) (c := 1) (o := K.E.y) (al _ (by simp))
+    (le _ (by simp)) (hd 1 (by decide) K.E.y (by simp)) h1
+  refine WP.mono W3 fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
+  have hs₃ := hs₂.of_keepRegs k₃ (by decide)
+  have W4 := selectCoord_ok hs₃ K hmag ((hm₁.keepRegs k₂).keepRegs k₃) (c := 2) (o := K.E.z)
+    (al _ (by simp)) (le _ (by simp)) (hd 2 (by decide) K.E.z (by simp)) h1
+  refine WP.mono W4 fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
+  have hs₄ := hs₃.of_keepRegs k₄ (by decide)
+  -- The table's numbers, unchanged by the selection.
+  have tb : ∀ c < 3, ∀ i' < 8, ∀ {m m' : Mem} {o : Nat}, o ∈ [K.E.x, K.E.y, K.E.z] →
+      Outside base o (8 * K.M.n) m m' →
+      wordsVal m' base (tblSlot K c i') K.M.n = wordsVal m base (tblSlot K c i') K.M.n :=
+    fun c hc i' hi' m m' o ho O => O.wordsVal (hsep o (sub3 o ho) c hc i' hi')
+      (by have := (hslot c hc i' hi').1; omega_using [hn, this])
+  have m₁ : s₁.mem = s.mem := k₁.mem
+  -- What `E` holds, from the table at `s`.
+  have vx : wordsVal s₄.mem base K.E.x K.M.n = (if mag (nib k i) = 0 then 0 else
+      wordsVal s.mem base (tblSlot K 0 (mag (nib k i) - 1)) K.M.n) := by
+    rw [O₄.wordsVal xz (by have := le K.E.x (by simp); omega_using [hn, this]),
+      O₃.wordsVal xy (by have := le K.E.x (by simp); omega_using [hn, this]), e₂, m₁]
+    rfl
+  have vy : wordsVal s₄.mem base K.E.y K.M.n = (if mag (nib k i) = 0 then K.one else
+      wordsVal s.mem base (tblSlot K 1 (mag (nib k i) - 1)) K.M.n) := by
+    rw [O₄.wordsVal yz (by have := le K.E.y (by simp); omega_using [hn, this]), e₃]
+    split
+    · rfl
+    · rw [tb 1 (by decide) _ (by omega_using [hmag]) (o := K.E.x) (by simp) O₂, m₁]
+  have vz : wordsVal s₄.mem base K.E.z K.M.n = (if mag (nib k i) = 0 then 0 else
+      wordsVal s.mem base (tblSlot K 2 (mag (nib k i) - 1)) K.M.n) := by
+    rw [e₄]
+    split
+    · rfl
+    · rw [tb 2 (by decide) _ (by omega_using [hmag]) (o := K.E.y) (by simp) O₃,
+        tb 2 (by decide) _ (by omega_using [hmag]) (o := K.E.x) (by simp) O₂, m₁]
+  have U₄ : Unch base [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n)] s.mem s₄.mem := by
+    rw [← m₁]; exact (O₂.unch.trans (O₃.unch.trans O₄.unch)).mono (by simp)
+  refine ⟨?_, by rw [k₄.gpr _ (by decide), k₃.gpr _ (by decide), k₂.gpr _ (by decide), k₁.gpr _ (by decide)],
+    by rw [k₄.gpr _ (by decide), k₃.gpr _ (by decide), k₂.gpr _ (by decide), k₁.gpr _ (by decide)], U₄, vx, vy, vz⟩
+  refine ((Keeps.regs k₁).mono ?_).trans ((k₂.trans (k₃.trans k₄)).mono ?_)
+  · intro r hr
+    simp only [List.mem_cons] at hr
+    rcases hr with rfl | rfl | rfl | rfl | hr
+    · exact combClob_mem (by simp)
+    · exact combClob_mem (by simp)
+    · simp [combClob]
+    · exact combClob_mem (by simp)
+    · exact maskRegs_combClob hr
+  · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> simp [combClob, clob]
+
+/-- The digit's entry, selected by `WinCfg.selOf K sl` (`SelOk`), and its `y`
+negated for a negative digit. -/
+theorem winEntryR_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL : WinLay K size)
+    (hA : WinA K) {Rp : Fe C → Fe C → Fe C → Point C → Prop} (hRp0 : Rp 0 1 0 .infinity)
+    (hRpNeg : ∀ {X Y Z : Fe C} {Q : Point C}, Rp X Y Z Q → Rp X (-Y) Z (negPt Q))
+    {P : Point C} (_hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
     (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s : State} (hs : Scr s base size)
     (hM : ModOkA K.M size C.p s.mem base) (hi : i < K.J) (hx : s.gpr .x19 = BitVec.ofNat 64 i)
     (hbits : ∀ t < 4 * K.J, s.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0)
-    (hz : wordsVal s.mem base K.zero K.M.n = 0) (hT : TblOk K C base P 8 s) :
-    WP isa (.block (digit K.bits ++ WinCfg.select K ++ negY K.M K.neg K.zero K.E.y K.bits)) s
-      (EntryPostW K C base size P k i s) := by
+    (hz : wordsVal s.mem base K.zero K.M.n = 0) (hT : TblOkR K C base Rp P 8 s)
+    {sl : Option (List Instr)} (hS : SelOk K size (WinCfg.selOf K sl)) :
+    WP isa (.block (WinCfg.entry K sl)) s
+      (EntryPostR K C base size Rp P k i s) := by
   have hn := hs.nowrap
   have hJ := hL.J
   have h0 := hL.n0
@@ -107,56 +235,10 @@ theorem winEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL 
       tblSlot K c i' % 8 = 0 ∧ (tblSlot K c i' + 8 * K.M.n ≤ o ∨ o + 8 * K.M.n ≤ tblSlot K c i') :=
     fun c hc o ho i' hi' => ⟨(hslot c hc i' hi').1, (hslot c hc i' hi').2,
       hsep o (sub3 o ho) c hc i' hi'⟩
-  -- The digit's masks.
-  rw [List.append_assoc, WP.block_append_iff]
-  refine WP.mono (digit_ok hs K.bits (k := k) (j := i) (N := 4 * K.J) (by omega_using [hi]) hL.bits hA.bits4 hx
-    hbits) fun s₁ ⟨m₁, k₁⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
-  have hm₁ : MasksOf s₁ (mag (nib k i)) := m₁
-  -- The entry.
-  rw [winSelect_eq, List.append_assoc, WP.block_append_iff]
-  have W2 := selectCoord_ok hs₁ K hmag hm₁ (c := 0) (o := K.E.x) (al _ (by simp)) (le _ (by simp))
-    (hd 0 (by decide) K.E.x (by simp)) (Nat.lt_trans hone_lt hpn)
-  refine WP.mono W2 fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
-  rw [List.append_assoc, WP.block_append_iff]
-  have W3 := selectCoord_ok hs₂ K hmag (hm₁.keepRegs k₂) (c := 1) (o := K.E.y) (al _ (by simp))
-    (le _ (by simp)) (hd 1 (by decide) K.E.y (by simp)) (Nat.lt_trans hone_lt hpn)
-  refine WP.mono W3 fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
-  have hs₃ := hs₂.of_keepRegs k₃ (by decide)
-  rw [WP.block_append_iff]
-  have W4 := selectCoord_ok hs₃ K hmag ((hm₁.keepRegs k₂).keepRegs k₃) (c := 2) (o := K.E.z)
-    (al _ (by simp)) (le _ (by simp)) (hd 2 (by decide) K.E.z (by simp)) (Nat.lt_trans hone_lt hpn)
-  refine WP.mono W4 fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
-  have hs₄ := hs₃.of_keepRegs k₄ (by decide)
-  -- The table's numbers, unchanged by the selection.
-  have tb : ∀ c < 3, ∀ i' < 8, ∀ {m m' : Mem} {o : Nat}, o ∈ [K.E.x, K.E.y, K.E.z] →
-      Outside base o (8 * K.M.n) m m' →
-      wordsVal m' base (tblSlot K c i') K.M.n = wordsVal m base (tblSlot K c i') K.M.n :=
-    fun c hc i' hi' m m' o ho O => O.wordsVal (hsep o (sub3 o ho) c hc i' hi')
-      (by have := (hslot c hc i' hi').1; omega_using [hn, this])
-  have m₁ : s₁.mem = s.mem := k₁.mem
-  -- What `E` holds, from the table at `s`.
-  have vx : wordsVal s₄.mem base K.E.x K.M.n = (if mag (nib k i) = 0 then 0 else
-      wordsVal s.mem base (tblSlot K 0 (mag (nib k i) - 1)) K.M.n) := by
-    rw [O₄.wordsVal xz (by have := le K.E.x (by simp); omega_using [hn, this]),
-      O₃.wordsVal xy (by have := le K.E.x (by simp); omega_using [hn, this]), e₂, m₁]
-    rfl
-  have vy : wordsVal s₄.mem base K.E.y K.M.n = (if mag (nib k i) = 0 then K.one else
-      wordsVal s.mem base (tblSlot K 1 (mag (nib k i) - 1)) K.M.n) := by
-    rw [O₄.wordsVal yz (by have := le K.E.y (by simp); omega_using [hn, this]), e₃]
-    split
-    · rfl
-    · rw [tb 1 (by decide) _ (by omega_using [hmag]) (o := K.E.x) (by simp) O₂, m₁]
-  have vz : wordsVal s₄.mem base K.E.z K.M.n = (if mag (nib k i) = 0 then 0 else
-      wordsVal s.mem base (tblSlot K 2 (mag (nib k i) - 1)) K.M.n) := by
-    rw [e₄]
-    split
-    · rfl
-    · rw [tb 2 (by decide) _ (by omega_using [hmag]) (o := K.E.y) (by simp) O₃,
-        tb 2 (by decide) _ (by omega_using [hmag]) (o := K.E.x) (by simp) O₂, m₁]
-  have U₄ : Unch base [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n)] s.mem s₄.mem := by
-    rw [← m₁]; exact (O₂.unch.trans (O₃.unch.trans O₄.unch)).mono (by simp)
+  -- The selection.
+  rw [WinCfg.entry, WP.block_append_iff]
+  refine WP.mono (hS hL hA hs hi hx hbits) fun s₄ ⟨k₄, x0₄, x19₄, U₄, vx, vy, vz⟩ => ?_
+  have hs₄ : Scr s₄ base size := ⟨x0₄.trans hs.x0, k₄.wr ▸ hs.wr, hs.nowrap, hs.enc⟩
   have hEW : ∀ w ∈ [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n), (K.neg, 8 * K.M.n),
       (K.M.tmp, 8 * K.M.n)], w ∈ winW K := by
     intro w hw
@@ -197,8 +279,7 @@ theorem winEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL 
     · exact hw
     · exact hEW w (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hw ⊢; grind)
   have hx₅ : s₅.gpr .x19 = BitVec.ofNat 64 i := by
-    rw [k₅.gpr _ (x19_not_clob _), k₄.gpr _ (by decide), k₃.gpr _ (by decide), k₂.gpr _ (by decide),
-      k₁.gpr _ (by decide), hx]
+    rw [k₅.gpr _ (x19_not_clob _), x19₄, hx]
   have hbits₅ : ∀ t < 4 * K.J, s₅.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0 :=
     fun t ht => by
       have := hL.bits
@@ -243,23 +324,12 @@ theorem winEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL 
       (0 + C.p - wordsVal s₄.mem base K.E.y K.M.n) % C.p else wordsVal s₄.mem base K.E.y K.M.n := by
     rw [e₇, m₆, e₅, hz₄, vy₅]
   refine ⟨hs₆.of_keepRegs k₇ (by decide), ?_, ?_, ?_, ?_, ?_⟩
-  · rw [k₇.gpr _ (by decide), k₆.gpr _ (by decide), k₅.gpr _ (x19_not_clob _), k₄.gpr _ (by decide),
-      k₃.gpr _ (by decide), k₂.gpr _ (by decide), k₁.gpr _ (by decide)]
+  · rw [k₇.gpr _ (by decide), k₆.gpr _ (by decide), k₅.gpr _ (x19_not_clob _), x19₄]
   · have c1 : ∀ r ∈ clob K.M.n, r ∈ combClob K.M.n := fun r hr =>
       List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_right _ hr))
-    refine (((((((Keeps.regs k₁).mono ?_).trans ((k₂.trans (k₃.trans k₄)).mono ?_)).trans
+    refine (((k₄.trans
       ((⟨k₅.gpr, k₅.rd, k₅.wr, k₅.sp⟩ : KeepRegs (clob K.M.n) s₄ s₅).mono c1)).trans
-      ((Keeps.regs k₆).mono ?_)).trans (k₇.mono ?_)))
-    · intro r hr
-      simp only [List.mem_cons] at hr
-      rcases hr with rfl | rfl | rfl | rfl | hr
-      · exact combClob_mem (by simp)
-      · exact combClob_mem (by simp)
-      · simp [combClob]
-      · exact combClob_mem (by simp)
-      · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_left _ hr))
-    · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp [combClob, clob]
+      ((Keeps.regs k₆).mono ?_)).trans (k₇.mono ?_))
     · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> simp [combClob, clob]
     · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -281,13 +351,13 @@ theorem winEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL 
       · exact hp0
       · rename_i h; rw [hpt.2.2]; exact (Ta h).1 _ (by simp)
   · -- The point: `[|d|]P` (`O` for `0`), reflected for a negative digit.
-    have hR : Rep C (toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₄.mem base K.E.x K.M.n))
+    have hR : Rp (toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₄.mem base K.E.x K.M.n))
         (toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₄.mem base K.E.y K.M.n))
         (toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₄.mem base K.E.z K.M.n)) (mul (mag (nib k i)) P) := by
       rw [vx, vy, vz]
       by_cases h : mag (nib k i) = 0
       · simp only [h, ↓reduceIte, toM_zero, hone, mul_zero_pt']
-        exact rep_infinity' hC
+        exact hRp0
       · simp only [h, ↓reduceIte]
         rw [hpt.1, hpt.2.1, hpt.2.2]
         exact (Ta h).2
@@ -316,6 +386,18 @@ theorem winEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL 
       simp only [h8, ↓reduceIte]
       have : mag (nib k i) = 8 - nib k i := by simp [mag, h8]
       rw [this] at hR
-      exact Rep.negY hR
+      exact hRpNeg hR
+
+/-- `winEntryR_ok` in projective coordinates. -/
+theorem winEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL : WinLay K size)
+    (hA : WinA K) (hC : Law C) {P : Point C} (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
+    (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s : State} (hs : Scr s base size)
+    (hM : ModOkA K.M size C.p s.mem base) (hi : i < K.J) (hx : s.gpr .x19 = BitVec.ofNat 64 i)
+    (hbits : ∀ t < 4 * K.J, s.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0)
+    (hz : wordsVal s.mem base K.zero K.M.n = 0) (hT : TblOk K C base P 8 s) :
+    WP isa (.block (digit K.bits ++ WinCfg.select K ++ negY K.M K.neg K.zero K.E.y K.bits)) s
+      (EntryPostW K C base size P k i s) :=
+  winEntryR_ok hL hA (rep_infinity' hC) Rep.negY hpn hone_lt hone hs hM hi hx hbits hz hT
+    (sl := none) (selOk_default (Nat.lt_trans hone_lt hpn))
 
 end VG.Proof.Weierstrass.AArch64

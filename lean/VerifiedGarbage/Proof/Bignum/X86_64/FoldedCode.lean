@@ -1,14 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedMain
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedMain
+public import VerifiedGarbage.Proof.Bignum.X86_64.PdCode
+public import VerifiedGarbage.Impl.Rsa.X86_64.Folded
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Bignum.X86_64.Compare8
+import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+public import Mathlib.Logic.Relator
+import Mathlib.Data.Int.GCD
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 
@@ -18,28 +25,36 @@ open VG.Impl.Rsa.X86_64
 open VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64
 
-/-- The code after the check of `e`, for a valid `e`. -/
-theorem code_correct (M : Mont)
-    (hmx : (Folded.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true) (s : State) (h : pdContract.pre s)
+/-- The code after the check of `e`, for a valid `e`, with any `rest` that
+`rest_ok` describes, MXCSR's control bits included. -/
+theorem codeWith_correct (rest : Prog isa)
+    (hrest : ∀ {t : State} {B : Addr} {Z k : Nat} {op ep ip : Addr} {L : Nat} {eb xb : List Byte} {N R : Nat},
+      PdPre t B Z k op ep ip L eb xb N R → WP isa rest t fun t' => ∃ y : Nat,
+        (R % N = 2^(64*((k+7)/8)) * 2^(64*((k+7)/8)) % N → y = Spec.Rsa.os2ip xb ^ Spec.Rsa.os2ip eb % N) ∧
+        MainPost t t' B Z k op (if Spec.Rsa.os2ip xb < N then y else 0) (decide (Spec.Rsa.os2ip xb < N)) ∧
+        t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10)
+    (s : State) (h : pdContract.pre s)
     (hev : Spec.Rsa.exponentValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)) = true) :
-    ∃ t s', Exec isa (Folded.code M.mm) s t s' ∧ abiPreserved s s' ∧ pdContract.post s s' := by
+    ∃ t s', Exec isa (.seq (.block Precomputed.entry) (.seq (seqs (Precomputed.loadWith Compare8.code))
+      (.ite .e fail rest))) s t s' ∧ abiPreserved s s' ∧ pdContract.post s s' := by
   have c := pdCtx_of h
   have hZ' := c.hZ
   have hk1 := c.hk1
   have hk2 := c.hk2
   have hn := c.hs.nowrap
-  suffices hwp : WP isa (Folded.code M.mm) s fun s' => gprPreserved s s' ∧ pdContract.post s s' by
-    obtain ⟨t, s', he, hg, hp⟩ := hwp
-    exact ⟨t, s', he, abiPreserved_of_exec hmx he hg, hp⟩
-  unfold Folded.code
+  suffices hwp : WP isa (.seq (.block Precomputed.entry) (.seq (seqs (Precomputed.loadWith Compare8.code))
+      (.ite .e fail rest))) s fun s' => (gprPreserved s s' ∧ pdContract.post s s') ∧
+        s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 by
+    obtain ⟨t, s', he, ⟨hg, hp⟩, hx⟩ := hwp
+    exact ⟨t, s', he, ⟨hg.1, hg.2, hx⟩, hp⟩
   have hw : ∀ i < 22, InRegions s.wr (off (stackArg s 2) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
-  refine WP.seq (WP.mono (pdEntry_ok rfl hw c.ha0 c.ha2 c.hsep) fun t₁ ⟨hdi, h0, h1, h2, h3, h4, h5, hO, hN, hK,
-    hE, hL, hIn, ho₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono_mx (by decide +kernel) (pdEntry_ok rfl hw c.ha0 c.ha2 c.hsep) fun t₁ ⟨hdi, h0, h1, h2, h3, h4, h5, hO, hN, hK,
+    hE, hL, hIn, ho₁, k₁⟩ mx₁ => ?_)
   have i₁ : InScr (stackArg s 2) ((stackArg s 3).toNat * 8) s.mem t₁.mem := InScr.of_outside ho₁ (by omega)
   have hz : slot (((s.gpr .rsi).toNat + 7) / 8) 8 ≤ (stackArg s 3).toNat * 8 := by unfold slot hdrBytes; omega
-  refine WP.seq (WP.mono (pdLoadWith_ok VG.Impl.Rsa.X86_64.Compare8.code @Compare8.code_ok (c.hs.congr k₁.2.2) hdi hz (by omega) (by omega) (by rw [hK, ofNat_toNat64])
+  refine WP.seq (WP.mono_mx (by decide +kernel) (pdLoadWith_ok VG.Impl.Rsa.X86_64.Compare8.code @Compare8.code_ok (c.hs.congr k₁.2.2) hdi hz (by omega) (by omega) (by rw [hK, ofNat_toNat64])
     hN (fun i hi => by rw [k₁.2.1, k₁.2.2]; exact c.hpr i hi) c.hps)
-    fun t₂ ⟨hN₂, hR₂, hW₂, hb₂, hz₂, f₂, k₂⟩ => ?_)
+    fun t₂ ⟨hN₂, hR₂, hW₂, hb₂, hz₂, f₂, k₂⟩ mx₂ => ?_)
   rw [pre_wv_entry c i₁ (by omega)] at hN₂
   rw [pre_wv_entry c i₁ (by omega)] at hR₂
   have x₂ := Fixed.of_frm f₂ (pdLoadRanges_fixed _)
@@ -90,8 +105,8 @@ theorem code_correct (M : Mont)
   refine WP.ite (!cb) (by simp [eval, hz₂]) (fun hb => ?_) (fun hb => ?_)
   · -- Values of no modulus.
     have hcf : cb = false := by simpa using hb
-    refine WP.mono (fail_ok hs₂ hdi₂ (by omega) (by omega) (by omega) hO₂ hK₂ hout₂ c.houts)
-      fun t hp => fin t 0 false hp fun nB hl hv hNv hRv => ?_
+    refine WP.mono_mx (by decide +kernel) (fail_ok hs₂ hdi₂ (by omega) (by omega) (by omega) hO₂ hK₂ hout₂ c.houts)
+      fun t hp mxt => ⟨fin t 0 false hp fun nB hl hv hNv hRv => ?_, by rw [mxt, mx₂, mx₁]⟩
     obtain ⟨hodd, -, hlo⟩ := valid_facts hv hk1
     have := checks_true (by omega) (hN₂.trans hNv) hodd hlo
       (by rw [hR₂, hRv]; exact Nat.mod_lt _ (by omega))
@@ -100,12 +115,31 @@ theorem code_correct (M : Mont)
   · have hct : cb = true := by simpa using hb
     rw [hct] at hcb
     obtain ⟨hodd, hN1, hRN⟩ := checks_facts (by omega) hcb
-    have hpre := pdPre_of c hdi hO hK hE hL hIn ho₁ k₁ hW₂ hb₂ f₂ k₂ hodd hN1 hRN hev
-    refine WP.mono (rest_ok M hpre) fun t ⟨y, hy, hp⟩ => fin t _ _ hp fun nB hl hv hNv hRv => ?_
+    have hpre := pdPre_of c hdi hO hK hE hL hIn ho₁ k₁ hW₂ hb₂ f₂ k₂ hodd hN1 (checks_big (by omega) hcb) hRN hev
+    refine WP.mono (hrest hpre) fun t ⟨y, hy, hp, mxt⟩ => ⟨fin t _ _ hp fun nB hl hv hNv hRv => ?_,
+      by rw [mxt, mx₂, mx₁]⟩
     rw [hN₂.trans hNv] at hy hp ⊢
     have hyX := hy (by
       rw [hR₂, hRv, Nat.mod_mod, ← Nat.pow_add, show 128 * (((s.gpr .rsi).toNat + 7) / 8) =
         64 * (((s.gpr .rsi).toNat + 7) / 8) + 64 * (((s.gpr .rsi).toNat + 7) / 8) by omega])
     exact ⟨rfl, by rw [hyX]⟩
+
+/-- The code after the check of `e`, for a valid `e`. -/
+theorem code_correct (M : Mont)
+    (hmx : (Folded.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true) (s : State) (h : pdContract.pre s)
+    (hev : Spec.Rsa.exponentValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)) = true) :
+    ∃ t s', Exec isa (Folded.code M.mm) s t s' ∧ abiPreserved s s' ∧ pdContract.post s s' := by
+  have h' := hmx
+  simp only [Folded.code, Code.allInstrs, Bool.and_eq_true] at h'
+  have hr := h'.2.2.2
+  have hmxp : (seqs (phases M)).allInstrs (fun i => !loadsMxcsr i) = true := by
+    have h'' := hr
+    rw [rest_eq, allInstrs_seqs_append _ (a := wordIn ++ restStepsWith VG.Impl.Rsa.X86_64.Compare8.code)
+        (b := phases M ++ wordOutStepsArr aY) (by simp [wordIn]) (by simp [phases]),
+      allInstrs_seqs_append _ (a := phases M) (b := wordOutStepsArr aY) (by simp [phases])
+        (by simp [wordOutStepsArr]), Bool.and_eq_true, Bool.and_eq_true] at h''
+    exact h''.2.1
+  exact codeWith_correct (Folded.rest M.mm) (fun hp => WP.mono_mx hr (rest_ok M hp hmxp)
+    fun t ⟨y, hy, hq⟩ mxt => ⟨y, hy, hq, by rw [mxt]⟩) s h hev
 
 end VG.Proof.Bignum.X86_64.FoldedPublic

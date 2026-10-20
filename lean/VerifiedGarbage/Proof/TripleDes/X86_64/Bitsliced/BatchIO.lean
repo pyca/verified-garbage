@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Copy
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Transpose
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Machine
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Pass
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 
 /-!
 # The start and end of a batch

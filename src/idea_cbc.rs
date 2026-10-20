@@ -3,16 +3,16 @@
 //!
 //! The block cipher work and the chaining are verified assembly:
 //! `vg_idea_expand_key` and `vg_idea_invert_key` (contracts
-//! `VG.Spec.Idea.expandKeyContract`, `invertKeyContract`) write the
-//! encryption and decryption subkeys, and `vg_idea_cbc_encrypt` and
-//! `vg_idea_cbc_decrypt` (`VG.Spec.Idea.cbcEncryptContract`,
-//! `cbcDecryptContract`) replace each block with its CBC encryption or
-//! decryption from the chaining value at `iv`, in constant time: their timing
-//! depends on none of the key, the chaining value and the data. Both are the
-//! modes' generic CBC, one block at a time: on x86, x86-64 and AArch64 over the
-//! scalar block code, on ARMv7 calling the verified `vg_idea_ecb` for each
-//! block. This module checks the lengths, holds the subkeys and keeps the
-//! chaining value to continue from: the last ciphertext block.
+//! `VG.Spec.Idea.expandKeyContract`, `invertKeyContract`) write the encryption
+//! and decryption subkeys, and `vg_idea_cbc_encrypt_chained` and
+//! `vg_idea_cbc_decrypt_chained` (`VG.Spec.Idea.cbcEncryptChainedContract`,
+//! `cbcDecryptChainedContract`) replace each block with its CBC encryption or
+//! decryption from the chaining value at `iv`, and the chaining value with the
+//! one to continue from, the last ciphertext block, in constant time: their
+//! timing depends on none of the key, the chaining value and the data. Both are
+//! the modes' generic CBC, one block at a time: on x86, x86-64 and AArch64 over
+//! the scalar block code, on ARMv7 calling the verified `vg_idea_ecb` for each
+//! block. This module checks the lengths and holds the subkeys.
 
 #![cfg(any(
     target_arch = "x86",
@@ -22,7 +22,7 @@
 ))]
 
 use crate::arch::idea::{vg_idea_expand_key, vg_idea_invert_key};
-use crate::arch::idea_cbc::{vg_idea_cbc_decrypt, vg_idea_cbc_encrypt};
+use crate::arch::idea_cbc::{vg_idea_cbc_decrypt_chained, vg_idea_cbc_encrypt_chained};
 use crate::zeroize::zeroize;
 
 /// Why an IDEA-CBC operation failed.
@@ -32,6 +32,13 @@ pub enum Error {
     InvalidKeyLength,
     /// The input length is not a multiple of eight bytes.
     IncompleteBlock,
+}
+
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid IDEA key length",
+        IncompleteBlock => "IDEA-CBC input is not a whole number of blocks",
+    }
 }
 
 /// An expanded IDEA key for CBC encryption and decryption: its encryption
@@ -69,21 +76,18 @@ impl IdeaCbc {
         if !buffer.len().is_multiple_of(8) {
             return Err(Error::IncompleteBlock);
         }
-        // SAFETY: the buffer holds `len / 8` whole blocks, and it, the
-        // chaining value and the schedule are separate valid objects of the
-        // sizes of the signature, none of them on the callee's stack. The
-        // function zeroes its working space on its own stack before
-        // returning.
+        // SAFETY: the buffer holds `len / 8` whole blocks, and it, the chaining
+        // value (which the function reads and replaces) and the schedule are
+        // separate valid objects of the sizes of the signature, none of them on
+        // the callee's stack. The function zeroes its working space on its own
+        // stack before returning.
         unsafe {
-            vg_idea_cbc_encrypt(
+            vg_idea_cbc_encrypt_chained(
                 &self.encrypt,
                 iv,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 8,
             );
-        }
-        if let Some(last) = buffer.rchunks_exact(8).next() {
-            iv.copy_from_slice(last);
         }
         Ok(())
     }
@@ -97,20 +101,15 @@ impl IdeaCbc {
         if !buffer.len().is_multiple_of(8) {
             return Err(Error::IncompleteBlock);
         }
-        let mut next = *iv;
-        if let Some(last) = buffer.rchunks_exact(8).next() {
-            next.copy_from_slice(last);
-        }
         // SAFETY: as in `encrypt`.
         unsafe {
-            vg_idea_cbc_decrypt(
+            vg_idea_cbc_decrypt_chained(
                 &self.decrypt,
                 iv,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 8,
             );
         }
-        *iv = next;
         Ok(())
     }
 }

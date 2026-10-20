@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillDep
 public import VerifiedGarbage.Proof.Argon2.AddressInput
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCall
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillState
+import VerifiedGarbage.Proof.Argon2.X86.Derive.Initial
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Argon2 on x86 (32-bit): the input of the address block

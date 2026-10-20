@@ -1,17 +1,15 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.X86.Inv
-import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
-import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
 public import VerifiedGarbage.Proof.Ecdsa.X86.Stages
-public import VerifiedGarbage.Proof.Weierstrass.X86.Rep
-public import VerifiedGarbage.Proof.Ecdsa.Sign
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Weierstrass.X86.Rep
+import VerifiedGarbage.Proof.Ecdsa.Sign
 import VerifiedGarbage.Proof.Ecdsa.X86.Finish
+import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
+import VerifiedGarbage.Proof.Ecdsa.X86.Scalar
+import VerifiedGarbage.Proof.Ecdsa.X86.Middle
+import VerifiedGarbage.Proof.Ecdsa.X86.Lays
+import VerifiedGarbage.Proof.Ecdsa.X86.Setup
 
 /-!
 # ECDSA on x86 (32-bit): the whole function

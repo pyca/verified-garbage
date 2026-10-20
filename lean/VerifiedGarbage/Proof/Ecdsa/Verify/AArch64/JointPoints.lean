@@ -1,26 +1,38 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPrep
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.ProjectiveFlags
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCache
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPrep
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.ProjectiveFlags
+public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
+public import VerifiedGarbage.Proof.P256.Linear.WeakCertificate
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticRR
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindowTiming
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.CachedHead
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedInit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticCachedHead
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafPrep
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCache
 import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticTable
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointGenerator
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyExtra
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-import VerifiedGarbage.Proof.Ecdh.AArch64.Main
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRaw
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFinish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
+import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 
 /-! ## `JointPrep` -/
 
@@ -293,216 +305,6 @@ theorem jointSetup_ok (hc : CfgOk p256) (hC : Law p256.C)
   exact ⟨it,st,gen,rd,wr,kt.sp.trans (ib.table.keep.sp.trans ia.keep.sp),un,ss⟩
 
 end VG.Proof.Ecdsa.Verify.AArch64
-
-end
-
-/-! ## `AllocatedPointsFrame` -/
-
-section
-
-namespace VG.Proof.Ecdsa.Verify.AArch64.Allocated
-open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
-open VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
-open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
-open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64 Spec.Weierstrass
-open VG.Impl.Ecdh.AArch64 (PX PY)
-
-def bodyRanges : List (Nat × Nat) := jointPointRanges++[(7104,576)]
-def pointRanges : List (Nat × Nat) := bodyRanges++[(7800,32)]
-
-theorem point_bounds : ∀ w∈pointRanges,w.1+w.2≤size := by decide +kernel
-theorem point_fixed : FixedOk p256 pointRanges := by unfold FixedOk; decide +kernel
-
-theorem save_same {s t : State} {base : Addr}
-    (hu : Outside base 7800 32 s.mem t.mem) :
-    ∀ i<45,sv p256 base t i=sv p256 base s i := by
-  intro i hi
-  apply hu.unch.wordsVal
-  · have h : ∀ i<45,∀ w∈[(7800,32)],p256.sl i+32≤w.1 ∨ w.1+w.2≤p256.sl i := by decide +kernel
-    exact h i hi
-  · have h : ∀ i<45,p256.sl i+32≤2^64 := by decide +kernel
-    exact h i hi
-
-/-- Saving extra registers touches no scalar, flag, peer or fixed verifier data. -/
-theorem mid_saved {s₀ s t : State} {base : Addr} {g : Reg → BitVec 64}
-    (h : Mid p256 s₀ base g s) (hk : KeepRegs [] s t)
-    (hu : Outside base 7800 32 s.mem t.mem) (hsy : t.syms=s.syms) :
-    Mid p256 s₀ base g t := by
-  have same := save_same hu
-  have whole : Unch base [(0,size)] s₀.mem t.mem := unch_whole (h.unch.trans hu.unch) (by
-    intro w hw
-    rcases List.mem_append.mp hw with hw | hw
-    · rw [List.mem_singleton.mp hw]; exact Nat.zero_add size |>.le
-    · rw [List.mem_singleton.mp hw]; decide)
-  refine ⟨h.scr.of_keepRegs hk (by simp),hk.wr.trans h.wr,hk.rd.trans h.rd,
-    h.fixed.unch (by decide) h.scr.nowrap (by unfold FixedOk; decide +kernel) hu.unch,
-    ?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,whole,hsy.trans h.syms,?_⟩
-  · rw [same RX (by decide)]; exact h.rx
-  · rw [same RY (by decide)]; exact h.ry
-  · rw [same RZ (by decide)]; exact h.rz
-  · rw [hu.unch.word (by decide +kernel) (by decide)]; exact h.flag
-  · rw [same PX (by decide)]; exact h.px_lt
-  · rw [same PY (by decide)]; exact h.py_lt
-  · rw [same PX (by decide)]; exact h.px
-  · rw [same PY (by decide)]; exact h.py
-  · rw [same RM' (by decide)]; exact h.rm_lt
-  · rw [same RM' (by decide)]; exact h.rm
-  · rw [same U (by decide)]; exact h.u_lt
-  · rw [same U (by decide)]; exact h.u
-  · rw [same V (by decide)]; exact h.v_lt
-  · rw [same V (by decide)]; exact h.v
-  · rw [same VG.Impl.Ecdsa.AArch64.K (by decide)]; exact h.k
-
-/-- The allocated body preserves the numerical inputs to the final check. -/
-theorem finalState_of_allocated {s₀ s t : State} {base : Addr} {g : Reg → BitVec 64}
-    (h : Mid p256 s₀ base g s) (hs : Scr t base size)
-    (hr : t.rd=s.rd) (hw : t.wr=s.wr) (hu : Unch base pointRanges s.mem t.mem)
-    (hx : sv p256 base t RX<p256.C.p) (hz : sv p256 base t RZ<p256.C.p) :
-    FinalState p256 s₀ base g t := by
-  have same (i : Nat) (hi : i∈[RM',VG.Impl.Ecdsa.AArch64.K]) : sv p256 base t i=sv p256 base s i := by
-    apply hu.wordsVal
-    · have he : ∀ i∈[RM',VG.Impl.Ecdsa.AArch64.K],∀ w∈pointRanges,p256.sl i+32≤w.1 ∨ w.1+w.2≤p256.sl i := by decide +kernel
-      exact he i hi
-    · have he : ∀ i∈[RM',VG.Impl.Ecdsa.AArch64.K],p256.sl i+32≤2^64 := by decide +kernel
-      exact he i hi
-  refine ⟨hs,hw.trans h.wr,hr.trans h.rd,h.fixed.unch (by decide) h.scr.nowrap point_fixed hu,
-    ?_,?_,?_,hz,?_,?_,hx⟩
-  · rw [hu.word (by decide +kernel) (by decide)]; exact h.flag
-  · rw [same RM' (by simp)]; exact h.rm_lt
-  · change toM _ _ (sv p256 base t RM')=_
-    rw [same RM' (by simp)]; exact h.rm
-  · exact unch_whole (h.unch.trans hu) (by
-      intro w hw
-      rcases List.mem_append.mp hw with hw | hw
-      · rw [List.mem_singleton.mp hw]; exact Nat.zero_add size |>.le
-      · exact point_bounds w hw)
-  · rw [same VG.Impl.Ecdsa.AArch64.K (by simp)]; exact h.k
-
-end VG.Proof.Ecdsa.Verify.AArch64.Allocated
-
-end
-
-/-! ## `AllocatedPoints` -/
-
-section
-
-namespace VG.Proof.Ecdsa.Verify.AArch64.Allocated
-open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
-open VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
-open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
-open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64 Spec.Weierstrass
-open VG.Impl.Ecdh.AArch64 (PX PY)
-
-structure BodyPost (base : Addr) (P : Point C) (s t : State) : Prop where
-  scr : Scr t base size
-  rd : t.rd=s.rd
-  wr : t.wr=s.wr
-  sp : t.sp=s.sp
-  unch : Unch base bodyRanges s.mem t.mem
-  bounds : ∀ i∈[RX,RY,RZ],sv p256 base t i<C.p
-  point : Rep C (tmv C 4 base t (p256.sl RX)) (tmv C 4 base t (p256.sl RY))
-    (tmv C 4 base t (p256.sl RZ)) P
-
-theorem body_ok (raw : RawCorrect) (hc : CfgOk p256) (hC : Law p256.C)
-    (hT : CombOkW p256.C 7 37 p256.tbl p256.start)
-    {s₀ s : State} {base : Addr} {g : Reg → BitVec 64} (hM : Mid p256 s₀ base g s)
-    (hTP : TblPre p256 s₀ (s₀.syms p256.tsym) base)
-    {P : Point p256.C} (hP : onCurve p256.C P=true)
-    (hrep : Rep p256.C (tmv p256.C 4 base s (p256.sl PX)) (tmv p256.C 4 base s (p256.sl PY))
-      (tmv p256.C 4 base s (p256.sl ONEP)) P) :
-    WP isa (Joint.points cfg P256Allocated.ops (p256.sl U) (p256.sl V)) s
-      (BodyPost base (add (mul (sv p256 base s U) (G C)) (mul (sv p256 base s V) P)) s) := by
-  have hm := unitMod_pow_two hc.p_odd (64*p256.n)
-  have hOne : K.one<C.p := by
-    change 2^256%C.p<C.p
-    exact Nat.mod_lt _ (by decide)
-  have hone : toM C.p (2^(64*K.M.n)) K.one=1 := toM_cmont hc.toBaseCfgOk 1
-  rw [Joint.points,Joint.window]
-  apply WP.assoc
-  apply WP.assoc
-  apply WP.assoc
-  refine WP.seq (WP.mono (WP.assoc' (jointSetup_ok hc hC hT hM hTP hP hrep)) fun a ia => ?_)
-  apply WP.assoc
-  refine WP.seq (WP.mono (initializedRun_ok raw hC hc.am3 hm hOne hc.onG hP
-    (show sv p256 base s U<2^256 from wordsVal_lt ..)
-    (show sv p256 base s V<2^256 from wordsVal_lt ..) ia.field ia.stable ia.generator)
-    fun b ⟨kb,ib,_⟩ => ?_)
-  refine WP.mono (jointFinish_ok (jacLay hc rfl) rfl (jacAligned p256 rfl) hm hC hOne hone
-    (by decide) ib) fun t ⟨kt,ut,_,lt,rep⟩ => ?_
-  have u1 : Unch base bodyRanges s.mem a.mem := ia.unch.mono (fun _ h => List.mem_append_left _ h)
-  have u2 : Unch base bodyRanges a.mem b.mem := kb.unch.cover (by decide +kernel)
-  have u3 : Unch base bodyRanges b.mem t.mem := ut.cover (by decide +kernel)
-  have un := ((u1.trans u2).mono (fun _ h => (List.mem_append.mp h).elim id id)).trans u3
-  refine ⟨ib.field.scr.of_keepRegs kt (by decide),kt.rd.trans (kb.regs.rd.trans ia.rd),
-    kt.wr.trans (kb.regs.wr.trans ia.wr),kt.sp.trans (kb.regs.sp.trans ia.sp),
-    un.mono (fun _ h => (List.mem_append.mp h).elim id id),?_,rep⟩
-  intro i hi
-  rcases List.mem_cons.mp hi with rfl|hi
-  · exact lt _ (by decide)
-  rcases List.mem_cons.mp hi with rfl|hi
-  · exact lt _ (by decide)
-  rcases List.mem_singleton.mp hi with rfl
-  exact lt _ (by decide)
-
-/-- Allocated point arithmetic restores its additional callee-saved registers and
-returns the same numerical and geometric verification postcondition. -/
-theorem points_ok (hc : CfgOk p256) (hC : Law p256.C)
-    (hT : CombOkW p256.C 7 37 p256.tbl p256.start)
-    {s₀ s : State} {base : Addr} {g : Reg → BitVec 64} (hM : Mid p256 s₀ base g s)
-    (hTP : TblPre p256 s₀ (s₀.syms p256.tsym) base)
-    {P : Point p256.C} (hP : onCurve p256.C P=true)
-    (hrep : Rep p256.C (tmv p256.C 4 base s (p256.sl PX)) (tmv p256.C 4 base s (p256.sl PY))
-      (tmv p256.C 4 base s (p256.sl ONEP)) P) :
-    WP isa P256Allocated.points s fun t => FinalState p256 s₀ base g t ∧
-      Rep C (tmv C 4 base t (p256.sl RX)) (tmv C 4 base t (p256.sl RY))
-        (tmv C 4 base t (p256.sl RZ))
-        (add (mul (sv p256 base s U) (G C)) (mul (sv p256 base s V) P)) ∧
-      ∀ r∈allocatedExtraRegs,t.gpr r=s.gpr r := by
-  unfold P256Allocated.points
-  apply WP.seq
-  refine WP.mono_syms (allocatedSave_ok hM.scr (by decide)) fun a ⟨ka,ua,sa⟩ sya => ?_
-  have ma := mid_saved hM ka ua sya
-  have repa : Rep C (tmv C 4 base a (p256.sl PX)) (tmv C 4 base a (p256.sl PY))
-      (tmv C 4 base a (p256.sl ONEP)) P := by
-    change Rep C (toM _ _ (sv p256 base a PX)) (toM _ _ (sv p256 base a PY))
-      (toM _ _ (sv p256 base a ONEP)) P
-    rw [save_same ua PX (by decide),save_same ua PY (by decide),save_same ua ONEP (by decide)]
-    exact hrep
-  refine WP.seq (WP.mono (body_ok raw_correct hc hC hT ma hTP hP repa) fun b hb => ?_)
-  have sb := allocatedSaved_keep sa hb.unch (by decide +kernel)
-  refine WP.mono (allocatedRestore_ok hb.scr (by decide) sb) fun t ⟨kt,extra⟩ => ?_
-  have whole : Unch base pointRanges s.mem t.mem := by
-    rw [kt.mem]
-    exact (ua.unch.trans hb.unch).mono (by
-      intro w hw
-      rcases List.mem_append.mp hw with hw|hw
-      · exact List.mem_append_right _ hw
-      · exact List.mem_append_left _ hw)
-  have bounds : ∀ i∈[RX,RY,RZ],sv p256 base t i<C.p := by simpa only [sv,kt.mem] using hb.bounds
-  refine ⟨finalState_of_allocated hM (hb.scr.of_keepRegs (show KeepRegs allocatedExtraRegs b t from ⟨kt.gpr,kt.rd,kt.wr,kt.sp⟩) (by decide))
-    (kt.rd.trans (hb.rd.trans ka.rd)) (kt.wr.trans (hb.wr.trans ka.wr)) whole
-    (bounds _ (by decide)) (bounds _ (by decide)),?_,extra⟩
-  have rep := hb.point
-  rw [save_same ua U (by decide),save_same ua V (by decide)] at rep
-  simpa only [tmv,kt.mem] using rep
-
-/-- The extra-register wrapper preserves precisely the verifier's untouched registers. -/
-theorem points_untouched (hc : CfgOk p256) (hC : Law p256.C)
-    (hT : CombOkW p256.C 7 37 p256.tbl p256.start)
-    {s₀ s : State} {g : Reg → BitVec 64} (hp : VPre p256 s₀)
-    (hm : Mid p256 s₀ (s₀.gpr .x3) g s) :
-    WP isa P256Allocated.points s fun t => ∀ r∈untouched,t.gpr r=s.gpr r := by
-  let P := peerPt p256 (s₀.mem (s₀.gpr .x0)=4) (keyX p256 s₀) (keyY p256 s₀)
-  have hP : onCurve p256.C P=true := peerPt_onCurve hc _ _ _
-  have hr : Rep p256.C (tmv p256.C 4 (s₀.gpr .x3) s (p256.sl PX))
-      (tmv p256.C 4 (s₀.gpr .x3) s (p256.sl PY))
-      (tmv p256.C 4 (s₀.gpr .x3) s (p256.sl ONEP)) P := by
-    have hOne : tmv p256.C 4 (s₀.gpr .x3) s (p256.sl ONEP)=1 := onep_tmv hc hm.fixed
-    rw [hOne]
-    exact peerPt_rep hC _ _ _ hm.px hm.py
-  exact WP.mono (points_ok hc hC hT hm hp.tbl hP hr) fun _ h r hr => h.2.2 r (by revert hr; revert r; decide)
-
-end VG.Proof.Ecdsa.Verify.AArch64.Allocated
 
 end
 

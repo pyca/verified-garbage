@@ -25,89 +25,89 @@ pub(crate) const VG_AES_CFB128_ENCRYPT_AESNI_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cfb128_encrypt_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]",
-        "mov DWORD PTR [eax+2064], ebx",
-        "mov DWORD PTR [eax+2068], esi",
-        "mov DWORD PTR [eax+2072], edi",
-        "mov DWORD PTR [eax+2076], ebp",
-        "mov esi, DWORD PTR [esp+16]",
-        "mov eax, DWORD PTR [esp+20]",
-        "test eax, eax",
-        "je 20f",
-        "22:",
-        "mov eax, DWORD PTR [esp+4]",
-        "mov ecx, DWORD PTR [esp+8]",
-        "mov ebx, DWORD PTR [esp+12]",
-        "mov edi, 1",
-        "mov ebp, DWORD PTR [esp+24]",
-        "push ebp",
-        "push edi",
-        "push ebx",
-        "push ecx",
-        "push eax",
-        "call {vg_aes_encrypt_blocks_aesni}",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "mov ebx, DWORD PTR [esp+12]",
-        "mov eax, DWORD PTR [esi]",
-        "mov ecx, DWORD PTR [ebx]",
-        "xor eax, ecx",
-        "mov DWORD PTR [esi], eax",
-        "mov eax, DWORD PTR [esi+4]",
-        "mov ecx, DWORD PTR [ebx+4]",
-        "xor eax, ecx",
-        "mov DWORD PTR [esi+4], eax",
-        "mov eax, DWORD PTR [esi+8]",
-        "mov ecx, DWORD PTR [ebx+8]",
-        "xor eax, ecx",
-        "mov DWORD PTR [esi+8], eax",
-        "mov eax, DWORD PTR [esi+12]",
-        "mov ecx, DWORD PTR [ebx+12]",
-        "xor eax, ecx",
-        "mov DWORD PTR [esi+12], eax",
-        "mov eax, 0",
-        "mov DWORD PTR [ebx], eax",
-        "mov DWORD PTR [ebx+4], eax",
-        "mov DWORD PTR [ebx+8], eax",
-        "mov DWORD PTR [ebx+12], eax",
-        "mov eax, DWORD PTR [ebx]",
-        "mov ecx, DWORD PTR [esi]",
-        "xor eax, ecx",
-        "mov DWORD PTR [ebx], eax",
-        "mov eax, DWORD PTR [ebx+4]",
-        "mov ecx, DWORD PTR [esi+4]",
-        "xor eax, ecx",
-        "mov DWORD PTR [ebx+4], eax",
-        "mov eax, DWORD PTR [ebx+8]",
-        "mov ecx, DWORD PTR [esi+8]",
-        "xor eax, ecx",
-        "mov DWORD PTR [ebx+8], eax",
-        "mov eax, DWORD PTR [ebx+12]",
-        "mov ecx, DWORD PTR [esi+12]",
-        "xor eax, ecx",
-        "mov DWORD PTR [ebx+12], eax",
-        "add esi, 16",
-        "mov eax, DWORD PTR [esp+20]",
-        "add eax, eax",
-        "add eax, eax",
-        "add eax, eax",
-        "add eax, eax",
-        "add eax, DWORD PTR [esp+16]",
-        "cmp esi, eax",
-        "jne 22b",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "mov eax, DWORD PTR [esp+24]",
-        "mov ebx, DWORD PTR [eax+2064]",
-        "mov esi, DWORD PTR [eax+2068]",
-        "mov edi, DWORD PTR [eax+2072]",
-        "mov ebp, DWORD PTR [eax+2076]",
-        "ret",
-        ".p2align 6",
+        r"mov eax, DWORD PTR [esp+24]
+mov DWORD PTR [eax+2064], ebx
+mov DWORD PTR [eax+2068], esi
+mov DWORD PTR [eax+2072], edi
+mov DWORD PTR [eax+2076], ebp
+mov esi, DWORD PTR [esp+16]
+mov eax, DWORD PTR [esp+20]
+test eax, eax
+je 20f
+22:
+mov eax, DWORD PTR [esp+4]
+mov ecx, DWORD PTR [esp+8]
+mov ebx, DWORD PTR [esp+12]
+mov edi, 1
+mov ebp, DWORD PTR [esp+24]
+push ebp
+push edi
+push ebx
+push ecx
+push eax
+call {vg_aes_encrypt_blocks_aesni}
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+mov ebx, DWORD PTR [esp+12]
+mov eax, DWORD PTR [esi]
+mov ecx, DWORD PTR [ebx]
+xor eax, ecx
+mov DWORD PTR [esi], eax
+mov eax, DWORD PTR [esi+4]
+mov ecx, DWORD PTR [ebx+4]
+xor eax, ecx
+mov DWORD PTR [esi+4], eax
+mov eax, DWORD PTR [esi+8]
+mov ecx, DWORD PTR [ebx+8]
+xor eax, ecx
+mov DWORD PTR [esi+8], eax
+mov eax, DWORD PTR [esi+12]
+mov ecx, DWORD PTR [ebx+12]
+xor eax, ecx
+mov DWORD PTR [esi+12], eax
+mov eax, 0
+mov DWORD PTR [ebx], eax
+mov DWORD PTR [ebx+4], eax
+mov DWORD PTR [ebx+8], eax
+mov DWORD PTR [ebx+12], eax
+mov eax, DWORD PTR [ebx]
+mov ecx, DWORD PTR [esi]
+xor eax, ecx
+mov DWORD PTR [ebx], eax
+mov eax, DWORD PTR [ebx+4]
+mov ecx, DWORD PTR [esi+4]
+xor eax, ecx
+mov DWORD PTR [ebx+4], eax
+mov eax, DWORD PTR [ebx+8]
+mov ecx, DWORD PTR [esi+8]
+xor eax, ecx
+mov DWORD PTR [ebx+8], eax
+mov eax, DWORD PTR [ebx+12]
+mov ecx, DWORD PTR [esi+12]
+xor eax, ecx
+mov DWORD PTR [ebx+12], eax
+add esi, 16
+mov eax, DWORD PTR [esp+20]
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, DWORD PTR [esp+16]
+cmp esi, eax
+jne 22b
+jmp 21f
+20:
+21:
+mov eax, DWORD PTR [esp+24]
+mov ebx, DWORD PTR [eax+2064]
+mov esi, DWORD PTR [eax+2068]
+mov edi, DWORD PTR [eax+2072]
+mov ebp, DWORD PTR [eax+2076]
+ret
+.p2align 6",
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
     )
 }
@@ -135,84 +135,84 @@ pub(crate) const VG_AES_CFB128_DECRYPT_AESNI_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cfb128_decrypt_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]",
-        "mov DWORD PTR [eax+2064], ebx",
-        "mov DWORD PTR [eax+2068], esi",
-        "mov DWORD PTR [eax+2072], edi",
-        "mov DWORD PTR [eax+2076], ebp",
-        "mov esi, DWORD PTR [esp+16]",
-        "mov eax, DWORD PTR [esp+20]",
-        "test eax, eax",
-        "je 20f",
-        "22:",
-        "mov eax, DWORD PTR [esp+4]",
-        "mov ecx, DWORD PTR [esp+8]",
-        "mov ebx, DWORD PTR [esp+12]",
-        "mov edi, 1",
-        "mov ebp, DWORD PTR [esp+24]",
-        "push ebp",
-        "push edi",
-        "push ebx",
-        "push ecx",
-        "push eax",
-        "call {vg_aes_encrypt_blocks_aesni}",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "mov ebx, DWORD PTR [esp+12]",
-        "mov eax, DWORD PTR [esi]",
-        "mov ecx, DWORD PTR [ebx]",
-        "xor eax, ecx",
-        "mov DWORD PTR [esi], eax",
-        "mov eax, DWORD PTR [esi+4]",
-        "mov ecx, DWORD PTR [ebx+4]",
-        "xor eax, ecx",
-        "mov DWORD PTR [esi+4], eax",
-        "mov eax, DWORD PTR [esi+8]",
-        "mov ecx, DWORD PTR [ebx+8]",
-        "xor eax, ecx",
-        "mov DWORD PTR [esi+8], eax",
-        "mov eax, DWORD PTR [esi+12]",
-        "mov ecx, DWORD PTR [ebx+12]",
-        "xor eax, ecx",
-        "mov DWORD PTR [esi+12], eax",
-        "mov eax, DWORD PTR [ebx]",
-        "mov ecx, DWORD PTR [esi]",
-        "xor eax, ecx",
-        "mov DWORD PTR [ebx], eax",
-        "mov eax, DWORD PTR [ebx+4]",
-        "mov ecx, DWORD PTR [esi+4]",
-        "xor eax, ecx",
-        "mov DWORD PTR [ebx+4], eax",
-        "mov eax, DWORD PTR [ebx+8]",
-        "mov ecx, DWORD PTR [esi+8]",
-        "xor eax, ecx",
-        "mov DWORD PTR [ebx+8], eax",
-        "mov eax, DWORD PTR [ebx+12]",
-        "mov ecx, DWORD PTR [esi+12]",
-        "xor eax, ecx",
-        "mov DWORD PTR [ebx+12], eax",
-        "add esi, 16",
-        "mov eax, DWORD PTR [esp+20]",
-        "add eax, eax",
-        "add eax, eax",
-        "add eax, eax",
-        "add eax, eax",
-        "add eax, DWORD PTR [esp+16]",
-        "cmp esi, eax",
-        "jne 22b",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "mov eax, DWORD PTR [esp+24]",
-        "mov ebx, DWORD PTR [eax+2064]",
-        "mov esi, DWORD PTR [eax+2068]",
-        "mov edi, DWORD PTR [eax+2072]",
-        "mov ebp, DWORD PTR [eax+2076]",
-        "ret",
-        ".p2align 6",
+        r"mov eax, DWORD PTR [esp+24]
+mov DWORD PTR [eax+2064], ebx
+mov DWORD PTR [eax+2068], esi
+mov DWORD PTR [eax+2072], edi
+mov DWORD PTR [eax+2076], ebp
+mov esi, DWORD PTR [esp+16]
+mov eax, DWORD PTR [esp+20]
+test eax, eax
+je 20f
+22:
+mov eax, DWORD PTR [esp+4]
+mov ecx, DWORD PTR [esp+8]
+mov ebx, DWORD PTR [esp+12]
+mov edi, 1
+mov ebp, DWORD PTR [esp+24]
+push ebp
+push edi
+push ebx
+push ecx
+push eax
+call {vg_aes_encrypt_blocks_aesni}
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+mov ebx, DWORD PTR [esp+12]
+mov eax, DWORD PTR [esi]
+mov ecx, DWORD PTR [ebx]
+xor eax, ecx
+mov DWORD PTR [esi], eax
+mov eax, DWORD PTR [esi+4]
+mov ecx, DWORD PTR [ebx+4]
+xor eax, ecx
+mov DWORD PTR [esi+4], eax
+mov eax, DWORD PTR [esi+8]
+mov ecx, DWORD PTR [ebx+8]
+xor eax, ecx
+mov DWORD PTR [esi+8], eax
+mov eax, DWORD PTR [esi+12]
+mov ecx, DWORD PTR [ebx+12]
+xor eax, ecx
+mov DWORD PTR [esi+12], eax
+mov eax, DWORD PTR [ebx]
+mov ecx, DWORD PTR [esi]
+xor eax, ecx
+mov DWORD PTR [ebx], eax
+mov eax, DWORD PTR [ebx+4]
+mov ecx, DWORD PTR [esi+4]
+xor eax, ecx
+mov DWORD PTR [ebx+4], eax
+mov eax, DWORD PTR [ebx+8]
+mov ecx, DWORD PTR [esi+8]
+xor eax, ecx
+mov DWORD PTR [ebx+8], eax
+mov eax, DWORD PTR [ebx+12]
+mov ecx, DWORD PTR [esi+12]
+xor eax, ecx
+mov DWORD PTR [ebx+12], eax
+add esi, 16
+mov eax, DWORD PTR [esp+20]
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, DWORD PTR [esp+16]
+cmp esi, eax
+jne 22b
+jmp 21f
+20:
+21:
+mov eax, DWORD PTR [esp+24]
+mov ebx, DWORD PTR [eax+2064]
+mov esi, DWORD PTR [eax+2068]
+mov edi, DWORD PTR [eax+2072]
+mov ebp, DWORD PTR [eax+2076]
+ret
+.p2align 6",
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
     )
 }
@@ -236,89 +236,89 @@ pub(crate) unsafe extern "C" fn vg_aes_cfb128_decrypt_aesni(schedule: *const [u8
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cfb128_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]",
-        "mov DWORD PTR [eax+2064], ebx",
-        "mov DWORD PTR [eax+2068], esi",
-        "mov DWORD PTR [eax+2072], edi",
-        "mov DWORD PTR [eax+2076], ebp",
-        "mov esi, DWORD PTR [esp+16]",
-        "mov eax, DWORD PTR [esp+20]",
-        "test eax, eax",
-        "je 20f",
-        "22:",
-        "mov eax, DWORD PTR [esp+4]",
-        "mov ecx, DWORD PTR [esp+8]",
-        "mov ebx, DWORD PTR [esp+12]",
-        "mov edi, 1",
-        "mov ebp, DWORD PTR [esp+24]",
-        "push ebp",
-        "push edi",
-        "push ebx",
-        "push ecx",
-        "push eax",
-        "call {vg_aes_encrypt_blocks}",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "mov ebx, DWORD PTR [esp+12]",
-        "mov eax, DWORD PTR [esi]",
-        "mov ecx, DWORD PTR [ebx]",
-        "xor eax, ecx",
-        "mov DWORD PTR [esi], eax",
-        "mov eax, DWORD PTR [esi+4]",
-        "mov ecx, DWORD PTR [ebx+4]",
-        "xor eax, ecx",
-        "mov DWORD PTR [esi+4], eax",
-        "mov eax, DWORD PTR [esi+8]",
-        "mov ecx, DWORD PTR [ebx+8]",
-        "xor eax, ecx",
-        "mov DWORD PTR [esi+8], eax",
-        "mov eax, DWORD PTR [esi+12]",
-        "mov ecx, DWORD PTR [ebx+12]",
-        "xor eax, ecx",
-        "mov DWORD PTR [esi+12], eax",
-        "mov eax, 0",
-        "mov DWORD PTR [ebx], eax",
-        "mov DWORD PTR [ebx+4], eax",
-        "mov DWORD PTR [ebx+8], eax",
-        "mov DWORD PTR [ebx+12], eax",
-        "mov eax, DWORD PTR [ebx]",
-        "mov ecx, DWORD PTR [esi]",
-        "xor eax, ecx",
-        "mov DWORD PTR [ebx], eax",
-        "mov eax, DWORD PTR [ebx+4]",
-        "mov ecx, DWORD PTR [esi+4]",
-        "xor eax, ecx",
-        "mov DWORD PTR [ebx+4], eax",
-        "mov eax, DWORD PTR [ebx+8]",
-        "mov ecx, DWORD PTR [esi+8]",
-        "xor eax, ecx",
-        "mov DWORD PTR [ebx+8], eax",
-        "mov eax, DWORD PTR [ebx+12]",
-        "mov ecx, DWORD PTR [esi+12]",
-        "xor eax, ecx",
-        "mov DWORD PTR [ebx+12], eax",
-        "add esi, 16",
-        "mov eax, DWORD PTR [esp+20]",
-        "add eax, eax",
-        "add eax, eax",
-        "add eax, eax",
-        "add eax, eax",
-        "add eax, DWORD PTR [esp+16]",
-        "cmp esi, eax",
-        "jne 22b",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "mov eax, DWORD PTR [esp+24]",
-        "mov ebx, DWORD PTR [eax+2064]",
-        "mov esi, DWORD PTR [eax+2068]",
-        "mov edi, DWORD PTR [eax+2072]",
-        "mov ebp, DWORD PTR [eax+2076]",
-        "ret",
-        ".p2align 6",
+        r"mov eax, DWORD PTR [esp+24]
+mov DWORD PTR [eax+2064], ebx
+mov DWORD PTR [eax+2068], esi
+mov DWORD PTR [eax+2072], edi
+mov DWORD PTR [eax+2076], ebp
+mov esi, DWORD PTR [esp+16]
+mov eax, DWORD PTR [esp+20]
+test eax, eax
+je 20f
+22:
+mov eax, DWORD PTR [esp+4]
+mov ecx, DWORD PTR [esp+8]
+mov ebx, DWORD PTR [esp+12]
+mov edi, 1
+mov ebp, DWORD PTR [esp+24]
+push ebp
+push edi
+push ebx
+push ecx
+push eax
+call {vg_aes_encrypt_blocks}
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+mov ebx, DWORD PTR [esp+12]
+mov eax, DWORD PTR [esi]
+mov ecx, DWORD PTR [ebx]
+xor eax, ecx
+mov DWORD PTR [esi], eax
+mov eax, DWORD PTR [esi+4]
+mov ecx, DWORD PTR [ebx+4]
+xor eax, ecx
+mov DWORD PTR [esi+4], eax
+mov eax, DWORD PTR [esi+8]
+mov ecx, DWORD PTR [ebx+8]
+xor eax, ecx
+mov DWORD PTR [esi+8], eax
+mov eax, DWORD PTR [esi+12]
+mov ecx, DWORD PTR [ebx+12]
+xor eax, ecx
+mov DWORD PTR [esi+12], eax
+mov eax, 0
+mov DWORD PTR [ebx], eax
+mov DWORD PTR [ebx+4], eax
+mov DWORD PTR [ebx+8], eax
+mov DWORD PTR [ebx+12], eax
+mov eax, DWORD PTR [ebx]
+mov ecx, DWORD PTR [esi]
+xor eax, ecx
+mov DWORD PTR [ebx], eax
+mov eax, DWORD PTR [ebx+4]
+mov ecx, DWORD PTR [esi+4]
+xor eax, ecx
+mov DWORD PTR [ebx+4], eax
+mov eax, DWORD PTR [ebx+8]
+mov ecx, DWORD PTR [esi+8]
+xor eax, ecx
+mov DWORD PTR [ebx+8], eax
+mov eax, DWORD PTR [ebx+12]
+mov ecx, DWORD PTR [esi+12]
+xor eax, ecx
+mov DWORD PTR [ebx+12], eax
+add esi, 16
+mov eax, DWORD PTR [esp+20]
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, DWORD PTR [esp+16]
+cmp esi, eax
+jne 22b
+jmp 21f
+20:
+21:
+mov eax, DWORD PTR [esp+24]
+mov ebx, DWORD PTR [eax+2064]
+mov esi, DWORD PTR [eax+2068]
+mov edi, DWORD PTR [eax+2072]
+mov ebp, DWORD PTR [eax+2076]
+ret
+.p2align 6",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
@@ -342,84 +342,84 @@ pub(crate) unsafe extern "C" fn vg_aes_cfb128_encrypt(schedule: *const [u8; 240]
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cfb128_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]",
-        "mov DWORD PTR [eax+2064], ebx",
-        "mov DWORD PTR [eax+2068], esi",
-        "mov DWORD PTR [eax+2072], edi",
-        "mov DWORD PTR [eax+2076], ebp",
-        "mov esi, DWORD PTR [esp+16]",
-        "mov eax, DWORD PTR [esp+20]",
-        "test eax, eax",
-        "je 20f",
-        "22:",
-        "mov eax, DWORD PTR [esp+4]",
-        "mov ecx, DWORD PTR [esp+8]",
-        "mov ebx, DWORD PTR [esp+12]",
-        "mov edi, 1",
-        "mov ebp, DWORD PTR [esp+24]",
-        "push ebp",
-        "push edi",
-        "push ebx",
-        "push ecx",
-        "push eax",
-        "call {vg_aes_encrypt_blocks}",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "mov ebx, DWORD PTR [esp+12]",
-        "mov eax, DWORD PTR [esi]",
-        "mov ecx, DWORD PTR [ebx]",
-        "xor eax, ecx",
-        "mov DWORD PTR [esi], eax",
-        "mov eax, DWORD PTR [esi+4]",
-        "mov ecx, DWORD PTR [ebx+4]",
-        "xor eax, ecx",
-        "mov DWORD PTR [esi+4], eax",
-        "mov eax, DWORD PTR [esi+8]",
-        "mov ecx, DWORD PTR [ebx+8]",
-        "xor eax, ecx",
-        "mov DWORD PTR [esi+8], eax",
-        "mov eax, DWORD PTR [esi+12]",
-        "mov ecx, DWORD PTR [ebx+12]",
-        "xor eax, ecx",
-        "mov DWORD PTR [esi+12], eax",
-        "mov eax, DWORD PTR [ebx]",
-        "mov ecx, DWORD PTR [esi]",
-        "xor eax, ecx",
-        "mov DWORD PTR [ebx], eax",
-        "mov eax, DWORD PTR [ebx+4]",
-        "mov ecx, DWORD PTR [esi+4]",
-        "xor eax, ecx",
-        "mov DWORD PTR [ebx+4], eax",
-        "mov eax, DWORD PTR [ebx+8]",
-        "mov ecx, DWORD PTR [esi+8]",
-        "xor eax, ecx",
-        "mov DWORD PTR [ebx+8], eax",
-        "mov eax, DWORD PTR [ebx+12]",
-        "mov ecx, DWORD PTR [esi+12]",
-        "xor eax, ecx",
-        "mov DWORD PTR [ebx+12], eax",
-        "add esi, 16",
-        "mov eax, DWORD PTR [esp+20]",
-        "add eax, eax",
-        "add eax, eax",
-        "add eax, eax",
-        "add eax, eax",
-        "add eax, DWORD PTR [esp+16]",
-        "cmp esi, eax",
-        "jne 22b",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "mov eax, DWORD PTR [esp+24]",
-        "mov ebx, DWORD PTR [eax+2064]",
-        "mov esi, DWORD PTR [eax+2068]",
-        "mov edi, DWORD PTR [eax+2072]",
-        "mov ebp, DWORD PTR [eax+2076]",
-        "ret",
-        ".p2align 6",
+        r"mov eax, DWORD PTR [esp+24]
+mov DWORD PTR [eax+2064], ebx
+mov DWORD PTR [eax+2068], esi
+mov DWORD PTR [eax+2072], edi
+mov DWORD PTR [eax+2076], ebp
+mov esi, DWORD PTR [esp+16]
+mov eax, DWORD PTR [esp+20]
+test eax, eax
+je 20f
+22:
+mov eax, DWORD PTR [esp+4]
+mov ecx, DWORD PTR [esp+8]
+mov ebx, DWORD PTR [esp+12]
+mov edi, 1
+mov ebp, DWORD PTR [esp+24]
+push ebp
+push edi
+push ebx
+push ecx
+push eax
+call {vg_aes_encrypt_blocks}
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+mov ebx, DWORD PTR [esp+12]
+mov eax, DWORD PTR [esi]
+mov ecx, DWORD PTR [ebx]
+xor eax, ecx
+mov DWORD PTR [esi], eax
+mov eax, DWORD PTR [esi+4]
+mov ecx, DWORD PTR [ebx+4]
+xor eax, ecx
+mov DWORD PTR [esi+4], eax
+mov eax, DWORD PTR [esi+8]
+mov ecx, DWORD PTR [ebx+8]
+xor eax, ecx
+mov DWORD PTR [esi+8], eax
+mov eax, DWORD PTR [esi+12]
+mov ecx, DWORD PTR [ebx+12]
+xor eax, ecx
+mov DWORD PTR [esi+12], eax
+mov eax, DWORD PTR [ebx]
+mov ecx, DWORD PTR [esi]
+xor eax, ecx
+mov DWORD PTR [ebx], eax
+mov eax, DWORD PTR [ebx+4]
+mov ecx, DWORD PTR [esi+4]
+xor eax, ecx
+mov DWORD PTR [ebx+4], eax
+mov eax, DWORD PTR [ebx+8]
+mov ecx, DWORD PTR [esi+8]
+xor eax, ecx
+mov DWORD PTR [ebx+8], eax
+mov eax, DWORD PTR [ebx+12]
+mov ecx, DWORD PTR [esi+12]
+xor eax, ecx
+mov DWORD PTR [ebx+12], eax
+add esi, 16
+mov eax, DWORD PTR [esp+20]
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, DWORD PTR [esp+16]
+cmp esi, eax
+jne 22b
+jmp 21f
+20:
+21:
+mov eax, DWORD PTR [esp+24]
+mov ebx, DWORD PTR [eax+2064]
+mov esi, DWORD PTR [eax+2068]
+mov edi, DWORD PTR [eax+2072]
+mov ebp, DWORD PTR [eax+2076]
+ret
+.p2align 6",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }

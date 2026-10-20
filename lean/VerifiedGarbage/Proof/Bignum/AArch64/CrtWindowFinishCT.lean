@@ -1,11 +1,29 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinish
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinish
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCoreCT
-public meta import VerifiedGarbage.Impl.Bignum.AArch64.Core
-public meta import VerifiedGarbage.Impl.Bignum.CrtLayout
-public meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowTail
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinishSquare
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBuild
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinish
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCoreCT
+meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowTail
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinishSquare
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBuild
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! The final partial window branches and loops only on its public bit count. -/
 

@@ -1,19 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Fn
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Fn
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.CT
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.CT
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
+import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Fn
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.CT
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
+meta import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
 
 
 /-!

@@ -1,21 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
-import VerifiedGarbage.Impl.X25519.X86_64.Adx
-meta import VerifiedGarbage.Impl.X25519.X86_64.Adx
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
-meta import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
 public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
-meta import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
+public import VerifiedGarbage.Proof.X25519.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
+meta import VerifiedGarbage.Proof.X25519.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-! Checked literals for the comb variant (its doublings' calls inlined, as its constant-time proof
 reads it) and the registered code. -/

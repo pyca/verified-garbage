@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Contract
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.Core
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrSq
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.AArch64.MontFnVerified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.CrtExp
+import VerifiedGarbage.Proof.Rsa.Ranges
 
 /-! # The callable precondition supplies the shared round's context -/
 

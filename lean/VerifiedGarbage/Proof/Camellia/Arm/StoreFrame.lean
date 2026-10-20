@@ -2,13 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Aes.Arm.Sbox
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # A block that stores only at given offsets of `sb` (ARMv7)
@@ -34,7 +31,7 @@ and does not write `sb`. -/
 def storesIn (lo hi : Nat) : Instr → Bool
   | .str _ n d => n == sb && decide (lo ≤ d) && decide (d + 4 ≤ hi)
   | .strb .. | .push _ | .pop .. | .alloc _ | .free _ => false
-  | i => dstOf i != some sb
+  | i => !clobbers i sb
 
 /-- The bytes `[sb + lo, sb + hi)`. -/
 abbrev storeRegion (b : BitVec 32) (lo hi : Nat) : Region := ⟨State.addr b + BitVec.ofNat 64 lo, hi - lo⟩
@@ -70,7 +67,7 @@ theorem exec_storesIn {lo hi : Nat} {i : Instr} {s s' : State} (hs : storesIn lo
   | _ =>
     first
     | (simp [storesIn] at hs; done)
-    | (refine ⟨exec_gpr (fun e => by simp_all [storesIn]) h, ?_⟩
+    | (refine ⟨exec_gpr (by simp_all [storesIn]) h, ?_⟩
        rw [exec_mem_of_noStore h (fun _ _ _ e => nomatch e) (fun _ _ _ e => nomatch e)]
        exact Frame.refl _ _)
 

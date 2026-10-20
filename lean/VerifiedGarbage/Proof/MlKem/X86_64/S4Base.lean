@@ -3,11 +3,10 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.SampleNtt
 import VerifiedGarbage.Proof.Sha3.X86_64.X4.Bytes
 public import VerifiedGarbage.Impl.MlKem.X86_64.Sample4
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, the layout
@@ -24,6 +23,33 @@ namespace VG.Proof.MlKem.X86_64
 open VG VG.X86_64 VG.Impl.MlKem.X86_64
 open VG.Spec.MlKem
 open VG.Spec.Sha3 (bytesAt)
+
+/-- Polynomial `k` of four at `a`, with 16-bit coefficients if `w16`: from byte `pBytes w16 * k`. -/
+abbrev poly4W (w16 : Bool) (a : Addr) (k : Nat) : Addr := a + BitVec.ofNat 64 (Sample4.pBytes w16 * k)
+
+/-- `vg_mlkem_sample_ntt4_avx2(seeds = rdi, a = rsi, scratch = rdx) -> eax`, or
+`vg_mlkem16_sample_ntt4_avx2` with 16-bit coefficients if `w16`, with 24
+bytes of stack below `rsp`. -/
+def sample4KW (w16 : Bool) : Contract isa where
+  pre s :=
+    s.rd = [⟨s.gpr .rdi, 136⟩] ∧ s.wr = [⟨s.gpr .rsi, 4 * Sample4.pBytes w16⟩, ⟨s.gpr .rdx, 8192⟩] ∧
+    Region.Disjoint ⟨s.gpr .rdi, 136⟩ ⟨s.gpr .rsi, 4 * Sample4.pBytes w16⟩ ∧
+    Region.Disjoint ⟨s.gpr .rdi, 136⟩ ⟨s.gpr .rdx, 8192⟩ ∧
+    Region.Disjoint ⟨s.gpr .rsi, 4 * Sample4.pBytes w16⟩ ⟨s.gpr .rdx, 8192⟩ ∧
+    (retR s).Disjoint ⟨s.gpr .rdi, 136⟩ ∧ (retR s).Disjoint ⟨s.gpr .rsi, 4 * Sample4.pBytes w16⟩ ∧
+    (retR s).Disjoint ⟨s.gpr .rdx, 8192⟩ ∧
+    (below (s.gpr .rsp) 24).Disjoint ⟨s.gpr .rdi, 136⟩ ∧
+    (below (s.gpr .rsp) 24).Disjoint ⟨s.gpr .rsi, 4 * Sample4.pBytes w16⟩ ∧
+    (below (s.gpr .rsp) 24).Disjoint ⟨s.gpr .rdx, 8192⟩ ∧
+    (s.gpr .rsi).toNat + 4 * Sample4.pBytes w16 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 8192 ≤ 2 ^ 64
+  post s s' :=
+    (s'.gpr .rax).setWidth 32 =
+        (if (List.range 4).all fun k => (sampleNTT minIterations (seed4 s.mem (s.gpr .rdi) k)).isSome
+          then 1 else 0) ∧
+      ∀ k < 4, ∀ f, sampleNTT minIterations (seed4 s.mem (s.gpr .rdi) k) = some f →
+        PolyIsW (cw w16) s'.mem (poly4W w16 (s.gpr .rsi) k) f
+  pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
+    s₁.gpr .rsp = s₂.gpr .rsp ∧ bytesAt s₁.mem (s₁.gpr .rdi) 136 = bytesAt s₂.mem (s₂.gpr .rdi) 136
 
 /-- `vg_mlkem_sample_ntt4_avx2(seeds = rdi, a = rsi, scratch = rdx) -> eax`,
 with 24 bytes of stack below `rsp`. -/
@@ -46,9 +72,14 @@ def sample4K : Contract isa where
   pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rsp = s₂.gpr .rsp ∧ bytesAt s₁.mem (s₁.gpr .rdi) 136 = bytesAt s₂.mem (s₂.gpr .rdi) 136
 
+/-- With 32-bit coefficients, `sample4KW` is `sample4K`. -/
+theorem sample4K_eq : sample4K = sample4KW false := rfl
+
 namespace S4
 
 open VG.Impl.MlKem.X86_64.Sample4
+
+variable {w16 : Bool}
 
 section
 variable (σ : State)
@@ -58,35 +89,50 @@ abbrev scr : Addr := σ.gpr .rdx
 /-- Seed `k`. -/
 abbrev B (k : Nat) : List Byte := seed4 σ.mem (sd σ) k
 abbrev sdR : Region := ⟨sd σ, 136⟩
-abbrev aR : Region := ⟨aP σ, 4096⟩
 abbrev scrR : Region := ⟨scr σ, 8192⟩
 abbrev stkR : Region := below (σ.gpr .rsp) 24
 /-- `scratch + off`. -/
 abbrev at' (off : Nat) : Addr := scr σ + BitVec.ofNat 64 off
 end
 
+/-- `omega` after splitting on the width. -/
+macro "wd_omega" : tactic => `(tactic| (cases ‹Bool› <;> (try simp only [pBytes, cw, Bool.false_eq_true, ↓reduceIte] at *) <;> omega))
+
+/-- The four polynomials. -/
+abbrev aRW (w16 : Bool) (σ : State) : Region := ⟨aP σ, 4 * pBytes w16⟩
+
+/-- The four polynomials of 32-bit coefficients. -/
+abbrev aR (σ : State) : Region := ⟨aP σ, 4096⟩
+
+@[simp] theorem aRW_false (σ : State) : aRW false σ = aR σ := rfl
+
 /-- The precondition, by name. -/
-structure Pre (σ : State) : Prop where
+structure PreW (w16 : Bool) (σ : State) : Prop where
   rd : σ.rd = [sdR σ]
-  wr : σ.wr = [aR σ, scrR σ]
-  sd_a : (sdR σ).Disjoint (aR σ)
+  wr : σ.wr = [aRW w16 σ, scrR σ]
+  sd_a : (sdR σ).Disjoint (aRW w16 σ)
   sd_scr : (sdR σ).Disjoint (scrR σ)
-  a_scr : (aR σ).Disjoint (scrR σ)
+  a_scr : (aRW w16 σ).Disjoint (scrR σ)
   ret_sd : (retR σ).Disjoint (sdR σ)
-  ret_a : (retR σ).Disjoint (aR σ)
+  ret_a : (retR σ).Disjoint (aRW w16 σ)
   ret_scr : (retR σ).Disjoint (scrR σ)
   stk_sd : (stkR σ).Disjoint (sdR σ)
-  stk_a : (stkR σ).Disjoint (aR σ)
+  stk_a : (stkR σ).Disjoint (aRW w16 σ)
   stk_scr : (stkR σ).Disjoint (scrR σ)
-  a_lt : (aP σ).toNat + 4096 ≤ 2 ^ 64
+  a_lt : (aP σ).toNat + 4 * pBytes w16 ≤ 2 ^ 64
   scr_lt : (scr σ).toNat + 8192 ≤ 2 ^ 64
 
-theorem pre_of {σ : State} (h : sample4K.pre σ) : Pre σ :=
+/-- The precondition of `vg_mlkem_sample_ntt4`'s proofs, with 32-bit coefficients. -/
+abbrev Pre := PreW false
+
+theorem preW_of {σ : State} (h : (sample4KW w16).pre σ) : PreW w16 σ :=
   let ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := h
   ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩
 
+theorem pre_of {σ : State} (h : sample4K.pre σ) : Pre σ := preW_of (w16 := false) h
+
 /-- What holds between the pieces. -/
-structure Env (σ s : State) : Prop where
+structure EnvW (w16 : Bool) (σ s : State) : Prop where
   rd : s.rd = σ.rd
   wr : s.wr = σ.wr
   rbx : s.gpr .rbx = scr σ
@@ -95,17 +141,20 @@ structure Env (σ s : State) : Prop where
   rsp : s.gpr .rsp = σ.gpr .rsp
   r15 : s.gpr .r15 = σ.gpr .r15
   saved : ∀ i < 5, s.mem.readW (at' σ (oSave + 8 * i)) 64 = σ.gpr (saved.getD i .rbx)
-  frame : Frame [aR σ, scrR σ, stkR σ] σ.mem s.mem
+  frame : Frame [aRW w16 σ, scrR σ, stkR σ] σ.mem s.mem
+
+/-- What holds between the pieces, with 32-bit coefficients. -/
+abbrev Env := EnvW false
 
 section
-variable {σ : State} (hp : Pre σ)
+variable {σ : State} (hp : PreW w16 σ)
 include hp
 
 omit hp in
 theorem sub_scr {a n : Nat} (h : a + n ≤ 8192) : Region.Sub ⟨at' σ a, n⟩ (scrR σ) := Offset.sub_base _ h
 
 omit hp in
-theorem sub_a {a n : Nat} (h : a + n ≤ 4096) : Region.Sub ⟨aP σ + BitVec.ofNat 64 a, n⟩ (aR σ) :=
+theorem sub_a {a n : Nat} (h : a + n ≤ 4 * pBytes w16) : Region.Sub ⟨aP σ + BitVec.ofNat 64 a, n⟩ (aRW w16 σ) :=
   Offset.sub_base _ h
 
 theorem in_scr {s : State} (hw : s.wr = σ.wr) {a n : Nat} (h : a + n ≤ 8192) : InRegions s.wr (at' σ a) n := by
@@ -120,12 +169,12 @@ theorem in_sd' {s : State} (hr : s.rd = σ.rd) (hw : s.wr = σ.wr) {a n : Nat} (
   rw [hr, hw, hp.rd, hp.wr]; exact ⟨sdR σ, by simp, Offset.contains_base _ h (by omega)⟩
 
 /-- The seeds are not written. -/
-theorem seeds_frame {m : Mem} (hf : Frame [aR σ, scrR σ, stkR σ] σ.mem m) {a : Nat} (ha : a < 136) :
+theorem seeds_frame {m : Mem} (hf : Frame [aRW w16 σ, scrR σ, stkR σ] σ.mem m) {a : Nat} (ha : a < 136) :
     m (sd σ + BitVec.ofNat 64 a) = σ.mem (sd σ + BitVec.ofNat 64 a) :=
   hf.bytes (R := sdR σ) (by simpa using ⟨hp.sd_a, hp.sd_scr, hp.stk_sd.symm⟩) (by simp) ha
 
 /-- Byte `a` of seed `k`. -/
-theorem seed_byte {m : Mem} (hf : Frame [aR σ, scrR σ, stkR σ] σ.mem m) {k a : Nat} (hk : k < 4) (ha : a < 34) :
+theorem seed_byte {m : Mem} (hf : Frame [aRW w16 σ, scrR σ, stkR σ] σ.mem m) {k a : Nat} (hk : k < 4) (ha : a < 34) :
     m (sd σ + BitVec.ofNat 64 (34 * k + a)) = (B σ k).getD a 0 := by
   rw [seeds_frame hp hf (by omega), B, seed4, ← Offset.add_add]
   simp [bytesAt, ha]
@@ -144,11 +193,14 @@ theorem pro_eq : pro = [.store (at_ .rdx 4384) .rbx, .store (at_ .rdx 4392) .rbp
     .mov .r13 (.reg .rsi), .mov32 .r14 (.imm 1)] := rfl
 
 /-- After the prologue. -/
-structure I0 (σ s : State) : Prop where
-  env : Env σ s
+structure I0W (w16 : Bool) (σ s : State) : Prop where
+  env : EnvW w16 σ s
   r14 : s.gpr .r14 = 1
 
-theorem pro_ok {σ : State} (hp : Pre σ) : WP isa (.block pro) σ (I0 σ) := by
+/-- `I0W` with 32-bit coefficients. -/
+abbrev I0 := I0W false
+
+theorem pro_ok {σ : State} (hp : PreW w16 σ) : WP isa (.block pro) σ (I0W w16 σ) := by
   rw [pro_eq]
   refine WP.mono (WP.keep [.rbx, .r12, .r13, .r14] (Q := fun s =>
       s.mem = ((((σ.mem.writeW (at' σ 4384) (σ.gpr .rbx)).writeW (at' σ 4392) (σ.gpr .rbp)).writeW (at' σ 4400)

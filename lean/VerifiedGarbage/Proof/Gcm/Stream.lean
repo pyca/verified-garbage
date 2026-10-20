@@ -1,11 +1,10 @@
 module
+public import VerifiedGarbage.Spec.Gcm
 
 import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.Gcm.Spec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # GCM: GHASH and counter mode over a message given in pieces

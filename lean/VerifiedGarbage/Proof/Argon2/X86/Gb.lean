@@ -1,17 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.Blake2.X86.CompressB.G
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Blake2.X86.CompressB.G
 public import VerifiedGarbage.Proof.Argon2.Spec
 public import VerifiedGarbage.Impl.Argon2.X86.Compress
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Proof.Sha512.X86.Rounds
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 @[expose] public section
 

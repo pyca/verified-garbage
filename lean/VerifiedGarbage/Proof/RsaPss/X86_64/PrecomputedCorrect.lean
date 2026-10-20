@@ -1,12 +1,12 @@
 module
+public import VerifiedGarbage.Impl.RsaPss.X86_64.Precomputed
+public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCall
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedBody
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedBody
+import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBack
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
 
 @[expose] public section
 
@@ -15,19 +15,24 @@ namespace VG.Proof.RsaPss.X86_64.Pc
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.Rsa.X86_64 (PublicImpl)
 
-theorem public_safe (v : PublicImpl) : v.code.allInstrs safeI = true := by
-  rw [safeI_eq, allInstrs_and, v.mxSafe, Bool.and_true, Code.allInstrs_eq, List.all_eq_true]
+theorem public_sp (v : PublicImpl) : v.code.allInstrs (fun i => !isa.writesSp i) = true := by
+  rw [Code.allInstrs_eq, List.all_eq_true]
   intro i hi
   rw [(SpSafe.of_all v.spSafe) i hi]
   rfl
 
+theorem sp_of_safe {c : Prog isa} (h : c.allInstrs safeI = true) : c.allInstrs (fun i => !isa.writesSp i) = true := by
+  rw [safeI_eq, allInstrs_and, Bool.and_eq_true] at h
+  exact h.1
+
 variable {H : Impl.Pbkdf2.Md.X86_64.Hash} (hH : Pbkdf2.Md.X86_64.HashOK H) (K : Pbkdf2.Md.X86_64.Callees H)
 
 include hH K in
-theorem code_safe (v : PublicImpl) :
-    (Impl.RsaPss.X86_64.Precomputed.code H v.name v.code).allInstrs safeI = true := by
+theorem code_sp (v : PublicImpl) :
+    (Impl.RsaPss.X86_64.Precomputed.code H v.name v.code).allInstrs (fun i => !isa.writesSp i) = true := by
   simp only [Impl.RsaPss.X86_64.Precomputed.pubArgs, Impl.RsaPss.X86_64.Precomputed.code, Impl.RsaPss.X86_64.Precomputed.body, seqs,
-    Impl.RsaPss.X86_64.Precomputed.main, Code.allInstrs, mgfXor_safe hH K, saltBack_safe hH K, public_safe v, rec_all,
+    Impl.RsaPss.X86_64.Precomputed.main, Code.allInstrs, sp_of_safe (mgfXor_safe hH K), sp_of_safe (saltBack_safe hH K),
+    public_sp v, rec_all,
     List.all_append, verifyFail, emLen, anyArgs, posScan, posCheck, byteLoop, step, Bool.and_true, Bool.true_and]
   rfl
 
@@ -46,12 +51,10 @@ theorem code_correct (lk : Pbkdf2.Md.X86_64.MgfLink H hH) (v : PublicImpl)
     (s : State) (h : (Spec.RsaPss.verifyPrecomputedContract lk.G lk.G abi verifyStack).pre s) :
     ∃ t s', Exec isa (Impl.RsaPss.X86_64.Precomputed.code H v.name v.code) s t s' ∧ abiPreserved s s' ∧ (validCache s → (verifyK lk.G).post s s') := by
   have hp := pre_of lk.G h
-  have hsf := code_safe hH K v
-  have hW := X86_64.WP.stackFrame (safe_sp hsf) (by have := code_xd K v; unfold verifyStack at this; omega)
-    (code_ok hH K lk v h)
-  obtain ⟨t, s', he, hq⟩ := WP.mono_mx (safe_mx hsf) hW fun s' q hmx => (⟨q, hmx⟩ : _ ∧ _)
-  obtain ⟨⟨⟨hcs, hpost⟩, hf⟩, hmx⟩ := hq
-  refine ⟨t, s', he, ⟨hcs, ?_, by rw [hmx]⟩, hpost⟩
+  have hW := X86_64.WP.stackFrame (SpSafe.of_all (Code.all_of_allInstrs (code_sp hH K v)))
+    (by have := code_xd K v; unfold verifyStack at this; omega) (code_ok hH K lk v h)
+  obtain ⟨t, s', he, ⟨hcs, hpost, hmx⟩, hf⟩ := hW
+  refine ⟨t, s', he, ⟨hcs, ?_, hmx⟩, hpost⟩
   -- The return address.
   have hd := code_xd K v
   refine Mem.readW_congr fun i hi => hf _ fun r hr hc => ?_

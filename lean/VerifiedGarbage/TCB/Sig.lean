@@ -48,7 +48,7 @@ namespace VG
 
 /-- Element types of arrays and slices. -/
 inductive Elem
-  | u8 | u32 | u64
+  | u8 | u16 | u32 | u64
   /-- `[e; n]` -/
   | array (e : Elem) (n : Nat)
   deriving DecidableEq, Repr
@@ -56,12 +56,14 @@ inductive Elem
 /-- The size in bytes. -/
 def Elem.size : Elem → Nat
   | .u8 => 1
+  | .u16 => 2
   | .u32 => 4
   | .u64 => 8
   | .array e n => n * e.size
 
 def Elem.rust : Elem → String
   | .u8 => "u8"
+  | .u16 => "u16"
   | .u32 => "u32"
   | .u64 => "u64"
   | .array e n => s!"[{e.rust}; {n}]"
@@ -239,6 +241,30 @@ def Sig.bufs : List (String × Param) → List (BitVec 64) → List (Region × B
   | (_, .slice m e _) :: ps, p :: l :: vs => (⟨p, l.toNat * e.size⟩, m) :: Sig.bufs ps vs
   | (_, .slices ..) :: ps, _ :: _ :: vs => Sig.bufs ps vs
   | _, _ => []
+
+/-- The buffers of the arrays among the parameters, given the arguments'
+values: for each, its parameter's name and the region `Sig.bufs` gives it. -/
+def Sig.arrays : List (String × Param) → List (BitVec 64) → List (String × Region)
+  | [], _ => []
+  | (_, .int ..) :: ps, _ :: vs => Sig.arrays ps vs
+  | (n, .array _ e k) :: ps, p :: vs => (n, ⟨p, k * e.size⟩) :: Sig.arrays ps vs
+  | (_, .slice ..) :: ps, _ :: _ :: vs => Sig.arrays ps vs
+  | (_, .slices ..) :: ps, _ :: _ :: vs => Sig.arrays ps vs
+  | _, _ => []
+
+/-- For each `(name, n)` of `written`, the function changes no byte at
+offset `n` or beyond of the buffer of the array parameter `name`, between
+the entry state `s` and the exit state `s'`: it writes at most its first `n`
+bytes. With `written` empty, this says nothing. -/
+def Sig.writtenWithin {M : ISA} (A : Abi M) (sig : Sig) :
+    List (String × Nat) → M.State → M.State → Prop
+  | [], _, _ => True
+  | written, s, s' =>
+    match A.args ((sig.words A.ptrBits).map (·.bits A.ptrBits)) with
+    | none => True
+    | some vals => ∀ w ∈ written, ∀ b ∈ Sig.arrays sig.params (vals s), b.1 = w.1 →
+        ∀ i, w.2 ≤ i → i < b.2.len →
+          A.mem s' (b.2.base + BitVec.ofNat 64 i) = A.mem s (b.2.base + BitVec.ofNat 64 i)
 
 /-- The `n` descriptors of a list of slices at `p` (`Param.slices`), on a
 target with `ptrBits`-bit pointers: each `2 * (ptrBits / 8)` bytes. -/

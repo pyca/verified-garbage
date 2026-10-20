@@ -1,11 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Points
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
+import VerifiedGarbage.Proof.Ecdh.Arm.Peer
+import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
+import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
+import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
+import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
+import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.X25519.Arm.Limbs
 
 /-!
 # ECDSA verification on 32-bit ARM: `x` and the result

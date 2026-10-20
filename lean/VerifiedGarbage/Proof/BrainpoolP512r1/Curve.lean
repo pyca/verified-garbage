@@ -1,14 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Weierstrass.Complete
+public import VerifiedGarbage.Spec.BrainpoolP512r1
 import VerifiedGarbage.Proof.BrainpoolP512r1.Prime
-public import VerifiedGarbage.Proof.BrainpoolP512r1.Point
 import VerifiedGarbage.Proof.Weierstrass.Group
-public import VerifiedGarbage.Proof.Weierstrass.Cubic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Weierstrass.Cubic
 
 /-!
 # brainpoolP512r1 is a curve the proofs apply to

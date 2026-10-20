@@ -1,12 +1,10 @@
 module
+public import VerifiedGarbage.Proof.X25519.Arm.Field
 
 import VerifiedGarbage.Proof.X25519.Arm.Mul
-public import VerifiedGarbage.Proof.X25519.Arm.Cswap
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X25519.Arm.Cswap
+import VerifiedGarbage.Proof.X25519.Arm.AddSub
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # X25519 on 32-bit ARM: the field elements the working space holds

@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixTable
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgB
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixPost
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Pair
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Invoke the paired sampler in the existing key-generation workspace -/
 @[expose] public section
@@ -43,11 +44,11 @@ theorem pair_context {s₀ s : State} (hp : Pre P s₀) {e : Nat} (he : e+1<P.k*
     · exact hp.args.rdisj (b₁:=3) (b₂:=3) (o₁:=AH+1024*e) (l₁:=1024) (o₂:=AH+1024*(e+1)) (l₂:=1024) (by decide) (by decide) f1 f2 (by omega)
   exact ctx
 
-theorem matrix_pair {s₀ s : State} (hp : Pre P s₀) {e : Nat} (he : e+1<P.k*P.k)
-    (h : BInv P s₀ e s)
+theorem matrix_pair {w16 : Bool} {s₀ s : State} (hp : Pre P s₀) {e : Nat} (he : e+1<P.k*P.k)
+    (h : BInvW w16 P s₀ e s)
     (tb : MatrixTable P s₀ s) :
-    WP isa (Impl.MlKem.AArch64.Paired.pair P true e) s fun t=>
-      BInv P s₀ (e+2) t ∧ MatrixTable P s₀ t := by
+    WP isa (Impl.MlKem.AArch64.Paired.pair P true e w16) s fun t=>
+      BInvW w16 P s₀ (e+2) t ∧ MatrixTable P s₀ t := by
   have hw := hp.wf
   have f0 : SS+2048≤kL P 3 := by kl
   have ctx := pair_context hp he h.kb tb

@@ -1,8 +1,79 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.AesOcb.X86.Frame
+import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
+public import VerifiedGarbage.Proof.Aes.X86.Decrypt
+public import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
+public import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
+public import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
+public import VerifiedGarbage.Proof.AesGcm.X86.Flush
+public import VerifiedGarbage.Proof.AesOcb.X86.Blk
+public import VerifiedGarbage.Proof.AesOcb.X86.Calls
+public import VerifiedGarbage.Proof.AesOcb.X86.Entry
+public import VerifiedGarbage.Proof.AesOcb.X86.Init
+public import VerifiedGarbage.Proof.AesOcb.X86.LNtz
+public import VerifiedGarbage.Proof.AesOcb.X86.NonceBlock
+public import VerifiedGarbage.Proof.AesOcb.X86.Offset0
+public import VerifiedGarbage.Proof.AesOcb.X86.Run
+public import VerifiedGarbage.Proof.AesOcb.X86.Setup
+public import VerifiedGarbage.Proof.Cmac.Block
+public import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Absorb
+public import VerifiedGarbage.Proof.CmacAes.X86.UpdateCT
+public import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
+public import VerifiedGarbage.Proof.CmacAes.X86.Verified
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+public import VerifiedGarbage.Proof.Gcm.Be64
+public import VerifiedGarbage.Proof.Gcm.Bits
+public import VerifiedGarbage.Proof.Ocb.Spec
+public import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
+import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
+import VerifiedGarbage.Proof.Aes.X86.Decrypt
+import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
+import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
+import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
+import VerifiedGarbage.Proof.AesGcm.X86.Flush
+import VerifiedGarbage.Proof.AesOcb.X86.Blk
+import VerifiedGarbage.Proof.AesOcb.X86.Calls
+import VerifiedGarbage.Proof.AesOcb.X86.Entry
+import VerifiedGarbage.Proof.AesOcb.X86.Init
+import VerifiedGarbage.Proof.AesOcb.X86.LNtz
+import VerifiedGarbage.Proof.AesOcb.X86.NonceBlock
+import VerifiedGarbage.Proof.AesOcb.X86.Offset0
+import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.AesOcb.X86.Setup
+import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.CmacAes.Stream.X86.Absorb
+import VerifiedGarbage.Proof.CmacAes.X86.UpdateCT
+import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
+import VerifiedGarbage.Proof.CmacAes.X86.Verified
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import VerifiedGarbage.Proof.Gcm.Be64
+import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # AES-OCB (RFC 7253) on x86
@@ -31,37 +102,31 @@ def callNote (v : Proof.Aes.X86.BlocksImpl) (dec : Bool) : String :=
     (if dec then ", and deciphers with `" ++ v.dec.name ++ "`." else ".")
 
 def artifacts (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
-  { Spec.Ocb.initApi with
-    name := Spec.Ocb.initApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Ocb.initApi.doc (notes := ["This implementation expands the key with `" ++ v.expand.name ++
-      "`, and enciphers `L_*` with `" ++ v.enc.name ++ "`."])
+  Spec.Ocb.initApi.artifact X86.target {
+    suffix := v.suffix
+    notes := ["This implementation expands the key with `" ++ v.expand.name ++
+      "`, and enciphers `L_*` with `" ++ v.enc.name ++ "`."]
     code := Impl.StackScratch.X86.withStackScratch 2580 3 (Impl.AesOcb.X86.init (callees v))
-    contract := Spec.Ocb.initContract X86.abi 2604
     stack := 2604
     verified := init_framed v
-    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide) (init_spSafe v)
+    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (init_spSafe v)
     features := v.features },
-  { Spec.Ocb.sealApi with
-    name := Spec.Ocb.sealApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Ocb.sealApi.doc (notes := [callNote v false])
+  Spec.Ocb.sealApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [callNote v false]
     code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesOcb.X86.seal (callees v))
-    contract := Spec.Ocb.sealContract X86.abi 2632
     stack := 2632
     verified := seal_framed v
-    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide) (seal_spSafe v)
+    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (seal_spSafe v)
     features := v.features },
-  { Spec.Ocb.openApi with
-    name := Spec.Ocb.openApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Ocb.openApi.doc (notes := [callNote v true,
-      "It compares the tags and overwrites the data with zeros without a branch on the result."])
+  Spec.Ocb.openApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [callNote v true,
+      "It compares the tags and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesOcb.X86.open (callees v))
-    contract := Spec.Ocb.openContract X86.abi 2632
     stack := 2632
     verified := open_framed v
-    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide) (open_spSafe v)
+    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (open_spSafe v)
     features := v.features }]
 
 end VG.Generic.AesBlocks.X86.AesOcb

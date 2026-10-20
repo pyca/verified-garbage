@@ -2,145 +2,340 @@
 //! Verified `hmac_md5` functions for `aarch64`.
 #![allow(dead_code)]
 
-/// Starts an HMAC-MD5 computation with a key of at most 64 bytes: makes the MD5 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` padded with zeros to 64 bytes (FIPS 198-1). The text is then absorbed with `vg_md5_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_md5_finalize`.
+/// Starts an HMAC-MD5 computation with a key of any length: makes the MD5 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their MD5 digest, if there are more than 64) padded with zeros to 64 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_md5_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_md5_finalize`.
 ///
-/// Contract: `VG.Spec.Hmac.Instance.initContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+/// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 80 bytes.
 /// * `outer` must be valid for reads and writes of 80 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
-/// * `key_len` must be at most 64.
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `key` may overlap the 400 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `key` may overlap the 1040 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #384",
-        "add x4, sp, #0",
-        "str x19, [x4, #112]",
-        "str x20, [x4, #120]",
-        "str x21, [x4, #128]",
-        "str x22, [x4, #136]",
-        "str x24, [x4, #144]",
-        "str x30, [x4, #152]",
-        "str x23, [x4, #160]",
-        "add x19, x0, #0",
-        "add x20, x4, #0",
-        "add x21, x1, #0",
-        "add x22, x2, #0",
-        "add x23, x4, #0",
-        "add x24, x3, #0",
-        "add x0, x19, #0",
-        "bl {vg_md5_init}",
-        "add x0, x21, #0",
-        "bl {vg_md5_init}",
-        "movz w14, #13878, lsl #0",
-        "movk w14, #13878, lsl #16",
-        "str w14, [x19, #16]",
-        "str w14, [x19, #20]",
-        "str w14, [x19, #24]",
-        "str w14, [x19, #28]",
-        "str w14, [x19, #32]",
-        "str w14, [x19, #36]",
-        "str w14, [x19, #40]",
-        "str w14, [x19, #44]",
-        "str w14, [x19, #48]",
-        "str w14, [x19, #52]",
-        "str w14, [x19, #56]",
-        "str w14, [x19, #60]",
-        "str w14, [x19, #64]",
-        "str w14, [x19, #68]",
-        "str w14, [x19, #72]",
-        "str w14, [x19, #76]",
-        "movz x10, #0, lsl #0",
-        "cbz x24, 20f",
-        "22:",
-        "add x13, x22, x10",
-        "ldrb w9, [x13, #0]",
-        "eor x9, x9, x14",
-        "add x12, x19, x10",
-        "strb w9, [x12, #16]",
-        "add x10, x10, #1",
-        "sub x11, x24, x10",
-        "cbnz x11, 22b",
-        "b 21f",
-        "20:",
-        "21:",
-        "movz w15, #27242, lsl #0",
-        "movk w15, #27242, lsl #16",
-        "ldr w9, [x19, #16]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #16]",
-        "ldr w9, [x19, #20]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #20]",
-        "ldr w9, [x19, #24]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #24]",
-        "ldr w9, [x19, #28]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #28]",
-        "ldr w9, [x19, #32]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #32]",
-        "ldr w9, [x19, #36]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #36]",
-        "ldr w9, [x19, #40]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #40]",
-        "ldr w9, [x19, #44]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #44]",
-        "ldr w9, [x19, #48]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #48]",
-        "ldr w9, [x19, #52]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #52]",
-        "ldr w9, [x19, #56]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #56]",
-        "ldr w9, [x19, #60]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #60]",
-        "ldr w9, [x19, #64]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #64]",
-        "ldr w9, [x19, #68]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #68]",
-        "ldr w9, [x19, #72]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #72]",
-        "ldr w9, [x19, #76]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #76]",
-        "add x1, x19, #16",
-        "add x0, x19, #0",
-        "movz x2, #1, lsl #0",
-        "add x3, x20, #0",
-        "bl {vg_md5_compress}",
-        "add x19, x21, #0",
-        "add x1, x21, #16",
-        "add x0, x19, #0",
-        "movz x2, #1, lsl #0",
-        "add x3, x20, #0",
-        "bl {vg_md5_compress}",
-        "ldr x19, [x23, #112]",
-        "ldr x20, [x23, #120]",
-        "ldr x21, [x23, #128]",
-        "ldr x22, [x23, #136]",
-        "ldr x24, [x23, #144]",
-        "ldr x30, [x23, #152]",
-        "ldr x23, [x23, #160]",
-        "add sp, sp, #384",
-        "ret",
-        ".p2align 6",
+        r"movz x10, #64, lsl #0
+movz x12, #0, lsl #0
+subs x11, x10, x3
+csel x9, x12, x3, hs
+cbnz x9, 20f
+sub sp, sp, #384
+add x4, sp, #0
+str x19, [x4, #112]
+str x20, [x4, #120]
+str x21, [x4, #128]
+str x22, [x4, #136]
+str x24, [x4, #144]
+str x30, [x4, #152]
+str x23, [x4, #160]
+add x19, x0, #0
+add x20, x4, #0
+add x21, x1, #0
+add x22, x2, #0
+add x23, x4, #0
+add x24, x3, #0
+add x0, x19, #0
+bl {vg_md5_init}
+add x0, x21, #0
+bl {vg_md5_init}
+movz w14, #13878, lsl #0
+movk w14, #13878, lsl #16
+str w14, [x19, #16]
+str w14, [x19, #20]
+str w14, [x19, #24]
+str w14, [x19, #28]
+str w14, [x19, #32]
+str w14, [x19, #36]
+str w14, [x19, #40]
+str w14, [x19, #44]
+str w14, [x19, #48]
+str w14, [x19, #52]
+str w14, [x19, #56]
+str w14, [x19, #60]
+str w14, [x19, #64]
+str w14, [x19, #68]
+str w14, [x19, #72]
+str w14, [x19, #76]
+movz x10, #0, lsl #0
+cbz x24, 22f
+24:
+add x13, x22, x10
+ldrb w9, [x13, #0]
+eor x9, x9, x14
+add x12, x19, x10
+strb w9, [x12, #16]
+add x10, x10, #1
+sub x11, x24, x10
+cbnz x11, 24b
+b 23f
+22:
+23:
+movz w15, #27242, lsl #0
+movk w15, #27242, lsl #16
+ldr w9, [x19, #16]
+eor x9, x9, x15
+str w9, [x21, #16]
+ldr w9, [x19, #20]
+eor x9, x9, x15
+str w9, [x21, #20]
+ldr w9, [x19, #24]
+eor x9, x9, x15
+str w9, [x21, #24]
+ldr w9, [x19, #28]
+eor x9, x9, x15
+str w9, [x21, #28]
+ldr w9, [x19, #32]
+eor x9, x9, x15
+str w9, [x21, #32]
+ldr w9, [x19, #36]
+eor x9, x9, x15
+str w9, [x21, #36]
+ldr w9, [x19, #40]
+eor x9, x9, x15
+str w9, [x21, #40]
+ldr w9, [x19, #44]
+eor x9, x9, x15
+str w9, [x21, #44]
+ldr w9, [x19, #48]
+eor x9, x9, x15
+str w9, [x21, #48]
+ldr w9, [x19, #52]
+eor x9, x9, x15
+str w9, [x21, #52]
+ldr w9, [x19, #56]
+eor x9, x9, x15
+str w9, [x21, #56]
+ldr w9, [x19, #60]
+eor x9, x9, x15
+str w9, [x21, #60]
+ldr w9, [x19, #64]
+eor x9, x9, x15
+str w9, [x21, #64]
+ldr w9, [x19, #68]
+eor x9, x9, x15
+str w9, [x21, #68]
+ldr w9, [x19, #72]
+eor x9, x9, x15
+str w9, [x21, #72]
+ldr w9, [x19, #76]
+eor x9, x9, x15
+str w9, [x21, #76]
+add x1, x19, #16
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_md5_compress}
+add x19, x21, #0
+add x1, x21, #16
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_md5_compress}
+ldr x19, [x23, #112]
+ldr x20, [x23, #120]
+ldr x21, [x23, #128]
+ldr x22, [x23, #136]
+ldr x24, [x23, #144]
+ldr x30, [x23, #152]
+ldr x23, [x23, #160]
+add sp, sp, #384
+21:
+ret
+20:
+sub sp, sp, #1024
+add x4, sp, #0
+str x19, [x4, #384]
+str x20, [x4, #392]
+str x21, [x4, #400]
+str x22, [x4, #408]
+str x24, [x4, #416]
+str x30, [x4, #424]
+str x23, [x4, #432]
+add x23, x4, #0
+add x19, x2, #0
+add x20, x3, #0
+add x21, x0, #0
+add x22, x1, #0
+lsr x9, x20, #6
+cbz x9, 25f
+sub x9, x20, #64
+cbz x9, 27f
+add x0, x23, #704
+bl {vg_md5_init}
+add x0, x23, #704
+movz x1, #0, lsl #0
+add x2, x19, #0
+add x3, x20, #0
+add x4, x23, #0
+bl {vg_md5_update_scratch}
+add x0, x23, #704
+add x1, x20, #0
+add x2, x23, #816
+add x3, x23, #0
+bl {vg_md5_finalize_scratch}
+add x2, x23, #816
+movz x3, #16, lsl #0
+b 28f
+27:
+add x2, x19, #0
+add x3, x20, #0
+28:
+b 26f
+25:
+add x2, x19, #0
+add x3, x20, #0
+26:
+add x0, x21, #0
+add x1, x22, #0
+add x4, x23, #0
+bl {vg_hmac_md5_init_scratch}
+ldr x19, [x23, #384]
+ldr x20, [x23, #392]
+ldr x21, [x23, #400]
+ldr x22, [x23, #408]
+ldr x24, [x23, #416]
+ldr x30, [x23, #424]
+ldr x23, [x23, #432]
+add x16, sp, #0
+movz x17, #0, lsl #0
+str x17, [x16, #0]
+str x17, [x16, #8]
+str x17, [x16, #16]
+str x17, [x16, #24]
+str x17, [x16, #32]
+str x17, [x16, #40]
+str x17, [x16, #48]
+str x17, [x16, #56]
+str x17, [x16, #64]
+str x17, [x16, #72]
+str x17, [x16, #80]
+str x17, [x16, #88]
+str x17, [x16, #96]
+str x17, [x16, #104]
+str x17, [x16, #112]
+str x17, [x16, #120]
+str x17, [x16, #128]
+str x17, [x16, #136]
+str x17, [x16, #144]
+str x17, [x16, #152]
+str x17, [x16, #160]
+str x17, [x16, #168]
+str x17, [x16, #176]
+str x17, [x16, #184]
+str x17, [x16, #192]
+str x17, [x16, #200]
+str x17, [x16, #208]
+str x17, [x16, #216]
+str x17, [x16, #224]
+str x17, [x16, #232]
+str x17, [x16, #240]
+str x17, [x16, #248]
+str x17, [x16, #256]
+str x17, [x16, #264]
+str x17, [x16, #272]
+str x17, [x16, #280]
+str x17, [x16, #288]
+str x17, [x16, #296]
+str x17, [x16, #304]
+str x17, [x16, #312]
+str x17, [x16, #320]
+str x17, [x16, #328]
+str x17, [x16, #336]
+str x17, [x16, #344]
+str x17, [x16, #352]
+str x17, [x16, #360]
+str x17, [x16, #368]
+str x17, [x16, #376]
+str x17, [x16, #384]
+str x17, [x16, #392]
+str x17, [x16, #400]
+str x17, [x16, #408]
+str x17, [x16, #416]
+str x17, [x16, #424]
+str x17, [x16, #432]
+str x17, [x16, #440]
+str x17, [x16, #448]
+str x17, [x16, #456]
+str x17, [x16, #464]
+str x17, [x16, #472]
+str x17, [x16, #480]
+str x17, [x16, #488]
+str x17, [x16, #496]
+str x17, [x16, #504]
+str x17, [x16, #512]
+str x17, [x16, #520]
+str x17, [x16, #528]
+str x17, [x16, #536]
+str x17, [x16, #544]
+str x17, [x16, #552]
+str x17, [x16, #560]
+str x17, [x16, #568]
+str x17, [x16, #576]
+str x17, [x16, #584]
+str x17, [x16, #592]
+str x17, [x16, #600]
+str x17, [x16, #608]
+str x17, [x16, #616]
+str x17, [x16, #624]
+str x17, [x16, #632]
+str x17, [x16, #640]
+str x17, [x16, #648]
+str x17, [x16, #656]
+str x17, [x16, #664]
+str x17, [x16, #672]
+str x17, [x16, #680]
+str x17, [x16, #688]
+str x17, [x16, #696]
+str x17, [x16, #704]
+str x17, [x16, #712]
+str x17, [x16, #720]
+str x17, [x16, #728]
+str x17, [x16, #736]
+str x17, [x16, #744]
+str x17, [x16, #752]
+str x17, [x16, #760]
+str x17, [x16, #768]
+str x17, [x16, #776]
+str x17, [x16, #784]
+str x17, [x16, #792]
+str x17, [x16, #800]
+str x17, [x16, #808]
+str x17, [x16, #816]
+str x17, [x16, #824]
+str x17, [x16, #832]
+str x17, [x16, #840]
+str x17, [x16, #848]
+str x17, [x16, #856]
+str x17, [x16, #864]
+str x17, [x16, #872]
+str x17, [x16, #880]
+str x17, [x16, #888]
+str x17, [x16, #896]
+str x17, [x16, #904]
+str x17, [x16, #912]
+str x17, [x16, #920]
+str x17, [x16, #928]
+str x17, [x16, #936]
+str x17, [x16, #944]
+str x17, [x16, #952]
+str x17, [x16, #960]
+str x17, [x16, #968]
+str x17, [x16, #976]
+str x17, [x16, #984]
+str x17, [x16, #992]
+str x17, [x16, #1000]
+str x17, [x16, #1008]
+str x17, [x16, #1016]
+add sp, sp, #1024
+b 21b
+.p2align 6",
         vg_md5_init = sym super::md5::vg_md5_init,
         vg_md5_compress = sym super::md5::vg_md5_compress,
+        vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch,
+        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
+        vg_hmac_md5_init_scratch = sym super::hmac_md5::vg_hmac_md5_init_scratch,
     )
 }
 
@@ -159,83 +354,83 @@ pub(crate) unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *m
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #384",
-        "add x4, sp, #0",
-        "str x19, [x4, #112]",
-        "str x20, [x4, #120]",
-        "str x21, [x4, #128]",
-        "str x22, [x4, #136]",
-        "str x24, [x4, #144]",
-        "str x30, [x4, #152]",
-        "str x23, [x4, #160]",
-        "add x19, x0, #0",
-        "add x20, x1, #0",
-        "add x21, x3, #0",
-        "add x23, x4, #0",
-        "add x1, x2, #0",
-        "add x2, x23, #168",
-        "add x3, x23, #0",
-        "bl {vg_md5_finalize_scratch}",
-        "ldr w9, [x20, #0]",
-        "str w9, [x19, #0]",
-        "ldr w9, [x20, #4]",
-        "str w9, [x19, #4]",
-        "ldr w9, [x20, #8]",
-        "str w9, [x19, #8]",
-        "ldr w9, [x20, #12]",
-        "str w9, [x19, #12]",
-        "ldr w9, [x23, #168]",
-        "str w9, [x19, #16]",
-        "ldr w9, [x23, #172]",
-        "str w9, [x19, #20]",
-        "ldr w9, [x23, #176]",
-        "str w9, [x19, #24]",
-        "ldr w9, [x23, #180]",
-        "str w9, [x19, #28]",
-        "add x24, x21, #0",
-        "add x21, x19, #16",
-        "add x20, x23, #0",
-        "movz x9, #128, lsl #0",
-        "str w9, [x21, #16]",
-        "movz x9, #0, lsl #0",
-        "str w9, [x21, #20]",
-        "str w9, [x21, #24]",
-        "str w9, [x21, #28]",
-        "str w9, [x21, #32]",
-        "str w9, [x21, #36]",
-        "str w9, [x21, #40]",
-        "str w9, [x21, #44]",
-        "str w9, [x21, #48]",
-        "str w9, [x21, #52]",
-        "movz x22, #80, lsl #0",
-        "add x9, x22, x22",
-        "add x9, x9, x9",
-        "add x9, x9, x9",
-        "str x9, [x19, #72]",
-        "add x1, x21, #0",
-        "add x0, x19, #0",
-        "movz x2, #1, lsl #0",
-        "add x3, x20, #0",
-        "bl {vg_md5_compress}",
-        "add x21, x24, #0",
-        "ldr w9, [x19, #0]",
-        "str w9, [x21, #0]",
-        "ldr w9, [x19, #4]",
-        "str w9, [x21, #4]",
-        "ldr w9, [x19, #8]",
-        "str w9, [x21, #8]",
-        "ldr w9, [x19, #12]",
-        "str w9, [x21, #12]",
-        "ldr x19, [x23, #112]",
-        "ldr x20, [x23, #120]",
-        "ldr x21, [x23, #128]",
-        "ldr x22, [x23, #136]",
-        "ldr x24, [x23, #144]",
-        "ldr x30, [x23, #152]",
-        "ldr x23, [x23, #160]",
-        "add sp, sp, #384",
-        "ret",
-        ".p2align 6",
+        r"sub sp, sp, #384
+add x4, sp, #0
+str x19, [x4, #112]
+str x20, [x4, #120]
+str x21, [x4, #128]
+str x22, [x4, #136]
+str x24, [x4, #144]
+str x30, [x4, #152]
+str x23, [x4, #160]
+add x19, x0, #0
+add x20, x1, #0
+add x21, x3, #0
+add x23, x4, #0
+add x1, x2, #0
+add x2, x23, #168
+add x3, x23, #0
+bl {vg_md5_finalize_scratch}
+ldr w9, [x20, #0]
+str w9, [x19, #0]
+ldr w9, [x20, #4]
+str w9, [x19, #4]
+ldr w9, [x20, #8]
+str w9, [x19, #8]
+ldr w9, [x20, #12]
+str w9, [x19, #12]
+ldr w9, [x23, #168]
+str w9, [x19, #16]
+ldr w9, [x23, #172]
+str w9, [x19, #20]
+ldr w9, [x23, #176]
+str w9, [x19, #24]
+ldr w9, [x23, #180]
+str w9, [x19, #28]
+add x24, x21, #0
+add x21, x19, #16
+add x20, x23, #0
+movz x9, #128, lsl #0
+str w9, [x21, #16]
+movz x9, #0, lsl #0
+str w9, [x21, #20]
+str w9, [x21, #24]
+str w9, [x21, #28]
+str w9, [x21, #32]
+str w9, [x21, #36]
+str w9, [x21, #40]
+str w9, [x21, #44]
+str w9, [x21, #48]
+str w9, [x21, #52]
+movz x22, #80, lsl #0
+add x9, x22, x22
+add x9, x9, x9
+add x9, x9, x9
+str x9, [x19, #72]
+add x1, x21, #0
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_md5_compress}
+add x21, x24, #0
+ldr w9, [x19, #0]
+str w9, [x21, #0]
+ldr w9, [x19, #4]
+str w9, [x21, #4]
+ldr w9, [x19, #8]
+str w9, [x21, #8]
+ldr w9, [x19, #12]
+str w9, [x21, #12]
+ldr x19, [x23, #112]
+ldr x20, [x23, #120]
+ldr x21, [x23, #128]
+ldr x22, [x23, #136]
+ldr x24, [x23, #144]
+ldr x30, [x23, #152]
+ldr x23, [x23, #160]
+add sp, sp, #384
+ret
+.p2align 6",
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
         vg_md5_compress = sym super::md5::vg_md5_compress,
     )
@@ -258,125 +453,125 @@ pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_md5_init_scratch(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize, scratch: *mut [u64; 48]) {
     core::arch::naked_asm!(
-        "str x19, [x4, #112]",
-        "str x20, [x4, #120]",
-        "str x21, [x4, #128]",
-        "str x22, [x4, #136]",
-        "str x24, [x4, #144]",
-        "str x30, [x4, #152]",
-        "str x23, [x4, #160]",
-        "add x19, x0, #0",
-        "add x20, x4, #0",
-        "add x21, x1, #0",
-        "add x22, x2, #0",
-        "add x23, x4, #0",
-        "add x24, x3, #0",
-        "add x0, x19, #0",
-        "bl {vg_md5_init}",
-        "add x0, x21, #0",
-        "bl {vg_md5_init}",
-        "movz w14, #13878, lsl #0",
-        "movk w14, #13878, lsl #16",
-        "str w14, [x19, #16]",
-        "str w14, [x19, #20]",
-        "str w14, [x19, #24]",
-        "str w14, [x19, #28]",
-        "str w14, [x19, #32]",
-        "str w14, [x19, #36]",
-        "str w14, [x19, #40]",
-        "str w14, [x19, #44]",
-        "str w14, [x19, #48]",
-        "str w14, [x19, #52]",
-        "str w14, [x19, #56]",
-        "str w14, [x19, #60]",
-        "str w14, [x19, #64]",
-        "str w14, [x19, #68]",
-        "str w14, [x19, #72]",
-        "str w14, [x19, #76]",
-        "movz x10, #0, lsl #0",
-        "cbz x24, 20f",
-        "22:",
-        "add x13, x22, x10",
-        "ldrb w9, [x13, #0]",
-        "eor x9, x9, x14",
-        "add x12, x19, x10",
-        "strb w9, [x12, #16]",
-        "add x10, x10, #1",
-        "sub x11, x24, x10",
-        "cbnz x11, 22b",
-        "b 21f",
-        "20:",
-        "21:",
-        "movz w15, #27242, lsl #0",
-        "movk w15, #27242, lsl #16",
-        "ldr w9, [x19, #16]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #16]",
-        "ldr w9, [x19, #20]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #20]",
-        "ldr w9, [x19, #24]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #24]",
-        "ldr w9, [x19, #28]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #28]",
-        "ldr w9, [x19, #32]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #32]",
-        "ldr w9, [x19, #36]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #36]",
-        "ldr w9, [x19, #40]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #40]",
-        "ldr w9, [x19, #44]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #44]",
-        "ldr w9, [x19, #48]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #48]",
-        "ldr w9, [x19, #52]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #52]",
-        "ldr w9, [x19, #56]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #56]",
-        "ldr w9, [x19, #60]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #60]",
-        "ldr w9, [x19, #64]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #64]",
-        "ldr w9, [x19, #68]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #68]",
-        "ldr w9, [x19, #72]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #72]",
-        "ldr w9, [x19, #76]",
-        "eor x9, x9, x15",
-        "str w9, [x21, #76]",
-        "add x1, x19, #16",
-        "add x0, x19, #0",
-        "movz x2, #1, lsl #0",
-        "add x3, x20, #0",
-        "bl {vg_md5_compress}",
-        "add x19, x21, #0",
-        "add x1, x21, #16",
-        "add x0, x19, #0",
-        "movz x2, #1, lsl #0",
-        "add x3, x20, #0",
-        "bl {vg_md5_compress}",
-        "ldr x19, [x23, #112]",
-        "ldr x20, [x23, #120]",
-        "ldr x21, [x23, #128]",
-        "ldr x22, [x23, #136]",
-        "ldr x24, [x23, #144]",
-        "ldr x30, [x23, #152]",
-        "ldr x23, [x23, #160]",
-        "ret",
-        ".p2align 6",
+        r"str x19, [x4, #112]
+str x20, [x4, #120]
+str x21, [x4, #128]
+str x22, [x4, #136]
+str x24, [x4, #144]
+str x30, [x4, #152]
+str x23, [x4, #160]
+add x19, x0, #0
+add x20, x4, #0
+add x21, x1, #0
+add x22, x2, #0
+add x23, x4, #0
+add x24, x3, #0
+add x0, x19, #0
+bl {vg_md5_init}
+add x0, x21, #0
+bl {vg_md5_init}
+movz w14, #13878, lsl #0
+movk w14, #13878, lsl #16
+str w14, [x19, #16]
+str w14, [x19, #20]
+str w14, [x19, #24]
+str w14, [x19, #28]
+str w14, [x19, #32]
+str w14, [x19, #36]
+str w14, [x19, #40]
+str w14, [x19, #44]
+str w14, [x19, #48]
+str w14, [x19, #52]
+str w14, [x19, #56]
+str w14, [x19, #60]
+str w14, [x19, #64]
+str w14, [x19, #68]
+str w14, [x19, #72]
+str w14, [x19, #76]
+movz x10, #0, lsl #0
+cbz x24, 20f
+22:
+add x13, x22, x10
+ldrb w9, [x13, #0]
+eor x9, x9, x14
+add x12, x19, x10
+strb w9, [x12, #16]
+add x10, x10, #1
+sub x11, x24, x10
+cbnz x11, 22b
+b 21f
+20:
+21:
+movz w15, #27242, lsl #0
+movk w15, #27242, lsl #16
+ldr w9, [x19, #16]
+eor x9, x9, x15
+str w9, [x21, #16]
+ldr w9, [x19, #20]
+eor x9, x9, x15
+str w9, [x21, #20]
+ldr w9, [x19, #24]
+eor x9, x9, x15
+str w9, [x21, #24]
+ldr w9, [x19, #28]
+eor x9, x9, x15
+str w9, [x21, #28]
+ldr w9, [x19, #32]
+eor x9, x9, x15
+str w9, [x21, #32]
+ldr w9, [x19, #36]
+eor x9, x9, x15
+str w9, [x21, #36]
+ldr w9, [x19, #40]
+eor x9, x9, x15
+str w9, [x21, #40]
+ldr w9, [x19, #44]
+eor x9, x9, x15
+str w9, [x21, #44]
+ldr w9, [x19, #48]
+eor x9, x9, x15
+str w9, [x21, #48]
+ldr w9, [x19, #52]
+eor x9, x9, x15
+str w9, [x21, #52]
+ldr w9, [x19, #56]
+eor x9, x9, x15
+str w9, [x21, #56]
+ldr w9, [x19, #60]
+eor x9, x9, x15
+str w9, [x21, #60]
+ldr w9, [x19, #64]
+eor x9, x9, x15
+str w9, [x21, #64]
+ldr w9, [x19, #68]
+eor x9, x9, x15
+str w9, [x21, #68]
+ldr w9, [x19, #72]
+eor x9, x9, x15
+str w9, [x21, #72]
+ldr w9, [x19, #76]
+eor x9, x9, x15
+str w9, [x21, #76]
+add x1, x19, #16
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_md5_compress}
+add x19, x21, #0
+add x1, x21, #16
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_md5_compress}
+ldr x19, [x23, #112]
+ldr x20, [x23, #120]
+ldr x21, [x23, #128]
+ldr x22, [x23, #136]
+ldr x24, [x23, #144]
+ldr x30, [x23, #152]
+ldr x23, [x23, #160]
+ret
+.p2align 6",
         vg_md5_init = sym super::md5::vg_md5_init,
         vg_md5_compress = sym super::md5::vg_md5_compress,
     )
@@ -399,80 +594,80 @@ pub(crate) unsafe extern "C" fn vg_hmac_md5_init_scratch(inner: *mut [u8; 80], o
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize_scratch(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 48]) {
     core::arch::naked_asm!(
-        "str x19, [x4, #112]",
-        "str x20, [x4, #120]",
-        "str x21, [x4, #128]",
-        "str x22, [x4, #136]",
-        "str x24, [x4, #144]",
-        "str x30, [x4, #152]",
-        "str x23, [x4, #160]",
-        "add x19, x0, #0",
-        "add x20, x1, #0",
-        "add x21, x3, #0",
-        "add x23, x4, #0",
-        "add x1, x2, #0",
-        "add x2, x23, #168",
-        "add x3, x23, #0",
-        "bl {vg_md5_finalize_scratch}",
-        "ldr w9, [x20, #0]",
-        "str w9, [x19, #0]",
-        "ldr w9, [x20, #4]",
-        "str w9, [x19, #4]",
-        "ldr w9, [x20, #8]",
-        "str w9, [x19, #8]",
-        "ldr w9, [x20, #12]",
-        "str w9, [x19, #12]",
-        "ldr w9, [x23, #168]",
-        "str w9, [x19, #16]",
-        "ldr w9, [x23, #172]",
-        "str w9, [x19, #20]",
-        "ldr w9, [x23, #176]",
-        "str w9, [x19, #24]",
-        "ldr w9, [x23, #180]",
-        "str w9, [x19, #28]",
-        "add x24, x21, #0",
-        "add x21, x19, #16",
-        "add x20, x23, #0",
-        "movz x9, #128, lsl #0",
-        "str w9, [x21, #16]",
-        "movz x9, #0, lsl #0",
-        "str w9, [x21, #20]",
-        "str w9, [x21, #24]",
-        "str w9, [x21, #28]",
-        "str w9, [x21, #32]",
-        "str w9, [x21, #36]",
-        "str w9, [x21, #40]",
-        "str w9, [x21, #44]",
-        "str w9, [x21, #48]",
-        "str w9, [x21, #52]",
-        "movz x22, #80, lsl #0",
-        "add x9, x22, x22",
-        "add x9, x9, x9",
-        "add x9, x9, x9",
-        "str x9, [x19, #72]",
-        "add x1, x21, #0",
-        "add x0, x19, #0",
-        "movz x2, #1, lsl #0",
-        "add x3, x20, #0",
-        "bl {vg_md5_compress}",
-        "add x21, x24, #0",
-        "ldr w9, [x19, #0]",
-        "str w9, [x21, #0]",
-        "ldr w9, [x19, #4]",
-        "str w9, [x21, #4]",
-        "ldr w9, [x19, #8]",
-        "str w9, [x21, #8]",
-        "ldr w9, [x19, #12]",
-        "str w9, [x21, #12]",
-        "ldr x19, [x23, #112]",
-        "ldr x20, [x23, #120]",
-        "ldr x21, [x23, #128]",
-        "ldr x22, [x23, #136]",
-        "ldr x24, [x23, #144]",
-        "ldr x30, [x23, #152]",
-        "ldr x23, [x23, #160]",
-        "ret",
-        ".p2align 6",
+        r"str x19, [x4, #112]
+str x20, [x4, #120]
+str x21, [x4, #128]
+str x22, [x4, #136]
+str x24, [x4, #144]
+str x30, [x4, #152]
+str x23, [x4, #160]
+add x19, x0, #0
+add x20, x1, #0
+add x21, x3, #0
+add x23, x4, #0
+add x1, x2, #0
+add x2, x23, #168
+add x3, x23, #0
+bl {vg_md5_finalize_scratch}
+ldr w9, [x20, #0]
+str w9, [x19, #0]
+ldr w9, [x20, #4]
+str w9, [x19, #4]
+ldr w9, [x20, #8]
+str w9, [x19, #8]
+ldr w9, [x20, #12]
+str w9, [x19, #12]
+ldr w9, [x23, #168]
+str w9, [x19, #16]
+ldr w9, [x23, #172]
+str w9, [x19, #20]
+ldr w9, [x23, #176]
+str w9, [x19, #24]
+ldr w9, [x23, #180]
+str w9, [x19, #28]
+add x24, x21, #0
+add x21, x19, #16
+add x20, x23, #0
+movz x9, #128, lsl #0
+str w9, [x21, #16]
+movz x9, #0, lsl #0
+str w9, [x21, #20]
+str w9, [x21, #24]
+str w9, [x21, #28]
+str w9, [x21, #32]
+str w9, [x21, #36]
+str w9, [x21, #40]
+str w9, [x21, #44]
+str w9, [x21, #48]
+str w9, [x21, #52]
+movz x22, #80, lsl #0
+add x9, x22, x22
+add x9, x9, x9
+add x9, x9, x9
+str x9, [x19, #72]
+add x1, x21, #0
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_md5_compress}
+add x21, x24, #0
+ldr w9, [x19, #0]
+str w9, [x21, #0]
+ldr w9, [x19, #4]
+str w9, [x21, #4]
+ldr w9, [x19, #8]
+str w9, [x21, #8]
+ldr w9, [x19, #12]
+str w9, [x21, #12]
+ldr x19, [x23, #112]
+ldr x20, [x23, #120]
+ldr x21, [x23, #128]
+ldr x22, [x23, #136]
+ldr x24, [x23, #144]
+ldr x30, [x23, #152]
+ldr x23, [x23, #160]
+ret
+.p2align 6",
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
         vg_md5_compress = sym super::md5::vg_md5_compress,
     )

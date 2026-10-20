@@ -1,22 +1,16 @@
 module
+public import VerifiedGarbage.Proof.P256.EcdhJac.State
+public import VerifiedGarbage.Proof.P256.Linear.WeakCertificate
 
-public import VerifiedGarbage.Proof.P256.EcdhDouble.LinearField
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.P256.Linear.Arithmetic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Proof.P256.EcdhDouble.LinearField
 import VerifiedGarbage.Proof.P256.Linear.Linear41
-import VerifiedGarbage.Proof.Weierstrass.Booth
 
 @[expose] public section
 
 namespace VG.Proof.P256.EcdhDouble
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass
 open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
-open EcdhJac (C K M Sl layout aligned)
+open EcdhJac (C K M)
 
 /-- A canonical linear combination, with the ordinary field-operation frame. -/
 def LinearCorrect (code : List Instr) (o a b c d : Nat) : Prop :=
@@ -26,7 +20,8 @@ def LinearCorrect (code : List Instr) (o a b c d : Nat) : Prop :=
       KeepRegs (clob 4) s t ∧ Outside base o 32 s.mem t.mem ∧
       wordsVal t.mem base o 4=(c*wordsVal s.mem base a 4+d*(C.p-wordsVal s.mem base b 4))%C.p
 
-theorem linearField_ok {code : List Instr} {o a b c d : Nat}
+theorem linearField_ok {Sl : Nat → Prop} (layout : Lay M 8192 Sl)
+    {code : List Instr} {o a b c d : Nat}
     (hc : LinearCorrect code o a b c d) (ho : Sl o)
     {base : Addr} {s : State} {V : List Nat} {E : Nat→Fin C.p}
     (hi : Inv M base 8192 C.p Sl V E s) (ha : a∈V) (hb : b∈V) :
@@ -42,7 +37,8 @@ theorem linearField_ok {code : List Instr} {o a b c d : Nat}
     rw [hv,toM_linear (wordsVal s.mem base a 4) (wordsVal s.mem base b 4) c d (hi.lt b hb)]
     exact congrArg₂ (fun x y => Fin.ofNat C.p c*x-Fin.ofNat C.p d*y) (hi.val a ha) (hi.val b hb)
 
-theorem linear41Field_ok {base : Addr} {s : State} {V : List Nat} {E : Nat→Fin C.p}
+theorem linear41Field_ok {Sl : Nat → Prop} (layout : Lay M 8192 Sl) (h512 : Sl 512)
+    {base : Addr} {s : State} {V : List Nat} {E : Nat→Fin C.p}
     (hi : Inv M base 8192 C.p Sl V E s) (ha : 928∈V) (hb : 960∈V) :
     WP isa (.block (Impl.P256.Linear.linear41 512 928 960)) s fun t =>
       OpKeep M base 512 s t ∧ Inv M base 8192 C.p Sl (512::V)
@@ -50,7 +46,7 @@ theorem linear41Field_ok {base : Addr} {s : State} {V : List Nat} {E : Nat→Fin
   refine WP.mono (Linear.linear41_ok hi.scr (hi.lt 928 ha) (hi.lt 960 hb))
     fun t ⟨kr,ko,hlt,hv⟩ => ?_
   have hk := linearKeep kr ko
-  refine ⟨hk,hi.update layout (by decide +kernel) hk hlt ?_⟩
+  refine ⟨hk,hi.update layout h512 hk hlt ?_⟩
   change toM C.p (2^256) (wordsVal t.mem base 512 4)=_
   change wordsVal t.mem base 512 4=(4*wordsVal s.mem base 928 4+C.p-wordsVal s.mem base 960 4)%C.p at hv
   rw [hv,toM_linear41 (wordsVal s.mem base 928 4) (wordsVal s.mem base 960 4) (hi.lt 960 hb)]

@@ -1,20 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableState
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableInit
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
+import VerifiedGarbage.Proof.Weierstrass.JacMul
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-! The public tree carries exact paired field values and fixed loop counters. -/
 
@@ -35,7 +29,7 @@ structure NafTableChecks (K : WinCfg) : Prop where
   add : JacAddChecks K K.R (Naf.twice K) K.D
   copyStep : FieldCT (.block (copyPt K.M.n K.R K.D))
   advance : RegCT [.x19,.x20] (.block [.addImm .x .x20 .x20 96,decCounter])
-  keepAdd : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (Jacobian.jacAdd K K.R (Naf.twice K) K.D), dstOf i≠some r
+  keepAdd : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (Jacobian.jacAdd K K.R (Naf.twice K) K.D), clobbers i r = false
 
  theorem nafTable_init_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     (hL : JacWinLay K size) (hAl : Aligned K.M (·∈jacWinSlots K))

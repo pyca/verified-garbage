@@ -1,11 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Stack
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
 
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.StackContext
-import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MillerRabin.X86_64.StackContext
+import VerifiedGarbage.Proof.Bignum.CrtExp
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # The Montgomery and exponent contexts survive the saved frame -/
 

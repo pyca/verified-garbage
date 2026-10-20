@@ -1,13 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCalls
-public import VerifiedGarbage.Proof.Dsa.Encoding
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Dsa.AArch64.LocalCallFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.BufferFrame
+import Batteries.Logic
 
 /-! # Reading and preserving operands across the DSA arithmetic schedule -/
 

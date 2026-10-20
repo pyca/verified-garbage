@@ -1,14 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Glue
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Region
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.VecR
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: `ifma`
@@ -353,6 +352,7 @@ theorem vecI_ok (hl : LayOk l) {t : State} {B : Addr} {Z w op oq a wp : Nat} {mi
   rw [hm.qn, ← hwp] at hmQ
   refine WP.mono (vecR_ok hl (M := two P Q) (K1 := two (2 ^ l.dbls * Yp % P) (2 ^ l.dbls * Yq % Q))
     (Xc := two Xcp Xcq) (Y := two Yp Yq) (Fin := two Yp 1) (x := fun _ => C) (mi := two mp mq) (Q := K)
+    (e := two (Spec.Rsa.os2ip ebp) (Spec.Rsa.os2ip ebq))
     (w := wp) (R := 2 ^ (64 * wp)) hwp rfl bx ((hs.congr k.2.2).sub (by omega_using [haZ]) (by omega_using []))
     (fun p hp => by rcases h01 p hp with rfl | rfl <;> rw [me] <;> [exact rp.n; exact rq.n])
     (fun p hp => by rcases h01 p hp with rfl | rfl <;> rw [me] <;> [exact rp.k1; exact rq.k1])
@@ -379,16 +379,20 @@ theorem vecI_ok (hl : LayOk l) {t : State} {B : Addr} {Z w op oq a wp : Nat} {mi
       · show 2 ^ l.dbls * Yp % P % P = 2 ^ l.dbls * 2 ^ (64 * wp) % P
         rw [Nat.mod_mod, Nat.mul_mod, vyp hK, ← Nat.mul_mod]
       · show 2 ^ l.dbls * Yq % Q % Q = 2 ^ l.dbls * 2 ^ (64 * wp) % Q
-        rw [Nat.mod_mod, Nat.mul_mod, vyq hK, ← Nat.mul_mod]))
+        rw [Nat.mod_mod, Nat.mul_mod, vyq hK, ← Nat.mul_mod])
+    (fun p hp => by
+      have lt8 : ∀ {eb : List Byte}, eb.length ≤ l.E → Spec.Rsa.os2ip eb < 2 ^ (8 * l.E) := fun h =>
+        Nat.lt_of_lt_of_le (VG.Proof.Bignum.os2ip_lt _)
+          (by rw [Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) h)
+      rcases h01 p hp with rfl | rfl <;> [exact lt8 hLp; exact lt8 hLq])
+    (fun p hp i hi => by rcases h01 p hp with rfl | rfl <;> rw [me] <;> [exact rp.d i hi; exact rq.d i hi]))
     fun t' ⟨hy, ho, hr, hrd, hwr, hmx⟩ => ?_
-  have evp : ev l u.mem (off B a) 0 l.E = Spec.Rsa.os2ip ebp := ev_padE hLp (by rw [me]; exact rp.e)
-  have evq : ev l u.mem (off B a) 1 l.E = Spec.Rsa.os2ip ebq := ev_padE hLq (by rw [me]; exact rq.e)
   refine ⟨⟨(hy 0 (by decide)).1, fun hK => ?_⟩, ⟨(hy 1 (by decide)).1, fun hK => ?_⟩, by rw [← me]; exact ho,
     by rw [hr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide), k.gpr (by decide)], by rw [hrd, k.2.1],
     by rw [hwr, k.2.2], by rw [hmx, mx], ⟨fun r hrm => ?_, by rw [hrd, k.2.1], by rw [hwr, k.2.2]⟩⟩
-  · rw [← evp]; exact (hy 0 (by decide)).2 hK
-  · rw [← evq]; exact (hy 1 (by decide)).2 hK
+  · exact (hy 0 (by decide)).2 hK
+  · exact (hy 1 (by decide)).2 hK
   · have hn : ∀ r', r' ∈ mmRegs → r ≠ r' := fun r' h' h => hrm (h ▸ h')
     rw [hr r (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide))
       (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide))

@@ -1,11 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+public import VerifiedGarbage.Proof.X25519.AArch64.Top
+import VerifiedGarbage.Proof.Framework.Lit
 
-public import VerifiedGarbage.Proof.X25519.AArch64.Word.Output
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddMemory
 
 /-! The contract the X25519 function is proven against, and the saved registers. -/
 

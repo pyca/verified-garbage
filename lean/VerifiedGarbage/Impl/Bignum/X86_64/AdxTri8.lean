@@ -21,9 +21,22 @@ def chain (k : Nat) (hi other prev : Reg) : List Reg → List Instr
   | [col] => close prev col
   | col::next::rest => word k hi prev col ++ chain (k+1) other hi hi (next::rest)
 
-/-- A row: `rax`, zero, is the first word's incoming high word. -/
-def rowCore (i : Nat) (rs : List Reg) : List Instr :=
-  ([.mov .rdx (.mem (at_ .rbp (8*i))),.alu32 .xor .rax (.reg .rax)] : List Instr) ++ chain (i+1) .rbx .rax .rax rs
+/-- The last register of `col::rest`. -/
+def last : Reg → List Reg → Reg
+  | r, [] => r
+  | _, r::rs => last r rs
+
+/-- A row's first word, whose incoming high word is zero: the low product
+added to `col`, no `adox`. -/
+def wordF (k : Nat) (hi col : Reg) : List Instr :=
+  [.mulx hi .rsi (.mem (at_ .rbp (8*k))),.adcx col (.reg .rsi)]
+
+/-- A row over the columns `col::rest`: one `xor` zeroes its top column
+`last col rest` and clears both flags, then its first word, then the rest of
+the chain, from the first word's high word in `rbx`. -/
+def rowCore (i : Nat) (col : Reg) (rest : List Reg) : List Instr :=
+  ([.mov .rdx (.mem (at_ .rbp (8*i))),.alu32 .xor (last col rest) (.reg (last col rest))] : List Instr) ++
+    (wordF (i+1) .rbx col ++ chain (i+2) .rax .rbx .rbx rest)
 
 /-- `rcx :=` the block's output base, which it keeps through the rows. -/
 def headBases : List Instr :=
@@ -34,9 +47,10 @@ def storeHead (i : Nat) (lo hi : Reg) : Prog isa :=
   .seq (.block [.store (at_ .rcx (16+8*(2*i+1))) lo])
     (.block [.store (at_ .rcx (16+8*(2*i+2))) hi])
 
+/-- A row, its two low words stored; `lo` becomes the next row's top column,
+which that row zeroes. -/
 def rowStep (i : Nat) (lo hi : Reg) (tail : List Reg) : Prog isa :=
-  .seq (.block (rowCore i (lo::hi::tail)))
-    (.seq (storeHead i lo hi) (.block [.mov32 lo (.imm 0)]))
+  .seq (.block (rowCore i lo (hi::tail))) (storeHead i lo hi)
 
 def rotate (rs : List Reg) : List Reg := rs.drop 2 ++ rs.take 1
 
@@ -60,8 +74,7 @@ def row0Core : List Reg → List Instr
       .mulx .rbx col (.mem (at_ .rbp 8))] : List Instr) ++ chain0 2 .rax .rbx .rbx rest
 
 def rowStep0 (lo hi : Reg) (tail : List Reg) : Prog isa :=
-  .seq (.block (row0Core (lo::hi::tail)))
-    (.seq (storeHead 0 lo hi) (.block [.mov32 lo (.imm 0)]))
+  .seq (.block (row0Core (lo::hi::tail))) (storeHead 0 lo hi)
 
 def rows : Nat → Nat → List Reg → Prog isa
   | 0, _, _ => .block []

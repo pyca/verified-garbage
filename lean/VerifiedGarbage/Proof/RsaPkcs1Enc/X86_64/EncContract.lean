@@ -1,14 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Encrypt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on x86-64: the contracts on the registers
@@ -94,7 +91,7 @@ def encK : Contract isa where
       1 ≤ (s.gpr .r9).toNat ∧ (s.gpr .r9).toNat ≤ (s.gpr .rcx).toNat ∧
       (stackArg s 1).toNat + 11 ≤ (s.gpr .rcx).toNat ∧
       (stackArg s 3).toNat = (s.gpr .rcx).toNat - (stackArg s 1).toNat - 3 ∧
-      Spec.Rsa.scratchWords (s.gpr .rcx).toNat ≤ (stackArg s 5).toNat
+      Spec.Rsa.publicScratchWords (s.gpr .rcx).toNat ≤ (stackArg s 5).toNat
   post s s' :=
     Spec.Rsa.written s'.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((s'.gpr .rax).setWidth 32)
       (Spec.RsaPkcs1Enc.encrypt (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)

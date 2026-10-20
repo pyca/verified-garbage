@@ -1,10 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.X25519
 
-public import VerifiedGarbage.Proof.X25519.Field
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.Field
 
 /-!
 # X25519 on 32-bit ARM: numbers of 16-bit limbs

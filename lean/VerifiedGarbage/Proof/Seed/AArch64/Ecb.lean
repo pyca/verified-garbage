@@ -1,12 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Seed.AArch64.Batch
 
-public import VerifiedGarbage.Proof.Seed.AArch64.Setup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Seed.AArch64.Setup
 import VerifiedGarbage.Proof.Seed.Memory
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The function on AArch64

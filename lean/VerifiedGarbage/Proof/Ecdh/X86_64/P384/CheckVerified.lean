@@ -1,31 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.X86_64.CheckFn
-meta import VerifiedGarbage.Proof.Ecdh.X86_64.CheckFn
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.InverseVerified
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.InverseVerified
-import VerifiedGarbage.Proof.Weierstrass.X86_64.P384Literals
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P384Literals
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.InverseLit
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.TaintMap
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Weierstrass.X86_64.P384Literals
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.CheckFn
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.InverseVerified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.InverseLit
 meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Framework.TaintMap
-meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P384Literals
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-import VerifiedGarbage.Spec.EcKey.Generic
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-meta import VerifiedGarbage.Spec.EcKey.Generic
 
 /-!
 # `vg_p384_check_point` on x86-64: `Verified`

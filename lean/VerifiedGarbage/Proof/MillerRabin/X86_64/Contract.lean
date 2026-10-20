@@ -4,11 +4,7 @@ public import VerifiedGarbage.Spec.MillerRabin
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Shared Miller–Rabin round: the callable contract on X86_64 -/
 

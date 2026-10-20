@@ -1,14 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyMain
+import VerifiedGarbage.Proof.Ed448.AArch64.VerifyMain
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Front
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Windows
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.ConstMem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Tactic.NormNum.Prime
+public import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Lit
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyLocal
+public import VerifiedGarbage.Proof.Ed448.Ref
 
 /-!
 # Ed448 verification's equation on AArch64: `Verified`

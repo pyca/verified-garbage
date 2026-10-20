@@ -1,28 +1,28 @@
 module
 
 public import VerifiedGarbage.Impl.Secp256k1.Point
-meta import VerifiedGarbage.Impl.Secp256k1.Point
+public import VerifiedGarbage.Proof.Weierstrass.Arm.PointContract
 
-public import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
+import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontSecp256k1
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Secp256k1.Point
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.PointContract
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontSecp256k1
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Spec.Secp256k1
-meta import VerifiedGarbage.Spec.Secp256k1
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
-meta import VerifiedGarbage.Spec.Rc2
-meta import VerifiedGarbage.Spec.X25519
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Complete point addition and doubling as functions, on 32-bit ARM: secp256k1

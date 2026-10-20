@@ -1,15 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.VLanes
-public import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.Proof.MlKem.Ntt
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 public import VerifiedGarbage.Impl.MlKem.X86_64.Ntt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM on x86-64: polynomials as words in the working space
@@ -36,15 +35,23 @@ def wordAt (m : Mem) (p : Addr) (i : Nat) : BitVec 16 := m.readW (wAddr p i) 16
 /-- The polynomial `F` as 256 words at `p`. -/
 def S16 (m : Mem) (p : Addr) (F : Poly) : Prop := ∀ i < 256, (wordAt m p i).toNat = (F[i]!).val
 
+/-- The values `F` related by `R` to the 256 words at `p`: `S16` is `S16R canW`. -/
+def S16R {α : Type} [Inhabited α] (R : BitVec 16 → α → Prop) (m : Mem) (p : Addr) (F : Vector α n) : Prop :=
+  ∀ i < 256, R (wordAt m p i) F[i]!
+
 /-- The 512 bytes of a polynomial as words. -/
 abbrev sR (p : Addr) : Region := ⟨p, 512⟩
 
 theorem wAddr_add (p : Addr) (j e : Nat) : wAddr p j + BitVec.ofNat 64 (2 * e) = wAddr p (j + e) := by
   rw [wAddr, wAddr, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.mul_add]
 
-theorem lanes_load {m : Mem} {p : Addr} {F : Poly} (h : S16 m p F) {j : Nat} (hj : j + 8 ≤ 256) :
-    Lanes (m.readW (wAddr p j) 128) (fun e => F[j + e]!) := fun e he => by
+theorem lanes_loadR {α : Type} [Inhabited α] {R : BitVec 16 → α → Prop} {m : Mem} {p : Addr} {F : Vector α n}
+    (h : S16R R m p F) {j : Nat} (hj : j + 8 ≤ 256) :
+    LanesR R (m.readW (wAddr p j) 128) (fun e => F[j + e]!) := fun e he => by
   rw [word_readW _ _ he, wAddr_add]; exact h _ (by bdd_omega)
+
+theorem lanes_load {m : Mem} {p : Addr} {F : Poly} (h : S16 m p F) {j : Nat} (hj : j + 8 ≤ 256) :
+    Lanes (m.readW (wAddr p j) 128) (fun e => F[j + e]!) := lanes_loadR (R := canW) h hj
 
 /-- Word `i` after storing `x` at word `j`. -/
 theorem wordAt_write128 (m : Mem) (p : Addr) {j : Nat} (hj : j + 8 ≤ 256) (x : BitVec 128) {i : Nat}
@@ -58,12 +65,13 @@ theorem wordAt_write128 (m : Mem) (p : Addr) {j : Nat} (hj : j + 8 ≤ 256) (x :
   · exact Mem.readW_writeW_sep (Offset.sep p (by bdd_omega) (by bdd_omega) (by bdd_omega)) (by decide)
 
 /-- Two vectors stored into the words of a polynomial, with the lanes `a` and `b`. -/
-theorem s16_write2 {m : Mem} {p : Addr} {P R : Poly} (hP : S16 m p P) {j j' : Nat}
+theorem s16_write2R {α : Type} [Inhabited α] {R : BitVec 16 → α → Prop} {m : Mem} {p : Addr} {P Q : Vector α n}
+    (hP : S16R R m p P) {j j' : Nat}
     (hj : j + 8 ≤ 256) (hj' : j' + 8 ≤ 256) (hsep : j + 8 ≤ j' ∨ j' + 8 ≤ j) {x y : BitVec 128}
-    {a b : Nat → Zq} (hx : Lanes x a) (hy : Lanes y b)
-    (hR : ∀ i < 256, R[i]! = if j ≤ i ∧ i < j + 8 then a (i - j)
+    {a b : Nat → α} (hx : LanesR R x a) (hy : LanesR R y b)
+    (hR : ∀ i < 256, Q[i]! = if j ≤ i ∧ i < j + 8 then a (i - j)
       else if j' ≤ i ∧ i < j' + 8 then b (i - j') else P[i]!) :
-    S16 ((m.writeW (wAddr p j) x).writeW (wAddr p j') y) p R := fun i hi => by
+    S16R R ((m.writeW (wAddr p j) x).writeW (wAddr p j') y) p Q := fun i hi => by
   rw [wordAt_write128 _ _ hj' _ hi, wordAt_write128 _ _ hj _ hi, hR i hi]
   by_cases h1 : j' ≤ i ∧ i < j' + 8
   · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ite_eq_right_of_eq_false _ _ (eq_false (by bdd_omega)),
@@ -76,6 +84,14 @@ theorem s16_write2 {m : Mem} {p : Addr} {P R : Poly} (hP : S16 m p P) {j j' : Na
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), ite_eq_right_of_eq_false _ _ (eq_false h2),
         ite_eq_right_of_eq_false _ _ (eq_false h1)]
       exact hP i hi
+
+theorem s16_write2 {m : Mem} {p : Addr} {P R : Poly} (hP : S16 m p P) {j j' : Nat}
+    (hj : j + 8 ≤ 256) (hj' : j' + 8 ≤ 256) (hsep : j + 8 ≤ j' ∨ j' + 8 ≤ j) {x y : BitVec 128}
+    {a b : Nat → Zq} (hx : Lanes x a) (hy : Lanes y b)
+    (hR : ∀ i < 256, R[i]! = if j ≤ i ∧ i < j + 8 then a (i - j)
+      else if j' ≤ i ∧ i < j' + 8 then b (i - j') else P[i]!) :
+    S16 ((m.writeW (wAddr p j) x).writeW (wAddr p j') y) p R :=
+  s16_write2R (R := canW) hP hj hj' hsep hx hy hR
 
 theorem sR_contains (p : Addr) {j : Nat} (hj : j + 8 ≤ 256) : (sR p).Contains (wAddr p j) 16 :=
   Offset.contains_base p (by bdd_omega) (by bdd_omega)

@@ -1,14 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Run
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimA
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimC
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimB
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.Words
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.Local
+import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+import VerifiedGarbage.Proof.MlDsa.Sign.Mem
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+import VerifiedGarbage.Proof.MlDsa.DecideAt
 
 /-!
 # ML-DSA signing on x86 (32-bit): the checks of an iteration

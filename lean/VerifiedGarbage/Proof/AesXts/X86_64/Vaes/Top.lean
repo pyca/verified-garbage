@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Setup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesXts.Spec
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Tail
+import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Body
+import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # One-pass XTS-AES on x86-64: the whole function

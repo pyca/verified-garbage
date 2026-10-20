@@ -1,12 +1,11 @@
 module
 
 public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncLoops
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncFrame
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncLoops
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on x86-64: the encoded message

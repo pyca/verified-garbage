@@ -1,14 +1,12 @@
 module
 
 import VerifiedGarbage.Proof.AesOcb.X86.SealCT
-public import VerifiedGarbage.Proof.AesOcb.X86.Init
+import VerifiedGarbage.Proof.AesOcb.X86.Init
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Ocb.Contract
 public import VerifiedGarbage.Proof.AesOcb.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesOcb.X86.Callee
+public import VerifiedGarbage.Proof.AesOcb.X86.Contract
+import VerifiedGarbage.Proof.AesOcb.X86.Seal
 
 /-!
 # AES-OCB on x86: `Verified`

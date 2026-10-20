@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.Arm.Lookup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.Blowfish.Arm
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # Blowfish on ARMv7: F
@@ -46,11 +44,7 @@ theorem step_run {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) {u : S
   have e0 : u.gpr .r0 = s₀.gpr .r0 := k.gpr (by decide)
   have e1 : u.gpr .r1 = s₀.gpr .r1 := k.gpr (by decide)
   rw [t3, v5, hm, e0, e1, vk.gpr (by decide)]
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
-  · rfl
-  · rw [h3 (by decide)]; rfl
-  · rw [h3 (by decide)]; rfl
-  · rw [h3 (by decide)]; rfl
+  exact fAcc_step _ _ hj _ h3
 
 theorem f_run {s : State} (E : LookEnv s) :
     WP isa Impl.Blowfish.Arm.f s fun t =>

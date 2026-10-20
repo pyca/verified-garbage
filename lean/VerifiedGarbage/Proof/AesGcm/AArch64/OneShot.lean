@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Front
-import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Body
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
+public import VerifiedGarbage.Proof.AesGcm.AArch64.FinTag
+public import VerifiedGarbage.Proof.AesGcm.AArch64.OneEntry
 import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # AES-GCM on AArch64: what `seal` and `open` share

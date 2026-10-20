@@ -1,26 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingPublic
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingReadyCT
+import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingReadyCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingPublic
 meta import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingReadyCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
-import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyMinusCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyRangeCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
-import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ReadyMinusCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ReadyRangeCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
-meta import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Constant time of the complete verifying entry point -/
 

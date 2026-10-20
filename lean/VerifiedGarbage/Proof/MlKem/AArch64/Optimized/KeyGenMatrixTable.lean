@@ -1,10 +1,6 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixFrame
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixPost
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Preserve the immutable rejection table across key-generation matrix entries -/
 @[expose] public section

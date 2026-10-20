@@ -1,16 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.Arm.Contract
-public import VerifiedGarbage.Proof.AesGcm.Arm.Run
-public import VerifiedGarbage.Proof.AesGcm.Arm.Loops
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
 public import VerifiedGarbage.Proof.AesGcm.Arm.Callee
-public import VerifiedGarbage.Impl.AesOcb.Arm
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.AesOcb.Arm
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.AesOcb.Arm.Contract
 
 /-!
 # AES-OCB on ARMv7: where everything is

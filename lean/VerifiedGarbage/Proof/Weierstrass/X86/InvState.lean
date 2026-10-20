@@ -2,15 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86.InvCfg
 public import VerifiedGarbage.Proof.Divstep.Alg32Def
-public import VerifiedGarbage.Proof.Mont.X86.Ops
-import VerifiedGarbage.Proof.Weierstrass.X86.MontCall
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Impl.Weierstrass.X86.Mont
+import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.TCB.X86.State
 
 /-! # Memory layout and state of the 256-bit divstep inversion -/
 

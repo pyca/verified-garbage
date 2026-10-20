@@ -1,25 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.Verify.Body
-meta import VerifiedGarbage.Proof.Ed448.X86.Verify.Body
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.CT
-meta import VerifiedGarbage.Proof.Ed448.X86.Shake.CT
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Proof.X448.X86.Ops
+import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Ed448.X86.Verify.Body
+meta import VerifiedGarbage.Proof.Ed448.X86.Shake.CT
 meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Proof.X448.X86.Ops
+meta import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # Ed448 verification on x86 (32-bit): constant time, and `Verified`

@@ -1,10 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Mont.X86_64.Row
 
-public import VerifiedGarbage.Proof.Mont.X86_64.Blocks
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Blocks
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Montgomery arithmetic on x86-64: a round of the multiplication
@@ -73,12 +74,12 @@ theorem fresh_wins {n : Nat} (hn : n < 7) (i : Nat) : Fresh (wins n i) := by
 
 /-- A row of `rcx · [d]` into the low words of `W = low ++ [tn, tn1]`, and its
 carry into `tn` and `tn1`, if the sum fits. -/
-theorem rowCarry_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
+theorem rowCarry_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (late : Bool)
     {low : List Reg} {tn tn1 : Reg} (hf : Fresh (low ++ [tn, tn1])) {d : Nat}
     (hd : d + 8 * low.length ≤ size)
     (hb : regsVal s (low ++ [tn, tn1]) + (s.gpr .rcx).toNat * wordsVal s.mem base d low.length <
       2 ^ (64 * low.length) * 2 ^ 128) :
-    WP isa (.block (mulRow low d ++ carryUp tn tn1)) s fun s' =>
+    WP isa (.block (mulRowB late low d ++ carryUp tn tn1)) s fun s' =>
       regsVal s' (low ++ [tn, tn1]) =
         regsVal s (low ++ [tn, tn1]) + (s.gpr .rcx).toNat * wordsVal s.mem base d low.length ∧
       Keeps (.rbp :: .rax :: .rdx :: (low ++ [tn, tn1])) s s' := by
@@ -91,7 +92,7 @@ theorem rowCarry_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
   have ftn := hf.2 tn (by simp)
   have ftn1 := hf.2 tn1 (by simp)
   rw [WP.block_append_iff]
-  refine WP.mono (mulRow_ok hs hd hfl) fun s₁ ⟨e₁, k₁⟩ => ?_
+  refine WP.mono (mulRowB_ok hs late hd hfl) fun s₁ ⟨e₁, k₁⟩ => ?_
   have gtn : s₁.gpr tn = s.gpr tn := k₁.1 tn (by simp [hn.1, ftn.1, ftn.2.2.1, ftn.2.2.2.1])
   have gtn1 : s₁.gpr tn1 = s.gpr tn1 := k₁.1 tn1 (by simp [hn.2.1, ftn1.1, ftn1.2.2.1, ftn1.2.2.2.1])
   have hX := regsVal_lt s₁ low
@@ -118,11 +119,11 @@ theorem rowCarry_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
 /-! ## A round -/
 
 /-- The product half of round `i`: `T + a_i B`, if `T < 2m`. -/
-theorem prod_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {n : Nat}
+theorem prod_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (late : Bool) {n : Nat}
     (hn : n < 7) {a b i m : Nat} (ha : a + 8 * i + 8 ≤ size) (hb : b + 8 * n ≤ size)
     (hm : m < 2 ^ (64 * n)) (hB : wordsVal s.mem base b n < m) (hT : regsVal s (wins n i) < 2 * m) :
     WP isa (.block (([.mov .rcx (.mem (sc (a + 8 * i)))] : List Instr) ++
-        (mulRow ((List.range n).map (win n i)) b ++ carryUp (win n i n) (win n i (n + 1))))) s fun s' =>
+        (mulRowB late ((List.range n).map (win n i)) b ++ carryUp (win n i n) (win n i (n + 1))))) s fun s' =>
       regsVal s' (wins n i) = regsVal s (wins n i) +
         (word s.mem base (a + 8 * i)).toNat * wordsVal s.mem base b n ∧
       Scr s' base size ∧ Keeps (.rax :: .rcx :: .rdx :: .rbp :: wins n i) s s' := by
@@ -140,7 +141,7 @@ theorem prod_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {n
   have hA := (word s.mem base (a + 8 * i)).isLt
   have hAB : (word s.mem base (a + 8 * i)).toNat * wordsVal s.mem base b n ≤ (2 ^ 64 - 1) * m :=
     Nat.mul_le_mul (by omega) (by omega)
-  refine WP.mono (rowCarry_ok hs₁ hf (d := b) (by rw [hl]; omega) (by
+  refine WP.mono (rowCarry_ok hs₁ late hf (d := b) (by rw [hl]; omega) (by
       rw [← hW, hl, hT₁, c₁, k₁.2.1, hP]
       have : (2 ^ 64 - 1) * m ≤ 2 ^ (64 * n) * 2 ^ 64 := by
         rw [Nat.mul_comm]; exact Nat.mul_le_mul (by omega) (by omega)
@@ -164,7 +165,7 @@ theorem redGen_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     (hT : regsVal s (wins M.n i) < 2 * m + (2 ^ 64 - 1) * m) :
     WP isa (.block (([.mov .rax (.reg (win M.n i 0)), .movImm64 .rcx M.minv, .mul .rcx, .mov .rcx (.reg .rax)] :
           List Instr) ++
-          (mulRow ((List.range M.n).map (win M.n i)) M.mo ++
+          (mulRowB (lateRow M) ((List.range M.n).map (win M.n i)) M.mo ++
             carryUp (win M.n i M.n) (win M.n i (M.n + 1))))) s fun s' =>
       (∃ u, u < 2 ^ 64 ∧ 2 ^ 64 * regsVal s' (wins M.n (i + 1)) = regsVal s (wins M.n i) + u * m) ∧
       Keeps (.rax :: .rcx :: .rdx :: .rbp :: wins M.n i) s s' := by
@@ -186,7 +187,7 @@ theorem redGen_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   have hu := (s₃.gpr .rcx).isLt
   have hum : (s₃.gpr .rcx).toNat * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul (by omega) (Nat.le_refl _)
   have hmem₃ : s₃.mem = s.mem := k₃.2.1
-  refine WP.mono (rowCarry_ok hs₃ hf (d := M.mo) (by rw [hl]; omega) (by
+  refine WP.mono (rowCarry_ok hs₃ (lateRow M) hf (d := M.mo) (by rw [hl]; omega) (by
       rw [← hW, hl, hT₃, hmem₃, hm, hP]
       have : (2 ^ 64 - 1) * m ≤ 2 ^ (64 * M.n) * 2 ^ 64 := by
         rw [Nat.mul_comm]; exact Nat.mul_le_mul (by omega) (by omega)

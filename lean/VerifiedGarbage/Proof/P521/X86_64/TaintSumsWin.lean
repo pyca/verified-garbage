@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
-meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
 meta import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # P-521 on x86-64: summaries of ECDH's window method, for constant time

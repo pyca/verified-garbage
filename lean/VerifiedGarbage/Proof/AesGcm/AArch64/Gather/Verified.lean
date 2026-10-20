@@ -1,12 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.CT
 public import VerifiedGarbage.Impl.StackScratch.AArch64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+public import VerifiedGarbage.Impl.AesGcm.AArch64.SealGather
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Callee
+import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Fn
+import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.CT
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, AArch64: `Verified`
@@ -28,9 +32,9 @@ namespace VG.Proof.AesGcm.AArch64.Gather
 
 open VG VG.AArch64 VG.Impl.AesGcm.AArch64.SealGather
 
-theorem sealGather_correct (F : SealFn) (s : State) (hs : gatherAArch64.pre s) :
-    ∃ t s', Exec isa (sealGather F.fn) s t s' ∧ abiPreserved s s' ∧ gatherAArch64.post s s' := by
-  obtain ⟨t, s', he, ha, hp⟩ := sealGather_wp F hs
+theorem sealGather_correct {C : CtxSpec} (F : SealFn C) (s : State) (hs : (gatherAArch64 C).pre s) :
+    ∃ t s', Exec isa (sealGather F.fn) s t s' ∧ abiPreserved s s' ∧ (gatherAArch64 C).post s s' := by
+  obtain ⟨t, s', he, ha, hp⟩ := sealGather_wp F hs.1 hs.2
   exact ⟨t, s', he, ha, hp⟩
 
 theorem stackArgs_three (s : State) : List.map (stackArg s) (List.range 3) =
@@ -56,7 +60,8 @@ theorem pairFacts_ro (l : List (Region × Bool)) (h : ∀ a ∈ l, a.2 = false) 
     rfl
 
 set_option linter.unusedSimpArgs false in
-theorem gatherPre_of_spec {s : State} (h : (Spec.Gcm.sealGatherContract AArch64.abi 2592).pre s) : gatherPre s := by
+theorem gatherPre_of_spec {s : State} (h : (Spec.Gcm.sealGatherContract AArch64.abi 2592).pre s) :
+    gatherPre .plain s := by
   sig_pre [Spec.Gcm.sealGatherContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre,
     AArch64.abi, AArch64.argRegs, stackArgs_three, List.append_eq] at h
   rw [Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, pairFacts_ro _ (by simp)] at h
@@ -100,12 +105,12 @@ theorem gatherSat_pre : ∃ s, (Spec.Gcm.sealGatherContract AArch64.abi 2592).pr
     AArch64.abi, AArch64.argRegs, stackArgs_three, List.append_eq] [gatherSat, stackArg, stackArgAddr, Mem.readW,
     Mem.read] using gatherSat
 
-theorem gather_implies : gatherAArch64.Implies (Spec.Gcm.sealGatherContract AArch64.abi 2592) :=
-  ⟨fun _ h => gatherPre_of_spec h, fun _ _ _ h => gatherPost_of h, fun _ _ _ _ h => gatherPub_of h, gatherSat_pre⟩
+theorem gather_implies : (gatherAArch64 .plain).Implies (Spec.Gcm.sealGatherContract AArch64.abi 2592) :=
+  ⟨fun _ h => ⟨gatherPre_of_spec h, trivial⟩, fun _ _ _ h => gatherPost_of h, fun _ _ _ _ h => gatherPub_of h, gatherSat_pre⟩
 
-theorem sealGather_verified (F : SealFn) :
+theorem sealGather_verified (F : SealFn .plain) :
     Verified AArch64.target (sealGather F.fn) (Spec.Gcm.sealGatherContract AArch64.abi 2592) :=
-  Verified.of_correct (k := gatherAArch64) (sealGather_correct F) (sealGather_ct F) gather_implies
+  Verified.of_correct (k := gatherAArch64 .plain) (sealGather_correct F) (sealGather_ct F) gather_implies
 
 theorem depth_of_noFrames {c : Prog isa} (h : c.noFrames = true) : c.aarch64Depth = 0 := by
   induction c <;> simp_all [Code.noFrames, Code.aarch64Depth]
@@ -114,8 +119,8 @@ open VG.Impl.AesGcm.AArch64 in
 /-- The frames of `vg_aes_gcm_seal`, in its frame of 2576 bytes, use at most those. -/
 theorem seal_depth (v : GcmImpl) :
     16 * (Impl.StackScratch.AArch64.withStackArgScratch 2576 1 («seal» v.callees)).aarch64Depth ≤ 2576 := by
-  simp only [Impl.StackScratch.AArch64.withStackArgScratch, «seal», j0, j0hash, oneAad, absorbAl, encBody, fo, textAbs,
-    finBody, tag, crypt, crSeg1, crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy,
+  simp only [Impl.StackScratch.AArch64.withStackArgScratch, «seal», sealRest, j0, j0hash, oneAad, absorbAl, encBody, fo, textAbs,
+    finBody, tag, crypt, crSeg1, crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, xorB,
     Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.aarch64Depth, Instr.frameUnits,
     depth_of_noFrames v.ctr.noFrames, depth_of_noFrames v.key.noFrames, depth_of_noFrames v.gh.noFrames]
   decide

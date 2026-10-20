@@ -1,17 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCorrect
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivPub
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Rsa.AArch64.PrivCheckOk
+import VerifiedGarbage.Proof.Rsa.AArch64.PrivRelease
+import VerifiedGarbage.Proof.Rsa.AArch64.PrivCrt
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Rsa.AArch64.PrivCorrect
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Rsa.AArch64.PrivPub
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Rsa.AArch64.PrivCheckOk
+meta import VerifiedGarbage.Proof.Rsa.AArch64.PrivRelease
+meta import VerifiedGarbage.Proof.Rsa.AArch64.PrivCrt
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_private_checked` on AArch64: constant time

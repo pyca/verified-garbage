@@ -4,16 +4,18 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
 import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
 import VerifiedGarbage.Proof.AesGcm.X86_64.Undo
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.SealBody
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_open`
 
-Untrusted: everything here is checked by Lean. A tag length §5.2.1.2 does
+Untrusted: everything here is checked by Lean. A tag length `tagLenOk` does
 not allow gives 0. Any other: `J₀` and the additional data (`oneAad`), the
 whole blocks decrypted and absorbed (`oneBlocks`), the tag of the ciphertext
 (`oneTag 112`), the received tag, read from `tag`, padded (`recv`) and
@@ -567,7 +569,7 @@ theorem openOkW_ok (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {
   generalize hR : (s.gpr .rsi).toNat = R at *
   have hR' : R = 10 ∨ R = 12 ∨ R = 14 := hR ▸ C.rounds
   have hb : 1 ≤ t ∧ t ≤ 16 := by
-    simp only [Spec.Gcm.tagLenOk, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true, decide_eq_true_eq] at hok'
+    simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at hok'
     omega_arith
   refine WP.seq (WP.mono ha fun s₃ M => ?_)
   generalize hH : ctxH s.mem Ctx = H at M
@@ -708,7 +710,7 @@ theorem openM_of {M : Gcm.X86_64.Stitch.CtxMode} {mid : Prog isa} {s : State}
   have hlt := C.data.ok.lt
   refine WP.seq (WP.mono (Q := OpenOkPost s Ctx W SP Np A D T nl al n t)
     (WP.ite (!Spec.Gcm.tagLenOk t) (eval_e hz₂) (fun hbad => ?_) (fun hok => ?_)) fun s₅ h₅ => ?_)
-  · -- A length §5.2.1.2 does not allow.
+  · -- A length `tagLenOk` does not allow.
     have hbad' : Spec.Gcm.tagLenOk t = false := by simpa using hbad
     refine WP.run (Q := fun s₅ => s₅.gpr .rax = 0 ∧ (∀ r, r ≠ .rax → s₅.gpr r = s₂.gpr r) ∧ s₅.mem = s₂.mem ∧
         s₅.rd = s₂.rd ∧ s₅.wr = s₂.wr)

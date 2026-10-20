@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.TripleDes.X86.Ecb
 public import VerifiedGarbage.Impl.Modes.X86.Seq
+public import VerifiedGarbage.Impl.Modes.CbcChained
+public import VerifiedGarbage.Impl.TripleDes.X86.Block
 
 /-!
 # Triple DES's core for the modes on x86 (32-bit)
@@ -77,10 +78,10 @@ def dirCore (d : Direction) : Modes.X86.Core where
   bw := 2
   stack := 16
 
-/-- `vg_triple_des_cbc_encrypt`, with its scratch buffer as the fifth argument. -/
-def cbcEncrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cbcEnc 2)
+/-- `vg_triple_des_cbc_encrypt_chained`, with its scratch buffer as the fifth argument. -/
+def cbcEncryptChained : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cbcEncChained 2)
 
-/-- `vg_triple_des_cbc_decrypt`, with its scratch buffer as the fifth argument. -/
-def cbcDecrypt : Prog isa := (dirCore .decrypt).seq (Modes.Mode.cbcDec 2)
+/-- `vg_triple_des_cbc_decrypt_chained`, with its scratch buffer as the fifth argument. -/
+def cbcDecryptChained : Prog isa := (dirCore .decrypt).seq (Modes.Mode.cbcDecChained 2)
 
 end VG.Impl.TripleDes.X86

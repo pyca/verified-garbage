@@ -1,15 +1,26 @@
 module
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Chunk
+public import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
 
-public import VerifiedGarbage.Proof.AesCcm.X86_64.MacCT
-meta import VerifiedGarbage.Proof.AesCcm.X86_64.MacCT
-public import VerifiedGarbage.Proof.AesCcm.X86_64.Crypt
-meta import VerifiedGarbage.Proof.AesCcm.X86_64.Crypt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesCcm.X86_64.Crypt
 import VerifiedGarbage.Proof.AesCcm.X86_64.Args
+import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Chunk
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Crypt
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.Args
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Impl.AesCcm.X86_64
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
 
 /-!
 # AES-CCM on x86-64: counter mode is constant time

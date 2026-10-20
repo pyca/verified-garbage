@@ -1,12 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Masks
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ShapeOctets
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Shape
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Bignum.X86_64.Words
 
 /-! # FFDH parameter candidates on x86-64: the first shaped byte -/
 

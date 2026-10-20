@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86.Unpack
 public import VerifiedGarbage.Impl.MlKem.X86.Ntt
 public import VerifiedGarbage.Proof.MlKem.Ntt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-!

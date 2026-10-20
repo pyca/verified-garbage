@@ -1,25 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Main
-meta import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Main
 public import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Contract
-meta import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Contract
-public import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Lit
-meta import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Lit
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Lit
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Main
+meta import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Lit
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Mathlib.Tactic.Finiteness.Attr
 
 /-!
 # secp256k1 public keys on AArch64: `Verified`

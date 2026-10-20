@@ -1,12 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
 public import VerifiedGarbage.Proof.Ecdh.X86.Main
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Scalars
 
 @[expose] public section
 

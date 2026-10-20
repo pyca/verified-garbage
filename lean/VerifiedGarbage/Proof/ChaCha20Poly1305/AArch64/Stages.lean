@@ -1,24 +1,22 @@
 module
 
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.Framework.AArch64.Spill
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Init
+import VerifiedGarbage.Proof.Poly1305.AArch64.Init
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Finalize
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorVariant
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
-import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
-public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.ChaCha20Poly1305
-import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Blocks
+import VerifiedGarbage.Proof.Poly1305.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Lit
-public import VerifiedGarbage.Proof.Framework.Offset
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 
@@ -341,7 +339,7 @@ end
 /-- A block that writes no callee-saved register keeps them, and the stack
 pointer. -/
 theorem WP.kept {is : List Instr} {s : State} {Q : State → Prop} (h : WP isa (.block is) s Q)
-    (hc : (is.all fun i => preserved.all fun r => dstOf i != some r) = true) :
+    (hc : (is.all fun i => preserved.all fun r => !clobbers i r) = true) :
     WP isa (.block is) s fun s' => Q s' ∧ (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.sp = s.sp := by
   obtain ⟨t, s', he, hq⟩ := h
   refine ⟨t, s', he, hq, fun r hr => Exec.gpr (fun i hi => ?_) he (.inl rfl), Exec.sp he⟩

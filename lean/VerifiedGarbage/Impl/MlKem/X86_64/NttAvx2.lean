@@ -4,22 +4,11 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Ntt
 public import VerifiedGarbage.Impl.MlKem.X86_64.Avx
 
 /-!
-# ML-KEM on x86-64: `vg_mlkem_ntt_avx2` and `vg_mlkem_inv_ntt_avx2`
+# ML-KEM on x86-64: NTT layers with AVX2
 
-`nttAvx2(f = rdi, scratch = rsi)` and `nttInvAvx2(f = rdi, scratch = rsi)`
-are `vg_mlkem_ntt` and `vg_mlkem_inv_ntt` (`Ntt.lean`) on sixteen
-coefficients at a time, eight in each 128-bit lane of AVX2 registers
-(`Avx.lean`), with the same working space: the table of zetas at 0, the
-polynomial as 256 words at 256 (`S`), and MXCSR's at 768 (`withMxcsr`).
-The prologue packs `f` into `S` sixteen coefficients at a time (`ypack`:
-`vpackssdw` and `vpermq` to put the words back in order), and the epilogue
-unpacks `S` into `f` (`yunpack`).
-
-The table holds `ζ^BitRev7(k) · 2¹⁶ mod q` at `k` for `NTT` (`zmTab`), and
-at `127 - k` for `NTT⁻¹` (`zmTabInv`), so that both take the zetas of their
-blocks in increasing order: a layer whose first block has the zeta at
-position `t` of the table runs them in order from `r8` at `t`. The layers,
-each a pass over `S` with `rdx` at the words it loads:
+The definitions below are the layers on sixteen coefficients at a time,
+eight in each 128-bit lane of AVX2 registers (`Avx.lean`), that ML-DSA's
+AVX2 transforms (`Impl/MlDsa/X86_64/Arith/Avx2.lean`) share:
 
 * `len ≥ 16` (`ylay`): each block with its zeta in every word of `ymm13`
   (`yzeta1`), and `len / 16` times the butterflies of the sixteen words
@@ -33,8 +22,6 @@ each a pass over `S` with `rdx` at the words it loads:
   `16 + 8l` to `16 + 8l + 7`; the zetas of the blocks of each lane are
   gathered into the lanes of `ymm13` with `vpblendd` (`yzeta4`, `yzeta8`).
 
-`NTT⁻¹` then multiplies every coefficient by `3303` (`yscale`). Both clear
-the upper halves of the vector registers before returning (`vzeroupper`).
 Every address and branch depends only on the pointers.
 -/
 
@@ -43,9 +30,6 @@ Every address and branch depends only on the pointers.
 namespace VG.Impl.MlKem.X86_64
 
 open VG.X86_64
-
-/-- `ζ^BitRev7(127 - k) · 2¹⁶ mod q`, the table of `NTT⁻¹`. -/
-def zmTabInv (k : Nat) : Nat := zmTab (127 - k)
 
 /-- `vop d, a, b` on 256-bit registers. -/
 def yb (op : VBinOp) (d a b : XReg) : Instr := .vop (.vbin op .l256 d a b)
@@ -127,11 +111,14 @@ def ylay4 (bf : List Instr) (t : Nat) : Prog isa := ylay42 bf gath4 scat4 yzeta4
 
 def ylay2 (bf : List Instr) (t : Nat) : Prog isa := ylay42 bf gath2 scat2 yzeta8 16 t
 
-/-- Every word of `S` times `3303`, reduced. -/
-def yscale : Prog isa :=
-  .seq (.block (leaR .rdx .rsi oS ++ yconst .xmm13 0x02000200))
-    (rcxLoop 16 ([.vmovdquLoad .l256 .xmm3 (at_ .rdx 0)] ++ toY (vmont .xmm3 .xmm13 .xmm2 ++ vcadd .xmm3 .xmm2) ++
+/-- `body` on every word of `S` in `ymm3`, with `c` in every doubleword of `ymm13`. -/
+def ymulc (c : BitVec 32) (body : List Instr) : Prog isa :=
+  .seq (.block (leaR .rdx .rsi oS ++ yconst .xmm13 c))
+    (rcxLoop 16 ([.vmovdquLoad .l256 .xmm3 (at_ .rdx 0)] ++ toY body ++
       [.vmovdquStore .l256 (at_ .rdx 0) .xmm3, .alu .add .rdx (.imm 32)]))
+
+/-- Every word of `S` times `3303`, reduced. -/
+def yscale : Prog isa := ymulc 0x02000200 (vmont .xmm3 .xmm13 .xmm2 ++ vcadd .xmm3 .xmm2)
 
 /-- The 256 `u32`s at `[r9]` to words at `[rdx]`, sixteen at a time. -/
 def ypack : Prog isa :=
@@ -154,14 +141,5 @@ def ypro (tab : Nat → Nat) : Prog isa :=
 /-- `S` unpacked into `f`, and the upper halves of the vector registers cleared. -/
 def yepi : Prog isa :=
   .seq (.block ([.mov .r9 (.reg .rdi)] ++ leaR .rdx .rsi oS)) (.seq yunpack (.block [.vop .vzeroupper]))
-
-def nttAvx2 : Prog isa := withMxcsr .rsi oMx <|
-  .seq (ypro zmTab) (.seq (ylay vbfly 128 1) (.seq (ylay vbfly 64 2) (.seq (ylay vbfly 32 4)
-    (.seq (ylay vbfly 16 8) (.seq (ylay8 vbfly 16) (.seq (ylay4 vbfly 32) (.seq (ylay2 vbfly 64) yepi)))))))
-
-def nttInvAvx2 : Prog isa := withMxcsr .rsi oMx <|
-  .seq (ypro zmTabInv) (.seq (ylay2 vibfly 0) (.seq (ylay4 vibfly 64) (.seq (ylay8 vibfly 96)
-    (.seq (ylay vibfly 16 112) (.seq (ylay vibfly 32 120) (.seq (ylay vibfly 64 124)
-      (.seq (ylay vibfly 128 126) (.seq yscale yepi))))))))
 
 end VG.Impl.MlKem.X86_64

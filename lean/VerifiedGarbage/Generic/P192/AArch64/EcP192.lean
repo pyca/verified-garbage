@@ -1,11 +1,37 @@
 module
 
-import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-public import VerifiedGarbage.Proof.EcKey.AArch64.P192.Verified
+import VerifiedGarbage.Proof.EcKey.AArch64.P192.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
+public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Tactic.ClearExcept
+public import VerifiedGarbage.Proof.EcKey.AArch64.P192.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.P192
+public import VerifiedGarbage.Proof.EcKey.AArch64.P192.Verified
+import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Impl.Ecdh.P192.AArch64
+public import VerifiedGarbage.Proof.EcKey.PublicKey
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+public import VerifiedGarbage.Proof.Ecdsa.Sign
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
+import VerifiedGarbage.Impl.Ecdh.P192.AArch64
+import VerifiedGarbage.Proof.EcKey.PublicKey
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
+import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+import VerifiedGarbage.Proof.Ecdsa.Sign
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 
 /-! # p192 on AArch64, generic over its proven group law and inversions -/
 
@@ -14,16 +40,13 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 namespace VG.Generic.P192.AArch64.EcP192
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P192.curve) : List Artifact := [
-  { Spec.EcKey.P192.publicKeyApi with
-    target := AArch64.target
-    doc := Spec.EcKey.P192.publicKeyApi.doc (notes := ["Field elements are four 64-bit words in Montgomery form. \
+  Spec.EcKey.P192.publicKeyApi.artifact AArch64.target {
+    notes := ["Field elements are four 64-bit words in Montgomery form. \
       Scalar multiplication uses a fixed 256-iteration ladder with the general complete addition \
       formulas of Renes, Costello and Batina (Algorithm 1). \
       The inversion is a call of `vg_p192_inv_mod_p`, by divsteps. \
-      Branches and memory addresses depend only on pointers and loop counters."])
+      Branches and memory addresses depend only on pointers and loop counters."]
     code := Impl.EcKey.AArch64.publicKeyP192
-    contract := Spec.EcKey.P192.inst.publicKeyContract AArch64.abi
-    verified := Proof.EcKey.AArch64.P192.pk_verified h.law h.inv
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.EcKey.AArch64.P192.pk_verified h.law h.inv }]
 
 end VG.Generic.P192.AArch64.EcP192

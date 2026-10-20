@@ -1,14 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
+public import VerifiedGarbage.Proof.Dsa.AArch64.Execution
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.WriteSignature
+import VerifiedGarbage.Proof.Dsa.AArch64.WriteSignature
 import VerifiedGarbage.Proof.Dsa.AArch64.Result
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.RsaPss
+import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Signature release, success return value and restored registers -/
 

@@ -1,8 +1,7 @@
 module
 
-import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
-import VerifiedGarbage.Impl.Ed25519.X86_64.Cached
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Point64
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
 
 /-!
 # Verification's equation with signed sliding windows

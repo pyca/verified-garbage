@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part1
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.X25519.X86_64.Env
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: stages 2 and 3 of an iteration
@@ -33,7 +31,7 @@ theorem le_kbv {x : Nat} (i : Nat) (h : x < 2 ^ 61) : x ≤ kbv i := by simp onl
 /-- Stage 2 and its product. -/
 theorem part2_ok {s : State} {base : Addr} {x1 : Nat → Nat} (hs : Scr s base) (hk : Consts s.mem base x1)
     (hy : ∀ l < 4, ∀ i < 5, lanes s 0 l i < 2 ^ 61) :
-    WP isa (.block (stage2 ++ mul4 OPV)) s fun s' => Kept base s s' ∧
+    WP isa (.block (stage2 ++ mul4H)) s fun s' => Kept base s s' ∧
       (∀ l < 4, ∀ i < 5, lanes s' 0 l i < 2 ^ 61 ∧ slotv s'.mem base OPV l i < 2 ^ 52) ∧
       fe5 (slotv s'.mem base OPV 2) = fe5 (lanes s 0 0) ∧
       fe5 (slotv s'.mem base OPV 3) = fe5 (lanes s 0 0) - fe5 (lanes s 0 1) ∧
@@ -66,8 +64,8 @@ theorem part2_ok {s : State} {base : Addr} {x1 : Nat → Nat} (hs : Scr s base) 
   have hs₄ := scr_of hs₃ g₄ w₄
   have b5 : ∀ l < 4, ∀ i < 5, lanes s₃ 5 l i < 2 ^ 52 := fun l hl i hi => by
     rw [e₃ l hl i hi]; exact (u₂ l hl i hi).2
-  refine WP.mono (mul4_wp (a := OPV) (by decide) (mulS_eq _ _) (mulV_nat) mulV_ok mulV_keep mulV_st
-    hs₄.rdi (scr_ctx hs₄) (fun l hl i hi => by rw [(u₄ l hl i hi).1]; exact b5 l hl i hi)
+  refine WP.mono (mul4H_wp
+    hs₄.rdi (scr_ctx hs₄) (fun l hl i hi => by rw [(u₄ l hl i hi).1.2]; exact b5 l hl i hi)
     (fun l hl i hi => by rw [(u₄ l hl i hi).2]; exact (u₃ l hl i hi).2))
     fun s₅ ⟨v₅, m₅, u₅, _⟩ => ?_
   have K : Kept base s s₅ :=
@@ -75,7 +73,7 @@ theorem part2_ok {s : State} {base : Addr} {x1 : Nat → Nat} (hs : Scr s base) 
       ⟨g₄, r₄, w₄, o₄.mono (by decide) (by decide)⟩).trans (Kept.vm v₅ m₅)
   -- the operands
   have fV : ∀ l < 4, fe5 (slotv s₅.mem base OPV l) = fe5 (fun i => opV (lanes s 0) l i) := fun l hl => by
-    rw [m₅, fe5_congr (fun i hi => (u₄ l hl i hi).1), fe5_congr (fun i hi => e₃ l hl i hi),
+    rw [m₅, fe5_congr (fun i hi => (u₄ l hl i hi).1.1), fe5_congr (fun i hi => e₃ l hl i hi),
       fe5_congr (fun i hi => (u₂ l hl i hi).1), fe5_carry _ (by have := (u₁ l hl 4 (by decide)).2.1; omega)]
     exact fe5_congr fun i hi => (u₁ l hl i hi).1
   have fW : ∀ l < 4, fe5 (lanes s₄ 5 l) = fe5 (fun i => opW (lanes s 0) l i) := fun l hl => by
@@ -85,8 +83,9 @@ theorem part2_ok {s : State} {base : Addr} {x1 : Nat → Nat} (hs : Scr s base) 
   have fM : ∀ l < 4, fe5 (lanes s₅ 0 l) = fe5 (fun i => opV (lanes s 0) l i) * fe5 (fun i => opW (lanes s 0) l i) :=
     fun l hl => by
       rw [fe5_congr (fun i hi => (u₅ l hl i hi).1),
-        fe5_mul (fun i hi => by rw [(u₄ l hl i hi).1]; exact b5 l hl i hi)
-          (fun i hi => by rw [(u₄ l hl i hi).2]; exact (u₃ l hl i hi).2), ← m₅, fV l hl, fW l hl]
+        fe5_mul (fun i hi => by rw [(u₄ l hl i hi).1.2]; exact b5 l hl i hi)
+          (fun i hi => by rw [(u₄ l hl i hi).2]; exact (u₃ l hl i hi).2),
+        fe5_congr (fun i hi => (u₄ l hl i hi).1.2.trans (u₄ l hl i hi).1.1.symm), ← m₅, fV l hl, fW l hl]
   have f0 : fe5 (fun i => opV (lanes s 0) 0 i) = fe5 (lanes s 0 2) + fe5 (lanes s 0 3) := fe5_add fun _ _ => rfl
   have f1 : fe5 (fun i => opV (lanes s 0) 1 i) = fe5 (lanes s 0 2) - fe5 (lanes s 0 3) :=
     fe5_sub (fun _ _ => rfl) (fun i hi => le_kbv i (hy 3 (by decide) i hi))
@@ -98,7 +97,7 @@ theorem part2_ok {s : State} {base : Addr} {x1 : Nat → Nat} (hs : Scr s base) 
     fe5_sub (fun _ _ => rfl) (fun i hi => le_kbv i (hy 3 (by decide) i hi))
   have g2 : fe5 (fun i => opW (lanes s 0) 2 i) = fe5 (lanes s 0 1) := fe5_congr fun _ _ => rfl
   have g3 : fe5 (fun i => opW (lanes s 0) 3 i) = Spec.X25519.a24 := fe5_a24
-  refine ⟨K, fun l hl i hi => ⟨(u₅ l hl i hi).2, by rw [m₅, (u₄ l hl i hi).1]; exact b5 l hl i hi⟩,
+  refine ⟨K, fun l hl i hi => ⟨(u₅ l hl i hi).2, by rw [m₅, (u₄ l hl i hi).1.1]; exact b5 l hl i hi⟩,
     by rw [fV 2 (by decide), f2], by rw [fV 3 (by decide), f3],
     by rw [fM 0 (by decide), f0, g0], by rw [fM 1 (by decide), f1, g1],
     by rw [fM 2 (by decide), f2, g2], by rw [fM 3 (by decide), f3, g3]⟩
@@ -106,7 +105,7 @@ theorem part2_ok {s : State} {base : Addr} {x1 : Nat → Nat} (hs : Scr s base) 
 /-- Stage 3 and its product, with stage 2's first operand at `OPV`. -/
 theorem part3_ok {s : State} {base : Addr} {x1 : Nat → Nat} (hs : Scr s base) (hk : Consts s.mem base x1)
     (hy : ∀ l < 4, ∀ i < 5, lanes s 0 l i < 2 ^ 61 ∧ slotv s.mem base OPV l i < 2 ^ 52) :
-    WP isa (.block (stage3 ++ mul4 OPG)) s fun s' => Kept base s s' ∧
+    WP isa (.block (stage3 ++ mul4H)) s fun s' => Kept base s s' ∧
       (∀ l < 4, ∀ i < 5, lanes s' 0 l i < 2 ^ 61) ∧
       fe5 (lanes s' 0 0) = fe5 (lanes s 0 2) * 1 ∧
       fe5 (lanes s' 0 1) = fe5 (slotv s.mem base OPV 3) * (fe5 (slotv s.mem base OPV 2) + fe5 (lanes s 0 3)) ∧
@@ -134,18 +133,18 @@ theorem part3_ok {s : State} {base : Addr} {x1 : Nat → Nat} (hs : Scr s base) 
   have e₃ := lanes_keep (s := s₂) (s' := s₃) (r0 := 5) (fun r hr h1 h2 l hl => k₃ r hr (by omega) (by omega) l hl)
     (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (s3b_wp hs₃.rdi (scr_ctx hs₃)) fun s₄ ⟨v₄, o₄, u₄, k₄⟩ => ?_
+  refine WP.mono (s3b_wp (scr_ctx hs₃)) fun s₄ ⟨v₄, o₄, u₄, k₄⟩ => ?_
   have hs₄ := scr_of hs₃ (vm_gpr v₄) (vm_wr v₄)
   have e₄ := lanes_keep (s := s₃) (s' := s₄) (r0 := 5) (fun r hr _ _ l hl => k₄ r hr l hl) (by decide)
   have b5 : ∀ l < 4, ∀ i < 5, lanes s₄ 5 l i < 2 ^ 52 := fun l hl i hi => by
     rw [e₄ l hl i hi, e₃ l hl i hi]; exact (u₂ l hl i hi).2
-  refine WP.mono (mul4_wp (a := OPG) (by decide) (mulS_eq _ _) (mulG_nat) mulG_ok mulG_keep mulG_st
+  refine WP.mono (mul4H_wp
     hs₄.rdi (scr_ctx hs₄) (fun l hl i hi => by rw [u₄ l hl i hi]; exact (u₃ l hl i hi).2) b5)
     fun s₅ ⟨v₅, m₅, u₅, _⟩ => ?_
   have K : Kept base s s₅ :=
     ((((Kept.vm v₁ m₁).trans (Kept.vm v₂ m₂)).trans (Kept.vm v₃ m₃)).trans
-      ⟨vm_gpr v₄, vm_rd v₄, vm_wr v₄, o₄.mono (by decide) (by decide)⟩).trans (Kept.vm v₅ m₅)
-  have fG : ∀ l < 4, fe5 (slotv s₄.mem base OPG l) = fe5 (fun i => opG (lanes s 0) (slotv s.mem base OPV) l i) :=
+      (Kept.vm v₄ o₄)).trans (Kept.vm v₅ m₅)
+  have fG : ∀ l < 4, fe5 (hlanes s₄ l) = fe5 (fun i => opG (lanes s 0) (slotv s.mem base OPV) l i) :=
     fun l hl => by
       rw [fe5_congr (fun i hi => u₄ l hl i hi), fe5_congr (fun i hi => (u₃ l hl i hi).1),
         fe5_carry _ (by rw [e₂ l hl 4 (by decide)]; have := (u₁ l hl 4 (by decide)).2.2.2; omega)]

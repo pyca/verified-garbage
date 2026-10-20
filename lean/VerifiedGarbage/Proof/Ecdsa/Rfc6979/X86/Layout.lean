@@ -1,21 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86
-public import VerifiedGarbage.Proof.Framework.X86.Call
-public import VerifiedGarbage.Proof.Framework.X86.Wp
-public import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.Framework.X86.StackScratch
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Covers
-public import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): where everything is
@@ -55,14 +45,16 @@ structure Lay (dn : Nat) where
   q : Nat
   /-- Whether two `V`s make a candidate. -/
   wide : Bool
+  /-- Whether `h` is at the frame's top. -/
+  hHigh : Bool
   /-- The words at the frame's top. -/
   e : Nat
-  ew : e = extra wide
+  ew : e = extra wide hHigh
   cs : List (String × List (BitVec 64))
   sy : String → BitVec 32
 
 theorem Lay.he {dn : Nat} (L : Lay dn) : L.e ≤ 36 := by
-  rw [L.ew, extra]; split <;> omega_arith
+  rw [L.ew, extra]; split <;> (try split) <;> omega_arith
 
 namespace Lay
 
@@ -411,45 +403,46 @@ end Ctx
 /-! ## The frame's allocation -/
 
 /-- The layout of a call from `s`, with a digest of `dn` bytes, scalars of
-`q`, and two `V`s making a candidate if `wide`. -/
-def lay (dn q : Nat) (wide : Bool) (s : State) (cs : List (String × List (BitVec 64)) := []) : Lay dn :=
-  ⟨arg s 0, arg s 1, arg s 2, arg s 3, s.gpr .esp, q, wide, _, rfl, cs, fun n => if n ∈ cs.map Prod.fst then s.syms n else 0⟩
+`q`, two `V`s making a candidate if `wide`, and `h` at the frame's top if
+`hHigh`. -/
+def lay (dn q : Nat) (wide hHigh : Bool) (s : State) (cs : List (String × List (BitVec 64)) := []) : Lay dn :=
+  ⟨arg s 0, arg s 1, arg s 2, arg s 3, s.gpr .esp, q, wide, hHigh, _, rfl, cs, fun n => if n ∈ cs.map Prod.fst then s.syms n else 0⟩
 
-theorem lay_sy (dn q : Nat) (wide : Bool) (s : State) (cs : List (String × List (BitVec 64)))
-    {c : String × List (BitVec 64)} (hc : c ∈ cs) : (lay dn q wide s cs).sy c.1 = s.syms c.1 := by
+theorem lay_sy (dn q : Nat) (wide hHigh : Bool) (s : State) (cs : List (String × List (BitVec 64)))
+    {c : String × List (BitVec 64)} (hc : c ∈ cs) : (lay dn q wide hHigh s cs).sy c.1 = s.syms c.1 := by
   exact ite_eq_left (List.mem_map.mpr ⟨c, hc, rfl⟩)
 
-theorem lay_tbls (dn q : Nat) (wide : Bool) (s : State) (cs : List (String × List (BitVec 64))) :
-    (lay dn q wide s cs).TBLs = Abi.constRegions (fun n => (s.syms n).setWidth 64) cs := by
+theorem lay_tbls (dn q : Nat) (wide hHigh : Bool) (s : State) (cs : List (String × List (BitVec 64))) :
+    (lay dn q wide hHigh s cs).TBLs = Abi.constRegions (fun n => (s.syms n).setWidth 64) cs := by
   apply List.map_congr_left
   intro c hc
-  simp only [lay_sy dn q wide s cs hc]
+  simp only [lay_sy dn q wide hHigh s cs hc]
 
 /-- Our arguments' slots. -/
-theorem lay_ARGS {I : Spec.Ecdsa.Rfc6979.Instance} {wide : Bool} {s : State} {cs : List (String × List (BitVec 64))}
-    (e272 : 272 + 4 * extra wide ≤ (s.gpr .esp).toNat) (e20 : (s.gpr .esp).toNat + 20 ≤ 2 ^ 32) :
-    (lay I.hashLen I.ecdsa.curve.len wide s cs).ARGS = ⟨argAddr s 0, 16⟩ := by
-  have hB : (lay I.hashLen I.ecdsa.curve.len wide s cs).B =
-      (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 (272 + 4 * extra wide) := Taint.sub_setWidth e272
-  show (⟨(lay I.hashLen I.ecdsa.curve.len wide s cs).B + BitVec.ofNat 64 (276 + 4 * extra wide), 16⟩ : Region) = _
+theorem lay_ARGS {I : Spec.Ecdsa.Rfc6979.Instance} {wide hHigh : Bool} {s : State} {cs : List (String × List (BitVec 64))}
+    (e272 : 272 + 4 * extra wide hHigh ≤ (s.gpr .esp).toNat) (e20 : (s.gpr .esp).toNat + 20 ≤ 2 ^ 32) :
+    (lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).ARGS = ⟨argAddr s 0, 16⟩ := by
+  have hB : (lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).B =
+      (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 (272 + 4 * extra wide hHigh) := Taint.sub_setWidth e272
+  show (⟨(lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).B + BitVec.ofNat 64 (276 + 4 * extra wide hHigh), 16⟩ : Region) = _
   rw [hB]
   congr 1
   show _ = (s.gpr .esp + BitVec.ofNat 32 (4 + 4 * 0)).setWidth 64
   rw [show (s.gpr .esp + BitVec.ofNat 32 (4 + 4 * 0)).setWidth 64 = addr (s.gpr .esp) 4 from rfl,
-    addr_eq (by omega_arith), show 276 + 4 * extra wide = (272 + 4 * extra wide) + 4 by omega_arith, ← Offset.add_add, BitVec.sub_add_cancel]
+    addr_eq (by omega_arith), show 276 + 4 * extra wide hHigh = (272 + 4 * extra wide hHigh) + 4 by omega_arith, ← Offset.add_add, BitVec.sub_add_cancel]
 
-theorem lay_ok {I : Spec.Ecdsa.Rfc6979.Instance} {wide : Bool} {s : State} {cs : List (String × List (BitVec 64))}
-    (h : (rfcX86 I (272 + 4 * extra wide) cs).pre s) : (lay I.hashLen I.ecdsa.curve.len wide s cs).Ok := by
+theorem lay_ok {I : Spec.Ecdsa.Rfc6979.Instance} {wide hHigh : Bool} {s : State} {cs : List (String × List (BitVec 64))}
+    (h : (rfcX86 I (272 + 4 * extra wide hHigh) cs).pre s) : (lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).Ok := by
   obtain ⟨e272, e20, -, -, od, og, oc, dc, gc, ao, ac, ro, rc, ko, kd, kg, kc, no, nd, ng, nc, ht⟩ := h
-  have hB : (lay I.hashLen I.ecdsa.curve.len wide s cs).B =
-      (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 (272 + 4 * extra wide) := Taint.sub_setWidth e272
-  have eR : (lay I.hashLen I.ecdsa.curve.len wide s cs).RET = ⟨(s.gpr .esp).setWidth 64, 4⟩ := by
-    show (⟨(lay I.hashLen I.ecdsa.curve.len wide s cs).B + BitVec.ofNat 64 (272 + 4 * extra wide), 4⟩ : Region) = _
+  have hB : (lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).B =
+      (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 (272 + 4 * extra wide hHigh) := Taint.sub_setWidth e272
+  have eR : (lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).RET = ⟨(s.gpr .esp).setWidth 64, 4⟩ := by
+    show (⟨(lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).B + BitVec.ofNat 64 (272 + 4 * extra wide hHigh), 4⟩ : Region) = _
     rw [hB, BitVec.sub_add_cancel]
-  have eA := lay_ARGS (I := I) (wide := wide) (cs := cs) e272 e20
-  have eK : (lay I.hashLen I.ecdsa.curve.len wide s cs).STK =
-      ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 (272 + 4 * extra wide), 272 + 4 * extra wide⟩ := by
-    show (⟨(lay I.hashLen I.ecdsa.curve.len wide s cs).B, 272 + 4 * extra wide⟩ : Region) = _
+  have eA := lay_ARGS (I := I) (wide := wide) (hHigh := hHigh) (cs := cs) e272 e20
+  have eK : (lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).STK =
+      ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 (272 + 4 * extra wide hHigh), 272 + 4 * extra wide hHigh⟩ := by
+    show (⟨(lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).B, 272 + 4 * extra wide hHigh⟩ : Region) = _
     rw [hB]
   refine ⟨od, og, oc, dc, gc, eA ▸ ao, eA ▸ ac, eR ▸ ro, eR ▸ rc, eK ▸ ko, eK ▸ kd, eK ▸ kg, eK ▸ kc,
     no, nd, ng, nc, e272, e20, ?_⟩
@@ -461,16 +454,16 @@ theorem lay_ok {I : Spec.Ecdsa.Rfc6979.Instance} {wide : Bool} {s : State} {cs :
 /-- The state after the frame's allocation. -/
 abbrev entered (e : Nat) (s : State) : State := allocState (196 + 4 * e) s
 
-theorem entered_esp (dn q : Nat) (wide : Bool) (s : State) (cs : List (String × List (BitVec 64)) := []) :
-    (entered (extra wide) s).gpr .esp = (lay dn q wide s cs).F := by
+theorem entered_esp (dn q : Nat) (wide hHigh : Bool) (s : State) (cs : List (String × List (BitVec 64)) := []) :
+    (entered (extra wide hHigh) s).gpr .esp = (lay dn q wide hHigh s cs).F := by
   simp only [entered, allocState_esp]; rfl
 
-theorem entered_wr {I : Spec.Ecdsa.Rfc6979.Instance} {wide : Bool} {s : State} {cs : List (String × List (BitVec 64))}
-    (h : (rfcX86 I (272 + 4 * extra wide) cs).pre s) :
-    (entered (extra wide) s).wr = (lay I.hashLen I.ecdsa.curve.len wide s cs).FR :: s.wr := by
+theorem entered_wr {I : Spec.Ecdsa.Rfc6979.Instance} {wide hHigh : Bool} {s : State} {cs : List (String × List (BitVec 64))}
+    (h : (rfcX86 I (272 + 4 * extra wide hHigh) cs).pre s) :
+    (entered (extra wide hHigh) s).wr = (lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).FR :: s.wr := by
   simp only [entered, allocState_wr]
   congr 1
-  show (⟨(lay I.hashLen I.ecdsa.curve.len wide s cs).F.setWidth 64, 196 + 4 * extra wide⟩ : Region) = _
+  show (⟨(lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).F.setWidth 64, 196 + 4 * extra wide hHigh⟩ : Region) = _
   rw [(lay_ok h).F64]; rfl
 
 /-- The release of the frame. -/
@@ -496,57 +489,57 @@ theorem WP.alloc {e : Nat} (he : e ≤ 36) {body : Prog isa} {s : State} {Q : St
   exact ⟨_, _, Exec.frame hpush he' hpop, hq⟩
 
 /-- Our caller's registers, saved: `Ctx` holds. -/
-theorem save_ok {I : Spec.Ecdsa.Rfc6979.Instance} {wide : Bool} {s : State} {cs : List (String × List (BitVec 64))}
-    (h : (rfcX86 I (272 + 4 * extra wide) cs).pre s) {is : List Instr}
-    {Q : State → Prop} (hQ : ∀ t, Ctx (lay I.hashLen I.ecdsa.curve.len wide s cs) s.gpr s.mem t → (∀ r, r ≠ .esp → t.gpr r = s.gpr r) →
+theorem save_ok {I : Spec.Ecdsa.Rfc6979.Instance} {wide hHigh : Bool} {s : State} {cs : List (String × List (BitVec 64))}
+    (h : (rfcX86 I (272 + 4 * extra wide hHigh) cs).pre s) {is : List Instr}
+    {Q : State → Prop} (hQ : ∀ t, Ctx (lay I.hashLen I.ecdsa.curve.len wide hHigh s cs) s.gpr s.mem t → (∀ r, r ≠ .esp → t.gpr r = s.gpr r) →
       WP isa (.block is) t Q) :
-    WP isa (.block (Impl.Ecdsa.Rfc6979.X86.Cfg.save ++ is)) (entered (extra wide) s) Q := by
+    WP isa (.block (Impl.Ecdsa.Rfc6979.X86.Cfg.save ++ is)) (entered (extra wide hHigh) s) Q := by
   have hL := lay_ok h
   have nB := hL.nB
-  have le : (lay I.hashLen I.ecdsa.curve.len wide s cs).e = extra wide := rfl
-  have hesp : (entered (extra wide) s).gpr .esp = (lay I.hashLen I.ecdsa.curve.len wide s cs).F := entered_esp _ _ wide s cs
-  have hw : ∀ o, o + 4 ≤ 196 + 4 * extra wide → InRegions (entered (extra wide) s).wr (addr (lay I.hashLen I.ecdsa.curve.len wide s cs).F o) 4 := fun o ho =>
-    ⟨(lay I.hashLen I.ecdsa.curve.len wide s cs).FR, by rw [entered_wr h]; simp, by
+  have le : (lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).e = extra wide hHigh := rfl
+  have hesp : (entered (extra wide hHigh) s).gpr .esp = (lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).F := entered_esp _ _ wide hHigh s cs
+  have hw : ∀ o, o + 4 ≤ 196 + 4 * extra wide hHigh → InRegions (entered (extra wide hHigh) s).wr (addr (lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).F o) 4 := fun o ho =>
+    ⟨(lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).FR, by rw [entered_wr h]; simp, by
       rw [hL.addrF (by omega_arith)]; exact Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)⟩
-  have hg : ∀ r, r ≠ .esp → (entered (extra wide) s).gpr r = s.gpr r := fun r hr => allocState_gpr _ _ hr
+  have hg : ∀ r, r ≠ .esp → (entered (extra wide hHigh) s).gpr r = s.gpr r := fun r hr => allocState_gpr _ _ hr
   simp only [Impl.Ecdsa.Rfc6979.X86.Cfg.save, Impl.Ecdsa.Rfc6979.X86.saved, Impl.Ecdsa.Rfc6979.X86.fSave,
     List.map_cons, List.map_nil, List.cons_append, List.nil_append, Impl.Ecdsa.Rfc6979.X86.stk, Nat.reduceAdd]
   refine wp_stm hesp (hw 180 (by omega_arith)) fun s₁ u₁ => ?_
-  refine wp_stm (B := (lay I.hashLen I.ecdsa.curve.len wide s cs).F) (by rw [u₁.gpr, hesp]) (by rw [u₁.wr]; exact hw 184 (by omega_arith))
+  refine wp_stm (B := (lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).F) (by rw [u₁.gpr, hesp]) (by rw [u₁.wr]; exact hw 184 (by omega_arith))
     fun s₂ u₂ => ?_
-  refine wp_stm (B := (lay I.hashLen I.ecdsa.curve.len wide s cs).F) (by rw [u₂.gpr, u₁.gpr, hesp])
+  refine wp_stm (B := (lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).F) (by rw [u₂.gpr, u₁.gpr, hesp])
     (by rw [u₂.wr, u₁.wr]; exact hw 188 (by omega_arith)) fun s₃ u₃ => ?_
-  refine wp_stm (B := (lay I.hashLen I.ecdsa.curve.len wide s cs).F) (by rw [u₃.gpr, u₂.gpr, u₁.gpr, hesp])
+  refine wp_stm (B := (lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).F) (by rw [u₃.gpr, u₂.gpr, u₁.gpr, hesp])
     (by rw [u₃.wr, u₂.wr, u₁.wr]; exact hw 192 (by omega_arith)) fun s₄ u₄ => hQ s₄ ?_ fun r hr => ?_
-  · have sep : ∀ x y, x + 4 ≤ y ∨ y + 4 ≤ x → x + 4 ≤ 292 + 4 * extra wide → y + 4 ≤ 292 + 4 * extra wide →
-        Mem.Sep ((lay I.hashLen I.ecdsa.curve.len wide s cs).B + BitVec.ofNat 64 x) (32 / 8) ((lay I.hashLen I.ecdsa.curve.len wide s cs).B + BitVec.ofNat 64 y) (32 / 8) :=
+  · have sep : ∀ x y, x + 4 ≤ y ∨ y + 4 ≤ x → x + 4 ≤ 292 + 4 * extra wide hHigh → y + 4 ≤ 292 + 4 * extra wide hHigh →
+        Mem.Sep ((lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).B + BitVec.ofNat 64 x) (32 / 8) ((lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).B + BitVec.ofNat 64 y) (32 / 8) :=
       fun x y h h₁ h₂ => Offset.sep _ h (by omega_arith) (by omega_arith)
-    have a : ∀ o, o < 216 + 4 * extra wide → addr (lay I.hashLen I.ecdsa.curve.len wide s cs).F o = (lay I.hashLen I.ecdsa.curve.len wide s cs).B + BitVec.ofNat 64 (76 + o) :=
+    have a : ∀ o, o < 216 + 4 * extra wide hHigh → addr (lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).F o = (lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).B + BitVec.ofNat 64 (76 + o) :=
       fun o ho => hL.addrF ho
-    have m₄ : s₄.mem = (((s.mem.writeW ((lay I.hashLen I.ecdsa.curve.len wide s cs).B + BitVec.ofNat 64 256) (s.gpr .ebx)).writeW
-        ((lay I.hashLen I.ecdsa.curve.len wide s cs).B + BitVec.ofNat 64 260) (s.gpr .esi)).writeW
-        ((lay I.hashLen I.ecdsa.curve.len wide s cs).B + BitVec.ofNat 64 264) (s.gpr .edi)).writeW
-        ((lay I.hashLen I.ecdsa.curve.len wide s cs).B + BitVec.ofNat 64 268) (s.gpr .ebp) := by
+    have m₄ : s₄.mem = (((s.mem.writeW ((lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).B + BitVec.ofNat 64 256) (s.gpr .ebx)).writeW
+        ((lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).B + BitVec.ofNat 64 260) (s.gpr .esi)).writeW
+        ((lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).B + BitVec.ofNat 64 264) (s.gpr .edi)).writeW
+        ((lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).B + BitVec.ofNat 64 268) (s.gpr .ebp) := by
       simp only [u₄.mem, u₃.mem, u₂.mem, u₁.mem, u₃.gpr, u₂.gpr, u₁.gpr]
       rw [a 180 (by omega_arith), a 184 (by omega_arith), a 188 (by omega_arith), a 192 (by omega_arith),
         hg .ebx (by decide), hg .esi (by decide), hg .edi (by decide), hg .ebp (by decide)]
       rfl
-    have pa : ∀ d i, d = 276 + 4 * extra wide + 4 * i → i < 4 →
-        s₄.mem.readW ((lay I.hashLen I.ecdsa.curve.len wide s cs).B + BitVec.ofNat 64 d) 32 = arg s i :=
+    have pa : ∀ d i, d = 276 + 4 * extra wide hHigh + 4 * i → i < 4 →
+        s₄.mem.readW ((lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).B + BitVec.ofNat 64 d) 32 = arg s i :=
       fun d i hd hi => by
         subst hd
-        rw [m₄, Mem.readW_writeW_sep (sep (276 + 4 * extra wide + 4 * i) 268 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
-          Mem.readW_writeW_sep (sep (276 + 4 * extra wide + 4 * i) 264 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
-          Mem.readW_writeW_sep (sep (276 + 4 * extra wide + 4 * i) 260 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
-          Mem.readW_writeW_sep (sep (276 + 4 * extra wide + 4 * i) 256 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
+        rw [m₄, Mem.readW_writeW_sep (sep (276 + 4 * extra wide hHigh + 4 * i) 268 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+          Mem.readW_writeW_sep (sep (276 + 4 * extra wide hHigh + 4 * i) 264 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+          Mem.readW_writeW_sep (sep (276 + 4 * extra wide hHigh + 4 * i) 260 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+          Mem.readW_writeW_sep (sep (276 + 4 * extra wide hHigh + 4 * i) 256 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
         show _ = s.mem.readW (argAddr s i) 32
         congr 1
         show _ = addr (s.gpr .esp) (4 + 4 * i)
-        rw [addr_eq (by have := h.2.1; omega_arith), hL.B_eq, le, show 276 + 4 * extra wide + 4 * i = (272 + 4 * extra wide) + (4 + 4 * i) by omega_arith,
+        rw [addr_eq (by have := h.2.1; omega_arith), hL.B_eq, le, show 276 + 4 * extra wide hHigh + 4 * i = (272 + 4 * extra wide hHigh) + (4 + 4 * i) by omega_arith,
           ← Offset.add_add, BitVec.sub_add_cancel]
         rfl
     have ct : ∀ x, 256 ≤ x → x + 4 ≤ 272 →
-        (lay I.hashLen I.ecdsa.curve.len wide s cs).STK.Contains ((lay I.hashLen I.ecdsa.curve.len wide s cs).B + BitVec.ofNat 64 x) (32 / 8) :=
+        (lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).STK.Contains ((lay I.hashLen I.ecdsa.curve.len wide hHigh s cs).B + BitVec.ofNat 64 x) (32 / 8) :=
       fun x h₁ h₂ => Offset.contains_base _ (by omega_arith) (by omega_arith)
     refine ⟨by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd]; show s.rd = _; rw [h.2.2.1, lay_ARGS h.1 h.2.1, lay_tbls]; rfl,
       by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr, entered_wr h, h.2.2.2.1]; rfl, by
@@ -572,12 +565,12 @@ theorem save_ok {I : Spec.Ecdsa.Rfc6979.Instance} {wide : Bool} {s : State} {cs 
         (ct 264 (by omega_arith) (by omega_arith)) |>.writeW (by simp) _ (ct 268 (by omega_arith) (by omega_arith))
     · intro c hc
       change c ∈ cs at hc
-      rw [u₄.syms, u₃.syms, u₂.syms, u₁.syms, lay_sy I.hashLen I.ecdsa.curve.len wide s cs hc]
+      rw [u₄.syms, u₃.syms, u₂.syms, u₁.syms, lay_sy I.hashLen I.ecdsa.curve.len wide hHigh s cs hc]
       rfl
     · have ht := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
       intro c hc
       change c ∈ cs at hc
-      simpa only [lay_sy I.hashLen I.ecdsa.curve.len wide s cs hc] using ht.1 c hc
+      simpa only [lay_sy I.hashLen I.ecdsa.curve.len wide hHigh s cs hc] using ht.1 c hc
   · rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr]; exact hg r hr
 
 end VG.Proof.Ecdsa.Rfc6979.X86

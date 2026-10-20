@@ -3,14 +3,11 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointFn
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 public import VerifiedGarbage.Impl.Weierstrass.X86.LadderP
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Mont.X86.Chain
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # The ladder by calls of the point functions, on x86 (32-bit): copies and calls

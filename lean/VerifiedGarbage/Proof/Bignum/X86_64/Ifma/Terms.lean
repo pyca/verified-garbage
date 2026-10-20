@@ -1,10 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ESym
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Rsa.X86_64.PubIfma
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -14,7 +11,7 @@ For `CrtIfma.ammStep l i`, the terms `ESym.run` computes for
 step `i` of a block, written for any `i` and `l` (`expReg`), and checked
 against the run for each `i < R` of each layout (`checkStep`).
 
-For each prime `p` (0 or 1, at `D p` from each base): `bT` the limb of the
+For each lane `p` (below `nl`, at `D p` from each base): `bT` the limb of the
 second operand, broadcast; `a1T` the accumulator of role `k` plus the low
 halves of `a b`; `a1hT` plus, for `k ≥ 1`, the high halves of role `k - 1`
 of `a b`; `uT` the factor `u`, broadcast; `a2T` plus the low halves of
@@ -35,15 +32,15 @@ variable (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay)
 
 /-- The bytes each base may be loaded from: the operands and the modulus' region. -/
 def lim : Reg → Nat := fun b =>
-  if b = .r8 then l.D + l.NB else if b = .r9 then l.D + 32 * (l.R - 1) + 8
-  else if b = .r10 then l.D + l.NB + 32 else 0
+  if b = .r8 then l.D * (l.nl - 1) + l.NB else if b = .r9 then l.D * (l.nl - 1) + 32 * (l.R - 1) + 8
+  else if b = .r10 then l.D * (l.nl - 1) + l.NB + 32 else 0
 
 /-- The register number of role `k` of prime `p` at step `i`. -/
 def regOf (p k i : Nat) : Nat := l.R * p + (k + i) % l.R
 
 /-- The zero register and the temporary. -/
-def zN : Nat := 2 * l.R + 4
-def tN : Nat := 2 * l.R + 5
+def zN : Nat := l.nl * l.R + 2 * l.nl
+def tN : Nat := l.nl * l.R + 2 * l.nl + 1
 
 def bT (p i : Nat) : T := .bc (.lane0 (.ld .r9 (l.D * p + 32 * i)))
 def a1T (p k i : Nat) : T := .mad false (.reg (regOf l p k i)) (bT l p i) (.ld .r8 (l.D * p + 32 * k))
@@ -67,10 +64,10 @@ def roleOf (r i : Nat) : Nat := (r % l.R + l.R - (i + 1) % l.R) % l.R
 
 /-- The terms after step `i`. -/
 def expReg (i r : Nat) : T :=
-  if r < 2 * l.R then hT l (r / l.R) (roleOf l r i) i
-  else if r = 2 * l.R then bT l 0 i else if r = 2 * l.R + 1 then bT l 1 i
-  else if r = 2 * l.R + 2 then uT l 0 i else if r = 2 * l.R + 3 then uT l 1 i
-  else if r = tN l then cT l 1 i else .reg r
+  if r < l.nl * l.R then hT l (r / l.R) (roleOf l r i) i
+  else if r < l.nl * l.R + l.nl then bT l (r - l.nl * l.R) i
+  else if r < l.nl * l.R + 2 * l.nl then uT l (r - l.nl * l.R - l.nl) i
+  else if r = tN l then cT l (l.nl - 1) i else .reg r
 
 /-! Equality of terms as the kernel evaluates it: a structural comparison,
 rather than the derived `DecidableEq`, whose evaluation was most of
@@ -131,7 +128,7 @@ theorem T.eq_of_beq : ∀ {a b : T}, T.beq a b = true → a = b := by
 def checkStep (i : Nat) : Bool :=
   match ESym.init.run (lim l) (ammStep l i) with
   | some σ => (List.range 32).all (fun r => T.beq (σ.reg r) (expReg l i r)) &&
-      G.beq σ.rax (.ld .r9 (l.D + 32 * i))
+      G.beq σ.rax (.ld .r9 (l.D * (l.nl - 1) + 32 * i))
   | none => false
 
 /-- The layouts the code runs. -/
@@ -141,13 +138,30 @@ theorem checkStep_2048 : ∀ i < lay2048.R, checkStep lay2048 i = true := by dec
 theorem checkStep_3072 : ∀ i < lay3072.R, checkStep lay3072 i = true := by decide +kernel
 theorem checkStep_4096 : ∀ i < lay4096.R, checkStep lay4096 i = true := by decide +kernel
 
-theorem checkStep_ok {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : LayOk l) : ∀ i < l.R, checkStep l i = true := by
-  rcases hl with rfl | rfl | rfl
+open VG.Impl.Rsa.X86_64.PubIfma (pay2048 pay3072 pay4096) in
+/-- The layouts the multiplication runs: the CRT's, and the public operation's. -/
+def AmmOk (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop :=
+  LayOk l ∨ l = pay2048 ∨ l = pay3072 ∨ l = pay4096
+
+theorem LayOk.amm {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : LayOk l) : AmmOk l := .inl hl
+
+theorem checkStep_p2048 : ∀ i < VG.Impl.Rsa.X86_64.PubIfma.pay2048.R,
+    checkStep VG.Impl.Rsa.X86_64.PubIfma.pay2048 i = true := by decide +kernel
+theorem checkStep_p3072 : ∀ i < VG.Impl.Rsa.X86_64.PubIfma.pay3072.R,
+    checkStep VG.Impl.Rsa.X86_64.PubIfma.pay3072 i = true := by decide +kernel
+theorem checkStep_p4096 : ∀ i < VG.Impl.Rsa.X86_64.PubIfma.pay4096.R,
+    checkStep VG.Impl.Rsa.X86_64.PubIfma.pay4096 i = true := by decide +kernel
+
+theorem checkStep_ok {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : AmmOk l) : ∀ i < l.R, checkStep l i = true := by
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl
   · exact checkStep_2048
   · exact checkStep_3072
   · exact checkStep_4096
+  · exact checkStep_p2048
+  · exact checkStep_p3072
+  · exact checkStep_p4096
 
-theorem run_ammStep {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : LayOk l) {i : Nat} (hi : i < l.R) :
+theorem run_ammStep {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : AmmOk l) {i : Nat} (hi : i < l.R) :
     ∃ σ, ESym.init.run (lim l) (ammStep l i) = some σ ∧ ∀ r < 32, σ.reg r = expReg l i r := by
   have h := checkStep_ok hl i hi
   unfold checkStep at h

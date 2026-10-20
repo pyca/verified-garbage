@@ -3,6 +3,13 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.TaintSum
 public import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Summaries for the x86-64 taint analysis
@@ -444,6 +451,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
   | store m r => exact h.store m (by decide) (hw.pubM) hs
   | store32 m r => exact h.store m (by decide) (hw.pubM) hs
   | store8 m r => exact h.store m (by decide) (hw.pubM) hs
+  | store16 m r => exact h.store m (by decide) (hw.pubM) hs
   | alu op d src | alu32 op d src =>
     simp only [step, aluStep] at hs ⊢
     split at hs <;> [rename_i hok; cases hs]
@@ -501,12 +509,30 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     simp only [step, Option.some.injEq] at hs ⊢
     cases hs
     exact ⟨_, rfl, h.upd (set_mono hw d id) h.flags (h.killM d) empty_subset'⟩
-  | movzx8 d m =>
+  | movzx8 d m | movzx16 d m =>
     simp only [step] at hs ⊢
     split at hs <;> [rename_i hm; cases hs]
     cases hs
     rw [ite_t (hw.memPubM hm)]
     exact ⟨_, rfl, h.upd (set_mono hw d id) h.flags (h.killM d) empty_subset'⟩
+  | aluTbl _ d m _ _ =>
+    simp only [step] at hs ⊢
+    split at hs <;> [rename_i hm; cases hs]
+    cases hs
+    have hm' : idxPub σ m = true := by
+      unfold idxPub at hm ⊢; split <;> rename_i heq <;> rw [heq] at hm <;> simp only at hm ⊢
+      exact hw.pubM hm
+    rw [ite_t hm']
+    exact ⟨_, rfl, h.upd (set_mono hw d id) id (h.killM d) empty_subset'⟩
+  | vmovdquTbl _ m _ _ | movdquTbl _ m _ _ =>
+    simp only [step] at hs ⊢
+    split at hs <;> [rename_i hm; cases hs]
+    cases hs
+    have hm' : idxPub σ m = true := by
+      unfold idxPub at hm ⊢; split <;> rename_i heq <;> rw [heq] at hm <;> simp only at hm ⊢
+      exact hw.pubM hm
+    rw [ite_t hm']
+    exact ⟨_, rfl, h.clearX⟩
   | vpmovmskb _ d _ | leaSym d _ =>
     simp only [step, Option.some.injEq] at hs ⊢
     cases hs
@@ -520,7 +546,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
   | evMadd52Load _ _ _ m =>
     exact h.memSomeX hs
   | ldmxcsr m => exact h.memSome hs
-  | kLoad k _ m =>
+  | kLoad k _ m | kLoad8 k _ m =>
     simp only [step] at hs ⊢
     split at hs <;> [rename_i hm; cases hs]
     cases hs
@@ -528,7 +554,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     rw [ite_t (show (memPub σ m && pub σ k) = true by
       simp only [Bool.and_eq_true]; exact ⟨hw.memPubM hm.1, hw.pubM hm.2⟩)]
     exact ⟨_, rfl, h.clearX⟩
-  | kStore m k _ =>
+  | kStore m k _ | kStore8 m k _ =>
     simp only [step] at hs ⊢
     split at hs <;> [rename_i hk; cases hs]
     rw [ite_t (hw.pubM hk)]
@@ -842,9 +868,9 @@ theorem ne_of_clobbers {i : Instr} {d : Reg} {j : Nat} (hd : clobbers i d = true
 theorem step_bits {σ σ' : T} {i : Instr} (hs : step σ i = some σ') {j : Nat} (hc : NoWrite i j)
     (hr : σ.regs.bits.testBit j = true) : σ'.regs.bits.testBit j = true := by
   cases i
-  case store | store32 | store8 | movdquStore | vmovdqu32Store | stmxcsr | evStore =>
+  case store | store32 | store8 | store16 | movdquStore | vmovdqu32Store | stmxcsr | evStore =>
     rw [storeStep_regs hs]; exact hr
-  case kStore =>
+  case kStore | kStore8 =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
     rw [storeStep_regs hs]; exact hr

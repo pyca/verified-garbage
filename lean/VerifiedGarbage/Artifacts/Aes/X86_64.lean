@@ -1,15 +1,47 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
-import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
-import VerifiedGarbage.Proof.Aes.X86_64.Blocks
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Blocks
 public import VerifiedGarbage.Proof.Aes.X86_64.Frame
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+public import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
+public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+public import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+import VerifiedGarbage.Proof.Gcm.Spec
 
 /-! # AES on x86-64 -/
 
@@ -18,143 +50,91 @@ public import VerifiedGarbage.Proof.Aes.X86_64.Frame
 namespace VG.Artifacts.Aes.X86_64
 
 def artifacts : List Artifact := [
-  { Spec.Aes.expandKeyApi with
-    target := X86_64.target
-    doc := Spec.Aes.expandKeyApi.doc
-      (notes := ["`SUBWORD` uses a constant-time bitsliced S-box, in the style of BearSSL's \
+  Spec.Aes.expandKeyApi.artifact X86_64.target {
+    notes := ["`SUBWORD` uses a constant-time bitsliced S-box, in the style of BearSSL's \
         `aes_ct64` (Thomas Pornin, MIT licence). The working space is in a frame of 520 \
-        bytes on the stack, zeroed before returning."])
+        bytes on the stack, zeroed before returning."]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 520 .rcx 64 Impl.Aes.X86_64.expandKey
-    contract := Spec.Aes.expandKeyContract X86_64.abi 520
     stack := 520
-    verified := Proof.Aes.X86_64.scalar_expandKey_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Aes.expandKeyScratchApi with
-    target := X86_64.target
-    doc := Spec.Aes.expandKeyScratchApi.doc
-      (notes := ["`SUBWORD` uses a constant-time bitsliced S-box, in the style of BearSSL's \
-        `aes_ct64` (Thomas Pornin, MIT licence)."])
+    verified := Proof.Aes.X86_64.scalar_expandKey_framed },
+  Spec.Aes.expandKeyScratchApi.artifact X86_64.target {
+    notes := ["`SUBWORD` uses a constant-time bitsliced S-box, in the style of BearSSL's \
+        `aes_ct64` (Thomas Pornin, MIT licence)."]
     code := Impl.Aes.X86_64.expandKey
-    contract := Spec.Aes.expandKeyScratchContract X86_64.abi
-    verified := Proof.Aes.X86_64.expandKey_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Gcm.ctr32Api with
-    target := X86_64.target
-    doc := Spec.Gcm.ctr32Api.doc
-      (notes := ["Constant-time bitsliced AES, four blocks at a time, in the style of BearSSL's \
-        `aes_ct64` (Thomas Pornin, MIT licence)."])
+    verified := Proof.Aes.X86_64.expandKey_verified },
+  Spec.Gcm.ctr32Api.artifact X86_64.target {
+    notes := ["Constant-time bitsliced AES, four blocks at a time, in the style of BearSSL's \
+        `aes_ct64` (Thomas Pornin, MIT licence)."]
     code := Impl.Aes.X86_64.ctr32
-    contract := Spec.Gcm.ctr32Contract X86_64.abi
-    verified := Proof.Aes.X86_64.ctr32_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Aes.expandKeyApi with
-    name := "vg_aes_expand_key_aesni"
-    target := X86_64.target
-    doc := Spec.Aes.expandKeyApi.doc
-      (notes := ["Uses AES-NI: four words at a time, with AESKEYGENASSIST. The working space is \
-        in a frame of 520 bytes on the stack, zeroed before returning."])
+    verified := Proof.Aes.X86_64.ctr32_verified },
+  Spec.Aes.expandKeyApi.artifact X86_64.target {
+    suffix := "_aesni"
+    notes := ["Uses AES-NI: four words at a time, with AESKEYGENASSIST. The working space is \
+        in a frame of 520 bytes on the stack, zeroed before returning."]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 520 .rcx 64
       Impl.Aes.X86_64.AesNi.expandKey
-    contract := Spec.Aes.expandKeyContract X86_64.abi 520
     stack := 520
     verified := Proof.Aes.X86_64.aesni_expandKey_framed
-    features := ["aes"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Aes.expandKeyScratchApi with
-    name := "vg_aes_expand_key_scratch_aesni"
-    target := X86_64.target
-    doc := Spec.Aes.expandKeyScratchApi.doc
-      (notes := ["Uses AES-NI: four words at a time, with AESKEYGENASSIST."])
+    features := ["aes"] },
+  Spec.Aes.expandKeyScratchApi.artifact X86_64.target {
+    suffix := "_aesni"
+    notes := ["Uses AES-NI: four words at a time, with AESKEYGENASSIST."]
     code := Impl.Aes.X86_64.AesNi.expandKey
-    contract := Spec.Aes.expandKeyScratchContract X86_64.abi
     verified := Proof.Aes.X86_64.AesNi.Key.expandKey_verified
-    features := ["aes"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Gcm.ctr32Api with
-    name := "vg_aes_ctr32_aesni"
-    target := X86_64.target
-    doc := Spec.Gcm.ctr32Api.doc
-      (notes := ["Uses AES-NI: eight blocks at a time, then one at a time."])
+    features := ["aes"] },
+  Spec.Gcm.ctr32Api.artifact X86_64.target {
+    suffix := "_aesni"
+    notes := ["Uses AES-NI: eight blocks at a time, then one at a time."]
     code := Impl.Aes.X86_64.AesNi.ctr32
-    contract := Spec.Gcm.ctr32Contract X86_64.abi
     verified := Proof.Aes.X86_64.AesNi.ctr32_verified
-    features := ["aes", "ssse3"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Gcm.ctr32Api with
-    name := "vg_aes_ctr32_vaes"
-    target := X86_64.target
-    doc := Spec.Gcm.ctr32Api.doc
-      (notes := ["Uses VAES: sixteen blocks at a time, two in each 256-bit register; the \
-        blocks left go eight and then one at a time with AES-NI, as in `vg_aes_ctr32_aesni`."])
+    features := ["aes", "ssse3"] },
+  Spec.Gcm.ctr32Api.artifact X86_64.target {
+    suffix := "_vaes"
+    notes := ["Uses VAES: sixteen blocks at a time, two in each 256-bit register; the \
+        blocks left go eight and then one at a time with AES-NI, as in `vg_aes_ctr32_aesni`."]
     code := Impl.Aes.X86_64.Vaes.ctr32
-    contract := Spec.Gcm.ctr32Contract X86_64.abi
     verified := Proof.Aes.X86_64.Vaes.ctr32_verified
-    features := ["aes", "avx", "avx2", "ssse3", "vaes"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Aes.encryptBlocksApi with
-    target := X86_64.target
-    doc := Spec.Aes.encryptBlocksApi.doc
-      (notes := ["Constant-time bitsliced AES, four blocks at a time, in the style of BearSSL's \
-        `aes_ct64` (Thomas Pornin, MIT licence)."])
+    features := ["aes", "avx", "avx2", "ssse3", "vaes"] },
+  Spec.Aes.encryptBlocksApi.artifact X86_64.target {
+    notes := ["Constant-time bitsliced AES, four blocks at a time, in the style of BearSSL's \
+        `aes_ct64` (Thomas Pornin, MIT licence)."]
     code := Impl.Aes.X86_64.encryptBlocks
-    contract := Spec.Aes.encryptBlocksContract X86_64.abi
-    verified := Proof.Aes.X86_64.encryptBlocks_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.Aes.decryptBlocksApi with
-    target := X86_64.target
-    doc := Spec.Aes.decryptBlocksApi.doc
-      (notes := ["Constant-time bitsliced AES, four blocks at a time, in the style of BearSSL's \
+    verified := Proof.Aes.X86_64.encryptBlocks_verified },
+  Spec.Aes.decryptBlocksApi.artifact X86_64.target {
+    notes := ["Constant-time bitsliced AES, four blocks at a time, in the style of BearSSL's \
         `aes_ct64` (Thomas Pornin, MIT licence): the inverse S-box is the forward one between \
-        two inverse affine maps."])
+        two inverse affine maps."]
     code := Impl.Aes.X86_64.decryptBlocks
-    contract := Spec.Aes.decryptBlocksContract X86_64.abi
-    verified := Proof.Aes.X86_64.decryptBlocks_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.Aes.encryptBlocksApi with
-    name := "vg_aes_encrypt_blocks_aesni"
-    target := X86_64.target
-    doc := Spec.Aes.encryptBlocksApi.doc
-      (notes := ["Uses AES-NI: eight blocks at a time, then one at a time."])
+    verified := Proof.Aes.X86_64.decryptBlocks_verified },
+  Spec.Aes.encryptBlocksApi.artifact X86_64.target {
+    suffix := "_aesni"
+    notes := ["Uses AES-NI: eight blocks at a time, then one at a time."]
     code := Impl.Aes.X86_64.AesNi.encryptBlocks
-    contract := Spec.Aes.encryptBlocksContract X86_64.abi
     verified := Proof.Aes.X86_64.AesNi.encryptBlocks_verified
-    features := ["aes"]
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.Aes.decryptBlocksApi with
-    name := "vg_aes_decrypt_blocks_aesni"
-    target := X86_64.target
-    doc := Spec.Aes.decryptBlocksApi.doc
-      (notes := ["Uses AES-NI: eight blocks at a time, then one at a time, with the Equivalent \
+    features := ["aes"] },
+  Spec.Aes.decryptBlocksApi.artifact X86_64.target {
+    suffix := "_aesni"
+    notes := ["Uses AES-NI: eight blocks at a time, then one at a time, with the Equivalent \
         Inverse Cipher (FIPS 197 §5.3.5): the middle round keys go through AESIMC into the \
-        working space first."])
+        working space first."]
     code := Impl.Aes.X86_64.AesNi.decryptBlocks
-    contract := Spec.Aes.decryptBlocksContract X86_64.abi
     verified := Proof.Aes.X86_64.AesNi.decryptBlocks_verified
-    features := ["aes"]
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.Aes.encryptBlocksApi with
-    name := "vg_aes_encrypt_blocks_vaes"
-    target := X86_64.target
-    doc := Spec.Aes.encryptBlocksApi.doc
-      (notes := ["Uses VAES: sixteen blocks at a time, two in each 256-bit register; the blocks \
-        left go eight and then one at a time with AES-NI, as in `vg_aes_encrypt_blocks_aesni`."])
+    features := ["aes"] },
+  Spec.Aes.encryptBlocksApi.artifact X86_64.target {
+    suffix := "_vaes"
+    notes := ["Uses VAES: sixteen blocks at a time, two in each 256-bit register; the blocks \
+        left go eight and then one at a time with AES-NI, as in `vg_aes_encrypt_blocks_aesni`."]
     code := Impl.Aes.X86_64.VaesBlocks.encryptBlocks
-    contract := Spec.Aes.encryptBlocksContract X86_64.abi
     verified := Proof.Aes.X86_64.VaesBlocks.encryptBlocks_verified
-    features := ["aes", "avx", "avx2", "vaes"]
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.Aes.decryptBlocksApi with
-    name := "vg_aes_decrypt_blocks_vaes"
-    target := X86_64.target
-    doc := Spec.Aes.decryptBlocksApi.doc
-      (notes := ["Uses VAES: sixteen blocks at a time, two in each 256-bit register, with the \
+    features := ["aes", "avx", "avx2", "vaes"] },
+  Spec.Aes.decryptBlocksApi.artifact X86_64.target {
+    suffix := "_vaes"
+    notes := ["Uses VAES: sixteen blocks at a time, two in each 256-bit register, with the \
         Equivalent Inverse Cipher (FIPS 197 §5.3.5): the middle round keys go through AESIMC into \
         the working space first; the blocks left go eight and then one at a time with AES-NI, as \
-        in `vg_aes_decrypt_blocks_aesni`."])
+        in `vg_aes_decrypt_blocks_aesni`."]
     code := Impl.Aes.X86_64.VaesBlocks.decryptBlocks
-    contract := Spec.Aes.decryptBlocksContract X86_64.abi
     verified := Proof.Aes.X86_64.VaesBlocks.decryptBlocks_verified
-    features := ["aes", "avx", "avx2", "vaes"]
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    features := ["aes", "avx", "avx2", "vaes"] }]
 
 end VG.Artifacts.Aes.X86_64

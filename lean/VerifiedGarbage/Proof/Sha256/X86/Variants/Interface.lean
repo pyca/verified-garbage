@@ -1,12 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha224
-public import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
-public import VerifiedGarbage.TCB.Artifact
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha256
 
 /-!
 # SHA-256 backends on x86
@@ -51,8 +47,19 @@ structure StreamFn where
   verified : Verified X86.target code contract
   ofSig : ∃ pre post leak,
     contract = api.sig.contract X86.abi pre post api.writeArgs stack leak
-  ofApi : api.contracts.elim True fun f => contract = f X86.abi stack
+  ofApi : contract = api.contract X86.abi stack
   spSafe : code.all (fun i => !isa.writesSp i) = true
+
+/-- `f` as a registration of its `Api` (`Api.artifact`). -/
+def StreamFn.reg (f : StreamFn) : Registration f.api X86.target where
+  consts := []
+  code := f.code
+  contract := f.contract
+  stack := f.stack
+  verified := f.verified
+  ofApi := f.ofApi
+  ofSig := f.ofSig
+  spSafe := f.spSafe
 
 /-- The functions the whole of PBKDF2 calls, with the compression function
 `cmpN`/`cmpC` and the streaming functions `s`. -/

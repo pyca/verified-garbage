@@ -1,33 +1,31 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.PointOps
-meta import VerifiedGarbage.Impl.Weierstrass.X86_64.PointOps
-public import VerifiedGarbage.Proof.X25519.X86_64.Step
-meta import VerifiedGarbage.Proof.X25519.X86_64.Step
 public import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
-meta import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
-meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Mont.X86_64.MulPX
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.PointOps
+meta import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
+meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Mont.X86_64.MulPX
 meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Impl.Ecdsa.X86_64
-import VerifiedGarbage.Spec.Ecdsa.Generic
-meta import VerifiedGarbage.Impl.Ecdsa.X86_64
-meta import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # Point operations as functions on x86-64: the registers they keep

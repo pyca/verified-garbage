@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Primes
+import VerifiedGarbage.Proof.RsaKeyGen.Primes
+public import VerifiedGarbage.Impl.RsaKeyGen.Primes
+public import VerifiedGarbage.Spec.RsaKeyGen
+import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.RsaKeyGen.Primes
-public import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Impl.RsaKeyGen.Primes
+meta import VerifiedGarbage.Spec.RsaKeyGen
 meta import VerifiedGarbage.Proof.Framework.Lit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The table of small primes

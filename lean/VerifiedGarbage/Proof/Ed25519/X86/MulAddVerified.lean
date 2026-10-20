@@ -1,31 +1,31 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarContract
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarContract
-import VerifiedGarbage.Proof.Ed25519.X86.Workspace
-meta import VerifiedGarbage.Proof.Ed25519.X86.Workspace
 public import VerifiedGarbage.Impl.Ed25519.X86.MulAdd
-meta import VerifiedGarbage.Impl.Ed25519.X86.MulAdd
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonInput
-meta import VerifiedGarbage.Proof.Ed25519.X86.CommonInput
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarEngine
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarEngine
 import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
-meta import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
-meta import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Inline
+import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
+import VerifiedGarbage.Proof.X25519.X86.Arith
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Ed25519.X86.MulAdd
+meta import VerifiedGarbage.Proof.Ed25519.X86.CommonInput
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarEngine
+meta import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
+meta import VerifiedGarbage.Proof.X25519.X86.Arith
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Ed25519.X86.MulAddMain`. -/
 

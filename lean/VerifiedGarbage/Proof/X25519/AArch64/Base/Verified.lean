@@ -1,26 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Proof.X25519.AArch64.Base.Main
-meta import VerifiedGarbage.Proof.X25519.AArch64.Base.Main
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.ConstMem
-meta import VerifiedGarbage.Proof.Framework.ConstMem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+import VerifiedGarbage.Proof.X25519.AArch64.Base.Engine
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+meta import VerifiedGarbage.Proof.X25519.AArch64.Base.Main
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Impl.Mont.Mod
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.X25519.AArch64.Base.Engine
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.X25519.AArch64.Ladder
 
 /-!
 # X25519 of the base point on AArch64: constant time and the contract
@@ -38,7 +39,7 @@ namespace VG.Proof.X25519.AArch64.Base
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64 VG.Impl.X25519.AArch64.Base
 open VG.Proof.Ed25519.AArch64
 
-/-- The engine: Ed25519's preparation and comb (`scalarBasePrepare_ct`, `combMultiply_ct`), with
+/-- The engine: Ed25519's preparation and comb (`scalarBasePrepare_ct`, `combMultiplyClamped_ct`), with
 the clamping and the encoding of `u` between and after them. -/
 theorem engine_ct (base k T : Addr) :
     CT (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y) engine (fun _ _ => True) := by
@@ -52,7 +53,7 @@ theorem engine_ct (base k T : Addr) :
       subst hr; exact h.1.1.x0.trans h.2.1.x0.symm) (by taint_decide)
   rw [engine]
   refine CT.seq (scalarBasePrepare_ct base k T) (CT.seq ((hc.wp fun x y h => ⟨hw x h.1, hw y h.2⟩).mono
-    (fun _ _ h => h) fun _ _ h => h.2) (CT.seq (combMultiply_ct base T) ?_))
+    (fun _ _ h => h) fun _ _ h => h.2) (CT.seq (combMultiplyClamped_ct base T) ?_))
   exact CT.taint (Taint.ofRegs [.x0]) (fun _ _ h => agree_ofRegs h) (by taint_decide)
 
 private def BaseStart (base k out T : Addr) (s : State) : Prop :=
@@ -158,7 +159,8 @@ theorem x25519Base_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] : ConstantTime is
 
 theorem x25519Base_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (s : State) (hs : baseLocal.pre s) :
     ∃ t s', Exec isa x25519Base s t s' ∧ abiPreserved s s' ∧ baseLocal.post s s' :=
-  x25519Base_correct hs
+  let ⟨t, s', he, ha, hp, _⟩ := x25519Base_correct hs
+  ⟨t, s', he, ha, hp⟩
 
 /-- The shared contract's precondition, from its facts. -/
 theorem x25519Base_spec_pre {s : State}
@@ -210,6 +212,24 @@ theorem x25519Base_implies : baseLocal.Implies
     obtain ⟨hsp, hsy, h0, h1, h2⟩ := h
     exact ⟨hsp, h0, h1, h2, hsy⟩
   sat := ⟨baseSatState, x25519Base_sat⟩
+
+/-- The function writes only the first 1024 bytes of `scratch`. -/
+theorem x25519Base_written [VG.Proof.Ed25519.AArch64.Divstep.Sound] (s : State) (t : List Leak)
+    (s' : State) (hs : (Spec.X25519.x25519BaseContract (AArch64.abi.withConsts combConsts)).pre s)
+    (he : Exec isa x25519Base s t s') :
+    Sig.writtenWithin (AArch64.abi.withConsts combConsts) Spec.X25519.x25519BaseSig
+      [("scratch", 1024)] s s' := by
+  have hl := x25519Base_implies.pre s hs
+  have hd : Region.Disjoint ⟨s.gpr .x0, 32⟩ ⟨s.gpr .x2, 8192⟩ := by
+    sig_pre [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig,
+      AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
+      stackBelow] at hs
+    exact hs.2.2.2.2.2.2.2.1
+  obtain ⟨t', s'', he', -, -, htail⟩ := x25519Base_correct hl
+  obtain ⟨-, rfl⟩ := Exec.det he he'
+  simp [Sig.writtenWithin, AArch64.abi, AArch64.argRegs, Abi.withConsts, combConsts_eq,
+    Spec.X25519.x25519BaseSig, Sig.words, Sig.arrays, Param.words, ArgWord.bits]
+  all_goals exact fun i h1 h2 => htail hd i h1 (by simpa [Elem.size] using h2)
 
 theorem x25519Base_verified [VG.Proof.Ed25519.AArch64.Divstep.Sound] :
     Verified AArch64.target x25519Base (Spec.X25519.x25519BaseContract (AArch64.abi.withConsts combConsts)) :=

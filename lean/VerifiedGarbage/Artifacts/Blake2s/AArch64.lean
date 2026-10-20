@@ -1,11 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Blake2.AArch64.Compress
 public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Verified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # BLAKE2s (RFC 7693) on AArch64 -/
 
@@ -14,51 +11,19 @@ import VerifiedGarbage.Proof.Framework.AArch64.Lit
 namespace VG.Artifacts.Blake2s.AArch64
 
 def artifacts : List Artifact := [
-  { Spec.Blake2.compressSApi with
-    target := AArch64.target
-    doc := Spec.Blake2.compressSApi.doc
+  Spec.Blake2.compressSApi.artifact AArch64.target {
     code := Impl.Blake2.AArch64.compress Spec.Blake2.s
-    contract := Spec.Blake2.compressSContract AArch64.abi
-    verified := Proof.Blake2.AArch64.compressS_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Blake2.initSApi with
-    target := AArch64.target
-    doc := Spec.Blake2.initSApi.doc
+    verified := Proof.Blake2.AArch64.compressS_verified },
+  Spec.Blake2.initSApi.artifact AArch64.target {
     code := Impl.Blake2.AArch64.Stream.init Spec.Blake2.s
-    contract := Spec.Blake2.initSContract AArch64.abi
-    verified := Proof.Blake2.AArch64.Stream.initS_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Blake2.updateSApi with
-    target := AArch64.target
-    doc := Spec.Blake2.updateSApi.doc
+    verified := Proof.Blake2.AArch64.Stream.initS_verified },
+  Spec.Blake2.updateSApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratch 576 .x4 (Impl.Blake2.AArch64.Stream.update Spec.Blake2.s)
-    contract := Spec.Blake2.updateSContract AArch64.abi (16 + 576)
     stack := 16 + 576
-    verified := Proof.Blake2.AArch64.Stream.updateS_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Blake2.finalizeSApi with
-    target := AArch64.target
-    doc := Spec.Blake2.finalizeSApi.doc
+    verified := Proof.Blake2.AArch64.Stream.updateS_framed },
+  Spec.Blake2.finalizeSApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratch 576 .x3 (Impl.Blake2.AArch64.Stream.finalize Spec.Blake2.s)
-    contract := Spec.Blake2.finalizeSContract AArch64.abi (16 + 576)
     stack := 16 + 576
-    verified := Proof.Blake2.AArch64.Stream.finalizeS_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Blake2.updateSScratchApi with
-    target := AArch64.target
-    doc := Spec.Blake2.updateSScratchApi.doc
-    code := Impl.Blake2.AArch64.Stream.update Spec.Blake2.s
-    contract := Spec.Blake2.updateSScratchContract AArch64.abi 16
-    stack := 16
-    verified := Proof.Blake2.AArch64.Stream.updateS_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Blake2.finalizeSScratchApi with
-    target := AArch64.target
-    doc := Spec.Blake2.finalizeSScratchApi.doc
-    code := Impl.Blake2.AArch64.Stream.finalize Spec.Blake2.s
-    contract := Spec.Blake2.finalizeSScratchContract AArch64.abi 16
-    stack := 16
-    verified := Proof.Blake2.AArch64.Stream.finalizeS_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Blake2.AArch64.Stream.finalizeS_framed }]
 
 end VG.Artifacts.Blake2s.AArch64

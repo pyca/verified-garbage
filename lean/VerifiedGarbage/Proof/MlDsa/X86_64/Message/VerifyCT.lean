@@ -1,14 +1,16 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Hash
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCall
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCorrect
+import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCorrect
 import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlDsa.X86_64.Message.HashCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCorrect
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 
 /-!
 # ML-DSA on x86-64, `verify_message`: constant time

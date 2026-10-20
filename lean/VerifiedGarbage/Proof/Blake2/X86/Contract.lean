@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Blake2.Stream
 public import VerifiedGarbage.TCB.X86.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # BLAKE2 on x86 (32-bit): the contracts

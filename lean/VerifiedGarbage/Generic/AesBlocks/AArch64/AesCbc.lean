@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-CBC (NIST SP 800-38A §6.2) on AArch64
@@ -23,25 +23,19 @@ namespace VG.Generic.AesBlocks.AArch64.AesCbc
 open VG.Proof.AesCbc.AArch64
 
 def artifacts (v : Proof.Aes.AArch64.BlocksImpl) : List Artifact := [
-  { Spec.Cbc.aesEncryptApi with
-    name := Spec.Cbc.aesEncryptApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Cbc.aesEncryptApi.doc (notes := ["This implementation enciphers one block at a time with `" ++
-      v.enc.name ++ "`."])
+  Spec.Cbc.aesEncryptApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := ["This implementation enciphers one block at a time with `" ++
+      v.enc.name ++ "`."]
     code := Impl.AesCbc.AArch64.encrypt v.enc
-    contract := Spec.Cbc.aesEncryptContract AArch64.abi
     verified := encrypt_verified v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
-  { Spec.Cbc.aesDecryptApi with
-    name := Spec.Cbc.aesDecryptApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Cbc.aesDecryptApi.doc (notes := ["This implementation deciphers one block at a time with `" ++
-      v.dec.name ++ "`."])
+  Spec.Cbc.aesDecryptApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := ["This implementation deciphers one block at a time with `" ++
+      v.dec.name ++ "`."]
     code := Impl.AesCbc.AArch64.decrypt v.dec
-    contract := Spec.Cbc.aesDecryptContract AArch64.abi
     verified := decrypt_verified v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features }]
 
 end VG.Generic.AesBlocks.AArch64.AesCbc

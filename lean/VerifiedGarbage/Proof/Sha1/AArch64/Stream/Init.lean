@@ -1,21 +1,21 @@
 module
 
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.MdStream.AArch64.Common
-meta import VerifiedGarbage.Proof.MdStream.AArch64.Common
 public import VerifiedGarbage.Proof.Sha1.AArch64.Compress
-meta import VerifiedGarbage.Proof.Sha1.AArch64.Compress
 public import VerifiedGarbage.Impl.Sha1.AArch64.Stream
-meta import VerifiedGarbage.Impl.Sha1.AArch64.Stream
 import VerifiedGarbage.Proof.Sha1.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Common
+meta import VerifiedGarbage.Proof.Sha1.AArch64.Compress
+meta import VerifiedGarbage.Impl.Sha1.AArch64.Stream
 meta import VerifiedGarbage.Proof.Sha1.Stream
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming SHA-1 on AArch64: `init`

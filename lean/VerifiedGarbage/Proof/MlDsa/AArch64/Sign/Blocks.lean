@@ -1,19 +1,15 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CallMore
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
-public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Base
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!
 # ML-DSA signing on AArch64: the blocks between the calls

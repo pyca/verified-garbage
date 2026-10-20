@@ -1,13 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Data
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Outputs
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.ScalarCT
-meta import VerifiedGarbage.Impl.Ffdh.X86_64.GenerateKey
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.MaskOutput
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.MaskSetup
+import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Data
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.MaskOutput
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.MaskSetup
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH on x86-64: output masks never control branches or addresses -/
 

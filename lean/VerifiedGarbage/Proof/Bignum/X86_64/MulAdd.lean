@@ -1,18 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64
+public import VerifiedGarbage.Proof.Framework.Semantics
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Poly1305.Limbs64
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: multiply-accumulate steps
 
 A step of `mulAddRow` (and of `reduceRow`): with a word `x` of the
 accumulator at `aA`, a word `y` of the operand at `aB`, the multiplier
-`rcx` and the carry `rbp`, it stores the low word of `rcx y + rbp + x` at
+`rcx` and the carry `rbp`, it stores the low word of `rcx y + x + rbp` at
 `aA'` (`aA` itself, or the word below) and leaves its high word in `rbp`
 (`macStep_ok`).
 -/
@@ -47,11 +46,11 @@ theorem mac_ok (s : State) {src : Reg} {d : Int} {aS aX aD : Addr}
   have hc := (s.gpr .rbp).isLt
   have hx := (s.mem.readW aX 64).isLt
   have e1 := addc_toNat (BitVec.ofNat 64 ((s.mem.readW aS 64).toNat * (s.gpr .rcx).toNat))
-    (BitVec.ofNat 64 ((s.mem.readW aS 64).toNat * (s.gpr .rcx).toNat / 2 ^ 64)) (s.gpr .rbp) (by omega)
-  have e2 := addc_toNat (BitVec.ofNat 64 ((s.mem.readW aS 64).toNat * (s.gpr .rcx).toNat) + s.gpr .rbp)
+    (BitVec.ofNat 64 ((s.mem.readW aS 64).toNat * (s.gpr .rcx).toNat / 2 ^ 64)) (s.mem.readW aX 64) (by omega)
+  have e2 := addc_toNat (BitVec.ofNat 64 ((s.mem.readW aS 64).toNat * (s.gpr .rcx).toNat) + s.mem.readW aX 64)
     (BitVec.ofNat 64 ((s.mem.readW aS 64).toNat * (s.gpr .rcx).toNat / 2 ^ 64) + 0 +
       (BitVec.ofBool (decide (2 ^ 64 ≤ (BitVec.ofNat 64 ((s.mem.readW aS 64).toNat *
-        (s.gpr .rcx).toNat)).toNat + (s.gpr .rbp).toNat))).setWidth 64) (s.mem.readW aX 64) (by omega)
+        (s.gpr .rcx).toNat)).toNat + (s.mem.readW aX 64).toNat))).setWidth 64) (s.gpr .rbp) (by omega)
   rw [e2, Nat.mul_comm (s.gpr .rcx).toNat]
   omega
 

@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Impl.Selftest.X86_64
 public import VerifiedGarbage.Proof.Selftest.X86_64
-public import VerifiedGarbage.Proof.Framework.Semantics
+public import Mathlib.Util.CompileInductive
 
 /-! # The pipeline self-test on x86-64 -/
 
@@ -17,7 +15,6 @@ def artifacts : List Artifact := [
     doc := Spec.Selftest.addApi.summary
     code := Impl.Selftest.X86_64.add
     contract := Spec.Selftest.addContract X86_64.abi
-    verified := Proof.Selftest.X86_64.add_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    verified := Proof.Selftest.X86_64.add_verified }]
 
 end VG.Artifacts.Selftest.X86_64

@@ -1,43 +1,37 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.CachedChecks
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.CachedChecks
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigitTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCachedDigitTiming
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCachedDigitTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointPairedTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointPairedTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPairedTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPairedTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigitTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigitTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticRR
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticRR
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCacheTiming
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCacheTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigitTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFinish
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFinish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Inplace
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.CachedChecks
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigitTiming
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafTiming
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCachedDigitTiming
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointPairedTiming
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigitTiming
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFinish
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Inplace
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 
 /-! ## `JointChecks` -/
 
@@ -107,11 +101,9 @@ theorem allocatedOps_timing (raw : RawCorrect) {base T : Addr} {P Q : Point C} {
   double := by
     intro A j E
     dsimp only [P256Allocated.ops]
-    have h := field_relCT raw Proof.P256.VerifyAllocated.Double.caseProof
-      (base:=base) (V:=jointLive cfg) (Out:=jointLive cfg) (E:=E)
-      (by decide +kernel) (by decide +kernel)
-      (fun _ hx => (mem_validAfter _ _).mpr (Or.inl hx))
-      (by decide +kernel) Proof.P256.VerifyAllocated.Double_ct
+    have h := fieldWP_relCT (base:=base) (V:=jointLive cfg) (V':=jointLive cfg) (E:=E)
+      Proof.P256.EcdhDouble.Certificate.ct fun _ hi =>
+        WP.mono (double_field_ok hi) fun _ ⟨hk,it⟩ => ⟨it,hk.regs.sp⟩
     exact h.mono (fun _ _ h => h.1) (fun _ _ h => ⟨_,h⟩)
   peer := by
     intro A j hj E

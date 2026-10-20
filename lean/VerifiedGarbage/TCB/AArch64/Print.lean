@@ -8,6 +8,19 @@ public import VerifiedGarbage.TCB.Print
 
 **Trusted.** Emits the GNU/LLVM assembler syntax used by Rust's
 `asm!`/`naked_asm!` on AArch64.
+
+`align k` (`Isa.lean`) prints as `.p2align k`, which the assembler fills, in
+a code section, with NOPs (`HINT #0`, `0xD503201F`: every A64 instruction is
+four bytes, and every offset in a function a multiple of four, so NOPs
+cover any padding). Unlike the padding after a function's `ret`
+(`funcAlign`), this padding is executed when the code before it falls
+through, so `align` is a NOP in the model: DDI 0487 C6.2, "NOP": "No
+Operation does nothing, other than advance the value of the program counter
+by 4. This instruction can be used for instruction alignment purposes." NOP
+is in the base A64 instruction set, so `align` requires no feature. The
+printer refuses any `k` but 4, 5 and 6 (16-, 32- and 64-byte boundaries):
+padding to more than a function's own 64-byte alignment (`funcAlign`) would
+not align anything relative to it.
 -/
 
 @[expose] public section
@@ -80,6 +93,17 @@ def VPermOp.name : VPermOp → String
 def VMulHOp.name : VMulHOp → String
   | .mul => "mul" | .mla => "mla" | .mls => "mls" | .sqdmulh => "sqdmulh" | .sqrdmulh => "sqrdmulh"
 
+def VCmpOp.name : VCmpOp → String
+  | .hi => "cmhi" | .hs => "cmhs"
+
+/-- The scalar register of a lane of the arrangement (`b<n>`, `h<n>`, `s<n>`,
+`d<n>`), or of twice its size if `long`, as in ADDV and UADDLV. -/
+def VReg.scalar (r : VReg) (a : VArr) (long : Bool) : String :=
+  let p := match a, long with
+    | .b16, false => "b" | .h8, false | .b16, true => "h" | .s4, false | .h8, true => "s"
+    | .d2, false | .s4, true => "d" | .d2, true => "q"
+  s!"{p}{r.index}"
+
 def Sha1Op.name : Sha1Op → String
   | .c => "sha1c" | .p => "sha1p" | .m => "sha1m"
 
@@ -98,11 +122,14 @@ def VOp.asm : VOp → String
   | .dupE a d n i => s!"dup {d.arr a.name}, v{n.index}.{a.elem}[{i}]"
   | .insE a d i n j => s!"mov v{d.index}.{a.elem}[{i}], v{n.index}.{a.elem}[{j}]"
   | .cmeq a d n m => s!"cmeq {d.arr a.name}, {n.arr a.name}, {m.arr a.name}"
+  | .cmp op a d n m => s!"{op.name} {d.arr a.name}, {n.arr a.name}, {m.arr a.name}"
   | .bsel op d n m => s!"{op.name} {d.b}, {n.b}, {m.b}"
   | .logic op d n m => s!"{op.name} {d.b}, {n.b}, {m.b}"
   | .not d n => s!"not {d.b}, {n.b}"
   | .add a d n m => s!"add {d.arr a.name}, {n.arr a.name}, {m.arr a.name}"
   | .sub a d n m => s!"sub {d.arr a.name}, {n.arr a.name}, {m.arr a.name}"
+  | .addv a d n => s!"addv {d.scalar a false}, {n.arr a.name}"
+  | .uaddlv a d n => s!"uaddlv {d.scalar a true}, {n.arr a.name}"
   | .shift op a d n sh => s!"{op.name} {d.arr a.name}, {n.arr a.name}, #{sh}"
   | .ext d n m imm => s!"ext {d.b}, {n.b}, {m.b}, #{imm}"
   | .rev .rev32b d n => s!"rev32 {d.b}, {n.b}"
@@ -116,6 +143,10 @@ def VOp.asm : VOp → String
   | .umull true d n m => s!"umull2 {d.arr "2d"}, {n.arr "4s"}, {m.arr "4s"}"
   | .umlal false d n m => s!"umlal {d.arr "2d"}, {n.arr "2s"}, {m.arr "2s"}"
   | .umlal true d n m => s!"umlal2 {d.arr "2d"}, {n.arr "4s"}, {m.arr "4s"}"
+  | .umullH false d n m => s!"umull {d.arr "4s"}, {n.arr "4h"}, {m.arr "4h"}"
+  | .umullH true d n m => s!"umull2 {d.arr "4s"}, {n.arr "8h"}, {m.arr "8h"}"
+  | .umlalH false d n m => s!"umlal {d.arr "4s"}, {n.arr "4h"}, {m.arr "4h"}"
+  | .umlalH true d n m => s!"umlal2 {d.arr "4s"}, {n.arr "8h"}, {m.arr "8h"}"
   | .mul d n m => s!"mul {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}"
   | .mla d n m => s!"mla {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}"
   | .mls d n m => s!"mls {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}"
@@ -180,6 +211,8 @@ def Instr.asm : Instr → List String
   | .umulh d n m => [s!"umulh {d.name .x}, {n.name .x}, {m.name .x}"]
   | .umaddl d n m a => [s!"umaddl {d.name .x}, {n.name .w}, {m.name .w}, {a.name .x}"]
   | .umull d n m => [s!"umull {d.name .x}, {n.name .w}, {m.name .w}"]
+  | .clz sz d n => [s!"clz {d.name sz}, {n.name sz}"]
+  | .rbit sz d n => [s!"rbit {d.name sz}, {n.name sz}"]
   | .rev32 d n => [s!"rev {d.name .w}, {n.name .w}"]
   | .rev d n => [s!"rev {d.name .x}, {n.name .x}"]
   | .movz sz d imm hw => [s!"movz {d.name sz}, #{imm.toNat}, lsl #{16 * hw}"]
@@ -188,17 +221,22 @@ def Instr.asm : Instr → List String
   | .str sz t n off => [s!"str {t.name sz}, [{n.name .x}, #{off}]"]
   | .ldrb t n off => [s!"ldrb {t.name .w}, [{n.name .x}, #{off}]"]
   | .strb t n off => [s!"strb {t.name .w}, [{n.name .x}, #{off}]"]
+  | .ldp t1 t2 n off => [s!"ldp {t1.name .x}, {t2.name .x}, [{n.name .x}, #{off}]"]
+  | .stp t1 t2 n off => [s!"stp {t1.name .x}, {t2.name .x}, [{n.name .x}, #{off}]"]
   | .push r => [s!"str {r.name .x}, [sp, #-16]!"]
   | .pop r => [s!"ldr {r.name .x}, [sp], #16"]
   | .addSp d imm => [s!"add {d.name .x}, sp, #{imm}"]
   | .alloc bytes => [s!"sub sp, sp, #{bytes}"]
   | .free bytes => [s!"add sp, sp, #{bytes}"]
   | .ldrSp t off => [s!"ldr {t.name .x}, [sp, #{off}]"]
+  | .strSp t off => [s!"str {t.name .x}, [sp, #{off}]"]
   | .vop op => [op.asm]
   | .ldrq t n off => [s!"ldr {t.q}, [{n.name .x}, #{off}]"]
+  | .ldrqTbl t n off .. => [s!"ldr {t.q}, [{n.name .x}, #{off}]"]
   | .strq t n off => [s!"str {t.q}, [{n.name .x}, #{off}]"]
   | .umov .w d n i => [s!"umov {d.name .w}, v{n.index}.s[{i}]"]
   | .umov .x d n i => [s!"umov {d.name .x}, v{n.index}.d[{i}]"]
+  | .align k => [s!".p2align {k}"]
 
 def printer : Printer isa where
   instr := Instr.asm
@@ -214,6 +252,9 @@ def printer : Printer isa where
     | .adrSym d name => some [.sym s!"adrp {d.name .x}, " .page name,
         .sym s!"add {d.name .x}, {d.name .x}, " .pageOff name]
     | _ => none
+  tables
+    | .ldrqTbl _ _ _ name ws => [(name, ws)]
+    | _ => []
   -- LLVM's AArch64 assembler rejects, e.g., `aese` unless the `aes` extension
   -- is enabled, and a directive in a naked function stays in effect for the
   -- rest of the module, so each function disables what it enabled.
@@ -227,5 +268,9 @@ def printer : Printer isa where
   fixed by the function alone: a change to other code cannot move them,
   and with them its performance. -/
   funcAlign := [".p2align 6"]
+  unencodable
+    | .align k =>
+      if k ∈ [4, 5, 6] then none else some s!"`.p2align {k}`: only 4, 5 and 6 are allowed"
+    | _ => none
 
 end VG.AArch64

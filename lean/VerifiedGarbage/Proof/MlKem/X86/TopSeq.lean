@@ -1,16 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
-import VerifiedGarbage.Proof.MlKem.X86.TopPrim3
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
 public import VerifiedGarbage.Proof.MlKem.X86.Common
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.MlKem.X86.NttLoop
+public import VerifiedGarbage.Proof.MlKem.X86.Top
+import VerifiedGarbage.Proof.MlKem.X86.TopPrim
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM on x86 (32-bit): the calls of the top-level functions, with their arguments

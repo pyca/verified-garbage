@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.X86.FbVerified
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Blowfish-OFB artifacts on baseline x86 (32-bit) -/
 
@@ -16,13 +17,10 @@ def note : String :=
   `Impl/Modes/X86/`, over Blowfish's ECB block."
 
 def artifacts : List Artifact := [
-  { Spec.Blowfish.ofbApi with
-    target := X86.target
-    doc := Spec.Blowfish.ofbApi.doc (notes := [note])
+  Spec.Blowfish.ofbApi.artifact X86.target {
+    notes := [note]
     code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.ofb
-    contract := Spec.Blowfish.ofbContract X86.abi 112
     stack := 112
-    verified := Proof.Blowfish.X86.Fb.ofb_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Blowfish.X86.Fb.ofb_framed }]
 
 end VG.Artifacts.BlowfishOfb.X86

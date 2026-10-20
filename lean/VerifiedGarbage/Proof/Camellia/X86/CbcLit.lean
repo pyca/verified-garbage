@@ -1,15 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Impl.Camellia.X86.Modes
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Impl.Camellia.X86.Modes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # Camellia-CBC on x86 (32-bit): the code as literals
@@ -23,7 +24,7 @@ The code of CBC encryption and decryption as literals
 
 namespace VG.Proof.Camellia.X86
 
-materialize_flat_code cbcEncryptCode := Impl.Camellia.X86.cbcEncrypt
-materialize_flat_code cbcDecryptCode := Impl.Camellia.X86.cbcDecrypt
+materialize_flat_code cbcEncryptChainedCode := Impl.Camellia.X86.cbcEncryptChained
+materialize_flat_code cbcDecryptChainedCode := Impl.Camellia.X86.cbcDecryptChained
 
 end VG.Proof.Camellia.X86

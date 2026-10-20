@@ -1,13 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Window
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.TableInit
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.Window
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.TableInit
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+public import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
 
 /-!
 # Ed448 verification on AArch64: the points compared

@@ -1,14 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxDualAdd
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddWord
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Spec.Rsa
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddWord
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
 
 @[expose] public section
 

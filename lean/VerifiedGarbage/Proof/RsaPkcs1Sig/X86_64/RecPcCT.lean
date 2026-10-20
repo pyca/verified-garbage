@@ -1,19 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecPcContract
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecPcContract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecPcContract
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_pkcs1_recover_precomputed` on x86-64: constant time

@@ -2,17 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.MontFnLazy
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdx
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnBase
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledLazy
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRaw
 import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRaw
 
 /-!
 # `vg_rsa_lazy_mont_mul_adx`: correctness

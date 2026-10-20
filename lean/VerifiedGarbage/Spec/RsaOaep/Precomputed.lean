@@ -21,7 +21,7 @@ namespace VG.Spec.RsaOaep
 
 open Mgf1 (Hash)
 open Rsa (bytesAt lenValid written)
-open RsaPss (scratchWords)
+open RsaPss (publicScratchWords)
 
 variable (H G : Hash)
 
@@ -42,7 +42,7 @@ def encryptPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contra
     (pre := fun _out outLen _n nLen _e eLen _label _labelLen _msg _msgLen _seed _scratch
         scratchLen _pre preLen _ =>
       lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ 1 ≤ eLen.toNat ∧
-        eLen.toNat ≤ nLen.toNat ∧ scratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        eLen.toNat ≤ nLen.toNat ∧ publicScratchWords nLen.toNat ≤ scratchLen.toNat ∧
         preLen.toNat = Rsa.precomputedWords nLen.toNat)
     (post := fun out _outLen n nLen e eLen label labelLen msg msgLen seed _scratch _scratchLen
         pre preLen m m' r =>
@@ -63,7 +63,7 @@ def encryptPrecomputedApi : Api where
   sig := encryptPrecomputedSig H
   writeArgs := true
   contracts := some fun A stack => encryptPrecomputedContract H G A stack
-  summary := (encryptApi H G).summary ++ "\n\n\
+  summary := encryptSummary H G ++ "\n\n\
     This entry point also takes `pre`, the `pre_len` words written by \
     `vg_rsa_public_precompute` for `n` (returning 1). With those values, it \
     writes and returns exactly what is specified above. If `pre` does not hold \
@@ -71,7 +71,7 @@ def encryptPrecomputedApi : Api where
     the timing guarantee still apply. Timing may additionally depend on the \
     contents of `pre`.\n\n\
     Contract: `VG.Spec.RsaOaep.encryptPrecomputedContract`."
-  safety := (encryptApi H G).safety ++
+  safety := encryptSafety ++
     ["`pre_len` must be `2 * ⌈n_len / 8⌉`.",
       "For the result to be encryption's, `pre` must hold what \
         `vg_rsa_public_precompute` wrote for `n` (returning 1)."]

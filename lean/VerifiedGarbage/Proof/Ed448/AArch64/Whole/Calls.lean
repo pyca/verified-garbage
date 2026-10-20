@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
-public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
 public import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyLocal
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarMain
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarMulAddMain
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Ed448's complete operations on AArch64: calls of the Ed448 primitives

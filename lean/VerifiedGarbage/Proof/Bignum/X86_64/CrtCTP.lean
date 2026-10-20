@@ -1,13 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPH
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPMq
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPH
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPMq
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+meta import VerifiedGarbage.Proof.Bignum.Math
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import Mathlib.Tactic.TermCongr
+public import Mathlib.Tactic.TermCongr
+import Mathlib.Data.Int.ModEq
+meta import Mathlib.Data.Int.ModEq
 
 /-!
 # RSA with the CRT on x86-64: constant time, `p`'s phase

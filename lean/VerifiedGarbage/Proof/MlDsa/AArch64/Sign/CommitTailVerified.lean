@@ -1,17 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailCorrect
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailTiming
 public import VerifiedGarbage.Spec.MlDsa.CommitTail
 public import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailBody
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ## From `CommitTailContract.lean` -/
 

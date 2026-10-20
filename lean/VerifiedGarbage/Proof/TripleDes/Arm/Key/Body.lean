@@ -4,20 +4,20 @@ import VerifiedGarbage.Proof.TripleDes.Arm.Key.Permutation
 import VerifiedGarbage.Proof.TripleDes.Arm.Bytes
 public import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-public import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.TripleDes.Arm.WordStore
 import VerifiedGarbage.Proof.TripleDes.Arm.Word
 import VerifiedGarbage.Proof.Rc2.Arm.KeySteps
 import VerifiedGarbage.Proof.TripleDes.Arm.Key.Rotation
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.TripleDes.Schedule
 public import VerifiedGarbage.Proof.Rc2.Arm.Lookup
 public import VerifiedGarbage.Proof.TripleDes.KeyMemory
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.TripleDes.KeySchedule
+import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## `Load` -/
 
@@ -126,7 +126,7 @@ theorem load_ok (s : State) (offset component : Nat) (hc : component < 3)
   · intro r hr
     have unused : ∀ r ∈ keyKept, r ≠ .r9 ∧ r ≠ .r8 ∧ r ≠ .r4 ∧ r ≠ .r5 := by decide
     have hcheck : ∀ r ∈ keyKept,
-        ((instrs keyPermutation1.lit).all fun op => dstOf op != some r) = true := by decide +kernel
+        ((instrs keyPermutation1.lit).all fun op => !clobbers op r) = true := by decide +kernel
     exact (reg₃ r (unused r hr).1 (unused r hr).2.1).trans
       ((reg₂ r (hcheck r hr)).trans (reg₁ r (unused r hr).2.2.1 (unused r hr).2.2.2))
 
@@ -206,7 +206,7 @@ theorem storeRound_ok (s : State) (c d : BitVec 28) (j : Nat) (hj : j < 16)
     rw [hd, hc]; exact packed28 c d
   rw [input] at lo₁ hi₁
   have checks : ∀ r ∈ (keyKept ++ [.r10, .r11, .r9, .r8]),
-      ((instrs keyPermutation2.lit).all fun op => dstOf op != some r) = true := by decide +kernel
+      ((instrs keyPermutation2.lit).all fun op => !clobbers op r) = true := by decide +kernel
   have keep₁ : ∀ r ∈ (keyKept ++ [.r10, .r11, .r9, .r8]), s₁.gpr r = s.gpr r :=
     fun r hr => reg₁ r (checks r hr)
   have write₁ : ∀ t < 2, InRegions s₁.wr (State.addr (s₁.gpr .r8 + BitVec.ofNat 32 (4 * t))) 4 := by

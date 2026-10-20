@@ -1,19 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Persist
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.SBase
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.KInit
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Spec
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.Persist
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.SBase
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.KInit
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.Spec
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Cross
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Result
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.Result
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyLocal
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.TCB.AArch64.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBits
+import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBits
+import VerifiedGarbage.Proof.Ed448.Scalar
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.X448.AArch64.Main
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Digit
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
 
 /-!
 # Ed448 verification's equation on AArch64: the whole function

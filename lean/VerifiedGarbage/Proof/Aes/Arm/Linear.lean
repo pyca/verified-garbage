@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Aes.Arm.Linear
 public import VerifiedGarbage.Proof.Aes.Arm.Sbox
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The linear layers of bitsliced AES on ARMv7
@@ -56,7 +52,7 @@ theorem addRoundKey_check :
 theorem q_linear {k xb : Nat} {c : Cfg} {is : List Instr} {g : Nat → Nat → List Nat}
     (hchk : check (lanes 32 k) c (linExt xb) is (linEnv qIns) (linPost k (qOuts g)) = true)
     (hk : 256 ≤ 2 ^ k)
-    (hw : layerKeep.all (fun r => is.all fun i => dstOf i != some r) = true)
+    (hw : layerKeep.all (fun r => is.all fun i => !clobbers i r) = true)
     {s : State} (hok : Ok c s) (W : Nat → BitVec 32) (hW : ∀ i < 8, W i = s.gpr (q i))
     (hext : ∀ j < c.exts,
       32 * (xb + j) + 32 ≤ 2 ^ k ∧ W (xb + j) = s.mem.readW (wordAddr (s.gpr c.ext) j) 32) :

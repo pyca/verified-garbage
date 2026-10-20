@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.Arm.Shake
-public import VerifiedGarbage.Impl.Ed448.Arm.Scalar
 public import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
 
 /-!

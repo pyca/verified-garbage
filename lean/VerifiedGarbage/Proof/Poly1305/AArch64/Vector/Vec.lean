@@ -1,10 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Finish
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Poly1305.AArch64.Vector
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: `vec`

@@ -1,15 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncContract
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Bytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on x86-64: the frame
@@ -72,7 +66,7 @@ structure EPre (s : State) : Prop where
   L2 : (s.gpr .r9).toNat ≤ (s.gpr .rcx).toNat
   hml : (stackArg s 1).toNat + 11 ≤ (s.gpr .rcx).toNat
   hpl : (stackArg s 3).toNat = (s.gpr .rcx).toNat - (stackArg s 1).toNat - 3
-  hsl : 16 * (s.gpr .rcx).toNat + 32 ≤ (stackArg s 5).toNat
+  hsl : Spec.Rsa.publicScratchWords (s.gpr .rcx).toNat ≤ (stackArg s 5).toNat
 
 theorem ePre_of {s : State} (h : encK.pre s) : EPre s := by
   simp only [encK] at h

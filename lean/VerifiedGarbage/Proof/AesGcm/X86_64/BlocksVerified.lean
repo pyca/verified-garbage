@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.CT
 public import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksContract
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fn
 
 /-!
 # AES-GCM on whole blocks, x86-64: `Verified`

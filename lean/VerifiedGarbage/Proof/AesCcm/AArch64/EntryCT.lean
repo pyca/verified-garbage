@@ -1,11 +1,15 @@
 module
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Entry
+public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.AesCcm.AArch64.Entry
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+meta import VerifiedGarbage.Proof.Aes.KeyExp
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
-public import VerifiedGarbage.Proof.AesCcm.AArch64.Rel
-meta import VerifiedGarbage.Proof.AesCcm.AArch64.Rel
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on AArch64: the arguments and the entry in two runs

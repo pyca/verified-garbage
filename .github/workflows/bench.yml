@@ -1,33 +1,19 @@
 name: Benchmarks
 
-# Compares the performance of a pull request with its base, on each
-# architecture whose code it changes (see ci/bench_arches.py), and fails if a
-# benchmark slowed down by more than ci/bench_compare.py's threshold. The
-# results are in the run's summary. Not part of `all-green`: it only runs for
-# some pull requests. A pull request never runs every benchmark of an
-# architecture (e.g. for a change to Cargo.lock or to the benchmarks' shared
-# code): the run's summary names those architectures, to run by hand.
-#
-# It can also be run by hand (Actions > Benchmarks > Run workflow), comparing
-# the chosen branch with any earlier commit on every architecture, e.g. to
-# measure the total speedup of a series of pull requests; or, with no
-# commit, measuring the chosen branch alone, next to OpenSSL and aws-lc-rs.
-# A targeted run can name the architectures, the `VG_CPU_FEATURES`
-# configurations and the library modules to run (`python3 ci/bench_arches.py
-# --choices` lists them), e.g. from the command line:
+# Compares the performance of a branch with an earlier commit, on runners of
+# each architecture, and fails if a benchmark slowed down by more than
+# ci/bench_compare.py's threshold; or, with no commit, measures the branch
+# alone, next to OpenSSL and aws-lc-rs. The results are in the run's summary.
+# It runs only by hand (Actions > Benchmarks > Run workflow): runners are
+# shared with CI, and a run of every benchmark takes dozens of jobs. Scope
+# each run to the architectures, `VG_CPU_FEATURES` configurations and library
+# modules a change affects: `git diff --name-only BASE HEAD | python3
+# ci/bench_arches.py --base BASE` prints them, and `python3 ci/bench_arches.py
+# --choices` lists the values each takes. E.g. from the command line:
 #
 #   gh workflow run bench.yml --ref BRANCH -f base_commit=SHA \
 #     -f arches=aarch64 -f cpu_features='- neon' -f modules=chacha20
 on:
-  pull_request:
-    paths:
-      - "src/**"
-      - "bench/**"
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - "ci/bench_compare.py"
-      - "ci/bench_arches.py"
-      - ".github/workflows/bench.yml"
   workflow_dispatch:
     inputs:
       base_commit:
@@ -42,13 +28,13 @@ on:
       modules:
         description: Space-separated library modules whose benchmarks run, e.g. `chacha20 poly1305` (empty for every benchmark; `python3 ci/bench_arches.py --choices` lists them)
         required: false
+      openssl:
+        description: Also run OpenSSL and aws-lc-rs, for reference, in a comparison with a commit (a run without one always does)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
@@ -64,9 +50,6 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # A pull request's checkout is its merge with the base branch's
-          # current tip, which is the merge's first parent.
-          fetch-depth: 2
           persist-credentials: false
       - id: arches
         env:
@@ -75,24 +58,10 @@ jobs:
           CPU_FEATURES: ${{ inputs.cpu_features }}
           MODULES: ${{ inputs.modules }}
         run: |
-          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
-            base=$BASE_COMMIT
-            matrix=$(python3 ci/bench_arches.py --all --arches "$ARCHES" --cpu-features "$CPU_FEATURES" --modules "$MODULES")
-          else
-            # Not `pull_request.base.sha`: it can be an older commit of the
-            # base branch, whose later changes would then count as the pull
-            # request's (selecting every benchmark) and be measured as such.
-            base=$(git rev-parse HEAD^1)
-            matrix=$(git diff --name-only "$base" HEAD | python3 ci/bench_arches.py --base "$base" 2> skipped.txt) \
-              || { cat skipped.txt >&2; exit 1; }
-            if [ -s skipped.txt ]; then
-              echo "::notice title=Benchmarks not run::$(cat skipped.txt)"
-              { echo "## Benchmarks not run"; echo; cat skipped.txt; } >> "$GITHUB_STEP_SUMMARY"
-            fi
-          fi
+          matrix=$(python3 ci/bench_arches.py --all --arches "$ARCHES" --cpu-features "$CPU_FEATURES" --modules "$MODULES")
           echo "$matrix"
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
-          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "base=$BASE_COMMIT" >> "$GITHUB_OUTPUT"
 
   compare:
     needs: arches
@@ -106,7 +75,7 @@ jobs:
     # Running every benchmark took 25-30 minutes on every runner with 3
     # rounds; with 2, about 20-25, until the x86-64 configurations outgrew
     # the timeout. One round with a shorter warm-up and measurement, and no
-    # OpenSSL or aws-lc-rs reference on pull requests (bench_compare.py), take
+    # OpenSSL or aws-lc-rs reference in comparisons (bench_compare.py), take
     # about half, until running P-521's groups from fresh copies took some
     # x86-64 configurations past it again, and AES-GCM's from copies did once
     # more: BENCHMARKS_PER_JOB (ci/bench_arches.py) splits a run of every
@@ -159,13 +128,14 @@ jobs:
         env:
           MODULES: ${{ matrix.modules }}
           SHARD: ${{ matrix.shard }}
+          ARCH: ${{ matrix.arch }}
           # Interleaved runs of each side (ci/bench_arches.py's platforms say
           # how many; one but on a shared VM).
           ROUNDS: ${{ matrix.rounds || 1 }}
-          # OpenSSL's and aws-lc-rs's times are a reference for manual runs; a
-          # pull request needs only its comparison with the base.
-          OPENSSL: ${{ github.event_name == 'workflow_dispatch' && '--openssl' || '' }}
+          # OpenSSL's and aws-lc-rs's times are only a reference: a comparison
+          # runs them when asked (a run without a base always does).
+          OPENSSL: ${{ inputs.openssl && '--openssl' || '' }}
         run: |
           # The `openssl` crate needs Homebrew's OpenSSL on macOS.
           if [ "$RUNNER_OS" = macOS ]; then export OPENSSL_DIR="$(brew --prefix openssl@3)"; fi
-          python3 head/ci/bench_compare.py base head --rounds "$ROUNDS" --modules "$MODULES" --shard "$SHARD" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL
+          python3 head/ci/bench_compare.py base head --rounds "$ROUNDS" --modules "$MODULES" --shard "$SHARD" --arch "$ARCH" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL

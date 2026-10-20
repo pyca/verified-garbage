@@ -1,10 +1,29 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Aes.Arm.Ctr32
-import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
 public import VerifiedGarbage.Proof.Aes.Arm.Blocks
 public import VerifiedGarbage.Proof.Aes.Arm.Frame
+public import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Aes.Ct32.Layers
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Aes.Ct32.Layers
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-! # AES on ARMv7 -/
 
@@ -13,53 +32,33 @@ public import VerifiedGarbage.Proof.Aes.Arm.Frame
 namespace VG.Artifacts.Aes.Arm
 
 def artifacts : List Artifact := [
-  { Spec.Aes.expandKeyApi with
-    target := Arm.target
-    doc := Spec.Aes.expandKeyApi.doc
-      (notes := ["`SUBWORD` uses a constant-time bitsliced S-box, in the style of BearSSL's \
+  Spec.Aes.expandKeyApi.artifact Arm.target {
+    notes := ["`SUBWORD` uses a constant-time bitsliced S-box, in the style of BearSSL's \
         `aes_ct` (Thomas Pornin, MIT licence). The working space is in a frame of 512 bytes \
-        on the stack, zeroed before returning."])
+        on the stack, zeroed before returning."]
     code := Impl.StackScratch.Arm.withRegScratchWiped 512 .r3 128 Impl.Aes.Arm.expandKey
-    contract := Spec.Aes.expandKeyContract Arm.abi 512
     stack := 512
-    verified := Proof.Aes.Arm.expandKey_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Aes.expandKeyScratchApi with
-    target := Arm.target
-    doc := Spec.Aes.expandKeyScratchApi.doc
-      (notes := ["`SUBWORD` uses a constant-time bitsliced S-box, in the style of BearSSL's \
-        `aes_ct` (Thomas Pornin, MIT licence)."])
+    verified := Proof.Aes.Arm.expandKey_framed },
+  Spec.Aes.expandKeyScratchApi.artifact Arm.target {
+    notes := ["`SUBWORD` uses a constant-time bitsliced S-box, in the style of BearSSL's \
+        `aes_ct` (Thomas Pornin, MIT licence)."]
     code := Impl.Aes.Arm.expandKey
-    contract := Spec.Aes.expandKeyScratchContract Arm.abi
-    verified := Proof.Aes.Arm.expandKey_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Gcm.ctr32Api with
-    target := Arm.target
-    doc := Spec.Gcm.ctr32Api.doc
-      (notes := ["Constant-time bitsliced AES, two blocks at a time, in the style of BearSSL's \
-        `aes_ct` (Thomas Pornin, MIT licence)."])
+    verified := Proof.Aes.Arm.expandKey_verified },
+  Spec.Gcm.ctr32Api.artifact Arm.target {
+    notes := ["Constant-time bitsliced AES, two blocks at a time, in the style of BearSSL's \
+        `aes_ct` (Thomas Pornin, MIT licence)."]
     code := Impl.Aes.Arm.ctr32
-    contract := Spec.Gcm.ctr32Contract Arm.abi
-    verified := Proof.Aes.Arm.ctr32_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Aes.encryptBlocksApi with
-    target := Arm.target
-    doc := Spec.Aes.encryptBlocksApi.doc
-      (notes := ["Constant-time bitsliced AES, two blocks at a time, in the style of BearSSL's \
-        `aes_ct` (Thomas Pornin, MIT licence)."])
+    verified := Proof.Aes.Arm.ctr32_verified },
+  Spec.Aes.encryptBlocksApi.artifact Arm.target {
+    notes := ["Constant-time bitsliced AES, two blocks at a time, in the style of BearSSL's \
+        `aes_ct` (Thomas Pornin, MIT licence)."]
     code := Impl.Aes.Arm.encryptBlocks
-    contract := Spec.Aes.encryptBlocksContract Arm.abi
-    verified := Proof.Aes.Arm.Ecb.encryptBlocks_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Aes.decryptBlocksApi with
-    target := Arm.target
-    doc := Spec.Aes.decryptBlocksApi.doc
-      (notes := ["Constant-time bitsliced AES, two blocks at a time, in the style of BearSSL's \
+    verified := Proof.Aes.Arm.Ecb.encryptBlocks_verified },
+  Spec.Aes.decryptBlocksApi.artifact Arm.target {
+    notes := ["Constant-time bitsliced AES, two blocks at a time, in the style of BearSSL's \
         `aes_ct` (Thomas Pornin, MIT licence): the inverse S-box is the forward one between \
-        two inverse affine maps."])
+        two inverse affine maps."]
     code := Impl.Aes.Arm.decryptBlocks
-    contract := Spec.Aes.decryptBlocksContract Arm.abi
-    verified := Proof.Aes.Arm.Ecb.decryptBlocks_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Aes.Arm.Ecb.decryptBlocks_verified }]
 
 end VG.Artifacts.Aes.Arm

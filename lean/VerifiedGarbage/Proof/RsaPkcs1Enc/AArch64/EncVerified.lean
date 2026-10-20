@@ -1,12 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCT
-public import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCT
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Callee
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncLay
+public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on AArch64: the shared contract

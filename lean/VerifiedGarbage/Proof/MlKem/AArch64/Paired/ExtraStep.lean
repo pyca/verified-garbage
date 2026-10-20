@@ -2,43 +2,69 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Context
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraBoth
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Memory
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdSplit
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
+import VerifiedGarbage.Proof.Framework.Block
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Proof.MlKem VG.Spec.MlKem VG.Proof.Sha3.AArch64.Neon
 
 def stepRegs : List Reg := nextRegs++bothRegs
-structure StepPost (A B : Spec.Sha3.State) (L M : List Zq) (p a b c : Addr) (s t : State) : Prop where
+structure StepPostW (w16 : Bool) (A B : Spec.Sha3.State) (L M : List Zq) (p a b c : Addr) (s t : State) : Prop where
  keep : Keep stepRegs s t
  frame : Frame (stepWrites p a b) s.mem t.mem
  frameFine : Frame [⟨p,1712⟩,polyRegion a,polyRegion b] s.mem t.mem
  context : Context p a b c t
  pointer : t.gpr .x19=p
  pair : PairAt t.mem p (Spec.Sha3.keccakF A) (Spec.Sha3.keccakF B)
- left : Rej8.Scalar.Coeffs t.mem a L
- right : Rej8.Scalar.Coeffs t.mem b M
- saveLeft : checkpoint (p+1680) a L t.mem
- saveRight : checkpoint (p+1696) b M t.mem
+ left : Rej8.Scalar.CoeffsW w16 t.mem a L
+ right : Rej8.Scalar.CoeffsW w16 t.mem b M
+ saveLeft : checkpointW w16 (p+1680) a L t.mem
+ saveRight : checkpointW w16 (p+1696) b M t.mem
  flagLeft : (t.gpr .x22).toNat=if L.length=256 then 1 else 0
  flagRight : (t.gpr .x23).toNat=if M.length=256 then 1 else 0
  flagBoth : (t.gpr .x6).toNat=if L.length=256 ∧ M.length=256 then 1 else 0
  constants : Rej8.Constants t
 
-theorem extraStep_ok {s : State} {p a b c : Addr} {A B : Spec.Sha3.State} {L M : List Zq}
+abbrev StepPost := StepPostW false
+
+theorem extraStep_ok {w16 : Bool} {s : State} {p a b c : Addr} {A B : Spec.Sha3.State} {L M : List Zq}
  (ctx : Context p a b c s) (hp : s.gpr .x19=p) (sym : s.syms "VG_MLKEM_REJ_SHUFFLE"=c)
  (pair : PairAt s.mem p A B) (hl : L.length≤256) (hm : M.length≤256)
- (ca : Rej8.Scalar.Coeffs s.mem a L) (cb : Rej8.Scalar.Coeffs s.mem b M)
- (sa : checkpoint (p+1680) a L s.mem) (sb : checkpoint (p+1696) b M s.mem) :
- WP isa Impl.MlKem.AArch64.Paired.extraStep s
- (StepPost A B (sampleAfter L (Proof.Sha3.byteOf (Spec.Sha3.keccakF A)) 56)
+ (ca : Rej8.Scalar.CoeffsW w16 s.mem a L) (cb : Rej8.Scalar.CoeffsW w16 s.mem b M)
+ (sa : checkpointW w16 (p+1680) a L s.mem) (sb : checkpointW w16 (p+1696) b M s.mem) :
+ WP isa (Impl.MlKem.AArch64.Paired.extraStep w16) s
+ (StepPostW w16 A B (sampleAfter L (Proof.Sha3.byteOf (Spec.Sha3.keccakF A)) 56)
  (sampleAfter M (Proof.Sha3.byteOf (Spec.Sha3.keccakF B)) 56) p a b c s) := by
- have grouped : WP isa (.seq nextBlock extraBoth) s
-     (StepPost A B (sampleAfter L (Proof.Sha3.byteOf (Spec.Sha3.keccakF A)) 56)
+ have grouped : WP isa (.seq nextBlock (extraBoth w16)) s
+     (StepPostW w16 A B (sampleAfter L (Proof.Sha3.byteOf (Spec.Sha3.keccakF A)) 56)
        (sampleAfter M (Proof.Sha3.byteOf (Spec.Sha3.keccakF B)) 56) p a b c s) := by
   refine WP.seq (WP.mono_syms (nextBlock_ok hp ctx.scratch pair) fun u h hsym => ?_)
   rcases h with ⟨ku,fu,precise,up,pu,ra,rb,cs,ut⟩
@@ -61,8 +87,8 @@ theorem extraStep_ok {s : State} {p a b c : Addr} {A B : Spec.Sha3.State} {L M :
    · exact Offset.disjoint p (d:=off) (n:=16) (e:=1408) (k:=8) (by omega) (by omega) (by decide)
   have usa := checkpoint_frame sa precise (checkpoints (Or.inl rfl))
   have usb := checkpoint_frame sb precise (checkpoints (Or.inr rfl))
-  have ea := cu.env ux (N:=56) (off:=400) (by decide) (by decide) (Or.inl rfl) (fun i hi=>ra.byte hi)
-  have eb := cu.env ux (N:=56) (off:=904) (by decide) (by decide) (Or.inr rfl) (fun i hi=>rb.byte hi)
+  have ea := cu.envW (w16 := w16) ux (N:=56) (off:=400) (by decide) (by decide) (Or.inl rfl) (fun i hi=>ra.byte hi)
+  have eb := cu.envW (w16 := w16) ux (N:=56) (off:=904) (by decide) (by decide) (Or.inr rfl) (fun i hi=>rb.byte hi)
   refine WP.mono (extraBoth_ok up cu.scratch cu.farA cu.farB cu.apart ea eb
     (by intro mask hmask; rw [ux]; exact cu.tableScratch.sub_left (Rej8.table_sub c hmask))
     cs hl hm ua ub usa usb) fun t ht => ?_

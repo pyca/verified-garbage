@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Sha256.Arm.Shared
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # SHA-224 (FIPS 180-4) on ARMv7
@@ -18,20 +17,12 @@ its digest, are its own, and it continues with SHA-256's `update`
 namespace VG.Artifacts.Sha224.Arm
 
 def artifacts : List Artifact := [
-  { Spec.Sha256.init224Api with
-    target := Arm.target
-    doc := Spec.Sha256.init224Api.doc
+  Spec.Sha256.init224Api.artifact Arm.target {
     code := Impl.Sha256.Arm.Stream.init224
-    contract := Spec.Sha256.init224Contract Arm.abi
-    verified := Proof.Sha256.Arm.Shared.init224
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha256.finalize224Api with
-    target := Arm.target
-    doc := Spec.Sha256.finalize224Api.doc
+    verified := Proof.Sha256.Arm.Shared.init224 },
+  Spec.Sha256.finalize224Api.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 624 1 Impl.Sha256.Arm.Stream.finalize224
-    contract := Spec.Sha256.finalize224Contract Arm.abi 624
     stack := 624
-    verified := Proof.Sha256.Arm.Shared.finalize224
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Sha256.Arm.Shared.finalize224 }]
 
 end VG.Artifacts.Sha224.Arm

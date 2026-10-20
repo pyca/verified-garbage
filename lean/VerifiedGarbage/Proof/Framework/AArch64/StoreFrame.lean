@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-public import VerifiedGarbage.Proof.Framework.Mem
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Code that stores only at given offsets of a base register (AArch64)
@@ -24,8 +25,8 @@ namespace VG.AArch64
 def storesAt (ok : Nat → Bool) : Instr → Bool
   | .str .x _ .x3 d => ok d
   | .strq _ .x3 d => ok d && ok (d + 8)
-  | .str .. | .strb .. | .strq .. | .push _ | .pop _ | .alloc _ | .free _ => false
-  | i => dstOf i != some .x3
+  | .str .. | .strb .. | .strSp .. | .strq .. | .stp .. | .push _ | .pop _ | .alloc _ | .free _ => false
+  | i => !clobbers i .x3
 
 /-- The byte at `a` is in no store at `base + d`, for `ok d`. -/
 def Unstored (ok : Nat → Bool) (base a : Addr) : Prop :=
@@ -33,8 +34,12 @@ def Unstored (ok : Nat → Bool) (base a : Addr) : Prop :=
 
 theorem exec_mem_of_noStore {i : Instr} {s s' : State} (h : exec i s = some s')
     (hi : ∀ sz t n off, i ≠ .str sz t n off) (hb : ∀ t n off, i ≠ .strb t n off)
-    (hq : ∀ t n off, i ≠ .strq t n off) : s'.mem = s.mem := by
+    (hq : ∀ t n off, i ≠ .strq t n off) (hp : ∀ t1 t2 n off, i ≠ .stp t1 t2 n off)
+    (hsp : ∀ t off, i ≠ .strSp t off) : s'.mem = s.mem := by
   cases i with
+  | strSp t off => exact absurd rfl (hsp t off)
+  | stp t1 t2 n off => exact absurd rfl (hp t1 t2 n off)
+  | ldp t1 t2 n off => obtain ⟨_, _, rfl⟩ := exec_ldp_eq h; rfl
   | str sz t n off => exact absurd rfl (hi sz t n off)
   | strb t n off => exact absurd rfl (hb t n off)
   | strq t n off => exact absurd rfl (hq t n off)
@@ -80,9 +85,9 @@ noncomputable def storeGet (ok : Nat → Bool) (s : State) : Addr × (Addr → B
 theorem exec_storeGet {ok : Nat → Bool} {i : Instr} {s s' : State} (hi : storesAt ok i = true)
     (h : exec i s = some s') : storeGet ok s' = storeGet ok s := by
   have h3 : s'.gpr .x3 = s.gpr .x3 := by
-    refine exec_gpr (fun hd => ?_) h
+    refine exec_gpr ?_ h
     unfold storesAt at hi
-    split at hi <;> simp_all [dstOf]
+    split at hi <;> simp_all [clobbers, dstOf]
   have hm : ∀ a, Unstored ok (s.gpr .x3) a → s'.mem a = s.mem a := by
     intro a ha
     unfold storesAt at hi
@@ -111,7 +116,7 @@ theorem exec_storeGet {ok : Nat → Bool} {i : Instr} {s s' : State} (hi : store
     all_goals first
       | exact absurd hi (by decide)
       | exact congrFun (exec_mem_of_noStore h (by intros; simp_all) (by intros; simp_all)
-          (by intros; simp_all)) a
+          (by intros; simp_all) (by intros; simp_all) (by intros; simp_all)) a
   unfold storeGet
   rw [h3]
   refine Prod.ext rfl (funext fun a => ?_)

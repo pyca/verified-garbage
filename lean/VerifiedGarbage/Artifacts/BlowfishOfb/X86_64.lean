@@ -1,12 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.X86_64.FbVerified
-public import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.TaintSum
-import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Blowfish-OFB artifacts on baseline x86-64 -/
 
@@ -21,13 +17,10 @@ def note : String :=
   the data; the schedule is read where it is. The mode is the generic OFB of `Impl/Modes/X86_64/`."
 
 def artifacts : List Artifact := [
-  { Spec.Blowfish.ofbApi with
-    target := X86_64.target
-    doc := Spec.Blowfish.ofbApi.doc (notes := [note])
+  Spec.Blowfish.ofbApi.artifact X86_64.target {
+    notes := [note]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 96 .r8 11 Impl.Blowfish.X86_64.ofb
-    contract := Spec.Blowfish.ofbContract X86_64.abi 96
     stack := 96
-    verified := Proof.Blowfish.X86_64.ofb_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Blowfish.X86_64.ofb_framed }]
 
 end VG.Artifacts.BlowfishOfb.X86_64

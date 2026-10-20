@@ -3,15 +3,16 @@ module
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Spread
 public import VerifiedGarbage.Proof.CmacTripleDes.Block
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Round
 import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # TDEA on AArch64: the passes and the block
@@ -386,18 +387,18 @@ theorem fp_check :
 
 def blockKept : List Reg := [.x1, .x2, .x3, .x4, .x10, .x14, .x15]
 
-theorem ip_kept : blockKept.all (fun r => ipCode.all fun i => dstOf i != some r) = true := by lit_decide
+theorem ip_kept : blockKept.all (fun r => ipCode.all fun i => !clobbers i r) = true := by lit_decide
 
-theorem fp_kept : blockKept.all (fun r => fpCode.all fun i => dstOf i != some r) = true := by lit_decide
+theorem fp_kept : blockKept.all (fun r => fpCode.all fun i => !clobbers i r) = true := by lit_decide
 
 theorem fp_v : fpCode.all (fun i => vdstOf i == none) = true := by lit_decide
 
-theorem fp_masks : maskConsts.all (fun p => fpCode.all fun i => dstOf i != some p.1) = true := by
+theorem fp_masks : maskConsts.all (fun p => fpCode.all fun i => !clobbers i p.1) = true := by
   lit_decide
 
 theorem ip_v : ipCode.all (fun i => vdstOf i == none) = true := by lit_decide
 
-theorem ip_masks : maskConsts.all (fun p => ipCode.all fun i => dstOf i != some p.1) = true := by
+theorem ip_masks : maskConsts.all (fun p => ipCode.all fun i => !clobbers i p.1) = true := by
   lit_decide
 
 theorem xPos_facts : ∀ e < 32, xPos e < 64 ∧ xBit (xPos e) = true ∧ xSrc (xPos e) = e := by decide
@@ -519,7 +520,7 @@ theorem maskSet_check :
 /-- The registers the masks' setup keeps. -/
 def maskKept : List Reg := [.x1, .x2, .x3, .x4, .x5, .x14, .x15]
 
-theorem maskSet_keeps : maskKept.all (fun r => maskSet.all fun i => dstOf i != some r) = true := by
+theorem maskSet_keeps : maskKept.all (fun r => maskSet.all fun i => !clobbers i r) = true := by
   lit_decide
 
 theorem maskSet_v : maskSet.all (fun i => vdstOf i == none) = true := by lit_decide

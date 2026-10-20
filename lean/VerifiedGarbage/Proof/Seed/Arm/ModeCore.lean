@@ -1,15 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.Arm.Verified
 public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.Seed.Arm.Modes
-public import VerifiedGarbage.Proof.Seed.Scratch
 public import VerifiedGarbage.Spec.Seed.Cbc
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Seed.Arm.Verified
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # SEED's ECB functions on ARMv7 as the modes' core

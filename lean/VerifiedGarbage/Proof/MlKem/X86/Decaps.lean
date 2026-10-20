@@ -1,13 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.DecapsBody
-public import VerifiedGarbage.Proof.MlKem.X86.EncInst
-public import VerifiedGarbage.Spec.MlKem.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.X86.EncInst
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM-768 on x86 (32-bit): `vg_mlkem768_decaps`

@@ -1,15 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.X86.Contract
-public import VerifiedGarbage.Proof.AesGcm.X86.Common
 public import VerifiedGarbage.Proof.AesGcm.X86.Fn
-public import VerifiedGarbage.Proof.AesGcm.X86.Top
-public import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.AesGcm.X86.Top
 public import VerifiedGarbage.Impl.AesOcb.X86
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.VariantProof
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-OCB on x86: where everything is

@@ -1,29 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.PointCTMul
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTMul
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTLit
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTLit
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseEntry
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseEntry
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.Ed25519.X86.InputBits
-import VerifiedGarbage.Spec.Rc2
-meta import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
+import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
+import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTMul
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseEntry
 meta import VerifiedGarbage.Proof.Ed25519.X86.InputBits
-meta import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
+meta import VerifiedGarbage.Proof.Ed25519.Bytes
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

@@ -108,10 +108,10 @@ def expected : String := "/// Returns word 1 of its table.
 #[unsafe(naked)]
 pub(crate) unsafe extern \"sysv64\" fn vg_test_consts() -> u64 {
     core::arch::naked_asm!(
-        \"lea rax, [rip + {VG_TEST_TABLE}]\",
-        \"mov rax, QWORD PTR [rax+8]\",
-        \"ret\",
-        \".p2align 6\",
+        r\"lea rax, [rip + {VG_TEST_TABLE}]
+mov rax, QWORD PTR [rax+8]
+ret
+.p2align 6\",
         VG_TEST_TABLE = sym super::consts::VG_TEST_TABLE,
     )
 }
@@ -119,7 +119,7 @@ pub(crate) unsafe extern \"sysv64\" fn vg_test_consts() -> u64 {
 
 #guard Rust.function artifact (fun _ => "") == expected
 
-#guard (Rust.checkConsts [artifact] artifact).isOk
+#guard (Rust.checkConsts [.of artifact] (.of artifact)).isOk
 #guard Instr.asm (.leaSym .rdx "VG_TEST_TABLE") == ["lea rdx, [rip + VG_TEST_TABLE]"]
 #guard (Instr.leaSym .rdx "VG_TEST_TABLE").requires.isEmpty
 #guard addrs (.leaSym .rdx "VG_TEST_TABLE") sat == []

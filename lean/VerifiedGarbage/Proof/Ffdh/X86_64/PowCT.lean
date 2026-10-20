@@ -1,17 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Pow
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp5
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
 
 /-!
 # FFDH on x86-64: an exponentiation in constant time

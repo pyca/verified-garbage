@@ -1,27 +1,29 @@
 module
 
 import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Ladder
-meta import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Ladder
-public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
-meta import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
-public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Verified
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Verified
+public import VerifiedGarbage.Proof.X25519.X86_64.Main
 import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.Sqr
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Sqr
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
-meta import VerifiedGarbage.Impl.Mont.Mod
-meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.X25519.X86_64.Verified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
+public import VerifiedGarbage.Impl.X25519.X86_64.Ifma
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
+meta import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Ladder
+meta import VerifiedGarbage.Proof.X25519.X86_64.Main
+meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
+meta import VerifiedGarbage.Proof.X25519.X86_64.Verified
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
+meta import VerifiedGarbage.Impl.X25519.X86_64.Ifma
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: `Verified`

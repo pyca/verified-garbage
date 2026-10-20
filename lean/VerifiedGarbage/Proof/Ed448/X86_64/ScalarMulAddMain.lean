@@ -1,10 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarWord
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMulAdd
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMulAdd
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMain
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarIO
+import VerifiedGarbage.Proof.X448.X86_64.AddSub
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed448 scalar multiply-add on x86-64: the whole function

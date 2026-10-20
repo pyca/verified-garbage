@@ -2,15 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Blake2.Stream
 public import VerifiedGarbage.Proof.Blake2.AArch64.Contract
-public import VerifiedGarbage.Proof.MdStream.AArch64.Common
+import VerifiedGarbage.Proof.MdStream.AArch64.Common
 public import VerifiedGarbage.Impl.Blake2.AArch64.Stream
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Streaming BLAKE2 on AArch64: common lemmas

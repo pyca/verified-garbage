@@ -1,17 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Common
-meta import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Common
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Blake2.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Common
 meta import VerifiedGarbage.Proof.Blake2.X86_64.Lit
-public import VerifiedGarbage.Impl.Blake2.X86_64.Stream
-meta import VerifiedGarbage.Impl.Blake2.X86_64.Stream
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 @[expose] public section
 

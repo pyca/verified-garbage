@@ -1,16 +1,46 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Hash
-public import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
-import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
+import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Ed448.Arm.BaseVerified
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMulAddMain
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
 import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Base
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed448.Arm.BaseEncode
+import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
+import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Prune
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
+import VerifiedGarbage.Proof.X25519.Arm.Pass
+import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.X448.Arm.Copy
+import VerifiedGarbage.Proof.X448.Arm.Counters
+import VerifiedGarbage.Proof.X448.Arm.Decode
+import VerifiedGarbage.Proof.X448.Arm.DecodeAll
+import VerifiedGarbage.Proof.X448.Arm.Fill
+import VerifiedGarbage.Proof.X448.Arm.Finish
+import VerifiedGarbage.Proof.X448.Arm.Init
+import VerifiedGarbage.Proof.X448.Arm.Initial
+import VerifiedGarbage.Proof.X448.Arm.MulLoop
+import VerifiedGarbage.Proof.X448.Arm.Normalize
+import VerifiedGarbage.Proof.X448.Arm.RowPass
+import VerifiedGarbage.Proof.X448.Arm.Setup
+import VerifiedGarbage.Proof.X448.Arm.Step
+import VerifiedGarbage.Proof.X448.Bytes
 
 /-!
 # Ed448 signing with a cached public key on ARMv7: the scalar calls

@@ -28,6 +28,13 @@ pub enum Error {
     IncompleteBlock,
 }
 
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid CAST5 key length",
+        IncompleteBlock => "CAST5 input is not a whole number of blocks",
+    }
+}
+
 /// An expanded CAST5 key for ECB encryption and decryption.
 pub struct Cast5Ecb {
     schedule: [u8; 128],

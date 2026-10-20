@@ -44,7 +44,7 @@ jobs:
       # The commit CI checked (GITHUB_SHA is main's head when this started).
       HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
       # Bump if the archive format or compression settings change.
-      CACHE_FORMAT: zstd5-oras-v3
+      CACHE_FORMAT: ltar5-oras-v5
       ORAS_VERSION: 1.3.2
       ORAS_SHA256: 9229ccc6d17bb282039ad4a69abb16dcb887a5bce567c075d731d9b3c7ad8eaf
     steps:
@@ -98,22 +98,53 @@ jobs:
             fi
           fi
           echo "needed=true" >> "$GITHUB_OUTPUT"
-      - uses: ./.github/actions/lean-prepare
-        id: prepare
+      - name: Restore the checked module archives
+        id: build
         if: ${{ steps.publish.outputs.needed == 'true' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
+          path: lean/.lake/ltar
           key: ${{ steps.keys.outputs.build-cache }}
-          restore-keys: ${{ steps.keys.outputs.build-cache }}
-      - name: Package the checked build and dependencies
+      - name: Retry restoring the checked module archives
+        id: build-again
+        if: ${{ steps.publish.outputs.needed == 'true' && steps.build.outputs.cache-hit != 'true' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: lean/.lake/ltar
+          key: ${{ steps.keys.outputs.build-cache }}
+      - name: Check the checked build was restored
+        id: dependencies
         if: ${{ steps.publish.outputs.needed == 'true' }}
         env:
-          CACHE_HIT: ${{ steps.prepare.outputs.cache-hit }}
+          CACHE_HIT: ${{ steps.build.outputs.cache-hit == 'true' || steps.build-again.outputs.cache-hit == 'true' }}
         run: |
           # Never publish a fallback or an empty project build.
           [ "$CACHE_HIT" = true ] || { echo "::error::The checked build cache is missing"; exit 1; }
-          mkdir -p "$RUNNER_TEMP/lean-cache-image"
-          tar -C lean -cf - .lake/build .lake/packages \
-            | zstd -T0 -5 -o "$RUNNER_TEMP/lean-cache-image/lean-cache.tar.zst"
+          if [ -f lean/.lake/ltar/mathlib-cache-key ]; then
+            echo "key=$(cat lean/.lake/ltar/mathlib-cache-key)" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Restore the checked dependency archives
+        id: mathlib
+        if: ${{ steps.publish.outputs.needed == 'true' && steps.dependencies.outputs.key != '' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: lean/.lake/mathlib-ltar
+          key: ${{ steps.dependencies.outputs.key }}
+      # Old project caches lack the dependency key. An evicted dependency
+      # cache also needs the normal setup to fetch and store it again.
+      - uses: ./.github/actions/lean-prepare
+        if: ${{ steps.publish.outputs.needed == 'true' && steps.mathlib.outputs.cache-hit != 'true' }}
+        with:
+          key: ${{ steps.keys.outputs.build-cache }}
+          restore-keys: ${{ steps.keys.outputs.build-cache }}
+      # The archive goes to memory: it is uploaded, then discarded.
+      - name: Package the checked build and dependencies
+        if: ${{ steps.publish.outputs.needed == 'true' }}
+        run: |
+          set -o pipefail
+          mkdir -p /dev/shm/lean-cache-image
+          python3 ci/lean_cache.py bundle lean .lake/ltar .lake/mathlib-ltar \
+            | zstd -T0 -5 -o /dev/shm/lean-cache-image/lean-cache.tar.zst
       - name: Upload the cache image
         id: upload
         if: ${{ steps.publish.outputs.needed == 'true' }}
@@ -124,9 +155,10 @@ jobs:
           # Runs hold the workflow's lock from the decision to here, so no
           # newer cache was published since.
           # The archive is the one layer, as it is: the README's restore
-          # streams it from the registry API into `zstd -dc | tar -x`.
+          # streams it from the registry API into
+          # `zstd -dc | ci/lean_cache.py unpack`.
           toolchain=$(cat lean/lean-toolchain)
-          cd "$RUNNER_TEMP/lean-cache-image"
+          cd /dev/shm/lean-cache-image
           printf '%s' "$GH_TOKEN" | oras push --username "$GITHUB_ACTOR" --password-stdin \
             --artifact-type application/vnd.pyca.lean-cache.v1 \
             --annotation "org.opencontainers.image.source=https://github.com/$GH_REPO" \

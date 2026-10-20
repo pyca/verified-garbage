@@ -1,15 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacFinishTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinish
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafStepTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTimingInit
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafLoopTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafFinishTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafLoopTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafFinishTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindow
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 
 @[expose] public section
 
@@ -19,7 +19,7 @@ open VG.Proof.Mont.AArch64 VG.Proof.Mont Spec.Weierstrass
 
 structure NafWindowChecks (K : WinCfg) : Prop where
   tree : NafTableChecks K
-  treeCopy : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), dstOf i≠some r
+  treeCopy : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), clobbers i r = false
   step : NafStepChecks K
   infinity : FieldCT (.block (Jacobian.infinity K K.R))
   counter : FieldCT (.block [.movz .x .x19 256 0])

@@ -1,13 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCTTail
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedKMain
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedKMain
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTFront
 import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Public candidate checks before the callable shared round -/
 
@@ -75,9 +71,9 @@ private theorem gcd_ct {Φ : SharedFPub → State → Prop} (hΦ : ∀ q s, Φ q
   (gcdCheck_ct (Φ := KSt) (fun _ _ h => h)).mono
     (fun _ _ ⟨q, hs, ht⟩ => ⟨q.toFPub, (hΦ _ _ hs).1, (hΦ _ _ ht).1⟩) (fun _ _ h => h)
 
-theorem sharedAfterLoad_ct (M : Mont) (R : Kernel) : RelCT isa (Two SharedKSt) (seqs (closeCheck ++ ([.ite .ne (finUsed 2) (seqs (trial ++
+theorem sharedAfterLoad_ct (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : MmCalls M mm) (R : Kernel) : RelCT isa (Two SharedKSt) (seqs (closeCheck ++ ([.ite .ne (finUsed 2) (seqs (trial ++
     ([.ite .ne (finUsed 3) (seqs (gcdCheck ++
-      ([.ite .ne (finUsed 3) (seqs (montSetup M.mm ++ expSetup ++ millerRabinWith M.mm R.run ++ [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))) fun _ _ => True := by
+      ([.ite .ne (finUsed 3) (seqs (montSetup mm ++ expSetup ++ millerRabinWith mm R.run ++ [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))) fun _ _ => True := by
   refine RelCT.seqs_app (by simp [closeCheck]) (by simp) (RelCT.seq (R := Two fun q s => SharedKSt q s ∧
     s.zf = some (!q.sch.close)) (two_post close_ct fun _ _ h => close_stage h) ?_)
   simp only [seqs]
@@ -95,15 +91,15 @@ theorem sharedAfterLoad_ct (M : Mont) (R : Kernel) : RelCT isa (Two SharedKSt) (
     exact WP.mono (gcd_stage h.1.1.1 h.1.2 hco) fun t ht => ⟨ht, h.1.2, hco⟩
   simp only [seqs]
   refine two_ite (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.1.2, h₂.1.2]) (fin3_ct fun _ _ h => h.1.1.1) ?_
-  refine (sharedTail_ct M R).mono (fun _ _ h => two_bind (fun q _ _ h₁ h₂ =>
+  refine (sharedTail_ct M hmc R).mono (fun _ _ h => two_bind (fun q _ _ h₁ h₂ =>
     ⟨q.tp, tail_pre h₁.1.1.1 h₁.1.2.1 h₁.1.2.2 (ne_false h₁.1.1.2 h₁.2),
       tail_pre h₂.1.1.1 h₂.1.2.1 h₂.1.2.2 (ne_false h₂.1.1.2 h₂.2)⟩) h) fun _ _ h => h
 
-theorem sharedKMain_ct (M : Mont) (R : Kernel) :
-    RelCT isa (Two SharedK0) (kMainWith M.mm R.run) (fun _ _ => True) := by
+theorem sharedKMain_ct (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : MmCalls M mm) (R : Kernel) :
+    RelCT isa (Two SharedK0) (kMainWith mm R.run) (fun _ _ => True) := by
   rw [kMainWith_eq]
   refine RelCT.seqs_app (by simp [loadC]) (by simp [closeCheck])
-    (RelCT.seq (two_post (two_map SharedFPub.toFPub (fun _ _ h => h.1) loadC_ct) ?_) (sharedAfterLoad_ct M R))
+    (RelCT.seq (two_post (two_map SharedFPub.toFPub (fun _ _ h => h.1) loadC_ct) ?_) (sharedAfterLoad_ct M hmc R))
   rintro q s ⟨h, henv⟩
   exact WP.mono (WP.keep mmRegs (loadCStage_ok h) rfl) fun _ ⟨ht, hk⟩ => ⟨ht, henv.kept hk (by decide)⟩
 

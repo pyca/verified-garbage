@@ -1,14 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Impl.Weierstrass.Arm.Mont
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontSecp256k1
-import Batteries.Logic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.RegSet
-import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Montgomery arithmetic modulo secp256k1's `p` and `n` on ARMv7
 
@@ -29,47 +22,29 @@ def notes : List String := ["The function saves `r4`–`r11` in its own working 
   conditional subtraction selected by a mask."]
 
 def artifacts : List Artifact := [
-  { secp256k1p.mulApi with
-    target := Arm.target
-    doc := secp256k1p.mulApi.doc (notes := notes)
+  secp256k1p.mulApi.artifact Arm.target {
+    notes := notes
     code := mulFn secp256k1p.k secp256k1p.m
-    contract := secp256k1p.mulContract Arm.abi
-    verified := secp256k1p_mul_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { secp256k1p.addApi with
-    target := Arm.target
-    doc := secp256k1p.addApi.doc (notes := notes)
+    verified := secp256k1p_mul_verified },
+  secp256k1p.addApi.artifact Arm.target {
+    notes := notes
     code := addFn secp256k1p.k secp256k1p.m
-    contract := secp256k1p.addContract Arm.abi
-    verified := secp256k1p_add_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { secp256k1p.subApi with
-    target := Arm.target
-    doc := secp256k1p.subApi.doc (notes := notes)
+    verified := secp256k1p_add_verified },
+  secp256k1p.subApi.artifact Arm.target {
+    notes := notes
     code := subFn secp256k1p.k secp256k1p.m
-    contract := secp256k1p.subContract Arm.abi
-    verified := secp256k1p_sub_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { secp256k1n.mulApi with
-    target := Arm.target
-    doc := secp256k1n.mulApi.doc (notes := notes)
+    verified := secp256k1p_sub_verified },
+  secp256k1n.mulApi.artifact Arm.target {
+    notes := notes
     code := mulFn secp256k1n.k secp256k1n.m
-    contract := secp256k1n.mulContract Arm.abi
-    verified := secp256k1n_mul_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { secp256k1n.addApi with
-    target := Arm.target
-    doc := secp256k1n.addApi.doc (notes := notes)
+    verified := secp256k1n_mul_verified },
+  secp256k1n.addApi.artifact Arm.target {
+    notes := notes
     code := addFn secp256k1n.k secp256k1n.m
-    contract := secp256k1n.addContract Arm.abi
-    verified := secp256k1n_add_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { secp256k1n.subApi with
-    target := Arm.target
-    doc := secp256k1n.subApi.doc (notes := notes)
+    verified := secp256k1n_add_verified },
+  secp256k1n.subApi.artifact Arm.target {
+    notes := notes
     code := subFn secp256k1n.k secp256k1n.m
-    contract := secp256k1n.subContract Arm.abi
-    verified := secp256k1n_sub_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := secp256k1n_sub_verified }]
 
 end VG.Artifacts.WeierstrassMontSecp256k1.Arm

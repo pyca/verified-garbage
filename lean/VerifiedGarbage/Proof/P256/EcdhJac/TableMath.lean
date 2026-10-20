@@ -1,12 +1,9 @@
 module
 
-public import VerifiedGarbage.Impl.P256.EcdhJac
 public import VerifiedGarbage.Proof.Weierstrass.JacCoZ
-import VerifiedGarbage.Proof.Weierstrass.Env
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.P256.EcdhJac.Base
+import VerifiedGarbage.Impl.AArch64Instrs
+import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
 
 @[expose] public section
 

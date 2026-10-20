@@ -1,14 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecPcCall
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncTail
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.RecoverPrecomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCall
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 
 /-!
 # `vg_rsa_pkcs1_recover_precomputed` on x86-64: after the call

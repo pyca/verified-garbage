@@ -1,8 +1,6 @@
 module
+public import VerifiedGarbage.TCB.X86.Isa
 
-public import VerifiedGarbage.Impl.Aes.X86.Ctr32
-public import VerifiedGarbage.Impl.Aes.X86.ExpandKey
-public import VerifiedGarbage.Impl.Gcm.X86
 
 /-!
 # AES-GCM: x86 (32-bit) implementation
@@ -351,16 +349,12 @@ def cmp (o : Nat) : Prog isa :=
     .alu .add .edx (imm vO), .mov .ecx (slot tglO)] : List Instr)))
   (.seq copyLoop (.block cmpTail))
 
-/-- ZF is clear iff the tag length (at `W + tglO`) is one §5.2.1.2 allows (4, 8 or 12 to 16). -/
+/-- ZF is clear iff the tag length (at `W + tglO`) is between 4 and 16 bytes. -/
 def tagLenOk : Prog isa :=
   .seq (.block [.mov .ecx (imm 0), .mov .ebx (slot tglO), .alu .cmp .ebx (imm 4)])
-  (.seq (.ite .e (.block [.mov .ecx (imm 1)]) (.block []))
-  (.seq (.block [.alu .cmp .ebx (imm 8)])
-  (.seq (.ite .e (.block [.mov .ecx (imm 1)]) (.block []))
-  (.seq (.block [.alu .cmp .ebx (imm 12)])
   (.seq (.ite .b (.block [])
       (.seq (.block [.alu .cmp .ebx (imm 17)]) (.ite .b (.block [.mov .ecx (imm 1)]) (.block []))))
-    (.block [.alu .test .ecx (.reg .ecx)]))))))
+    (.block [.alu .test .ecx (.reg .ecx)]))
 
 /-! ## The functions -/
 

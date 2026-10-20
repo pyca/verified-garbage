@@ -1,20 +1,17 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Rsa.X86_64.Recover
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+public import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
 
 import VerifiedGarbage.Proof.Rsa.X86_64.Implies8
-public import VerifiedGarbage.Proof.Rsa.X86_64.CallPatch
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
-public import VerifiedGarbage.Proof.Bignum.X86_64.PcFn
-public import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTLoop
+import VerifiedGarbage.Proof.Rsa.X86_64.CallPatch
+import VerifiedGarbage.Proof.Bignum.X86_64.PcFn
+import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
+import VerifiedGarbage.Proof.Bignum.Amm52
+import VerifiedGarbage.Proof.Rsa.X86_64.RpCT8
+import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
 
 /-!
 # The x86-64 RSA functions, with Montgomery multiplication by calls

@@ -1,13 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Sha1.X86.Stream.Md
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Spill
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Streaming SHA-1 parameterized by compression on x86

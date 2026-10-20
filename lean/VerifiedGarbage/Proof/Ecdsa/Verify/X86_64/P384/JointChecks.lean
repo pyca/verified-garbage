@@ -1,47 +1,37 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
 import VerifiedGarbage.Proof.P384.X86_64.JointTiming
-meta import VerifiedGarbage.Proof.P384.X86_64.JointTiming
 import VerifiedGarbage.Proof.P384.X86_64.NafTableTiming
-meta import VerifiedGarbage.Proof.P384.X86_64.NafTableTiming
-public import VerifiedGarbage.Proof.P384.X86_64.JointLayout
-meta import VerifiedGarbage.Proof.P384.X86_64.JointLayout
-import VerifiedGarbage.Proof.P384.X86_64.JointFrame
-meta import VerifiedGarbage.Proof.P384.X86_64.JointFrame
+import VerifiedGarbage.Proof.P384.X86_64.JointLayout
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-public import VerifiedGarbage.Proof.Framework.LitShare
-meta import VerifiedGarbage.Proof.Framework.LitShare
+public import VerifiedGarbage.Impl.P384.X86_64.Joint
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubleIn
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifyLit
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import VerifiedGarbage.Proof.Framework.LitShare
+import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
+meta import VerifiedGarbage.Proof.P384.X86_64.JointTiming
+meta import VerifiedGarbage.Proof.P384.X86_64.NafTableTiming
+meta import VerifiedGarbage.Proof.P384.X86_64.JointLayout
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Impl.P384.X86_64.Joint
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubleIn
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifyLit
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
-import VerifiedGarbage.Spec.EcKey.Generic
-meta import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
-meta import VerifiedGarbage.Spec.EcKey.Generic
 
 /-! Concrete timing checks and the doubler of P-384's baseline and ADX joint verification. -/
 
@@ -60,14 +50,14 @@ theorem joint_adx_mul_checks : JointMulChecks p384vx publicJointAdx :=
     joint_adx_infinity_ct,joint_adx_counter_ct,fastGenerator_adx_checks,fastPeer_adx_checks⟩
 
 theorem joint_doubler (hc : CfgOk p384v) (hC : Weierstrass.Law p384v.C) :
-    JointDoubler publicJoint p384v.C size (Joint.jacDouble publicJoint.K) :=
-  jacDouble_doubler joint_add_layout (Weierstrass.unitMod_pow_two hc.p_odd _) hC hc.am3
-    jointDouble_ct joint_cached_checks.copy
+    JointDoubler publicJoint p384v.C size (jointDouble publicJoint.K) :=
+  doubleIn_doubler joint_add_layout (Weierstrass.unitMod_pow_two hc.p_odd _) hC hc.am3
+    (by decide) jointDouble_ct
 
 theorem joint_adx_doubler (hc : CfgOk p384vx) (hC : Weierstrass.Law p384vx.C) :
-    JointDoubler publicJointAdx p384vx.C size (Joint.jacDouble publicJointAdx.K) :=
-  jacDouble_doubler joint_adx_add_layout (Weierstrass.unitMod_pow_two hc.p_odd _) hC hc.am3
-    jointDouble_adx_ct joint_adx_cached_checks.copy
+    JointDoubler publicJointAdx p384vx.C size (jointDoubleAdx publicJointAdx.K) :=
+  doubleCms_doubler joint_adx_add_layout (by decide +kernel) (Weierstrass.unitMod_pow_two hc.p_odd _) hC hc.am3
+    (by decide) jointDouble_adx_ct
 
 /-- `jointPrefix p384v` without its displacements, as a literal of shared blocks
 (`materialize_shared`): what its constant-time check analyses

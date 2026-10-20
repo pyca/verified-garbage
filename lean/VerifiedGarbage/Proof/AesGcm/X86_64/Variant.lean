@@ -1,19 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
-public import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
-public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
-public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
-public import VerifiedGarbage.Impl.Gcm.X86_64.StitchTo
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchR
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # AES-GCM on x86-64: the variants
@@ -23,7 +14,7 @@ is (see `TCB/Emit.lean`): the implementations its functions call, with the
 proofs that import the algebra of `Proof/Gcm/Poly.lean` (those of
 `vg_ghash` and of the interleaved loops) named rather than held, so that the
 variants need not import that algebra. The generic file
-(`Generic/AesGcm/X86_64/AesGcm.lean`) resolves the names (`GcmVariant.impl`).
+(`Proof/AesGcm/X86_64/Instances.lean`) resolves the names (`GcmVariant.impl`).
 -/
 
 @[expose] public section
@@ -117,6 +108,13 @@ CPU features it needs. -/
 def short : StitchName → Bool
   | .vaesAvx512 => true
   | _ => false
+
+/-- The loop with which `seal_split` takes a TLS record's whole groups at
+`src` and at `dst` in one pass (`SealSplit.prefixN`), if any. -/
+def onePass : StitchName → Option OnePassName
+  | .vaes => some .r
+  | .vaesAvx512 => some .z
+  | _ => none
 
 end StitchName
 

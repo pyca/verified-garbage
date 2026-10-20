@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Verified
 public import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on x86-64, in one pass
@@ -25,53 +25,41 @@ namespace VG.Artifacts.AesXts.X86_64
 
 
 def artifacts : List Artifact := [
-  { Spec.Xts.aesEncryptApi with
-    name := Spec.Xts.aesEncryptApi.name ++ "_vaes_vpclmul"
-    target := X86_64.target
-    doc := Spec.Xts.aesEncryptApi.doc (notes := [
+  Spec.Xts.aesEncryptApi.artifact X86_64.target {
+    suffix := "_vaes_vpclmul"
+    notes := [
       "This implementation reads each block once: it enciphers eight blocks at a time with VAES, " ++
-      "their tweaks kept in registers and computed eight at a time with VPCLMULQDQ, and the rest with AES-NI."])
+      "their tweaks kept in registers and computed eight at a time with VPCLMULQDQ, and the rest with AES-NI."]
     code := Impl.AesXts.X86_64Vaes.encrypt
-    contract := Spec.Xts.aesEncryptContract X86_64.abi 8
     stack := 8
     verified := Proof.AesXts.X86_64.Vaes.encrypt_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["aes", "avx", "avx2", "vaes", "vpclmulqdq"] },
-  { Spec.Xts.aesDecryptApi with
-    name := Spec.Xts.aesDecryptApi.name ++ "_vaes_vpclmul"
-    target := X86_64.target
-    doc := Spec.Xts.aesDecryptApi.doc (notes := [
+  Spec.Xts.aesDecryptApi.artifact X86_64.target {
+    suffix := "_vaes_vpclmul"
+    notes := [
       "This implementation reads each block once: it deciphers eight blocks at a time with VAES, " ++
-      "their tweaks kept in registers and computed eight at a time with VPCLMULQDQ, and the rest with AES-NI."])
+      "their tweaks kept in registers and computed eight at a time with VPCLMULQDQ, and the rest with AES-NI."]
     code := Impl.AesXts.X86_64Vaes.decrypt
-    contract := Spec.Xts.aesDecryptContract X86_64.abi 8
     stack := 8
     verified := Proof.AesXts.X86_64.Vaes.decrypt_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["aes", "avx", "avx2", "vaes", "vpclmulqdq"] },
-  { Spec.Xts.aesEncryptApi with
-    name := Spec.Xts.aesEncryptApi.name ++ "_aesni_pclmul"
-    target := X86_64.target
-    doc := Spec.Xts.aesEncryptApi.doc (notes := [
+  Spec.Xts.aesEncryptApi.artifact X86_64.target {
+    suffix := "_aesni_pclmul"
+    notes := [
       "This implementation reads each block once: it enciphers eight blocks at a time with AES-NI, " ++
-      "their tweaks computed eight at a time with PCLMULQDQ in the scratch buffer."])
+      "their tweaks computed eight at a time with PCLMULQDQ in the scratch buffer."]
     code := Impl.AesXts.X86_64AesNi.encrypt
-    contract := Spec.Xts.aesEncryptContract X86_64.abi 8
     stack := 8
     verified := Proof.AesXts.X86_64.OnePassNi.encrypt_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["aes", "avx", "pclmulqdq"] },
-  { Spec.Xts.aesDecryptApi with
-    name := Spec.Xts.aesDecryptApi.name ++ "_aesni_pclmul"
-    target := X86_64.target
-    doc := Spec.Xts.aesDecryptApi.doc (notes := [
+  Spec.Xts.aesDecryptApi.artifact X86_64.target {
+    suffix := "_aesni_pclmul"
+    notes := [
       "This implementation reads each block once: it deciphers eight blocks at a time with AES-NI, " ++
-      "their tweaks computed eight at a time with PCLMULQDQ in the scratch buffer."])
+      "their tweaks computed eight at a time with PCLMULQDQ in the scratch buffer."]
     code := Impl.AesXts.X86_64AesNi.decrypt
-    contract := Spec.Xts.aesDecryptContract X86_64.abi 8
     stack := 8
     verified := Proof.AesXts.X86_64.OnePassNi.decrypt_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["aes", "avx", "pclmulqdq"] }]
 
 end VG.Artifacts.AesXts.X86_64

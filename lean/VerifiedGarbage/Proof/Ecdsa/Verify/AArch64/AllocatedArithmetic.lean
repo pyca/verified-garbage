@@ -1,28 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointLoop
-public import VerifiedGarbage.Proof.P256.VerifyAllocated.Double
+import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.CachedHead
+public import Mathlib.Data.Nat.Prime.Defs
+public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
+public import VerifiedGarbage.Proof.P256.Linear.WeakCertificate
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddField
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticRR
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.JacInplace
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowEntryTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSumTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
+import Mathlib.Tactic.ClearExcept
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+import VerifiedGarbage.Proof.P256.EcdhDouble.Field
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
 
 /-! ## `AllocatedPointFrame` -/
 
@@ -199,19 +200,43 @@ theorem mixedTail_ok (raw : RawCorrect) {base : Addr} {V : List Nat} {E : Nat �
   · exact Or.inr ((show ∀ x∈[K.D.x,K.D.y,K.D.z],x∈(operations .mixedTail).map FOp.out by decide) x hx)
   · exact Or.inl ((mem_validAfter _ _).mpr (Or.inl (by simp [hx])))
 
-theorem double_ok (raw : RawCorrect) (hC : Law C) (ha : AM3 C)
+/-- The fused doubling (ECDH's), on the joint loop's live slots. -/
+theorem double_field_ok {base : Addr} {E : Nat → Fe C} {s : State}
+    (hi : Inv K.M base 8192 C.p Sl (jointLive cfg) E s) :
+    WP isa VG.Impl.P256.EcdhDouble.program s fun t =>
+      Frame base Proof.P256.VerifyAllocated.work s t ∧ Inv K.M base 8192 C.p Sl (jointLive cfg)
+        (runOps (operations .doubleRR) E) t := by
+  refine WP.mono (Proof.P256.EcdhDouble.Certificate.refine hi.scr
+    (Proof.P256.EcdhDouble.raw_ok JointLayout.layout.lay JointLayout.layout.aligned
+      (by decide +kernel) Proof.P256.EcdhDouble.Verified.linear129
+      Proof.P256.EcdhDouble.Verified.linear38 (unitMod_pow_two (by decide) _)
+      (by decide +kernel) hi)) fun t ⟨u,⟨_,hu⟩,ho,hk⟩ => ⟨hk,?_⟩
+  have hs := hk.scr allocatedRegs_x0 hi.scr
+  have hm := hi.mod.unch hk.unch
+    (show ∀ w∈Proof.P256.VerifyAllocated.work,K.M.mo+8*K.M.n≤w.1 ∨ w.1+w.2≤K.M.mo by decide)
+    hi.scr.nowrap
+  apply (hu.congr_env (Proof.P256.EcdhDouble.result_of E (by decide +kernel))).of_observed hs hm
+  intro x hx i him
+  apply ho (x+8*i) ((show ∀ x∈jointLive cfg,∀ i<4,
+    Proof.P256.VerifyAllocated.observe .doubleRR (x+8*i) by decide +kernel) x hx i him)
+  · have ha := JointLayout.layout.aligned.sl x (hi.sl x hx)
+    omega
+  · have hb := JointLayout.layout.lay.le x (hi.sl x hx)
+    change i<4 at him
+    change x+32≤8192 at hb
+    omega
+
+theorem double_ok (hC : Law C) (ha : AM3 C)
     {base : Addr} {E : Nat → Fe C} {s : State}
     (hi : Inv K.M base 8192 C.p Sl (jointLive cfg) E s) {P : Point C}
     (hP : onCurve C P=true) (hj : InvJ C (E K.R.x) (E K.R.y) (E K.R.z) P) :
-    WP isa (VG.Impl.P256.VerifyAllocated.program .doubleRR) s fun t =>
+    WP isa VG.Impl.P256.EcdhDouble.program s fun t =>
       Frame base work s t ∧ Inv K.M base 8192 C.p Sl (jointLive cfg)
         (runOps (operations .doubleRR) E) t ∧
       InvJ C (runOps (operations .doubleRR) E K.R.x) (runOps (operations .doubleRR) E K.R.y)
-        (runOps (operations .doubleRR) E K.R.z) (add P P) := by
-  refine WP.mono (field_ok raw Proof.P256.VerifyAllocated.Double.caseProof hi (by decide +kernel)
-    (by decide +kernel) (fun _ hx => (mem_validAfter _ _).mpr (Or.inl hx)) (by decide +kernel))
-    fun _ ⟨hk,it⟩ => ⟨liftArithmetic hk,it,?_⟩
-  exact InvJ.dbl' hC ha hP hj (dblJMul_inplace_run (by decide +kernel) E)
+        (runOps (operations .doubleRR) E K.R.z) (add P P) :=
+  WP.mono (double_field_ok hi) fun _ ⟨hk,it⟩ =>
+    ⟨liftArithmetic hk,it,InvJ.dbl' hC ha hP hj (dblJMul_inplace_run (by decide +kernel) E)⟩
 
 end VG.Proof.Ecdsa.Verify.AArch64.Allocated
 

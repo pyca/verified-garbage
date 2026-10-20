@@ -3,12 +3,8 @@ module
 public import VerifiedGarbage.Impl.Argon2.X86_64.InitialBody
 public import VerifiedGarbage.Proof.Argon2.X86_64.InitFill
 public import VerifiedGarbage.Proof.Argon2.X86_64.Initial
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Argon2.X86_64.InitialMetadata`. -/
 

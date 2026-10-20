@@ -1,11 +1,17 @@
 module
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Callee
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Derive
 
-public import VerifiedGarbage.Proof.AesGcmSiv.X86.Open
-meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Open
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcmSiv.X86.Keys
+import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Callee
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Derive
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Keys
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-GCM-SIV on x86: the keys are constant time

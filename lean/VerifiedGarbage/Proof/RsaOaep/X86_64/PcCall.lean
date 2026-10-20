@@ -2,16 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.PcCtx
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 
 /-!
 # RSAES-OAEP encryption with a precomputed public key on x86-64: the call
@@ -127,7 +121,7 @@ theorem call_pre {s t : State} (hp : PPre H s) (hsp : t.gpr .rsp = fb s)
     by rw [← hsi']; exact hp.wO, hp.preWrap, hp.wE,
     by simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold oEm; omega,
     by rw [r1, r2]; unfold oRsa; omega,
-    ⟨hk1, hk2⟩, hp.preLen, trivial, hp.L1, hp.L2, by rw [r1]; unfold Spec.Rsa.scratchWords; omega⟩
+    ⟨hk1, hk2⟩, hp.preLen, trivial, hp.L1, hp.L2, by rw [r1]; unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords; omega⟩
 
 theorem call_covers {s t : State} (hp : PPre H s) (hrd : t.rd = s.rd) (hwr : t.wr = [frR s, outR s, scrR s]) :
     Covers (callRd s ++ pubWr s) (t.rd ++ t.wr) ∧ Covers (pubWr s) t.wr := by

@@ -1,13 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.R2Adx
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 
 /-!
 # `R² mod m` by word steps with ADX: a word of `t = x 2^64 + q̂ mc`

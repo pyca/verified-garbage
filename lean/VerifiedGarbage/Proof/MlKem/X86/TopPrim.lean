@@ -1,16 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86.Top
+public import VerifiedGarbage.Spec.MlKem.Poly
 
-public import VerifiedGarbage.Proof.MlKem.X86.TopCall
-import VerifiedGarbage.Proof.MlKem.X86.Ntt
-import VerifiedGarbage.Proof.MlKem.X86.NttInv
+import VerifiedGarbage.Proof.MlKem.X86.TopCall
 import VerifiedGarbage.Proof.MlKem.X86.Mul
-import VerifiedGarbage.Proof.MlKem.X86.AddSub
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM on x86 (32-bit): calls of the primitives in the top-level functions

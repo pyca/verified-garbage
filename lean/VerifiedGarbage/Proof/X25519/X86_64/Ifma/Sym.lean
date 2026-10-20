@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: straight-line vector code, lane by lane
@@ -27,7 +27,7 @@ open VG VG.X86_64
 open VG.Proof.Poly1305.X86_64.Avx2 (xr xi xr_xi xi_inj qw qword_app0 qword_app1 qword_and
   qword_or qword_paddq qword_punpcklqdq qword_punpckhqdq qword_psllq qword_psrlq pick2
   qword_blendDwords qword256_eq qword256_ymm sel4 sel4_lt qw_setV256 qw_setV128 qw_lane lane_sel
-  qw_vbin qw_vshift qw_vmovdqa qw_vpblendd qw_vpbroadcastq qw_vmovq qw_vpermq mod2_lt hv_of)
+  qw_vbin qw_vshift qw_vmovdqa qw_vpblendd qw_vpbroadcastq qw_vmovq qw_vpermq mod2_lt hv_of qword256_perm)
 
 /-! ## Quadwords of the instructions added here -/
 
@@ -113,6 +113,94 @@ theorem qw_vperm2i128 (s : State) (d a b r : XReg) (hi : Bool) {k : Nat} (hk : k
   · cases hi <;> rcases VG.X86_64.cases4 hk with rfl | rfl | rfl | rfl <;> rfl
   · rfl
 
+/-! ## The registers only EVEX-encoded instructions name -/
+
+/-- `ymm (16 + i)`. -/
+def hr : Nat → HReg
+  | 0 => .xmm16 | 1 => .xmm17 | 2 => .xmm18 | 3 => .xmm19 | 4 => .xmm20 | 5 => .xmm21
+  | 6 => .xmm22 | 7 => .xmm23 | 8 => .xmm24 | 9 => .xmm25 | 10 => .xmm26 | 11 => .xmm27
+  | 12 => .xmm28 | 13 => .xmm29 | 14 => .xmm30 | _ => .xmm31
+
+/-- The number `i` of `ymm (16 + i)`. -/
+def hidx : HReg → Nat
+  | .xmm16 => 0 | .xmm17 => 1 | .xmm18 => 2 | .xmm19 => 3 | .xmm20 => 4 | .xmm21 => 5
+  | .xmm22 => 6 | .xmm23 => 7 | .xmm24 => 8 | .xmm25 => 9 | .xmm26 => 10 | .xmm27 => 11
+  | .xmm28 => 12 | .xmm29 => 13 | .xmm30 => 14 | .xmm31 => 15
+
+theorem hr_hidx (r : HReg) : hr (hidx r) = r := by cases r <;> rfl
+
+theorem hidx_inj {r r' : HReg} : hidx r = hidx r' ↔ r = r' :=
+  ⟨fun h => by rw [← hr_hidx r, h, hr_hidx], fun h => h ▸ rfl⟩
+
+/-- Quadword `k` of `ymm (16 + hidx r)`. -/
+def qwH (s : State) (r : HReg) (k : Nat) : BitVec 64 := qword256 (s.ymmH r) k
+
+/-- Quadword `k` of an `EVEX.256` instruction's register. -/
+def qv (s : State) (r : VReg) (k : Nat) : BitVec 64 := qword256 (s.vy r) k
+
+theorem qv_lo (s : State) (r : XReg) {k : Nat} (hk : k < 4) : qv s (.lo r) k = qw s r k :=
+  qword256_ymm s r hk
+
+theorem qv_hi (s : State) (r : HReg) (k : Nat) : qv s (.hi r) k = qwH s r k := rfl
+
+theorem qword256_extract (v : BitVec 256) {k : Nat} (hk : k < 4) :
+    qword (if k / 2 = 0 then v.extractLsb' 0 128 else v.extractLsb' 128 128) (k % 2) = qword256 v k := by
+  rw [qword256_eq]; rcases VG.X86_64.cases4 hk with rfl | rfl | rfl | rfl <;> rfl
+
+theorem qw_setVy_lo (s : State) (d r : XReg) (v : BitVec 256) {k : Nat} (hk : k < 4) :
+    qw (s.setVy (.lo d) v) r k = if r = d then qword256 v k else qw s r k := by
+  simp only [State.setVy, qw_setV256]
+  split
+  · exact qword256_extract v hk
+  · rfl
+
+theorem qw_setVy_hi (s : State) (d : HReg) (r : XReg) (v : BitVec 256) (k : Nat) :
+    qw (s.setVy (.hi d) v) r k = qw s r k := rfl
+
+theorem qwH_setVy_lo (s : State) (d : XReg) (r : HReg) (v : BitVec 256) (k : Nat) :
+    qwH (s.setVy (.lo d) v) r k = qwH s r k := rfl
+
+theorem qwH_setVy_hi (s : State) (d r : HReg) (v : BitVec 256) (k : Nat) :
+    qwH (s.setVy (.hi d) v) r k = if r = d then qword256 v k else qwH s r k := by
+  simp only [qwH, State.setVy]
+  split <;> rfl
+
+theorem extract_lo (x y : BitVec 128) : (x ++ y).extractLsb' 0 128 = y := by
+  apply BitVec.eq_of_getLsbD_eq; intro j hj
+  simp only [BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and, Nat.zero_add]
+  rw [BitVec.getLsbD_append]; simp [hj]
+
+theorem extract_hi (x y : BitVec 128) : (x ++ y).extractLsb' 128 128 = x := by
+  apply BitVec.eq_of_getLsbD_eq; intro j hj
+  simp only [BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and]
+  rw [BitVec.getLsbD_append]; simp
+
+/-- Quadword `k` of two 128-bit halves. -/
+theorem qword256_halves (x y : BitVec 128) {k : Nat} (hk : k < 4) :
+    qword256 (x ++ y) k = qword (if k / 2 = 0 then y else x) (k % 2) := by
+  rw [qword256_eq]
+  split
+  · rename_i h0; rw [h0, Nat.mul_zero, extract_lo]
+  · rw [show k / 2 = 1 by omega, Nat.mul_one, extract_hi]
+
+theorem qword256_lane (x : BitVec 256) {k : Nat} (hk : k < 4) :
+    qword (if k / 2 = 0 then lane256 x 0 else lane256 x 1) (k % 2) = qword256 x k := by
+  rw [qword256_eq]; rcases VG.X86_64.cases4 hk with rfl | rfl | rfl | rfl <;> rfl
+
+theorem qword256_lanes (f : BitVec 128 → BitVec 128 → BitVec 128) (a b : BitVec 256) {k : Nat} (hk : k < 4) :
+    qword256 (lanes256 f a b) k =
+      qword (f (if k / 2 = 0 then lane256 a 0 else lane256 a 1) (if k / 2 = 0 then lane256 b 0 else lane256 b 1))
+        (k % 2) := by
+  rw [lanes256, qword256_halves _ _ hk]
+  split <;> rfl
+
+theorem qword256_madd (h : Bool) (d a b : BitVec 256) {k : Nat} (hk : k < 4) :
+    qword256 (madd52 h (lane256 d 1) (lane256 a 1) (lane256 b 1) ++
+      madd52 h (lane256 d 0) (lane256 a 0) (lane256 b 0)) k =
+      mad52 h (qword256 d k) (qword256 a k) (qword256 b k) := by
+  rw [qword256_halves _ _ hk, ← qword256_lane d hk, ← qword256_lane a hk, ← qword256_lane b hk]
+  split <;> exact qword_madd52 _ _ _ _ (mod2_lt k)
+
 /-! ## Terms -/
 
 /-- A quadword, in terms of those where the code starts. -/
@@ -145,6 +233,8 @@ inductive T
   | p2 (a b : T) (hi : Bool)
   /-- `a` in quadwords 0 and 1, zero in the others (`vzeroupper`). -/
   | low (a : T)
+  /-- Quadword `k` of `ymm (16 + r)`. -/
+  | hreg (r : Nat)
   deriving DecidableEq
 
 def T.eval (s₀ : State) : T → Nat → BitVec 64
@@ -169,6 +259,7 @@ def T.eval (s₀ : State) : T → Nat → BitVec 64
   | .p2 a b hi, k => if k < 2 then a.eval s₀ (if hi then k + 2 else k)
     else b.eval s₀ (if hi then k else k - 2)
   | .low a, k => if k < 2 then a.eval s₀ k else 0
+  | .hreg r, k => qwH s₀ (hr r) k
 
 /-- The 256 bits of four quadwords. -/
 def T.val (s₀ : State) (t : T) : BitVec 256 :=
@@ -177,14 +268,27 @@ def T.val (s₀ : State) (t : T) : BitVec 256 :=
 /-! ## The machine -/
 
 /-- The terms of the vector registers (by number), and the stores so far
-(offset and term), the last first. -/
+(offset and term), the last first, and the terms of `ymm16–ymm31`. -/
 structure Sym where
   reg : Nat → T
   st : List (Nat × T)
+  hreg : Nat → T
 
-def Sym.init : Sym := ⟨.reg, []⟩
+def Sym.init : Sym := ⟨.reg, [], .hreg⟩
 
 def Sym.set (σ : Sym) (d : XReg) (t : T) : Sym := { σ with reg := fun r => if r = xi d then t else σ.reg r }
+
+def Sym.setH (σ : Sym) (d : HReg) (t : T) : Sym :=
+  { σ with hreg := fun r => if r = hidx d then t else σ.hreg r }
+
+/-- The term of an `EVEX.256` instruction's register. -/
+def Sym.get (σ : Sym) : VReg → T
+  | .lo r => σ.reg (xi r)
+  | .hi r => σ.hreg (hidx r)
+
+def Sym.setV (σ : Sym) : VReg → T → Sym
+  | .lo r, t => σ.set r t
+  | .hi r, t => σ.setH r t
 
 def Sym.bin (σ : Sym) (op : VBinOp) (d a b : XReg) : Option Sym :=
   let A := σ.reg (xi a)
@@ -226,6 +330,16 @@ def Sym.vop (σ : Sym) : VOp → Option Sym
   | .vzeroupper => some { σ with reg := fun r => .low (σ.reg r) }
   | _ => none
 
+/-- The `EVEX.256` instructions: a copy (`vporq` of a register with itself),
+a clear (`vpxorq` of a register with itself into it), `vpermq` and
+`vpmadd52luq`, `vpmadd52huq`. -/
+def Sym.eop (σ : Sym) : EOp → Option Sym
+  | .bin .vporq d a b => if a = b then some (σ.setV d (σ.get a)) else none
+  | .bin .vpxorq d a b => if a = b ∧ d = a then some (σ.setV d .zero) else none
+  | .vpermq d a o => some (σ.setV d (.perm (σ.get a) o.toNat))
+  | .vpmadd52 h d a b => some (σ.setV d (.mad h (σ.get d) (σ.get a) (σ.get b)))
+  | _ => none
+
 /-- The offset of `[rdi + d]`. -/
 def rdiOff (m : MemOp) : Option Nat :=
   if m.base = .rdi ∧ m.index = none then
@@ -240,6 +354,7 @@ def Sym.fresh (σ : Sym) (d : Nat) : Bool := σ.st.all fun (e, _) => d + 32 ≤ 
 /-- One instruction. Loads read only what no store wrote. -/
 def Sym.step (σ : Sym) : Instr → Option Sym
   | .vop o => σ.vop o
+  | .eop o => σ.eop o
   | .vmovdquLoad .l256 d m => (rdiOff m).bind fun o =>
     if o + 32 ≤ 4096 ∧ σ.fresh o then some (σ.set d (.ld o)) else none
   | .vmovdquStore .l256 m r => (rdiOff m).bind fun o =>
@@ -258,7 +373,8 @@ def stores (s₀ : State) (base : Addr) : List (Nat × T) → Mem → Mem
   | (d, t) :: st, m => (stores s₀ base st m).writeW (base + BitVec.ofNat 64 d) (t.val s₀)
 
 /-- `s₀` with the vector registers and memory of `s`. -/
-def vm (s₀ s : State) : State := { s₀ with xmm := s.xmm, ymmHi := s.ymmHi, zmmHi := s.zmmHi, mem := s.mem }
+def vm (s₀ s : State) : State :=
+  { s₀ with xmm := s.xmm, ymmHi := s.ymmHi, zmmHi := s.zmmHi, ymmH := s.ymmH, zmmHiH := s.zmmHiH, mem := s.mem }
 
 /-- The terms `σ` hold in `s`, which differs from `s₀` only in its vector
 registers and the stores of `σ`. -/
@@ -266,6 +382,7 @@ structure SRel (σ : Sym) (s₀ s : State) : Prop where
   reg : ∀ r k, k < 4 → qw s r k = (σ.reg (xi r)).eval s₀ k
   eq : vm s₀ s = s
   mem : s.mem = stores s₀ (s₀.gpr .rdi) σ.st s₀.mem
+  hreg : ∀ r k, k < 4 → qwH s r k = (σ.hreg (hidx r)).eval s₀ k
 
 theorem SRel.gpr {σ : Sym} {s₀ s : State} (h : SRel σ s₀ s) : s.gpr = s₀.gpr := by rw [← h.eq]; rfl
 theorem SRel.rd {σ : Sym} {s₀ s : State} (h : SRel σ s₀ s) : s.rd = s₀.rd := by rw [← h.eq]; rfl
@@ -277,10 +394,14 @@ theorem SRel.flags {σ : Sym} {s₀ s : State} (h : SRel σ s₀ s) :
   rw [← h.eq]; exact ⟨rfl, rfl, rfl, rfl⟩
 
 theorem SRel.init (s₀ : State) : SRel Sym.init s₀ s₀ :=
-  ⟨fun r k _ => by simp only [Sym.init, T.eval, xr_xi], rfl, rfl⟩
+  ⟨fun r k _ => by simp only [Sym.init, T.eval, xr_xi], rfl, rfl,
+    fun r k _ => by simp only [Sym.init, T.eval, hr_hidx]⟩
 
 theorem vm_vop {s₀ s : State} (h : vm s₀ s = s) (o : VOp) : vm s₀ (o.exec s) = o.exec s := by
   rw [← h]
+  cases o <;> simp only [VOp.exec] <;> (try split) <;> rfl
+
+theorem vop_ymmH (o : VOp) (s : State) : (o.exec s).ymmH = s.ymmH := by
   cases o <;> simp only [VOp.exec] <;> (try split) <;> rfl
 
 theorem vm_setV {s₀ s : State} (h : vm s₀ s = s) (len : VLen) (d : XReg) (lo hi : BitVec 128) :
@@ -289,13 +410,46 @@ theorem vm_setV {s₀ s : State} (h : vm s₀ s = s) (len : VLen) (d : XReg) (lo
 
 theorem SRel.set {σ : Sym} {s₀ s : State} (h : SRel σ s₀ s) {d : XReg} {t : T} {s' : State}
     (hv : ∀ r k, k < 4 → qw s' r k = if r = d then t.eval s₀ k else qw s r k)
-    (he : vm s₀ s' = s') (hm : s'.mem = s.mem) : SRel (σ.set d t) s₀ s' := by
-  refine ⟨fun r k hk => ?_, he, hm.trans h.mem⟩
-  rw [hv r k hk]
-  simp only [Sym.set, xi_inj]
-  split
-  · rfl
-  · exact h.reg r k hk
+    (he : vm s₀ s' = s') (hm : s'.mem = s.mem) (hh : s'.ymmH = s.ymmH) : SRel (σ.set d t) s₀ s' := by
+  refine ⟨fun r k hk => ?_, he, hm.trans h.mem, fun r k hk => ?_⟩
+  · rw [hv r k hk]
+    simp only [Sym.set, xi_inj]
+    split
+    · rfl
+    · exact h.reg r k hk
+  · simp only [Sym.set]; rw [← h.hreg r k hk]; simp only [qwH, hh]
+
+theorem SRel.setH {σ : Sym} {s₀ s : State} (h : SRel σ s₀ s) {d : HReg} {t : T} {s' : State}
+    (hv : ∀ r k, k < 4 → qwH s' r k = if r = d then t.eval s₀ k else qwH s r k)
+    (hq : ∀ r k, k < 4 → qw s' r k = qw s r k)
+    (he : vm s₀ s' = s') (hm : s'.mem = s.mem) : SRel (σ.setH d t) s₀ s' := by
+  refine ⟨fun r k hk => ?_, he, hm.trans h.mem, fun r k hk => ?_⟩
+  · rw [hq r k hk]; exact h.reg r k hk
+  · rw [hv r k hk]
+    simp only [Sym.setH, hidx_inj]
+    split
+    · rfl
+    · exact h.hreg r k hk
+
+theorem vm_setVy {s₀ s : State} (h : vm s₀ s = s) (d : VReg) (v : BitVec 256) :
+    vm s₀ (s.setVy d v) = s.setVy d v := by
+  rw [← h]; cases d <;> rfl
+
+theorem SRel.setV {σ : Sym} {s₀ s : State} (h : SRel σ s₀ s) (d : VReg) {t : T} (v : BitVec 256)
+    (hv : ∀ k, k < 4 → qword256 v k = t.eval s₀ k) : SRel (σ.setV d t) s₀ (s.setVy d v) := by
+  cases d with
+  | lo d =>
+    exact h.set (fun r k hk => by rw [qw_setVy_lo _ _ _ _ hk]; split <;> [rw [hv k hk]; rfl])
+      (vm_setVy h.eq _ _) rfl rfl
+  | hi d =>
+    exact h.setH (fun r k hk => by rw [qwH_setVy_hi]; split <;> [rw [hv k hk]; rfl])
+      (fun r k _ => qw_setVy_hi _ _ _ _ _) (vm_setVy h.eq _ _) rfl
+
+theorem SRel.get {σ : Sym} {s₀ s : State} (h : SRel σ s₀ s) (r : VReg) {k : Nat} (hk : k < 4) :
+    qword256 (s.vy r) k = (σ.get r).eval s₀ k := by
+  cases r with
+  | lo r => exact (qword256_ymm s r hk).trans (h.reg r k hk)
+  | hi r => exact h.hreg r k hk
 
 /-- The working space the code may load from and store to: every offset
 `d` of a load or store is readable and writable at `rdi + d`. -/
@@ -360,12 +514,13 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State}
     refine ⟨o.exec s, rfl, ?_⟩
     have he := vm_vop h.eq o
     have hm : (o.exec s).mem = s.mem := VOp.exec_mem o s
+    have hh := vop_ymmH o s
     unfold Sym.vop at e
     split at e
     · rename_i op d a b
       unfold Sym.bin at e
       split at e <;> cases e <;>
-        refine ⟨h.set (hv_of (fun k hk => ?_) (fun r hr k _ => by rw [qw_vbin, ite_eq_right hr])) he hm,
+        refine ⟨h.set (hv_of (fun k hk => ?_) (fun r hr k _ => by rw [qw_vbin, ite_eq_right hr])) he hm hh,
           hs⟩ <;>
         rw [qw_vbin, ite_eq_left rfl] <;> simp only [VBinOp.sse, T.eval]
       · rw [qword_paddq _ _ (mod2_lt k), qw_lane, qw_lane, hR a k hk, hR b k hk]
@@ -392,7 +547,7 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State}
       · rename_i hn
         split at e <;> cases e <;>
           refine ⟨h.set (hv_of (fun k hk => ?_) (fun r hr k _ => by rw [qw_vshift, ite_eq_right hr]))
-            he hm, hs⟩ <;>
+            he hm hh, hs⟩ <;>
           rw [qw_vshift, ite_eq_left rfl] <;> simp only [T.eval]
         · rw [qword_psllq _ hn (mod2_lt k), qw_lane, hR a k hk]
         · rw [qword_psrlq _ hn (mod2_lt k), qw_lane, hR a k hk]
@@ -400,44 +555,44 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State}
     · rename_i d a
       cases e
       exact ⟨h.set (hv_of (fun k hk => by rw [qw_vmovdqa _ _ _ _ hk, ite_eq_left rfl, hR a k hk])
-        (fun r hr k hk => by rw [qw_vmovdqa _ _ _ _ hk, ite_eq_right hr])) he hm, hs⟩
+        (fun r hr k hk => by rw [qw_vmovdqa _ _ _ _ hk, ite_eq_right hr])) he hm hh, hs⟩
     · rename_i d a b n
       cases e
       exact ⟨h.set (hv_of (fun k hk => by
           rw [qw_vpblendd _ _ _ _ _ _ hk, ite_eq_left rfl]; simp only [T.eval]; rw [hR a k hk, hR b k hk])
-        (fun r hr k hk => by rw [qw_vpblendd _ _ _ _ _ _ hk, ite_eq_right hr])) he hm, hs⟩
+        (fun r hr k hk => by rw [qw_vpblendd _ _ _ _ _ _ hk, ite_eq_right hr])) he hm hh, hs⟩
     · rename_i d a
       cases e
       exact ⟨h.set (hv_of (fun k _ => by rw [qw_vpbroadcastq, ite_eq_left rfl]; exact (hR a 0 (by decide)).symm)
-        (fun r hr k _ => by rw [qw_vpbroadcastq, ite_eq_right hr])) he hm, hs⟩
+        (fun r hr k _ => by rw [qw_vpbroadcastq, ite_eq_right hr])) he hm hh, hs⟩
     · rename_i d g
       cases e
       exact ⟨h.set (hv_of (fun k hk => by rw [qw_vmovq _ _ _ _ hk, ite_eq_left rfl]; simp only [T.eval, h.gpr])
-        (fun r hr k hk => by rw [qw_vmovq _ _ _ _ hk, ite_eq_right hr])) he hm, hs⟩
+        (fun r hr k hk => by rw [qw_vmovq _ _ _ _ hk, ite_eq_right hr])) he hm hh, hs⟩
     · rename_i d a o
       cases e
       exact ⟨h.set (hv_of (fun k hk => by
           rw [qw_vpermq _ _ _ _ _ hk, ite_eq_left rfl]; simp only [T.eval]; rw [hR a _ (sel4_lt _ _)])
-        (fun r hr k hk => by rw [qw_vpermq _ _ _ _ _ hk, ite_eq_right hr])) he hm, hs⟩
+        (fun r hr k hk => by rw [qw_vpermq _ _ _ _ _ hk, ite_eq_right hr])) he hm hh, hs⟩
     · rename_i d a b
       cases e
       have q := fun r k (hk : k < 4) => qw_lo s d a b r hk
       exact ⟨h.set (hv_of (fun k hk => by
           rw [q d k hk, ite_eq_left rfl]; simp only [T.eval]; rw [hR d k hk, hR a k hk, hR b k hk])
-        (fun r hr k hk => by rw [q r k hk, ite_eq_right hr])) he hm, hs⟩
+        (fun r hr k hk => by rw [q r k hk, ite_eq_right hr])) he hm hh, hs⟩
     · rename_i d a b
       cases e
       have q := fun r k (hk : k < 4) => qw_hi s d a b r hk
       exact ⟨h.set (hv_of (fun k hk => by
           rw [q d k hk, ite_eq_left rfl]; simp only [T.eval]; rw [hR d k hk, hR a k hk, hR b k hk])
-        (fun r hr k hk => by rw [q r k hk, ite_eq_right hr])) he hm, hs⟩
+        (fun r hr k hk => by rw [q r k hk, ite_eq_right hr])) he hm hh, hs⟩
     · rename_i d a b sel
       have p2ok : ∀ hi, sel = p2imm hi → σ.set d (.p2 (σ.reg (xi a)) (σ.reg (xi b)) hi) = σ' →
           SRel σ' s₀ ((VOp.vperm2i128 d a b sel).exec s) ∧ σ'.small := by
         intro hi hs' e'
         subst hs' e'
         refine ⟨h.set (hv_of (fun k hk => ?_) (fun r hr k hk => by
-          rw [qw_vperm2i128 _ _ _ _ _ _ hk, ite_eq_right hr])) he hm, hs⟩
+          rw [qw_vperm2i128 _ _ _ _ _ _ hk, ite_eq_right hr])) he hm hh, hs⟩
         rw [qw_vperm2i128 _ _ _ _ _ _ hk, ite_eq_left rfl]; simp only [T.eval]
         split
         · rw [hR a _ (by split <;> omega)]
@@ -448,10 +603,45 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State}
         · rename_i h1; cases e; exact p2ok true h1 rfl
         · cases e
     · cases e
-      refine ⟨⟨fun r k hk => ?_, he, hm.trans h.mem⟩, hs⟩
+      refine ⟨⟨fun r k hk => ?_, he, hm.trans h.mem, fun r k hk => ?_⟩, hs⟩
+      · simp only [T.eval]
+        simp only [VOp.exec, qw, State.lane]
+        rcases cases4 hk with rfl | rfl | rfl | rfl <;> simp [hR] <;> rfl
+      · rw [← h.hreg r k hk]; simp only [qwH, hh]
+    · cases e
+  · rename_i o
+    refine ⟨o.exec s, rfl, ?_⟩
+    unfold Sym.eop at e
+    split at e
+    · rename_i d a b
+      split at e
+      · rename_i hab
+        subst hab
+        cases e
+        refine ⟨h.setV d _ fun k hk => ?_, by cases d <;> exact hs⟩
+        rw [qword256_lanes _ _ _ hk]
+        simp only [EBinOp.sse, XBinOp.eval, BitVec.or_self]
+        rw [qword256_lane _ hk, h.get a hk]
+      · cases e
+    · rename_i d a b
+      split at e
+      · rename_i hab
+        obtain ⟨rfl, rfl⟩ := hab
+        cases e
+        refine ⟨h.setV d _ fun k hk => ?_, by cases d <;> exact hs⟩
+        rw [qword256_lanes _ _ _ hk]
+        simp [EBinOp.sse, XBinOp.eval, T.eval, qword]
+      · cases e
+    · rename_i d a o
+      cases e
+      refine ⟨h.setV d _ fun k hk => ?_, by cases d <;> exact hs⟩
       simp only [T.eval]
-      simp only [VOp.exec, qw, State.lane]
-      rcases cases4 hk with rfl | rfl | rfl | rfl <;> simp [hR] <;> rfl
+      rw [qword256_perm _ _ hk, h.get a (sel4_lt _ _)]
+    · rename_i hb d a b
+      cases e
+      refine ⟨h.setV d _ fun k hk => ?_, by cases d <;> exact hs⟩
+      simp only [T.eval]
+      rw [qword256_madd _ _ _ _ hk, h.get d hk, h.get a hk, h.get b hk]
     · cases e
   · rename_i d m
     obtain ⟨o, ho, e⟩ := Option.bind_eq_some_iff.1 e
@@ -468,7 +658,7 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State}
       ((s.mem.readW (s₀.gpr .rdi + BitVec.ofNat 64 o) 256).extractLsb' 128 128),
       by simp only [exec, ea, State.load256, hin, ite_true, Option.map_some], ?_, hs⟩
     refine h.set (hv_of (fun k hk => ?_) (fun r hr k hk => by rw [qw_load' _ _ _ _ _ rfl hk, ite_eq_right hr]))
-      (vm_setV h.eq _ _ _ _) rfl
+      (vm_setV h.eq _ _ _ _) rfl rfl
     rw [qw_load' _ _ _ _ _ rfl hk, ite_eq_left rfl]
     simp only [T.eval]
     have r1 := readW_extract s.mem (s₀.gpr .rdi + BitVec.ofNat 64 o) (w := 256) (k := 8 * k) (n := 8)
@@ -492,7 +682,8 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State}
       rw [ymm_eq_qw, T.val, h.reg r 3 (by decide), h.reg r 2 (by decide), h.reg r 1 (by decide),
         h.reg r 0 (by decide)]
     refine ⟨{ s with mem := s.mem.writeW (s₀.gpr .rdi + BitVec.ofNat 64 o) (s.ymm r) },
-      by simp only [exec, ea, State.store256, hin, ite_true], ⟨fun r' k hk => h.reg r' k hk, ?_, ?_⟩,
+      by simp only [exec, ea, State.store256, hin, ite_true],
+      ⟨fun r' k hk => h.reg r' k hk, ?_, ?_, fun r' k hk => h.hreg r' k hk⟩,
       fun e he => ?_⟩
     · rw [← h.eq]; rfl
     · simp only [stores, hy, h.mem]

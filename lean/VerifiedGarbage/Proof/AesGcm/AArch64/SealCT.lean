@@ -2,16 +2,51 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.OneCT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.OneCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesGcm.AArch64.OneShot
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.OneShot
 import VerifiedGarbage.Proof.AesGcm.AArch64.FinCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.FinCT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
+import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCryptCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamFinish
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Gcm.Bits
+meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCryptCT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.StreamFinish
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
+meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Gcm.Bits
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_seal` is constant time
@@ -90,7 +125,7 @@ theorem frontIn_of {σ σ₀ τ : State} {n w : Nat} {V : BitVec 64} (f : OneFac
 
 /-- The entry of `seal` and `open` and its stash, in two runs: `work` at `sp + k`, and
 the stack argument at `sp + j` kept. -/
-theorem entryStash_rel {σ₁ σ₂ : State} {n w k j : Nat} (hk : k = 8 ∨ k = 16) (hkw : k = 8 * w) (hj : j = 0 ∨ j = 8)
+theorem entryStash_rel {σ₁ σ₂ : State} {n w k j : Nat} (hk : k = 8 ∨ k = 16 ∨ k = 24) (hkw : k = 8 * w) (hj : j = 0 ∨ j = 8)
     (f₁ : OneFacts σ₁ σ₁ n w) (f₂ : OneFacts σ₂ σ₁ n w) (hwn : w < n) (qsp : σ₁.sp = σ₂.sp)
     (hq : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7], σ₁.gpr r = σ₂.gpr r) :
     RelCT isa (Eq2 σ₁ σ₂) (.block (oneEntry k ++ stashArg j)) TT := by
@@ -100,26 +135,32 @@ theorem entryStash_rel {σ₁ σ₂ : State} {n w k j : Nat} (hk : k = 8 ∨ k =
   have ts : ∃ h, (taint.check (Taint.ofRegs [.x19]) (.block (stashArg j)) h).isSome = true := by
     rcases hj with rfl | rfl <;> exact ⟨_, by taint_decide⟩
   refine RelCT.block_split (rel_seq (entry_rel hk hW₁ hW₂ (f₁.hsp w hwn) (f₂.hsp w hwn) f₁.perm.w f₂.perm.w qsp hq)
-    (oneEntry_ok (by rcases hk with h | h <;> rw [h] <;> decide) hW₁ (f₁.hsp w hwn) rfl f₁.perm)
-    (oneEntry_ok (by rcases hk with h | h <;> rw [h] <;> decide) hW₂ (f₂.hsp w hwn) (hq .x0 (by simp)).symm f₂.perm)
+    (oneEntry_ok (by rcases hk with h | h | h <;> rw [h] <;> decide) hW₁ (f₁.hsp w hwn) rfl f₁.perm)
+    (oneEntry_ok (by rcases hk with h | h | h <;> rw [h] <;> decide) hW₂ (f₂.hsp w hwn) (hq .x0 (by simp)).symm f₂.perm)
     fun τ₁ τ₂ a₁ a₂ => rel_taint [.x19] (by rw [a₁.1.sp, a₂.1.sp, qsp]) (by agree_tac [a₁.1.x19, a₂.1.x19]) ts)
 
-theorem seal_ct (v : GcmImpl) : ConstantTime isa sealAArch64.pre sealAArch64.pub («seal» v.callees) := by
-  refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
-  obtain ⟨f₁, f₂⟩ := oneFacts (by decide : 1 < 2) (sealCore h₁) (sealCore h₂) hq
+/-- What the entry of `seal` leaves in a run from `σ`, with the values of the
+first run `σ₀`. -/
+abbrev SealEntered (w : Nat) (σ σ₀ τ : State) : Prop :=
+  Env (σ₀.gpr .x0) (stackArg σ₀ w + BitVec.ofNat 64 16) (stackArg σ₀ w) σ.sp τ ∧
+    τ.gpr .x22 = σ.gpr .x1 ∧ τ.gpr .x23 = σ.gpr .x2 ∧ τ.gpr .x24 = σ.gpr .x3 ∧
+    τ.gpr .x26 = σ.gpr .x3 ∧ τ.gpr .x27 = 0 ∧ τ.gpr .x28 = stackArg σ₀ 0 ∧
+    τ.mem.readW (stackArg σ₀ w + BitVec.ofNat 64 216) 64 = σ.gpr .x4 ∧
+    τ.mem.readW (stackArg σ₀ w + BitVec.ofNat 64 224) 64 = σ.gpr .x5 ∧
+    τ.mem.readW (stackArg σ₀ w + BitVec.ofNat 64 232) 64 = σ.gpr .x6 ∧
+    τ.mem.readW (stackArg σ₀ w + BitVec.ofNat 64 240) 64 = σ.gpr .x7 ∧
+    τ.mem.readW (stackArg σ₀ w + BitVec.ofNat 64 248) 64 = stackArg σ₀ 0 ∧
+    Frame [entryR (stackArg σ₀ w)] σ.mem τ.mem ∧ SavedAt τ.mem (stackArg σ₀ w) σ ∧ τ.rd = σ.rd ∧ τ.wr = σ.wr
+
+/-- `seal` after its entry, in two runs. -/
+theorem sealRest_rel (v : GcmImpl) {w : Nat} {extra₁ extra₂ extraW₁ extraW₂ : List Region} {σ₁ σ₂ τ₁ τ₂ : State}
+    (h₁ : sealPreXW w extra₁ σ₁ extraW₁) (h₂ : sealPreXW w extra₂ σ₂ extraW₂)
+    (hq : onePub (w + 1) σ₁ σ₂) (a₁ : SealEntered w σ₁ σ₁ τ₁) (a₂ : SealEntered w σ₂ σ₁ τ₂) :
+    RelCT isa (Eq2 τ₁ τ₂) (sealRest v.callees) TT := by
+  unfold sealRest
+  obtain ⟨f₁, f₂⟩ := oneFacts (by omega : w < w + 1) (sealCore h₁) (sealCore h₂) hq
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qa⟩ := hq
-  have qt : stackArg σ₁ 0 = stackArg σ₂ 0 := qa 0 (by decide)
   have L := f₁.ol.lay
-  have hT₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 0) 64 = stackArg σ₁ 0 := rfl
-  have hT₂ : σ₂.mem.readW (σ₂.sp + BitVec.ofNat 64 0) 64 = stackArg σ₁ 0 := qt.symm
-  have hW₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 8) 64 = stackArg σ₁ 1 := rfl
-  have hW₂ : σ₂.mem.readW (σ₂.sp + BitVec.ofNat 64 8) 64 = stackArg σ₁ 1 := f₂.hW
-  refine rel_seq (entryStash_rel (k := 8) (j := 0) (.inl rfl) rfl (.inl rfl) f₁ f₂ (by decide) qsp
-      (by agree_tac [q0, q1, q2, q3, q4, q5, q6, q7]))
-    (entryStash_ok (V := stackArg σ₁ 0) (by decide) (by decide) hW₁ (f₁.hsp 1 (by decide)) (f₁.hsp 0 (by decide))
-      hT₁ (f₁.argW (by decide)) rfl f₁.perm)
-    (entryStash_ok (V := stackArg σ₁ 0) (by decide) (by decide) hW₂ (f₂.hsp 1 (by decide)) (f₂.hsp 0 (by decide))
-      hT₂ (f₂.argW (by decide)) q0.symm f₂.perm) fun τ₁ τ₂ a₁ a₂ => ?_
   have i₁ := frontIn_of f₁ rfl rfl rfl rfl rfl rfl a₁
   have i₂ := frontIn_of f₂ q3.symm q2.symm q4.symm q5.symm q6.symm q7.symm a₂
   rw [← qsp] at i₂
@@ -129,15 +170,15 @@ theorem seal_ct (v : GcmImpl) : ConstantTime isa sealAArch64.pre sealAArch64.pub
   rw [← q5] at s2₂
   rw [← q7] at s4₂
   have ol := f₁.ol
-  have sub16 : Region.Sub ⟨stackArg σ₁ 1 + BitVec.ofNat 64 16, 80⟩ (workR (stackArg σ₁ 1)) := Lay.wSub (by decide)
+  have sub16 : Region.Sub ⟨stackArg σ₁ w + BitVec.ofNat 64 16, 80⟩ (workR (stackArg σ₁ w)) := Lay.wSub (by decide)
   have hRb : (σ₁.gpr .x1).toNat = 10 ∨ (σ₁.gpr .x1).toNat = 12 ∨ (σ₁.gpr .x1).toNat = 14 := ol.rounds
   have hal := (σ₁.gpr .x5).isLt
   have hn := (σ₁.gpr .x7).isLt
   refine front_rel L v i₁ i₂ fun u₁ u₂ o₁ o₂ => ?_
-  have mkB : ∀ {σ τ u : State}, OneFacts σ σ₁ 2 1 → τ.gpr .x22 = σ₁.gpr .x1 → τ.wr = σ.wr →
-      FrontOut (σ₁.gpr .x0) (stackArg σ₁ 1 + BitVec.ofNat 64 16) (stackArg σ₁ 1) σ₁.sp τ.gpr (σ₁.gpr .x6)
+  have mkB : ∀ {σ τ u : State}, OneFacts σ σ₁ (w + 1) w → τ.gpr .x22 = σ₁.gpr .x1 → τ.wr = σ.wr →
+      FrontOut (σ₁.gpr .x0) (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) σ₁.sp τ.gpr (σ₁.gpr .x6)
         (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat τ u →
-      BodyIn (σ₁.gpr .x0) (stackArg σ₁ 1 + BitVec.ofNat 64 16) (stackArg σ₁ 1) σ₁.sp u.gpr (σ₁.gpr .x1).toNat
+      BodyIn (σ₁.gpr .x0) (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) σ₁.sp u.gpr (σ₁.gpr .x1).toNat
         (σ₁.gpr .x7).toNat 0 (σ₁.gpr .x6) (Spec.Gcm.zeros (σ₁.gpr .x5).toNat) []
         (blockAt u.mem (σ₁.gpr .x0 + BitVec.ofNat 64 240)) u := fun f x22 wr o =>
     ⟨o.env, fun _ _ => rfl, by rw [o.x22, x22, ofNat_toNat'], hRb, by rw [o.x25, Proof.Gcm.length_zeros],
@@ -148,12 +189,12 @@ theorem seal_ct (v : GcmImpl) : ConstantTime isa sealAArch64.pre sealAArch64.pub
   have B₂ := mkB f₂ x22₂ wr₂ o₂
   refine rel_seq (encBody_rel L v B₁ B₂ rfl) (WP.with_rdwr (encBody_ok L v B₁ 0))
     (WP.with_rdwr (encBody_ok L v B₂ 0)) fun w₁ w₂ ⟨b₁, _, _⟩ ⟨b₂, _, _⟩ => ?_
-  have sl : ∀ {σ τ u w : State}, OneFacts σ σ₁ 2 1 →
-      FrontOut (σ₁.gpr .x0) (stackArg σ₁ 1 + BitVec.ofNat 64 16) (stackArg σ₁ 1) σ₁.sp τ.gpr (σ₁.gpr .x6)
+  have sl : ∀ {σ τ u ω : State}, OneFacts σ σ₁ (w + 1) w →
+      FrontOut (σ₁.gpr .x0) (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) σ₁.sp τ.gpr (σ₁.gpr .x6)
         (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat τ u →
-      Frame (bodyFrame (stackArg σ₁ 1 + BitVec.ofNat 64 16) (stackArg σ₁ 1) (σ₁.gpr .x6) (σ₁.gpr .x7).toNat)
-        u.mem w.mem → ∀ d, 216 ≤ d → d + 8 ≤ 256 →
-      w.mem.readW (stackArg σ₁ 1 + BitVec.ofNat 64 d) 64 = τ.mem.readW (stackArg σ₁ 1 + BitVec.ofNat 64 d) 64 :=
+      Frame (bodyFrame (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) (σ₁.gpr .x6) (σ₁.gpr .x7).toNat)
+        u.mem ω.mem → ∀ d, 216 ≤ d → d + 8 ≤ 256 →
+      ω.mem.readW (stackArg σ₁ w + BitVec.ofNat 64 d) 64 = τ.mem.readW (stackArg σ₁ w + BitVec.ofNat 64 d) 64 :=
     fun _ o fb d h₁ h₂ => by
       rw [slot_kept fb (slots_bodyFrame L ol.data) h₁ h₂, slot_kept o.frame (slots_frontFrame L) h₁ h₂]
   refine rel_seq (rel_taint [.x19] (by rw [b₁.env.sp, b₂.env.sp]) (by agree_tac [b₁.env.x19, b₂.env.x19])
@@ -187,5 +228,24 @@ theorem seal_ct (v : GcmImpl) : ConstantTime isa sealAArch64.pre sealAArch64.pub
   have c28₂ : g₂.gpr .x28 = stackArg σ₁ 0 := (h₂.2.1 .x28 (by decide)).trans x28₂
   exact rel_taint [.x19, .x28] (by rw [h₁.1.sp, h₂.1.sp])
     (by agree_tac [h₁.1.x19, h₂.1.x19, c28₁, c28₂]) ⟨_, by taint_decide⟩
+
+theorem seal_ct (v : GcmImpl) : ConstantTime isa sealAArch64.pre sealAArch64.pub («seal» v.callees) := by
+  unfold «seal»
+  refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
+  obtain ⟨f₁, f₂⟩ := oneFacts (by decide : 1 < 2) (sealCore h₁) (sealCore h₂) hq
+  have hq₀ := hq
+  obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qa⟩ := hq
+  have qt : stackArg σ₁ 0 = stackArg σ₂ 0 := qa 0 (by decide)
+  have L := f₁.ol.lay
+  have hT₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 0) 64 = stackArg σ₁ 0 := rfl
+  have hT₂ : σ₂.mem.readW (σ₂.sp + BitVec.ofNat 64 0) 64 = stackArg σ₁ 0 := qt.symm
+  have hW₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 8) 64 = stackArg σ₁ 1 := rfl
+  have hW₂ : σ₂.mem.readW (σ₂.sp + BitVec.ofNat 64 8) 64 = stackArg σ₁ 1 := f₂.hW
+  refine rel_seq (entryStash_rel (k := 8) (j := 0) (.inl rfl) rfl (.inl rfl) f₁ f₂ (by decide) qsp
+      (by agree_tac [q0, q1, q2, q3, q4, q5, q6, q7]))
+    (entryStash_ok (V := stackArg σ₁ 0) (by decide) (by decide) hW₁ (f₁.hsp 1 (by decide)) (f₁.hsp 0 (by decide))
+      hT₁ (f₁.argW (by decide)) rfl f₁.perm)
+    (entryStash_ok (V := stackArg σ₁ 0) (by decide) (by decide) hW₂ (f₂.hsp 1 (by decide)) (f₂.hsp 0 (by decide))
+      hT₂ (f₂.argW (by decide)) q0.symm f₂.perm) fun _ _ a₁ a₂ => sealRest_rel v (sealPreX_W h₁) (sealPreX_W h₂) hq₀ a₁ a₂
 
 end VG.Proof.AesGcm.AArch64

@@ -1,19 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.X86.Sign.Sign
-public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
-public import VerifiedGarbage.Proof.Framework.X86.Inline
-public import VerifiedGarbage.Proof.MlDsa.Sign.Vals
-import VerifiedGarbage.Proof.MlDsa.Sign.Mem
-public import VerifiedGarbage.Spec.MlDsa.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.MlKem.X86.NttLoop
+public import VerifiedGarbage.Proof.MlKem.X86.Common
+public import VerifiedGarbage.Proof.MlKem.X86.Top
+public import VerifiedGarbage.Proof.MlDsa.Sign.Leak
+import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on x86 (32-bit): the setting of the proof

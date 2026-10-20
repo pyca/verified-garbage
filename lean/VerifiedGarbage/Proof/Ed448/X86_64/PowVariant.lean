@@ -1,15 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
-meta import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
-meta import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
+import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+public import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
+public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X448.X86_64.Lit
+meta import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
 meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
+meta import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+meta import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
+meta import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.X448.X86_64.Lit
 
 /-! The shared Curve448 exponentiation routine for each field backend. -/
 

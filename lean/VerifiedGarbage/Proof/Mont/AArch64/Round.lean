@@ -1,13 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Mont.AArch64.Row
 
-public import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
 import VerifiedGarbage.Proof.Mont.AArch64.RowInit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Montgomery arithmetic on AArch64: a round of the multiplication
@@ -324,7 +323,23 @@ theorem ptrOk_x0_lt : ∀ n < 10, Reg.x0 ∉ acc n := by decide
 
 theorem ptrOk_x0 {n : Nat} (hn : n < 10) : PtrOk n .x0 := ⟨by decide, ptrOk_x0_lt n hn⟩
 
-/-- `x1 = a_i` and `T += a_i B`: the first row straight into the cleared
+/-- The accumulator's value entering round `i`: zero entering the first,
+which sets the words it needs (`AccInit`). -/
+def accV (M : Mod) (s : State) (i : Nat) : Nat := if i = 0 then 0 else regsVal s (wins M.n i)
+
+theorem accV_succ (M : Mod) (s : State) (i : Nat) : accV M s (i + 1) = regsVal s (wins M.n (i + 1)) :=
+  ite_eq_right (Nat.succ_ne_zero i)
+
+theorem accV_of_pos (M : Mod) (s : State) {i : Nat} (h : 0 < i) : accV M s i = regsVal s (wins M.n i) :=
+  ite_eq_right (Nat.pos_iff_ne_zero.mp h)
+
+/-- The accumulator entering the first round: its top two words cleared, and
+all of it unless the first row writes the others (`rowInit`, for `n ≤ 4`). -/
+structure AccInit (M : Mod) (s : State) : Prop where
+  top : ∀ r ∈ (wins M.n 0).drop M.n, s.gpr r = 0
+  all : ¬ M.n ≤ 4 → regsVal s (wins M.n 0) = 0
+
+/-- `x1 = a_i` and `T += a_i B`: the first row straight into the
 accumulator, or a row into the window (its low `n + 1` words for a tight
 modulus). -/
 theorem prodRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod}
@@ -333,9 +348,9 @@ theorem prodRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     {a b i m : Nat} (ha : a + 8 * i + 8 ≤ sa) (hb : b + 8 * M.n ≤ sb)
     (ha8 : a % 8 = 0) (hb8 : b % 8 = 0) (hz : s.gpr .x7 = 0) (hBR : BRegs s pb b M.n)
     (hm : m < 2 ^ (64 * M.n)) (hok : M.ok m = true) (hB : wordsVal s.mem pb b M.n < m)
-    (hT : regsVal s (wins M.n i) < 2 * m) (h0 : i = 0 → regsVal s (wins M.n 0) = 0) :
+    (hT : accV M s i < 2 * m) (h0 : i = 0 → AccInit M s) :
     WP isa (.block (prodRow M ra rb a b i)) s
-      fun s' => regsVal s' (wins M.n i) = regsVal s (wins M.n i) +
+      fun s' => regsVal s' (wins M.n i) = accV M s i +
           (word s.mem pa (a + 8 * i)).toNat * wordsVal s.mem pb b M.n ∧
         Keeps (.x1 :: .x2 :: .x3 :: wins M.n i) s s' := by
   have hw := wins_regs hn i
@@ -377,11 +392,11 @@ theorem prodRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   by_cases hi : i = 0 ∧ M.n ≤ 4
   · rw [ite_eq_left_iff.mpr (fun h => absurd hi h)]
     obtain ⟨rfl, hn4⟩ := hi
-    have hz0 := regsVal_zero_of (h0 rfl)
+    have hz0 := (h0 rfl).top
     have hbl : (bRegs.take M.n).length = M.n := by
       rw [List.length_take]; exact Nat.min_eq_left (by simp [bRegs]; omega_using [hn4])
     have hbs : ∀ r ∈ bRegs.take M.n, r ∈ bRegs := fun r hr => List.mem_of_mem_take hr
-    refine WP.mono (rowInit_ok hs₁ hz₁ (x := .x1) (ts := (wins M.n 0).take (M.n + 1))
+    refine WP.mono (rowInit_ok hs₁.ptr hz₁ (by decide) (by decide) (x := .x1) (ts := (wins M.n 0).take (M.n + 1))
       (bs := bRegs.take M.n) (by rw [List.length_take, wins_length, hbl]; omega_using [])
       ((List.take_sublist _ _).nodup hnd)
       (fun t ht => by
@@ -389,21 +404,31 @@ theorem prodRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
         refine ⟨this.1, this.2.2.1, this.2.2.2.1, this.2.2.2.2.2.2.2.1, this.2.1, fun hb' => ?_⟩
         rcases bRegs_regs t (hbs t hb') with rfl | rfl | rfl | rfl <;> simp at this)
       (fun r hr => by rcases bRegs_regs r (hbs r hr) with rfl | rfl | rfl | rfl <;> decide)
-      (by decide) (by decide)
-      (fun t ht => by rw [k₁.gpr t (by simp [(hw t (htake t ht)).2.1])]; exact hz0 t (htake t ht)))
-      fun s₂ ⟨e₂, k₂⟩ => ⟨rest s₂ (fun q hq => k₂.gpr q (by
+      (by decide) (by decide) (fun t ht => (hw t (htake t ht)).1)
+      (fun t ht => by
+        rw [hbl, List.drop_take] at ht
+        have ht' := List.mem_of_mem_take ht
+        rw [k₁.gpr t (by simp [(hw t (List.mem_of_mem_drop ht')).2.1])]; exact hz0 t ht'))
+      fun s₂ ⟨e₂, k₂⟩ => ⟨by
+        have hd : regsVal s₂ ((wins M.n 0).drop (M.n + 1)) = 0 := regsVal_eq_zero fun q hq => by
           have := hw q (hdrop q hq)
-          simp only [List.mem_cons, not_or]
-          exact ⟨this.2.2.1, this.2.2.2.1, hdisj q hq⟩)) (by
-        have hz : regsVal s ((wins M.n 0).take (M.n + 1)) = 0 := by
-          have h := h0 rfl; rw [regsVal_wins_split] at h; omega_using [h]
-        rw [e₂, hz, c₁, ← rwVal_regs s₁ pb, ← bWords_regs b M.n hn4, hRB, Nat.zero_add]), (k₁.mono (by sub_regs)).trans (k₂.mono fun q hq => by
+          rw [k₂.gpr q (by simp only [List.mem_cons, not_or]; exact ⟨this.2.2.1, this.2.2.2.1, hdisj q hq⟩),
+            k₁.gpr q (by simp [this.2.1])]
+          exact hz0 q ((List.drop_sublist_drop_left _ (Nat.le_succ _)).subset hq)
+        rw [regsVal_wins_split s₂, hd, e₂, c₁, ← rwVal_regs s₁ pb, ← bWords_regs b M.n hn4, hRB]
+        simp only [accV, ↓reduceIte, Nat.mul_zero, Nat.add_zero, Nat.zero_add], (k₁.mono (by sub_regs)).trans (k₂.mono fun q hq => by
           simp only [List.mem_cons] at hq ⊢
           rcases hq with h | h | h
           · exact Or.inr (Or.inl h)
           · exact Or.inr (Or.inr (Or.inl h))
           · exact Or.inr (Or.inr (Or.inr (htake q h))))⟩
   · rw [ite_eq_right_iff.mpr (fun h => absurd h hi), prodWins]
+    have hV : accV M s i = regsVal s (wins M.n i) := by
+      unfold accV
+      split
+      · next h => subst h; exact ((h0 rfl).all fun h4 => hi ⟨rfl, h4⟩).symm
+      · rfl
+    rw [hV] at hT ⊢
     by_cases ht : M.tight = true
     · rw [ite_eq_left_iff.mpr (fun h => absurd ht h)]
       have hti := Mod.ok_tight hok ht
@@ -445,9 +470,9 @@ theorem round_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     (hz : s.gpr .x7 = 0) (hm : wordsVal s.mem base M.mo M.n = m)
     (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0) (hok : M.ok m = true)
     (hBR : BRegs s pb b M.n) (h6 : ConstOk M s) (hB : wordsVal s.mem pb b M.n < m)
-    (hT : regsVal s (wins M.n i) < 2 * m) (h0 : i = 0 → regsVal s (wins M.n 0) = 0) :
+    (hT : accV M s i < 2 * m) (h0 : i = 0 → AccInit M s) :
     WP isa (.block (round M ra rb a b i)) s fun s' =>
-      (∃ u, 2 ^ 64 * regsVal s' (wins M.n (i + 1)) = regsVal s (wins M.n i) +
+      (∃ u, 2 ^ 64 * regsVal s' (wins M.n (i + 1)) = accV M s i +
         (word s.mem pa (a + 8 * i)).toNat * wordsVal s.mem pb b M.n + u * m) ∧
       regsVal s' (wins M.n (i + 1)) < 2 * m ∧
       Keeps (.x1 :: .x2 :: .x3 :: wins M.n i) s s' := by

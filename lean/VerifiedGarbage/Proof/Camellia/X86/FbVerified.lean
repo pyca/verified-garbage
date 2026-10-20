@@ -1,21 +1,57 @@
 module
-
-public import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
-public import VerifiedGarbage.Proof.Camellia.X86.CbcVerified
-meta import VerifiedGarbage.Proof.Camellia.X86.CbcVerified
 public import VerifiedGarbage.Proof.Camellia.FbScratch
 meta import VerifiedGarbage.Proof.Camellia.FbScratch
 public import VerifiedGarbage.Proof.Camellia.X86.FbLit
 meta import VerifiedGarbage.Proof.Camellia.X86.FbLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Camellia.X86.ModeCore
+meta import VerifiedGarbage.Proof.Camellia.X86.ModeCore
+import VerifiedGarbage.Proof.Modes.X86.Modes
+meta import VerifiedGarbage.Proof.Modes.X86.Modes
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.Contract
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Proof.Modes.X86.Seq
+meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Camellia.CtrCipher
+import VerifiedGarbage.Proof.Camellia.Scratch
+import VerifiedGarbage.Proof.Camellia.X86.Copy
+import VerifiedGarbage.Proof.Camellia.X86.Crypt8
+import VerifiedGarbage.Proof.Camellia.X86.Fl
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Spec.Ctr.Contract
+meta import VerifiedGarbage.Proof.AesCtr.Inc
+meta import VerifiedGarbage.Proof.Camellia.CtrCipher
+meta import VerifiedGarbage.Proof.Camellia.Scratch
+meta import VerifiedGarbage.Proof.Camellia.X86.Copy
+meta import VerifiedGarbage.Proof.Camellia.X86.Crypt8
+meta import VerifiedGarbage.Proof.Camellia.X86.Fl
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.Syms
+meta import VerifiedGarbage.Proof.Modes.Steps
+meta import VerifiedGarbage.Proof.Modes.X86.Counter
+meta import VerifiedGarbage.Proof.Modes.X86.Ops
+meta import VerifiedGarbage.Spec.Ctr.Contract
 
 /-!
 # Camellia-OFB and Camellia-CFB128 on x86 (32-bit) meet their contracts
@@ -31,6 +67,19 @@ their working space on the stack, zeroed on return.
 -/
 
 @[expose] public section
+
+namespace VG.Proof.Camellia.X86
+
+open VG VG.X86 VG.Impl.Camellia.X86
+
+theorem disjoint_empty (r : Region) (a : Addr) : Region.Disjoint ⟨a, 0⟩ r := fun _ h => by
+  simp only [Region.Contains] at h; omega
+
+theorem scr_eq (s : State) (d : Dir) :
+    Modes.X86.scrR s (dirCore d) = ⟨(arg s 5).setWidth 64, 8 * 341⟩ := by
+  simp [Modes.X86.scrR, dirCore, slots_eq]
+
+end VG.Proof.Camellia.X86
 
 namespace VG.Proof.Camellia.X86.Fb
 

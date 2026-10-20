@@ -1,37 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Call
-public import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 public import VerifiedGarbage.Spec.MlDsa.Poly
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.MlKem.X86.AddSub
-public import VerifiedGarbage.Proof.MlKem.X86.CallRet
-public import VerifiedGarbage.Proof.MlKem.X86.Cbd
-public import VerifiedGarbage.Proof.MlKem.X86.CompressEncode
-public import VerifiedGarbage.Proof.MlKem.X86.Decode12
-public import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
-public import VerifiedGarbage.Proof.MlKem.X86.Encode12
-public import VerifiedGarbage.Proof.MlKem.X86.Mul
-public import VerifiedGarbage.Proof.MlKem.X86.NttInv
-public import VerifiedGarbage.Proof.MlKem.X86.Sample
-public import VerifiedGarbage.Proof.MlKem.X86.TopPrim3
-public import VerifiedGarbage.Proof.Sha256.Stream
-public import VerifiedGarbage.Proof.Sha256.X86.Compress
 public import VerifiedGarbage.Proof.Sha256.X86.Lit
-public import VerifiedGarbage.Proof.Sha3.Arith
 public import VerifiedGarbage.Proof.Sha3.X86.Lit
-public import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
-public import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
-public import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.MlKem.X86.Table
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # ML-DSA on x86 (32-bit): calls of the polynomial primitives

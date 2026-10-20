@@ -1,35 +1,43 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.GMul
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.GMul
+import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.GMul
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.Sig
-meta import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Weierstrass.PointFacts
-meta import VerifiedGarbage.Proof.Weierstrass.PointFacts
-public import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Proof.Mont.Read
-public import VerifiedGarbage.Spec.Weierstrass.Mul
-meta import VerifiedGarbage.Spec.Weierstrass.Mul
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.AArch64
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.MulFn
+import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
 import VerifiedGarbage.Proof.BrainpoolP512r1.Point
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Batteries.Data.List.Lemmas
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Weierstrass.CombLay
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.GMul
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Weierstrass.PointFacts
+meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.AArch64
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.MulFn
+meta import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
 meta import VerifiedGarbage.Proof.BrainpoolP512r1.Point
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Batteries.Data.List.Lemmas
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Weierstrass.CombLay
 
 /-!
 # `vg_brainpoolp512r1_mul` on AArch64: `Verified`

@@ -1,14 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.TopArgs
+import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.CompressEncode
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.DecodeDecompress
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM-1024 on AArch64: the calls of the compression functions

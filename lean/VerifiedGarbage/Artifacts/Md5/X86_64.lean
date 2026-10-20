@@ -1,12 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Md5.X86_64.Shared
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Md5.X86_64.Lit
 
 /-! # MD5 (RFC 1321) on x86-64 -/
 
@@ -15,51 +11,27 @@ import VerifiedGarbage.Proof.MdStream.Spec
 namespace VG.Artifacts.Md5.X86_64
 
 def artifacts : List Artifact := [
-  { Spec.Md5.compressApi with
-    target := X86_64.target
-    doc := Spec.Md5.compressApi.doc
+  Spec.Md5.compressApi.artifact X86_64.target {
     code := Impl.Md5.X86_64.compress
-    contract := Spec.Md5.compressContract X86_64.abi
-    verified := Proof.Md5.X86_64.Shared.compress
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Md5.initApi with
-    target := X86_64.target
-    doc := Spec.Md5.initApi.doc
+    verified := Proof.Md5.X86_64.Shared.compress },
+  Spec.Md5.initApi.artifact X86_64.target {
     code := Impl.Md5.X86_64.Stream.init
-    contract := Spec.Md5.initContract X86_64.abi
-    verified := Proof.Md5.X86_64.Shared.init
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Md5.updateApi with
-    target := X86_64.target
-    doc := Spec.Md5.updateApi.doc
+    verified := Proof.Md5.X86_64.Shared.init },
+  Spec.Md5.updateApi.artifact X86_64.target {
     code := Impl.StackScratch.X86_64.withStackScratch 120 .r8 Impl.Md5.X86_64.Stream.update
-    contract := Spec.Md5.updateContract X86_64.abi (8 + 120)
     stack := 8 + 120
-    verified := Proof.Md5.X86_64.Shared.update
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Md5.finalizeApi with
-    target := X86_64.target
-    doc := Spec.Md5.finalizeApi.doc
+    verified := Proof.Md5.X86_64.Shared.update },
+  Spec.Md5.finalizeApi.artifact X86_64.target {
     code := Impl.StackScratch.X86_64.withStackScratch 120 .rcx Impl.Md5.X86_64.Stream.finalize
-    contract := Spec.Md5.finalizeContract X86_64.abi (8 + 120)
     stack := 8 + 120
-    verified := Proof.Md5.X86_64.Shared.finalize
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Md5.updateScratchApi with
-    target := X86_64.target
-    doc := Spec.Md5.updateScratchApi.doc
+    verified := Proof.Md5.X86_64.Shared.finalize },
+  Spec.Md5.updateScratchApi.artifact X86_64.target {
     code := Impl.Md5.X86_64.Stream.update
-    contract := Spec.Md5.updateScratchContract X86_64.abi 8
     stack := 8
-    verified := Proof.Md5.X86_64.Shared.updateScratch
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Md5.finalizeScratchApi with
-    target := X86_64.target
-    doc := Spec.Md5.finalizeScratchApi.doc
+    verified := Proof.Md5.X86_64.Shared.updateScratch },
+  Spec.Md5.finalizeScratchApi.artifact X86_64.target {
     code := Impl.Md5.X86_64.Stream.finalize
-    contract := Spec.Md5.finalizeScratchContract X86_64.abi 8
     stack := 8
-    verified := Proof.Md5.X86_64.Shared.finalizeScratch
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Md5.X86_64.Shared.finalizeScratch }]
 
 end VG.Artifacts.Md5.X86_64

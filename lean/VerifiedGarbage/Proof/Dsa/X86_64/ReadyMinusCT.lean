@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.MinusCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.CTBlocks
-public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCallCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
+public import VerifiedGarbage.Proof.Dsa.X86_64.Modulus
+import VerifiedGarbage.Proof.Dsa.X86_64.CTBlocks
+import VerifiedGarbage.Proof.Dsa.X86_64.EnterLeave
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Constant-time construction of p-minus-one and q-minus-two -/
 

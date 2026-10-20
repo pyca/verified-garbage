@@ -1,30 +1,35 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.NativeTaint
-import VerifiedGarbage.Proof.Weierstrass.X86.MontBrainpoolP512r1
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontBrainpoolP512r1
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
-public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Config
-meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Config
-meta import VerifiedGarbage.Proof.Ecdsa.X86.Main
-import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
+import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Config
 public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Contract
+public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
+public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
+import VerifiedGarbage.Proof.Ecdsa.X86.Main
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Lit
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
+meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Config
 meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Contract
-public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.X86.Layout
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+meta import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+meta import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
+meta import VerifiedGarbage.Proof.Ecdsa.X86.Main
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Lit
-public import VerifiedGarbage.Proof.BrainpoolP512r1.Point
-meta import VerifiedGarbage.Proof.BrainpoolP512r1.Point
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.X86.Inline
-meta import VerifiedGarbage.Proof.Framework.X86.Inline
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ECDSA over brainpoolP512r1 on x86 (32-bit): `Verified`

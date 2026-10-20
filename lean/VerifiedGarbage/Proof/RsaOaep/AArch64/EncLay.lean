@@ -1,12 +1,12 @@
 module
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Label
+public import VerifiedGarbage.Spec.RsaPss.Contract
 
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEm
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
+import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLay
 
 /-!
 # RSAES-OAEP encryption on AArch64: where everything is
@@ -89,7 +89,7 @@ structure Ok : Prop where
   olk : L.ol.toNat = L.k.toNat
   el1 : 1 ≤ L.el.toNat
   elk : L.el.toNat ≤ L.k.toNat
-  slk : Spec.RsaPss.scratchWords L.k.toNat ≤ L.sl.toNat
+  slk : Spec.RsaPss.publicScratchWords L.k.toNat ≤ L.sl.toNat
   al40 : 40 ≤ L.al
   al64 : L.al ≤ 64
   nQa : L.Q.toNat + 288 + L.al ≤ 2 ^ 64
@@ -117,8 +117,8 @@ include h
 theorem k64 : 64 ≤ L.k.toNat := h.kv.1
 theorem k1024 : L.k.toNat ≤ 1024 := h.kv.2
 
-theorem s8192 : 8192 + Spec.Rsa.scratchWords L.k.toNat * 8 ≤ L.sl.toNat * 8 := by
-  have := h.slk; unfold Spec.RsaPss.scratchWords at this; omega
+theorem s8192 : 8192 + Spec.Rsa.publicScratchWords L.k.toNat * 8 ≤ L.sl.toNat * 8 := by
+  have := h.slk; unfold Spec.RsaPss.publicScratchWords at this; omega
 
 omit h in
 theorem sub_stk {d n : Nat} (hd : d + n ≤ 288) : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.STK := by

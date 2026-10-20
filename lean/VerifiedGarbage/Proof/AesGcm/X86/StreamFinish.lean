@@ -1,15 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.FinTag
-meta import VerifiedGarbage.Proof.AesGcm.X86.FinTag
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
-meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.AesGcm.X86.Top
+meta import VerifiedGarbage.Proof.AesGcm.X86.FinTag
+meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 meta import VerifiedGarbage.Proof.AesGcm.X86.Top
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+meta import VerifiedGarbage.Impl.AesGcm.X86
+meta import VerifiedGarbage.Proof.Framework.X86.Call
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+meta import VerifiedGarbage.TCB.X86.Isa
+meta import VerifiedGarbage.TCB.X86.State
+meta import VerifiedGarbage.TCB.X86.Target
 
 /-!
 # AES-GCM on x86: `vg_aes_gcm_stream_finish`

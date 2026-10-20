@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.AArch64.Env
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.CmacAes.AArch64.FinalizeCorrect
+public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Finish
+import VerifiedGarbage.Spec.Siv
 
 /-!
 # AES-SIV on AArch64: calling `vg_cmac_aes_finalize` with any subkeys

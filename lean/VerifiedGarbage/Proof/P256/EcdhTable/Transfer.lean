@@ -2,14 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.P256.EcdhTable.Dblu
 public import VerifiedGarbage.Proof.P256.EcdhTable.Zaddu
-public import VerifiedGarbage.Proof.P256.EcdhTable.DbluRaw
+public import VerifiedGarbage.Proof.P256.EcdhJac.DbluCertificate
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+import VerifiedGarbage.Proof.P256.EcdhTable.DbluRaw
 import VerifiedGarbage.Proof.P256.EcdhTable.ZadduRaw
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.Booth
+import VerifiedGarbage.Proof.P256.EcdhJac.Frame
+import VerifiedGarbage.Proof.P256.EcdhJac.Dblu
+import VerifiedGarbage.Proof.P256.EcdhJac.Zaddu
 
 @[expose] public section
 

@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivFrame
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # `vg_rsa_private_checked` on AArch64: the arguments of the CRT

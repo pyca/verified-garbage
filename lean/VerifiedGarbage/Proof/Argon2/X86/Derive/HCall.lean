@@ -1,10 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.Body
+public import VerifiedGarbage.Proof.Argon2.X86.HPrime.Calls
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
 
-public import VerifiedGarbage.Proof.Argon2.X86.Derive.Initial
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Argon2.X86.Derive.Scratch
+import VerifiedGarbage.Proof.Argon2.X86.HPrime.Verified
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Argon2.X86.CompressLit
+import VerifiedGarbage.Proof.Blake2.X86.Blake2b
+import VerifiedGarbage.Proof.Blake2.X86.LitB
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Sha256.X86.Lit
 
 /-!
 # Argon2 on x86 (32-bit): calls of H′ in the derivation

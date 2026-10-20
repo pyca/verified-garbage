@@ -1,23 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDotValue
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRoundCall
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDotValue
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRoundCall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestRow
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRestState
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedRow
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.TCB.Axioms
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.Proof.MlDsa.DecideAt
 
 @[expose] public section
 

@@ -1,27 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Proof.Sha256.Arm.Compress
-public import VerifiedGarbage.Proof.Sha256.Arm.Stream.Init
-public import VerifiedGarbage.Proof.Sha256.Arm.Stream.Md
+import VerifiedGarbage.Proof.Sha256.Arm.Stream.Init
 public import VerifiedGarbage.Proof.Sha256.Arm.Stream.Digest
-public import VerifiedGarbage.Spec.Sha256.Contract
-public import VerifiedGarbage.Proof.Sha256.Scratch
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Sha256.Scratch
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 public import VerifiedGarbage.Proof.Sha256.Digest
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.MdStream.Arm.Words
-public import VerifiedGarbage.Proof.MdStream.Prefix
+public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Sha256.Arm.Lit
-public import VerifiedGarbage.Proof.Sha256.StateMem
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Impl.StackScratch.Arm
+import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Sha256 on Arm: the shared contracts

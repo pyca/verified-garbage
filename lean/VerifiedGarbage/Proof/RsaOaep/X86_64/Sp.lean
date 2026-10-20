@@ -1,18 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Impl.RsaOaep.X86_64
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Stack
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecContract
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaOaep.X86_64.DecMain
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCtx
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # RSAES-OAEP on x86-64: `rsp` written only by the frames

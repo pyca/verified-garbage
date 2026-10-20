@@ -1,13 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTDefs
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyPhases
+import VerifiedGarbage.Proof.Rsa.X86_64.KeySteps
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTDefs
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyPhases
+meta import VerifiedGarbage.Proof.Rsa.X86_64.KeySteps
+meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyChecks
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_check_key` on x86-64: constant time of the pieces

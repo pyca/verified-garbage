@@ -32,11 +32,12 @@ Two kinds of curve and hash function, as on x86:
   with `out` and `d` kept in `r2` and `r3` meanwhile, as those use `r4` and
   `r5`).
 
-A frame of 216 bytes is allocated, 360 if `wide`: from `sp`, `K` and `V`
-(64 bytes each, of which the first `D` are used), `h` (48 bytes, unless
-`wide`), a word unused, and our caller's `r4`–`r11` and `lr` (the calls
-replace `lr`); and, if `wide`, the digest for `core` and the candidate (72
-bytes each). The functions we call
+A frame of 216 bytes is allocated, 360 if `wide` and 280 if `hHigh`: from
+`sp`, `K` and `V` (64 bytes each, of which the first `D` are used), `h` (48
+bytes, unless `wide` or `hHigh`), a word unused, and our caller's `r4`–`r11`
+and `lr` (the calls replace `lr`); and, if `wide`, the digest for `core` and
+the candidate (72 bytes each), or, if `hHigh` (64-byte scalars, as
+brainpoolP512r1's), `h` in 64 bytes. The functions we call
 preserve `r4`–`r11`, which hold what lives across the calls: `out`, `d` and
 `digest` in `r4`–`r6`, the frame in `r8`, the number of candidates left in
 `r9` and `scratch` in `r11`. Each call's arguments beyond `r0`–`r3` are
@@ -87,14 +88,14 @@ def fK : Nat := 0
 def fV : Nat := 64
 def fH : Nat := 128
 def fSave : Nat := 180
-/-- If `wide`: the digest for `core`, and the candidate. -/
+/-- If `wide`: the digest for `core`, and the candidate; if `hHigh`, `h`. -/
 def fX : Nat := 216
 def fKb : Nat := 288
 /-- The words at the frame's top: the digest for `core` and the candidate,
-if `wide`. -/
-def extra (wide : Bool) : Nat := if wide then 36 else 0
+if `wide`, or `h`, if `hHigh`. -/
+def extra (wide : Bool) (hHigh : Bool := false) : Nat := if wide then 36 else if hHigh then 16 else 0
 /-- The frame's size, a multiple of 8. -/
-def frameBytes (wide : Bool) : Nat := 216 + 4 * extra wide
+def frameBytes (wide : Bool) (hHigh : Bool := false) : Nat := 216 + 4 * extra wide hHigh
 
 /-! Where things are in `scratch`. -/
 def sInner : Nat := 0
@@ -124,6 +125,9 @@ structure Cfg where
   wide : Bool := false
   /-- The bits `core` shifts its digest right by, `8 Q - qlen`. -/
   sh : Nat := 0
+  /-- Whether `h` is kept at the frame's top, in 16 more words: for scalars
+  of 64 bytes, which the 48 bytes below the saved registers do not hold. -/
+  hHigh : Bool := false
   /-- The order of the curve's base point. -/
   n : Nat
   /-- The most candidates to try. -/
@@ -135,6 +139,9 @@ structure Cfg where
 namespace Cfg
 
 variable (c : Cfg)
+
+/-- Where `h` is in the frame. -/
+def fHo : Nat := if c.hHigh then fX else fH
 
 /-- Our caller's registers into the frame (through `r12`, its base); the
 arguments to the registers that keep them, and the frame's base to `r8`. -/
@@ -191,21 +198,21 @@ def copyBytes (len : Nat) (src : Reg) (so : Nat) (dst : Reg) (d : Nat) : List In
 
 /-- The message `V ‖ b` (and `‖ d ‖ h` if `full`, `Q` bytes each) at
 `scratch + sMsg`, for `V` of `D` bytes: `V` from the frame (`r8`), `b` a
-byte, `d` from `r5`, and `h` from the frame, or, if `wide`, `Q - D` zero
+byte, `d` from `r5`, and `h` from the frame at `ho`, or, if `wide`, `Q - D` zero
 bytes (a zero word, which the digest's words then overwrite but for them)
 and the digest (from `r6`). -/
-def msg (w Q D b : Nat) (full wide : Bool) : List Instr :=
+def msg (w Q D b : Nat) (full wide : Bool) (ho : Nat := fH) : List Instr :=
   copyN (D / 4) .r8 fV .r11 sMsg ++ ([.mov .r0 (.imm (BitVec.ofNat 32 b)), .strb .r0 .r11 (sMsg + D)] : List Instr) ++
     (if full then
       (if wide then
         copyBytes Q .r5 0 .r11 (sMsg + D + 1) ++
           ([.mov .r0 (.imm 0), .str .r0 .r11 (sMsg + D + 1 + Q)] : List Instr) ++ copyN (D / 4) .r6 0 .r11 (sMsg + 1 + 2 * Q)
-      else copyN w .r5 0 .r11 (sMsg + D + 1) ++ copyN w .r8 fH .r11 (sMsg + D + 1 + 4 * w))
+      else copyN w .r5 0 .r11 (sMsg + D + 1) ++ copyN w .r8 ho .r11 (sMsg + D + 1 + 4 * w))
     else [])
 
 /-- `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then `V = HMAC_K(V)` (steps d–e, f–g). -/
 def rekeyFull (b : Nat) : Prog isa :=
-  .seq (.block (msg c.w c.len c.F.H.D b true c.wide))
+  .seq (.block (msg c.w c.len c.F.H.D b true c.wide c.fHo))
     (.seq (c.hmac (scrAt .r1 sMsg) (c.F.H.D + 2 * c.len + 1) fK) c.hmacV)
 
 /-- `K = HMAC_K(V ‖ 0x00)`, then `V = HMAC_K(V)` (step h.3). -/
@@ -253,16 +260,16 @@ def subDigit (k : Nat) : List Instr :=
 as a big-endian number, to `h`'s place, and that word of the difference
 with `n` to `K`'s: both at the offset of the word's bytes. -/
 def subWord (j : Nat) : List Instr :=
-  ([.ldr .r0 .r6 (4 * (c.w - 1 - j)), .rev .r0 .r0, .str .r0 .r8 (fH + 4 * (c.w - 1 - j))] : List Instr) ++ movImm (c.nWord j) ++
+  ([.ldr .r0 .r6 (4 * (c.w - 1 - j)), .rev .r0 .r0, .str .r0 .r8 (c.fHo + 4 * (c.w - 1 - j))] : List Instr) ++ movImm (c.nWord j) ++
     subDigit 0 ++ subDigit 1 ++ ([.dp .orr .r2 .r2 (.reg .r3), .str .r2 .r8 (fK + 4 * (c.w - 1 - j))] : List Instr)
 
 /-- Word `j` of `h`: the difference's if subtracting `n` did not borrow (the
 mask in `r7`), the digest's number's if it did, big-endian into `h`. -/
 def selWord (j : Nat) : List Instr :=
-  [.ldr .r0 .r8 (fH + 4 * (c.w - 1 - j)), .ldr .r1 .r8 (fK + 4 * (c.w - 1 - j)),
+  [.ldr .r0 .r8 (c.fHo + 4 * (c.w - 1 - j)), .ldr .r1 .r8 (fK + 4 * (c.w - 1 - j)),
     -- `x = d ^ ((x ^ d) & mask)`: the difference `x` if it did not borrow, `d` if it did.
     .dp .eor .r1 .r1 (.reg .r0), .dp .and .r1 .r1 (.reg .r7), .dp .eor .r0 .r0 (.reg .r1),
-    .rev .r0 .r0, .str .r0 .r8 (fH + 4 * (c.w - 1 - j))]
+    .rev .r0 .r0, .str .r0 .r8 (c.fHo + 4 * (c.w - 1 - j))]
 
 /-- `h`: the `Q` bytes at `digest`, minus `n` if that does not borrow. -/
 def reduce : List Instr :=
@@ -325,14 +332,15 @@ def tryOne : Prog isa :=
 def zeros : List (Reg × Nat) := (List.range 44).map fun j => (.r1, 4 * j)
 
 /-- The words at the frame's top, each from `r1`. -/
-def zerosHigh (wide : Bool) : List (Reg × Nat) := (List.range (extra wide)).map fun j => (.r1, fX + 4 * j)
+def zerosHigh (wide : Bool) (hHigh : Bool := false) : List (Reg × Nat) :=
+  (List.range (extra wide hHigh)).map fun j => (.r1, fX + 4 * j)
 
 /-- `K`, `V` and `h` cleared, and the words at the frame's top (`r0`, the
 result, kept), and our caller's registers back, through `r12` (the frame's
 base). -/
-def wipe (wide : Bool) : List Instr :=
+def wipe (wide : Bool) (hHigh : Bool := false) : List Instr :=
   ([.mov .r12 (.reg .r8), .mov .r1 (.imm 0)] : List Instr) ++ zeros.map (fun p => .str p.1 .r12 p.2) ++
-    (zerosHigh wide).map (fun p => .str p.1 .r12 p.2) ++ epilogue
+    (zerosHigh wide hHigh).map (fun p => .str p.1 .r12 p.2) ++ epilogue
 
 /-- The frame's body. -/
 def body : Prog isa :=
@@ -341,11 +349,11 @@ def body : Prog isa :=
   (.seq (c.rekeyFull 1)
   (.seq (.block c.initCnt)
   (.seq (.loop c.tryOne .ne)
-    (.block (wipe c.wide))))))
+    (.block (wipe c.wide c.hHigh))))))
 
 /-- `vg_ecdsa_<curve>_<hash>_sign`. -/
 def sign : Prog isa :=
-  .frame (.alloc (frameBytes c.wide)) c.body (.free (frameBytes c.wide))
+  .frame (.alloc (frameBytes c.wide c.hHigh)) c.body (.free (frameBytes c.wide c.hHigh))
 
 end Cfg
 

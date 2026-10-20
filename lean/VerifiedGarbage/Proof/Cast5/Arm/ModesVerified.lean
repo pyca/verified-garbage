@@ -1,27 +1,61 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.Arm.ModeCore
-meta import VerifiedGarbage.Proof.Cast5.Arm.ModeCore
-public import VerifiedGarbage.Proof.Modes.Arm.Cbc
-meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
+import VerifiedGarbage.Proof.Modes.Arm.CbcChained
 import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+public import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+import VerifiedGarbage.Proof.Modes.Arm.Cbc
+meta import VerifiedGarbage.Proof.Cast5.Arm.ModeCore
+meta import VerifiedGarbage.Proof.Modes.Arm.CbcChained
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
+meta import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Impl.StackScratch.Arm
+meta import VerifiedGarbage.Proof.Cast5.Table
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
-public import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.ConstMem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-meta import VerifiedGarbage.Proof.Aes.SboxSpec
-meta import VerifiedGarbage.Proof.Framework.Arm.Linear
-meta import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
-meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
+public import VerifiedGarbage.Proof.Framework.ConstMem
+import Batteries.Logic
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.AesCtr.Ctr32
+import VerifiedGarbage.Proof.AesCtr.Spec
+import VerifiedGarbage.Proof.Cast5.Arm.EcbVerified
+import VerifiedGarbage.Proof.Cast5.Arm.Lit
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.CmacAes.Arm.Words
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.Modes.Arm.Counter
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Spec.Ctr.Contract
+meta import Batteries.Logic
+meta import Mathlib.Tactic.Conv
+meta import VerifiedGarbage.Proof.Aes.Blocks
+meta import VerifiedGarbage.Proof.AesCtr.Ctr32
+meta import VerifiedGarbage.Proof.AesCtr.Spec
+meta import VerifiedGarbage.Proof.Cast5.Arm.EcbVerified
+meta import VerifiedGarbage.Proof.Cast5.Arm.Lit
+meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Cmac.Mem
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.CmacAes.Arm.Words
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Modes.Addr
+meta import VerifiedGarbage.Proof.Modes.Arm.Counter
+meta import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Spec.Ctr.Contract
 
 /-!
 # CAST5-CBC, CAST5-OFB and CAST5-CFB64 on ARMv7 meet their contracts
@@ -119,43 +153,43 @@ theorem modeSatC_arg (ivW : Bool) {i : Nat} (hi : i < 2) : stackArg (modeSatC iv
 theorem frameSatC_arg (ivW : Bool) {i : Nat} (hi : i < 2) : stackArg (frameSatC ivW) i = 0 :=
   modeSatMem_readW _ (by rcases (show i = 0 ∨ i = 1 by omega) with rfl | rfl <;> cases ivW <;> decide)
 
-theorem cbc_sat (post : Spec.Cast5.cbcSig.Post Arm.abi.ptrBits) :
-    ∃ s, (Proof.Cast5.modeScratchContract (Arm.abi.withConsts ecbConsts) Spec.Cast5.cbcSig 39
-      (Spec.Cast5.cbcPre Arm.abi.ptrBits) post 8).pre s := by
-  refine ⟨modeSatC false, ?_⟩
-  have a0 := modeSatC_arg false (i := 0) (by decide)
-  have a1 := modeSatC_arg false (i := 1) (by decide)
+theorem cbc_sat (post : Spec.Cast5.cbcChainedSig.Post Arm.abi.ptrBits) :
+    ∃ s, (Proof.Cast5.modeScratchContract (Arm.abi.withConsts ecbConsts) Spec.Cast5.cbcChainedSig 39
+      (Proof.Cast5.cbcChainedPre Arm.abi.ptrBits) post 8).pre s := by
+  refine ⟨modeSatC true, ?_⟩
+  have a0 := modeSatC_arg true (i := 0) (by decide)
+  have a1 := modeSatC_arg true (i := 1) (by decide)
   have held := modeSatMem_held
-  generalize e : modeSatC false = s at a0 a1
+  generalize e : modeSatC true = s at a0 a1
   sig_pre [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch,
-    Spec.Cast5.cbcSig, Spec.Cast5.cbcPre, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, ecbConsts_eq,
+    Spec.Cast5.cbcChainedSig, Proof.Cast5.cbcChainedPre, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, ecbConsts_eq,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s1234_length]
   subst e
   rw [a0, a1]
   refine ⟨by decide, by decide, by decide, fun i hi => held i (by rw [s1234_length]; exact hi), by decide, ?_, ?_⟩
   · intro r hr
-    change r ∈ ([⟨0x3000, 0⟩, ⟨0, 312⟩] : List Region) at hr
+    change r ∈ ([⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0, 312⟩] : List Region) at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+    rcases hr with rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inl rfl
 
-theorem cbcFrame_sat (post : Spec.Cast5.cbcSig.Post Arm.abi.ptrBits) :
-    ∃ s, (Spec.Cast5.cbcSig.contract (Arm.abi.withConsts ecbConsts) (Spec.Cast5.cbcPre Arm.abi.ptrBits) post true
+theorem cbcFrame_sat (post : Spec.Cast5.cbcChainedSig.Post Arm.abi.ptrBits) :
+    ∃ s, (Spec.Cast5.cbcChainedSig.contract (Arm.abi.withConsts ecbConsts) (Proof.Cast5.cbcChainedPre Arm.abi.ptrBits) post true
       (8 + 328)).pre s := by
-  refine ⟨frameSatC false, ?_⟩
-  have a0 := frameSatC_arg false (i := 0) (by decide)
+  refine ⟨frameSatC true, ?_⟩
+  have a0 := frameSatC_arg true (i := 0) (by decide)
   have held := modeSatMem_held
-  generalize e : frameSatC false = s at a0
-  sig_pre [Spec.Cast5.cbcSig, Spec.Cast5.cbcPre, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, ecbConsts_eq,
+  generalize e : frameSatC true = s at a0
+  sig_pre [Spec.Cast5.cbcChainedSig, Proof.Cast5.cbcChainedPre, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, ecbConsts_eq,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s1234_length]
   subst e
   rw [a0]
   refine ⟨by decide, by decide, by decide, fun i hi => held i (by rw [s1234_length]; exact hi), by decide, ?_, ?_⟩
   · intro r hr
-    change r ∈ ([⟨0x3000, 0⟩] : List Region) at hr
+    change r ∈ ([⟨0x2000, 8⟩, ⟨0x3000, 0⟩] : List Region) at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl <;> exact Region.disjoint_of_sep (by decide)
+    rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inl rfl
 
@@ -239,24 +273,24 @@ theorem cfbFrame_sat (post : Spec.Cast5.cfbSig.Post Arm.abi.ptrBits) :
   · repeat' apply And.intro
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inl rfl
 
-theorem cbcEncryptTaint : SeqTaint (ecbCore true) cbcEnc :=
+theorem cbcEncryptChainedTaint : SeqTaint (ecbCore true) cbcEncChained :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
-theorem cbcEncrypt_implies : (seqArm (ecbCore true) (ecbSpec true) cbcEnc).Implies
-    (Proof.Cast5.modeScratchContract (Arm.abi.withConsts ecbConsts) Spec.Cast5.cbcSig 39
-      (Spec.Cast5.cbcPre Arm.abi.ptrBits) (Proof.Cast5.cbcEncPost Arm.abi.ptrBits) 8) where
+theorem cbcEncryptChained_implies : (seqArm (ecbCore true) (ecbSpec true) cbcEncChained).Implies
+    (Proof.Cast5.modeScratchContract (Arm.abi.withConsts ecbConsts) Spec.Cast5.cbcChainedSig 39
+      (Proof.Cast5.cbcChainedPre Arm.abi.ptrBits) (Proof.Cast5.cbcEncChainedPost Arm.abi.ptrBits) 8) where
   pre s h := by
     unfold Proof.Cast5.modeScratchContract Sig.scratchContract at h
     obtain ⟨h1, hk⟩ := pre_consts.mp h
-    refine seqArm_pre_roR' rfl rfl rfl (rd' := (stripConsts ecbConsts s).rd) ?_ (fun r hr => stripConsts_rd_mem hr)
-      (tabsOk_of hk (by decide))
-    sig_pre [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch, Spec.Cast5.cbcSig, Spec.Cast5.cbcPre, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h1
+    refine seqArm_pre_rwR' rfl (len := (· * 8)) (fun n => rfl) (rd' := (stripConsts ecbConsts s).rd) ?_
+      (fun r hr => stripConsts_rd_mem hr) (tabsOk_of hk (by decide))
+    sig_pre [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch, Spec.Cast5.cbcChainedSig, Proof.Cast5.cbcChainedPre, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h1
     exact h1
   post s s' _ h := by
     unfold Proof.Cast5.modeScratchContract Sig.scratchContract
     refine post_consts.mpr ?_
-    sig_post [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch, Spec.Cast5.cbcSig, Proof.Cast5.cbcEncPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-    have e := cbcEnc_post h
+    sig_post [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch, Spec.Cast5.cbcChainedSig, Proof.Cast5.cbcEncChainedPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+    have e := cbcEncChained_post h
     obtain ⟨e1, e2, e3, -, -⟩ := args_rounds (c := ecbCore true) rfl s
     simp only [show (ecbCore true).bs = 8 from rfl, e1, e2, e3] at e
     simp only [ecbSpec, Proof.Cast5.dirCipher, ↓reduceIte, State.addr, blocksOf_eq'] at e
@@ -264,44 +298,44 @@ theorem cbcEncrypt_implies : (seqArm (ecbCore true) (ecbSpec true) cbcEnc).Impli
   pub s₁ s₂ _ _ h := by
     unfold Proof.Cast5.modeScratchContract Sig.scratchContract at h
     obtain ⟨h, hsy⟩ := pub_consts.mp h
-    sig_pub [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch, Spec.Cast5.cbcSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
+    sig_pub [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch, Spec.Cast5.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
     exact seqArm_pubR h fun x hx => symAddr_eq_iff.mp (hsy x hx)
   sat := cbc_sat _
 
-theorem cbcEncrypt_verified : Verified Arm.target cbcEncrypt
-    (Proof.Cast5.modeScratchContract (Arm.abi.withConsts ecbConsts) Spec.Cast5.cbcSig 39
-      (Spec.Cast5.cbcPre Arm.abi.ptrBits) (Proof.Cast5.cbcEncPost Arm.abi.ptrBits) 8) :=
-  seq_verified (ecbSpec true) (cbcEnc_ok _) cbcEncryptTaint cbcEncrypt_implies
+theorem cbcEncryptChained_verified : Verified Arm.target cbcEncryptChained
+    (Proof.Cast5.modeScratchContract (Arm.abi.withConsts ecbConsts) Spec.Cast5.cbcChainedSig 39
+      (Proof.Cast5.cbcChainedPre Arm.abi.ptrBits) (Proof.Cast5.cbcEncChainedPost Arm.abi.ptrBits) 8) :=
+  seq_verified (ecbSpec true) (cbcEncChained_ok _) cbcEncryptChainedTaint cbcEncryptChained_implies
 
-/-- `cbcEncrypt`, with its scratch buffer on the stack (zeroed on return). -/
-theorem cbcEncrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 cbcEncrypt)
-      (Spec.Cast5.cbcEncryptContract (Arm.abi.withConsts ecbConsts) 336) :=
-  Arm.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcSig) (nm := "scratch")
-    (e := .u64) (n := 39) (pre := Spec.Cast5.cbcPre Arm.abi.ptrBits) (post := Proof.Cast5.cbcEncPost Arm.abi.ptrBits)
+/-- `cbcEncryptChained`, with its scratch buffer on the stack (zeroed on return). -/
+theorem cbcEncryptChained_framed :
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 cbcEncryptChained)
+      (Spec.Cast5.cbcEncryptChainedContract (Arm.abi.withConsts ecbConsts) 336) :=
+  Arm.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcChainedSig) (nm := "scratch")
+    (e := .u64) (n := 39) (pre := Proof.Cast5.cbcChainedPre Arm.abi.ptrBits) (post := Proof.Cast5.cbcEncChainedPost Arm.abi.ptrBits)
     (wa := true) (stack := 8) (m := 1) (bytes := 328)
-    cbcEncrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (fun vs m₁ m₂ hl _ h => Proof.Cast5.modePre_local _ vs m₁ m₂ hl h) (Proof.Cast5.cbcEncPost_local _)
-    (Proof.Cast5.cbcEncPostOut_local _) (cbcFrame_sat _)
+    cbcEncryptChained_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    (fun vs m₁ m₂ hl _ h => Proof.Cast5.modePre_local _ vs m₁ m₂ hl h) (Proof.Cast5.cbcEncChainedPost_local _)
+    (Proof.Cast5.cbcEncChainedPostOut_local _) (cbcFrame_sat _)
 
-theorem cbcDecryptTaint : SeqTaint (ecbCore false) cbcDec :=
+theorem cbcDecryptChainedTaint : SeqTaint (ecbCore false) cbcDecChained :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
-theorem cbcDecrypt_implies : (seqArm (ecbCore false) (ecbSpec false) cbcDec).Implies
-    (Proof.Cast5.modeScratchContract (Arm.abi.withConsts ecbConsts) Spec.Cast5.cbcSig 39
-      (Spec.Cast5.cbcPre Arm.abi.ptrBits) (Proof.Cast5.cbcDecPost Arm.abi.ptrBits) 8) where
+theorem cbcDecryptChained_implies : (seqArm (ecbCore false) (ecbSpec false) cbcDecChained).Implies
+    (Proof.Cast5.modeScratchContract (Arm.abi.withConsts ecbConsts) Spec.Cast5.cbcChainedSig 39
+      (Proof.Cast5.cbcChainedPre Arm.abi.ptrBits) (Proof.Cast5.cbcDecChainedPost Arm.abi.ptrBits) 8) where
   pre s h := by
     unfold Proof.Cast5.modeScratchContract Sig.scratchContract at h
     obtain ⟨h1, hk⟩ := pre_consts.mp h
-    refine seqArm_pre_roR' rfl rfl rfl (rd' := (stripConsts ecbConsts s).rd) ?_ (fun r hr => stripConsts_rd_mem hr)
-      (tabsOk_of hk (by decide))
-    sig_pre [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch, Spec.Cast5.cbcSig, Spec.Cast5.cbcPre, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h1
+    refine seqArm_pre_rwR' rfl (len := (· * 8)) (fun n => rfl) (rd' := (stripConsts ecbConsts s).rd) ?_
+      (fun r hr => stripConsts_rd_mem hr) (tabsOk_of hk (by decide))
+    sig_pre [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch, Spec.Cast5.cbcChainedSig, Proof.Cast5.cbcChainedPre, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h1
     exact h1
   post s s' _ h := by
     unfold Proof.Cast5.modeScratchContract Sig.scratchContract
     refine post_consts.mpr ?_
-    sig_post [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch, Spec.Cast5.cbcSig, Proof.Cast5.cbcDecPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-    have e := cbcDec_post h
+    sig_post [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch, Spec.Cast5.cbcChainedSig, Proof.Cast5.cbcDecChainedPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+    have e := cbcDecChained_post h
     obtain ⟨e1, e2, e3, -, -⟩ := args_rounds (c := ecbCore false) rfl s
     simp only [show (ecbCore false).bs = 8 from rfl, e1, e2, e3] at e
     simp only [ecbSpec, Proof.Cast5.dirCipher, Bool.false_eq_true, ↓reduceIte, State.addr, blocksOf_eq'] at e
@@ -309,25 +343,25 @@ theorem cbcDecrypt_implies : (seqArm (ecbCore false) (ecbSpec false) cbcDec).Imp
   pub s₁ s₂ _ _ h := by
     unfold Proof.Cast5.modeScratchContract Sig.scratchContract at h
     obtain ⟨h, hsy⟩ := pub_consts.mp h
-    sig_pub [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch, Spec.Cast5.cbcSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
+    sig_pub [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch, Spec.Cast5.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
     exact seqArm_pubR h fun x hx => symAddr_eq_iff.mp (hsy x hx)
   sat := cbc_sat _
 
-theorem cbcDecrypt_verified : Verified Arm.target cbcDecrypt
-    (Proof.Cast5.modeScratchContract (Arm.abi.withConsts ecbConsts) Spec.Cast5.cbcSig 39
-      (Spec.Cast5.cbcPre Arm.abi.ptrBits) (Proof.Cast5.cbcDecPost Arm.abi.ptrBits) 8) :=
-  seq_verified (ecbSpec false) (cbcDec_ok _) cbcDecryptTaint cbcDecrypt_implies
+theorem cbcDecryptChained_verified : Verified Arm.target cbcDecryptChained
+    (Proof.Cast5.modeScratchContract (Arm.abi.withConsts ecbConsts) Spec.Cast5.cbcChainedSig 39
+      (Proof.Cast5.cbcChainedPre Arm.abi.ptrBits) (Proof.Cast5.cbcDecChainedPost Arm.abi.ptrBits) 8) :=
+  seq_verified (ecbSpec false) (cbcDecChained_ok _) cbcDecryptChainedTaint cbcDecryptChained_implies
 
-/-- `cbcDecrypt`, with its scratch buffer on the stack (zeroed on return). -/
-theorem cbcDecrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 cbcDecrypt)
-      (Spec.Cast5.cbcDecryptContract (Arm.abi.withConsts ecbConsts) 336) :=
-  Arm.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcSig) (nm := "scratch")
-    (e := .u64) (n := 39) (pre := Spec.Cast5.cbcPre Arm.abi.ptrBits) (post := Proof.Cast5.cbcDecPost Arm.abi.ptrBits)
+/-- `cbcDecryptChained`, with its scratch buffer on the stack (zeroed on return). -/
+theorem cbcDecryptChained_framed :
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 cbcDecryptChained)
+      (Spec.Cast5.cbcDecryptChainedContract (Arm.abi.withConsts ecbConsts) 336) :=
+  Arm.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcChainedSig) (nm := "scratch")
+    (e := .u64) (n := 39) (pre := Proof.Cast5.cbcChainedPre Arm.abi.ptrBits) (post := Proof.Cast5.cbcDecChainedPost Arm.abi.ptrBits)
     (wa := true) (stack := 8) (m := 1) (bytes := 328)
-    cbcDecrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (fun vs m₁ m₂ hl _ h => Proof.Cast5.modePre_local _ vs m₁ m₂ hl h) (Proof.Cast5.cbcDecPost_local _)
-    (Proof.Cast5.cbcDecPostOut_local _) (cbcFrame_sat _)
+    cbcDecryptChained_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    (fun vs m₁ m₂ hl _ h => Proof.Cast5.modePre_local _ vs m₁ m₂ hl h) (Proof.Cast5.cbcDecChainedPost_local _)
+    (Proof.Cast5.cbcDecChainedPostOut_local _) (cbcFrame_sat _)
 
 theorem ofbTaint : SeqTaint (ecbCore true) VG.Impl.Modes.Arm.ofb :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩

@@ -1,14 +1,14 @@
 module
+public import VerifiedGarbage.Proof.X25519.AArch64.Word.Formula
+public import VerifiedGarbage.Proof.X25519.AArch64.Word.Head
+public import VerifiedGarbage.Proof.X25519.AArch64.Setup
+public import VerifiedGarbage.Spec.X25519.Contract
 
-public import VerifiedGarbage.Proof.X25519.AArch64.Word.Ladder
-public import VerifiedGarbage.Proof.X25519.AArch64.Top
+import VerifiedGarbage.Proof.X25519.AArch64.Top
 import VerifiedGarbage.Proof.Ed25519.AArch64.DecodeBits
 import VerifiedGarbage.Proof.Ed25519.Bytes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! Decode RFC 7748 inputs into four-word fields. -/
 
@@ -55,27 +55,35 @@ theorem decode_ok {base p : Addr} {s : State} (hs : Scratch s base)
     (hp : s.gpr .x2 = p)
     (hr : ∀ d, d+8 ≤ 32 → InRegions (s.rd ++ s.wr) (off p d) 8) :
     WP isa (.block (loadY ++ store4 (offset 0))) s fun t =>
-      Keep base s t ∧ env t.mem base 0 = toFe (decodeUCoordinate (bytesAt s.mem p 32)) := by
+      Keep base s t ∧ env t.mem base 0 = toFe (decodeUCoordinate (bytesAt s.mem p 32)) ∧
+      fe t.mem base (offset 0) < 2 ^ 255 := by
   rw [WP.block_append_iff]
   refine WP.mono (loadY_ok s p hp hr) fun a ⟨av,ka⟩ => ?_
   refine WP.mono (store4_ok (hs.of_keeps ka (by decide)) (slot_rangeWith (large := false) 0)) fun t ht => ?_
   subst t
   refine ⟨⟨fun r hr => ka.gpr r (fun hh => hr (by simp only [clob, List.mem_cons, List.not_mem_nil, or_false] at *; grind)),
-    ka.rd,ka.wr,ka.sp,?_,⟩,?_,⟩
+    ka.rd,ka.wr,ka.sp,?_,⟩,?_,?_⟩
   · rw [ka.mem]
     exact (st4_outside _ _ (by decide : offset 0+32<2^64) _ _ _ _).mono (by decide) (by decide)
   · change toFe (fe _ _ _) = _
     rw [fe_st4 _ _ (by decide), av, VG.Proof.Ed25519.decodeLE_eq,
       decodeUCoordinate_eq (length_bytesAt _ _ _)]
     rfl
+  · rw [fe_st4 _ _ (by decide), av]
+    exact Nat.mod_lt _ (by decide)
 
 theorem init_ok {base : Addr} {s : State} {x : Fe} (hs : Scratch s base)
-    (hx : env s.mem base 0 = x) :
+    (hx : env s.mem base 0 = x) (h0 : fe s.mem base (offset 0) < 2 ^ 255) :
     WP isa (.block (fieldCode ([.copy 3 0, .const 1 1, .const 2 0, .const 4 1, .const 18 121665] : List FieldOp) ++
       ([.movz .x .x2 0 0, VG.Impl.Ed25519.AArch64.st .x2 768] : List Instr))) s fun t =>
-      LoopKeep base s t ∧ Good (env t.mem base) x (init x) ∧ word t.mem base 768 = 0 := by
+      LoopKeep base s t ∧ Good (env t.mem base) x (init x) ∧ word t.mem base 768 = 0 ∧
+      Small t.mem base fun i => decide (1 ≤ i.val ∧ i.val ≤ 4) := by
   rw [WP.block_append_iff]
-  refine WP.mono (fieldCode_ok _ hs) fun a ⟨ka,ea⟩ => ?_
+  have hS : Small s.mem base fun i => decide (i = 0) := fun i hi => by
+    have : i = 0 := of_decide_eq_true hi
+    subst this
+    omega
+  refine WP.mono (fieldCode_okS _ hs hS) fun a ⟨ka,ea,sa⟩ => ?_
   have ga := initGood (env s.mem base) x hx
   rw [← ea] at ga
   rw [WP.block_cons_iff]
@@ -83,9 +91,12 @@ theorem init_ok {base : Addr} {s : State} {x : Fe} (hs : Scratch s base)
   have kb : Keeps [.x2] a (a.write .x .x2 0) :=
     ⟨fun r hr => RegUpd.gpr_write_of_ne _ _ _ (by simpa only [List.mem_singleton] using hr),rfl,rfl,rfl,rfl⟩
   have kab := (LoopKeep.of_field ka).trans (LoopKeep.of_keeps kb (by decide))
-  refine WP.mono (storeSwap_ok (kab.scratch hs)) fun t ⟨kt,et,wt,_⟩ => ?_
+  refine WP.mono (storeSwap_ok (kab.scratch hs)) fun t ⟨kt,et,wt,_,ot⟩ => ?_
+  have sa' : Small (a.write .x .x2 0).mem base
+      (smallAfterOps [.copy 3 0, .const 1 1, .const 2 0, .const 4 1, .const 18 121665] fun i => decide (i = 0)) := by
+    rw [RegUpd.mem_write]; exact sa
   exact ⟨kab.trans kt, by rw [et,RegUpd.mem_write]; exact ga,
-    wt.trans (RegUpd.gpr_write_self _ _ _ _)⟩
+    wt.trans (RegUpd.gpr_write_self _ _ _ _), (sa'.frame ot (by decide)).mono (by decide)⟩
 
 
 theorem LoopKeep.kp {base : Addr} {s t : State} (h : LoopKeep base s t) :
@@ -119,7 +130,8 @@ theorem setup_ok {base sc pt : Addr} {s : State} (hs : Sc base s)
       word t.mem base 768 = 0 ∧ t.gpr .x1 = s.gpr .x0 ∧
       (∀ i < 255, t.mem (off base (bitOffset+i)) = BitVec.ofNat 8 (bit (decodeScalar25519 (bytesAt s.mem sc 32)) i)) ∧
       (∀ i < 6, word t.mem base (8*i) = s.gpr (VG.Impl.X25519.AArch64.saved.getD i .x19)) ∧
-      Kp (clob ++ ([.x0,.x1,.x19] : List Reg)) s t := by
+      Kp (clob ++ ([.x0,.x1,.x19] : List Reg)) s t ∧
+      Small t.mem base (fun i => decide (1 ≤ i.val ∧ i.val ≤ 4)) := by
   rw [VG.Impl.X25519.AArch64.Word.setup]
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
@@ -150,13 +162,13 @@ theorem setup_ok {base sc pt : Addr} {s : State} (hs : Sc base s)
   rw [WP.block_append_iff]
   refine WP.mono (decode_ok hsc (by rw [kc.gpr _ (by decide),kb.gpr _ (by decide),ka.gpr _ (by simp),h2])
     (fun d hd => ⟨_,List.mem_append_left _ (by rw [kc.rd,kb.rd,ka.rd]; exact hpr),
-      Offset.contains_base pt (by omega) (by omega)⟩)) fun d ⟨kd,xd⟩ => ?_
+      Offset.contains_base pt (by omega) (by omega)⟩)) fun d ⟨kd,xd,bd⟩ => ?_
   rw [bp] at xd
-  refine WP.mono (init_ok (kd.scr hsc) xd) fun t ⟨kt,gt,wt⟩ => ?_
+  refine WP.mono (init_ok (kd.scr hsc) xd bd) fun t ⟨kt,gt,wt,st⟩ => ?_
   have ft : Outside base 48 728 b.mem t.mem :=
     (fc.mono (by decide) (by decide)).trans
       ((kd.mem.mono (by decide) (by decide)).trans (kt.mem.mono (by decide) (by decide)))
-  refine ⟨kt.scratch (kd.scr hsc),gt,wt,?_,?_,?_,?_,⟩
+  refine ⟨kt.scratch (kd.scr hsc),gt,wt,?_,?_,?_,?_,st⟩
   · rw [kt.gpr _ (by decide) (by decide), kd.gpr _ (by decide),oc,
       kb.gpr _ (by decide),ka.gpr _ (by simp)]
   · intro i hi

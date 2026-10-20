@@ -1,12 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.AArch64.KeyStore
 public import VerifiedGarbage.Proof.Camellia.AArch64.KeyChecks2
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Camellia.AArch64.Core
+public import VerifiedGarbage.Proof.Camellia.Common
+import VerifiedGarbage.Proof.Camellia.AArch64.Crypt8
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # A pair of rounds of the key schedule on AArch64
@@ -73,9 +71,9 @@ theorem spread_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : Ke
     (fun j hj => ⟨by simp only [keyCfg] at hj; omega, by
       simp only [keyCfg] at hj ⊢; simp only [W, Nat.zero_add, hj, ↓reduceIte]⟩)
   simp only [keyCfg] at hb' hkp f'
-  have hall : ∀ r, r ∉ layerWrites → ((spread d).all fun i => dstOf i != some r) = true := fun r hr => by
+  have hall : ∀ r, r ∉ layerWrites → ((spread d).all fun i => !clobbers i r) = true := fun r hr => by
     have h := not_layerWrites r hr
-    have : (layerKeep.all fun r => (spread d).all fun i => dstOf i != some r) = true := by
+    have : (layerKeep.all fun r => (spread d).all fun i => !clobbers i r) = true := by
       rcases hd with rfl | rfl <;> decide +kernel
     exact List.all_eq_true.mp this r h
   have hkeep : ∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r := fun r hr => o' r (hall r hr)

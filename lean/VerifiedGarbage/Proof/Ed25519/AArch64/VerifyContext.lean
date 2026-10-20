@@ -1,13 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PointDecode
-public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
-import VerifiedGarbage.Proof.Ed25519.Group.Decode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
+public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyTbl
+import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! The verification inputs remain readable and outside the workspace. -/
 

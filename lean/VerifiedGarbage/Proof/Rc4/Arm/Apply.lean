@@ -1,13 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Rc4.Arm.ApplyLoop
-public import VerifiedGarbage.Proof.Rc4.Arm.Init
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Rc4.Arm.Contract
+import VerifiedGarbage.Proof.Rc4.Arm.Init
 import VerifiedGarbage.Proof.Rc4.Stream
+import VerifiedGarbage.Proof.Rc4.Table
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # RC4 on ARMv7: the stream function -/
 

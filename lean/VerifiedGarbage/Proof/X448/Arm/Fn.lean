@@ -1,14 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.X448.Arm.Mul
-public import VerifiedGarbage.Proof.X448.Arm.AddSub
-import VerifiedGarbage.Proof.X448.Arm.Small
 public import VerifiedGarbage.TCB.Arm.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.X448.Arm.Field
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: the field functions

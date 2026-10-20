@@ -1,5 +1,0 @@
-name = "Botan ECDSA signing vectors with explicit nonces"
-directories = ["botan-ecdsa-prob"]
-url = "https://raw.githubusercontent.com/randombit/botan/f15e32463e984d525434d52c3e6a4660a29ef772/src/tests/data/pubkey/ecdsa_prob.vec"
-sha256 = "6501175904a37965d92893c6c49629101c28d806457caf9e1d3dc2dba0ffe42a"
-retrieved = 2026-10-14

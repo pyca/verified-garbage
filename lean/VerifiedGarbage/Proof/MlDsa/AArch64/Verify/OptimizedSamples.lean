@@ -1,17 +1,13 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.OptimizedSamples
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesTwoTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesBall
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesBall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesTwo
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesFourTiming
 
 @[expose] public section
 

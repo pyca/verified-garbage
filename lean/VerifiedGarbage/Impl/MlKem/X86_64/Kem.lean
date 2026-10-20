@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-public import VerifiedGarbage.Spec.MlKem
 public import VerifiedGarbage.Spec.MlKem.Contract
 
 /-!
@@ -44,11 +43,13 @@ structure Kem where
   `pZ`). -/
   pU : Nat
   pZ : Nat
-  /-- The compression and decompression to `d_u` and `d_v`. -/
-  ceN : String
-  ce : Prog isa
-  ddN : String
-  dd : Prog isa
+  /-- The compression and decompression to `d_u` and `d_v`, for the
+  implementations `cs` of `vg_mlkem_compress_encode` and
+  `vg_mlkem_decode_decompress`. -/
+  ceN : Codecs → String
+  ce : Codecs → Prog isa
+  ddN : Codecs → String
+  dd : Codecs → Prog isa
 
 namespace Kem
 
@@ -74,14 +75,14 @@ def oCT : Nat := oP L.pCT
 abbrev aS (i j : Nat) : Ptr := pS (L.pA + L.k * i + j)
 
 /-- `ByteEncode_d(Compress_d(f))` to `out`, for `d = d_u` or `d_v`. -/
-def ceAt (f : Ptr) (d : Nat) (out : Ptr) : Prog isa := ceCall L.ceN L.ce f d out
+def ceAt (cs : Codecs) (f : Ptr) (d : Nat) (out : Ptr) : Prog isa := ceCall (L.ceN cs) (L.ce cs) f d out
 
 /-- `NTT⁻¹(ŝ^⊺ ∘ NTT(u'))` to `w`, for the `k` polynomials `ŝ` from `s` and
 `u'` from `u`, with the working space `z` (4096 bytes):
 `vg_mlkem*_decrypt_mul`, with the arithmetic of `A`. -/
 def decMulAt (A : Arith) (w s u z : Ptr) : Prog isa :=
   .seq (.block (lea .rdi w ++ lea .rsi s ++ lea .rdx u ++ lea .rcx z))
-    (.call (L.p.fn "decrypt_mul" ++ A.sfx) (decryptMul A.bodies L.k))
+    (.call (L.p.fn "decrypt_mul" ++ A.sfx) (A.decMul L.k))
 
 /-- `NTT⁻¹(Â^⊺ ∘ NTT(y))` and `NTT⁻¹(t̂^⊺ ∘ NTT(y))` to the `k + 1`
 polynomials from `u`, for the `k²` polynomials of `Â` from `a` and the `k`
@@ -89,10 +90,18 @@ of `t̂` from `t` and of `y` from `y`, with the working space `z` (4096
 bytes): `vg_mlkem*_encrypt_mul`, with the arithmetic of `A`. -/
 def encMulAt (A : Arith) (u a t y z : Ptr) : Prog isa :=
   .seq (.block (lea .rdi u ++ lea .rsi a ++ lea .rdx t ++ lea .rcx y ++ lea .r8 z))
-    (.call (L.p.fn "encrypt_mul" ++ A.sfx) (encryptMul A.bodies L.k))
+    (.call (L.p.fn "encrypt_mul" ++ A.sfx) (A.encMul L.k))
+
+/-- `ŝ = NTT(s)` in place and `t̂ = Â ∘ ŝ + NTT(e)` to the `k` polynomials
+from `t`, for the `k` polynomials of `s` from `s` and of `e` from `e` and
+the `k²` of `Â` from `a`, with the working space `z` (4096 bytes):
+`vg_mlkem*_keygen_mul`, with the arithmetic of `A`. -/
+def kgMulAt (A : Arith) (t s a e z : Ptr) : Prog isa :=
+  .seq (.block (lea .rdi t ++ lea .rsi s ++ lea .rdx a ++ lea .rcx e ++ lea .r8 z))
+    (.call (L.p.fn "keygen_mul" ++ A.sfx) (keygenMul A.bodies L.k))
 
 /-- `Decompress_d(ByteDecode_d(b))` to `f`, for `d = d_u` or `d_v`. -/
-def ddAt (b : Ptr) (d : Nat) (f : Ptr) : Prog isa := ddCall L.ddN L.dd b d f
+def ddAt (cs : Codecs) (b : Ptr) (d : Nat) (f : Ptr) : Prog isa := ddCall (L.ddN cs) (L.dd cs) b d f
 
 /-- Entries `e, …, e + n - 1` of `Â` (entry `e = k i + j`), four at a time
 (with `pW` as the working space) and the last `n mod 4` one at a time. -/
@@ -108,13 +117,6 @@ def samples (c : Callee4) : Prog isa := L.ents c 0 (L.k * L.k)
 
 end Kem
 
-/-- `f[0] ×_T g[0] + ⋯ + f[n - 1] ×_T g[n - 1]` to polynomial 15 (with 16
-for the products), accumulated left to right. -/
-def dotN (A : Arith) (f g : Nat → Ptr) : Nat → Prog isa
-  | 0 => .block []
-  | 1 => mulAt A (pS 15) (f 0) (g 0)
-  | n + 2 => .seq (dotN A f g (n + 1)) (.seq (mulAt A (pS 16) (f (n + 1)) (g (n + 1))) (addAt A (pS 15) (pS 16)))
-
 /-- ML-KEM-768: `k = 3`, `d_u = 10`, `d_v = 4`; 28 polynomials in `scratch`:
 `Â` in polynomials 6–14, the working space from 17, the outputs of `PRF₂`
 in 20, and the ciphertext (1088 bytes) in 26 and 27; in encryption, `u` and
@@ -128,9 +130,9 @@ def kem768 : Kem where
   pCT := 26
   pU := 16
   pZ := 21
-  ceN := "vg_mlkem_compress_encode"
-  ce := compressEncode
-  ddN := "vg_mlkem_decode_decompress"
-  dd := decodeDecompress
+  ceN := Codecs.ceN
+  ce := Codecs.ce
+  ddN := Codecs.ddN
+  dd := Codecs.dd
 
 end VG.Impl.MlKem.X86_64

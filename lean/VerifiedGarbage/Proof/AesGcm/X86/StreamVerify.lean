@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.StreamFinish
-meta import VerifiedGarbage.Proof.AesGcm.X86.StreamFinish
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+meta import VerifiedGarbage.Proof.AesGcm.X86.StreamFinish
 meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on x86: `vg_aes_gcm_stream_verify`
@@ -117,7 +117,7 @@ theorem streamVerify_pc (p : BitVec 32 × (Nat → BitVec 32)) :
       tl.mem, by rw [tl.rd, h₁.rd], by rw [tl.wr, h₁.wr], by rw [tl.mem, hv (8, tglO) (by simp), a8 h₁.pub, ofNat_toNat32],
       by rw [tl.mem, hv (7, tpO) (by simp), a7 h₁.pub], by rw [hz, hok]⟩) ?_
   refine Pc.seq (Q := VOut p) (Pc.ite (!ok) (fun _ _ ⟨_, h⟩ => h.zf) (fun hb => ?_) (fun hb => ?_)) ?_
-  -- A tag length §5.2.1.2 does not allow.
+  -- A tag length `tagLenOk` does not allow.
   · have hf : ok = false := by simpa using hb
     refine Pc.taint [] (fun s₀ s ⟨s₁, h⟩ => ?_) (fun _ _ _ _ _ _ _ h => by simp at h) (by taint_decide)
     have he := h.fin.env
@@ -134,7 +134,7 @@ theorem streamVerify_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     have ht := hok
     rw [hT] at ht
     have ht' : 1 ≤ (p.2 8).toNat ∧ (p.2 8).toNat ≤ 16 := by
-      simp only [Spec.Gcm.tagLenOk, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true, decide_eq_true_eq] at ht
+      simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at ht
       omega
     obtain ⟨t1, t16⟩ := ht'
     -- The received tag copied.

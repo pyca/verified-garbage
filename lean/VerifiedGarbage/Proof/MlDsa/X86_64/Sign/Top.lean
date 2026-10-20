@@ -1,12 +1,13 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Sign
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Lay
+public import VerifiedGarbage.Proof.MlDsa.Sign.Leak
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Hash
-public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Hash
+import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on x86-64: the function's contract, layout, entry and exit

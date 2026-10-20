@@ -1,18 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Word
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailBank
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailRun
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveCore
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableMemory
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailTraversal
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalCorrect
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## From `Mem.lean` -/
 

@@ -1,14 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductPassMemory
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductPassMemory
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
+public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryBankField
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSliceComposition
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryBankField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSliceComposition
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankField
 
 /-! ## From `ProductMemoryValues.lean` -/
 

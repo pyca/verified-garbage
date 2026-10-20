@@ -1,14 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareWide
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBlock
-public import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRow
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! ## AdxSquareWideWord -/
 
@@ -338,6 +334,9 @@ theorem row_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
       fun t ⟨hv, ho, h14, kt⟩ => ⟨?_, ?_, h14, (ka.trans kt).mono (by decide)⟩
     · rw [hm, ka.gpr (by decide)] at hv; exact hv
     · rw [hm] at ho; exact ho
+
+theorem row_rowOk : AdxSquare.RowOk AdxSquareWide.row :=
+  ⟨fun hs h8 h9 hbp h0 hw hZ hZb sb => row_ok hs h8 h9 hbp h0 hw hZ hZb sb⟩
 end VG.Proof.Bignum.X86_64.AdxSquareWide
 
 end

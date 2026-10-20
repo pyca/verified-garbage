@@ -1,13 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Loop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on x86-64: correctness
@@ -123,12 +120,16 @@ theorem stageB_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
       have h₁ := (P.R.sizesA hw).2.1; have h₂ := (P.R.sizesA hw).2.2.1; show _ = 8 * P.R.E.C.len; omega_using [h₂]
     have hwc : (cfgOf P).wide = false := hw
     simp only [hwc, Bool.false_eq_true, ite_false]
-    refine WP.mono (reduce_ok (P := P) hw hL hc hsi (by rw [← hD]; omega_using [hQD])) fun u₁ ⟨hc₁, _, hh₁⟩ => ?_
+    have hb₀ := hB_ge P
+    have hb₉ := hB_le P
+    refine WP.mono (reduce_ok (P := P) hw hk.2.2.1 hL hc hsi (by rw [← hD]; omega_using [hQD])) fun u₁ ⟨hc₁, _, hh₁⟩ => ?_
     refine WP.mono (initKV_ok hL hc₁) fun u₂ ⟨hc₂, hf₂, hv₂, hk₂⟩ =>
       ⟨hc₂, ?_, hk₂ _ (by nums), hv₂ _ (by nums), dgOk_narrow hL hw hc₂⟩
     simp only [hOf, hPart, hw, Bool.false_eq_true, ite_false]
     rw [bytesAt_frame hf₂ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint _ (by omega_using []) (by omega_using [hQ8, h6]) (by omega_using [])) (by omega_using [hQ8, h6])]
+      simp only [List.mem_singleton] at hr; subst hr
+      exact Offset.disjoint _ (.inr (by omega_using [hb₀])) (by omega_using [hQ8, h6, hb₉]) (by omega_using []))
+      (by omega_using [hQ8, h6, hb₉])]
     rw [hSpec, bits2octets_eqQ hB (by rw [hBOf, length_bytesAt]; exact hQD), hBOf, ← bytesAt_take m₀ L.dg hQD]
     exact hh₁
   · obtain ⟨hw9, hQ66, hD64, -⟩ := P.sizesW hw
@@ -172,17 +173,20 @@ theorem stageB_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
       rw [e₁, e₂]
 
 /-- `h` in the message, kept by the steps on `K` and `V`. -/
-theorem hOf_kvw (hL : L.Ok) {m m' : Mem} (hf : Frame (KVW L) m m') : hOf P L m' = hOf P L m := by
+theorem hOf_kvw (hL : L.Ok) (hLe : L.e = P.e) {m m' : Mem} (hf : Frame (KVW L) m m') : hOf P L m' = hOf P L m := by
   have hs := P.sizes
   simp only [hOf, hPart]
   cases hw : P.R.wide
   · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
+    obtain ⟨-, -, hb₃, -, -, -⟩ := hb_facts hw hLe
+    have hb₀ := hB_ge P
+    have hb₉ := hB_le P
     simp only [Bool.false_eq_true, ite_false]
-    refine bytesAt_frame hf (fun r hr => ?_) (by omega_using [hQ8, h6])
+    refine bytesAt_frame hf (fun r hr => ?_) (by omega_using [hQ8, h6, hb₉])
     simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact hL.stk_SCR (by omega_using [hQ8, h6])
-    · exact Offset.disjoint_base _ (by omega_using []) (by omega_using [hQ8, h6])
+    · exact hL.stk_SCR (by omega_using [hb₃])
+    · exact Offset.disjoint_base _ (by omega_using [hb₀]) (by omega_using [hQ8, h6, hb₉])
   · simp only [ite_true]
     refine congrArg (_ ++ ·) (bytesAt_frame hf (fun r hr => ?_) (by nums))
     have hD : Region.Sub ⟨L.dg, P.H.D⟩ L.DG := Region.sub_prefix (by rw [P.len])
@@ -194,7 +198,7 @@ theorem hOf_kvw (hL : L.Ok) {m m' : Mem} (hf : Frame (KVW L) m m') : hOf P L m' 
 theorem stageC_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u) (hq : QB P L m₀ u) :
     WP isa ((cfgOf P).rekeyFull 0) u fun u' => Ctx L g m₀ u' ∧ QC P L m₀ u' :=
   WP.mono (rekeyFull_ok hL (hok_of hk) hc 0) fun u' ⟨hc', hf', hk', hv'⟩ =>
-    ⟨(hOf_kvw hL hf').trans hq.h,
+    ⟨(hOf_kvw hL hk.2.2.1 hf').trans hq.h,
       by rw [hk', hq.k, hq.v, hq.h, hc.dBytes hL (by rw [hk.1])],
       by rw [hv', hk', hq.k, hq.v, hq.h, hc.dBytes hL (by rw [hk.1])], hq.dg.frameOf hL hk hf' kvw_apart⟩ |>
     fun h => ⟨hc', h⟩

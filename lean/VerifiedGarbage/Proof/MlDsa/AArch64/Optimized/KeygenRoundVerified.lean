@@ -1,19 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundMemory
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundSemantic
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundMemory
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundSemantic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+meta import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## From `KeygenRoundLoop.lean` -/
 

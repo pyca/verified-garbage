@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.PcLay
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Precomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSAES-PKCS1-v1_5 encryption with a precomputed public key on AArch64: the call

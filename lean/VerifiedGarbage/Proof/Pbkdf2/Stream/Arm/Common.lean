@@ -1,14 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hash
-public import VerifiedGarbage.Proof.Hmac.Generic.Common
-public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Framework.OmegaLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Calls of a streaming hash function on 32-bit ARM: the byte loops

@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
@@ -33,7 +29,7 @@ def isXmmRead : Instr → Bool
 
 /-- The `xmm` register an SSE instruction writes (it writes no other). -/
 def xopDst : XOp → XReg
-  | .bin _ d _ | .shift _ d _ | .pshufd d _ _ | .palignr d _ _ | .sha256rnds2 d _ | .sha1rnds4 d _ _
+  | .bin _ d _ | .shift _ d _ | .pshufd d _ _ | .palignr d _ _ | .pblendw d _ _ | .sha256rnds2 d _ | .sha1rnds4 d _ _
   | .movq d _ | .aeskeygenassist d _ _ | .pclmulqdq d _ _ => d
 
 /-- The `xmm` register an SSE instruction or a 128-bit load writes. -/

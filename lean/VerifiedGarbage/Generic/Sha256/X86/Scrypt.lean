@@ -1,9 +1,7 @@
 module
 
-import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 public import VerifiedGarbage.Proof.Scrypt.X86.Whole.Verified
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # scrypt (RFC 7914 §6) on x86, over SHA-256
@@ -24,16 +22,14 @@ namespace VG.Generic.Sha256.X86.Scrypt
 open VG.Proof.Scrypt.X86.Whole (pbkName pbkOf scrypt_verified scrypt_spSafe)
 
 def artifacts (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
-  { Spec.Scrypt.scryptApi with
-    name := Spec.Scrypt.scryptApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Scrypt.scryptApi.doc (notes := ["Derives both keys with `" ++ pbkName v ++ "` and runs \
+  Spec.Scrypt.scryptApi.artifact X86.target {
+    suffix := v.suffix
+    notes := ["Derives both keys with `" ++ pbkName v ++ "` and runs \
       scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the working \
       space of each. The arguments of each call and the next block are kept in a 36-byte stack \
       frame; our own arguments are read from the stack whenever they are needed, and the calls use \
-      the 80 bytes below the frame."])
+      the 80 bytes below the frame."]
     code := Impl.Scrypt.X86.scrypt (pbkName v) (pbkOf v)
-    contract := Spec.Scrypt.scryptContract X86.abi 116
     stack := 116
     verified := scrypt_verified v
     spSafe := scrypt_spSafe v

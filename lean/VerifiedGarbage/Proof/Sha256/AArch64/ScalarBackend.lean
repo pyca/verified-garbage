@@ -1,15 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Sha256.AArch64.Variant
+public import VerifiedGarbage.Proof.Sha256.AArch64.Compress
+import VerifiedGarbage.Proof.Sha256.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sha256.AArch64.Variant
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.Sha256.AArch64.Lit
-import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Compress
 meta import VerifiedGarbage.Proof.Sha256.AArch64.Lit
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 
@@ -38,5 +40,9 @@ def backend : Compress where
     (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀D hp) (by taint_decide))
   finalize224Keeps := instrs_keeps (by lit_decide)
   finalize224Depth := by lit_decide
+  oneShot256 := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2])
+    (fun _ _ _ _ hp => MdStream.AArch64.OneShot.agree₀ hp) (by taint_decide))
+  oneShot224 := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2])
+    (fun _ _ _ _ hp => MdStream.AArch64.OneShot.agree₀ hp) (by taint_decide))
 
 end VG.Proof.Sha256.AArch64.Scalar

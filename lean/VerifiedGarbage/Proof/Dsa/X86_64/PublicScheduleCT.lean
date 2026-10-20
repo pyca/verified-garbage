@@ -1,28 +1,27 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.CallHeadCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicFinishCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicFinishCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.PublicPrefix
-meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicPrefix
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicPrefix
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicCalls
-meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicCalls
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCheckCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.CallHeadCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicFinishCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicPrefix
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicCalls
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCheckCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.RsaPss
-meta import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
-meta import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Spec.RsaPss
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
+meta import VerifiedGarbage.Proof.Dsa.Encoding
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant time of DSA domain and public-key validation -/
 

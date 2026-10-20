@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Modes.X86_64.Group
 public import VerifiedGarbage.TCB.X86_64.Target
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Modes.X86_64.Setup
+import VerifiedGarbage.Proof.Modes.X86_64.Steps
+import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.AesCtr.Ctr32
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # CTR on x86-64, for any core: the whole function
@@ -67,12 +68,14 @@ theorem ctr_wp (cs : CoreSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.dataReg 
     (hn : (s₀.gpr r.n).toNat = n) (hs : ScrIn s₀ B c.ctrSlots) (hwP : (⟨P, 16⟩ : Region) ∈ s₀.wr)
     (hwD : (⟨D, 16 * n⟩ : Region) ∈ s₀.wr) (sPS : Region.Disjoint ⟨P, 16⟩ ⟨B, 8 * c.ctrSlots⟩)
     (sDS : Region.Disjoint ⟨D, 16 * n⟩ ⟨B, 8 * c.ctrSlots⟩) (sPD : Region.Disjoint ⟨P, 16⟩ ⟨D, 16 * n⟩)
-    (fitD : D.toNat + 16 * n ≤ 2 ^ 64) (hk : cs.KeyArgs s₀ [⟨B, 8 * c.ctrSlots⟩, ⟨P, 16⟩] k) :
+    (fitD : D.toNat + 16 * n ≤ 2 ^ 64) (hk : cs.KeyArgs s₀ [⟨B, 8 * c.ctrSlots⟩, ⟨P, 16⟩] k)
+    (hstk : StkOk c s₀ := by exact Or.inl rfl) :
     WP isa (c.ctr r) s₀ fun s' => (∀ x ∈ calleeSaved, s'.gpr x = s₀.gpr x) ∧
       Spec.Cbc.blocksAt s'.mem D n =
         Spec.Ctr.crypt (cs.cipher k) (bytesAt s₀.mem P 16) (Spec.Cbc.blocksAt s₀.mem D n) ∧
       bytesAt s'.mem P 16 = Spec.Ctr.next (bytesAt s₀.mem P 16) n ∧
-      Frame [⟨B, 8 * c.ctrSlots⟩, ⟨P, 16⟩, ⟨D, 16 * n⟩] s₀.mem s'.mem ∧ s'.rd = s₀.rd ∧ s'.wr = s₀.wr := by
+      Frame ([⟨B, 8 * c.ctrSlots⟩, ⟨P, 16⟩, ⟨D, 16 * n⟩] ++ stkList c (s₀.gpr .rsp)) s₀.mem s'.mem ∧
+      s'.rd = s₀.rd ∧ s'.wr = s₀.wr := by
   have hL := cs.layout
   have hsm := hL.small
   have hroom := hL.room
@@ -110,11 +113,11 @@ theorem ctr_wp (cs : CoreSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.dataReg 
   -- The key.
   refine WP.seq (WP.mono (cs.prepare_wp b₁ ⟨by rw [wr₁]; exact hs.wr, hs.fit⟩ List.mem_cons_self hk₁)
     fun s₂ ⟨ready₂, b₂, rsp₂, dr₂, lr₂, f₂, rd₂, wr₂⟩ => ?_)
+  rw [show s₁.gpr .rsp = s₀.gpr .rsp from g₁ _ (by decide) (by decide) (by decide) (Ne.symm dsp) (Ne.symm lsp)] at f₂
   have keep₂ : ∀ j, c.slots ≤ j → j < c.ctrSlots →
       s₂.mem.readW (wordAddr B j) 64 = s₁.mem.readW (wordAddr B j) 64 := fun j h1 h2 =>
-    f₂.readW (Region.contains_self _ _) (fun x hx => by
-      simp only [List.mem_singleton] at hx; subst hx
-      exact VG.Offset.disjoint_base B (by omega) (by omega)) (by decide)
+    f₂.readW (Region.contains_self _ _) (hstk.coreFrame_disj (VG.Offset.disjoint_base B (by omega) (by omega))
+      ⟨_, hs.wr, VG.Offset.sub_base B (by omega)⟩) (by decide)
   have wr₂' : s₂.wr = s₀.wr := by rw [wr₂, wr₁]
   have rd₂' : s₂.rd = s₀.rd := by rw [rd₂, rd₁]
   -- Any blocks?
@@ -133,7 +136,8 @@ theorem ctr_wp (cs : CoreSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.dataReg 
   have rd₃' : s₃.rd = s₀.rd := by rw [rd₃, rd₂']
   have wr₃' : s₃.wr = s₀.wr := by rw [wr₃, wr₂']
   let V := ctrVal s₀.mem P
-  have hp : GPre c s₃ B D n := ⟨⟨by rw [wr₃']; exact hs.wr, hs.fit⟩, by rw [wr₃']; exact hwD, sDS, fitD⟩
+  have hp : GPre c s₃ B D n :=
+    ⟨⟨by rw [wr₃']; exact hs.wr, hs.fit⟩, by rw [wr₃']; exact hwD, sDS, fitD, hstk.congr rsp₃ wr₃'⟩
   -- The groups.
   refine WP.seq (WP.mono (M := isa) (Q := GDone cs s₃ B D n k V)
     (WP.ite (decide (n = 0)) (by simp [X86_64.eval, hz₃]) (fun h0 => ?_) (fun h0 => ?_)) fun s₄ d₄ => ?_)
@@ -173,33 +177,41 @@ theorem ctr_wp (cs : CoreSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.dataReg 
     · exact hsaved 3 (by decide)
     · exact hsaved 4 (by decide)
     · exact hsaved 5 (by decide)
-  · have subCore : ∀ x ∈ [coreRegion c B], Region.Sub x ⟨B, 8 * c.ctrSlots⟩ := fun x hx => by
-      simp only [List.mem_singleton] at hx; subst hx; exact Region.sub_prefix (by omega)
-    have ht : (bytesAt s₀.mem P 16).length = 16 := by simp [bytesAt]
+  · have ht : (bytesAt s₀.mem P 16).length = 16 := by simp [bytesAt]
     rw [m₅, ctr_of_dinv (cs.cipher_len k) ht d₄.data, mem₃,
-      cbcBlocks_frame f₂ (fun x hx => sDS.sub_right (subCore x hx)),
+      cbcBlocks_frame f₂ (hstk.coreFrame_disj (sDS.sub_right (Region.sub_prefix (by omega))) ⟨_, hwD, fun _ h => h⟩),
       cbcBlocks_frame f₁' (fun x hx => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
         rcases hx with rfl | rfl
         · exact sDS
         · exact sPD.symm)]
-  · rw [m₅, bytesAt_frame d₄.frame (fun x hx => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-        rcases hx with rfl | rfl
-        · exact sPS
-        · exact sPD) (by decide), mem₃,
-      bytesAt_frame f₂ (fun x hx => by
-        simp only [List.mem_singleton] at hx; subst hx; exact sPS.sub_right (Region.sub_prefix (by omega)))
+  · have pStk : ∀ x ∈ stkList c (s₀.gpr .rsp), Region.Disjoint ⟨P, 16⟩ x := hstk.disj ⟨_, hwP, fun _ h => h⟩
+    rw [m₅, bytesAt_frame d₄.frame (fun x hx => by
+        rcases List.mem_append.mp hx with hx | hx
+        · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+          rcases hx with rfl | rfl
+          · exact sPS
+          · exact sPD
+        · rw [rsp₃] at hx; exact pStk x hx) (by decide), mem₃,
+      bytesAt_frame f₂ (coreFrame_disj (sPS.sub_right (Region.sub_prefix (by omega))) pStk)
         (by decide), mem₁, bP₁, AesCtr.next_eq (by simp [bytesAt]), hn]
   · rw [m₅]
     refine ((f₁'.sub fun x hx => ⟨x, by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
         rcases hx with rfl | rfl <;> simp, fun _ h => h⟩).trans
-      (f₂.sub fun x hx => ⟨⟨B, 8 * c.ctrSlots⟩, List.mem_cons_self, by
-        simp only [List.mem_singleton] at hx; subst hx; exact Region.sub_prefix (by omega)⟩)).trans ?_
+      (f₂.sub fun x hx => by
+        obtain ⟨y, hy, hs⟩ := coreFrame_sub (rs := [⟨B, 8 * c.ctrSlots⟩])
+          ⟨_, List.mem_cons_self, Region.sub_prefix (by omega)⟩ x hx
+        refine ⟨y, ?_, hs⟩
+        rcases List.mem_append.mp hy with hy | hy
+        · simp only [List.mem_singleton] at hy; subst hy; simp
+        · exact List.mem_append_right _ hy)).trans ?_
     rw [← mem₃]
     exact d₄.frame.sub fun x hx => ⟨x, by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl <;> simp, fun _ h => h⟩
+      rw [rsp₃] at hx
+      rcases List.mem_append.mp hx with hx | hx
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+        rcases hx with rfl | rfl <;> simp
+      · exact List.mem_append_right _ hx, fun _ h => h⟩
 
 end VG.Proof.Modes.X86_64

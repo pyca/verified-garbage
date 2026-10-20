@@ -1,13 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.Init
 import VerifiedGarbage.Proof.Curve448.AArch64.Fast.MOp
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Ed448 verification on AArch64: storing a table entry

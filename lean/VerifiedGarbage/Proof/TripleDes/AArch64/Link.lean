@@ -2,33 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.ModeCore
+import VerifiedGarbage.Proof.TripleDes.AArch64.ModeCore
 public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Fb
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.AesSiv.Ctr32
-public import VerifiedGarbage.Proof.AesSiv.Words
-public import VerifiedGarbage.Proof.Cmac.Stream
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-public import VerifiedGarbage.Proof.Framework.CallLay
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Gcm.Bits
-public import VerifiedGarbage.Proof.Modes.AArch64.Xor
-public import VerifiedGarbage.Proof.Rc2.Select
-public import VerifiedGarbage.Proof.Rc2.Word
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bytes
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Initial
-public import VerifiedGarbage.Proof.TripleDes.AArch64.RoundFunction
-public import VerifiedGarbage.Proof.TripleDes.AArch64.SboxTable
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Store
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Tail
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Word
-public import VerifiedGarbage.Proof.TripleDes.Schedule
-public import VerifiedGarbage.Proof.TripleDes.Word
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.TripleDes.AArch64.SboxTable
 
 /-!
 # Triple DES's core for the modes on AArch64: the registers across the call
@@ -63,8 +42,8 @@ theorem crypt_eq (d : Direction) :
 
 /-- No instruction of the block function writes `r`. -/
 theorem dirBlock_keeps {r : Reg} (hr : r = .x25 ∨ r = .x26) (d : Direction) :
-    ∀ i ∈ instrs (dirBlock d), dstOf i ≠ some r := by
-  have h : ((instrs (dirBlock d)).all fun i => decide (dstOf i ≠ some .x25) && decide (dstOf i ≠ some .x26)) =
+    ∀ i ∈ instrs (dirBlock d), clobbers i r = false := by
+  have h : ((instrs (dirBlock d)).all fun i => decide (clobbers i .x25 = false) && decide (clobbers i .x26 = false)) =
       true := by
     cases d
     · change ((instrs encryptBlock).all _) = true
@@ -142,9 +121,9 @@ tactic_template "keeps_x30" : tactic => `(tactic| repeat (first
   | apply KeepsReg.loop
   | exact Modes.AArch64.keepsReg_of_regSafe (by decide)))
 
-theorem cbcEncrypt_keeps_x30 : KeepsReg .x30 cbcEncrypt := by keeps_x30
+theorem cbcEncryptChained_keeps_x30 : KeepsReg .x30 cbcEncryptChained := by keeps_x30
 
-theorem cbcDecrypt_keeps_x30 : KeepsReg .x30 cbcDecrypt := by keeps_x30
+theorem cbcDecryptChained_keeps_x30 : KeepsReg .x30 cbcDecryptChained := by keeps_x30
 
 theorem ofb_keeps_x30 : KeepsReg .x30 ofb := by keeps_x30
 

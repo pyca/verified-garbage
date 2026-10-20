@@ -4,12 +4,10 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Layout
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AddrArith
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Deterministic ECDSA on AArch64: addresses and registers
@@ -62,7 +60,7 @@ theorem Ctx.below_eq {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} {L : Lay dn E} {g :
 
 /-- Code that writes no callee-saved register and calls nothing keeps them. -/
 theorem WP.keepCs {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q)
-    (hc : (instrs c).all (fun i => preserved.all fun r => dstOf i != some r) = true)
+    (hc : (instrs c).all (fun i => preserved.all fun r => !clobbers i r) = true)
     (hn : c.noCalls = true) :
     WP isa c s fun s' => Q s' ∧ s'.sp = s.sp ∧ ∀ r ∈ preserved, s'.gpr r = s.gpr r := by
   obtain ⟨t, s', he, hq⟩ := h
@@ -75,7 +73,7 @@ writes only safe regions, keeps `Ctx`. -/
 theorem Ctx.of_keep {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} {L : Lay dn E} {g : Reg → BitVec 64} {m₀ : Mem} (hL : L.Ok) {t : State}
     (hc : Ctx L g m₀ t) {is : List Instr} {ws : List Region} {Q : State → Prop}
     (h : WP isa (.block is) t fun t' => t'.rd = t.rd ∧ t'.wr = t.wr ∧ Frame ws t.mem t'.mem ∧ Q t')
-    (hk : (instrs (.block is : Prog isa)).all (fun i => preserved.all fun r => dstOf i != some r) = true)
+    (hk : (instrs (.block is : Prog isa)).all (fun i => preserved.all fun r => !clobbers i r) = true)
     (hs : ∀ r ∈ ws, Safe L r) :
     WP isa (.block is) t fun t' => Ctx L g m₀ t' ∧ Frame ws t.mem t'.mem ∧ Q t' :=
   WP.mono_syms (WP.keepCs h hk rfl) fun _ ⟨⟨hrd, hwr, hf, hq⟩, hsp, hcs⟩ hsy =>

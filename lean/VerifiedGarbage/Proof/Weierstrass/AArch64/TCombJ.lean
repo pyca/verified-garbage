@@ -1,14 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.FprogJ
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJInvariant
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJFirst
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJStep
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJStep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJOut
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 @[expose] public section
 

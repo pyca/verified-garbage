@@ -1,11 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.X86.Lookup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Blowfish.X86.Run
+import VerifiedGarbage.Proof.Blowfish.Schedule
 
 /-!
 # Blowfish on x86 (32-bit): F
@@ -109,12 +106,21 @@ theorem step_run {sch : Nat} {S : BitVec 32} {s₀ : State} (E : FEnv sch S s₀
     rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide))
     fun t ⟨tm, tk⟩ => hQ t ((k.trans vk).trans tk |>.mono (by decide)) ?_
   rw [tm, vm, vbp, v7, hK]
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
-  · rw [hm]; rfl
-  all_goals
-    simp only [hm, Nat.reduceEqDiff, ite_false, ite_true, Nat.add_one_sub_one, Mem.readW_writeW_self32,
-      writeW_writeW32]
-    rfl
+  -- For any `j`, with `fAcc_step`: a case split on `j` would have the kernel
+  -- compare `fAcc … (1 - 1)` with `fAcc … 0` by evaluating the S-boxes.
+  have hprev : 0 < j → u.mem.readW (addr (s₀.gpr .ebp) fOff) 32 =
+      fAcc (scheduleAt s₀.mem (S.setWidth 64)) (s₀.mem.readW (addr (s₀.gpr .ebp) xlOff) 32) (j - 1) :=
+    fun h => by
+      rw [hm]; split
+      · omega
+      · exact Mem.readW_writeW_self32 _ _ _
+  have hmem : ∀ v, u.mem.writeW (addr (s₀.gpr .ebp) fOff) v = s₀.mem.writeW (addr (s₀.gpr .ebp) fOff) v :=
+    fun v => by
+      rw [hm]; split
+      · rfl
+      · exact writeW_writeW32 _ _ _ _
+  rw [hmem]
+  exact congrArg _ (fAcc_step _ _ hj _ hprev)
 
 theorem f_run {sch : Nat} {S : BitVec 32} {s : State} (E : FEnv sch S s) :
     WP isa (Impl.Blowfish.X86.f sch) s fun t =>

@@ -1,27 +1,29 @@
 module
 
 import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointEqual
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointEqual
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointEqual
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyPoints
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyPoints
-public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
-public import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
 import VerifiedGarbage.Proof.Ed25519.Window
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-meta import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointEqual
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyPoints
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
 meta import VerifiedGarbage.Proof.Ed25519.Window
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
-meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.X86_64.PointEqualCT`. -/
 

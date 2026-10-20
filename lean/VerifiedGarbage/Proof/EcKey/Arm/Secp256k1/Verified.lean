@@ -1,23 +1,33 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.Arm.Main
-meta import VerifiedGarbage.Proof.EcKey.Arm.Main
 public import VerifiedGarbage.Proof.EcKey.Arm.Secp256k1.Contract
-meta import VerifiedGarbage.Proof.EcKey.Arm.Secp256k1.Contract
 import VerifiedGarbage.Proof.EcKey.Arm.Secp256k1.Lit
-meta import VerifiedGarbage.Proof.EcKey.Arm.Secp256k1.Lit
 import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Verified
 public import VerifiedGarbage.Impl.EcKey.Secp256k1.Arm
-meta import VerifiedGarbage.Impl.EcKey.Secp256k1.Arm
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Spec.EcKey.Secp256k1
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
+meta import VerifiedGarbage.Proof.EcKey.Arm.Main
+meta import VerifiedGarbage.Proof.EcKey.Arm.Secp256k1.Contract
+meta import VerifiedGarbage.Proof.EcKey.Arm.Secp256k1.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Verified
+meta import VerifiedGarbage.Impl.EcKey.Secp256k1.Arm
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Spec.EcKey.Secp256k1
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # secp256k1 public keys on 32-bit ARM: `Verified`

@@ -1,19 +1,15 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.X86.Message
-public import VerifiedGarbage.Proof.MlKem.X86.Keccak
-public import VerifiedGarbage.Proof.MlKem.X86.Leaf
-public import VerifiedGarbage.Proof.MlKem.X86.CallRet
-public import VerifiedGarbage.Proof.Framework.X86.Wp
-public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MlDsa.Message.Common
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Impl.MlDsa.X86.Message
+import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.MlKem.X86.Leaf
+import VerifiedGarbage.TCB.X86.State
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: where everything is

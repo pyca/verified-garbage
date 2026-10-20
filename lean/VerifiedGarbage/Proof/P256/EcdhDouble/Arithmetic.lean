@@ -1,10 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.Jac
 
-public import VerifiedGarbage.Proof.Weierstrass.JacMul
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! The fused small linear combinations implement the existing Jacobian double. -/
 

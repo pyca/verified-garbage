@@ -1,14 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.AesXts.X86.Steps
+import VerifiedGarbage.Proof.AesXts.X86.Steps
 public import VerifiedGarbage.Proof.AesXts.Batch
-import VerifiedGarbage.Proof.AesCbc.X86.CT
 public import VerifiedGarbage.Proof.AesOcb.X86.Callee
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.AesXts.X86
+public import VerifiedGarbage.Proof.AesCbc.X86.Body
+public import VerifiedGarbage.Proof.AesXts.Spec
 import VerifiedGarbage.Proof.CmacAes.X86.UpdateLoop
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # XTS-AES on x86: all the blocks in one call

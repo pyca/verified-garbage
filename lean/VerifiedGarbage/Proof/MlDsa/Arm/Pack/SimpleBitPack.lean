@@ -1,17 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Contracts
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Contracts
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Loop
 import VerifiedGarbage.Proof.MlKem.Arm.Add
-meta import VerifiedGarbage.Proof.MlKem.Arm.Add
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Contracts
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Loop
+meta import VerifiedGarbage.Proof.MlKem.Arm.Add
+meta import Init.Data.Nat.Bitwise.Basic
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_simple_bit_pack`
@@ -77,9 +83,9 @@ theorem sbp_wp {s₀ : State} (hp : SbpPre s₀) :
         by rw [h₂.2.2.2.2, h₁.2.2.2.2]⟩
 
 /-- `simpleBitPack` writes no register the ABI preserves. -/
-theorem sbp_preserves : ∀ r ∈ preserved, ∀ i ∈ instrs Impl.MlDsa.Arm.Pack.simpleBitPack, dstOf i ≠ some r := by
+theorem sbp_preserves : ∀ r ∈ preserved, ∀ i ∈ instrs Impl.MlDsa.Arm.Pack.simpleBitPack, clobbers i r = false := by
   have h : (instrs Impl.MlDsa.Arm.Pack.simpleBitPack).all
-      (fun i => preserved.all fun r => dstOf i != some r) = true := by
+      (fun i => preserved.all fun r => !clobbers i r) = true := by
     rw [← Code.allInstrs_eq]; decide +kernel
   intro r hr i hi
   have := List.all_eq_true.mp (List.all_eq_true.mp h i hi) r hr

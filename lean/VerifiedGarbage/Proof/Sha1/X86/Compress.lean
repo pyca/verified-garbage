@@ -1,35 +1,29 @@
 module
 
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.X86.Exec
-meta import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.X86.Spill
-meta import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Sha1.Spec
-meta import VerifiedGarbage.Proof.Sha1.Spec
 public import VerifiedGarbage.Impl.Sha1.X86
-meta import VerifiedGarbage.Impl.Sha1.X86
-public import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-public import Mathlib.Tactic.Set
-meta import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Sha1.X86.Lit
-meta import VerifiedGarbage.Proof.Sha1.X86.Lit
 public import VerifiedGarbage.Proof.Sha1.X86.Contract
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86.Spill
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Sha1.Spec
+meta import VerifiedGarbage.Impl.Sha1.X86
+meta import VerifiedGarbage.Proof.Sha1.X86.Lit
 meta import VerifiedGarbage.Proof.Sha1.X86.Contract
-public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+meta import Mathlib.Tactic.Set
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # SHA-1 compression function on x86 (32-bit): the message schedule and the rounds

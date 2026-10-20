@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AArch64: straight-line bitwise code, by evaluation
@@ -490,7 +490,7 @@ and the machine state is related to the abstract result. -/
 theorem run (hD : D.Sound R) {is : List Instr} {e e' : Env α} {s : State} (hok : Ok c s)
     (hrel : Rel R c ext e s) (h : eval D c ext is e = some e') :
     ∃ s', runBlock isa is s = some s' ∧
-      Post R c ext e' s s' (fun r => (is.all fun i => dstOf i != some r) = false) := by
+      Post R c ext e' s s' (fun r => (is.all fun i => !clobbers i r) = false) := by
   induction is generalizing e s with
   | nil =>
     cases h
@@ -503,8 +503,8 @@ theorem run (hD : D.Sound R) {is : List Instr} {e e' : Env α} {s : State} (hok 
     refine ⟨s', by rw [runBlock_cons, hs₁, runStep_some]; exact hs', p.rel, p.ok,
       p.rd.trans p₁.rd, p.wr.trans p₁.wr, p.sp.trans p₁.sp, p.base.trans p₁.base,
       p.ext.trans p₁.ext, fun r hr => ?_, ?_⟩
-    · simp only [List.all_cons, Bool.and_eq_false_iff, bne_eq_false_iff_eq, not_or] at hr
-      exact (p.other r hr.2).trans (p₁.other r hr.1)
+    · simp only [List.all_cons, Bool.and_eq_false_iff, Bool.not_eq_false', not_or] at hr
+      exact (p.other r hr.2).trans (p₁.other r fun h => hr.1 (clobbers_of_dstOf h))
     · refine p₁.frame.trans ?_
       have := p.frame
       simp only [slotRegion, p₁.base] at this

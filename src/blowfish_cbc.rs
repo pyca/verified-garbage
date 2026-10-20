@@ -4,18 +4,18 @@
 //! The block cipher work and the chaining are verified assembly:
 //! `vg_blowfish_expand_key` (contract `VG.Spec.Blowfish.expandKeyContract`)
 //! writes the schedule, which serves both directions, and
-//! `vg_blowfish_cbc_encrypt` and `vg_blowfish_cbc_decrypt`
-//! (`VG.Spec.Blowfish.cbcEncryptContract`, `cbcDecryptContract`) replace each
-//! block with its CBC encryption or decryption from the chaining value at `iv`,
-//! in constant time: their timing depends on none of the key, the chaining
-//! value and the data. Both are the modes' generic CBC over the inlined ECB
-//! code, reading the schedule where it is: on x86 and x86-64 one block at a
-//! time, on AArch64 through the ECB code's batch of sixteen blocks, which
-//! deciphers sixteen blocks at once (encryption, which is sequential, one per
-//! batch), on ARMv7 calling the verified `vg_blowfish_ecb_encrypt` or
-//! `vg_blowfish_ecb_decrypt` for each block. This module checks the lengths,
-//! holds the schedule and keeps the chaining value to continue from: the last
-//! ciphertext block.
+//! `vg_blowfish_cbc_encrypt_chained` and `vg_blowfish_cbc_decrypt_chained`
+//! (`VG.Spec.Blowfish.cbcEncryptChainedContract`, `cbcDecryptChainedContract`)
+//! replace each block with its CBC encryption or decryption from the chaining
+//! value at `iv`, and the chaining value with the one to continue from, the
+//! last ciphertext block, in constant time: their timing depends on none of the
+//! key, the chaining value and the data. Both are the modes' generic CBC over
+//! the inlined ECB code, reading the schedule where it is: on x86 and x86-64
+//! one block at a time, on AArch64 through the ECB code's batch of sixteen
+//! blocks, which deciphers sixteen blocks at once (encryption, which is
+//! sequential, one per batch), on ARMv7 calling the verified
+//! `vg_blowfish_ecb_encrypt` or `vg_blowfish_ecb_decrypt` for each block. This
+//! module checks the lengths and holds the schedule.
 
 #![cfg(any(
     target_arch = "x86",
@@ -25,7 +25,7 @@
 ))]
 
 use crate::arch::blowfish::vg_blowfish_expand_key;
-use crate::arch::blowfish_cbc::{vg_blowfish_cbc_decrypt, vg_blowfish_cbc_encrypt};
+use crate::arch::blowfish_cbc::{vg_blowfish_cbc_decrypt_chained, vg_blowfish_cbc_encrypt_chained};
 use crate::zeroize::zeroize;
 
 /// Why a Blowfish-CBC operation failed.
@@ -35,6 +35,13 @@ pub enum Error {
     InvalidKeyLength,
     /// The input length is not a multiple of eight bytes.
     IncompleteBlock,
+}
+
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid Blowfish key length",
+        IncompleteBlock => "Blowfish-CBC input is not a whole number of blocks",
+    }
 }
 
 /// An expanded Blowfish key for CBC encryption and decryption, which use the
@@ -71,21 +78,18 @@ impl BlowfishCbc {
         if !buffer.len().is_multiple_of(8) {
             return Err(Error::IncompleteBlock);
         }
-        // SAFETY: the buffer holds `len / 8` whole blocks, and it, the
-        // chaining value and the schedule are separate valid objects of the
-        // sizes of the signature, none of them on the callee's stack. The
-        // function zeroes its working space on its own stack before
-        // returning.
+        // SAFETY: the buffer holds `len / 8` whole blocks, and it, the chaining
+        // value (which the function reads and replaces) and the schedule are
+        // separate valid objects of the sizes of the signature, none of them on
+        // the callee's stack. The function zeroes its working space on its own
+        // stack before returning.
         unsafe {
-            vg_blowfish_cbc_encrypt(
+            vg_blowfish_cbc_encrypt_chained(
                 &self.schedule,
                 iv,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 8,
             );
-        }
-        if let Some(last) = buffer.rchunks_exact(8).next() {
-            iv.copy_from_slice(last);
         }
         Ok(())
     }
@@ -99,20 +103,15 @@ impl BlowfishCbc {
         if !buffer.len().is_multiple_of(8) {
             return Err(Error::IncompleteBlock);
         }
-        let mut next = *iv;
-        if let Some(last) = buffer.rchunks_exact(8).next() {
-            next.copy_from_slice(last);
-        }
         // SAFETY: as in `encrypt`.
         unsafe {
-            vg_blowfish_cbc_decrypt(
+            vg_blowfish_cbc_decrypt_chained(
                 &self.schedule,
                 iv,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 8,
             );
         }
-        *iv = next;
         Ok(())
     }
 }

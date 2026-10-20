@@ -1,23 +1,10 @@
 module
 
-public import VerifiedGarbage.Impl.X448.AArch64.Field56
-meta import VerifiedGarbage.Impl.X448.AArch64.Field56
-public import VerifiedGarbage.Impl.X448.AArch64.Base
 public import VerifiedGarbage.Impl.Ed448.AArch64.Point56
-meta import VerifiedGarbage.Impl.Ed448.AArch64.Point56
-meta import VerifiedGarbage.Impl.X448.AArch64.Base
-public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSymMono
+meta import VerifiedGarbage.Impl.Ed448.AArch64.Point56
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSymMono
-public import VerifiedGarbage.Proof.Framework.TaintSum
-meta import VerifiedGarbage.Proof.Framework.TaintSum
-public import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The taint of the AArch64 point addition and power, analysed once

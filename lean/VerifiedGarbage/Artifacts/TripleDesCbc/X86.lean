@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86.CbcVerified
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.TripleDes.X86.CbcLit
 
 /-! # Triple DES-CBC artifacts on baseline x86 (32-bit) -/
 
@@ -15,21 +17,15 @@ def note : String :=
   copied into the working space once per call. The mode is the generic CBC of `Impl/Modes/X86/`."
 
 def artifacts : List Artifact := [
-  { Spec.TripleDes.cbcEncryptApi with
-    target := X86.target
-    doc := Spec.TripleDes.cbcEncryptApi.doc (notes := [note])
-    code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cbcEncrypt
-    contract := Spec.TripleDes.cbcEncryptContract X86.abi 984
+  Spec.TripleDes.cbcEncryptChainedApi.artifact X86.target {
+    notes := [note, "The chaining value, the last ciphertext block, goes back to the IV at the end."]
+    code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cbcEncryptChained
     stack := 984
-    verified := Proof.TripleDes.X86.Cbc.cbcEncrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.TripleDes.cbcDecryptApi with
-    target := X86.target
-    doc := Spec.TripleDes.cbcDecryptApi.doc (notes := [note])
-    code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cbcDecrypt
-    contract := Spec.TripleDes.cbcDecryptContract X86.abi 984
+    verified := Proof.TripleDes.X86.Cbc.cbcEncryptChained_framed },
+  Spec.TripleDes.cbcDecryptChainedApi.artifact X86.target {
+    notes := [note, "The chaining value, the last ciphertext block, goes back to the IV at the end."]
+    code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cbcDecryptChained
     stack := 984
-    verified := Proof.TripleDes.X86.Cbc.cbcDecrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.TripleDes.X86.Cbc.cbcDecryptChained_framed }]
 
 end VG.Artifacts.TripleDesCbc.X86

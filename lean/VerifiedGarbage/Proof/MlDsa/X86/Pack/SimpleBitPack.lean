@@ -1,23 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Top
-meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.Top
 public import VerifiedGarbage.Impl.MlDsa.X86.Pack.Encode
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.Top
 meta import VerifiedGarbage.Impl.MlDsa.X86.Pack.Encode
-public import VerifiedGarbage.TCB.X86.Target
-meta import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Framework.Sig
-meta import VerifiedGarbage.Proof.Framework.Sig
-public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_simple_bit_pack`

@@ -2,11 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.Ffdh
 import VerifiedGarbage.Proof.Ffdh.Domain
-import VerifiedGarbage.Proof.Bignum.Math
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-! # Powers of a checked FFDH generator remain in its subgroup -/
 

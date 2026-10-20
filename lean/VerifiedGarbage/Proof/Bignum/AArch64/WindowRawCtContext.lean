@@ -1,19 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT
-public import VerifiedGarbage.Impl.Bignum.AArch64.WindowRaw
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparseCTRows
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSetupCT
+public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtContext
+public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparseCtContext
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparsePadding
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSetup
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareRaw
+import VerifiedGarbage.Proof.Bignum.AArch64.WideZero
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtSetup
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowRaw

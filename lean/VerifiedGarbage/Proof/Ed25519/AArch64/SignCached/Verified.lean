@@ -1,34 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Body
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Body
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Entry
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Entry
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.CTReady
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.CTReady
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.ConstMem
-meta import VerifiedGarbage.Proof.Framework.ConstMem
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Sha512.Word64
-meta import VerifiedGarbage.Proof.Framework.KernelRfl
-meta import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 public import VerifiedGarbage.Spec.Ed25519.CachedSign
-import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
 import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Body
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Entry
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.CTReady
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 meta import VerifiedGarbage.Spec.Ed25519.CachedSign
-meta import VerifiedGarbage.Impl.Mont.Mod
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
 meta import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Merged from `Proof.Ed25519.AArch64.SignCached.Correct`. -/
 
@@ -491,7 +488,7 @@ def satState : State where
     | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x3000 | .x3 => 0x4000 | .x5 => 0x5000 | _ => 0
   sp := 0x9000
   mem := satMemT
-  rd := [⟨0x2000, 32⟩, ⟨0x3000, 32⟩, ⟨0x4000, 0⟩, ⟨0x100000, 24576⟩]
+  rd := [⟨0x2000, 32⟩, ⟨0x3000, 32⟩, ⟨0x4000, 0⟩, ⟨0x100000, 49152⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x5000, 8192⟩]
   syms _ := 0x100000
 

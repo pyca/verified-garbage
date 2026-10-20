@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateVerified
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 
 /-!
 # Streaming Poly1305 on x86-64, with its working space on the stack

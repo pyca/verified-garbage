@@ -1,12 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawPublic
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyCT
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomRangeCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawCheck
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawCopy
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawPublic
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomRangeCT
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawCheck
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawCopy
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! The copy-and-check prefix leaks only public addresses and widths. -/
 @[expose] public section

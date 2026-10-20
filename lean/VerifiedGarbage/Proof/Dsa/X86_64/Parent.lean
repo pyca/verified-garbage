@@ -1,14 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
-public import VerifiedGarbage.Proof.Dsa.X86_64.Setup
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Bignum.X86_64.Setup
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-! # Initializing the parent DSA workspace without prior scratch contents -/
 

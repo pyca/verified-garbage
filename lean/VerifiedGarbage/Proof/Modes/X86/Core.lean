@@ -1,15 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.X86.Ops
-public import VerifiedGarbage.Proof.Modes.Steps
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.Framework.X86.Syms
-public import VerifiedGarbage.Spec.Aes
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Modes.X86.Seq
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Cbc
+import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # What the modes need of a block cipher's core, on x86 (32-bit)

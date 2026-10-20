@@ -1,11 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Rc4.Arm.Lookup
 
-public import VerifiedGarbage.Proof.Rc4.Arm.Replace
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Rc4.Arm.Replace
+public import VerifiedGarbage.Proof.Rc4.Arm.Run
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # RC4 on ARMv7: one PRGA step -/
 

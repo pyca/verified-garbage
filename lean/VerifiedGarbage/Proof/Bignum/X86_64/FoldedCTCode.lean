@@ -1,19 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTMain
-meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTMain
 public import VerifiedGarbage.Proof.Rsa.X86_64.Guarded
+public import VerifiedGarbage.Impl.Rsa.X86_64.Folded
+public import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIOCT
+import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTMain
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Guarded
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Impl.Rsa.X86_64.Folded
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIOCT
+meta import VerifiedGarbage.Proof.Bignum.Octets
 
 @[expose] public section
 
@@ -23,9 +21,10 @@ open VG.Impl.Rsa.X86_64
 open VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64
 
-theorem code_ct (M : Mont)
-    (hfinal : RelCT isa (Two GoodL) (M.mm aY aX aY) (fun _ _ => True)) : RelCT isa (Two CR) (Folded.code M.mm) fun _ _ => True := by
-  unfold Folded.code
+/-- The code after the check of `e`, with any constant-time `rest`. -/
+theorem codeWith_ct (rest : Prog isa) (hrest : RelCT isa (Two DRel) rest fun _ _ => True) :
+    RelCT isa (Two CR) (.seq (.block Precomputed.entry) (.seq (seqs (Precomputed.loadWith Compare8.code))
+      (.ite .e fail rest))) fun _ _ => True := by
   refine RelCT.seq (R := Two CE2) ?_ ?_
   · rw [pdEntry_split]
     refine RelCT.block_append (RelCT.seq (two_piece (Ψ := CE1) [.rsp] (fun p s₁ s₂ h₁ h₂ r hr => by
@@ -73,13 +72,18 @@ theorem code_ct (M : Mont)
       xrun [State.ea, hdr, hdi, hdrOff, hl sOut (by decide), hl sK (by decide), hO, hK]) rfl)
       fun t' ⟨⟨hsi, hcx⟩, k'⟩ => ⟨hsi, hcx, (k'.gpr (by decide)).trans hdi⟩
   · -- `rest`.
-    exact two_map (fun p => p.d) (fun _ _ h => cl_rest h.1 h.2) (rest_ct M hfinal)
+    exact two_map (fun p => p.d) (fun _ _ h => cl_rest h.1 h.2) hrest
 
-/-- The code after the check of `e` is constant time, for valid `e`s. -/
-theorem code_constantTime (M : Mont)
-    (hfinal : RelCT isa (Two GoodL) (M.mm aY aX aY) (fun _ _ => True)) :
-    ConstantTime isa (fun s => pdContract.pre s ∧ Rsa.X86_64.eValid s = true) pdContract.pub (Folded.code M.mm) := by
-  refine RelCT.constantTime ((code_ct M hfinal).mono (fun s₁ s₂ ⟨⟨h₁, v₁⟩, ⟨h₂, _⟩, hp⟩ => ⟨cpubOfD s₁, ?_, ?_⟩)
+theorem code_ct (M : Mont)
+    (hfinal : RelCT isa (Two GoodL) (M.mm aY aX aY) (fun _ _ => True)) : RelCT isa (Two CR) (Folded.code M.mm) fun _ _ => True :=
+  codeWith_ct (Folded.rest M.mm) (rest_ct M hfinal)
+
+/-- The code after the check of `e` is constant time, for valid `e`s, with any
+constant-time `rest`. -/
+theorem codeWith_constantTime (rest : Prog isa) (hrest : RelCT isa (Two DRel) rest fun _ _ => True) :
+    ConstantTime isa (fun s => pdContract.pre s ∧ Rsa.X86_64.eValid s = true) pdContract.pub
+      (.seq (.block Precomputed.entry) (.seq (seqs (Precomputed.loadWith Compare8.code)) (.ite .e fail rest))) := by
+  refine RelCT.constantTime ((codeWith_ct rest hrest).mono (fun s₁ s₂ ⟨⟨h₁, v₁⟩, ⟨h₂, _⟩, hp⟩ => ⟨cpubOfD s₁, ?_, ?_⟩)
     fun _ _ h => h)
   · exact ⟨h₁, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, v₁⟩
   · obtain ⟨hr, a0, -, a2, a3, hw, he⟩ := hp
@@ -94,5 +98,11 @@ theorem code_constantTime (M : Mont)
       exact (wv_of_wordsAt hw (by omega)).symm
     · rw [r .rdx (by decide), r .rsi (by decide)]
       exact (wv_of_wordsAt hw (by omega)).symm
+
+/-- The code after the check of `e` is constant time, for valid `e`s. -/
+theorem code_constantTime (M : Mont)
+    (hfinal : RelCT isa (Two GoodL) (M.mm aY aX aY) (fun _ _ => True)) :
+    ConstantTime isa (fun s => pdContract.pre s ∧ Rsa.X86_64.eValid s = true) pdContract.pub (Folded.code M.mm) :=
+  codeWith_constantTime (Folded.rest M.mm) (rest_ct M hfinal)
 
 end VG.Proof.Bignum.X86_64.FoldedPublic

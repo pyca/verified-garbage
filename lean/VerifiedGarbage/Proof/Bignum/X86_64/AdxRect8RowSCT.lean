@@ -1,17 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowS
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowS
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowS
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowS
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # A square's row in constant time

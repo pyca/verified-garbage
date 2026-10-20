@@ -1,13 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Front
+public import VerifiedGarbage.Spec.Ecdsa.Verify
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Final
-public import VerifiedGarbage.Proof.Ecdsa.Verify
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Final
+import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdh.X86.Main
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Weierstrass.X86.Rep
 
 /-!
 # ECDSA verification on x86 (32-bit): the whole function

@@ -1,11 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontVerified
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSqrVerified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSqr521Verified
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Montgomery products modulo the curves' `p` and `n` on AArch64 -/
 
@@ -31,6 +27,13 @@ def notesSqr384 : List String := ["The function is the product modulo P-384's `p
   OR MIT-0): the fifteen products of distinct words once (a `mul` and `umulh` row for each word), the \
   sum doubled, then the six squares of the words added."]
 
+/-- The dedicated Mersenne-prime square uses every off-diagonal product once. -/
+def notesSqr521 : List String := ["The function loads all nine input words before writing the output, \
+  computes the symmetric square in registers, folds at bit 521, and conditionally corrects to \
+  the canonical field residue. A cyclic 55-bit rotation supplies the Montgomery factor. \
+  Callee-saved registers are kept in vector lanes; the output pointer is duplicated in v22. \
+  The function has no stack frame and permits the output to alias the input."]
+
 /-- How the functions work. -/
 def notes : List String := ["The function zero-extends the offsets, saves the callee-saved \
   registers it writes in lanes of `v16`–`v20`, and keeps every word it multiplies by in a register: \
@@ -49,41 +52,30 @@ def notesG : List String := ["The function zero-extends the offsets, saves the c
   multiple of the modulus, then a final conditional subtraction selected by `csel`."]
 
 def artifacts : List Artifact := [
-  { p384p.mulApi with
-    target := AArch64.target
-    doc := p384p.mulApi.doc (notes := notes384)
+  p384p.mulApi.artifact AArch64.target {
+    notes := notes384
     code := mulFn p384p.k p384p.m
-    contract := p384p.mulContract AArch64.abi
-    verified := p384p_mul_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { p384p.sqrApi with
-    target := AArch64.target
-    doc := p384p.sqrApi.doc (notes := notesSqr384)
+    verified := p384p_mul_verified },
+  p384p.sqrApi.artifact AArch64.target {
+    notes := notesSqr384
     code := sqrFn384
-    contract := p384p.sqrContract AArch64.abi
-    verified := p384p_sqr_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { p521p.mulApi with
-    target := AArch64.target
-    doc := p521p.mulApi.doc (notes := notes)
+    verified := p384p_sqr_verified },
+  p521p.sqrApi.artifact AArch64.target {
+    notes := notesSqr521
+    code := sqrFn521
+    verified := p521p_sqr_verified },
+  p521p.mulApi.artifact AArch64.target {
+    notes := notes
     code := mulFn p521p.k p521p.m
-    contract := p521p.mulContract AArch64.abi
-    verified := p521p_mul_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { p384n.mulApi with
-    target := AArch64.target
-    doc := p384n.mulApi.doc (notes := notesG)
+    verified := p521p_mul_verified },
+  p384n.mulApi.artifact AArch64.target {
+    notes := notesG
     code := mulFn p384n.k p384n.m
-    contract := p384n.mulContract AArch64.abi
-    verified := p384n_mul_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { p521n.mulApi with
-    target := AArch64.target
-    doc := p521n.mulApi.doc (notes := notesG)
+    verified := p384n_mul_verified },
+  p521n.mulApi.artifact AArch64.target {
+    notes := notesG
     code := mulFn p521n.k p521n.m
-    contract := p521n.mulContract AArch64.abi
-    verified := p521n_mul_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }
+    verified := p521n_mul_verified }
 ]
 
 end VG.Artifacts.WeierstrassMont.AArch64

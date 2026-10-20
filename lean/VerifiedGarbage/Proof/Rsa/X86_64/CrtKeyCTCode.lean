@@ -1,17 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTCode
-meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTCode
 import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTMain
-meta import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTMain
 public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCode
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTCode
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTMain
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCode
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
 # `vg_rsa_check_crt_key` on x86-64: constant time

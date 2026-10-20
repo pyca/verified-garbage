@@ -78,7 +78,8 @@ run_cmd do
     throwError "expected 14 valid and 42 invalid verification vectors, checked {pass} and {fail}"
 
 #assert_standard_axioms VG.Spec.Cmac.tdesInitContract
-#assert_standard_axioms VG.Spec.Cmac.tdesUpdateContract
-#assert_standard_axioms VG.Spec.Cmac.tdesFinalizeContract
+#assert_standard_axioms VG.Spec.Cmac.tdesStreamInitContract
+#assert_standard_axioms VG.Spec.Cmac.tdesAbsorbContract
+#assert_standard_axioms VG.Spec.Cmac.tdesFinishContract
 
 end VG.Test.CmacTripleDes

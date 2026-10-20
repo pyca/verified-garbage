@@ -1,7 +1,7 @@
 module
 
 public import Mathlib.Data.List.Dedup
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Init
+import VerifiedGarbage.Proof.AesGcm.AArch64.Init
 import VerifiedGarbage.Proof.AesGcm.AArch64.InitCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInitCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.StreamAadCT
@@ -10,13 +10,15 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.FinCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.SealCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.OpenCT
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Gcm.Contract
 public import VerifiedGarbage.Proof.AesGcm.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
 import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCrypt
+import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamFinish
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamAad
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInit
 
 /-!
 # AES-GCM on AArch64: `Verified`
@@ -44,44 +46,44 @@ open VG VG.AArch64 VG.Impl.AesGcm.AArch64
 /-! ## v8–v15 -/
 
 theorem init_keepsV (v : GcmImpl) : (init v.callees).allInstrs keepsV = true := by
-  simp only [init, ctrCall, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]; decide +kernel
+  simp only [init, initWith, ctrCall, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]; decide +kernel
 
 theorem streamInit_keepsV (v : GcmImpl) : (streamInit v.callees).allInstrs keepsV = true := by
-  simp only [streamInit, j0, j0hash, ghCall, absorb, absSeg1, absTail, minK, copy, Impl.AesGcm.AArch64.xor, padSeg, flush, lens,
+  simp only [streamInit, j0, j0hash, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, xorB, Impl.AesGcm.AArch64.xor, padSeg, flush, lens,
     GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]; decide +kernel
 
 theorem streamAad_keepsV (v : GcmImpl) : (streamAad v.callees).allInstrs keepsV = true := by
-  simp only [streamAad, ghCall, absorb, absSeg1, absTail, minK, copy, Impl.AesGcm.AArch64.xor, padSeg, flush, lens,
+  simp only [streamAad, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, xorB, Impl.AesGcm.AArch64.xor, padSeg, flush, lens,
     GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]; decide +kernel
 
 theorem streamEncrypt_keepsV (v : GcmImpl) : (streamEncrypt v.callees).allInstrs keepsV = true := by
   simp only [streamEncrypt, encBody, fo, textAbs, crypt, crSeg1, crSeg2, crTail, ctrCall, ghCall, absorb,
-    absSeg1, absTail, minK, copy, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV,
+    absSeg1, absTail, minK, copy, copyB, xorB, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV,
     v.key.keepsV, v.gh.keepsV]; decide +kernel
 
 theorem streamDecrypt_keepsV (v : GcmImpl) : (streamDecrypt v.callees).allInstrs keepsV = true := by
   simp only [streamDecrypt, decBody, decAbs, fo, textAbs, crypt, crSeg1, crSeg2, crTail, ctrCall, ghCall,
-    absorb, absSeg1, absTail, minK, copy, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.allInstrs,
+    absorb, absSeg1, absTail, minK, copy, copyB, xorB, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.allInstrs,
     v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]; decide +kernel
 
 theorem streamFinish_keepsV (v : GcmImpl) : (streamFinish v.callees).allInstrs keepsV = true := by
   simp only [streamFinish, finBody, tag, crypt, crSeg1, crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1,
-    absTail, minK, copy, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV,
+    absTail, minK, copy, copyB, xorB, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV,
     v.key.keepsV, v.gh.keepsV]; decide +kernel
 
 theorem streamVerify_keepsV (v : GcmImpl) : (streamVerify v.callees).allInstrs keepsV = true := by
-  simp only [streamVerify, tagLenOk, tlTest, tagIn, cmpSeg, finBody, tag, crypt, crSeg1, crSeg2, crTail, ctrCall,
-    ghCall, absorb, absSeg1, absTail, minK, copy, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.allInstrs,
+  simp only [streamVerify, tagLenOk, tagIn, cmpSeg, cmp, cmp16, finBody, tag, crypt, crSeg1, crSeg2, crTail, ctrCall,
+    ghCall, absorb, absSeg1, absTail, minK, copy, copyB, xorB, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.allInstrs,
     v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]; decide +kernel
 
 theorem seal_keepsV (v : GcmImpl) : («seal» v.callees).allInstrs keepsV = true := by
-  simp only [«seal», j0, j0hash, oneAad, absorbAl, encBody, fo, textAbs, finBody, tag, crypt, crSeg1, crSeg2, crTail,
-    ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees,
+  simp only [«seal», sealRest, j0, j0hash, oneAad, absorbAl, encBody, fo, textAbs, finBody, tag, crypt, crSeg1, crSeg2, crTail,
+    ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, xorB, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees,
     Code.allInstrs, v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]; decide +kernel
 
 theorem open_keepsV (v : GcmImpl) : («open» v.callees).allInstrs keepsV = true := by
-  simp only [«open», openMain, oneCrypt, cryptAl, crArgs, tagLenOk, tlTest, tagIn, cmpSeg, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs,
-    finBody, tag, crypt, crSeg1, crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, Impl.AesGcm.AArch64.xor,
+  simp only [«open», openEntry, openRest, openMain, oneCrypt, cryptAl, crArgs, tagLenOk, tagIn, cmpSeg, cmp, cmp16, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs,
+    finBody, tag, crypt, crSeg1, crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, xorB, Impl.AesGcm.AArch64.xor,
     padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]
   decide +kernel
 
@@ -248,7 +250,7 @@ theorem seal_verified (v : GcmImpl) :
     Verified AArch64.target («seal» v.callees) (Proof.AesGcm.sealScratchContract AArch64.abi) :=
   Verified.of_correct (seal_correct v) (seal_ct v) (by
     sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
-      Spec.Gcm.sealPost, sealAArch64, sealPre, onePub, args, rounds, AArch64.abi,
+      Spec.Gcm.sealPost, sealAArch64, sealPre, sealPreX, List.append_nil, onePub, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
 
@@ -256,7 +258,7 @@ theorem open_verified (v : GcmImpl) :
     Verified AArch64.target («open» v.callees) (Proof.AesGcm.openScratchContract AArch64.abi) :=
   Verified.of_correct (open_correct v) (open_ct v) (by
     sig_implies [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
-      Spec.Gcm.openPost, Spec.Gcm.openLeak, openAArch64, openPre, onePub, openRes, openLeakOf, args, rounds,
+      Spec.Gcm.openPost, Spec.Gcm.openLeak, openAArch64, openPre, openPreX, List.append_nil, onePub, openRes, openLeakOf, args, rounds,
       AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
       List.range.loop]
       [openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSat)

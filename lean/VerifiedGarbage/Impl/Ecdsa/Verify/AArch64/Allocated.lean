@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
 public import VerifiedGarbage.Impl.P256.VerifyAllocated
+public import VerifiedGarbage.Impl.P256.EcdhDouble
+public import VerifiedGarbage.Impl.P256.VerifyTable
 
 /-! Public P-256 verification with register-allocated point and inversion arithmetic. -/
 
@@ -32,11 +33,13 @@ def cachedOps : CachedJac.Ops where
   tail := VerifyAllocated.program .jacTail
   double := P256Joint.cachedOps.double
 
+/-- The odd multiples of `Q` by co-Z arithmetic, which leaves their cached
+powers too. -/
 def ops : Joint.Ops where
-  table := P256Joint.ops.table
-  cache := P256Joint.ops.cache
+  table := VerifyTable.build
+  cache := .block []
   digitQ := CachedJac.digit K cachedOps
-  double := VerifyAllocated.program .doubleRR
+  double := EcdhDouble.program
   mixedAdd := mixedAdd
 
 def extra : List (Reg × Nat) := [(.x26,7800),(.x27,7808),(.x28,7816),(.x30,7824)]
@@ -50,7 +53,7 @@ def points : Prog isa :=
 def inverseUpdate : List Instr := VerifyAllocatedCode.inverseUpdate
 
 def inverseBatch : Prog isa :=
-  .seq (.block p256.invN.batchStart) (.seq (wsteps 59) (.block inverseUpdate))
+  .seq (.block p256.invN.batchStart) (.seq (.block pwords) (.block inverseUpdate))
 
 def inverseNine : InvCfg :=
   let c := 2^45 * (2^256)^3 % p256.C.n

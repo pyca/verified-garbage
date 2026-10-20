@@ -2,8 +2,36 @@ module
 
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Inst
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintErase
+public import VerifiedGarbage.Proof.Mgf1.Bytes
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCT1
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCT2
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCorrect
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCT1
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCorrect
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEm
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
+import VerifiedGarbage.Proof.Framework.AArch64.TaintErase
+import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
+import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCT1
+import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCT2
+import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCorrect
+import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCT1
+import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCorrect
+import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEm
+import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
+import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
+import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
+import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
 
 /-!
 # RSAES-OAEP decryption on AArch64
@@ -33,22 +61,17 @@ open VG.Proof.RsaPkcs1Enc.AArch64 (privOf)
 
 def artifacts (v v2 : Proof.Pbkdf2.Md.AArch64.MdHash) (c : Proof.Rsa.AArch64.CrtImpl) : List Artifact :=
   if emitted v v2 then [
-    { Spec.RsaOaep.decryptApi v.mgf.G v2.mgf.G with
-      name := Emit.qualifiedName (Spec.RsaOaep.decryptApi v.mgf.G v2.mgf.G).name
-        (parts v v2 ++ [("crt", c.suffix)])
-      target := AArch64.target
-      doc := (Spec.RsaOaep.decryptApi v.mgf.G v2.mgf.G).doc
-        (notes := ["This implementation calls `" ++ (privOf c).name ++ "`, hashes the label with `" ++
+    (Spec.RsaOaep.decryptApi v.mgf.G v2.mgf.G).artifact AArch64.target {
+      suffix := Emit.qualifiedName "" (parts v v2 ++ [("crt", c.suffix)])
+      notes := ["This implementation calls `" ++ (privOf c).name ++ "`, hashes the label with `" ++
           v.H.stream.updN ++ "` and unmasks the seed and `DB` with MGF1 calling `" ++ v2.H.stream.updN ++
           "`. The checks of `Y`, `lHash'` and the separator, the scan for it and the shift of the \
           message to the start of `out` are masks computed without branches, reading every byte of \
-          `EM` whatever the outcome."])
+          `EM` whatever the outcome."]
       code := Impl.RsaOaep.AArch64.decrypt v.H v2.H (privOf c).name (privOf c).code
-      contract := Spec.RsaOaep.decryptContract v.mgf.G v2.mgf.G AArch64.abi (decStack (privOf c))
       stack := decStack (privOf c)
       verified := dec_verified v.ok.stream v2.ok.stream v.mgf.hash v.mgf.len (mgf_valid v.mgf) v2.mgf.hash
         v2.mgf.len (mgf_valid v2.mgf) (privOf c) (dec_sat v.mgf.G v2.mgf.G c)
-      spSafe := Code.all_of_forall (fun _ => rfl) _
       features := features v v2 ++ c.features.filter (!(features v v2).contains ·) }]
   else []
 

@@ -2,13 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Wide
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Core
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Reduce
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Copy
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): the candidates
@@ -96,7 +93,7 @@ theorem Ctx.dgBytes (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {n : Nat} (hn 
   exact List.map_congr_left fun i hi => hc.dg_byte hL (by have := List.mem_range.mp hi; omega)
 
 theorem hok_of (hk : CoreOk P L) : HOk P L :=
-  ⟨hk.2.2.1, by rw [hk.1], fun _ => by rw [P.len]⟩
+  ⟨hk.2.2.1, by rw [hk.1], fun _ => by rw [P.len], hk.2.1.2⟩
 
 /-- The count, kept by memory that changed elsewhere. -/
 theorem cnt_frame {ws : List Region} {m m' : Mem} (hf : Frame ws m m')
@@ -145,7 +142,7 @@ theorem dg_apart (hL : L.Ok) (hk : CoreOk P L) {r : Region} (h : DgApart P L r) 
   have nB := hL.nB
   cases hw : P.R.wide
   · have hLw : L.wide = false := hk.2.2.1.trans hw
-    have hn := hk.2.1 hLw
+    have hn := hk.2.1.1 hLw
     simp only [dgAddr, hLw, Bool.false_eq_true, ite_false]
     have hD : Region.Sub ⟨L.dg, P.Q⟩ L.DG := Region.sub_prefix hn
     rcases h with rfl | rfl | rfl | rfl | rfl | ⟨h, -⟩
@@ -243,7 +240,7 @@ theorem cand_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
     simp only [RfcHash.nb, CW, hw, hLw, Bool.false_eq_true, ite_false, kAddr]
     have hc' : (cfgOf P).cand = (cfgOf P).hmacV := by simp only [Cfg.cand, cfgOf, hw]; rfl
     rw [hc', genT_one]
-    refine WP.mono (hmacV_ok hL hk.2.2.1 hc) fun u ⟨hcu, hf, hk', hv⟩ => ⟨hcu, hf, hk', hv, ?_⟩
+    refine WP.mono (hmacV_ok hL hk.2.2.1 hk.2.1.2 hc) fun u ⟨hcu, hf, hk', hv⟩ => ⟨hcu, hf, hk', hv, ?_⟩
     rw [Spec.Ecdsa.Rfc6979.bits2int, List.append_nil, hashToInt_takeQ hB (by rw [mac_length]; exact hQD)]
     refine congrArg Spec.Weierstrass.ofBytes ?_
     rw [bytesAt_take _ _ hQD]
@@ -252,7 +249,7 @@ theorem cand_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
     have hl := P.R.nBits_len
     simp only [RfcHash.nb, CW, hw, hLw, ite_true, kAddr]
     rw [genT_two]
-    refine WP.mono (candW_ok hL hk.2.2.1 hw hc) fun u ⟨hcu, hf, hk', hv, hb⟩ => ⟨hcu, hf, hk', hv, ?_⟩
+    refine WP.mono (candW_ok hL hk.2.2.1 hk.2.1.2 hw hc) fun u ⟨hcu, hf, hk', hv, hb⟩ => ⟨hcu, hf, hk', hv, ?_⟩
     obtain ⟨hw9, hQ66, hD64, -⟩ := P.sizesW hw
     rw [hb, Spec.Ecdsa.Rfc6979.bits2int, hashToInt_takeR (R := P.Q) (by show _ ≤ 8 * P.R.E.C.len; omega)
       (by simp only [List.length_append, mac_length, List.length_nil]; omega), List.append_nil,
@@ -316,8 +313,8 @@ theorem try₁_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t
 
 theorem try₂_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) {i : Nat}
     (hi : P₁ P L m₀ i t) :
-    WP isa (.block (Cfg.coreArgs P.R.wide)) t fun u => Ctx L g m₀ u ∧ P₁ P L m₀ i u ∧ CoreRegs L u :=
-  hk.2.2.1 ▸ WP.mono (coreArgs_ok hL hc) fun _ ⟨hc₂, hm₂, hdi, hsi, hdx, hcx, h8⟩ =>
+    WP isa (.block (Cfg.coreArgs P.R.wide P.R.hHigh)) t fun u => Ctx L g m₀ u ∧ P₁ P L m₀ i u ∧ CoreRegs L u :=
+  hk.2.2.1 ▸ hk.2.1.2 ▸ WP.mono (coreArgs_ok hL hc) fun _ ⟨hc₂, hm₂, hdi, hsi, hdx, hcx, h8⟩ =>
     ⟨hc₂, ⟨hi.lt, hm₂ ▸ hi.k, hm₂ ▸ hi.v, hm₂ ▸ hi.cnt, hi.fails, hm₂ ▸ hi.dg, hm₂ ▸ hi.kk⟩, hdi, hsi, hdx, hcx, h8⟩
 
 theorem try₃_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) {i : Nat}

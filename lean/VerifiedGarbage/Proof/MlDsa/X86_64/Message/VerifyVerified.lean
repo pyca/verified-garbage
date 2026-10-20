@@ -1,21 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCall
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Contracts
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.MlDsa.Sign.Iter
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Prims
+import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCorrect
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-DSA on x86-64, `verify_message`: verified

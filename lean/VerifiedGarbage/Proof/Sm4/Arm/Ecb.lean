@@ -1,14 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.Group
-import VerifiedGarbage.Proof.Sm4.Common
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Sm4.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Sm4.Arm.Keys
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
 
 /-!
 # SM4 ECB on ARMv7: the whole function

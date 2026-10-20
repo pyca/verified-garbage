@@ -1,18 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.FRow
-public import VerifiedGarbage.Proof.Framework.Omega
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Step
+import VerifiedGarbage.Proof.X25519.X86_64.Ops
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X25519 on x86-64, inversion by divsteps: the rows of `a` and `b`
 
 `aRow m₁ m₂ dst` leaves at `dst` the four words `aRowV` of the words at
 `m₁`, `m₂` and the numbers `a`, `b` (`aRow_ok`): the two products
-(`prod_ok`), then `foldP`, which brings the five words `Q` less `37 c` below
+(`cols_ok`), then `foldP`, which brings the five words `Q` less `37 c` below
 `2²⁵⁶` (`foldP_ok`): `w = 38 Q₄ - 37 c` in two words (`foldA_ok`), added to
 the low four with its sign (`foldB_ok`), and the carry of that folded in as
 `±38`.
@@ -231,8 +231,9 @@ theorem prodN_le (w : BitVec 64) {X : Nat} (hX : X < 2 ^ 256) :
   exact Nat.mul_le_mul h1 h2
 
 theorem aRow_eq (m₁ m₂ dst : Nat) :
-    aRow m₁ m₂ dst = zeroP ++ (prod m₁ dsA false ++ (prod m₂ dsB false ++ (foldP ++ store4 dst))) := by
-  simp only [aRow, List.append_assoc]
+    aRow m₁ m₂ dst = (absMk m₁ .rcx .r14 ++ absMk m₂ .r13 .r15) ++
+      (cSum .rbx ++ (([.mov32 .r8 (.imm 0)] : List Instr) ++ (cols dsA dsB ++ (foldP ++ store4 dst)))) := by
+  simp only [aRow, rowP, reduceCtorEq, ↓reduceIte, List.append_assoc]
 
 /-- A row of `a` and `b`: `[dst] = aRowV [m₁] [m₂] a b`. -/
 theorem aRow_ok {s : State} {base : Addr} (hs : Scr s base) {m₁ m₂ dst : Nat} (h₁ : m₁ + 8 ≤ 4096)
@@ -241,41 +242,43 @@ theorem aRow_ok {s : State} {base : Addr} (hs : Scr s base) {m₁ m₂ dst : Nat
       fe t.mem base dst = aRowV (word s.mem base m₁) (word s.mem base m₂) (fe s.mem base dsA)
         (fe s.mem base dsB) ∧
       Outside base dst 32 s.mem t.mem ∧ (∀ r, r ∉ rowClob → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have hA : dsA + 32 ≤ 4096 := by decide
-  have hB : dsB + 32 ≤ 4096 := by decide
   rw [aRow_eq, WP.block_append_iff]
-  refine WP.mono (zeroP_ok s) fun s₁ ⟨v1, b1, k1⟩ => ?_
-  have hs₁ := hs.of_keeps k1 (by decide)
+  refine WP.mono (absMk2_ok hs h₁ h₂) fun s₂ ⟨a1, k1, a2, k2, K2⟩ => ?_
+  have hs₂ := hs.of_keeps K2 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (prod_ok hs₁ h₁ hA false) fun s₂ ⟨v2, b2, k2⟩ => ?_
-  have hs₂ := hs₁.of_keeps k2 (by decide)
+  refine WP.mono (cSum_ok s₂ (cd := .rbx) (by decide)) fun s₃ ⟨c3, K3⟩ => ?_
+  have hs₃ := hs₂.of_keeps K3 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (prod_ok hs₂ h₂ hB false) fun s₃ ⟨v3, b3, k3⟩ => ?_
-  have hs₃ := hs₂.of_keeps k3 (by decide)
+  refine WP.mono (movZero_ok s₃ .r8) fun s₄ ⟨z4, K4⟩ => ?_
+  have hs₄ := hs₃.of_keeps K4 (by decide)
+  have R4 : ∀ r, r ∈ [Reg.rcx, .r13, .r14, .r15] → s₄.gpr r = s₂.gpr r := fun r hr =>
+    (K4.1 r (fun h => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr h
+                         rcases hr with rfl | rfl | rfl | rfl <;> simp at h)).trans
+    (K3.1 r (fun h => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr h
+                         rcases hr with rfl | rfl | rfl | rfl <;> simp at h))
   rw [WP.block_append_iff]
-  refine WP.mono (foldP_ok s₃) fun s₄ ⟨v4, k4⟩ => ?_
-  have hs₄ := hs₃.of_keeps k4 (by decide)
-  refine WP.mono (store4_ok hs₄ (by unfold Slot; omega)) fun t ⟨mt, gt, rt, wt⟩ => ⟨?_, ?_, ?_, ?_, ?_⟩
-  · have M1 : s₁.mem = s.mem := k1.2.1
-    have M2 : s₂.mem = s.mem := k2.2.1.trans M1
-    rw [M1] at v2 b2
-    rw [M2] at v3 b3
-    rw [mt, fe_st4 _ _ (by omega), v4, v3, v2, v1, b3, b2, b1]
-    unfold aRowV cN
+  refine WP.mono (cols_ok hs₄ (by decide) (by decide) (by rw [R4 .rcx (by simp), a1]; exact absN_le _)
+    (by rw [R4 .r13 (by simp), a2]; exact absN_le _)) fun s₅ ⟨v5, K5⟩ => ?_
+  have hs₅ := hs₄.of_keeps K5 (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (foldP_ok s₅) fun s₆ ⟨v6, K6⟩ => ?_
+  have hs₆ := hs₅.of_keeps K6 (by decide)
+  refine WP.mono (store4_ok hs₆ (by unfold Slot; omega)) fun t ⟨mt, gt, rt, wt⟩ => ⟨?_, ?_, ?_, ?_, ?_⟩
+  · have M4 : s₄.mem = s.mem := K4.2.1.trans (K3.2.1.trans K2.2.1)
+    have B5 : s₅.gpr .rbx = s₃.gpr .rbx := (K5.1 _ (by decide)).trans (K4.1 _ (by decide))
+    rw [R4 .rcx (by simp), R4 .r13 (by simp), R4 .r14 (by simp), R4 .r15 (by simp), k1, k2, a1, a2, z4, M4,
+      feX_mask, feX_mask] at v5
+    rw [mt, fe_st4 _ _ (by omega), v6, v5, B5, c3, k1, k2, cSum_val _ _ _ _ a1 a2]
+    unfold aRowV
     have z : (0 : BitVec 64).toNat = 0 := rfl
-    have p1 := prodN_le (word s.mem base m₁) (fe_lt s.mem base dsA)
-    have p2 := prodN_le (word s.mem base m₂) (fe_lt s.mem base dsB)
-    simp only [Bool.false_eq_true, ↓reduceIte, Nat.mul_zero, Nat.sub_zero, z, Nat.zero_add]
-    refine congr (congrArg foldV ?_) ?_
-    · omega_arith
-    · omega_arith
-  · rw [mt, k4.2.1, k3.2.1, k2.2.1, k1.2.1]
+    rw [z, Nat.zero_add]
+  · rw [mt, K6.2.1, K5.2.1, K4.2.1, K3.2.1, K2.2.1]
     exact st4_outside _ _ (by omega) _ _ _ _
   · intro r hr
     have sub : ∀ L : List Reg, (∀ x ∈ L, x ∈ rowClob) → r ∉ L := fun L hL h => hr (hL r h)
-    rw [gt r, k4.1 r (sub _ (by decide)), k3.1 r (sub _ (by decide)), k2.1 r (sub _ (by decide)),
-      k1.1 r (sub _ (by decide))]
-  · rw [rt, k4.2.2.1, k3.2.2.1, k2.2.2.1, k1.2.2.1]
-  · rw [wt, k4.2.2.2, k3.2.2.2, k2.2.2.2, k1.2.2.2]
+    rw [gt r, K6.1 r (sub _ (by decide)), K5.1 r (sub _ (by decide)), K4.1 r (sub _ (by decide)),
+      K3.1 r (sub _ (by decide)), K2.1 r (sub _ (by decide))]
+  · rw [rt, K6.2.2.1, K5.2.2.1, K4.2.2.1, K3.2.2.1, K2.2.2.1]
+  · rw [wt, K6.2.2.2, K5.2.2.2, K4.2.2.2, K3.2.2.2, K2.2.2.2]
 
 end VG.Proof.X25519.X86_64

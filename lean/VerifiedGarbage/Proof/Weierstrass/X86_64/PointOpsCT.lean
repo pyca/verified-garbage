@@ -3,16 +3,11 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsMixed
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Impl.Ecdsa.X86_64
-import VerifiedGarbage.Spec.Ecdsa.Generic
+import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
+import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd
+import VerifiedGarbage.Proof.Weierstrass.JacMul
 
 /-!
 # Point operations as functions on x86-64: the additions' timing

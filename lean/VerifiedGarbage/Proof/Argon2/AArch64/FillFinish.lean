@@ -1,17 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillFinish
-import VerifiedGarbage.Proof.Argon2.AArch64.FillIterations
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillIterations
 public import VerifiedGarbage.Proof.Argon2.AArch64.FinishReady
-import VerifiedGarbage.Impl.Argon2.AArch64.Finish
-import VerifiedGarbage.Proof.Argon2.AArch64.FinalOutputReady
-public import VerifiedGarbage.Proof.Argon2.Serialization
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Argon2.Serialization
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Argon2.AArch64.ReductionLoopState
 
 /-! Merged from `Proof.Argon2.AArch64.FinishStage`. -/
 

@@ -1,15 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86.TCombJ
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombSelect
 public import VerifiedGarbage.Proof.Weierstrass.Booth
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.Call
 
 /-!
 # The comb with Booth's digits on x86 (32-bit): digits and masks

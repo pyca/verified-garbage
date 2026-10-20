@@ -3,11 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCallCT
 import VerifiedGarbage.Proof.Dsa.AArch64.JointReadyCT
 import VerifiedGarbage.Proof.Dsa.AArch64.ReadyJoint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-! # Composable timing steps for complete DSA arithmetic schedules -/
 

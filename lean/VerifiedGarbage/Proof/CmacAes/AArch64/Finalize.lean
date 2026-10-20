@@ -1,11 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.CmacAes.AArch64.Subkeys
+import VerifiedGarbage.Proof.CmacAes.AArch64.Subkeys
 public import VerifiedGarbage.Proof.Cmac.Block
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.CmacAes.AArch64
+public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-CMAC on AArch64: `vg_cmac_aes_finalize`, the last block

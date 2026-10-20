@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.Arm.KeyStep
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.Syms
+import VerifiedGarbage.Proof.Cast5.Arm.Scan
+import VerifiedGarbage.Proof.Cast5.Arm.Round
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 
 /-!
 # CAST5 key expansion on ARMv7: the steps of a half, run

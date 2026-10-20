@@ -2,15 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafTable
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafDigitRead
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Weierstrass.X86.WinQuad
-import VerifiedGarbage.Proof.X25519.X86.Column
 import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.X86.JacDouble
+import VerifiedGarbage.Proof.Weierstrass.X86.NafPoint
+import VerifiedGarbage.Proof.Weierstrass.X86.JacState
+import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 
 /-! ## `NafInvariant` -/
 

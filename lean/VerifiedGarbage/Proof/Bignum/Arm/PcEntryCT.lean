@@ -1,0 +1,84 @@
+module
+public import VerifiedGarbage.Impl.Bignum.Arm.PcFn
+public import VerifiedGarbage.Proof.Framework.RelCT
+
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Bignum.Arm.PcFn
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+
+/-! # The public precomputation entry uses only stack-relative addresses -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm
+
+theorem single_ct {P Q : State → State → Prop} {i : Instr}
+    (addresses : ∀ s t, P s t → addrs i s = addrs i t)
+    (post : ∀ s t u v, P s t → exec i s = some u → exec i t = some v → Q u v) :
+    RelCT isa P (.block [i]) Q := by
+  intro s t tr1 tr2 u v h e1 e2
+  rw [Exec.block_iff] at e1 e2
+  simp only [execBlock] at e1 e2
+  split at e1
+  · cases e1
+  · rename_i a ha
+    split at e2
+    · cases e2
+    · rename_i b hb
+      simp only [Option.map_some, Option.some.injEq, Prod.mk.injEq, List.append_nil] at e1 e2
+      obtain ⟨rfl, rfl⟩ := e1
+      obtain ⟨rfl, rfl⟩ := e2
+      exact ⟨by rw [addresses s t h], post s t a b h ha hb⟩
+
+theorem pcEntry_ct : RelCT isa (fun s t => s.sp = t.sp) (.block PcFn.entry) (fun s t => s.sp = t.sp) := by
+  let P := fun (s t : State) => s.sp = t.sp ∧ s.gpr .r12 = t.gpr .r12
+  have addr : RelCT isa (fun s t => s.sp = t.sp) (.block [.addSp .r12 0]) P := by
+    apply single_ct (fun _ _ _ => rfl)
+    intro s t u v h e1 e2
+    simp only [exec, Nat.reduceLT, ite_true, BitVec.add_zero, Option.some.injEq] at e1 e2
+    subst u; subst v
+    exact ⟨h, by simpa only [State.setReg, ite_true] using h⟩
+  have store : RelCT isa P (.block [.str .r0 .r12 4]) P := by
+    apply single_ct (fun s t h => by simp only [addrs, h.2])
+    intro s t u v h e1 e2
+    simp only [exec, Nat.reduceLT, ite_true, State.store32] at e1 e2
+    split at e1
+    · split at e2
+      · simp only [Option.some.injEq] at e1 e2
+        subst u; subst v; exact h
+      · cases e2
+    · cases e1
+  have load : RelCT isa P (.block [.ldrSp .r0 56]) P := by
+    apply single_ct (fun s t h => by simp only [addrs, h.1])
+    intro s t u v h e1 e2
+    simp only [exec, Nat.reduceLT, ite_true, State.load32] at e1 e2
+    split at e1
+    · split at e2
+      · simp only [Option.map_some, Option.some.injEq] at e1 e2
+        subst u; subst v
+        exact ⟨h.1, by simpa only [State.setReg, reduceCtorEq, ite_false] using h.2⟩
+      · cases e2
+    · cases e1
+  have tail : RelCT isa P (.block [.str .r0 .r12 0, .mov .r4 (.reg .r2), .mov .r6 (.reg .r3)])
+      (fun s t => s.sp = t.sp) := by
+    apply relCT_keep_sp (sp := fun _ _ h => h.1)
+    apply RelCT.taint (A := taint) (Taint.ofRegs [.r12]) _ (by taint_decide)
+    intro s t h
+    apply Taint.agree_ofRegs
+    intro r hr
+    simp only [List.mem_singleton] at hr
+    subst r
+    exact h.2
+  exact RelCT.block_append (addr.seq (RelCT.block_append (store.seq (RelCT.block_append (load.seq tail)))))
+
+end VG.Proof.Bignum.Arm

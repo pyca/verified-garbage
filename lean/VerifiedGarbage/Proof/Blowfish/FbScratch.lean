@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Spec.Blowfish.Ofb
-public import VerifiedGarbage.Spec.Blowfish.Cfb
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Spec.Cfb
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Blowfish.Schedule
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Blowfish-OFB and -CFB64 with their working space as an argument

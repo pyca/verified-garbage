@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Verified
-import Mathlib.Algebra.Field.ZMod
-import Mathlib.RingTheory.AdjoinRoot
-import VerifiedGarbage.Proof.Gcm.Poly
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.Positivity.Finset
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-GCM-SIV (RFC 8452) on ARMv7
@@ -33,22 +35,16 @@ def note : String := "This implementation encrypts with `vg_aes_ctr32` (and expa
   `vg_aes_expand_key`) and computes POLYVAL with `vg_ghash`."
 
 def artifacts : List Artifact := [
-  { Spec.GcmSiv.sealApi with
-    target := Arm.target
-    doc := Spec.GcmSiv.sealApi.doc (notes := [note])
+  Spec.GcmSiv.sealApi.artifact Arm.target {
+    notes := [note]
     code := Impl.StackScratch.Arm.withStackScratch 3792 4 Impl.AesGcmSiv.Arm.«seal»
-    contract := Spec.GcmSiv.sealContract Arm.abi 3800
     stack := 3800
-    verified := seal_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.GcmSiv.openApi with
-    target := Arm.target
-    doc := Spec.GcmSiv.openApi.doc (notes := [note,
-      "It compares the tags and overwrites the data with zeros without a branch on the result."])
+    verified := seal_framed },
+  Spec.GcmSiv.openApi.artifact Arm.target {
+    notes := [note,
+      "It compares the tags and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.Arm.withStackScratch 3792 4 Impl.AesGcmSiv.Arm.«open»
-    contract := Spec.GcmSiv.openContract Arm.abi 3800
     stack := 3800
-    verified := open_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := open_framed }]
 
 end VG.Artifacts.AesGcmSiv.Arm

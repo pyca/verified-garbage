@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.AArch64.FbVerified
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SEED-CFB128 artifacts on baseline AArch64 -/
 
@@ -17,21 +17,15 @@ def note : String :=
   per call. The mode is the generic CFB of `Impl/Modes/AArch64/`."
 
 def artifacts : List Artifact := [
-  { Spec.Seed.cfbEncryptApi with
-    target := AArch64.target
-    doc := Spec.Seed.cfbEncryptApi.doc (notes := [note])
+  Spec.Seed.cfbEncryptApi.artifact AArch64.target {
+    notes := [note]
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x4 182 Impl.Seed.AArch64.cfbEncrypt
-    contract := Spec.Seed.cfbEncryptContract AArch64.abi 1456
     stack := 1456
-    verified := Proof.Seed.AArch64.cfbEncrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Seed.cfbDecryptApi with
-    target := AArch64.target
-    doc := Spec.Seed.cfbDecryptApi.doc (notes := [note])
+    verified := Proof.Seed.AArch64.cfbEncrypt_framed },
+  Spec.Seed.cfbDecryptApi.artifact AArch64.target {
+    notes := [note]
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x4 182 Impl.Seed.AArch64.cfbDecrypt
-    contract := Spec.Seed.cfbDecryptContract AArch64.abi 1456
     stack := 1456
-    verified := Proof.Seed.AArch64.cfbDecrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Seed.AArch64.cfbDecrypt_framed }]
 
 end VG.Artifacts.SeedCfb.AArch64

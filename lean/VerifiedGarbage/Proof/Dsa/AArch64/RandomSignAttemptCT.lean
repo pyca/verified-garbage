@@ -1,12 +1,29 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCall
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublic
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRunning
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingleCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSampleCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignAttempt
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingleCT
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSampleCT
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignAttempt
+import VerifiedGarbage.Proof.Dsa.RandomSignTrace
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSample
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCall
+meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublic
+meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRunning
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingleCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSampleCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignAttempt
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.RandomSignTrace
+meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSample
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! A complete signing attempt leaks only its specified sampling and signing markers. -/
 @[expose] public section

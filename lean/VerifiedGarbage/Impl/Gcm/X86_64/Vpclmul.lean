@@ -128,6 +128,17 @@ def body8 : List Instr :=
 /-- `d ← mul(p, H'⁸)` in each lane, with `H'⁸` in both lanes of `ymm7`. -/
 def mulPair (d p : XReg) : List Instr := zero ++ acc p .xmm7 ++ reduce d
 
+/-- `H'³`–`H'⁸` from `H'` and `H'²` in `xmm3` and `xmm4`, on 256-bit
+registers: `[H'², H']` (`ymm12`) times `H'²` gives `[H'⁴, H'³]` (`ymm13`), and
+`ymm12` and `ymm13` times `H'⁴` give `[H'⁶, H'⁵]` (`ymm14`) and `[H'⁸, H'⁷]`
+(`ymm15`): the eight powers paired as `powers` leaves them, with two fewer
+multiplications. -/
+def powersY : List Instr :=
+  ([.vop (.vinserti128 .xmm0 .xmm0 .xmm0 1), .vop (.vinserti128 .xmm1 .xmm1 .xmm1 1),
+    .vop (.vmovdqa .l128 .xmm2 .xmm2), .vop (.vinserti128 .xmm12 .xmm4 .xmm3 1),
+    .vop (.vinserti128 .xmm7 .xmm4 .xmm4 1)] : List Instr) ++ mulPair .xmm13 .xmm12 ++
+  ([.vop (.vinserti128 .xmm7 .xmm13 .xmm13 1)] : List Instr) ++ mulPair .xmm14 .xmm12 ++ mulPair .xmm15 .xmm13
+
 /-- `H'⁹`–`H'¹⁶`, paired in the lanes of `ymm3`–`ymm6`. -/
 def powers16 : List Instr :=
   ([.vop (.vinserti128 .xmm7 .xmm15 .xmm15 1)] : List Instr) ++ mulPair .xmm3 .xmm15 ++ mulPair .xmm4 .xmm14 ++

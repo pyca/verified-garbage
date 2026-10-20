@@ -1,12 +1,9 @@
 module
+public import VerifiedGarbage.Proof.X448.Arm.RowMem
 
-public import VerifiedGarbage.Proof.X448.Arm.Init
 import VerifiedGarbage.Proof.X448.Arm.RowF
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X448.Arm.Row
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: the multiplication loop

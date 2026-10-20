@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Impl.X25519.X86.Field32
 public import VerifiedGarbage.Proof.X25519.X86.Field32.Verified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
 
 /-! # Powers in curve25519's field, in radix `2^32`, on x86 (32-bit) -/
 
@@ -23,13 +21,9 @@ def notes : List String := ["Uses baseline integer instructions. The function sa
   `2^256 = 38` into eight words. It then restores the registers."]
 
 def artifacts : List Artifact := [
-  { pow250Api with
-    target := X86.target
-    doc := pow250Api.doc (notes := notes)
+  pow250Api.artifact X86.target {
+    notes := notes
     code := pow250Fn
-    contract := pow250Contract X86.abi
-    verified := pow250Fn_verified
-    ofSig := by unfold pow250Contract; exact ⟨_, _, _, rfl⟩
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := pow250Fn_verified }]
 
 end VG.Artifacts.Gf25519R32.X86

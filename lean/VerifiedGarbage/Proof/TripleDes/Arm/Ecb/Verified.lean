@@ -1,18 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.Arm.VerifiedBlock
-public import VerifiedGarbage.Impl.TripleDes.Arm.Ecb
-public import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.TripleDes.EcbMemory
 import VerifiedGarbage.Proof.Rc2.Arm.KeySteps
-public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.TripleDes.Contract
 public import VerifiedGarbage.Proof.TripleDes.Scratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.TripleDes.Arm.Pre
 import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
 
 /-! ## `Call` -/
 

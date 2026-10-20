@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.EncMath
+import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.EncMath
 public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.EncBase
-meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.MlKem.AArch64.Codec16
+public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Lanes
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Bytes
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # ML-KEM encoding eight coefficients at a time -/
 

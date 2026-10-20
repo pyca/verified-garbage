@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Calls
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Calls
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Init
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Bytes
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Streaming ChaCha20 on x86-64: `apply`, correctness

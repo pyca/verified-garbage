@@ -1,21 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnBase
-meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnBase
-public import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Bignum.X86_64.MontFnBase
+import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Spec.Rsa.Mont
-meta import VerifiedGarbage.Spec.Rsa.Mont
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.Bignum.X86_64.MontFn
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnBase
+meta import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Spec.Rsa.Mont
 meta import VerifiedGarbage.Proof.Framework.Contract
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Impl.Bignum.X86_64.MontFn
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 
@@ -23,7 +25,7 @@ namespace VG.Proof.Bignum.X86_64.MontFn
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.Bignum VG.Impl.Bignum.X86_64.MontFn
 open VG.Impl.Bignum.X86_64.Public (aN aAcc aTmp)
-open VG.Spec.Rsa.Mont (numAt wOf wordAt Layout Operand Keeps arrAt aM minvWord)
+open VG.Spec.Rsa.Mont (numAt wOf wordAt Layout Operand arrAt aM minvWord)
 
 /-- The index in the low half of `r`. -/
 abbrev idx (s : State) (r : Reg) : Nat := ((s.gpr r).setWidth 32).toNat
@@ -46,7 +48,7 @@ def fnContract : Contract isa where
     let M := numAt s.mem ws w aM
     numAt s'.mem ws w (idx s .rdx) < M ∧
       numAt s'.mem ws w (idx s .rdx) * 2 ^ (64 * w) % M = numAt s.mem ws w (idx s .rcx) * numAt s.mem ws w (idx s .r8) % M ∧
-      Keeps ws (s.gpr .rsi).toNat w (idx s .rdx) s.mem s'.mem
+      Spec.Rsa.Mont.Keeps ws (s.gpr .rsi).toNat w (idx s .rdx) s.mem s'.mem
   pub s₁ s₂ :=
     s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
       (s₁.gpr .rdx).setWidth 32 = (s₂.gpr .rdx).setWidth 32 ∧ (s₁.gpr .rcx).setWidth 32 = (s₂.gpr .rcx).setWidth 32 ∧
@@ -69,7 +71,7 @@ def fnLazyContract : Contract isa where
     let w := wOf s.mem ws
     let M := numAt s.mem ws w aM
     numAt s'.mem ws w (idx s .rdx) * 2 ^ (64 * w) % M = numAt s.mem ws w (idx s .rcx) * numAt s.mem ws w (idx s .r8) % M ∧
-      Keeps ws (s.gpr .rsi).toNat w (idx s .rdx) s.mem s'.mem
+      Spec.Rsa.Mont.Keeps ws (s.gpr .rsi).toNat w (idx s .rdx) s.mem s'.mem
   pub := fnContract.pub
 
 theorem fnLazy_pre {s : State} (h : fnContract.pre s) : fnLazyContract.pre s :=
@@ -141,7 +143,7 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
     obtain ⟨t, s', he, hg, hp⟩ := hwp
     exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he hg, hp⟩
   rw [numAt_eq, numAt_eq] at hB
-  refine WP.mono (mulBase_ok hs rfl hH hZ hw hw' ho ha hb ho2 ho3 ha2 hb2 (idx_eq s .rdx) (idx_eq s .rcx)
+  refine WP.mono (mulBase_ok hs rfl hH hZ hw hw' ho ha hb ho2 ho3 ha2 ha3 hb2 hb3 (idx_eq s .rdx) (idx_eq s .rcx)
     (idx_eq s .r8) hinv hB) fun t ⟨hlt, heq, har, k, hcs⟩ => ?_
   have hn := hs.nowrap
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_, ?_, ?_⟩

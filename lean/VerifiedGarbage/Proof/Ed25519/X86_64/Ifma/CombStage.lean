@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Setup
 public import VerifiedGarbage.Impl.Ed25519.X86_64.CombIfma
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed25519's comb with AVX512_IFMA: the blocks, run symbolically
@@ -45,7 +44,7 @@ theorem eloadS_regs (E : Env) : ∀ j < 5, ∀ l < 4, (eloadS.reg (5 + j)).nat E
 
 def eloadB : Bnds :=
   ⟨fun _ => 2 ^ 64 - 1, fun _ => 2 ^ 64 - 1, fun d => if d = KM then 2 ^ 51 - 1 else 2 ^ 64 - 1,
-    fun _ => 0⟩
+    fun _ => 0, fun _ => 2 ^ 64 - 1⟩
 
 theorem eloadS_ok : ∀ j < 5, ∀ l < 4, (eloadS.reg (5 + j)).ok eloadB l = true ∧
     (eloadS.reg (5 + j)).bnd eloadB l < 2 ^ 52 := by
@@ -86,7 +85,7 @@ theorem vaddAS_nat (E : Env) : ∀ j < 5, ∀ l < 4, (vaddAS.reg j).nat E l = aN
 def addB : Bnds :=
   ⟨fun i => if i < 5 then 2 ^ 61 - 1 else 2 ^ 64 - 1, fun _ => 2 ^ 64 - 1,
     fun d => if d = KB0 then 2 ^ 62 - 38912 else if d = KB1 then 2 ^ 62 - 2048 else 2 ^ 64 - 1,
-    fun d => if d = KB0 then 2 ^ 62 - 38912 else if d = KB1 then 2 ^ 62 - 2048 else 0⟩
+    fun d => if d = KB0 then 2 ^ 62 - 38912 else if d = KB1 then 2 ^ 62 - 2048 else 0, fun _ => 2 ^ 64 - 1⟩
 
 theorem vaddAS_ok : ∀ j < 5, ∀ l < 4, (vaddAS.reg j).ok addB l = true ∧
     (vaddAS.reg j).bnd addB l < 2 ^ 63 := by

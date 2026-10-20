@@ -1,13 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.CallFinishCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Call2
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Proof.Dsa.X86_64.Call
+import VerifiedGarbage.Proof.Dsa.X86_64.Arguments2
+import VerifiedGarbage.Proof.Dsa.X86_64.EnterLeave
 
 /-! # Constant time of the complete parent-to-child reduction call -/
 

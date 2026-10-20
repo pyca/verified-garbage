@@ -1,11 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Verified
-public import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.StackScratch.X86
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
 
 /-!
 # AES-GCM's key setup and streaming functions on x86, with their working space on the stack
@@ -36,9 +33,9 @@ private theorem noEsp_of {c : Prog isa} (h : NoSp c) :
 /-- The frame of `withStackScratch` keeps the stack pointer for any `c` that
 does, if it does for an empty body (decided for literal sizes). -/
 theorem withStackScratch_spSafe {bytes n : Nat} {c : Prog isa}
+    (h : c.all (fun i => !isa.writesSp i) = true)
     (hf : (Impl.StackScratch.X86.withStackScratch bytes n (.block [])).all
-      (fun i => !isa.writesSp i) = true)
-    (h : c.all (fun i => !isa.writesSp i) = true) :
+      (fun i => !isa.writesSp i) = true := by decide) :
     (Impl.StackScratch.X86.withStackScratch bytes n c).all (fun i => !isa.writesSp i) = true := by
   simp only [Impl.StackScratch.X86.withStackScratch, Code.all, List.all_nil, Bool.and_true,
     Bool.and_eq_true] at hf ⊢

@@ -1,14 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSelected
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-DSA (FIPS 204) verification on AArch64 -/
 
@@ -25,38 +18,29 @@ def notes : List String :=
     without a branch, so the only branches depend on the public key and the signature."]
 
 def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
-  { Spec.MlDsa.verify44Api with
-    name := Spec.MlDsa.verify44Api.name ++ v.callee.suffix
+  Spec.MlDsa.verify44Api.artifact AArch64.target {
+    suffix := v.callee.suffix
     features := v.features
     consts := selectedConsts v
-    target := AArch64.target
-    doc := Spec.MlDsa.verify44Api.doc (notes := notes)
+    notes := notes
     code := selectedCode v Spec.MlDsa.mlDsa44
-    contract := Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa44 (selectedAbi v) 16
     stack := 16
-    verified := selected_verify_verified v (.inl rfl)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.verify65Api with
-    name := Spec.MlDsa.verify65Api.name ++ v.callee.suffix
+    verified := selected_verify_verified v (.inl rfl) },
+  Spec.MlDsa.verify65Api.artifact AArch64.target {
+    suffix := v.callee.suffix
     features := v.features
     consts := selectedConsts v
-    target := AArch64.target
-    doc := Spec.MlDsa.verify65Api.doc (notes := notes)
+    notes := notes
     code := selectedCode v Spec.MlDsa.mlDsa65
-    contract := Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa65 (selectedAbi v) 16
     stack := 16
-    verified := selected_verify_verified v (.inr (.inl rfl))
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.verify87Api with
-    name := Spec.MlDsa.verify87Api.name ++ v.callee.suffix
+    verified := selected_verify_verified v (.inr (.inl rfl)) },
+  Spec.MlDsa.verify87Api.artifact AArch64.target {
+    suffix := v.callee.suffix
     features := v.features
     consts := selectedConsts v
-    target := AArch64.target
-    doc := Spec.MlDsa.verify87Api.doc (notes := notes)
+    notes := notes
     code := selectedCode v Spec.MlDsa.mlDsa87
-    contract := Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa87 (selectedAbi v) 16
     stack := 16
-    verified := selected_verify_verified v (.inr (.inr rfl))
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := selected_verify_verified v (.inr (.inr rfl)) }]
 
 end VG.Generic.Keccak.AArch64.MlDsaVerify

@@ -1,15 +1,30 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCall
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCall
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyCT
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CT
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyLoop
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCall
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CT
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyLoop
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Impl.AesGcm.X86_64
+meta import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: constant time of a short copy to `vg_aes_gcm_seal_split`
@@ -208,7 +223,7 @@ theorem selTest_rel {ts : Nat} (hts : ts < 2 ^ 31) :
     (fun _ h => selTest_wp hp hts h) (fun _ h => selTest_wp hp' hts h)
 
 /-- `ctx` and `rounds`, in two runs. -/
-theorem splitCtx_rel {σ₁ σ₂ p₁ p₂ : State} (h₁ : Base s₀ (AL s₀) 0 σ₁) (h₂ : Base s₀' (AL s₀') 0 σ₂)
+theorem splitCtx_rel {σ₁ σ₂ p₁ p₂ : State} (h₁ : SCBase s₀ σ₁) (h₂ : SCBase s₀' σ₂)
     (hP₁ : p₁.gpr .rsp = SP s₀ - BitVec.ofNat 64 40) (hrd₁ : p₁.rd = σ₁.rd)
     (hwr₁ : p₁.wr = ⟨SP s₀ - BitVec.ofNat 64 40, 40⟩ :: σ₁.wr)
     (hf₁ : Frame [⟨SP s₀ - BitVec.ofNat 64 40, 40⟩] σ₁.mem p₁.mem)
@@ -224,8 +239,8 @@ theorem splitCtx_rel {σ₁ σ₂ p₁ p₂ : State} (h₁ : Base s₀ (AL s₀)
   exact ChaCha20Poly1305.X86_64.Gather.rel_regs [.r11] (by simp [L₁.1, L₂.1, e₁, e₂, pb.w]) splitCtx_check
 
 /-- The call itself, in two runs. -/
-theorem splitCallX_rel (S : SplitFn M) {σ₁ σ₂ : State} (h₁ : SPBase s₀ σ₁) (g₁ : SplitRegs s₀ σ₁)
-    (h₂ : SPBase s₀' σ₂) (g₂ : SplitRegs s₀' σ₂) {q₁ q₂ : State} (Q₁ : SplitQ s₀ σ₁ q₁) (Q₂ : SplitQ s₀' σ₂ q₂) :
+theorem splitCallX_rel (S : SplitFn M) {σ₁ σ₂ : State} (h₁ : SCBase s₀ σ₁) (g₁ : SplitRegs s₀ σ₁)
+    (h₂ : SCBase s₀' σ₂) (g₂ : SplitRegs s₀' σ₂) {q₁ q₂ : State} (Q₁ : SplitQ s₀ σ₁ q₁) (Q₂ : SplitQ s₀' σ₂ q₂) :
     RelCT isa (Eq2 q₁ q₂) (.call S.fn.name S.fn.code) TT := by
   have hP₁ : (pushed [.rax, .r10, .r11, .rdi, .rsi] σ₁).gpr .rsp = SP s₀ - BitVec.ofNat 64 40 := by
     rw [pushed_rsp, h₁.rsp]; rfl
@@ -257,8 +272,8 @@ theorem splitCallX_rel (S : SplitFn M) {σ₁ σ₂ : State} (h₁ : SPBase s₀
     q₂sp, K, Nn, Ad, AL, pb.rdi, pb.rsi, pb.rdx, pb.rcx, pb.r8, pb.r9, pb.eFb, pb.eFl, pb.dst, pb.len, pb.tg, and_self]
 
 /-- The call of `vg_aes_gcm_seal_split`, in two runs. -/
-theorem splitCall_rel (S : SplitFn M) {σ₁ σ₂ : State} (h₁ : SPBase s₀ σ₁) (g₁ : SplitRegs s₀ σ₁)
-    (h₂ : SPBase s₀' σ₂) (g₂ : SplitRegs s₀' σ₂) :
+theorem splitCall_rel (S : SplitFn M) {σ₁ σ₂ : State} (h₁ : SCBase s₀ σ₁) (g₁ : SplitRegs s₀ σ₁)
+    (h₂ : SCBase s₀' σ₂) (g₂ : SplitRegs s₀' σ₂) :
     RelCT isa (Eq2 σ₁ σ₂) (.frame (.push [.rax, .r10, .r11, .rdi, .rsi])
       (.seq (.block splitCtx) (.call S.fn.name S.fn.code)) (.pop .rax 5)) TT := by
   have wsp := hp.w_sp
@@ -281,8 +296,8 @@ theorem splitCall_rel (S : SplitFn M) {σ₁ σ₂ : State} (h₁ : SPBase s₀ 
     rw [pushed_wr, h₂.rsp]; rfl
   refine RelCT.frame (fun _ _ h => by obtain ⟨rfl, rfl⟩ := h; rw [h₁.rsp, h₂.rsp]; exact pb.rsp.symm)
     ((ChaCha20Poly1305.X86_64.Gather.rel_seq
-      (splitCtx_rel hp hp' pb h₁.toBase h₂.toBase hP₁ (pushed_rd _ _) hw₁ hf₁ hP₂ (pushed_rd _ _) hw₂ hf₂)
-      (splitCtx_ok hp h₁.toBase hP₁ (pushed_rd _ _) hw₁ hf₁) (splitCtx_ok hp' h₂.toBase hP₂ (pushed_rd _ _) hw₂ hf₂)
+      (splitCtx_rel hp hp' pb h₁ h₂ hP₁ (pushed_rd _ _) hw₁ hf₁ hP₂ (pushed_rd _ _) hw₂ hf₂)
+      (splitCtx_ok hp h₁ hP₁ (pushed_rd _ _) hw₁ hf₁) (splitCtx_ok hp' h₂ hP₂ (pushed_rd _ _) hw₂ hf₂)
       fun q₁ q₂ ⟨a₁, b₁, c₁, d₁, e₁, f₁⟩ ⟨a₂, b₂, c₂, d₂, e₂, f₂⟩ =>
         splitCallX_rel hp hp' pb S h₁ g₁ h₂ g₂ ⟨a₁, b₁, c₁, d₁, e₁, f₁⟩ ⟨a₂, b₂, c₂, d₂, e₂, f₂⟩).mono (fun _ _ h => by
         obtain ⟨_, _, ⟨rfl, rfl⟩, rfl, rfl⟩ := h; exact ⟨rfl, rfl⟩) fun _ _ h => h)
@@ -344,8 +359,8 @@ theorem copySplit_rel (S : SplitFn M) (hL : L s₀ - fl s₀ < 2 ^ 63) {σ₁ σ
     (splitArgs_ok hp' B₂) fun ξ₁ ξ₂ a₁ a₂ => ?_
   obtain ⟨dx₁', cx₁, r8₁, r9₁', ax₁, r10₁, di₁', si₁', r11₁'', cs₁, m₁', rd₁, wr₁⟩ := a₁
   obtain ⟨dx₂', cx₂, r8₂, r9₂', ax₂, r10₂, di₂', si₂', r11₂'', cs₂, m₂', rd₂, wr₂⟩ := a₂
-  exact splitCall_rel hp hp' pb S (B₁.regs m₁' cs₁ rd₁ wr₁) ⟨dx₁', cx₁, r8₁, r9₁', ax₁, r10₁, di₁', si₁', r11₁''⟩
-    (B₂.regs m₂' cs₂ rd₂ wr₂) ⟨dx₂', cx₂, r8₂, r9₂', ax₂, r10₂, di₂', si₂', r11₂''⟩
+  exact splitCall_rel hp hp' pb S (B₁.regs m₁' cs₁ rd₁ wr₁).toSC ⟨dx₁', cx₁, r8₁, r9₁', ax₁, r10₁, di₁', si₁', r11₁''⟩
+    (B₂.regs m₂' cs₂ rd₂ wr₂).toSC ⟨dx₂', cx₂, r8₂, r9₂', ax₂, r10₂, di₂', si₂', r11₂''⟩
 
 end
 

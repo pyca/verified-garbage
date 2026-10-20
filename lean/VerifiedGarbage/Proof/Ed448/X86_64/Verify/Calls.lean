@@ -1,18 +1,19 @@
 module
 
 import VerifiedGarbage.Proof.Ed448.X86_64.VariantBounds
-public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
-public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
-public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarVerified
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
+import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarVerified
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMain
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Layout
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLit
+import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # Ed448 verification on x86-64: the challenge and the equation

@@ -1,13 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Contract
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Fn
 
 /-!
 # AES-GCM on whole blocks out of place, x86-64: `Verified`

@@ -1,12 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Terms
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Vec
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Win
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: moving numbers between the layouts
@@ -32,6 +28,10 @@ variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 theorem conv_bounds (hl : LayOk l) : 1 ≤ l.W ∧ 64 * l.W ≤ 52 * l.L ∧ l.L ≤ 40 ∧ 64 * l.W + 2 ≤ 52 * l.S ∧
     128 * l.W ≤ 104 * l.S ∧ l.S ≤ l.L := by
   rcases hl with rfl | rfl | rfl <;> decide
+
+theorem conv_boundsN (hl : AmmOk l) : 1 ≤ l.W ∧ 64 * l.W ≤ 52 * l.L ∧ l.L ≤ 80 ∧ 64 * l.W + 2 ≤ 52 * l.S ∧
+    128 * l.W ≤ 104 * l.S ∧ l.S ≤ l.L := by
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
 
 theorem and_mask' (x : BitVec 64) : x &&& mask52 = BitVec.ofNat 64 (x.toNat % 2 ^ 52) := AmmSym.and_mask' x
 
@@ -138,7 +138,7 @@ theorem l52_ok {s : State} {A C : Addr} {j : Nat} (hA : s.gpr .rsi = A) (hC : s.
       rw [and_mask', BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, limbN_one hw (by omega)]
 
 /-- The `W` words at `rsi = A` into `4 R` limbs at `r11 = C`. -/
-theorem to52_ok (hl : LayOk l) {s : State} {A C : Addr} (hA : s.gpr .rsi = A) (hC : s.gpr .r11 = C)
+theorem to52_ok (hl : AmmOk l) {s : State} {A C : Addr} (hA : s.gpr .rsi = A) (hC : s.gpr .r11 = C)
     (h12 : s.gpr .r12 = mask52) (hrd : ∀ i < l.W, InRegions (s.rd ++ s.wr) (A + BitVec.ofNat 64 (8 * i)) 8)
     (hwr : ∀ j < l.L, InRegions s.wr (C + BitVec.ofNat 64 (l.off j)) 8)
     (hsep : ∀ m m' : Mem, Outside C 0 l.NB m m' → ∀ i < l.W, word m' A (8 * i) = word m A (8 * i)) :
@@ -165,15 +165,15 @@ theorem to52_ok (hl : LayOk l) {s : State} {A C : Addr} (hA : s.gpr .rsi = A) (h
       ((k.gpr (by decide)).trans hC) ((k.gpr (by decide)).trans h12)
       (fun i hi => by rw [k.2.1, k.2.2]; exact hrd i hi) (by rw [k.2.2]; exact hwr n (by omega)))
       fun t' ⟨m', k', x'⟩ => ⟨fun j hj => ?_, ?_, (k.trans k').mono (by decide), x'.trans x⟩
-    · have := off_lt hl (j := n) (by omega)
+    · have := off_ltN hl (j := n) (by omega)
       rw [m', hwv]
       rcases Nat.lt_or_eq_of_le (Nat.le_of_lt_succ hj) with hj | rfl
-      · have := off_lt hl (j := j) (by omega)
-        have hs := off_sep hl (j := n) (q := j) (by omega) (by omega) (by omega)
+      · have := off_ltN hl (j := j) (by omega)
+        have hs := off_sepN hl (j := n) (q := j) (by omega) (by omega) (by omega)
         rw [(writeW_outside _ C _ (by omega)).word (by omega) (by omega)]
         exact v j hj
       · exact VG.Proof.Bignum.word_writeW_self _ _ _ _
-    · have := off_lt hl (j := n) (by omega)
+    · have := off_ltN hl (j := n) (by omega)
       rw [m']
       exact o.trans ((writeW_outside _ C _ (by omega)).mono (by omega) (by omega))
 
@@ -373,9 +373,9 @@ theorem wv_digitsG {m : Mem} {P : Addr} {V : Nat} :
       BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide), Nat.mul_succ, Nat.pow_add, Nat.mod_mul]
 
 /-- The value of the limbs `to52` writes: the number, below `2^(64 W)`. -/
-theorem val_to52 (hl : LayOk l) {m : Mem} {A : Addr} : lval (limbN (wv m A 0 l.W)) l.L = wv m A 0 l.W := by
+theorem val_to52 (hl : AmmOk l) {m : Mem} {A : Addr} : lval (limbN (wv m A 0 l.W)) l.L = wv m A 0 l.W := by
   have h1 := VG.Proof.Bignum.wv_lt m A 0 l.W
-  have h2 := pow2_le (a := 64 * l.W) (b := 52 * l.L) (conv_bounds hl).2.1
+  have h2 := pow2_le (a := 64 * l.W) (b := 52 * l.L) (conv_boundsN hl).2.1
   rw [lval_limbN]
   generalize 2 ^ (64 * l.W) = a at h1 h2
   generalize 2 ^ (52 * l.L) = b at h2 ⊢

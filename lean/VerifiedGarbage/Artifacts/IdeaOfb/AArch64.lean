@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.AArch64.FbVerified
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # IDEA-OFB artifacts on baseline AArch64 -/
 
@@ -16,13 +16,10 @@ def note : String :=
   The mode is the generic OFB of `Impl/Modes/AArch64/`."
 
 def artifacts : List Artifact := [
-  { Spec.Idea.ofbApi with
-    target := AArch64.target
-    doc := Spec.Idea.ofbApi.doc (notes := [note])
+  Spec.Idea.ofbApi.artifact AArch64.target {
+    notes := [note]
     code := Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.ofb
-    contract := Spec.Idea.ofbContract AArch64.abi 208
     stack := 208
-    verified := Proof.Idea.AArch64.ofb_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Idea.AArch64.ofb_framed }]
 
 end VG.Artifacts.IdeaOfb.AArch64

@@ -1,19 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProductCallCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCallCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Joint
 import VerifiedGarbage.Proof.Dsa.X86_64.JointEncodeCT
+import VerifiedGarbage.Proof.Dsa.X86_64.JointBuildCT
+import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+import VerifiedGarbage.Proof.Dsa.X86_64.JointEncode
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCallCT
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Joint
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointEncodeCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.JointPrepare
-meta import VerifiedGarbage.Proof.Dsa.X86_64.JointPrepare
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Spec.Dsa
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Spec.Dsa
+meta import VerifiedGarbage.Proof.Dsa.X86_64.JointBuildCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+meta import VerifiedGarbage.Proof.Dsa.X86_64.JointEncode
+meta import VerifiedGarbage.Proof.Bignum.Math
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant-time preparation of the joint exponentiation table -/
 

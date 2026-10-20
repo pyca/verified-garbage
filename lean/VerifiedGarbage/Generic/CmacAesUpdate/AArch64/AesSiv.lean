@@ -1,7 +1,47 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.AesSiv.AArch64.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.AesCcm.Mac
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Call
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
+public import VerifiedGarbage.Proof.AesSiv.AArch64.FinishLong
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Open
+public import VerifiedGarbage.Proof.AesSiv.AArch64.S2vAd
+public import VerifiedGarbage.Proof.AesSiv.Ctr32
+public import VerifiedGarbage.Proof.AesSiv.Key
+public import VerifiedGarbage.Proof.Cmac.Dbl32
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.AesCcm.Mac
+import VerifiedGarbage.Proof.AesSiv.AArch64.Call
+import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
+import VerifiedGarbage.Proof.AesSiv.AArch64.FinishLong
+import VerifiedGarbage.Proof.AesSiv.AArch64.Open
+import VerifiedGarbage.Proof.AesSiv.AArch64.S2vAd
+import VerifiedGarbage.Proof.AesSiv.Ctr32
+import VerifiedGarbage.Proof.AesSiv.Key
+import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Gcm.Stream
 
 /-!
 # AES-SIV (RFC 5297) encryption and decryption on AArch64
@@ -32,28 +72,22 @@ def cryptNote (v : Proof.CmacAes.AArch64.UpdateImpl) : String :=
     v.ctr.suffix ++ "`), and encrypts with `" ++ v.ctr.callee.name ++ "`."
 
 def artifacts (v : Proof.CmacAes.AArch64.UpdateImpl) : List Artifact := [
-  { Spec.Siv.encryptApi with
-    name := Spec.Siv.encryptApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Siv.encryptApi.doc (notes := [cryptNote v])
+  Spec.Siv.encryptApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [cryptNote v]
     code := Impl.StackScratch.AArch64.withStackScratch 2576 .x7
       (Impl.AesSiv.AArch64.encrypt v.callee v.ctr.callee v.ctr.suffix)
-    contract := Spec.Siv.encryptContract AArch64.abi 2576
     stack := 2576
     verified := encrypt_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
-  { Spec.Siv.decryptApi with
-    name := Spec.Siv.decryptApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Siv.decryptApi.doc (notes := [cryptNote v,
-      "It compares the IVs and overwrites the data with zeros without a branch on the result."])
+  Spec.Siv.decryptApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [cryptNote v,
+      "It compares the IVs and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.AArch64.withStackScratch 2576 .x7
       (Impl.AesSiv.AArch64.decrypt v.callee v.ctr.callee v.ctr.suffix)
-    contract := Spec.Siv.decryptContract AArch64.abi 2576
     stack := 2576
     verified := decrypt_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features }]
 
 end VG.Generic.CmacAesUpdate.AArch64.AesSiv

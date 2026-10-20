@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.P256
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # P-256's base point is on the curve

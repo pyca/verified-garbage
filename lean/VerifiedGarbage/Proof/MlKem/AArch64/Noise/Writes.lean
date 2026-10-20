@@ -1,10 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Pair
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutPair
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Offsets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Exact paired-noise footprints and separated retained outputs -/
 @[expose] public section

@@ -1,32 +1,32 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Continue
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Trace
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
-structure Resume (L : List Zq) (B : Nat→Byte) (buf : Nat) (aP : Addr) (s : State) : Prop where
-  env : Rej8.Env 56 B (s.gpr .x19+BitVec.ofNat 64 buf) aP s
+structure ResumeW (w16 : Bool) (L : List Zq) (B : Nat→Byte) (buf : Nat) (aP : Addr) (s : State) : Prop where
+  env : Rej8.EnvW w16 56 B (s.gpr .x19+BitVec.ofNat 64 buf) aP s
   constants : Rej8.Constants s
   len : L.length≤256
-  coeffs : Rej8.Scalar.Coeffs s.mem aP L
-  x3 : s.gpr .x3=coeffAddr aP L.length
+  coeffs : Rej8.Scalar.CoeffsW w16 s.mem aP L
+  x3 : s.gpr .x3=cAddr w16 aP L.length
   x4 : (s.gpr .x4).toNat=256-L.length
 
-theorem continue_relCT {s u : State} {buf : Nat} (hb : buf<4096)
-    {B : Nat→Byte} {L : List Zq} {aP : Addr} (ps : Resume L B buf aP s) (pu : Resume L B buf aP u)
+abbrev Resume := ResumeW false
+
+theorem continue_relCT {w16 : Bool} {s u : State} {buf : Nat} (hb : buf<4096)
+    {B : Nat→Byte} {L : List Zq} {aP : Addr} (ps : ResumeW w16 L B buf aP s) (pu : ResumeW w16 L B buf aP u)
     (hsp : s.sp=u.sp) (h19 : s.gpr .x19=u.gpr .x19) (h16 : s.gpr .x16=u.gpr .x16) :
     RelCT isa (fun a b=>a=s ∧ b=u)
-      (.seq (.block (continueEntry buf)) Impl.MlKem.AArch64.Rej8.rejLoop)
+      (.seq (.block (continueEntry buf)) (Impl.MlKem.AArch64.Rej8.rejLoop w16))
       (fun a b=>a.sp=b.sp ∧ a.gpr .x19=b.gpr .x19) := by
   have start : RelCT isa (fun a b=>a=s ∧ b=u) (.block (continueEntry buf))
-      (fun a b=>Rej8.Entry L 56 B (s.gpr .x19+BitVec.ofNat 64 buf) aP a ∧
-        Rej8.Entry L 56 B (s.gpr .x19+BitVec.ofNat 64 buf) aP b ∧ a.sp=b.sp ∧ a.gpr .x16=b.gpr .x16) := by
+      (fun a b=>Rej8.EntryW w16 L 56 B (s.gpr .x19+BitVec.ofNat 64 buf) aP a ∧
+        Rej8.EntryW w16 L 56 B (s.gpr .x19+BitVec.ofNat 64 buf) aP b ∧ a.sp=b.sp ∧ a.gpr .x16=b.gpr .x16) := by
     intro a b tr ur a' b' h ea eb
     rcases h with ⟨ha,hb'⟩
     subst a; subst b

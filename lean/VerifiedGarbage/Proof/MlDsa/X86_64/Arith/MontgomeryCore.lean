@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMul
 public import VerifiedGarbage.Spec.MlDsa.Montgomery
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLanes
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 @[expose] public section
 

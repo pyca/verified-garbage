@@ -1,10 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86.Front
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesOcb.X86.TagIO
+import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.AesGcm.X86.Top
+import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Spec.Ocb.Contract
+import Mathlib.Tactic.Set
 
 /-!
 # AES-OCB on x86: `vg_aes_ocb_seal` and `vg_aes_ocb_open`

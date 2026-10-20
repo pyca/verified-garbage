@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Octets
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.FieldTheory.Finite.Basic
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Rsa.Octets
+public import VerifiedGarbage.Spec.Rsa
+import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Data.Nat.Prime.Defs
+public import Mathlib.Data.Nat.ModEq
 
 /-!
 # RSA: what BoringSSL's checks protect against

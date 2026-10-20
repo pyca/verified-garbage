@@ -1,7 +1,7 @@
 module
 
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Sha1.X86.Shared
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # SHA-1 (FIPS 180-4) on x86
@@ -16,12 +16,8 @@ made with it, are registered for each of its implementations
 namespace VG.Artifacts.Sha1.X86
 
 def artifacts : List Artifact := [
-  { Spec.Sha1.initApi with
-    target := X86.target
-    doc := Spec.Sha1.initApi.doc
+  Spec.Sha1.initApi.artifact X86.target {
     code := Impl.Sha1.X86.Stream.init
-    contract := Spec.Sha1.initContract X86.abi
-    verified := Proof.Sha1.X86.Shared.init
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Sha1.X86.Shared.init }]
 
 end VG.Artifacts.Sha1.X86

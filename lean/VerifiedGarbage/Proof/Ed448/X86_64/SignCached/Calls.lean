@@ -1,17 +1,22 @@
 module
 
 import VerifiedGarbage.Proof.Ed448.X86_64.VariantBounds
-public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Prune
-public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Calls
+import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Calls
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMulAddMain
+public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Layout
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarVerified
+import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Hash
+import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLit
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
+import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # Ed448 signing with a cached public key on x86-64: the scalar calls

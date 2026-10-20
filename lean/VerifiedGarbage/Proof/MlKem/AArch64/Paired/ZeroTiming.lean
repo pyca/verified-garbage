@@ -1,27 +1,32 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Paired
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Checkpoint
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Scalar
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Trace
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Zero
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
-structure ZeroReady (L : List Zq) (slot : Nat) (aP : Addr) (s : State) : Prop where
+structure ZeroReadyW (w16 : Bool) (L : List Zq) (slot : Nat) (aP : Addr) (s : State) : Prop where
   len : L.length≤256
-  coeffs : Rej8.Scalar.Coeffs s.mem aP L
-  saved : checkpoint (s.gpr .x19+BitVec.ofNat 64 slot) aP L s.mem
+  coeffs : Rej8.Scalar.CoeffsW w16 s.mem aP L
+  saved : checkpointW w16 (s.gpr .x19+BitVec.ofNat 64 slot) aP L s.mem
   read0 : InRegions (s.rd++s.wr) (s.gpr .x19+BitVec.ofNat 64 slot) 8
   read1 : InRegions (s.rd++s.wr) (s.gpr .x19+BitVec.ofNat 64 (slot+8)) 8
-  writable : ∀i<256,InRegions s.wr (coeffAddr aP i) 4
+  writable : ∀i<256,InRegions s.wr (cAddr w16 aP i) 4
 
-theorem zeroExtra_relCT {s u : State} {slot : Nat} (ho : slot+8<32768) (ha : slot%8=0)
-    {L : List Zq} {aP : Addr} (ps : ZeroReady L slot aP s) (pu : ZeroReady L slot aP u)
+abbrev ZeroReady := ZeroReadyW false
+
+theorem zeroExtra_relCT {w16 : Bool} {s u : State} {slot : Nat} (ho : slot+8<32768) (ha : slot%8=0)
+    {L : List Zq} {aP : Addr} (ps : ZeroReadyW w16 L slot aP s) (pu : ZeroReadyW w16 L slot aP u)
     (hsp : s.sp=u.sp) (h19 : s.gpr .x19=u.gpr .x19) :
-    RelCT isa (fun a b=>a=s ∧ b=u) (Impl.MlKem.AArch64.Paired.zeroExtra slot)
+    RelCT isa (fun a b=>a=s ∧ b=u) (Impl.MlKem.AArch64.Paired.zeroExtra slot w16)
       (fun a b=>s.sp=a.sp ∧ u.sp=b.sp) := by
   have start : RelCT isa (fun a b=>a=s ∧ b=u)
       (.block [.ldr .x .x3 .x19 slot,.ldr .x .x4 .x19 (slot+8)])
@@ -45,11 +50,11 @@ theorem zeroExtra_relCT {s u : State} {slot : Nat} (ho : slot+8<32768) (ha : slo
       have eu : u.gpr .x19+BitVec.ofNat 64 (slot+8)=u.gpr .x19+BitVec.ofNat 64 slot+8 := by
         rw [BitVec.ofNat_add,BitVec.add_assoc]; rfl
       rw [es,eu,ps.saved.2,pu.saved.2]
-  have trace : RelCT isa (fun a b=>a=s ∧ b=u) (Impl.MlKem.AArch64.Paired.zeroExtra slot)
+  have trace : RelCT isa (fun a b=>a=s ∧ b=u) (Impl.MlKem.AArch64.Paired.zeroExtra slot w16)
       (fun _ _=>True) := by
     refine RelCT.seq start ?_
     intro a b tr ur a' b' h ea eb
-    exact ⟨zeroSuffix_ct a b tr ur a' b' trivial trivial h ea eb,trivial⟩
+    exact ⟨zeroSuffix_ct w16 a b tr ur a' b' trivial trivial h ea eb,trivial⟩
   intro a b tr ur a' b' h ea eb
   rcases h with ⟨ha',hb'⟩
   subst a; subst b

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.X86.FbVerified
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Seed.X86.FbLit
 
 /-! # SEED-CFB128 artifacts on baseline x86 (32-bit) -/
 
@@ -16,21 +18,15 @@ def note : String :=
   The mode is the generic CFB of `Impl/Modes/X86/`, over SEED's ECB core."
 
 def artifacts : List Artifact := [
-  { Spec.Seed.cfbEncryptApi with
-    target := X86.target
-    doc := Spec.Seed.cfbEncryptApi.doc (notes := [note])
+  Spec.Seed.cfbEncryptApi.artifact X86.target {
+    notes := [note]
     code := Impl.StackScratch.X86.withStackScratchWiped 888 4 216 Impl.Seed.X86.cfbEncrypt
-    contract := Spec.Seed.cfbEncryptContract X86.abi 888
     stack := 888
-    verified := Proof.Seed.X86.Fb.cfbEncrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Seed.cfbDecryptApi with
-    target := X86.target
-    doc := Spec.Seed.cfbDecryptApi.doc (notes := [note])
+    verified := Proof.Seed.X86.Fb.cfbEncrypt_framed },
+  Spec.Seed.cfbDecryptApi.artifact X86.target {
+    notes := [note]
     code := Impl.StackScratch.X86.withStackScratchWiped 888 4 216 Impl.Seed.X86.cfbDecrypt
-    contract := Spec.Seed.cfbDecryptContract X86.abi 888
     stack := 888
-    verified := Proof.Seed.X86.Fb.cfbDecrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Seed.X86.Fb.cfbDecrypt_framed }]
 
 end VG.Artifacts.SeedCfb.X86

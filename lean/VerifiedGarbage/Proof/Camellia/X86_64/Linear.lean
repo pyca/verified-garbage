@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Impl.Camellia.X86_64.Layers
 public import VerifiedGarbage.Proof.Camellia.Bitsliced
 public import VerifiedGarbage.Proof.Framework.X86_64.Linear
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # The linear layers of bitsliced Camellia on x86-64, by evaluation

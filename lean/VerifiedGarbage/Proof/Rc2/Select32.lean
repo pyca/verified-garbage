@@ -1,12 +1,10 @@
 module
 
-public import VerifiedGarbage.Spec.Rc2
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.PowLit
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.TCB.Mem
+meta import Lean.Elab.Tactic.Omega.Frontend
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Arithmetic selection lemmas for RC2's constant-time lookups -/
 

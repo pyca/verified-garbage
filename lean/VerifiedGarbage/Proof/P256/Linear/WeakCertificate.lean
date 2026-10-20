@@ -1,27 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.P256.Linear.WeakReference
-meta import VerifiedGarbage.Proof.P256.Linear.WeakReference
 public import VerifiedGarbage.Impl.P256.Linear
-meta import VerifiedGarbage.Impl.P256.Linear
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.P256.Linear.WeakReference
+meta import VerifiedGarbage.Impl.P256.Linear
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import Mathlib.Logic.Function.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import Mathlib.Logic.Function.Basic
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Ecdsa.Generic
-meta import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
 
 @[expose] public section
 

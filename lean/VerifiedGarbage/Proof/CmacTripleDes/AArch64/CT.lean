@@ -1,15 +1,13 @@
 module
 
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
-meta import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
+public import VerifiedGarbage.Impl.CmacTripleDes.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
 meta import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Impl.CmacTripleDes.AArch64
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on AArch64: constant time

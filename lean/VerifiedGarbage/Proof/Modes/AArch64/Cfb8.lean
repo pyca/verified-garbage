@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.AArch64.Cfb8Loop
+import VerifiedGarbage.Proof.Modes.AArch64.Cfb8Loop
 public import VerifiedGarbage.Proof.Modes.AArch64.Fb
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Modes.AArch64.Cfb8
+public import VerifiedGarbage.Proof.Modes.Cfb8
 import VerifiedGarbage.Proof.Modes.AArch64.Ctr
+import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # CFB8 on AArch64, for any core: the whole function

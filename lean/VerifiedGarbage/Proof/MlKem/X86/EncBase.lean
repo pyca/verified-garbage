@@ -1,14 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
-public import VerifiedGarbage.Proof.MlKem.X86.TopKem
+import VerifiedGarbage.Proof.MlKem.X86.TopKem
 public import VerifiedGarbage.Proof.MlKem.X86.Extra
-public import VerifiedGarbage.Impl.MlKem.X86.Encrypt
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.MlKem.KPke
+public import VerifiedGarbage.Proof.Sha256.X86.Lit
+public import VerifiedGarbage.Proof.Sha3.X86.Lit
+public import VerifiedGarbage.Impl.MlKem.X86.Kem
+import VerifiedGarbage.Proof.MlKem.X86.TopCall
+import VerifiedGarbage.Impl.MlKem.X86.Encrypt
+import VerifiedGarbage.Proof.MlKem.X86.Table
 
 /-!
 # ML-KEM on x86 (32-bit): the setting of K-PKE.Encrypt
@@ -117,7 +121,7 @@ def inApart (L : KemLay) (Y : Lay) (bs : List Buf) : Bool :=
   Y.apart (bEK L Y.sc) bs && Y.apart (bM L Y.sc) bs && Y.apart (bKR L Y.sc) bs
 
 /-- A fact of the layout of buffers of `scratch`, computed from their offsets. -/
-macro "sc_decide" : tactic => `(tactic| plain_simp_names (simp only [Lay.apart, List.all_cons, List.all_nil, Bool.and_true,
+tactic_template "sc_decide" : tactic => `(tactic| (simp only [Lay.apart, List.all_cons, List.all_nil, Bool.and_true,
                    ok_sc ‹SOK _ _›, okW_sc ‹SOK _ _›, sep_sc, (‹SOK _ _›).stk, inApart]; decide))
 
 /-- The facts of the layout that `rn_split` and `cbd_piece` use. -/
@@ -130,7 +134,7 @@ class BaseOK (L : KemLay) : Prop where
     Y.sep (bRN L Y.sc) (bWK L Y.sc) && Y.sep (bST L Y.sc) (bPRF L Y.sc) && Y.sep (bPRF L Y.sc) (bWK L Y.sc)) = true
 
 /-- A taint check of code that reaches buffers of `scratch` through `esi`, for any parameter set. -/
-macro "sc_taint" : tactic => `(tactic| plain_simp_names ((try simp only [ptrTo_sc]); (try simp only [ptrTo, reduceIte,
+tactic_template "sc_taint" : tactic => `(tactic| ((try simp only [ptrTo_sc]); (try simp only [ptrTo, reduceIte,
                    Nat.reduceEqDiff, List.cons_append, List.nil_append]); taint_rfl))
 
 variable {L : KemLay} {Y : Lay} {lk : State → List Byte}

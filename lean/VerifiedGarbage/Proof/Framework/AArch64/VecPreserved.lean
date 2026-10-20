@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.AArch64.Target
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! Vector register preservation, including through calls and stack frames. -/
 
@@ -13,9 +16,11 @@ namespace VG.AArch64
 def VOp.dst : VOp → VReg
   | .mov d .. | .movi0 d | .dup _ d .. | .ins _ d .. | .dupS d .. => d
   | .logic _ d .. | .not d .. | .add _ d .. | .sub _ d .. | .shift _ _ d .. => d
+  | .cmp _ _ d .. | .addv _ d _ | .uaddlv _ d _ => d
   | .ext d .. | .rev _ d .. | .perm _ _ d .. | .tbl d .. => d
   | .dupE _ d .. | .insE _ d .. | .cmeq _ d .. | .bsel _ d .. | .tblN _ _ d .. => d
   | .umull _ d .. | .umlal _ d .. | .mul d .. | .mla d .. | .mls d .. => d
+  | .umullH _ d .. | .umlalH _ d .. => d
   | .sqdmulh d .. | .umin d .. | .mulH _ d .. | .pmull _ d .. => d
   | .aese d .. | .aesd d .. | .aesmc d .. | .aesimc d .. => d
   | .sha1 _ d .. | .sha1h d .. | .sha1su0 d .. | .sha1su1 d .. => d
@@ -26,7 +31,7 @@ def VOp.dst : VOp → VReg
 /-- The vector register an instruction writes, if any. -/
 def vdstOf : Instr → Option VReg
   | .vop op => some op.dst
-  | .ldrq d .. => some d
+  | .ldrq d .. | .ldrqTbl d .. => some d
   | _ => none
 
 theorem VOp.eval_dst {op : VOp} {s : State} {d : VReg} {v : BitVec 128}
@@ -41,7 +46,7 @@ theorem VOp.eval_dst {op : VOp} {s : State} {d : VReg} {v : BitVec 128}
     simp only [VOp.eval] at h
     split at h <;> simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq] at h
     exact h.1.symm
-  case dupS | dupE | insE | shift | ext | tblN | xar | xarS | mulH =>
+  case dupS | dupE | insE | shift | ext | tblN | xar | xarS | mulH | addv | uaddlv =>
     exact (Prod.mk.inj (Option.some.inj (Option.ite_none_right_eq_some.mp h).2)).1.symm
   all_goals exact (Prod.mk.inj (Option.some.inj h)).1.symm
 
@@ -52,6 +57,11 @@ theorem exec_vec {i : Instr} {r : VReg} {s s' : State}
     simp only [exec, Option.bind_eq_some_iff, State.store] at h
     obtain ⟨a, -, h⟩ := h
     split at h <;> cases h; rfl
+  | strSp t off =>
+    simp only [exec] at h
+    split at h <;> [skip; cases h]
+    simp only [State.store] at h
+    split at h <;> cases h; rfl
   | ldr sz t n off | ldrb t n off =>
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
@@ -59,6 +69,12 @@ theorem exec_vec {i : Instr} {r : VReg} {s s' : State}
   | ldrq t n off =>
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
+    have ht : r ≠ t := fun e => hi (by simp [vdstOf, e])
+    simp only [State.setV, ht, ite_false]
+  | ldrqTbl t n off name ws =>
+    simp only [exec] at h
+    split at h <;> [skip; cases h]
+    cases h
     have ht : r ≠ t := fun e => hi (by simp [vdstOf, e])
     simp only [State.setV, ht, ite_false]
   | vop op =>
@@ -77,6 +93,8 @@ theorem exec_vec {i : Instr} {r : VReg} {s s' : State}
     simp only [Option.some.injEq] at h; subst h
     split <;> rfl
   | push _ | pop _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
+  | ldp t1 t2 n off => obtain ⟨_, _, rfl⟩ := exec_ldp_eq h; rfl
+  | stp t1 t2 n off => obtain ⟨_, rfl⟩ := exec_stp_eq h; rfl
   | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _
   | subImm _ _ _ _ | ror _ _ _ _ | lsr _ _ _ _ | lsl _ _ _ _ | movz _ _ _ _ | movk _ _ _ _
   | umov _ _ _ _ =>

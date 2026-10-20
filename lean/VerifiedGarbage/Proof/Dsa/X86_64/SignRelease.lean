@@ -1,14 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Execution
+public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.WriteSignature
-public import VerifiedGarbage.Proof.Dsa.X86_64.Result
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Dsa.X86_64.WriteSignature
+import VerifiedGarbage.Proof.Dsa.X86_64.Result
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
+import VerifiedGarbage.Proof.Dsa.X86_64.Setup
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Signature release, success return value and restored registers -/

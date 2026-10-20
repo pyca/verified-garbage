@@ -1,10 +1,14 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Front
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Open
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Open
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Ks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Xor
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM's short path on x86-64: what each piece keeps
@@ -41,14 +45,15 @@ structure SJ (s₀ : State) (Ctx W SP A D : Addr) (R al n : Nat) (J : Block) (tl
 section
 variable {k : Nat} {s₀ s : State} {Ctx W SP Np A D : Addr} {nl al n R : Nat} {J : Block} {tl : BitVec 64}
 
-theorem powSj {pw : Prog isa} (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hpw : PowFrom pw s₀ Ctx W SP D n)
+theorem powSj {pw gh : Prog isa} {tm : Mem → Mem} (C : OneCtx s₀ k Ctx W SP Np A D nl al n)
+    (hpw : PowFrom pw gh tm s₀ Ctx W SP D n)
     (h32 : nb16 al + nb16 n < 32) (S : SM s₀ Ctx W SP A D R al n J tl s) :
     WP isa pw s (SJ s₀ Ctx W SP A D R al n J tl) := by
   have h32' := h32
   simp only [nb16] at h32'
   have hg1 : 1 ≤ grp al n := by simp only [grp, nb16]; omega
   have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega
-  exact WP.mono (hpw s S.env S.r288 hg1 hg8 S.frame S.rd S.wr) fun t ⟨_, fT, z0, z1, g, rd, wr⟩ =>
+  exact WP.mono (hpw.run s S.env S.r288 hg1 hg8 S.frame S.rd S.wr) fun t ⟨_, fT, z0, z1, g, rd, wr⟩ =>
     ⟨S.keep C.dE fT (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact wk_T)
       (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -194,19 +199,24 @@ theorem lens_sj (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hal5 : al < 512) (h
       rcases hr with rfl | rfl | rfl | rfl <;> exact g _ (by decide) (by decide)) rd wr,
     fun l hl => by rw [z, S.z0 l hl], fun l hl => by rw [z, S.z1 l hl]⟩
 
-theorem ghash_sj (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (h32 : nb16 al + nb16 n < 32)
-    (S : SJ s₀ Ctx W SP A D R al n J tl s) : WP isa ghash s (SJ s₀ Ctx W SP A D R al n J tl) := by
+theorem gh_sj {gh : Prog isa} {tm : Mem → Mem} (hgh : GhFrom gh tm s₀ Ctx W SP) (C : OneCtx s₀ k Ctx W SP Np A D nl al n)
+    (h32 : nb16 al + nb16 n < 32)
+    (S : SJ s₀ Ctx W SP A D R al n J tl s) : WP isa gh s (SJ s₀ Ctx W SP A D R al n J tl) := by
   have h32' := h32
   simp only [nb16] at h32'
   have hg1 : 1 ≤ grp al n := by simp only [grp, nb16]; omega
   have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega
-  exact WP.mono (ghash_ok s S.sm.env.r15 S.sm.r288 hg1 hg8 S.sm.env.perm.w S.z0 S.z1)
+  exact WP.mono (hgh s S.sm.env S.sm.r288 hg1 hg8 S.z0 S.z1 S.sm.rd S.sm.wr)
     fun t ⟨_, _, g, m, rd, wr, z⟩ =>
     ⟨S.sm.keep C.dE (rs := []) (by rw [m]; exact Frame.refl _ _) (by simp)
       (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl <;> exact g _ (by decide) (by decide) (by decide)) rd wr,
       fun l hl => by rw [z _ (by decide) l hl, S.z0 l hl], fun l hl => by rw [z _ (by decide) l hl, S.z1 l hl]⟩
+
+theorem ghash_sj (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (h32 : nb16 al + nb16 n < 32)
+    (S : SJ s₀ Ctx W SP A D R al n J tl s) : WP isa ghash s (SJ s₀ Ctx W SP A D R al n J tl) :=
+  gh_sj ghFrom_ghash C h32 S
 
 theorem tagK_sm (C : OneCtx s₀ k Ctx W SP Np A D nl al n) {o : Nat} (ho : o = 0 ∨ o = 112)
     (S : SJ s₀ Ctx W SP A D R al n J tl s) : WP isa (.block (tagK o)) s (SM s₀ Ctx W SP A D R al n J tl) := by

@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.JointCallCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.JointCallCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCallCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 
 /-! # Joint-call timing in the persistent verification workspace -/
 

@@ -1,14 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Exchange
-import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Contract
-import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # FFDH public-key validation on x86-64: save the arguments and ABI registers -/
 

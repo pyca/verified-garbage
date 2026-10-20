@@ -1,14 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Block
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorContract
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Xor
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 
@@ -24,9 +22,9 @@ structure BlockImpl where
   ok : ∀ s, blockAArch64.pre s →
     ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧ blockAArch64.post s s'
   noFrames : callee.code.noFrames = true
-  keeps : ∀ r ∈ [Reg.x0, .x1], ∀ i ∈ instrs callee.code, dstOf i ≠ some r
+  keeps : ∀ r ∈ [Reg.x0, .x1], ∀ i ∈ instrs callee.code, clobbers i r = false
   xorKeeps : ∀ r ∈ [Reg.x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28],
-    ∀ i ∈ instrs (Impl.ChaCha20.AArch64.Xor.xorWith callee), dstOf i ≠ some r
+    ∀ i ∈ instrs (Impl.ChaCha20.AArch64.Xor.xorWith callee), clobbers i r = false
   xorKeepsV : (Impl.ChaCha20.AArch64.Xor.xorWith callee).allInstrs keepsV = true
   xorNoFrames : (Impl.ChaCha20.AArch64.Xor.xorWith callee).noFrames = true
   xorTaint : ∃ h, (taint.check (Taint.ofRegs [.x0, .x1, .x2, .x3])

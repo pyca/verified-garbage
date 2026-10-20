@@ -1,8 +1,8 @@
 module
 
-import VerifiedGarbage.Impl.Ecdh.X86
 public import VerifiedGarbage.Impl.Weierstrass.X86.Naf
 public import VerifiedGarbage.Impl.Ecdh.X86.Window
+public import VerifiedGarbage.Impl.Weierstrass.X86.NafPrep
 
 /-!
 # ECDSA signature verification on x86 (32-bit)

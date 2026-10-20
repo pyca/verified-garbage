@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.MdStep
 import VerifiedGarbage.Proof.Hmac.Common
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 
 /-!
 # HMAC over a Merkle–Damgård hash function: the outer hash as one compression

@@ -1,12 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Powers
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.VKeep
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Gpr
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Poly1305.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # Poly1305 on x86-64 with AVX-512: the integer instructions

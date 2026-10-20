@@ -1,13 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Masked
-import all Init.Data.Array.Basic
-import all Init.Data.Array.DecidableEq
-import all Init.Data.Nat.Bitwise.Basic
-import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import Batteries.Tactic.Init
 
 /-!
 # ML-DSA key generation: the result of the samplers, for every target
