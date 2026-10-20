@@ -4,6 +4,15 @@ public import VerifiedGarbage.Impl.Bignum.X86.SparseExponent
 public import VerifiedGarbage.Proof.Bignum.X86.ExponentRanges
 public import VerifiedGarbage.Proof.Mont.X86.ExponentShift
 public import VerifiedGarbage.Proof.Mont.X86.ExponentWord
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
+
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Mont.X86.Ops
+import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
 
 /-! # One iteration of the exponentiation that skips the products of clear bits -/
 

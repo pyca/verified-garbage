@@ -10,6 +10,8 @@ public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedApply
 
 import VerifiedGarbage.Proof.Bignum.X86.PublicDataTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedSetup
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedSetupFrame
 
 /-! # Stored-power arithmetic and public key checks have fixed instruction traces -/
 

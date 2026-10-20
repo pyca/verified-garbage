@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Mont.X86.ExponentInitMath
 
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
 
 /-! # Safe execution for all packed values, RSA correctness for a valid stored R² -/
 

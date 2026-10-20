@@ -9,6 +9,8 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicPrepared
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86.PublicImport
 
 /-! # The complete fixed-width public RSA operation keeps the input secret -/
 

@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Bignum.X86.PrecomputedDataTiming
 import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedKey
 
 /-! # Packed-key rejection branches only on public key values -/
 

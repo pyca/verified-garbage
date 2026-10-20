@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Bignum.X86.SparseStep
 public import VerifiedGarbage.Proof.Bignum.X86.PublicTiming
 public import VerifiedGarbage.Proof.Bignum.MontRepresentation
 public import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 
 /-! # The exponentiation's trace depends on the public exponent alone
 
