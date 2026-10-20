@@ -2,15 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.X86.Inline
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Proof.Sha256.X86.Compress
 meta import VerifiedGarbage.Proof.Sha256.X86.Compress
 public import VerifiedGarbage.Spec.Sha256.Contract
 meta import VerifiedGarbage.Spec.Sha256.Contract
-public import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
+import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
 meta import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
-public import VerifiedGarbage.Proof.Sha256.StateMem
+import VerifiedGarbage.Proof.Sha256.StateMem
 meta import VerifiedGarbage.Proof.Sha256.StateMem
 public import VerifiedGarbage.Proof.Sha256.X86.Contract
 meta import VerifiedGarbage.Proof.Sha256.X86.Contract
@@ -20,7 +19,7 @@ public import VerifiedGarbage.Proof.MdStream.X86.Finalize
 meta import VerifiedGarbage.Proof.MdStream.X86.Finalize
 public import VerifiedGarbage.Proof.MdStream.X86.Update
 meta import VerifiedGarbage.Proof.MdStream.X86.Update
-public import VerifiedGarbage.Proof.MdStream.X86.Words
+import VerifiedGarbage.Proof.MdStream.X86.Words
 meta import VerifiedGarbage.Proof.MdStream.X86.Words
 public import VerifiedGarbage.Proof.Sha256.Md
 meta import VerifiedGarbage.Proof.Sha256.Md
@@ -28,14 +27,14 @@ public import VerifiedGarbage.Impl.Sha256.X86.Stream
 meta import VerifiedGarbage.Impl.Sha256.X86.Stream
 public import VerifiedGarbage.Proof.Sha256.X86.Lit
 meta import VerifiedGarbage.Proof.Sha256.X86.Lit
-public import VerifiedGarbage.Proof.Sha256.Scratch
+import VerifiedGarbage.Proof.Sha256.Scratch
 meta import VerifiedGarbage.Proof.Sha256.Scratch
 public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.MdStream.X86.ArgWord
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.MdStream.X86.ArgWord
 meta import VerifiedGarbage.Proof.Framework.Bswap
 meta import VerifiedGarbage.Proof.MdStream.X86.ArgWord
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -52,6 +51,28 @@ meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Mmx
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import Init.Data.BitVec.Basic
+meta import Init.Data.BitVec.Basic
+public import Init.Data.Vector.Basic
+meta import Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+meta import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Impl.MdStream.X86
+meta import VerifiedGarbage.Impl.MdStream.X86
+public import VerifiedGarbage.Spec.Sha256
+meta import VerifiedGarbage.Spec.Sha256
+public import VerifiedGarbage.TCB.Artifact
+meta import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.Impl.Sha256.X86
+meta import VerifiedGarbage.Impl.Sha256.X86
+public import VerifiedGarbage.Proof.Framework.X86.Call
+meta import VerifiedGarbage.Proof.Framework.X86.Call
 
 /-!
 # Streaming SHA-256 on x86 (32-bit): `init`
