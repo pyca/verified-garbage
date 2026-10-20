@@ -57,7 +57,7 @@ theorem body_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
       · exact Or.inl (by decide)
       · exact saved d hd
     refine WP.mono (main_ok backend u context (calls.after rest) stable' (by simp [h0]) (by simp [h4]) (by simp [h24])
-      (by simp [h32]) (by simp [h36]) (by simp [h40]) (by simp [h44]) saved' facts.2.1 facts.1
+      (by simp [h32]) (by simp [h36]) (by simp [h40]) (by simp [h44]) saved' facts.2.1 facts.1 facts.2.2
       (peer.after_frame frame rest (sourceFrame peerStack)) peerLength
       (scalar.after_frame frame rest (sourceFrame scalarStack)) positive scalarFit scalarCount
       (by rw [rest.sp]; exact peerStack) (by rw [rest.sp]; exact scalarStack) (output.after rest)

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMain
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeMemory
 public import VerifiedGarbage.Impl.Ffdh.Arm.SharedExchange
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainSharedPrepareAt
+public import VerifiedGarbage.Proof.Ffdh.Arm.DomainNormalizedPrepareAt
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPower
 import VerifiedGarbage.Proof.Ffdh.Arm.PowerAt
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAt
@@ -29,6 +29,7 @@ theorem main_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
     (h36 : 36 ∈ slots) (h40 : 40 ∈ slots) (h44 : 44 ∈ slots)
     (saved : ∀ d ∈ slots, d + 4 ≤ 64 ∨ 68 ≤ d)
     (large : 1 < p.P) (odd : p.P % 2 = 1)
+    (normalized : 2 ^ (64 * (p.w - 1)) ≤ p.P)
     (peer : Octets p.base p.publicValue p.len yb s) (peerLength : yb.length = p.k)
     (scalar : Octets p.base p.privateValue p.len xb s) (positive : 0 < xb.length) (scalarFit : xb.length < 2 ^ 32)
     (scalarCount : p.slotValue 44 = BitVec.ofNat 32 xb.length)
@@ -47,7 +48,7 @@ theorem main_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
   have extend {m m' : Mem} (f : Frame [⟨State.addr p.base, 8 * p.len⟩, FrameStack.belowA s.sp 48] m m') : Frame (writes p s) m m' :=
     f.mono (by simp [writes, exchangeWrites])
   rw [VG.Impl.Ffdh.Arm.SharedExchange.main, WP.seq_iff]
-  refine WP.mono (domainSharedPrepareAt24_ok backend s h calls.toDomainCallMemory stable h0 h24 h32 large odd) ?_
+  refine WP.mono (domainNormalizedPrepareAt24_ok backend s h calls.toDomainCallMemory stable h0 h24 h32 large odd normalized) ?_
   rintro u ⟨contextU, readyU, modU, r2U, frameU, restU⟩
   have prepareSeparate {src : BitVec 32} {bs : List Byte}
       (octets : Octets p.base src p.len bs s)

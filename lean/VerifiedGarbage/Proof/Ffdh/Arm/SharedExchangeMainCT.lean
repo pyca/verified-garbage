@@ -7,11 +7,11 @@ public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeMemory
 public import VerifiedGarbage.Impl.Ffdh.Arm.SharedExchange
-import VerifiedGarbage.Proof.Ffdh.Arm.DomainSharedPrepareAt
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainNormalizedPrepareAt
 import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPower
 public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMainCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPowerCT
-import VerifiedGarbage.Proof.Ffdh.Arm.DomainSharedPrepareAtCT
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainNormalizedPrepareAtCT
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpSharedCT
 import VerifiedGarbage.Proof.Ffdh.Arm.RangeCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
@@ -36,10 +36,11 @@ structure PowerInput (p : Inputs) (slots : List Nat) (yb xb : List Byte) (s : St
 theorem prepare_power (backend : MontBackend) (s : State) {p : Inputs} {slots : List Nat} {yb xb : List Byte}
     (h : MainInput p slots yb xb s) (stable : stableSlots slots = true)
     (h0 : 0 ∈ slots) (h24 : 24 ∈ slots) (h32 : 32 ∈ slots)
-    (peerLength : yb.length = p.k) (large : 1 < p.P) (odd : p.P % 2 = 1) :
-    WP isa (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt
+    (peerLength : yb.length = p.k) (large : 1 < p.P) (odd : p.P % 2 = 1)
+    (normalized : 2 ^ (64 * (p.w - 1)) ≤ p.P) :
+    WP isa (VG.Impl.Ffdh.Arm.NormalizedPrepare.prepareAt
       (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) 24) s (PowerInput p slots yb xb) := by
-  refine WP.mono (domainSharedPrepareAt24_ok backend s h.context h.calls.toDomainCallMemory stable h0 h24 h32 large odd) ?_
+  refine WP.mono (domainNormalizedPrepareAt24_ok backend s h.context h.calls.toDomainCallMemory stable h0 h24 h32 large odd normalized) ?_
   rintro u ⟨context, ready, modulus, r2, frame, rest⟩
   have sourceSep {src : BitVec 32} {bs : List Byte} (source : Octets p.base src p.len bs s)
       (stack : Region.Disjoint ⟨State.addr src, bs.length⟩ ⟨State.addr s.sp, 72⟩)
@@ -109,10 +110,11 @@ theorem main_ct (backend : MontBackend) {p : Inputs} {slots : List Nat} {yb xb1 
     (saved : ∀ d ∈ slots, d + 4 ≤ 64 ∨ 68 ≤ d)
     (peerLength : yb.length = p.k) (positive : 0 < xb1.length) (fits : xb1.length < 2 ^ 32)
     (count : p.slotValue 44 = BitVec.ofNat 32 xb1.length) (length : xb1.length = xb2.length)
-    (large : 1 < p.P) (odd : p.P % 2 = 1) :
+    (large : 1 < p.P) (odd : p.P % 2 = 1)
+    (normalized : 2 ^ (64 * (p.w - 1)) ≤ p.P) :
     RelCT isa (fun s t => MainInput p slots yb xb1 s ∧ MainInput p slots yb xb2 t ∧ s.sp = t.sp)
       (VG.Impl.Ffdh.Arm.SharedExchange.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) (fun _ _ => True) := by
-  have prepare := (domainSharedPrepareAt24_ct backend stable h0 h24 h32 large odd).mono
+  have prepare := (domainNormalizedPrepareAt24_ct backend stable h0 h24 h32 large odd normalized).mono
     (P' := fun (s t : State) => MainInput p slots yb xb1 s ∧ MainInput p slots yb xb2 t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨⟨h.1.context,h.1.calls.toDomainCallMemory⟩,
       ⟨h.2.1.context,h.2.1.calls.toDomainCallMemory⟩,h.2.2⟩) (fun _ _ h => h)
@@ -122,8 +124,8 @@ theorem main_ct (backend : MontBackend) {p : Inputs} {slots : List Nat} {yb xb1 
     (fun _ _ h => ⟨h.1.ready,h.2.1.ready,h.2.2⟩) (fun _ _ h => h)
   unfold VG.Impl.Ffdh.Arm.SharedExchange.main
   exact relCT_chain prepare
-    (fun s h => prepare_power backend s h stable h0 h24 h32 peerLength large odd)
-    (fun s h => prepare_power backend s h stable h0 h24 h32 peerLength large odd)
+    (fun s h => prepare_power backend s h stable h0 h24 h32 peerLength large odd normalized)
+    (fun s h => prepare_power backend s h stable h0 h24 h32 peerLength large odd normalized)
     (relCT_chain (power_ct backend stable h32 h36 h40 h44 peerLength positive fits count length odd)
       (fun s h => power_finish backend s h stable h32 h36 h40 h44 peerLength positive fits count odd)
       (fun s h => power_finish backend s h stable h32 h36 h40 h44 peerLength

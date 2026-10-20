@@ -66,7 +66,7 @@ theorem body_ct (backend : MontBackend) {p : Inputs} {slots : List Nat} {yb xb1 
       have facts := VG.Proof.Bignum.valid_facts valid p.minLength
       exact main_ct backend stable' (by simp [h0]) (by simp [h4]) (by simp [h24])
         (by simp [h32]) (by simp [h36]) (by simp [h40]) (by simp [h44]) saved'
-        peerLength positive fits count length facts.2.1 facts.1 s t tr1 tr2 u v
+        peerLength positive fits count length facts.2.1 facts.1 facts.2.2 s t tr1 tr2 u v
         ⟨h.1.1.1, h.1.2.1.1, h.1.2.2⟩ e1 e2
     · exact (ret_ct 0).mono (fun _ _ _ => trivial) (fun _ _ h => h)
   unfold VG.Impl.Ffdh.Arm.Domain.head

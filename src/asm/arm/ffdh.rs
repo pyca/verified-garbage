@@ -45042,7 +45042,7 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
-/// ARMv7: RSA's fixed three-bit windows process every supplied private-scalar byte. Montgomery preparation, products and specialized squares call the shared RSA arithmetic helper. Shared-value range checking, fixed-width export and rejection masking remain in verified code.
+/// ARMv7: RSA's fixed three-bit windows process every supplied private-scalar byte. Normalized modulus setup, products and specialized squares call the shared RSA arithmetic helper. Shared-value range checking, fixed-width export and rejection masking remain in verified code.
 ///
 /// # Safety
 ///
@@ -45439,7 +45439,7 @@ str r2, [r12, #56]
 str r11, [r12, #60]
 mov r0, r12
 mov r2, #4
-mov r5, #1
+mov r5, #0
 add r2, r0, r2, lsl #3
 ldr r4, [r2, #64]
 ldr lr, [r0, #48]
@@ -45469,7 +45469,14 @@ bne 26b
 str r5, [r4, #0]
 ldr r0, [sp, #0]
 ldr r1, [r0, #48]
-add r1, r1, r1, lsl #6
+add r2, r1, r1, lsl #2
+lsl r2, r2, #3
+add r2, r2, #312
+add r2, r0, r2
+mov r3, #1
+str r3, [r2, #0]
+ldr r1, [r0, #48]
+add r1, r1, #64
 str r1, [r0, #208]
 27:
 mov r2, #4
@@ -49985,7 +49992,7 @@ pub(crate) const VG_FFDH_EXCHANGE_UMAAL_FEATURES: crate::cpu::Features = crate::
 ///
 /// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
-/// ARMv7: RSA's fixed three-bit windows process every supplied private-scalar byte. Montgomery preparation, products and specialized squares call the shared RSA arithmetic helper. Shared-value range checking, fixed-width export and rejection masking remain in verified code.
+/// ARMv7: RSA's fixed three-bit windows process every supplied private-scalar byte. Normalized modulus setup, products and specialized squares call the shared RSA arithmetic helper. Shared-value range checking, fixed-width export and rejection masking remain in verified code.
 ///
 /// # Safety
 ///
@@ -50384,7 +50391,7 @@ str r2, [r12, #56]
 str r11, [r12, #60]
 mov r0, r12
 mov r2, #4
-mov r5, #1
+mov r5, #0
 add r2, r0, r2, lsl #3
 ldr r4, [r2, #64]
 ldr lr, [r0, #48]
@@ -50414,7 +50421,14 @@ bne 26b
 str r5, [r4, #0]
 ldr r0, [sp, #0]
 ldr r1, [r0, #48]
-add r1, r1, r1, lsl #6
+add r2, r1, r1, lsl #2
+lsl r2, r2, #3
+add r2, r2, #312
+add r2, r0, r2
+mov r3, #1
+str r3, [r2, #0]
+ldr r1, [r0, #48]
+add r1, r1, #64
 str r1, [r0, #208]
 27:
 mov r2, #4

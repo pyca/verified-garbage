@@ -18,7 +18,7 @@ theorem stack_ok (b : MontBackend) : FrameStack.armStack (code b) ≤ 176 := by
   have s0 : FrameStack.armStack PublicFn.prepare = 0 := by rfl
   have s1 : FrameStack.armStack importModulus = 0 := by rfl
   have s2 : FrameStack.armStack precomputeInverse = 0 := by rfl
-  have s3 : FrameStack.armStack r2Init = 0 := by rfl
+  have s3 : FrameStack.armStack NormalizedR2.init = 0 := by rfl
   have s4 : FrameStack.armStack doubleLoop = 0 := by rfl
   have s5 : FrameStack.armStack (smallConst 7 1) = 0 := by rfl
   have s6 : FrameStack.armStack SharedWindow.tablePrepare = 0 := by rfl
@@ -32,8 +32,8 @@ theorem stack_ok (b : MontBackend) : FrameStack.armStack (code b) ≤ 176 := by
     VG.Impl.Ffdh.Arm.SharedExchange.main, VG.Impl.Ffdh.Arm.SharedCheckPublic.powerAt,
     VG.Impl.Ffdh.Arm.framed, VG.Impl.Ffdh.Arm.Domain.head,
     VG.Impl.Ffdh.Arm.Domain.ret,
-    VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt,
-    VG.Impl.Ffdh.Arm.SharedPrepare.code, SharedPrecompute.precompute, SharedR2.r2, SharedR2.squares,
+    VG.Impl.Ffdh.Arm.NormalizedPrepare.prepareAt,
+    VG.Impl.Ffdh.Arm.NormalizedPrepare.code, NormalizedPrecompute.precompute, NormalizedR2.r2, SharedR2.squares,
     SharedWindow.phase, SharedWindow.init, SharedWindow.tableBuild,
     SharedWindow.tableBody, SharedWindow.bytes, SharedWindow.bits,
     SharedWindow.round, SharedWindow.bit, SharedWindow.apply,
