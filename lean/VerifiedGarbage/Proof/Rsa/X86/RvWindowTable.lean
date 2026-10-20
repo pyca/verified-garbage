@@ -44,16 +44,12 @@ def TI (g : Geo) (s0 : State) (A AW V : Nat → Nat) (live ls : List Nat) (m b i
   KS g s0 (upd (tableA A g.n m b (i + 2)) mXm (b ^ (i + 1) * 2 ^ (64 * g.n) % m))
     (mXm :: (List.range (i + 2) ++ live)) AW [wRc, wR] V ls s
 
-/-- One of the table's unrolled steps: the next power into `mXm`, and into entry `i + 2`. -/
-abbrev tableStep (i : Nat) : Prog isa :=
-  .seq (VG.Impl.Rsa.X86.RecoverRt.mmul mXm mXm mG) (copy nar (i + 2) mXm)
-
 theorem tableStep_ok {m b i : Nat} (h : TI g s0 A AW V live ls m b i s) (L : TableLive live)
     (hG : mG ∈ live) (hB : mBase ∈ live)
     (hI : sInv ∈ ls) (value : A mBase = m) (bound : m < 2 ^ (64 * g.n))
     (inverse : (m * V sInv + 1) % 2 ^ 32 = 0) (odd : m % 2 = 1) (positive : 0 < m)
     (base : A mG = b * 2 ^ (64 * g.n) % m) (hi : i < 14) :
-    WP isa (tableStep i) s (TI g s0 A AW V live ls m b (i + 1)) := by
+    WP isa (VG.Impl.Rsa.X86.RecoverRt.tableStep i) s (TI g s0 A AW V live ls m b (i + 1)) := by
   have aboveA (j : Nat) (hj : j ∈ live) (k : Nat) (hk : k ≤ 16) : tableA A g.n m b k j = A j := by
     have := L.above j hj
     simp only [tableA, show ¬ j < k by omega, ↓reduceIte]
@@ -113,9 +109,9 @@ theorem table_ok {m b : Nat} (h : KS g s0 A live AW [wRc, wR] V ls s) (L : Table
     (one : A aO = 2 ^ (64 * g.n) % m) (base : A mG = b * 2 ^ (64 * g.n) % m) :
     WP isa VG.Impl.Rsa.X86.RecoverRt.table s fun t =>
       KS g s0 (tableA A g.n m b 16) (List.range 16 ++ live) AW [wRc, wR] V ls t := by
-  let pre : List (Prog isa) := [copy nar 0 aO, copy nar 1 mG, copy nar mXm mG]
-  have init : WP isa (seqs pre) s (TI g s0 A AW V live ls m b 0) := by
-    simp only [pre, seqs]
+  have init : WP isa VG.Impl.Rsa.X86.RecoverRt.tableStart s (TI g s0 A AW V live ls m b 0) := by
+    unfold VG.Impl.Rsa.X86.RecoverRt.tableStart
+    simp only [seqs]
     refine WP.seq (WP.mono (h.copy_w (o := 0) (a := aO) (by decide) hO (by decide) (by decide))
       fun s1 ⟨h1, _, _⟩ => ?_)
     refine WP.seq (WP.mono (h1.copy_w (o := 1) (a := mG) (by decide) (by simp [hG]) (by decide) (by decide))
@@ -147,18 +143,18 @@ theorem table_ok {m b : Nat} (h : KS g s0 A live AW [wRc, wR] V ls s) (L : Table
         · have := L.above j hi
           rw [upd_ne _ _ (show j ≠ 1 by omega), upd_ne _ _ (show j ≠ 0 by omega)]
           simp only [tableA, show ¬ j < 0 + 2 by omega, ↓reduceIte]
-  have steps : ∀ k ≤ 14, WP isa (seqs (pre ++ (List.range k).map tableStep)) s
-      (TI g s0 A AW V live ls m b k) := by
+  have steps : ∀ k ≤ 14, ∀ u, TI g s0 A AW V live ls m b 0 u →
+      WP isa (VG.Impl.Rsa.X86.RecoverRt.tableSteps k) u (TI g s0 A AW V live ls m b k) := by
     intro k hk
     induction k with
-    | zero => simpa using init
+    | zero => intro u hu; exact WP.block_nil hu
     | succ k ih =>
-      rw [List.range_succ, List.map_append, ← List.append_assoc,
-        wp_seqs_append (by simp [pre]) (by simp)]
-      exact WP.mono (ih (by omega)) fun t ht =>
-        tableStep_ok ht L hG hB hI value bound inverse odd positive base (by omega)
+      intro u hu
+      exact WP.seq (WP.mono (ih (by omega) u hu) fun t ht =>
+        tableStep_ok ht L hG hB hI value bound inverse odd positive base (by omega))
   unfold VG.Impl.Rsa.X86.RecoverRt.table
-  refine WP.mono (steps 14 (by decide)) fun t hu => ?_
+  refine WP.seq (WP.mono init fun u hu => WP.mono (steps 14 (by decide) u hu) fun t ht => ?_)
+  have hu := ht
   exact hu.mono (fun j hj => ⟨List.mem_cons_of_mem _ hj, by
     have : j ≠ mXm := by
       simp only [List.mem_append, List.mem_range] at hj

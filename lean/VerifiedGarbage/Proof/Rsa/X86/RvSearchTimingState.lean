@@ -1,5 +1,5 @@
 module
-public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateTiming
+public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateData
 public import VerifiedGarbage.Proof.Rsa.X86.RvSearchState
 
 import VerifiedGarbage.Proof.Rsa.X86.RvSearchLoop
@@ -61,7 +61,7 @@ theorem candidate_condition {m t r c j : Nat} (ht : 1 ≤ t) (hc : t ≤ c)
 
 theorem searchBody_ok {g : Geo} {m eLen dLen : Nat} (C : CandidateData g m eLen dLen)
     {j : Nat} (hj : j < 100) {s : State} (hs : CI g C.s0 C.A C.AW C.V j s) :
-    WP isa (candBody g.n) s fun t =>
+    WP isa VG.Impl.Rsa.X86.RecoverRt.candBody s fun t =>
       SI g C.s0 C.A C.AW (VJ C.V (j + 1)) m (8 * (dLen + eLen)) 0
         (candidateState m (C.V sTc) (C.AW wR) (8 * (dLen + eLen)) j) t ∧
       t.zf = some (!(decide (j + 1 < 100) &&
@@ -76,7 +76,7 @@ def SearchInvariant {g : Geo} {m eLen dLen : Nat}
 
 theorem searchBody_post {g : Geo} {m eLen dLen : Nat} (C : CandidateData g m eLen dLen)
     (tc : 1 ≤ C.V sTc) {j : Nat} {s : State} (h : SearchInvariant C j s) :
-    WP isa (candBody g.n) s fun t =>
+    WP isa VG.Impl.Rsa.X86.RecoverRt.candBody s fun t =>
       isa.eval .ne t = some (decide (j + 1 < C.tries)) ∧
       (isa.eval .ne t = some true → SearchInvariant C (j + 1) t) := by
   have top := VG.Proof.Rsa.go_le m (C.V sTc) (C.AW wR) 100 (by decide)

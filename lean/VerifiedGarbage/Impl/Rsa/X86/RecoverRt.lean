@@ -146,8 +146,16 @@ def alignBody : Prog isa := .seq shiftUp (.block cntNext)
 def alignStart : Prog isa := .seq candSet (.block alignCount)
 
 /-- The table of the candidate's powers `0` to `15` (Montgomery form) in narrow arrays `0` to `15`. -/
-def table : Prog isa := seqs ([copy nar 0 aO, copy nar 1 mG, copy nar mXm mG] ++
-  (List.range 14).map fun i => .seq (mmul mXm mXm mG) (copy nar (i + 2) mXm))
+def tableStep (i : Nat) : Prog isa := .seq (mmul mXm mXm mG) (copy nar (i + 2) mXm)
+
+/-- The first `k` steps of the table. -/
+def tableSteps : Nat → Prog isa
+  | 0 => .block []
+  | k + 1 => .seq (tableSteps k) (tableStep k)
+
+def tableStart : Prog isa := seqs [copy nar 0 aO, copy nar 1 mG, copy nar mXm mG]
+
+def table : Prog isa := .seq tableStart (tableSteps 14)
 
 /-- The exponent's top four bits, into `sWin`. -/
 def windowTop : List Instr :=

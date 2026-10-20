@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvMontStage
+public import VerifiedGarbage.Proof.Rsa.X86.RvTaint
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Rsa.X86.RvArguments
@@ -11,6 +12,7 @@ import VerifiedGarbage.Proof.Mont.X86.Rt.Verified
 import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # What the timing of prime recovery at a run-time width checks its pieces from
 
@@ -32,12 +34,6 @@ open VG.Impl.Rsa.X86.Recover
 open VG.Impl.Rsa.X86.RecoverRt (mmul mulArgs clrTop)
 open VG.Proof.Rsa.X86.Keys
 open VG.Proof.Bignum.X86.PublicRt (calleeOf argByte_alloc calleeOf_eq rtPub_of rtPre_of)
-
-/-- The arguments, `edi` and `esp`. -/
-def τA : VG.X86.Taint.T := { regs := .ofList [.edi, .esp], flags := false, argLen := 52 }
-
-/-- `τA` in the frame of a call of `vg_rsa_mont_mul_at`. -/
-def τF : VG.X86.Taint.T := { regs := .ofList [.edi, .esp], flags := false, argLen := 52, stk := [some 36] }
 
 /-- The return address and the arguments lie apart from every writable region. -/
 def ArgsOk (s : State) : Prop :=
@@ -119,6 +115,61 @@ theorem ks_agreeF (pg : PubG g) (h : KS g s0 A al AW aw V sl s) (j : KS g t0 B b
     rwa [show VG.X86.Taint.depth τA.stk = 0 from rfl, Nat.zero_add] at this
 
 end
+
+/-- A piece checked by `τA` leaks the same trace from two stages. -/
+theorem pub_trace {g : Geo} (pg : PubG g) {c : Prog isa}
+    (hc : (VG.Taint.check taint τA c (VG.Taint.hintOf taint τA c)).isSome = true)
+    {s0 t0 s t : State} {A B AW BW V W : Nat → Nat} {al bl aw bw sl tl : List Nat}
+    (h : KS g s0 A al AW aw V sl s) (j : KS g t0 B bl BW bw W tl t)
+    {tr ur : List Leak} {sf tf : State} (es : Exec isa c s tr sf) (et : Exec isa c t ur tf) : tr = ur :=
+  (VG.RelCT.taint (A := taint) τA (fun _ _ h => h) hc _ _ _ _ _ _ (ks_agree pg h j) es et).1
+
+/-- A piece leaking the same trace from two runs, each meeting its correctness lemma. -/
+theorem stage_relCT {c : Prog isa} {P Q P' Q' : State → Prop}
+    (h : RelCT isa (fun s t => P s ∧ Q t) c (fun _ _ => True))
+    (left : ∀ s, P s → WP isa c s P') (right : ∀ t, Q t → WP isa c t Q') :
+    RelCT isa (fun s t => P s ∧ Q t) c (fun s t => P' s ∧ Q' t) :=
+  (h.wp (F₁ := P') (F₂ := Q') fun s t hst => ⟨left s hst.1, right t hst.2⟩).mono (fun _ _ h => h)
+    fun _ _ h => h.2
+
+/-- A loop of `c` rounds, each related by `body`, its flag from each run's invariant. -/
+theorem fixedLoop_relCT {body : Prog isa} {c : Nat}
+    (I J : Nat → State → Prop) (positive : 0 < c)
+    (rel : ∀ k, k < c → RelCT isa (fun s t => I k s ∧ J k t) body (fun _ _ => True))
+    (left : ∀ k s, k < c → I k s → WP isa body s fun t =>
+      I (k + 1) t ∧ t.zf = some (decide (c - (k + 1) = 0)))
+    (right : ∀ k s, k < c → J k s → WP isa body s fun t =>
+      J (k + 1) t ∧ t.zf = some (decide (c - (k + 1) = 0))) :
+    RelCT isa (fun s t => I 0 s ∧ J 0 t) (.loop body .ne)
+      (fun s t => I c s ∧ J c t) := by
+  have loop := VG.RelCT.loop (M := isa) (body := body) (c := .ne)
+    (Q := fun s t => I c s ∧ J c t)
+    (fun remaining s t => ∃ k, k + remaining = c ∧ 0 < remaining ∧ I k s ∧ J k t)
+    (fun remaining s t tr ur sf tf ⟨k, sum, pos, hs, ht⟩ es et => by
+      have trace := (rel k (by omega) _ _ _ _ _ _ ⟨hs, ht⟩ es et).1
+      obtain ⟨is, zs⟩ := VG.Proof.Dsa.X86.wp_result (left k s (by omega) hs) es
+      obtain ⟨it, zt⟩ := VG.Proof.Dsa.X86.wp_result (right k t (by omega) ht) et
+      refine ⟨trace, ?_, ?_, ?_⟩
+      · change sf.zf.map (!·) = tf.zf.map (!·)
+        rw [zs, zt]
+      · intro done
+        have last : k + 1 = c := by
+          change sf.zf.map (!·) = some false at done
+          rw [zs] at done
+          simp only [Option.map_some, Option.some.injEq, Bool.not_eq_false', decide_eq_true_eq] at done
+          omega
+        exact ⟨last ▸ is, last ▸ it⟩
+      · intro more
+        have next : k + 1 < c := by
+          change sf.zf.map (!·) = some true at more
+          rw [zs] at more
+          simp only [Option.map_some, Option.some.injEq, Bool.not_eq_true', decide_eq_false_iff_not] at more
+          omega
+        exact ⟨remaining - 1, by omega, k + 1, by omega, by omega, is, it⟩) c
+  apply loop.mono
+  · intro s t ⟨hs, ht⟩
+    exact ⟨0, by omega, positive, hs, ht⟩
+  · intro s t h; exact h
 
 /-- Code whose leaks `τA` makes public. -/
 def Pub (c : Prog isa) : Prop := ∃ hint, (VG.Taint.check taint τA c hint).isSome = true
