@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KeyArrs
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheck
+public import VerifiedGarbage.Impl.Rsa.X86.KeyCheckRt
+public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 import Mathlib.Tactic.Finiteness.Attr
 public import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
@@ -18,11 +20,12 @@ import VerifiedGarbage.TCB.X86.State
 
 /-! # The checks of an RSA key on i686: the state between the steps
 
-`Geo`: the working space (`B`, `Z` bytes) and native word width `w`, which
-two runs share; `Vals`: the numbers read, which they may not. `Stg g s₀ A
+`Geo`: the working space (`B`, `Z` bytes), the modulus's length `len`, of
+the width `w = kw len`, and which key is checked, which two runs share; `Vals`: the numbers read, which they may not. `Stg g s₀ A
 live c s`: from the state `s₀` the checks start from, the steps so far wrote
 only the arrays and the header words they may, the arrays `live` hold `A`,
-and the mask is `c`. The workspace base stays in EDI throughout.
+and the mask is `c`, with the length and the working space's arguments
+(`RtWs`) as they were.
 -/
 
 @[expose] public section
@@ -36,7 +39,14 @@ open VG.Proof.Rsa.X86.Keys
 structure Geo where
   B : Addr
   Z : Nat
-  w : Nat
+  len : Nat
+  full : Bool
+
+/-- The width in words. -/
+abbrev Geo.w (g : Geo) : Nat := VG.Proof.Rsa.X86.KeyRt.kw g.len
+
+/-- Where the operations find the length and the working space. -/
+abbrev Geo.L (g : Geo) : VG.Impl.Rsa.X86.KeyRt.Lay := VG.Impl.Rsa.X86.KeyCheckRt.lay g.full
 
 structure Vals where
   n : Nat
@@ -54,14 +64,14 @@ def vals (v : Vals) : Nat → Nat :=
     aQI v.qI) aN v.n
 
 /-- The header words the checks write. -/
-abbrev bodySlots : List Nat := [sB, sC, sT, sF, sMask]
+abbrev bodySlots : List Nat := [sB, sC, sT, sF, sMask, VG.Impl.Rsa.X86.KeyRt.sCy, VG.Impl.Rsa.X86.KeyRt.sQb]
 
 /-- The workspace base and stack pointer are preserved. -/
 abbrev bodyRegs : List Reg := [.eax, .ecx, .edx, .ebp, .ebx, .esi]
 
 /-- Between the steps. -/
 structure Stg (g : Geo) (s0 : State) (A : Nat → Nat) (live : List Nat) (c : Bool) (s : State) : Prop where
-  ws : Ws s g.B g.Z g.w nArr
+  ws : VG.Proof.Rsa.X86.KeyRt.RtWs g.L s g.B g.Z g.len nArr
   keep : Keep g.B g.w (List.range nArr) bodySlots s0.mem s.mem
   rest : Keeps bodyRegs s0 s
   arrs : Arrs s.mem g.B g.w A live
@@ -71,7 +81,8 @@ structure Stg (g : Geo) (s0 : State) (A : Nat → Nat) (live : List Nat) (c : Bo
 
 /-- A step from `Stg`. -/
 theorem Stg.next {g : Geo} {s0 s t : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
-    (h : Stg g s0 A live c s) {js ds : List Nat} {rs : List Reg} (hw : Ws t g.B g.Z g.w nArr)
+    (h : Stg g s0 A live c s) {js ds : List Nat} {rs : List Reg}
+    (hw : VG.Proof.Rsa.X86.KeyRt.RtWs g.L t g.B g.Z g.len nArr)
     (k : Keep g.B g.w js ds s.mem t.mem) (hjs : ∀ j ∈ js, j < nArr) (hds : ∀ d ∈ ds, d ∈ bodySlots)
     (r : Keeps rs s t) (hrs : ∀ x ∈ rs, x ∈ bodyRegs) {A' : Nat → Nat} {live' : List Nat} {c' : Bool}
     (ha : Arrs t.mem g.B g.w A' live') (hl : ∀ j ∈ live', j < nArr)
@@ -91,20 +102,20 @@ theorem Stg.vd_keep {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
     (h : Stg g s0 A live c s) {js ds : List Nat} {m' : Mem} (k : Keep g.B g.w js ds s.mem m')
     (hj : ∀ j ∈ js, j ≠ aVD) (hd : ∀ d ∈ ds, d + 4 ≤ hdr) :
     w32 m' g.B (arr g.w aVD + 4 * g.w) = 0 := by
-  rw [k.word (by simp only [S]; omega) hj hd (h.ws.fit64 (by decide)), h.vdTop]
+  rw [k.word (by simp only [S]; omega) hj hd (h.ws.ws.fit64 (by decide)), h.vdTop]
 
 /-- The arrays through a step that writes none of them. -/
 theorem Stg.arrs_keep {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {js ds : List Nat} {m' : Mem} (k : Keep g.B g.w js ds s.mem m')
     (hj : ∀ j ∈ live, j ∉ js) (hd : ∀ d ∈ ds, d + 4 ≤ hdr) : Arrs m' g.B g.w A live :=
-  h.arrs.keep k h.ws (fun j hj' => ⟨h.live_lt j hj', hj j hj'⟩) hd
+  h.arrs.keep k h.ws.ws (fun j hj' => ⟨h.live_lt j hj', hj j hj'⟩) hd
 
 /-- The arrays through a step that writes `o := v`. -/
 theorem Stg.arrs_write {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {js ds : List Nat} {m' : Mem} (k : Keep g.B g.w js ds s.mem m') {o v : Nat}
     (e : num m' g.B g.w o = v) (hj : ∀ j ∈ live, j = o ∨ j ∉ js) (hd : ∀ d ∈ ds, d + 4 ≤ hdr) :
     Arrs m' g.B g.w (upd A o v) live :=
-  h.arrs.write k h.ws e (fun j hj' => (hj j hj').imp_right fun n => ⟨h.live_lt j hj', n⟩) hd
+  h.arrs.write k h.ws.ws e (fun j hj' => (hj j hj').imp_right fun n => ⟨h.live_lt j hj', n⟩) hd
 
 /-- The mask and'ed with a check. -/
 theorem acc_bits {x y : Nat} {c d : Bool} (hx : x = if c then 1 else 0) (hy : y = if d then 1 else 0) :
