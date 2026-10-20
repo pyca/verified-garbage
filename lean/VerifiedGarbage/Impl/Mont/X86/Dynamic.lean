@@ -23,20 +23,25 @@ def redDigit (acc inv mult : Nat) : List Instr :=
   [.mov .eax (.mem (at_ .ebp acc)), .mov .edx (.mem (sc inv)),
    .mul .edx, .store (sc mult) .eax]
 
-/-- `[ebp + acc + 4j] += [mult] · [ecx + b]` for the word `j` that `ecx`
-points to, its carry word in `ebx`, then both pointers move up a word. The
-accumulator's word is added before the carry, so that the carry from one
-step to the next passes through one addition (`add`, `adc`) rather than
-two. -/
-def mulStepW (N acc b mult : Nat) : List Instr :=
-  [.mov .eax (.mem (sc mult)), .mov .edx (.mem (at_ .ecx b)), .mul .edx,
-    .alu .add .eax (.mem (at_ .ebp acc)), .alu .adc .edx (.imm 0),
+/-- `[ebp + acc + d] += [mult] · [ecx + b + d]`, with the carry word in
+`ebx`. The accumulator's word is added before the carry, so that the carry
+from one word to the next passes through one addition (`add`, `adc`) rather
+than two. -/
+def macW (acc b mult d : Nat) : List Instr :=
+  [.mov .eax (.mem (sc mult)), .mov .edx (.mem (at_ .ecx (b + d))), .mul .edx,
+    .alu .add .eax (.mem (at_ .ebp (acc + d))), .alu .adc .edx (.imm 0),
     .alu .add .eax (.reg .ebx), .alu .adc .edx (.imm 0),
-    .store (at_ .ebp acc) .eax, .mov .ebx (.reg .edx),
-    .alu .add .ecx (.imm 4), .alu .add .ebp (.imm 4),
-    .mov .eax (.reg .edi), .alu .add .eax (.imm (BitVec.ofNat 32 (4 * N))), .alu .cmp .ecx (.reg .eax)]
+    .store (at_ .ebp (acc + d)) .eax, .mov .ebx (.reg .edx)]
 
-/-- The window `+= [mult] · [b]`, `N` words, with its carry, through `ecx`. -/
+/-- The words `j` and `j + 1` that `ecx` points to, then both pointers move
+up two words: the loop's own instructions run once for two words. -/
+def mulStepW (N acc b mult : Nat) : List Instr :=
+  macW acc b mult 0 ++ macW acc b mult 4 ++
+    [.alu .add .ecx (.imm 8), .alu .add .ebp (.imm 8),
+      .mov .eax (.reg .edi), .alu .add .eax (.imm (BitVec.ofNat 32 (4 * N))), .alu .cmp .ecx (.reg .eax)]
+
+/-- The window `+= [mult] · [b]`, `N` words (an even number), with its
+carry, through `ecx`. -/
 def mulRowW (acc b N mult : Nat) : Prog isa :=
   .seq (.block [.mov .ebx (.imm 0), .mov .ecx (.reg .edi)]) <|
   .seq (.loop (.block (mulStepW N acc b mult)) .ne)

@@ -86,7 +86,7 @@ structure LoopInvW (base : Addr) (N acc a b m mult i : Nat) (s t : State) : Prop
 theorem rowTail_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {N acc a b mo inv mult i m : Nat}
     (hL : MulLay N size acc a b mo) (hX : MultLay N size acc a b mo inv mult)
     (hv : inv + 4 ≤ size) (hsepInv : inv + 4 ≤ acc ∨ acc + 4 * (2 * N + 1) ≤ inv) (hi : i < N)
-    (hp : s.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 (4 * i))
+    (hE : N % 2 = 0) (hp : s.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 (4 * i))
     (hm : val32 s.mem base mo N = m) (hinv : (m * w32 s.mem base inv + 1) % 2 ^ 32 = 0)
     (hB : val32 s.mem base b N < m)
     (hT : val32 s.mem base (acc + 4 * i) (2 * N + 1 - i) < 2 * m) :
@@ -144,8 +144,8 @@ theorem rowTail_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     have : 2 ^ (32 * N) * 2 ^ 32 ≤ 2 ^ (32 * N) * 2 ^ 64 := Nat.mul_le_mul_left _ (by decide)
     have : m * 2 ^ 32 < 2 ^ (32 * N) * 2 ^ 32 := Nat.mul_lt_mul_of_pos_right hmP (by decide)
     omega_arith
-  refine WP.seq (WP.mono (mulRowW_ok hs₁ hN hp₁ hw hL.b_le (by omega_arith) (by have := hL.sb; omega_arith) hX.le
-    (by have := hX.sacc; omega_arith) hlt₁) fun s₂ ⟨O₂, V₂, K₂⟩ => ?_)
+  refine WP.seq (WP.mono (mulRowW_ok hs₁ hN hE hp₁ hw hL.b_le (by omega_arith) (by have := hL.sb; omega_arith)
+    hX.le (by have := hX.sacc; omega_arith) hlt₁) fun s₂ ⟨O₂, V₂, K₂⟩ => ?_)
   have k₂ : Keeps clobW s s₂ := k₁.trans (K₂.mono (by decide))
   have hs₂ := hs.of_keeps k₂ (by decide)
   have hp₂ : s₂.gpr .ebp = s₂.gpr .edi + BitVec.ofNat 32 (4 * i) := by
@@ -183,8 +183,8 @@ theorem rowTail_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     have : m * 2 ^ 32 < 2 ^ (32 * N) * 2 ^ 32 := Nat.mul_lt_mul_of_pos_right hmP (by decide)
     have : 2 ^ (32 * N) * 2 ^ 32 ≤ 2 ^ (32 * N) * 2 ^ 64 := Nat.mul_le_mul_left _ (by decide)
     omega_arith
-  refine WP.seq (WP.mono (mulRowW_ok hs₆ hN hp₆ hw hL.mo_le (by omega_arith) (by have := hL.smo; omega_arith) hX.le
-    (by have := hX.sacc; omega_arith) hlt₆) fun s₇ ⟨O₇, V₇, K₇⟩ => ?_)
+  refine WP.seq (WP.mono (mulRowW_ok hs₆ hN hE hp₆ hw hL.mo_le (by omega_arith) (by have := hL.smo; omega_arith)
+    hX.le (by have := hX.sacc; omega_arith) hlt₆) fun s₇ ⟨O₇, V₇, K₇⟩ => ?_)
   have k₇ : Keeps clobW s s₇ := k₆.trans (K₇.mono (by decide))
   have hp₇ : s₇.gpr .ebp = s₇.gpr .edi + BitVec.ofNat 32 (4 * i) := by
     rw [K₇.1 _ (by decide), K₇.1 _ (by decide)]; exact hp₆
@@ -251,7 +251,7 @@ theorem rowTail_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
 theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {N acc a b mo inv mult i m : Nat}
     (hL : MulLay N size acc a b mo) (hX : MultLay N size acc a b mo inv mult)
     (hv : inv + 4 ≤ size) (hsepInv : inv + 4 ≤ acc ∨ acc + 4 * (2 * N + 1) ≤ inv) (hi : i < N)
-    (hp : s.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 (4 * i))
+    (hE : N % 2 = 0) (hp : s.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 (4 * i))
     (hm : val32 s.mem base mo N = m) (hinv : (m * w32 s.mem base inv + 1) % 2 ^ 32 = 0)
     (hB : val32 s.mem base b N < m)
     (hT : val32 s.mem base (acc + 4 * i) (2 * N + 1 - i) < 2 * m) :
@@ -291,7 +291,7 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {N 
     rw [O₁.val32 (by have := hX.smo; omega_arith) (by omega_arith), hm]
   have inv₁ : w32 s₁.mem base inv = w32 s.mem base inv :=
     O₁.w32 (by have := hX.sinv; omega_arith) (by omega_arith)
-  refine WP.mono (rowTail_ok hs₁ hL hX hv hsepInv hi hp₁ mo₁ (by rw [inv₁]; exact hinv) (by rw [b₁]; exact hB)
+  refine WP.mono (rowTail_ok hs₁ hL hX hv hsepInv hi hE hp₁ mo₁ (by rw [inv₁]; exact hinv) (by rw [b₁]; exact hB)
     (by rw [win₁]; exact hT)) fun u ⟨hp', hz, O, ⟨q, hq⟩, hT', K⟩ =>
       ⟨hp', hz, (Outs.of_outside O₁ (by simp)).trans O, ⟨q, by rw [hq, win₁, mult₁, b₁]⟩, hT', k₁.trans K⟩
 
@@ -299,7 +299,7 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {N 
 theorem loop_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {N acc a b mo inv mult m : Nat}
     (hL : MulLay N size acc a b mo) (hX : MultLay N size acc a b mo inv mult)
     (hv : inv + 4 ≤ size) (hsepInv : inv + 4 ≤ acc ∨ acc + 4 * (2 * N + 1) ≤ inv) (hN : 0 < N)
-    (hm : val32 s.mem base mo N = m) (hinv : (m * w32 s.mem base inv + 1) % 2 ^ 32 = 0)
+    (hE : N % 2 = 0) (hm : val32 s.mem base mo N = m) (hinv : (m * w32 s.mem base inv + 1) % 2 ^ 32 = 0)
     (hB : val32 s.mem base b N < m) {t : State} (h0 : LoopInvW base N acc a b m mult 0 s t) :
     WP isa (.loop (VG.Impl.Mont.X86.Dynamic.row N acc a b mo inv mult) .ne) t fun u =>
       LoopInvW base N acc a b m mult N s u := by
@@ -321,7 +321,7 @@ theorem loop_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {N
     outs2_w32 I.out (by have := hL.sa; omega_arith) (by have := hX.sa; omega_arith) (by omega_arith)
   have hinv' : (m * w32 t'.mem base inv + 1) % 2 ^ 32 = 0 := by
     rw [outs2_w32 I.out hsepInv (by have := hX.sinv; omega_arith) (by omega_arith)]; exact hinv
-  refine WP.mono (row_ok ht hL hX hv hsepInv hi I.ebp hm' hinv' (hb' ▸ hB) I.lt)
+  refine WP.mono (row_ok ht hL hX hv hsepInv hi hE I.ebp hm' hinv' (hb' ▸ hB) I.lt)
     fun u ⟨hp, hz, O, ⟨q, hq⟩, hT, K⟩ => ?_
   rw [hb', ha'] at hq
   have I' : LoopInvW base N acc a b m mult (i + 1) s u := by

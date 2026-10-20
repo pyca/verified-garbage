@@ -79,8 +79,8 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     · rw [Nat.mul_zero, Nat.add_zero, Nat.sub_zero, mem₂, V₁]; simp [val32]
   have hinv₂ : (m * w32 s₂.mem base inv + 1) % 2 ^ 32 = 0 := by
     rw [O₂.w32 hsi (by omega_using [hv, hn])]; exact hinv
-  refine WP.seq (WP.mono (loop_ok hs₂ hML hX hv hsi (by omega_using [hN2, n0]) hm₂ hinv₂ hB₂ I₀)
-    fun t I => ?_)
+  refine WP.seq (WP.mono (loop_ok hs₂ hML hX hv hsi (by omega_using [hN2, n0]) (by omega_using [hN2]) hm₂ hinv₂
+    hB₂ I₀) fun t I => ?_)
   have ht := hs₂.of_keeps I.keeps (by decide)
   have hmt : val32 t.mem base M.mo N = m := by
     rw [outs2_val32 I.out (by omega_using [l₃, hN2, hacc]) (by omega_using [mt, hN2, n0])
