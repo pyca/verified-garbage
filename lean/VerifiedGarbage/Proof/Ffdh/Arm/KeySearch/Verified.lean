@@ -26,6 +26,11 @@ theorem constantTime (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) :
   exact (function_ct backend _ _ _ _ _ _
     ⟨(p, (searchResult p s).statuses), ⟨inputS, rfl⟩, ⟨inputT, statuses.symm⟩, sp⟩ e₁ e₂).1
 
+/-- The native controller registered for this attempt backend. -/
+def calledCode (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) : Prog VG.Arm.isa :=
+  VG.Impl.Ffdh.Arm.KeySearch.codeFor sampling.cachedContext
+    (.call backend.keyName backend.generateKey)
+
 theorem verified (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) :
     Verified target (VG.Impl.Ffdh.Arm.KeySearch.codeFor sampling.cachedContext (.call backend.keyName backend.generateKey))
       (GenerationPolicy.searchContract sampling (KeyConstants.abi sampling) (stackUse sampling)) :=

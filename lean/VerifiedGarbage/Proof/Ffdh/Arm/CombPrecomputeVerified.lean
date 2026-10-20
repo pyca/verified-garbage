@@ -24,4 +24,14 @@ theorem combPrecompute_verified (backend : MontBackend) :
   ⟨combPrecompute_correct backend,
     combPrecompute_contract_ct backend (CombBuilder.main_ct backend),combPrecompute_sat⟩
 
+/-- The caller transform is part of the registered initializer. -/
+def combPrecomputeCalledCode (backend : MontBackend) : Prog isa :=
+  backend.caller.code (VG.Impl.Ffdh.Arm.CombPrecompute.code
+    (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VettedBound.code)
+
+theorem combPrecomputeCalled_verified (backend : MontBackend) :
+    Verified target (combPrecomputeCalledCode backend)
+      (Spec.Ffdh.generationPrecomputeContract (abi.withConsts tableConsts) 176) :=
+  backend.caller.verified (combPrecompute_verified backend)
+
 end VG.Proof.Ffdh.Arm
