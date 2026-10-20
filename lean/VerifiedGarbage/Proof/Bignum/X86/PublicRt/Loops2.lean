@@ -159,14 +159,14 @@ theorem selectLoop_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {x 
       .alu .sub .edi (.imm 4)]) .ne) t₀
       fun u => Outside W d (4 * N) t₀.mem u.mem ∧
         val32 u.mem W d N = (if k then val32 t₀.mem W x N else val32 t₀.mem W d N) ∧
-        Keeps [.eax, .ebx, .edx, .ebp, .edi] t₀ u := by
+        PtrAt u W .ebx (d + 4 * N) ∧ Keeps [.eax, .ebx, .edx, .ebp, .edi] t₀ u := by
   have hn := hw.nowrap
   refine WP.mono (countLoop hN (fun j t => Keeps [.eax, .ebx, .edx, .ebp, .edi] t₀ t ∧
       PtrAt t W .ebp (x + 4 * j) ∧ PtrAt t W .ebx (d + 4 * j) ∧ (t.gpr .edi).toNat = 4 * (N - j) ∧
       Outside W d (4 * j) t₀.mem t.mem ∧
       val32 t.mem W d j = (if k then val32 t₀.mem W x j else val32 t₀.mem W d j)) ?_
     ⟨Keeps.refl _ _, by simpa using hebp, by simpa using hebx, by simpa using hedi, Outside.refl _ _ _ _,
-      by cases k <;> rfl⟩) fun u ⟨K, _, _, _, O, V⟩ => ⟨O, V, K⟩
+      by cases k <;> rfl⟩) fun u ⟨K, _, P, _, O, V⟩ => ⟨O, V, P, K⟩
   rintro j t hj ⟨Kt, ebp, ebx, edi, O, V⟩
   have ht := hw.of_keeps Kt
   have ecx : t.gpr .ecx = cmask k := by rw [Kt.1 _ (by decide)]; exact hecx

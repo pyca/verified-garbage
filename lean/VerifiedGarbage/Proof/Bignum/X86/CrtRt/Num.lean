@@ -154,7 +154,7 @@ theorem select_ok (h : In base bytes len args s) {x d : Loc} {n : Cnt} (N : CntO
     (by rw [PtrAt, Kw.1 _ (by decide)]; exact pv)
     (cnt_toNat h.upper' N cw')
     (by rw [Kw.1 _ (by decide), Kv.1 _ (by decide), K.1 _ (by decide)]; exact hk))
-    fun t ⟨O, V, Kt⟩ => ?_)
+    fun t ⟨O, V, _, Kt⟩ => ?_)
   have Kall : Keeps [.eax, .ebx, .edx, .ebp, .edi] s t := (Kw'.mono (by decide)).trans Kt
   have Oall : Outside base 0 bytes s.mem t.mem := by rw [← mw']; exact O.mono (Nat.zero_le _) (by omega)
   refine wp_movS ((h.crt.stack 16 (by decide)).keep Kall (by decide) Oall).readSrc fun t₁ u₁ _ => WP.block_nil ?_

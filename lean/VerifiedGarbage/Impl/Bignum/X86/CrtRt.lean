@@ -258,8 +258,8 @@ def tableStep (c : Ctx) : Prog isa :=
   .seq (mul c 7 7 5) <|
   .seq (.block ([.mov .ecx (.imm (BitVec.allOnes 32))] ++ ptrTo (.slot c 7) .ebp .edx ++
     [.mov .ebx (.reg .esi)] ++ cntTo (one c) .edi)) <|
-  .seq selectLoop
-    (.block (restoreEdi ++ [.mov .esi (.reg .ebx)] ++ entryPtr c .edx 16 .eax ++ [.alu .cmp .esi (.reg .edx)]))
+  .seq (.seq selectLoop (.block restoreEdi))
+    (.block ([.mov .esi (.reg .ebx)] ++ entryPtr c .edx 16 .eax ++ [.alu .cmp .esi (.reg .edx)]))
 
 /-- The table: one (slot 6) and the base (slot 5) in Montgomery form, and their products. -/
 def buildTable (c : Ctx) : Prog isa :=

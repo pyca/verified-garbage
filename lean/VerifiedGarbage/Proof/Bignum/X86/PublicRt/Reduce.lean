@@ -105,7 +105,7 @@ theorem select_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bi
     (by rw [PtrAt, uw.other _ (by decide)]; exact pv)
     (by rw [uw.gpr, cv, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; exact wbe)
     (by rw [uw.other _ (by decide), Kv.1 _ (by decide), K.1 _ (by decide)]; exact hk))
-    fun t ⟨O, V, Kt⟩ => ?_)
+    fun t ⟨O, V, _, Kt⟩ => ?_)
   have Kall : Keeps [.eax, .ebx, .edx, .ebp, .edi] s t := (Kw.mono (by decide)).trans Kt
   have Oall : Outside base 0 bytes s.mem t.mem := by rw [← mw]; exact O.mono (Nat.zero_le _) (by omega)
   refine wp_movS ((h.stack 8 (by decide)).keep Kall (by decide) Oall).readSrc fun t₁ u₁ _ => WP.block_nil ?_

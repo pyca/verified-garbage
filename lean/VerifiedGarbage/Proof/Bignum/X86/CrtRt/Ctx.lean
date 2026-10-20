@@ -59,7 +59,7 @@ abbrev mulR (len : Nat) (c : Ctx) (o : Nat) : List (Nat × Nat) :=
 theorem cmul_ok (C : CtxOk base bytes len args c M s) {o a b : Nat} (ho3 : 3 ≤ o) (ho : o ≤ 8) (ha3 : 3 ≤ a)
     (ha : a ≤ 8) (hb3 : 3 ≤ b) (hb : b ≤ 8) (hB : sv s.mem base len c b < M) :
     WP isa (mul c o a b) s fun t =>
-      CtxOk base bytes len args c M t ∧ (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧
+      CtxOk base bytes len args c M t ∧ Keeps [.eax, .ecx, .edx] s t ∧
       Frame (frameR base (s.gpr .esp) (mulR len c o)) s.mem t.mem ∧
       sv t.mem base len c o < M ∧
       sv t.mem base len c o * 2 ^ (8 * bc len c) % M = sv s.mem base len c a * sv s.mem base len c b % M := by
@@ -88,7 +88,13 @@ theorem cmul_ok (C : CtxOk base bytes len args c M s) {o a b : Nat} (ho3 : 3 ≤
       intro p hp; simp only [mulR, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl <;> dsimp only <;> omega) (by
       intro p hp; simp only [mulR, List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl <;> dsimp only <;> omega), cs, F', L, V⟩
+      rcases hp with rfl | rfl <;> dsimp only <;> omega), Ks, F', L, V⟩
+
+/-- The context holds after register changes but `edi` and `esp`. -/
+theorem CtxOk.regs (C : CtxOk base bytes len args c M s) {regs : List Reg} (K : Keeps regs s t)
+    (m : t.mem = s.mem) (di : .edi ∉ regs := by decide) (sp : .esp ∉ regs := by decide) :
+    CtxOk base bytes len args c M t :=
+  ⟨C.inp.regs K m di sp, by rw [sv, m]; exact C.mod, C.gt, C.odd, by rw [m]; exact C.inv⟩
 
 end
 
