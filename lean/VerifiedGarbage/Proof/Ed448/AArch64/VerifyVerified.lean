@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Lit
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyLocal
 public import VerifiedGarbage.Proof.Ed448.Ref
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Ed448 verification's equation on AArch64: `Verified`

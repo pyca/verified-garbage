@@ -10,6 +10,8 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombTiming
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 @[expose] public section
 

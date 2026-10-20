@@ -10,7 +10,6 @@ meta import VerifiedGarbage.Proof.X448.Arm.FnLit
 meta import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit

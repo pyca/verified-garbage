@@ -16,7 +16,6 @@ meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-! The comb as a literal (`materialize_code`): its field arithmetic is built once, here, rather

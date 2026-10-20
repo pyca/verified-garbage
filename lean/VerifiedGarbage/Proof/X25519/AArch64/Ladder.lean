@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.X25519.AArch64.Slots
 public import VerifiedGarbage.Proof.X25519.Ladder
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # X25519 on AArch64: the ladder

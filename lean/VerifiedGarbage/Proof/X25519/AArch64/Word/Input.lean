@@ -7,6 +7,8 @@ public import VerifiedGarbage.Spec.X25519.Contract
 import VerifiedGarbage.Proof.X25519.AArch64.Top
 import VerifiedGarbage.Proof.Ed25519.AArch64.DecodeBits
 import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! Decode RFC 7748 inputs into four-word fields. -/
 

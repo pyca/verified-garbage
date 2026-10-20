@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.DigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepD
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+import VerifiedGarbage.Proof.Weierstrass.JacMul
 
 /-!
 # Timing of the public NAF's iterations with a given doubling

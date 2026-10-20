@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedInit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! ## `JointBoundaryChecks` -/
 

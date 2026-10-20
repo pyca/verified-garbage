@@ -19,7 +19,6 @@ import VerifiedGarbage.Proof.Ed448.Arm.BaseEncode
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.BitByte
 import VerifiedGarbage.Proof.Framework.Bswap

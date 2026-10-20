@@ -13,10 +13,8 @@ import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Scalar
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Middle
 import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-!
 # ECDH on AArch64: the result, and the whole function

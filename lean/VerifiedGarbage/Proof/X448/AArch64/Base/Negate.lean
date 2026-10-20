@@ -1,13 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.Base.Select
-public import VerifiedGarbage.Proof.X448.AArch64.Base.Add
-public import VerifiedGarbage.Proof.X448.AArch64.Fast.Ladder
+import VerifiedGarbage.Proof.X448.AArch64.Base.Select
+import VerifiedGarbage.Proof.X448.AArch64.Base.Add
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Ladder
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.KernelRfl
-public import VerifiedGarbage.Proof.Framework.AArch64.Syms
-public import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.TCB.Mem
+public import Mathlib.Algebra.Group.Nat.Defs
+public import VerifiedGarbage.Impl.X448.AArch64.Base
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Env
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Digit
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
 
 /-!
 # X448 of the base point on AArch64: negating an entry for a negative digit

@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Scalar
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Scalar
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 @[expose] public section
 

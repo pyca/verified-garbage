@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sub
 import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Prelude
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 
 /-!
 # `a + 39081 e`

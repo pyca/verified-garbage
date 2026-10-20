@@ -11,8 +11,9 @@ public import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.X25519.Field
-public import VerifiedGarbage.Proof.X25519.X86_64.Step
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.X25519.X86_64.Step
+public import Lean.Elab.Tactic.Basic
+public import Init.Data.BitVec.Basic
 
 /-!
 # X25519 on x86-64, inversion by divsteps: running blocks

@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Memory
 import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! Load a scalar bit and turn the old/new swap XOR into a selection mask. -/
 

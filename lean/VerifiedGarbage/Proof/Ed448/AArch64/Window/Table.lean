@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Bounds
+import VerifiedGarbage.Proof.X448.BaseAdd
 
 /-!
 # Ed448 verification on AArch64: the table of `[n](-A)`

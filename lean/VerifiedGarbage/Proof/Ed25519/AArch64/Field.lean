@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.Sub
 public import VerifiedGarbage.Spec.Ed25519
 public import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! Merged from `Proof.Ed25519.AArch64.Sqr`. -/
 

@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 
 /-! ## `ProjectiveArithmetic` -/
 

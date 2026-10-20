@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Mont.X86_64.MulF
 import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # P-521's product modulo `n` as a function, on x86-64

@@ -2,13 +2,19 @@ module
 
 public import VerifiedGarbage.Impl.Ecdh.X86.WinJac
 public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacBuildState
-public import VerifiedGarbage.Proof.Ecdsa.X86.Lays
+import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
-public import VerifiedGarbage.Proof.Weierstrass.BytesLen
-public import VerifiedGarbage.Proof.Weierstrass.Window
-public import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
-public import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
+import VerifiedGarbage.Proof.Weierstrass.BytesLen
+import VerifiedGarbage.Proof.Weierstrass.Window
+import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
+import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
+public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
+public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+public import Init.Data.List.Basic
+public import VerifiedGarbage.Impl.Mont.Mod
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Impl.Weierstrass.Slots
+public import VerifiedGarbage.Impl.Weierstrass.X86.Mont
 
 /-! The five-bit ECDH window fits the existing P-256 scratch layout. -/
 

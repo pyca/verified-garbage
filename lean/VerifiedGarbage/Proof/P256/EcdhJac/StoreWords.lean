@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
-import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 
 /-! Stores for the Jacobian window's table construction. -/

@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # ECDSA on x86-64: `Z^(p-2)` and `k^(n-2)`

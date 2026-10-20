@@ -11,7 +11,6 @@ meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitAdx
 meta import VerifiedGarbage.Impl.Ecdh.P384.X86_64
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 

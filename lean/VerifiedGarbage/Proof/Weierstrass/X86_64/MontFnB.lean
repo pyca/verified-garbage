@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnX
 public import VerifiedGarbage.Proof.Mont.X86_64.SqrP
 import VerifiedGarbage.Proof.Mont.X86_64.Rounds
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # P-521's product modulo `p` as a function, on x86-64

@@ -18,6 +18,7 @@ import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Data.Sym.Sym2.Init
 import Mathlib.Tactic.ContinuousFunctionalCalculus
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! Merged from `Proof.Ed25519.AArch64.SignCached.Secret`. -/
 

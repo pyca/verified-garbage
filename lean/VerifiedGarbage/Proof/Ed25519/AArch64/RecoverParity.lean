@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Ed25519.AArch64.RecoverSign
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! Merged from `Proof.Ed25519.AArch64.FieldCheck`. -/
 

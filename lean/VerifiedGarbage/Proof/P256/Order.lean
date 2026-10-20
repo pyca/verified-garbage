@@ -11,7 +11,6 @@ import Mathlib.Tactic.SetLike
 import Mathlib.Tactic.Finiteness.Attr
 public import Aesop.BuiltinRules
 public import Mathlib.Tactic.ToDual
-import VerifiedGarbage.Proof.Framework.Pratt
 
 /-!
 # P-256: `G` has order `n`

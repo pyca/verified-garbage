@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Ed25519.AArch64.PointLoop
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Field
 import VerifiedGarbage.Proof.Ed25519.AArch64.Points
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! Sixteen exact doublings, preserving the saved accumulator. -/
 

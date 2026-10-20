@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.X25519.AArch64.Ops
 import Mathlib.Tactic.NormNum.Pow
 import Mathlib.Tactic.NormNum.Inv
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! # The inversion's start and end on AArch64
 

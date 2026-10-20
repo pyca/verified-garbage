@@ -9,6 +9,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Mont.X86_64.Ops
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # Products modulo P-521's and P-384's `p` by calls, on x86-64

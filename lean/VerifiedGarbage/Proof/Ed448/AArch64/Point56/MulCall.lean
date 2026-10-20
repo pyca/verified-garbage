@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulFn
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Curve448's field product on AArch64: calls of `vg_gf448_r56_mul`

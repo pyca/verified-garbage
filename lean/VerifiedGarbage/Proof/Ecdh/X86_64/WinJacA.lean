@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
 import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
-import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ECDH on x86-64: `[d]P` by 5-bit windows with an affine table

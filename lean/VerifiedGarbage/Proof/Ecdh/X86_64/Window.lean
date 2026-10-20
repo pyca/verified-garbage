@@ -7,12 +7,9 @@ import VerifiedGarbage.Proof.Ecdh.X86_64.Validate
 import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Weierstrass.JacMadd
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # ECDH on x86-64: `[d]P` by windows, and `Z^(p-2)`

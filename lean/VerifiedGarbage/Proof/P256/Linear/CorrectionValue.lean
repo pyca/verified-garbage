@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Proof.Ed25519.Word64
 import VerifiedGarbage.Proof.Mont.AArch64.Words
 
 @[expose] public section

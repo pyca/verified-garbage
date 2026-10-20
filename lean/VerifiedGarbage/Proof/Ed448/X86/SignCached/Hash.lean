@@ -4,21 +4,31 @@ public import VerifiedGarbage.Proof.Ed448.X86.SignCached.Layout
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.Sponge
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
 public import VerifiedGarbage.Impl.Ed448.X86.SignCached
-public import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
-public import VerifiedGarbage.Proof.Ed448.Scalar
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.OffsetBelow
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-public import VerifiedGarbage.Proof.MdStream.X86.ArgWord
-public import VerifiedGarbage.Proof.MdStream.X86.Words
-public import VerifiedGarbage.Proof.Sha256.X86.Compress
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
+import VerifiedGarbage.Proof.Ed448.Scalar
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.MdStream.X86.ArgWord
+import VerifiedGarbage.Proof.MdStream.X86.Words
+import VerifiedGarbage.Proof.Sha256.X86.Compress
 public import VerifiedGarbage.Proof.Sha256.X86.Lit
-public import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Sha3.Arith
 public import VerifiedGarbage.Proof.Sha3.X86.Lit
-public import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
-public import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
-public import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Layout
+public import Init.Data.BitVec.Basic
+public import VerifiedGarbage.Spec.Ed448
+public import VerifiedGarbage.TCB.Code
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.TCB.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Spec.Sha3
 
 /-!
 # Ed448 signing with a cached key on x86 (32-bit): the three hashes

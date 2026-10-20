@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Proof.Ed25519.Word64
 import VerifiedGarbage.TCB.AArch64.Simd
 
 @[expose] public section

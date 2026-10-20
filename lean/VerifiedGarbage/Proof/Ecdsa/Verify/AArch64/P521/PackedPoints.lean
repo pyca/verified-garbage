@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! `[u]G + [v]Q` with `[v]Q` by the public NAF (`packedNafPoints_ok`), as `points_ok`. -/
 

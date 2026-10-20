@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Mont.X86_64.MulPX
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # P-521's product modulo `p` as a function, with BMI2 and ADX, on x86-64

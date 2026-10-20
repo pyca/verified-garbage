@@ -46,7 +46,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Framework.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.X25519.Arm.AddSub

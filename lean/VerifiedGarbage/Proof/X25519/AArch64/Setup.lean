@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.X25519.AArch64.Codec
 public import VerifiedGarbage.Proof.X25519.AArch64.Slots
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 
 /-!

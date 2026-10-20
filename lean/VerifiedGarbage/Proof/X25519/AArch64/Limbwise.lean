@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.Ops
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # X25519 on AArch64: the operations limb by limb

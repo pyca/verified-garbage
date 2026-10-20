@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
 import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddMemory
 import VerifiedGarbage.Proof.Ed25519.AArch64.Freeze
 import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Canonical field encoding and restoration of the caller's registers. -/
 

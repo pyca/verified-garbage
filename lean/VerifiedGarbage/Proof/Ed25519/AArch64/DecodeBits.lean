@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Ed25519.Bytes
 import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddMemory
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! Load the encoded y-coordinate and its separate sign bit. -/
 

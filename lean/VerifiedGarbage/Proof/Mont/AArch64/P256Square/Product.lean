@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+import VerifiedGarbage.Proof.Ed25519.Word64
 
 @[expose] public section
 

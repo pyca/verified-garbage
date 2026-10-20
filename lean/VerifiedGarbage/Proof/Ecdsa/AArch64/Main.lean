@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Middle
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
 # ECDSA on AArch64: the whole function

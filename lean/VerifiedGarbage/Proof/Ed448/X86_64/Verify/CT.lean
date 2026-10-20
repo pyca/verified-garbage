@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Rel
 import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLit
 import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarVerified
 
 /-!
 # Ed448 verification on x86-64: constant time

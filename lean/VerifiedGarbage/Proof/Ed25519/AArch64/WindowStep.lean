@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddMemory
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! Merged from `Proof.Ed25519.AArch64.BaseAccumulate`. -/
 

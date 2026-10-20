@@ -10,8 +10,6 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # ECDH on AArch64: `[d]P` by windows, and `Z^(p-2)`

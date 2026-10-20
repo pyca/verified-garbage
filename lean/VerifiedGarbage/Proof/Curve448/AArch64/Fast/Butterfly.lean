@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sub
 public import VerifiedGarbage.Proof.X448.AArch64.Swap
 import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Finish
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 
 /-!
 # The ladder's sums and differences, of conditionally swapped coordinates

@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Digit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+import VerifiedGarbage.Proof.Weierstrass.JacMul
 
 /-!
 # The public NAF's iterations with a given doubling

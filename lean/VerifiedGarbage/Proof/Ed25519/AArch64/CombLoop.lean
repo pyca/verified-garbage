@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Ed25519.Canonical64
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # The comb's loop

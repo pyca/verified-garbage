@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Mont.AArch64.Words
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Divstep
 import VerifiedGarbage.Proof.X25519.AArch64.Ops
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # The inversion's rows
 

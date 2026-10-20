@@ -2,6 +2,8 @@ module
 public import VerifiedGarbage.Proof.X448.Wide.Column
 
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+import VerifiedGarbage.Proof.Ed25519.Word64
 
 /-! Untrusted: wide coefficient addition for reduction modulo the X448 prime. -/
 

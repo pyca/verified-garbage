@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Mont.AArch64.Blocks
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # The window method on AArch64: `R = 16 R`
