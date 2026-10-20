@@ -36,14 +36,14 @@ theorem sqBody_step {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m k c : Nat
     (inverse : (m * V sInv + 1) % 2 ^ 32 = 0) (odd : m % 2 = 1) (hm : 1 < m)
     (one : A aO = 2 ^ (64 * g.n) % m) (neg : A aNg = m - 2 ^ (64 * g.n) % m)
     (hk : k + 1 < 2 ^ 31) (ht : V sTc < 2 ^ 31) (lo : 1 ≤ c) (hi : c < 2 ^ 32) :
-    WP isa (sqBody g.n) s fun t => SI g s0 A AW V m (k + 1) (c - 1)
+    WP isa VG.Impl.Rsa.X86.RecoverRt.sqBody s fun t => SI g s0 A AW V m (k + 1) (c - 1)
       (sqStep m (V sTc) k st) t ∧ t.zf = some (decide (c - 1 = 0)) := by
   have positive : 0 < m := by omega
   have cop := VG.Proof.Bignum.coprime_pow2 odd (64 * g.n)
   have mr := h.montReady (m := m) (by simp [liveSq, liveM]) (by simp [slotsSq])
     (by simpa only [upd_ne _ _ (by decide : mBase ≠ mY)] using value) bound
     (by simpa [VS, upd, sInv, sK, sCnt, sDone, sOk] using inverse)
-  unfold sqBody
+  unfold VG.Impl.Rsa.X86.RecoverRt.sqBody VG.Impl.Rsa.X86.RecoverRt.eqAt
   simp only [seqs]
   refine WP.seq (WP.mono (h.mmul mr (o := mX) (a := mY) (b := mY)
     (by decide) (by decide) (by decide) (by decide) (by simp [liveSq]) (by simp [liveSq])
@@ -80,10 +80,10 @@ theorem sqBody_step {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m k c : Nat
     (by simp [VS, upd, sOk, sE1, sE2])
     (by simp [upd, sE1, sE2]) (by simp [upd])) fun s4 h4 => ?_)
   refine WP.seq (WP.mono (h4.copy_w (o := aU) (a := mY) (by decide) (by simp [liveSq])
-    (by decide)) fun s5 ⟨h5, _, _⟩ => ?_)
+    (by decide) (by decide)) fun s5 ⟨h5, _, _⟩ => ?_)
   refine WP.seq (WP.mono (h5.sel_w (o := mY) (a := aU) (b := mX) (sl := sLive)
     (by decide) (by simp) (by simp) (by simp)
-    (by rw [upd_self]; exact VG.Proof.Rsa.b2n_le _) (by decide)) fun s6 ⟨h6, _⟩ => ?_)
+    (by rw [upd_self]; exact VG.Proof.Rsa.b2n_le _) (.inl (by decide)) (by decide)) fun s6 ⟨h6, _⟩ => ?_)
   refine WP.mono (h6.sqNext_ok (by simp [slotsSq]) (by simp [slotsSq])
     (by simpa [VS, upd, sK, sLive, sDone, sOk, sE1, sE2, sCnt] using (show k + 1 < 2 ^ 32 by omega))
     (by simpa [VS, upd, sCnt, sK, sLive, sDone, sOk, sE1, sE2] using lo)
