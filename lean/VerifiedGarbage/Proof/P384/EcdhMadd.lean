@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.P384.EcdhMadd
-public import VerifiedGarbage.Proof.P384.Ops
+import VerifiedGarbage.Proof.P384.Ops
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
 
 /-!
