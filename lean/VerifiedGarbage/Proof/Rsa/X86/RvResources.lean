@@ -34,10 +34,10 @@ theorem ABI.stackArgument {s : State} (a : ABI s) {i : Nat} (hi : i < 12) :
     StackArgument s (caller s).B (caller s).Z i := by
   apply stackArgument_of (count := 12) (by have := a.stackBound; omega) hi
   · rw [a.rd, a.wr]; simp
-  · exact a.argsApart _ (by simp [CallGeometry.writes])
+  · exact a.argsApart _ (by simp)
 
 theorem ABI.stack {s : State} (a : ABI s) : StkOk (s.gpr .esp) (caller s).B (caller s).Z := by
-  apply VG.Proof.Weierstrass.X86.stkOk_of (Nat.le_refl 20) a.stackLow
+  apply VG.Proof.Weierstrass.X86.stkOk_of (by decide : 20 ≤ 40) a.stackLow
   · have h := a.scratchBound
     simpa only [caller, argumentPointer, BitVec.toNat_setWidth,
       Nat.mod_eq_of_lt (Nat.lt_trans (arg s 10).isLt (by decide : 2 ^ 32 < 2 ^ 64))] using h
@@ -46,7 +46,7 @@ theorem ABI.stack {s : State} (a : ABI s) : StkOk (s.gpr .esp) (caller s).B (cal
 
 theorem ABI.stackApart {s : State} (a : ABI s) {i : Nat} (hi : i < 12)
     {r : Region} (hr : r ∈ (caller s).writes) : (⟨stackAddress s i, 4⟩ : Region).Disjoint r := by
-  apply (a.argsApart r hr).sub_left
+  apply (a.argsApartW r hr).sub_left
   have p : stackAddress s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) :=
     addr_eq (by have := a.stackBound; omega)
   have z : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 :=
@@ -56,6 +56,10 @@ theorem ABI.stackApart {s : State} (a : ABI s) {i : Nat} (hi : i < 12)
 
 theorem ABI.lengths_ok {s : State} (a : ABI s) : Lengths (caller s) :=
   ⟨a.lengths.1, a.lengths.2, rfl,
+    BitVec.eq_of_toNat_eq (by
+      simp only [caller, argumentPointer, BitVec.toNat_ofNat, BitVec.toNat_setWidth]
+      have := (arg s 10).isLt
+      rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]), rfl,
     BitVec.eq_of_toNat_eq a.pLen, BitVec.eq_of_toNat_eq a.qLen⟩
 
 end VG.Proof.Rsa.X86.Recover
