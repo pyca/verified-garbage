@@ -29,9 +29,11 @@ pub fn bench(c: &mut Criterion) {
     // The shared sizes, and more below 1 KiB and at 4 KiB, where the TLS
     // records of interactive traffic fall; and TLS 1.3's records of 512 and
     // 768 bytes, 1 KiB, 4 KiB and 16 KiB (the most a record carries) of
-    // payload, whose plaintext is one byte longer: the content type.
-    const SIZES: [usize; 13] = [
-        16, 64, 256, 512, 513, 768, 769, 1024, 1025, 4096, 4097, 16384, 16385,
+    // payload, whose plaintext is one byte longer: the content type. 480
+    // bytes (30 blocks of Poly1305) is near where the x86-64 IFMA Poly1305
+    // hands short inputs to other code.
+    const SIZES: [usize; 14] = [
+        16, 64, 256, 480, 512, 513, 768, 769, 1024, 1025, 4096, 4097, 16384, 16385,
     ];
     let key = [0x42; 32];
     let nonce = [0x24; 12];
