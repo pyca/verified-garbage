@@ -37,6 +37,8 @@ structure Lengths (g : CallGeometry) : Prop where
   width : g.n = Spec.Rsa.modulusWords (g.args 5).toNat
   scratch : g.args 10 = BitVec.ofNat 32 g.B.toNat
   bytes : g.Z = (g.args 11).toNat * 8
+  pLen : g.args 1 = g.args 5
+  qLen : g.args 3 = g.args 5
 
 structure Inputs (g : CallGeometry) (s : State) : Prop where
   ws : Ws s g.B g.Z g.toGeo.w nArr
