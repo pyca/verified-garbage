@@ -51,10 +51,11 @@ theorem Side.pair {sp : BitVec 32} {s t : State} (S₁ : Side base bytes len arg
   ⟨S₁.1, S₂.1, S₁.2.2.1.trans S₂.2.2.1.symm⟩
 
 theorem valid_relCT (sp : BitVec 32) :
-    RelCT isa (fun s t => (Side base bytes len args sp s ∧ ValidAt len args s) ∧
-      (Side base bytes len args sp t ∧ ValidAt len args t)) PublicRt.valid fun _ _ => True := by
+    RelCT isa (fun s t => ((Side base bytes len args sp s ∧ ValidAt len args s) ∧
+      (Side base bytes len args sp t ∧ ValidAt len args t)) ∧ s.gpr .ebx = t.gpr .ebx ∧ s.gpr .edx = t.gpr .edx)
+      PublicRt.valid fun _ _ => True := by
   unfold PublicRt.valid
-  intro s t tr ur sf tf ⟨⟨S₁, V₁⟩, ⟨S₂, V₂⟩⟩ E F
+  intro s t tr ur sf tf ⟨⟨⟨S₁, V₁⟩, ⟨S₂, V₂⟩⟩, Rb, Rd⟩ E F
   have sz := PublicContext.size_eq (Spec.Rsa.modulusWords len)
   have space := S₁.1.space
   have nw := S₁.1.scratch.nowrap
@@ -64,17 +65,17 @@ theorem valid_relCT (sp : BitVec 32) :
     | seq F1 F2 =>
       have T1 := (RelCT.taint (A := taint) argumentTaint (fun _ _ h => h) (hc := .block []) (by taint_decide)
         _ _ _ _ _ _ (S₁.pair S₂).agree E1 F1).1
-      obtain ⟨Os, Ks⟩ := wp_result (saveExponent_frame S₁.1.scratch (by omega)) E1
-      obtain ⟨Ot, Kt⟩ := wp_result (saveExponent_frame S₂.1.scratch (by omega)) F1
+      obtain ⟨Ws, Os, Ks⟩ := wp_result (saveExponent_value S₁.1.scratch (by omega)) E1
+      obtain ⟨Wt, Ot, Kt⟩ := wp_result (saveExponent_value S₂.1.scratch (by omega)) F1
       have Os' : Outside base 0 bytes s.mem _ := Os.mono (by omega) (by omega)
       have Ot' : Outside base 0 bytes t.mem _ := Ot.mono (by omega) (by omega)
       have U₁ := S₁.keep Ks (by decide) (by decide) Os'
       have U₂ := S₂.keep Kt (by decide) (by decide) Ot'
       have ns := scratch_bytes Os' (by have := S₁.1.upper; omega) S₁.1.nApart
       have nt := scratch_bytes Ot' (by have := S₁.1.upper; omega) S₁.1.nApart
-      have T2 := (sizedNarrow_relCT S₁.2.1.hbase S₁.2.1.hbytes sp _ _ _ _ _ _
-        ⟨⟨U₁.1, U₁.2.1, U₁.2.2.1, by rw [ns]; exact V₁, U₁.2.2.2⟩,
-          ⟨U₂.1, U₂.2.1, U₂.2.2.1, by rw [nt]; exact V₂, U₂.2.2.2⟩⟩ E2 F2).1
+      have T2 := (sizedNarrow_relCT S₁.2.1.hbase S₁.2.1.hbytes sp _ _ _ _ _ _ _
+        ⟨⟨U₁.1, U₁.2.1, U₁.2.2.1, by rw [ns]; exact V₁, Ws, U₁.2.2.2⟩,
+          ⟨U₂.1, U₂.2.1, U₂.2.2.1, by rw [nt]; exact V₂, by rw [Wt, Rb, Rd], U₂.2.2.2⟩⟩ E2 F2).1
       exact ⟨by rw [T1, T2], trivial⟩
 
 theorem checkExponent_trace (sp : BitVec 32) {s t : State} (S₁ : Side base bytes len args sp s)
@@ -83,11 +84,13 @@ theorem checkExponent_trace (sp : BitVec 32) {s t : State} (S₁ : Side base byt
       Spec.Rsa.bytesAt t.mem (byteAddr (args 4)) (args 5).toNat)
     {tr ur : List Leak} {sf tf : State}
     (E : Exec isa PublicRt.checkExponent s tr sf) (F : Exec isa PublicRt.checkExponent t ur tf) : tr = ur := by
-  have Branch : RelCT isa (fun s t => ((Side base bytes len args sp s ∧ ValidAt len args s) ∧
-      (Side base bytes len args sp t ∧ ValidAt len args t)) ∧ s.zf = t.zf)
+  have Branch : RelCT isa (fun s t => (((Side base bytes len args sp s ∧ ValidAt len args s) ∧
+      (Side base bytes len args sp t ∧ ValidAt len args t)) ∧ s.gpr .ebx = t.gpr .ebx ∧ s.gpr .edx = t.gpr .edx) ∧
+      s.zf = t.zf)
       (.ite .e PublicFn.failure PublicRt.valid) (fun _ _ => True) := by
     apply VG.RelCT.ite (M := isa) (c := .e) (fun _ _ h => h.2)
-    · exact (publicFailure_relCT base bytes len args).mono (fun _ _ h => h.1.1.1.1.pair h.1.1.2.1) (fun _ _ h => h)
+    · exact (publicFailure_relCT base bytes len args).mono (fun _ _ h => h.1.1.1.1.1.pair h.1.1.1.2.1)
+        (fun _ _ h => h)
     · exact (valid_relCT sp).mono (fun _ _ h => h.1.1) (fun _ _ h => h)
   have Compare : RelCT isa (fun _ _ => True) (.block [.alu .cmp .eax (.imm 0)]) (fun _ _ => True) := by
     apply RelCT.taint (A := taint) (τr []) (fun _ _ _ => agree_regs (by simp)) (hc := .block [])
@@ -98,9 +101,9 @@ theorem checkExponent_trace (sp : BitVec 32) {s t : State} (S₁ : Side base byt
     cases F with
     | seq F1 Frest =>
       have T1 := publicExponent_trace (S₁.pair S₂) same E1 F1
-      obtain ⟨Vs, _, _, Ms, Ks⟩ := wp_result (publicExponent_ok S₁.1) E1
-      obtain ⟨Vt, _, _, Mt, Kt⟩ := wp_result (publicExponent_ok S₂.1) F1
-      rw [same] at Vs
+      obtain ⟨Vs, Bs, Ds, Ms, Ks⟩ := wp_result (publicExponent_ok S₁.1) E1
+      obtain ⟨Vt, Bt, Dt, Mt, Kt⟩ := wp_result (publicExponent_ok S₂.1) F1
+      rw [same] at Vs Bs Ds
       have U₁ := S₁.keep Ks (by decide) (by decide) (by rw [Ms]; exact Outside.refl _ _ _ _)
       have U₂ := S₂.keep Kt (by decide) (by decide) (by rw [Mt]; exact Outside.refl _ _ _ _)
       cases Erest with
@@ -112,8 +115,10 @@ theorem checkExponent_trace (sp : BitVec 32) {s t : State} (S₁ : Side base byt
           obtain ⟨Zt, Mvt, Kvt⟩ := wp_result (exponentFlag_ok _ Vt) F2
           have W₁ := U₁.keep Kvs (by decide) (by decide) (by rw [Mvs]; exact Outside.refl _ _ _ _)
           have W₂ := U₂.keep Kvt (by decide) (by decide) (by rw [Mvt]; exact Outside.refl _ _ _ _)
-          have T3 := (Branch _ _ _ _ _ _ ⟨⟨⟨W₁, by show Spec.Rsa.modulusValid _ _ = true; rw [Mvs, Ms]; exact V₁⟩,
+          have T3 := (Branch _ _ _ _ _ _ ⟨⟨⟨⟨W₁, by show Spec.Rsa.modulusValid _ _ = true; rw [Mvs, Ms]; exact V₁⟩,
             ⟨W₂, by show Spec.Rsa.modulusValid _ _ = true; rw [Mvt, Mt]; exact V₂⟩⟩,
+            by rw [Kvs.1 _ (by decide), Kvt.1 _ (by decide), Bs, Bt],
+            by rw [Kvs.1 _ (by decide), Kvt.1 _ (by decide), Ds, Dt]⟩,
             Zs.trans Zt.symm⟩ E3 F3).1
           rw [T1, T2, T3]
 

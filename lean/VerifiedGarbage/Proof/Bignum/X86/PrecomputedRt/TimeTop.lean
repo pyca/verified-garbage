@@ -62,10 +62,12 @@ theorem VExp.bound {s : State} (V : VExp args s) : expOf args s < 2 ^ 33 := by
 theorem valid_relCT (sp : BitVec 32) :
     RelCT isa (fun s t => (Side base bytes len args sp s ∧ VExp args s) ∧
       (Side base bytes len args sp t ∧ VExp args t) ∧
-      preM len args s = preM len args t ∧ preT len args s = preT len args t) PrecomputedRt.valid
+      preM len args s = preM len args t ∧ preT len args s = preT len args t ∧
+      Spec.Rsa.bytesAt s.mem (byteAddr (args 4)) (args 5).toNat =
+        Spec.Rsa.bytesAt t.mem (byteAddr (args 4)) (args 5).toNat) PrecomputedRt.valid
       fun _ _ => True := by
   unfold PrecomputedRt.valid
-  intro s t tr ur sf tf ⟨⟨S₁, V₁⟩, ⟨S₂, V₂⟩, eM, eT⟩ E F
+  intro s t tr ur sf tf ⟨⟨S₁, V₁⟩, ⟨S₂, V₂⟩, eM, eT, same⟩ E F
   have sz := PublicContext.size_eq (Spec.Rsa.modulusWords len)
   have space := S₁.1.space
   have nw' := S₁.1.scratch.nowrap
@@ -93,7 +95,8 @@ theorem valid_relCT (sp : BitVec 32) :
       have T2 := (sizedNarrow_relCT S₁.2.1.hbase S₁.2.1.hbytes sp _ _ _ _ _ _
         ⟨⟨U₁.1, U₁.2.1, U₁.2.2.1, ⟨by rw [Xs, es], by rw [es]; exact V₁.1⟩, U₁.2.2.2⟩,
           ⟨U₂.1, U₂.2.1, U₂.2.2.1, ⟨by rw [Xt, et], by rw [et]; exact V₂.1⟩, U₂.2.2.2⟩,
-          by simp only [preM]; rw [ms, mt]; exact eM, by simp only [preT]; rw [ts, tt]; exact eT⟩ E2 F2).1
+          by simp only [preM]; rw [ms, mt]; exact eM, by simp only [preT]; rw [ts, tt]; exact eT,
+          by rw [Xs, Xt, es, et, same]⟩ E2 F2).1
       exact ⟨by rw [T1, T2], trivial⟩
 
 theorem body_relCT (sp : BitVec 32) :
@@ -103,7 +106,9 @@ theorem body_relCT (sp : BitVec 32) :
         Spec.Rsa.bytesAt t.mem (byteAddr (args 4)) (args 5).toNat)
       PrecomputedRt.body (fun _ _ => True) := by
   let R := fun s t => (Side base bytes len args sp s ∧ Side base bytes len args sp t) ∧
-    (preM len args s = preM len args t ∧ preT len args s = preT len args t) ∧
+    (preM len args s = preM len args t ∧ preT len args s = preT len args t ∧
+      Spec.Rsa.bytesAt s.mem (byteAddr (args 4)) (args 5).toNat =
+        Spec.Rsa.bytesAt t.mem (byteAddr (args 4)) (args 5).toNat) ∧
     ∃ b : Bool, s.zf = some b ∧ t.zf = some b ∧ (b = false → VExp args s ∧ VExp args t)
   have Branch : RelCT isa R (.ite .e PublicFn.failure PrecomputedRt.valid) (fun _ _ => True) := by
     apply VG.RelCT.ite (M := isa) (c := .e) (P := R)
@@ -116,7 +121,8 @@ theorem body_relCT (sp : BitVec 32) :
       have B : b = false := by
         change s.zf = some false at Z
         exact Option.some.inj (Zs.symm.trans Z)
-      exact valid_relCT sp _ _ _ _ _ _ ⟨⟨H.1.1, (Valid B).1⟩, ⟨H.1.2, (Valid B).2⟩, H.2.1⟩ E F
+      exact valid_relCT sp _ _ _ _ _ _ ⟨⟨H.1.1, (Valid B).1⟩, ⟨H.1.2, (Valid B).2⟩, H.2.1.1, H.2.1.2.1,
+        H.2.1.2.2⟩ E F
   have Compare : RelCT isa (fun _ _ => True) (.block [.alu .cmp .eax (.imm 0)]) (fun _ _ => True) := by
     apply RelCT.taint (A := taint) (τr []) (fun _ _ _ => agree_regs (by simp)) (hc := .block [])
     rfl
@@ -144,7 +150,7 @@ theorem body_relCT (sp : BitVec 32) :
           have mt : z.mem = t.mem := Mvt.trans Mt
           have Rel : R w z := by
             refine ⟨⟨W₁, W₂⟩, ⟨by simp only [preM]; rw [ms, mt]; exact eM,
-              by simp only [preT]; rw [ms, mt]; exact eT⟩, _, Zs, by rw [Zt, same], fun hb => ⟨?_, ?_⟩⟩
+              by simp only [preT]; rw [ms, mt]; exact eT, by rw [ms, mt]; exact same⟩, _, Zs, by rw [Zt, same], fun hb => ⟨?_, ?_⟩⟩
             · refine ⟨?_, ?_, ?_⟩
               · simp only [expOf, ms]; simpa using hb
               · simp only [expOf, ms]; rw [Kvs.1 _ (by decide)]; exact Ls

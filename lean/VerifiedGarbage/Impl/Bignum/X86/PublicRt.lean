@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
 public import VerifiedGarbage.Impl.Mont.X86.MulRt
+public import VerifiedGarbage.Impl.Bignum.X86.SparseExponent
 
 /-! # Checked public RSA at a width read at run time (i686 cdecl)
 
@@ -134,23 +135,21 @@ def mulArgs (o a b : Nat) : List Instr :=
 def mul (o a b : Nat) : Prog isa :=
   .frame (.alloc 36) (.seq (.block (mulArgs o a b)) (.call Spec.Rsa.MontMul.mulApi.name Rt.body)) (.free 36)
 
-/-- A step of the exponent's fixed schedule: the result times the base where
-its low bit is set, the base squared, the exponent shifted, `esi` down one. -/
-def expStep : Prog isa :=
-  .seq (.block (VG.Impl.Mont.X86.Dynamic.exponentMask PublicContext.exponentOffset PublicContext.maskOffset)) <|
-  .seq (mul 4 2 1) <|
-  .seq (.block [.mov .ecx (.mem (sc PublicContext.maskOffset))]) <|
-  .seq (select 4 2) <|
+/-- A round of the exponent's public schedule: the result times the base
+where its low bit is set, the base squared, the exponent shifted, and `zf`
+set once no bit is left. -/
+def sparseRound : Prog isa :=
+  .seq (.seq (.block PublicContext.bitTest) (.ite .e (.block []) (mul 2 2 1))) <|
   .seq (mul 1 1 1) <|
-  .block (VG.Impl.Mont.X86.Dynamic.shiftExponent 2 PublicContext.exponentOffset ++ [.alu .sub .esi (.imm 1)])
+  .block (VG.Impl.Mont.X86.Dynamic.shiftExponent 2 PublicContext.exponentOffset ++ PublicContext.exponentLeft)
 
-/-- The result `X^e mod M`: `R mod M`, the base `X R mod M`, the 64 steps,
-and the result out of Montgomery form. -/
+/-- The result `X^e mod M`: `R mod M`, the base `X R mod M`, a round per bit
+of the public exponent up to its top one, and the result out of Montgomery
+form. -/
 def exponentiate : Prog isa :=
   .seq (mul 2 4 3) <|
   .seq (mul 1 1 4) <|
-  .seq (.block [.mov .esi (.imm 64)]) <|
-  .seq (.loop expStep .ne) (mul 2 2 3)
+  .seq (.loop sparseRound .ne) (mul 2 2 3)
 
 /-- The result cleared where the input was not accepted (the mask at 144). -/
 def maskOut : Prog isa :=

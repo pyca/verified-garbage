@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 The copies and checks, the failure, `applyPrefix` and the output are checked
 by the taint analysis (`τA`), the exponentiation related by
-`exponentiate_relCT`, on runs narrowed to the output and the working space
+`exponentiate_relCT` from the same exponent, on runs narrowed to the output and the working space
 (`sized_relCT`); the checks' outcome agrees as the values of `pre` do. The
 runs from the states themselves leak the same traces (`sizedNarrow_relCT`).
 -/
@@ -50,7 +50,8 @@ theorem SIn.keep {sp : BitVec 32} {s t : State} (S : SIn base bytes len args sp 
 def KeyOut (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (σ s : State) : Prop :=
   SIn base bytes len args sp s ∧ s.zf = some (!Accepted (preM len args σ) (preT len args σ)) ∧
     val32 s.mem base (numAt len 0) (nw len) = preM len args σ ∧
-    val32 s.mem base (numAt len 4) (nw len) = preT len args σ ∧ val32 s.mem base (numAt len 3) (nw len) = 1
+    val32 s.mem base (numAt len 4) (nw len) = preT len args σ ∧ val32 s.mem base (numAt len 3) (nw len) = 1 ∧
+    val32 s.mem base 128 2 = val32 σ.mem base 128 2
 
 theorem keyChecks_ok {sp : BitVec 32} {σ : State} (S : SIn base bytes len args sp σ) :
     WP isa (.seq importKey checks) σ (KeyOut base bytes len args sp σ) := by
@@ -71,42 +72,47 @@ theorem keyChecks_ok {sp : BitVec 32} {σ : State} (S : SIn base bytes len args 
     fun j hj => O₂.val32 (.inr (by simp only [numAt, numOff]; omega)) (by
       have := (h.fits (j := j) (by omega)).1; simp only [nw, wb] at *; omega)
   exact ⟨Su.keep K₂ (by decide) (by decide) O₂', by rw [Z, V0, V4], by rw [uv 0 (by decide), V0],
-    by rw [uv 4 (by decide), V4], by rw [uv 3 (by decide), V3]⟩
+    by rw [uv 4 (by decide), V4], by rw [uv 3 (by decide), V3],
+    by rw [O₂.val32 (.inl (by decide)) (by decide), O₁.val32 (.inl (by simp only [numOff]; omega)) (by decide)]⟩
 
 theorem sized_relCT (hbase : (args 8).toNat = base.toNat) (hbytes : bytes = (args 9).toNat * 8) (sp : BitVec 32) :
     RelCT isa (fun s t => SIn base bytes len args sp s ∧ SIn base bytes len args sp t ∧
-      preM len args s = preM len args t ∧ preT len args s = preT len args t) PrecomputedRt.sized
+      preM len args s = preM len args t ∧ preT len args s = preT len args t ∧
+      val32 s.mem base 128 2 = val32 t.mem base 128 2) PrecomputedRt.sized
       fun _ _ => True := by
   unfold PrecomputedRt.sized
   apply VG.RelCT.assoc
   refine VG.RelCT.seq ((RelCT.taint (A := taint) τA (fun _ _ ⟨S₁, S₂, _⟩ => S₁.agree S₂)
     (hc := VG.Taint.hintOf taint τA (.seq importKey checks)) (by taint_decide)).wpDep
     (F := KeyOut base bytes len args sp) fun _ _ ⟨S₁, S₂, _⟩ => ⟨keyChecks_ok S₁, keyChecks_ok S₂⟩) ?_
-  refine VG.RelCT.ite (fun s t ⟨_, σ₁, σ₂, ⟨_, _, eM, eT⟩, F₁, F₂⟩ => by
+  refine VG.RelCT.ite (fun s t ⟨_, σ₁, σ₂, ⟨_, _, eM, eT, _⟩, F₁, F₂⟩ => by
     show s.zf = t.zf; rw [F₁.2.1, F₂.2.1, eM, eT]) ?_ ?_
   · exact RelCT.taint (A := taint) τA (fun _ _ ⟨⟨_, _, _, _, F₁, F₂⟩, _⟩ => F₁.1.agree F₂.1)
       (hc := VG.Taint.hintOf taint τA PublicFn.failure) (by taint_decide)
   · unfold applyInput
-    have pre : ∀ s, (∃ σ, KeyOut base bytes len args sp σ s ∧ Accepted (preM len args σ) (preT len args σ) = true) →
-        WP isa applyPrefix s fun u => ∃ M, ExpIn base bytes len args sp M u := by
-      rintro s ⟨σ, ⟨⟨h, _, X, A, sp₀⟩, _, N, T, O⟩, acc⟩
+    have pre : ∀ k s, (∃ σ, KeyOut base bytes len args sp σ s ∧ Accepted (preM len args σ) (preT len args σ) = true) ∧
+        val32 s.mem base 128 2 = k → WP isa applyPrefix s fun u => ∃ M, ExpIn base bytes len args sp M k u := by
+      rintro k s ⟨⟨σ, ⟨⟨h, _, X, A, sp₀⟩, _, N, T, O, _⟩, acc⟩, W⟩
       simp only [Accepted, Bool.and_eq_true, decide_eq_true_eq] at acc
       obtain ⟨⟨hM1, hTM⟩, odd⟩ := acc
-      refine WP.mono (applyPrefix_ok h X.room X.top N odd rfl rfl) fun u ⟨E, _, T₄, One₄, _, _, _, K⟩ =>
+      refine WP.mono (applyPrefix_ok h X.room X.top N odd W rfl) fun u ⟨E, _, T₄, One₄, _, W₄, _, K⟩ =>
         ⟨_, E, A.keep K (by decide), (K.1 _ (by decide)).trans sp₀, by rw [One₄, O]; exact hM1,
-          by rw [T₄, T]; exact hTM⟩
-    refine (VG.RelCT.seq (taint_both (P := fun s => ∃ σ, KeyOut base bytes len args sp σ s ∧
-        Accepted (preM len args σ) (preT len args σ) = true) (fun _ _ ⟨_, K₁, _⟩ ⟨_, K₂, _⟩ => K₁.1.agree K₂.1)
-      (VG.Taint.hintOf taint τA applyPrefix) (by taint_decide) pre) ?_).mono ?_ fun _ _ h => h
-    · refine VG.RelCT.seq (exponentiate_relCT hbase hbytes sp) ?_
-      exact RelCT.taint (A := taint) τA (fun _ _ ⟨⟨_, E₁, A₁, sp₁⟩, ⟨_, E₂, A₂, sp₂⟩⟩ =>
-        agreeA E₁.pi E₂.pi A₁ A₂ (sp₁.trans sp₂.symm)) (hc := VG.Taint.hintOf taint τA (.seq maskOut write))
-        (by taint_decide)
-    · rintro s t ⟨⟨_, σ₁, σ₂, ⟨_, _, eM, eT⟩, F₁, F₂⟩, ev⟩
-      have z : s.zf = some false := ev
-      rw [F₁.2.1] at z
-      have acc : Accepted (preM len args σ₁) (preT len args σ₁) = true := by simpa using z
-      exact ⟨⟨σ₁, F₁, acc⟩, σ₂, F₂, by rw [← eM, ← eT]; exact acc⟩
+          by rw [T₄, T]; exact hTM, W₄⟩
+    have core : ∀ k, RelCT isa (Both fun s => (∃ σ, KeyOut base bytes len args sp σ s ∧
+        Accepted (preM len args σ) (preT len args σ) = true) ∧ val32 s.mem base 128 2 = k)
+        (.seq applyPrefix (.seq exponentiate (.seq maskOut write))) fun _ _ => True := fun k =>
+      VG.RelCT.seq (taint_both (fun _ _ ⟨⟨_, K₁, _⟩, _⟩ ⟨⟨_, K₂, _⟩, _⟩ => K₁.1.agree K₂.1)
+        (VG.Taint.hintOf taint τA applyPrefix) (by taint_decide) (pre k))
+        (VG.RelCT.seq (exponentiate_relCT hbytes sp k)
+          (RelCT.taint (A := taint) τA (fun _ _ ⟨⟨_, E₁, A₁, sp₁⟩, ⟨_, E₂, A₂, sp₂⟩⟩ =>
+            agreeA E₁.pi E₂.pi A₁ A₂ (sp₁.trans sp₂.symm)) (hc := VG.Taint.hintOf taint τA (.seq maskOut write))
+            (by taint_decide)))
+    rintro s t tr ur sf tf ⟨⟨_, σ₁, σ₂, ⟨_, _, eM, eT, eE⟩, F₁, F₂⟩, ev⟩ E F
+    have z : s.zf = some false := ev
+    rw [F₁.2.1] at z
+    have acc : Accepted (preM len args σ₁) (preT len args σ₁) = true := by simpa using z
+    exact core (val32 s.mem base 128 2) _ _ _ _ _ _ ⟨⟨⟨σ₁, F₁, acc⟩, rfl⟩,
+      ⟨⟨σ₂, F₂, by rw [← eM, ← eT]; exact acc⟩, by rw [F₂.2.2.2.2.2, F₁.2.2.2.2.2, eE]⟩⟩ E F
 
 /-- The permissions of `sized`'s narrowed runs: everything readable, the output and the working space
 writable. -/
@@ -152,10 +158,11 @@ theorem narrow_in {sp : BitVec 32} {s : State} (S : SAt base bytes len args sp s
 
 theorem sizedNarrow_relCT (hbase : (args 8).toNat = base.toNat) (hbytes : bytes = (args 9).toNat * 8)
     (sp : BitVec 32) : RelCT isa (fun s t => SAt base bytes len args sp s ∧ SAt base bytes len args sp t ∧
-      preM len args s = preM len args t ∧ preT len args s = preT len args t) PrecomputedRt.sized
+      preM len args s = preM len args t ∧ preT len args s = preT len args t ∧
+      val32 s.mem base 128 2 = val32 t.mem base 128 2) PrecomputedRt.sized
       fun _ _ => True := by
   refine relCT_narrow (fun s => s.rd ++ s.wr) (fun _ => narrowW base bytes len args)
-    (fun s₁ s₂ ⟨S₁, S₂, eM, eT⟩ => ?_) (sized_relCT (len := len) hbase hbytes sp)
+    (fun s₁ s₂ ⟨S₁, S₂, eM, eT, eE⟩ => ?_) (sized_relCT (len := len) hbase hbytes sp)
   have cov : ∀ {s : State}, SAt base bytes len args sp s → Covers (narrowW base bytes len args) s.wr := by
     intro s S
     rintro a n ⟨r, hr, hc⟩
@@ -171,7 +178,7 @@ theorem sizedNarrow_relCT (hbase : (args 8).toNat = base.toNat) (hbytes : bytes 
     exact ⟨_, sized_ok h ⟨X.hbase, X.hbytes, X.room, X.top⟩ E V⟩
   exact ⟨Covers.append_left (Covers.refl _) (Covers.right (cov S₁)), cov S₁,
     Covers.append_left (Covers.refl _) (Covers.right (cov S₂)), cov S₂, wp S₁, wp S₂,
-    narrow_in S₁, narrow_in S₂, eM, eT⟩
+    narrow_in S₁, narrow_in S₂, eM, eT, eE⟩
 
 end
 
