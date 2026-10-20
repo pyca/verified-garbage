@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.Arithmetic
+public import VerifiedGarbage.Impl.Ffdh.Arm.CallerRows
 public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 public import VerifiedGarbage.Impl.Bignum.Arm.ImportOperand
@@ -178,19 +179,30 @@ def keyContext : List Instr :=
   [.ldrSp .r0 0, .dp .add .r8 .r0 (.imm 96), .ldr .r9 .r0 48,
     .mov .r9 (.shifted .r9 .lsl 1), .dp .add .r9 .r9 (.imm 2)] ++ Rsa.Arm.Keys.stride
 
+def keyStride : List Instr := [.str .r7 .r0 224, .mov .r1 (.imm 0), .str .r1 .r0 228]
+
+def montKeyArrays : Prog isa := seqs [
+  .block (Rsa.Arm.Recover.clrTop 0), .block (Rsa.Arm.Recover.clrTop 1),
+  Rsa.Arm.Keys.copy 9 1, Rsa.Arm.Keys.sub3 10 0 9]
+
 def montPrep : Prog isa := seqs [
   .block [.ldrSp .r0 0, .ldrSp .r6 12], VG.Impl.Ffdh.Arm.prepare,
   smallConst 1 1, montOp 1 1 4,
-  .block (keyContext ++ [.str .r7 .r0 224, .mov .r1 (.imm 0), .str .r1 .r0 228] ++
-    Rsa.Arm.Recover.clrTop 0 ++ Rsa.Arm.Recover.clrTop 1),
-  Rsa.Arm.Keys.copy 9 1, Rsa.Arm.Keys.sub3 10 0 9]
+  .block (keyContext ++ keyStride), montKeyArrays]
 
-def phaseHead (q : Bool) : List Instr :=
-  [.ldrSp .r3 24] ++ (if q then [.dp .sub .r3 .r3 (.imm 1)] else []) ++ save .r3 44 ++
-  [.dp .add .r4 .r3 (.imm 7), .mov .r4 (.shifted .r4 .lsr 3)] ++ save .r4 48 ++
+def phaseBitHead (q : Bool) : List Instr :=
+  [.ldrSp .r3 24] ++ (if q then [.dp .sub .r3 .r3 (.imm 1)] else []) ++ save .r3 44
+
+def phaseWidth : List Instr :=
+  [.dp .add .r4 .r3 (.imm 7), .mov .r4 (.shifted .r4 .lsr 3)] ++ save .r4 48
+
+def phaseChecks : List Instr :=
   [.dp .sub .r3 .r3 (.imm 1), .subs .r3 .r3 (.imm 2048), .mov .r5 (.imm 0),
-    .adc .r5 .r5 (.imm 0), .mov .r5 (.shifted .r5 .lsl 6), .dp .add .r5 .r5 (.imm 64)] ++
-  save .r5 52 ++ [.mov .r1 (.imm 0)] ++ save .r1 56
+    .adc .r5 .r5 (.imm 0), .mov .r5 (.shifted .r5 .lsl 6), .dp .add .r5 .r5 (.imm 64)] ++ save .r5 52
+
+def phasePassed : List Instr := [.mov .r1 (.imm 0)] ++ save .r1 56
+
+def phaseHead (q : Bool) : List Instr := phaseBitHead q ++ phaseWidth ++ phaseChecks ++ phasePassed
 
 def halfCountStep : Prog isa := seqs [
   .block [.mov .r11 (.imm 0)], Rsa.Arm.Keys.half 29,
@@ -263,5 +275,10 @@ def main (name : String) (body : Prog isa) : Prog isa := seqs [
 
 def code (name : String) (body : Prog isa) : Prog isa := VG.Impl.Ffdh.Arm.framed
   (seqs [.block entry, .block initialRoom, .ite .eq finNone (main name body)])
+
+/-- A selected shared round keeps its exact call body. The caller's own
+Montgomery conversions follow the backend's UMAAL requirement as well. -/
+def optimizedCode (umaal : Bool) (name : String) (body : Prog isa) : Prog isa :=
+  if umaal then callerRows (code name body) else code name body
 
 end VG.Impl.Ffdh.Arm.ParameterCandidate
