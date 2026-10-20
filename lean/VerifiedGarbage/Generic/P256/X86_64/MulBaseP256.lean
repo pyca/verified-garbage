@@ -131,7 +131,8 @@ def note : String :=
   doublings: each entry is selected in constant time by loading every entry of its table, \
   32 bytes at a time with AVX2, and keeping (`vpand`, `vpor`, under the mask of `vpcmpeqd` of a \
   counter and the magnitude, broadcast) the one of the digit's magnitude (or the point at infinity for a zero \
-  digit), negated by a mask of its sign, and added, from `j = 0` up, to a Jacobian accumulator \
+  digit), negated by a mask of its sign (the loads of window `j + 1`'s entries spread between the field \
+  operations of window `j`'s addition, whose multiplications' latency they fill), and added, from `j = 0` up, to a Jacobian accumulator \
   by the mixed addition formulas madd-2004-hmv, which fail only for equal points: the \
   accumulator, the sum of the digits' terms below `j`, is never the entry, since `n` is prime, \
   `[n]G` is the point at infinity and the sums are smaller than any nonzero digit's term modulo \

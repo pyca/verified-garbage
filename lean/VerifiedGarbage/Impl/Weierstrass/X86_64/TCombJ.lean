@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.TComb
+public import VerifiedGarbage.Impl.X86_64Scal
 
 /-!
 # The fixed-base comb with Booth's digits and Jacobian mixed additions
@@ -72,14 +73,22 @@ def first : Prog isa :=
   .seq (.block K.bnegY) <|
   .block (copyPt K.M.n K.A K.E ++ [.mov32 .rbx (.imm 1)])
 
+/-- Window `j = rbx`'s addition of its entry, in `E`, by `madd` (`maddJ`'s
+code), then `D = E` where `A` is `O`, `A = D` unless the digit is zero, and
+`fin`. -/
+def tailJ (madd : Prog isa) (fin : List Instr) : Prog isa :=
+  .seq madd <|
+  .seq (.block (nzMask K.M.n K.A.z ++ selPt K.M.n K.D K.E K.D)) <|
+  .block (K.bdigit true ++ eqMask 0 ++ selPt K.M.n K.A K.D K.A ++ fin)
+
+/-- `rbx = j + 1` and `ZF` for `j + 1 = J`. -/
+def incCmp (J : Nat) : List Instr := [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm (BitVec.ofNat 32 J))]
+
 /-- Window `j = rbx` (`1 ≤ j < J`), then `rbx = j + 1` and `ZF` for `j + 1 = J`. -/
 def stepJ : Prog isa :=
   .seq (.block (K.bdigit true ++ K.select)) <|
   .seq (.block K.bnegY) <|
-  .seq (fprogB K.M (maddJ K.S K.A K.E K.D)) <|
-  .seq (.block (nzMask K.M.n K.A.z ++ selPt K.M.n K.D K.E K.D)) <|
-  .block (K.bdigit true ++ eqMask 0 ++ selPt K.M.n K.A K.D K.A ++
-    [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm (BitVec.ofNat 32 K.J))])
+  K.tailJ (fprogB K.M (maddJ K.S K.A K.E K.D)) (incCmp K.J)
 
 /-- `Y = R mod p` where `Z = 0`: `Y` cleared there (from `zero`), then `R`'s
 words or-ed in under the complemented mask, through `rax`, `rcx` and `rdx`. -/
@@ -92,9 +101,91 @@ def outFix : List Instr :=
 /-- `A = (XZ : Y : Z³)`. -/
 def outOps : List FOp := [.mul K.A.x K.A.x K.A.z, .mul K.S.t0 K.A.z K.A.z, .mul K.A.z K.S.t0 K.A.z]
 
-/-- `[k]G` into `A`, in projective coordinates. -/
-def combJ : Prog isa :=
+/-! ### The pipelined comb
+
+Each window's entry is selected by loading every entry of its table, which
+takes about as long as the addition, but needs none of its results; the
+addition's field operations mostly wait on each other's. So with `pipe`, the
+entry of window `j + 1` is selected while window `j`'s addition runs: its
+256-bit loads are spread among the addition's operations (`selChunk`,
+`fprogBI`), and kept in the vector accumulators, which the operations, of
+scalar code (`scalCode`), do not touch, until the addition's selections are
+done. The operations keep nothing in registers from one to the next, so
+each part of the selection computes the table's address in `rdx` again,
+from the public counter `rbx`. Window `1`'s entry is selected before the loop, and the
+last window, `J - 1`, selects none (`stepJ`'s addition). -/
+
+/-- The addition's field operations. -/
+def nOps : Nat := (maddJ K.S K.A K.E K.D).length
+
+/-- The entries selected before field operation `i` of the addition is done:
+`H i / nOps`, all `H` after the last. -/
+def chunkLo (i : Nat) : Nat := K.H * i / K.nOps
+
+/-- `rdx` = table `rbx + 1`'s address, from the static `tsym`'s, through `rax`
+and `rcx`. -/
+def selSetupNext : List Instr :=
+  [.mov .rax (.reg .rbx), .alu .add .rax (.imm 1), .mov32 .rcx (.imm (BitVec.ofNat 32 K.tblBytes)), .mul .rcx,
+    .leaSym .rdx K.tsym, .alu .add .rdx (.reg .rax)]
+
+/-- After field operation `i`: the address of table `rbx + 1` in `rdx`
+(the field operations keep nothing in registers, so the selection's part
+computes it again), and entries `chunkLo i + 1 … chunkLo (i + 1)` of the
+table kept in the accumulators under the mask of the next digit's
+magnitude (`selEntryY`). -/
+def selChunk (i : Nat) : List Instr :=
+  if K.chunkLo (i + 1) = K.chunkLo i then [] else
+  K.selSetupNext ++ (List.range (K.chunkLo (i + 1) - K.chunkLo i)).flatMap fun e =>
+    selEntryY (16 * K.M.n) ((K.M.n + 1) / 2) (qY K.M.n) (K.chunkLo i + e + 1)
+
+/-- Before window `j = rbx`'s addition: the magnitude of digit `j + 1`
+(`bdigit`, `rbx` incremented around it) broadcast to `ymm13`, one to `ymm12`
+and the counter `ymm14`, and the accumulators cleared (`selPassY`'s start),
+through `rax`, `rcx` and `rdx`. -/
+def prepNext : List Instr :=
+  [.alu .add .rbx (.imm 1)] ++ K.bdigit true ++ [.alu .sub .rbx (.imm 1)] ++
+  [.vop (.vmovq .xmm13 .r8), .vop (.vpbroadcastd .l256 .xmm13 .xmm13), .mov32 .rcx (.imm 1),
+    .vop (.vmovq .xmm12 .rcx), .vop (.vpbroadcastd .l256 .xmm12 .xmm12), .vop (.vmovdqa .l256 .xmm14 .xmm12)] ++
+  ((List.range ((K.M.n + 1) / 2)).map (fun c => .vop (.vbin .vpxor .l256 (selAcc c) (selAcc c) (selAcc c))) :
+    List Instr)
+
+/-- After window `j`'s selections: `rbx = j + 1`, the next entry stored to
+`E` from the accumulators (`selPassY`'s end), its magnitude again, `selOne`
+and the negation for a negative digit, and `ZF` for `j + 1 = J - 1`. -/
+def finNext : List Instr :=
+  [.alu .add .rbx (.imm 1)] ++
+  ((List.range ((K.M.n + 1) / 2)).map (fun c => .vmovdquStore .l256 (sc (K.E.x + 16 * qY K.M.n c)) (selAcc c)) :
+    List Instr) ++
+  [.vop .vzeroupper] ++ K.bdigit true ++ K.selOne ++ K.bnegY ++
+  [.alu .cmp .rbx (.imm (BitVec.ofNat 32 (K.J - 1)))]
+
+/-- Window `j = rbx` (`1 ≤ j < J - 1`) with window `j + 1`'s selection, its
+entry in `E` (negated), then `rbx = j + 1` and `ZF` for `j + 1 = J - 1`. -/
+def stepJP : Prog isa :=
+  .seq (.block K.prepNext) <| K.tailJ (fprogBI K.M (maddJ K.S K.A K.E K.D) K.selChunk 0) K.finNext
+
+/-- Whether the pipelined comb applies: asked for (`pipe`), with AVX2 and at
+least two words (`selPassY`'s 32-byte pieces), at least three windows, and an
+addition of scalar code only. -/
+def pipeOk : Bool :=
+  K.pipe && K.avx2 && decide (2 ≤ K.M.n) && decide (3 ≤ K.J) &&
+    (maddJ K.S K.A K.E K.D).all fun op => scalCode (opProg K.M op)
+
+/-- `[k]G` into `A`, in projective coordinates, by the pipelined comb. -/
+def combJP : Prog isa :=
+  .seq K.first <|
+  .seq (.block (K.bdigit true ++ K.select)) <| .seq (.block K.bnegY) <|
+  .seq (.loop K.stepJP .ne) <|
+  .seq (K.tailJ (fprogB K.M (maddJ K.S K.A K.E K.D)) (incCmp K.J)) <|
+  .seq (.block K.outFix) (fprogB K.M K.outOps)
+
+/-- `[k]G` into `A`, in projective coordinates, a window at a time. -/
+def combJ0 : Prog isa :=
   .seq K.first <| .seq (.loop K.stepJ .ne) <| .seq (.block K.outFix) (fprogB K.M K.outOps)
+
+/-- `[k]G` into `A`, in projective coordinates: pipelined where it applies
+(`pipeOk`). -/
+def combJ : Prog isa := if K.pipeOk then K.combJP else K.combJ0
 
 end TCombCfg
 

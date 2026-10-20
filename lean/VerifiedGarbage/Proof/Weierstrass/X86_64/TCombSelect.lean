@@ -215,14 +215,19 @@ theorem Unch.split {base : Addr} {o k : Nat} {m m' : Mem} (h : Unch base [(o, 2 
   dsimp only at h1 h2 ⊢; omega_arith
 
 /-- What the selection leaves: in `E`, entry `a`'s `x` and `y` (of the table
-at `X`) and `R` if `a ≥ 1`, else `(0, R, 0)`. -/
-structure SelPost (K : TCombCfg) (base : Addr) (s : State) (a : Nat) (X : Addr) (t : State) : Prop where
-  x : wordsVal t.mem base K.E.x K.M.n = if 1 ≤ a then wordsVal s.mem X (16 * K.M.n * (a - 1)) K.M.n else 0
+at `X`, in `mem`) and `R` if `a ≥ 1`, else `(0, R, 0)`. -/
+structure SelPostM (K : TCombCfg) (base : Addr) (mem : Mem) (s : State) (a : Nat) (X : Addr) (t : State) :
+    Prop where
+  x : wordsVal t.mem base K.E.x K.M.n = if 1 ≤ a then wordsVal mem X (16 * K.M.n * (a - 1)) K.M.n else 0
   y : wordsVal t.mem base K.E.y K.M.n =
-    if 1 ≤ a then wordsVal s.mem X (16 * K.M.n * (a - 1) + 8 * K.M.n) K.M.n else K.one
+    if 1 ≤ a then wordsVal mem X (16 * K.M.n * (a - 1) + 8 * K.M.n) K.M.n else K.one
   z : wordsVal t.mem base K.E.z K.M.n = if 1 ≤ a then K.one else 0
   keep : KeepRegs [.rax, .rcx, .rdx] s t
   unch : Unch base [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n)] s.mem t.mem
+
+/-- `SelPostM` from the table in the memory of the selection's start. -/
+abbrev SelPost (K : TCombCfg) (base : Addr) (s : State) (a : Nat) (X : Addr) (t : State) : Prop :=
+  SelPostM K base s.mem s a X t
 
 theorem bv_and_or_true (x y : BitVec 64) : (x &&& bmask true) ||| y = x ||| y := by
   rw [show bmask true = BitVec.allOnes 64 from rfl, BitVec.and_allOnes]
@@ -243,6 +248,56 @@ theorem wordsVal_wordOf {m : Mem} {b : Addr} {o k v : Nat} (hv : v < 2 ^ (64 * k
 theorem wordsVal_zeros {m : Mem} {b : Addr} {o k : Nat} (h : ∀ i < k, word m b (o + 8 * i) = 0) :
     wordsVal m b o k = 0 :=
   wordsVal_of_shifts m b o k 0 (Nat.two_pow_pos _) fun i hi => by rw [h i hi, Nat.zero_shiftRight]; rfl
+
+/-- The end of the selection, from the pieces of entry `a` (zero for `a = 0`)
+of the table at `X` in `mem` at `E.x + 16 c` and the magnitude in `r8`:
+`selOne`, and `E` as `SelPostM` says. -/
+theorem selFinish_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
+    (hexy : K.E.y = K.E.x + 8 * K.M.n) (hy : K.E.y + 8 * K.M.n ≤ size)
+    (hz : K.E.z + 8 * K.M.n ≤ size) (hxz : K.E.x + 16 * K.M.n ≤ K.E.z ∨ K.E.z + 8 * K.M.n ≤ K.E.x)
+    (hone : K.one < 2 ^ (64 * K.M.n)) {mem : Mem} {X : Addr} {a : Nat} (h8 : s.gpr .r8 = BitVec.ofNat 64 a)
+    (ha : a ≤ K.H) (hH : K.H < 2 ^ 31)
+    (a₂ : ∀ c < K.M.n, s.mem.readW (off base (K.E.x + 16 * c)) 128 = accVal mem X (16 * K.M.n) (16 * ·) a K.H c) :
+    WP isa (.block K.selOne) s (SelPostM K base mem s a X) := by
+  have hnw := hs.nowrap
+  refine WP.mono (selOne_ok K hs (by omega_arith) h8 hy hz (by omega_arith)) fun t ⟨ey, ez, k₃, U₃, _⟩ => ?_
+  have W := accVal_word a₂
+  have hxw : ∀ i < K.M.n, word t.mem base (K.E.x + 8 * i) = word s.mem base (K.E.x + 8 * i) := fun i hi =>
+    U₃.word (fun w hw => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith)
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · by_cases h1 : 1 ≤ a
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h1)]
+      exact wordsVal_congr₂ _ _ _ fun i hi => by
+        rw [hxw i hi, W i (by omega_arith), ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, ha⟩)]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
+      exact wordsVal_zeros fun i hi => by
+        rw [hxw i hi, W i (by omega_arith), ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]
+  · have hyw : ∀ i < K.M.n, word s.mem base (K.E.y + 8 * i) =
+        if 1 ≤ a ∧ a ≤ K.H then word mem X (16 * K.M.n * (a - 1) + 8 * K.M.n + 8 * i) else 0 := fun i hi => by
+      rw [hexy, show K.E.x + 8 * K.M.n + 8 * i = K.E.x + 8 * (K.M.n + i) by omega_arith, W _ (by omega_arith),
+        show 16 * K.M.n * (a - 1) + 8 * (K.M.n + i) = 16 * K.M.n * (a - 1) + 8 * K.M.n + 8 * i by omega_arith]
+    by_cases h1 : 1 ≤ a
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h1)]
+      exact wordsVal_congr₂ _ _ _ fun i hi => by
+        rw [ey i hi, hyw i hi, ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, ha⟩),
+          decide_eq_false (show ¬ a = 0 by omega_arith), bv_and_or_false]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
+      exact wordsVal_wordOf hone fun i hi => by
+        rw [ey i hi, hyw i hi, ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith)),
+          decide_eq_true (show a = 0 by omega_arith), bv_and_or_true, bv_or_zero]
+  · by_cases h1 : 1 ≤ a
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h1)]
+      exact wordsVal_wordOf hone fun i hi => by
+        rw [ez i hi, decide_eq_false (show ¬ a = 0 by omega_arith), Bool.not_false, bv_and_true]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
+      exact wordsVal_zeros fun i hi => by
+        rw [ez i hi, decide_eq_true (show a = 0 by omega_arith), Bool.not_true, bv_and_false]
+  · exact k₃.mono (by decide)
+  · exact U₃.mono fun w hw => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
+      rcases hw with h | h <;> simp [h]
 
 /-- The entry of table `rbx = j` for the magnitude `r8 = a ≤ H` into `E`:
 selected from the table at `T + j · tblBytes`, the static `tsym`'s address
@@ -272,49 +327,15 @@ theorem select_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Sc
     (by omega_arith)) fun s₂ ⟨a₂, O₂, k₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   have h8₂ : s₂.gpr .r8 = BitVec.ofNat 64 a := by rw [k₂.gpr _ (by decide), h8₁]
-  refine WP.mono (selOne_ok K hs₂ (by omega_arith) h8₂ hy hz (by omega_arith)) fun t ⟨ey, ez, k₃, U₃, _⟩ => ?_
-  have W := accVal_word a₂
-  rw [k₁.2.1] at W
-  have hxw : ∀ i < K.M.n, word t.mem base (K.E.x + 8 * i) = word s₂.mem base (K.E.x + 8 * i) := fun i hi =>
-    U₃.word (fun w hw => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith)
-  refine ⟨?_, ?_, ?_, ?_, ?_⟩
-  · by_cases h1 : 1 ≤ a
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true h1)]
-      exact wordsVal_congr₂ _ _ _ fun i hi => by
-        rw [hxw i hi, W i (by omega_arith), ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, ha⟩)]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
-      exact wordsVal_zeros fun i hi => by
-        rw [hxw i hi, W i (by omega_arith), ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]
-  · have hyw : ∀ i < K.M.n, word s₂.mem base (K.E.y + 8 * i) =
-        if 1 ≤ a ∧ a ≤ K.H then word s.mem (T + BitVec.ofNat 64 (j * K.tblBytes))
-          (16 * K.M.n * (a - 1) + 8 * K.M.n + 8 * i) else 0 := fun i hi => by
-      rw [hexy, show K.E.x + 8 * K.M.n + 8 * i = K.E.x + 8 * (K.M.n + i) by omega_arith, W _ (by omega_arith),
-        show 16 * K.M.n * (a - 1) + 8 * (K.M.n + i) = 16 * K.M.n * (a - 1) + 8 * K.M.n + 8 * i by omega_arith]
-    by_cases h1 : 1 ≤ a
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true h1)]
-      exact wordsVal_congr₂ _ _ _ fun i hi => by
-        rw [ey i hi, hyw i hi, ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, ha⟩),
-          decide_eq_false (show ¬ a = 0 by omega_arith), bv_and_or_false]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
-      exact wordsVal_wordOf hone fun i hi => by
-        rw [ey i hi, hyw i hi, ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith)),
-          decide_eq_true (show a = 0 by omega_arith), bv_and_or_true, bv_or_zero]
-  · by_cases h1 : 1 ≤ a
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true h1)]
-      exact wordsVal_wordOf hone fun i hi => by
-        rw [ez i hi, decide_eq_false (show ¬ a = 0 by omega_arith), Bool.not_false, bv_and_true]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
-      exact wordsVal_zeros fun i hi => by
-        rw [ez i hi, decide_eq_true (show a = 0 by omega_arith), Bool.not_true, bv_and_false]
-  · exact ((Keeps.regs k₁).trans (k₂.mono (by decide))).trans (k₃.mono (by decide))
+  rw [k₁.2.1] at a₂
+  refine WP.mono (selFinish_ok K hs₂ hexy hy hz hxz hone h8₂ ha hH a₂) fun t P => ⟨P.x, P.y, P.z, ?_, ?_⟩
+  · exact ((Keeps.regs k₁).trans (k₂.mono (by decide))).trans P.keep
   · have U₂ : Unch base [(K.E.x, 8 * K.M.n), (K.E.x + 8 * K.M.n, 8 * K.M.n)] s.mem s₂.mem := by
       rw [← k₁.2.1]
       exact Unch.split (by rw [show 2 * (8 * K.M.n) = 16 * K.M.n by omega_arith]; exact O₂.unch)
     rw [← hexy] at U₂
-    exact (U₂.trans U₃).mono fun w hw => by
+    exact (U₂.trans P.unch).mono fun w hw => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
-      rcases hw with h | h | h | h <;> simp [h]
+      rcases hw with h | h | h | h | h <;> simp [h]
 
 end VG.Proof.Weierstrass.X86_64

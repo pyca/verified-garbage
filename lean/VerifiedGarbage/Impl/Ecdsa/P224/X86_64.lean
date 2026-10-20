@@ -15,7 +15,7 @@ open VG.X86_64
 def p224 : Cfg where
   n := 4
   C := Spec.P224.curve
-  comb := some ⟨7, Impl.P224.p224Comb7, Impl.P224.p224Comb7Start, "VG_P224_COMB", false⟩
+  comb := some ⟨7, Impl.P224.p224Comb7, Impl.P224.p224Comb7Start, "VG_P224_COMB", false, false⟩
   fastN := true
   inverse := some Spec.Weierstrass.Inverse.p224
   checkPoint := some Spec.Weierstrass.CheckPoint.p224

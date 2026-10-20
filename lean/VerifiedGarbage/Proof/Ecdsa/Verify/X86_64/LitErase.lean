@@ -39,7 +39,7 @@ namespace VG.Proof.Ecdsa.Verify.X86_64
 open VG.Impl.Ecdsa.X86_64 VG.Impl.Ecdsa.Verify.X86_64 VG.Proof.Weierstrass.X86_64
 
 /-- P-256's comb table. -/
-def p256Table : CombData := ⟨7,Impl.P256.p256Comb7,Impl.P256.p256Comb7Start,"VG_P256_COMB",true⟩
+def p256Table : CombData := ⟨7,Impl.P256.p256Comb7,Impl.P256.p256Comb7Start,"VG_P256_COMB",true,true⟩
 
 /-- The code before the comb, without its displacements. -/
 def beforeErased : Prog VG.X86_64.isa := VG.X86_64.Code.erase (verifyPrefix p256)

@@ -160,11 +160,11 @@ theorem keeps_of_unch {ws : Addr} {m m' : Mem} (adx : Bool) (hu : Unch ws (gWA (
 theorem tbls_of {s : State} (adx : Bool) (hrd : s.rd = [⟨s.syms "VG_P384_COMB", 8 * p384W.length⟩])
     (hwr : s.wr = [⟨s.gpr .rdi, 8192⟩]) (ht : TblHeld s [⟨s.gpr .rdi, 8192⟩, ⟨s.gpr .rsp, 8⟩]) :
     TblMem s (s.syms "VG_P384_COMB") ((cfg adx).combWords ⟨7, Impl.P384.p384Comb7, Impl.P384.p384Comb7Start,
-      "VG_P384_COMB", false⟩) ∧ ∀ i < ((cfg adx).combWords ⟨7, Impl.P384.p384Comb7,
-      Impl.P384.p384Comb7Start, "VG_P384_COMB", false⟩).length, ∀ b < 8,
+      "VG_P384_COMB", false, false⟩) ∧ ∀ i < ((cfg adx).combWords ⟨7, Impl.P384.p384Comb7,
+      Impl.P384.p384Comb7Start, "VG_P384_COMB", false, false⟩).length, ∀ b < 8,
       size ≤ ofs (s.gpr .rdi) (s.syms "VG_P384_COMB" + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) := by
   obtain ⟨held, fit, hdw⟩ := ht
-  have hcd : (cfg adx).comb = some ⟨7, Impl.P384.p384Comb7, Impl.P384.p384Comb7Start, "VG_P384_COMB", false⟩ := by
+  have hcd : (cfg adx).comb = some ⟨7, Impl.P384.p384Comb7, Impl.P384.p384Comb7Start, "VG_P384_COMB", false, false⟩ := by
     cases adx <;> rfl
   refine tbl_of_held hcd (s₀ := s) ?_ (by rw [hwr]; simp) (fun r hr => ?_) (Unch.refl _ _ _)
   · rw [TblsHeld, cfg_combConsts, Abi.constRegions_cons, Abi.constRegions_nil, Sig.forall_mem_const_single]
@@ -175,7 +175,7 @@ theorem tbls_of {s : State} (adx : Bool) (hrd : s.rd = [⟨s.syms "VG_P384_COMB"
     rw [hrd, hr]; simp
 
 /-- The comb of P-384's configurations. -/
-abbrev comb7 : CombData := ⟨7, Impl.P384.p384Comb7, Impl.P384.p384Comb7Start, "VG_P384_COMB", false⟩
+abbrev comb7 : CombData := ⟨7, Impl.P384.p384Comb7, Impl.P384.p384Comb7Start, "VG_P384_COMB", false, false⟩
 
 theorem cfg_comb (adx : Bool) : (cfg adx).comb = some comb7 := by cases adx <;> rfl
 
