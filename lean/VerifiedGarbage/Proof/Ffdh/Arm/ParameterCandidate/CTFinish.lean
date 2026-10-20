@@ -22,9 +22,13 @@ structure ResultData where
   dst : BitVec 32
   usedPtr : BitVec 32
   n : Nat
-  consumed : Nat
 
-def ResultStart (p : ResultData) (s : State) : Prop := ResultContext p.dst p.usedPtr p.n p.consumed s
+def ResultStart (p : ResultData) (s : State) : Prop := ∃ consumed, ResultContext p.dst p.usedPtr p.n consumed s
+
+theorem ResultStart.after_memory {p : ResultData} {s t : State} {rs : List Reg}
+    (h : ResultStart p s) (memory : t.mem = s.mem) (rest : Rest rs s t) : ResultStart p t := by
+  obtain ⟨consumed, context⟩ := h
+  exact ⟨consumed, context.after_memory memory rest⟩
 
 private def ResultPointer (p : ResultData) (s : State) : Prop := s.gpr .r2 = p.usedPtr
 private def ClearPointers (p : ResultData) (s : State) : Prop := s.gpr .r0 = p.dst ∧ s.gpr .lr = BitVec.ofNat 32 p.n
@@ -32,7 +36,7 @@ private def ClearPointers (p : ResultData) (s : State) : Prop := s.gpr .r0 = p.d
 theorem finish_ct (status : Nat) (bound : status ≤ 2) : RelCT isa (Two ResultStart)
     (.block (VG.Impl.Ffdh.Arm.ParameterCandidate.finish status)) (fun _ _ => True) := by
   have head : RelCT isa (Two ResultStart) (.block [.ldrSp .r2 32]) (Two ResultPointer) :=
-    two_post ((loadStack_ct .r2 32).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) (fun p s h => by
+    two_post ((loadStack_ct .r2 32).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) (fun p s ⟨_, h⟩ => by
       refine wp_loadStack (a := State.addr (s.sp + 32#32)) (by decide) rfl (h.saved.read (by decide)) fun t loaded => WP.block_nil ?_
       exact loaded.gpr.trans (h.saved.saved 32 (by decide)))
   obtain ⟨hint, checked⟩ := finishTail_taint status bound
@@ -47,7 +51,7 @@ theorem finish_ct (status : Nat) (bound : status ≤ 2) : RelCT isa (Two ResultS
 
 theorem clearOutput_ct : RelCT isa (Two ResultStart) VG.Impl.Ffdh.Arm.ParameterCandidate.clearOutput (Two ResultStart) := by
   have head : RelCT isa (Two ResultStart) (.block [.ldrSp .r0 4, .ldrSp .lr 12, .mov .r2 (.imm 0)]) (Two ClearPointers) :=
-    two_post ((stackOnly_ct _ rfl).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) (fun _ s h =>
+    two_post ((stackOnly_ct _ rfl).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) (fun _ s ⟨_, h⟩ =>
       WP.mono (clearHead_ok h) (fun _ ⟨⟨ptr, count, _, _⟩, _⟩ => ⟨ptr, count⟩))
   obtain ⟨hint, checked⟩ := clearOutputLoop_taint
   have loop : RelCT isa (Two ClearPointers) VG.Impl.Ffdh.Arm.Domain.GenerateKey.zeros (fun _ _ => True) := by
@@ -57,12 +61,12 @@ theorem clearOutput_ct : RelCT isa (Two ResultStart) VG.Impl.Ffdh.Arm.ParameterC
     rcases hr with rfl | rfl
     · exact a.1.trans b.1.symm
     · exact a.2.trans b.2.symm
-  exact two_post (head.seq loop) (fun _ _ h => WP.mono (clearOutput_ok h) (fun _ ⟨context, _, _, _⟩ => context))
+  exact two_post (head.seq loop) (fun _ _ ⟨consumed, h⟩ => WP.mono (clearOutput_ok h) (fun _ ⟨context, _, _, _⟩ => ⟨consumed, context⟩))
 
 private theorem loadConsumed_ct : RelCT isa (Two ResultStart) (.block [.ldrSp .r3 40]) (Two ResultStart) :=
-  two_post ((loadStack_ct .r3 40).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) (fun _ s h => by
+  two_post ((loadStack_ct .r3 40).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) (fun _ s ⟨consumed, h⟩ => by
     refine wp_loadStack (a := State.addr (s.sp + 40#32)) (by decide) rfl (h.saved.read (by decide)) fun t loaded => WP.block_nil ?_
-    exact h.after_memory loaded.mem (loaded.rest (by simp : Reg.r3 ∈ [Reg.r3])))
+    exact ⟨consumed, h.after_memory loaded.mem (loaded.rest (by simp : Reg.r3 ∈ [Reg.r3]))⟩)
 
 private theorem zeroConsumed_ct : RelCT isa (Two ResultStart) (.block [.mov .r3 (.imm 0)]) (Two ResultStart) :=
   two_post ((stackOnly_ct _ rfl).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) (fun _ _ h => by

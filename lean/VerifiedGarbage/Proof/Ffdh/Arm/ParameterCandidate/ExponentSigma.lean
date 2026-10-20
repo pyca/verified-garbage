@@ -28,7 +28,7 @@ private theorem maskCount (count : Nat) : BitVec.ofNat 32 count &&& 3 = BitVec.o
   rw [Nat.and_two_pow_sub_one_eq_mod, Nat.mod_mod_of_dvd count (by decide : 4 ∣ 2 ^ 32),
     Nat.mod_eq_of_lt (by omega : count % 4 < 2 ^ 32)]
 
-private theorem sigmaHead_ok {s : State} {count : Nat} (stack : Workspace s s.sp 72)
+theorem sigmaHead_ok {s : State} {count : Nat} (stack : Workspace s s.sp 72)
     (saved : s.mem.readW (State.addr (s.sp + 60#32)) 32 = BitVec.ofNat 32 count) :
     WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.exponentSigmaHead) s fun t =>
       (t.gpr .r1 = BitVec.ofNat 32 (count % 4) ∧ t.z = decide (count % 4 = 0) ∧ t.mem = s.mem) ∧

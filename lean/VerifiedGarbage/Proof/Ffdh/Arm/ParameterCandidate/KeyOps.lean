@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
-public import Mathlib.Algebra.Group.Nat.Defs
 public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Rsa.Arm.Recover
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
@@ -102,7 +101,7 @@ theorem keySub3_ok {s : State} {base : BitVec 32} {capacity w o a b : Nat}
       VG.Proof.Rsa.Arm.Keys.num t.mem (base + 96#32) (2 * w + 2) o +
         VG.Proof.Rsa.Arm.Keys.num s.mem (base + 96#32) (2 * w + 2) b =
         VG.Proof.Rsa.Arm.Keys.num s.mem (base + 96#32) (2 * w + 2) a +
-          2 ^ (32 * (2 * w + 2)) * (t.gpr .r11).toNat ∧
+          Nat.pow 2 (32 * (2 * w + 2)) * (t.gpr .r11).toNat ∧
       (t.gpr .r11).toNat ≤ 1 ∧ Rest VG.Proof.Rsa.Arm.Keys.opRegs s t := by
   refine keyView_inline workspace (viewLarge ready)
     (VG.Proof.Rsa.Arm.Keys.sub3_ok ready outBound aBound bBound (by decide) oa ob) (by rfl) ?_
@@ -117,7 +116,7 @@ theorem keyHalf_ok {s : State} {base : BitVec 32} {capacity w j : Nat}
       VG.Proof.Rsa.Arm.Keys.Keep (base + 96#32) (2 * w + 2) [j] [] s.mem t.mem ∧
       VG.Proof.Rsa.Arm.Keys.num t.mem (base + 96#32) (2 * w + 2) j =
         (VG.Proof.Rsa.Arm.Keys.num s.mem (base + 96#32) (2 * w + 2) j +
-          2 ^ (32 * (2 * w + 2)) * (s.gpr .r11).toNat) / 2 ∧
+          Nat.pow 2 (32 * (2 * w + 2)) * (s.gpr .r11).toNat) / 2 ∧
       Rest VG.Proof.Rsa.Arm.Keys.opRegs s t := by
   refine keyView_inline workspace (viewLarge ready)
     (VG.Proof.Rsa.Arm.Keys.half_ok ready bound (by decide) carry) (by rfl) ?_

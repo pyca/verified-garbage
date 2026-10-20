@@ -21,7 +21,7 @@ open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.Ffdh.Arm VG.Proof.X255
 open VG.Spec.Rsa.Mont (numAt Operand)
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
-private theorem roundArgs_ok {s : State} {base : BitVec 32} {capacity w : Nat}
+theorem roundArgs_ok {s : State} {base : BitVec 32} {capacity w : Nat}
     (ready : ArithmeticReady base capacity w s) (stack : Workspace s s.sp 72)
     (saved : s.mem.readW (State.addr (s.sp + 36#32)) 32 = BitVec.ofNat 32 capacity) :
     WP isa (.block [.ldrSp .r0 0, .ldrSp .r1 36]) s fun t =>

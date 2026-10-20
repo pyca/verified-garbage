@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.PowLit
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Ffdh.Arm VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
 
-private theorem passHead_ok {s : State} {passed checks : Nat} (stack : Workspace s s.sp 72)
+theorem passHead_ok {s : State} {passed checks : Nat} (stack : Workspace s s.sp 72)
     (more : passed < checks) (bound : checks ≤ 128)
     (savedPassed : s.mem.readW (State.addr (s.sp + 56#32)) 32 = BitVec.ofNat 32 passed)
     (savedChecks : s.mem.readW (State.addr (s.sp + 52#32)) 32 = BitVec.ofNat 32 checks) :
