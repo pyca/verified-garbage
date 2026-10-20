@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecHash
 public import Mathlib.Data.Fintype.Card
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
-import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecCall
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry

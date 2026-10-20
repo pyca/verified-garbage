@@ -6,7 +6,6 @@ import Mathlib.Data.Fintype.Card
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Sha256.AArch64.Compress
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: `KDK = HMAC(DH, C)`

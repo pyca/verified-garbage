@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
 import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Data.Fintype.Card
 import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Sha256.StateMem
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
