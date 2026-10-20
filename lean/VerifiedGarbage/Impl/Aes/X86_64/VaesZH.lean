@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Impl.Aes.X86_64.AesNi
-import VerifiedGarbage.Impl.Aes.X86_64.VaesZ
 
 
 /-!

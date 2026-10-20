@@ -18,11 +18,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.Wp
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-import VerifiedGarbage.TCB.X86.Isa
-import VerifiedGarbage.TCB.X86.State
-import VerifiedGarbage.TCB.X86.Target
 meta import VerifiedGarbage.Proof.Framework.X86.Exec
 meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 meta import VerifiedGarbage.TCB.X86.Isa
