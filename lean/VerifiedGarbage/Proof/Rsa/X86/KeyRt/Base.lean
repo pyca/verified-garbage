@@ -41,7 +41,7 @@ theorem kw_bound {len : Nat} (hle : len ≤ 4096) : 4 * kw len ≤ 4104 := by
 /-- What every operation needs of a state. -/
 structure RtWs (L : Lay) (s : State) (B : Addr) (Z len N : Nat) : Prop where
   ws : Ws s B Z (kw len) N
-  lenArg : ∃ a, a ≤ 1024 ∧ L.toLen a = len ∧ CallArgument s B Z L.len (BitVec.ofNat 32 a)
+  lenArg : ∃ a, a ≤ 1024 ∧ kw (L.toLen a) = kw len ∧ CallArgument s B Z L.len (BitVec.ofNat 32 a)
   wsArg : CallArgument s B Z L.ws (BitVec.ofNat 32 B.toNat)
   lenLe : len ≤ 4096
   layLen : 1 ≤ L.len
@@ -72,9 +72,9 @@ theorem lenOp_eq (hL : 1 ≤ L.len) : lenOp L = VG.Impl.Bignum.X86.PublicFn.argu
   simp only [lenOp, VG.Impl.Bignum.X86.PublicRt.argAt, VG.Impl.Bignum.X86.PublicFn.argument]
   congr 1; omega
 
-/-- The modulus's length argument, as `widthB` reads it, of the length `len` for the shape. -/
+/-- The modulus's length argument, as `widthB` reads it, of the width `kw len` for the shape. -/
 def LenSrc (L : Lay) (s : State) (len : Nat) : Prop :=
-  ∃ a, a ≤ 1024 ∧ L.toLen a = len ∧ readSrc s (.mem (lenOp L)) = some (BitVec.ofNat 32 a)
+  ∃ a, a ≤ 1024 ∧ kw (L.toLen a) = kw len ∧ readSrc s (.mem (lenOp L)) = some (BitVec.ofNat 32 a)
 
 theorem lenSrc {s : State} (h : RtWs L s B Z len N) : LenSrc L s len :=
   have ⟨a, l, e, c⟩ := h.lenArg
@@ -103,7 +103,8 @@ variable {is : List Instr} {s : State} {Q : State → Prop}
 theorem bytesB_ok {r : Reg} (hl : LenSrc L s len) (_hle : len ≤ 4096)
     (k : ∀ t, Keeps [r] s t → t.mem = s.mem → (t.gpr r).toNat = 4 * kw len → WP isa (.block is) t Q) :
     WP isa (.block (bytesB L r ++ is)) s Q := by
-  obtain ⟨a, ha, rfl, hr⟩ := hl
+  obtain ⟨a, ha, he, hr⟩ := hl
+  rw [← he] at k
   have hw := wb_le ha
   unfold bytesB
   rw [List.append_assoc]
