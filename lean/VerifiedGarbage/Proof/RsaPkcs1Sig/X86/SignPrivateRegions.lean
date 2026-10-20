@@ -32,10 +32,10 @@ theorem Context.retSub {g : Geometry} {bs : Fin 8 → List Byte} {s : State}
   VG.X86.below_sub (by decide : 4 ≤ calleeBytes) h.valid.stackLow
 
 theorem Context.belowSub {g : Geometry} {bs : Fin 8 → List Byte} {s : State}
-    (h : Context g bs s) : (⟨(g.stack - 4).setWidth 64 - 3368#64, 3368⟩ : Region).Sub g.calleeRegion := by
+    (h : Context g bs s) : (⟨(g.stack - 4).setWidth 64 - 3388#64, 3388⟩ : Region).Sub g.calleeRegion := by
   have low : (g.stack - 4).toNat = g.stack.toNat - 4 :=
     sub_toNat (k := 4) (by have := h.valid.stackLow; simp only [calleeBytes] at this; omega)
-  rw [← VG.X86.Taint.sub_setWidth (by rw [low]; have := h.valid.stackLow; simp only [calleeBytes] at this; omega : 3368 ≤ (g.stack - 4).toNat)]
-  exact VG.X86.below_inner (by decide : 3368 + 4 ≤ calleeBytes) h.valid.stackLow
+  rw [← VG.X86.Taint.sub_setWidth (by rw [low]; have := h.valid.stackLow; simp only [calleeBytes] at this; omega : 3388 ≤ (g.stack - 4).toNat)]
+  exact VG.X86.below_inner (by decide : 3388 + 4 ≤ calleeBytes) h.valid.stackLow
 
 end VG.Proof.RsaPkcs1Sig.X86.Sgn

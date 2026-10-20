@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicPre
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyCall
+<<<<<<< HEAD
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLocal
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyRegions
 import VerifiedGarbage.Proof.Rsa.BytesFrame
@@ -9,6 +10,9 @@ import VerifiedGarbage.Proof.Framework.Sig
 public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Weierstrass.Point
+=======
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedABI
+>>>>>>> origin/claude/x86-rsa-crt-rt
 
 /-! # Calling checked public RSA retains every immutable verification input -/
 
@@ -19,8 +23,8 @@ open VG VG.X86 VG.Proof.Bignum.X86 VG.Proof.Mont.X86
 structure PublicImpl where
   name : String
   code : Prog isa
-  verified : Verified target code (Spec.Rsa.publicPrecomputedCheckedContract abi 20)
-  stack : stackUse code ≤ 20
+  verified : Verified target code (Spec.Rsa.publicPrecomputedCheckedContract abi 40)
+  stack : stackUse code ≤ 40
   noSp : NoSp code
 
 theorem publicCovers {g : Geometry} {bs : Fin 5 → List Byte} {s : State} (h : Context g bs s) :
@@ -46,7 +50,7 @@ theorem Context.callFrame {g : Geometry} {bs : Fin 5 → List Byte} {s : State}
     (h : Context g bs s) : Frame [g.calleeRegion] s.mem s.callEntry.mem := by
   rw [State.callEntry_mem, h.sp]
   exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-    (VG.X86.below_top (by decide : 4 ≤ 24) h.valid.stackLow (by decide : 4 ≤ 4))
+    (VG.X86.below_top (by decide : 4 ≤ 44) h.valid.stackLow (by decide : 4 ≤ 4))
 
 theorem Context.callBytes {g : Geometry} {bs : Fin 5 → List Byte} {s : State}
     (h : Context g bs s) (i : Fin 5) :

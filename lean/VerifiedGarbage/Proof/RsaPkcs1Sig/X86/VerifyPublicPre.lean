@@ -28,7 +28,7 @@ theorem publicArgs_values {g : Geometry} {bs : Fin 5 → List Byte} {s : State}
 
 theorem publicCall_pre {g : Geometry} {bs : Fin 5 → List Byte} {s : State}
     (h : Context g bs s) (a : Arguments g (publicArgument g) 10 s) (siglen : g.signatureLength = g.length) :
-    (Spec.Rsa.publicPrecomputedCheckedContract abi 20).pre (s.callEntry.withRegions (publicRd g) (publicWr g)) := by
+    (Spec.Rsa.publicPrecomputedCheckedContract abi 40).pre (s.callEntry.withRegions (publicRd g) (publicWr g)) := by
   have sa := fun {j} (hj : j < 10) => publicArgs_values h a hj
   have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
   have efit : g.exponentLength < 2 ^ 32 := by have := h.valid.exponentFits; omega
@@ -54,10 +54,10 @@ theorem publicCall_pre {g : Geometry} {bs : Fin 5 → List Byte} {s : State}
   have cArgs := h.valid.calleeInner.sub_right argsSub
   have low : (g.stack - 4).toNat = g.stack.toNat - 4 := sub_toNat (k := 4) (by have := h.valid.stackLow; omega)
   have retSub : (⟨(g.stack - 4).setWidth 64, 4⟩ : Region).Sub g.calleeRegion :=
-    VG.X86.below_sub (by decide : 4 ≤ 24) h.valid.stackLow
-  have belowSub : (⟨(g.stack - 4).setWidth 64 - 20#64, 20⟩ : Region).Sub g.calleeRegion := by
-    rw [← VG.X86.Taint.sub_setWidth (by rw [low]; have := h.valid.stackLow; omega : 20 ≤ (g.stack - 4).toNat)]
-    exact VG.X86.below_inner (by decide : 20 + 4 ≤ 24) h.valid.stackLow
+    VG.X86.below_sub (by decide : 4 ≤ 44) h.valid.stackLow
+  have belowSub : (⟨(g.stack - 4).setWidth 64 - 40#64, 40⟩ : Region).Sub g.calleeRegion := by
+    rw [← VG.X86.Taint.sub_setWidth (by rw [low]; have := h.valid.stackLow; omega : 40 ≤ (g.stack - 4).toNat)]
+    exact VG.X86.below_inner (by decide : 40 + 4 ≤ 44) h.valid.stackLow
   rw [low]
   have sourceSig : g.sourceRegion 3 = ⟨(g.sources 3).setWidth 64, g.length⟩ := by
     change (⟨byteAddr (g.sources 3), g.signatureLength⟩ : Region) = _

@@ -42,15 +42,18 @@ def mulRowW (acc b N mult : Nat) : Prog isa :=
   .seq (.loop (.block (mulStepW N acc b mult)) .ne)
     (.block (.alu .sub .ebp (.imm (BitVec.ofNat 32 (4 * N))) :: carryUp acc N))
 
-/-- One CIOS row with the runtime inverse at `[inv]`, its multipliers in
-`[mult]`. -/
-def row (N acc a b mo inv mult : Nat) : Prog isa :=
-  .seq (.block [.mov .eax (.mem (at_ .ebp a)), .store (sc mult) .eax]) <|
+/-- A CIOS row once its multiplier `a_i` is in `[mult]`. -/
+def rowTail (N acc b mo inv mult : Nat) : Prog isa :=
   .seq (mulRowW acc b N mult) <|
   .seq (.block (redDigit acc inv mult)) <|
   .seq (mulRowW acc mo N mult)
     (.block [.alu .add .ebp (.imm 4), .mov .edx (.reg .edi),
       .alu .add .edx (.imm (BitVec.ofNat 32 (4 * N))), .alu .cmp .ebp (.reg .edx)])
+
+/-- One CIOS row with the runtime inverse at `[inv]`, its multipliers in
+`[mult]`. -/
+def row (N acc a b mo inv mult : Nat) : Prog isa :=
+  .seq (.block [.mov .eax (.mem (at_ .ebp a)), .store (sc mult) .eax]) (rowTail N acc b mo inv mult)
 
 /-- `[o] = [a] [b] R⁻¹ mod m`, with the runtime inverse at `[inv]`. The
 rows keep their multiplier in the first word of `[M.tmp]`, and leave `esi`

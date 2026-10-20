@@ -20,7 +20,7 @@ theorem call_keeps {s t : State} (rd : t.rd = s.rd) (wr : t.wr = s.wr)
 theorem private_call_ok {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivContext g bs s)
     {name : String} {code : Prog isa} {contract : Contract isa}
-    (verified : Verified target code contract) (stack : stackUse code ≤ 20) (noSp : NoSp code)
+    (verified : Verified target code contract) (stack : stackUse code ≤ 40) (noSp : NoSp code)
     {rd wr : List Region} (pre : contract.pre (s.callEntry.withRegions rd wr))
     (read : Covers (rd ++ wr) (s.rd ++ s.wr)) (write : Covers wr s.wr)
     (sub : ∀ r ∈ wr, ∃ R ∈ bodyWrites g, r.Sub R) :
@@ -41,7 +41,7 @@ theorem private_call_ok {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State
     · obtain rfl := List.mem_singleton.mp hr
       refine ⟨g.calleeRegion, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
       rw [h.sp]
-      exact VG.X86.below_sub (by omega : stackUse code + 4 ≤ 24) h.valid.stackLow
+      exact VG.X86.below_sub (by omega : stackUse code + 4 ≤ 44) h.valid.stackLow
   have Fbody : Frame (bodyWrites g) s.mem t.mem := F.sub (by
     intro r hr
     rcases List.mem_append.mp hr with hr | hr

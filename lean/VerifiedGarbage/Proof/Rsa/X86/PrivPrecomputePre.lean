@@ -54,10 +54,10 @@ theorem pcCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
       (by have := h.valid.maxLength; simp only [precomputeOffset, Spec.Rsa.modulusWords]; omega)
   have low : (g.stack - 4).toNat = g.stack.toNat - 4 := sub_toNat (k := 4) (by have := h.valid.stackLow; omega)
   have retSub : (⟨(g.stack - 4).setWidth 64, 4⟩ : Region).Sub g.calleeRegion :=
-    VG.X86.below_sub (by decide : 4 ≤ 24) h.valid.stackLow
+    VG.X86.below_sub (by decide : 4 ≤ 44) h.valid.stackLow
   have belowSub : (⟨(g.stack - 4).setWidth 64 - 20#64, 20⟩ : Region).Sub g.calleeRegion := by
     rw [← VG.X86.Taint.sub_setWidth (by rw [low]; have := h.valid.stackLow; omega : 20 ≤ (g.stack - 4).toNat)]
-    exact VG.X86.below_inner (by decide : 20 + 4 ≤ 24) h.valid.stackLow
+    exact VG.X86.below_inner (by decide : 20 + 4 ≤ 44) h.valid.stackLow
   have calleeSource := (h.valid.stackSources 0).sub_left h.valid.calleeSub
   have calleeWorkspace := h.valid.stackWorkspace.sub_left h.valid.calleeSub
   have calleePre := h.valid.calleeInner.sub_right preSub

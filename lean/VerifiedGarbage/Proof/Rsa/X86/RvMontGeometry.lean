@@ -9,7 +9,8 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 /-! # Montgomery arithmetic within the prime-recovery workspace
 
 The accumulator occupies arrays 16 and 17. Arrays 20 and 22 hold the
-modulus and subtraction temporary. Operand arrays lie above the accumulator.
+modulus and subtraction temporary. Operand arrays lie above the accumulator,
+or below it (the window table's, 0 to 15).
 -/
 
 @[expose] public section
@@ -19,7 +20,7 @@ open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.Rsa.X86.Recover
 open VG.Proof.Rsa.X86.Keys
 
-abbrev MontIndex (j : Nat) : Prop := 20 ≤ j ∧ j < nArr ∧ j ≠ mTmp
+abbrev MontIndex (j : Nat) : Prop := (20 ≤ j ∨ j < 16) ∧ j < nArr ∧ j ≠ mTmp
 
 theorem words_eq_num {g : Geo} {m : Mem} {j : Nat}
     (h : num m g.B g.w j < 2 ^ (64 * g.n)) :
@@ -54,9 +55,17 @@ theorem mont_layout {g : Geo} {s : State} (h : Ws s g.B g.Z g.w nArr)
   have fit : arr g.w 18 ≤ g.Z := Nat.le_trans (Nat.le_add_right _ _) (h.arr_fit (by decide : 18 < nArr))
   have before (j : Nat) (hj : 18 ≤ j) : arr g.w mAcc + accLen (montMod g.n) ≤ arr g.w j :=
     Nat.le_trans acc (arr_mono hj)
+  have side (j : Nat) (hj : MontIndex j) : arr g.w mAcc + accLen (montMod g.n) ≤ arr g.w j ∨
+      arr g.w j + 8 * (montMod g.n).n ≤ arr g.w mAcc := by
+    rcases hj.1 with hi | lo
+    · exact .inl (before j (by omega))
+    · refine .inr ?_
+      have := arr_end (w := g.w) (show j < mAcc by unfold mAcc; omega)
+      change arr g.w j + 8 * g.n ≤ arr g.w mAcc
+      change arr g.w j + 4 * (2 * g.n + 2 + 2) ≤ arr g.w mAcc at this
+      omega
   exact ⟨Nat.le_trans acc fit, mont_bytes_fit h ho.2.1, mont_bytes_fit h ha.2.1,
-    mont_bytes_fit h hb.2.1, .inl (before o (by omega)), .inl (before a (by omega)),
-    .inl (before b (by omega)), .inl (before mBase (by decide)),
+    mont_bytes_fit h hb.2.1, side o ho, side a ha, side b hb, .inl (before mBase (by decide)),
     .inl (before mTmp (by decide)), mont_bytes_sep ho.2.2⟩
 
 /-- The invariant needed by the runtime-modulus multiplication. -/

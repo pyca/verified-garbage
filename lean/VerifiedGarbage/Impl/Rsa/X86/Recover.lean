@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.X86.MulMod
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
+public import VerifiedGarbage.Impl.Mont.X86.Context
+public import VerifiedGarbage.Impl.Mont.X86.Window
 
 /-! # RSA prime recovery on i686
 
@@ -28,6 +30,9 @@ def sCnt : Nat := 56
 def sLt : Nat := 60
 def sInv : Nat := 64
 def sMask : Nat := 132
+/-- The current window of the exponent, and whether it names a table entry. -/
+def sWin : Nat := 68
+def sEq : Nat := 72
 
 def mAcc : Nat := 16
 def mBase : Nat := 20
@@ -138,11 +143,62 @@ def mont (n : Nat) : Prog isa := seqs [
 def candSet (n : Nat) : Prog isa := seqs [copy (width n) mG aZ,
   .block [.mov .eax (.mem (sc sCand)), .alu .add .eax (.imm 2),
     .store (sc (slot (width n) mG)) .eax],
-  copy (width n) mY aO, copy (wide n) wRc wR, .block cntBits]
+  copy (width n) mY aO, copy (wide n) wRc wR]
 
-def expBody (n : Nat) : Prog isa := seqs [
-  .block (bitOf (wide n) sBit wRc ++ [.mov .ebx (.imm 0)]), half (wide n) wRc,
-  sel (width n) mXm aO mG sBit, mmul n mY mY mXm, mmul n mG mG mG, .block cntNext]
+/-! The candidate's power by fixed 4-bit windows of the exponent `r`, from its
+top: `r < 2 ^ c` for the public bit count `c = 8 (e_len + d_len)`, so `r`
+is first shifted up by the public `32 W - c` bits (`W` its words), four at a
+time, to put its top window at the top of its words. The table of the
+candidate's powers `0` to `15` takes slots `0` to `15`, whose numbers are
+dead during the candidates. -/
+
+/-- `32 W - c`, in four-bit shifts. -/
+def alignCount (n : Nat) : List Instr := [.mov .eax (.mem (PublicFn.argument 7)),
+  .alu .add .eax (.mem (PublicFn.argument 9)), .alu .add .eax (.reg .eax),
+  .mov .edx (.imm (BitVec.ofNat 32 (8 * wide n))), .alu .sub .edx (.reg .eax), .store (sc sCnt) .edx]
+
+def alignBody (n : Nat) : Prog isa :=
+  .seq (Dynamic.shiftUp (wide n) (slot (wide n) wRc)) (.block cntNext)
+
+/-- The candidate, and the alignment's count. -/
+def alignStart (n : Nat) : Prog isa := .seq (candSet n) (.block (alignCount n))
+
+/-- `c / 4` windows. -/
+def windowCount : List Instr := [.mov .eax (.mem (PublicFn.argument 7)),
+  .alu .add .eax (.mem (PublicFn.argument 9)), .alu .add .eax (.reg .eax), .store (sc sCnt) .eax]
+
+/-- The next entry: the one below (`mXm`) times the candidate, into `mXm` and
+the array at `esi`; until `esi` reaches array 16. -/
+def tableStep (n : Nat) : Prog isa := seqs [mmul n mXm mXm mG,
+  Dynamic.copyOut (width n) (slot (width n) mXm),
+  .block [.alu .add .esi (.imm 8), .mov .edx (.reg .edi),
+    .alu .add .edx (.imm (BitVec.ofNat 32 (slot (width n) 16))), .alu .cmp .esi (.reg .edx)]]
+
+def table (n : Nat) : Prog isa := seqs [copy (width n) 0 aO, copy (width n) 1 mG,
+  copy (width n) mXm mG,
+  .block [.mov .esi (.reg .edi), .alu .add .esi (.imm (BitVec.ofNat 32 (slot (width n) 2)))],
+  .loop (tableStep n) .ne]
+
+/-- The exponent's top four bits, into `sWin`. -/
+def windowTop (n : Nat) : List Instr :=
+  [.mov .eax (.mem (sc (slot (wide n) wRc + 4 * (wide n - 1)))), .shift .shr .eax 28,
+    .store (sc sWin) .eax]
+
+/-- `sEq` is 1 exactly when the window is `j` (below 16). -/
+def windowIs (j : Nat) : List Instr := [.mov .eax (.mem (sc sWin)),
+  .alu .xor .eax (.imm (BitVec.ofNat 32 j)), .alu .sub .eax (.imm 1), .shift .shr .eax 31,
+  .store (sc sEq) .eax]
+
+/-- The window's entry into `mXm`, by a scan of entries `0` to `k`. -/
+def scan (n : Nat) : Nat → Prog isa
+  | 0 => copy (width n) mXm 0
+  | k + 1 => seqs [scan n k, .block (windowIs (k + 1)), sel (width n) mXm mXm (k + 1) sEq]
+
+def square (n : Nat) : Prog isa := mmul n mY mY mY
+
+def windowBody (n : Nat) : Prog isa := seqs [square n, square n, square n, square n,
+  .block (windowTop n), Dynamic.shiftUp (wide n) (slot (wide n) wRc), scan n 15,
+  mmul n mY mY mXm, .block cntNext]
 
 def eqAt (n d a b : Nat) : Prog isa := eqS (width n) d a b aW
 
@@ -175,8 +231,8 @@ def candNext : List Instr := [.mov .eax (.mem (sc sCand)), .alu .add .eax (.imm 
   .mov .edx (.mem (sc sOk)), .alu .xor .edx (.imm 1), .alu .and .eax (.reg .edx),
   .alu .cmp .eax (.imm 0)]
 
-def candExp (n : Nat) : Prog isa := seqs [candSet n, mmul n mG mG mR2,
-  .loop (expBody n) .ne]
+def candExp (n : Nat) : Prog isa := seqs [alignStart n, .loop (alignBody n) .ne,
+  mmul n mG mG mR2, table n, .block windowCount, .loop (windowBody n) .ne]
 
 def candSquare (n : Nat) : Prog isa := seqs [eqAt n sE1 mY aO, eqAt n sE2 mY aNg,
   .block sqInit, .loop (sqBody n) .ne]

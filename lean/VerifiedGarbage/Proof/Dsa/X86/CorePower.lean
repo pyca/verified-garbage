@@ -21,7 +21,7 @@ theorem corePower_ok {s : State} {base : Addr} {size len expLen n m output : Nat
     (hs : Scr s base size) (hz : VG.Impl.Dsa.X86.Layout.saved ≤ size)
     (room : Pow.Room (s.gpr .esp) base size) (hused : usedBytes ≤ size)
     (hn : n = (len + 7) / 8) (h4 : 4 ≤ len) (hmax : len ≤ 384) (hw4 : len % 4 = 0)
-    (he4 : 4 ≤ expLen) (he : expLen ≤ len) (hwe : expLen % 4 = 0)
+    (he4 : 8 ≤ expLen) (he : expLen ≤ len) (hwe : expLen % 4 = 0)
     (Rq : OperandReady s base n (.input modulus) len)
     (Ra : OperandReady s base n a len) (Rb : OperandReady s base n b expLen)
     (hm : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input modulus)).setWidth 64) len) = m)
@@ -57,7 +57,7 @@ theorem corePower_ok {s : State} {base : Addr} {size len expLen n m output : Nat
   have Ksv := Ku.trans Kv
   have Osv := Ou'.trans Ov'
   refine WP.mono (coreLoad_ok (hs.of_keeps Ksv (by decide)) hz (bounds 8 (by decide))
-    he4 (by omega) hwe Rbv.toReadableComponent (Rbv.slot (by decide))) fun w ⟨Bw, Kw, Ow⟩ => ?_
+    (by omega) (by omega) hwe Rbv.toReadableComponent (Rbv.slot (by decide))) fun w ⟨Bw, Kw, Ow⟩ => ?_
   have Ksw := Ksv.trans Kw
   have Opre := Osv.trans (slotOutside_whole Ow (by decide))
   have Mw : wordsVal w.mem base (slot n 0) n = m := by

@@ -18,7 +18,7 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Mont.X86.Dynamic 
 open VG.Proof.Mont.X86
 
 theorem exponentiate_ok {n size m expWords : Nat} {base : Addr} {s : State}
-    (h : Context n m base size s) (he : 0 < expWords) (hen : expWords ≤ 2 * n)
+    (h : Context n m base size s) (he : 1 < expWords) (hen : expWords ≤ 2 * n)
     (hsteps : 32 * expWords < 2 ^ 32)
     (hone : wordsVal s.mem base (slot n 3) n = 1)
     (hr2 : wordsVal s.mem base (slot n 4) n = 2 ^ (128 * n) % m) :

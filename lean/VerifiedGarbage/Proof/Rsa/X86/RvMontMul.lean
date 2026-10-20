@@ -18,7 +18,7 @@ theorem mmul_ok {g : Geo} {m : Nat} {s : State} (h : MR g m s) {o a b : Nat}
     (ho : MontIndex o) (ha : MontIndex a) (hb : MontIndex b) (ho0 : o ≠ mBase)
     (hA : num s.mem g.B g.w a < 2 ^ (64 * g.n)) (hB : num s.mem g.B g.w b < m) :
     WP isa (mmul g.n o a b) s fun t => MR g m t ∧
-      Keep g.B g.w (montWrites o) [] s.mem t.mem ∧ Keeps opRegs s t ∧
+      Keep g.B g.w (montWrites o) [] s.mem t.mem ∧ (Keeps opRegs s t ∧ t.gpr .esi = s.gpr .esi) ∧
       num t.mem g.B g.w o < m ∧
       num t.mem g.B g.w o * 2 ^ (64 * g.n) % m =
         num s.mem g.B g.w a * num s.mem g.B g.w b % m := by
@@ -46,7 +46,8 @@ theorem mmul_ok {g : Geo} {m : Nat} {s : State} (h : MR g m s) {o a b : Nat}
   have hu := h.keep frame (by simpa [montWrites, mTmp, mAcc, mBase] using ho0) rest
   refine WP.mono (clrTop_ok hu.ws ho.2.1) fun t ⟨_, kt, vt, rt⟩ => ?_
   refine ⟨hu.keep kt (by simpa using ho0) (rt.mono (by decide)),
-    frame.trans (kt.mono (by simp [montWrites]) (by simp)), rest.trans (rt.mono (by decide)), ?_, ?_⟩
+    frame.trans (kt.mono (by simp [montWrites]) (by simp)),
+    ⟨rest.trans (rt.mono (by decide)), (rt.1 _ (by decide)).trans (ku.gpr _ (by decide))⟩, ?_, ?_⟩
   · rw [vt]; exact lt
   · change wordsVal u.mem g.B (arr g.w o) g.n * 2 ^ (64 * g.n) % m =
         wordsVal s.mem g.B (arr g.w a) g.n * wordsVal s.mem g.B (arr g.w b) g.n % m at value

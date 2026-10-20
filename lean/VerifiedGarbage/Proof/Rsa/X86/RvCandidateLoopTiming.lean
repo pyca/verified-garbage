@@ -36,7 +36,7 @@ theorem CandidateData.search_ok {g : Geo} {m eLen dLen : Nat} (C : CandidateData
     (vc : C.V sCnt = 0) (tc : 1 ≤ C.V sTc) :
     WP isa (candLoop g.n) s (SearchResult g C.s0 C.A C.AW C.V m (8 * (dLen + eLen))) :=
   candLoop_ok C.zero C.value C.bound C.inverse C.odd C.large C.one C.neg C.r2
-    C.ae C.ad C.tc C.rb C.count C.limit h vc tc
+    C.ae C.ad C.tc C.rb C.count C.limit C.wide h vc tc
 
 theorem candLoop_relCT {g : Geo} {m eLen dLen : Nat} (C D : CandidateData g m eLen dLen)
     (sp : C.s0.gpr .esp = D.s0.gpr .esp) (vcC : C.V sCnt = 0) (vcD : D.V sCnt = 0)

@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 
 The eight source buffers are n, e, input, p, q, dp, dq, and qInv. Stack
 arguments lie above the wrapper's two frames and return address; each callee has a separate
-24-byte frame below the inner frame.
+44-byte frame below the inner frame.
 -/
 
 @[expose] public section
@@ -40,10 +40,10 @@ def outputRegion (g : PrivGeometry) : Region := ⟨byteAddr g.output, g.length�
 def workspaceRegion (g : PrivGeometry) : Region := ⟨byteAddr g.workspace, 8 * g.scratchLength⟩
 def innerRegion (g : PrivGeometry) : Region := ⟨byteAddr g.stack, VG.Impl.Rsa.X86.PrivChecked.frameBytes⟩
 def savedRegion (g : PrivGeometry) : Region := ⟨byteAddr g.stack + BitVec.ofNat 64 VG.Impl.Rsa.X86.PrivChecked.frameBytes, 16⟩
-def calleeRegion (g : PrivGeometry) : Region := VG.X86.below g.stack 24
+def calleeRegion (g : PrivGeometry) : Region := VG.X86.below g.stack 44
 def argumentsRegion (g : PrivGeometry) : Region :=
   ⟨byteAddr g.stack + BitVec.ofNat 64 (VG.Impl.Rsa.X86.PrivChecked.frameBytes + 20), 80⟩
-def wholeStack (g : PrivGeometry) : Region := ⟨byteAddr (g.stack - BitVec.ofNat 32 24), stackBytes⟩
+def wholeStack (g : PrivGeometry) : Region := ⟨byteAddr (g.stack - BitVec.ofNat 32 44), stackBytes⟩
 def temporary (g : PrivGeometry) : BitVec 32 := g.stack + BitVec.ofNat 32 candidateOffset
 def precomputation (g : PrivGeometry) : BitVec 32 := g.stack + BitVec.ofNat 32 precomputeOffset
 
@@ -70,7 +70,7 @@ structure Valid (g : PrivGeometry) : Prop where
   qPositive : 0 < g.qLength
   qFits : g.qLength < g.length
   space : Spec.Rsa.scratchWords g.length ≤ g.scratchLength
-  stackLow : 24 ≤ g.stack.toNat
+  stackLow : 44 ≤ g.stack.toNat
   stackHigh : g.stack.toNat + VG.Impl.Rsa.X86.PrivChecked.frameBytes + 20 + 80 ≤ 2 ^ 32
   outputFit : g.output.toNat + g.length ≤ 2 ^ 32
   sourceFits : ∀ i, (g.sources i).toNat + g.sourceLength i ≤ 2 ^ 32
