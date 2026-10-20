@@ -69,12 +69,10 @@ def maskOutput (slot : Nat) : Prog isa := .seq (.block [
   .ldrSp .r0 slot, .ldrSp .lr 32, .ldrSp .r3 64,
   .mov .r2 (.imm 0), .dp .sub .r2 .r2 (.reg .r3)]) maskBytes
 
-def acceptSubgroup : Prog isa := .seq (subgroup 36) (.block [
-  .ldrSp .r3 64, .dp .and .r11 .r11 (.reg .r3), .addSp .r12 0, st .r11 64])
-
-def finish : Prog isa := .seq (withQ acceptSubgroup (.block []))
-  (.seq (maskOutput 40) (.seq (maskOutput 36) (.block [
-    .ldrSp .r3 64, .mov .r0 (.imm 3), .dp .sub .r0 .r0 (.shifted .r3 .lsl 1)])))
+/-- A power of a valid domain's generator is already in its subgroup. Only
+its nondegenerate range needs checking after exponentiation. -/
+def finish : Prog isa := .seq (maskOutput 40) (.seq (maskOutput 36) (.block [
+  .ldrSp .r3 64, .mov .r0 (.imm 3), .dp .sub .r0 .r0 (.shifted .r3 .lsl 1)]))
 
 def tail : Prog isa := .seq (powerAt 56 16 20) (.seq (inRange 6)
   (.seq (.block Exchange.saveResult) (.seq Exchange.exportResult finish)))
