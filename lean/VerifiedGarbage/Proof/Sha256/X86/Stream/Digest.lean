@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.MdStream.Prefix
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Sha256.X86.Shared
+import VerifiedGarbage.Proof.MdStream.X86.Words
 
 /-!
 # Streaming SHA-224 on x86 (32-bit): `finalize224`
