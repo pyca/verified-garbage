@@ -14,9 +14,9 @@ open VG VG.Arm VG.Proof.Bignum.Arm
 
 theorem keyGeneratePrepare_next (prepare : Prog isa) (prep : KeyPrepareLaw prepare) (s : State) {p : Inputs} {slots : List Nat} {rb : List Byte}
     (stable : stableSlots slots = true) (h0 : 0 ∈ slots) (h24 : 24 ∈ slots) (h32 : 32 ∈ slots)
-    (large : 1 < p.P) (odd : p.P % 2 = 1) (size : rb.length = p.k) (h : KeyScalarInput p slots rb s) (calls : KeyCallMemory p s) :
+    (large : 1 < p.P) (odd : p.P % 2 = 1) (normalized : 2 ^ (64 * (p.w - 1)) ≤ p.P) (size : rb.length = p.k) (h : KeyScalarInput p slots rb s) (calls : KeyCallMemory p s) :
     WP isa prepare s (fun t => KeyPrepared p slots rb t ∧ KeyCallMemory p t) := by
-  refine WP.mono (prep.correct s h.context calls stable h0 h24 h32 large odd) ?_
+  refine WP.mono (prep.correct s h.context calls stable h0 h24 h32 large odd normalized) ?_
   rintro t ⟨context, ready, modulus, r2, frame, rest⟩
   have entropy := h.entropy.after_frame frame rest (by
     intro r hr

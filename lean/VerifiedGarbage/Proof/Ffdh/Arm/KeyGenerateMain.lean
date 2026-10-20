@@ -33,7 +33,7 @@ theorem keyGenerateMain_ok (prepare tail : Prog isa) (prep : KeyPrepareLaw prepa
     (h0 : 0 ∈ slots) (h4 : 4 ∈ slots) (h24 : 24 ∈ slots) (h28 : 28 ∈ slots) (h32 : 32 ∈ slots)
     (h36 : 36 ∈ slots) (h40 : 40 ∈ slots) (h44 : 44 ∈ slots) (h48 : 48 ∈ slots) (h56 : 56 ∈ slots) (h60 : 60 ∈ slots)
     (saved : ∀ d ∈ slots, d + 4 ≤ 64 ∨ 68 ≤ d)
-    (large : 1 < p.P) (odd : p.P % 2 = 1)
+    (large : 1 < p.P) (odd : p.P % 2 = 1) (normalized : 2 ^ (64 * (p.w - 1)) ≤ p.P)
     (entropy : Octets p.base p.entropy p.len rb s) (size : rb.length = p.k)
     (entropyStack : Region.Disjoint ⟨State.addr p.entropy, p.k⟩ ⟨State.addr s.sp, 72⟩)
     (outputs : KeyOutputs p s)
@@ -51,7 +51,7 @@ theorem keyGenerateMain_ok (prepare tail : Prog isa) (prep : KeyPrepareLaw prepa
   have extend {m m' : Mem} (f : Frame [⟨State.addr p.base, 8 * p.len⟩] m m') : Frame (keyCallWrites p s) m m' :=
     f.mono (by simp [keyCallWrites, keyWrites])
   rw [VG.Impl.Ffdh.Arm.KeyGenerate.main, WP.seq_iff]
-  refine WP.mono (prep.correct s h calls stable h0 h24 h32 large odd) ?_
+  refine WP.mono (prep.correct s h calls stable h0 h24 h32 large odd normalized) ?_
   rintro u ⟨contextU, readyU, modU, r2U, frameU, restU⟩
   have entropyU := entropy.after_frame frameU restU (by
     intro r hr

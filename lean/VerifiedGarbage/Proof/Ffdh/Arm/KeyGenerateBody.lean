@@ -55,7 +55,7 @@ theorem keyGenerateBody_ok (prepare tail : Prog isa) (prep : KeyPrepareLaw prepa
     have entropyU := entropy.after_frame frame rest (by simpa [size] using entropyStack)
     refine WP.mono (keyGenerateMain_ok prepare tail prep law u context (calls.after rest) stable' (by simp [h0]) (by simp [h4]) (by simp [h24])
       (by simp [h28]) (by simp [h32]) (by simp [h36]) (by simp [h40]) (by simp [h44]) (by simp [h48])
-      (by simp) (by simp) saved' facts.2.1 facts.1 entropyU size (by rw [rest.sp]; exact entropyStack)
+      (by simp) (by simp) saved' facts.2.1 facts.1 facts.2.2 entropyU size (by rw [rest.sp]; exact entropyStack)
       (outputs.after rest) entropySep privateLength outputY) ?_
     rintro t ⟨result, privateT, publicT, frameT⟩
     exact ⟨fun _ => ⟨result, privateT, publicT⟩, entryFrame.trans (by simpa only [keyCallWrites, keyWrites, rest.sp] using frameT)⟩

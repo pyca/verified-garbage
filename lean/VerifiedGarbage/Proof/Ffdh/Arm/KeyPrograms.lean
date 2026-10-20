@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
 public import VerifiedGarbage.Impl.Bignum.Arm.SharedWindow
-public import VerifiedGarbage.Impl.Ffdh.Arm.SharedPrepare
+public import VerifiedGarbage.Impl.Ffdh.Arm.NormalizedPrepare
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeyPower
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeyGenerate
 
@@ -15,8 +15,7 @@ open VG VG.Arm VG.Impl.Bignum.Arm
 open VG.Proof.Bignum.Arm
 
 def prepare (b : MontBackend) : Prog isa :=
-  .seq (.block (VG.Impl.Ffdh.Arm.Domain.prepareArgs 24))
-    (VG.Impl.Ffdh.Arm.SharedPrepare.code (MontCall.op b.name b.mul))
+  VG.Impl.Ffdh.Arm.NormalizedPrepare.prepareAt (MontCall.op b.name b.mul) 24
 
 def tail (b : MontBackend) : Prog isa :=
   VG.Impl.Ffdh.Arm.KeyGenerate.tail
@@ -32,7 +31,7 @@ theorem stack_ok (b : MontBackend) : FrameStack.armStack (code b) ≤ 176 := by
   have s0 : FrameStack.armStack (PublicFn.prepare) = 0 := by rfl
   have s1 : FrameStack.armStack (importModulus) = 0 := by rfl
   have s2 : FrameStack.armStack (precomputeInverse) = 0 := by rfl
-  have s3 : FrameStack.armStack (r2Init) = 0 := by rfl
+  have s3 : FrameStack.armStack (NormalizedR2.init) = 0 := by rfl
   have s4 : FrameStack.armStack (doubleLoop) = 0 := by rfl
   have s5 : FrameStack.armStack (smallConst 7 1) = 0 := by rfl
   have s6 : FrameStack.armStack (smallConst 5 2) = 0 := by rfl
@@ -55,8 +54,9 @@ theorem stack_ok (b : MontBackend) : FrameStack.armStack (code b) ≤ 176 := by
     VG.Impl.Ffdh.Arm.KeyGenerate.main, VG.Impl.Ffdh.Arm.KeyGenerate.tail,
     VG.Impl.Ffdh.Arm.framed, VG.Impl.Ffdh.Arm.Domain.head,
     VG.Impl.Ffdh.Arm.Domain.ifFlag, VG.Impl.Ffdh.Arm.Domain.testFlag,
-    VG.Impl.Ffdh.Arm.Domain.ret, VG.Impl.Ffdh.Arm.SharedPrepare.code,
-    SharedPrecompute.precompute, SharedR2.r2, SharedR2.squares,
+    VG.Impl.Ffdh.Arm.Domain.ret, VG.Impl.Ffdh.Arm.NormalizedPrepare.prepareAt,
+    VG.Impl.Ffdh.Arm.NormalizedPrepare.code,
+    NormalizedPrecompute.precompute, NormalizedR2.r2, SharedR2.squares,
     VG.Impl.Ffdh.Arm.KeyPower.powerAt, VG.Impl.Ffdh.Arm.KeyPower.power,
     VG.Impl.Ffdh.Arm.KeyPower.phase, VG.Impl.Ffdh.Arm.KeyPower.twoPhase,
     VG.Impl.Bignum.Arm.TwoExp.phase, VG.Impl.Bignum.Arm.TwoExp.initial,

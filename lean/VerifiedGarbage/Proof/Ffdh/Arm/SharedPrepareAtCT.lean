@@ -56,7 +56,13 @@ theorem sharedPrepareAt24_ct (backend : MontBackend) {p : Inputs} {slots : List 
     ⟨⟨h.1.1, h.1.2, rfl⟩, ⟨h.2.1.1, h.2.1.2, h.2.2.symm⟩, h.2.2⟩ e1 e2
 
 theorem sharedPrepareLaw (backend : MontBackend) :
-    KeyPrepareLaw (KeyGenerate.prepare backend) :=
-  ⟨sharedPrepareAt24_ok backend, sharedPrepareAt24_ct backend⟩
+    KeyPrepareLaw (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt
+      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) 24) :=
+  { correct := by
+      intro s p slots h calls stable h0 h24 h32 large odd _normalized
+      exact sharedPrepareAt24_ok backend s h calls stable h0 h24 h32 large odd
+    ct := by
+      intro p slots stable h0 h24 h32 large odd _normalized
+      exact sharedPrepareAt24_ct backend stable h0 h24 h32 large odd }
 
 end VG.Proof.Ffdh.Arm

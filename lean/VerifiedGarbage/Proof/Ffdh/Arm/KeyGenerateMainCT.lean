@@ -34,7 +34,7 @@ theorem keyGenerateMain_ct (prepare tail : Prog isa) (prep : KeyPrepareLaw prepa
     (classification : keyScalarValid p rb1 ↔ keyScalarValid p rb2)
     (entropySep : Region.Disjoint ⟨State.addr p.entropy, p.k⟩ ⟨State.addr p.privateValue, p.k⟩)
     (privateLength : p.privateLength = p.k) (outputY : p.output = p.publicValue)
-    (large : 1 < p.P) (odd : p.P % 2 = 1) :
+    (large : 1 < p.P) (odd : p.P % 2 = 1) (normalized : 2 ^ (64 * (p.w - 1)) ≤ p.P) :
     RelCT isa (fun s t => (KeyScalarInput p slots rb1 s ∧ KeyCallMemory p s) ∧ (KeyScalarInput p slots rb2 t ∧ KeyCallMemory p t) ∧ s.sp = t.sp)
       (VG.Impl.Ffdh.Arm.KeyGenerate.main prepare tail) (fun _ _ => True) := by
   have stable' : stableSlots (16 :: 68 :: 20 :: slots) = true := by
@@ -48,7 +48,7 @@ theorem keyGenerateMain_ct (prepare tail : Prog isa) (prep : KeyPrepareLaw prepa
     · right; decide
     · left; decide
     · exact saved d hd
-  have prepareCT := (prep.ct (p := p) stable h0 h24 h32 large odd).mono
+  have prepareCT := (prep.ct (p := p) stable h0 h24 h32 large odd normalized).mono
     (P' := fun (s t : State) => (KeyScalarInput p slots rb1 s ∧ KeyCallMemory p s) ∧
       (KeyScalarInput p slots rb2 t ∧ KeyCallMemory p t) ∧ s.sp = t.sp)
     (fun _ _ h => ⟨⟨h.1.1.context, h.1.2⟩, ⟨h.2.1.1.context, h.2.1.2⟩, h.2.2⟩) (fun _ _ h => h)
@@ -90,8 +90,8 @@ theorem keyGenerateMain_ct (prepare tail : Prog isa) (prep : KeyPrepareLaw prepa
         (fun _ _ h => ⟨⟨h.1.1.context.toArgumentMemory, h.1.1.outputs⟩, ⟨h.2.1.1.context.toArgumentMemory, h.2.1.1.outputs⟩, h.2.2⟩) (fun _ _ h => h)
   unfold VG.Impl.Ffdh.Arm.KeyGenerate.main
   exact relCT_chain prepareCT
-    (fun s h => keyGeneratePrepare_next prepare prep s stable h0 h24 h32 large odd size1 h.1 h.2)
-    (fun s h => keyGeneratePrepare_next prepare prep s stable h0 h24 h32 large odd size2 h.1 h.2)
+    (fun s h => keyGeneratePrepare_next prepare prep s stable h0 h24 h32 large odd normalized size1 h.1 h.2)
+    (fun s h => keyGeneratePrepare_next prepare prep s stable h0 h24 h32 large odd normalized size2 h.1 h.2)
     (relCT_chain (keyGenerateCT_calls sample)
       (fun s h => keyGenerateWP_calls (keySample_next s stable h0 h24 h28 h32 h40 h48 h60 size1 entropySep h.1) h.2)
       (fun s h => keyGenerateWP_calls (keySample_next s stable h0 h24 h28 h32 h40 h48 h60 size2 entropySep h.1) h.2)
