@@ -82,15 +82,74 @@ section
 variable {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
   {AW : Nat → Nat} {liveW : List Nat} {V : Nat → Nat} {ls : List Nat} {m : Nat}
 
-theorem KS.mmul {o a b : Nat} (h : KS g s0 A live AW liveW V ls s) (mr : MR g m s)
+/-- A call of `vg_rsa_mont_mul_at` for `mmul o a b`, its arguments pushed: the callee's precondition,
+its arguments, and the regions it is given. -/
+def CallOk (g : Geo) (o a b : Nat) (x : State) : Prop :=
+  RtABI (VG.Proof.Bignum.X86.PublicRt.calleeOf x g.B g.Z) ∧ x.gpr .esp = g.sp - BitVec.ofNat 32 36 ∧
+    (∀ i < 9, arg (VG.Proof.Bignum.X86.PublicRt.calleeOf x g.B g.Z) i =
+      callArg (BitVec.ofNat 32 g.B.toNat) (BitVec.ofNat 32 (g.Z / 8)) g.n (arr g.w mBase) sInv
+        (arr g.w mAcc) (arr g.w o) (arr g.w a) (arr g.w b) i) ∧
+    (⟨(x.gpr .esp).setWidth 64, 36⟩ : Region) ∈ x.wr ∧ (⟨g.B, g.Z⟩ : Region) ∈ x.wr
+
+theorem KS.callOk {o a b : Nat} (h : KS g s0 A live AW liveW V ls s) (mr : MR g m s)
+    (ho : MontIndex o) (ha : MontIndex a) (hb : MontIndex b) (ho0 : o ≠ mBase)
+    (hbl : b ∈ live) (hB : A b < m) :
+    WP isa (.block (mulArgs o a b)) (allocFrame 36 s) (CallOk g o a b) := by
+  have pos := mr.positive
+  have nw := h.ws.workspace.nowrap
+  have fits := h.ws.fits
+  have z8 := h.z8
+  have low := h.room.low
+  have top := h.top
+  have up := h.upper
+  have esp := h.sp
+  have bnd := mr.bound
+  have vm : val32 s.mem g.B (arr g.w mBase) (2 * g.n) = m := num_prefix mr.modulus mr.bound
+  have vb : val32 s.mem g.B (arr g.w b) (2 * g.n) = A b := num_prefix (h.arrs b hbl) (by omega)
+  have wsl : g.Z = (BitVec.ofNat 32 (g.Z / 8)).toNat * 8 := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega
+  have R : CallRoom (s.gpr .esp) g.B g.Z := by rw [esp]; exact h.room
+  have fEsp : (allocFrame 36 s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := allocFrame_esp _ _
+  have hl5 : VG.Proof.Rsa.X86.KeyRt.LenSrc narF (allocFrame 36 s) (8 * g.n + 8) := by
+    obtain ⟨a', la, ea, ca⟩ := h.rt.lenArg
+    have r5 : readSrc s (.mem (VG.Impl.Bignum.X86.PublicFn.argument 5)) = some (BitVec.ofNat 32 a') := ca.readSrc
+    have e : VG.Proof.Rsa.X86.KeyRt.lenOp narF = VG.Impl.Bignum.X86.PublicRt.argAt 9 5 := rfl
+    refine ⟨a', la, ea, ?_⟩
+    rw [e]
+    exact argAt_alloc r5
+  have hr11 := argAt_alloc h.wsLen.readSrc
+  have lowS : 40 ≤ (s.gpr .esp).toNat := by rw [esp]; exact low
+  have edi : s.gpr .edi = BitVec.ofNat 32 g.B.toNat := by
+    apply BitVec.eq_of_toNat_eq
+    have header := h.ws.hdr_le
+    unfold hdr at header
+    rw [h.ws.workspace.edi_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  have M := mulArgs_ok (f := allocFrame 36 s) (n := g.n) (o := o) (a := a) (b := b) hl5 up hr11 ho.1 ha.1 hb.1
+    (by rw [fEsp, VG.X86.sub_toNat (by omega)]; omega) (by rw [allocFrame_wr, fEsp]; exact List.mem_cons_self ..)
+  rw [show (allocFrame 36 s).gpr .edi = s.gpr .edi from allocFrame_gpr _ _ (by decide)] at M
+  refine WP.mono M fun x ⟨Kx, Fx, Rx⟩ => ?_
+  have xEsp : x.gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := by rw [Kx.1 _ (by decide), fEsp]
+  have hFx : Frame [below (s.gpr .esp) 36] s.mem x.mem := by
+    have := Fx; rwa [fEsp, allocFrame_mem] at this
+  have hread : ∀ i < 9, x.mem.readW ((x.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 * i)) 32 =
+      callArg (s.gpr .edi) (BitVec.ofNat 32 (g.Z / 8)) g.n (arr g.w mBase) sInv (arr g.w mAcc) (arr g.w o)
+        (arr g.w a) (arr g.w b) i := by
+    intro i hi; rw [Kx.1 _ (by decide), Rx i hi]
+  refine ⟨callee_abi h.ws.workspace wsl R (mont_offs fits ho ha hb ho0 pos) xEsp hFx hread
+    (by rw [vm]; exact mr.inverse) (by rw [vb, vm]; exact hB), by rw [xEsp, esp], fun i hi => ?_, ?_, ?_⟩
+  · rw [callee_arg (base := g.B) (bytes := g.Z) lowS xEsp hread hi, edi]
+  · rw [Kx.2.2, allocFrame_wr, xEsp]; exact List.mem_cons_self ..
+  · rw [Kx.2.2, allocFrame_wr]; exact List.mem_cons_of_mem _ h.ws.workspace.wr
+
+theorem KS.mmulCall {o a b : Nat} (h : KS g s0 A live AW liveW V ls s) (mr : MR g m s)
     (ho : MontIndex o) (ha : MontIndex a) (hb : MontIndex b) (ho0 : o ≠ mBase)
     (hal : a ∈ live) (hbl : b ∈ live) (hA : A a < m) (hB : A b < m)
     (hl : ∀ j ∈ live, j = o ∨ j ∉ montWrites o)
     (hlW : ∀ j ∈ liveW, ∀ i ∈ montWrites o, i / 2 ≠ j) :
-    WP isa (mmul o a b) s fun t => ∃ X,
-      KS g s0 (upd A o X) (o :: live) AW liveW V ls t ∧ MR g m t ∧
-      (Keeps opRegs s t ∧ t.gpr .esi = s.gpr .esi) ∧
-      X < m ∧ X * 2 ^ (64 * g.n) % m = A a * A b % m := by
+    WP isa (callCode (mulArgs o a b)) s fun u =>
+      KS g s0 A (live.filter (· ≠ o)) AW liveW V ls u ∧ MR g m u ∧ Keeps opRegs s u ∧
+      u.gpr .esi = s.gpr .esi ∧ val32 u.mem g.B (arr g.w o) (2 * g.n) < m ∧
+      val32 u.mem g.B (arr g.w o) (2 * g.n) * 2 ^ (64 * g.n) % m = A a * A b % m := by
   have pos := mr.positive
   have nw := h.ws.workspace.nowrap
   have fits := h.ws.fits
@@ -123,8 +182,7 @@ theorem KS.mmul {o a b : Nat} (h : KS g s0 A live AW liveW V ls s) (mr : MR g m 
       have := mulArgs_ok (f := allocFrame 36 s) (n := g.n) (o := o) (a := a) (b := b) hl5 up hr11 ho.1 ha.1 hb.1
         (by rw [fEsp, VG.X86.sub_toNat (by omega)]; omega) (by rw [allocFrame_wr, fEsp]; exact List.mem_cons_self ..)
       rwa [show (allocFrame 36 s).gpr .edi = s.gpr .edi from allocFrame_gpr _ _ (by decide)] at this)
-  unfold VG.Impl.Rsa.X86.RecoverRt.mmul
-  refine WP.seq (WP.mono C fun u ⟨cs, rd, wr, F, L, Vv⟩ => ?_)
+  refine WP.mono C fun u ⟨cs, rd, wr, F, L, Vv⟩ => ?_
   have Ku : Keeps opRegs s u :=
     ⟨fun r hr => cs r (by revert hr; cases r <;> decide), rd, wr⟩
   have Fu : Frame (VG.Proof.Bignum.X86.CrtRt.frameR g.B g.sp [(arr g.w o, 8 * g.n), (arr g.w mAcc, scratchBytes g.n)])
@@ -201,7 +259,20 @@ theorem KS.mmul {o a b : Nat} (h : KS g s0 A live AW liveW V ls s) (mr : MR g m 
         rcases hp with rfl | rfl <;> dsimp only <;> omega)
     simpa only [val32, Nat.mul_zero, Nat.mul_one, Nat.add_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add] using e
   have mrU : MR g m u := mr.of_eq mU iU
-  -- The result's top words.
+  exact ⟨hu, mrU, Ku, cs _ (by decide), by rw [← vm]; exact L, by rw [← vm, ← va, ← vb]; exact Vv⟩
+
+theorem KS.mmul {o a b : Nat} (h : KS g s0 A live AW liveW V ls s) (mr : MR g m s)
+    (ho : MontIndex o) (ha : MontIndex a) (hb : MontIndex b) (ho0 : o ≠ mBase)
+    (hal : a ∈ live) (hbl : b ∈ live) (hA : A a < m) (hB : A b < m)
+    (hl : ∀ j ∈ live, j = o ∨ j ∉ montWrites o)
+    (hlW : ∀ j ∈ liveW, ∀ i ∈ montWrites o, i / 2 ≠ j) :
+    WP isa (mmul o a b) s fun t => ∃ X,
+      KS g s0 (upd A o X) (o :: live) AW liveW V ls t ∧ MR g m t ∧
+      (Keeps opRegs s t ∧ t.gpr .esi = s.gpr .esi) ∧
+      X < m ∧ X * 2 ^ (64 * g.n) % m = A a * A b % m := by
+  unfold VG.Impl.Rsa.X86.RecoverRt.mmul
+  refine WP.seq (WP.mono (h.mmulCall mr ho ha hb ho0 hal hbl hA hB hl hlW)
+    fun u ⟨hu, mrU, Ku, esi, L, Vv⟩ => ?_)
   have kn := kw_nar g.n
   refine WP.mono (clrTop_ok hu.rt (j := o) ho.1 (by rw [kn]; simp only [width]; omega))
     fun t ⟨_, k, e, r⟩ => ?_
@@ -218,9 +289,9 @@ theorem KS.mmul {o a b : Nat} (h : KS g s0 A live AW liveW V ls s) (mr : MR g m 
     · by_cases jo : j = o
       · subst jo; exact ⟨List.mem_cons_self .., rfl⟩
       · exact ⟨List.mem_cons_of_mem _ (List.mem_filter.mpr ⟨hj', by simpa using jo⟩), rfl⟩
-  · rw [r.1 _ (by decide), cs _ (by decide)]
-  · rw [← vm]; exact L
-  · rw [← vm, ← va, ← vb]; exact Vv
+  · rw [r.1 _ (by decide), esi]
+  · exact L
+  · exact Vv
 
 end
 end VG.Proof.Rsa.X86.Recover
