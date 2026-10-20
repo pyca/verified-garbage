@@ -93,6 +93,34 @@ theorem keyArrayRegions.header {s : State} {base : BitVec 32} {capacity w : Nat}
     omega
   · omega
 
+theorem key_keep_workspace {s : State} {base : BitVec 32} {capacity w : Nat} {js : List Nat} {m' : Mem}
+    (workspace : Workspace s base (8 * capacity)) (ready : KeyReady base capacity w s)
+    (bounds : ∀ j ∈ js, j < 30)
+    (keep : VG.Proof.Rsa.Arm.Keys.Keep (base + 96#32) (2 * w + 2) js [] s.mem m') :
+    Frame [⟨State.addr base, 8 * capacity⟩] s.mem m' := by
+  refine (key_keep_frame workspace ready bounds keep).sub ?_
+  intro r hr
+  obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hr
+  exact ⟨_, by simp, Offset.sub_base _ (ready.arrayFit (bounds j hj))⟩
+
+theorem key_keep_header {s : State} {base : BitVec 32} {capacity w d : Nat}
+    {js : List Nat} {m' : Mem}
+    (workspace : Workspace s base (8 * capacity)) (ready : KeyReady base capacity w s)
+    (bounds : ∀ j ∈ js, j < 30) (fit : d + 8 ≤ 256)
+    (keep : VG.Proof.Rsa.Arm.Keys.Keep (base + 96#32) (2 * w + 2) js [] s.mem m') :
+    m'.readW (off (State.addr base) d) 64 = s.mem.readW (off (State.addr base) d) 64 := by
+  refine (key_keep_frame workspace ready bounds keep).readW (r := ⟨State.addr base, 256⟩)
+    (Offset.contains_base _ fit (by omega)) ?_ (by decide)
+  intro r hr
+  obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hr
+  have arrayFit := ready.arrayFit (bounds j hj)
+  have nowrap := workspace.nowrap
+  apply Region.Disjoint.symm
+  apply Offset.disjoint_base
+  · simp only [arrAt, VG.Spec.Rsa.Mont.hdrBytes]
+    omega
+  · omega
+
 theorem keyArrayRegions.modulus {s : State} {base : BitVec 32} {capacity w : Nat} {js : List Nat}
     (workspace : Workspace s base (8 * capacity)) (h : KeyReady base capacity w s)
     (bounds : ∀ j ∈ js, j < 30) (nonzero : ∀ j ∈ js, j ≠ 0) :

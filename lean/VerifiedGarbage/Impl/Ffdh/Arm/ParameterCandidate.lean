@@ -185,10 +185,11 @@ def montKeyArrays : Prog isa := seqs [
   .block (Rsa.Arm.Recover.clrTop 0), .block (Rsa.Arm.Recover.clrTop 1),
   Rsa.Arm.Keys.copy 9 1, Rsa.Arm.Keys.sub3 10 0 9]
 
+def montKeySetup : Prog isa := .seq (.block (keyContext ++ keyStride)) montKeyArrays
+
 def montPrep : Prog isa := seqs [
   .block [.ldrSp .r0 0, .ldrSp .r6 12], VG.Impl.Ffdh.Arm.prepare,
-  smallConst 1 1, montOp 1 1 4,
-  .block (keyContext ++ keyStride), montKeyArrays]
+  .seq (smallConst 1 1) (montOp 1 1 4), montKeySetup]
 
 def phaseBitHead (q : Bool) : List Instr :=
   [.ldrSp .r3 24] ++ (if q then [.dp .sub .r3 .r3 (.imm 1)] else []) ++ save .r3 44
@@ -204,26 +205,36 @@ def phasePassed : List Instr := [.mov .r1 (.imm 0)] ++ save .r1 56
 
 def phaseHead (q : Bool) : List Instr := phaseBitHead q ++ phaseWidth ++ phaseChecks ++ phasePassed
 
+def halfCountTail : List Instr :=
+  [.ldrSp .r1 60, .dp .add .r1 .r1 (.imm 1)] ++ save .r1 60 ++
+    Rsa.Arm.Keys.ptr .r0 29 ++ [.ldr .r1 .r0 0, .dp .and .r1 .r1 (.imm 1), .cmp .r1 (.imm 0)]
+
 def halfCountStep : Prog isa := seqs [
-  .block [.mov .r11 (.imm 0)], Rsa.Arm.Keys.half 29,
-  .block ([.ldrSp .r1 60, .dp .add .r1 .r1 (.imm 1)] ++ save .r1 60 ++
-    Rsa.Arm.Keys.ptr .r0 29 ++ [.ldr .r1 .r0 0, .dp .and .r1 .r1 (.imm 1), .cmp .r1 (.imm 0)])]
+  .block [.mov .r11 (.imm 0)], Rsa.Arm.Keys.half 29, .block halfCountTail]
+
+def exponentHalfTail : List Instr := [.ldrSp .r1 64, .subs .r1 .r1 (.imm 1)] ++ save .r1 64
 
 def exponentHalf : Prog isa := seqs [
-  .block [.mov .r11 (.imm 0)], Rsa.Arm.Keys.half 27,
-  .block ([.ldrSp .r1 64, .subs .r1 .r1 (.imm 1)] ++ save .r1 64)]
+  .block [.mov .r11 (.imm 0)], Rsa.Arm.Keys.half 27, .block exponentHalfTail]
+
+def expCountInit : Prog isa := seqs [Rsa.Arm.Keys.copy 29 0,
+  .block (Rsa.Arm.Keys.clrLow 29), .block ([.mov .r1 (.imm 0)] ++ save .r1 60)]
+
+def expDecompose : Prog isa := .seq expCountInit (.loop halfCountStep .eq)
+
+def exponentSigmaHead : List Instr := [.ldrSp .r1 60, .dp .and .r1 .r1 (.imm 3), .cmp .r1 (.imm 0)]
+
+def exponentSigma : Prog isa := seqs [.block exponentSigmaHead,
+  .ite .eq (.block [.mov .r1 (.imm 4)]) (.block []), .block (save .r1 64)]
+
+def exponentPowerStore : List Instr := Rsa.Arm.Keys.ptr .r0 27 ++
+  [.dp .add .r0 .r0 (.shifted .r9 .lsl 2), .dp .sub .r0 .r0 (.imm 8), .str .r2 .r0 0, .str .r3 .r0 4]
 
 /-- The compact round's exponent and its complete u64 decomposition word. -/
-def expSetup : Prog isa := seqs [
-  .block keyContext, Rsa.Arm.Keys.copy 29 0,
-  .block (Rsa.Arm.Keys.clrLow 29 ++ [.mov .r1 (.imm 0)] ++ save .r1 60),
-  .loop halfCountStep .eq,
-  .block [.ldrSp .r1 60, .dp .and .r1 .r1 (.imm 3), .cmp .r1 (.imm 0)],
-  .ite .eq (.block [.mov .r1 (.imm 4)]) (.block []),
-  .block (save .r1 64), Rsa.Arm.Keys.copy 27 0, .loop exponentHalf .ne,
+def expSetup : Prog isa := seqs [expDecompose,
+  exponentSigma, Rsa.Arm.Keys.copy 27 0, .loop exponentHalf .ne,
   .block ([.ldrSp .r1 60] ++ TwoPower.code),
-  .block (Rsa.Arm.Keys.ptr .r0 27 ++ [.dp .add .r0 .r0 (.shifted .r9 .lsl 2),
-    .dp .sub .r0 .r0 (.imm 8), .str .r2 .r0 0, .str .r3 .r0 4])]
+  .block exponentPowerStore]
 
 /-- Mask the highest native word occupied by a witness, including at a
 32- or 64-bit width boundary. Import has already cleared the higher words. -/
