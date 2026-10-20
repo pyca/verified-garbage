@@ -57,12 +57,13 @@ theorem RtWs.edi {s : State} (h : RtWs L s B Z len N) : (s.gpr .edi).toNat = B.t
 /-- The modulus's length argument, as `widthB` reads it. -/
 abbrev lenOp (L : Lay) : MemOp := VG.Impl.Bignum.X86.PublicRt.argAt (L.len - 1) 1
 
+theorem lenOp_eq (hL : 1 ≤ L.len) : lenOp L = VG.Impl.Bignum.X86.PublicFn.argument L.len := by
+  simp only [lenOp, VG.Impl.Bignum.X86.PublicRt.argAt, VG.Impl.Bignum.X86.PublicFn.argument]
+  congr 1; omega
+
 theorem lenSrc {s : State} (h : RtWs L s B Z len N) :
     readSrc s (.mem (lenOp L)) = some (BitVec.ofNat 32 len) := by
-  have e : lenOp L = VG.Impl.Bignum.X86.PublicFn.argument L.len := by
-    simp only [lenOp, VG.Impl.Bignum.X86.PublicRt.argAt, VG.Impl.Bignum.X86.PublicFn.argument]
-    congr 1; have := h.layLen; omega
-  rw [e]; exact h.lenArg.readSrc
+  rw [lenOp_eq h.layLen]; exact h.lenArg.readSrc
 
 /-- An argument read the same after writes to registers but `esp`, memory kept. -/
 theorem src_keep {s t : State} {rs : List Reg} (K : Keeps rs s t) (esp : .esp ∉ rs) (m : t.mem = s.mem)
