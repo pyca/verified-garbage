@@ -4,7 +4,8 @@ public import VerifiedGarbage.Impl.P384.EcdhDouble
 meta import VerifiedGarbage.Impl.P384.EcdhDouble
 public import VerifiedGarbage.Impl.P384.EcdhAllocatedCode
 meta import VerifiedGarbage.Impl.P384.EcdhAllocatedCode
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Observed
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Observed
@@ -12,6 +13,15 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # P-384's allocated doublings agree with their raw arithmetic

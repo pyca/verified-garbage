@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.P384.EcdhDouble.Raw
+import VerifiedGarbage.Proof.P384.EcdhDouble.Raw
+public import VerifiedGarbage.Proof.P384.Ops
 public import VerifiedGarbage.Proof.P384.EcdhDouble.Certificate
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
 

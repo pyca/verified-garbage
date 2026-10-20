@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.AArch64.MulOk
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJLoop
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
 public import VerifiedGarbage.Impl.Ecdh.AArch64.WindowJ
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Window

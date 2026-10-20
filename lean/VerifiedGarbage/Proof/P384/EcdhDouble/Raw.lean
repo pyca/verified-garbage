@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.P384.Ops
 public import VerifiedGarbage.Impl.P384.EcdhDouble
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-public import VerifiedGarbage.Proof.Weierstrass.JacMul
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Weierstrass.JacMul
 
 /-!
 # P-384's raw doubling

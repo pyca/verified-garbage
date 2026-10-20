@@ -3,11 +3,18 @@ module
 public import VerifiedGarbage.Impl.P384.Ops
 public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
 public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
-public import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
+import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
+public import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Rows
+public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontRound
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontRound
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
 
 /-!
 # P-384's field operations inline on AArch64
