@@ -28,12 +28,22 @@ abbrev kw (len : Nat) : Nat := 2 * Spec.Rsa.modulusWords len
 
 theorem wb_kw (len : Nat) : wb len = 4 * kw len := by simp only [wb, kw]; omega
 
+/-- The length whose width `kw` is the shape's, from the modulus's length `a`. -/
+def _root_.VG.Impl.Rsa.X86.KeyRt.Lay.toLen (L : Lay) (a : Nat) : Nat :=
+  match L.shape with
+  | .base => a
+  | .narrow => a + 8
+  | .wide => 2 * wb a + 24
+
+theorem kw_bound {len : Nat} (hle : len ≤ 4096) : 4 * kw len ≤ 4104 := by
+  simp only [kw, Spec.Rsa.modulusWords]; omega
+
 /-- What every operation needs of a state. -/
 structure RtWs (L : Lay) (s : State) (B : Addr) (Z len N : Nat) : Prop where
   ws : Ws s B Z (kw len) N
-  lenArg : CallArgument s B Z L.len (BitVec.ofNat 32 len)
+  lenArg : ∃ a, a ≤ 1024 ∧ L.toLen a = len ∧ CallArgument s B Z L.len (BitVec.ofNat 32 a)
   wsArg : CallArgument s B Z L.ws (BitVec.ofNat 32 B.toNat)
-  lenLe : len ≤ 1024
+  lenLe : len ≤ 4096
   layLen : 1 ≤ L.len
 
 variable {L : Lay} {B : Addr} {Z len N : Nat}
@@ -45,7 +55,8 @@ theorem outs_outside {m m' : Mem} {rs : List (Nat × Nat)} (h : Outs B rs m m')
 
 theorem RtWs.keep {s t : State} (h : RtWs L s B Z len N) {rs : List Reg} (K : Keeps rs s t)
     (edi : .edi ∉ rs) (esp : .esp ∉ rs) (O : Outside B 0 Z s.mem t.mem) : RtWs L t B Z len N :=
-  ⟨h.ws.rest K edi esp, h.lenArg.keep K esp O, h.wsArg.keep K esp O, h.lenLe, h.layLen⟩
+  ⟨h.ws.rest K edi esp, h.lenArg.imp fun _ ⟨a, l, c⟩ => ⟨a, l, c.keep K esp O⟩, h.wsArg.keep K esp O, h.lenLe,
+    h.layLen⟩
 
 /-- `edi` is the workspace. -/
 theorem RtWs.wsSrc {s : State} (h : RtWs L s B Z len N) :
@@ -61,9 +72,13 @@ theorem lenOp_eq (hL : 1 ≤ L.len) : lenOp L = VG.Impl.Bignum.X86.PublicFn.argu
   simp only [lenOp, VG.Impl.Bignum.X86.PublicRt.argAt, VG.Impl.Bignum.X86.PublicFn.argument]
   congr 1; omega
 
-theorem lenSrc {s : State} (h : RtWs L s B Z len N) :
-    readSrc s (.mem (lenOp L)) = some (BitVec.ofNat 32 len) := by
-  rw [lenOp_eq h.layLen]; exact h.lenArg.readSrc
+/-- The modulus's length argument, as `widthB` reads it, of the length `len` for the shape. -/
+def LenSrc (L : Lay) (s : State) (len : Nat) : Prop :=
+  ∃ a, a ≤ 1024 ∧ L.toLen a = len ∧ readSrc s (.mem (lenOp L)) = some (BitVec.ofNat 32 a)
+
+theorem lenSrc {s : State} (h : RtWs L s B Z len N) : LenSrc L s len :=
+  have ⟨a, l, e, c⟩ := h.lenArg
+  ⟨a, l, e, by rw [lenOp_eq h.layLen]; exact c.readSrc⟩
 
 /-- An argument read the same after writes to registers but `esp`, memory kept. -/
 theorem src_keep {s t : State} {rs : List Reg} (K : Keeps rs s t) (esp : .esp ∉ rs) (m : t.mem = s.mem)
@@ -71,6 +86,11 @@ theorem src_keep {s t : State} {rs : List Reg} (K : Keeps rs s t) (esp : .esp �
   simp only [readSrc, State.load32, State.ea, at_, K.1 _ esp, m, K.2.1, K.2.2]; rfl
 
 /-- Any operand read the same after writes to `ecx`, memory kept. -/
+theorem LenSrc.keep {s t : State} {rs : List Reg} (hl : LenSrc L s len) (K : Keeps rs s t) (esp : .esp ∉ rs)
+    (m : t.mem = s.mem) : LenSrc L t len :=
+  have ⟨a, l, e, r⟩ := hl
+  ⟨a, l, e, (src_keep K esp m).trans r⟩
+
 theorem src_keep' {s t : State} (K : Keeps [.ecx] s t) (m : t.mem = s.mem) {d : Nat} :
     readSrc t (.mem (sc d)) = readSrc s (.mem (sc d)) := by
   have e : t.gpr .edi = s.gpr .edi := K.1 _ (by decide)
@@ -80,20 +100,43 @@ section
 variable {is : List Instr} {s : State} {Q : State → Prop}
 
 /-- `bytesB r`: `r = 4 w`. -/
-theorem bytesB_ok {r : Reg} (hl : readSrc s (.mem (lenOp L)) = some (BitVec.ofNat 32 len)) (hle : len ≤ 1024)
+theorem bytesB_ok {r : Reg} (hl : LenSrc L s len) (_hle : len ≤ 4096)
     (k : ∀ t, Keeps [r] s t → t.mem = s.mem → (t.gpr r).toNat = 4 * kw len → WP isa (.block is) t Q) :
-    WP isa (.block (bytesB L r ++ is)) s Q :=
-  widthB_ok hl hle fun t K m e => k t K m (by
-    rw [e, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := wb_le hle; omega), wb_kw])
+    WP isa (.block (bytesB L r ++ is)) s Q := by
+  obtain ⟨a, ha, rfl, hr⟩ := hl
+  have hw := wb_le ha
+  unfold bytesB
+  rw [List.append_assoc]
+  refine widthB_ok hr ha fun t K m e => ?_
+  have et : (t.gpr r).toNat = wb a := by rw [e, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  unfold Lay.toLen at k
+  cases hs : L.shape with
+  | base =>
+    simp only [hs] at k
+    simpa only [Shape.extra, List.nil_append] using k t K m (by rw [et, wb_kw])
+  | narrow =>
+    simp only [hs] at k
+    simp only [Shape.extra, List.cons_append, List.nil_append]
+    refine wp_addS rfl fun u U _ => k u (K.trans U.keeps) (U.mem.trans m) ?_
+    rw [U.gpr, BitVec.toNat_add, et, show (8 : BitVec 32).toNat = 8 from rfl]
+    simp only [wb, kw, Spec.Rsa.modulusWords]
+    omega
+  | wide =>
+    simp only [hs] at k
+    simp only [Shape.extra, List.cons_append, List.nil_append]
+    refine wp_addS rfl fun u U _ => wp_addS rfl fun v V _ =>
+      k v ((K.trans U.keeps).trans V.keeps) (V.mem.trans (U.mem.trans m)) ?_
+    rw [V.gpr, U.gpr, BitVec.toNat_add, BitVec.toNat_add, et, show (24 : BitVec 32).toNat = 24 from rfl]
+    simp only [wb, kw, Spec.Rsa.modulusWords]
+    omega
 
 /-- `count r extra`: `r = 4 w`, or `4 w + 4` with `extra`. -/
-theorem count_ok {r : Reg} {extra : Bool} (hl : readSrc s (.mem (lenOp L)) = some (BitVec.ofNat 32 len))
-    (hle : len ≤ 1024)
+theorem count_ok {r : Reg} {extra : Bool} (hl : LenSrc L s len)
+    (hle : len ≤ 4096)
     (k : ∀ t, Keeps [r] s t → t.mem = s.mem → (t.gpr r).toNat = 4 * (kw len + extra.toNat) →
       WP isa (.block is) t Q) :
     WP isa (.block (count L r extra ++ is)) s Q := by
-  have hw := wb_le hle
-  rw [wb_kw] at hw
+  have hw := kw_bound hle
   unfold count
   cases extra with
   | false => simpa using bytesB_ok hl hle fun t K m e => k t K m (by simpa using e)
@@ -103,14 +146,13 @@ theorem count_ok {r : Reg} {extra : Bool} (hl : readSrc s (.mem (lenOp L)) = som
     rw [U.gpr, BitVec.toNat_add, e]; simp; omega
 
 /-- `arrPtr r j t`: `r` at array `j`, `t = 4 w + 8`, for `edi` at the workspace. -/
-theorem arrPtr_ok {r t : Reg} {j : Nat} (hl : readSrc s (.mem (lenOp L)) = some (BitVec.ofNat 32 len))
-    (hle : len ≤ 1024) (hedi : (s.gpr .edi).toNat = B.toNat) (hrt : r ≠ t) (hte : t ≠ .edi)
+theorem arrPtr_ok {r t : Reg} {j : Nat} (hl : LenSrc L s len)
+    (hle : len ≤ 4096) (hedi : (s.gpr .edi).toNat = B.toNat) (hrt : r ≠ t) (hte : t ≠ .edi)
     (hj : arr (kw len) j < 2 ^ 32)
     (k : ∀ u, Keeps [r, t] s u → u.mem = s.mem → PtrAt u B r (arr (kw len) j) →
       (u.gpr t).toNat = 4 * kw len + 8 → WP isa (.block is) u Q) :
     WP isa (.block (arrPtr L r j t ++ is)) s Q := by
-  have hw := wb_le hle
-  rw [wb_kw] at hw
+  have hw := kw_bound hle
   simp only [arrPtr, List.append_assoc, List.cons_append, List.nil_append]
   refine bytesB_ok hl hle fun s₁ K₁ m₁ e₁ => wp_addS rfl fun s₂ u₂ _ => wp_movS rfl fun s₃ u₃ _ => ?_
   refine wp_addS rfl fun s₄ u₄ _ => adds_ok hrt j fun u K m e => ?_

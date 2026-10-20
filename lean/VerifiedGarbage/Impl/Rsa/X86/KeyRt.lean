@@ -21,11 +21,17 @@ as in `KeyWs`, or, across a loop, in a header word.
 namespace VG.Impl.Rsa.X86.KeyRt
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Rsa.X86.Keys
 
+/-- The width of the arrays, from the modulus's `B` bytes: `B` (`base`), `B + 8`, two words more
+(`narrow`), or `2 B + 24`, room for a product of two numbers and six words (`wide`). -/
+inductive Shape | base | narrow | wide
+  deriving DecidableEq, Repr
+
 /-- Where an operation finds the modulus's length and the working space: arguments, with no
-words pushed. -/
+words pushed; and the arrays' width from it. -/
 structure Lay where
   len : Nat
   ws : Nat
+  shape : Shape := .base
 
 /-- Argument `i`. -/
 def argOp (i : Nat) : MemOp := at_ .esp (4 + 4 * i)
@@ -38,9 +44,15 @@ def sQb : Nat := 140
 
 variable (L : Lay)
 
-/-- `r = B = 8 ⌈len / 8⌉`, the bytes of a number: `PublicRt.widthB`, its argument at `L.len`
-(`argAt (L.len - 1) 1`, for `1 ≤ L.len`). -/
-def bytesB (r : Reg) : List Instr := PublicRt.widthB (L.len - 1) r
+/-- What `bytesB` adds to the modulus's bytes for the shape. -/
+def Shape.extra : Shape → Reg → List Instr
+  | .base, _ => []
+  | .narrow, r => [.alu .add r (.imm 8)]
+  | .wide, r => [.alu .add r (.reg r), .alu .add r (.imm 24)]
+
+/-- `r`, the bytes of an array's number: `B = 8 ⌈len / 8⌉` from the modulus's length (`PublicRt.widthB`,
+its argument at `L.len`, `argAt (L.len - 1) 1`, for `1 ≤ L.len`), for the shape. -/
+def bytesB (r : Reg) : List Instr := PublicRt.widthB (L.len - 1) r ++ L.shape.extra r
 
 /-- `r = edi + hdr + j (B + 8)`, array `j`, and `t = B + 8`. -/
 def arrPtr (r : Reg) (j : Nat) (t : Reg) : List Instr :=

@@ -44,7 +44,7 @@ theorem inputsRt {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths 
     RtWs (VG.Impl.Rsa.X86.KeyCheckRt.lay g.full) s g.base g.size (g.args 1).toNat nArr := by
   have ws := h.ws
   rw [len.width] at ws
-  refine ⟨ws, ?_, ?_, len.upper, Nat.le_refl 1⟩
+  refine ⟨ws, ⟨_, len.upper, rfl, ?_⟩, ?_, Nat.le_trans len.upper (by decide), Nat.le_refl 1⟩
   · have a := h.arguments 1 (by cases g.full <;> decide)
     rwa [BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · rw [← len.scratch]; exact h.arguments (scratchArg g.full) (by omega)
