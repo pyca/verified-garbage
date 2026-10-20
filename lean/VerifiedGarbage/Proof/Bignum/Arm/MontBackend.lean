@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCallEntry
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.CallerTransform
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Spec.Rsa.Mont
 
@@ -27,6 +28,7 @@ structure MontBackend where
     RelCT isa (fun s t => CallInput base len w o a b s ∧
       CallInput base len w o a b t ∧ s.sp = t.sp) mul (fun _ _ => True)
   stackOk : FrameStack.armStack mul ≤ 40
+  caller : CallerTransform := CallerTransform.identity
   suffix : String
   features : List String
 

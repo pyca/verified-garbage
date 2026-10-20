@@ -1065,26 +1065,9 @@ mov r11, #0
 ldr r1, [r12, #0]
 mov r2, r1
 ldr r10, [r0, #0]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-adds r3, r3, r10
-adc r4, r4, #0
-adds r3, r3, r11
-adc r4, r4, #0
+mov r3, r10
+mov r4, r11
+umaal r3, r4, r1, r2
 str r3, [r0, #0]
 ldr r10, [r0, #4]
 adds r4, r4, r10

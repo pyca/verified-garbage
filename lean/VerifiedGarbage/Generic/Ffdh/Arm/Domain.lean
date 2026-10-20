@@ -19,14 +19,6 @@ def artifacts (v : Proof.Ffdh.Arm.Backend) : List Artifact :=
     notes := ["ARMv7: RSA's packed-u64 working space and native 32-bit arithmetic check the \
       modulus, generator, subgroup bound, divisibility and subgroup relation. Exponentiation \
       uses fixed three-bit windows; every selected Montgomery row is verified."] },
-  Spec.Ffdh.checkPublicApi.artifact VG.Arm.target {
-    suffix := v.suffix
-    features := v.features
-    stack := 128
-    code := v.checkPublic
-    verified := v.checkPublic_verified
-    notes := ["ARMv7: native range checking and optional subgroup exponentiation use RSA's \
-      fixed three-bit window arithmetic. Domain and public-value bytes are public."] },
   Spec.Ffdh.checkPrivateApi.artifact VG.Arm.target {
     suffix := v.suffix
     features := v.features
