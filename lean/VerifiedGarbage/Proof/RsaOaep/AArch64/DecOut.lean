@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

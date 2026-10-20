@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.AesSiv.Key
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-SIV on ARMv7: `vg_aes_siv_init`

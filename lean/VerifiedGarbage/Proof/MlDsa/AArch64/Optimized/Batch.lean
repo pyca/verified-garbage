@@ -3,8 +3,8 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Word
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Vec
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

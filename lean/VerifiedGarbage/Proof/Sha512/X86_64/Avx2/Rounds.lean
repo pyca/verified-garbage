@@ -2,10 +2,11 @@ module
 
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Sha512.Spec
 public import VerifiedGarbage.Impl.Sha512.X86_64.Avx2
 public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
 
 /-!

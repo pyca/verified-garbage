@@ -1,41 +1,30 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintPack
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintPack
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintCT
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintCT
 public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
-import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.MlDsa.Pack.Mem
-meta import Mathlib.Tactic.SplitIfs
 import all Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Proof.Framework.TaintSum
-meta import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.MlKem.Arm.CallF
-meta import VerifiedGarbage.Proof.MlKem.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
-meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.MlKem.Mem
-meta import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Stream
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.MlKem.Arm.Common
-meta import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Stream
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintPack
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintCT
+meta import VerifiedGarbage.Proof.MlDsa.Pack.Mem
+meta import Init.Data.Nat.Bitwise.Basic
+meta import VerifiedGarbage.Proof.MlKem.Arm.CallF
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.MlKem.Mem
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.MlKem.Arith
 meta import VerifiedGarbage.Proof.MlKem.Arm.Common
 
 /-!

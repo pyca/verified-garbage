@@ -1,8 +1,9 @@
 module
 public import VerifiedGarbage.Impl.MlKem.AArch64.Cbd16
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 
 /-! # Canonical reduction and storage of CBD2 lanes -/

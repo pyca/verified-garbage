@@ -7,23 +7,8 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Env
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Env
-public import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Gcm.Ctr
-public import VerifiedGarbage.Proof.Gcm.Stream
-public import VerifiedGarbage.Spec.GcmSiv.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Gcm.Ctr
-import VerifiedGarbage.Proof.Gcm.Stream
-import VerifiedGarbage.Spec.GcmSiv.Contract
 
 /-!
 # AES-GCM-SIV on x86-64: the entry, the exit and the arguments

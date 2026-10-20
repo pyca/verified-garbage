@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.ExponentByte
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The public-exponent scanner computes the exact low word and saturated high word -/
 

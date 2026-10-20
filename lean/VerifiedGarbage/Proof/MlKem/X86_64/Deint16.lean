@@ -1,7 +1,4 @@
 module
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.TCB.X86_64.Sse
 
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack

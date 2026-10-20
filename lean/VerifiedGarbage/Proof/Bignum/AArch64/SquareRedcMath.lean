@@ -1,13 +1,8 @@
 module
 
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Bignum.Words
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.TCB.AArch64.Isa
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
-import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 
 /-! Low-word cancellation and pending high carries for REDC. -/
 

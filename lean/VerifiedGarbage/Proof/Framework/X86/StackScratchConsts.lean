@@ -3,8 +3,8 @@ public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 import VerifiedGarbage.Proof.Framework.X86.Syms
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # A scratch buffer on the stack, for code that reads tables of constants (x86)

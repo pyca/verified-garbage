@@ -1,9 +1,17 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.Rsa
 
 import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Data.Nat.Basic
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Tactic.Basic
+import Mathlib.Data.Prod.Basic
+public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Push
+public import Aesop.BuiltinRules
+public import Mathlib.Logic.Function.Iterate
+import Mathlib.Basic.IsEmpty.Defs
 
 /-!
 # Recovering the prime factors: the mathematics

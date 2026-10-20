@@ -12,14 +12,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.Cmac.Block
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Spec.Cmac.TripleDesContract
 
 /-!
 # TDEA-CMAC on AArch64: `vg_cmac_triple_des_init`

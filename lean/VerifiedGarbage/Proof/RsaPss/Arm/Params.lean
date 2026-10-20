@@ -1,6 +1,4 @@
 module
-public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.RsaPss.Arm.Step
 public import VerifiedGarbage.Spec.RsaPss
 
 import VerifiedGarbage.Proof.RsaPss.Arm.CtXor
@@ -11,6 +9,10 @@ import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.RsaPss.Arm.Step
+public import VerifiedGarbage.Proof.RsaPss.Arm.Base
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RSASSA-PSS on ARMv7: the encoding's parameters

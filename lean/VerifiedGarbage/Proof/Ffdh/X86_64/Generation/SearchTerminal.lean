@@ -1,16 +1,19 @@
 module
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-public import VerifiedGarbage.Proof.RsaKeyGen.Slots
-public import VerifiedGarbage.Proof.RsaKeyGen.Table
 
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Native terminal policy transitions -/
 

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Mont.X86.DynamicOps
 import VerifiedGarbage.Proof.Mont.X86.Chain
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Modular subtraction for a runtime modulus -/
 

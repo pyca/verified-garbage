@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Weierstrass.Complete
 public import VerifiedGarbage.Spec.P384
 import VerifiedGarbage.Proof.P384.Prime

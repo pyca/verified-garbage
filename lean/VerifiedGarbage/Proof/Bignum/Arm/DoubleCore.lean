@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.Csub
 import VerifiedGarbage.Proof.Bignum.Arm.DoubleProduct
 import VerifiedGarbage.Proof.Bignum.Arm.MontFinish
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Canonical modular doubling from the initialized workspace -/
 

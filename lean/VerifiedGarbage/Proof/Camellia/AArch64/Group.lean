@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Camellia.AArch64.Prologue
 public import VerifiedGarbage.Proof.Camellia.Common
 public import VerifiedGarbage.Proof.Camellia.AArch64.Keys
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Camellia.AArch64.Copy
 import VerifiedGarbage.Proof.Camellia.AArch64.Crypt8

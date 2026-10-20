@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.PcFnCT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Bignum.Arm.PcInput
 import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! # Public precomputation satisfies the shared RSA contract under AAPCS -/
 

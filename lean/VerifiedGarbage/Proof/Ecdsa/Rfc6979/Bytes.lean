@@ -3,10 +3,12 @@ module
 import VerifiedGarbage.Proof.Weierstrass.Words
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979
 public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Spec.P256
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Deterministic ECDSA: big-endian numbers

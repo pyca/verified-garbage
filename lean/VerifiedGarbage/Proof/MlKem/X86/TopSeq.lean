@@ -1,10 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
-import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MlKem.X86.Common
 public import VerifiedGarbage.Proof.MlKem.X86.Top
 import VerifiedGarbage.Proof.MlKem.X86.TopPrim
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM on x86 (32-bit): the calls of the top-level functions, with their arguments

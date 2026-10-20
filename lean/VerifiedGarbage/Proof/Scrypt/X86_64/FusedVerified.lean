@@ -1,11 +1,10 @@
 module
-public import Mathlib.Tactic.DefEqTransformations
 public import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMixFused
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Common
 
 import VerifiedGarbage.Proof.Scrypt.X86_64.FusedCT
 import VerifiedGarbage.Proof.Scrypt.X86_64.FusedCorrect
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

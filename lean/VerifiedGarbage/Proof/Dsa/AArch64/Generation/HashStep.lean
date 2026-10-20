@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashPlan
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PHash
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashOne
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Advance the native hash-contribution sequence -/
 

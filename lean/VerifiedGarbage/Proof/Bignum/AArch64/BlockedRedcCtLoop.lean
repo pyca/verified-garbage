@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtContext
 
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtRow
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 
 @[expose] public section

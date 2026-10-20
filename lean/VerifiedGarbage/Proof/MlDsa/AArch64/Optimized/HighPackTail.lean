@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackShuffle
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.HighPack
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## From `HighPackTailStore.lean` -/
 

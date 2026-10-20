@@ -4,8 +4,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
 public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBatch
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

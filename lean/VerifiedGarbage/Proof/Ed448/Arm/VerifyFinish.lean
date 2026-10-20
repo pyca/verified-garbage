@@ -5,8 +5,9 @@ public import VerifiedGarbage.Proof.X448.Arm.Save
 import VerifiedGarbage.Proof.Ed448.Arm.VerifySign
 import VerifiedGarbage.Proof.X448.Arm.Restore
 import VerifiedGarbage.Proof.X448.Arm.Counters
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed448 verification's equation on ARMv7: the comparison and the result

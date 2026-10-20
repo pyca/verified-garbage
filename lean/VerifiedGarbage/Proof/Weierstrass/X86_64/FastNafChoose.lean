@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.FastNaf
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
 public import VerifiedGarbage.Proof.X25519.X86_64.Step
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Width-five and width-seven public digit selection on x86-64. -/
 

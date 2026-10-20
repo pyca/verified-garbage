@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.PowLit
-public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import VerifiedGarbage.Proof.Weierstrass.Complete
 public import VerifiedGarbage.Spec.P256
 import VerifiedGarbage.Proof.P256.Prime

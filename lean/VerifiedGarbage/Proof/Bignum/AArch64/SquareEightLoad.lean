@@ -1,13 +1,11 @@
 module
 
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightWord
 public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEight
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Impl.Bignum.AArch64.Square
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

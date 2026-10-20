@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Aes.KeyExp
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.SigEval
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: the setting

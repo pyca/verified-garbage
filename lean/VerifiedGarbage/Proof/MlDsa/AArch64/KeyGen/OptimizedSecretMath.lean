@@ -1,11 +1,10 @@
 module
 
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 public import VerifiedGarbage.Spec.MlDsa.BoundedFour
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 @[expose] public section
 

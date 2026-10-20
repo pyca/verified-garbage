@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Bignum.Arm.WideMath
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The word-level value of ARMv7's full product -/
 

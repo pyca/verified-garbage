@@ -8,6 +8,10 @@ public import VerifiedGarbage.Proof.Ed25519.X86_64.PointDecode
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.X25519.X86_64.Lit
 
 /-! Merged from `Proof.Ed25519.X86_64.VerifyTables`. -/
 

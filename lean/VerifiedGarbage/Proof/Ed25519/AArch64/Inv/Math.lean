@@ -1,13 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-public import Mathlib.Data.BitVec
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.Tactic.Linarith
-public import Mathlib.Tactic.Positivity
-public import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Spec.X25519
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.NormNum.OfScientific
+import Mathlib.Tactic.NormNum.DivMod
+import Mathlib.Tactic.NormNum.Abs
+import Mathlib.Data.Rat.Cast.Order
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Algebra.Group.Int.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-! # The inversion modulo `p` on AArch64: the numbers
 

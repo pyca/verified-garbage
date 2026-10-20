@@ -3,12 +3,13 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Parity
 
 import VerifiedGarbage.Proof.Framework.Range
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## From `CommitTailUpperWord.lean` -/
 

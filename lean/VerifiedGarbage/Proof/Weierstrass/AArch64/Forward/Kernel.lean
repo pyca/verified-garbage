@@ -3,10 +3,10 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.AllBelow
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FastEnv
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Tree
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Kernel-evaluated twins of the certificate checks. The kernel reduces a
 recursor (`Tree.rec`, `List.rec`, `Nat.rec`) directly, several times faster

@@ -1,14 +1,12 @@
 module
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
-public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Semantics
 
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # H′: arguments for a fixed workspace buffer -/
 

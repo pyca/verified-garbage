@@ -43,6 +43,8 @@ import VerifiedGarbage.Proof.MlKem.X86.TopPrim
 import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
 import VerifiedGarbage.Proof.MlKem.X86.TopSeq
 import VerifiedGarbage.Proof.Sha512.Spec
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM-768 on x86 (32-bit): `vg_mlkem768_keygen`

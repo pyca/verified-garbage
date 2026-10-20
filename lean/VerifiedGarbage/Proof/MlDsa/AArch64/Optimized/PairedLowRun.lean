@@ -7,6 +7,10 @@ import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCallFrame
 import VerifiedGarbage.Proof.MlKem.Arith
+import Mathlib.Tactic.FinCases
+public import Mathlib.Tactic.SetNotationForOrder
+import Mathlib.Data.Fintype.Fin
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! ## `PairedLowStep` -/
 

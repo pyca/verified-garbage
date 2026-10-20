@@ -2,8 +2,9 @@ module
 
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomPrepare
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomState
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Initialize the persistent sampler state from the public q buffer. -/
 @[expose] public section

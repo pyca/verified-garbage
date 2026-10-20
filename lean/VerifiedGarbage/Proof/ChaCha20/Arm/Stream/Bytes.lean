@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.Arm.Xor
 public import VerifiedGarbage.Impl.ChaCha20.Arm.Stream
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.ChaCha20.Stream
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Init
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Streaming ChaCha20 on ARMv7: XORing bytes

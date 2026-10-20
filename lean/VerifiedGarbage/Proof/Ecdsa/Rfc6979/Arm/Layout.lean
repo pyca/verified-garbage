@@ -5,12 +5,10 @@ import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Contract
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: where everything is

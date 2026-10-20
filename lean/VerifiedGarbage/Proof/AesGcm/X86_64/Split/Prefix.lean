@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Impl.Gcm.X86_64
 
 /-!
 # AES-GCM `seal_split` on x86-64: the whole blocks at `src`

@@ -2,11 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.Arm.Round.Round
 public import VerifiedGarbage.Proof.MlDsa.Round.Mem
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.MlKem.Arm.Common
-import VerifiedGarbage.Proof.MlDsa.Arith.Zq
-import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-DSA on 32-bit ARM: the loop over the coefficients

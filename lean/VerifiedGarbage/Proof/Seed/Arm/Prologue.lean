@@ -1,9 +1,6 @@
 module
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Seed.Arm.Ecb
 public import VerifiedGarbage.Proof.Framework.Arm.Straight
-public import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Proof.Seed.SboxLit
 
 import VerifiedGarbage.Proof.Seed.Arm.Crypt8
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd

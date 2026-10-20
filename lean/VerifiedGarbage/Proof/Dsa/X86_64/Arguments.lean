@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
-import Mathlib.Tactic.Set
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
 
 /-! # Preparing the three operand bindings of a DSA arithmetic call -/
 

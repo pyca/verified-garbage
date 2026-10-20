@@ -1,14 +1,13 @@
 module
 
-public import Mathlib.Tactic.SplitIfs
-public import Batteries.Logic
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Impl.Curve448.AArch64.Fast
 import VerifiedGarbage.Proof.X448.Wide.Limbs
-import VerifiedGarbage.Impl.X448.AArch64
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Word
+import VerifiedGarbage.Impl.X448.AArch64.Symmetric
 
 /-!
 # Limb-by-limb operations

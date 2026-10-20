@@ -3,14 +3,13 @@ module
 public import VerifiedGarbage.Proof.Modes.Arm.Words
 public import VerifiedGarbage.Spec.Ctr
 import VerifiedGarbage.Proof.Modes.Arm.Counter
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.CmacAes.Arm.Words
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # A mode's block operations on ARMv7, and what they compute

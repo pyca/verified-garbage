@@ -2,11 +2,10 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseK
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsD
 
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
 import VerifiedGarbage.Proof.MlDsa.Round.Decompose
 import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Proof.MlDsa.Arith.Zq
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on x86-64: the signature

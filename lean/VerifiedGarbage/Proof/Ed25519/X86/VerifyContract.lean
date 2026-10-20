@@ -5,9 +5,10 @@ import VerifiedGarbage.Proof.Ed25519.X86.CopyWords
 public import VerifiedGarbage.Proof.Ed25519.X86.RecoverParity
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyTbl
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonInput
-import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

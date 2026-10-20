@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Ed25519.AArch64.PointSelect
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Field
 public import VerifiedGarbage.Proof.Ed25519.Canonical64
 import VerifiedGarbage.Proof.Ed25519.AArch64.Swap
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
 
 /-! Point selection reuses the verified constant-time field swaps. -/

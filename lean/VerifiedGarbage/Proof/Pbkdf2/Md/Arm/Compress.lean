@@ -5,31 +5,19 @@ public import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.Framework.RelCT
 
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
-meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MdStream.Arm.Common
-meta import VerifiedGarbage.Proof.MdStream.Arm.Common
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.MdStream.Arm.Words
-import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Words
-import VerifiedGarbage.Proof.Pbkdf2.Memory
-import VerifiedGarbage.Spec.Pbkdf2.Generic
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Impl.MdStream.Arm
+meta import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Proof.Framework.Arm.Call
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.MdStream.Arm.Common
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.MdStream.Arm.Words
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Words
-meta import VerifiedGarbage.Proof.Pbkdf2.Memory
-meta import VerifiedGarbage.Spec.Pbkdf2.Generic
 
 /-!
 # A Merkle–Damgård compression function on ARMv7, called on one block

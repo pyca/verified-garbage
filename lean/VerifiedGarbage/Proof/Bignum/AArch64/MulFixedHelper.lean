@@ -5,12 +5,6 @@ import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Spec.Rsa.MontMulFixed
 public import VerifiedGarbage.Impl.Bignum.AArch64.MulFixedCall
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! Callable Montgomery products against the fixed-index contract

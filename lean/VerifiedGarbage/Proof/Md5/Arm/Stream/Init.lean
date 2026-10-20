@@ -1,29 +1,23 @@
 module
 
 import VerifiedGarbage.Proof.MdStream.Arm.Common
-meta import VerifiedGarbage.Proof.MdStream.Arm.Common
 public import VerifiedGarbage.Proof.Md5.Arm.Compress
-meta import VerifiedGarbage.Proof.Md5.Arm.Compress
 import VerifiedGarbage.Proof.Md5.Stream
-meta import VerifiedGarbage.Proof.Md5.Stream
 public import VerifiedGarbage.Impl.Md5.Arm.Stream
-meta import VerifiedGarbage.Impl.Md5.Arm.Stream
 import VerifiedGarbage.Proof.Md5.StateMem
-meta import VerifiedGarbage.Proof.Md5.StateMem
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Call
-meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.MdStream.Arm.Common
+meta import VerifiedGarbage.Proof.Md5.Arm.Compress
+meta import VerifiedGarbage.Proof.Md5.Stream
+meta import VerifiedGarbage.Impl.Md5.Arm.Stream
+meta import VerifiedGarbage.Proof.Md5.StateMem
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming MD5 on ARMv7: `init`

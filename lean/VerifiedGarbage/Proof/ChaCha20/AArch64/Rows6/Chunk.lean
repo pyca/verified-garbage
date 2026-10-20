@@ -3,13 +3,9 @@ module
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Finish
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Chunk
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Rows6
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.CachedAdd
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

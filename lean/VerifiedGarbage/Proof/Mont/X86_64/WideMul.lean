@@ -2,10 +2,10 @@ module
 public import VerifiedGarbage.Proof.Mont.X86_64.Csub
 
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.X86_64.Blocks
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Mont.X86_64.Adx
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Montgomery arithmetic on x86-64: the multiplication with the accumulator in memory

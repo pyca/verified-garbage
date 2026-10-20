@@ -2,45 +2,12 @@ module
 public import VerifiedGarbage.Proof.AesGcmSiv.X86.Contract
 public import VerifiedGarbage.Proof.AesGcmSiv.X86.Env
 
-public import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
 import VerifiedGarbage.Proof.AesGcm.X86.Top
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
-public import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
-public import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
-public import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
-public import VerifiedGarbage.Proof.AesGcm.X86.Flush
-public import VerifiedGarbage.Proof.AesGcm.X86.Top
-public import VerifiedGarbage.Proof.Cmac.Block
-public import VerifiedGarbage.Proof.Cmac.Frame
-public import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Framework.X86.SseTaint
-public import VerifiedGarbage.Proof.Gcm.Be64
-public import VerifiedGarbage.Proof.Gcm.Bits
-public import VerifiedGarbage.Spec.GcmSiv.Contract
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
-import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
-import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
-import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
-import VerifiedGarbage.Proof.AesGcm.X86.Flush
-import VerifiedGarbage.Proof.Cmac.Block
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Gcm.Be64
-import VerifiedGarbage.Proof.Gcm.Bits
-import VerifiedGarbage.Spec.GcmSiv.Contract
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM-SIV on x86: the arguments and the entry

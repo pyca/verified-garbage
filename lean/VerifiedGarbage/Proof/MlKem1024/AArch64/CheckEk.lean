@@ -1,37 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.CheckEk
-meta import VerifiedGarbage.Proof.MlKem.AArch64.CheckEk
 public import VerifiedGarbage.Impl.MlKem1024.AArch64.CheckEk
-meta import VerifiedGarbage.Impl.MlKem1024.AArch64.CheckEk
 public import VerifiedGarbage.Spec.MlKem.Contract1024
-import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Spec.MlKem.Contract1024
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-import VerifiedGarbage.Proof.MlKem.Compress
-import VerifiedGarbage.Proof.MlKem.Encode
-meta import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.MlKem.AArch64.CheckEk
+meta import VerifiedGarbage.Impl.MlKem1024.AArch64.CheckEk
+meta import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.WriteBytes
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-meta import VerifiedGarbage.Proof.MlKem.Compress
-meta import VerifiedGarbage.Proof.MlKem.Encode
 
 /-!
 # ML-KEM-1024 on AArch64: `vg_mlkem1024_check_ek`

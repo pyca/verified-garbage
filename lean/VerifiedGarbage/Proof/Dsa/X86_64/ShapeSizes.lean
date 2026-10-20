@@ -4,7 +4,8 @@ import VerifiedGarbage.Proof.Dsa.X86_64.ScanField
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeFrame
 public import VerifiedGarbage.Proof.Dsa.X86_64.WidthChoice
 public import VerifiedGarbage.Proof.Dsa.DomainShape
-import Mathlib.Tactic.Set
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
 
 /-! # The two public width scans and supported-size selection -/
 

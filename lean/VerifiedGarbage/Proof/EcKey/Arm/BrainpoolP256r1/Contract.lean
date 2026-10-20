@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.BrainpoolP256r1
 public import VerifiedGarbage.Spec.EcKey.Generic
 public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # brainpoolP256r1 public keys on 32-bit ARM: the contract the proof is written against

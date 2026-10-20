@@ -1,15 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Arm
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Mont.Arm.Words
 import VerifiedGarbage.Proof.Mont.Arm.Csub
 import VerifiedGarbage.Proof.Mont.Arm.Step
 import VerifiedGarbage.Proof.Weierstrass.Words32
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Weierstrass.Arm.Const
-import VerifiedGarbage.Proof.Weierstrass.Words
 
 /-!
 # ECDSA on 32-bit ARM: the masks of the checks, and the flag

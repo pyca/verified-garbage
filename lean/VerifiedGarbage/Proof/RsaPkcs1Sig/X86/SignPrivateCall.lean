@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Rsa.X86.PrivCall
 import VerifiedGarbage.Proof.Rsa.X86.PrivCallInput
 import VerifiedGarbage.Proof.Rsa.X86.PrivCrtCall
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! # Checked private RSA returns the signature of the exact local encoding -/
 

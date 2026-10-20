@@ -1,14 +1,13 @@
 module
 
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Impl.Weierstrass.AArch64
-public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # Short Weierstrass curves on AArch64: code as a sequence of blocks

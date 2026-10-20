@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgCommon
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Impl.MlKem.AArch64.Noise
 
 

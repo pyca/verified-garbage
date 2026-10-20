@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Bignum.X86.ReverseByteStep
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Runtime endian conversion, with byte-exact output and memory preservation -/
 

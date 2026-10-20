@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 import VerifiedGarbage.Proof.Bignum.X86.ExponentSaturate
 import VerifiedGarbage.Proof.Mont.X86.PowerInit
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Consume one public exponent byte and advance the public scan -/
 

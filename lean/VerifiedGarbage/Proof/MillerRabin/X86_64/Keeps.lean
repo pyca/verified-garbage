@@ -6,8 +6,10 @@ public import VerifiedGarbage.Proof.MillerRabin.X86_64.Normalize
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Core
 import VerifiedGarbage.Proof.MillerRabin.X86_64.NormalizeByte
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Restore bookkeeping without changing the reusable round contract -/
 

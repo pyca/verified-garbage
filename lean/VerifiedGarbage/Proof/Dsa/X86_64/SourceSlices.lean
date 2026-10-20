@@ -1,9 +1,12 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
 
 /-! # Memory-safe component and digest slices of external DSA inputs -/
 

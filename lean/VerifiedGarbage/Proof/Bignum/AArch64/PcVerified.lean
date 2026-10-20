@@ -3,8 +3,6 @@ module
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # `vg_rsa_public_precompute` on AArch64: verified against the shared contract

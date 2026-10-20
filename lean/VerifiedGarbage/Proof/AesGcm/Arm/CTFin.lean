@@ -16,6 +16,16 @@ meta import VerifiedGarbage.Proof.AesGcm.Arm.CTFn
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CTCrypt
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CTAbsorb
 meta import VerifiedGarbage.Proof.AesGcm.Arm.TextAbsorb
+import VerifiedGarbage.Impl.AesGcm.Arm
+import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.TCB.Arm.Isa
+meta import VerifiedGarbage.Impl.AesGcm.Arm
+meta import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.TCB.Arm.Isa
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # AES-GCM on ARMv7: `finTag`, `vg_aes_gcm_stream_finish` and `vg_aes_gcm_stream_verify` are constant time

@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 public import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul

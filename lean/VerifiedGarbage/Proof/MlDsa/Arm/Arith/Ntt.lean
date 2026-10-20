@@ -1,35 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttLoop
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttLoop
 public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
 import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.TaintSum
-meta import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
-meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.MlKem.Arith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttLoop
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_ntt`

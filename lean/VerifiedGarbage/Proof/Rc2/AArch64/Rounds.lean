@@ -3,12 +3,13 @@ module
 public import VerifiedGarbage.Impl.Rc2.AArch64.Block
 public import VerifiedGarbage.Proof.Rc2.AArch64.Lookup
 import VerifiedGarbage.Proof.Rc2.Word
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Rc2.Select
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! # RC2 mixing and mashing in AArch64 registers -/
 

@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.AesOcb.Arm.Body
 import VerifiedGarbage.Spec.Ocb.Contract
+import VerifiedGarbage.Proof.Framework.SigEval
 
 /-!
 # AES-OCB on ARMv7: before the data

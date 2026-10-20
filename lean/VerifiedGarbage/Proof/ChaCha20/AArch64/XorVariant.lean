@@ -6,7 +6,9 @@ public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorContract
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Spec.ChaCha20.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

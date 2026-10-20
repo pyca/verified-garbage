@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMont
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareMont
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquareDispatch
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 
 /-! ## AdxTiledSquareMont -/
 

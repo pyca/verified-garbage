@@ -3,13 +3,13 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.TCB.AArch64.Simd
 public import VerifiedGarbage.TCB.Mem
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-import Mathlib.Util.CompileInductive
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## From `ResidentRejWord.lean` -/
 

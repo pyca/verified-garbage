@@ -5,10 +5,13 @@ public import VerifiedGarbage.Proof.TripleDes.Bitslice.Tdea
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Transpose
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Bytes
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 /-!
 # An AdvSIMD batch

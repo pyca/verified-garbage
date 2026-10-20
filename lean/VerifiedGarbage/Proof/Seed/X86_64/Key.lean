@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Seed.X86_64.KeyBody
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Seed.X86_64.Ecb
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Seed.Memory
 import VerifiedGarbage.Proof.Seed.X86_64.KeyLoad
 import VerifiedGarbage.Proof.Seed.X86_64.Setup

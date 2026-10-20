@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.TCB.X86_64.Gpr
-import VerifiedGarbage.TCB.X86_64.Isa
 
 
 /-!

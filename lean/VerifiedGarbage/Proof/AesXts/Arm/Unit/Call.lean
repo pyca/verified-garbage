@@ -7,7 +7,10 @@ public import VerifiedGarbage.Impl.AesXts.ArmUnit
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.AesXts.Arm.Body
 import VerifiedGarbage.Proof.AesXts.Unit
-import VerifiedGarbage.Proof.AesXts.Arm.Unit.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # XTS-AES of data units on ARMv7: a call of a whole-block function

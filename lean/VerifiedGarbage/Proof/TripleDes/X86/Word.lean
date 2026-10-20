@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.TripleDes.Word
 
 @[expose] public section
 

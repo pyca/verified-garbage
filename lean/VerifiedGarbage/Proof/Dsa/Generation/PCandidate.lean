@@ -3,10 +3,13 @@ module
 public import VerifiedGarbage.Proof.Dsa.Generation.Contributions
 public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Spec.Ffdh
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Generation.PReduction
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ShapeOctets
 import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The shared native shaper and divider implement DSA's p candidate -/
 

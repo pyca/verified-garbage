@@ -24,6 +24,8 @@ meta import VerifiedGarbage.Proof.Ecdh.Arm.BrainpoolP512r1.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ECDH over brainpoolP512r1 on 32-bit ARM: `Verified`

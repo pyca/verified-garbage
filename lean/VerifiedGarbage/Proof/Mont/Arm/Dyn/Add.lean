@@ -3,9 +3,9 @@ public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ws
 public import VerifiedGarbage.Proof.Mont.Arm.Words
 
 import VerifiedGarbage.Proof.Mont.Arm.Dyn.Digit
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Runtime-modulus Montgomery arithmetic on 32-bit ARM: a sum as digits

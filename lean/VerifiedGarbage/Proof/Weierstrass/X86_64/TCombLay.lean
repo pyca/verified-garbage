@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.Weierstrass.CombLay
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.TComb
 public import VerifiedGarbage.Proof.Weierstrass.Unch
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Weierstrass.Comb
-import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # The fixed-base comb from tables in memory on x86-64: where it keeps its numbers

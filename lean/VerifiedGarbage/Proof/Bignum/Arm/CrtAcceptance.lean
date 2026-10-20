@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtAcceptance
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Copy the validity bit without exposing it in control flow -/
 

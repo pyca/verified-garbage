@@ -1,11 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
-public import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ML-KEM on x86-64: the layers of the NTT and its inverse with `len ≥ 8` on AVX2 registers

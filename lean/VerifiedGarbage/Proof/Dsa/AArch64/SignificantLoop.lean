@@ -6,6 +6,10 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 import VerifiedGarbage.Proof.Dsa.AArch64.ReduceCount
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Complete actual-width scanning for DSA's public moduli -/
 

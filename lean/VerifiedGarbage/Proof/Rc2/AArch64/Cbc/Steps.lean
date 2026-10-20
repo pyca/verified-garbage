@@ -1,14 +1,14 @@
 module
 public import VerifiedGarbage.Impl.Rc2.AArch64.Cbc
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Rc2.AArch64.Lit
 public import VerifiedGarbage.Proof.Rc2.AArch64.Lookup
 
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rc2.AArch64.MemOps
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Rc2.AArch64.Lit
 
 /-! # CBC loads, XORs, stores, and public loop counters -/
 

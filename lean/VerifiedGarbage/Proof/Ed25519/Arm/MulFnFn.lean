@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 public import VerifiedGarbage.Proof.Ed25519.Arm.MulFnRow
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.Arm.Field
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block

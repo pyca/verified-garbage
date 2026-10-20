@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.PrivGeometry
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Disjoint wrapper, callee, saved-register, and argument stack regions -/
 

@@ -1,9 +1,7 @@
 module
 public import VerifiedGarbage.Proof.MlKem.X86_64.VLay
 
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 
 /-!
 # ML-KEM on x86-64: code with MXCSR `0x1FBF`

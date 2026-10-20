@@ -6,7 +6,9 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PShapeArgs
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashShape
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QShape
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # The native hash-suffix shaper feeds exactly the specified reduction -/
 

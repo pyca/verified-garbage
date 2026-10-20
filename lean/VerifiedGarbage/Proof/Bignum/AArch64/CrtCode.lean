@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.SigEval
 
 /-!
 # RSA with the CRT on AArch64: correctness

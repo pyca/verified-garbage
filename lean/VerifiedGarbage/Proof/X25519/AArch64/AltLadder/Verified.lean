@@ -14,6 +14,8 @@ meta import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Top
 meta import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Lit
 meta import VerifiedGarbage.Proof.X25519.AArch64.Verified
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-! The `_alt` ladder: correctness, constant time, and the shared contract. -/
 

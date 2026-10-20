@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Loop
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 
 /-!
 # AES-GCM `seal_split`'s path for TLS records: at most 16 bytes left

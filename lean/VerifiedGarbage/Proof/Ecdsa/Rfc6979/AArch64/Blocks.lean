@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on AArch64: the blocks between the calls

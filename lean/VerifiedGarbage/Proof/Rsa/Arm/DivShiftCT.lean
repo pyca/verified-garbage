@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Impl.Rsa.Arm.Div
 public import VerifiedGarbage.Proof.Rsa.Arm.DivContext
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import Batteries.Logic
 
 import VerifiedGarbage.Proof.Rsa.Arm.DivArgsCT
 import VerifiedGarbage.Proof.Rsa.Arm.DivShiftArray
@@ -11,7 +10,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Rsa.Arm.DivArgs
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftCT
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Shifting the secret division registers reveals only public dimensions -/
 

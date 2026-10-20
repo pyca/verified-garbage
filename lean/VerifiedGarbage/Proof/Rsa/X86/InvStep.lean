@@ -4,7 +4,16 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvU
 public import VerifiedGarbage.Proof.Rsa.X86.InvHalf
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Rsa.X86.KeySelect
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Basic.IsEmpty.Defs
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
+import VerifiedGarbage.Proof.Rsa.KeyMath
 
 /-! # `inverse` on i686: one step is `invStep` -/
 

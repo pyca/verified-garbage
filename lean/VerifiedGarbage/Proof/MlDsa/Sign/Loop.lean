@@ -3,6 +3,8 @@ public import VerifiedGarbage.Spec.MlDsa
 
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.Framework.Mem
+import Batteries.Tactic.Init
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ML-DSA: the signing loop

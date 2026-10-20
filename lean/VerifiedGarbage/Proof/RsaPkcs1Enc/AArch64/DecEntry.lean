@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

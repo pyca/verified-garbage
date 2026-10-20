@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.EcKey.BrainpoolP512r1.AArch64
-meta import VerifiedGarbage.Impl.EcKey.BrainpoolP512r1.AArch64
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Impl.EcKey.BrainpoolP512r1.AArch64
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
-import VerifiedGarbage.Impl.Ecdh.BrainpoolP512r1.AArch64
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP512r1.AArch64
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!

@@ -4,8 +4,8 @@ public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.Zero
 import VerifiedGarbage.Proof.RsaPss.Params
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The right-to-left byte borrow used by scalar rejection sampling. -/
 @[expose] public section

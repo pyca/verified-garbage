@@ -1,21 +1,19 @@
 module
 
 public import VerifiedGarbage.Impl.Rc2.X86.ExpandKey
-meta import VerifiedGarbage.Impl.Rc2.X86.ExpandKey
 public import VerifiedGarbage.Proof.Rc2.PiLit
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Mem
-meta import VerifiedGarbage.Proof.Rc2.PiLit
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Impl.Rc2.X86.ExpandKey
+meta import VerifiedGarbage.Proof.Rc2.PiLit
+meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 @[expose] public section
 

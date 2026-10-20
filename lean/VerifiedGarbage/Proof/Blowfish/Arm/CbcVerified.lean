@@ -14,6 +14,8 @@ meta import VerifiedGarbage.Proof.Modes.Arm.CbcChained
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.Blowfish.Arm.Run
+import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 
 /-!
 # Blowfish-CBC on ARMv7 meets its contracts

@@ -3,6 +3,11 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckModel
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPartition
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

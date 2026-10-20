@@ -3,10 +3,10 @@ module
 public import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.Spec.GcmSiv
 public import VerifiedGarbage.Spec.Cmac
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # AES-GCM-SIV's interleaved loop: what it needs and does

@@ -7,6 +7,9 @@ public import VerifiedGarbage.Spec.Xts.Contract
 
 import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
 import VerifiedGarbage.Proof.AesXts.X86_64.CT
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
 
 /-!
 # XTS-AES on x86-64: `Verified`

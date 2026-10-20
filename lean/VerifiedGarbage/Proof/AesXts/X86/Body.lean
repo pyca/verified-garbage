@@ -8,9 +8,9 @@ public import VerifiedGarbage.Proof.AesCbc.X86.Body
 public import VerifiedGarbage.Proof.AesXts.Spec
 import VerifiedGarbage.Proof.CmacAes.X86.UpdateLoop
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.AesCbc.X86.CT
-import VerifiedGarbage.Proof.AesGcm.X86.Fn
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # XTS-AES on x86: all the blocks in one call

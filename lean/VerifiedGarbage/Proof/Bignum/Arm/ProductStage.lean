@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.Round
 import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
 import VerifiedGarbage.Proof.Bignum.Arm.RowFull
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The first multiply-add of a Montgomery round -/
 

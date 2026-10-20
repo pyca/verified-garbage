@@ -1,36 +1,27 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Basic
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Basic
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.AddSub
-meta import VerifiedGarbage.Impl.MlDsa.Arm.Arith.AddSub
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 public import VerifiedGarbage.TCB.Arm.Target
-meta import Mathlib.Tactic.SplitIfs
 import all Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Proof.Framework.TaintSum
-meta import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
-meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.MlKem.Arith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Basic
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Impl.MlDsa.Arm.Arith.AddSub
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+meta import VerifiedGarbage.TCB.Arm.Target
+meta import Init.Data.Nat.Bitwise.Basic
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_add` and `vg_mldsa_sub`

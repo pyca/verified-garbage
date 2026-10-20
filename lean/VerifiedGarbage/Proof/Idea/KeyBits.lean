@@ -2,10 +2,11 @@ module
 
 import VerifiedGarbage.Proof.Idea.Memory
 public import VerifiedGarbage.Impl.Idea.Key
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Spec.Idea
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # IDEA key expansion, bit by bit

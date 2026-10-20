@@ -1,45 +1,21 @@
 module
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.SeedAdd
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedByte
 import Mathlib.Data.List.Induction
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Generation.SeedAdd
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.Bignum.AArch64
-import VerifiedGarbage.Proof.Bignum.Layout
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Dsa.Arithmetic
-import VerifiedGarbage.Proof.Dsa.Digest
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedByte
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Poly1305.Limbs64
-public import VerifiedGarbage.Impl.Bignum.AArch64
-public import VerifiedGarbage.Proof.Bignum.AArch64.Run
-public import VerifiedGarbage.Proof.Bignum.Octets
-public import VerifiedGarbage.Proof.Dsa.Arithmetic
-public import VerifiedGarbage.Proof.Dsa.Digest
-public import VerifiedGarbage.Proof.Dsa.Encoding
-public import VerifiedGarbage.Proof.Dsa.Generation.SeedAdd
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! # Wrapped addition across an entire seed -/
 

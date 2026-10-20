@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 import VerifiedGarbage.Proof.Bignum.CrtRedc
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Padded candidate and witness loads for the shared primality workspace -/
 

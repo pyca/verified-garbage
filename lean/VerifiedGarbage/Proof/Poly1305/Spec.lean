@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Poly1305
 public import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Poly1305: lemmas about the specification

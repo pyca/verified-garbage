@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcWord
 
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcAdd
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcTile
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLoad
 
 @[expose] public section

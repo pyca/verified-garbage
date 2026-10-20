@@ -2,9 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignFnInput
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRegions
-import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
-import VerifiedGarbage.Proof.Rsa.X86.PrivEntryInput
-import VerifiedGarbage.Proof.Rsa.X86.PrivObservations
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Native cdecl inputs before reserving the two wrapper frames -/
 

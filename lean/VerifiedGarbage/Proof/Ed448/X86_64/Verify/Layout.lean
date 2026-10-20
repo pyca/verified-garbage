@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.X86_64.Verify
-public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
-public import VerifiedGarbage.Proof.Sha3.X86_64.Round
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # Ed448 verification on x86-64: where everything is

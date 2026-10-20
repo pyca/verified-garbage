@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.TripleDes.X86_64.RoundLit
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Sbox
 import VerifiedGarbage.Proof.TripleDes.Permutation
 public import VerifiedGarbage.Proof.Framework.X86_64.Linear
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 @[expose] public section
 

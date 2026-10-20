@@ -3,9 +3,9 @@ module
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 public import VerifiedGarbage.Spec.Cbc
 public import VerifiedGarbage.Impl.Modes.X86_64.Ctr
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!

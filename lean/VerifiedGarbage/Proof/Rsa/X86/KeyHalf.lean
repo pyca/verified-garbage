@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 
 import VerifiedGarbage.Proof.Mont.X86.ExponentShift
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Halving an RSA workspace array with an incoming carry -/
 

@@ -20,6 +20,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Weierstrass.X86.Loop
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # The ladder by calls of the point functions, on x86 (32-bit)

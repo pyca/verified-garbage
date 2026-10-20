@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Store
 public import VerifiedGarbage.Proof.MlKem.CoeffW
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Advance
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # One complete eight-candidate rejection batch -/
 

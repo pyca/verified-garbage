@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.X448.Wide.Word
 public import VerifiedGarbage.Proof.X448.Wide.Product
 public import VerifiedGarbage.Proof.X448.Wide.Representation
 import VerifiedGarbage.Proof.X448.Wide.DoubleTerm
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.X448.Wide.Term
 

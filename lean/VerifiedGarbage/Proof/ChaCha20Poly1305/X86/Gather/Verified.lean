@@ -7,8 +7,10 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Callee
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Contract
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Fn
 import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
-import VerifiedGarbage.Proof.AesGcm.X86.Gather.Contract
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.VariantProof
+import VerifiedGarbage.Proof.ChaCha20.X86.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86: `Verified`

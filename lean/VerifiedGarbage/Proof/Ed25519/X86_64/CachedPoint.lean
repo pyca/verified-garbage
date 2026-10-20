@@ -4,9 +4,10 @@ public import VerifiedGarbage.Impl.Ed25519.X86_64.Cached
 public import VerifiedGarbage.Proof.Ed25519.BaseTable
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointTableAddr
 import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.X86_64.Points
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Cached points

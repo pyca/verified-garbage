@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.X25519.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!

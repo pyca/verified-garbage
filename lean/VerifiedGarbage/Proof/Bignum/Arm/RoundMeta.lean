@@ -1,9 +1,9 @@
 module
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.TCB.Arm.Isa
 
 import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The Montgomery loop's temporary state and its preservation -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.Gb
 import VerifiedGarbage.Proof.Argon2.Permutation
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Argon2 on ARMv7: the row and column permutations

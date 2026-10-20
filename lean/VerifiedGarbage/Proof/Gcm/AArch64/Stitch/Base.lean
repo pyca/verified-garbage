@@ -1,17 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Spec
-public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 public import VerifiedGarbage.Proof.Aes.AArch64.Group
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Gcm.Ctr
 import VerifiedGarbage.Proof.Gcm.Spec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Aes.AArch64.Aese.Rounds
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
-import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
-import VerifiedGarbage.Proof.Gcm.Stream
 
 /-!
 # Interleaved counter mode and GHASH on AArch64: the invariant of the loops

@@ -1,11 +1,13 @@
 module
-public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeBlock
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Probe
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 
 /-! # The next paired SHAKE128 block and rejection-constant refresh -/
 

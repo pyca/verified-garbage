@@ -1,15 +1,12 @@
 module
-public import Mathlib.Tactic.Set
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
 
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Bignum.Words
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-!
 # `vg_rsa_pkcs1_sign` on x86-64: the contract on the registers

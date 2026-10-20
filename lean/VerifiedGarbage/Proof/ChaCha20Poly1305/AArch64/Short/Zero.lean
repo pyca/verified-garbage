@@ -2,14 +2,13 @@ module
 
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stages
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Short
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ChaCha20-Poly1305 on AArch64, 64 to 256 bytes: the kernel's output zeroed

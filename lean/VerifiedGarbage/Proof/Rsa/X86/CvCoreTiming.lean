@@ -1,13 +1,13 @@
 module
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Rsa.X86.KeyTiming
 
 import VerifiedGarbage.Proof.Rsa.X86.CvHelperTiming
 import VerifiedGarbage.Proof.Rsa.X86.DivTiming
 import VerifiedGarbage.Proof.Rsa.X86.InverseTiming
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # CRT division, binary inversion, and acceptance tests have a public schedule -/
 

@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
-public import Mathlib.Tactic.Tauto
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Weierstrass.JacAdd
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-! The cached header and tail compute the same Jacobian addition formula. -/

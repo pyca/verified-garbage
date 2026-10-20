@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256DR
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256ED
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
+public import VerifiedGarbage.Impl.P256.VerifyDouble
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

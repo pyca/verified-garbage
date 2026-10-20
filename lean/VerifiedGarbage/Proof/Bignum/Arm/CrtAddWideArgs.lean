@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Bignum.Arm.CrtAddWideScalars
 import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWideArgs
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Load the public pointers and width for final CRT addition -/
 

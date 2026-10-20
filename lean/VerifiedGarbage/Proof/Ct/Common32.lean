@@ -1,5 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.TCB.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
 
 
 @[expose] public section

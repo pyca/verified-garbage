@@ -3,7 +3,7 @@ public import VerifiedGarbage.Proof.Aes.X86.AesNi.Invariant
 
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Body
-import Mathlib.Data.List.Induction
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

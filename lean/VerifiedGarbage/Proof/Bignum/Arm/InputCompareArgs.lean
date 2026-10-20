@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.InputCompare
 public import VerifiedGarbage.Proof.Bignum.Arm.Bases
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Native pointers for the constant-time RSA input range check -/
 

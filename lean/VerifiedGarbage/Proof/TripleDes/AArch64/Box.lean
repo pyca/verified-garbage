@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Round
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Spills
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

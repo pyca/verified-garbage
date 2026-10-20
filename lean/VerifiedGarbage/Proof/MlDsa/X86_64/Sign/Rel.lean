@@ -2,9 +2,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseA
 public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Hash
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-DSA signing on x86-64: two runs

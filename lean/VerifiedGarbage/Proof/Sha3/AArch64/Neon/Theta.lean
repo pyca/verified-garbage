@@ -2,9 +2,9 @@ module
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Parity
 
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

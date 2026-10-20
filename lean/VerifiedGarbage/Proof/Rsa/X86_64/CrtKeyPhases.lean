@@ -5,10 +5,6 @@ public import VerifiedGarbage.Impl.Rsa.X86_64.CheckCrtKey
 import VerifiedGarbage.Proof.Rsa.X86_64.KeySteps
 import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyReduce
 import VerifiedGarbage.Proof.Rsa.Octets
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # `vg_rsa_check_crt_key` on x86-64: the checks with remainders

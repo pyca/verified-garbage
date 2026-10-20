@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Camellia.AArch64.KaKb
 public import VerifiedGarbage.Proof.Camellia.AArch64.KeyChecks2
 public import VerifiedGarbage.Proof.Camellia.AArch64.Prologue
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Camellia.AArch64.KeyPair
 import VerifiedGarbage.Proof.Camellia.AArch64.KeyStore

@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ECDSA verification over brainpoolP512r1 on x86-64: the contract the proof is written against

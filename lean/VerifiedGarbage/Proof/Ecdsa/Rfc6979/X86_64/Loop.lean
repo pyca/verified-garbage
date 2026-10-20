@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Core
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
-import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on x86-64: the candidates

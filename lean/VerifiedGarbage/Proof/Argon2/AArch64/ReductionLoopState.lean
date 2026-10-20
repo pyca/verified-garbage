@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.ReduceLane
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceCount
 
 /-! Public loop metadata survives accumulator writes and register-only advancement. -/
 

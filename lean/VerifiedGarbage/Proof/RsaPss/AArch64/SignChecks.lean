@@ -1,14 +1,13 @@
 module
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Impl.RsaPss.AArch64
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 
 import VerifiedGarbage.Proof.RsaPss.Params
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # RSASSA-PSS on AArch64: the encoding's parameters

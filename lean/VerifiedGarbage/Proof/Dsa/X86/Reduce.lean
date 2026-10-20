@@ -4,6 +4,8 @@ public import VerifiedGarbage.Impl.Dsa.X86.Reduce
 public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Mont.X86.DynamicAdd
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The residue invariant for streaming big-endian input -/
 

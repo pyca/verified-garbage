@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.WideMul
 import VerifiedGarbage.Proof.Bignum.Arm.Mul64Math
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Instruction-level register-pair multiplication -/
 

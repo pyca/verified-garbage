@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Memory unchanged outside a list of ranges

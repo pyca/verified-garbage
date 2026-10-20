@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Spec.Rsa.Mont
 import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
 import VerifiedGarbage.Proof.Bignum.Arm.MontMath
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The existing 64-bit RSA workspace as native ARMv7 words -/
 

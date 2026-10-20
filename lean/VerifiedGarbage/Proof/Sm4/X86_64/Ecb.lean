@@ -7,6 +7,10 @@ public import VerifiedGarbage.Proof.Sm4.X86_64.Keys
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-!
 # SM4 ECB on x86-64: the whole function

@@ -5,11 +5,11 @@ import VerifiedGarbage.Proof.Camellia.X86_64.Group
 public import VerifiedGarbage.Proof.Camellia.KeySched
 public import VerifiedGarbage.Impl.Camellia.X86_64.ExpandKey
 public import VerifiedGarbage.Proof.Camellia.Bytes
-public import VerifiedGarbage.Proof.Camellia.SboxTable
 public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Storing the subkeys on x86-64

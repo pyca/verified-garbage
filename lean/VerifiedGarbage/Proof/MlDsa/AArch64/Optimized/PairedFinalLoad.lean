@@ -2,7 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStore
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalArithmetic
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

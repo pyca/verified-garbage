@@ -2,6 +2,9 @@ module
 
 import VerifiedGarbage.Proof.Bignum.Arm.MontMath
 public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Packed-word Montgomery coefficients, capacity bounds, and exact division -/
 

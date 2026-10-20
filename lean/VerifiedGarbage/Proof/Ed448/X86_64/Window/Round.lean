@@ -4,13 +4,12 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Ops
 
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.SignedSelect
 
-import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseStep
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.X448.X86_64.AddSub
-import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! One joint window: five doublings followed by two selected additions. -/
 

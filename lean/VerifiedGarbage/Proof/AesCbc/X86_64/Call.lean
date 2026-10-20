@@ -1,15 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesCbc.Spec
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Aes.X86_64.Callee
 public import VerifiedGarbage.Proof.Aes.X86_64.Blocks
-public import VerifiedGarbage.Proof.Aes.X86_64.Lit
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-CBC on x86-64: the contracts, and a call of a block function

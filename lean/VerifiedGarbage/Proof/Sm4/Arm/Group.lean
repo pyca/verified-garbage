@@ -1,11 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Omega
 
 public import VerifiedGarbage.Proof.Sm4.Arm.Prologue
 public import VerifiedGarbage.Proof.Sm4.Common
 public import VerifiedGarbage.Proof.Sm4.Arm.Core
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sm4.Arm.Copy
 import VerifiedGarbage.Proof.Sm4.Arm.Keys
 import VerifiedGarbage.Proof.Sm4.Arm.Crypt8
@@ -14,6 +12,9 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
 
 /-!
 # A group of blocks of SM4 ECB on ARMv7

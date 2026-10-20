@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
 import VerifiedGarbage.Proof.Bignum.X86_64.Setup
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Initializing the Montgomery inverse for each odd DSA modulus -/
 

@@ -4,11 +4,10 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentStream
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! ## From `ResidentPair.lean` -/
 

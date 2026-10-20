@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Root
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
 public import VerifiedGarbage.Proof.X448.Arm.Square
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed448 verification's equation on ARMv7: the square root's power

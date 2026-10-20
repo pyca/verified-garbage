@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.CombSelect
 public import VerifiedGarbage.Proof.Ed25519.Canonical64
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # The comb's loop

@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Loop
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

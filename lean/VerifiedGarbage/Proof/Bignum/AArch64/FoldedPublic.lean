@@ -1,10 +1,8 @@
 module
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-public import VerifiedGarbage.Proof.Framework.Contract
 
 import VerifiedGarbage.Proof.Bignum.FoldedPublic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! The last public-exponent multiplication also leaves Montgomery form. -/
 

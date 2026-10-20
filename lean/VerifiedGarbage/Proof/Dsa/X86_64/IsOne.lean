@@ -4,7 +4,8 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.CheckFrame
 
 import VerifiedGarbage.Proof.Dsa.X86_64.CheckCall
 import VerifiedGarbage.Proof.Dsa.X86_64.LoadOne
-import Mathlib.Tactic.Set
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
 
 /-! # Complete checks of DSA subgroup exponentiation results -/
 

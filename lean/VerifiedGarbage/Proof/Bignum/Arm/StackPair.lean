@@ -1,11 +1,10 @@
 module
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Load two distinct registers from public stack slots -/
 

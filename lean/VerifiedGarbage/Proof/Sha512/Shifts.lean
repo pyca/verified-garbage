@@ -1,6 +1,4 @@
 module
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Spec.Sha512
 
 import VerifiedGarbage.Proof.Sha512.Spec

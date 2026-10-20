@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Seed.Arm.Lanes
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # The steps of a round, lane by lane

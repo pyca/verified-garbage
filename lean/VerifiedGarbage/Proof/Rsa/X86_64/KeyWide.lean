@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKeyCore
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCtx
 
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.X86_64.KeySteps
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 

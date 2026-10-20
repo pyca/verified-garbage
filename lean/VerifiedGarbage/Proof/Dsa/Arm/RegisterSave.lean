@@ -3,13 +3,12 @@ module
 public import VerifiedGarbage.Impl.Dsa.Arm.Pow
 import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.TCB.Arm.Target
-public import Batteries.Logic
 public import VerifiedGarbage.Proof.Framework.Covers
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ws
 public import VerifiedGarbage.Proof.Mont.Words32
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Workspace register saves and byte/word conversions shared by DSA helpers -/
 

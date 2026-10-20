@@ -5,13 +5,10 @@ import VerifiedGarbage.Proof.X448.X86.Freeze
 import VerifiedGarbage.Proof.X448.X86.RowPass
 import VerifiedGarbage.Proof.X448.X86.Carry
 public import VerifiedGarbage.Impl.Ed448.X86.Scalar
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.X448.X86.Swap
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.X448.X86.Select
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 scalar arithmetic on x86 (32-bit): one chunk

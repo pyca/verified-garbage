@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Rsa.Arm.PrivCompareArgs
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivReleaseTail
 import VerifiedGarbage.Proof.Bignum.Arm.CompareBuffer
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Compare the public re-exponentiation before releasing any private bytes -/
 

@@ -2,9 +2,9 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Probe
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Scalar
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Table
-public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Invariant
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # Vector iteration under sampler memory and permission hypotheses -/
 

@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.Spec.Gcm
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Interleaved counter mode and GHASH: what the loops need and do

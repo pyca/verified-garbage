@@ -4,13 +4,12 @@ public import VerifiedGarbage.Spec.MlDsa.HighPack
 public import VerifiedGarbage.Spec.MlDsa.ResidentMask
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CallMore
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Arith
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
 
 /-!
 # ML-DSA signing on AArch64: the primitives it calls

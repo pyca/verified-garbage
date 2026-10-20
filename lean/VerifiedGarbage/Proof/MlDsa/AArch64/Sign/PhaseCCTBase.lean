@@ -2,12 +2,10 @@ module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Rel
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseC
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCall
 import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! ## From `BlockTr.lean` -/
 

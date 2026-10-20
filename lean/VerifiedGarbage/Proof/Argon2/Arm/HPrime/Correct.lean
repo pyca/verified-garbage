@@ -2,7 +2,9 @@ module
 public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Body
 
 import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Finish
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Sha512.Arm.Rounds
+import VerifiedGarbage.Proof.Blake2.Arm.CompressB
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # Argon2 H′ on ARMv7: correctness

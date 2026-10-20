@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Loops
 
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

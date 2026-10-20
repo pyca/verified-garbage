@@ -16,6 +16,10 @@ meta import VerifiedGarbage.Proof.AesGcmSiv.X86.KeysCT
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.TagIO
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Cmp
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Polyval
+import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-GCM-SIV on x86: `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open` are constant time

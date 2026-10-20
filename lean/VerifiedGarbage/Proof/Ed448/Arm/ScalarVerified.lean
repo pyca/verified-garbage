@@ -1,46 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
-meta import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMulAddMain
-meta import VerifiedGarbage.Proof.Ed448.Arm.ScalarMulAddMain
-public import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
-meta import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-public import VerifiedGarbage.Proof.Framework.TaintSum
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
-meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.X25519.Arm.Pass
-import VerifiedGarbage.Proof.X448.Arm.Carry
-import VerifiedGarbage.Proof.X448.Arm.Init
-import VerifiedGarbage.Proof.X448.Arm.MulLoop
-import VerifiedGarbage.Proof.X448.Arm.Normalize
-import VerifiedGarbage.Proof.X448.Arm.RowPass
-import VerifiedGarbage.Proof.X448.Arm.Step
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
+meta import VerifiedGarbage.Proof.Ed448.Arm.ScalarMulAddMain
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.X25519.Arm.Pass
-meta import VerifiedGarbage.Proof.X448.Arm.Carry
-meta import VerifiedGarbage.Proof.X448.Arm.Init
-meta import VerifiedGarbage.Proof.X448.Arm.MulLoop
-meta import VerifiedGarbage.Proof.X448.Arm.Normalize
-meta import VerifiedGarbage.Proof.X448.Arm.RowPass
-meta import VerifiedGarbage.Proof.X448.Arm.Step
 
 /-!
 # Ed448 scalar arithmetic on ARMv7: `Verified`

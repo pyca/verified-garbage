@@ -13,6 +13,10 @@ import VerifiedGarbage.Proof.MillerRabin.X86_64.BoundaryCT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Core
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import Mathlib.Order.Defs.PartialOrder
+import Mathlib.Data.Nat.GCD.Basic
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Constant time of the saved prepared round body -/
 

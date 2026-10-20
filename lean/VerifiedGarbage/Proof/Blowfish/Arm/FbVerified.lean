@@ -14,6 +14,8 @@ meta import VerifiedGarbage.Spec.Blowfish.Cfb
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.Blowfish.Arm.Run
+import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 
 /-!
 # Blowfish-OFB and Blowfish-CFB128 on ARMv7 meet their contracts

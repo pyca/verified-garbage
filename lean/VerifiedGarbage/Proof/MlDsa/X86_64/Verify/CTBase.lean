@@ -1,52 +1,23 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Blocks
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.HashCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Top
-import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Blocks
-meta import Mathlib.Tactic.Conv
 import all Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.MlDsa.Arith.Zq
-import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
-import VerifiedGarbage.Proof.MlDsa.Verify.Mem
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Correct
-import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.MlDsa.Arith.Zq
-meta import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
-meta import VerifiedGarbage.Proof.MlDsa.Verify.Mem
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Correct
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Blocks
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.HashCT
-meta import VerifiedGarbage.Proof.MlKem.Mem
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Top
+meta import Init.Data.Nat.Bitwise.Basic
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA verification on x86-64: constant time, the pieces without calls

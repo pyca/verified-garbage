@@ -8,6 +8,12 @@ meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Crypt
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.KeysCT
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Polyval
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-GCM-SIV on x86: the tag and counter mode are constant time

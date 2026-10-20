@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Ed448.Scalar
 public import VerifiedGarbage.Impl.Ed448.X86.Shake
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-!
 # Ed448 on x86 (32-bit): the header of `dom4`

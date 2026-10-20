@@ -1,10 +1,10 @@
 module
 
 public meta import Lean.Meta.Reduce
-public import VerifiedGarbage.Proof.Framework.Contract
-public meta import VerifiedGarbage.Proof.Framework.Contract
-public meta import VerifiedGarbage.TCB.Arm.Target
-import Lean.Meta.Reduce
+public meta import Std.Do.Triple.SpecLemmas
+public meta import Lean.Meta.Tactic.Simp.Types
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.TCB.Arm.Target
 
 /-!

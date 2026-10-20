@@ -4,17 +4,16 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 public import VerifiedGarbage.Proof.Weierstrass.Unch
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
-import VerifiedGarbage.Proof.Framework.Lit
-import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import Mathlib.Basic.Logic.Basic
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # The comb from tables in memory on AArch64: the selection by vectors

@@ -1,14 +1,14 @@
 module
-public import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.Arm.Mem
 
 import VerifiedGarbage.Proof.X448.Arm.Iter
 import VerifiedGarbage.Proof.Framework.BitByte
 import VerifiedGarbage.Proof.Framework.Range
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.X448.Arm.Carry
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: expanding scalar bytes

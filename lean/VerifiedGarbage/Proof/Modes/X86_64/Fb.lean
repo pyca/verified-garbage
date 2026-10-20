@@ -4,13 +4,13 @@ public import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
 public import VerifiedGarbage.Proof.Modes.X86_64.Setup
 public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Modes.X86_64.Ctr
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
 import VerifiedGarbage.Proof.Modes.X86_64.Words
 import VerifiedGarbage.Proof.Modes.X86_64.Steps
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # OFB and CFB on x86-64, for any core: the whole function

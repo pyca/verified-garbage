@@ -3,10 +3,10 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lanes
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Table
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

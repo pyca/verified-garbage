@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Rc2.AArch64.KeyLoop
 public import VerifiedGarbage.Proof.Rc2.Expansion
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rc2.AArch64.KeyCompose
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! # Forward expansion to 128 bytes -/
 

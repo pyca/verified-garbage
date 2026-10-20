@@ -38,6 +38,8 @@ meta import Batteries.Data.List.Lemmas
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Secp256k1.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ECDH over secp256k1 on x86 (32-bit): `Verified`

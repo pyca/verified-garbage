@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.Word64
 public import VerifiedGarbage.Proof.Mont.AArch64.Row
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Montgomery arithmetic on AArch64: the conditional subtraction

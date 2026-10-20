@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Proof.Aes.Arm.Decrypt
 public import VerifiedGarbage.Spec.Aes.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # AES on whole blocks on ARMv7: the groups

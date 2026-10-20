@@ -4,8 +4,12 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Impl.Dsa.X86_64.Core
 
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
-import Mathlib.Data.Int.ModEq
-import Mathlib.Tactic.Set
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import Aesop.BuiltinRules
+import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Dsa.X86_64.Operands
 
 /-! # Early verification failure restores System V registers -/

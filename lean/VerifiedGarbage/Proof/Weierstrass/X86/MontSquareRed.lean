@@ -2,9 +2,8 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontBase
 
 import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Sparse Montgomery reduction of a full-width x86 square -/
 

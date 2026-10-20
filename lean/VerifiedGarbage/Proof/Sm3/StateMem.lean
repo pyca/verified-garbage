@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.Sm3
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # SM3: the hash value in memory

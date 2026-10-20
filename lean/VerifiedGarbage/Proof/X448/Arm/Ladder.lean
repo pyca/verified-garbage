@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Arm.Iter
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.Arm.Counters
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: all 448 ladder iterations

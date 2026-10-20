@@ -3,10 +3,11 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.AArch64
 import VerifiedGarbage.Proof.Mont.AArch64.Blocks
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
-public import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # Short Weierstrass curves on AArch64: constants

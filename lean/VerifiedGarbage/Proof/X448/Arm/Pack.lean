@@ -2,12 +2,12 @@ module
 
 import VerifiedGarbage.Proof.X448.Arm.BitWrite
 public import VerifiedGarbage.Proof.X448.Radix16Bytes
-public import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.X448.Arm.Field
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.X448.Arm.Carry
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.X448.Ladder
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: encoding a limb

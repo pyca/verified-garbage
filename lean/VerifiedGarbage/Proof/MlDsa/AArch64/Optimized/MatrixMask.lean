@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskStep
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskMemory
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Base
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitWord
 public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
@@ -13,8 +11,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourLoop
-import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-! ## From `MatrixMaskGroup.lean` -/
 

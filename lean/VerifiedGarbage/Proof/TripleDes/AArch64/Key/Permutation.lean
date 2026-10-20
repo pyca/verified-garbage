@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
 
 import VerifiedGarbage.Proof.TripleDes.AArch64.Permutation
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

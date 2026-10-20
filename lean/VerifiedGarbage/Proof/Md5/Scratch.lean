@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Md5.Contract
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Md5.Stream
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # MD5's streaming postconditions read memory only within the buffers

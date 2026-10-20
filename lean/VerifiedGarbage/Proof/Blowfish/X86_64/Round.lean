@@ -2,13 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.X86_64.F
 public import VerifiedGarbage.Proof.Blowfish.Feistel
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Rc2.X86_64.Lookup
 import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The rounds

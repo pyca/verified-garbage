@@ -1,8 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
 import VerifiedGarbage.Proof.Bignum.AArch64.Double
 import VerifiedGarbage.Proof.Bignum.AArch64.Rounds

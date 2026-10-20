@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailTraversal
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PackedBank
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalCorrect
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! ## From `TailField.lean` -/
 

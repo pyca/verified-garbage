@@ -6,28 +6,12 @@ public import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Argon2.X86.Derive.Scratch
 import VerifiedGarbage.Proof.Argon2.X86.HPrime.Verified
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Argon2.Permutation
-import VerifiedGarbage.Proof.Argon2.X86.CompressVerified
-import VerifiedGarbage.Proof.Argon2.X86.Derive.Initial
-import VerifiedGarbage.Proof.Argon2.X86.HPrime.HashCT
-import VerifiedGarbage.Proof.Blake2.Scratch
-import VerifiedGarbage.Proof.Blake2.X86.CompressB.Verified
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Init
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Update
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Argon2.X86.CompressLit
+import VerifiedGarbage.Proof.Blake2.X86.Blake2b
+import VerifiedGarbage.Proof.Blake2.X86.LitB
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import VerifiedGarbage.Proof.MdStream.X86.Common
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Sha256.X86.Compress
-import VerifiedGarbage.Proof.Sha512.Spec
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Sha256.X86.Lit
 
 /-!
 # Argon2 on x86 (32-bit): calls of H′ in the derivation

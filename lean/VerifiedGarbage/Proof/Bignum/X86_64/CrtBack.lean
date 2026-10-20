@@ -9,7 +9,12 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
 import VerifiedGarbage.Proof.Bignum.CrtMath
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Data.Nat.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSA with the CRT on x86-64: from the checks to the result

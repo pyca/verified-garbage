@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.Entry
 import VerifiedGarbage.Proof.Bignum.Arm.MontFnBody
 import VerifiedGarbage.Proof.Bignum.Arm.Restore
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Callable Montgomery multiplication preserves the ARM procedure-call ABI -/
 

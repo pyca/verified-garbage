@@ -2,13 +2,12 @@ module
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CommitTail
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
 
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Boundary
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## From `CommitTailSaveV.lean` -/
 

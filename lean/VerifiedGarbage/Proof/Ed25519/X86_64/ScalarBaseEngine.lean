@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
 import VerifiedGarbage.Proof.Ed25519.X86_64.Points
 import VerifiedGarbage.Proof.Ed25519.Bytes
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! The scalar bits, point multiplication, and canonical encoding compose. -/
 

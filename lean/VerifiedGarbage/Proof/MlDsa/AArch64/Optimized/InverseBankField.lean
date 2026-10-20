@@ -4,11 +4,10 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldPack
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldRun
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFive
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldSchedule
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldPackedBank
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailBank
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## From `InverseBankFieldPackedLayer.lean` -/
 

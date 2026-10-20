@@ -3,8 +3,6 @@ public import VerifiedGarbage.Impl.Bignum.AArch64.Square
 public import VerifiedGarbage.Proof.Bignum.AArch64.Row
 
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareCount
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareRow
 
 /-! Four-word rows with exact scalar-tail handling. -/

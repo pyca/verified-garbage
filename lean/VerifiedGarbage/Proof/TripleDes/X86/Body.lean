@@ -1,14 +1,14 @@
 module
 
-public import Batteries.Logic
 public import VerifiedGarbage.Proof.TripleDes.X86.RoundStep
 public import VerifiedGarbage.Proof.TripleDes.Core
-public import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.TripleDes.Word
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Batteries.Logic
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! ## `Loop` -/
 

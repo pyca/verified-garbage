@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
 import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Weierstrass.Pow
-import VerifiedGarbage.Proof.X25519.Arm.Limbs
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # ECDSA on 32-bit ARM: the whole function

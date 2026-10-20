@@ -1,15 +1,17 @@
 module
 public import VerifiedGarbage.Impl.Sm4.X86.ExpandKey
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sm4.X86.Crypt8
 
 import VerifiedGarbage.Proof.Sm4.X86.KeyInit
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Sm4.X86.Group
 import VerifiedGarbage.Proof.Sm4.X86.Keys
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 
 /-!
 # The loop of the SM4 key schedule on x86 (32-bit)

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Merged from `Proof.Ed25519.AArch64.Row`. -/

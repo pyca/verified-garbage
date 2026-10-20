@@ -4,11 +4,11 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTBase
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.PrimsOk
 
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTCompute
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTSample
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTStages
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Correct
 import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA verification on x86-64: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`

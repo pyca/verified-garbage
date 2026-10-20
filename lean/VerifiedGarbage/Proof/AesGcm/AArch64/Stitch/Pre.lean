@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ok
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on AArch64, interleaved: the first bytes

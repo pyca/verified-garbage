@@ -22,6 +22,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.RsaPss.Arm.Step
+meta import VerifiedGarbage.Proof.RsaPss.Arm.Step
 
 /-!
 # RSASSA-PSS verification with a precomputed public key on ARMv7: a pass of the shift

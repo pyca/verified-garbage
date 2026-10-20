@@ -2,9 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.X86.Linear
 public import VerifiedGarbage.Proof.Camellia.X86.Sbox
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Camellia.Bitsliced
 
 /-!

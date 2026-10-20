@@ -2,8 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.X86.Core
 import VerifiedGarbage.Proof.Sm4.Layout
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 
 /-!
 # The transposes, and eight blocks of bitsliced SM4 on x86 (32-bit)

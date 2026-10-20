@@ -1,21 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfForward
-meta import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfForward
 public import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
-meta import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.TCB.X86_64.Target
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfForward
+meta import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.TCB.X86_64.Target
 
 /-! The forwarded point doubler's addresses depend only on the scratch pointer. -/
 

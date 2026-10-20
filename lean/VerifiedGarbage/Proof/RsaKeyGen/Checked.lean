@@ -1,10 +1,15 @@
 module
-public import Mathlib.FieldTheory.Finite.Basic
-public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.RsaKeyGen
 
 import VerifiedGarbage.Proof.RsaKeyGen.Generate
 import VerifiedGarbage.Proof.Rsa.Checked
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+public import Mathlib.Data.Nat.Prime.Defs
 
 /-!
 # RSA key generation: generated keys and the checked private operation

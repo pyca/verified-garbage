@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicBuffers
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupContext
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Public geometry and immutable source buffers of a private CRT call
 

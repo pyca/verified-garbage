@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Modes.Ctr
 
 import VerifiedGarbage.Proof.Modes.AArch64.CbcEncLoop
 import VerifiedGarbage.Proof.Modes.AArch64.Ctr
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
 import VerifiedGarbage.Proof.Modes.AArch64.Words
 import VerifiedGarbage.Proof.Modes.AArch64.Steps

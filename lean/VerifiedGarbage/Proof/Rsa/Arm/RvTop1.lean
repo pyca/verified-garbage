@@ -5,6 +5,7 @@ public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.Arm.RvBase
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Rsa.Arm.RvFin5
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! # `vg_rsa_recover_primes` on ARMv7: the contract's arguments
 

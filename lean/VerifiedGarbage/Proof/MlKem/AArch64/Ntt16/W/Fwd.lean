@@ -2,14 +2,15 @@ module
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.Readonly
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.W.Pass1
 public import VerifiedGarbage.Proof.Framework.Covers
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.W.Pass2
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Pre
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Fwd
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Pass2
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM's 16-bit NTT on AArch64, of a polynomial stored with 16 bits

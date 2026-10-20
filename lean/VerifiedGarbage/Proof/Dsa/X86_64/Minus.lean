@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.MinusCore
 public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
-import Mathlib.Tactic.Set
+import Mathlib.Tactic.Finiteness.Attr
 
 /-! # Modulus-minus constants in a linked DSA workspace -/
 

@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
 public import VerifiedGarbage.Impl.MillerRabin.AArch64.Layout
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.Ranges
 
 /-!

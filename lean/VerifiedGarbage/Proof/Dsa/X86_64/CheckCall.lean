@@ -3,8 +3,10 @@ module
 import VerifiedGarbage.Proof.Dsa.X86_64.MaskContext
 public import VerifiedGarbage.Proof.Dsa.X86_64.CheckFrame
 public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.EnterLeave
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
 
 /-! # Returning DSA validation predicates through the parent workspace -/
 

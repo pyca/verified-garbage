@@ -2,12 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentMask
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Parity
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## From `ResidentSaveG.lean` -/
 

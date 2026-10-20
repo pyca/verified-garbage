@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.RestoreSlots
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The public RSA frame saves arguments and all callee-saved registers -/
 

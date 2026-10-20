@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.DeriveFrame
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressCall
 import VerifiedGarbage.Proof.Argon2.AArch64.DeriveSaved
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

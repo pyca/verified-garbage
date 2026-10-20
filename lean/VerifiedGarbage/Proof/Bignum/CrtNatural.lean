@@ -1,7 +1,11 @@
 module
-public import Mathlib.Data.Int.ModEq
 
 import VerifiedGarbage.Proof.Bignum.CrtMath
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
 
 /-! # Natural-number CRT recombination agrees with the signed RFC coefficient -/
 

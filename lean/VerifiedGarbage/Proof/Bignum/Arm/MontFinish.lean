@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.Csub
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Impl.Bignum.Arm.MontFinish
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Canonical Montgomery output using the workspace temporary -/
 

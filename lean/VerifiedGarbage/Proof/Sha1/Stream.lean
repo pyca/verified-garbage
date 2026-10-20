@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Sha1
-public import VerifiedGarbage.Proof.Framework.Mem
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Streaming SHA-1: facts about the specification

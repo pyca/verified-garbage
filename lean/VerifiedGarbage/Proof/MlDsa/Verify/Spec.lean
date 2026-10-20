@@ -1,7 +1,8 @@
 module
 public import VerifiedGarbage.Spec.MlDsa
-
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
+
 
 /-!
 # ML-DSA: `verifyMu` as the verification functions compute it

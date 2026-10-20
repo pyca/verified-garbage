@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.Modes.AArch64.CbcChained
 public import VerifiedGarbage.Proof.Modes.AArch64.Setup
 public import VerifiedGarbage.Proof.Modes.Ctr
 import VerifiedGarbage.Proof.Modes.AArch64.Ctr
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Modes.AArch64.Words
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
 import VerifiedGarbage.Proof.Framework.AArch64.Syms

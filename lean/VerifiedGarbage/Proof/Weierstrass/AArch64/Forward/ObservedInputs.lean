@@ -1,8 +1,9 @@
 module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Logic.Function.Basic
 
 @[expose] public section
 

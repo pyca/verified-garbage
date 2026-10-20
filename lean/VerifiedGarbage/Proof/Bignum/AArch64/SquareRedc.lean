@@ -3,11 +3,8 @@ public import VerifiedGarbage.Impl.Bignum.AArch64.Square
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedcLoop
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 /-! REDC's final pending carry and exact Montgomery relation. -/
 

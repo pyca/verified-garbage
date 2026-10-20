@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Rel
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseA4
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-DSA signing on x86-64: `ExpandA` leaks only `ρ`

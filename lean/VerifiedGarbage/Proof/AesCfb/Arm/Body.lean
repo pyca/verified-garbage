@@ -10,6 +10,8 @@ meta import VerifiedGarbage.Proof.AesOfb.Arm.Body
 meta import VerifiedGarbage.Impl.AesCfb.Arm
 meta import VerifiedGarbage.Proof.AesCbc.Arm.CT
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Cmac.Frame
 
 /-!
 # AES-CFB128 on ARMv7: one block, and constant time

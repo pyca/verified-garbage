@@ -1,7 +1,8 @@
 module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Checkpoint
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Scalar
-import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 
 /-! # Save a resumed sampler's output cursor and success flag -/

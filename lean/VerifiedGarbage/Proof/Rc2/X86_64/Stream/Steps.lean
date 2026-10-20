@@ -10,9 +10,9 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Rc2.X86_64.ConstantTime
 public import VerifiedGarbage.Proof.Rc2.X86_64.Lookup
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Rc2.X86_64.Lit
 
 @[expose] public section
 

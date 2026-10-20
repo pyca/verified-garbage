@@ -3,6 +3,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.CrtSetup
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
 import VerifiedGarbage.Proof.Bignum.Arm.CrtAdvanceLink
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Named offsets for each CRT pointer advancement -/
 

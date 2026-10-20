@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Idea.Arm.Round
 public import VerifiedGarbage.Proof.Idea.Arith
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Idea.Arith32
 import VerifiedGarbage.Proof.Idea.Memory
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd

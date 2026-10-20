@@ -5,8 +5,9 @@ import VerifiedGarbage.Proof.Ed25519.X86.PointPowersLoop
 import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
 public import VerifiedGarbage.Impl.Ed25519.X86.PointMul
 public import VerifiedGarbage.Proof.Ed25519.X86.PointPowers
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.X86.Points
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Ed25519.X86.PointMulFrame`. -/
 

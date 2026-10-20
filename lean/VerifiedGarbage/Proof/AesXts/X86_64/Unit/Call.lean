@@ -5,8 +5,12 @@ public import VerifiedGarbage.Proof.AesXts.Spec
 import VerifiedGarbage.Proof.AesXts.Unit
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.AesXts.Alpha16
-import VerifiedGarbage.Proof.AesXts.X86_64.Body
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Impl.AesCbc.X86_64
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
 /-!
 # XTS-AES of data units on x86-64: a call of a whole-block function

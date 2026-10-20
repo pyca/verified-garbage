@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CombSelect
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.AArch64.CombLoop
 import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode

@@ -1,31 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Lit
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitAdx
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitAdx
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-public import VerifiedGarbage.Proof.Framework.LitShare
-meta import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Weierstrass.X86_64.P384Literals
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P384Literals
-import VerifiedGarbage.Impl.Ecdh.P384.X86_64
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.LitShare
+public import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Lit
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitAdx
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.Syms
-meta import VerifiedGarbage.Impl.Ecdh.P384.X86_64
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P384Literals
+meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitAdx
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
 # `vg_p384_mul_base` on x86-64: the code without its displacements, as literals

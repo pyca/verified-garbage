@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Multiword arithmetic on AArch64: a prime's workspace

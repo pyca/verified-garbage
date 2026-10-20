@@ -5,7 +5,9 @@ public import VerifiedGarbage.Proof.AesXts.Spec
 import VerifiedGarbage.Proof.AesXts.Unit
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.AesXts.AArch64.Body
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.AesCbc.AArch64.Block
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # XTS-AES of data units on AArch64: a call of a whole-block function

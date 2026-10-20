@@ -2,12 +2,12 @@ module
 public import VerifiedGarbage.Impl.Rsa.Arm.Div
 public import VerifiedGarbage.Proof.Rsa.Arm.DivContext
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import Batteries.Logic
 
 import VerifiedGarbage.Proof.Rsa.Arm.DivArgsCT
 import VerifiedGarbage.Proof.Bignum.Arm.SubtractIfGeCT
 import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 import VerifiedGarbage.Proof.Rsa.Arm.DivArgs
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The secret remainder comparison only controls masked selection -/
 

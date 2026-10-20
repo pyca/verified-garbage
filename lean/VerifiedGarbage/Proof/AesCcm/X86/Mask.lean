@@ -26,6 +26,8 @@ meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 meta import VerifiedGarbage.Proof.AesGcm.X86.Common
 meta import VerifiedGarbage.Proof.AesGcm.X86.Env
 meta import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-CCM on x86: masking the data, and the tag copied out

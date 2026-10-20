@@ -4,11 +4,11 @@ import VerifiedGarbage.Proof.X448.Arm.Initial
 import VerifiedGarbage.Proof.X448.Arm.DecodeAll
 public import VerifiedGarbage.Proof.X448.Arm.Save
 public import VerifiedGarbage.Proof.X448.Arm.Env
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Spec.X448.Contract
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.X448.Bytes
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: reading the arguments

@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Impl.Aes.X86_64.AesNi
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Gcm.X86_64.Rev
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Semantics
 
 @[expose] public section

@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Dsa.X86.Checks
 import VerifiedGarbage.Proof.Dsa.X86.ValidateLower
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Range masks for private scalars and public group elements -/
 

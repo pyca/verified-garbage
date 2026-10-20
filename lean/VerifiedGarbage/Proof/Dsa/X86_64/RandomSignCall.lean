@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Backend
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Call any registered supplied-nonce backend, retaining its contract and frame. -/
 @[expose] public section

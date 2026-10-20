@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNafWide
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
 import VerifiedGarbage.Proof.Mont.AArch64.Chain
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 @[expose] public section
 namespace VG.Proof.Weierstrass.AArch64.PubNafWide
 open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass.AArch64.PubNaf

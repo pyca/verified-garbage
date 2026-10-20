@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+import Batteries.Tactic.Init
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ML-DSA: signing's values, from its inputs

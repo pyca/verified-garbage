@@ -1,59 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowCore
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowCore
 public import VerifiedGarbage.Spec.MlDsa.ResponseLow
-meta import VerifiedGarbage.Spec.MlDsa.ResponseLow
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMath
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseMath
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Vec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Loop
-import VerifiedGarbage.Proof.MlDsa.Pack.Stream
-import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-import VerifiedGarbage.Spec.MlDsa.PositiveNtt
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowCore
+meta import VerifiedGarbage.Spec.MlDsa.ResponseLow
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.WriteBytes
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMath
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseMath
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Vec
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Loop
-meta import VerifiedGarbage.Proof.MlDsa.Pack.Stream
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-meta import VerifiedGarbage.Spec.MlDsa.PositiveNtt
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-! ## From `ResponseLowCorrect.lean` -/
 

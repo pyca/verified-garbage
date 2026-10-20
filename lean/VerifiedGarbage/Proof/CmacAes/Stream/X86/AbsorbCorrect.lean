@@ -1,12 +1,12 @@
 module
 
 import VerifiedGarbage.Proof.CmacAes.Stream.X86.Absorb
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Call
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Streaming AES-CMAC on x86: `vg_cmac_aes_absorb` is correct

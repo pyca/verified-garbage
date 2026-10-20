@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductWord
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVec
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section

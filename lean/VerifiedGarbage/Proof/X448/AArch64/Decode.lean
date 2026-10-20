@@ -3,13 +3,10 @@ module
 public import VerifiedGarbage.Proof.X448.Pairs
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
-import Batteries.Logic
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Impl.X448.AArch64
-import VerifiedGarbage.Proof.X448.Ladder
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on AArch64: decoding the u-coordinate

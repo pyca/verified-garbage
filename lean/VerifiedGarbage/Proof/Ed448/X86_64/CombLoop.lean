@@ -5,7 +5,8 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseStep
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseLoop
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! The 114 iterations of the four-column Ed448 fixed-base comb. -/
 

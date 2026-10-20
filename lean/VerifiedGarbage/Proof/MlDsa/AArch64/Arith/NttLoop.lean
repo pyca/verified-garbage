@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.NttBfly
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Table
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on AArch64: the blocks and layers of `NTT` and `NTT⁻¹`

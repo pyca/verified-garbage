@@ -3,8 +3,10 @@ module
 import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Encode
 public import VerifiedGarbage.Impl.MlKem.AArch64.Encode
 public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.EncBase
-public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # Public ByteEncode12 proof using eight-coefficient blocks -/
 

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
 import VerifiedGarbage.Proof.Bignum.Arm.RoundFinishSteps
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Exact stores and public loop condition at the end of a Montgomery round -/
 

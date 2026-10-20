@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Bignum.X86.ModulusBounds
 import VerifiedGarbage.Proof.Bignum.X86.ModulusFinish
 import VerifiedGarbage.Proof.Bignum.ModulusCheckMath
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # i686 modulus validation agrees with the shared RSA specification -/
 

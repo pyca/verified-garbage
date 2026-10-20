@@ -1,5 +1,8 @@
 module
 public import VerifiedGarbage.Proof.Bignum.CrtFrame
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 
 /-! The wider window's table fits the existing public scratch contract.

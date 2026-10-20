@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Blake2.X86.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Blake2.X86.CompressB.G
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section

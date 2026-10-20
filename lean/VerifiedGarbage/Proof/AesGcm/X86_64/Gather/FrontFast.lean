@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: a TLS record's text from the entry

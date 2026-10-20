@@ -1,10 +1,10 @@
 module
-public import Mathlib.Data.List.Induction
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Cmac
 
 import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Streaming AES-CMAC: lemmas about the state

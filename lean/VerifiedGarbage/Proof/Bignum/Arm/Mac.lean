@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.Mac
 public import VerifiedGarbage.Proof.Bignum.Arm.WideMul
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The exact multiply-accumulate value and its carry, on ARMv7 -/
 

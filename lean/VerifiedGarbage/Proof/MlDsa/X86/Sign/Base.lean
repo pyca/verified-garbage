@@ -4,9 +4,8 @@ public import VerifiedGarbage.Impl.MlDsa.X86.Sign.Sign
 public import VerifiedGarbage.Proof.MlKem.X86.Common
 public import VerifiedGarbage.Proof.MlKem.X86.Top
 public import VerifiedGarbage.Proof.MlDsa.Sign.Leak
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86.TopSeq
-import VerifiedGarbage.Proof.MlKem.X86.Table
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on x86 (32-bit): the setting of the proof

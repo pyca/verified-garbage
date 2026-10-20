@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Argon2.HPrime
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
+import Mathlib.Tactic.Conv
 
 /-! Merged from `Proof.Argon2.AArch64.InitialFinish`. -/
 

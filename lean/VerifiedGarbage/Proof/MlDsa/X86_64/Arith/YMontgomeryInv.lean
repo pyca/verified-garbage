@@ -3,55 +3,17 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
 public import VerifiedGarbage.Spec.MlDsa.Montgomery
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
 import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Impl.MlKem.X86_64.NttRegs
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.MontgomeryCore
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay21
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay21
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomery
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMul
-import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
-import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-meta import VerifiedGarbage.Impl.MlKem.X86_64.NttRegs
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
+meta import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
+meta import VerifiedGarbage.Spec.MlDsa.Montgomery
+meta import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.WriteBytes
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.Words
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.MontgomeryCore
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay21
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay21
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomery
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMul
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-meta import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
-meta import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 
 @[expose] public section
 

@@ -1,10 +1,8 @@
 module
-public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.MlDsa
 
 import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
 import VerifiedGarbage.Proof.MlDsa.Arith.Zq
-import VerifiedGarbage.Proof.MlDsa.Arith.VectorNtt
 
 /-! Unsigned doubleword coefficients used between lazy forward NTT layers. -/
 

@@ -1,60 +1,39 @@
 module
 
 public import VerifiedGarbage.Proof.Sha512.Md
-meta import VerifiedGarbage.Proof.Sha512.Md
 public import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
-meta import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
 public import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
-meta import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
 import VerifiedGarbage.Proof.MdStream.X86_64.Words
-meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Verified
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Verified
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
-meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
 public import VerifiedGarbage.Impl.Sha512.X86_64.Stream
 public import VerifiedGarbage.Proof.Sha512.X86_64.Compress
-meta import VerifiedGarbage.Impl.Sha512.X86_64.Stream
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Verified
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Verified
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
-meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.CT
-import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Compress
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Sha512.Md
+meta import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
+meta import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
+meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Verified
+meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
+meta import VerifiedGarbage.Impl.Sha512.X86_64.Stream
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Compress
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Verified
+meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.CT
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Compress
 
 /-!
 # Streaming SHA-512 on x86-64: `update` and `finalize`

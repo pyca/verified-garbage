@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Decrypt
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 import VerifiedGarbage.Proof.Bignum.Words
 

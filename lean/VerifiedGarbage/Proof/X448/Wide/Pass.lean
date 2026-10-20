@@ -1,12 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.X448.Wide.PassInit
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.X448.Wide.CarryStep
 public import VerifiedGarbage.Proof.X448.Wide.Column
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Impl.X448.AArch64
 
 /-! Untrusted: in-place or disjoint wide carry propagation. -/
 

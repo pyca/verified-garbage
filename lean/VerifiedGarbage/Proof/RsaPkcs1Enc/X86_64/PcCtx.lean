@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Precomputed
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncFrame
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSAES-PKCS1-v1_5 encryption with a precomputed public key on x86-64: the precondition

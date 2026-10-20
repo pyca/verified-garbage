@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Seed.Memory
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Eight blocks of SEED on ARMv7

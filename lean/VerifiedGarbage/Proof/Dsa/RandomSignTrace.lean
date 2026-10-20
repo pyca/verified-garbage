@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.RandomSignRemaining
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.RandomSignResult
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Separate each sampling trace from its following signing-result marker. -/
 @[expose] public section

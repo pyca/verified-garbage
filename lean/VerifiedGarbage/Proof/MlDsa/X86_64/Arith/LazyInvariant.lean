@@ -1,13 +1,11 @@
 module
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.MlDsa.Arith.LazyButterfly
 public import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
 
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyLay
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Each layer increases the nonnegative coefficient bound by 2q, while
 preserving the residues of the specification's canonical NTT. -/

@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Arithmetic
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Finiteness.Attr
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-! # Loading DSA's padded components into a child workspace -/
 

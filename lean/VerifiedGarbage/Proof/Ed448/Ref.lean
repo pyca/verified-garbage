@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Root
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.X25519.Bytes
 public import VerifiedGarbage.Spec.Ed448
 import VerifiedGarbage.Proof.Ed448.Scalar

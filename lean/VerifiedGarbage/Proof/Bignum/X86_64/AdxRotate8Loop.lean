@@ -3,7 +3,6 @@ public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRotate8
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tile
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Math
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 

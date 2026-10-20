@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Seed.X86.ExpandKey
 public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Seed.X86.Lanes
 public import VerifiedGarbage.TCB.X86.Target
 

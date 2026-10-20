@@ -2,8 +2,8 @@ module
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Theta
 
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

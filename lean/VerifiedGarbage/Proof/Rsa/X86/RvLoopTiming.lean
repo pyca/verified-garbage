@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvHelperTiming
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Relate fixed-count recovery loops while their secret arithmetic differs -/
 

@@ -2,7 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Data
 import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # FFDH key generation on x86-64: initialize the public output -/
 

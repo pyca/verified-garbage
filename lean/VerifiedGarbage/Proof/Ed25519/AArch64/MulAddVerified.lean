@@ -1,42 +1,33 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.MulAdd
-meta import VerifiedGarbage.Impl.Ed25519.AArch64.MulAdd
 import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Framework.Lit
-meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMain
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarWord
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.Field64
-import VerifiedGarbage.Proof.Ed25519.Scalar
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMain
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarWord
-meta import VerifiedGarbage.Proof.Ed25519.Bytes
-meta import VerifiedGarbage.Proof.Ed25519.Field64
-meta import VerifiedGarbage.Proof.Ed25519.Scalar
-meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Impl.Ed25519.AArch64.MulAdd
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+meta import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Merged from `Proof.Ed25519.AArch64.MulAddLit`. -/
 

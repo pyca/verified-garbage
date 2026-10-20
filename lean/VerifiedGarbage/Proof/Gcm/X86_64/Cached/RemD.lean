@@ -8,8 +8,11 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGD
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
 
 /-!
 # The blocks after the last group, decrypted

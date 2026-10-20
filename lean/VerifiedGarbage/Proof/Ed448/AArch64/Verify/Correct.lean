@@ -2,45 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Hash
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Impl.Ed448.Formulas
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLoop
-public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
-public import VerifiedGarbage.Proof.Ed448.ScalarWords
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.AArch64.Syms
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.OffsetBelow
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Sha3.AArch64.Call
-public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
-import VerifiedGarbage.Impl.Ed448.Formulas
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLoop
-import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
-import VerifiedGarbage.Proof.Ed448.ScalarWords
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sha3.AArch64.Call
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 
 /-!
 # Ed448 verification on AArch64: the frame's body

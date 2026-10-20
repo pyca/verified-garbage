@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Weierstrass.Complete
 public import VerifiedGarbage.Spec.BrainpoolP256r1
 import VerifiedGarbage.Proof.BrainpoolP256r1.Prime

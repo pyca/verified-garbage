@@ -4,14 +4,11 @@ public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Call
 import VerifiedGarbage.Proof.CmacAes.X86.Finalize
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 public import VerifiedGarbage.Proof.Cmac.Stream
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Cmac.Block
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.CmacAes.X86.Subkeys
-import VerifiedGarbage.Proof.CmacAes.X86.UpdateCT
-import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Streaming AES-CMAC on x86: arithmetic, copies and saved registers

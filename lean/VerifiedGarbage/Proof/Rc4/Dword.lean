@@ -1,8 +1,10 @@
 module
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 
 import VerifiedGarbage.Proof.Rc4.Memory
+import VerifiedGarbage.Proof.Framework.InstancePriority
+public import VerifiedGarbage.TCB.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # RC4: scanning the table a doubleword at a time

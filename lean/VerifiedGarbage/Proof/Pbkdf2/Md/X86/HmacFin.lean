@@ -2,13 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Block
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Finalize
-public import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Pbkdf2.Memory
 import VerifiedGarbage.Proof.Pbkdf2.MdHmac
 import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # HMAC over a Merkle–Damgård hash function on x86 (32-bit): `finalize`, correct

@@ -2,34 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Last3
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.ContractPost
-import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Poly1305.Stream
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
-import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize
-import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
-import VerifiedGarbage.Proof.Poly1305.X86_64.Init
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 
 /-!
 # ChaCha20-Poly1305 on x86-64: `Verified`

@@ -1,42 +1,20 @@
 module
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Run
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Short
 import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
-public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
-import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Env
-public import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Gcm.Ctr
-public import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.AesGcm.X86_64.Env
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Gcm.Ctr
-import VerifiedGarbage.Proof.Gcm.Stream
 
 /-!
 # AES-GCM's short path on x86-64: copying bytes

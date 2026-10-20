@@ -1,45 +1,21 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.Comb
-meta import VerifiedGarbage.Impl.Ed25519.X86.Comb
 import VerifiedGarbage.Proof.Ed25519.X86.CombLit
-meta import VerifiedGarbage.Proof.Ed25519.X86.CombLit
 public import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
 import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
-meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
-meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
-import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarStep
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.NativeTaint
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.NativeHintData
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.X25519.X86.Fold
-import VerifiedGarbage.Proof.X25519.X86.Freeze
-meta import VerifiedGarbage.Proof.Ed25519.Bytes
-meta import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
-meta import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarStep
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Impl.Ed25519.X86.Comb
+meta import VerifiedGarbage.Proof.Ed25519.X86.CombLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
+meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.X25519.X86.Fold
-meta import VerifiedGarbage.Proof.X25519.X86.Freeze
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-! The comb has a public trace: its loops' counters (`esi`) are public, and every address is
 the workspace pointer `edi` plus a constant or `8 esi`, or the tables' address plus

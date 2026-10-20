@@ -1,14 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.Arm.CrtValues
-meta import VerifiedGarbage.Impl.Rsa.Arm.CrtValues
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Impl.Rsa.Arm.CrtValues
+meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # `vg_rsa_crt_values` on ARMv7: the pieces the taint analysis checks

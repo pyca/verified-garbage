@@ -2,12 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rounds
 public import VerifiedGarbage.Proof.ChaCha20.Keystream
-public import VerifiedGarbage.Proof.Framework.PlainSimp
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

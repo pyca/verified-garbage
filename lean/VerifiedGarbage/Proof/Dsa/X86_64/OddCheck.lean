@@ -1,13 +1,16 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 import VerifiedGarbage.Proof.Dsa.X86_64.LastByte
 import VerifiedGarbage.Proof.Dsa.X86_64.Parity
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.Masks
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-! # Public oddness checks on the encoded DSA moduli -/
 

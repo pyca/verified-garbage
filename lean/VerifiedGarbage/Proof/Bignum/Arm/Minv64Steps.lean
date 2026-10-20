@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.Newton64Steps
 import VerifiedGarbage.Proof.Bignum.Arm.Sub64
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The initial approximation, lifting step, and final negation -/
 

@@ -3,33 +3,17 @@ module
 import VerifiedGarbage.Proof.Ed448.Arm.Verify.Hash
 import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyLocal
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Ed448.Arm.Verify
 public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Layout
-public import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
 import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
-import VerifiedGarbage.Proof.X25519.Arm.Pass
-import VerifiedGarbage.Proof.X448.Arm.Carry
-import VerifiedGarbage.Proof.X448.Arm.Init
-import VerifiedGarbage.Proof.X448.Arm.MulLoop
-import VerifiedGarbage.Proof.X448.Arm.Normalize
-import VerifiedGarbage.Proof.X448.Arm.RowPass
-import VerifiedGarbage.Proof.X448.Arm.Step
 
 /-!
 # Ed448 verification on ARMv7: the challenge, the equation, and the body

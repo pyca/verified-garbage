@@ -20,6 +20,10 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 meta import VerifiedGarbage.Proof.Dsa.SizeBounds
 meta import VerifiedGarbage.Proof.Dsa.Encoding
 public import VerifiedGarbage.Proof.Dsa.SizeBounds
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Constant time of the complete x86-64 key derivation -/
 

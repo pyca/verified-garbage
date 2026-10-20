@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 public import VerifiedGarbage.Impl.Rsa.X86.PrivChecked
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Runtime byte copying, with byte-exact output and memory preservation -/
 

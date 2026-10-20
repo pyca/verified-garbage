@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Sha512
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Std.Data.DTreeMap.Internal.Balancing
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Streaming SHA-512: facts about the specification

@@ -2,8 +2,9 @@ module
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonContract
 
 import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

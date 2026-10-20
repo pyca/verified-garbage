@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Semantics
 public import VerifiedGarbage.Proof.Sha3.Spec
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

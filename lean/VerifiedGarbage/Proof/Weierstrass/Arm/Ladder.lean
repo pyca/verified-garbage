@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.Pow
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
 import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
 import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Short Weierstrass curves on 32-bit ARM: the ladder

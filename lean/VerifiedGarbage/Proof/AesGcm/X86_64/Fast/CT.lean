@@ -18,6 +18,14 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Aad
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM `seal_split`'s path for TLS records, in two runs

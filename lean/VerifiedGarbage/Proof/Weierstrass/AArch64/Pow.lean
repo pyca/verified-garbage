@@ -1,10 +1,10 @@
 module
 
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Mont.AArch64.Ops
-public import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Impl.Weierstrass.AArch64
+import VerifiedGarbage.Impl.Weierstrass.Slots
 
 /-!
 # Short Weierstrass curves on AArch64: the registers powers and loops change

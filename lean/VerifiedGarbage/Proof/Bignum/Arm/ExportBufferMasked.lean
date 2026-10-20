@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.ExportBufferMasked
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.Arm.ExportBEArgs
 import VerifiedGarbage.Proof.Bignum.Arm.ReverseBuffer
@@ -11,7 +9,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.MaskOutput
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
 import VerifiedGarbage.Proof.Bignum.ReadPrefix
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Bignum.Arm.ReadPrefix
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Exact accepted output and zero rejected output from a wide CRT buffer -/
 

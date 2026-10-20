@@ -1,6 +1,4 @@
 module
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.X448.AArch64.Fast
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
@@ -11,7 +9,8 @@ import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Convert
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.Framework.Mem
+public import Mathlib.Tactic.ToDual
 
 /-!
 # X448 on AArch64: saving `v8`–`v15`

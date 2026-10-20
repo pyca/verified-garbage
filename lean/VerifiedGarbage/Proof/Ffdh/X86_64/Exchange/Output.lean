@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Arithmetic
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Exchange
 import VerifiedGarbage.Proof.Bignum.X86_64.Store
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # FFDH exchange on x86-64: encode or mask the shared value -/
 

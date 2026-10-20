@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Dsa.RandomResult
 
+import Std.Data.DTreeMap.Internal.Balancing
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Scalar presence, status, and consumed bytes are fixed by the public trace. -/

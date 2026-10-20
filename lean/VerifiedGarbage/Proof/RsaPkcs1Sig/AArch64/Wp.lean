@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
-public import VerifiedGarbage.Proof.Framework.PlainSimp
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # RSA signatures on AArch64: the instructions on the stack

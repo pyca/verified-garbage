@@ -12,6 +12,8 @@ meta import VerifiedGarbage.Proof.Camellia.CtrScratch
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Camellia.X86_64.ModesLit
 meta import VerifiedGarbage.Impl.StackScratch.X86_64
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Camellia-CTR on x86-64 meets its contracts

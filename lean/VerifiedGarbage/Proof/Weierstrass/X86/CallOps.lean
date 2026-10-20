@@ -3,8 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontCall
 public import VerifiedGarbage.Proof.Mont.X86.Loop
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Mont.X86.Ops
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Field operations by calls, on x86 (32-bit)

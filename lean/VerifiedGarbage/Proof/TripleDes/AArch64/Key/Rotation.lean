@@ -4,11 +4,11 @@ import VerifiedGarbage.Proof.TripleDes.AArch64.KeySteps
 import VerifiedGarbage.Proof.TripleDes.KeySchedule
 public import VerifiedGarbage.Proof.Rc2.AArch64.Lookup
 public import VerifiedGarbage.Impl.TripleDes.AArch64.ExpandKey
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 @[expose] public section
 

@@ -3,10 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotBatch
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
-import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

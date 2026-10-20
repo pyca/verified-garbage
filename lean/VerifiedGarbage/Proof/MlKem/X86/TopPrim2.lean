@@ -5,9 +5,9 @@ public import VerifiedGarbage.Spec.MlKem.Poly
 import VerifiedGarbage.Proof.MlKem.X86.Cbd
 import VerifiedGarbage.Proof.MlKem.X86.Encode12
 import VerifiedGarbage.Proof.MlKem.X86.Decode12
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86.TopCall
-import VerifiedGarbage.Proof.MlKem.X86.Table
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM on x86 (32-bit): calls of the primitives of two arguments

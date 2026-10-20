@@ -4,10 +4,10 @@ public import VerifiedGarbage.Impl.Argon2.X86_64.ClearBlock
 public import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitClear
 public import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
 public import VerifiedGarbage.Proof.Framework.Covers
-public import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Zero every word, preserving the enclosing loop's registers and memory. -/
 

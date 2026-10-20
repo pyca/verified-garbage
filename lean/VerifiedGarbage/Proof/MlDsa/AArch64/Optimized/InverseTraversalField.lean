@@ -6,9 +6,10 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Arithmetic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttSpec
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
 
 @[expose] public section
 

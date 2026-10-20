@@ -6,13 +6,12 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.InitialLayout
 public import VerifiedGarbage.Proof.Argon2.AArch64.InitialArgs
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Backend
 public import VerifiedGarbage.Proof.Argon2.Initial
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Update
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Init
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
 
 @[expose] public section
 

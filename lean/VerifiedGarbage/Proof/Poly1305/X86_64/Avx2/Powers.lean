@@ -1,10 +1,10 @@
 module
 
-public import Mathlib.Tactic.Ring
 public import Mathlib.Data.Nat.ModEq
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Mul
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Poly1305.Horner
+import Mathlib.Tactic.Ring.RingNF
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Poly1305 on x86-64 with AVX2: the powers of `r`

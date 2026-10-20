@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 
 import VerifiedGarbage.Proof.TripleDes.X86_64.Permutation
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

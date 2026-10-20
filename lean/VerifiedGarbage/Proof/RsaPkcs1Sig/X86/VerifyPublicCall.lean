@@ -2,12 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicPre
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyCall
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLocal
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyRegions
 import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Framework.Sig
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-! # Calling checked public RSA retains every immutable verification input -/
 

@@ -1,29 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.AArch64.Ecb
-meta import VerifiedGarbage.Proof.Cast5.AArch64.Ecb
-public import VerifiedGarbage.Proof.Cast5.AArch64.Lit
-meta import VerifiedGarbage.Proof.Cast5.AArch64.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.ConstMem
-meta import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 public import VerifiedGarbage.Spec.Cast5.Contract
-meta import VerifiedGarbage.Spec.Cast5.Contract
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Cast5.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Cast5.AArch64.Ecb
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+meta import VerifiedGarbage.Spec.Cast5.Contract
+meta import VerifiedGarbage.Proof.Cast5.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # CAST5 ECB on AArch64: verified against the shared contracts

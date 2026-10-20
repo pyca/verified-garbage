@@ -1,11 +1,9 @@
 module
-public import Batteries.Logic
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.TCB.Arm.Isa
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Inline
-import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Frames (ARMv7)

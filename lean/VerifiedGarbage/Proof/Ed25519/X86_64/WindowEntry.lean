@@ -4,10 +4,11 @@ public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
 import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointTableAddr
 public import VerifiedGarbage.Proof.Ed25519.BaseTable
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddMemory
 import VerifiedGarbage.Proof.Ed25519.X86_64.Points
 import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Adding a table entry

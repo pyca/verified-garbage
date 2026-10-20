@@ -1,9 +1,6 @@
 module
 
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Bignum.Words
-public import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcColumns
 
 @[expose] public section

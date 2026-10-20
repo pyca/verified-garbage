@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejBoundedBody
 import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_rej_bounded_poly`, correctness

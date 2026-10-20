@@ -3,31 +3,29 @@ module
 public import VerifiedGarbage.Impl.CmacAes.AArch64.Aese
 public import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateLoop
 public import VerifiedGarbage.Spec.Cmac.Contract
-meta import VerifiedGarbage.Impl.CmacAes.AArch64.Aese
 import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
-meta import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
 import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
-meta import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
 import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Gcm.Spec
-meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Impl.CmacAes.AArch64.Aese
+meta import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateLoop
+meta import VerifiedGarbage.Spec.Cmac.Contract
+meta import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
+meta import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Gcm.Spec
 
 /-! The register-resident CMAC loop, proven against the existing shared
 contract. Memory is unchanged until the final chaining value is stored. -/

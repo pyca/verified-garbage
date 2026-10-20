@@ -1,8 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.R2
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.Math

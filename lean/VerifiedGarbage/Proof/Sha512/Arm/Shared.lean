@@ -14,6 +14,9 @@ public import VerifiedGarbage.Proof.Sha512.Digest
 public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.MdStream.Arm.Words
 public import VerifiedGarbage.Proof.MdStream.Prefix
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Sha512 on Arm: the shared contracts

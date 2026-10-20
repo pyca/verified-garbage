@@ -3,14 +3,13 @@ module
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
 public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Boundary
 public import VerifiedGarbage.Proof.Sha3.Lanes
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
 import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

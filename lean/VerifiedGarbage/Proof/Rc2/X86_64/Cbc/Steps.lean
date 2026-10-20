@@ -3,20 +3,12 @@ module
 public import VerifiedGarbage.Proof.Rc2.X86_64.Block
 public import VerifiedGarbage.Impl.Rc2.X86_64.Cbc
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Proof.Rc2.CbcMemory
-import VerifiedGarbage.Proof.Rc2.Word
-import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Finish
+import VerifiedGarbage.Proof.Rc2.X86_64.Lit
 
 @[expose] public section
 

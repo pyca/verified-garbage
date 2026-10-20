@@ -8,6 +8,10 @@ public import VerifiedGarbage.Proof.AesXts.Unit
 import VerifiedGarbage.Proof.CmacAes.X86.Save
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # XTS-AES of data units on x86: the code between the calls

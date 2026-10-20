@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Schedule
 public import VerifiedGarbage.Proof.Sha512.Spec
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # SHA-512 with the SHA512 extension: the values in the AVX registers

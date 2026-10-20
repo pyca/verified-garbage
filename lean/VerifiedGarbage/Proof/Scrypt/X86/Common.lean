@@ -2,13 +2,11 @@ module
 
 import VerifiedGarbage.Proof.Scrypt.X86.Salsa
 public import VerifiedGarbage.Impl.Scrypt.X86.BlockMix
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.Sha256.X86.Lit
 public import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
 public import VerifiedGarbage.Spec.Scrypt.Contract
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!

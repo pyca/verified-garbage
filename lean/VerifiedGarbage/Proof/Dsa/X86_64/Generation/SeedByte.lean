@@ -3,8 +3,9 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedAdd
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.Bignum.Words
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Words
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
 
 /-! # Carry propagation for one wrapped-seed byte -/
 

@@ -3,9 +3,7 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Common
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: `pbkdf2`'s parts

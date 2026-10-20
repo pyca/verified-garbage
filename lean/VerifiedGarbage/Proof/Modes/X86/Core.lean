@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Impl.Modes.X86.Seq
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Spec.Cbc
 import VerifiedGarbage.Proof.Framework.X86.Syms
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # What the modes need of a block cipher's core, on x86 (32-bit)

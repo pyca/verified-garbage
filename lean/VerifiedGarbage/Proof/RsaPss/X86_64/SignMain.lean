@@ -64,6 +64,7 @@ import VerifiedGarbage.Proof.RsaPss.Encoding
 import VerifiedGarbage.Proof.RsaPss.X86_64.BufferCopy
 import VerifiedGarbage.Proof.RsaPss.X86_64.DirectLen
 import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirect
+import Mathlib.Tactic.Set
 
 /-!
 # RSASSA-PSS on x86-64: the encoding

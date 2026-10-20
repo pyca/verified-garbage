@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.SubModBuffers
 public import VerifiedGarbage.Proof.Bignum.Arm.WideMul
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Preserve public buffer addresses and carry the secret borrow into addition -/
 

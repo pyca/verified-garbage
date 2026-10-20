@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Call
 import VerifiedGarbage.Proof.Dsa.AArch64.EnterLeave
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # DSA calls with a result binding and implicit modulus input -/
 

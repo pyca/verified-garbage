@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Sm4.CtrCipher
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Sm4.Arm.EcbCall
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # SM4's ECB functions on ARMv7 as the modes' core

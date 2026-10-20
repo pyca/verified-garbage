@@ -4,8 +4,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubExp
 public import VerifiedGarbage.Proof.Bignum.CrtGPow
 public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.R2
 import VerifiedGarbage.Proof.Bignum.X86_64.Double
 import VerifiedGarbage.Proof.Bignum.X86_64.Row

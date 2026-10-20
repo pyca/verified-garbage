@@ -3,13 +3,10 @@ module
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
 public import VerifiedGarbage.Proof.Modes.Words
 public import VerifiedGarbage.Impl.Modes.AArch64.Ctr
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.Range
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Copying and XORing blocks a word at a time, on AArch64

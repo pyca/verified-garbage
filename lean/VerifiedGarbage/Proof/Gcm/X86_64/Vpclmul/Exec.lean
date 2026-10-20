@@ -19,6 +19,7 @@ compute in the field is in `Vpclmul/Ghash.lean`, which needs the algebra of
 `Proof/Gcm/Poly.lean`; this module does not, so that proofs about where the
 products go (such as the interleaved loops of `Proof/Gcm/X86_64/Stitch/`)
 import it alone.
+import VerifiedGarbage.Proof.Framework.Mem
 -/
 
 @[expose] public section

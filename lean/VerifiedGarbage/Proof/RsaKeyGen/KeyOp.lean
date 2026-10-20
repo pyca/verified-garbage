@@ -1,12 +1,17 @@
 module
-public import Mathlib.Data.Int.ModEq
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.RsaKeyGen
 
 import VerifiedGarbage.Proof.RsaKeyGen.KeyCheck
 import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
 import VerifiedGarbage.Proof.Rsa.KeyMath
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Order.RelClasses
+import Mathlib.Data.Nat.Basic
+import Mathlib.Tactic.Finiteness.Attr
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # An RSA key from its primes: `keyFromPrimes` as `vg_rsa_keygen_key` computes it

@@ -10,6 +10,8 @@ meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Derive
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Keys
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-GCM-SIV on x86: the keys are constant time

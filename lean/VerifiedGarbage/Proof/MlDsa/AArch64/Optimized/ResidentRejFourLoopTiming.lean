@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejParsePubl
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBodyTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourLoop
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

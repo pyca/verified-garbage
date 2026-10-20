@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawResult
 public import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-! Convert the right-aligned sampled scalar to the signer's nonce encoding. -/

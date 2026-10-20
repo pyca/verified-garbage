@@ -2,8 +2,8 @@ module
 
 import VerifiedGarbage.Proof.MlKem.X86.TopSeq
 public import VerifiedGarbage.Proof.MlKem.X86.TopPrim3
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86.TopPrim
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM on x86 (32-bit): the calls of three and four arguments, with their arguments

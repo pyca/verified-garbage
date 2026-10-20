@@ -6,12 +6,12 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseStaticCore
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ProductBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBatch
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! ## From `ProductFive.lean` -/
 

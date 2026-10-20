@@ -2,7 +2,10 @@ module
 public import VerifiedGarbage.Proof.Rc4.Arm.Lookup
 
 import VerifiedGarbage.Proof.Rc4.Arm.Replace
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Rc4.Arm.Run
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! # RC4 on ARMv7: one PRGA step -/
 

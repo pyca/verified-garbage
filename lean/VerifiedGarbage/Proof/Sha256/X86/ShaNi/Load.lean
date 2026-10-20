@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Block
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Compress
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset

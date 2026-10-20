@@ -3,8 +3,6 @@ module
 import VerifiedGarbage.Proof.RsaOaep.X86_64.DecLoops
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
 public import VerifiedGarbage.Proof.RsaOaep.Scan
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

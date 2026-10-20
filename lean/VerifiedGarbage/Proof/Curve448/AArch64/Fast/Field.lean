@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Small
 public import VerifiedGarbage.Proof.X448.Field
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Mul
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sub
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # The field operations, modulo `p`

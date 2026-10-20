@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.X448.X86.Carry
 import VerifiedGarbage.Proof.X448.Bytes
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): limbs from bytes, and `S < L`

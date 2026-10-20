@@ -1,9 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Framework.PowLit
 
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Data.Fintype.Card
-import Mathlib.Data.Fintype.Fin
+import Mathlib.Data.Fintype.EquivFin
 
 /-! # Every reduced residue has a Montgomery representation -/
 

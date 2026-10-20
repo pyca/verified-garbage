@@ -1,10 +1,9 @@
 module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Entry
 
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Sha3.X86_64.Round
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-DSA verification on x86-64: calls of the samplers

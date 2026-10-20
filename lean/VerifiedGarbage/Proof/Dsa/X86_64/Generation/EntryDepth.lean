@@ -5,6 +5,14 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashDepth
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ControllerDepth
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateDepth
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateDepth
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! # Stack bound for the complete parameter-generation entry point -/
 

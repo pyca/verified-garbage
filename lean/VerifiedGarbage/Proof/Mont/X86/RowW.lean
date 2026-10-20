@@ -7,10 +7,10 @@ public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Mont.X86.Row
 import VerifiedGarbage.Proof.Mont.X86.Loop
 import VerifiedGarbage.Proof.Mont.X86.WordOps
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.X86.Step
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # A multiply-accumulate row as a loop (x86, 32-bit)

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Rsa.X86.PrivStatusMask
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Rsa.X86.PrivZeroTest
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Complete branchless private-result release decision -/
 

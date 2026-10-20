@@ -3,11 +3,18 @@ module
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Pow
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Gcm.Split
-public import Mathlib.Tactic.LinearCombination
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # AES-GCM's short path on x86-64: GHASH of the buffer, in the field

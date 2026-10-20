@@ -3,11 +3,10 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.BallLoop
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_rej_bounded_poly`, correctness

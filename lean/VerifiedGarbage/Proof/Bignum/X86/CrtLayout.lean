@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Impl.Bignum.X86.CrtLayout
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The CRT workspace fits the existing shared RSA scratch contract -/
 

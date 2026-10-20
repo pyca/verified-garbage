@@ -3,22 +3,13 @@ module
 public import VerifiedGarbage.Impl.Ed25519.X86.VerifyWindow
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.ReadHalves
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.X25519.X86.Basic
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Ed25519.X86.PointTable
-import VerifiedGarbage.Proof.Framework.Bswap
+public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.X25519.X86.Fold
-import VerifiedGarbage.Proof.X25519.X86.Freeze
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Ed25519.X86.Workspace
 
 /-!
 # Ed25519 verification on x86 (32-bit): `-[1]B … -[15]B` in a static

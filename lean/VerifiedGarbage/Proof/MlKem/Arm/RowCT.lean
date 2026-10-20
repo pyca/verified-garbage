@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.MlKem.Arm.RowSum
 import VerifiedGarbage.Proof.MlKem.Arm.HashCT
 import VerifiedGarbage.Proof.MlKem.Arm.Loops
 import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM on 32-bit ARM: a row of `Â ∘ v̂` in constant time

@@ -3,8 +3,6 @@ module
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Impl.Aes.AArch64.Aese
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Mem
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # The Armv8 AES instructions are FIPS 197's rounds

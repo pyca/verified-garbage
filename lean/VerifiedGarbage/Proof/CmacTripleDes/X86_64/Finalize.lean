@@ -2,18 +2,15 @@ module
 
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Update
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Cmac.Mem
 public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Contract
-public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
 public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Save
-public import VerifiedGarbage.Proof.TripleDes.SboxTables
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
 
 /-!
 # TDEA-CMAC on x86-64: `vg_cmac_triple_des_finalize`, the last block

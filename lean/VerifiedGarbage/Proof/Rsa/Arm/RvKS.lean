@@ -3,6 +3,8 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KeyArrs
 public import VerifiedGarbage.Proof.Rsa.Arm.RvBase
 
 import VerifiedGarbage.Proof.Rsa.Arm.RvViews
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # `vg_rsa_recover_primes` on ARMv7: a stage in the key working space
 

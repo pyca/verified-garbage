@@ -2,7 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Data
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Bound
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Algebra.GroupWithZero.Nat
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # FFDH on x86-64: the bound scan preserves the key-generation inputs -/
 

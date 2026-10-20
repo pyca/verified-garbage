@@ -5,9 +5,12 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashPlan
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashSequence
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PShape
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Hash and shape the complete unreduced p candidate -/
 

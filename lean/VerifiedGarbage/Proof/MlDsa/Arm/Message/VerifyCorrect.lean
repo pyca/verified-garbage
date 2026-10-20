@@ -5,6 +5,10 @@ import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCorrect
 import VerifiedGarbage.Proof.MlDsa.Arm.Message.HashMu
 import VerifiedGarbage.Proof.MlKem.Arm.Common
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on ARMv7, `verify_message`: correctness

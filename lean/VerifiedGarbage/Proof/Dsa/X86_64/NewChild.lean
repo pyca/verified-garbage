@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.ChildBases
 public import VerifiedGarbage.Proof.Dsa.X86_64.ChildCount
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
-import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Creating a linked arithmetic child from its public operand length -/
 

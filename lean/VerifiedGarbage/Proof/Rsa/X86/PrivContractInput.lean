@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Rsa.X86.PrivRegions
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Shared private RSA preconditions establish the i686 wrapper inputs -/
 

@@ -5,12 +5,17 @@ public import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Subgroup
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Data.Nat.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH public-key validation on x86-64: the main computation -/
 

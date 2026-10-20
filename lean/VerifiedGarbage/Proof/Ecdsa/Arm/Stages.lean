@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
 import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # ECDSA on 32-bit ARM: the setup and the tables of bits

@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.X448.Wide.Column
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Untrusted: wide coefficient addition for reduction modulo the X448 prime. -/

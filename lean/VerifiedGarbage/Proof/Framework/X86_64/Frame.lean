@@ -4,7 +4,7 @@ public import VerifiedGarbage.TCB.X86_64.Isa
 
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Frames (x86-64)

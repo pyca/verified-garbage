@@ -1,14 +1,7 @@
 module
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.Set
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.CmacTripleDes.X86
 public import VerifiedGarbage.Proof.CmacTripleDes.X86.Contract
-public import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize
 import VerifiedGarbage.Proof.CmacTripleDes.Words
@@ -18,6 +11,7 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
 
 /-!
 # TDEA-CMAC on x86: `vg_cmac_triple_des_finalize` is correct

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.CmacTripleDes.Scratch
 public import VerifiedGarbage.TCB.X86_64.Target
-import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
 
 /-!

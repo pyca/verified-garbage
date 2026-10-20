@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.CandidateWidth
 import VerifiedGarbage.Proof.Dsa.Generation.CandidateWidth
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 public import VerifiedGarbage.Spec.Dsa
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 

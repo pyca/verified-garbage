@@ -1,5 +1,10 @@
 module
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionWords
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Spec.Weierstrass
 
 
 @[expose] public section

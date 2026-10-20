@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Save
 import VerifiedGarbage.Proof.Cmac.Frame
 public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Block
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Contract
 public import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.CmacTripleDes.Bytes
@@ -14,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
 
 /-!
 # TDEA-CMAC on x86-64: `vg_cmac_triple_des_update`

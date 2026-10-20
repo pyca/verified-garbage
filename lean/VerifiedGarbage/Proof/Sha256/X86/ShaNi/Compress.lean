@@ -4,14 +4,13 @@ public import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Spec
 public import VerifiedGarbage.Impl.Sha256.X86.ShaNi
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Memory
 import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Const
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Sha256.X86.Compress
 
 @[expose] public section

@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.TCB.AArch64.Isa
-import Batteries.Tactic.Init
-import Batteries.Tactic.PermuteGoals
-import Batteries.Tactic.SeqFocus
-import Mathlib.Util.CompileInductive
 import VerifiedGarbage.Proof.Framework.GetElem
 
 /-! Stack consumption in 16-byte units, including contiguous allocations. -/

@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.X448.Arm.Mem
 
 import VerifiedGarbage.Proof.X448.Arm.Field
 import VerifiedGarbage.Proof.Framework.Range
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: filling words with zero

@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedGroupRun
 public import VerifiedGarbage.Proof.MlDsa.Arith.Pairs
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPackedRoot
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRun
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRoots
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! ## From `PairedStage.lean` -/

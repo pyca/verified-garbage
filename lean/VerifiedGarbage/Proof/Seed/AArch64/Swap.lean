@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
 public import VerifiedGarbage.Proof.Seed.AArch64.G16
 public import VerifiedGarbage.Proof.Seed.AArch64.Lanes
 import VerifiedGarbage.Proof.Framework.ReadHalves
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

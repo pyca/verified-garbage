@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Modes.AArch64.Core
 public import VerifiedGarbage.Proof.Modes.Counter
 public import VerifiedGarbage.Proof.Framework.AArch64.Straight
 import VerifiedGarbage.Proof.Modes.Addr
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

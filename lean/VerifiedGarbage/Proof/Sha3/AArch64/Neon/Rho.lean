@@ -2,10 +2,10 @@ module
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Theta
 
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

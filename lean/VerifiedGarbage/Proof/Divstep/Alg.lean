@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Divstep.State
-public import Mathlib.Data.BitVec
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
 import VerifiedGarbage.Proof.Divstep.Batch
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Algebra.Ring.Int.Defs
 
 /-!
 # Inversion by batches of divsteps

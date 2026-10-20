@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Round
 public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Loop
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Keccak-f[1600] four times at once, in registers: the permutation

@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupSteps
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Argon2.AArch64.SegmentSetupReset`. -/

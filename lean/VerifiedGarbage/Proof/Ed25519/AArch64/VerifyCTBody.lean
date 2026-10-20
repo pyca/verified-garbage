@@ -22,6 +22,8 @@ meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
 meta import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
+import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Block
 
 /-! Merged from `Proof.Ed25519.AArch64.VerifyCTPublic`. -/
 

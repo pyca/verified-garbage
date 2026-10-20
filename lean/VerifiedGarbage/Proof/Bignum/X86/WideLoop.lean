@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Bignum.X86.WideRow
 import VerifiedGarbage.Proof.Bignum.WideBounds
 import VerifiedGarbage.Proof.Mont.X86.Dynamic
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Terminating schoolbook multiplication over a public operand width -/
 

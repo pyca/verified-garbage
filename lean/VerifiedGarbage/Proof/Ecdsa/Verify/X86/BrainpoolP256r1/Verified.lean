@@ -34,6 +34,8 @@ meta import Batteries.Data.List.Lemmas
 meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ECDSA verification over brainpoolP256r1 on x86 (32-bit): `Verified`

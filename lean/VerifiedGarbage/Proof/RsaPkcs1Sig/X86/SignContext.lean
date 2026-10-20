@@ -6,8 +6,8 @@ public import VerifiedGarbage.Proof.Rsa.X86.PrivWorkspace
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignGeometry
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Rsa.X86.PrivContext
-import VerifiedGarbage.Proof.Rsa.X86.PrivObservations
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Immutable sources and incoming arguments survive calls and local frame writes -/
 

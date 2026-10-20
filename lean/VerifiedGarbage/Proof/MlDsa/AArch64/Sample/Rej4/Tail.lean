@@ -4,10 +4,11 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.PadStore
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Pad
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

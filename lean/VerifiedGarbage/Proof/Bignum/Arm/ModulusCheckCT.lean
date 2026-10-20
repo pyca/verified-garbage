@@ -1,35 +1,13 @@
 module
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Impl.Bignum.Arm.ModulusCheck
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 
 import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Impl.Bignum.Arm.ModulusCheck
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
-import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckBounds
-import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckCalc
-import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckFinish
-import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckMath
-import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckRead
-import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-import VerifiedGarbage.Proof.Bignum.Layout
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Bignum.ModulusCheckMath
-import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Impl.Bignum.Arm.ModulusCheck
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! # The modulus validity check has no data-dependent addresses or branches -/
 

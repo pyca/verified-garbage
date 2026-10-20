@@ -1,10 +1,16 @@
 module
 
-public import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Bound
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Mul
 public import VerifiedGarbage.Proof.Poly1305.Limbs26
 public import VerifiedGarbage.Impl.Poly1305.X86_64.Avx512
+import Mathlib.Tactic.Ring.RingNF
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Poly1305 on x86-64 with AVX-512: the product

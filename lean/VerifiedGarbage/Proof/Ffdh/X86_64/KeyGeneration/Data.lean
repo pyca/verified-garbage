@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Contract
 public import VerifiedGarbage.Proof.Ffdh.KeyGeneration
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitValues
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
 

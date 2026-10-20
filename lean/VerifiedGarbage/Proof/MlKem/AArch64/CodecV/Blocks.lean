@@ -1,14 +1,13 @@
 module
-public import VerifiedGarbage.Proof.MlKem.Compress
 public import VerifiedGarbage.Proof.MlKem.Mem
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
-public import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 public import VerifiedGarbage.Proof.MlKem.AArch64.Width
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM on AArch64: the loads and compressions of the vector codecs

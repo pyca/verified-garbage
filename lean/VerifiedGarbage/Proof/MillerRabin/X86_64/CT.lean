@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrRound
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Shared Miller–Rabin core: constant time on x86-64
 

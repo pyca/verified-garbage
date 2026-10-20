@@ -1,6 +1,5 @@
 module
 
-public import Mathlib.Data.List.Dedup
 import VerifiedGarbage.Proof.AesGcm.X86.StreamAad
 import VerifiedGarbage.Proof.AesGcm.X86.StreamInit
 import VerifiedGarbage.Proof.AesGcm.X86.StreamDecrypt
@@ -8,11 +7,16 @@ import VerifiedGarbage.Proof.AesGcm.X86.StreamVerify
 import VerifiedGarbage.Proof.AesGcm.X86.Seal
 import VerifiedGarbage.Proof.AesGcm.X86.Open
 import VerifiedGarbage.Proof.AesGcm.X86.Init
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.AesGcm.Scratch
 public import VerifiedGarbage.Proof.AesGcm.X86.Callee
 public import VerifiedGarbage.Proof.AesGcm.X86.Contract
 import VerifiedGarbage.Proof.AesGcm.X86.StreamEncrypt
+public import Mathlib.Data.List.Defs
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.VariantProof
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on x86: `Verified`

@@ -5,8 +5,8 @@ public import VerifiedGarbage.Proof.AesGcm.X86.Callee
 public import VerifiedGarbage.Impl.AesOcb.X86
 import VerifiedGarbage.Proof.AesOcb.X86.Run
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Aes.X86.Keys
-import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-OCB on x86: the calls

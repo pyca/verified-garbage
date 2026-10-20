@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds3
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # ChaCha20 on x86-64 with AVX2, the last bytes: three sets

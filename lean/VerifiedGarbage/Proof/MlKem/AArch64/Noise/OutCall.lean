@@ -1,11 +1,10 @@
 module
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
-public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 public import VerifiedGarbage.Spec.MlKem.Poly
 
 import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # CBD sampling and optional transform of one paired PRF output -/
 @[expose] public section

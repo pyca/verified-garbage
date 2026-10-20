@@ -5,8 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixSeeds
 public import VerifiedGarbage.Spec.MlDsa.RejNTT2
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixFour
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixTwo
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

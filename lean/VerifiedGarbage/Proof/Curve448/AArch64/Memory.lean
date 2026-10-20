@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Wide.Representation
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X448.AArch64.Mul
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

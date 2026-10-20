@@ -10,6 +10,27 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CallTo
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Calls
+import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
+meta import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Gcm.Stream
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Gcm.Stream
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Impl.Gcm.X86_64
+meta import VerifiedGarbage.Impl.Gcm.X86_64
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: constant time

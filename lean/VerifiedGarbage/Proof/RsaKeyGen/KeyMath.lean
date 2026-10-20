@@ -2,9 +2,14 @@ module
 
 import VerifiedGarbage.Proof.Rsa.KeyMath
 public import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.Framework.Omega
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Spec.Rsa
+import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Tactic.Basic
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-!
 # An RSA key from its primes: the arithmetic

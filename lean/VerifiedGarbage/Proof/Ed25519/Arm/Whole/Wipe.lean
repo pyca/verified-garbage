@@ -4,9 +4,8 @@ public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Wipe
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

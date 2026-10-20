@@ -1,14 +1,11 @@
 module
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Semantics
 
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MdStream.X86_64.Common
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # H′: arguments for a fixed workspace buffer -/
 

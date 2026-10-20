@@ -1,8 +1,9 @@
 module
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.X86.Sse
 
 import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

@@ -1,7 +1,4 @@
 module
-public import Mathlib.Tactic.Linarith
-public import Mathlib.Tactic.Positivity
-public import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Divstep.Alg
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
@@ -14,6 +11,8 @@ import VerifiedGarbage.Proof.Mont.AArch64.Csub
 import VerifiedGarbage.Proof.Mont.AArch64.Blocks
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Inversion by divsteps on AArch64: the reduction of the coefficients

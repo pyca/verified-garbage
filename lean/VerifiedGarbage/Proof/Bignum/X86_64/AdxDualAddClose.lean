@@ -3,11 +3,10 @@ public import VerifiedGarbage.Impl.Bignum.X86_64.AdxDualAdd
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
 
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddWord
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

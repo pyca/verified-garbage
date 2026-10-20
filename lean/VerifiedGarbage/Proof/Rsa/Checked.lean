@@ -1,11 +1,11 @@
 module
 
 import VerifiedGarbage.Proof.Rsa.Octets
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.FieldTheory.Finite.Basic
-public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Data.Nat.Prime.Defs
+public import Mathlib.Data.Nat.ModEq
 
 /-!
 # RSA: what BoringSSL's checks protect against

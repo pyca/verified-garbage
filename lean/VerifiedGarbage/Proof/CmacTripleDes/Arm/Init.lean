@@ -4,9 +4,7 @@ import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
 import VerifiedGarbage.Proof.CmacTripleDes.Arm.Keys
 public import VerifiedGarbage.Proof.CmacTripleDes.Cmac
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Contract
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Save
-public import VerifiedGarbage.Proof.TripleDes.SboxTables
 import VerifiedGarbage.Proof.CmacTripleDes.Words
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Arm.Exec

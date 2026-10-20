@@ -3,11 +3,11 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp4
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MatrixMask
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

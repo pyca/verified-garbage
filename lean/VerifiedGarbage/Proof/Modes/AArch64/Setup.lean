@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Modes.AArch64.Core
 public import VerifiedGarbage.Proof.Modes.Counter
 
 import VerifiedGarbage.Proof.Modes.AArch64.Counter
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
 import VerifiedGarbage.Proof.Framework.Offset
 

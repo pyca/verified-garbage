@@ -2,11 +2,13 @@ module
 public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Calls
 
 import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.CT
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
-import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
 import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Correct
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLit
+import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # Ed448 signing with a cached public key on x86-64: `Verified`

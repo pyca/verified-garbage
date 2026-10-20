@@ -6,8 +6,9 @@ public import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
 public import VerifiedGarbage.Proof.Gcm.X86_64.Rev
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # GHASH with PCLMULQDQ: what the instruction groups compute, as bits

@@ -1,19 +1,9 @@
 module
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyArith
-
-public import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeySteps
-import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.Wp
-import VerifiedGarbage.Proof.Gcm.Spec
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
-public import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
+
 
 @[expose] public section
 

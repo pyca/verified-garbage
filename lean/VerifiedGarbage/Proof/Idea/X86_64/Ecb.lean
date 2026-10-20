@@ -3,13 +3,18 @@ module
 import VerifiedGarbage.Proof.Idea.X86_64.Block
 public import VerifiedGarbage.Proof.Idea.X86_64.ConstantTime
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Idea.X86_64.Round
 import VerifiedGarbage.Proof.Idea.Memory
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Idea.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-!
 # IDEA ECB on x86-64

@@ -6,11 +6,12 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PHash
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Label
 public import VerifiedGarbage.Spec.Dsa
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashFrame
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! Each contribution hashes the original seed plus its wrapped public offset. -/
 @[expose] public section

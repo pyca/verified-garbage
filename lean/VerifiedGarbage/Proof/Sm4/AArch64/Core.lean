@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.Sm4.AArch64.Round
 public import VerifiedGarbage.Impl.Sm4.AArch64.Ecb
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
 
 /-!
 # Sixteen blocks of bitsliced SM4 on AArch64

@@ -1,25 +1,23 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.Verify
-meta import VerifiedGarbage.Impl.Ed25519.Arm.Verify
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
+public import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
-meta import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
-public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
-meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Impl.Ed25519.Arm.Verify
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
+meta import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
+meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 
 /-! Checked code literals for verifier composition. -/
 

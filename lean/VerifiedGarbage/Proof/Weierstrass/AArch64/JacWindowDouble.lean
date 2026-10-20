@@ -5,7 +5,8 @@ import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 public import VerifiedGarbage.Impl.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.Jac
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! Direct-product Jacobian doubling for the public verification loops. -/
 

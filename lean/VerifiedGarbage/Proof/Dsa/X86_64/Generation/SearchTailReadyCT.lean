@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchTailCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchLoop
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchAdvance
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchStatus
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 
 /-! # Controller-tail framing and the exact public continuation decision -/
 

@@ -1,62 +1,21 @@
 module
 
 public import VerifiedGarbage.TCB.X86_64.Target
-public import Mathlib.Logic.Function.Basic
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Verified
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Verified
 import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Keeps
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Keeps
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
-import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointLoop
-import VerifiedGarbage.Proof.Ed25519.X86_64.Points
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Point64
+public import VerifiedGarbage.Impl.X25519.X86_64.Adx
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-import VerifiedGarbage.Proof.X25519.Invert
-import VerifiedGarbage.Proof.X25519.X86_64.AddSub
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.Mul
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.Sqr
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Proof.X25519.X86_64.Sqr
-meta import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
-meta import VerifiedGarbage.Impl.Mont.Mod
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointLoop
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.Points
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Verified
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Keeps
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+meta import VerifiedGarbage.Impl.Ed25519.X86_64.Point64
+meta import VerifiedGarbage.Impl.X25519.X86_64.Adx
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
-meta import VerifiedGarbage.Proof.X25519.Invert
-meta import VerifiedGarbage.Proof.X25519.X86_64.AddSub
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Mul
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Sqr
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Sqr
 
 /-!
 # Ed25519's point doubling and cached additions, in radix `2^64`, on x86-64: the functions' proofs

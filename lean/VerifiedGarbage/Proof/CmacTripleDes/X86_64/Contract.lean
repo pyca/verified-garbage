@@ -3,10 +3,10 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.Spec.Cmac
 public import VerifiedGarbage.TCB.Artifact
-
-import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
+
 
 /-!
 # TDEA-CMAC on x86-64: the contracts the proofs are written against

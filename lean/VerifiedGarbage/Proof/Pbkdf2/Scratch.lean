@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # PBKDF2 with its working space on the stack: locality

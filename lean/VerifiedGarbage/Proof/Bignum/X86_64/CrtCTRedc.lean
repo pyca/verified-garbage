@@ -10,8 +10,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
@@ -22,6 +20,12 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import Mathlib.Tactic.TermCongr
+public import Mathlib.Tactic.TermCongr
+import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import Mathlib.Data.Int.ModEq
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 

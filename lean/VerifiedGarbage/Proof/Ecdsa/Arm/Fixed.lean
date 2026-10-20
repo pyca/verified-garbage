@@ -3,6 +3,8 @@ public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # ECDSA on 32-bit ARM: what every phase keeps

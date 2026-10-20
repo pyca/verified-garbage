@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit
 public import VerifiedGarbage.Impl.X448.AArch64.Fast
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-!
 # Curve448's register-resident field arithmetic on AArch64, erased

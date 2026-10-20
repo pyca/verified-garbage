@@ -3,10 +3,11 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcWord
 
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcAdd
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcStore
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

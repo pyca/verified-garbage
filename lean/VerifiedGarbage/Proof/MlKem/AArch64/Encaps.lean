@@ -8,6 +8,8 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KemB
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem768_encaps` and `vg_mlkem1024_encaps`

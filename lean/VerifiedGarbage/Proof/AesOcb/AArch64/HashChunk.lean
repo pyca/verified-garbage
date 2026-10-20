@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.AesOcb.AArch64.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-OCB on AArch64: a chunk of `HASH` (`hashChunk`)

@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Sign
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Public buffers and frame geometry of PKCS #1 signing
 

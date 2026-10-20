@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.AArch64Weave
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Mem
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # AArch64: interleaving independent code

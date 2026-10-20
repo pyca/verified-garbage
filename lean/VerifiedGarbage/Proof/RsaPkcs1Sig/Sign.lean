@@ -1,12 +1,17 @@
 module
-public import Mathlib.FieldTheory.Finite.Basic
-public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.RsaPkcs1Sig
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 import VerifiedGarbage.Proof.Rsa.Checked
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Octets
 import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+public import Mathlib.Data.Nat.Prime.Defs
 
 /-!
 # RSASSA-PKCS1-v1_5 signing: what it releases verifies

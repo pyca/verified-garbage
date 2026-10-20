@@ -1,10 +1,8 @@
 module
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Bignum.X86_64
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 import VerifiedGarbage.Proof.Bignum.X86_64.Setup
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Math
 
 /-!

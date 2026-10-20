@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.MlDsa.Pack.Bits
 public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.Bits
 import VerifiedGarbage.Proof.MlKem.Encode
 
 /-!

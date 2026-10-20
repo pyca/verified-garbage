@@ -5,10 +5,10 @@ import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
 public import VerifiedGarbage.Impl.Ed25519.X86.RecoverSign
 public import VerifiedGarbage.Proof.Ed25519.X86.Field
 import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Ed25519.X86.FieldCheck`. -/
 

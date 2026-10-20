@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Aes.X86.Ctr32
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Counters
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

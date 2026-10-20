@@ -1,18 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.Set
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Framework.Offset
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Impl.Dsa.X86.Bytes
-import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.TCB.X86.State
+import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Retaining scratch values while writing external signature bytes -/
 

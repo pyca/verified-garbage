@@ -2,12 +2,8 @@ module
 
 import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 public import VerifiedGarbage.Proof.Cmac.Stream
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
-public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
-public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
 import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
@@ -15,6 +11,10 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

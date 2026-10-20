@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.RandomAttemptState
 public import VerifiedGarbage.Proof.Dsa.X86.RandomCallCT
 
 import VerifiedGarbage.Proof.Dsa.X86.RandomBodyCT
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The randomized signer is constant time (x86)

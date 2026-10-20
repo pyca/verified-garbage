@@ -1,13 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Gcm.Arm
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.Straight
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.Proof.MdStream.Arm.Common
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # GHASH on ARMv7: the steps of Algorithm 1

@@ -1,29 +1,25 @@
 module
 
 public import VerifiedGarbage.Impl.Zeroize.X86_64
-meta import VerifiedGarbage.Impl.Zeroize.X86_64
 public import VerifiedGarbage.Proof.Zeroize.Common
-meta import VerifiedGarbage.Proof.Zeroize.Common
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Zeroize.Contract
-meta import VerifiedGarbage.Spec.Zeroize.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Semantics
-meta import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Impl.Zeroize.X86_64
+meta import VerifiedGarbage.Proof.Zeroize.Common
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+meta import VerifiedGarbage.Spec.Zeroize.Contract
+meta import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Framework.Semantics
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
 
 @[expose] public section
 

@@ -3,6 +3,9 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyContractGeometry
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicBytes
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # The shared verifier leakage fixes every immutable input byte -/
 

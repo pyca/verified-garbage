@@ -2,12 +2,8 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 import VerifiedGarbage.Proof.AesCcm.X86_64.Env
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Spec.Aes
-import VerifiedGarbage.Proof.AesOcb.X86_64.Contract
 
 /-!
 # AES-OCB on x86-64: where everything is

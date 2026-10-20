@@ -4,36 +4,8 @@ public import VerifiedGarbage.Proof.Rc2.X86.Stream.Verified
 public import VerifiedGarbage.Impl.StackScratch.X86
 import VerifiedGarbage.Proof.Rc2.X86.Stream.Lit
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Framework.X86.SseDword
-import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Rc2.CbcMemory
-import VerifiedGarbage.Proof.Rc2.PairMem
-import VerifiedGarbage.Proof.Rc2.Select
-import VerifiedGarbage.Proof.Rc2.Select32
-import VerifiedGarbage.Proof.Rc2.Stream
-import VerifiedGarbage.Proof.Rc2.Word
-import VerifiedGarbage.Proof.Rc2.Word32
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.ConstantTime
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.Correct
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.Loop
-import VerifiedGarbage.Proof.Rc2.X86.Key
-import VerifiedGarbage.Proof.Rc2.X86.KeyIO
-import VerifiedGarbage.Proof.Rc2.X86.KeyLookup
-import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
 
 /-!
 # RC2-CBC's streaming functions on x86, with their working space on the stack

@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
 public import VerifiedGarbage.Spec.Gcm.Prepared
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Prepared GHASH contexts: preservation under disjoint writes

@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Calls
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Loops
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

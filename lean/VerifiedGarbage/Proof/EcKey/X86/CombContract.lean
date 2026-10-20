@@ -5,6 +5,7 @@ public import VerifiedGarbage.Spec.EcKey.P256
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! # Shared public-key contract for the x86 fixed-base comb -/
 

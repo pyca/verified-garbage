@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Hash
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-! Spatial preconditions for calls of the x86 streaming SHA-512 functions. -/
 

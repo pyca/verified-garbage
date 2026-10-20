@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlKem.Arm.Prf
 import VerifiedGarbage.Proof.MlKem.Arm.Loops
 import VerifiedGarbage.Proof.MlKem.Arm.HashTop
+import Batteries.Logic
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM on 32-bit ARM: a row of `Â ∘ v̂`

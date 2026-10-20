@@ -1,10 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ed25519.Scalar
 import VerifiedGarbage.Proof.Ed25519.Bytes
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarStep
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

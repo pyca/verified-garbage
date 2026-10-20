@@ -2,11 +2,8 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Data.List.Induction
-import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Spec.Aes
-import VerifiedGarbage.Proof.AesCcm.X86_64.Contract
 
 /-!
 # AES-CCM on x86-64: where everything is

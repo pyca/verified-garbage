@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Dsa.DomainShape
 public import VerifiedGarbage.Spec.Dsa.Random
 
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
+import Std.Data.DTreeMap.Internal.Balancing
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

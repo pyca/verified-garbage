@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Ed448.X86_64.BaseStep
 import VerifiedGarbage.Proof.X448.X86_64.Chain
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed448 verification's equation on x86-64: `[S]B + [k](-A)`

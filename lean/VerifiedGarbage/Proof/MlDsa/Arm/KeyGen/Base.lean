@@ -4,8 +4,9 @@ public import VerifiedGarbage.Impl.MlDsa.Arm.KeyGen.Frag
 public import VerifiedGarbage.Proof.MlKem.Arm.HashCT
 public import VerifiedGarbage.Proof.MlKem.Arm.CallF
 public import VerifiedGarbage.Proof.MlKem.Arm.Prims
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA on 32-bit ARM: the primitives, and calling them

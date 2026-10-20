@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightLoad
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcBlock
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcTile
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLoad
 

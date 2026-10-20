@@ -1,9 +1,9 @@
 module
 public import VerifiedGarbage.Spec.Dsa
 
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Mem
+import Batteries.Tactic.Init
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Arithmetic bounds implied by DSA's supported actual bit lengths -/

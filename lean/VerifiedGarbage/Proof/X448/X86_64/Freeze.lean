@@ -1,13 +1,14 @@
 module
-public import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.X448.X86_64.Field
 public import VerifiedGarbage.Proof.X448.X86_64.Swap
 
 import VerifiedGarbage.Proof.Framework.Range
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.X448.X86_64.AddSub
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on x86-64: the full reduction

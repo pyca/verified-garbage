@@ -1,9 +1,9 @@
 module
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Ed25519.Word64
 
 @[expose] public section

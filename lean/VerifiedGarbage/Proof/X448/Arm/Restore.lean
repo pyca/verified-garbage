@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Arm.Save
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: restoring the callee-saved registers

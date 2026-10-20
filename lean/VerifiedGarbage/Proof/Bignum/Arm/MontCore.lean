@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 import VerifiedGarbage.Proof.Bignum.Arm.MontRounds
 import VerifiedGarbage.Proof.Bignum.Arm.MontFinish
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Canonical Montgomery multiplication and its workspace frame -/
 

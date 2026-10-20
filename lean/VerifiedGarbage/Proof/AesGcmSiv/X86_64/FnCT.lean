@@ -8,6 +8,18 @@ meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.PolyvalCT
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
 meta import VerifiedGarbage.Proof.Framework.X86_64.Narrow
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM-SIV on x86-64: `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open` are constant time

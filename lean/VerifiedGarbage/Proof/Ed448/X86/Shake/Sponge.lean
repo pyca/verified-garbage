@@ -13,6 +13,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-!
 # Ed448 on x86 (32-bit): the calls of the sponge functions

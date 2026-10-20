@@ -1,15 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvTaint2
-meta import VerifiedGarbage.Proof.Rsa.Arm.RvTaint2
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Rsa.Arm.RvTaint2
+meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! # `vg_rsa_recover_primes` on ARMv7: the pieces of the candidates the taint analysis checks -/
 

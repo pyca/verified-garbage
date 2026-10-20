@@ -4,6 +4,8 @@ import VerifiedGarbage.Proof.Rsa.X86.RvOps
 public import VerifiedGarbage.Proof.Rsa.RecoverSubtract
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Recovery subtraction, including its modular result and borrow -/
 

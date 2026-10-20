@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.Mont
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Code with its operands read through other registers, on x86-64

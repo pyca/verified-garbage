@@ -3,10 +3,11 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Upd
 
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: one HMAC

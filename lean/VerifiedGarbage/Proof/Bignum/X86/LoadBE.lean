@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Dsa.Frame
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # RSA integer import, including non-word-aligned input lengths -/
 

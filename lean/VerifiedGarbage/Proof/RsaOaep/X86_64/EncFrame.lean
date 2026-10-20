@@ -5,7 +5,10 @@ public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import Mathlib.Order.Basic
+import Mathlib.Data.Nat.Basic
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
 
 /-!
 # RSAES-OAEP encryption on x86-64: the precondition by name, and the frame

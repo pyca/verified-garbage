@@ -6,9 +6,9 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSaves
 public import VerifiedGarbage.Proof.Mont.AArch64.Ops
 public import VerifiedGarbage.Impl.Weierstrass.AArch64
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Montgomery products modulo a general modulus, as functions, on AArch64

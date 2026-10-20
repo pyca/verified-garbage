@@ -4,11 +4,9 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourTaint
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourState
 public import VerifiedGarbage.Proof.Framework.RelCT
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-! ## From `BoundedFourLeak.lean` -/
 

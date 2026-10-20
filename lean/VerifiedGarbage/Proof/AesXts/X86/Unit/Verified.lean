@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.AesXts.X86.Verified
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.AesXts.X86.Unit.Run
 import VerifiedGarbage.Proof.AesXts.X86.CT
+public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
 
 /-!
 # XTS-AES of data units on x86: `Verified`

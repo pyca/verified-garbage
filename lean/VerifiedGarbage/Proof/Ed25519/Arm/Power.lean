@@ -4,7 +4,8 @@ public import VerifiedGarbage.Impl.Ed25519.Arm.Power
 import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
 public import VerifiedGarbage.Proof.Ed25519.RootPower
 public import VerifiedGarbage.Proof.Ed25519.Arm.AsFn
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Merged from `Proof.Ed25519.Arm.PowerEnv`. -/
 

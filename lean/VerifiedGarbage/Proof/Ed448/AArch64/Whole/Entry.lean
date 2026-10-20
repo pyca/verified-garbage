@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Impl.Ed448.AArch64.Whole
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 

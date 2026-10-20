@@ -2,8 +2,8 @@ module
 public import VerifiedGarbage.TCB.AArch64.Isa
 
 import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 
 /-!

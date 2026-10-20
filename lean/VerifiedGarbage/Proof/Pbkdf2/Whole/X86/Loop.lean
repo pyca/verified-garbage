@@ -1,11 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Block
-public import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: the rest of a block, the loop, and `pbkdf2`

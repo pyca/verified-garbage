@@ -2,8 +2,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Impl.Bignum.Arm.PrecomputeOut
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Mont
 
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutArgs
@@ -14,7 +12,7 @@ import VerifiedGarbage.Proof.Bignum.ExportEncoding
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.Arm.ExportEncoding
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Serialize both RSA precomputation arrays in the shared word format -/
 

@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Mask4
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Four-way matrix expansion during verification: preserve decoded hints and z, and mask failed batches without a branch. -/
 

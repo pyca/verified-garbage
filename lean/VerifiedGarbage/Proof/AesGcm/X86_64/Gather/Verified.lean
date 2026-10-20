@@ -13,6 +13,7 @@ public import Aesop.BuiltinRules
 public import Mathlib.Tactic.Attr.Core
 public import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyCT
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: `Verified`

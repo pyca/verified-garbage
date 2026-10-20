@@ -1,13 +1,12 @@
 module
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.AbsorbStep
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Schedule
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.Sha3.Stream
 public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Contract
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.FixedHash
 open VG VG.AArch64 VG.Impl.MlKem.AArch64

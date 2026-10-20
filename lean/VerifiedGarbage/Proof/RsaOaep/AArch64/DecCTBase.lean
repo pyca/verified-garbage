@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLay
 
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RSAES-OAEP decryption on AArch64: two runs

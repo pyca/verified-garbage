@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEncoding
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignPrivateRegions
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignStackWord
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRegions
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! # The signing call satisfies the checked RSA contract -/
 

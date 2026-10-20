@@ -5,10 +5,10 @@ import VerifiedGarbage.Proof.TripleDes.KeySchedule
 public import VerifiedGarbage.Proof.Rc2.Arm.Lookup
 public import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
 import VerifiedGarbage.Proof.Rc2.Arm.KeySteps
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

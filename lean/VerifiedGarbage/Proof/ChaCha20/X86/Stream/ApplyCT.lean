@@ -1,37 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86.Stream.Apply
-meta import VerifiedGarbage.Proof.ChaCha20.X86.Stream.Apply
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.ChaCha20.StreamBytes
-import VerifiedGarbage.Proof.ChaCha20.X86.Bytes
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.ChaCha20.X86.Lit
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Framework.X86.SseDword
-import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-meta import VerifiedGarbage.Proof.ChaCha20.StreamBytes
-meta import VerifiedGarbage.Proof.ChaCha20.X86.Bytes
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.ChaCha20.X86.Stream.Apply
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.ChaCha20.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.Sse
-meta import VerifiedGarbage.Proof.Framework.X86.SseDword
-meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 
 /-!
 # Streaming ChaCha20 on x86 (32-bit): `apply`, constant time

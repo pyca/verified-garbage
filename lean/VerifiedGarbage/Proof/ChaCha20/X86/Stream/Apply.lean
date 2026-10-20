@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86.Stream.Calls
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.ChaCha20.StreamBytes
 import VerifiedGarbage.Proof.ChaCha20.X86.Bytes
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.ChaCha20.X86.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming ChaCha20 on x86 (32-bit): `apply`, correctness

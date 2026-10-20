@@ -3,11 +3,9 @@ module
 public import VerifiedGarbage.Proof.X25519.X86.Step
 import VerifiedGarbage.Proof.X25519.X86.Field32.Call
 public import VerifiedGarbage.Impl.X25519.X86.Fn
-public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.X25519.X86.Field32.Chain
-public import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
 
 /-!
 # X25519 on x86 (32-bit): the inversion

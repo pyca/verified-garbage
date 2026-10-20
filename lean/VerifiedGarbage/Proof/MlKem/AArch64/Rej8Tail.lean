@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Impl.MlKem.AArch64.Lay
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Scalar
-public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 
 /-! # Four scalar chunks at the end of the compacted polynomial -/

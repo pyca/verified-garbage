@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.JointWindow
 
 import VerifiedGarbage.Proof.Dsa.X86_64.JointEntries
 import VerifiedGarbage.Proof.Dsa.X86_64.Setup
-import Mathlib.Tactic.Set
 
 /-! # Preparing the joint table and Montgomery accumulator -/
 

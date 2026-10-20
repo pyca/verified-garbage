@@ -3,8 +3,8 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ball
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.BallLoop
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallTry
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 @[expose] public section
 

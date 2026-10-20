@@ -1,7 +1,8 @@
 module
 
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.Data.Int.GCD
+import Mathlib.Data.Int.ModEq
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!

@@ -3,8 +3,6 @@ public import VerifiedGarbage.Impl.Bignum.X86_64
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
 /-!

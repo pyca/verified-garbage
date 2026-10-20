@@ -8,11 +8,10 @@ public import VerifiedGarbage.Proof.X25519.AArch64.Ladder
 public import VerifiedGarbage.Proof.X25519.AArch64.Setup
 public import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.X25519.AArch64.Invert
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
 
 /-!
 # X25519 on AArch64: the whole function

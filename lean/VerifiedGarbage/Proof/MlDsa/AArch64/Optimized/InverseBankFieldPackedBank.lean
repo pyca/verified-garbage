@@ -6,11 +6,10 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailBank
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalField
-import VerifiedGarbage.Proof.MlDsa.Arith.Montgomery
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! ## From `InverseBankFieldPacked.lean` -/
 

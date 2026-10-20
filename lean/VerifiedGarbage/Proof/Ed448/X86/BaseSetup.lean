@@ -5,9 +5,9 @@ import VerifiedGarbage.Proof.X448.X86.RowMem
 public import VerifiedGarbage.Proof.X448.X86.Bits
 import VerifiedGarbage.Proof.Ed448.Scalar
 public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit): the entry

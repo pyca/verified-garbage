@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomCopy
 public import VerifiedGarbage.Proof.Dsa.RandomRange
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.RandomPrepare
 import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
 import VerifiedGarbage.Proof.Dsa.Zero

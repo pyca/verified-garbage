@@ -1,14 +1,13 @@
 module
 public import VerifiedGarbage.Impl.TripleDes.X86_64.ExpandKey
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Semantics
 
 import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Loop
 import VerifiedGarbage.Proof.TripleDes.Schedule
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Load
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

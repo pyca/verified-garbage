@@ -4,6 +4,11 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Gh
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.SetupFin
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PhaseOne
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Framework.X86_64.Straight
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Framework.SigEval
 
 /-!
 # AES-GCM's short path on x86-64: the table of powers, without the field

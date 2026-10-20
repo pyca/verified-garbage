@@ -3,11 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestBase
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Pack
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Arith
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
-import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA key generation on AArch64: `s₁ ‖ s₂` to `sk`, and `ŝ₁`

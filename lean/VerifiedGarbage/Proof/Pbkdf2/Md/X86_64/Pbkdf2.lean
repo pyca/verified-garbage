@@ -1,14 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PbkCalls
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PbkCommon
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
 import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!

@@ -3,6 +3,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.WideProduct
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The scalar source address comes from a public product control -/
 

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Setup
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 
 /-! # RSA Montgomery setup with a fallback for padded DSA moduli -/

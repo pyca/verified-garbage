@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.RowCarry
 import VerifiedGarbage.Proof.Bignum.Arm.Mac
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Correctness of the two-word carry propagation -/
 

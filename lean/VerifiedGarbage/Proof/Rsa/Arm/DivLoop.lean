@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.DivReduce
 import VerifiedGarbage.Proof.Rsa.Arm.DivStep
 import VerifiedGarbage.Proof.Rsa.Arm.DivInit
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Bignum.Arm.WideMul
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Termination and quotient/remainder correctness of fixed-count division -/
 

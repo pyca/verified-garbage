@@ -2,13 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Mont.X86
 public import VerifiedGarbage.Proof.Mont.Words
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Util.CompileInductive
 import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Mont.Words32
 
 /-!
 # Montgomery arithmetic on x86 (32-bit): words in the working space

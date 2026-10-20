@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.AesGcm.X86.Contract
 import VerifiedGarbage.Proof.Gcm.Compose
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.VariantProof
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on x86: from the contracts to the pieces

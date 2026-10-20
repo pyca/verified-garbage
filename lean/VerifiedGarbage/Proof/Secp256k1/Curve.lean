@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Weierstrass.Complete
 public import VerifiedGarbage.Spec.Secp256k1
 import VerifiedGarbage.Proof.Secp256k1.Prime

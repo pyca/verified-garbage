@@ -2,15 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.Bitsliced
 public import VerifiedGarbage.Proof.Camellia.X86_64.Linear
-public import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
-import VerifiedGarbage.Impl.Sm4.X86_64.ExpandKey
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
+public import VerifiedGarbage.Impl.Sm4.X86_64.Layers
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # The linear layers of bitsliced SM4 on x86-64, by evaluation

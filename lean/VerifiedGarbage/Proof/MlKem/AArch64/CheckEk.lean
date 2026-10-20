@@ -1,45 +1,27 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.MlKem.EkCheck
-meta import VerifiedGarbage.Proof.MlKem.EkCheck
 public import VerifiedGarbage.Impl.MlKem.AArch64.Encode
-meta import VerifiedGarbage.Impl.MlKem.AArch64.Encode
 public import VerifiedGarbage.Spec.MlKem.Contract
-meta import VerifiedGarbage.Spec.MlKem.Contract
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.AArch64.Target
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.AArch64.Wp
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.MlKem.Encode
-meta import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-import VerifiedGarbage.Proof.MlKem.Compress
-import VerifiedGarbage.Spec.MlKem.Contract1024
-meta import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.EkCheck
+meta import VerifiedGarbage.Impl.MlKem.AArch64.Encode
+meta import VerifiedGarbage.Spec.MlKem.Contract
+meta import VerifiedGarbage.Proof.Framework.Semantics
+meta import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+meta import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.WriteBytes
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-meta import VerifiedGarbage.Proof.MlKem.Compress
-meta import VerifiedGarbage.Spec.MlKem.Contract1024
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem768_check_ek` and `vg_mlkem1024_check_ek`

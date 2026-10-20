@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcWord
 
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcFastCancel
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

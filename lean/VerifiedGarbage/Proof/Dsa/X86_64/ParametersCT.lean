@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.DomainShapeCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
 public import VerifiedGarbage.Proof.Dsa.SizeBounds
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Constant time of the x86-64 DSA domain check
 

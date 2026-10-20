@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnBodyCT
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Compose modular doubling inside the outer RSA stack frame -/
 

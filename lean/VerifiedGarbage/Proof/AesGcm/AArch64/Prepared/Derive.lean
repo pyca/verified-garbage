@@ -6,6 +6,7 @@ public import VerifiedGarbage.Spec.Gcm.Prepared8
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.AesGcm.AArch64.Env
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_derive_prepared8`

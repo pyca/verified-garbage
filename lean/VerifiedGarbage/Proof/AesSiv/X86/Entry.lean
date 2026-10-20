@@ -1,12 +1,13 @@
 module
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Impl.AesSiv.X86
 public import VerifiedGarbage.Proof.AesGcm.X86.Fn
 
 import VerifiedGarbage.Proof.AesSiv.X86.Run
 import VerifiedGarbage.Proof.AesSiv.X86.Env
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-SIV on x86: the entry of `encrypt` and `decrypt`

@@ -3,9 +3,11 @@ module
 public import VerifiedGarbage.Proof.TripleDes.X86.Round
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.TripleDes.Round
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.Slots
+import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-! ## `Box` -/
 

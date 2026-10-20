@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 meta import VerifiedGarbage.Proof.Dsa.X86_64.NewChild
 meta import VerifiedGarbage.Proof.Dsa.X86_64.InitFrame
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Load
+meta import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
+public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
 
 /-! # Constant time of creating and initializing a modulus workspace -/
 

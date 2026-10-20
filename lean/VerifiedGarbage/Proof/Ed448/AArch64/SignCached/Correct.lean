@@ -4,10 +4,9 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Hash
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
 import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Prune
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Ed448.Signing
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
 
 /-!
 # Ed448 signing with a cached public key on AArch64: the frame's body

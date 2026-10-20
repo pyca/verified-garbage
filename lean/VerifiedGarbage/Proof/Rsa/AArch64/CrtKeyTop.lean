@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import Mathlib.Order.Defs.Prop
+import Mathlib.Data.Int.ModEq
 
 /-!
 # `vg_rsa_check_crt_key` on AArch64: the shortened remainder

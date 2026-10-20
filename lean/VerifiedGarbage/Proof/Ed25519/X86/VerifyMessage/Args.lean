@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Setup
 public import VerifiedGarbage.Spec.Ed25519.Contract
-public import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.X86.VerifyMessage.Layout`. -/

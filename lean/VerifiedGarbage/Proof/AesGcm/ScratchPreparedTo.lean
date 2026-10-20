@@ -6,6 +6,9 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Contract
 public import VerifiedGarbage.Spec.Gcm.Prepared
 import VerifiedGarbage.Proof.AesGcm.Scratch
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Prepared-context out-of-place scratch contracts -/
 

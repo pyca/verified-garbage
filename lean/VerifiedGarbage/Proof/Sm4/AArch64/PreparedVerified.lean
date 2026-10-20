@@ -1,38 +1,31 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.AArch64.PreparedBody
-meta import VerifiedGarbage.Proof.Sm4.AArch64.PreparedBody
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sm4.AArch64.Lit
-meta import VerifiedGarbage.Proof.Sm4.AArch64.Lit
-public import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
-meta import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Sm4.AArch64.Lit
+import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
+public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sm4.AArch64.Copy
-import VerifiedGarbage.Proof.Sm4.AArch64.Crypt16
-import VerifiedGarbage.Proof.Sm4.Layout
-import VerifiedGarbage.Proof.Sm4.Planes
-meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
+meta import VerifiedGarbage.Proof.Sm4.AArch64.PreparedBody
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Sm4.AArch64.Lit
+meta import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Sm4.AArch64.Copy
-meta import VerifiedGarbage.Proof.Sm4.AArch64.Crypt16
-meta import VerifiedGarbage.Proof.Sm4.Layout
-meta import VerifiedGarbage.Proof.Sm4.Planes
+meta import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegSet
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-!
 # SM4's prepared round keys and batches on AArch64 meet their contracts

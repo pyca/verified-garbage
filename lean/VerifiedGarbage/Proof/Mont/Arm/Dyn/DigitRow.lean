@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.Mont.Arm.Words
 
 import VerifiedGarbage.Proof.Mont.Arm.Dyn.MulRow
 import VerifiedGarbage.Proof.Mont.Arm.Loop
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.Arm.Dyn.Digit
 import VerifiedGarbage.Proof.Mont.Arm.Step
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Runtime-modulus Montgomery arithmetic on 32-bit ARM: a digit's rows

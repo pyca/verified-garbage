@@ -8,13 +8,11 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Add
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Store
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 import VerifiedGarbage.Proof.Bignum.Rectangular
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8AddChain
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Word
 
 /-! ## AdxCarry8 -/
 

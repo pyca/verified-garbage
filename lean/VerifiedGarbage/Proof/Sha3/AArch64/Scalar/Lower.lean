@@ -2,10 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Lower
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

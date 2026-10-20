@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Argon2.Matrix
 import VerifiedGarbage.Proof.Argon2.FillPositions
 import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Argon2.X86_64.FillKernelMatrix`. -/
 

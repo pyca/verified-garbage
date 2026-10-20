@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.RsaPss.AArch64.FixedSaltHash
 import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyLogic
 import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
-import VerifiedGarbage.Proof.RsaPss.AArch64.Select
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! A known salt length changes only the hash of already rejected encodings. -/
 

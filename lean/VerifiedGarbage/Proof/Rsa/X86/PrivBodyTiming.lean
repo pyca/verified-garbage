@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Rsa.X86.PrivCallsTiming
 import VerifiedGarbage.Proof.Rsa.X86.PrivSetupTiming
 import VerifiedGarbage.Proof.Rsa.X86.PrivTailContext
 import VerifiedGarbage.Proof.Rsa.X86.PrivTailTiming
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # The complete private body has equal traces for independent private components -/
 

@@ -3,42 +3,13 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
 public import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.Call
 public import VerifiedGarbage.Proof.MlKem.X86.Common
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86.CallRet
 import VerifiedGarbage.Proof.MlKem.X86.TopSeq
 import VerifiedGarbage.Proof.MlKem.X86.TopCall
-import VerifiedGarbage.Proof.MlKem.X86.Table
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.MlKem.X86.NttLoop
-public import VerifiedGarbage.Impl.MlKem.X86.CheckEk
-public import VerifiedGarbage.Impl.Sha256.X86.Stream
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Framework.X86.Mmx
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
-public import VerifiedGarbage.Proof.MlKem.X86.TopCall
-public import VerifiedGarbage.Proof.MlKem.X86.TopHash
-public import VerifiedGarbage.Proof.MlKem.X86.TopLocal
-public import VerifiedGarbage.Proof.MlKem.X86.TopPrim
-public import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
-public import VerifiedGarbage.Proof.MlKem.X86.TopSeq
-public import VerifiedGarbage.Proof.Sha512.Spec
-import VerifiedGarbage.Impl.MlKem.X86.CheckEk
-import VerifiedGarbage.Impl.Sha256.X86.Stream
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.MlKem.Compress
-import VerifiedGarbage.Proof.MlKem.X86.Red
-import VerifiedGarbage.Proof.MlKem.X86.TopHash
-import VerifiedGarbage.Proof.MlKem.X86.TopLocal
-import VerifiedGarbage.Proof.MlKem.X86.TopPrim
-import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
-import VerifiedGarbage.Proof.Sha512.Spec
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA on x86 (32-bit): calls of the primitives from the top-level functions

@@ -8,6 +8,8 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Rc2.X86.KeyLit
 public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Contract
+import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

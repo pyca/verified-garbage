@@ -1,11 +1,11 @@
 module
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Idx
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lane
 import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # ML-KEM's 16-bit inverse NTT on AArch64: lanes

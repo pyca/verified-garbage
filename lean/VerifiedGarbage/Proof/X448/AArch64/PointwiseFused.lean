@@ -3,11 +3,11 @@ public import VerifiedGarbage.Proof.X448.AArch64.Mul
 
 import VerifiedGarbage.Proof.X448.AArch64.PointwiseCarry
 import VerifiedGarbage.Proof.X448.AArch64.PointwiseFinish
-import Batteries.Logic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.AArch64.Carry
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Untrusted: fuse a pointwise coefficient with its first carry step. -/
 

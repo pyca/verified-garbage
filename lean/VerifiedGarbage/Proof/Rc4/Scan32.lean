@@ -5,6 +5,8 @@ import VerifiedGarbage.Proof.Rc4.Dword
 import VerifiedGarbage.Proof.Rc4.Table
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # RC4: a doubleword scan of the table, step by step

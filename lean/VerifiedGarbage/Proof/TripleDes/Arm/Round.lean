@@ -1,11 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.TripleDes.Arm.Lit
 public import VerifiedGarbage.Proof.TripleDes.Arm.Sbox
 import VerifiedGarbage.Proof.TripleDes.Permutation
 public import VerifiedGarbage.Proof.Framework.Arm.Linear
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

@@ -2,12 +2,12 @@ module
 
 import VerifiedGarbage.Proof.AesGcmSiv.AArch64.FnCT
 import VerifiedGarbage.Proof.GcmSiv.Polyval
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Fn
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM-SIV on AArch64: `Verified`

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Block
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
-public import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Impl.CmacTripleDes.AArch64
 public import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Cmac.Frame
@@ -11,6 +10,7 @@ import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
 
 /-!
 # TDEA-CMAC on AArch64: `vg_cmac_triple_des_update`

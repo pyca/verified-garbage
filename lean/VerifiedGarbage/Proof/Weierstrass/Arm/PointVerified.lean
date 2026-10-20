@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.PointContract
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontVerified
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 
 /-!

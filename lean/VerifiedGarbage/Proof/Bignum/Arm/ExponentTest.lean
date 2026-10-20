@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 import VerifiedGarbage.Proof.Bignum.Arm.ExponentTests
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The public-exponent decision matches the shared RSA limits exactly -/
 

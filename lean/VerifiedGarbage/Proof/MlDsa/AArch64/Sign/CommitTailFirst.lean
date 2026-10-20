@@ -5,14 +5,15 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.AbsorbBlock
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CommitTail
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Parity
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Load
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## From `CommitTailAbsorb.lean` -/
 

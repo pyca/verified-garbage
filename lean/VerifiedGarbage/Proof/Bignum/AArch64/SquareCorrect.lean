@@ -6,8 +6,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.SquareRaw
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedc
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareFinish
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Squaring preserves the existing Montgomery contract, including allowed aliases. -/
 

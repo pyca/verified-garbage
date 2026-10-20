@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
 public import VerifiedGarbage.Proof.MdStream.Arm.Common
 public import VerifiedGarbage.Impl.Pbkdf2.Stream.Arm
@@ -9,11 +8,11 @@ public import VerifiedGarbage.Spec.Hmac.Generic
 public import VerifiedGarbage.Spec.Pbkdf2
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OmegaLit
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Spec.Pbkdf2.Generic
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # HMAC and PBKDF2-HMAC over any streaming hash function: the 32-bit ARM contracts

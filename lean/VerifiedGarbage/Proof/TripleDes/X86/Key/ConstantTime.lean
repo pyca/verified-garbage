@@ -1,6 +1,5 @@
 module
 
-public import Batteries.Logic
 public import VerifiedGarbage.Proof.TripleDes.X86.Key.Component
 import VerifiedGarbage.Proof.TripleDes.X86.CorrectBlock
 public import VerifiedGarbage.Proof.TripleDes.KeyMemory
@@ -13,6 +12,9 @@ import VerifiedGarbage.Proof.TripleDes.Bytes
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Batteries.Logic
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
 
 /-! ## `Copy` -/
 

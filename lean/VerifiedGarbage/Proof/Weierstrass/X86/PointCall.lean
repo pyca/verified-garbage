@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontCall
 public import VerifiedGarbage.Impl.Weierstrass.X86.Point
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Mont.X86.Chain
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

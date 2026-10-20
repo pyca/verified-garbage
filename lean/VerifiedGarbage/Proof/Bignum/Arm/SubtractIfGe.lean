@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.SubRow
 import VerifiedGarbage.Proof.Bignum.Arm.SelectPrepare
 import VerifiedGarbage.Proof.Bignum.Arm.SelectAliasRow
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Exact conditional subtraction and the borrow used by RSA division -/
 

@@ -2,43 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Apply
 public import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Apply
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Calls
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Calls
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
-import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
-meta import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Apply
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Calls
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
 
 /-!
 # Streaming ChaCha20 on x86-64: `apply`, constant time

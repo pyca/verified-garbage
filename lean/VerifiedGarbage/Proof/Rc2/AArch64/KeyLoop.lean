@@ -1,9 +1,10 @@
 module
 public import VerifiedGarbage.Proof.Rc2.AArch64.KeySteps
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! # A bounded loop rule and frame invariant for key expansion -/
 

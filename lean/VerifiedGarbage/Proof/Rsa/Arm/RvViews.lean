@@ -1,10 +1,13 @@
 module
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyArrs
 
 import VerifiedGarbage.Proof.Rsa.KeyViews
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Impl.Rsa.Arm.Recover
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
+import VerifiedGarbage.TCB.Arm.Isa
 
 /-! # The key working space read with `w` and with `W = 2 w + 2` words
 

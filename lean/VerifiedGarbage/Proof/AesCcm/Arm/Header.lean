@@ -11,6 +11,12 @@ import VerifiedGarbage.Proof.AesCcm.Arm.Ctrs
 import VerifiedGarbage.Proof.AesCcm.Arm.Compare
 import VerifiedGarbage.Proof.AesCcm.Bytes
 import VerifiedGarbage.Proof.AesCcm.BytesAt
+import Lean.Environment
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.TCB.Arm.Isa
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-CCM on ARMv7: the encoding of the length of the associated data

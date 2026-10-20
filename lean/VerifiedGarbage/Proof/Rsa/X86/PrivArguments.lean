@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.PrivContext
 
 import VerifiedGarbage.Proof.Rsa.X86.PrivLocalArgument
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Installing successive cdecl arguments preserves every earlier word -/
 

@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86.Callee
-import VerifiedGarbage.Spec.Gcm.Precomputed
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.VariantProof
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86: the function called

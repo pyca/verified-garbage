@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.X448.Arm.Field
 
 import VerifiedGarbage.Proof.X448.Arm.MulLoop
 import VerifiedGarbage.Proof.X448.Arm.Reduce
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.Arm.Init
 import VerifiedGarbage.Proof.X448.Arm.Normalize
 import VerifiedGarbage.Proof.X448.Arm.Carry

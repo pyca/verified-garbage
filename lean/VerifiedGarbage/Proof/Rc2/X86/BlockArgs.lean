@@ -6,8 +6,6 @@ public import VerifiedGarbage.Proof.Rc2.X86.Save
 public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
 import VerifiedGarbage.Proof.Rc2.X86.KeyLookup
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rc2.Word32
 import VerifiedGarbage.Proof.Rc2.X86.KeyIO
 import VerifiedGarbage.Proof.Rc2.Select32

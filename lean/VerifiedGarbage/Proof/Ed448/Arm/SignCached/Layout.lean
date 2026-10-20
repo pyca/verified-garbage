@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Sponge
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 signing with a cached public key on ARMv7: the layout

@@ -4,6 +4,11 @@ public import VerifiedGarbage.Proof.Idea.Arm.Ecb
 public import VerifiedGarbage.Proof.Idea.Arm.Invert
 import VerifiedGarbage.Proof.Framework.Arm.RegScratch
 public import VerifiedGarbage.Impl.StackScratch.Arm
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Idea.Arm.Lit
 
 /-!
 # Verified IDEA on ARMv7, with its saved registers on the stack

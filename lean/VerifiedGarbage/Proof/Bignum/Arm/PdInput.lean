@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicBuffers
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 
 /-! # Native AAPCS assumptions for checked public RSA -/

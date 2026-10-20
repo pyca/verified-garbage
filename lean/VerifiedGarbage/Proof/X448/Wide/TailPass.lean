@@ -5,11 +5,9 @@ public import VerifiedGarbage.Proof.X448.Wide.Column
 
 import VerifiedGarbage.Proof.X448.Wide.PassInit
 import VerifiedGarbage.Proof.X448.Wide.TailStep
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.X448.Wide.TailBounds
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Impl.X448.AArch64
 
 /-! Untrusted: in-place or disjoint wide carry propagation. -/
 

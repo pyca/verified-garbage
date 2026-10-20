@@ -4,11 +4,11 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwLanes
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Theta
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Chi
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Constant
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

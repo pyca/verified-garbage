@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MdStream.X86.Common
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

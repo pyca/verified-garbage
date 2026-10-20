@@ -7,10 +7,11 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.X25519.X86_64.Iter
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
-public import VerifiedGarbage.Proof.X25519.X86_64.Lit
 import VerifiedGarbage.Proof.X25519.X86_64.Bits
 import VerifiedGarbage.Proof.X25519.X86_64.Freeze
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.X86_64.Lit
 
 /-!
 # X25519 on x86-64: the whole function

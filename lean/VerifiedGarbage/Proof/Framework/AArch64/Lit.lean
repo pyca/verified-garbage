@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 
 /-!
 # VReg code as literals

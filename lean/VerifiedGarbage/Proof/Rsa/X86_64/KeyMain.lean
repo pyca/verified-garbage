@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Rsa.X86_64.KeyPhases
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
 import VerifiedGarbage.Proof.Rsa.KeyParts
 import VerifiedGarbage.Proof.Bignum.X86_64.R2
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyMod
 import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyPhases
 import VerifiedGarbage.Proof.Rsa.X86_64.KeySteps

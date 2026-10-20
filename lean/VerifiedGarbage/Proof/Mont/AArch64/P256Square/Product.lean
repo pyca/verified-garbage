@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Impl.Mont.AArch64.P256Square
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Spec.Weierstrass
 
 @[expose] public section
 

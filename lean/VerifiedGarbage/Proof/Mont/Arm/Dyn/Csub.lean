@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Add
 import VerifiedGarbage.Proof.Mont.Arm.Csub
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.Arm.Dyn.Digit
 import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
 import VerifiedGarbage.Proof.Mont.Arm.Step
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Runtime-modulus Montgomery arithmetic on 32-bit ARM: the conditional subtraction

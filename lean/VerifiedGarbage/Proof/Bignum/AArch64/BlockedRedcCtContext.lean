@@ -2,10 +2,8 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcBody
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLoad
-import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 @[expose] public section
 

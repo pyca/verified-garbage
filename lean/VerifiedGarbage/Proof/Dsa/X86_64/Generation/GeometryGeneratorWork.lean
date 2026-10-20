@@ -1,15 +1,13 @@
 module
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.Set
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryTape
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
-public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
-public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! # Geometry of the generator's parent and arithmetic workspaces -/
 

@@ -4,7 +4,8 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Minus
 import VerifiedGarbage.Proof.Dsa.X86_64.ResultCall
 public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
 public import VerifiedGarbage.Proof.Dsa.X86_64.Call
-import Mathlib.Tactic.Set
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
 
 /-! # Encoded p-minus-one and q-minus-two for DSA -/
 

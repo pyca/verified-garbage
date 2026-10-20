@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Camellia.Arm.Verified
 public import VerifiedGarbage.Proof.Camellia.Scratch
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # Camellia's ECB functions on ARMv7 as the modes' core

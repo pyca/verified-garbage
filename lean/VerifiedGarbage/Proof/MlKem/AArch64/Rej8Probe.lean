@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Parse
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Accept
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Composition of vector parsing, acceptance, horizontal sum and lookup index -/
 

@@ -2,13 +2,12 @@ module
 public import VerifiedGarbage.Impl.Aes.X86.AesNi
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Gcm.X86.Rev
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Gcm.Spec
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-! XOR the encrypted SIMD lanes into writable data. The execution proof
 keeps register updates folded, and expresses memory through writeW. -/

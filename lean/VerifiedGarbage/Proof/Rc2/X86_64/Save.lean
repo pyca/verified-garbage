@@ -6,8 +6,6 @@ public import VerifiedGarbage.Impl.Rc2.X86_64.Block
 import VerifiedGarbage.Proof.Rc2.Word
 import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Finish
 public import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Vector
-public import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Rc2.Select
 import VerifiedGarbage.Proof.Framework.X86_64.Words

@@ -4,8 +4,9 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Gcd
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Words
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
 
 @[expose] public section
 

@@ -4,10 +4,14 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Pow
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Checks
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
 public import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Ffdh.X86_64.Setup
 import VerifiedGarbage.Proof.Bignum.Octets
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Data.Nat.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-!
 # FFDH on X86_64: the front of the domain operations

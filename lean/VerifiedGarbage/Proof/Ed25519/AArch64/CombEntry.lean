@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Ed25519.Canonical64
 public import VerifiedGarbage.Proof.Ed25519.CombDigits
 import VerifiedGarbage.Proof.X25519.AArch64.Alt.Mem
 import VerifiedGarbage.Proof.Framework.CallLay
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Ed25519.AArch64.CombDigit
 import VerifiedGarbage.Proof.X25519.AArch64.Alt.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

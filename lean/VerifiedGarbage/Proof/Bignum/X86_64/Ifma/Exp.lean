@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Win
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Tab
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 

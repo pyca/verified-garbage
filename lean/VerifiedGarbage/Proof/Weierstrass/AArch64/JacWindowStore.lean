@@ -1,13 +1,12 @@
 module
 
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Impl.NatPairs
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
-public import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Proof.Framework.Lit
-import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Impl.NatPairs
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-! Stores for the Jacobian window's table construction. -/
 

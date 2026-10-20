@@ -1,11 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
-public import Batteries.Tactic.Init
-public import Batteries.Tactic.PermuteGoals
-public import Batteries.Tactic.SeqFocus
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-! # Compositional stack-pointer safety avoids rechecking every dispatched width -/
 

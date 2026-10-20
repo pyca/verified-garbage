@@ -2,8 +2,11 @@ module
 public import VerifiedGarbage.Proof.Modes.Ctr
 
 import VerifiedGarbage.Proof.Modes.Cbc
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.Linter.Style
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # CBC encryption's result, for any block cipher and target

@@ -18,6 +18,12 @@ meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Entry
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Pad
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on AArch64, interleaved: `sealWithS` is constant time

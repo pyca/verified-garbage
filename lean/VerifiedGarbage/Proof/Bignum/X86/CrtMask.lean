@@ -7,7 +7,12 @@ public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Bignum.X86.CrtMaskOutput
 import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Impl.Bignum.X86.CrtLayout
+import VerifiedGarbage.Impl.Mont.X86.Context
 import VerifiedGarbage.Proof.Mont.X86.Dynamic
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
 
 /-! # Apply the saved acceptance mask after exponentiation -/
 

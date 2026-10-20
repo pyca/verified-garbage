@@ -1,19 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.Arm.Run
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Rc4.Dword
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Rc4.Dword
-public import VerifiedGarbage.Proof.Rc4.Table
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Rc4.Arm.Run
+public import VerifiedGarbage.Proof.Rc4.Scan32
+public import VerifiedGarbage.Impl.Rc4.Arm
+public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Rc4.Table
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! # RC4 on ARMv7: the table lookup, a word at a time -/
 

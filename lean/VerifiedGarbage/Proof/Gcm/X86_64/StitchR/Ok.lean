@@ -9,6 +9,9 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.SetupFin
 public import VerifiedGarbage.Proof.Gcm.Poly
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # The 256-bit interleaved loops with prepared powers meet their contracts

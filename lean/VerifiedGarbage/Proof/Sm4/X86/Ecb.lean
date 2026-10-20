@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86.Group
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Sm4.X86.Keys
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.X86.LayersLit
+import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-!
 # SM4 ECB on x86 (32-bit): the whole function

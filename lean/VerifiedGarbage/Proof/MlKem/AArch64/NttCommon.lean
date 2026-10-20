@@ -1,12 +1,12 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Barrett
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 public import VerifiedGarbage.Proof.MlKem.Mem
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlKem.Ntt
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
 
 /-!
 # ML-KEM on AArch64: what the NTT and its inverse share

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Impl.Mont.Arm
 public import VerifiedGarbage.Proof.Mont.Arm.Words
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Saving and restoring registers in the working space, on 32-bit ARM

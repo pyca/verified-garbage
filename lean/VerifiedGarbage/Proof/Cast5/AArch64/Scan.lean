@@ -3,15 +3,8 @@ module
 import VerifiedGarbage.Proof.Cast5.AArch64.Run
 public import VerifiedGarbage.Proof.Cast5.Table
 import VerifiedGarbage.Proof.Framework.CallLay
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Cast5.AArch64
-public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-!
 # CAST5 on AArch64: the scan of a table

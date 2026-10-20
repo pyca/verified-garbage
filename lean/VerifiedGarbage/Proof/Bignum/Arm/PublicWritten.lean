@@ -1,5 +1,5 @@
 module
-public import VerifiedGarbage.Proof.Bignum.PublicWritten
+import VerifiedGarbage.Proof.Bignum.PublicWritten
 
 
 @[expose] public section

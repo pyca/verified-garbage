@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
 import VerifiedGarbage.Proof.Argon2.Divide
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 

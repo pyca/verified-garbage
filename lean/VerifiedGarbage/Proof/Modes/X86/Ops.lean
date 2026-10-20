@@ -4,9 +4,7 @@ public import VerifiedGarbage.Impl.Modes.X86.Seq
 public import VerifiedGarbage.Proof.Modes.Ops
 import VerifiedGarbage.Proof.Modes.X86.Counter
 public import VerifiedGarbage.Proof.Framework.X86.Wp
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!

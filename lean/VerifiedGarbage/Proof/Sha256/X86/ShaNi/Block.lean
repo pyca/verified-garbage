@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Compress
 public import VerifiedGarbage.Proof.Sha256.X86.Compress
 public import VerifiedGarbage.Impl.Sha256.X86.ShaNi
 public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Spec
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 

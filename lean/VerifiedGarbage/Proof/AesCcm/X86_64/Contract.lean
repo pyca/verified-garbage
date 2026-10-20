@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Spec.Ccm
-import VerifiedGarbage.Spec.Ccm.Contract
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # AES-CCM on x86-64: the contracts the proofs are written against

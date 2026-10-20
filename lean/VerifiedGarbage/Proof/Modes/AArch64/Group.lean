@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.Modes.Ctr
 public import VerifiedGarbage.Proof.Framework.AArch64.Straight
 public import VerifiedGarbage.Proof.Modes.AArch64.Core
 public import VerifiedGarbage.Proof.Modes.Counter
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Modes.AArch64.Counter
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
 import VerifiedGarbage.Proof.Modes.Addr

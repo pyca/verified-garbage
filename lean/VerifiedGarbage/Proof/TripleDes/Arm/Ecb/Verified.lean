@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.TripleDes.EcbMemory
 import VerifiedGarbage.Proof.Rc2.Arm.KeySteps
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.TripleDes.Scratch
 public import VerifiedGarbage.Proof.TripleDes.Arm.Pre
 import VerifiedGarbage.Proof.TripleDes.Schedule
@@ -12,7 +11,9 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.TripleDes.Arm.VerifiedBlock
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
 
 /-! ## `Call` -/
 

@@ -6,26 +6,11 @@ import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
 import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
 import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
 import VerifiedGarbage.Proof.Mont.Read
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Mont.X86.Chain
-import VerifiedGarbage.Proof.Mont.X86.Csub
-import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Mont.X86.Row
-import VerifiedGarbage.Proof.Mont.X86.SparseStep
-import VerifiedGarbage.Proof.Mont.X86.Step
-import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
-import VerifiedGarbage.Proof.X25519.Field
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Proof.X25519.X86.Fold
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-! ## `MontModuli` -/
 

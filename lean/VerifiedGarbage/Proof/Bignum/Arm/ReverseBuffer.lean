@@ -5,6 +5,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 
 import VerifiedGarbage.Proof.Bignum.Arm.StoreBE
 import VerifiedGarbage.Proof.Bignum.Arm.ReverseRegion
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Serialize a nonempty native integer buffer as exact big-endian octets -/
 

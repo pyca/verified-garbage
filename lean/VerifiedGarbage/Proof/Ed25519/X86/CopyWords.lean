@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.PointTable
 public import VerifiedGarbage.Proof.Ed25519.X86.Workspace
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X25519.X86.Column
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Bounded word copies between disjoint scratch ranges. -/
 

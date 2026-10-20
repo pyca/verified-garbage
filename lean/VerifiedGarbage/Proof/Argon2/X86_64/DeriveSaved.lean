@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveFrame
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Offset
 

@@ -2,10 +2,10 @@ module
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Rows6
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
 import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # ECDSA on 32-bit ARM: `x`, `r`, `k R mod n` and the checks of `d`, `k`, `r`

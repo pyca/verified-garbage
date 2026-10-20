@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Mont.X86.DynamicOps
 
 import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Preservation of the compact public RSA Montgomery context -/
 

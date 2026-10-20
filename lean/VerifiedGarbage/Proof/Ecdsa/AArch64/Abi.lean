@@ -1,10 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!

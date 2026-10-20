@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Verify
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Framework.Covers
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.TCB.AArch64.Target
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.KernelList
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # `vg_rsa_pkcs1_verify` on AArch64: the precondition

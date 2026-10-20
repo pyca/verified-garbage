@@ -1,15 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Dsa.X86_64.Joint
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Dsa.X86_64.JointRun
 import VerifiedGarbage.Proof.Dsa.X86_64.JointPrepare
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.Arithmetic
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 
 /-! # Loading and preparing both bases for joint DSA exponentiation -/
 

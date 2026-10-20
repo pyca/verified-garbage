@@ -6,11 +6,10 @@ public import VerifiedGarbage.Proof.X448.Pairs
 
 import VerifiedGarbage.Proof.X448.AArch64.Decode
 import VerifiedGarbage.Proof.X448.AArch64.Swap
-import Batteries.Logic
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.X448.AArch64.Step
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on AArch64: storing decoded limb pairs

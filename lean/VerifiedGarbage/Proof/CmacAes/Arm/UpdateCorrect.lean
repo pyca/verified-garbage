@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.CmacAes.Arm.UpdateLoop
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-CMAC on ARMv7: `vg_cmac_aes_update` is correct

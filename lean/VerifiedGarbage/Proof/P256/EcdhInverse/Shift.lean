@@ -1,9 +1,13 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Framework.PowLit
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
 import VerifiedGarbage.Proof.Divstep.WordBasic
+public import Mathlib.Algebra.Group.Int.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

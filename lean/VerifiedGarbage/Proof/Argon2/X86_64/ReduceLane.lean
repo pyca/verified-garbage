@@ -10,6 +10,7 @@ public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Argon2.X86_64.FillWritePrefix
 import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Argon2.X86_64.ReductionState`. -/
 

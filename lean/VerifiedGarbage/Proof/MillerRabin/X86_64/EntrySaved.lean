@@ -4,7 +4,11 @@ public import VerifiedGarbage.Proof.MillerRabin.X86_64.Stack
 
 import VerifiedGarbage.Proof.MillerRabin.X86_64.StackBookkeeping
 import VerifiedGarbage.Proof.MillerRabin.X86_64.StackContext
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Stage
 
 /-! # Saved words agree with the workspace after entering the round -/
 

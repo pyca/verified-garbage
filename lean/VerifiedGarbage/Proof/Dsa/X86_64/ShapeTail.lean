@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.OddCheck
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeFinish
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.Masks
 
 /-! # Composition of domain masks, parity, and digest-prefix selection -/

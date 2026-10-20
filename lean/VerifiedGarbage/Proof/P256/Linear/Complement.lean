@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.P256.Linear
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

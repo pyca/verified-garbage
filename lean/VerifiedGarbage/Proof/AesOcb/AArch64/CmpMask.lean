@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Env
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # AES-OCB on AArch64: checking the tag and masking the data (`cmp`, `mask`)

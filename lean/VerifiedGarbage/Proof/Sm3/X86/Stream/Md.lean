@@ -1,43 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.X86.Finalize
-meta import VerifiedGarbage.Proof.MdStream.X86.Finalize
 public import VerifiedGarbage.Proof.MdStream.X86.Update
-meta import VerifiedGarbage.Proof.MdStream.X86.Update
 import VerifiedGarbage.Proof.MdStream.X86.Words
-meta import VerifiedGarbage.Proof.MdStream.X86.Words
 public import VerifiedGarbage.Proof.Sm3.Md
-meta import VerifiedGarbage.Proof.Sm3.Md
 public import VerifiedGarbage.Proof.Sm3.X86.Contract
-meta import VerifiedGarbage.Proof.Sm3.X86.Contract
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sm3.X86.Compress
-meta import VerifiedGarbage.Proof.Sm3.X86.Compress
-import VerifiedGarbage.Impl.Sm3.X86.Stream
-meta import VerifiedGarbage.Impl.Sm3.X86.Stream
-public import VerifiedGarbage.Proof.Sm3.X86.Lit
-meta import VerifiedGarbage.Proof.Sm3.X86.Lit
-public import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.CallWith
-meta import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Sm3.X86.Lit
+public import VerifiedGarbage.Impl.Sm3.X86.Stream
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.MdStream.X86.Finalize
+meta import VerifiedGarbage.Proof.MdStream.X86.Update
+meta import VerifiedGarbage.Proof.MdStream.X86.Words
+meta import VerifiedGarbage.Proof.Sm3.Md
+meta import VerifiedGarbage.Proof.Sm3.X86.Contract
+meta import VerifiedGarbage.Proof.Sm3.X86.Compress
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Sm3.X86.Lit
+meta import VerifiedGarbage.Impl.Sm3.X86.Stream
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming SM3 on x86 (32-bit): `update` and `finalize`

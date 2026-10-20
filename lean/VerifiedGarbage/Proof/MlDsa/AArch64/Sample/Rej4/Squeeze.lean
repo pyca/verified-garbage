@@ -2,9 +2,11 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SqPhase
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SqAdvance
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SqPair
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 @[expose] public section
 

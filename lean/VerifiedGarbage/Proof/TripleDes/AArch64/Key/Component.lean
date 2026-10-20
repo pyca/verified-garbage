@@ -1,10 +1,12 @@
 module
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Load
 
 import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Loop
 import VerifiedGarbage.Proof.TripleDes.Schedule
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
 
 @[expose] public section
 

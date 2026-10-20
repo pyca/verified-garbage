@@ -5,12 +5,10 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Loads
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseLocalTable
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRoots
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `InverseInitConst.lean` -/
 

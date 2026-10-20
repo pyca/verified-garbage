@@ -5,6 +5,11 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Order.Defs.PartialOrder
+import Mathlib.Tactic.Set
+import Mathlib.Data.Int.GCD
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
 
 /-!
 # RSASSA-PSS verification on x86-64: the call of `vg_rsa_public_checked`

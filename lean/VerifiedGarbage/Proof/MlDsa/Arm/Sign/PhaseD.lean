@@ -5,6 +5,8 @@ import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsD
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsB
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Hash
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsC
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on ARMv7: the private key and `ρ″`

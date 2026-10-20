@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CombTbl
 public import VerifiedGarbage.Spec.Ed25519.Contract
-public import VerifiedGarbage.Spec.Weierstrass
-public import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! Merged from `Proof.Ed25519.AArch64.SignCached.Layout`. -/
 

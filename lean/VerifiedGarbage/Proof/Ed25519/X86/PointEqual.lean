@@ -3,11 +3,11 @@ module
 public import VerifiedGarbage.Impl.Ed25519.X86.Verify
 public import VerifiedGarbage.Proof.Ed25519.X86.PowerEnv
 public import VerifiedGarbage.Proof.Ed25519.X86.RecoverParity
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
-import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

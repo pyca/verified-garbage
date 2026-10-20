@@ -4,12 +4,13 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCall
 
 import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCorrect
 import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCT
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.X86_64.Message.HashCT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCorrect
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-import VerifiedGarbage.Proof.MlKem.X86_64.VLay
 
 /-!
 # ML-DSA on x86-64, `verify_message`: constant time

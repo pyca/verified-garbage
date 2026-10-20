@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignContract
 import VerifiedGarbage.Proof.Rsa.X86.PrivVerified
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Complete i686 certificate for checked PKCS #1 signing -/
 

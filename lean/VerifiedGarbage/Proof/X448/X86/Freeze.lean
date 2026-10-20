@@ -3,9 +3,8 @@ module
 import VerifiedGarbage.Proof.X448.X86.FreezePrep
 import VerifiedGarbage.Proof.X448.X86.Select
 public import VerifiedGarbage.Proof.X448.X86.Env
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.X448.X86.Carry
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # X448 on x86 (32-bit): canonical reduction

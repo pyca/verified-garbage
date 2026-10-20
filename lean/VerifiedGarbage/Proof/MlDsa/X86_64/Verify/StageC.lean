@@ -8,12 +8,12 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.PrimsOk
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Top
 
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.StageA
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
 import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-DSA verification on x86-64: `w′₁`, row by row

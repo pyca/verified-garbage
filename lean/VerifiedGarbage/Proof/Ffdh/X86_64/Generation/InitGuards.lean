@@ -3,10 +3,8 @@ public import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Init
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Spec.Ffdh.Generation
-public import VerifiedGarbage.Spec.Rsa.Contract
 
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitValues
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Native validation branches and invalid-input output for FFDH generation -/
 

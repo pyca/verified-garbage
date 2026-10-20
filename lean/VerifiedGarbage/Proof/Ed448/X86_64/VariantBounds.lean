@@ -1,28 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import VerifiedGarbage.Proof.Ed448.Scalar
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
-import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
-import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Verified
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
+public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Proof.X448.X86_64.AddSub
-import VerifiedGarbage.Proof.X448.X86_64.Pow223
-import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
 
 /-! Stack and register bounds shared by callers of every field backend. -/
 

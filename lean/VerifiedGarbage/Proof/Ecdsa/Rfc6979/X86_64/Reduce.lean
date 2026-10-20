@@ -3,13 +3,9 @@ module
 import VerifiedGarbage.Proof.X25519.X86_64.Step
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Weierstrass.BytesLen
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hash
 public import VerifiedGarbage.Proof.Mont.Words
-import Mathlib.Tactic.Tauto
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on x86-64: `h = bits2octets(digest)`

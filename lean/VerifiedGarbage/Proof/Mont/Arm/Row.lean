@@ -3,7 +3,7 @@ public import VerifiedGarbage.Impl.Mont.Arm
 public import VerifiedGarbage.Proof.Mont.Arm.Words
 
 import VerifiedGarbage.Proof.Mont.Arm.Step
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Montgomery arithmetic on 32-bit ARM: a row of the multiplication

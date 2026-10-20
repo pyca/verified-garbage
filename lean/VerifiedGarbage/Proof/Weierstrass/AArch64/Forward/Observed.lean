@@ -1,12 +1,12 @@
 module
 
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Logic.Function.Basic
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Certificate
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Run
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Register allocation can discard dead scratch words and introduce spills.
 Its certificate therefore compares exactly the words the caller observes,

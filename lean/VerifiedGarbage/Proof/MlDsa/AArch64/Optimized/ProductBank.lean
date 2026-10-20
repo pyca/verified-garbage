@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ProductBank
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBatch
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

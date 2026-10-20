@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Sha512.X86.Sse
 public import VerifiedGarbage.Proof.Sha512.X86.Rounds
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Sha512.Spec
 import VerifiedGarbage.Proof.Framework.AddrArith
 

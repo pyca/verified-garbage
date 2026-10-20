@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Spec.Dsa
-import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.PowLit
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Bounds for the three reviewed DSA generation sizes -/
 

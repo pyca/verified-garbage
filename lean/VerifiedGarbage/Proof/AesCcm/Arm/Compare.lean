@@ -5,13 +5,18 @@ public import VerifiedGarbage.Proof.AesGcm.Arm.Blocks
 public import VerifiedGarbage.Proof.AesGcm.Arm.Loops
 public import VerifiedGarbage.Proof.Cmac.Mem32
 public import VerifiedGarbage.Spec.Gcm
-import VerifiedGarbage.Proof.AesGcm.Arm.Compare
-import VerifiedGarbage.Proof.AesGcm.Arm.Flush
-import VerifiedGarbage.Proof.AesGcm.Arm.Run
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
 import VerifiedGarbage.Proof.AesGcm.Arm.Tag
-import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.AesGcm.Arm.Compare
+public import VerifiedGarbage.Proof.AesGcm.Arm.Flush
+public import VerifiedGarbage.Proof.AesGcm.Arm.Run
 
 /-!
 # AES-CCM on ARMv7: checking a received tag (`recv`, `cmp o`)

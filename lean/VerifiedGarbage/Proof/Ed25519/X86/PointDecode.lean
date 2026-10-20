@@ -5,12 +5,12 @@ import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
 public import VerifiedGarbage.Proof.Ed25519.X86.PointMultiplyFrame
 public import VerifiedGarbage.Proof.Ed25519.X86.RecoverSign
 import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBody
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.X25519.X86.Freeze
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Ed25519.X86.DecodeY`. -/
 

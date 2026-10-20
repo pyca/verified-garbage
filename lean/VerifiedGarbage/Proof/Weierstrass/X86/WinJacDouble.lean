@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86.WinJac
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! In-place doubling for the secret-scalar Jacobian window loop. -/
 

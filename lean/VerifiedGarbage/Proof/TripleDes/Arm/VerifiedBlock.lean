@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.Arm.Pre
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.TripleDes.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
 
 @[expose] public section
 

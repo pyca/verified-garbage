@@ -5,8 +5,12 @@ public import VerifiedGarbage.Proof.Rsa.Ranges
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReductionExponent
 import VerifiedGarbage.Proof.Bignum.CrtFrame
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Double
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Rsa.KeyMath
 
 /-! # The byte-to-integer bridge for p-candidate arithmetic -/
 

@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Arguments
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorStep
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-public import VerifiedGarbage.Proof.RsaKeyGen.Table
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Bind either h or computed g to the native range checker -/
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Blake2.Arm.CompressS.Rounds
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 

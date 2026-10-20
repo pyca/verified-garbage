@@ -2,7 +2,12 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryTape
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Push
+import Mathlib.Data.Nat.Basic
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Geometry of the generator's parent and arithmetic workspaces -/
 

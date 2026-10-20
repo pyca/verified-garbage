@@ -5,6 +5,8 @@ public import VerifiedGarbage.Impl.RsaPss.X86_64.Precomputed
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
 import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCorrect
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
 
 /-!
 # RSASSA-PSS verification with cached public-key values on x86-64: the stack pointer

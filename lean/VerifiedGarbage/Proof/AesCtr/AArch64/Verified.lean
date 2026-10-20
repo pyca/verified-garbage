@@ -8,7 +8,8 @@ public import VerifiedGarbage.Spec.Ctr.Contract
 import VerifiedGarbage.Proof.AesCbc.AArch64.Verified
 import VerifiedGarbage.Proof.AesCtr.AArch64.CT
 import VerifiedGarbage.Proof.AesCtr.AArch64.Iter
-import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 
 /-!
 # AES-CTR on AArch64: `Verified`

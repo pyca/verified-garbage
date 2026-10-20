@@ -1,10 +1,9 @@
 module
-public import Batteries.Tactic.Init
-public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.RsaOaep
 
 import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # RSAES-OAEP: the encoding, on any target

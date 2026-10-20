@@ -2,8 +2,10 @@ module
 public import VerifiedGarbage.Impl.MlKem.AArch64.Codec16
 public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecLanes
 
-meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # SIMD decoder arithmetic -/
 

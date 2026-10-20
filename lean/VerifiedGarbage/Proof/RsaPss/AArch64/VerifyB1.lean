@@ -3,10 +3,10 @@ public import VerifiedGarbage.Proof.RsaPss.AArch64.Mgf
 public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyScan
 
 import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyParts
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
 import VerifiedGarbage.Proof.RsaPss.AArch64.SignEncOk
 import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RSASSA-PSS verification on AArch64: unmasking `DB`

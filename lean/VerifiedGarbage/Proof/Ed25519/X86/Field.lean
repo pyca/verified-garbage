@@ -4,7 +4,8 @@ public import VerifiedGarbage.Proof.Ed25519.X86.Workspace
 public import VerifiedGarbage.Impl.Ed25519.X86.Field
 public import VerifiedGarbage.Proof.X25519.X86.Ops
 public import VerifiedGarbage.Spec.Ed25519
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Ed25519.X86.FieldMemory`. -/
 

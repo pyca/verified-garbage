@@ -1,7 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # RC2 word arithmetic in 64-bit registers -/
 

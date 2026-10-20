@@ -26,6 +26,8 @@ meta import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.P224.Arm
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ECDSA over P-224 on 32-bit ARM: `Verified`

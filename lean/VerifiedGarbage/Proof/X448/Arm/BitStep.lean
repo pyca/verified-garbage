@@ -1,14 +1,12 @@
 module
-public import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.X448.Arm.Swap
 
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.X448.Ladder
-import VerifiedGarbage.Spec.X25519
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: reading a scalar bit

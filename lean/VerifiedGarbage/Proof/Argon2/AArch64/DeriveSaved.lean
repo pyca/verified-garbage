@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.DeriveFrame
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Argon2.AArch64.DeriveFrameState`. -/

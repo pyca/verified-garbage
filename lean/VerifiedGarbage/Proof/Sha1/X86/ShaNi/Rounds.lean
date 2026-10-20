@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 public import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Spec
 public import VerifiedGarbage.Impl.Sha1.X86.ShaNi
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # SHA-1 with the SHA extensions on x86: the 80 rounds of a block

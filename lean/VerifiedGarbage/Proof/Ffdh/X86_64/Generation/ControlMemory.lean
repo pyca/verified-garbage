@@ -1,14 +1,13 @@
 module
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Bignum.Words
-public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Spec.Rsa.Contract
 
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitValues
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! # The generation controller's private sixteen-word workspace -/
 

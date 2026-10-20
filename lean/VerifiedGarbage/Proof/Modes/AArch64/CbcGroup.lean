@@ -5,9 +5,7 @@ import VerifiedGarbage.Proof.Modes.AArch64.Unchain
 public import VerifiedGarbage.Proof.Modes.Cbc
 public import VerifiedGarbage.Impl.Modes.AArch64.Cbc
 public import VerifiedGarbage.Proof.Modes.AArch64.Setup
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Modes.AArch64.Xor
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Modes.AArch64.Copy
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
 import VerifiedGarbage.Proof.Modes.Addr

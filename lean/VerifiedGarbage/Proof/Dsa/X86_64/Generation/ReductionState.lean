@@ -2,9 +2,12 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Reduce
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Division
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Subtract
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+public import Mathlib.Tactic.Attr.Core
 
 /-! # Public workspace invariants between the reduction's arithmetic pieces -/
 

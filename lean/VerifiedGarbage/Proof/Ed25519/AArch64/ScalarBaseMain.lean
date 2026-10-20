@@ -1,11 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
-public import Mathlib.FieldTheory.Finite.Basic
-public import Mathlib.Tactic.NormNum.Prime
 public import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CombTbl
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
 import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
@@ -14,42 +11,20 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Ed25519.AArch64.BitByte
-import VerifiedGarbage.Proof.Ed25519.AArch64.Bits
-import VerifiedGarbage.Proof.Ed25519.AArch64.CombDigit
-import VerifiedGarbage.Proof.Ed25519.AArch64.CombEntry
-import VerifiedGarbage.Proof.Ed25519.AArch64.CombLoop
-import VerifiedGarbage.Proof.Ed25519.AArch64.Freeze
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointLoop
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointSelect
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMain
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarWord
-import VerifiedGarbage.Proof.Ed25519.AArch64.Swap
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.Field64
-import VerifiedGarbage.Proof.Ed25519.Scalar
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.BitByte
-import VerifiedGarbage.Proof.Framework.Pratt
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Mont.AArch64.Blocks
-import VerifiedGarbage.Proof.Mont.AArch64.Chain
-import VerifiedGarbage.Proof.Mont.AArch64.Csub
-import VerifiedGarbage.Proof.Mont.AArch64.Rounds
-import VerifiedGarbage.Proof.X25519.AArch64.Alt.Add
-import VerifiedGarbage.Proof.X25519.AArch64.Alt.Cmadd
-import VerifiedGarbage.Proof.X25519.AArch64.Alt.Exec
-import VerifiedGarbage.Proof.X25519.AArch64.Alt.Mul
-import VerifiedGarbage.Proof.X25519.AArch64.Alt.Mux
-import VerifiedGarbage.Proof.X25519.AArch64.Alt.Sqr
-import VerifiedGarbage.Proof.X25519.AArch64.Alt.Sub
-import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Flags
-import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Formula
-import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Step
+import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
 
 /-! Merged from `Proof.Ed25519.AArch64.ScalarBaseMemory`. -/
 

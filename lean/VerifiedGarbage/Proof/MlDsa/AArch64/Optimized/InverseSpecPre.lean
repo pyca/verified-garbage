@@ -3,13 +3,11 @@ module
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
 public import VerifiedGarbage.Spec.MlDsa.Montgomery
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## From `InverseSat.lean` -/
 

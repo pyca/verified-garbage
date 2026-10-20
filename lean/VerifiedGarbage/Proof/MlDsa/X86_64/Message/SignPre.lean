@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Layout
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
+import VerifiedGarbage.Proof.Sha3.X86_64.Permute
 
 /-!
 # ML-DSA on x86-64, `sign_message`: the precondition and the layout

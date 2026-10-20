@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.PrepTiming
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNafWide
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WideLoop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WideInit
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Timing of the public NAF's recoding

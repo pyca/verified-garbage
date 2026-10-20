@@ -8,8 +8,10 @@ import VerifiedGarbage.Proof.Dsa.X86_64.EqualHead
 import VerifiedGarbage.Proof.Dsa.X86_64.EqualLoop
 import VerifiedGarbage.Proof.Dsa.X86_64.ZeroMask
 import VerifiedGarbage.Proof.Dsa.X86_64.MaskContext
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.Masks
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
 
 /-! # Complete byte-buffer equality and inequality checks -/
 

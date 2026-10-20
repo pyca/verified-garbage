@@ -3,10 +3,9 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Parity
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Constant
 
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Sha3.AArch64.Permute
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
 
 @[expose] public section
 

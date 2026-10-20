@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.Arm.PrivChecked
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # One masked private-result byte and clearing of its temporary source -/
 

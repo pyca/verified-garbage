@@ -3,8 +3,7 @@ module
 public import VerifiedGarbage.Spec.EcKey.P224
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Tables
 public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # P-224 public keys on AArch64: the contract the proof is written against

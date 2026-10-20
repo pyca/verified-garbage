@@ -4,9 +4,7 @@ public import VerifiedGarbage.Impl.Aes.AArch64.Ctr32
 public import VerifiedGarbage.Proof.Framework.AArch64.Linear
 public import VerifiedGarbage.Proof.Aes.SboxSpec
 public import VerifiedGarbage.Proof.Aes.Bitsliced
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 

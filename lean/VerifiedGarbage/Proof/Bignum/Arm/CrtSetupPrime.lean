@@ -1,14 +1,14 @@
 module
-public import Batteries.Logic
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtSetup
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Mont
 
 import VerifiedGarbage.Proof.Bignum.Arm.CrtEnterPrime
 import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
 import VerifiedGarbage.Proof.Bignum.Arm.Setup
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Initialize one factor workspace while retaining its parent link -/
 

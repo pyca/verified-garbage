@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameCopy
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Framework.AArch64.StackStore
+import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Copy incoming argument words without modifying unread stack arguments -/

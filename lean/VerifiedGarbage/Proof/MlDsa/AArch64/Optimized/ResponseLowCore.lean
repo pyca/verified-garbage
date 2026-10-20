@@ -5,12 +5,11 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFlags
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowInit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintFlags
 
 /-! ## From `ResponseLowFlags.lean` -/
 

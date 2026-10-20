@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.AnyKey
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.OmegaLit
 
 /-!
 # HMAC's `init` for a key of any length over any Merkle–Damgård hash function on x86-64: constant time, verified

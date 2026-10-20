@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKeyCore
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.X86_64.Rounds

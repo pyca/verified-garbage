@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Camellia.AArch64.Ecb
 import VerifiedGarbage.Proof.Camellia.AArch64.Crypt8
 public import VerifiedGarbage.Impl.Camellia.AArch64.Prepared
-import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 

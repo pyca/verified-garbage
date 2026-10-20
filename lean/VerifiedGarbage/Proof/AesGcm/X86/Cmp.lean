@@ -10,6 +10,14 @@ meta import VerifiedGarbage.Proof.Cmac.Block32
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.AesGcm.X86.Tag
 meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Impl.AesGcm.X86
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
+meta import VerifiedGarbage.Impl.AesGcm.X86
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.TCB.X86.Isa
+meta import VerifiedGarbage.TCB.X86.State
 
 /-!
 # AES-GCM on x86: checking a tag

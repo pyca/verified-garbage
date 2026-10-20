@@ -2,17 +2,15 @@ module
 
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
 import VerifiedGarbage.Proof.Hmac.Common
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.AArch64
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Spec.Weierstrass.Point
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Spec.Sha256
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Deterministic ECDSA on AArch64: copying words

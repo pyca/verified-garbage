@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Weierstrass.X86.Rcb3
 public import VerifiedGarbage.Proof.Weierstrass.JacMadd
 public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # The mixed Jacobian addition's code on x86 (32-bit)

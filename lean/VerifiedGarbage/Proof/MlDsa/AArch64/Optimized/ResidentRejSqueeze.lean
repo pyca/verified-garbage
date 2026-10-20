@@ -5,9 +5,8 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMemory
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentStream
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

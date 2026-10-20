@@ -8,8 +8,6 @@ public import VerifiedGarbage.Spec.MlDsa.PositiveNtt
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.NttTable
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableArtifact
 public import VerifiedGarbage.Proof.Framework.ConstMem
-public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
 
 /-! ## From `NttContract.lean` -/

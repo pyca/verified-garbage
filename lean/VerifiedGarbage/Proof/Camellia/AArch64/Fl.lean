@@ -3,10 +3,8 @@ module
 public import VerifiedGarbage.Impl.Camellia.AArch64.Layers
 public import VerifiedGarbage.Proof.Camellia.Bitsliced
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # FL and FLINV on AArch64

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Args
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Spec.Weierstrass
 
 @[expose] public section
 

@@ -1,11 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Omega
 
 public import VerifiedGarbage.Proof.Sm4.AArch64.Prologue
 public import VerifiedGarbage.Proof.Sm4.Common
 public import VerifiedGarbage.Proof.Sm4.AArch64.Core
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sm4.AArch64.Copy
 import VerifiedGarbage.Proof.Sm4.AArch64.Keys
 import VerifiedGarbage.Proof.Sm4.AArch64.Crypt16
@@ -14,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
 
 /-!
 # A group of blocks of SM4 ECB on AArch64

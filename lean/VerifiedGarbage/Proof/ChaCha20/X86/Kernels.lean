@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.ChaCha20.X86.Quad
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86.SseDword
 import VerifiedGarbage.Proof.Framework.X86.Wp
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

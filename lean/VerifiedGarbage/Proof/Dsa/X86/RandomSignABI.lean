@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Spec.Dsa.RandomSign
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # The randomized signer's resources, from the shared cdecl contract

@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.SboxLit
 public import VerifiedGarbage.Proof.Framework.X86_64.StraightY
 public import VerifiedGarbage.Proof.TripleDes.SboxTables
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Straight
-import VerifiedGarbage.Proof.TripleDes.X86_64.Sbox
+import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 
 /-!
 # The AVX2 S-box circuits' machine code

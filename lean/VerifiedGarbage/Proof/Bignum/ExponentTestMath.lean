@@ -2,6 +2,10 @@ module
 public import VerifiedGarbage.Proof.Bignum.ExponentCheckMath
 
 import VerifiedGarbage.Proof.Bignum.ModulusCheckMath
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Word tests equivalent to the shared RSA public-exponent predicate -/
 

@@ -15,6 +15,8 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Callee
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Contract
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Fn
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Crypted
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, AArch64: `Verified`

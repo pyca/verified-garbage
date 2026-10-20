@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.KPke
-import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86.Common
 public import VerifiedGarbage.Impl.AesSiv.X86
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.VariantProof
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-SIV on x86: where everything is

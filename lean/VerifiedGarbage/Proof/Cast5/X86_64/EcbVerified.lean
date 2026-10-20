@@ -1,35 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86_64.Ecb
-meta import VerifiedGarbage.Proof.Cast5.X86_64.Ecb
-public import VerifiedGarbage.Proof.Cast5.X86_64.Lit
-meta import VerifiedGarbage.Proof.Cast5.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.ConstMem
-meta import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 public import VerifiedGarbage.Spec.Cast5.Contract
-meta import VerifiedGarbage.Spec.Cast5.Contract
-import VerifiedGarbage.Proof.Cast5.Memory
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Cast5.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Syms
-meta import VerifiedGarbage.Proof.Cast5.Memory
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Cast5.X86_64.Ecb
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+meta import VerifiedGarbage.Spec.Cast5.Contract
+meta import VerifiedGarbage.Proof.Cast5.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
 # CAST5 ECB on x86-64: verified against the shared contracts

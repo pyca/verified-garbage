@@ -4,8 +4,9 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Sample
 import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 public import VerifiedGarbage.Proof.MlKem.KPke
 public import VerifiedGarbage.Proof.MlKem.Mem16
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM on x86-64: the loop of `vg_mlkem_sample_ntt`

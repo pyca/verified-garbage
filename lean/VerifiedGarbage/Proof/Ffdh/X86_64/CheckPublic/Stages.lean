@@ -7,8 +7,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Contract
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
 public import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Entry
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Context
 import VerifiedGarbage.Proof.Ffdh.X86_64.Scan
@@ -17,7 +15,12 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Data.Nat.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_ffdh_check_public` on X86_64: the stages of a run

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Teardown
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Stack
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Compose the round's two saved frames -/
 

@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.TripleDes.X86.Sbox
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Rc2.X86.KeySteps
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 @[expose] public section
 

@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Scrypt.Memory
 import VerifiedGarbage.Proof.Scrypt.X86_64.FusedHalf
 import VerifiedGarbage.Proof.Scrypt.X86_64.FusedSetup
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

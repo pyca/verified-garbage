@@ -3,13 +3,12 @@ module
 public import VerifiedGarbage.Proof.MdStream.Spec
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Impl.MdStream.X86
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!

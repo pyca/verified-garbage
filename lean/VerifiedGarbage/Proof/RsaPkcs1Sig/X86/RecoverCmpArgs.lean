@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Compare
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackWord
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRegions
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Compare the public RSA result against the separately encoded digest -/
 

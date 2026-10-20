@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Env
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.Sqr
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.Mul
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.X25519.X86_64.Sqr
+import VerifiedGarbage.Proof.X25519.X86_64.Divstep.ARow
 
 /-!
 # X25519 on x86-64: `b + a24 · a` with BMI2 and ADX, and `adx_ok`

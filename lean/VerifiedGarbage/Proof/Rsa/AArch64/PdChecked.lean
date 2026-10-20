@@ -4,9 +4,10 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.Guarded
 import VerifiedGarbage.Proof.Bignum.AArch64.PdCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Rsa.AArch64.ExpCheck
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_public_precomputed_checked` on AArch64

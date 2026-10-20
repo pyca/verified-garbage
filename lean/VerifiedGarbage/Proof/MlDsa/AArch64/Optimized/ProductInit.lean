@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSetup
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductLoad
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.Framework.Block
 

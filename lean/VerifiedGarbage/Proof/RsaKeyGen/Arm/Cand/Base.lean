@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Candidate
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyArrs
 public import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # A candidate on ARMv7: the public parameters and the stages
 

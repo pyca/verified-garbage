@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveCore
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Slice
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Layout
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## From `FiveSlice.lean` -/
 

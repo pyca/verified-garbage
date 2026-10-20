@@ -1,13 +1,10 @@
 module
-public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Spec.MlDsa.Poly
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Frag
 
 import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Sign
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-!

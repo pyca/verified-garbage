@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.PassStart
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.TripleDes.AArch64.RoundBody
 import VerifiedGarbage.Proof.TripleDes.AArch64.Box
 import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

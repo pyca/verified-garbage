@@ -1,15 +1,14 @@
 module
-public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Base
-public import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Entry
 import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-DSA verification on x86-64: the blocks between the calls

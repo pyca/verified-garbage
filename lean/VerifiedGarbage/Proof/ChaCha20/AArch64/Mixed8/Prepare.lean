@@ -6,12 +6,13 @@ public import VerifiedGarbage.Proof.ChaCha20.AArch64.Block
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Rounds
 public import VerifiedGarbage.Proof.ChaCha20.Keystream
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Setup
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Counter
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Rounds
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

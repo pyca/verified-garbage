@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Camellia.X86.Prologue
 public import VerifiedGarbage.Proof.Camellia.Common
 public import VerifiedGarbage.Impl.Camellia.X86.ExpandKey
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Camellia.Planes32
 
 /-!

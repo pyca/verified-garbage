@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Loop
-import Mathlib.Tactic.IntervalCases
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Restore
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Save
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Store
@@ -10,7 +9,13 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLoop
+import Mathlib.Tactic.NormNum.OfScientific
+import Mathlib.Tactic.NormNum.DivMod
+import Mathlib.Tactic.NormNum.Abs
+import Mathlib.Data.Rat.Cast.Order
+import Mathlib.Tactic.NormNum.Pow
+import Mathlib.Data.Finset.Attr
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # The scalar resident absorber: whole blocks

@@ -3,10 +3,9 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Mont.X86_64.Csub
-public import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Short Weierstrass curves on x86-64: copies, selections and constants

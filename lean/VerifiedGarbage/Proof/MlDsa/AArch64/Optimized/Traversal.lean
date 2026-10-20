@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttSpec
 public import VerifiedGarbage.Proof.MlDsa.Arith.Schedule
 public import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

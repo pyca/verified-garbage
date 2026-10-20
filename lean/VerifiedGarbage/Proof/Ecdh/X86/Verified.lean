@@ -42,6 +42,8 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Weierstrass.WinLay
 meta import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ECDH over P-256 on x86 (32-bit): `Verified`

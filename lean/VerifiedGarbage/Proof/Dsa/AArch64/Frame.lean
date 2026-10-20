@@ -3,10 +3,12 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Product
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.CrtExp
-public import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
-public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.Set
+import Mathlib.Tactic.Push
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Framing the DSA child workspaces -/
 

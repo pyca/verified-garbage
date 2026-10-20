@@ -1,14 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Random
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.Bignum.AArch64.Run
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Correctness of the sampler's fixed public-byte mask selection. -/
 @[expose] public section

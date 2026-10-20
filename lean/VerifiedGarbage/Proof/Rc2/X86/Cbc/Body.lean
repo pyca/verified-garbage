@@ -7,21 +7,13 @@ public import VerifiedGarbage.Proof.Rc2.X86.Block
 public import VerifiedGarbage.Impl.Rc2.X86.Cbc
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Rc2.X86.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Framework.X86.SseDword
-import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-import VerifiedGarbage.Proof.Rc2.X86.KeyIO
-import VerifiedGarbage.Proof.Rc2.X86.PiLookup
-import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 @[expose] public section
 

@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Common
 import VerifiedGarbage.Proof.Framework.OffsetBelow
-import VerifiedGarbage.Proof.Framework.OmegaLit
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 

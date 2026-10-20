@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Limbwise
 public import VerifiedGarbage.Impl.Curve448.AArch64.Fast
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Finish
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Impl.X448.AArch64
+import VerifiedGarbage.Impl.X448.AArch64.Symmetric
 
 /-!
 # Differences and sums

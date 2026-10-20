@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Sm4.AArch64.Prologue
 
 import VerifiedGarbage.Proof.Sm4.AArch64.KeyInit
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sm4.AArch64.Keys
 import VerifiedGarbage.Proof.Sm4.Common
 import VerifiedGarbage.Proof.Sm4.Layout
@@ -13,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
 
 /-!
 # The loop of the SM4 key schedule on AArch64

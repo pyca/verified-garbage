@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.TapeLoop
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Advance one complete chunk and retain its input pointer -/
 

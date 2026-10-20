@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.Sm4.AArch64.Ecb
 import VerifiedGarbage.Proof.Sm4.AArch64.Crypt16
 public import VerifiedGarbage.Impl.Sm4.AArch64.Prepared
 import VerifiedGarbage.Proof.Sm4.Planes
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
 
 /-!
 # SM4's prepared round keys and batches on AArch64: the code

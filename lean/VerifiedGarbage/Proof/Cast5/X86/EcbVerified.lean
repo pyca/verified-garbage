@@ -1,29 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86.Ecb
-meta import VerifiedGarbage.Proof.Cast5.X86.Ecb
 public import VerifiedGarbage.Proof.Framework.X86.TaintSym
-meta import VerifiedGarbage.Proof.Framework.X86.TaintSym
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.ConstMem
-meta import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Spec.Cast5.Contract
+meta import VerifiedGarbage.Proof.Cast5.X86.Ecb
+meta import VerifiedGarbage.Proof.Framework.X86.TaintSym
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Spec.Cast5.Contract
-import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.CallLay
-import VerifiedGarbage.Proof.Framework.ReadHalves
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Framework.X86.SseDword
-meta import VerifiedGarbage.Proof.Framework.CallLay
-meta import VerifiedGarbage.Proof.Framework.ReadHalves
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.Sse
-meta import VerifiedGarbage.Proof.Framework.X86.SseDword
 
 /-!
 # CAST5 ECB on 32-bit x86: verified against the shared contracts

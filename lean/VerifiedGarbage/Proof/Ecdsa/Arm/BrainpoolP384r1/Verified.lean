@@ -26,6 +26,8 @@ meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.Arm
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ECDSA over brainpoolP384r1 on 32-bit ARM: `Verified`

@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyLay21
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyLay
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyButterfly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

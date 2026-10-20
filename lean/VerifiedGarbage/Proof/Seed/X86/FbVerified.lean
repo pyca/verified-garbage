@@ -26,6 +26,12 @@ meta import VerifiedGarbage.Spec.Seed.Cfb
 meta import VerifiedGarbage.Proof.Modes.X86.Seq
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Seed.X86.FbLit
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Seed.X86.Lanes
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Seed.X86.Lanes
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # SEED-OFB and SEED-CFB128 on x86 (32-bit) meet their contracts

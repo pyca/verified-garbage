@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Spec.Dsa.Generate
-public import Mathlib.Data.Int.ModEq
-public import VerifiedGarbage.Proof.RsaKeyGen.Table
-public import VerifiedGarbage.Proof.Dsa.AArch64.Run
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Sig
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Public parameter-generation ABI and its disjoint input buffers -/
 

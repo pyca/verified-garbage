@@ -6,9 +6,10 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Rel
 import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.HashCT
 import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Correct
 import VerifiedGarbage.Proof.Ed448.X86_64.Verify.CT
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Ed448.X86_64.ScalarVerified
 import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Prune
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLit
+import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
 
 /-!
 # Ed448 signing with a cached public key on x86-64: constant time

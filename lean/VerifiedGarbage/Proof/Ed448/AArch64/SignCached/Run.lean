@@ -3,10 +3,10 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
 public import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Hash
 
 import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Correct
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Ed448.Signing
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
 
 /-!
 # Ed448 signing with a cached public key on AArch64: the body's run

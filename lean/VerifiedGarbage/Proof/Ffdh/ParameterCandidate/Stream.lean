@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Spec.Ffdh
 
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Witness
+import Std.Data.DTreeMap.Internal.Balancing
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH parameter candidates: executable witness-stream equations -/

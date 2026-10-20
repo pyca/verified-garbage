@@ -1,17 +1,16 @@
 module
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.Set
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Sign
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Mont.X86.Words
-public import VerifiedGarbage.Spec.Weierstrass
 
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseArgs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Impl.Rsa.X86.PrivChecked
 import VerifiedGarbage.Proof.Rsa.X86.PrivRestore
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
 
 /-! # Restoring the three registers above the final pop -/
 

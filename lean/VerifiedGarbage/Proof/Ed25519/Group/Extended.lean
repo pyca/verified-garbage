@@ -1,13 +1,11 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Pratt
-public import Mathlib.Tactic.NormNum.Prime
 public import VerifiedGarbage.Proof.Edwards.Group
-public import Mathlib.Algebra.Group.Defs
-public import Mathlib.Algebra.Group.Basic
 public import VerifiedGarbage.Spec.Ed25519
-public import Mathlib.FieldTheory.Finite.Basic
-public import Mathlib.Algebra.Group.Nat.Even
+import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Algebra.Field.ZMod
+import Mathlib.Tactic.NormNum.Prime
 
 /-! Merged from `Proof.Ed25519.Group.Field`. -/
 

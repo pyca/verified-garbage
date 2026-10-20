@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcBody
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCorrect
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

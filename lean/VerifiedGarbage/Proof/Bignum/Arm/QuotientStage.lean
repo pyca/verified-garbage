@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Impl.Bignum.Arm.Round
 import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Exact division and state advance after Montgomery cancellation -/
 

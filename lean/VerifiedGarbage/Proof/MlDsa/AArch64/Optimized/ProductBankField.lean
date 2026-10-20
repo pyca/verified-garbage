@@ -3,11 +3,8 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBatch
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Arithmetic
-import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

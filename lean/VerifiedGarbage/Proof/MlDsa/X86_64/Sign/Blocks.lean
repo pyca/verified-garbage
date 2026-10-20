@@ -1,18 +1,17 @@
 module
-public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Lay
-public import VerifiedGarbage.Proof.Sha3.X86_64.Round
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlKem.X86_64.FragBase
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 
 /-!

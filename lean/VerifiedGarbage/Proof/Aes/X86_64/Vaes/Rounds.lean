@@ -5,6 +5,8 @@ public import VerifiedGarbage.Impl.Aes.X86_64.Vaes
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # VAES: encrypting the lanes of the block registers

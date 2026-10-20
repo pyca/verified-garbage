@@ -11,6 +11,12 @@ import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
 import VerifiedGarbage.Proof.Mont.X86.Csub
 import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Data.BitVec
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Reduction of a signed divstep coefficient row -/
 

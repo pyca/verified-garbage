@@ -4,6 +4,16 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bcast
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bcast
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM's short path on x86-64: the powers from a prepared context

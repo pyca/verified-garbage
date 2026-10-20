@@ -3,15 +3,17 @@ module
 import VerifiedGarbage.Proof.Ed25519.X86.WindowTables
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
 public import VerifiedGarbage.Proof.Ed25519.WindowNibble
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Ed25519.DblPoint
 public import VerifiedGarbage.Proof.Ed25519.X86.PointTable
 public import VerifiedGarbage.Proof.Ed25519.X86.PowerEnv
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ed25519.X86.Point32.Call
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
 import VerifiedGarbage.Proof.Ed25519.Group.Double
 import VerifiedGarbage.Proof.X25519.X86.Fold
+import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Verification's windows

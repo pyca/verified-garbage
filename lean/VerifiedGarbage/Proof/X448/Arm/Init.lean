@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Arm.RowMem
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 

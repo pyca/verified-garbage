@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.X86.Seq
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Modes.Steps
 
 /-!
 # The modes on x86 (32-bit), for any core

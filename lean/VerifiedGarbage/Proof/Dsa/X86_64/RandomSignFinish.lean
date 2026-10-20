@@ -2,11 +2,15 @@ module
 
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignZero
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublish
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Dsa.X86_64.RandomSign
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-! All exits clear failed output, wipe the nonce, and publish consumption. -/
 @[expose] public section

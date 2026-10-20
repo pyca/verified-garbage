@@ -1,39 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86.CallCT
-meta import VerifiedGarbage.Proof.X448.X86.CallCT
 import VerifiedGarbage.Proof.X448.X86.Square
-meta import VerifiedGarbage.Proof.X448.X86.Square
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.X448.X86.FnLit
-meta import VerifiedGarbage.Proof.X448.X86.FnLit
 import VerifiedGarbage.Proof.X448.X86.Counters
-meta import VerifiedGarbage.Proof.X448.X86.Counters
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.X25519.X86
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.X448.X86.Columns
-import VerifiedGarbage.Proof.X448.X86.Copy
-import VerifiedGarbage.Proof.X448.X86.FnVerified
-import VerifiedGarbage.Proof.X448.X86.Small
-meta import VerifiedGarbage.Impl.X25519.X86
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.X448.X86.CallCT
+meta import VerifiedGarbage.Proof.X448.X86.Square
+meta import VerifiedGarbage.Proof.X448.X86.FnLit
+meta import VerifiedGarbage.Proof.X448.X86.Counters
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.X448.X86.Columns
-meta import VerifiedGarbage.Proof.X448.X86.Copy
-meta import VerifiedGarbage.Proof.X448.X86.FnVerified
-meta import VerifiedGarbage.Proof.X448.X86.Small
+import VerifiedGarbage.Impl.X25519.X86
+meta import VerifiedGarbage.Impl.X25519.X86
 
 /-!
 # Field arithmetic on x86 (32-bit): two runs, piece by piece

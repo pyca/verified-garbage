@@ -12,8 +12,9 @@ import VerifiedGarbage.Proof.Gcm.SealGather
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
-import VerifiedGarbage.Proof.AesGcm.X86.Gather.Contract
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.VariantProof
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86: the function

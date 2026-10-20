@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 
 /-!
 # AES-GCM `open`'s path for TLS records: the tag

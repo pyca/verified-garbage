@@ -5,7 +5,8 @@ public import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.X448.X86.Counters
 import VerifiedGarbage.Proof.X448.X86.Decode
 import VerifiedGarbage.Proof.X448.X86.Fill
-import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # Ed448 scalar arithmetic on x86 (32-bit): the loops

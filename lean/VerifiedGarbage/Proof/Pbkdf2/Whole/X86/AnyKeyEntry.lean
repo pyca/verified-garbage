@@ -1,11 +1,11 @@
 module
 
 import VerifiedGarbage.Proof.Framework.EntryBranch
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Cold
+import VerifiedGarbage.Proof.Md5.X86.Lit
+import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-!
 # HMAC's `init` for a key of any length on x86 (32-bit), choosing on entry

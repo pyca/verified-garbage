@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.AArch64.Footprint
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Impl.X448.AArch64.Fast
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # X448 on AArch64: the footprints of the field operations, for any slots

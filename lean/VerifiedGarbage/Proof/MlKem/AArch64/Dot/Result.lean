@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Field
 import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Dot

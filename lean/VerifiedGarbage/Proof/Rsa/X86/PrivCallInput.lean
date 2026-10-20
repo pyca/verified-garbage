@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.PrivContext
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Rsa.X86.PrivRegions
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # The call return address does not alter the private candidate or packed public key -/
 

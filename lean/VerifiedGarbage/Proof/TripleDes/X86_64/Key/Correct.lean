@@ -3,12 +3,12 @@ module
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Composition
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Body
 import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Save
 import VerifiedGarbage.Proof.TripleDes.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.TripleDes.X86_64.FunctionsLit
 
 @[expose] public section
 

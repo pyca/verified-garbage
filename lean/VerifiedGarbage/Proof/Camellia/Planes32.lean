@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Camellia.Planes32
 public import VerifiedGarbage.Proof.Camellia.Bitsliced32
-import VerifiedGarbage.Proof.Camellia.Bitsliced
 
 /-!
 # Planes of Camellia's 64-bit constants, on 32-bit targets

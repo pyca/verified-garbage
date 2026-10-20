@@ -1,20 +1,11 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.Mul
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Mul
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 public import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMul
-meta import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-meta import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: products of NTTs with AVX2, the shared pieces

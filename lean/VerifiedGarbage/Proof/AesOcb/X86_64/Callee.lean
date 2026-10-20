@@ -7,6 +7,9 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Spec.Ocb
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-OCB on x86-64: the functions called

@@ -1,16 +1,21 @@
 module
-public import Mathlib.Data.Int.GCD
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.AArch64.Isa
 
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Impl.Bignum.AArch64.Core
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Impl.Bignum.Layout
+import VerifiedGarbage.TCB.AArch64.Simd
+import VerifiedGarbage.Impl.Bignum.AArch64.Core
 
 /-! A table row's SIMD comparison and masked insertion. -/
 

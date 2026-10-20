@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Idea.Arm.Block
 public import VerifiedGarbage.Proof.Idea.Inverse
 public import VerifiedGarbage.Proof.Idea.Scratch32
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Idea.Arm.ConstantTime
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Idea.Arm.Round
@@ -15,6 +14,12 @@ import VerifiedGarbage.Proof.Idea.Memory
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Idea.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.Taint
 
 /-!
 # IDEA decryption subkeys on ARMv7

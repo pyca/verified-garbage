@@ -3,13 +3,11 @@ module
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Constant
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRound
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

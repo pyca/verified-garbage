@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWin
 
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
@@ -10,7 +9,9 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+public import VerifiedGarbage.Proof.Bignum.CrtFrame
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.RsaKeyGen.Gcd
 
 /-!
 # A candidate on x86-64: Miller–Rabin's table

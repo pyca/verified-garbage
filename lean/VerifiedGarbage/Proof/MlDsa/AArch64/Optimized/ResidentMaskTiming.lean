@@ -14,6 +14,10 @@ meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes
 meta import VerifiedGarbage.Proof.Sha3.Arith
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ## From `ResidentMaskDecode.lean` -/
 

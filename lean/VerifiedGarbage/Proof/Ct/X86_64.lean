@@ -1,25 +1,19 @@
 module
 
 public import VerifiedGarbage.Impl.Ct.X86_64
-meta import VerifiedGarbage.Impl.Ct.X86_64
 public import VerifiedGarbage.Proof.Ct.Common
-meta import VerifiedGarbage.Proof.Ct.Common
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.Ct.Contract
-meta import VerifiedGarbage.Spec.Ct.Contract
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Impl.Ct.X86_64
+meta import VerifiedGarbage.Proof.Ct.Common
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Spec.Ct.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
 
 @[expose] public section
 

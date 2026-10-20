@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Loops
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Spec.Sha256
 import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.MdStream.X86_64.Common
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Word copies preserve exactly the same byte-level buffer contents. -/
 

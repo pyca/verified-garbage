@@ -1,9 +1,5 @@
 module
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Decrypt
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Spec.RsaPkcs1Enc
@@ -15,6 +11,9 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: IRPRF's messages

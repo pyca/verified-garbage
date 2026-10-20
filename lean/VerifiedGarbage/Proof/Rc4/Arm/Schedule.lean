@@ -4,7 +4,10 @@ import VerifiedGarbage.Proof.Rc4.Arm.Replace
 public import VerifiedGarbage.Proof.Rc4.Identity
 public import VerifiedGarbage.Proof.Rc4.Schedule
 public import VerifiedGarbage.Proof.Rc4.Arm.Lookup
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Rc4.Arm.Run
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! # RC4 on ARMv7: key scheduling -/
 

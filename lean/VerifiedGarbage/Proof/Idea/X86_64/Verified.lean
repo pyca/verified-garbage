@@ -4,19 +4,9 @@ public import VerifiedGarbage.Proof.Idea.X86_64.Ecb
 public import VerifiedGarbage.Proof.Idea.Scratch
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Impl.StackScratch.X86_64
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Idea.KeyBits
-import VerifiedGarbage.Proof.Idea.Memory
-import VerifiedGarbage.Proof.Idea.X86_64.Block
+import VerifiedGarbage.Proof.Idea.X86_64.Lit
 
 /-!
 # Verified IDEA ECB on x86-64

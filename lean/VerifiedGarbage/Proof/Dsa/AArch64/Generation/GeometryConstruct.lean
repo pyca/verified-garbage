@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructPlan
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryPrime
 import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
+public import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-! # Concrete p-candidate construction plan for each accepted subgroup candidate -/
 

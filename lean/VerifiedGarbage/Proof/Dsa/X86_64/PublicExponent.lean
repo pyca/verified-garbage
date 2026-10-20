@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicWindow
 public import VerifiedGarbage.Impl.Dsa.X86_64.PublicPower
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Math
 

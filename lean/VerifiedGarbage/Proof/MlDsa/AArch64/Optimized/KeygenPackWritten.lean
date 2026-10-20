@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Pack.Written
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 @[expose] public section
 

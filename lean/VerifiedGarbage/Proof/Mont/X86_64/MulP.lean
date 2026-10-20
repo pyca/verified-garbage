@@ -6,7 +6,9 @@ import VerifiedGarbage.Proof.Mont.X86_64.Rounds
 import VerifiedGarbage.Proof.Mont.X86_64.Blocks
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.X25519.X86_64.Mem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Montgomery arithmetic on x86-64: P-521's product by columns

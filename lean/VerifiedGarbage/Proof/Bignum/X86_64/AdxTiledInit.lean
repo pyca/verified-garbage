@@ -2,8 +2,6 @@ module
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledProduct
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Row
 
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
 
 @[expose] public section
 

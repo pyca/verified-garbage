@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

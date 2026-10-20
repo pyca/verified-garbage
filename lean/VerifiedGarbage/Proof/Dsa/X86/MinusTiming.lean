@@ -1,13 +1,13 @@
 module
 public import VerifiedGarbage.Proof.Dsa.X86.Pointer
 public import VerifiedGarbage.Impl.Dsa.X86.Validate
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 
 import VerifiedGarbage.Proof.Dsa.X86.CoreSetupTiming
 import VerifiedGarbage.Proof.Dsa.X86.CoreStoreTiming
 import VerifiedGarbage.Proof.Dsa.X86.ValidationBlocksTiming
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Constant-time formation of the fixed public modulus decrements -/
 

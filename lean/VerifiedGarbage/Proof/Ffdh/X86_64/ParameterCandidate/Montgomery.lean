@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Montgomery
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontSetup
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.CrtFrame
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # FFDH parameter candidates on x86-64: precompute R² at the candidate's own width -/
 

@@ -1,9 +1,12 @@
 module
-public import Mathlib.Data.Int.ModEq
-public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.Rsa
 
 import VerifiedGarbage.Proof.Rsa.RecoverMath
+import Mathlib.Order.RelClasses
+import Mathlib.Data.Nat.Basic
+import Mathlib.Tactic.Finiteness.Attr
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-!
 # `recoverPrimes`: the number of tries

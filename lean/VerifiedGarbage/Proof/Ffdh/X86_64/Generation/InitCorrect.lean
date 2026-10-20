@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitGuards
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitValues
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Correct native parameter-generation initialization, including validation -/
 

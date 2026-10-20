@@ -1,16 +1,15 @@
 module
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 
 import Mathlib.Data.BitVec
-import Mathlib.Data.Int.ModEq
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Ring
-import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.NormNum.OfScientific
+import Mathlib.Tactic.NormNum.DivMod
+import Mathlib.Tactic.NormNum.Abs
+import Mathlib.Data.Rat.Cast.Order
+import Mathlib.Tactic.NormNum.Pow
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! Fixed matrix multiplication blocks in the packed divstep batch. -/
 

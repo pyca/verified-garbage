@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttLoop
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Base
 
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

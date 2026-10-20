@@ -1,11 +1,11 @@
 module
-public import VerifiedGarbage.Proof.Rc4.X86.Lookup
 
 import VerifiedGarbage.Proof.Rc4.X86.Schedule
 import VerifiedGarbage.Proof.Rc4.X86.Save
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Rc4.X86.Lookup
+public import VerifiedGarbage.Impl.Rc4.X86
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
+public import VerifiedGarbage.Proof.Rc4.Memory
 
 /-! # RC4 on x86 (32-bit): checked initialization -/
 

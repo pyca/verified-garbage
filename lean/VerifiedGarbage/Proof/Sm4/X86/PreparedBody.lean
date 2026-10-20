@@ -4,11 +4,14 @@ public import VerifiedGarbage.Proof.Sm4.X86.Ecb
 public import VerifiedGarbage.Impl.Sm4.X86.Prepared
 import VerifiedGarbage.Proof.Sm4.Planes
 import all Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Sm4.X86.Crypt8
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 
 /-!
 # SM4's prepared round keys and batches on x86 (32-bit): the code

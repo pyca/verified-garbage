@@ -5,9 +5,10 @@ public import VerifiedGarbage.Proof.Weierstrass.Jac
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStore
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! Field environments after multi-coordinate public table transfers. -/
 

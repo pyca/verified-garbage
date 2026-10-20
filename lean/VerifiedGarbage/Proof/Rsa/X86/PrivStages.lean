@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Rsa.X86.PrivRetained
 import VerifiedGarbage.Proof.Rsa.X86.PrivPublicCall
 import VerifiedGarbage.Proof.Rsa.X86.PrivCrtCall
 import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Intermediate states for composing independent secret executions -/
 

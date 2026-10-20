@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Scrypt.BlockMix
 public import VerifiedGarbage.Spec.Scrypt.Contract
-public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # scryptROMix: facts about the specification

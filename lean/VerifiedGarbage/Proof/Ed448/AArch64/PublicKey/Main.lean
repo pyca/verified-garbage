@@ -2,16 +2,14 @@ module
 
 import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Base
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Ed448.AArch64.PublicKey
 public import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
 public import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Layout
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Hash
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 public-key derivation on AArch64: the whole function

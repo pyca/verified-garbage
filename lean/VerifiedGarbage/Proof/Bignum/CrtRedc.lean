@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.CrtLayout
 public import VerifiedGarbage.Proof.Bignum.Layout
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # RSA with the CRT: `redc`'s ranges and chunks

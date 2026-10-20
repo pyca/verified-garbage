@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Common
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Sha256.X86.Compress
-import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: the prologue and the key

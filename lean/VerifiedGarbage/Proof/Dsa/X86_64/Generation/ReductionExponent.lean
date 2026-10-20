@@ -5,8 +5,12 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateReduction
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Double
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Generation.PReduction
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Widget.Calc
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
 
 /-! # Candidate reduction also produces the generator exponent -/
 

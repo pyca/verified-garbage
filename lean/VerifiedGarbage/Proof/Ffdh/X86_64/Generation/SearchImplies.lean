@@ -2,10 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchContract
 public import VerifiedGarbage.Spec.Ffdh.GenerationContract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Match the complete native controller to its shared callable contract -/

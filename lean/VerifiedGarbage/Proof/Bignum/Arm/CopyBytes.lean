@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 import VerifiedGarbage.Proof.Bignum.Arm.CopyByteStep
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Runtime byte copying, with byte-exact output and memory preservation -/
 

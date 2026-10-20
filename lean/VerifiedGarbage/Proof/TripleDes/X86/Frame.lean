@@ -1,47 +1,16 @@
 module
-public import Batteries.Logic
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.TripleDes.X86.ConstantTime
-public import VerifiedGarbage.Proof.TripleDes.X86.Sbox
 public import VerifiedGarbage.Spec.TripleDes.Contract
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.StackScratch.X86
-public import VerifiedGarbage.Proof.Framework.Contract
 
 import VerifiedGarbage.Proof.TripleDes.X86.Key.Verified
 import VerifiedGarbage.Proof.TripleDes.X86.Ecb.Verified
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.Impl.TripleDes.X86.Ecb
+public import VerifiedGarbage.Impl.TripleDes.X86.ExpandKey
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Framework.X86.SseDword
-import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-import VerifiedGarbage.Proof.Rc2.Select
-import VerifiedGarbage.Proof.Rc2.Select32
-import VerifiedGarbage.Proof.Rc2.Word
-import VerifiedGarbage.Proof.Rc2.Word32
-import VerifiedGarbage.Proof.Rc2.X86.BlockArgs
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
-import VerifiedGarbage.Proof.Rc2.X86.KeyIO
-import VerifiedGarbage.Proof.Rc2.X86.KeyLookup
-import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
-import VerifiedGarbage.Proof.TripleDes.Bytes
-import VerifiedGarbage.Proof.TripleDes.EcbMemory
-import VerifiedGarbage.Proof.TripleDes.Permutation
-import VerifiedGarbage.Proof.TripleDes.Round
-import VerifiedGarbage.Proof.TripleDes.Schedule
-import VerifiedGarbage.Proof.TripleDes.Word
-import VerifiedGarbage.Proof.TripleDes.X86.BlockCT
-import VerifiedGarbage.Proof.TripleDes.X86.Bytes
-import VerifiedGarbage.Proof.TripleDes.X86.Key.ConstantTime
-import VerifiedGarbage.Proof.TripleDes.X86.RestoredOutput
-import VerifiedGarbage.Proof.TripleDes.X86.VerifiedBlock
-import VerifiedGarbage.Proof.TripleDes.X86.WordStore
+import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
 
 /-!
 # Triple DES key expansion and ECB on x86, with their working space on the stack

@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Packed
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

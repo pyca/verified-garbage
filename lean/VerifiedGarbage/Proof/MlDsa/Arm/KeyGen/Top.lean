@@ -51,6 +51,9 @@ meta import VerifiedGarbage.Proof.Sha3.Arith
 meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
 meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.RestPack
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA key generation on 32-bit ARM: `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`

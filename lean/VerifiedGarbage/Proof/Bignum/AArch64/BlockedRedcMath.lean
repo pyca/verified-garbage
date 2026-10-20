@@ -2,12 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Square
 public import VerifiedGarbage.Proof.Ed25519.Word64
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.PlainSimp
-import Mathlib.Util.CompileInductive
-import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Batteries.Tactic.Init
 import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! Arithmetic invariants for a register block of Montgomery multiply-adds.
 Low and high product halves use separate carry chains, as in the x86-64

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.Double
 public import VerifiedGarbage.Proof.Bignum.Arm.Csub
 import VerifiedGarbage.Proof.Bignum.Arm.MontCore
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Complete modular doubling from pointers and a packed-word count -/
 

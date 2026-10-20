@@ -3,12 +3,10 @@ module
 import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Hash
 public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Rel
 public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Layout
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # Ed448 signing with a cached public key on x86-64: relating two runs

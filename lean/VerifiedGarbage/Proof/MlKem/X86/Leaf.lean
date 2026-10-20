@@ -1,19 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.Piece
-meta import VerifiedGarbage.Proof.MlKem.X86.Piece
 public import VerifiedGarbage.Impl.MlKem.X86.Basic
-meta import VerifiedGarbage.Impl.MlKem.X86.Basic
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.MlKem.X86.Piece
+meta import VerifiedGarbage.Impl.MlKem.X86.Basic
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # ML-KEM on x86 (32-bit): leaf functions

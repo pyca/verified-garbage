@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.X448.X86.Counters
 import VerifiedGarbage.Proof.X448.X86.Iter
 import VerifiedGarbage.Proof.Ed448.VerifyFormulas
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): `[S]B + [k](-A)`

@@ -3,11 +3,11 @@ public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Spec.Dsa
 
 import VerifiedGarbage.Proof.RsaPss.Params
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Actual modulus widths, independently of zero padding -/
 

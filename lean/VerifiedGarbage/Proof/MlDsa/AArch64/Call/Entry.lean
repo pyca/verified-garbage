@@ -5,6 +5,7 @@ public import Mathlib.Tactic.Conv
 public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # ML-DSA on AArch64: entry to a callee

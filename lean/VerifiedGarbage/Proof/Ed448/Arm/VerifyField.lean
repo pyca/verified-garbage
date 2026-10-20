@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ed448.Arm.BaseStep
 public import VerifiedGarbage.Proof.X448.Arm.Square
 public import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed448 verification's equation on ARMv7: field programs

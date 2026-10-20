@@ -20,6 +20,8 @@ meta import VerifiedGarbage.Spec.Sm4.Cfb
 meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # SM4-OFB and SM4-CFB128 on ARMv7 meet their contracts

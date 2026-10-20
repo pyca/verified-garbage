@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Proof.X448.AArch64.Env
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Spec.X448.Contract
 
 import VerifiedGarbage.Proof.X448.AArch64.Initial
@@ -8,6 +7,7 @@ import VerifiedGarbage.Proof.X448.AArch64.DecodeAll
 import VerifiedGarbage.Proof.X448.Bytes
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on AArch64: reading the arguments

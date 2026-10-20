@@ -3,11 +3,13 @@ module
 public import VerifiedGarbage.Impl.Rc2.X86.ExpandKey
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Rc2.X86.PiLookup
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Impl.Rc2.X86.Lookup
+import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Rc2.Select32
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
 
 @[expose] public section
 

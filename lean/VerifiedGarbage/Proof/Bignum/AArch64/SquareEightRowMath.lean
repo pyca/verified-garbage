@@ -5,6 +5,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRowMath
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightBound
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightMath
+import Batteries.Tactic.Init
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

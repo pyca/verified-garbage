@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Inst
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Inv
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.SignCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Correct
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on ARMv7: verified

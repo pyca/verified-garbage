@@ -3,10 +3,9 @@ module
 public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Args
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # Ed448 verification on x86-64: relating two runs

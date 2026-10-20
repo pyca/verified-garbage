@@ -3,6 +3,11 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PShapeValue
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PHash
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashSequence
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Exact public bytes produced by the complete p hash-and-shape stage -/
 

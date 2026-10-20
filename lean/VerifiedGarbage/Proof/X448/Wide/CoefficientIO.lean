@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.X448.Wide.Memory
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Untrusted: coefficient reads and writes inside the X448 scratch buffer. -/

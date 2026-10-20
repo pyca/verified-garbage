@@ -6,6 +6,8 @@ public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Vec
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # ML-DSA on x86-64: coefficients in the doublewords of SSE registers

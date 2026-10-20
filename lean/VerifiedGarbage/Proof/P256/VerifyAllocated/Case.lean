@@ -4,7 +4,8 @@ public import VerifiedGarbage.Impl.P256.VerifyAllocated
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Observed
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

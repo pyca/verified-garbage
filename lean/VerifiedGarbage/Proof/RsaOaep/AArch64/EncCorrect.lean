@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCall
 public import VerifiedGarbage.Impl.RsaOaep.AArch64.Precomputed
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEntry
 public import VerifiedGarbage.Proof.RsaOaep.Encode
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect

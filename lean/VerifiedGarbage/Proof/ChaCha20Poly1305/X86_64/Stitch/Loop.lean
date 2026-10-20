@@ -1,11 +1,13 @@
 module
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Stitch
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Lit
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Semantics
 
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the counted loops of the tails

@@ -3,10 +3,14 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFrame
 public import VerifiedGarbage.Proof.Dsa.RandomSignRemaining
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomState
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
 import VerifiedGarbage.Proof.Bignum.Octets
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Read-only inputs and the sampler context derived from the public ABI. -/
 @[expose] public section

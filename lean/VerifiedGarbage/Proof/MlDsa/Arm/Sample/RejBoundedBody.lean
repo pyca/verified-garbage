@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejBoundedLoop
 import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA on 32-bit ARM: an iteration of `vg_mldsa_rej_bounded_poly`

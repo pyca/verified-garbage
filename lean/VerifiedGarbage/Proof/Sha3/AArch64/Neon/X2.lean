@@ -30,6 +30,8 @@ meta import VerifiedGarbage.Impl.Sha3.AArch64.Neon.X2
 meta import Std.Tactic.BVDecide.Normalize.Prop
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # `vg_keccak_f1600_x2` on AArch64

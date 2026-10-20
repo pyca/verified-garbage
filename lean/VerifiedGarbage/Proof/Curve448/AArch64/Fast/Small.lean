@@ -1,6 +1,5 @@
 module
 
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Curve448.AArch64.Fast
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Bounds
 public import VerifiedGarbage.Proof.Framework.Semantics
@@ -9,8 +8,6 @@ import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sub
 import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Prelude
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Impl.X448.AArch64
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sqr
 
 /-!
 # `a + 39081 e`

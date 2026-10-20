@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.Entry
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The complete callable Montgomery function is constant time -/
 

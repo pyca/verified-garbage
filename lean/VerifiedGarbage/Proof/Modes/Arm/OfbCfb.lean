@@ -3,9 +3,7 @@ module
 import VerifiedGarbage.Proof.Modes.Arm.Cbc
 public import VerifiedGarbage.Spec.Ofb
 public import VerifiedGarbage.Spec.Cfb
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Modes.Arm.SeqBody
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!

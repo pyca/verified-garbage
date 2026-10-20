@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.X448.X86.Output
 import VerifiedGarbage.Proof.X448.X86.Freeze
 import VerifiedGarbage.Proof.X448.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # X448 on x86 (32-bit): the result and restored registers

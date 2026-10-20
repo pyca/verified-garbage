@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
 public import VerifiedGarbage.Proof.Ed25519.Arm.Field
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset

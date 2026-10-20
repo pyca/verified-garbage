@@ -2,6 +2,8 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeCopy
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeChecks
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Input geometry and byte-string result of the i686 encoder -/
 

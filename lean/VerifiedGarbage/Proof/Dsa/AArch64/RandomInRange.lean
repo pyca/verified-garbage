@@ -1,13 +1,15 @@
 module
-public import Mathlib.Data.Int.GCD
-public import VerifiedGarbage.Proof.Dsa.AArch64.Run
 public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Impl.Dsa.AArch64.Random
-public import VerifiedGarbage.Proof.Framework.Contract
 
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomRange
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomFrame
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 
 /-! Whole range-check correctness, including reads of the sampler's frame. -/
 @[expose] public section

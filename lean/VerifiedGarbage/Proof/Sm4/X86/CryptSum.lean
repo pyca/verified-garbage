@@ -1,20 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.X86.LayersLit
-meta import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
 public import VerifiedGarbage.Impl.Sm4.X86.Ecb
-meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
-import VerifiedGarbage.Impl.Sm4.X86.Modes
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Impl.Sm4.X86.Modes
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Impl.Sm4.X86.Ecb
+meta import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # The constant-time analysis of SM4's x86 core in ECB, once

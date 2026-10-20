@@ -1,10 +1,9 @@
 module
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Gcm
 
 import VerifiedGarbage.Proof.Gcm.Ctr
-import Mathlib.Data.List.Induction
-import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # GCM: counter mode and GHASH of whole blocks, split

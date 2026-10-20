@@ -4,11 +4,10 @@ import VerifiedGarbage.Proof.MlKem.Arm.Common
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.MlDsa.Pack.Stream
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.MlKem.Bits
 public import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Stream
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # ML-DSA on 32-bit ARM: streaming fields through `r3`

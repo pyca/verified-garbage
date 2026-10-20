@@ -4,8 +4,10 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.OneScan
 public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.ZeroMask
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
 
 /-! # Testing a byte-encoded DSA subgroup result against one -/
 

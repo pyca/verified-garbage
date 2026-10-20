@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.AesCcm.Mac
 import VerifiedGarbage.Proof.Gcm.Be64
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # AES-CCM: blocks built from words and bytes

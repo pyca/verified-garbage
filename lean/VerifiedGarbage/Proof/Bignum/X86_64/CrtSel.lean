@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Bignum.CrtExp
 
 -- Reduce vector updates before comparing unchanged fields of whole states.
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 @[expose] public section
 

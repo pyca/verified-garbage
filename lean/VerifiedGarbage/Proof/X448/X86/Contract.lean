@@ -3,10 +3,8 @@ module
 import VerifiedGarbage.Proof.X25519.X86.Basic
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Exec
-import Mathlib.Tactic.SplitIfs
-import Batteries.Logic
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

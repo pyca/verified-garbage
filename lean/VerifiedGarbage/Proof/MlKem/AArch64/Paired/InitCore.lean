@@ -7,6 +7,9 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Words
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Tail
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 
 /-! # Exact instruction proof of paired noise state initialization -/
 

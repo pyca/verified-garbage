@@ -12,6 +12,8 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorFields
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+import VerifiedGarbage.Proof.Dsa.X86_64.Parent
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Parent
 
 /-! # Timing of fresh generator modulus setup -/
 

@@ -6,7 +6,8 @@ public import VerifiedGarbage.Proof.X448.X86.Mem
 import VerifiedGarbage.Proof.X448.X86.Decode
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.X448.X86.Swap
-import VerifiedGarbage.Proof.X448.Ladder
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on x86 (32-bit): decoding the whole coordinate

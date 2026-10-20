@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressCall
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Backend
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Contract
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Correct
+import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
 
 /-! A verified H′ call initializes one 1024-byte memory block. -/
 

@@ -3,9 +3,9 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BoundedFour
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskInit
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskMemory
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-! ## From `BoundedFourMaskOne.lean` -/
 

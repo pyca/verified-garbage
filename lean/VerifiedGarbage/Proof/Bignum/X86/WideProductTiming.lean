@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Bignum.X86.WideProduct
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! # Schoolbook multiplication branches and addresses depend only on public widths -/

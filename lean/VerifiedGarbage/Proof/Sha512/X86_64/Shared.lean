@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
 public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Digest
@@ -11,6 +10,9 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Verified
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Verified
+import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 
 /-!
 # Sha512 on X86_64: the shared contracts

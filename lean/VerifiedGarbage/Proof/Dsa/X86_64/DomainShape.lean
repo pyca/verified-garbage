@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizes
 import VerifiedGarbage.Proof.Dsa.X86_64.ShapeTail
 import VerifiedGarbage.Proof.Dsa.DomainWidths
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import Mathlib.Tactic.Set
 
 /-! # Functional correctness of the public DSA domain-shape check -/
 

@@ -3,10 +3,10 @@ public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Macs
 
 import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Arith
 import VerifiedGarbage.Proof.Framework.Range
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Convert
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Combining the halves' coefficients

@@ -3,10 +3,10 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerTraversal
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerRun
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

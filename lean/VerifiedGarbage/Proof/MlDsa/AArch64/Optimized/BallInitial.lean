@@ -7,47 +7,15 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Ball
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallChunk
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallTry
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbWord
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Zero
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-import VerifiedGarbage.Proof.MlKem.Compress
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.KPke
-import VerifiedGarbage.Proof.Sha3.AArch64.Call
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-! ## From `BallZero.lean` -/
 

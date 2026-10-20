@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallResident
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Depth
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallResident
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BallDispatch
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Ball
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

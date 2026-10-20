@@ -1,12 +1,13 @@
 module
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Impl.AesCfb8.X86
 public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
 public import VerifiedGarbage.Spec.Cfb8.Contract
 
 import VerifiedGarbage.Proof.AesCbc.X86.Verified
 import VerifiedGarbage.Proof.AesCfb8.X86.CT
-import VerifiedGarbage.Proof.AesCbc.X86.CT
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CFB8 on x86: `Verified`

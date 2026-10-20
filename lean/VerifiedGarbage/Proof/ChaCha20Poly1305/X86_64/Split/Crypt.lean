@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Aes.KeyExp
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ChaCha20-Poly1305 with the data's first bytes from `src`, x86-64: the encryption

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 
 import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Constant-address array selection in the RSA key workspace -/
 

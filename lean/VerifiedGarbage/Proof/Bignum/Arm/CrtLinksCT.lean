@@ -1,41 +1,21 @@
 module
-public import Batteries.Logic
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtSetup
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
 import VerifiedGarbage.Proof.Bignum.Arm.StageCT
-meta import VerifiedGarbage.Impl.Bignum.Arm.CrtSetup
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStrides
 import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Bignum.Arm.ArgsCT
-import VerifiedGarbage.Proof.Bignum.Arm.CrtAdvanceLink
-import VerifiedGarbage.Proof.Bignum.Arm.CrtLinkStep
-import VerifiedGarbage.Proof.Bignum.Arm.CrtLinks
-import VerifiedGarbage.Proof.Bignum.Arm.ProductArgs
-import VerifiedGarbage.Proof.Bignum.Arm.ReductionArgs
-import VerifiedGarbage.Proof.Bignum.Arm.RowAdvance
-import VerifiedGarbage.Proof.Bignum.Arm.RowFullCT
-import VerifiedGarbage.Proof.Bignum.Arm.RowStep
-import VerifiedGarbage.Proof.Bignum.Arm.Shift
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftArgs
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftCT
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftStep
-import VerifiedGarbage.Proof.Bignum.Arm.WideMath
-import VerifiedGarbage.Proof.Bignum.Arm.WideValue
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.Impl.Bignum.Arm.CrtLayout
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Impl.Bignum.Arm.CrtSetup
+meta import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+meta import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtStrides
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! # CRT link setup uses only public buffer geometry -/
 

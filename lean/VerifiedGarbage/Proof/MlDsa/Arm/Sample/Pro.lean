@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Sponge
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA on 32-bit ARM: the sampling functions' prologue and epilogue

@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointTableIO
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Ed25519.Arm.Field
-public import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Ed25519.Arm.PointPowers
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Ed25519 on ARMv7: addresses past 4096, and `lr` saved

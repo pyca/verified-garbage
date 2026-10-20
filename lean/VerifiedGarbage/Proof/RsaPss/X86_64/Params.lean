@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.RsaPss.Params
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Framework.AddrArith
 

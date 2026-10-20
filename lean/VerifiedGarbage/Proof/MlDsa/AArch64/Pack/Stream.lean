@@ -7,9 +7,9 @@ public import VerifiedGarbage.Proof.MlDsa.Pack.Coeffs
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Proof.MlKem.Bits
 import VerifiedGarbage.Proof.Framework.Range
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA on AArch64: streaming fields through `x9`

@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PubCT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Rsa.AArch64.ExpCheck
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # `vg_rsa_public_checked` on AArch64

@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Proof.Dsa.Arm.Pow
 public import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # DSA's exponentiation as a function on 32-bit ARM: its calls

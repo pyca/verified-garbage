@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Bignum.Arm.Newton64Steps
 import VerifiedGarbage.Proof.Bignum.Arm.Mul64
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # A complete machine-level Newton step on 64-bit values -/
 

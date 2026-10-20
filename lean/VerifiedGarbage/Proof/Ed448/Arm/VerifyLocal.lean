@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Ed448.Contract
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Ed448 verification's equation on ARMv7: the contract the proof is written against

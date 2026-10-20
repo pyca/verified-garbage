@@ -2,12 +2,15 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PointDecode
 public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverParity
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.Bytes
 import VerifiedGarbage.Proof.X25519.X86_64.Setup
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.X25519.X86_64.Lit
 
 /-! Load the encoded y-coordinate and its separate sign bit. -/
 

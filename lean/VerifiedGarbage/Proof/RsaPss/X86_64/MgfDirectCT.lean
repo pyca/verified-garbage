@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.FixedHashCT
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPss.X86_64.DirectLen
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
 

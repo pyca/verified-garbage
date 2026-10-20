@@ -4,7 +4,8 @@ public import VerifiedGarbage.Proof.Weierstrass.Jac
 public import VerifiedGarbage.Impl.Weierstrass.JacMul
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

@@ -5,8 +5,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 
 /-! Merged from `Proof.Ed25519.AArch64.Whole.Entry`. -/

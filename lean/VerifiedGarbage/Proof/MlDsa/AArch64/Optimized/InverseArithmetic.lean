@@ -3,6 +3,8 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Word
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

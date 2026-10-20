@@ -10,6 +10,10 @@ meta import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
 meta import VerifiedGarbage.Proof.AesSiv.Arm.Env
 meta import VerifiedGarbage.Proof.AesSiv.Arm.CTFinish
 meta import VerifiedGarbage.Proof.AesSiv.Arm.Ctr
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Run
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # AES-SIV on ARMv7: CTR is constant time

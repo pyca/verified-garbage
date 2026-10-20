@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.DivReduce
 import VerifiedGarbage.Proof.Bignum.Arm.Zero
 import VerifiedGarbage.Proof.Rsa.Arm.DivArgs
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Bignum.Arm.WideMul
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Division starts from a zero remainder and a public bit count -/
 

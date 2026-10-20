@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
 
 /-!
 # TDEA-CMAC on x86: `vg_cmac_triple_des_finalize`, up to the last block

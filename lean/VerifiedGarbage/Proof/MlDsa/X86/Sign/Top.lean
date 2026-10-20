@@ -3,6 +3,8 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Final
 
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.Pre
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # ML-DSA signing on x86 (32-bit): `vg_mldsa{44,65,87}_sign`

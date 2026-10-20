@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Model
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Step
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA
 
 /-!
 # ML-KEM on x86-64: the NTT on registers, of `u16`s

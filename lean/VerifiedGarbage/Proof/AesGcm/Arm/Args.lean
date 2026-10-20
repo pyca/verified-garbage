@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.AesGcm.Arm.Contract
 
 import VerifiedGarbage.Proof.AesGcm.Arm.Entry
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on ARMv7: stack arguments read after other code

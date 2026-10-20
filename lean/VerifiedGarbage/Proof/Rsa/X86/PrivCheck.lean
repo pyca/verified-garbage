@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Rsa.X86.PrivTailContext
 import VerifiedGarbage.Proof.Rsa.X86.PrivPublicCall
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackWord
 import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Re-exponentiate, compare, and release only a checked private result -/
 

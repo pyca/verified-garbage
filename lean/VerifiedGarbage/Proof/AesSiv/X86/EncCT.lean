@@ -12,6 +12,8 @@ meta import VerifiedGarbage.Proof.AesSiv.X86.Dec
 meta import VerifiedGarbage.Proof.AesSiv.X86.FinishCT
 meta import VerifiedGarbage.Proof.AesSiv.X86.Finish
 meta import VerifiedGarbage.Proof.AesSiv.X86.Run
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-SIV on x86: `encrypt` and `decrypt` are constant time

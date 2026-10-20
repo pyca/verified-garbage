@@ -1,44 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.Ecb
-meta import VerifiedGarbage.Proof.Camellia.X86_64.Ecb
 public import VerifiedGarbage.Proof.Camellia.Scratch
-meta import VerifiedGarbage.Proof.Camellia.Scratch
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-public import VerifiedGarbage.Proof.Camellia.X86_64.PairSum
-meta import VerifiedGarbage.Proof.Camellia.X86_64.PairSum
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Camellia.X86_64.Lit
 public import VerifiedGarbage.Impl.StackScratch.X86_64
-meta import VerifiedGarbage.Proof.Camellia.X86_64.Lit
-import VerifiedGarbage.Proof.Camellia.X86_64.Copy
-import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Camellia.X86_64.Lit
+import VerifiedGarbage.Proof.Camellia.X86_64.PairSum
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-meta import VerifiedGarbage.Proof.Camellia.X86_64.Copy
-meta import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Camellia.X86_64.Ecb
+meta import VerifiedGarbage.Proof.Camellia.Scratch
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+meta import VerifiedGarbage.Impl.StackScratch.X86_64
+meta import VerifiedGarbage.Proof.Camellia.X86_64.Lit
+meta import VerifiedGarbage.Proof.Camellia.X86_64.PairSum
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 
 /-!
 # Camellia ECB on x86-64 meets its contracts

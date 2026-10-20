@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.X448.X86.Save
 public import VerifiedGarbage.Proof.X448.X86.Env
 import VerifiedGarbage.Proof.X448.X86.Frame
 import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # X448 on x86 (32-bit): reading the arguments

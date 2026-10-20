@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.X448.X86.Mul
 import VerifiedGarbage.Proof.X448.X86.Small
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Proof.X448.X86.AddSub
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

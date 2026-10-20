@@ -1,5 +1,4 @@
 module
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.X25519.Arm.Ladder
 public import VerifiedGarbage.Spec.X25519.Contract
 

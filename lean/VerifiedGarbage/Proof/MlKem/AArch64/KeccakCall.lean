@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM on AArch64: calling the Keccak functions

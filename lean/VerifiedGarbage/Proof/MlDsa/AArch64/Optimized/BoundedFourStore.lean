@@ -6,8 +6,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourVec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourCompact
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMath
 
 /-! ## From `BoundedFourValues.lean` -/
 

@@ -2,12 +2,9 @@ module
 
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 public import VerifiedGarbage.Proof.RsaOaep.Scan
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Loops
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!

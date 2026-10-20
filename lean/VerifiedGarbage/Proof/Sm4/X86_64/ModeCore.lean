@@ -4,48 +4,14 @@ public import VerifiedGarbage.Proof.Sm4.X86_64.PreparedVerified
 public import VerifiedGarbage.Proof.Modes.X86_64.Core
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Impl.Sm4.X86_64.Ctr
-public import VerifiedGarbage.Proof.Sm4.CtrCipher
 public import VerifiedGarbage.Spec.Sm4.Cbc
-meta import VerifiedGarbage.Proof.Sm4.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sm4.CtrCipher
+import VerifiedGarbage.Proof.Sm4.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-import VerifiedGarbage.Proof.Modes.Addr
-import VerifiedGarbage.Proof.Modes.X86_64.Counter
-import VerifiedGarbage.Proof.Modes.X86_64.Setup
-import VerifiedGarbage.Proof.Modes.X86_64.Steps
-import VerifiedGarbage.Proof.Sm4.Layout
-import VerifiedGarbage.Proof.Sm4.Planes
-import VerifiedGarbage.Proof.Sm4.X86_64.Copy
-import VerifiedGarbage.Proof.Sm4.X86_64.Crypt16
-public import VerifiedGarbage.Proof.Sm4.X86_64.GroupStep
-import VerifiedGarbage.Spec.Ctr.Contract
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.X86_64.Syms
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-public import VerifiedGarbage.Proof.Modes.Addr
-public import VerifiedGarbage.Proof.Modes.X86_64.Counter
-public import VerifiedGarbage.Proof.Modes.X86_64.Setup
-public import VerifiedGarbage.Proof.Modes.X86_64.Steps
-public import VerifiedGarbage.Proof.Sm4.Layout
-public import VerifiedGarbage.Proof.Sm4.Planes
-public import VerifiedGarbage.Proof.Sm4.X86_64.Copy
-public import VerifiedGarbage.Proof.Sm4.X86_64.Crypt16
-public import VerifiedGarbage.Spec.Ctr.Contract
+import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
 
 /-!
 # SM4's core for the modes on x86-64

@@ -2,9 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectBase
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectKey
-import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.DirectKey
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! Reuse the dense tables with sparse signed magnitudes. -/
 

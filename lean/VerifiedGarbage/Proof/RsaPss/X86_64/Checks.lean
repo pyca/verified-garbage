@@ -1,9 +1,21 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPss.X86_64
-meta import VerifiedGarbage.Impl.RsaPss.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Impl.RsaPss.X86_64
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # RSASSA-PSS on x86-64: the taint checks of each hash function
@@ -16,16 +28,6 @@ of its streaming code and its digest size `D`. The code of a hash function
 `H` is that of `ckH H.P H.D`, by definition. The taint they start from,
 `pT`, is defined here too, with no proofs, so that the hash functions' files
 import this file without the proofs of RSA's code (`CtBase.lean`).
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegSetOrder
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.TCB.X86_64.Target
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.TCB.X86_64.Target
 -/
 
 @[expose] public section

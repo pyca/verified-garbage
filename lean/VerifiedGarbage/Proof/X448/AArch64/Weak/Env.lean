@@ -6,8 +6,9 @@ import VerifiedGarbage.Proof.Curve448.AArch64.Swap
 public import VerifiedGarbage.Proof.X448.AArch64.Env
 public import VerifiedGarbage.Proof.Curve448.AArch64.Memory
 public import VerifiedGarbage.Impl.Curve448.AArch64
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Curve448.AArch64.Copy
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Impl.X448.AArch64.Weak
 
 /-!

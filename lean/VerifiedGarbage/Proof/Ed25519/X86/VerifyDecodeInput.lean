@@ -4,8 +4,11 @@ public import VerifiedGarbage.Proof.Ed25519.X86.PointDecode
 public import VerifiedGarbage.Proof.Ed25519.X86.InputSlice
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
 import VerifiedGarbage.Proof.Ed25519.Decode
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Callee
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.SigEval
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: `vg_aes_gcm_seal` called

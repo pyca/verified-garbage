@@ -2,10 +2,10 @@ module
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Block
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

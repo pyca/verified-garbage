@@ -3,10 +3,7 @@ module
 import VerifiedGarbage.Proof.AesOcb.X86_64.PadTo
 public import VerifiedGarbage.Proof.Ocb.Nonce
 public import VerifiedGarbage.Impl.AesOcb.X86_64
-public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
-public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Env
-public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.AesOcb.X86_64.Args
 import VerifiedGarbage.Proof.AesOcb.X86_64.Words
 import VerifiedGarbage.Proof.AesOcb.X86_64.Run

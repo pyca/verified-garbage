@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.InvToM
-public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Weierstrass.Field
-public import Mathlib.Tactic.LinearCombination
-public import Mathlib.FieldTheory.Finite.Basic
-public import VerifiedGarbage.Spec.Weierstrass
+public import Mathlib.Algebra.Order.Ring.Nat
+public import Mathlib.Data.ZMod.Defs
+public import Mathlib.Data.Nat.Prime.Defs
 
 /-!
 # Inversion by divsteps: the result in Montgomery form

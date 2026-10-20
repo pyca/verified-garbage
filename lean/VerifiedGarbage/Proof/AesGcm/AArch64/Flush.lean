@@ -11,6 +11,8 @@ public import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on AArch64: padding (`flush`) and the lengths block (`lens`)

@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86.Rev
-public import VerifiedGarbage.Proof.Framework.PlainSimp
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Util.CompileInductive
-import VerifiedGarbage.TCB.Code
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

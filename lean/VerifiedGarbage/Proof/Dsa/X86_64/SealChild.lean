@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.InitInverse
 public import VerifiedGarbage.Proof.Dsa.X86_64.Return
 import VerifiedGarbage.Proof.Dsa.X86_64.EnterLeave
-import Mathlib.Tactic.Set
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
 
 /-! # Finishing a child modulus and returning a reusable workspace -/
 

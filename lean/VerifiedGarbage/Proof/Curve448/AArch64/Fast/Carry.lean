@@ -1,5 +1,4 @@
 module
-public import Batteries.Logic
 public import VerifiedGarbage.Proof.X448.Wide.Limbs
 
 

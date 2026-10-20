@@ -1,6 +1,6 @@
 module
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.Framework.Contract
 
 
 /-! # Output pointers and permissions survive fixed word copies -/

@@ -1,14 +1,12 @@
 module
-public import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.X448.AArch64.Swap
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Impl.X448.AArch64.Weak
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
-import VerifiedGarbage.Proof.X448.Ladder
 
 /-!
 # X448 on AArch64: reading a scalar bit

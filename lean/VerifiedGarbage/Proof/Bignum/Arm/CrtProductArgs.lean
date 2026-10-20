@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductMemory
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtProduct
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Prepare the verified full-width factor multiplication -/
 

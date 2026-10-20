@@ -7,6 +7,11 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
+import Mathlib.Order.Defs.PartialOrder
+import Mathlib.Data.Int.GCD
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
 
 @[expose] public section
 

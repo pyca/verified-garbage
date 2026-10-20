@@ -7,10 +7,15 @@ public import VerifiedGarbage.Spec.Ffdh
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PShapeArgs
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashShape
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Shape
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! # The shaped hash bytes are determined by the public seed and offset -/
 

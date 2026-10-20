@@ -6,11 +6,11 @@ public import VerifiedGarbage.TCB.X86_64.Target
 
 import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
 import VerifiedGarbage.Proof.Modes.X86_64.Ctr
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Modes.X86_64.Words
 import VerifiedGarbage.Proof.Modes.X86_64.Steps
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # CBC decryption on x86-64, for any core: the whole function

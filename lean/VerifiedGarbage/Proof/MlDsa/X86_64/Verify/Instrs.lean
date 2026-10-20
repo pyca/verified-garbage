@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.PrimsOk
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Verify
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Top
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-DSA verification on x86-64: properties of every instruction

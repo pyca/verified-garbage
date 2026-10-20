@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
 public import VerifiedGarbage.TCB.X86_64.Avx512
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # x86-64: AVX-512 registers lane by lane

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Proof.Ed25519.Word64
 
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcSave
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 

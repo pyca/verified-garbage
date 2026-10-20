@@ -2,6 +2,8 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtLayout
 public import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 
 /-! # Separated writable workspaces for CRT setup -/

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
 import VerifiedGarbage.Proof.Mont.AArch64.Chain
 import VerifiedGarbage.Proof.Mont.AArch64.Csub
 public import VerifiedGarbage.Proof.Weierstrass.InvMask
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

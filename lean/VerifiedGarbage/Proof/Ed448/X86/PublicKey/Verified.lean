@@ -1,43 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Body
-meta import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Body
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.CT
-meta import VerifiedGarbage.Proof.Ed448.X86.Shake.CT
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Impl.Sha256.X86.Stream
-import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
-import VerifiedGarbage.Proof.Sha512.Spec
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
-meta import VerifiedGarbage.Impl.Sha256.X86.Stream
-meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sha512.X86.Lit
+meta import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Body
+meta import VerifiedGarbage.Proof.Ed448.X86.Shake.CT
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.Sse
-meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
-meta import VerifiedGarbage.Proof.Sha512.Spec
-meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+meta import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-!
 # Ed448 public-key derivation on x86 (32-bit): constant time, and `Verified`

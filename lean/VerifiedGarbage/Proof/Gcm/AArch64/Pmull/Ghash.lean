@@ -1,40 +1,31 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Arith
-meta import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Arith
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.PrepKey
-meta import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.PrepKey
 import VerifiedGarbage.Proof.Gcm.Powers
-meta import VerifiedGarbage.Proof.Gcm.Powers
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
-meta import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
-meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import Mathlib.Tactic.LinearCombination
-meta import Mathlib.Tactic.LinearCombination
-public import Mathlib.Tactic.Ring.RingNF
-meta import Mathlib.Tactic.Ring.RingNF
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Gcm.Bits
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Arith
+meta import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.PrepKey
+meta import VerifiedGarbage.Proof.Gcm.Powers
+meta import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import Init.Data.Nat.Bitwise.Basic
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Gcm.Bits
 
 
 @[expose] public section

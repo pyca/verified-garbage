@@ -2,10 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.Linear
 public import VerifiedGarbage.Proof.Camellia.AArch64.Sbox
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Camellia.AArch64.Fl
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # A round of bitsliced Camellia on AArch64

@@ -1,11 +1,9 @@
 module
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp5
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp5
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
+import Mathlib.Tactic.Finiteness.Attr
 
 /-!
 # RSA with the CRT on x86-64: the exponentiations are constant time

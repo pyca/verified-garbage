@@ -3,6 +3,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.Select
 public import VerifiedGarbage.Proof.Bignum.Arm.SelectState
 
 import VerifiedGarbage.Proof.Bignum.Arm.SelectBody
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Termination and exact value of a runtime-length selection -/
 

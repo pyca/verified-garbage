@@ -4,14 +4,13 @@ import VerifiedGarbage.Proof.Modes.X86_64.Setup
 public import VerifiedGarbage.Proof.Modes.Words
 public import VerifiedGarbage.Impl.Modes.X86_64.Ctr
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Range
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Modes.X86_64.Steps
 import VerifiedGarbage.Proof.Modes.Addr
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Copying and XORing blocks a word at a time, on x86-64

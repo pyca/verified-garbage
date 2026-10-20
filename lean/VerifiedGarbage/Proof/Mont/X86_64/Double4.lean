@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
 import VerifiedGarbage.Proof.Mont.X86_64.Chain
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.X25519.X86_64.Mem
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! Register-only four-limb doubling and its canonical memory result. -/
 

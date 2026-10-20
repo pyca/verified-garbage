@@ -1,31 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarMulAddMain
-meta import VerifiedGarbage.Proof.Ed448.AArch64.ScalarMulAddMain
-public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
-meta import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarMain
-meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLoop
-import VerifiedGarbage.Proof.Ed448.ScalarWords
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLoop
+meta import VerifiedGarbage.Proof.Ed448.AArch64.ScalarMulAddMain
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Ed448.AArch64.ScalarMain
-meta import VerifiedGarbage.Proof.Ed448.ScalarWords
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 

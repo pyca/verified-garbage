@@ -1,18 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Poly1305.AArch64.Vector
-public import Batteries.Tactic.Init
-public import Batteries.Tactic.PermuteGoals
-public import Batteries.Tactic.SeqFocus
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.GetElem
-public import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Impl.Poly1305.AArch64.Vector
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.TCB.AArch64.Target
 
 @[expose] public section
 

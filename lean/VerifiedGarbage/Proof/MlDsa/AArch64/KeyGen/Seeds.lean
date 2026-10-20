@@ -22,6 +22,7 @@ meta import VerifiedGarbage.Proof.MlKem.Mem
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!
 # ML-DSA key generation on AArch64: the prologue and the seeds

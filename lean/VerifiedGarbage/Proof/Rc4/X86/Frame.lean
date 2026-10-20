@@ -1,26 +1,13 @@
 module
 
 import VerifiedGarbage.Proof.Rc4.X86.Verified
-public import VerifiedGarbage.Proof.Rc4.X86.Lit
-public import VerifiedGarbage.Proof.Rc4.X86.Contract
-public import VerifiedGarbage.Proof.Rc4.X86.Lookup
 public import VerifiedGarbage.Impl.StackScratch.X86
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.MlKem.X86.Leaf
-import VerifiedGarbage.Proof.Rc4.Dword
-import VerifiedGarbage.Proof.Rc4.Stream
-import VerifiedGarbage.Proof.Rc4.Table
-import VerifiedGarbage.Proof.Rc4.X86.Apply
-import VerifiedGarbage.Proof.Rc4.X86.Init
-import VerifiedGarbage.Proof.Rc4.X86.Replace
-import VerifiedGarbage.Proof.Rc4.X86.Save
+import VerifiedGarbage.Proof.Rc4.X86.Lit
+public import VerifiedGarbage.Spec.Rc4.Contract
+public import VerifiedGarbage.Impl.Rc4.X86
+public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Rc4.X86.Lookup
 
 /-!
 # RC4 on x86, with the working space on the stack

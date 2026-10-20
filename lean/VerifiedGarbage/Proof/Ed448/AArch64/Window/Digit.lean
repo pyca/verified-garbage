@@ -6,10 +6,10 @@ public import VerifiedGarbage.Proof.X448.AArch64.Mem
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Store
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.AArch64.BitWrite
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed448 verification on AArch64: a digit of the challenge

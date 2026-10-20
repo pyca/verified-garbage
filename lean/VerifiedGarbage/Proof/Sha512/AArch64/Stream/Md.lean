@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
 import VerifiedGarbage.Proof.MdStream.AArch64.Words
 public import VerifiedGarbage.Proof.Sha512.Md
 public import VerifiedGarbage.Impl.Sha512.AArch64.Stream
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!

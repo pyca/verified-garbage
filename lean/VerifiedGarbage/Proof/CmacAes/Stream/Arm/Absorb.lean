@@ -5,7 +5,8 @@ public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Call
 import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.CmacAes.Arm.Finalize
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Streaming AES-CMAC on ARMv7: `vg_cmac_aes_absorb` up to the first call

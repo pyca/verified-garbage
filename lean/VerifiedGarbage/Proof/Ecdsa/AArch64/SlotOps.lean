@@ -3,7 +3,7 @@ public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # ECDSA on AArch64: field operations on numbered slots

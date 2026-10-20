@@ -24,6 +24,8 @@ meta import VerifiedGarbage.Impl.EcKey.P224.X86
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P224.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # P-224 public keys on x86 (32-bit): `Verified`

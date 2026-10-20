@@ -1,7 +1,5 @@
 module
-public import Batteries.Logic
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtAddWide
 
 import VerifiedGarbage.Proof.Bignum.Arm.CrtAddWideArgs
@@ -9,6 +7,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.RowFull
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Exact full-width addition in the CRT result buffer -/
 

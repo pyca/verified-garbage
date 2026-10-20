@@ -3,12 +3,11 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Common
 public import VerifiedGarbage.Proof.Pbkdf2.MdKeys
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
 import VerifiedGarbage.Proof.MdStream.X86_64.Words
 import VerifiedGarbage.Proof.Framework.OffsetBelow
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!

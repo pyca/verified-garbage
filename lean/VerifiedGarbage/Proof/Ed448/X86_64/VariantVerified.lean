@@ -34,6 +34,8 @@ meta import VerifiedGarbage.Proof.Ed448.X86_64.PointSums
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
+meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
 
 /-! The same scalar and verification contracts for every field backend. -/
 

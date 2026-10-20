@@ -8,6 +8,7 @@ import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.SignVerify
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import Mathlib.Tactic.Convert
 
 /-! # The computed scalars and rejection mask implement the packed signing spec -/
 

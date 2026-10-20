@@ -19,6 +19,7 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Absorb
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SeedFrame
 import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Semantics
 
 /-! ## From `BoundedFourCounts.lean` -/
 

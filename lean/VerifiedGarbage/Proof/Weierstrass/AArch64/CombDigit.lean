@@ -3,13 +3,12 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb
 public import VerifiedGarbage.Proof.Weierstrass.Comb
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
-import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # The comb on AArch64: digits and masks

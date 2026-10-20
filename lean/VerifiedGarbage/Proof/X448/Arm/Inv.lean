@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Arm.Square
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: inversion

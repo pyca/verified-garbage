@@ -2,13 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.P256.Linear
 import VerifiedGarbage.Proof.P256.Linear.CorrectionWords
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
 public import VerifiedGarbage.Proof.P256.Linear.Arithmetic
-import VerifiedGarbage.Impl.NatPairs
-import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Impl.NatPairs
+import VerifiedGarbage.Spec.Weierstrass.Point
 
 @[expose] public section
 

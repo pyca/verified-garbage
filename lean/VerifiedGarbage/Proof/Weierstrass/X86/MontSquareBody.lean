@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.MontBase
 import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareRed
 import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareArithmetic
 import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareInit
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! ## `MontSquareRound` -/

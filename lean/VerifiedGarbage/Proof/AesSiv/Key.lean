@@ -1,13 +1,13 @@
 module
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Siv
 
 import VerifiedGarbage.Proof.AesSiv.CtrPart
-import Mathlib.Data.List.Induction
 import VerifiedGarbage.Proof.Cmac.Stream
-import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # AES-SIV: the key context

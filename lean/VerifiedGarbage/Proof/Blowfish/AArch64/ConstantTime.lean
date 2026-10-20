@@ -1,15 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.AArch64.Lit
-meta import VerifiedGarbage.Proof.Blowfish.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+import VerifiedGarbage.Proof.Blowfish.AArch64.Lit
+public import VerifiedGarbage.Impl.Blowfish.AArch64
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
-meta import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.Blowfish.AArch64.Lit
+meta import VerifiedGarbage.Impl.Blowfish.AArch64
 
 /-!
 # Constant time

@@ -12,6 +12,8 @@ meta import VerifiedGarbage.Proof.AesCcm.X86.AadCT
 meta import VerifiedGarbage.Proof.AesCcm.X86.Aad
 meta import VerifiedGarbage.Proof.AesCcm.X86.Blocks
 meta import VerifiedGarbage.Proof.AesCcm.X86.Run
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-CCM on x86: the CBC-MAC and the tag in constant time

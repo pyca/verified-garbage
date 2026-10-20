@@ -1,7 +1,5 @@
 module
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
-public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Gcm.X86_64.Rev
@@ -12,8 +10,9 @@ import VerifiedGarbage.Proof.Framework.X86_64.ZFrameBlock
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Spec.Gcm.Precomputed
-import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # The setup of the blocks after the last group

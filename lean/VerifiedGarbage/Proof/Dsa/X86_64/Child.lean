@@ -4,9 +4,13 @@ import VerifiedGarbage.Proof.Dsa.X86_64.NewChild
 import VerifiedGarbage.Proof.Dsa.X86_64.SealChild
 public import VerifiedGarbage.Proof.Dsa.X86_64.InitFrame
 public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.Load
-import VerifiedGarbage.Proof.Dsa.X86_64.Setup
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Complete initialization of one DSA Montgomery workspace -/
 

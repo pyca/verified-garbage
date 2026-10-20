@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 public import VerifiedGarbage.Proof.Sha512.X86_64.Compress
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # SHA-512 compression on x86-64 with the shared contract's scratch space

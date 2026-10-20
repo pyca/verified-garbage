@@ -12,6 +12,8 @@ meta import VerifiedGarbage.Spec.Dsa.SignVerify
 meta import VerifiedGarbage.Proof.Dsa.Layout
 meta import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Child
+import VerifiedGarbage.Proof.Dsa.X86_64.Parent
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Parent
 
 /-! # Constant time of initializing both Montgomery workspaces -/
 

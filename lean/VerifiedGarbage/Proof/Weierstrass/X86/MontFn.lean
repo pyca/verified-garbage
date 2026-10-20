@@ -4,10 +4,8 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.MontTail
 import VerifiedGarbage.Proof.Weierstrass.X86.MontBody
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontMul
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Mont.X86.Chain
 
 /-!
 # Montgomery arithmetic as functions on x86 (32-bit): the functions

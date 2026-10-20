@@ -5,11 +5,8 @@ public import VerifiedGarbage.Impl.Ed25519.X86.PublicKey
 import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Spec.Ed25519.Contract
-public import VerifiedGarbage.Proof.Framework.PlainSimp
-public import Mathlib.Tactic.SplitIfs
 
 /-! Merged from `Proof.Ed25519.X86.PublicKey.PruneArithmetic`. -/
 

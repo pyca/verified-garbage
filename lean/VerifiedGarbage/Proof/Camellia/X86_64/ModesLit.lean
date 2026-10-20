@@ -1,26 +1,19 @@
 module
 
 public import VerifiedGarbage.Impl.Camellia.X86_64.Cbc
-meta import VerifiedGarbage.Impl.Camellia.X86_64.Cbc
 public import VerifiedGarbage.Impl.Camellia.X86_64.Fb
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.Mem
-meta import VerifiedGarbage.Impl.Camellia.X86_64.Fb
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Spec.Camellia.Contract
-import VerifiedGarbage.TCB.X86_64.Target
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Impl.Camellia.X86_64.Cbc
+meta import VerifiedGarbage.Impl.Camellia.X86_64.Fb
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Spec.Camellia.Contract
-meta import VerifiedGarbage.TCB.X86_64.Target
 
 /-! # Camellia-CBC, -OFB, -CFB128 and -CTR's x86-64 code as literals, for kernel-evaluated checks -/
 

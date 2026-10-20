@@ -16,6 +16,8 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Camellia.X86_64.ModesLit
 meta import VerifiedGarbage.Proof.Modes.Fb
 meta import VerifiedGarbage.Impl.StackScratch.X86_64
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Camellia-OFB and Camellia-CFB128 on x86-64 meet their contracts

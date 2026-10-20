@@ -2,10 +2,11 @@ module
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelect
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacLay
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Mont.X86_64.Csub
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # The Jacobian window method on x86-64: storing an entry

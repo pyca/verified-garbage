@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseArithmetic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackWord
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
 
 @[expose] public section
 

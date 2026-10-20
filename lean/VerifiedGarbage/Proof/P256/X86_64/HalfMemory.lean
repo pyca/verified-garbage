@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Mont.X86_64.Csub
 import VerifiedGarbage.Proof.Mont.X86_64.Chain
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! Memory contract for P-256 modular halving, permitting in-place operation. -/
 

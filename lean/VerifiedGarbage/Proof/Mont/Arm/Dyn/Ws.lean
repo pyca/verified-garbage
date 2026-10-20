@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Mont.Arm.Dynamic
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

@@ -1,23 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Camellia.AArch64.ExpandKey
-meta import VerifiedGarbage.Impl.Camellia.AArch64.ExpandKey
 public import VerifiedGarbage.Impl.Camellia.AArch64.Cbc
-public import Batteries.Tactic.Init
-public import Batteries.Tactic.PermuteGoals
-public import Batteries.Tactic.SeqFocus
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.GetElem
-public import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Impl.Camellia.AArch64.ExpandKey
 meta import VerifiedGarbage.Impl.Camellia.AArch64.Cbc
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Spec.Camellia.Contract
-import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Spec.Camellia.Contract
-meta import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # Camellia on AArch64: the code as literals

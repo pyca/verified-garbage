@@ -3,16 +3,16 @@ module
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream
 public import VerifiedGarbage.Impl.CmacTripleDes.Stream.AArch64
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Finalize
 import VerifiedGarbage.Proof.Cmac.Block
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # Streaming TDEA-CMAC on AArch64: arithmetic, branches, memory and copying bytes

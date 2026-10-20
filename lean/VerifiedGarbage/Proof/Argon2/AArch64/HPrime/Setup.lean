@@ -4,14 +4,11 @@ import VerifiedGarbage.Proof.Blake2.Stream
 public import VerifiedGarbage.Spec.Argon2
 public import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Semantics
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # H′: saving the caller and writing the length prefix -/
 

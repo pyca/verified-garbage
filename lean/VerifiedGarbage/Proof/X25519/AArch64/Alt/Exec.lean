@@ -1,9 +1,8 @@
 module
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.AArch64.Isa
 
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! # The register instructions of `AltOps`, one step each
 

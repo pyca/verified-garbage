@@ -1,31 +1,17 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.CheckEk
-meta import VerifiedGarbage.Proof.MlKem.X86_64.CheckEk
 public import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
-meta import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
 public import VerifiedGarbage.Spec.MlKem.Contract1024
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.TCB.X86_64.Target
-meta import VerifiedGarbage.Spec.MlKem.Contract1024
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.MlKem.Compress
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.MlKem.X86_64.CheckEk
+meta import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
+meta import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.MlKem.Compress
-meta import VerifiedGarbage.Proof.MlKem.Encode
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 
 /-!
 # ML-KEM-1024 on x86-64: `vg_mlkem1024_check_ek`

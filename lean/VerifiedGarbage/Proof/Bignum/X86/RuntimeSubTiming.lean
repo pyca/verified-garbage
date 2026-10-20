@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.RelCT
 
 import VerifiedGarbage.Proof.Mont.X86.ExponentTimingBlocks

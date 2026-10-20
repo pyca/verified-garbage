@@ -5,8 +5,8 @@ import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 public import VerifiedGarbage.Impl.Aes.X86.AesNi
 public import VerifiedGarbage.Proof.Framework.Semantics
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! AES-NI round execution on IA-32. Register updates stay folded; the same
 proof applies to any distinct block registers other than the key temporary. -/

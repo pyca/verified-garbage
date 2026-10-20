@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCBase
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskAt
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! ## From `MaskSeedWords.lean` -/
 

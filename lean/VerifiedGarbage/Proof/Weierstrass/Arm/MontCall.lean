@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Call
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Calls of the Montgomery arithmetic's functions, on 32-bit ARM

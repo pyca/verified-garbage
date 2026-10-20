@@ -1,5 +1,4 @@
 module
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming

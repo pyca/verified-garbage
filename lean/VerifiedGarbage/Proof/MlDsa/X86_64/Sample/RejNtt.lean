@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Sponge
 
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttLoop
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
 

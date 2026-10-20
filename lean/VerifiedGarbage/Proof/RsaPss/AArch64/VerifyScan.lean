@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.VerifyCases
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Basic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
 import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RSASSA-PSS verification on AArch64: the first nonzero byte of `DB`

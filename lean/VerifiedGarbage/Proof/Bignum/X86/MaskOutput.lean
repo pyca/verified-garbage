@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Rejected RSA representatives produce zero without a secret branch -/
 

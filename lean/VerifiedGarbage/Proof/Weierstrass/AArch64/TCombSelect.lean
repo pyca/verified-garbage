@@ -1,16 +1,16 @@
 module
 
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
-import VerifiedGarbage.Proof.Framework.Lit
-import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Mont.AArch64.Blocks
 import VerifiedGarbage.Proof.Mont.AArch64.Row
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The comb from tables in memory on AArch64: the selection's scalar parts

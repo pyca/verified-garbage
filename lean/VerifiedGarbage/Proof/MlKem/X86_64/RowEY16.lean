@@ -4,9 +4,8 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.RowEY
 public import VerifiedGarbage.Proof.MlKem.X86_64.Deint16
 public import VerifiedGarbage.Proof.MlKem.PolyW
 import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
-import VerifiedGarbage.Proof.Framework.X86_64.Words
 import VerifiedGarbage.Proof.Framework.CallLay
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: a row of products of polynomials of `u16`s (`rowEY16`)

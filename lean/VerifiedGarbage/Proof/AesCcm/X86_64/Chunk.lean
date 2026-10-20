@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.AesCcm.X86_64.Contract
 
 /-!
 # AES-CCM on x86-64: a chunk of counter mode (`ctrChunk`)

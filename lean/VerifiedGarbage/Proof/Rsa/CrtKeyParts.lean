@@ -1,8 +1,8 @@
 module
-public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.Rsa
 
 import VerifiedGarbage.Proof.Rsa.KeyParts
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # RSA: `crtKeyValid` from its parts

@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Sig
-public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ChaCha20-Poly1305 with its working space as an argument

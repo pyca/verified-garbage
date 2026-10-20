@@ -10,8 +10,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.Row
 
 /-! ## AdxTri8Rows -/
 

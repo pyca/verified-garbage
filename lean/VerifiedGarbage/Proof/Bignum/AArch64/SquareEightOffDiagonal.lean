@@ -1,9 +1,7 @@
 module
 
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightColumns
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMath
-import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

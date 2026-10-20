@@ -7,10 +7,9 @@ import VerifiedGarbage.Proof.Ed448.Arm.BaseEncode
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.X448.Arm.Save
 public import VerifiedGarbage.Spec.Ed448.Contract
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.X448.Arm.Carry
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.X448.Arm.Initial
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Ed448 base-point multiplication on ARMv7: the whole function

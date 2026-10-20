@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Layout
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.X86.CombTbl
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 

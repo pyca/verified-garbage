@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86.Message.Entry
 public import VerifiedGarbage.Proof.MlDsa.X86.Message.Pre
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the layouts' shapes

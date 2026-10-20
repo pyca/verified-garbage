@@ -4,8 +4,11 @@ import VerifiedGarbage.Proof.Rc4.Arm.Schedule
 public import VerifiedGarbage.Proof.Rc4.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 public import VerifiedGarbage.Proof.Rc4.Arm.Run
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! # RC4 on ARMv7: checked initialization -/
 

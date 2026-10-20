@@ -4,10 +4,8 @@ import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
 import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
 import VerifiedGarbage.Proof.Hmac.Generic.Common
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.X86_64.Iterate
 public import VerifiedGarbage.Spec.Mgf1
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on x86-64: the hash function

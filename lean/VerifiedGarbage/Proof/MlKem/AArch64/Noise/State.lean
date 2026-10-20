@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Seed
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Sha3.Arith
-import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The concrete words of a padded 33-byte noise seed -/
 

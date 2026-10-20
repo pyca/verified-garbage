@@ -3,12 +3,12 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Memory
 
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.SignedSelect
-import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.Ops
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.X448.X86_64.AddSub
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! Initialize from the first selected point, avoiding arithmetic on the identity. -/
 

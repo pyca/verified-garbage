@@ -3,9 +3,10 @@ module
 public import VerifiedGarbage.Proof.Sm4.X86.Linear
 public import VerifiedGarbage.Proof.Sm4.X86.Sbox
 public import VerifiedGarbage.Proof.Sm4.Rounds
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 
 /-!
 # A round of bitsliced SM4 on x86 (32-bit)

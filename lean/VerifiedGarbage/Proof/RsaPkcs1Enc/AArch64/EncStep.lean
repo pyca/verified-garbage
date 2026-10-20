@@ -1,10 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Encrypt
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

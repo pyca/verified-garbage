@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.AccY
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvTop
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRunAccA
-import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRunAcc0
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRunAcc1
 
 /-!
 # ML-KEM on x86-64: `NTT⁻¹` of the AVX2 accumulator

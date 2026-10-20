@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.AesCtr.Spec
 public import VerifiedGarbage.Proof.AesCtr.Inc
-public import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Spec.Cbc.Contract
 public import VerifiedGarbage.Spec.Gcm
 import VerifiedGarbage.Proof.AesSiv.Ctr32
@@ -11,8 +10,9 @@ import VerifiedGarbage.Proof.Cmac.Dbl32
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Spec.Ctr.Contract
-import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # AES-CTR from `vg_aes_ctr32`

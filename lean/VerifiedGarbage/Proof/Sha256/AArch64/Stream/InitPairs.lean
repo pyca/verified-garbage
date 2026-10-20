@@ -1,12 +1,11 @@
 module
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Impl.Sha256.AArch64.Stream
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Sha256.AArch64.Contract
 
 import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Streaming SHA-256 on AArch64: `initQ` in the one-shot digests

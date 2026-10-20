@@ -1,10 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.TripleDes.X86.Sbox
 public import VerifiedGarbage.Proof.TripleDes.X86.Spills
 import VerifiedGarbage.Proof.TripleDes.Permutation
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.Slots
 
 @[expose] public section
 

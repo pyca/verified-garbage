@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Stages
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Lower
-public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

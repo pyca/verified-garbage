@@ -4,7 +4,7 @@ public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.EcKey.P521
 public import VerifiedGarbage.Spec.Ecdh.Generic
-import VerifiedGarbage.Spec.Ecdh.P521
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ECDH over P-521 on x86-64: the contract the proof is written against

@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.IterateCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFinCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInitCT
-import VerifiedGarbage.Proof.Pbkdf2.Hmac
+import VerifiedGarbage.Proof.Md5.X86.Lit
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
+import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-!
 # HMAC's `init` and `finalize` and PBKDF2's `iterate` on x86 (32-bit): the instances

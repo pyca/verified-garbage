@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CommitTail
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CommitTail
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CommitTail
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.TCB.AArch64.Target
 
 @[expose] public section
 

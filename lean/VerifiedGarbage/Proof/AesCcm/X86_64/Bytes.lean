@@ -4,13 +4,15 @@ public import VerifiedGarbage.Proof.Cmac.Mem
 public import VerifiedGarbage.Proof.Cmac.Mem32
 import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
-public import VerifiedGarbage.Proof.Aes.X86_64.Lit
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Ccm
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.AesCcm.Mac
+public import VerifiedGarbage.TCB.X86_64.Gpr
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # AES-CCM on x86-64: the bytes of a buffer after writes

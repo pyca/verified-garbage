@@ -26,6 +26,10 @@ meta import Mathlib.Algebra.Group.Nat.Defs
 meta import Aesop.BuiltinRules
 meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-! Merged from `Proof.Ed25519.X86.SignCached.Contract`. -/
 

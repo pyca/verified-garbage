@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Mont.X86.Chain
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ECDSA on x86 (32-bit): the curve, the arguments and the working space

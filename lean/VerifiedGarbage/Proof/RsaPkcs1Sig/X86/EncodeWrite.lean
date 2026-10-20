@@ -5,6 +5,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeDispatch
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeHead
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodePadding
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # The encoder writes the complete EMSA-PKCS1-v1_5 byte string -/

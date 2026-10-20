@@ -2,11 +2,10 @@ module
 
 import VerifiedGarbage.Proof.Rc4.X86_64.ApplyStep
 public import VerifiedGarbage.Proof.Rc4.Stream
-public import VerifiedGarbage.Proof.Rc4.X86_64.Lookup
 import VerifiedGarbage.Proof.Rc4.X86_64.Schedule
-import VerifiedGarbage.Proof.Rc4.Table
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Rc4.X86_64.Lookup
+public import VerifiedGarbage.Impl.Rc4.X86_64
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-! # RC4 on x86-64: the stream function -/
 

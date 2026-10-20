@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Impl.Dsa.Layout
 public import VerifiedGarbage.Spec.Dsa.SignVerify
 public import VerifiedGarbage.Proof.Bignum.CrtFrame
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Bounds of the DSA scratch layout -/
 

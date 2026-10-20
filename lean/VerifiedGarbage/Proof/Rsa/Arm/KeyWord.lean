@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 
 import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The operations on the arrays of the working space: low words and equality -/
 

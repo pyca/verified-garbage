@@ -1,5 +1,4 @@
 module
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Dsa.X86.Pointer
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
@@ -7,6 +6,7 @@ public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 import VerifiedGarbage.Proof.Dsa.X86.PointerTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Mont.X86.PowerTiming
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Constant-time modulus loading and context initialization -/
 

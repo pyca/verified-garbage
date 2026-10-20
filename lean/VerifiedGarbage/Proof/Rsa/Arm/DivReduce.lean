@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.DivContext
 import VerifiedGarbage.Proof.Rsa.Arm.DivArgs
 import VerifiedGarbage.Proof.Bignum.Arm.SubtractIfGe
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Bignum.Arm.WideMul
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The division remainder's conditional subtraction -/
 

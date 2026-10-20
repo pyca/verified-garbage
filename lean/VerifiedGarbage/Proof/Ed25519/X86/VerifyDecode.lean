@@ -7,9 +7,11 @@ public import VerifiedGarbage.Proof.Ed25519.X86.WindowLoop
 import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ed25519.Group.Decode
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
 import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Ed25519 verification on x86: `A` and `R` decoded by one loop

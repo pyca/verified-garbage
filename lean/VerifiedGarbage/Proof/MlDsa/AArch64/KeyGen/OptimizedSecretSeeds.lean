@@ -3,12 +3,11 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedSecrets
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretCopy
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

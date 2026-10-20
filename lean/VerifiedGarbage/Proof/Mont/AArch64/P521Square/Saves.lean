@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSaves
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! Six caller-saved vector registers hold the eleven saved general registers. -/
 

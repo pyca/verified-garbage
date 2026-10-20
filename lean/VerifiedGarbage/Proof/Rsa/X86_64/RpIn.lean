@@ -4,8 +4,12 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.CvHead
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpBase
 public import VerifiedGarbage.Impl.Rsa.X86_64.Recover
 
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Data.Nat.Basic
+public import Mathlib.Tactic.Attr.Core
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: the arguments

@@ -5,12 +5,12 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.InvRed
 public import VerifiedGarbage.Proof.Divstep.TcS
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvPacked
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-public import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvWords
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Inversion by divsteps on AArch64: a batch

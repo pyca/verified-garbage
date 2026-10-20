@@ -1,8 +1,8 @@
 module
 
-public import Batteries.Tactic.Init
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.X448
+import Batteries.Tactic.Init
 
 /-!
 # X448: radix-2⁵⁶ arithmetic

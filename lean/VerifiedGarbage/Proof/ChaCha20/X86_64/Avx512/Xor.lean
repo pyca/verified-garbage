@@ -2,31 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Setup
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
-import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Setup
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
 
 /-!
 # ChaCha20 keystream XOR on x86-64 with AVX-512

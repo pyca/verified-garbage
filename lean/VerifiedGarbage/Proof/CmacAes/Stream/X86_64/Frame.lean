@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Verified
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
 
 /-!
 # Streaming AES-CMAC on x86-64, with its working space on the stack

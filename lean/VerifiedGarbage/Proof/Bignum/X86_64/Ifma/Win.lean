@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Area
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Sel
 
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Tab
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

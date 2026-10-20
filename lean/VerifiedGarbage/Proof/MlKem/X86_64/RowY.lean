@@ -1,20 +1,11 @@
 module
 
-meta import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
 public import VerifiedGarbage.Proof.MlKem.X86_64.Lazy
-meta import VerifiedGarbage.Proof.MlKem.X86_64.AccY
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecMul
-meta import VerifiedGarbage.Proof.MlKem.X86_64.DecMul
 public import VerifiedGarbage.Proof.MlKem.X86_64.FinY
-meta import VerifiedGarbage.Proof.MlKem.X86_64.FinY
 import VerifiedGarbage.Proof.Framework.CallLay
-meta import VerifiedGarbage.Impl.MlKem.X86_64.KpkeAccY
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

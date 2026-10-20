@@ -3,7 +3,10 @@ module
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Verified
 public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared8
 import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.CT
-import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Fn
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, AArch64: `_prepared`

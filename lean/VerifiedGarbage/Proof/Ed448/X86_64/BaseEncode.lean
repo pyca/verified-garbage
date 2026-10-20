@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
 public import VerifiedGarbage.Proof.X448.X86_64.Setup
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Ed448.Contract
 
 import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMain
@@ -12,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.X448.Ladder
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Ed448 base-point multiplication on x86-64: the encoding

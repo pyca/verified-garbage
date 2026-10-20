@@ -4,11 +4,10 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskStep
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitWord
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatchGeometry
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFlagValue
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-! ## From `BoundedFourMaskLoop.lean` -/
 

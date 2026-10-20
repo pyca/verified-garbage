@@ -1,5 +1,4 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Rsa.X86.MulMod
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 public import VerifiedGarbage.Proof.Framework.Semantics
@@ -12,7 +11,13 @@ import VerifiedGarbage.Proof.Rsa.X86.KeyBits
 import VerifiedGarbage.Proof.Rsa.X86.KeyHalf
 import VerifiedGarbage.Proof.Rsa.X86.KeySelect
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Mont.X86.Row
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Rsa.KeyMath
 
 /-! # `mulMod` on i686: `[a] = ([a] + ([y] mod 2^k) [x]) mod [m]`
 

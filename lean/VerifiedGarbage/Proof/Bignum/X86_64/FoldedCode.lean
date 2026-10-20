@@ -9,6 +9,13 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Compare8
 import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+public import Mathlib.Logic.Relator
+import Mathlib.Data.Int.GCD
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

@@ -1,10 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackIndex
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.PowLit
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Util.CompileInductive
+meta import Lean.Elab.Tactic.Omega.Frontend
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section

@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
 public import VerifiedGarbage.Proof.X448.Wide.Word
 
-import Mathlib.Tactic.SplitIfs
 
 /-! Untrusted: two-word coefficients in the existing X448 scratch region. -/
 

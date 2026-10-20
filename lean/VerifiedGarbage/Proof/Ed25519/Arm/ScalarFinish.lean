@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
 import VerifiedGarbage.Proof.Ed25519.Arm.PackField
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Canonical scalar output and restoration of the saved registers. -/
 

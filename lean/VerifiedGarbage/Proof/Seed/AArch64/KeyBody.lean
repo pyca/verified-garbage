@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Seed.AArch64.KeyStore
 public import VerifiedGarbage.Proof.Seed.AArch64.KeyRounds
 import VerifiedGarbage.Proof.Seed.AArch64.Batch
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset

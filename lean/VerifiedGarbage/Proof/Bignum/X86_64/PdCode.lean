@@ -4,9 +4,13 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.PdMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.Push
+import Mathlib.Data.Nat.Basic
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Order.Basic
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_public_precomputed` on x86-64: correctness

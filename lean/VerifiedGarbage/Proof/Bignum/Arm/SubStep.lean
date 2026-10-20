@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.SubRow
 import VerifiedGarbage.Proof.Bignum.Arm.Sub
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Exact value, memory safety and frame of one subtraction step -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.MinusHead
 public import VerifiedGarbage.Proof.Dsa.AArch64.MinusStep
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Exact subtraction of a small public value from the modulus -/
 @[expose] public section

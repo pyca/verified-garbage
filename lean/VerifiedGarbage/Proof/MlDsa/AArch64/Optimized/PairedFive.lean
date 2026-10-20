@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStageRun
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPackedRun
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseLocalTable
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

@@ -5,14 +5,11 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
 import VerifiedGarbage.Proof.Bignum.AArch64.Store
 import VerifiedGarbage.Proof.Rsa.Ranges
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
 import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # RSA private keys on AArch64: the working space and its pieces

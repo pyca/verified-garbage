@@ -1,25 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.Top
-meta import VerifiedGarbage.Proof.X25519.AArch64.Top
-public import VerifiedGarbage.Proof.X25519.AArch64.Lit
-meta import VerifiedGarbage.Proof.X25519.AArch64.Lit
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.X25519.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.X25519.AArch64.Invert
-import VerifiedGarbage.Proof.X25519.AArch64.Main
-meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.X25519.AArch64.Top
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.X25519.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.X25519.AArch64.Invert
-meta import VerifiedGarbage.Proof.X25519.AArch64.Main
 
 /-!
 # X25519 on AArch64: `Verified`

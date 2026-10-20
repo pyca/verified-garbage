@@ -3,7 +3,8 @@ public import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
 
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Complete descent through the checkpoint table. -/
 

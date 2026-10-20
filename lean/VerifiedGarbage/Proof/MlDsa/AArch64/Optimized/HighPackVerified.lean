@@ -1,60 +1,31 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.HighPack
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.HighPack
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackLoop
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackLoop
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Spec.MlDsa.HighPack
-meta import VerifiedGarbage.Spec.MlDsa.HighPack
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackSpec
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
-meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
-meta import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCoefficients
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackEncode
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Loop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
-import VerifiedGarbage.Proof.MlDsa.Pack.Stream
-import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.Simd
-meta import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.HighPack
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackLoop
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Spec.MlDsa.HighPack
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackSpec
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.WriteBytes
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCoefficients
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackEncode
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Loop
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
-meta import VerifiedGarbage.Proof.MlDsa.Pack.Stream
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
 
 /-! ## From `HighPackTiming.lean` -/
 

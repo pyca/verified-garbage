@@ -3,12 +3,9 @@ module
 import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Prep
 public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Contract
 public import VerifiedGarbage.Proof.Rc2.AArch64.Key
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Impl.Rc2.AArch64.Stream
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Rc2.AArch64.Lit
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rc2.CbcMemory
 import VerifiedGarbage.Proof.Rc2.Stream
 import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Copy
@@ -16,13 +13,8 @@ import VerifiedGarbage.Proof.MdStream.AArch64.Common
 import VerifiedGarbage.Proof.Rc2.Memory
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Spill
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming RC2-CBC on AArch64: `init`

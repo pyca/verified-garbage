@@ -1,43 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackProg
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackProg
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCoefficients
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackEncode
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackEncode
-import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-import VerifiedGarbage.Spec.MlDsa.UseHintPack
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.Simd
-meta import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackProg
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.WriteBytes
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCoefficients
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackEncode
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackEncode
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-meta import VerifiedGarbage.Spec.MlDsa.UseHintPack
 
 /-! ## From `UseHintPackContract.lean` -/
 

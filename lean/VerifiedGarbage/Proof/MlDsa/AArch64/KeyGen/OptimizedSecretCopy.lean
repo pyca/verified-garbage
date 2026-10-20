@@ -2,13 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedSecrets
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Lay
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

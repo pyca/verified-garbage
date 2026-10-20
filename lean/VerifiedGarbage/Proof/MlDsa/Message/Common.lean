@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.MlDsa.Poly
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ML-DSA, `sign_message` and `verify_message`: what every target's proof uses

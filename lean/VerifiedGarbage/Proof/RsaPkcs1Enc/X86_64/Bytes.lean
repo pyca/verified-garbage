@@ -1,15 +1,14 @@
 module
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Bignum.Words
-public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.Sig
 
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.X86_64.Words
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.TCB.X86_64.Sse
 import VerifiedGarbage.TCB.X86_64.State
-import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Bignum.X86_64.Words
 
 /-!
 # RSAES-PKCS1-v1_5 on x86-64: bytes at offsets of a base

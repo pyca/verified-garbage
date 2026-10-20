@@ -2,26 +2,14 @@ module
 public import VerifiedGarbage.Proof.Blowfish.X86_64.Reduce
 public import VerifiedGarbage.Proof.Blowfish.X86_64.Row
 
-public import VerifiedGarbage.Proof.Blowfish.X86_64.Combine
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Blowfish.X86_64.Combine
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Vector
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+import VerifiedGarbage.Impl.Rc2.X86_64.Sse2Lookup
 
 /-!
 # An S-box lookup

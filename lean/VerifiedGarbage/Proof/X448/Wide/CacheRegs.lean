@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.X448.AArch64.Cached
-import Mathlib.Tactic.SplitIfs
-import Batteries.Logic
-import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.X448.AArch64.Mem

@@ -2,11 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.Spec
 public import VerifiedGarbage.Impl.Argon2.AArch64.Compress
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import Mathlib.Tactic.SplitIfs
 
 /-! # Argon2's modified addition on ARM64 -/
 

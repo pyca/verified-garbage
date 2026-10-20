@@ -2,49 +2,32 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.Sponge
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
-meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Sponge
 import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
-meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
 import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
-meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
-meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
-meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
-meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
-meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
-import VerifiedGarbage.Impl.Sha256.X86.Stream
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Sha512.Spec
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
-meta import VerifiedGarbage.Impl.Sha256.X86.Stream
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sha512.X86.Lit
+meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Sponge
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
+meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
+meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
+meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.Sse
-meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Sha512.Spec
-meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+meta import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-!
 # Ed448 on x86 (32-bit): the calls of the sponge functions in constant time

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
 public import VerifiedGarbage.Proof.Framework.Semantics
 
 import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Macs
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Convert
 import VerifiedGarbage.Proof.Framework.AArch64.Simd

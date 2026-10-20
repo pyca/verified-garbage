@@ -17,7 +17,8 @@ import VerifiedGarbage.Proof.X448.X86_64.Inv
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.X448.X86_64.Main
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.X448.X86_64.Lit
 
 /-!
 # Ed448 base-point multiplication on x86-64: the whole function

@@ -5,9 +5,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecLanes
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecInput
-meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # Eight-coefficient decoding loop -/
 

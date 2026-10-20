@@ -1,14 +1,14 @@
 module
-public import VerifiedGarbage.Proof.TripleDes.AArch64.RoundLit
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Spills
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 
 import VerifiedGarbage.Proof.TripleDes.AArch64.RoundBody
 import VerifiedGarbage.Proof.Framework.AArch64.Tbl
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.TripleDes.AArch64.Box
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

@@ -1,10 +1,12 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Bignum.Words
-public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.Sig
 
-import Mathlib.Tactic.Set
+import Mathlib.Tactic.Finiteness.Attr
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.TCB.X86_64.State
 
 /-! # The shared oddness mask for DSA moduli -/

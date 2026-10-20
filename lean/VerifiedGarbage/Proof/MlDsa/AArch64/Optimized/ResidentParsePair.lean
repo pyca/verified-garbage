@@ -3,7 +3,8 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentMask
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackMemory
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentParse
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

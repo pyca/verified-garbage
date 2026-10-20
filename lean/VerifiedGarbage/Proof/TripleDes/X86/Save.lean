@@ -4,10 +4,10 @@ import VerifiedGarbage.Proof.TripleDes.X86.Bytes
 import VerifiedGarbage.Proof.Rc2.X86.Save
 public import VerifiedGarbage.Proof.TripleDes.X86.RoundStep
 public import VerifiedGarbage.Proof.TripleDes.X86.Permutation
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Rc2.X86.KeyIO
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! ## `Initial` -/
 

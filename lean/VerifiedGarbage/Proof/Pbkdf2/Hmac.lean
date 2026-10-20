@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.Spec.Hmac
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # PBKDF2-HMAC-SHA-256: one step as two compressions

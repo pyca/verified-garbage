@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Cast5.KeyMem
 public import VerifiedGarbage.Proof.Cast5.AArch64.Run
 public import VerifiedGarbage.Proof.Cast5.AArch64.Scan
 import VerifiedGarbage.Proof.Framework.CallLay
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # CAST5 key expansion on AArch64: a line

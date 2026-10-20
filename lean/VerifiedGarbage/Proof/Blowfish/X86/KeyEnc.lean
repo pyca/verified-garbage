@@ -3,10 +3,7 @@ module
 import VerifiedGarbage.Proof.Rc4.Scan32
 public import VerifiedGarbage.Proof.Blowfish.KeyTable
 public import VerifiedGarbage.Proof.Blowfish.X86.Ecb
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Blowfish.X86.Run
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Blowfish on x86 (32-bit): key expansion's 521 encryptions

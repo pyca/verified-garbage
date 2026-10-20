@@ -1,7 +1,5 @@
 module
-public import Batteries.Logic
 public import VerifiedGarbage.Impl.Bignum.Arm.MaskOutput
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Spec.Rsa.Contract
@@ -10,6 +8,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.MaskOutputArgs
 import VerifiedGarbage.Proof.Rsa.AcceptanceMask32
 import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Accepted RSA output is retained; rejected output is zeroed in constant time -/
 

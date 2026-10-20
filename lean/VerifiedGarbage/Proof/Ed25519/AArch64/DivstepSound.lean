@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Batch
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Step
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Divstep.Alg
 
 /-!
 # Ed25519 and X25519 on AArch64: the inversion by divsteps is sound modulo `p = 2²⁵⁵ - 19`

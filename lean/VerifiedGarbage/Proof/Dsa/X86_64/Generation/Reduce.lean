@@ -5,7 +5,10 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Subtract
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Increment
 import VerifiedGarbage.Proof.Dsa.Generation.PReduction
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
 
 /-! # Native remainder subtraction and increment implement p reduction -/
 

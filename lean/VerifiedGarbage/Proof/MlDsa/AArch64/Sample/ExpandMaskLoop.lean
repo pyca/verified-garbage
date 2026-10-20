@@ -6,15 +6,13 @@ import VerifiedGarbage.Proof.MlDsa.Sample.LeWord
 import VerifiedGarbage.Proof.MlDsa.Pack.Arith
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.ExpandMask
-import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-!
 # ML-DSA on AArch64: the loop of `vg_mldsa_expand_mask_poly`

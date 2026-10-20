@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBody
 public import VerifiedGarbage.Proof.Framework.X86.Spill
-public import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Taint
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Untrusted cdecl facts shared by the Ed25519 primitives. No particular
 argument list or output is assumed by scratch setup and register saving. -/

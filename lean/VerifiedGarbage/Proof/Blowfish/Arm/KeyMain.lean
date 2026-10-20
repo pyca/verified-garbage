@@ -1,18 +1,15 @@
 module
 
 import VerifiedGarbage.Proof.Blowfish.Arm.KeyEnc
-public import Mathlib.Tactic.SplitIfs
-public import Batteries.Logic
 public import VerifiedGarbage.Impl.Blowfish.Arm
-public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Blowfish.Arm.KeyP
 import VerifiedGarbage.Proof.Blowfish.Arm.KeyInit
 import VerifiedGarbage.Proof.Blowfish.Arm.Ecb
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # Blowfish on ARMv7: key expansion

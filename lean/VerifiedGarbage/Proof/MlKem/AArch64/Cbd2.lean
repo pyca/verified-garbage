@@ -3,8 +3,8 @@ module
 import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16
 public import VerifiedGarbage.Impl.MlKem.AArch64.Encode
 public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Base
-public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # Public CBD2 proof, using sixteen byte lanes -/
 

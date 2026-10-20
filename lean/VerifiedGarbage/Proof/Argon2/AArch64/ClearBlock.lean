@@ -4,13 +4,12 @@ public import VerifiedGarbage.Impl.Argon2.AArch64.ClearBlock
 public import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitClearMemory
 public import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
 public import VerifiedGarbage.Proof.Framework.Covers
-public import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Argon2.AArch64.AddressHeaderWords
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Zero every word, preserving the enclosing loop's registers and memory. -/
 

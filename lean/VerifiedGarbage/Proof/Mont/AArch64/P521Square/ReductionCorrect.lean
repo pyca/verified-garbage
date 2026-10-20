@@ -4,6 +4,12 @@ public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionFold
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionMath
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Spec.Weierstrass
 
 @[expose] public section
 set_option exponentiation.threshold 1024

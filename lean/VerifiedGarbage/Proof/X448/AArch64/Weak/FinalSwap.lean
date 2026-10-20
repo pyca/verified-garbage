@@ -3,9 +3,9 @@ public import VerifiedGarbage.Impl.X448.AArch64.Weak
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
 
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Iter
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on AArch64: the swap after the ladder

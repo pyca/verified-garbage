@@ -3,11 +3,12 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Message
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Layout
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Hash
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-!
 # ML-DSA on AArch64, `sign_message` and `verify_message`: entry and exit

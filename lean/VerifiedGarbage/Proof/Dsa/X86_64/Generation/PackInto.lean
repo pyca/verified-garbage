@@ -1,11 +1,9 @@
 module
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Pack
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackPart
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 

@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Contract
 public import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Call
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # XTS-AES of data units on AArch64: the arguments of each call

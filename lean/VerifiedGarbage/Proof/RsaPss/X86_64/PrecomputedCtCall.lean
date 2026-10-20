@@ -10,6 +10,10 @@ meta import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtCall
 meta import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCall
 meta import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedArgs
 meta import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
+meta import VerifiedGarbage.Proof.Bignum.Math
+meta import VerifiedGarbage.Proof.Sha256.StateMem
 
 @[expose] public section
 

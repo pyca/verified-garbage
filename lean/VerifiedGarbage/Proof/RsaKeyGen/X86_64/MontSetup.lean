@@ -1,18 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-public import Mathlib.Data.Nat.GCD.Basic
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Layout
-public import VerifiedGarbage.Proof.RsaKeyGen.Table
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.R2
 import VerifiedGarbage.Proof.Bignum.X86_64.Setup
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Impl.Rsa.X86_64
-import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
+import Mathlib.Tactic.Push
+public import Mathlib.Tactic.Basic
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-!
 # A candidate on x86-64: Montgomery arithmetic modulo `c`

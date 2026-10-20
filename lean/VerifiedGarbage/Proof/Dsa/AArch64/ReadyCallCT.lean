@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeadCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
 import VerifiedGarbage.Proof.Dsa.AArch64.CallAddCT
+import Batteries.Logic
 
 /-! # Arithmetic timing in a persistent DSA execution workspace -/
 

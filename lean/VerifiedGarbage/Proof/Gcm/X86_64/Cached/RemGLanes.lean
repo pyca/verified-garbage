@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemMask
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # The lanes of the blocks after the last group, as a group

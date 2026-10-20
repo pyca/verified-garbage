@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Prims
-import Mathlib.Tactic.Conv
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.MlKem.Arm.Common
-import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlKem.Arm.Keccak
 
 /-!

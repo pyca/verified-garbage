@@ -1,9 +1,17 @@
 module
 
 import VerifiedGarbage.Proof.Ed448.VerifyEq
-public import Mathlib.Tactic.Abel
 public import VerifiedGarbage.Proof.Ed448.Group.Projective
 import VerifiedGarbage.Proof.Ed448.Group.Decode
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.Abel
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Ed448: the reference computations agree with the specification

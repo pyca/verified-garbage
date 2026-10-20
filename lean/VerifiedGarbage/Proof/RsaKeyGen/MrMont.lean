@@ -1,5 +1,4 @@
 module
-public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.RsaKeyGen.MillerRabin
 
 import VerifiedGarbage.Proof.Bignum.Math

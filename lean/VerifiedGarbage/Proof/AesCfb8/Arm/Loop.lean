@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-CFB8 on ARMv7: the contracts, and the loop

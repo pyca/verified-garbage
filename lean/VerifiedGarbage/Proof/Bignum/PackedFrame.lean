@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Bignum.ExportEncoding
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-! # External packed integers remain unchanged by scratch writes -/
 

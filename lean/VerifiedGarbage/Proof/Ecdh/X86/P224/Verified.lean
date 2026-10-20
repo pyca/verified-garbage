@@ -30,6 +30,8 @@ meta import VerifiedGarbage.Impl.Ecdh.P224.X86
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P224.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ECDH over P-224 on x86 (32-bit): `Verified`

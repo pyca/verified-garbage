@@ -2,15 +2,13 @@ module
 
 import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Verified
 public import VerifiedGarbage.Proof.TripleDes.Scratch
-public import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
 public import VerifiedGarbage.Impl.StackScratch.AArch64
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+public import VerifiedGarbage.Impl.TripleDes.AArch64.ExpandKey
+import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
+import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
 
 /-!
 # Triple DES key expansion and ECB on AArch64, with their working space on the stack

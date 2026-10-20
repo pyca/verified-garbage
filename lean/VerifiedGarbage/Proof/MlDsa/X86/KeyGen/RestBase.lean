@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Sha256.X86.Lit
 meta import VerifiedGarbage.Proof.Sha3.X86.Lit
+import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+meta import VerifiedGarbage.Proof.MlKem.X86.TopLocal
 
 /-!
 # ML-DSA key generation on x86 (32-bit): after the samplers

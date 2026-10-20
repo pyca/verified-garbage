@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Bignum.X86.CrtCoefficient
 public import VerifiedGarbage.Impl.Bignum.X86.CheckFactorProduct
 public import VerifiedGarbage.Impl.Bignum.X86.PrimeMask
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 import VerifiedGarbage.Proof.Bignum.X86.RuntimeSubTiming

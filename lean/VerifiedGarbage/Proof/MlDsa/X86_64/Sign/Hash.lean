@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Keccak
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Sign
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on x86-64: `H` of pieces of memory

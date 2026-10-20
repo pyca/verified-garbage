@@ -4,11 +4,12 @@ import VerifiedGarbage.Proof.TripleDes.X86_64.Bytes
 import VerifiedGarbage.Proof.TripleDes.X86_64.Initial
 public import VerifiedGarbage.Impl.TripleDes.X86_64.Block
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.TripleDes.X86_64.Box
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 @[expose] public section
 

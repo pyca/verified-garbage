@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Sign.Loop
-public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.MlDsa.Poly
 import VerifiedGarbage.Proof.MlDsa.Round.Decompose
-import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Batteries.Tactic.Init
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # ML-DSA: signing polynomial by polynomial

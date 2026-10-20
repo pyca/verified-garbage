@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.PrivContext
 import VerifiedGarbage.Proof.Rsa.X86.PrivRegions
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
 
 /-! # Entry state and preserved saved-register words for checked private RSA -/
 

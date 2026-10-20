@@ -1,9 +1,9 @@
 module
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Verify
 public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 
 /-! # Public buffers and the two encoding buffers used by i686 verification -/

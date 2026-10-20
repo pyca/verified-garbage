@@ -2,9 +2,13 @@ module
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generate
 public import VerifiedGarbage.Spec.Dsa.Derive
-public import Mathlib.Data.Int.GCD
-public import VerifiedGarbage.Proof.Dsa.AArch64.Run
-public import VerifiedGarbage.Proof.Framework.Contract
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 
 /-! # Arithmetic variants for the complete DSA entry points

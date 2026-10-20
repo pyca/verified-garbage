@@ -3,9 +3,14 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.Random
 import VerifiedGarbage.Proof.Dsa.X86_64.SignificantLoop
 public import VerifiedGarbage.Proof.Dsa.DomainShape
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-! Adapt the existing verified width scan to the random sampler. -/
 @[expose] public section

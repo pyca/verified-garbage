@@ -1,9 +1,9 @@
 module
-public import Mathlib.Data.Int.GCD
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Bignum.Words
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.TCB.AArch64.Simd
 
 

@@ -10,6 +10,9 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
 import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 
 
 /-!

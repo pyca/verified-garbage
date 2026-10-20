@@ -1,9 +1,7 @@
 module
 public import VerifiedGarbage.Impl.Camellia.X86_64.Ecb
-public import VerifiedGarbage.Proof.Camellia.SboxTable
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 
 import VerifiedGarbage.Proof.Camellia.X86_64.Keys
 import VerifiedGarbage.Proof.Camellia.Common

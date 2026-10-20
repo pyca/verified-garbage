@@ -1,9 +1,9 @@
 module
 
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourExtract
 public import VerifiedGarbage.Proof.MlDsa.Sample.HalfByte
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

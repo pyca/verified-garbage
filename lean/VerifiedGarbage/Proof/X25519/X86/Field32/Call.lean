@@ -1,24 +1,15 @@
 module
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.X25519.Invert
-public import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
 public import VerifiedGarbage.Proof.X25519.X86.Ops
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X25519.X86.Field32.Fn
 import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
+public import VerifiedGarbage.Impl.X25519.X86.Field32
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.X25519.X86.Field32.Chain
-import VerifiedGarbage.Proof.X25519.X86.Field32.Verified
-import VerifiedGarbage.Proof.X25519.X86.Fold
-import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Calls of `vg_gf25519_r32_pow250` on x86 (32-bit)

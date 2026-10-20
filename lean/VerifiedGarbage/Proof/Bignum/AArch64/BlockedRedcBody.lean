@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcSetup
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcBlock
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcStart
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcFinish
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 @[expose] public section
 

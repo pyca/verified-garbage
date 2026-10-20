@@ -16,6 +16,16 @@ meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Polyval
 meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Keys
 meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Derive
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+import VerifiedGarbage.Impl.AesGcmSiv.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Impl.AesGcmSiv.AArch64
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.TCB.AArch64.Isa
+meta import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # AES-GCM-SIV on AArch64: the tag, counter mode and the functions are constant time

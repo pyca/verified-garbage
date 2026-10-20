@@ -2,10 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.TCB.Arm.Target
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Inlining verified code (ARMv7)

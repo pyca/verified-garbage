@@ -6,14 +6,10 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Block
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 import VerifiedGarbage.Proof.Bignum.Triangular
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRow
 
 /-! ## AdxTri8FullBlock -/
 

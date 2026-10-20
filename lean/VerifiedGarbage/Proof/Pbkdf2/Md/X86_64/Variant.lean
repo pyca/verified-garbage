@@ -13,7 +13,9 @@ import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Hmac.Scratch
-import VerifiedGarbage.Proof.Framework.Cold
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-!
 # Merkle–Damgård hash functions on x86-64, as variants

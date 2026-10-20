@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem768_decaps` and `vg_mlkem1024_decaps`

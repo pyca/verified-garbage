@@ -24,6 +24,8 @@ meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP512r1.X86
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ECDH over brainpoolP512r1 on x86 (32-bit): `Verified`

@@ -3,6 +3,8 @@ public import VerifiedGarbage.Proof.Bignum.X86.WideLoop
 
 import VerifiedGarbage.Proof.Bignum.X86.WideProduct
 import VerifiedGarbage.Proof.Bignum.WideProductValue
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Full products in the RSA API's 64-bit word representation -/
 

@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Top
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-!
 # ML-DSA signing on AArch64: what holds of the state between the pieces

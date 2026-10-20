@@ -6,7 +6,6 @@ public import VerifiedGarbage.Spec.Dsa
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.AttemptStatus
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateWidth
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
 
 /-! # Undersized p candidates retry without consuming witness bytes -/

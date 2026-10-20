@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Flags
 import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Formula
 import VerifiedGarbage.Proof.X25519.AArch64.Ops
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.X25519.AArch64.Ladder
 
 /-! # One iteration of the `_alt` ladder -/

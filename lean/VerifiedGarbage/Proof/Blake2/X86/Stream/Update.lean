@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Blake2.Spec
 import VerifiedGarbage.Proof.MdStream.X86.Common
 import VerifiedGarbage.Proof.Framework.Offset

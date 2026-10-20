@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.SquareCross
 import VerifiedGarbage.Proof.Bignum.Arm.Csub
 import VerifiedGarbage.Proof.Bignum.Arm.CsubValue
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The whole ARMv7 Montgomery square: `a² R⁻¹ mod m`, canonical -/
 

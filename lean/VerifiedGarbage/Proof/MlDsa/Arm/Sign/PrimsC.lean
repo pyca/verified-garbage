@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Prims
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.MlKem.Arm.Common
-import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
-import VerifiedGarbage.Proof.MlKem.Arm.Keccak
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on ARMv7: calls of the rounding functions, the norm check and `SimpleBitPack`

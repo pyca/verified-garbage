@@ -2,9 +2,10 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Out
 
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CoreU
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the multiplication

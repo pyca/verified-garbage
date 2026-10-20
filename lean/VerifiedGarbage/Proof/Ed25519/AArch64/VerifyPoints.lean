@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Ed25519.Window
 import VerifiedGarbage.Proof.Ed25519.ScalarBytes
 import VerifiedGarbage.Proof.Ed25519.AArch64.Points
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Ed25519.AArch64.WindowTables`. -/
 

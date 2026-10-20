@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.PcLay
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Precomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset

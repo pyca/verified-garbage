@@ -1,11 +1,21 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Candidate
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
-public import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import Mathlib.Algebra.GroupWithZero.Nat
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Data.Nat.Basic
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Tactic.Basic
+public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Push
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # A candidate on ARMv7: the table of small primes written (`table_ok`)
 

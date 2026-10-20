@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Spec.Ecdsa.Generic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Short Weierstrass curves: numbers as words, bits and bytes

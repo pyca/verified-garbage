@@ -4,6 +4,8 @@ public import VerifiedGarbage.Impl.Bignum.Arm.CrtProduct
 
 import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWide
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Inputs for exact CRT factor-product validation -/
 

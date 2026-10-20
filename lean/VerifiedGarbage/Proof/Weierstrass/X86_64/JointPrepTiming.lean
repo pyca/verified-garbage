@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Joint
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafPrep
 
 @[expose] public section

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.R2
 
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dStep
 import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dRecip
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dQuot
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dSub

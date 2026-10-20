@@ -7,17 +7,10 @@ public import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
 public import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
 public import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 public import VerifiedGarbage.Impl.StackScratch.X86
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Sha3.X86.Lit
-import VerifiedGarbage.Impl.Sha256.X86.Stream
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Sha512.Spec
 
 /-!
 # The SHA-3 sponge on x86, with its working space on the stack

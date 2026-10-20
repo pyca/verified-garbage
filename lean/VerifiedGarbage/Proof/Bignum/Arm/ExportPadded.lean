@@ -1,15 +1,15 @@
 module
 public import VerifiedGarbage.Impl.Bignum.Arm.ExportArray
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Mont
 
 import VerifiedGarbage.Proof.Bignum.Arm.ExportArray
 import VerifiedGarbage.Proof.Bignum.Arm.ArrayFrame
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Export a modulus into a zero-padded full-product buffer -/
 

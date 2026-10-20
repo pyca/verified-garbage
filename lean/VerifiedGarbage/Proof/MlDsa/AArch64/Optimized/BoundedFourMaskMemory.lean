@@ -1,13 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
-import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskStep
 public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 @[expose] public section
 

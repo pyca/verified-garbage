@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightColumns
 public import VerifiedGarbage.Proof.Bignum.Square
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

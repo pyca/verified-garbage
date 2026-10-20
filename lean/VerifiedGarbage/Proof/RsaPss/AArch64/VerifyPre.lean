@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Spec.RsaPss.Precomputed
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignPre
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RSASSA-PSS verification on AArch64: the precondition

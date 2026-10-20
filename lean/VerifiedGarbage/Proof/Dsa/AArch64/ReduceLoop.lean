@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReduceByte
 public import VerifiedGarbage.Proof.Dsa.Arithmetic
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # The nonempty streaming reduction loop -/
 

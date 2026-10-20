@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.RandomSourcePrepare
 public import VerifiedGarbage.Proof.Argon2.FillStep
 import VerifiedGarbage.Proof.Argon2.X86_64.DependentWord
 import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelStable
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Argon2.X86_64.DependentWordState`. -/
 

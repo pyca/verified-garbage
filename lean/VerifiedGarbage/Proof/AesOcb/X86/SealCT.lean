@@ -22,6 +22,10 @@ meta import VerifiedGarbage.Proof.AesOcb.X86.TagIO
 meta import VerifiedGarbage.Proof.AesOcb.X86.Hash
 meta import VerifiedGarbage.Proof.AesOcb.X86.Setup
 meta import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-OCB on x86: `vg_aes_ocb_seal` and `vg_aes_ocb_open` in constant time

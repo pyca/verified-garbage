@@ -1,45 +1,25 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
 import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
 public import VerifiedGarbage.Impl.MlDsa.Arm.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Sponge
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Loop
-meta import VerifiedGarbage.Impl.MlDsa.Arm.Sample.ExpandMask
-import VerifiedGarbage.Proof.Framework.TaintSum
-meta import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
-meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
-import VerifiedGarbage.Proof.MlDsa.Pack.Arith
-import VerifiedGarbage.Proof.MlDsa.Pack.Stream
-import VerifiedGarbage.Proof.MlKem.Arm.Add
-import VerifiedGarbage.Proof.MlKem.Compress
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
+meta import VerifiedGarbage.Impl.MlDsa.Arm.Sample.ExpandMask
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Sponge
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Loop
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
-meta import VerifiedGarbage.Proof.MlDsa.Pack.Arith
-meta import VerifiedGarbage.Proof.MlDsa.Pack.Stream
-meta import VerifiedGarbage.Proof.MlKem.Arm.Add
-meta import VerifiedGarbage.Proof.MlKem.Compress
-meta import VerifiedGarbage.Proof.MlKem.Encode
-meta import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_expand_mask_poly`

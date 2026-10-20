@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.PdFn
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry

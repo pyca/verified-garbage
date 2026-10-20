@@ -2,8 +2,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Layer
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedLayer
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

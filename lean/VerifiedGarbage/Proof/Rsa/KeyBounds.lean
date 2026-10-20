@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Framework.PowLit
-
 import VerifiedGarbage.Proof.Framework.Omega
+
 
 /-! # Bounds for the full private exponent in RSA key validation -/
 

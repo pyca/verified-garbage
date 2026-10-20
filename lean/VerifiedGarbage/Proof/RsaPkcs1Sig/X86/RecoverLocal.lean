@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverContext
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRegions
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # The two local encodings and the outgoing arguments are separate -/
 

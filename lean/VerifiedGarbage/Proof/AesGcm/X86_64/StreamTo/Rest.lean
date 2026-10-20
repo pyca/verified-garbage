@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Gcm.Ctr
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: the bytes left

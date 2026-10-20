@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.RowAdvance
 import VerifiedGarbage.Proof.Bignum.Arm.RowStep
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Two words of a row an iteration preserve the row invariant -/
 

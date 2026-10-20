@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Ed25519.X86.Workspace
 public import VerifiedGarbage.Proof.X25519.X86.Ops
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBody
 import VerifiedGarbage.Proof.Ed25519.X86.CopyWords
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The comb's digits, and their masks

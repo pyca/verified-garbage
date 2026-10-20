@@ -4,10 +4,8 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PackedLanes
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalBank
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldPackedBank
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSchedule
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PackedBank
 
 @[expose] public section
 

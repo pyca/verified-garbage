@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Camellia.X86.KeyStore
 public import VerifiedGarbage.Proof.Camellia.Common
 public import VerifiedGarbage.Proof.Camellia.X86.Prologue
 import VerifiedGarbage.Proof.Camellia.Scratch
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Camellia.X86.KaKb
 import VerifiedGarbage.Proof.Camellia.X86.KeyLoad
 import VerifiedGarbage.Proof.Camellia.X86.KeyInit

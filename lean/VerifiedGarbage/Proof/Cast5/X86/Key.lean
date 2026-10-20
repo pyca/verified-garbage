@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Proof.Cast5.X86.KeyHalf
 import VerifiedGarbage.Proof.Cast5.X86.Ecb
 import VerifiedGarbage.Proof.Framework.CallLay
-import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # CAST5 key expansion on 32-bit x86

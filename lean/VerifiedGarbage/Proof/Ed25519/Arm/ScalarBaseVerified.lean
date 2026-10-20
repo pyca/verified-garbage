@@ -67,6 +67,9 @@ meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.X25519.Arm.AddSub
 meta import VerifiedGarbage.Proof.X25519.Arm.Cswap
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ed25519.Arm.PointKeep
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarBaseEngine`. -/
 

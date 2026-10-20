@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Base
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA verification on x86-64: calls

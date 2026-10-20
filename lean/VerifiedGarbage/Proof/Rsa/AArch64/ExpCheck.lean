@@ -2,12 +2,9 @@ module
 
 import VerifiedGarbage.Proof.Bignum.AArch64.PdExp
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Rsa.AArch64
 public import VerifiedGarbage.Proof.Bignum.Words
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Bignum.AArch64.PdLoad
 import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
@@ -15,6 +12,9 @@ import VerifiedGarbage.Proof.Bignum.AArch64.Row
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSA on AArch64: BoringSSL's limits on the public exponent

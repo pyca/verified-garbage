@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Bignum.X86.ExportArrayArgs
 import VerifiedGarbage.Proof.Bignum.X86.CopyRead
 import VerifiedGarbage.Proof.Bignum.PackedRead
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-! # Packed workspace export preserves its integer value and advances the destination -/
 

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.TCB.Arm.Target
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!

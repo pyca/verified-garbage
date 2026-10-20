@@ -4,12 +4,11 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 public import VerifiedGarbage.Proof.Sha3.Stream
 public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.Pair
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Parity
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

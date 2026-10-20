@@ -9,6 +9,12 @@ import VerifiedGarbage.Proof.MlDsa.Arm.Message.HashCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCorrect
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.Arm.Common
 
 /-!
 # ML-DSA on ARMv7, `verify_message`: constant time

@@ -8,6 +8,8 @@ import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.SignVerify
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import Mathlib.Tactic.Convert
+import Mathlib.Data.Int.ModEq
 
 /-! # The verification mask implements the packed DSA verification spec -/
 

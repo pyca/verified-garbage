@@ -1,51 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.Blake2.X86.LitS
-meta import VerifiedGarbage.Proof.Blake2.X86.LitS
 import VerifiedGarbage.Proof.Blake2.X86.CompressS.Compress
-meta import VerifiedGarbage.Proof.Blake2.X86.CompressS.Compress
 import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
-meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Blake2.Contract
 public import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
 public import VerifiedGarbage.Impl.StackScratch.X86
-meta import VerifiedGarbage.Spec.Blake2.Contract
 import VerifiedGarbage.Proof.Blake2.Scratch
-meta import VerifiedGarbage.Proof.Blake2.Scratch
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
-meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.CallWith
-meta import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Blake2.X86.LitS
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.MdStream.X86.Common
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Sha512.Spec
-import VerifiedGarbage.Proof.Sha512.Word64
-meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Blake2.X86.CompressS.Compress
+meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Spec.Blake2.Contract
+meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
+meta import VerifiedGarbage.Impl.StackScratch.X86
+meta import VerifiedGarbage.Proof.Blake2.Scratch
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Blake2.X86.LitS
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.Sse
-meta import VerifiedGarbage.Proof.MdStream.X86.Common
-meta import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Sha512.Spec
-meta import VerifiedGarbage.Proof.Sha512.Word64
 
 /-!
 # BLAKE2s on x86 (32-bit): the instance

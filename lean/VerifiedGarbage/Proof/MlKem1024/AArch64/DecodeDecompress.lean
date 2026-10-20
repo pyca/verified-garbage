@@ -8,6 +8,10 @@ import VerifiedGarbage.Proof.MlKem.Compress1024
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Dd5Step
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Dd11Step
 meta import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
+import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Widths
+meta import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Proof.MlKem.Compress1024
+meta import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Widths
 
 /-!
 # ML-KEM-1024 on AArch64: `vg_mlkem1024_decode_decompress`

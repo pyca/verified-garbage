@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Impl.Weierstrass.X86
 public import VerifiedGarbage.Proof.Mont.X86.Ops
 public import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Field programs on x86 (32-bit)

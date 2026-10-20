@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MdStream.X86.Common
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!

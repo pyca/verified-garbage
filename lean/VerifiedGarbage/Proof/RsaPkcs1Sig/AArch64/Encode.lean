@@ -2,12 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Encode
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # EMSA-PKCS1-v1_5 encoding on AArch64: correctness

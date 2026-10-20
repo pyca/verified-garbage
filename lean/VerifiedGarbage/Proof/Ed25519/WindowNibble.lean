@@ -2,6 +2,14 @@ module
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 
 import VerifiedGarbage.Proof.Ed25519.ScalarBytes
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.Module
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
 
 /-!
 # Verification with windows, nibble by nibble

@@ -5,9 +5,11 @@ public import VerifiedGarbage.Spec.Dsa.SignVerify
 public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
 public import VerifiedGarbage.Proof.Dsa.X86_64.InitFrame
 import VerifiedGarbage.Proof.Dsa.Layout
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.Parent
-import VerifiedGarbage.Proof.Dsa.X86_64.Setup
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
 
 /-! # Initializing both DSA moduli in the shared scratch allocation -/
 

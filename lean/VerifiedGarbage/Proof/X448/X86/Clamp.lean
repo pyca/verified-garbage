@@ -2,14 +2,11 @@ module
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.X86.Mem
 
-import Mathlib.Logic.Function.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.X448.X86.Instr
 import VerifiedGarbage.Proof.Framework.Block
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # X448 on x86 (32-bit): clamping the scalar bits

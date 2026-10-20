@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelSpec
 public import VerifiedGarbage.Proof.Argon2.X86_64.RandomSource
 import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Argon2.X86_64.RandomSourceState`. -/
 

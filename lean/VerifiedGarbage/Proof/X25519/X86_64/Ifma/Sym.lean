@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: straight-line vector code, lane by lane

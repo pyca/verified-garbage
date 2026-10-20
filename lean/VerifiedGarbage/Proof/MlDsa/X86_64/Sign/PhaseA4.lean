@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseA
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Blocks
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-DSA signing on x86-64: `ExpandA`, four entries at a time

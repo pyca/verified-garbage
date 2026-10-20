@@ -14,6 +14,20 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtBack
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Store
 meta import VerifiedGarbage.Proof.Bignum.Octets
+import Mathlib.Order.Defs.PartialOrder
+meta import Mathlib.Order.Defs.PartialOrder
+import Mathlib.Data.Int.ModEq
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import Mathlib.Data.Int.ModEq
+meta import Mathlib.Tactic.Set
+meta import VerifiedGarbage.Proof.Bignum.Math
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSA with the CRT on x86-64: `main` in constant time

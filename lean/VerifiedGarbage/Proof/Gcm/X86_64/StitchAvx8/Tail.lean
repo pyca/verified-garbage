@@ -4,14 +4,15 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Loop
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopOne
-import Mathlib.Data.List.Induction
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # The blocks after the pipeline's

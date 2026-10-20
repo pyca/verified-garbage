@@ -6,6 +6,7 @@ public import VerifiedGarbage.Spec.Weierstrass
 
 import VerifiedGarbage.Proof.Rsa.X86.PrivContract
 import VerifiedGarbage.Proof.Rsa.X86.PrivObservations
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Complete i686 certificate for checked private RSA -/
 

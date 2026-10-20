@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.X448.Wide.Memory
 
 import VerifiedGarbage.Proof.Curve448.AArch64.Normalize
 import VerifiedGarbage.Proof.X448.Wide.CoefficientIO
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.Wide.TailPass
 import VerifiedGarbage.Proof.Curve448.AArch64.Collect
 import VerifiedGarbage.Proof.X448.Wide.Fold

@@ -1,16 +1,14 @@
 module
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.Set
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Proof.Mont.X86.Words
 
 import VerifiedGarbage.Proof.Bignum.X86.CrtSave
 import VerifiedGarbage.Proof.Mont.X86.Instr
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Establishing the arithmetic workspace while preserving the caller ABI -/
 

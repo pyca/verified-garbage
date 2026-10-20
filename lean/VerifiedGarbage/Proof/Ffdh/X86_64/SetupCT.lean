@@ -1,19 +1,12 @@
 module
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Front
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.PowLit
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Ffdh.X86_64.Front
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
-import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
-import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
 
 /-!
 # FFDH on X86_64: the front in constant time

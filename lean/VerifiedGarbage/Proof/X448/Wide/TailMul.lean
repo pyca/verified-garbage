@@ -2,9 +2,9 @@ module
 public import VerifiedGarbage.Proof.X448.AArch64.Mul
 
 import VerifiedGarbage.Proof.X448.Wide.TailSquare
-import Batteries.Logic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.Wide.TailProduct
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Untrusted: choose cached squaring from public, static field-slot indices. -/
 

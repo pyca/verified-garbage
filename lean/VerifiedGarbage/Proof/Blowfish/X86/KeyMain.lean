@@ -2,12 +2,8 @@ module
 public import VerifiedGarbage.Proof.Blowfish.X86.Ecb
 
 import VerifiedGarbage.Proof.Blowfish.X86.KeyEnc
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Blowfish.X86.KeyP
 import VerifiedGarbage.Proof.Blowfish.X86.Run
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.TCB.X86.Target
 
 /-!
 # Blowfish on x86 (32-bit): key expansion

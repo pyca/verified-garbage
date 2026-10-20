@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Camellia.X86.Core
 
 import VerifiedGarbage.Proof.Camellia.X86.Prologue
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Camellia.Common
 import VerifiedGarbage.Proof.Camellia.X86.Copy
 import VerifiedGarbage.Proof.Camellia.X86.Crypt8

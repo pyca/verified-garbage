@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.CvFinish
 import VerifiedGarbage.Proof.Rsa.Arm.CvLoads
 import VerifiedGarbage.Proof.Rsa.Arm.DivCT
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! # `vg_rsa_crt_values` on ARMv7: constant time
 

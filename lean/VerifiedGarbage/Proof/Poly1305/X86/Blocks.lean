@@ -1,39 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.PowLit
-meta import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Poly1305.X86
-meta import VerifiedGarbage.Impl.Poly1305.X86
 import VerifiedGarbage.Proof.Poly1305.X86.Lit
-meta import VerifiedGarbage.Proof.Poly1305.X86.Lit
-public import Mathlib.Tactic.Set
-meta import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Poly1305.Spec
-meta import VerifiedGarbage.Proof.Poly1305.Spec
 import VerifiedGarbage.Proof.Framework.X86.Inline
-meta import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Poly1305.Contract
-meta import VerifiedGarbage.Spec.Poly1305.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Impl.Poly1305.X86
+meta import VerifiedGarbage.Proof.Poly1305.X86.Lit
+meta import VerifiedGarbage.Proof.Poly1305.Spec
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Spec.Poly1305.Contract
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # Poly1305 on x86: carries and digits, for `omega` on small linear problems

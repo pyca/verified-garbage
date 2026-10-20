@@ -7,8 +7,8 @@ import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Ed25519.X86_64.FieldLazy
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarWord
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # Ed25519's comb with AVX512_IFMA: the selection

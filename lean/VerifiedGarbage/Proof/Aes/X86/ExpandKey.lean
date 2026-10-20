@@ -3,11 +3,10 @@ module
 import VerifiedGarbage.Proof.Aes.X86.Ctr32
 public import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
 public import VerifiedGarbage.Proof.Aes.KeyExp
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Aes.Contract
-public import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Proof.Aes.Ct32.Bitsliced
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # The AES key expansion on x86 (32-bit)

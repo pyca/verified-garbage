@@ -1,19 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
 import VerifiedGarbage.Proof.Dsa.X86_64.Exponent
 import VerifiedGarbage.Proof.Dsa.X86_64.EncodePower
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.Load
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Bignum.X86_64.Exp
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 
 /-! # DSA exponentiation, including conversion out of Montgomery form -/
 

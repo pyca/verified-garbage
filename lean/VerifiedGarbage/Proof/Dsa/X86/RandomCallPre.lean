@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Dsa.X86.RandomContext
 
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86.RandomCopy
 import VerifiedGarbage.Proof.Framework.Offset
 

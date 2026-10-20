@@ -2,12 +2,8 @@ module
 
 import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Common
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Contract
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.CmacTripleDes.Stream.AArch64
-public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Mem
@@ -15,7 +11,9 @@ import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Cmac.Stream
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Streaming TDEA-CMAC on AArch64: `vg_cmac_triple_des_stream_init`

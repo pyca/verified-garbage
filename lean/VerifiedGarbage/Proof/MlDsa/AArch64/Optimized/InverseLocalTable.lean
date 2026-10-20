@@ -3,9 +3,8 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRun
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableMemory
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRoots
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## From `InverseLocalRoots.lean` -/
 

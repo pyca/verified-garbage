@@ -6,10 +6,12 @@ import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
 public import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
 public import VerifiedGarbage.Proof.Ed25519.X86.CombTbl
 public import VerifiedGarbage.Proof.Ed25519.X86.PointMultiplyFrame
-public import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
-import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-! Merged from `Proof.Ed25519.X86.ScalarBaseContract`. -/
 

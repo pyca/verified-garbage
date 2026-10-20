@@ -2,23 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Callee
 public import VerifiedGarbage.Proof.Gcm.X86.Pclmul.Ghash
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Body
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBranches
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyMemory
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyPost
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeySteps
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Loops
-import VerifiedGarbage.Proof.Aes.X86.Keys
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.VariantProof
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Gcm.Compose
-import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # AES-GCM on x86: `vg_ghash_pclmul`

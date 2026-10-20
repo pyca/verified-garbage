@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Numbers in memory as `Mem.read` reads them

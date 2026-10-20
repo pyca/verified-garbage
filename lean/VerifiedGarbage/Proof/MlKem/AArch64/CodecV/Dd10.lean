@@ -3,10 +3,13 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd4
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dword
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdSplit
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdLoop
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdSplit
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM on AArch64: `dd10Half`

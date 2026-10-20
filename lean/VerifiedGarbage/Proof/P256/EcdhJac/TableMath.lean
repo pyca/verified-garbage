@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.JacCoZ
-public import VerifiedGarbage.Impl.AArch64Instrs
 public import VerifiedGarbage.Impl.P256.EcdhJac.Base
-import VerifiedGarbage.Impl.P256.EcdhJac
+import VerifiedGarbage.Impl.AArch64Instrs
+import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
 
 @[expose] public section
 

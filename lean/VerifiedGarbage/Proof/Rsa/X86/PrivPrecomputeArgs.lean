@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Rsa.X86.PrivSaveStatus
 import VerifiedGarbage.Proof.Rsa.X86.PrivLocalArgument
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackWord
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Retaining the CRT status and preparing the public-key precomputation call -/
 

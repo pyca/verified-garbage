@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Impl.Bignum.Layout
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Multiword arithmetic: the working space's layout

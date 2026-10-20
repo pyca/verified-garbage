@@ -2,9 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
 public import VerifiedGarbage.Impl.Ecdh.X86_64
-public import VerifiedGarbage.Proof.Framework.TaintSum
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 
 /-!

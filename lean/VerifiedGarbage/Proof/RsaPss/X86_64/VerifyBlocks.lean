@@ -1,14 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.VerifyCases
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Loops
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtHash
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!

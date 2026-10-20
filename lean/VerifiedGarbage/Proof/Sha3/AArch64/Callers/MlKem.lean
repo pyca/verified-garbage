@@ -2,16 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
-public import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
-meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
-public import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
-meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Framework.RegSet
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-!
 # Constant time of ML-KEM's calls of the sponge, for any Keccak backend

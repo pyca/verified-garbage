@@ -7,9 +7,9 @@ public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.AArch64.DecodeBits
 import VerifiedGarbage.Proof.Ed25519.Decode
 import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Ed25519.Canonical64
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Merged from `Proof.Ed25519.AArch64.DecodeLoad`. -/
 

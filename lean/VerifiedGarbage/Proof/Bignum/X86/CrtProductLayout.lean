@@ -4,6 +4,8 @@ import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
 public import VerifiedGarbage.Proof.Bignum.X86.WideLoop
 public import VerifiedGarbage.Impl.Bignum.X86.CrtLayout
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The full product and its multiplier are disjoint from both source slots -/
 

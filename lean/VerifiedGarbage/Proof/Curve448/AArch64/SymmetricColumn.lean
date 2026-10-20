@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.X448.Wide.Product
 public import VerifiedGarbage.Proof.X448.Wide.Representation
 
 import VerifiedGarbage.Proof.Curve448.AArch64.AccumSquareBody
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.Wide.Column
 import VerifiedGarbage.Proof.Framework.Block
 

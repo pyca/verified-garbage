@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
 public import VerifiedGarbage.Proof.RsaPss.X86_64.FixedPad
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!

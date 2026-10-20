@@ -4,13 +4,10 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintPacked
 import VerifiedGarbage.Proof.MlDsa.Round.Ones
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintNorm
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
 import VerifiedGarbage.Proof.MlDsa.Round.Mem
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `ResponseHintOnes.lean` -/
 

@@ -1,15 +1,15 @@
 module
 public import VerifiedGarbage.Impl.TripleDes.X86_64.Block
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 
 import VerifiedGarbage.Proof.TripleDes.X86_64.BlockIO
 import VerifiedGarbage.Proof.TripleDes.Word
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.TripleDes.X86_64.Initial
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

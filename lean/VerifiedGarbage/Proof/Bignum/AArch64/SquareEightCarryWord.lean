@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightRaw
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Proof.Ed25519.Word64
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

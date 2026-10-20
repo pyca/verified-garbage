@@ -14,6 +14,8 @@ meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16
+meta import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16
 
 @[expose] public section
 

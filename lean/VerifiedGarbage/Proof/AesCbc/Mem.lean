@@ -1,11 +1,10 @@
 module
-public import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Spec.Cbc
 
 import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # CBC: blocks moved as 64-bit words

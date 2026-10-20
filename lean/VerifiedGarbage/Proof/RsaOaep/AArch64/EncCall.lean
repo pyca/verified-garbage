@@ -3,15 +3,15 @@ module
 import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncLay
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLay
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncLay
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
 
 /-!
 # RSAES-OAEP encryption on AArch64: the public-key operation

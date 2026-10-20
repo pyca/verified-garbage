@@ -1,46 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightLoad
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightProducts
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightWord
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightPolynomial
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightBound
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Impl.Bignum.AArch64
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMath
-import VerifiedGarbage.Proof.Bignum.AArch64.Csub
-import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-import VerifiedGarbage.Proof.Bignum.AArch64.Reduce
-import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
-import VerifiedGarbage.Proof.Bignum.AArch64.Row
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalCore
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightColumn
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightLoad
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Poly1305.Limbs64
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Impl.Bignum.AArch64
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMath
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalCore
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightBound
-public import VerifiedGarbage.Proof.Bignum.Octets
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.DivContext
 public import VerifiedGarbage.Impl.Rsa.Arm.Div
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Division loop arguments depend only on the public header -/
 

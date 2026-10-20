@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! # The shared x86 signing contract with a 20-byte stack: the calls', which holds the
 four-byte static-address frame -/

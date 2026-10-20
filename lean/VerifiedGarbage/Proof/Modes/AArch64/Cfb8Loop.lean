@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Modes.AArch64.Cfb8Steps
 public import VerifiedGarbage.Proof.Modes.Cfb8
 public import VerifiedGarbage.Impl.Modes.AArch64.Cfb8
 public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Modes.AArch64.Xor
 import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup

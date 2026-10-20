@@ -7,8 +7,8 @@ import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunR101
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.TopAcc16
 import VerifiedGarbage.Proof.MlKem.X86_64.AccInvY
 import VerifiedGarbage.Proof.MlKem.X86_64.FinY
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunR100
 
 /-!
 # ML-KEM on x86-64: the AVX2 arithmetic without its MXCSR region

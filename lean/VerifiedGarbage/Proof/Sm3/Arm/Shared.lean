@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sm3.Arm.Compress
 import VerifiedGarbage.Proof.Sm3.Arm.Stream.Init
 import VerifiedGarbage.Proof.Sm3.Arm.Stream.Md
@@ -9,8 +8,10 @@ public import VerifiedGarbage.Proof.MdStream.Arm.Finalize
 public import VerifiedGarbage.Proof.MdStream.Arm.Update
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Sm3.Arm.Stream
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sm3.Arm.Lit
 
 /-!
 # SM3 on ARMv7: the shared contracts

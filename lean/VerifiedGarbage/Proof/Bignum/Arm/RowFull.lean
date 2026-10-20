@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.RowCarryMemory
 import VerifiedGarbage.Proof.Bignum.Arm.RowCarry
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # A complete scalar multiply-add in an extended accumulator -/
 

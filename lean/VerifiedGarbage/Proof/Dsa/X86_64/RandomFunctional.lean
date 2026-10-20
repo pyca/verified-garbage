@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomRemaining
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleLoop
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Functional equivalence of the bounded sampling loop. -/
 @[expose] public section

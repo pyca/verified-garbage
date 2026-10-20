@@ -7,6 +7,9 @@ public import VerifiedGarbage.Spec.Ofb.Contract
 
 import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
 import VerifiedGarbage.Proof.AesOfb.X86_64.Body
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
 
 /-!
 # AES-OFB on x86-64: `Verified`

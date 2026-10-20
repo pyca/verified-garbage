@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivTail
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Rsa.AArch64.PrivCrt
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_private_checked` on AArch64: the tail

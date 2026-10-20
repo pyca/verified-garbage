@@ -24,6 +24,8 @@ meta import VerifiedGarbage.Impl.EcKey.P384.X86
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P384.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # P-384 public keys on x86 (32-bit): `Verified`

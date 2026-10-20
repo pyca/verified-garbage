@@ -3,10 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarNat
 import VerifiedGarbage.Proof.X448.Arm.RowPass
 public import VerifiedGarbage.Proof.X25519.Arm.Field
-public import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.X448.Arm.Carry
 
 /-!
 # Ed448 scalar arithmetic on ARMv7: one chunk

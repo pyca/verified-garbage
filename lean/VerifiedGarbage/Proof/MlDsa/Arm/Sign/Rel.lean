@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseA
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Hash
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.Arm.Permute
 
 /-!
 # ML-DSA signing on ARMv7: two runs

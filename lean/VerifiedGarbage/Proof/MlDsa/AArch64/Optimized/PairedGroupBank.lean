@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedGroup
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedState
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedShape
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBatch
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

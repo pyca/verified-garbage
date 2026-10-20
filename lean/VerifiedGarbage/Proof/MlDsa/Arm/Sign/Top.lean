@@ -2,12 +2,11 @@ module
 
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Hash
 public import VerifiedGarbage.Proof.MlKem.Arm.Reduce
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Lay
 public import VerifiedGarbage.Proof.MlDsa.Sign.Leak
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on ARMv7: the function's contract, layout, entry and exit

@@ -3,41 +3,21 @@ module
 import VerifiedGarbage.Proof.Bignum.Arm.SquareInit
 import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-meta import VerifiedGarbage.Impl.Bignum.Arm.Square
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Impl.Bignum.Arm.Square
 public import VerifiedGarbage.Proof.Bignum.Arm.SquareState
 public import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Bignum.Arm.ArgsCT
-import VerifiedGarbage.Proof.Bignum.Arm.ProductArgs
-import VerifiedGarbage.Proof.Bignum.Arm.ReductionArgs
-import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
-import VerifiedGarbage.Proof.Bignum.Arm.RowAdvance
-import VerifiedGarbage.Proof.Bignum.Arm.RowFullCT
-import VerifiedGarbage.Proof.Bignum.Arm.RowStep
-import VerifiedGarbage.Proof.Bignum.Arm.Shift
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftArgs
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftCT
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftStep
-import VerifiedGarbage.Proof.Bignum.Arm.Stack
-import VerifiedGarbage.Proof.Bignum.Arm.WideMath
-import VerifiedGarbage.Proof.Bignum.Arm.WideValue
-import VerifiedGarbage.Proof.Bignum.Arm.Zero
-import VerifiedGarbage.Proof.Bignum.Arm.ZeroStep
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.CallF
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Bignum.Arm.SquareInit
+meta import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Impl.Bignum.Arm.Square
+meta import VerifiedGarbage.Proof.Bignum.Arm.SquareState
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! # Two runs of a square leak the same trace: the pieces
 

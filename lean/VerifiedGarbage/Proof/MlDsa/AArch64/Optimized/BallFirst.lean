@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallChunk
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallLoop
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.Sample.LeWord
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-! ## From `BallSetup.lean` -/
 

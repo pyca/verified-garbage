@@ -4,7 +4,13 @@ public import VerifiedGarbage.Proof.Argon2.X86.Derive.Scratch
 public import VerifiedGarbage.Proof.Argon2.Initial
 import VerifiedGarbage.Proof.Argon2.X86.HPrime.Finish
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Argon2.X86.Compress
+import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
+import VerifiedGarbage.Proof.Argon2.X86.CompressLit
+import VerifiedGarbage.Proof.Blake2.X86.Blake2b
+import VerifiedGarbage.Proof.Blake2.X86.LitB
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.X86.Lit
+import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
 
 /-!
 # Argon2 on x86 (32-bit): H₀

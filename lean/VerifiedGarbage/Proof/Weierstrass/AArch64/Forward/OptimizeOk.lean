@@ -3,10 +3,10 @@ module
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.DeadOk
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.WellFormed
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ForwardOk
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! `optimize` is proved correct once, for every block the interpreter over
 concrete words runs: the optimized block runs too and leaves the same word in

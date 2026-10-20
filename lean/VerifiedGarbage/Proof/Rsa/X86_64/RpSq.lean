@@ -2,13 +2,15 @@ module
 public import VerifiedGarbage.Proof.Rsa.RecoverMath
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpCst
 
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
 import VerifiedGarbage.Proof.Rsa.X86_64.RpHalf
 import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Bignum.Math
 
 /-!

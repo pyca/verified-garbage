@@ -1,7 +1,5 @@
 module
 public import VerifiedGarbage.Impl.Rsa.Arm.PrivChecked
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
@@ -11,7 +9,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
 import VerifiedGarbage.Proof.Rsa.AcceptanceMask32
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.Arm.MaskOutput
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Private-result release writes masked output and erases its temporary buffer -/
 

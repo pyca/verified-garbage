@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Small
 public import VerifiedGarbage.Spec.Ed25519
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed25519 scalar reduction: the conditional subtraction on x86-64

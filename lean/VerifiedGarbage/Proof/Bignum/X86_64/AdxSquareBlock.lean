@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareMac
 
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! The register-resident scalar multiply-add used by the square. -/

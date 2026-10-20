@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Bignum.X86_64.WordIOLoad
 public import VerifiedGarbage.Proof.Bignum.X86_64.Store
 public import VerifiedGarbage.Impl.Rsa.X86_64.WordIO
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.WordIOBytes
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes

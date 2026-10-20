@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
 import VerifiedGarbage.Proof.Argon2.FillPositions
 import VerifiedGarbage.Proof.Argon2.AArch64.BlockAddress
 import VerifiedGarbage.Proof.Argon2.Dimensions
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Argon2.AArch64.Carry
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

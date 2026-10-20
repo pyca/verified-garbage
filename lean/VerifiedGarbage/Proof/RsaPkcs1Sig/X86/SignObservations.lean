@@ -1,8 +1,11 @@
 module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignContractGeometry
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Dsa.X86.Layout
-import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
+import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
 
 
 /-! # Extract the shared contract's public cdecl arguments and key bytes -/

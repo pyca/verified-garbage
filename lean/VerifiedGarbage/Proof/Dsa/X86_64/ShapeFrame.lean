@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeMasks
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Dsa.Layout
-import Mathlib.Tactic.Set
 
 /-! # Memory changed by the public DSA domain-shape check -/
 

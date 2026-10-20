@@ -4,10 +4,11 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.StageC
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Instrs
 public import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.StageA
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.Verify.Final
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
 import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-DSA verification on x86-64: correctness

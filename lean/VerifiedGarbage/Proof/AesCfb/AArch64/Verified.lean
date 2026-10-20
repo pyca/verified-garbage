@@ -7,7 +7,8 @@ public import VerifiedGarbage.Spec.Cfb.Contract
 
 import VerifiedGarbage.Proof.AesCbc.AArch64.Verified
 import VerifiedGarbage.Proof.AesCfb.AArch64.Body
-import VerifiedGarbage.Proof.AesCbc.AArch64.Body
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 
 /-!
 # AES-CFB128 on AArch64: `Verified`

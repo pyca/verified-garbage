@@ -10,6 +10,7 @@ public import VerifiedGarbage.Impl.Ed448.X86.PublicKey
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-!
 # Ed448 public-key derivation on x86 (32-bit): correctness

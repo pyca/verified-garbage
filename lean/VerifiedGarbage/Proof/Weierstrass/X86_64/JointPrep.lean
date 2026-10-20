@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafPrep
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafPrep
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! Both scalar recoders retain the second input and the first digit buffer. -/
 

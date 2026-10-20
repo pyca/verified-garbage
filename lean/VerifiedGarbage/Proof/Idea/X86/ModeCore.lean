@@ -1,58 +1,28 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.X86.Block
-public import VerifiedGarbage.Proof.Idea.X86.Ecb
-public import VerifiedGarbage.Proof.Idea.ModeBytes
 public import VerifiedGarbage.Proof.Modes.X86.Core
 public import VerifiedGarbage.Impl.Idea.X86.Modes
-public import Mathlib.Data.Finset.Card
-public import Mathlib.Data.Nat.Find
-public import Mathlib.Data.Nat.Prime.Defs
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Idea.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Spec.Idea.Cbc
 import VerifiedGarbage.Proof.Idea.Memory
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Idea.X86.Invert
-public import VerifiedGarbage.Proof.Aes.Blocks
-public import VerifiedGarbage.Proof.AesCtr.Ctr32
-public import VerifiedGarbage.Proof.AesCtr.Spec
-public import VerifiedGarbage.Proof.Cmac.Frame
-public import VerifiedGarbage.Proof.Cmac.Mem
-public import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Pratt
-public import VerifiedGarbage.Proof.Framework.X86.SseTaint
-public import VerifiedGarbage.Proof.Framework.X86.Syms
-public import VerifiedGarbage.Proof.Idea.Arith32
-public import VerifiedGarbage.Proof.Idea.KeyBits
-public import VerifiedGarbage.Proof.Idea.Memory
-public import VerifiedGarbage.Proof.Idea.X86.Invert
-public import VerifiedGarbage.Proof.Idea.X86.Key
-public import VerifiedGarbage.Proof.Modes.Steps
-public import VerifiedGarbage.Proof.Modes.X86.Counter
-public import VerifiedGarbage.Proof.Modes.X86.Ops
-public import VerifiedGarbage.Spec.Ctr.Contract
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.AesCtr.Ctr32
-import VerifiedGarbage.Proof.AesCtr.Spec
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.Pratt
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Framework.X86.Syms
-import VerifiedGarbage.Proof.Idea.Arith32
-import VerifiedGarbage.Proof.Idea.KeyBits
-import VerifiedGarbage.Proof.Idea.X86.Key
-import VerifiedGarbage.Proof.Modes.Steps
-import VerifiedGarbage.Proof.Modes.X86.Counter
-import VerifiedGarbage.Proof.Modes.X86.Ops
-import VerifiedGarbage.Spec.Ctr.Contract
+import VerifiedGarbage.Proof.Idea.ModeBytes
+import VerifiedGarbage.Proof.Idea.X86.Ecb
+import VerifiedGarbage.Proof.Idea.X86.Block
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Idea.X86.Lit
 
 /-!
 # IDEA's core for the modes on x86 (32-bit)

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Seed.AArch64.KeyBody
 import VerifiedGarbage.Proof.Seed.AArch64.Ecb
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Seed.Memory
 import VerifiedGarbage.Proof.Seed.AArch64.KeyLoad
 import VerifiedGarbage.Proof.Seed.AArch64.Setup

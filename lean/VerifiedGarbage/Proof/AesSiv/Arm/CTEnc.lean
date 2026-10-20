@@ -18,6 +18,10 @@ meta import VerifiedGarbage.Proof.AesSiv.Arm.CTFinish
 meta import VerifiedGarbage.Proof.AesSiv.Arm.Open
 meta import VerifiedGarbage.Proof.AesSiv.Arm.Seal
 meta import VerifiedGarbage.Proof.AesSiv.Arm.FinishLong
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-SIV on ARMv7: `encrypt` and `decrypt` are constant time

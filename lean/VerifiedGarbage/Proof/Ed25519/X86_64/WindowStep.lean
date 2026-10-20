@@ -9,8 +9,6 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
 public import VerifiedGarbage.Proof.Ed25519.Group.Double
 public import VerifiedGarbage.Proof.Ed25519.Recode
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.X25519.X86_64.Lit
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
 import VerifiedGarbage.Proof.Ed25519.X86_64.Points
@@ -18,6 +16,10 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.X86_64.Lit
 
 /-! Merged from `Proof.Ed25519.X86_64.WindowTables`. -/
 

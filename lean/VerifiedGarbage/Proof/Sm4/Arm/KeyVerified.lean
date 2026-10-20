@@ -1,50 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.KeyEk
-meta import VerifiedGarbage.Proof.Sm4.Arm.KeyEk
 public import VerifiedGarbage.Proof.Sm4.Scratch
-meta import VerifiedGarbage.Proof.Sm4.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
-meta import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sm4.Arm.Lit
 public import VerifiedGarbage.Impl.StackScratch.Arm
-meta import VerifiedGarbage.Proof.Sm4.Arm.Lit
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.CallF
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Sm4.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sm4.Arm.Copy
-import VerifiedGarbage.Proof.Sm4.Arm.Ecb
-import VerifiedGarbage.Proof.Sm4.Arm.KeyInit
-import VerifiedGarbage.Proof.Sm4.Arm.KeyLoop
-import VerifiedGarbage.Proof.Sm4.Layout
-import VerifiedGarbage.Spec.Ctr.Contract
-meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.CallF
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
+meta import VerifiedGarbage.Proof.Sm4.Arm.KeyEk
+meta import VerifiedGarbage.Proof.Sm4.Scratch
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+meta import VerifiedGarbage.Impl.StackScratch.Arm
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Sm4.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Sm4.Arm.Copy
-meta import VerifiedGarbage.Proof.Sm4.Arm.Ecb
-meta import VerifiedGarbage.Proof.Sm4.Arm.KeyInit
-meta import VerifiedGarbage.Proof.Sm4.Arm.KeyLoop
-meta import VerifiedGarbage.Proof.Sm4.Layout
-meta import VerifiedGarbage.Spec.Ctr.Contract
+meta import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
 
 /-!
 # SM4 key expansion on ARMv7 meets its contracts
