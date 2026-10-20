@@ -25,4 +25,9 @@ theorem MR.keep {g : Geo} {m : Nat} {s t : State} (h : MR g m s) (ws : Ws s g.B 
     {js : List Nat} (k : Keep g.B g.w js [] s.mem t.mem) (hj : ∀ j ∈ js, j ≠ mBase) : MR g m t :=
   h.of_eq (k.num hj (by simp) (ws.fit64 (by decide))) (k.slot (e := sInv) (by decide) (by simp))
 
+theorem MR.keepD {g : Geo} {m : Nat} {s t : State} (h : MR g m s) (ws : Ws s g.B g.Z g.w nArr)
+    {js ds : List Nat} (k : Keep g.B g.w js ds s.mem t.mem) (hj : ∀ j ∈ js, j ≠ mBase)
+    (hd : ∀ d ∈ ds, d + 4 ≤ hdr) (hi : ∀ d ∈ ds, sInv + 4 ≤ d ∨ d + 4 ≤ sInv) : MR g m t :=
+  h.of_eq (k.num hj hd (ws.fit64 (by decide))) (k.slot (e := sInv) (by decide) hi)
+
 end VG.Proof.Rsa.X86.Recover
