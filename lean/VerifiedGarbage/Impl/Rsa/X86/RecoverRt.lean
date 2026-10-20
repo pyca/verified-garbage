@@ -27,7 +27,7 @@ open VG.Impl.Rsa.X86.Keys (aM aNM aZero hdr seqs)
 open VG.Impl.Rsa.X86.KeyRt (Lay Shape arrPtr bytesB sub3 copy sel half bitOf setOne clrLow eqS zeroArrays
   mulMod inverse div load restoreEdi)
 open VG.Impl.Rsa.X86.Recover (sTc sCand sK sDone sOk sBit sLive sE1 sE2 sCnt sLt sInv sMask sWin sEq mAcc
-  mBase mY mR2 mG mXm mX aN aOne aZ aO aNg aW aU aQ aRm aDv aDt nArr wZ wE wD wM wMod wT wH wU wR wRc
+  mBase mY mR2 mG mXm mX aN aOne aZ aO aNg aW aQ aRm aDv aDt nArr wZ wE wD wM wMod wT wH wR wRc
   entry skipTest cntBits cntNext sqInit sqMasks sqNext candNext prodCount windowCount)
 
 /-- The modulus's length (argument 5) and the working space (argument 10), with `k` words pushed. -/
@@ -65,9 +65,10 @@ def halfBit : List Instr := bitOf wid sBit wR ++ [
   .mov .eax (.mem (sc sBit)), .alu .xor .eax (.imm 1), .store (sc sBit) .eax,
   .mov .edx (.mem (sc sTc)), .alu .add .edx (.reg .eax), .store (sc sTc) .edx]
 
-def halfBody : Prog isa := seqs [copy wid wU wR, copy wid wH wR,
+/-- Keep the old value in `wR` until the masked update; no snapshot array is needed. -/
+def halfBody : Prog isa := seqs [copy wid wH wR,
   .block [.mov .ebx (.imm 0)], half wid wH, .block halfBit,
-  sel wid wR wU wH sBit, .block cntNext]
+  sel wid wR wR wH sBit, .block cntNext]
 
 def halving : Prog isa := .seq halfInit (.loop halfBody .ne)
 
@@ -181,7 +182,7 @@ def eqAt (d a b : Nat) : Prog isa := eqS nar d a b aW
 
 /-- The square's tests and masks, and `mY` kept or replaced by it. -/
 def sqTail : Prog isa := seqs [eqAt sE1 mX aO, eqAt sE2 mX aNg, .block sqMasks,
-  copy nar aU mY, sel nar mY aU mX sLive, .block sqNext]
+  sel nar mY mY mX sLive, .block sqNext]
 
 def sqBody : Prog isa := .seq (mmul mX mY mY) sqTail
 

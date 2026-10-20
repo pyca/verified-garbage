@@ -43,10 +43,7 @@ theorem halfBody_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {m c k : Nat}
   rw [aW] at h
   unfold VG.Impl.Rsa.X86.RecoverRt.halfBody
   simp only [seqs]
-  refine WP.seq (WP.mono (h.copy_W (o := wU) (a := wR) (by decide) (by simp) (by decide)
-    (by simp only [List.mem_singleton]; rintro j rfl; decide)) fun s1 ⟨h1, _⟩ => ?_)
-  rw [upd_noop rfl] at h1
-  refine WP.seq (WP.mono (h1.copy_W (o := wH) (a := wR) (by decide) (by simp) (by decide)
+  refine WP.seq (WP.mono (h.copy_W (o := wH) (a := wR) (by decide) (by simp) (by decide)
     (by simp only [List.mem_singleton]; rintro j rfl; decide)) fun s2 ⟨h2, _⟩ => ?_)
   rw [upd_noop rfl] at h2
   refine WP.seq (wp_movS rfl fun s3 U _ => WP.block_nil ?_)
@@ -58,8 +55,8 @@ theorem halfBody_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {m c k : Nat}
   have bitR : upd (fun _ => R) wH (R / 2) wR = R := rfl
   rw [bitR] at h5
   have bitValue : Vhalf (Vh c m k) R sBit = 1 - R % 2 := rfl
-  refine WP.seq (WP.mono (h5.sel_W (o := wR) (a := wU) (b := wH) (sl := sBit)
-    (by decide) (by simp) (by simp) (by simp) (by rw [bitValue]; omega) (.inl (by decide))
+  refine WP.seq (WP.mono (h5.sel_W (o := wR) (a := wR) (b := wH) (sl := sBit)
+    (by decide) (by simp) (by simp) (by simp) (by rw [bitValue]; omega) (.inr (by decide))
     (by simp only [List.mem_singleton]; rintro j rfl; decide)) fun s6 ⟨h6, _⟩ => ?_)
   have count : Vhalf (Vh c m k) R sCnt = c - k := by
     unfold Vhalf
@@ -74,7 +71,7 @@ theorem halfBody_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {m c k : Nat}
     · simp only [List.mem_singleton] at hj; subst j
       refine ⟨by simp, ?_⟩
       simp only [AWh, hs, halveStep]
-      rw [upd_self, bitValue, upd_ne (fun _ => R) (R / 2) (show wU ≠ wH by decide), upd_self]
+      rw [upd_self, bitValue, upd_ne (fun _ => R) (R / 2) (show wR ≠ wH by decide), upd_self]
       by_cases even : R % 2 = 0
       · simp only [even, ite_true]; split <;> omega
       · simp only [even, ite_false]; split <;> omega

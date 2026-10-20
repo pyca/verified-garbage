@@ -79,11 +79,9 @@ theorem sqBody_step {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m k c : Nat
     (by simp [VS, upd, sDone, sOk, sE1, sE2])
     (by simp [VS, upd, sOk, sE1, sE2])
     (by simp [upd, sE1, sE2]) (by simp [upd])) fun s4 h4 => ?_)
-  refine WP.seq (WP.mono (h4.copy_w (o := aU) (a := mY) (by decide) (by simp [liveSq])
-    (by decide) (by decide)) fun s5 ⟨h5, _, _⟩ => ?_)
-  refine WP.seq (WP.mono (h5.sel_w (o := mY) (a := aU) (b := mX) (sl := sLive)
+  refine WP.seq (WP.mono (h4.sel_w (o := mY) (a := mY) (b := mX) (sl := sLive)
     (by decide) (by simp) (by simp) (by simp)
-    (by rw [upd_self]; exact VG.Proof.Rsa.b2n_le _) (.inl (by decide)) (by decide)) fun s6 ⟨h6, _⟩ => ?_)
+    (by rw [upd_self]; exact VG.Proof.Rsa.b2n_le _) (.inr (by decide)) (by decide)) fun s6 ⟨h6, _⟩ => ?_)
   refine WP.mono (h6.sqNext_ok (by simp [slotsSq]) (by simp [slotsSq])
     (by simpa [VS, upd, sK, sLive, sDone, sOk, sE1, sE2, sCnt] using (show k + 1 < 2 ^ 32 by omega))
     (by simpa [VS, upd, sCnt, sK, sLive, sDone, sOk, sE1, sE2] using lo)
@@ -93,13 +91,12 @@ theorem sqBody_step {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m k c : Nat
     refine ⟨by simp [hj], ?_⟩
     simp only [liveSq, liveM, List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · simp only [upd_self, upd_ne _ _ (by decide : mX ≠ aU),
-        upd_ne _ _ (by decide : mY ≠ mX)]
+    · simp only [upd_self, upd_ne _ _ (by decide : mY ≠ mX)]
       simp only [sqStep]
       cases (!st.2.1 && decide (k < V sTc) && !decide (st.1 * st.1 % m = 1) &&
         !(decide (st.1 * st.1 % m = m - 1) || decide (k + 1 = V sTc))) <;>
         simp [b2n]
-    all_goals simp [upd, mY, mX, aU, aNg, aO, mR2, mBase, aOne, aZ, aN]
+    all_goals simp [upd, mY, mX, aNg, aO, mR2, mBase, aOne, aZ, aN]
   · intro d hd
     refine ⟨by simp [hd], ?_⟩
     simp only [slotsSq, List.mem_cons, List.not_mem_nil, or_false] at hd
