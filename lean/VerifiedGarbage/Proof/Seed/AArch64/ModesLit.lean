@@ -8,7 +8,6 @@ meta import VerifiedGarbage.Proof.Seed.AArch64.Lit
 meta import VerifiedGarbage.Impl.Seed.AArch64.Modes
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-! # SEED-CBC, -OFB and -CFB128's AArch64 code as literals, for kernel-evaluated checks -/

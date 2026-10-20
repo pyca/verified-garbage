@@ -5,9 +5,7 @@ public import VerifiedGarbage.Proof.Seed.KeySchedule
 import VerifiedGarbage.Proof.Seed.AArch64.Round
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Impl.Seed.AArch64.ExpandKey
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # The sixteen rounds of the key schedule on AArch64
