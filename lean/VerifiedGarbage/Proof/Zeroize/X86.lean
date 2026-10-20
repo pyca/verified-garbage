@@ -1,32 +1,19 @@
 module
 
 public import VerifiedGarbage.Impl.Zeroize.X86
-meta import VerifiedGarbage.Impl.Zeroize.X86
 import VerifiedGarbage.Proof.Zeroize.Common32
-meta import VerifiedGarbage.Proof.Zeroize.Common32
-public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
-meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
-meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Zeroize.Contract
 public import VerifiedGarbage.Proof.Zeroize.Common
+import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Impl.Zeroize.X86
+meta import VerifiedGarbage.Proof.Zeroize.Common32
+meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 meta import VerifiedGarbage.Spec.Zeroize.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.MlKem.X86.Leaf
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.MlKem.X86.Leaf
+meta import VerifiedGarbage.Proof.Zeroize.Common
+meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

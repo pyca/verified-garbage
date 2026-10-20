@@ -1,11 +1,14 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Dsa.X86_64.Core
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-! # Public child width and workspace selection -/
 

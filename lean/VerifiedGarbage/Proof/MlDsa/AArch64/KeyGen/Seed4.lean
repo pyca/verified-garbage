@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

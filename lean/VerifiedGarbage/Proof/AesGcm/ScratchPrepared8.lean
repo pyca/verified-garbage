@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Gcm.Prepared8
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! # 384-byte prepared-context scratch contracts and locality
 

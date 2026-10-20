@@ -1,45 +1,33 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.X86.Ecb
-meta import VerifiedGarbage.Proof.Idea.X86.Ecb
-public import VerifiedGarbage.Proof.Idea.X86.Lit
-meta import VerifiedGarbage.Proof.Idea.X86.Lit
 import VerifiedGarbage.Proof.Idea.Local
-meta import VerifiedGarbage.Proof.Idea.Local
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.StackScratch.X86
 public import VerifiedGarbage.Proof.Idea.X86.Invert
-meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Idea.X86.Lit
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Batteries.Data.List.Lemmas
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Pratt
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Idea.Arith32
-import VerifiedGarbage.Proof.Idea.KeyBits
-import VerifiedGarbage.Proof.Idea.Memory
-import VerifiedGarbage.Proof.Idea.X86.Block
-import VerifiedGarbage.Proof.Idea.X86.Key
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Pratt
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Idea.Arith32
-meta import VerifiedGarbage.Proof.Idea.KeyBits
-meta import VerifiedGarbage.Proof.Idea.Memory
-meta import VerifiedGarbage.Proof.Idea.X86.Block
+meta import VerifiedGarbage.Proof.Idea.X86.Ecb
+meta import VerifiedGarbage.Proof.Idea.Local
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Impl.StackScratch.X86
 meta import VerifiedGarbage.Proof.Idea.X86.Invert
-meta import VerifiedGarbage.Proof.Idea.X86.Key
+meta import VerifiedGarbage.Proof.Idea.X86.Lit
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Batteries.Data.List.Lemmas
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Verified IDEA on x86 (32-bit), with its working space on the stack

@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Fn
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 
 /-!
 # Ed25519's point functions on x86-64: their `Verified`

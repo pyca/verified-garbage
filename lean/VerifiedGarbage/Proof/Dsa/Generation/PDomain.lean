@@ -1,6 +1,4 @@
 module
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Spec.Dsa
 
 import VerifiedGarbage.Proof.Dsa.Generation.CandidateWidth
@@ -9,6 +7,13 @@ import VerifiedGarbage.Proof.RsaKeyGen.KeyCheck
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Generation.PReduction
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Full-width reduced p candidates satisfy the native primality preconditions -/
 

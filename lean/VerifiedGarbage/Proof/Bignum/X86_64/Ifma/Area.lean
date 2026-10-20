@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Spec
 
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the regions as numbers

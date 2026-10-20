@@ -6,10 +6,10 @@ import VerifiedGarbage.Proof.X25519.Arm.Cswap
 import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Impl.Ed25519.Arm.Scalar
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.Scalar
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarByte`. -/
 

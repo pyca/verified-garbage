@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Term
 
 import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Finish
 import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ML-KEM's fused dot product of polynomials stored with 16 bits, on AArch64: an iteration's sums

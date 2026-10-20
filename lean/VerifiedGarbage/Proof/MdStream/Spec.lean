@@ -1,10 +1,11 @@
 module
-public import Mathlib.Tactic.Conv
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Spec.Sha256
 
 import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Streaming Merkle–Damgård hash functions: facts about the specification

@@ -1,9 +1,10 @@
 module
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.X448.Field
 public import VerifiedGarbage.Proof.X448.X86.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # X448 on x86 (32-bit): field operations and their frame

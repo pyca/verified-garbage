@@ -20,6 +20,14 @@ meta import VerifiedGarbage.Spec.Idea.Cfb
 meta import VerifiedGarbage.Proof.Modes.X86.Seq
 meta import VerifiedGarbage.Proof.Idea.X86.ModesLit
 meta import VerifiedGarbage.Proof.Idea.KeyLit32
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Idea.ModeBytes
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Idea.ModeBytes
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # IDEA-OFB and IDEA-CFB64 on x86 (32-bit) meet their contracts

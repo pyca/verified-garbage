@@ -4,9 +4,7 @@ public import VerifiedGarbage.Proof.Modes.Fb
 public import VerifiedGarbage.Impl.Modes.AArch64.Fb
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 public import VerifiedGarbage.Proof.Modes.AArch64.Group
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Modes.AArch64.Xor
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
 import VerifiedGarbage.Proof.Modes.AArch64.Words
 import VerifiedGarbage.Proof.Modes.AArch64.Steps

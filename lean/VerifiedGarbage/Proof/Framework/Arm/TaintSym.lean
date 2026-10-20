@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 import VerifiedGarbage.Proof.Framework.Arm.Syms
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+meta import VerifiedGarbage.Proof.Framework.Arm.Syms
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ARMv7 taint tracking with the addresses of statics

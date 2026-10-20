@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverParity
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointEncode
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.X86_64.Lit
 
 /-! Merged from `Proof.Ed25519.X86_64.RecoverAdjust`. -/
 

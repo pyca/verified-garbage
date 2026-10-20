@@ -20,6 +20,8 @@ meta import VerifiedGarbage.Spec.Sm4.Cfb
 meta import VerifiedGarbage.Impl.StackScratch.X86_64
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # SM4-OFB and SM4-CFB128 on x86-64 meet their contracts

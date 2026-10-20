@@ -20,6 +20,8 @@ meta import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
 meta import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Enc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # One-pass XTS-AES with AES-NI on x86-64: correctness and `Verified`

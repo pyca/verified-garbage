@@ -1,12 +1,12 @@
 module
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Stack
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
 
 import VerifiedGarbage.Proof.MillerRabin.X86_64.StackContext
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.CrtExp
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # The Montgomery and exponent contexts survive the saved frame -/
 

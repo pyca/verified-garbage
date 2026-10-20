@@ -1,14 +1,14 @@
 module
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
 public import VerifiedGarbage.Proof.Curve448.AArch64.Swap
 
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChecks
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Range
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed448 verification's equation on AArch64: the sign of `x`

@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Callee
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Contract
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.SigEval
+import VerifiedGarbage.Impl.Aes.X86_64.Alloc
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: `vg_aes_gcm_seal_split` called

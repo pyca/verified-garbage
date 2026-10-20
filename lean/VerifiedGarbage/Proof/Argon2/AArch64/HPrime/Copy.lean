@@ -6,10 +6,8 @@ import VerifiedGarbage.Proof.MdStream.AArch64.Common
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Spec.Blake2
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # H′: copying digest bytes -/

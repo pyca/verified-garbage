@@ -2,6 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Sample.Ball
 import VerifiedGarbage.Proof.MlDsa.Sample.Hash
+public import VerifiedGarbage.Proof.Framework.PowLit
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # ML-DSA: `BitUnpack` as arithmetic on the bytes

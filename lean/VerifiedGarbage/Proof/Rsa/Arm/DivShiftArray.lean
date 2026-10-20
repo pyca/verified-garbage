@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.DivReduce
 import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeft
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Shifting either division register while preserving the public layout -/
 

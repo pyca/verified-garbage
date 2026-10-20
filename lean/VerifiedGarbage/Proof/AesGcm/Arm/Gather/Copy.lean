@@ -2,10 +2,6 @@ module
 
 import VerifiedGarbage.Proof.AesGcm.Arm.Loops
 public import VerifiedGarbage.Impl.AesGcm.Arm.SealGather
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.WriteBytes
@@ -18,6 +14,9 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, ARMv7: copying a slice

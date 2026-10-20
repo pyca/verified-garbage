@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Sha512.AArch64.Variant
 public import VerifiedGarbage.Spec.Sha512.Contract
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Sha512.AArch64.Stream
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot

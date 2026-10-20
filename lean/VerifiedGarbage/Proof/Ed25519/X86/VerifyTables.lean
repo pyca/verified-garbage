@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.PointTable
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonContract
 public import VerifiedGarbage.Impl.Ed25519.X86.VerifyWindow
 import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Layout
 public import VerifiedGarbage.Proof.Framework.X86.Wp
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

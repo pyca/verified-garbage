@@ -5,9 +5,7 @@ import VerifiedGarbage.Proof.Aes.X86.Group
 public import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Impl.Aes.X86.Blocks
 public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
-public import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Proof.Aes.X86.Encrypt
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 

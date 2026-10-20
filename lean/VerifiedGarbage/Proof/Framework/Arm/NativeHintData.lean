@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.Framework.RegSet
 public import VerifiedGarbage.Proof.Framework.NativeHintOps
 public import VerifiedGarbage.TCB.Arm.Isa
-import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.Proof.Framework.RegSet
+meta import VerifiedGarbage.Proof.Framework.NativeHintOps
+meta import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Executable ARMv7 taint operations for the compiled hint search
 (`native_taint_decide`), separated from their soundness proofs: a copy of

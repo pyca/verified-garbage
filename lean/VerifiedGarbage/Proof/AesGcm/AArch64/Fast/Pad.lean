@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on AArch64, the path for TLS records: padded blocks

@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 import VerifiedGarbage.Proof.Ed448.AArch64.Chain
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed448 on AArch64: words stored and loaded relative to a register

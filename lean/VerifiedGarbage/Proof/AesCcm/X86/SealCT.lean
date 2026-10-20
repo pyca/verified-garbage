@@ -12,6 +12,12 @@ meta import VerifiedGarbage.Proof.AesCcm.BytesAt
 meta import VerifiedGarbage.Proof.AesCcm.X86.Mac
 meta import VerifiedGarbage.Proof.AesCcm.X86.Run
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.AesGcm.X86.CT
+import VerifiedGarbage.Proof.AesGcm.X86.Callee
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.AesGcm.X86.CT
+meta import VerifiedGarbage.Proof.AesGcm.X86.Callee
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
 
 /-!
 # AES-CCM on x86: `vg_aes_ccm_seal` is constant time

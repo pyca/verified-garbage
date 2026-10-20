@@ -4,7 +4,10 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PHashCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PHashCopyCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashStep
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! # Constant time of the complete p-candidate hash sequence -/
 

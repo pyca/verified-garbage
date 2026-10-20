@@ -1,5 +1,4 @@
 module
-public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.MlDsa
 
 import VerifiedGarbage.Proof.MlDsa.Arith.Zq

@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.Sm4.AArch64.Group
 public import VerifiedGarbage.Spec.Sm4.Contract
 public import VerifiedGarbage.Proof.Sm4.AArch64.Keys
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
 
 /-!
 # SM4 ECB on AArch64: the whole function

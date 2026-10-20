@@ -2,53 +2,30 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
 public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
-public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.X448.X86_64.Lit
-meta import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
 import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Verified
-meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Verified
 import VerifiedGarbage.Proof.X448.X86_64.Adx.Sqr
-meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Sqr
 import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
-meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
-meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
-import VerifiedGarbage.Proof.Ed448.Scalar
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.X448.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Proof.X448.X86_64.AddSub
-import VerifiedGarbage.Proof.X448.X86_64.Adx.Mul
-import VerifiedGarbage.Proof.X448.X86_64.Pow223
-import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
-meta import VerifiedGarbage.Proof.Ed448.Scalar
-meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Verified
+meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Sqr
+meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
+meta import VerifiedGarbage.Proof.X448.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
-meta import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Proof.X448.X86_64.AddSub
-meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Mul
-meta import VerifiedGarbage.Proof.X448.X86_64.Pow223
-meta import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
 
 /-! The field backends implement the same point programs and public contracts. -/
 

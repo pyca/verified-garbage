@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Accumulate
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Store
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddChain

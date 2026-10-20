@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Camellia.Arm.KeyPair
 public import VerifiedGarbage.Proof.Camellia.Arm.Prologue
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Camellia.Arm.Copy
 import VerifiedGarbage.Proof.Camellia.Layout32
 import VerifiedGarbage.Proof.Camellia.Arm.Fl

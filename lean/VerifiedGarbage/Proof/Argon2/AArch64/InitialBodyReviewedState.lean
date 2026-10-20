@@ -24,6 +24,8 @@ meta import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetup
 meta import VerifiedGarbage.Proof.Argon2.Dimensions
 meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Correct
 meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Argon2.AArch64.InitialCTState`. -/
 

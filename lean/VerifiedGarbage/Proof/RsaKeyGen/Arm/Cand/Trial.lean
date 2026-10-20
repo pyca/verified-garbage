@@ -4,6 +4,13 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Tab
 
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.TrialP
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
+import Mathlib.Tactic.Set
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # A candidate on ARMv7: trial division by the table (`trialLoop_ok`)
 

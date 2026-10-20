@@ -16,6 +16,9 @@ import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Calls
 import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.SigEval
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 signing with a cached public key on ARMv7: the whole function

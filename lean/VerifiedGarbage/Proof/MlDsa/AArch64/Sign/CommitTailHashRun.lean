@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailModel
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailFirst
 import VerifiedGarbage.Proof.MlKem.Mem
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## From `CommitTailHashPadding.lean` -/
 

@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.MontRounds
 import VerifiedGarbage.Proof.Bignum.Arm.MontRoundsCT
 public import VerifiedGarbage.Proof.Bignum.Arm.MontFinishCT
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundCT
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Constant time of canonical Montgomery multiplication after initialization -/
 

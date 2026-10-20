@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillBlock
 import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelSpec
 public import VerifiedGarbage.Proof.Argon2.AArch64.RandomSource
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Framework.Offset
 

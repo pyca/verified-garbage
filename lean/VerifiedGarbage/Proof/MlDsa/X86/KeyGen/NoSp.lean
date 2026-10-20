@@ -1,12 +1,8 @@
 module
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.Call
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.Proof.Framework.Contract
 
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.CallWith
 
 /-!
 # ML-DSA on x86 (32-bit): code that writes `esp` only by frames and calls

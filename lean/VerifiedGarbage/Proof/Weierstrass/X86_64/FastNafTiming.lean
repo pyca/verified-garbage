@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafStep
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafPrep
-import Mathlib.Tactic.SplitIfs
 
 /-! Sparse recoding branches depend on the public scalar and its public digit index. -/
 

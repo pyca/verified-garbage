@@ -1,17 +1,13 @@
 module
 
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
-meta import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Contract
-meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Impl.CmacTripleDes.Stream.AArch64
+meta import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
+meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Contract
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.Impl.CmacTripleDes.Stream.AArch64
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # Streaming TDEA-CMAC on AArch64: constant time

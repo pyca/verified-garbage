@@ -3,7 +3,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Table
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
-import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Parse
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Stable compaction and widening stores of an eight-candidate batch -/
 

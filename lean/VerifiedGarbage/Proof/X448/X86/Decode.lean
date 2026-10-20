@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.X448.Radix16Bytes
 public import VerifiedGarbage.Proof.X448.X86.Instr
 import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.X448.Ladder
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on x86 (32-bit): decoding a coordinate limb

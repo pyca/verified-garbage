@@ -2,14 +2,13 @@ module
 public import VerifiedGarbage.Impl.TripleDes.X86_64.ExpandKey
 public import VerifiedGarbage.Proof.Framework.Block
 
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.TripleDes.Word
 import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Permutation
-import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Rc2.X86_64.Lookup
 
 @[expose] public section

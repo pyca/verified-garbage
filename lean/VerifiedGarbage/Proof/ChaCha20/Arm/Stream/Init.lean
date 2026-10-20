@@ -1,39 +1,35 @@
 module
 
 import VerifiedGarbage.Proof.ChaCha20.StreamBytes
-meta import VerifiedGarbage.Proof.ChaCha20.StreamBytes
 import VerifiedGarbage.Proof.ChaCha20.Arm.Block
-meta import VerifiedGarbage.Proof.ChaCha20.Arm.Block
 import VerifiedGarbage.Proof.MdStream.Arm.Common
-meta import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Impl.ChaCha20.Arm.Stream
-public import Batteries.Logic
 public import VerifiedGarbage.Proof.ChaCha20.Stream
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.ChaCha20.Contract
 public import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.Impl.ChaCha20.Arm.Stream
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.ChaCha20.StreamBytes
+meta import VerifiedGarbage.Proof.ChaCha20.Arm.Block
+meta import VerifiedGarbage.Proof.MdStream.Arm.Common
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Impl.ChaCha20.Arm.Stream
 meta import VerifiedGarbage.Proof.ChaCha20.Stream
-meta import VerifiedGarbage.Proof.Framework.Arm.Call
-meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Semantics
+meta import VerifiedGarbage.Spec.ChaCha20.Contract
+meta import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming ChaCha20 on ARMv7: `init` and `set_nonce`

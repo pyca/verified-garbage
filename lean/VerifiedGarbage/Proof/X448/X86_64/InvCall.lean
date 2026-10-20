@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.X448.X86_64.Pow223
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.X448.Invert
 public import VerifiedGarbage.Proof.X448.X86_64.Env
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.X86_64.Chain
 
 /-!

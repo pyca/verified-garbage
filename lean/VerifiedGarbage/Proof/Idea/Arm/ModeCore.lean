@@ -9,6 +9,7 @@ public import Aesop.BuiltinRules
 public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Idea.Arm.Verified
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # IDEA's ECB function on ARMv7 as the modes' core

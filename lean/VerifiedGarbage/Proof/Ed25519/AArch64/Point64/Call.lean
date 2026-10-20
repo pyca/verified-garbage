@@ -1,12 +1,11 @@
 module
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Point64.Fn
-public import VerifiedGarbage.Proof.Framework.Contract
 
 import VerifiedGarbage.Proof.Ed25519.AArch64.Point64.Verified
 import VerifiedGarbage.Proof.Framework.AArch64.Call
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed25519 on AArch64: calls of the point functions

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeSpec
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM on AArch64: the loop of the vector compression

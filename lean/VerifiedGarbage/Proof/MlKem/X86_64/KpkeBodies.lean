@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeMul
 public import VerifiedGarbage.Proof.MlKem.X86_64.Ntt
 import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # ML-KEM on x86-64: the SSE2 arithmetic without its MXCSR region

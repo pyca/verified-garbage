@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Proof.TripleDes.Arm.Lit
 import VerifiedGarbage.Proof.TripleDes.Permutation
 public import VerifiedGarbage.Proof.Framework.Arm.Linear
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

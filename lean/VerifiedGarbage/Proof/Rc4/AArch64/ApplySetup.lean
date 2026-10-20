@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Rc4.AArch64.Lanes
 
 import VerifiedGarbage.Proof.Rc4.AArch64.Consts
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Rc4.AArch64.Rows
 import VerifiedGarbage.Proof.Rc4.Memory
 

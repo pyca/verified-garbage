@@ -3,12 +3,10 @@ module
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseO
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseL
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on AArch64: correctness

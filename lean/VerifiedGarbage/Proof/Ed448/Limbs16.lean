@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Ed448.ScalarWords
 public import VerifiedGarbage.Proof.X448.Radix16Bytes
-public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Ed448.Scalar
 
 /-!

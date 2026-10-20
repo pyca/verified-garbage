@@ -1,17 +1,18 @@
 module
-public import Mathlib.Data.Nat.GCD.Basic
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-public import VerifiedGarbage.Proof.RsaKeyGen.Table
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
 import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
 import VerifiedGarbage.Proof.Bignum.X86_64.Store
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-!
 # A candidate on x86-64: zeros to `out`, and the ends

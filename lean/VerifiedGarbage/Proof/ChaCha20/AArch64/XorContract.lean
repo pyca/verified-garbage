@@ -1,14 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
-public import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
-public import VerifiedGarbage.Proof.Framework.Omega
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.Spec.ChaCha20
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
 
 /-!
 # ChaCha20 keystream XOR on AArch64

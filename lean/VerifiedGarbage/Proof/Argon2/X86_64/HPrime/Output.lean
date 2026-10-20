@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Spec.Blake2

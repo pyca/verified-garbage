@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.Mac
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The memory and arithmetic effects of one ARMv7 Montgomery row step -/
 

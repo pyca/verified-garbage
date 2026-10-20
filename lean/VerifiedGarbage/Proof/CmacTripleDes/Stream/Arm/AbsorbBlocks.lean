@@ -1,14 +1,9 @@
 module
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.CmacTripleDes.Stream.Arm
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream
 public import VerifiedGarbage.Proof.Framework.Covers
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Common
 import VerifiedGarbage.Proof.Cmac.Block
@@ -18,7 +13,8 @@ import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
+import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 @[expose] public section
 

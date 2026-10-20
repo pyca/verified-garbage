@@ -6,8 +6,6 @@ public import VerifiedGarbage.Spec.Ecdsa.Generic
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
 import VerifiedGarbage.Proof.Weierstrass.BytesLen
-import Mathlib.Logic.Function.Basic
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Mont.AArch64.Blocks
@@ -15,7 +13,10 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # Short Weierstrass curves on AArch64: numbers of `len` bytes

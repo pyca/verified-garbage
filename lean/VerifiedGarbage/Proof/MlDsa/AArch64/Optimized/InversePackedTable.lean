@@ -3,10 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedRun
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseLocalTable
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRoots
-import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

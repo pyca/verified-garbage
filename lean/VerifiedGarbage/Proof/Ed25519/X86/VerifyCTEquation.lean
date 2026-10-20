@@ -22,6 +22,8 @@ meta import VerifiedGarbage.Proof.Ed25519.Window
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
 meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ed25519.X86.PointTable
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointTable
 
 /-!
 # Verification's equation: what its traces depend on

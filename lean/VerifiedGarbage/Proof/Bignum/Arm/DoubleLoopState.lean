@@ -1,12 +1,15 @@
 module
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Mont
 
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
-import VerifiedGarbage.Impl.Bignum.Arm.Sub
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Impl.Bignum.Arm.Shift
+import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.TCB.Arm.Isa
 
 /-! # Workspace and stack invariants shared by repeated modular doublings -/
 

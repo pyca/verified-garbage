@@ -1,17 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
-public import Batteries.Logic
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Impl.AesCbc.Arm
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Cbc.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.AesCbc.Arm.CT
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CBC on ARMv7: `Verified`

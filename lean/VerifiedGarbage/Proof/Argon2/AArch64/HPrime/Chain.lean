@@ -6,13 +6,13 @@ public import VerifiedGarbage.Proof.Argon2.HPrime
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Compare
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Output
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Absorb
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Length
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Finalize
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Init
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Merged from `Proof.Argon2.AArch64.HPrime.Next`. -/
 

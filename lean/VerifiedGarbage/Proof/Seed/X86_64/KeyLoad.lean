@@ -5,7 +5,8 @@ import VerifiedGarbage.Proof.Seed.X86_64.Copy
 import VerifiedGarbage.Proof.Seed.Memory
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Seed.X86_64.KeyRounds
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Seed.SboxLit
 
 /-!
 # Loading the key on x86-64

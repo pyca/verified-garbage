@@ -3,9 +3,11 @@ module
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Block
 import VerifiedGarbage.Proof.TripleDes.Schedule
 public import VerifiedGarbage.Proof.TripleDes.X86_64.ConstantTime
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.X86_64.FunctionsLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.RoundLit
 
 @[expose] public section
 

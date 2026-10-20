@@ -2,9 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCtx
 public import VerifiedGarbage.Impl.Rsa.AArch64.PrivChecked
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import Lean.Elab.Tactic.Omega.Frontend
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # `vg_rsa_private_checked` on AArch64: where everything is

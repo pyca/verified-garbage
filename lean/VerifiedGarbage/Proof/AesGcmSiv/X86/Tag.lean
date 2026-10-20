@@ -7,7 +7,8 @@ import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
 import VerifiedGarbage.Proof.GcmSiv.Spec
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM-SIV on x86: a block encrypted with the encryption key (`tag`)

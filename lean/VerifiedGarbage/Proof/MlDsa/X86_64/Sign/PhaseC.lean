@@ -2,12 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseD
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Blocks
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsD
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseA4
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on x86-64: the commitment of an iteration

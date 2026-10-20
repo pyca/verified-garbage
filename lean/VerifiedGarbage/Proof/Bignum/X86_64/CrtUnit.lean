@@ -4,10 +4,14 @@ public import VerifiedGarbage.Proof.Bignum.CrtGPow
 
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtGPow
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.CrtMath
 import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Data.Nat.Basic
+import Mathlib.Tactic.Attr.Core
 
 /-!
 # RSA with the CRT on x86-64: `R_X mod X`

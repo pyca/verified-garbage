@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Bignum.X86.ReverseBuffer
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Bignum.ReadPrefix
 import VerifiedGarbage.Proof.Mont.X86.WordOps
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Exact big-endian export of the low bytes of an RSA workspace integer -/
 

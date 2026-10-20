@@ -4,10 +4,8 @@ public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Loop
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Finish
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Prelude
 import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Columns
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Impl.X448.AArch64
 
 /-!
 # Multiplication

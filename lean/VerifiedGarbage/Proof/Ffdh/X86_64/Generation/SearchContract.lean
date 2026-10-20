@@ -3,6 +3,9 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Contract
 public import VerifiedGarbage.Spec.Ffdh.Generation
 import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.TCB.X86_64.Target
 
 
 /-! # The complete parameter-search controller: layout and observable result -/

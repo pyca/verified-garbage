@@ -6,6 +6,7 @@ import Mathlib.Basic.IsEmpty.Basic
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Dsa.SignVerify
 import VerifiedGarbage.Proof.Dsa.Arithmetic
+import Mathlib.Tactic.Convert
 
 /-! # The verification mask implements the packed DSA verification spec -/
 

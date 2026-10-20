@@ -1,9 +1,9 @@
 module
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Rsa.X86.PrivChecked
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Call-argument setup reveals only the public stack pointer -/
 

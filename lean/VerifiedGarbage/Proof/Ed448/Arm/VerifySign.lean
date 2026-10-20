@@ -4,10 +4,10 @@ public import VerifiedGarbage.Proof.Ed448.Arm.VerifyChecks
 import VerifiedGarbage.Proof.Ed448.Arm.BaseEncode
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.X448.Arm.Freeze
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.X448.Arm.Copy
 import VerifiedGarbage.Proof.X448.Arm.Carry
-import VerifiedGarbage.Proof.X448.Radix16Bytes
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed448 verification's equation on ARMv7: the sign of a decoded point

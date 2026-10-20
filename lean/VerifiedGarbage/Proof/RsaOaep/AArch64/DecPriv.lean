@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCallee
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLay
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

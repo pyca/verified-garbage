@@ -1,5 +1,8 @@
 module
 public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 
 /-! # Schoolbook partial products fit the row accumulator -/

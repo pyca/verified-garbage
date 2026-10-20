@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Impl.Modes.Arm.Counter
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Spec.Ctr
 import VerifiedGarbage.Proof.Framework.Offset
 

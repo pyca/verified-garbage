@@ -3,6 +3,8 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignContext
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignLocalArgument
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Installing successive cdecl arguments preserves every earlier word -/
 

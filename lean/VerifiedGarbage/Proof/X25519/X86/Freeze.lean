@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.X86.Ops
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X25519.X86.Fold
 
 /-!

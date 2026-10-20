@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hash
 import VerifiedGarbage.Proof.Hmac.Generic.Common
-public import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.OmegaLit
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Hmac.Common
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!

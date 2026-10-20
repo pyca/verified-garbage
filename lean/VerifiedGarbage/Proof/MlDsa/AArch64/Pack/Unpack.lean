@@ -1,35 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 import VerifiedGarbage.Proof.MlDsa.Pack.Arith
-meta import VerifiedGarbage.Proof.MlDsa.Pack.Arith
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.SimpleBitPack
-import VerifiedGarbage.Proof.MlDsa.Pack.Stream
-import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
+meta import VerifiedGarbage.Proof.MlDsa.Pack.Arith
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.WriteBytes
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.SimpleBitPack
-meta import VerifiedGarbage.Proof.MlDsa.Pack.Stream
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_bit_unpack` and `vg_mldsa_unpack_t1`

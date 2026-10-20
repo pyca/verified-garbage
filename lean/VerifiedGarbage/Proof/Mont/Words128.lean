@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-! # Sixteen-byte accesses to Montgomery working space -/
 

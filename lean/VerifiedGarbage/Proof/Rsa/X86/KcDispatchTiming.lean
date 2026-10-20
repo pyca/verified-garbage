@@ -1,17 +1,23 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheck
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Proof.Mont.X86.Words
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.RelCT
 
 import VerifiedGarbage.Proof.Bignum.X86.PublicDispatchTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Rsa.X86.KcDispatch
 import VerifiedGarbage.Proof.Framework.X86.RelCT
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Push
+import Mathlib.Basic.IsEmpty.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
 
 /-! # Width dispatch branches only on the common public modulus length -/
 

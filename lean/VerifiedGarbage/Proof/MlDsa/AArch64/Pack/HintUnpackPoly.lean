@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
 public import VerifiedGarbage.Proof.MlDsa.Pack.Hint
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintPack
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Loop
 import VerifiedGarbage.Proof.Framework.Offset

@@ -1,6 +1,8 @@
 module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Call
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Optimized
 open VG VG.AArch64 VG.Proof.MlKem VG.Proof.MlKem.AArch64

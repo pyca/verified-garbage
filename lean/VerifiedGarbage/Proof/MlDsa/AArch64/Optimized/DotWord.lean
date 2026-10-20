@@ -3,8 +3,9 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Word
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductWord
 import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Arithmetic
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

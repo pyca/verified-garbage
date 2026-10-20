@@ -1,24 +1,13 @@
 module
 
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
-meta import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
-public import Batteries.Tactic.Init
-public import Batteries.Tactic.PermuteGoals
-public import Batteries.Tactic.SeqFocus
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Impl.CmacTripleDes.AArch64
-public import VerifiedGarbage.Proof.Framework.GetElem
-public import VerifiedGarbage.Proof.Framework.Lit
-meta import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
+meta import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
+meta import VerifiedGarbage.Impl.CmacTripleDes.AArch64
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Spec.Cmac.TripleDesContract
-import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Spec.Cmac.TripleDesContract
-meta import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # TDEA-CMAC on AArch64: constant time

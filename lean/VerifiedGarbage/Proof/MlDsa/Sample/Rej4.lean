@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

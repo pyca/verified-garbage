@@ -3,6 +3,9 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 
 import VerifiedGarbage.Proof.Rsa.X86.RvFrames
 import VerifiedGarbage.Proof.Rsa.X86.RvViews
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Updating the arrays and scalar words tracked by a recovery stage -/
 

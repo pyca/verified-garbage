@@ -1,21 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CompareBytes
-public import Batteries.Logic
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.Mem
-meta import VerifiedGarbage.Impl.Bignum.Arm.CompareBytes
 import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Impl.Bignum.Arm.CompareBytes
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! # Output masking is constant-time even when the acceptance mask is secret -/
 

@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.Ctr
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # CBC decryption's result, for any block cipher and target

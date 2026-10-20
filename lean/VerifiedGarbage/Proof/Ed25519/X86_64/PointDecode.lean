@@ -4,13 +4,15 @@ public import VerifiedGarbage.Impl.Ed25519.X86_64.PointDecode
 import VerifiedGarbage.Proof.Ed25519.X86_64.DecodeBits
 import VerifiedGarbage.Proof.Ed25519.Decode
 public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverPoint
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.X25519.X86_64.Freeze
 import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.X86_64.Lit
 
 /-! Merged from `Proof.Ed25519.X86_64.DecodeLoad`. -/
 

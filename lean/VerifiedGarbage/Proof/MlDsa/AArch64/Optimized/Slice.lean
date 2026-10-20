@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Loads
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Bank
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 
 @[expose] public section

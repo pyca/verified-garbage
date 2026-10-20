@@ -6,23 +6,11 @@ import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Spec.Blowfish.Contract
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Blowfish.AArch64.Ecb
-import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
-import VerifiedGarbage.Proof.Blowfish.AArch64.Exec
-import VerifiedGarbage.Proof.Blowfish.AArch64.KeySetup
-import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
-import VerifiedGarbage.Proof.Blowfish.AArch64.Verified
-import VerifiedGarbage.Proof.Blowfish.Blocks
-import VerifiedGarbage.Proof.Blowfish.Schedule
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Blowfish.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Blowfish.Feistel
 
 @[expose] public section
 

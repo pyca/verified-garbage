@@ -1,10 +1,16 @@
 module
-public import Mathlib.Data.Nat.Prime.Defs
-public import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P521Joint
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P521.Joint
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha1.X86_64.ShaNi.Compress
 import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Init
 public import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Md

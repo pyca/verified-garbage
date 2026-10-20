@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Certificate
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Run
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Logic.Function.Basic
-public import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 The scheduler is untrusted. A certificate runs both instruction lists through

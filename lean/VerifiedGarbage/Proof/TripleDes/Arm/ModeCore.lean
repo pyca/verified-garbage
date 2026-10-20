@@ -3,13 +3,14 @@ module
 import VerifiedGarbage.Proof.TripleDes.Arm.Frame
 public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.TripleDes.Arm.Cbc
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.TripleDes.Arm.ConstantTime
 public import VerifiedGarbage.Spec.TripleDes.Cbc
 import VerifiedGarbage.Proof.TripleDes.CbcBlocks
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.TripleDes.Arm.Ecb.Verified
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
 
 /-!
 # Triple DES's ECB functions on ARMv7 as the modes' core

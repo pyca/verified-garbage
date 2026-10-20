@@ -4,11 +4,8 @@ import VerifiedGarbage.Proof.AesXts.Unit
 public import VerifiedGarbage.Impl.AesXts.ArmUnit
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.TCB.Arm.Target
-public import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Spec.Xts.Contract
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

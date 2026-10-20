@@ -1,14 +1,15 @@
 module
-public import Mathlib.Data.Nat.GCD.Basic
 public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdStep
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.CandMath
 import VerifiedGarbage.Proof.Bignum.AArch64.Row
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.RsaKeyGen.Gcd
 
 /-!
 # A candidate on AArch64: `(c − 1) mod e`

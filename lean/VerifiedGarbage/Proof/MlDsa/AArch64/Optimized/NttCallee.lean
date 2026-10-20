@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttOutVerified
-import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.NttTable
 public import VerifiedGarbage.Spec.MlDsa.PositiveNtt
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 @[expose] public section
 

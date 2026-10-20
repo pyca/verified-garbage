@@ -1,7 +1,9 @@
 module
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 
 /-! Bounds for the unreduced accumulators. No arithmetic wraps for at most

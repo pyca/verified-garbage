@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Seed.AArch64.Batch
 
 import VerifiedGarbage.Proof.Seed.AArch64.Setup
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Seed.Memory
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.X25519.Arm.Field
 
 import VerifiedGarbage.Proof.X25519.Arm.Mul
 import VerifiedGarbage.Proof.X25519.Arm.Cswap
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X25519.Arm.AddSub
 import VerifiedGarbage.Proof.Framework.Offset
 

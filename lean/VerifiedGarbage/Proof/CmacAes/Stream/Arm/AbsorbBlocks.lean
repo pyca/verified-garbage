@@ -1,12 +1,7 @@
 module
-public import Batteries.Logic
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.CmacAes.Stream.Arm
 public import VerifiedGarbage.Proof.Cmac.Stream
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Covers
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 
@@ -17,6 +12,8 @@ import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

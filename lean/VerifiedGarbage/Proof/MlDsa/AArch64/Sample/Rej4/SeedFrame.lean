@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Base
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Words
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 @[expose] public section
 

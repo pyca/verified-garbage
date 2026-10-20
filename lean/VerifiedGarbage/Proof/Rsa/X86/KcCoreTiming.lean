@@ -1,14 +1,15 @@
 module
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheck
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 
 import VerifiedGarbage.Proof.Rsa.X86.KcTiming
 import VerifiedGarbage.Proof.Rsa.X86.CvHelperTiming
 import VerifiedGarbage.Proof.Rsa.X86.DivTiming
 import VerifiedGarbage.Proof.Mont.X86.ExponentTiming
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Key checks are constant time without requiring a public initial counter -/
 

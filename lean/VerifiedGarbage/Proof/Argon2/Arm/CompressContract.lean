@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Sha512.Arm.Rounds
 public import VerifiedGarbage.Spec.Argon2.Contract
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 
 /-!

@@ -1,36 +1,19 @@
 module
 
 public import VerifiedGarbage.Impl.Ct.X86
-meta import VerifiedGarbage.Impl.Ct.X86
 import VerifiedGarbage.Proof.Ct.Common32
-meta import VerifiedGarbage.Proof.Ct.Common32
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
-meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
-meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
-import VerifiedGarbage.Proof.Framework.X86.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86.RelCT
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Ct.Contract
 public import VerifiedGarbage.Proof.Ct.Common
-public import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Impl.Ct.X86
+meta import VerifiedGarbage.Proof.Ct.Common32
+meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
+meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 meta import VerifiedGarbage.Spec.Ct.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.MlKem.X86.Leaf
 meta import VerifiedGarbage.Proof.Ct.Common
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.MlKem.X86.Leaf
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

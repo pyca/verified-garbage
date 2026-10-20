@@ -4,10 +4,10 @@ public import VerifiedGarbage.Proof.Weierstrass.CombLay
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 public import VerifiedGarbage.Impl.Weierstrass.X86.TComb
 public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Weierstrass.TCombWords
 public import VerifiedGarbage.Proof.Weierstrass.Comb
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # The fixed-base comb from tables in memory on x86 (32-bit): where it keeps its numbers

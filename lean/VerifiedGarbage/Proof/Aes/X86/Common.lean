@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Mem
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.X86.Exec
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # AES and GHASH on x86 (32-bit): regions of 32-bit buffers

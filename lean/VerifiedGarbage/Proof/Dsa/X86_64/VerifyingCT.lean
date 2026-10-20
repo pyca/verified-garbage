@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingPublic
 import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingReadyCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingPublic
 meta import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingReadyCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Constant time of the complete verifying entry point -/
 

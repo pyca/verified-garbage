@@ -1,8 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Bignum.Arm.LoadBEFn
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Mont
 public import VerifiedGarbage.Spec.Rsa.Contract
 

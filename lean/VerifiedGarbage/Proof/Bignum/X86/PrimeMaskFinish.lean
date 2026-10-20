@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Impl.Bignum.X86.PrimeMask
 public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Combine the lower bound and low-bit checks as a secret mask -/
 

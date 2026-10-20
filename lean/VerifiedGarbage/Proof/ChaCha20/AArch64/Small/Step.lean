@@ -3,10 +3,11 @@ public import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Small
 
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Chunk
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

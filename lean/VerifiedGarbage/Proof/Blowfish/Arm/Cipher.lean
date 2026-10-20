@@ -3,8 +3,10 @@ module
 import VerifiedGarbage.Proof.Blowfish.Arm.F
 public import VerifiedGarbage.Proof.Blowfish.Feistel
 public import VerifiedGarbage.Proof.Blowfish.Arm.Lookup
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Blowfish.Schedule
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # Blowfish on ARMv7: the block function

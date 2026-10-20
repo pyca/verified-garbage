@@ -8,6 +8,8 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.Bits
 import VerifiedGarbage.Spec.MlKem.Poly
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Sig
 
 @[expose] public section
 

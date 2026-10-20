@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # RSA encryption on AArch64: bytes, one at a time

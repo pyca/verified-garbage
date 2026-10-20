@@ -10,6 +10,10 @@ meta import VerifiedGarbage.Proof.AesCbc.Arm.CT
 meta import VerifiedGarbage.Proof.AesCtr.Spec
 meta import VerifiedGarbage.Impl.AesCtr.Arm
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-CTR on ARMv7: one block, and constant time

@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtSetup
 import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Initialize the main CRT layout and all five buffer links -/
 

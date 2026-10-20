@@ -1,14 +1,19 @@
 module
-public import Mathlib.FieldTheory.Finite.Basic
-public import Mathlib.Tactic.NormNum.Prime
 public import VerifiedGarbage.Impl.Ed448.X86_64.Window
 public import VerifiedGarbage.Proof.X448.X86_64.Env
-public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.Sig
 
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.X448.X86_64.Setup
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Nat.Totient
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToAdditive
 
 /-! Direct lookup of a public verification digit in the projective table. -/
 

@@ -4,7 +4,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BoundedFour
 public import VerifiedGarbage.Proof.MlDsa.Sample.HalfByte
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! ## From `BoundedFourWord.lean` -/
 

@@ -1,9 +1,10 @@
 module
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Constant
 
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sha3.Lanes
 import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 
 @[expose] public section

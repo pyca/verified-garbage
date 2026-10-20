@@ -3,6 +3,13 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.RvGcdSet
 import VerifiedGarbage.Proof.Rsa.X86.InvLoop
 import VerifiedGarbage.Proof.Rsa.X86.RvFrames
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Algebra.GroupWithZero.Nat
+import Mathlib.Tactic.Push
+import Mathlib.Algebra.NeZero
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The first recovered factor from the verified binary GCD -/
 

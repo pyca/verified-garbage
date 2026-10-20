@@ -1,44 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86.KeyEk
-meta import VerifiedGarbage.Proof.Sm4.X86.KeyEk
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.StackScratch.X86
 public import VerifiedGarbage.Proof.Sm4.Scratch
-public import VerifiedGarbage.Proof.Sm4.X86.CryptSum
-public import VerifiedGarbage.Proof.Sm4.X86.Lit
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import VerifiedGarbage.Impl.Sm4.X86.Modes
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Sm4.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Sm4.Layout
-import VerifiedGarbage.Proof.Sm4.X86.Copy
-import VerifiedGarbage.Proof.Sm4.X86.KeyInit
-import VerifiedGarbage.Proof.Sm4.X86.KeyLoop
-import VerifiedGarbage.Proof.Sm4.X86.Verified
-import VerifiedGarbage.Spec.Ctr.Contract
-meta import VerifiedGarbage.Impl.Sm4.X86.Modes
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Sm4.X86.CryptSum
+import VerifiedGarbage.Proof.Sm4.X86.LayersLit
+meta import VerifiedGarbage.Proof.Sm4.X86.KeyEk
+meta import VerifiedGarbage.Impl.StackScratch.X86
+meta import VerifiedGarbage.Proof.Sm4.Scratch
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Proof.Sm4.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Sm4.Layout
-meta import VerifiedGarbage.Proof.Sm4.X86.Copy
-meta import VerifiedGarbage.Proof.Sm4.X86.KeyInit
-meta import VerifiedGarbage.Proof.Sm4.X86.KeyLoop
-meta import VerifiedGarbage.Proof.Sm4.X86.Verified
-meta import VerifiedGarbage.Spec.Ctr.Contract
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Sm4.X86.CryptSum
+meta import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 
 /-!
 # The SM4 key schedule on x86 (32-bit) meets its contracts

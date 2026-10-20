@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Curve448.AArch64.Column
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Impl.X448.AArch64
 
 /-! Untrusted: the complete two-word coefficient array of a wide product. -/
 

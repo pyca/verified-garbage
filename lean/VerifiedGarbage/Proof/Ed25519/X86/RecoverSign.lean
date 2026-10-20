@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.RecoverParity
 import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
-import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Ed25519.X86.RecoverAdjust`. -/
 

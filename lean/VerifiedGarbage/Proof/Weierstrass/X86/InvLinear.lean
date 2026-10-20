@@ -1,13 +1,5 @@
 module
-public import Mathlib.Algebra.Order.Ring.Abs
-public import Mathlib.Data.BitVec
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.Tactic.Linarith
-public import Mathlib.Tactic.Ring
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Weierstrass.X86.InvMemory
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Mont.X86.Loop
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 
@@ -15,8 +7,19 @@ import VerifiedGarbage.Proof.Weierstrass.X86.InvLinearMath
 import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
 import VerifiedGarbage.Proof.Divstep.Tc32Words
 import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
+public import Mathlib.Algebra.Group.Int.Defs
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Impl.X25519.X86
 import VerifiedGarbage.Proof.Framework.X86.Wp
-import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Spec.Weierstrass.Mont
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
 
 /-! # The signed multiword divstep matrix row -/
 

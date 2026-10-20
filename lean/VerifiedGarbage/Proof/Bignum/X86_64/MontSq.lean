@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # Squarings of an exponentiation's accumulator

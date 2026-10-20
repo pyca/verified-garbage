@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Dsa.AArch64.Arithmetic
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 

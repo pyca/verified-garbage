@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.Exp
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Load the current public exponent byte through its saved pointer -/
 

@@ -5,10 +5,19 @@ public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowStep
 import VerifiedGarbage.Proof.Ed25519.X86_64.WindowDigits
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.Module
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Verification's windows: a doubling and the digits at each position

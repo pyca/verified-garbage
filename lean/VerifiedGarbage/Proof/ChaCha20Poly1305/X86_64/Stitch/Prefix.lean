@@ -1,8 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Tail
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the 448 bytes before the chunks

@@ -1,12 +1,9 @@
 module
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Inverse
-public import VerifiedGarbage.Proof.Framework.PowLit
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

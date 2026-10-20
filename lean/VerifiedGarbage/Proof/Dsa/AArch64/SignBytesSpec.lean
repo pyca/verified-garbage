@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.AcceptedSpec
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Dsa.SignVerify
 import VerifiedGarbage.Proof.Dsa.Arithmetic
+import Mathlib.Tactic.Convert
 
 /-! # The computed scalars and rejection mask implement the packed signing spec -/
 

@@ -8,8 +8,9 @@ import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
 import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Top
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # One-pass XTS-AES on x86-64: decryption

@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Scan
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Finish
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.CutInputs
+public import Mathlib.Tactic.TermCongr
+import Mathlib.Data.Int.ModEq
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # FFDH on x86-64: the complete scalar-sampling stage -/
 

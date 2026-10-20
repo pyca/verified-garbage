@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-public import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
 
 /-!

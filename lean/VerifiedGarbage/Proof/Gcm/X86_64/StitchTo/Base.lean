@@ -2,8 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchTo
-public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Gcm.X86_64.Rev
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
@@ -11,8 +9,10 @@ import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
-import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # The out-of-place VAES loop: the data

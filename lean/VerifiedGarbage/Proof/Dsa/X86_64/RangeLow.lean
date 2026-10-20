@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 import VerifiedGarbage.Proof.RsaKeyGen.CandMath
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The low boundary of DSA scalar and group-element ranges -/
 

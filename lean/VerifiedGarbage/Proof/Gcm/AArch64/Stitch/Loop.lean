@@ -6,7 +6,8 @@ import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Weave
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Interleaved counter mode and GHASH on AArch64: the loops

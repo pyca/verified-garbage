@@ -5,9 +5,10 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Bfly
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 public import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

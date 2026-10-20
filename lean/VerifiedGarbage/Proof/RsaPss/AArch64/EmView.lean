@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Mgf
 public import VerifiedGarbage.Proof.RsaPss.EncBytes
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RSASSA-PSS on AArch64: the encoding's bytes

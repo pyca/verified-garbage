@@ -1,46 +1,35 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.AArch64.Ecb
-meta import VerifiedGarbage.Proof.Sm4.AArch64.Ecb
 public import VerifiedGarbage.Proof.Sm4.Scratch
-meta import VerifiedGarbage.Proof.Sm4.Scratch
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sm4.AArch64.Lit
-meta import VerifiedGarbage.Proof.Sm4.AArch64.Lit
-public import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
 public import VerifiedGarbage.Impl.StackScratch.AArch64
-meta import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
+import VerifiedGarbage.Proof.Sm4.AArch64.Lit
+import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
+public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sm4.AArch64.Copy
-import VerifiedGarbage.Proof.Sm4.AArch64.Crypt16
-import VerifiedGarbage.Proof.Sm4.Layout
-import VerifiedGarbage.Spec.Ctr.Contract
-meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Sm4.AArch64.Ecb
+meta import VerifiedGarbage.Proof.Sm4.Scratch
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+meta import VerifiedGarbage.Impl.StackScratch.AArch64
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
+meta import VerifiedGarbage.Proof.Sm4.AArch64.Lit
+meta import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Sm4.AArch64.Copy
-meta import VerifiedGarbage.Proof.Sm4.AArch64.Crypt16
-meta import VerifiedGarbage.Proof.Sm4.Layout
-meta import VerifiedGarbage.Spec.Ctr.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegSet
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-!
 # SM4 ECB on AArch64 meets its contracts

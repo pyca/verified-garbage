@@ -1,10 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Idea
-public import Mathlib.Data.Finset.Card
-public import Mathlib.Data.Nat.Find
 public import Mathlib.Data.Nat.Prime.Defs
-public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Pratt
 
 /-!

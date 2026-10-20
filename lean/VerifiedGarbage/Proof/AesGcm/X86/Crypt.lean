@@ -5,7 +5,9 @@ public import VerifiedGarbage.Proof.Gcm.Ctr
 import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.VariantProof
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on x86: counter mode over a piece (`crypt`), the definitions

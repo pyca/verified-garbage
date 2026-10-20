@@ -4,7 +4,6 @@ public import VerifiedGarbage.Spec.ChaCha20Poly1305
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86
-public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Poly1305.X86.Init
 public import VerifiedGarbage.Proof.Poly1305.X86.Blocks
 import VerifiedGarbage.Proof.Poly1305.X86.Finalize
@@ -13,18 +12,9 @@ public import VerifiedGarbage.Proof.ChaCha20.X86.Variant
 import VerifiedGarbage.Proof.ChaCha20.X86.Lit
 import VerifiedGarbage.Proof.Poly1305.X86.Lit
 import VerifiedGarbage.Proof.Framework.Offset
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.ChaCha20.X86.Bytes
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Range
+import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Framework.X86.SseDword
-import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 
 @[expose] public section
 

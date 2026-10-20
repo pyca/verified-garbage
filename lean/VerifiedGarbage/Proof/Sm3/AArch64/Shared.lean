@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sm3.AArch64.Compress
 import VerifiedGarbage.Proof.Sm3.AArch64.Stream.Init
 import VerifiedGarbage.Proof.Sm3.AArch64.Stream.Md
 public import VerifiedGarbage.Proof.Sm3.Scratch
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Sm3.AArch64.Stream
+import VerifiedGarbage.Proof.Sm3.AArch64.Lit
 
 /-!
 # SM3 on AArch64: the shared contracts

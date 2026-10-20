@@ -1,45 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Contract
-meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.Contract
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86.RelCT
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rc2.X86.KeyIO
-meta import VerifiedGarbage.Proof.Rc2.X86.KeyIO
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Framework.X86.SseDword
-import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.Loop
-import VerifiedGarbage.Proof.Rc2.X86.PiLookup
-import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Rc2.X86.Lit
+meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.Contract
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Rc2.X86.KeyIO
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.Sse
-meta import VerifiedGarbage.Proof.Framework.X86.SseDword
-meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
-meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.Loop
-meta import VerifiedGarbage.Proof.Rc2.X86.PiLookup
-meta import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Rc2.X86.Lit
 
 @[expose] public section
 

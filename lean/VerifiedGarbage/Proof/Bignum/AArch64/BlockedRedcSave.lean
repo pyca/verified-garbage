@@ -4,11 +4,9 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Proof.Ed25519.Word64
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 @[expose] public section
 

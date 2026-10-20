@@ -1,13 +1,13 @@
 module
 public import VerifiedGarbage.Impl.TripleDes.X86_64.Common
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Semantics
 
 import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Steps
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Rc2.X86_64.Lit
 
 @[expose] public section
 

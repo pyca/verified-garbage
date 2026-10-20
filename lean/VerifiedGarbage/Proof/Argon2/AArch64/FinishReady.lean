@@ -20,6 +20,16 @@ meta import VerifiedGarbage.Proof.Argon2.AArch64.ReductionClear
 meta import VerifiedGarbage.Proof.Argon2.AArch64.FillLaneAdvance
 meta import VerifiedGarbage.Proof.Argon2.Dimensions
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
+meta import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
 
 /-! Merged from `Proof.Argon2.AArch64.ReduceLanesBody`. -/
 

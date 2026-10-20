@@ -6,16 +6,20 @@ import VerifiedGarbage.Proof.Bignum.AArch64.CrtRows
 import VerifiedGarbage.Proof.Bignum.AArch64.R2
 import VerifiedGarbage.Proof.Bignum.AArch64.Setup
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
-public import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Impl.Rsa.AArch64.Crt
 public import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
-public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
 import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 import VerifiedGarbage.Proof.Bignum.AArch64.Row
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+import Mathlib.Tactic.GCongr
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
 
 /-!
 # `vg_rsa_private_crt` on AArch64: the fixes and the products

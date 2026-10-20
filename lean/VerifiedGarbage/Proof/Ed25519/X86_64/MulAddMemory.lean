@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.MulAdd
 public import VerifiedGarbage.Proof.X25519.X86_64.Setup
-public import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset

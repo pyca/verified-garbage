@@ -14,6 +14,22 @@ meta import VerifiedGarbage.Proof.Ocb.State
 meta import VerifiedGarbage.Proof.AesOcb.X86.Setup
 meta import VerifiedGarbage.Proof.AesOcb.X86.Run
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+meta import Mathlib.Tactic.Set
+meta import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+meta import VerifiedGarbage.Proof.AesGcm.X86.CT
+meta import VerifiedGarbage.Proof.AesGcm.X86.Callee
+meta import VerifiedGarbage.Proof.AesGcm.X86.Common
+meta import VerifiedGarbage.Proof.AesGcm.X86.Fn
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+public import VerifiedGarbage.Proof.AesGcm.X86.CT
+public import VerifiedGarbage.Proof.AesGcm.X86.Callee
+public import VerifiedGarbage.Proof.AesGcm.X86.Common
+public import VerifiedGarbage.Proof.AesGcm.X86.Fn
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-OCB on x86: `vg_aes_ocb_init`

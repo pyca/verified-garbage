@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Lcm
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Front
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
 import VerifiedGarbage.Spec.RsaKeyGen
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ## Out -/
 

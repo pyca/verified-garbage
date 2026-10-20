@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Camellia.KeySched
 public import VerifiedGarbage.Proof.Camellia.Layout
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Camellia's proofs: what every target uses

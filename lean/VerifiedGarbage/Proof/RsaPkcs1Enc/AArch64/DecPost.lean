@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Calls
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecLay
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
 import VerifiedGarbage.Proof.Framework.Offset
 

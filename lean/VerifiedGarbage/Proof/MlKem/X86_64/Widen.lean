@@ -1,14 +1,12 @@
 module
 public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMem
-public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Spec.MlKem.Kpke16
 
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 import VerifiedGarbage.Proof.MlKem.PolyW
 import VerifiedGarbage.Proof.Framework.CallLay
-import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: a polynomial of `u16`s as `u32`s (`vunpack`)

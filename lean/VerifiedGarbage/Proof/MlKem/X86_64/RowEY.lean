@@ -1,14 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.RowY
-meta import VerifiedGarbage.Proof.MlKem.X86_64.RowY
 import VerifiedGarbage.Proof.MlKem.X86_64.AccInvY
-meta import VerifiedGarbage.Proof.MlKem.X86_64.AccInvY
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
-import VerifiedGarbage.Proof.Framework.X86_64.Words
 import VerifiedGarbage.Proof.Framework.CallLay
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

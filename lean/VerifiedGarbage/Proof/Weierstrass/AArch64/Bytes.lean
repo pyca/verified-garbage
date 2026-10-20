@@ -1,29 +1,21 @@
 module
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Spec.Weierstrass
 
-import Mathlib.Logic.Function.Basic
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.Mont.AArch64
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
-import VerifiedGarbage.Proof.Mont.AArch64.Words
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.Mont.AArch64.Blocks
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
-public import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Mont.AArch64.Blocks
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
-import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
-import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Impl.Mont.AArch64
+import VerifiedGarbage.Proof.Mont.AArch64.Words
+import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Impl.Weierstrass.AArch64
+import VerifiedGarbage.Impl.Weierstrass.Slots
 
 /-!
 # Short Weierstrass curves on AArch64: words to and from big-endian bytes

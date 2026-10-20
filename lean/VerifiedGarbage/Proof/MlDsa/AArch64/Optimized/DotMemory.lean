@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotBankField
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFive
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Slice
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

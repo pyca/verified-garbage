@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Rsa.Arm.CvState
 import VerifiedGarbage.Proof.Framework.Arm.Spill
 import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # `vg_rsa_crt_values` on ARMv7: the entry
 

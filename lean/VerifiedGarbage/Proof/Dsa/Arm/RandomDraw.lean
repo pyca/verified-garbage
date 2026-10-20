@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomInRange
 import VerifiedGarbage.Proof.Dsa.Encoding
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
 

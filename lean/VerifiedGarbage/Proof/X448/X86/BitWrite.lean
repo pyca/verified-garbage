@@ -3,12 +3,10 @@ public import VerifiedGarbage.Proof.X448.X86.Instr
 
 import VerifiedGarbage.Proof.X448.X86.ByteMem
 import VerifiedGarbage.Proof.X448.X86.Args
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.X448.Ladder
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # X448 on x86 (32-bit): expanding a scalar byte

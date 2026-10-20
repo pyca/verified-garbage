@@ -3,10 +3,7 @@ module
 public import VerifiedGarbage.Impl.X448.X86
 public import VerifiedGarbage.Proof.X448.Radix16
 import VerifiedGarbage.Proof.Framework.X86.Exec
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!

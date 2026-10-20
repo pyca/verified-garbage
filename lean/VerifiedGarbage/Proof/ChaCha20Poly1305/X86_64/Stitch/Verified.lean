@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prefix
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
 import VerifiedGarbage.Proof.Framework.ContractPost
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prologue
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.SmallTest
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailK
@@ -28,6 +30,10 @@ meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prefix
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
 meta import VerifiedGarbage.Proof.Framework.ContractPost
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): `bulk` is constant time

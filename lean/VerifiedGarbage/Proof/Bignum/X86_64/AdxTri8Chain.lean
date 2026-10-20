@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
 
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Word
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 
 @[expose] public section

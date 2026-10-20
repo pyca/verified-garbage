@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.X448.X86.Square
 public import VerifiedGarbage.Proof.Ed448.Formulas
 public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
-import VerifiedGarbage.Impl.Ed448.X86.VerifyEquation
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): field programs

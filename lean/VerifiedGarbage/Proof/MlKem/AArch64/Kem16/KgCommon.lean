@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # The 16-bit key generation's invariants
 

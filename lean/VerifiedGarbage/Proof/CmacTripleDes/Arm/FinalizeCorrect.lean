@@ -1,13 +1,7 @@
 module
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.CmacTripleDes.Arm
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Contract
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 import VerifiedGarbage.Proof.CmacTripleDes.Arm.Finalize
 import VerifiedGarbage.Proof.CmacTripleDes.Cmac

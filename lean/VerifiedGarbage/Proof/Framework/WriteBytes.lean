@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Writing a list of bytes

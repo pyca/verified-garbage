@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourTable
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMath
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

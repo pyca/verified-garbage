@@ -1,13 +1,10 @@
 module
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtHash
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSASSA-PSS on x86-64: compressing every block, selecting the last

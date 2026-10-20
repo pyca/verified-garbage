@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafPrep
-public import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

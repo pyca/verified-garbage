@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelPrepare
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Argon2.AArch64.FillCompress
 import VerifiedGarbage.Proof.Framework.Offset
 

@@ -1,37 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Rc4.Arm.Contract
-meta import VerifiedGarbage.Proof.Rc4.Arm.Contract
 import VerifiedGarbage.Proof.Rc4.Arm.Lit
-meta import VerifiedGarbage.Proof.Rc4.Arm.Lit
 import VerifiedGarbage.Proof.Rc4.Arm.Apply
-meta import VerifiedGarbage.Proof.Rc4.Arm.Apply
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Rc4.Arm.Run
-meta import VerifiedGarbage.Proof.Framework.RelCT
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Impl.Rc4.Arm
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Rc4.Arm.Init
-import VerifiedGarbage.Proof.Rc4.Arm.Replace
-import VerifiedGarbage.Proof.Rc4.Arm.Schedule
-import VerifiedGarbage.Proof.Rc4.Dword
-import VerifiedGarbage.Proof.Rc4.Scratch
-import VerifiedGarbage.Proof.Rc4.Table
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Rc4.Arm.Contract
+meta import VerifiedGarbage.Proof.Rc4.Arm.Lit
+meta import VerifiedGarbage.Proof.Rc4.Arm.Apply
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Impl.Rc4.Arm
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Rc4.Arm.Init
-meta import VerifiedGarbage.Proof.Rc4.Arm.Replace
-meta import VerifiedGarbage.Proof.Rc4.Arm.Schedule
-meta import VerifiedGarbage.Proof.Rc4.Dword
-meta import VerifiedGarbage.Proof.Rc4.Scratch
-meta import VerifiedGarbage.Proof.Rc4.Table
 
 /-! # RC4 on ARMv7: constant time
 

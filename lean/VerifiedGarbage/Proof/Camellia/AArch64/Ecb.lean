@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.Group
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 

@@ -1,10 +1,12 @@
 module
 public import Mathlib.Data.Nat.ModEq
-public import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Mul
 
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Powers
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import Mathlib.Tactic.NormNum.Pow
+import Mathlib.Tactic.NormNum.Inv
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Poly1305 on x86-64 with AVX2: the accumulator in and out

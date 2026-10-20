@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ECDSA verification over brainpoolP256r1 on AArch64: the contract the proof is written against

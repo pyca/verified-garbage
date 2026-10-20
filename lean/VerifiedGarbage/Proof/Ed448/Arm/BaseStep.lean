@@ -4,10 +4,11 @@ public import VerifiedGarbage.Proof.Ed448.Ref
 import VerifiedGarbage.Proof.X448.Arm.Counters
 public import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
 public import VerifiedGarbage.Proof.X448.Arm.Ops
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.X448.Arm.Iter
 import VerifiedGarbage.Proof.X448.Arm.Carry
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed448 base-point multiplication on ARMv7: the loop over the bits

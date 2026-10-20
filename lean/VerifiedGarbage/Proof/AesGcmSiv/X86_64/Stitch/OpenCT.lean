@@ -8,6 +8,18 @@ meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Open
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ok
 meta import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+meta import VerifiedGarbage.Proof.Cmac.Spec
 
 /-!
 # AES-GCM-SIV on x86-64: `vg_aes_gcm_siv_open` with the interleaved loop is constant time

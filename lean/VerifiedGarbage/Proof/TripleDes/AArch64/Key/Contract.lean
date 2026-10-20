@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.ConstantTime
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
+import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
 
 @[expose] public section
 

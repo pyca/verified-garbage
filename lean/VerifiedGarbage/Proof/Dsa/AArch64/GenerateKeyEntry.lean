@@ -4,10 +4,10 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSlots
 public import VerifiedGarbage.Impl.Dsa.AArch64.GenerateKey
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFrame
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignEnv
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
 
 /-! Save the key-generation ABI arguments in the private stack frame. -/
 @[expose] public section

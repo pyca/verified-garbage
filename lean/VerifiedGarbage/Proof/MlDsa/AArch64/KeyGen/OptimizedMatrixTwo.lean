@@ -5,10 +5,9 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCallTwo
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixSeeds
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MatrixMask
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

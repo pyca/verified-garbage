@@ -5,7 +5,10 @@ public import VerifiedGarbage.Proof.Gcm.Ctr
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.TCB.X86_64.State
 import VerifiedGarbage.Proof.Gcm.Stream
 
 /-!

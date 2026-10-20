@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.RsaPss.Encoding
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
 
 /-!
 # RSASSA-PSS verification on x86-64: correctness

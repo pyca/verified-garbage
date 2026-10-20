@@ -2,6 +2,9 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 
 /-!

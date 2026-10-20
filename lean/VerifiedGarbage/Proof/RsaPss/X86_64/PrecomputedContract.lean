@@ -2,6 +2,8 @@ module
 public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCall
 
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
 
 @[expose] public section
 

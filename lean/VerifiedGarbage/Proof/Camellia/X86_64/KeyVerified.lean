@@ -2,32 +2,15 @@ module
 
 import VerifiedGarbage.Proof.Camellia.X86_64.ExpandKey
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Camellia.X86_64.Lit
 public import VerifiedGarbage.Proof.Camellia.Scratch
-public import VerifiedGarbage.Proof.Camellia.SboxTable
 public import VerifiedGarbage.Proof.Camellia.X86_64.KeyContract
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Camellia.X86_64.Copy
-import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
-import VerifiedGarbage.Proof.Camellia.X86_64.KeyPair
-import VerifiedGarbage.Proof.Camellia.X86_64.KeySetup
-import VerifiedGarbage.Proof.Camellia.X86_64.KeyStore
-import VerifiedGarbage.Proof.Camellia.X86_64.KeyWords
-import VerifiedGarbage.Proof.Camellia.X86_64.Keys
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Camellia.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-!
 # The Camellia key schedule on x86-64 meets its contracts

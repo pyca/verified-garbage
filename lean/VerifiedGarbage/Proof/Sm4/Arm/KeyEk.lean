@@ -1,11 +1,9 @@
 module
 public import VerifiedGarbage.Impl.Sm4.Arm.ExpandKey
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sm4.Arm.Core
 public import VerifiedGarbage.Proof.Sm4.Arm.Prologue
 
 import VerifiedGarbage.Proof.Sm4.Arm.KeyLoop
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
 import VerifiedGarbage.Proof.Sm4.Planes
 import VerifiedGarbage.Proof.Sm4.Arm.KeyInit
@@ -13,6 +11,11 @@ import VerifiedGarbage.Proof.Sm4.Arm.Group
 import VerifiedGarbage.Proof.Sm4.Layout
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
+import VerifiedGarbage.Proof.Framework.Arm.Taint
 
 /-!
 # The SM4 key schedule on ARMv7: the whole function

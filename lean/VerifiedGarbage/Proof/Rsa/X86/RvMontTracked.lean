@@ -1,6 +1,10 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.X86.RvMontGeometry
+import Mathlib.Tactic.Finiteness.Attr
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 
 /-! # Recovering Montgomery readiness from the tracked workspace -/

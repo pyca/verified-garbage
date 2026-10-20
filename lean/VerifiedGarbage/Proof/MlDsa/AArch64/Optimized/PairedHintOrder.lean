@@ -2,6 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalCheck
 public import VerifiedGarbage.Proof.MlDsa.Round.Ones
+import Batteries.Data.List.Lemmas
+import Mathlib.Tactic.Conv
+import Mathlib.Data.Fintype.Fin
+import Mathlib.Tactic.FinCases
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

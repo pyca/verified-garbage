@@ -5,7 +5,8 @@ public import VerifiedGarbage.Proof.MlKem.X86.Unpack
 public import VerifiedGarbage.Impl.MlKem1024.X86.Compress
 public import VerifiedGarbage.Proof.MlKem.X86.Pack
 public import VerifiedGarbage.Spec.MlKem.Contract1024
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # ML-KEM-1024 on x86 (32-bit): loading bytes and decompressing coefficients

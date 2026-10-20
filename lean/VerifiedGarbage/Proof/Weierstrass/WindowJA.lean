@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.JacMadd
-public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Weierstrass.JacAdd
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # Signed windows in Jacobian coordinates with an affine table, on any target

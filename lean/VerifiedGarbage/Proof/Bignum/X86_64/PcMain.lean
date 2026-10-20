@@ -5,10 +5,11 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Impl.Rsa.X86_64
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
 import VerifiedGarbage.Proof.Bignum.X86_64.Setup
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_public_precompute` on x86-64: the computation for a valid modulus

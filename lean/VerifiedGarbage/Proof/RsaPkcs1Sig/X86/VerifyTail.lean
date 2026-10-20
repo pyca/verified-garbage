@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyEncoding
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyCmpArgs
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStatus
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Compare
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # The encoded-digest check is masked by the saved checked-RSA status -/
 

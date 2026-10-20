@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Lit
 public import VerifiedGarbage.Proof.Rc2.AArch64.ConstantTime
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Lit
 
 /-! # CBC's function-level contract -/
 

@@ -2,11 +2,12 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Layout
 
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-DSA on x86-64, `sign_message` and `verify_message`: the frame

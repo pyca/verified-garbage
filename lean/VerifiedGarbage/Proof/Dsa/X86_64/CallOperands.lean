@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.BufferFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import Batteries.Logic
 
 /-! # Reading and preserving operands across the DSA arithmetic schedule -/
 

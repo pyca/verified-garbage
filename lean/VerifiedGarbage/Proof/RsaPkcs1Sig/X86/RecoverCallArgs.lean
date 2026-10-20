@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverArguments
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Recover
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverLocalArgument
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackWord
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # All ten arguments of precomputed public RSA verification -/
 

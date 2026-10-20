@@ -1,10 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce10
-public import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Widths
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dword
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Widths
+public import VerifiedGarbage.Impl.MlKem1024.AArch64.Compress
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM-1024 on AArch64: `ce5Math`

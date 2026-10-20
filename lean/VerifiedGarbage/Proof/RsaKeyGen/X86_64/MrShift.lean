@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
 import VerifiedGarbage.Proof.RsaKeyGen.Halve
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
@@ -10,9 +9,11 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.GCongr
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.ModE
+import VerifiedGarbage.Proof.RsaKeyGen.Gcd
 
 /-!
 # A candidate on x86-64: Miller–Rabin's exponent

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.Sample.RejBounded
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Sponge
 
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBoundedLoop
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
 

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.DomainShape
 public import VerifiedGarbage.Spec.Dsa.SignVerify
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.DomainWidths
 
 /-! # Public shape acceptance and early rejection in the DSA specification -/

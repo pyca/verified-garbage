@@ -8,6 +8,8 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Squeeze
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 meta import Std.Tactic.BVDecide.Normalize.Prop
 meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The main squeezes of a hashing pair leak only public pointers

@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

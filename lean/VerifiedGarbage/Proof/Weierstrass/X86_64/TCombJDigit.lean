@@ -4,11 +4,11 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.TCombJ
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelect
 public import VerifiedGarbage.Proof.Weierstrass.Booth
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Weierstrass.Words
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # The comb with Booth's digits on x86-64: digits and masks

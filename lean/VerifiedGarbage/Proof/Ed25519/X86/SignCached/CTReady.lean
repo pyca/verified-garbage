@@ -7,6 +7,22 @@ public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.MulAdd
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
 import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Ed25519.X86.CombLit
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 @[expose] public section
 

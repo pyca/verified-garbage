@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.X448.Wide.Encoded
 public import VerifiedGarbage.Proof.X448.AArch64.Mul
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.Wide.Reduce
 import VerifiedGarbage.Proof.X448.Wide.Normalize
 import VerifiedGarbage.Proof.X448.Wide.Pack

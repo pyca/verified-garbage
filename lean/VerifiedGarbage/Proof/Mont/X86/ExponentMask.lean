@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Mont.X86.ExponentWord
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Saving and consuming a secret exponent bit -/
 

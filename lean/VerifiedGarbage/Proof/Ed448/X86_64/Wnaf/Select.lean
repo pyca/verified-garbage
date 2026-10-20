@@ -6,6 +6,9 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectBase
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectKey
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Sign
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! Sparse signed-digit selection preserves the accumulator and curve constant. -/
 

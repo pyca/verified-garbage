@@ -1,36 +1,26 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.Mem
-meta import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
-meta import VerifiedGarbage.Proof.Framework.Arm.Spill
 public import VerifiedGarbage.Proof.Sm3.Spec
-meta import VerifiedGarbage.Proof.Sm3.Spec
 public import VerifiedGarbage.Impl.Sm3.Arm
-meta import VerifiedGarbage.Impl.Sm3.Arm
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Sm3.Arm.Contract
-meta import VerifiedGarbage.Proof.Sm3.Arm.Contract
-public import VerifiedGarbage.Proof.Sm3.Arm.Lit
-meta import VerifiedGarbage.Proof.Sm3.Arm.Lit
-public import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Sm3.Arm.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Arm.Spill
+meta import VerifiedGarbage.Proof.Sm3.Spec
+meta import VerifiedGarbage.Impl.Sm3.Arm
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Sm3.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Sm3.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!

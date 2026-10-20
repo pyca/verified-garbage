@@ -4,8 +4,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.ExportArrayArgs
 import VerifiedGarbage.Proof.Bignum.Arm.ImportArraySwap
 import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Mont
 public import VerifiedGarbage.Impl.Bignum.Arm.ImportArray
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge

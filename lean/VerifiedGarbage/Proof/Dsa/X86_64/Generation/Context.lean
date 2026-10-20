@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryTape
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Persistent inputs shared by every phase of the native parameter search -/
 

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarIO
 public import VerifiedGarbage.TCB.Arm.Target
-import Batteries.Logic
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 

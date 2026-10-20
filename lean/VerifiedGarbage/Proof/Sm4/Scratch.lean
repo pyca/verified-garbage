@@ -3,9 +3,10 @@ module
 public import VerifiedGarbage.Spec.Sm4.Contract
 public import VerifiedGarbage.Spec.Sm4.Ctr
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # SM4 key expansion and ECB with their working space as an argument

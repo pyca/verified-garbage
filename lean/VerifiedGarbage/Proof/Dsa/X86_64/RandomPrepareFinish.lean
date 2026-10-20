@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomMask
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The public q>1 decision and mask store at the end of initialization. -/
 @[expose] public section

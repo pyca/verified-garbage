@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Seed.Memory
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Eight blocks of SEED on x86 (32-bit)

@@ -1,10 +1,8 @@
 module
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 public import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
 
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wAdd
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.WordStep
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wSub
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy

@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.X86.PrivChecked
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Verified callees and stack bounds for checked private RSA -/
 

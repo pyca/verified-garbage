@@ -3,9 +3,8 @@ module
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillWritePrefix
 public import VerifiedGarbage.Proof.Framework.Covers
-public import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Argon2.AArch64.CountCandidates
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Merged from `Proof.Argon2.AArch64.FillWrite`. -/
 

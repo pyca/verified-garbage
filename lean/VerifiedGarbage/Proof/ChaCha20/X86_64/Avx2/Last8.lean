@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ChaCha20 on x86-64 with AVX2: the last 385 to 511 bytes

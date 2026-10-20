@@ -1,13 +1,11 @@
 module
-public import VerifiedGarbage.Proof.Blowfish.AArch64.Lit
 public import VerifiedGarbage.Proof.Blowfish.Scratch
 public import VerifiedGarbage.Impl.StackScratch.AArch64
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Blowfish.AArch64.Lit
 
 /-!
 # Blowfish ECB on AArch64, with its working space on the stack

@@ -1,19 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Blake2.X86.CompressB.Lit
-meta import VerifiedGarbage.Proof.Blake2.X86.CompressB.Lit
 public import VerifiedGarbage.Impl.Blake2.X86.Stream
-meta import VerifiedGarbage.Impl.Blake2.X86.Stream
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Proof.Blake2.X86.CompressB.Lit
+meta import VerifiedGarbage.Impl.Blake2.X86.Stream
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # BLAKE2b on x86 (32-bit): the streaming functions as literals

@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 
 import VerifiedGarbage.Proof.Framework.X86.Syms
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!

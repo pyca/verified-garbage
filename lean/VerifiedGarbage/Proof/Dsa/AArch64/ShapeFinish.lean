@@ -5,6 +5,8 @@ import Mathlib.Order.Lattice
 import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Digest-prefix selection and the public domain-check result -/
 

@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.Power
 import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-! Merged from `Proof.Ed25519.AArch64.WindowByte`. -/
 

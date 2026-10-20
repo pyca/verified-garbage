@@ -6,9 +6,6 @@ import VerifiedGarbage.Proof.MlDsa.Pack.Stream
 public import VerifiedGarbage.Proof.MlDsa.Pack.Written
 public import VerifiedGarbage.Proof.MlKem.Bits
 import VerifiedGarbage.Proof.Framework.Range
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.X86.Leaf
-import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on x86 (32-bit): streaming fields through `ebx`

@@ -1,5 +1,4 @@
 module
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Ed448.AArch64.Scalar
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 public import VerifiedGarbage.Spec.Ed448.Contract

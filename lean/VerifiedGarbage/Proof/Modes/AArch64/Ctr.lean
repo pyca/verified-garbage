@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Modes.AArch64.Group
 public import VerifiedGarbage.Proof.Modes.AArch64.Setup
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
 import VerifiedGarbage.Proof.Modes.Addr
 import VerifiedGarbage.Proof.AesCtr.Ctr32

@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.MOp
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Impl.X448.AArch64
 
 /-!
 # The end of a column: carry in, stage a limb, carry out

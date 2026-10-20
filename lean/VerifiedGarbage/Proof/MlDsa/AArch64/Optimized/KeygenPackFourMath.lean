@@ -1,9 +1,9 @@
 module
 
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## From `KeygenPackFourMachine.lean` -/
 

@@ -1,23 +1,14 @@
 module
 
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.X25519.X86.Basic
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-public import VerifiedGarbage.Proof.X25519.X86.Fold
-public import VerifiedGarbage.Proof.X25519.X86.Freeze
-public import VerifiedGarbage.Proof.X25519.X86.Arith
-public import VerifiedGarbage.Proof.X25519.X86.Column
-public import VerifiedGarbage.Proof.X25519.X86.Ops
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.X25519.X86.Fold
+import VerifiedGarbage.Proof.X25519.X86.Arith
+import VerifiedGarbage.Proof.X25519.X86.Ops
+import VerifiedGarbage.Proof.X25519.X86.Freeze
 
 /-!
 # Ed25519 on x86 (32-bit): the field arithmetic

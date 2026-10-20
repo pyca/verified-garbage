@@ -2,8 +2,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRun
 
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderIncrement
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderDecrement
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Impl.Bignum.Arm.Zero
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Advance both product pointers and the public row count -/
 

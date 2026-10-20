@@ -9,10 +9,15 @@ public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
 import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
 import VerifiedGarbage.Proof.Ed25519.X86.InputBits
-import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
 import VerifiedGarbage.Proof.Ed25519.X86.Power
 import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
+import VerifiedGarbage.Proof.Ed25519.X86.CombLit
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # X25519 of the base point on x86: correctness

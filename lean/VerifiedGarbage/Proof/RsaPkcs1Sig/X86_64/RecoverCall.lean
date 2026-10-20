@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverFrame
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.RandomInRange
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
 import VerifiedGarbage.Proof.Dsa.Encoding
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The copied draw is the specification's candidate (x86)

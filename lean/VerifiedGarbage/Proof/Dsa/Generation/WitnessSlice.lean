@@ -1,10 +1,10 @@
 module
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Spec.RsaKeyGen
 
 import VerifiedGarbage.Proof.Dsa.Generation.WitnessBytes
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The copied suffix is the witness of the whole consumed tape draw -/
 

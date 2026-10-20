@@ -1,19 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKey
-public import VerifiedGarbage.Proof.Md5.X86.Lit
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
-public import VerifiedGarbage.Proof.Sha512.X86.Lit
 public import VerifiedGarbage.Impl.StackScratch.X86
 public import VerifiedGarbage.Proof.Hmac.Scratch
 import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
 import VerifiedGarbage.Proof.Hmac.AnyKey
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Proof.Pbkdf2.Hmac
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
+public import VerifiedGarbage.Proof.Md5.X86.Lit
+public import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-!
 # HMAC's `init` for a key of any length on x86 (32-bit): constant time, and the shared contract

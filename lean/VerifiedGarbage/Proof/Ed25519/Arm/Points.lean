@@ -4,7 +4,8 @@ public import VerifiedGarbage.Impl.Ed25519.Arm.FieldMemory
 public import VerifiedGarbage.Impl.Ed25519.Arm.Point16
 public import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
 import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Exact extended-coordinate operations, by calls of the functions of point
 arithmetic, and the slots they preserve. -/

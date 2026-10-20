@@ -2,11 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.TripleDes.Arm.Word
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

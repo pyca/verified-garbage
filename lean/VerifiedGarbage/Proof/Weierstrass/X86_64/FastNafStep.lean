@@ -2,10 +2,10 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafState
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafOdd
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafShift
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafChoose
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! Each recoder step advances one bit for an even residual, or one window for an odd residual. -/
 

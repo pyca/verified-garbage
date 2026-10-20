@@ -1,48 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Calls
-public import Mathlib.FieldTheory.Finite.Basic
-public import Mathlib.Tactic.NormNum.Prime
 public import VerifiedGarbage.Impl.Ed25519.X86.SignCached
-public import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Hash
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Hash
 import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Impl.Sha256.X86.Stream
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.X86.CombCT
-import VerifiedGarbage.Proof.Ed25519.X86.CombDigit
-import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
-import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
-import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
-import VerifiedGarbage.Proof.Ed25519.X86.PointMul
-import VerifiedGarbage.Proof.Ed25519.X86.Power
-import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarStep
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Ed25519.X86.CombLit
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Pratt
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Sha512.Spec
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
-import VerifiedGarbage.Proof.X25519.X86.Fold
-import VerifiedGarbage.Proof.X25519.X86.Freeze
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 @[expose] public section
 

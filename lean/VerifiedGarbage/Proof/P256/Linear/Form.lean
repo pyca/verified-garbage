@@ -3,12 +3,11 @@ module
 public import VerifiedGarbage.Proof.P256.Linear.Complement
 public import VerifiedGarbage.Proof.P256.Linear.Scale
 public import VerifiedGarbage.Proof.P256.Linear.Arithmetic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.NatPairs
-import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Mont.AArch64.Chain
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Impl.NatPairs
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Spec.Weierstrass.Point
 
 @[expose] public section
 

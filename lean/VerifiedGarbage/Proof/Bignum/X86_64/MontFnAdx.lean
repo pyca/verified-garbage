@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRaw
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 
 /-!
 # `vg_rsa_mont_mul_adx`: correctness

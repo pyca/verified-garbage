@@ -1,63 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Main
-meta import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Main
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Base
 public import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Hash
-meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Impl.Ed448.Formulas
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sha3.Arith
-import VerifiedGarbage.Spec.X25519
-meta import VerifiedGarbage.Impl.Ed448.Formulas
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
+meta import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Main
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Base
 meta import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Hash
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.OffsetBelow
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Sha3.Arith
-meta import VerifiedGarbage.Spec.X25519
 
 /-!
 # Ed448 public-key derivation on AArch64: `Verified`

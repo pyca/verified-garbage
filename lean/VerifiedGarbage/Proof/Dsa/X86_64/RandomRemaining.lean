@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawResult
 public import VerifiedGarbage.Proof.Dsa.RandomResult
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
 
 /-! Relating a tape offset to the recursive sampling specification. -/

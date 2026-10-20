@@ -3,12 +3,10 @@ module
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Framework.RegSet
 public import VerifiedGarbage.Proof.Framework.SlotsK
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.TCB.X86.Target
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Taint tracking for x86 (32-bit)

@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Dsa.X86.ShapeCombine
 
 import VerifiedGarbage.Proof.Dsa.X86.DigestClamp
 import VerifiedGarbage.Proof.Dsa.X86.DigestWidth
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # The DSA digest-prefix length from validated subgroup masks -/
 

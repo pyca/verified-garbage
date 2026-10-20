@@ -1,14 +1,9 @@
 module
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Impl.Rc2.AArch64.Stream
-public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 
 import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Copy
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rc2.Stream
 import VerifiedGarbage.Proof.MdStream.AArch64.Common
 import VerifiedGarbage.Proof.Framework.Offset

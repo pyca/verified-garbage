@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
 
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Low-word parity checks before Montgomery initialization -/
 

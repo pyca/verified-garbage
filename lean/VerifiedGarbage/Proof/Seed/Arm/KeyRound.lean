@@ -3,12 +3,12 @@ module
 import VerifiedGarbage.Proof.Seed.KeyRot
 public import VerifiedGarbage.Impl.Seed.Arm.ExpandKey
 public import VerifiedGarbage.Proof.Seed.KeySchedule
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Seed.Arm.Lanes
 import VerifiedGarbage.Proof.Seed.Arm.Steps
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # A round of the key schedule on ARMv7

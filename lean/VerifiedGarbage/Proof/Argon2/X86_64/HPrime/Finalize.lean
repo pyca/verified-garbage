@@ -1,12 +1,12 @@
 module
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
 
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Update
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # H′: finishing a BLAKE2b hash -/
 

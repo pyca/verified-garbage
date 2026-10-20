@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Contract
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
-public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.AddSub
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Ntt16.Readonly

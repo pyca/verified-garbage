@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Points
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
 
 /-!

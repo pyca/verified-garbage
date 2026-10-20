@@ -5,8 +5,10 @@ public import VerifiedGarbage.Impl.Modes.FbMode
 public import VerifiedGarbage.Spec.Ofb
 public import VerifiedGarbage.Spec.Cfb
 public import VerifiedGarbage.Proof.Modes.Ctr
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # OFB's and CFB's results, for any block cipher and target

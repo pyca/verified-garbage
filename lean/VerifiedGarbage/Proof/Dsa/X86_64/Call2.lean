@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Arguments2
 public import VerifiedGarbage.Proof.Dsa.X86_64.Call
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.EnterLeave
+import Mathlib.Tactic.Finiteness.Attr
 
 /-! # Complete DSA arithmetic calls, from operand binding through return -/
 

@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeMasks
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 import Mathlib.Order.RelClasses
 import VerifiedGarbage.Proof.Dsa.Layout
+import Mathlib.Tactic.Push
+import Mathlib.Data.Nat.Basic
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Memory changed by the public DSA domain-shape check -/
 

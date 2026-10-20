@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeySample
 
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! # Key generation's public inputs, and what its leak fixes -/
 

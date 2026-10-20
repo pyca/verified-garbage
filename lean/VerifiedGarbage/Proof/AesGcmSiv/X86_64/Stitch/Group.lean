@@ -2,14 +2,14 @@ module
 
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Gh
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Group
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Stitch
-public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Spec
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Aes
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
-import VerifiedGarbage.Spec.Gcm.Precomputed
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # AES-GCM-SIV's interleaved loop: hashing a group between the rounds

@@ -14,6 +14,8 @@ meta import VerifiedGarbage.Proof.AesOcb.X86.PadTo
 meta import VerifiedGarbage.Proof.AesOcb.X86.LNtz
 meta import VerifiedGarbage.Proof.AesOcb.X86.Run
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-OCB on x86: `HASH` in constant time

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.CombDigitW
 public import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Weierstrass.Window
 
 /-! Signed five-bit windows for public P-256 verification scalars. -/
 

@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Camellia.Arm.Fl
 public import VerifiedGarbage.Proof.Camellia.Words
 public import VerifiedGarbage.Proof.Camellia.Arm.Round
 import VerifiedGarbage.Proof.Camellia.Common
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset

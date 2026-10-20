@@ -3,12 +3,13 @@ module
 import VerifiedGarbage.Proof.Blowfish.AArch64.Ecb
 public import VerifiedGarbage.Proof.Blowfish.KeyTable
 public import VerifiedGarbage.Proof.Blowfish.AArch64.Round
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Blowfish.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # Key expansion: the 521 encryptions

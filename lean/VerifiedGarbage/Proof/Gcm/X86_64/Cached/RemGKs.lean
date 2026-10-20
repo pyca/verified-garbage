@@ -3,8 +3,6 @@ public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Ctr
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGLanes
-public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.HighKeep
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
 
@@ -13,7 +11,10 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Ks
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGXor
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemMask
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Aes
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
 
 /-!
 # The blocks after the last group, as a masked group: after the rounds

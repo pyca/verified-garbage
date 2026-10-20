@@ -1,33 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA
-public meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA
-public meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.StLit
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Sound
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Run
 meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Sound
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegSetOrder
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Words
+meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA
+meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Run
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.StLit
-import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Step
-import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Framework.X86_64.Words
-meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Step
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.StLit
 
 /-!
 # ML-KEM on x86-64: the NTT on registers, pass A of `u16`s

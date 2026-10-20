@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Base
 public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Bytes
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Absorb
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Offset

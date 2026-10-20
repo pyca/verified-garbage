@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
 public import VerifiedGarbage.Proof.Framework.Contract
 
 import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # `vg_rsa_public_precompute` on x86-64: verified against the shared contract

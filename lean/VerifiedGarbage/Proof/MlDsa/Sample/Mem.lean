@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.MlDsa.Poly
-public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ML-DSA: polynomials sampled into memory, for every target

@@ -1,10 +1,8 @@
 module
 public import VerifiedGarbage.Impl.Modes.AArch64.Ctr
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Mem
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Modes.Addr
 import VerifiedGarbage.Proof.Modes.AArch64.Steps

@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.TripleDes.X86_64.KeySteps
 import VerifiedGarbage.Proof.TripleDes.KeySchedule
 public import VerifiedGarbage.Proof.Rc2.X86_64.Lookup
 public import VerifiedGarbage.Impl.TripleDes.X86_64.ExpandKey
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 

@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.Codec
-public import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.X25519.AArch64.Ops
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.SetNotationForOrder
 
 /-!
 # X25519 on AArch64: the full reduction and the result

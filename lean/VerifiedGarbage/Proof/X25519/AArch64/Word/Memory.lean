@@ -2,9 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Slots
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Power
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X25519.AArch64.Ops
-import VerifiedGarbage.Proof.X25519.Ladder
 
 /-! Frames for the ladder, including its saved swap bit. -/
 

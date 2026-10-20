@@ -3,11 +3,10 @@ module
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Constant
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Theta
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Sha3.AArch64.Permute
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
 
 @[expose] public section
 

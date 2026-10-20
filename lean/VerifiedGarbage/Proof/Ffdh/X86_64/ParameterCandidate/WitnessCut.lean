@@ -7,10 +7,11 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CutByte
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Copy
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Bignum.X86_64.Words
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! # FFDH parameter candidates on x86-64: the complete masked witness draw -/
 

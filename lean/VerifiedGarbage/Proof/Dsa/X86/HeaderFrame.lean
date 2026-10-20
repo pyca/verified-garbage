@@ -1,14 +1,12 @@
 module
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.Set
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Dsa.X86.Pointer
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Spec.Weierstrass
 
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Mont.Words32
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Disjoint fields in the saved argument header -/
 

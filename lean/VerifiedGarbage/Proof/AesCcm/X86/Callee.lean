@@ -8,6 +8,8 @@ meta import VerifiedGarbage.Proof.AesCcm.X86.Run
 meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Call
 meta import VerifiedGarbage.Spec.Ccm
 meta import VerifiedGarbage.Proof.AesCcm.X86.Env
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-CCM on x86: the functions called

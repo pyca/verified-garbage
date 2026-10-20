@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.X86.Field
 
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.Offset

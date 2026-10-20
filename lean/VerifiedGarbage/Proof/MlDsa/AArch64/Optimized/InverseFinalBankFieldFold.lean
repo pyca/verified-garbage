@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalBankFieldStage
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseScale
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

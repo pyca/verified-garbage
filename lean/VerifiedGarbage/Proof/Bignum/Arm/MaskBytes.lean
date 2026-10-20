@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 import VerifiedGarbage.Proof.Bignum.Arm.MaskByteStep
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Exact byte masking with public loop bounds -/
 

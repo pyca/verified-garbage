@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.SelectWord
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Impl.Bignum.Arm.Select
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # A selection step writes exactly the chosen input word -/
 

@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Gh
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
-public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Interleaved counter mode and GHASH: hashing a group between the rounds

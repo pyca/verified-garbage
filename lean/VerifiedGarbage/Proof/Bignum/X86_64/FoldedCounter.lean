@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.X86_64.Folded
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 

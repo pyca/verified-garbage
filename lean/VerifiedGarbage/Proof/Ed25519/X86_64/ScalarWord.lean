@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarStep
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Ed25519.Scalar
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed25519 scalar reduction: one word on x86-64

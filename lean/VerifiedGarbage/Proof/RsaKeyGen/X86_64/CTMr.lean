@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
-public import Mathlib.Data.Nat.GCD.Basic
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Layout
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-public import VerifiedGarbage.Proof.RsaKeyGen.Table
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import Mathlib.Tactic.Push
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-!
 # A candidate on x86-64: constant time of Miller–Rabin, its header

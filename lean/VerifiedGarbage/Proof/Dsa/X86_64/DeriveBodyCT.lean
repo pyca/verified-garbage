@@ -12,6 +12,8 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 meta import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCopy
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCheckCT
+import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Constant time of derivation's computation: x's range, g^x, y's copy and the key checks
 

@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.MlKem.Arm.KeyGen
 
 import VerifiedGarbage.Proof.MlKem.Arm.KeyGenCT
 import VerifiedGarbage.Proof.MlKem1024.Arm.Calls
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM-1024 on 32-bit ARM: `vg_mlkem1024_keygen`, `Verified`

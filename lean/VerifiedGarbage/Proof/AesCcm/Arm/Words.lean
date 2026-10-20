@@ -4,6 +4,9 @@ public import VerifiedGarbage.Spec.Ccm
 public import VerifiedGarbage.TCB.Arm.Isa
 
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # AES-CCM on ARMv7: words as bytes

@@ -7,9 +7,10 @@ public import VerifiedGarbage.Proof.Framework.Arm.Frame
 public import VerifiedGarbage.Impl.MlKem.Arm.Sample
 public import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.Sha3.Arm.Permute
-import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.MlKem.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM on 32-bit ARM: calling the SHA-3 sponge

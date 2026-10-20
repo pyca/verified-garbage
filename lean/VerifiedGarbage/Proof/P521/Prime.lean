@@ -2,10 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.Pratt
 public import VerifiedGarbage.Spec.P521
-public import Mathlib.Data.Finset.Card
-public import Mathlib.Data.Nat.Find
 public import Mathlib.Data.Nat.Prime.Defs
-public import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # The P-521 field prime `p = 2^521 - 1` and group order `n` are prime

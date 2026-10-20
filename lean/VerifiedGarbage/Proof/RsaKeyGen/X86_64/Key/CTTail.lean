@@ -10,6 +10,12 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTD
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Halve
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Front
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Row
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 
 /-!
 # An RSA key from its primes on x86-64: constant time, the tail

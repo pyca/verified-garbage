@@ -1,47 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86.HPrime.Calls
-meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.Calls
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
-meta import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Impl.Sha256.X86.Stream
-import VerifiedGarbage.Proof.Argon2.HPrime
-import VerifiedGarbage.Proof.Blake2.Spec
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
+import VerifiedGarbage.Proof.Blake2.X86.Blake2b
+import VerifiedGarbage.Proof.Blake2.X86.LitB
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import VerifiedGarbage.Proof.MdStream.X86.Common
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Sha512.Spec
-import VerifiedGarbage.Proof.Sha512.Word64
-meta import VerifiedGarbage.Impl.Sha256.X86.Stream
-meta import VerifiedGarbage.Proof.Argon2.HPrime
-meta import VerifiedGarbage.Proof.Blake2.Spec
-meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
-meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
+meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.Calls
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Blake2.X86.Blake2b
+meta import VerifiedGarbage.Proof.Blake2.X86.LitB
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
-meta import VerifiedGarbage.Proof.MdStream.X86.Common
-meta import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Sha512.Spec
-meta import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
+meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
 
 /-!
 # Argon2 H′ on x86 (32-bit): the calls, in two runs

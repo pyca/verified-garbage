@@ -2,16 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.HmacFinInner
-public import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Wide
 import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Pbkdf2.AArch64.IterateCT
-import VerifiedGarbage.Proof.Pbkdf2.Hmac
 
 /-!
 # HMAC over any Merkle–Damgård hash function on AArch64: `finalize`

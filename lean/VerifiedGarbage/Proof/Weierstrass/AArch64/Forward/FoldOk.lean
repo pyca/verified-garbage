@@ -3,8 +3,8 @@ public import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Concrete
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ForwardOk
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! `foldMoves` keeps every word a block leaves in memory: dropping a copy
 `orr d a a` whose register `d` the rest of the block does not read before

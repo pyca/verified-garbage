@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.AesGcm.X86.OneEntry
 public import VerifiedGarbage.Proof.AesGcm.X86.J0
 meta import VerifiedGarbage.Proof.AesGcm.X86.OneEntry
 meta import VerifiedGarbage.Proof.AesGcm.X86.J0
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
 
 /-!
 # AES-GCM on x86: `J₀` and the additional data of `seal` and `open`

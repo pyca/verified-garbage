@@ -3,13 +3,12 @@ module
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCall
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseD
 import VerifiedGarbage.Proof.MlDsa.Sign.Mem
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Blocks
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on AArch64: the commitment of an iteration

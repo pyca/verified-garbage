@@ -3,8 +3,9 @@ module
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Retained
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Scrypt.Memory
-import Mathlib.Tactic.DefEqTransformations
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Public loop metadata for the scalar core's retained-state BlockMix loop. -/
 

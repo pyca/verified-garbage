@@ -1,17 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Spill
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.Set
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Dsa.X86.Pow
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Mont.X86.Words
-public import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.Offset
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # IA-32 shared DSA exponentiation: register spills -/
 

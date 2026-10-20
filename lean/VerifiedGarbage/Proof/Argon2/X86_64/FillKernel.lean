@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelPrepare
 import VerifiedGarbage.Proof.Argon2.X86_64.FillCompress
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Complete active-cell update from a random word and the matrix allocation. -/
 

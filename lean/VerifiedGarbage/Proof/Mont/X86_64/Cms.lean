@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.X25519.X86_64.Adx.Steps
 import VerifiedGarbage.Proof.Mont.X86_64.Round
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.X25519.X86_64.Mem
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # P-384's `C [a] - D [b] mod p` on x86-64 with BMI2 and ADX

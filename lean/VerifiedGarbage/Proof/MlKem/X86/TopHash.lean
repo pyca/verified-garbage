@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.MlKem.X86.Top
 
 import VerifiedGarbage.Proof.MlKem.X86.TopSeq
 import VerifiedGarbage.Proof.MlKem.KPke
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86.SampleSetup
 import VerifiedGarbage.Proof.MlKem.X86.TopCall
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM on x86 (32-bit): SHA-3 and SHAKE in the top-level functions

@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_public` on x86-64: an invalid modulus

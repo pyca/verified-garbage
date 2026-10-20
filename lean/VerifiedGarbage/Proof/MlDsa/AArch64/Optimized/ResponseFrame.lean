@@ -1,9 +1,8 @@
 module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.Taint
+
 
 @[expose] public section
 

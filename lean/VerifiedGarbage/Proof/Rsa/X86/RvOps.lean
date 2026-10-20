@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Rsa.X86.KeyCopy
 import VerifiedGarbage.Proof.Rsa.X86.KeyHalf
 import VerifiedGarbage.Proof.Rsa.X86.KeySelect
 import VerifiedGarbage.Proof.Rsa.X86.KeySub
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Array arithmetic on the two recovery workspace views -/
 

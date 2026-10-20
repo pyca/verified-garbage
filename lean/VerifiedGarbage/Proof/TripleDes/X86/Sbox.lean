@@ -1,23 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86.RoundLit
-meta import VerifiedGarbage.Proof.TripleDes.X86.RoundLit
 public import VerifiedGarbage.Proof.TripleDes.X86.Linear
-meta import VerifiedGarbage.Proof.TripleDes.X86.Linear
 public import VerifiedGarbage.Impl.TripleDes.X86.Permutation
-meta import VerifiedGarbage.Impl.TripleDes.X86.Permutation
 public import VerifiedGarbage.Proof.TripleDes.SboxTables
-meta import VerifiedGarbage.Proof.TripleDes.SboxTables
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Proof.TripleDes.X86.RoundLit
+meta import VerifiedGarbage.Proof.TripleDes.X86.Linear
+meta import VerifiedGarbage.Impl.TripleDes.X86.Permutation
+meta import VerifiedGarbage.Proof.TripleDes.SboxTables
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-! ## `RoundCheck` -/
 

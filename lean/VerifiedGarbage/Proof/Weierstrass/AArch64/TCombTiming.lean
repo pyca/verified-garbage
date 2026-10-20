@@ -1,14 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
-import VerifiedGarbage.Proof.Weierstrass.Law3
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! The direct lookup address depends only on the public scalar and table. -/
 

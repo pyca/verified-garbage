@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-! # The public actual-width scan's first-nonzero selection -/
 

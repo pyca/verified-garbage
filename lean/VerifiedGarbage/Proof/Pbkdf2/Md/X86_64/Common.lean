@@ -3,13 +3,10 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
 import VerifiedGarbage.Proof.MdStream.X86_64.Common
 import VerifiedGarbage.Proof.Hmac.Generic.Common
-public import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.OmegaLit
 public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha256.X86_64.Compress
-import VerifiedGarbage.Proof.Hmac.Common
+import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!

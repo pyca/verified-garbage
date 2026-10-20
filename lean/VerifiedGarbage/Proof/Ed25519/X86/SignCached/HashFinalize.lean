@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Hash
 import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashUpdate
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Count
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-! Merged from `Proof.Ed25519.X86.SignCached.FinalizeArgs`. -/
 

@@ -4,8 +4,9 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.Bignum.WorkFrame
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerPre
-public import VerifiedGarbage.Proof.RsaKeyGen.Slots
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Preserve policy inputs around the shared round's private stack -/
 

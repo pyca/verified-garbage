@@ -2,15 +2,14 @@ module
 
 public import VerifiedGarbage.Impl.P256.EcdhSelect
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Lit
-import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
-import VerifiedGarbage.Proof.Mont.AArch64.Row
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Weierstrass.Words
 
 @[expose] public section

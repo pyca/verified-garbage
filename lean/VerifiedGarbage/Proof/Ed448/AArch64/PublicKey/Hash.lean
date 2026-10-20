@@ -7,9 +7,9 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
 import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Zero
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 public-key derivation on AArch64: `SHAKE256(seed, 114)`

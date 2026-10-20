@@ -1,7 +1,8 @@
 module
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomState
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Public draw parameters, with random bytes existential in the state predicate. -/
 @[expose] public section

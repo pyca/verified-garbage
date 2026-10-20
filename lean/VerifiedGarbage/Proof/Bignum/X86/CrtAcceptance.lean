@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Impl.Bignum.X86.CrtCore
 public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Save and merge private-key acceptance masks without branching -/
 

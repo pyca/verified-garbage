@@ -1,7 +1,5 @@
 module
 
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.MlKem.AArch64.Vec

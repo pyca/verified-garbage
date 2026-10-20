@@ -4,18 +4,13 @@ public import VerifiedGarbage.Proof.Modes.Words
 import VerifiedGarbage.Proof.CmacAes.Arm.Words
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Impl.Modes.Arm.Seq
-public import Batteries.Logic
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.Framework.Covers
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Semantics
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Copying and XORing blocks a word at a time, on ARMv7

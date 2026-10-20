@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.NttRegs
-public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # ML-KEM on x86-64: the NTT on registers, word by word

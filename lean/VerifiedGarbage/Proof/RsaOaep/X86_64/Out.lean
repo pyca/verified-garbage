@@ -1,10 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

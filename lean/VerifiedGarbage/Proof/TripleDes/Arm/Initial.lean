@@ -5,7 +5,8 @@ public import VerifiedGarbage.Proof.TripleDes.Arm.Lit
 
 import VerifiedGarbage.Proof.TripleDes.Arm.Permutation
 import VerifiedGarbage.Proof.TripleDes.Core
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

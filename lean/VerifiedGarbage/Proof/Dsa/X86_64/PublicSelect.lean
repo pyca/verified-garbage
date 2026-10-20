@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 public import VerifiedGarbage.Impl.Dsa.X86_64.PublicPower
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 
 /-! # Direct selection of a public exponentiation-table digit -/

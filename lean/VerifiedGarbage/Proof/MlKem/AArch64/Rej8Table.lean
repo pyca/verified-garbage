@@ -1,14 +1,11 @@
 module
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Impl.MlKem.AArch64.Rej8
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Value
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Parse
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Rejection shuffle-table contents and selected halfwords -/
 

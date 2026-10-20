@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsPrepare
 public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCalls
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Argon2.X86_64.AddressGeneration`. -/
 

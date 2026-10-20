@@ -30,6 +30,18 @@ meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import Mathlib.FieldTheory.Finite.Basic
+import Mathlib.Tactic.NormNum.Prime
+import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.X448.X86_64.Lit
+meta import Mathlib.FieldTheory.Finite.Basic
+meta import Mathlib.Tactic.NormNum.Prime
+meta import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.X448.X86_64.Lit
 
 /-! Verification lookups reveal only public scalar digits. -/
 

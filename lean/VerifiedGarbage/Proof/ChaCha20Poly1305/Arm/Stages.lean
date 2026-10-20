@@ -5,12 +5,9 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 public import VerifiedGarbage.Proof.ChaCha20.Arm.Xor
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.Arm
-public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Poly1305.Arm.Init
 import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.Poly1305.Arm.Bytes
 import Mathlib.Tactic.SplitIfs
@@ -18,11 +15,13 @@ import VerifiedGarbage.Proof.Poly1305.Stream
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Range
+import Batteries.Logic
+import VerifiedGarbage.Proof.Poly1305.Arm.Lit
+import VerifiedGarbage.Proof.ChaCha20.Arm.Lit
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sha256.Stream
 
 @[expose] public section
 

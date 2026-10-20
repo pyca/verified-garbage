@@ -4,7 +4,7 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.EcKey.P224
 public import VerifiedGarbage.Spec.Ecdh.Generic
-import VerifiedGarbage.Spec.Ecdh.P224
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ECDH over P-224 on AArch64: the contract the proof is written against

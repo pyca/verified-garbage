@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.Push
 public import VerifiedGarbage.Spec.Argon2
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Argon2 H′ on ARMv7: the contract of the proof

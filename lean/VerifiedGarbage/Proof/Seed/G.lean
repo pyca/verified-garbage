@@ -1,6 +1,6 @@
 module
-public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Seed.SboxLit
+import VerifiedGarbage.Proof.Framework.PowLit
 
 
 /-!

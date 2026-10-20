@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeBytes
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Start the encoding and derive the padding-string count -/
 

@@ -8,6 +8,8 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Finish
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraPairTiming
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.TCB.Axioms
+public import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! # Public completion flags and fixed-address restoration -/
 @[expose] public section

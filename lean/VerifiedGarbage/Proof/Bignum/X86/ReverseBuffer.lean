@@ -4,6 +4,8 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 
 import VerifiedGarbage.Proof.Bignum.X86.StoreBE
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Serialize a nonempty native integer buffer as exact big-endian octets -/
 

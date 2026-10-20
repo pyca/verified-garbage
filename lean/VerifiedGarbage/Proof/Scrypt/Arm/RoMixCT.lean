@@ -1,50 +1,44 @@
 module
 
 public import VerifiedGarbage.Proof.Scrypt.RoMix
-meta import VerifiedGarbage.Proof.Scrypt.RoMix
 public import VerifiedGarbage.Impl.Scrypt.Arm.RoMix
-meta import VerifiedGarbage.Impl.Scrypt.Arm.RoMix
-public import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.Set
-meta import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Scrypt.Arm.BlockMixVerified
-meta import VerifiedGarbage.Proof.Scrypt.Arm.BlockMixVerified
-public import Mathlib.Tactic.DefEqTransformations
-meta import Mathlib.Tactic.DefEqTransformations
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Scrypt.Arm.Lit
-meta import VerifiedGarbage.Proof.Scrypt.Arm.Lit
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Nat.Power2.Basic
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.Arm.Call
-import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.RelCT
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Scrypt.Memory
-meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
-meta import VerifiedGarbage.Proof.Scrypt.Memory
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Contract
+import Mathlib.Tactic.DefEqTransformations
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OmegaLit
-import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Scrypt.Arm.Lit
+meta import VerifiedGarbage.Proof.Scrypt.RoMix
+meta import VerifiedGarbage.Impl.Scrypt.Arm.RoMix
+meta import VerifiedGarbage.Proof.Scrypt.Arm.BlockMixVerified
+meta import Init.Data.Nat.Power2.Basic
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.Arm.Call
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Scrypt.Memory
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import Mathlib.Tactic.DefEqTransformations
+meta import Mathlib.Tactic.Set
+meta import Mathlib.Tactic.Conv
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
-meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Scrypt.Arm.Lit
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!

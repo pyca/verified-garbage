@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintFinish
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

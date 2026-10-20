@@ -1,10 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtSpill
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 @[expose] public section
 

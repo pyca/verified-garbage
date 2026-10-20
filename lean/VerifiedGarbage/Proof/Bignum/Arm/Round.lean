@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.QuotientStage
 import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
 import VerifiedGarbage.Proof.Bignum.Arm.MontMath
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # A complete ARMv7 Montgomery round, including its memory and loop state -/
 

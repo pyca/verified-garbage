@@ -1,11 +1,8 @@
 module
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Loops
 
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MdStream.X86_64.Common
 import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
-import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! Fixed word-sized XORs have the same byte-level effect as MGF1's byte loop. -/
 

@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Probe
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Scalar
-public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 
 /-! # The public rejection-count branch selects a proved vector or scalar step -/

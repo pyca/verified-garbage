@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Mont.X86_64.WideOps
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.X25519.X86_64.Mem
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # The window method on x86-64: the recoded scalar

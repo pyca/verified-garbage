@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Steps
 public import VerifiedGarbage.Spec.Poly1305
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Poly1305.Limbs64
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

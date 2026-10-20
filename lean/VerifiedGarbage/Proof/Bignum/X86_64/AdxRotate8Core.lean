@@ -5,12 +5,8 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Word
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Math
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.Bignum.Words
 
 /-! Eight rotating columns compute an exact multiply-add and one-word shift. -/
 

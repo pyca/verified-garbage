@@ -3,9 +3,8 @@ module
 import VerifiedGarbage.Proof.Sha3.X86_64.Permute
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 public import VerifiedGarbage.Impl.Sha3.X86_64.X4
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sha3.X86_64.Round
-import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Keccak-f[1600] four times at once on x86-64: one instruction at a time

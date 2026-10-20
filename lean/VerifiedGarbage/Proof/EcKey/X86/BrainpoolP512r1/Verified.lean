@@ -22,6 +22,8 @@ meta import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP512r1.Lit
 meta import VerifiedGarbage.Impl.EcKey.BrainpoolP512r1.X86
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # brainpoolP512r1 public keys on x86 (32-bit): `Verified`

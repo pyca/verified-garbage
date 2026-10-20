@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Cmac
-public import Mathlib.Data.List.Induction
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Gcm
 import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # CMAC: lemmas about the specification

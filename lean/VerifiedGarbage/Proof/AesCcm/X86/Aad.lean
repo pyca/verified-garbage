@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.AesCcm.X86.Absorb
 public import VerifiedGarbage.Proof.AesCcm.Mac
 import VerifiedGarbage.Proof.AesCcm.Words32
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.AesCcm.X86.Blocks
 import VerifiedGarbage.Proof.AesCcm.Words
 import VerifiedGarbage.Proof.AesCcm.X86.Run
@@ -14,7 +13,8 @@ import VerifiedGarbage.Proof.AesGcm.X86.Flush
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CCM on x86: the associated data (`header`, `aadHead y`, `aad y`)

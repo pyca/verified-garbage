@@ -1,18 +1,14 @@
 module
-public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
 public import VerifiedGarbage.Proof.Framework.X86_64.Linear
-public import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 import VerifiedGarbage.Proof.CmacTripleDes.KeySchedule
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.KeysLit
-import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Round
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Impl.CmacTripleDes.X86_64.Round
+import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 /-!
 # DES's key schedule on x86-64

@@ -1,13 +1,15 @@
 module
 public import VerifiedGarbage.Proof.Sm4.Arm.Core
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
 import VerifiedGarbage.Proof.Sm4.Layout
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
 
 /-!
 # The table of bitsliced round keys on ARMv7

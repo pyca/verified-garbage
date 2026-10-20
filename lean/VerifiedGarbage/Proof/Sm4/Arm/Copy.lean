@@ -1,17 +1,18 @@
 module
 public import VerifiedGarbage.Impl.Sm4.Arm.Ecb
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
-public import VerifiedGarbage.Proof.Sm4.SboxTable
 
 import VerifiedGarbage.Proof.Sm4.Arm.Keys
 import VerifiedGarbage.Proof.Sm4.Common
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
+import VerifiedGarbage.Proof.Framework.Arm.Taint
 
 /-!
 # Copying blocks on ARMv7

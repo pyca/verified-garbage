@@ -3,8 +3,7 @@ module
 import VerifiedGarbage.Proof.X448.X86.Counters
 public import VerifiedGarbage.Proof.X448.Invert
 public import VerifiedGarbage.Proof.X448.X86.Ops
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # X448 on x86 (32-bit): runs of squarings

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointWindow
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.Joint
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 

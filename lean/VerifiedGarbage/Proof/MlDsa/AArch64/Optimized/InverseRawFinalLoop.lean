@@ -4,10 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRawFinalSlice
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

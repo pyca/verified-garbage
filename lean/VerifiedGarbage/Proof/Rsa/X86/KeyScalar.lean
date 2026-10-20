@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 
 import VerifiedGarbage.Proof.Rsa.KeyBits32
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Scalar header operations for the binary RSA inverse -/
 

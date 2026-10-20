@@ -3,8 +3,9 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
 public import VerifiedGarbage.Proof.Bignum.Words
 
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Spill
 import VerifiedGarbage.Proof.Mont.Words
-import VerifiedGarbage.Proof.Bignum.Layout
+import VerifiedGarbage.TCB.Arm.Isa
 
 /-! # The secret acceptance slot does not overlap saved AAPCS registers -/
 

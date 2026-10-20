@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Frame
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Update
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # H′: arguments for the caller's input -/
 

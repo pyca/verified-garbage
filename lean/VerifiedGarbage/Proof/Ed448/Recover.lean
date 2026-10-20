@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Proof.X448.Field
 import VerifiedGarbage.Proof.Ed448.DecodeBytes
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Ed448: decoding a point, as code computes it

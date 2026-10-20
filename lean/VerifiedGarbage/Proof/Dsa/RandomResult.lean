@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Spec.Dsa.Random
-
 import VerifiedGarbage.Proof.Framework.Omega
+
 
 /-! Observable results of bounded rejection sampling. -/
 @[expose] public section

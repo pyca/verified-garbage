@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # ML-DSA: `RejBoundedPoly` a byte at a time

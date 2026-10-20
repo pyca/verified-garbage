@@ -8,10 +8,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OmegaLit
 public import VerifiedGarbage.Impl.Blake2.Arm.Stream
 public import VerifiedGarbage.Proof.Framework.Arm.Call
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
 
 @[expose] public section
 

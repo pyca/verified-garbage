@@ -1,12 +1,10 @@
 module
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.TripleDes
 public import VerifiedGarbage.TCB.X86_64.Gpr
 
 import VerifiedGarbage.Proof.TripleDes.X86_64.Bytes
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.TCB.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Blocks as little-endian words

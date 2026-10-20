@@ -1,18 +1,18 @@
 module
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
-public import VerifiedGarbage.Proof.RsaKeyGen.Slots
-public import VerifiedGarbage.Proof.RsaKeyGen.Table
-public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
-public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
-public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 public import VerifiedGarbage.Spec.Mgf1
 
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! # Hash implementations shared by the complete parameter-generation phases -/
 

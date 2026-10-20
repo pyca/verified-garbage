@@ -6,12 +6,10 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Input
-meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Proof.Rc4.AArch64.Rows
 import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Stores
 import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Prepare
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
-import VerifiedGarbage.Proof.Rc4.AArch64.Group
 
 /-! # Eight sixteen-byte CBD2 iterations -/
 

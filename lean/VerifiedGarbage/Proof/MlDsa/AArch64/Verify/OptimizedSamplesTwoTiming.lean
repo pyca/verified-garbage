@@ -5,10 +5,10 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp4
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesFourTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesTwo
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

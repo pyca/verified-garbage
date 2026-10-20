@@ -3,11 +3,11 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCall
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivImpl
 
 import VerifiedGarbage.Proof.Rsa.AArch64.PrivCrt
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_private_checked` on AArch64: the calls of the public operation

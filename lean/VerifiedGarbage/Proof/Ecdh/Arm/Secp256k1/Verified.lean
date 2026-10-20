@@ -28,6 +28,8 @@ meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ECDH over secp256k1 on 32-bit ARM: `Verified`

@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Env
 public import VerifiedGarbage.Proof.Framework.AArch64.StoreFrame
 public import VerifiedGarbage.Spec.X448.Field56
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Ed448 on AArch64: the specification's elements and the proofs'

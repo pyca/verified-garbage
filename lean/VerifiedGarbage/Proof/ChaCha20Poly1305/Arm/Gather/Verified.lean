@@ -2,12 +2,14 @@ module
 
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.CT
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Verified
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.Arm.SealGather
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Callee
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Contract
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Fn
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Poly1305.Arm.Lit
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, ARMv7: `Verified`

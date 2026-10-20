@@ -1,10 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Batch
-public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # Polynomial-prefix effects of the vector rejection stores -/
 

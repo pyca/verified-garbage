@@ -2,9 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Impl.Dsa.Layout
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.TCB.X86.State
-import VerifiedGarbage.TCB.X86.Isa
 
 /-! # Workspace frames that account for helper-call stack writes
 

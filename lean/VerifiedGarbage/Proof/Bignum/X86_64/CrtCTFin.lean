@@ -12,6 +12,12 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Order.Defs.PartialOrder
+meta import Mathlib.Order.Defs.PartialOrder
+import Mathlib.Data.Int.ModEq
+import Mathlib.Tactic.Set
+meta import Mathlib.Data.Int.ModEq
+meta import Mathlib.Tactic.Set
 
 /-!
 # RSA with the CRT on x86-64: the result in constant time

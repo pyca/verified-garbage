@@ -2,8 +2,8 @@ module
 public import VerifiedGarbage.Proof.X448.Arm.RowMem
 
 import VerifiedGarbage.Proof.X448.Arm.RowF
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.Arm.Row
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: the multiplication loop

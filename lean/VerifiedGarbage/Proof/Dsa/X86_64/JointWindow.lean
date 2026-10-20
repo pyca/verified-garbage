@@ -3,9 +3,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.Joint
 import VerifiedGarbage.Proof.Dsa.Joint
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.Arithmetic
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-! # Correctness of a joint two-bit exponentiation window -/
 

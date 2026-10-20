@@ -2,10 +2,6 @@ module
 public import VerifiedGarbage.Proof.Divstep.Alg32Def
 
 import VerifiedGarbage.Proof.Divstep.Mred32
-import Mathlib.Algebra.Order.Ring.Abs
-import Mathlib.Data.BitVec
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Divstep.Tc32Words
 
 /-! # Signed Montgomery reduction on multiword values -/

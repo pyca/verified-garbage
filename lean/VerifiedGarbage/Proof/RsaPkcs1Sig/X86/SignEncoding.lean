@@ -9,7 +9,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRegions
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Mont.X86.Loop
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Encode the digest into the private frame and retain its exact bytes -/
 

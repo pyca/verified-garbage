@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Env
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: the blocks between the calls

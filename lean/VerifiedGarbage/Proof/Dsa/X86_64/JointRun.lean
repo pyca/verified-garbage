@@ -5,7 +5,6 @@ public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointBuildContext
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointWindow
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Dsa.X86_64.JointByte
 import VerifiedGarbage.Proof.Bignum.Math

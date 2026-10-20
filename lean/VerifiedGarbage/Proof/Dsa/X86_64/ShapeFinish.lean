@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeFrame
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.Operands
 
 /-! # Digest-prefix selection and the public domain-check result -/

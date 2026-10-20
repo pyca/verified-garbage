@@ -3,9 +3,9 @@ public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Parity
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

@@ -5,6 +5,10 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import Mathlib.Tactic.Set
+import Mathlib.Data.Int.GCD
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
 
 /-!
 # RSASSA-PSS verification on x86-64: the precondition by name, the frame

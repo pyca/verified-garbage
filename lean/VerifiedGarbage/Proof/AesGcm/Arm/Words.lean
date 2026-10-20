@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.TCB.Arm.Isa
-public import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Spec.Gcm
 import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # AES-GCM on ARMv7: words and the lengths block

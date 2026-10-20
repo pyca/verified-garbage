@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Stack
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! # Leave the two fixed frames -/
 

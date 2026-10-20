@@ -2,6 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpBase
 public import VerifiedGarbage.Impl.Rsa.AArch64.Recover
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Push
+import Mathlib.Data.Nat.Basic
+public import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!

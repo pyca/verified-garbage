@@ -1,14 +1,14 @@
 module
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Impl.Bignum.Arm.Sub
-import VerifiedGarbage.Impl.Bignum.Arm.Shift
-import VerifiedGarbage.Impl.Bignum.Arm.Zero
+import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.TCB.Arm.Isa
 
 /-! # What holds throughout an ARMv7 Montgomery square
 

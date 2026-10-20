@@ -1,6 +1,6 @@
 module
-public import VerifiedGarbage.Proof.Framework.TaintSum
 public import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Framework.TaintSum
 
 
 /-!

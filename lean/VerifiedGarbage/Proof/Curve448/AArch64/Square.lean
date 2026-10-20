@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Curve448.AArch64.Product
 import VerifiedGarbage.Proof.Curve448.AArch64.SymmetricColumns
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Curve448.AArch64
 public import VerifiedGarbage.Proof.Curve448.AArch64.Memory
 public import VerifiedGarbage.Proof.X448.AArch64.Mul
@@ -11,7 +10,6 @@ import VerifiedGarbage.Proof.Curve448.AArch64.Bounds
 import VerifiedGarbage.Proof.Curve448.AArch64.Normalize
 import VerifiedGarbage.Proof.X448.Wide.LoadCached
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.X448.Wide.Mul
 
 @[expose] public section
 

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PointTable
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Field
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

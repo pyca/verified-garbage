@@ -6,11 +6,9 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseWord
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `CanonicalizeWord.lean` -/
 

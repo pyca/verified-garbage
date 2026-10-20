@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+import VerifiedGarbage.Impl.Sha512.X86_64.Avx2Rolled
 
 /-! # A complete native p-search body, including controller entry and return -/
 

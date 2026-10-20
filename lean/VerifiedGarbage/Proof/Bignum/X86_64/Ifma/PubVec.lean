@@ -4,12 +4,10 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Spec
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Vec
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CoreU
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Core
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
 /-!

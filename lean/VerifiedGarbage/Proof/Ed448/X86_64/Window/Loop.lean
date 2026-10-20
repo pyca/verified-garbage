@@ -4,8 +4,10 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Memory
 
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.Round
+import Mathlib.Tactic.Abel
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseLoop
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseStep
 
 /-! The joint window loop represents `[S]B + [k](-A)` for valid decoded points. -/
 

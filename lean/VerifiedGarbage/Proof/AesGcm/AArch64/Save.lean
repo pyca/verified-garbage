@@ -2,17 +2,17 @@ module
 
 import VerifiedGarbage.Proof.AesGcm.AArch64.Env
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.AesGcm.AArch64
-public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # AES-GCM on AArch64: saving and restoring our caller's registers

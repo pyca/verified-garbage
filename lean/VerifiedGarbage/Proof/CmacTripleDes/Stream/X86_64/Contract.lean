@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Spec.Cmac.TripleDesContract
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.TCB.X86_64.Isa
-import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 

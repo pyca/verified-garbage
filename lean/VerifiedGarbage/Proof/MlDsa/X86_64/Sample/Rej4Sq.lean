@@ -1,39 +1,8 @@
 module
-public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sha3.X86_64.Round
-public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt4
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.MlKem.Compress
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-public import VerifiedGarbage.Proof.MlKem.X86_64.S4SqT
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegSetOrder
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx
-public import VerifiedGarbage.Proof.Framework.X86_64.Masked
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.X86_64.Sse
-public import VerifiedGarbage.Proof.MlKem.Compress
-public import VerifiedGarbage.Proof.MlKem.Encode
-public import VerifiedGarbage.Proof.MlKem.Mem
-public import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-public import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Base
+import VerifiedGarbage.Proof.MlKem.X86_64.S4SqT
 
 
 /-!

@@ -1,14 +1,14 @@
 module
-public import Mathlib.Tactic.Conv
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.WordSemantic
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Word
+public import VerifiedGarbage.Impl.MlKem.AArch64.Top
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-! # Copy a bounded sequence of state words without touching the source -/
 @[expose] public section

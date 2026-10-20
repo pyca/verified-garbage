@@ -3,14 +3,10 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Lay
 import VerifiedGarbage.Proof.MlKem.Arm.Keccak
 import VerifiedGarbage.Proof.MlKem.Arm.Common
-public import VerifiedGarbage.Proof.Framework.Contract
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.Set
-public import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlDsa.Sign.Mem
-import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
 
 /-!
 # ML-DSA signing on ARMv7: calls of verified code

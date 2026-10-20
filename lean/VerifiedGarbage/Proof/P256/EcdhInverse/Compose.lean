@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Divstep.NegInput
 public import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Divstep.Packed
-import Mathlib.Data.BitVec
+import Mathlib.Data.Finset.Attr
 
 @[expose] public section
 

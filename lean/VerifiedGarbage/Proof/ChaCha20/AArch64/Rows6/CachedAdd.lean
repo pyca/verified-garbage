@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Add
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

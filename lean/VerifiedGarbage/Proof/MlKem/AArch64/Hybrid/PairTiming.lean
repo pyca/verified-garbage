@@ -30,6 +30,8 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import Std.Tactic.BVDecide.Normalize.Prop
 meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # A hashing pair leaks only public pointers and the public seed

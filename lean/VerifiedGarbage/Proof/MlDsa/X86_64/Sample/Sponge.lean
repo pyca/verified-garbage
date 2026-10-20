@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 public import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze

@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Mont.X86.SparseChain
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontBase
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.X86.Row
 import VerifiedGarbage.Proof.Mont.X86.Chain
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Montgomery arithmetic as functions on x86 (32-bit): P-256's sparse reduction

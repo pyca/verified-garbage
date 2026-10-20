@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.TCB.Mem
+meta import Lean.Elab.Tactic.Omega.Frontend
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Arithmetic selection lemmas for RC2's constant-time lookups -/
 

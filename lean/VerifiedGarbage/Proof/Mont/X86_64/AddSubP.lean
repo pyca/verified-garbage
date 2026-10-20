@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Mont.X86_64.MulPX
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Mont.X86_64.Chain
 
 /-!
 # Montgomery arithmetic on x86-64: P-521's sums and differences

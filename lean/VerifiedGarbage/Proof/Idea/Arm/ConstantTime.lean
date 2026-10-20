@@ -1,21 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.Arm.Lit
-meta import VerifiedGarbage.Proof.Idea.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Idea.Arm.Lit
+public import VerifiedGarbage.Impl.Idea.Arm
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Idea.Arm.Lit
+meta import VerifiedGarbage.Impl.Idea.Arm
+meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! # Constant-time IDEA programs on ARMv7
 

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Impl.Dsa.X86.Random
 
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.Offset
 

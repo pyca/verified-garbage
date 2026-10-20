@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The representative comparison returns a mask without secret branches -/
 

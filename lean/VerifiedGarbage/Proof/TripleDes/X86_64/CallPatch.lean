@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Spec.TripleDes.Cbc
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-public import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # Triple DES's modes on x86-64: the call's return address

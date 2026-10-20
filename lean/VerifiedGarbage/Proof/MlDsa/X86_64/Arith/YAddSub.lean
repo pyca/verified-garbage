@@ -1,39 +1,19 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Avx2
 public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
-import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
+meta import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Avx2
+meta import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.WriteBytes
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.Words
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
-meta import VerifiedGarbage.Proof.MlKem.Mem
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_add_avx2` and `vg_mldsa_sub_avx2`

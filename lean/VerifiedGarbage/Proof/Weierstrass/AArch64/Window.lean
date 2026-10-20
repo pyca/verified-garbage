@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # The window method on AArch64

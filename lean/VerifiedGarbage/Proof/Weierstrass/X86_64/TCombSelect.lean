@@ -1,16 +1,15 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectPass
 import VerifiedGarbage.Proof.Framework.CallLay
-import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import Mathlib.Tactic.ToDual
 
 /-!
 # The comb from tables in memory on x86-64: the selection

@@ -1,18 +1,16 @@
 module
 public import VerifiedGarbage.Impl.AesGcm.X86_64
 public import VerifiedGarbage.Proof.Framework.Covers
-public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Spec.Aes
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
-import Mathlib.Data.List.Induction
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: copying bytes

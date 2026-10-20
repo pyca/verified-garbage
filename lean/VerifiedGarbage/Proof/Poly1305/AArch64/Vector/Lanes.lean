@@ -3,11 +3,12 @@ module
 import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
 public import VerifiedGarbage.Impl.Poly1305.AArch64.Vector
 public import VerifiedGarbage.Proof.Framework.PowLit
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Util.CompileInductive
-import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Mathlib.Tactic.Linter.Style
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: the lanes of the operations

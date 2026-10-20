@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.AArch64.Square
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.AArch64.Csub
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

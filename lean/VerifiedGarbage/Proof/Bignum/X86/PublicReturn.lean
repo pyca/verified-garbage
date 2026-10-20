@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Mont.Words
 
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.TCB.X86.State
+import VerifiedGarbage.TCB.X86.Target
 
 /-! # Saved registers and return address survive the public RSA body -/
 

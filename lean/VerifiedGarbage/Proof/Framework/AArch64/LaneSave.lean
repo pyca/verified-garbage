@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Registers kept in vector lanes, on AArch64

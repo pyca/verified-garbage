@@ -4,15 +4,13 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotLoad
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFrame
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MontDot
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lanes
-public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Block
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseVec
-import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! ## From `MontDotTerms.lean` -/
 

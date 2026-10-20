@@ -1,53 +1,33 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha256.X86_64.Compress
-meta import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
-meta import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
 import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Compress
-meta import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Compress
 import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Digest
-meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Digest
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
-meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Sha256.Digest
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
-import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Sha256.Digest
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MdStream.X86_64.Words
-meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Schedule
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Compress
+meta import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Compress
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Digest
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Sha256.Digest
+meta import VerifiedGarbage.Impl.StackScratch.X86_64
+meta import VerifiedGarbage.Proof.Framework.X86_64.Depth
+meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Schedule
 
 /-!
 # Streaming SHA-256 on x86-64: `init`

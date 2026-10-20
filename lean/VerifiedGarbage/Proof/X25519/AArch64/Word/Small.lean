@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Slots
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! The single-row constant multiplication shares the checked carry fold. -/
 

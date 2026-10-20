@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop

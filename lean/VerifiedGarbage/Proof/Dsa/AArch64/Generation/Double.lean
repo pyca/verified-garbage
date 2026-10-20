@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Reduce
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 

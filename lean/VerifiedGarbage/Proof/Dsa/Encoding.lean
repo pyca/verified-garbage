@@ -3,10 +3,10 @@ public import VerifiedGarbage.Spec.Dsa
 
 import VerifiedGarbage.Proof.Dsa.Digest
 import VerifiedGarbage.Proof.Rsa.Octets
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.Dsa.Arithmetic
 
 /-! # Fixed-width encodings used by the DSA entry points -/
 

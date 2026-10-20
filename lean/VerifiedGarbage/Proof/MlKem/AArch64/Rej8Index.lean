@@ -3,6 +3,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Value
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Extracting the public rejection mask and table address -/
 

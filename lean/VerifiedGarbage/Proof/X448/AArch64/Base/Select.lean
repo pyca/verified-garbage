@@ -4,13 +4,11 @@ public import VerifiedGarbage.Proof.X448.AArch64.Base.Digit
 import VerifiedGarbage.Proof.X448.AArch64.Init
 import VerifiedGarbage.Proof.Framework.CallLay
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Comb
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Curve448.AArch64.Memory
+import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Curve448.AArch64.Swap
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-!
 # X448 of the base point on AArch64: the constant-time selection

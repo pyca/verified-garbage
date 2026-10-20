@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelSpec
 public import VerifiedGarbage.Impl.Argon2.AArch64.DependentWord
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Argon2.AArch64.BlockAddress
 import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
 import VerifiedGarbage.Proof.Argon2.AArch64.Instructions

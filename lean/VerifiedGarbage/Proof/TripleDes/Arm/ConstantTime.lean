@@ -1,23 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
-meta import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
 public import VerifiedGarbage.Proof.Framework.Arm.TaintMono
-meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
+public import VerifiedGarbage.Impl.TripleDes.Arm.Ecb
+public import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+meta import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
+meta import VerifiedGarbage.Impl.TripleDes.Arm.Ecb
+meta import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
+meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! # Constant-time Triple DES block and key-expansion programs -/
 

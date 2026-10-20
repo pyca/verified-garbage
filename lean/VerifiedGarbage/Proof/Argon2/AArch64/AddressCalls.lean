@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCallsStage
 public import VerifiedGarbage.Proof.Argon2.AddressInput
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
 import VerifiedGarbage.Proof.Framework.Offset
 

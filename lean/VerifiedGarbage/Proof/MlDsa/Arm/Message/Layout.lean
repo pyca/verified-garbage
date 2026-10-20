@@ -1,38 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.Arm.Common
-public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MlDsa.Message.Common
-public import Batteries.Logic
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Covers
-public import VerifiedGarbage.Proof.Framework.Lit
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.MlKem.Arm.Common
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Impl.MlDsa.Arm.Message
-public import VerifiedGarbage.Proof.MlKem.Arm.Keccak
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.MlKem.Arith
-public import VerifiedGarbage.Proof.MlKem.Compress
-public import VerifiedGarbage.Proof.MlKem.Encode
-public import VerifiedGarbage.Proof.MlKem.KPke
-public import VerifiedGarbage.Proof.Sha256.Stream
-public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.MlKem.Arith
-import VerifiedGarbage.Proof.MlKem.Arm.Keccak
-import VerifiedGarbage.Proof.MlKem.Compress
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.KPke
-import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Impl.MlDsa.Arm.Message
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.SigEval
+import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 
 /-!

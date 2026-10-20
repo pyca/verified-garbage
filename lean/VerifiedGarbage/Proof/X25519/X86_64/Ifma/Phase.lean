@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Carry
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: the blocks of an iteration

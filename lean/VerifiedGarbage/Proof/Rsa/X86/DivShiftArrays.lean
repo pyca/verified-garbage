@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Rsa.X86.Div
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Rsa.X86.DivBit
 import VerifiedGarbage.Proof.Rsa.X86.DivShift
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The quotient's high bit is shifted into the extended remainder -/
 

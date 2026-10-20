@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckPrivate
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
 
 /-! # FFDH public-key validation on x86-64: save the arguments and ABI registers -/
 

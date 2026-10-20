@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
 public import VerifiedGarbage.Proof.Modes.AArch64.Setup
 import VerifiedGarbage.Proof.Modes.AArch64.Ctr
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
 import VerifiedGarbage.Proof.Modes.AArch64.Words
 import VerifiedGarbage.Proof.Modes.AArch64.Steps

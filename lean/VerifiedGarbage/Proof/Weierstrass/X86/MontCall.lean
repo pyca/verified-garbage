@@ -2,11 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontFn
 import VerifiedGarbage.Proof.Framework.X86.CallWith
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Mont.X86.Chain
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

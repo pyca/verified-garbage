@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.X448.X86.Ops
 import VerifiedGarbage.Proof.X448.X86.Iter
 public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit): the loop over the bits

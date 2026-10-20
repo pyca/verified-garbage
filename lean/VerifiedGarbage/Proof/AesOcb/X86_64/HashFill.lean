@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.AesCcm.X86_64.Env
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Cmac.Frame
 
 /-!
 # AES-OCB on x86-64: filling the buffer of `HASH` (`hashFill`)

@@ -3,6 +3,7 @@ public import VerifiedGarbage.Impl.Rsa.X86.Div
 public import VerifiedGarbage.Proof.Mont.X86.WordOps
 
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Conditional subtraction selects the next remainder and quotient bit -/
 

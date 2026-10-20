@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicBuffers
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Stable frame slots and source bytes for private-key imports -/
 

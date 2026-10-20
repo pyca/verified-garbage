@@ -28,6 +28,8 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.RsaPss.Arm.Step
+meta import VerifiedGarbage.Proof.RsaPss.Arm.Step
 
 /-!
 # RSASSA-PSS on ARMv7: `DB ⊕= MGF1(H, dbLen)`

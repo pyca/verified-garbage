@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Composition
 public import VerifiedGarbage.Proof.Rc2.X86_64.Lookup
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

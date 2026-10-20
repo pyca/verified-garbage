@@ -4,7 +4,14 @@ public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.NFinish
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Math
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Bounds
 public import VerifiedGarbage.Proof.X448.Field
-import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Convert
+import Mathlib.Tactic.Linarith.Frontend
+import Mathlib.Tactic.NormNum.OfScientific
+import Mathlib.Tactic.NormNum.DivMod
+import Mathlib.Tactic.NormNum.Abs
+import Mathlib.Data.Rat.Cast.Order
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # The value and bounds of `mul2`'s results

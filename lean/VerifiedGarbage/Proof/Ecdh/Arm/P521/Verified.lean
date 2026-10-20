@@ -26,6 +26,8 @@ meta import VerifiedGarbage.Proof.Ecdh.Arm.P521.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ECDH over P-521 on 32-bit ARM: `Verified`

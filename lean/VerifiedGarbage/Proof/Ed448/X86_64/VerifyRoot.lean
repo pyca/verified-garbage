@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Ed448.Root
 public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.X448.X86_64.Inv
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.X448.X86_64.Lit
 
 /-!
 # Ed448 verification's equation on x86-64: the square root's power

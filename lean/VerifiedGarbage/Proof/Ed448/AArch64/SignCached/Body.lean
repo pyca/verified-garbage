@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Layout
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-!
 # Ed448 signing with a cached public key on AArch64: the frame's entry

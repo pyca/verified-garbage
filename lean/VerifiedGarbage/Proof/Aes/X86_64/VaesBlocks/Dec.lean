@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Dec
 public import VerifiedGarbage.Impl.Aes.X86_64.VaesBlocks
 public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # VAES: decrypting the lanes of the block registers

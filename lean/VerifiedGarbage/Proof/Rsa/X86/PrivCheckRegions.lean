@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.PrivPublicPre
 
 import VerifiedGarbage.Proof.Rsa.X86.PrivRegions
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Private intermediates and status slots survive the check's calls -/
 

@@ -5,8 +5,9 @@ public import VerifiedGarbage.Spec.MlKem.Poly
 import VerifiedGarbage.Proof.MlKem.X86.Sample
 import VerifiedGarbage.Proof.MlKem.X86.CompressEncode
 import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86.TopCall
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlKem.X86.Table
 
 /-!

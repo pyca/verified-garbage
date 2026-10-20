@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
-public import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
 import VerifiedGarbage.Proof.Framework.Block

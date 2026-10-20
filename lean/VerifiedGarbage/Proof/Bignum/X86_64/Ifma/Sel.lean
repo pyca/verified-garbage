@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Spec
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.X86_64.Csub
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: reading an entry of the table

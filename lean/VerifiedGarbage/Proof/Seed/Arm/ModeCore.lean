@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Seed.Arm.Verified
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # SEED's ECB functions on ARMv7 as the modes' core

@@ -3,7 +3,6 @@ public import VerifiedGarbage.Impl.Sha256.X86.ShaNi
 public import VerifiedGarbage.Proof.Sha256.X86.Compress
 
 import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Load
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Compress
 import VerifiedGarbage.Proof.Framework.Offset
 

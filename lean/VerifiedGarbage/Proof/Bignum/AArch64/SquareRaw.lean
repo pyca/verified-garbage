@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareCross
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalLoop
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 

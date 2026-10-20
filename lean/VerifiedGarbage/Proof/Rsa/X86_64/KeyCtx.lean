@@ -2,8 +2,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyChecks
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # `vg_rsa_check_key` on x86-64: the checks' common context

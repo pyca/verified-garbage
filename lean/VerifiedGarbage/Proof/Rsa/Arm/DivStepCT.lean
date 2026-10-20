@@ -1,5 +1,4 @@
 module
-public import Batteries.Logic
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Impl.Rsa.Arm.Div
 public import VerifiedGarbage.Proof.Rsa.Arm.DivContext
@@ -9,8 +8,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.DivShiftCT
 import VerifiedGarbage.Proof.Rsa.Arm.DivReduceCT
 import VerifiedGarbage.Proof.Rsa.Arm.DivBitCT
 import VerifiedGarbage.Proof.Bignum.Arm.StageCT
-import VerifiedGarbage.Proof.Bignum.Arm.Shift
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftCT
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # One division iteration is independent of the secret numerator and divisor -/
 

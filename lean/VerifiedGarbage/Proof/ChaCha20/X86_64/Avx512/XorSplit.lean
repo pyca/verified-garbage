@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.SymSel
 
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.FinishSel
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ChaCha20 keystream XOR with the data's first bytes from another buffer on x86-64 with AVX-512: the loop

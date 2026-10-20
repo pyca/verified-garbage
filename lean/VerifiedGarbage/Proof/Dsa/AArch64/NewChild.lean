@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.ChildBases
 public import VerifiedGarbage.Proof.Dsa.AArch64.ChildCount
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Creating a linked arithmetic child from its public operand length -/
 

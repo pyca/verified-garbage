@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFrame
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejLoopState
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPhase
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejGuard
 
 /-! ## From `ResidentRejInit.lean` -/

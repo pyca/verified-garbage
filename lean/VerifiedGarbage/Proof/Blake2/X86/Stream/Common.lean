@@ -5,18 +5,13 @@ import VerifiedGarbage.Proof.MdStream.X86.Common
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Impl.Blake2.X86.Stream
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.Framework.X86.Call
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Blake2.Spec
+import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming BLAKE2 on x86 (32-bit): common lemmas

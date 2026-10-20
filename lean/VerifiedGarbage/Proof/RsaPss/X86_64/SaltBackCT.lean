@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtBack
 import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltCT
 meta import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtBack
 meta import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltCT
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
+meta import VerifiedGarbage.Proof.Bignum.Math
+meta import VerifiedGarbage.Proof.Sha256.StateMem
 
 /-! Constant-time public dispatch for PSS salt verification. -/
 

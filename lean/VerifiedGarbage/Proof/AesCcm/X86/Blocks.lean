@@ -24,6 +24,10 @@ meta import VerifiedGarbage.Proof.AesGcm.X86.Flush
 meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
 meta import VerifiedGarbage.Proof.Cmac.Stream
 meta import VerifiedGarbage.Proof.Cmac.Spec
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import Mathlib.Tactic.Conv
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-CCM on x86: `Ctr₀`, counter blocks and chaining a block

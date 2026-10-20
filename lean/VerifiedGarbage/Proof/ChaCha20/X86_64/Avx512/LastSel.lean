@@ -4,7 +4,8 @@ public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplit
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.SymSel
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.FinishSel
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ChaCha20 keystream XOR with the data's first bytes from another buffer on x86-64 with AVX-512: the last 513 to 1023 bytes

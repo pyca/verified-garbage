@@ -2,9 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.Cold
 public import VerifiedGarbage.TCB.Artifact
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # A function that chooses, on entry, between two verified functions

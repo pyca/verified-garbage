@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.Store64
 import VerifiedGarbage.Proof.Rc2.PairMem
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Full-width inverse initialization on ARMv7 -/
 

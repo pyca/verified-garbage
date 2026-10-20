@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Area
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Sel
 import VerifiedGarbage.Proof.Framework.X86_64.StraightY
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop

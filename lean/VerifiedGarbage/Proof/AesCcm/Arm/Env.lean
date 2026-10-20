@@ -1,17 +1,14 @@
 module
-public import Batteries.Logic
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Covers
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.TCB.Arm.Target
 
 import VerifiedGarbage.Proof.AesGcm.Arm.Env
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CCM on ARMv7: where everything is

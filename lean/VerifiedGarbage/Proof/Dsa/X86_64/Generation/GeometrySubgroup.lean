@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.BufferSeparate
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Concrete q-phase layout inside the shared generation arena -/
 

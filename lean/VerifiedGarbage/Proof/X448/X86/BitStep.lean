@@ -1,16 +1,12 @@
 module
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.X448.X86.Swap
 
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.X448.Ladder
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # X448 on x86 (32-bit): reading a scalar bit

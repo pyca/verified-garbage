@@ -1,7 +1,8 @@
 module
 public import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Top
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Hash
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 
 /-!

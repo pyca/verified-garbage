@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.RandomSourcePrepare
 public import VerifiedGarbage.Proof.Argon2.FillStep
 import VerifiedGarbage.Proof.Argon2.AArch64.DependentWord
 import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelStable
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 /-! Merged from `Proof.Argon2.AArch64.DependentWordState`. -/
 

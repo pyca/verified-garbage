@@ -1,18 +1,10 @@
 module
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.Set
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86_64
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Layout
-public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
-public import VerifiedGarbage.Spec.Weierstrass.Point
 
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Blocks
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
-import Mathlib.Tactic.Tauto
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on x86-64: the messages of steps d, f and h.3

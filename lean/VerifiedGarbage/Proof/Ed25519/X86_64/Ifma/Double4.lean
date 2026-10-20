@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part2
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Merged from `Proof.Ed25519.X86_64.Ifma.Block`. -/
 

@@ -2,9 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackConst
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.HighPack
-public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.Framework.Block
 

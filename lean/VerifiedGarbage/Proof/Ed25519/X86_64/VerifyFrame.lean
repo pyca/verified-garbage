@@ -5,11 +5,14 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.DecodeBits
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarStep
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
 public import VerifiedGarbage.Spec.Ed25519.Contract
-public import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X25519.X86_64.Setup
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.X25519.X86_64.Lit
 
 /-!
 # Verification preserves its inputs and saved pointers

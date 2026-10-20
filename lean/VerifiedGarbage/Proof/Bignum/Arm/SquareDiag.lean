@@ -5,7 +5,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.AddCarry
 import VerifiedGarbage.Proof.Bignum.Arm.Mac
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Arm.Inline
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The squares of the operand's words added to the doubled cross products -/
 

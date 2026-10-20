@@ -1,25 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.AArch64.Lit
 import VerifiedGarbage.Proof.Rc4.AArch64.ApplyCT
 import VerifiedGarbage.Proof.Rc4.AArch64.Apply
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Rc4.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Rc4.AArch64.Lit
+public import VerifiedGarbage.Impl.Rc4.AArch64
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Rc4.AArch64.ApplyFinish
-import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
-import VerifiedGarbage.Proof.Rc4.AArch64.Group
-import VerifiedGarbage.Proof.Rc4.AArch64.Rotate
-import VerifiedGarbage.Proof.Rc4.Stream
-import VerifiedGarbage.Proof.Rc4.Table
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 @[expose] public section
 

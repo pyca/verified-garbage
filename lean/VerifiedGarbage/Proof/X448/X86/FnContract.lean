@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.X448.X86.Fn
 import VerifiedGarbage.Proof.X25519.X86.Basic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on x86 (32-bit): the field functions' contracts

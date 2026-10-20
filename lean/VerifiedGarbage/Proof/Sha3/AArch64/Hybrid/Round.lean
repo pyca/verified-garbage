@@ -7,12 +7,10 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Control
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Round
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.ScheduleFacts
 public import VerifiedGarbage.Proof.Sha3.AArch64.Hybrid.Comm
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Parity
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Sha3.AArch64.Permute
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwLanes
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # A round of Keccak-f[1600] on three states

@@ -6,12 +6,10 @@ public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
 import VerifiedGarbage.Proof.Framework.AArch64.StackStore
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 
 /-! # Return a p-attempt result to the bounded search controller -/
 

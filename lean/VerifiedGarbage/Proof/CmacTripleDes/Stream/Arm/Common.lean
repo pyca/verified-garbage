@@ -4,12 +4,10 @@ public import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Contract
 import VerifiedGarbage.Proof.MdStream.Arm.Common
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
-public import VerifiedGarbage.Proof.TripleDes.SboxTables
-public import Mathlib.Tactic.Conv
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 /-!
 # Streaming TDEA-CMAC on ARMv7: arithmetic and memory

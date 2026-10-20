@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Pack
 public import VerifiedGarbage.Spec.MlDsa.HighPack
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 @[expose] public section
 

@@ -4,13 +4,16 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 import VerifiedGarbage.Proof.Dsa.X86_64.EntryScratch
-import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Layout
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.EntryFieldsFrame
 import VerifiedGarbage.Proof.Dsa.X86_64.KeyPointers
 import VerifiedGarbage.Proof.Dsa.X86_64.Save
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import Aesop.BuiltinRules
+import Mathlib.Tactic.ToAdditive
 
 /-! # Complete System V entry for a DSA signing attempt -/
 

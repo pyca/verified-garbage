@@ -5,6 +5,8 @@ import VerifiedGarbage.Proof.MlKem.Mem16Bytes
 public import VerifiedGarbage.Proof.MlKem.Mem16
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ML-KEM: coefficients stored with 16 or 32 bits

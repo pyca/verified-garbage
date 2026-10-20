@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideChoice
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourStep
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideValue
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 @[expose] public section
 

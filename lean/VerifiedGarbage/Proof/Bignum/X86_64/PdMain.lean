@@ -1,13 +1,13 @@
 module
 
 import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
-public import Mathlib.Data.Int.GCD
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 public import VerifiedGarbage.Impl.Rsa.X86_64
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import Mathlib.Data.Int.GCD
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-!
 # `vg_rsa_public_precomputed` on x86-64: the computation

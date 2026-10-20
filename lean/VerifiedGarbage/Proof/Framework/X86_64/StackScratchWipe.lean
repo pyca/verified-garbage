@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Impl.StackScratch.X86_64
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 

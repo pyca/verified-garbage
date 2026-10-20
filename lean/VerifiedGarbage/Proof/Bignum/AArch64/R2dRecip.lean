@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dQuot
 import VerifiedGarbage.Proof.Bignum.WordStep
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.AArch64.Row
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

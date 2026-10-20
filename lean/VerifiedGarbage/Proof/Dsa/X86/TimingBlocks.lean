@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Proof.Framework.X86.TaintErase
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.RelCT
 
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

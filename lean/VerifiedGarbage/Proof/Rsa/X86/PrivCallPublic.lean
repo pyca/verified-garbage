@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Rsa.X86.PrivPublicPre
 
 import VerifiedGarbage.Proof.Rsa.X86.PrivCallInput
 import VerifiedGarbage.Proof.Rsa.X86.PrivCrtCall
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Public nested-call observations agree for the same public RSA key -/
 

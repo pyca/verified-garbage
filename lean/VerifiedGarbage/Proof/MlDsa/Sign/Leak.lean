@@ -1,8 +1,9 @@
 module
 public import VerifiedGarbage.Spec.MlDsa.Contract
 
-import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # ML-DSA: what signing leaks, iteration by iteration

@@ -4,15 +4,11 @@ import VerifiedGarbage.Proof.Ed25519.Bytes
 public import VerifiedGarbage.Impl.Ed25519.Arm.PublicKey
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Omega
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
-public import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Merged from `Proof.Ed25519.Arm.PublicKey.PruneArithmetic`. -/
 

@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Ed448.ScalarWords
 import VerifiedGarbage.Proof.X25519.X86.Basic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 scalar arithmetic on x86 (32-bit): entry and exit

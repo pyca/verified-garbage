@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Spec.Idea.Ofb
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Spec.Cfb
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Idea.Arith
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Spec.Idea.Cfb
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # IDEA-OFB and -CFB64 with their working space as an argument

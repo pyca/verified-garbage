@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Spec.Ecdsa.Verify
 public import VerifiedGarbage.Spec.P384
 public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ECDSA verification over P-384 on 32-bit ARM: the contract the proof is written against

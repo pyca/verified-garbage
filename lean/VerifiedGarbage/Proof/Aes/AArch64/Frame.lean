@@ -1,16 +1,14 @@
 module
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Impl.StackScratch.AArch64
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Aes.Contract
 
 import VerifiedGarbage.Proof.Aes.Scratch
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # The AES key expansion on AArch64, with its working space on the stack

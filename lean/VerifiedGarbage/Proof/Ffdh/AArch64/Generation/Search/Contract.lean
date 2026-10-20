@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Contract
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Spec.Ffdh.Generation
 
 /-! # The parameter-search controller's contract in terms of the machine (AArch64)

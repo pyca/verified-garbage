@@ -7,6 +7,8 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-!
 # SHA3-256 of `ek`, one block before each `x3` call

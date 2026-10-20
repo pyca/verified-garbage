@@ -1,16 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Word64
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.NafPrep
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.Naf5
-import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Mont.AArch64.Csub
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Weierstrass.Words
 
 @[expose] public section

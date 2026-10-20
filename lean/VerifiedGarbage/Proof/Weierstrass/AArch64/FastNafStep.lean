@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafState
-import Mathlib.Logic.Function.Basic
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafExec
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

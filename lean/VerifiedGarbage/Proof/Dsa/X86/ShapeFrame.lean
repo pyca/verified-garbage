@@ -3,6 +3,9 @@ public import VerifiedGarbage.Proof.Dsa.X86.ShapeCombine
 public import VerifiedGarbage.Proof.Mont.Words32
 
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-! # Frames for width-mask scratch and public header slots -/
 

@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.DivBit
 public import VerifiedGarbage.Proof.Rsa.KeyMath
 public import VerifiedGarbage.Proof.Rsa.Arm.DivReduce
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Bignum.Arm.WideMul
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # A native division iteration implements the shared arithmetic model -/
 

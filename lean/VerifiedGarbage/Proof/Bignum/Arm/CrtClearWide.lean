@@ -4,11 +4,11 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWideArgs
 import VerifiedGarbage.Proof.Bignum.Arm.Zero
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtClearWide
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Zero a complete factor-product buffer while preserving all other bytes -/
 

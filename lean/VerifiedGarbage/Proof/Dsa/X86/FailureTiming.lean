@@ -3,12 +3,12 @@ module
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Dsa.X86.Pointer
 public import VerifiedGarbage.Impl.Dsa.X86.Entry
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Constant-time clearing on public shape rejection -/
 

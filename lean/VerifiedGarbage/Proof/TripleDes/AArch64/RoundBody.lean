@@ -5,8 +5,8 @@ public import VerifiedGarbage.Proof.TripleDes.AArch64.Spills
 import VerifiedGarbage.Proof.TripleDes.AArch64.Box
 import VerifiedGarbage.Proof.TripleDes.AArch64.RoundFunction
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

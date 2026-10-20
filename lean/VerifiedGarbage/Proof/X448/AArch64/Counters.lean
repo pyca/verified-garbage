@@ -1,13 +1,11 @@
 module
-public import Mathlib.Logic.Function.Basic
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.AArch64.Isa
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on AArch64: loop counters

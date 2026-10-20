@@ -2,9 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoad
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! A complete table-row selection, with fixed-address loads and SIMD masks. -/
 

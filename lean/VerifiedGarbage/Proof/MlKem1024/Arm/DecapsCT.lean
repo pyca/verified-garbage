@@ -5,6 +5,8 @@ public import VerifiedGarbage.Spec.MlKem.Contract1024
 
 import VerifiedGarbage.Proof.MlKem.Arm.DecapsCT
 import VerifiedGarbage.Proof.MlKem1024.Arm.Calls
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM-1024 on 32-bit ARM: `vg_mlkem1024_decaps`, `Verified`

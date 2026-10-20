@@ -14,6 +14,8 @@ meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 meta import Std.Tactic.BVDecide.Normalize.Prop
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

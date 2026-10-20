@@ -7,13 +7,8 @@ public import VerifiedGarbage.Impl.AesXts.AArch64
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Loop
 public import VerifiedGarbage.Proof.AesXts.Spec
 import VerifiedGarbage.Proof.AesCbc.AArch64.Body
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.AesCbc.AArch64.CT
-import VerifiedGarbage.Proof.AesCbc.Mem
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # XTS-AES on AArch64: all the blocks in one call

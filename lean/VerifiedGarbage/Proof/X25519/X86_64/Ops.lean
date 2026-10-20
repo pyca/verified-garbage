@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Mul
 public import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X25519 on x86-64: the field operations

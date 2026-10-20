@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.OffsetBelow
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Shared frame and call invariants for complete AArch64 Ed25519. -/

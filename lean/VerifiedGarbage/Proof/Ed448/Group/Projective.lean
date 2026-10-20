@@ -2,9 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Edwards.Group
 import VerifiedGarbage.Proof.Framework.Pratt
-public import Mathlib.Tactic.NormNum.Prime
 public import VerifiedGarbage.Proof.Ed448.Ref
-public import Mathlib.FieldTheory.Finite.Basic
+import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Algebra.Field.ZMod
+import Mathlib.Tactic.NormNum.Prime
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The specification's projective points represent points of the group

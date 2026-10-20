@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.EntryCT
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 public-key derivation on ARMv7: constant time, and `Verified`

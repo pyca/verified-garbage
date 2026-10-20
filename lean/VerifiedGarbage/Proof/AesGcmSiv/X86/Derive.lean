@@ -5,13 +5,17 @@ import VerifiedGarbage.Proof.GcmSiv.Ctr
 public import VerifiedGarbage.Proof.Cmac.Block32
 public import VerifiedGarbage.Proof.AesGcmSiv.X86.Env
 public import VerifiedGarbage.Proof.GcmSiv.Spec
-import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.AesGcm.X86.Flush
+public import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
+public import VerifiedGarbage.Proof.AesGcm.X86.Callee
+public import VerifiedGarbage.Proof.AesGcm.X86.Common
+public import VerifiedGarbage.Proof.AesGcm.X86.Env
 
 /-!
 # AES-GCM-SIV on x86: the message keys (`derive`)

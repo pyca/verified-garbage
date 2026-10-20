@@ -1,48 +1,23 @@
 module
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
 import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnX
-meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Mont.X86_64.Blocks
-import VerifiedGarbage.Proof.Mont.X86_64.CsubS
-import VerifiedGarbage.Proof.Mont.X86_64.Friendly
-import VerifiedGarbage.Proof.Mont.X86_64.Round
-import VerifiedGarbage.Proof.Mont.X86_64.Sparse
-import VerifiedGarbage.Proof.Mont.X86_64.SparseX
-import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Mont.X86_64.WideOps
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
+meta import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnX
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Mont.X86_64.Blocks
-meta import VerifiedGarbage.Proof.Mont.X86_64.CsubS
-meta import VerifiedGarbage.Proof.Mont.X86_64.Friendly
-meta import VerifiedGarbage.Proof.Mont.X86_64.Round
-meta import VerifiedGarbage.Proof.Mont.X86_64.Sparse
-meta import VerifiedGarbage.Proof.Mont.X86_64.SparseX
-meta import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
 meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
-meta import VerifiedGarbage.Proof.Mont.X86_64.WideOps
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # P-521's product modulo `p` as a function, with BMI2 and ADX, on x86-64: verified

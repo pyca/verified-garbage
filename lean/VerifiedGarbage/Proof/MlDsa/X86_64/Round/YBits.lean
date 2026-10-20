@@ -4,41 +4,20 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBlock
 public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Contracts
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBlock
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.OneOut
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.OneOut
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
-import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBlock
+meta import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Contracts
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.OneOut
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.WriteBytes
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.Words
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
-meta import VerifiedGarbage.Proof.MlKem.Mem
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_high_bits_avx2` and `vg_mldsa_low_bits_avx2`

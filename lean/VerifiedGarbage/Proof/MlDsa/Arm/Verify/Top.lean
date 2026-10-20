@@ -10,6 +10,8 @@ meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.SampC
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Row
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Control
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA verification on 32-bit ARM: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`

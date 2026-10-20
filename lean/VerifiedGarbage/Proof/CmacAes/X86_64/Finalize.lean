@@ -2,13 +2,8 @@ module
 
 import VerifiedGarbage.Proof.CmacAes.X86_64.Subkeys
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.CmacAes.X86_64
-public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
-public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Cmac
 import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 import VerifiedGarbage.Proof.Cmac.Spec
@@ -16,6 +11,9 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-CMAC on x86-64: `vg_cmac_aes_finalize`, the last block

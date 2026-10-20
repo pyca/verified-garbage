@@ -4,8 +4,9 @@ public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTInputs
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintSum
-import Mathlib.Tactic.Set
 
 @[expose] public section
 

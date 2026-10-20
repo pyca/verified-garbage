@@ -1,12 +1,14 @@
 module
-public import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawControl
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomMask
-public import VerifiedGarbage.Proof.Dsa.AArch64.Run
 public import VerifiedGarbage.Proof.Dsa.DomainShape
 
-import VerifiedGarbage.Proof.Framework.Omega
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! The sampler state retained across rejected draws. -/
 @[expose] public section

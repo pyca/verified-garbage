@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.RsaPss.AArch64.Basic
 import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
 import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Copy the public number of salt bytes from the end of the decoded DB. -/
 

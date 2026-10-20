@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Impl.Bignum.AArch64.SquareEight
 import VerifiedGarbage.TCB.AArch64.Simd
 

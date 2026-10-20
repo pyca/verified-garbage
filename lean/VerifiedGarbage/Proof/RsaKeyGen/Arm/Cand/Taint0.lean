@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Impl.Rsa.Arm.KeyWs
+import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.Impl.RsaKeyGen.Arm.Candidate
 
 /-! # A candidate on ARMv7: pieces the taint analysis checks

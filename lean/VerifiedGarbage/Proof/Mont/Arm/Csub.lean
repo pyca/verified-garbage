@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.Arm.Loop
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Mont.Arm.Step
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Montgomery arithmetic on 32-bit ARM: the conditional subtraction

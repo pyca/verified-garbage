@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Modes.Arm.Ctr
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Modes.Arm.SeqBody
 import VerifiedGarbage.Proof.AesCtr.Spec
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

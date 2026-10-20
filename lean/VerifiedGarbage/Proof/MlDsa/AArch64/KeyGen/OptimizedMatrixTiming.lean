@@ -3,8 +3,6 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedMatrix
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCallTwo
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixSeeds
 
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixFour
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
@@ -12,6 +10,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixTwo
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

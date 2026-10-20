@@ -7,16 +7,15 @@ public import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
 public import VerifiedGarbage.Proof.X448.Arm.Save
 public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.Spec.X448.Contract
-public import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.Arm.Freeze
 import VerifiedGarbage.Proof.X448.Arm.Output
 import VerifiedGarbage.Proof.X448.Arm.Restore
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.X448.Arm.BitWrite
 import VerifiedGarbage.Proof.X448.Arm.Carry
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Ed448 base-point multiplication on ARMv7: the encoding

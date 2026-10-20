@@ -2,15 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentSetup
 public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.ResidentCore
-public import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentControl
 import VerifiedGarbage.Proof.Sha3.Arith
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentMath
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentSelect
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Rounds
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Sha3.AArch64.Permute
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

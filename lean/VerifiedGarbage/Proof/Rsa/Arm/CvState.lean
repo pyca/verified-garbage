@@ -3,6 +3,12 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.CvBase
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Rsa.Arm.CvBase
 
 /-! # `vg_rsa_crt_values` on ARMv7: what every stage keeps
 

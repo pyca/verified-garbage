@@ -35,6 +35,11 @@ meta import VerifiedGarbage.Proof.Sha3.Arith
 meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
 meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
+import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.MlKem.Arm.HashCT
+meta import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM on 32-bit ARM: encapsulation, constant time and `Verified`

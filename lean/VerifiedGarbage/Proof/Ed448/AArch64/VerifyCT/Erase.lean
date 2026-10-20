@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
 
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-!
 # Ed448 verification's equation on AArch64: its comparisons, erased

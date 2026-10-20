@@ -2,15 +2,13 @@ module
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombPublic
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
-import VerifiedGarbage.Proof.Framework.Lit
-import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 import VerifiedGarbage.Proof.Mont.AArch64.Row
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Public Jacobian table loads within the scratch allocation. -/
 

@@ -1,18 +1,22 @@
 module
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Layout
 public import VerifiedGarbage.Proof.Framework.X86.Wp
 
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Copy
-import Mathlib.Data.Int.ModEq
-import Mathlib.Data.Nat.Prime.Defs
-import VerifiedGarbage.Proof.Sha256.X86.Lit
-import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Regs
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import Aesop.BuiltinRules
+import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.X86.Lit
+import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): the messages of steps d, f and h.3

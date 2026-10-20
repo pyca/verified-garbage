@@ -20,6 +20,8 @@ meta import VerifiedGarbage.Proof.Cmac.Stream
 meta import VerifiedGarbage.Proof.AesSiv.X86.Callee
 meta import VerifiedGarbage.Proof.AesSiv.X86.Run
 meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-SIV on x86: the CMAC of a string (`cmacOf`)

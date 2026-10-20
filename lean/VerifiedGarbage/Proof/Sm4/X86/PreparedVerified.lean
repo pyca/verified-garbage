@@ -1,35 +1,29 @@
 module
 
 import VerifiedGarbage.Proof.Sm4.X86.PreparedBody
-meta import VerifiedGarbage.Proof.Sm4.X86.PreparedBody
-public import VerifiedGarbage.Proof.Sm4.X86.Lit
-meta import VerifiedGarbage.Proof.Sm4.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sm4.Common
 public import VerifiedGarbage.Proof.Sm4.X86.Prologue
-meta import VerifiedGarbage.Proof.Framework.Contract
 import all Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sm4.X86.Lit
+public import VerifiedGarbage.Impl.Sm4.X86.Prepared
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Sm4.Layout
-import VerifiedGarbage.Proof.Sm4.Planes
-import VerifiedGarbage.Proof.Sm4.X86.Copy
-import VerifiedGarbage.Proof.Sm4.X86.Crypt8
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sm4.X86.LayersLit
+meta import VerifiedGarbage.Proof.Sm4.X86.PreparedBody
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Sm4.Common
+meta import VerifiedGarbage.Proof.Sm4.X86.Prologue
+meta import Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Sm4.X86.Lit
+meta import VerifiedGarbage.Impl.Sm4.X86.Prepared
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Sm4.Layout
-meta import VerifiedGarbage.Proof.Sm4.Planes
-meta import VerifiedGarbage.Proof.Sm4.X86.Copy
-meta import VerifiedGarbage.Proof.Sm4.X86.Crypt8
+meta import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 
 /-!
 # SM4's prepared round keys and batches on x86 (32-bit) meet their contracts

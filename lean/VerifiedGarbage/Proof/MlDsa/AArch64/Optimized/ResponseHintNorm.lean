@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintFlags
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintCount
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseMath

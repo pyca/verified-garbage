@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.CrtSetup
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtLayout
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Public arithmetic determines the CRT workspace and product strides -/
 

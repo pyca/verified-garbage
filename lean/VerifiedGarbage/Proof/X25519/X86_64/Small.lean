@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Ops
 import VerifiedGarbage.Proof.X25519.X86_64.AddSub
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X25519 on x86-64: multiplication by `a24`, and the swap

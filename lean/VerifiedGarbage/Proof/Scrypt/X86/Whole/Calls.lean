@@ -2,29 +2,16 @@ module
 
 import VerifiedGarbage.Proof.Scrypt.X86.RoMixCT
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Contract
-public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Impl.Scrypt.X86.Scrypt
-public import Mathlib.Tactic.DefEqTransformations
 public import VerifiedGarbage.Proof.Scrypt.X86.Salsa
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Scrypt.Whole
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Calls
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Framework.X86.SseDword
-import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-import VerifiedGarbage.Proof.Hmac.Generic.Implies
-import VerifiedGarbage.Proof.Scrypt.X86.Common
-import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 @[expose] public section
 

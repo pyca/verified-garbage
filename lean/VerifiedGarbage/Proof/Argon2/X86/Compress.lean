@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Blake2.X86.CompressB.Body
 public import VerifiedGarbage.Spec.Argon2.Contract
 public import VerifiedGarbage.Proof.Argon2.X86.Gb
 import VerifiedGarbage.Proof.Argon2.Permutation
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section

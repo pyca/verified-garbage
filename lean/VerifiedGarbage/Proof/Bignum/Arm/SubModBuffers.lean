@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.SubRow
 import VerifiedGarbage.Proof.Bignum.Arm.RowFull
 import VerifiedGarbage.Proof.Bignum.Arm.ProductRowMath
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Exact modular subtraction through the shared native arithmetic loops -/
 

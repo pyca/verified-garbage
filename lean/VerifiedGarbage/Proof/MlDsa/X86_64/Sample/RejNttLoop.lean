@@ -4,12 +4,10 @@ import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt
 public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-public import VerifiedGarbage.Proof.Sha3.X86_64.Round
 import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on x86-64: the loop of `vg_mldsa_rej_ntt_poly`

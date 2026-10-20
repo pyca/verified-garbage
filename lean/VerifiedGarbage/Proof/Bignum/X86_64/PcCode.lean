@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
@@ -10,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Valid
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_public_precompute` on x86-64: correctness

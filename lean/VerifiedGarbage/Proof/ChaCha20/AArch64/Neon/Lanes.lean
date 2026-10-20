@@ -1,8 +1,8 @@
 module
 public import VerifiedGarbage.TCB.AArch64.Isa
 
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section

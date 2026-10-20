@@ -6,6 +6,8 @@ public import VerifiedGarbage.Spec.Dsa.RandomSign
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCorrect
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignConstantTime
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Complete verification of randomized DSA signing for every AArch64 backend. -/
 @[expose] public section

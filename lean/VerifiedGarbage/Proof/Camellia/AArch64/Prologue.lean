@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Camellia.AArch64.Round
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Camellia.AArch64.Crypt8
 import VerifiedGarbage.Proof.Framework.Offset
 

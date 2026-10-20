@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowSparse

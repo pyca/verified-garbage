@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.CombContract
 import VerifiedGarbage.Proof.Ecdsa.X86.CombSat
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! # The comb signing implementation satisfies the shared API contract -/
 

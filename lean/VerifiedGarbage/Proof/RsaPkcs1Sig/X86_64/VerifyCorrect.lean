@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Encode
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.Octets
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_pkcs1_verify` on x86-64: correctness

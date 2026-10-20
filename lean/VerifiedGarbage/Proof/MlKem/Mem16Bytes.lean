@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.MlKem.Kpke16
-public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!

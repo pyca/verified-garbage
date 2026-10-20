@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecMain
-public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncLay
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry

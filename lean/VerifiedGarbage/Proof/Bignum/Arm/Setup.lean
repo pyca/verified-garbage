@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.SetBases
 import VerifiedGarbage.Proof.Bignum.Arm.Store64
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Establish the shared RSA workspace contract on ARMv7 -/
 

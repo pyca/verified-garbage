@@ -4,8 +4,9 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Sha512.Arm.Compress
 import VerifiedGarbage.Proof.Sha512.Stream
 public import VerifiedGarbage.Impl.Sha512.Arm.Stream
-import VerifiedGarbage.Proof.Sha512.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha512.Arm.Lit
 
 /-!
 # Streaming SHA-512 on ARMv7: `init`

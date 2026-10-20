@@ -1,27 +1,11 @@
 module
 public import VerifiedGarbage.Proof.Blowfish.X86.Contract
-public import VerifiedGarbage.Proof.Blowfish.X86.Lit
-public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 public import VerifiedGarbage.Impl.StackScratch.X86
 
 import VerifiedGarbage.Proof.Blowfish.X86.Verified
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Blowfish.Blocks
-import VerifiedGarbage.Proof.Blowfish.Table
-import VerifiedGarbage.Proof.Blowfish.X86.KeyEnc
-import VerifiedGarbage.Proof.Blowfish.X86.KeyMain
-import VerifiedGarbage.Proof.Blowfish.X86.KeyP
+public import VerifiedGarbage.Impl.Blowfish.X86
 import VerifiedGarbage.Proof.Blowfish.X86.Run
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.MlKem.X86.Leaf
-import VerifiedGarbage.Proof.Rc4.Scan32
-import VerifiedGarbage.Proof.Rc4.Table
 
 /-!
 # Blowfish on x86 (32-bit), with the working space on the stack

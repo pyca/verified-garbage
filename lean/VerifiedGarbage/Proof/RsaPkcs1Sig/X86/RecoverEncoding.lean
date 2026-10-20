@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Encode
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Re-encode the trailing digest in a separate buffer -/
 

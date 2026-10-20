@@ -5,7 +5,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.ReverseEncoding
 import VerifiedGarbage.Proof.Bignum.Arm.ReverseRegion
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Bignum.Arm.ReverseEncoding
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The same byte reversal implements RSA's I2OSP -/
 

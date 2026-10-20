@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCheck
 import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyConstantTime
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCorrect
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Complete verification of DSA key generation for every AArch64 backend -/
 

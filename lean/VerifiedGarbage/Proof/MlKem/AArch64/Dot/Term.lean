@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Gather
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Accumulate
 public import VerifiedGarbage.Spec.MlKem.Poly
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec

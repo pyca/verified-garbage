@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseBuffer
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRegions
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Release only an accepted digest, otherwise write zeros, without a branch -/
 

@@ -5,11 +5,11 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
 
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Output
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Absorb
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Finalize
 import VerifiedGarbage.Proof.MdStream.X86_64.Common
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Merged from `Proof.Argon2.X86_64.HPrime.Next`. -/
 

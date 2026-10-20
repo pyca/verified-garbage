@@ -3,11 +3,13 @@ module
 import VerifiedGarbage.Proof.Bignum.X86.PublicDispatchTiming
 public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
 public import VerifiedGarbage.Proof.Mont.X86.Words
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
 
 /-! # Width dispatch branches only on the common public modulus length -/
 

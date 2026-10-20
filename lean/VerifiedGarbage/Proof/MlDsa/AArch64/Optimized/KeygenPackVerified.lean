@@ -2,11 +2,7 @@ module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerify
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourContracts
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenPack
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.MlDsa.Poly
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackDispatch

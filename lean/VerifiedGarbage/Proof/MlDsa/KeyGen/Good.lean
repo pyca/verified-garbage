@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Masked
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import Batteries.Tactic.Init
 
 /-!
 # ML-DSA key generation: the result of the samplers, for every target

@@ -2,9 +2,9 @@ module
 public import VerifiedGarbage.Proof.X448.Arm.Field
 
 import VerifiedGarbage.Proof.X448.Arm.Columns
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.Arm.Carry
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: multiplication by a24

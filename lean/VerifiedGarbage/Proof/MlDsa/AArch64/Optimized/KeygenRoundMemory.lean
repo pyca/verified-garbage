@@ -4,10 +4,8 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenRound
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundWord
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFrame
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `KeygenRoundVec.lean` -/
 

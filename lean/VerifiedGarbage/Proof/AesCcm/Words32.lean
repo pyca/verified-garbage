@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # AES-CCM: blocks built of 32-bit words

@@ -4,12 +4,7 @@ public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquare
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledInit
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowS
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTail
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRow
 
 /-! ## AdxTiledSquareInit -/
 

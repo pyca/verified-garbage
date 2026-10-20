@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarIO
 import VerifiedGarbage.Proof.X448.X86.Frame
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Ed448 scalar reduction on x86 (32-bit): the whole function

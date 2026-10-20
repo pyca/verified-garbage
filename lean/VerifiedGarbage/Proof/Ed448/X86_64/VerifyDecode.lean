@@ -1,7 +1,5 @@
 module
-public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyRoot
-public import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 public import VerifiedGarbage.Spec.Ed448.Contract
 
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyChecks
@@ -13,6 +11,9 @@ import VerifiedGarbage.Proof.X448.X86_64.Freeze
 import VerifiedGarbage.Proof.X448.X86_64.AddSub
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Ed448.Ref
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.X448.X86_64.Lit
 
 /-!
 # Ed448 verification's equation on x86-64: decoding a point

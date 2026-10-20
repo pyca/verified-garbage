@@ -4,10 +4,10 @@ public import VerifiedGarbage.Spec.MillerRabin
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrTab
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrLoop
 import VerifiedGarbage.Proof.Ffdh.MillerRabin
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrExp
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Shared Miller–Rabin core: correctness on x86-64
 

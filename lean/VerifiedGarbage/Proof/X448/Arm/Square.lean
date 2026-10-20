@@ -3,9 +3,9 @@ module
 import VerifiedGarbage.Proof.X448.Arm.Counters
 public import VerifiedGarbage.Proof.X448.Invert
 public import VerifiedGarbage.Proof.X448.Arm.Ops
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: runs of squarings

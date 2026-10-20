@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
 public import VerifiedGarbage.Spec.MlKem.Contract
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha256.X86.Lit
+import VerifiedGarbage.Proof.Sha3.X86.Lit
 
 /-!
 # ML-KEM-768 on x86 (32-bit): `vg_mlkem768_check_ek`

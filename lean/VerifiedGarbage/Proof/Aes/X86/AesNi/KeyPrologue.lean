@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
 public import VerifiedGarbage.Impl.Aes.X86.AesNi
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 

@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Piece
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneShot
 
-import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CryptCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.J0CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
@@ -14,6 +13,21 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.CryptCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.J0CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
+import Lean.Level
+import VerifiedGarbage.Impl.AesGcm.X86_64
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
+public import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+meta import Lean.Level
+meta import VerifiedGarbage.Impl.AesGcm.X86_64
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
 
 /-!
 # AES-GCM on x86-64: the pieces of `seal` and `open` in two runs

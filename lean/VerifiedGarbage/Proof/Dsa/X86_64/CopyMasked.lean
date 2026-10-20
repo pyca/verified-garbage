@@ -1,13 +1,15 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Bignum.X86_64
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.Layout
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Push
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-! # Fixed-length masked signature output -/
 

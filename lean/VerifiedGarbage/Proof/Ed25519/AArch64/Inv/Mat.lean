@@ -3,6 +3,13 @@ module
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Math
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Divstep
 import VerifiedGarbage.Proof.X25519.AArch64.Ops
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.NormNum.OfScientific
+import Mathlib.Tactic.NormNum.DivMod
+import Mathlib.Tactic.NormNum.Abs
+import Mathlib.Data.Rat.Cast.Order
+import Mathlib.Tactic.NormNum.Pow
 
 /-! # The inversion's matrix as magnitudes and signs
 

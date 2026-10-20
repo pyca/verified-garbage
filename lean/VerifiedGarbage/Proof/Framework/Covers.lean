@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.TCB.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Covering regions

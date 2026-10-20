@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.PcFn
 public import VerifiedGarbage.Spec.Rsa
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Compute the shared RSA limb count from the public byte length -/
 

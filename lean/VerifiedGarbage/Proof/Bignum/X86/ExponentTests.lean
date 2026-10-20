@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.ExponentTestMath
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Test the public exponent's upper bound, parity and lower bound -/
 

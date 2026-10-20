@@ -9,6 +9,12 @@ import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Block
+import Mathlib.Tactic.NormNum.OfScientific
+import Mathlib.Tactic.NormNum.DivMod
+import Mathlib.Tactic.NormNum.Abs
+import Mathlib.Data.Rat.Cast.Order
+import Mathlib.Tactic.NormNum.Pow
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # The radix-2⁵⁶ results

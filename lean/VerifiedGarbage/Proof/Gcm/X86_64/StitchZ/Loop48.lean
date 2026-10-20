@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
@@ -8,7 +7,9 @@ import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pair
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Interleaved counter mode and GHASH with AVX-512: 48 blocks at a time

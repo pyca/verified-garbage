@@ -6,8 +6,9 @@ import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Round
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Round
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Step
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 
 /-!
 # An SSE2 DES pass on the machine

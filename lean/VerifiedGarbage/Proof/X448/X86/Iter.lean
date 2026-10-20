@@ -1,10 +1,9 @@
 module
 
 import VerifiedGarbage.Proof.X448.X86.BitStep
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.X448.Ladder
 public import VerifiedGarbage.Proof.X448.X86.Ops
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # X448 on x86 (32-bit): the Montgomery ladder

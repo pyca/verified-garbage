@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWord
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVec
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

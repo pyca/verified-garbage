@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inv
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-! Working-space invariants for lazy forward transforms and centered products.
 Canonical `Pl` and `Fam` remain unchanged for packed and public values. -/

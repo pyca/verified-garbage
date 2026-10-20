@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Weierstrass.Naf5
 public import VerifiedGarbage.Proof.Mont.X86_64.Words
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! The five-, seven- and ten-word subtractions used by signed scalar recoding, and the value of the
 scalar's registers (`nafValN`). -/

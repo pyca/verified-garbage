@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.X25519.X86_64.Inv
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Ed25519 on x86-64: two square roots' powers at once

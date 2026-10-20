@@ -2,8 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Ed448.Scalar
 public import VerifiedGarbage.Proof.X448.Field
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.Ed448
 

@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Base
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Bytes
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Offset

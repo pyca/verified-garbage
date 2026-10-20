@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Spec.Cmac.TripleDesContract
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Impl.CmacTripleDes.Stream.X86
 
 /-!
 # Streaming TDEA-CMAC on x86: the contracts the proofs are written against

@@ -1,7 +1,5 @@
 module
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Bignum.Words
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Impl.Bignum.X86.ExponentCheck
 public import VerifiedGarbage.Proof.Bignum.ExponentCheckMath
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
@@ -10,7 +8,10 @@ import VerifiedGarbage.Proof.Bignum.X86.ExponentConsumeTiming
 import VerifiedGarbage.Proof.Bignum.X86.ExponentByte
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
 
 /-! # A common public prefix determines each exponent-scanner iteration -/
 

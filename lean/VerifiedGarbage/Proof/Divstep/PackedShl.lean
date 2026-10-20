@@ -1,11 +1,10 @@
 module
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.Tactic.Linarith
-public import Mathlib.Tactic.LinearCombination
-public import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Divstep.PackedDef
 
 import VerifiedGarbage.Proof.Divstep.Packed
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Algebra.Group.Int.Defs
 
 /-!
 # Packed divsteps: the `g` row's low bits

@@ -1,10 +1,7 @@
 module
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Aes.X86.ExpandKey
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
 public import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Impl.StackScratch.X86
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
 
 import VerifiedGarbage.Proof.Aes.X86.ExpandKey
@@ -12,19 +9,10 @@ import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
 import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
 import VerifiedGarbage.Proof.Aes.Scratch
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import VerifiedGarbage.Proof.Aes.X86.AesNi.CT
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBranches
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyMemory
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyPost
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeySteps
-import VerifiedGarbage.Proof.Aes.X86.Ctr32
-import VerifiedGarbage.Proof.Aes.X86.Keys
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+public import VerifiedGarbage.Impl.Aes.X86.AesNi
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Gcm.Spec
 
 /-!
 # The AES key expansion on x86, with its working space on the stack

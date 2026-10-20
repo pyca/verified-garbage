@@ -3,11 +3,13 @@ public import VerifiedGarbage.Impl.X448.X86_64.Adx
 public import VerifiedGarbage.Proof.X448.X86_64.Env
 
 import VerifiedGarbage.Proof.X448.X86_64.Adx.Mul
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.X448.X86_64.AddSub
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import Batteries.Data.List.Basic
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on x86-64: squaring with BMI2 and ADX

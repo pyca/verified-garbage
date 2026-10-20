@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+import VerifiedGarbage.Proof.Framework.Lit
 
 
 /-!

@@ -7,14 +7,18 @@ public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Common
 import VerifiedGarbage.Proof.CmacTripleDes.Scratch
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.TripleDes.SboxTables
+import VerifiedGarbage.Impl.CmacTripleDes.Stream.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.CmacTripleDes.Block
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
 
 @[expose] public section
 

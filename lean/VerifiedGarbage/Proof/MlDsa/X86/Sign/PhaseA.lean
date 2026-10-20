@@ -6,10 +6,9 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.Words
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimB
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.Local
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.MlDsa.DecideAt
-import VerifiedGarbage.Proof.MlKem.X86.Table
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on x86 (32-bit): `ExpandA`

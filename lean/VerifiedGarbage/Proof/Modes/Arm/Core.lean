@@ -2,13 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Modes.Ctr
 public import VerifiedGarbage.Proof.Modes.Arm.Push
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Impl.Modes.Arm.Seq
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Modes.Addr
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.AesCtr.Inc
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # What the modes need of a block cipher's ECB function, on ARMv7

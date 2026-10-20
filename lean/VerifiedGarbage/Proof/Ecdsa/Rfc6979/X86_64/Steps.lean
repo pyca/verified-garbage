@@ -2,10 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Msg
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hmac
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
-import Mathlib.Tactic.Tauto
-import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on x86-64: the steps on `K` and `V`

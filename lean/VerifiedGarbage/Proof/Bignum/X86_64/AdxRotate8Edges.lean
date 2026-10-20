@@ -3,9 +3,7 @@ public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcRow
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
-import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.AddrArith
 

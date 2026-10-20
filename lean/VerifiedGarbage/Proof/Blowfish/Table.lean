@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Impl.Blowfish.Table
 public import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Blowfish.Blocks
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # The table of the initial schedule

@@ -4,11 +4,8 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableLayout
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableConstants
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `PairedTableConstants.lean` -/
 

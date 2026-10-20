@@ -3,6 +3,8 @@ public import VerifiedGarbage.Proof.Ed448.X86.ScalarIO
 
 import VerifiedGarbage.Proof.Ed448.X86.ScalarMulAdd
 import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Ed448 scalar multiply-add on x86 (32-bit): the whole function

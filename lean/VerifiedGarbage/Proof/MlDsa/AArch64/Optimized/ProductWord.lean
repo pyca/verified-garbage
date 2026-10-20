@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Word
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Word
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

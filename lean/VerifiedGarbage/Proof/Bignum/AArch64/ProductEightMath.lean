@@ -1,13 +1,16 @@
 module
 
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Bignum.Words
-public import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Batteries.Tactic.Init
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMath
 import VerifiedGarbage.TCB.AArch64.Simd
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcWord
-import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.ProductEight

@@ -3,11 +3,9 @@ module
 import VerifiedGarbage.Proof.X448.AArch64.Columns
 public import VerifiedGarbage.Proof.X448.Difference
 public import VerifiedGarbage.Proof.X448.AArch64.Mul
-import Batteries.Logic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on AArch64: addition and subtraction

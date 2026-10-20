@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointRunCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.JointRunCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.JointPower
 import VerifiedGarbage.Proof.Dsa.X86_64.JointPrepareCT
 import VerifiedGarbage.Proof.Dsa.X86_64.JointPrepare
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
 
 /-! # Constant time of complete joint DSA exponentiation -/
 

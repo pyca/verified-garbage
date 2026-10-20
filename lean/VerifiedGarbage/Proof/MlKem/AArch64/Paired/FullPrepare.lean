@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Readonly
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Constants and complete-stream rejection entry for the singleton fallback -/
 @[expose] public section

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourGroup
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackBody
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourSetup
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWritten
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.SimpleBitPack
 import VerifiedGarbage.Proof.MlDsa.Pack.Arith

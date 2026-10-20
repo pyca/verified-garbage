@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchControl
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchAdvance
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchStatus
 
 /-! # Total correctness of the bounded native candidate-search loop

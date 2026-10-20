@@ -5,22 +5,18 @@ import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Finalize
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorVariant
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
-public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.ChaCha20Poly1305
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Blocks
 import VerifiedGarbage.Proof.Poly1305.Stream
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.AddS
 
 @[expose] public section
 

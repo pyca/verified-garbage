@@ -1,8 +1,7 @@
 module
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Rsa.X86.KeyTiming
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 
 /-! # Public address schedules for the CRT workspace helpers -/

@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.PrecomputeOut
-public import Batteries.Logic
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-public import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Advance the RSA precomputation output by one array -/
 

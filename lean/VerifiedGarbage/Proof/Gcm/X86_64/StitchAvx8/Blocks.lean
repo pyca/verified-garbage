@@ -1,15 +1,18 @@
 module
 
-public import Mathlib.Tactic.IntervalCases
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Data
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.SetupDispatch
-import Mathlib.Data.List.Induction
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+import Mathlib.Tactic.IntervalCases
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## Schedule -/
 

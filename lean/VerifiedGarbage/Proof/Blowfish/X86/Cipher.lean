@@ -2,11 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.X86.F
 public import VerifiedGarbage.Proof.Blowfish.Feistel
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Blowfish.X86.Run
 import VerifiedGarbage.Proof.Blowfish.Schedule
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-!
 # Blowfish on x86 (32-bit): the block function

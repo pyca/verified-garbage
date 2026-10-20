@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.SubState
 
 import VerifiedGarbage.Proof.Bignum.Arm.SubCompare
 import VerifiedGarbage.Proof.Bignum.Arm.SubRow
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Keep pointer postconditions together with the exact subtraction comparison -/
 

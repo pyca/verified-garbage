@@ -1,37 +1,27 @@
 module
 
 import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Vec
-meta import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Vec
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
-meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame
-meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Lit
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Lit
 import VerifiedGarbage.Proof.Poly1305.Stream
-meta import VerifiedGarbage.Proof.Poly1305.Stream
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Lit
+public import VerifiedGarbage.Impl.Poly1305.AArch64.Vector
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.AddS
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Simd
-meta import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-meta import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Vec
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame
+meta import VerifiedGarbage.Impl.StackScratch.AArch64
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Poly1305.Stream
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Lit
+meta import VerifiedGarbage.Impl.Poly1305.AArch64.Vector
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.AddS
-meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
 
 /-!
 # Poly1305 on AArch64: `update`, with AdvSIMD

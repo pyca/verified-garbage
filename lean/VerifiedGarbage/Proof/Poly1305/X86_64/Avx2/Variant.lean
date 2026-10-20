@@ -2,17 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
+import Mathlib.Tactic.NormNum.Pow
+import Mathlib.Tactic.NormNum.Inv
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Final
 
 /-!
 # `vg_poly1305_blocks_avx2` as an implementation of `vg_poly1305_blocks`

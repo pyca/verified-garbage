@@ -1,10 +1,10 @@
 module
 
-public import Mathlib.Data.Int.GCD
-public import VerifiedGarbage.Proof.Bignum.Amm52
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFront
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import Mathlib.Data.Int.GCD
+import VerifiedGarbage.Proof.Bignum.Amm52
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-!
 # RSA with AVX512_IFMA on x86-64: the workspaces around the IFMA branch

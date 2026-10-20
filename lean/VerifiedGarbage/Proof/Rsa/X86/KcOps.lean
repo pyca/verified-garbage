@@ -9,7 +9,10 @@ import VerifiedGarbage.Proof.Rsa.X86.KeyEq
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Rsa.X86.KeySub
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Mont.X86.Row
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The checks of an RSA key on i686: the steps on `Stg`
 

@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.Rej8
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Exact acceptance bits and compaction masks for eight ML-KEM candidates -/
 

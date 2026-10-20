@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRotate8
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Block
 
 /-! Numeric equations for a rotating ADX column, including both live flags. -/
 

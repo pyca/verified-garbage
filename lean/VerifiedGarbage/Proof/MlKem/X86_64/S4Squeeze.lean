@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Sha3.Seed34
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Absorb
 public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Loop
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Sha3.Arith
 import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop

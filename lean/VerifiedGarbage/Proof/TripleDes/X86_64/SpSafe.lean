@@ -1,23 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Lit
 public import VerifiedGarbage.Impl.StackScratch.X86_64
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Lit
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.SboxLit
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.SboxLit
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.SboxLit
+public import VerifiedGarbage.Impl.TripleDes.X86_64.BitslicedAvx512
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.SboxLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Lit
 
 /-!
 # The bitsliced ECB code on x86-64 writes `rsp` only in its frame

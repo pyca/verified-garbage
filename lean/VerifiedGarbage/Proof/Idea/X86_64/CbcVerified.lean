@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Idea.X86_64.ModeCore
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Idea.ModeBytes
+meta import VerifiedGarbage.Proof.Idea.ModeBytes
 
 /-!
 # IDEA-CBC on x86-64 meets its contracts

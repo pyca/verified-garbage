@@ -2,12 +2,16 @@ module
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
-public import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
-public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # DSA rejection-mask arithmetic and accumulation -/
 

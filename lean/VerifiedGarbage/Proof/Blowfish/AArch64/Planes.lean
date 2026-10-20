@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Proof.Blowfish.AArch64.Transpose
 public import VerifiedGarbage.Impl.Blowfish.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Byte planes in and out, and the accumulation of F

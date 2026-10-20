@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointBuildContext
 public import VerifiedGarbage.Impl.Dsa.X86_64.Joint
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 
 /-! # Advancing the row or column of the joint power table -/

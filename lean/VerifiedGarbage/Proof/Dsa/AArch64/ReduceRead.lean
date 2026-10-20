@@ -3,6 +3,10 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
 
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Dsa.AArch64.Frame
 
 /-! # Reading a byte for DSA streaming reduction -/
 

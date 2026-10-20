@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.EcKey.Generic
 public import VerifiedGarbage.Spec.P384
 public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # P-384 public keys on 32-bit ARM: the contract the proof is written against

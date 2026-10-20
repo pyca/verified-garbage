@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Base
 
-import Mathlib.Tactic.Conv
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4`'s contract

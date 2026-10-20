@@ -3,9 +3,9 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Concrete
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ForwardOk
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! `deadStores` keeps every word a block leaves in memory: it drops a store
 to a slot that a later store overwrites before any load reads it. Going

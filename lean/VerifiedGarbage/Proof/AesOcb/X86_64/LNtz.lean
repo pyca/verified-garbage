@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Ocb.LowBit
 public import VerifiedGarbage.Proof.Gcm.X86_64.Rev
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Env
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Words
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.AesOcb.X86_64.Run
 import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 import VerifiedGarbage.Proof.AesCcm.X86_64.Env

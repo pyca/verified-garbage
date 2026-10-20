@@ -3,12 +3,11 @@ module
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AnyKey.Arm
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Common
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Upd
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Loop
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # HMAC's `init` for a key of any length on 32-bit ARM: correct

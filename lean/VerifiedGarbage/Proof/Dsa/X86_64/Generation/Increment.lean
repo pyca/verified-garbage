@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Reduce
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.X86_64.Div
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+import Mathlib.Tactic.Finiteness.Attr
 
 /-! # Incrementing the even difference in candidate reduction -/
 

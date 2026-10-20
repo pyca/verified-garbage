@@ -1,33 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.AArch64.Update
-meta import VerifiedGarbage.Proof.MdStream.AArch64.Update
 public import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
-meta import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
 import VerifiedGarbage.Proof.MdStream.AArch64.Words
-meta import VerifiedGarbage.Proof.MdStream.AArch64.Words
 public import VerifiedGarbage.Proof.Md5.Md
-meta import VerifiedGarbage.Proof.Md5.Md
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Md5.AArch64.Compress
-meta import VerifiedGarbage.Proof.Md5.AArch64.Compress
 public import VerifiedGarbage.Impl.Md5.AArch64.Stream
-meta import VerifiedGarbage.Impl.Md5.AArch64.Stream
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Update
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Words
+meta import VerifiedGarbage.Proof.Md5.Md
+meta import VerifiedGarbage.Proof.Md5.AArch64.Compress
+meta import VerifiedGarbage.Impl.Md5.AArch64.Stream
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming MD5 on AArch64: `update` and `finalize`

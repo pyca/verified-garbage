@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Scrypt.X86_64.FusedInvariant
 import VerifiedGarbage.Proof.Scrypt.X86_64.FusedInit
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Bignum.ExponentCheckMath
 
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Save a validated exponent and derive the public limb count -/
 

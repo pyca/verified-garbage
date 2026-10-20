@@ -1,44 +1,23 @@
 module
 
 import VerifiedGarbage.Proof.X448.X86_64.Pow223
-meta import VerifiedGarbage.Proof.X448.X86_64.Pow223
-public import VerifiedGarbage.Proof.X448.X86_64.Lit
-meta import VerifiedGarbage.Proof.X448.X86_64.Lit
 import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.X448.Invert
 public import VerifiedGarbage.Proof.X448.X86_64.Env
 public import VerifiedGarbage.Proof.Mont.Words
-meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.X448.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-import VerifiedGarbage.Proof.X448.X86_64.AddSub
-import VerifiedGarbage.Spec.X25519
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.X448.X86_64.Pow223
+meta import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.X448.Invert
+meta import VerifiedGarbage.Proof.X448.X86_64.Env
+meta import VerifiedGarbage.Proof.Mont.Words
+meta import VerifiedGarbage.Proof.X448.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
-meta import VerifiedGarbage.Proof.X448.X86_64.AddSub
-meta import VerifiedGarbage.Spec.X25519
 
 /-!
 # X448 on x86-64: `vg_gf448_r64_pow223`, verified

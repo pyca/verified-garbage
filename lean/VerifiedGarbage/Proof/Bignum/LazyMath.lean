@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Bignum.Math
 
 
 /-!

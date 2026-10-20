@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.SavedOperand
 public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandState
 import VerifiedGarbage.Proof.Bignum.Arm.StackPair
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Restore a private operand's pointer and length from the call frame -/
 

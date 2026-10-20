@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.DomainShape
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Digest
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.Dsa.Digest
 
 /-! # Relating public width scans to the DSA parameter-size predicate -/
 

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.CheckEffects
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import Batteries.Logic
 
 /-! # Validation preserves every operand outside the arithmetic prefix -/
 

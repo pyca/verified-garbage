@@ -3,11 +3,13 @@ module
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Core
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Data.Nat.GCD.Basic
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import Aesop.BuiltinRules
+import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # FFDH parameter generation on x86-64: random-tape header operations -/
 

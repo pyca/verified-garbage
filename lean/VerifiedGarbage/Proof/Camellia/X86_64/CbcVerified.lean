@@ -14,6 +14,8 @@ meta import VerifiedGarbage.Proof.Camellia.CbcScratch
 meta import VerifiedGarbage.Impl.Camellia.X86_64.Cbc
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Camellia.X86_64.ModesLit
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Camellia-CBC on x86-64 meets its contracts

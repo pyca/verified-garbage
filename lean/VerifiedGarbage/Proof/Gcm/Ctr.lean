@@ -1,12 +1,10 @@
 module
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Gcm
 
-import Mathlib.Data.List.Induction
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.Gcm.Stream
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # GCM: counter mode over a text given in pieces

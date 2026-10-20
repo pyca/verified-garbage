@@ -1,23 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
-meta import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
 public import VerifiedGarbage.Proof.Aes.X86.Ctr32CT
-meta import VerifiedGarbage.Proof.Aes.X86.Ctr32CT
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+public import VerifiedGarbage.Impl.Aes.X86.AesNi
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.Wp
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
+meta import VerifiedGarbage.Proof.Aes.X86.Ctr32CT
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+meta import VerifiedGarbage.Impl.Aes.X86.AesNi
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.Wp
 
 @[expose] public section
 

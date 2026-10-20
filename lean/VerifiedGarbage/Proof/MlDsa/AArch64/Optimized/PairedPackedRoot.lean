@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedState
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRoots
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedShape
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! ## From `PairedPackedBoth.lean` -/
 

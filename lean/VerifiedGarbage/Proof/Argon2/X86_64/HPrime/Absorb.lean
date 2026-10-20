@@ -3,9 +3,9 @@ module
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Fixed
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Frame
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Update
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # H′: absorbing the length prefix or previous digest -/
 

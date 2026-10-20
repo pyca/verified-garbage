@@ -3,12 +3,12 @@ module
 import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Rotation
 import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Store
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.TripleDes.KeySchedule
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Load
-public import VerifiedGarbage.Proof.Framework.PlainSimp
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
 
 @[expose] public section
 

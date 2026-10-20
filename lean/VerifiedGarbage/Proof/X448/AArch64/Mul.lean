@@ -7,9 +7,10 @@ public import VerifiedGarbage.Proof.X448.Field
 import VerifiedGarbage.Proof.X448.AArch64.Init
 import VerifiedGarbage.Proof.X448.AArch64.MulLoop
 import VerifiedGarbage.Proof.X448.AArch64.Reduce
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.AArch64.Normalize
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on AArch64: field multiplication

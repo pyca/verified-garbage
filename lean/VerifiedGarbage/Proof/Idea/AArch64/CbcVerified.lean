@@ -14,6 +14,10 @@ meta import VerifiedGarbage.Proof.Idea.CbcScratch
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Idea.AArch64.ModesLit
 meta import VerifiedGarbage.Proof.Idea.AArch64.ModeCore
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Idea.ModeBytes
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Idea.ModeBytes
 
 /-!
 # IDEA-CBC on AArch64 meets its contracts

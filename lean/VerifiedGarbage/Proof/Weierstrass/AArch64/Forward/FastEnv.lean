@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Data
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Util.CompileInductive
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Spec.Weierstrass
 
 @[expose] public section
 

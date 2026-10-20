@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.X448.Arm.Field
 
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset

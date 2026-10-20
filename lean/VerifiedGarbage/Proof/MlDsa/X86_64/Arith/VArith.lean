@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mont
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.MlKem.X86_64.VArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # ML-DSA on x86-64: arithmetic modulo `q` in doublewords

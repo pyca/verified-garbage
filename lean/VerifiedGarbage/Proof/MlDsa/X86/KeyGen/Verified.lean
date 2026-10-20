@@ -3,6 +3,8 @@ public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Base
 
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Top
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA key generation on x86 (32-bit): the contract

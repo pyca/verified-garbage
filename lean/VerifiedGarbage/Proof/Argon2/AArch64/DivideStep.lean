@@ -1,10 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.Divide
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! # One bit of Argon2's fixed-time index division -/

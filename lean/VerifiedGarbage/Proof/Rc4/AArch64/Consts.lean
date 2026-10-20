@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Rc4.AArch64.Regs
 
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # The constants

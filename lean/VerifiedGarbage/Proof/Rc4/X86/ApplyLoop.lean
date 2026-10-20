@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Rc4.X86.ApplyStep
 import VerifiedGarbage.Proof.Rc4.Update
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Rc4.Stream
 import VerifiedGarbage.Proof.Rc4.Table
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Rc4.Scan32
+public import VerifiedGarbage.Spec.Rc4
+import VerifiedGarbage.Proof.Rc4.X86.Lookup
 
 /-! # RC4 on x86 (32-bit): the stream loop -/
 

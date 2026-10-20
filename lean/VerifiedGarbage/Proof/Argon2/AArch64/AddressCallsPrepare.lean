@@ -5,10 +5,10 @@ import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlock
 public import VerifiedGarbage.Proof.Argon2.AddressInput
 public import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
 import VerifiedGarbage.Proof.Argon2.AArch64.AddressHeaderWords
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
 
 /-! Merged from `Proof.Argon2.AArch64.AddressHeaderCorrect`. -/
 

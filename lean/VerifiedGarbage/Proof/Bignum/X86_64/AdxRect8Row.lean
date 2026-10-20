@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRect8
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
 public import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Store
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
@@ -14,7 +13,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.X86_64.Row
 
 /-! ## AdxRect8Embed -/
 

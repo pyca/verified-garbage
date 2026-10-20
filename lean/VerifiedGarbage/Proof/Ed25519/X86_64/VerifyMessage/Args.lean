@@ -4,8 +4,10 @@ public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyMessage
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Hash
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! Merged from `Proof.Ed25519.X86_64.VerifyMessage.Layout`. -/
 

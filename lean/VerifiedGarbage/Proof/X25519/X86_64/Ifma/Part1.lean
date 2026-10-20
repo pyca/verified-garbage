@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lanes
-import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.X25519.X86_64.Env
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: stage 1 of an iteration

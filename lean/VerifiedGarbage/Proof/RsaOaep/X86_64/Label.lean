@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 public import VerifiedGarbage.Spec.Mgf1
 
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
 import VerifiedGarbage.Proof.Framework.Offset
 

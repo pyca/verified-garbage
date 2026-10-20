@@ -7,8 +7,6 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCacheSelect
 import VerifiedGarbage.Proof.Argon2.AArch64.AddressCacheWord
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillKernel
 import VerifiedGarbage.Proof.Argon2.AArch64.Carry
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

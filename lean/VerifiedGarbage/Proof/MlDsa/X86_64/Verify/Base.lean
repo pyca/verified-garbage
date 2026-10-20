@@ -7,6 +7,7 @@ public import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Frag
 import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA verification on x86-64: moves, layouts and calls

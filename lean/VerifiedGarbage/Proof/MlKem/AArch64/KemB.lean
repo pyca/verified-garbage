@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
 meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!
 # ML-KEM on AArch64: the matrix `Â` of `encaps` and `decaps`

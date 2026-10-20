@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+public import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # ML-DSA key generation on AArch64: parameters and buffers

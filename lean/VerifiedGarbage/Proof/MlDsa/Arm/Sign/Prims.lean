@@ -1,14 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Call
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.MlDsa.Sign.Mem
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.MlKem.Arm.Keccak
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
+public import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlKem.Arm.Common
 
 /-!

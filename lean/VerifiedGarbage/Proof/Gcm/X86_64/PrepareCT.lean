@@ -1,27 +1,23 @@
 module
 
 public import VerifiedGarbage.Impl.Gcm.X86_64.Prepare
-meta import VerifiedGarbage.Impl.Gcm.X86_64.Prepare
 public import VerifiedGarbage.Impl.Gcm.X86_64.PrepareAvx
-meta import VerifiedGarbage.Impl.Gcm.X86_64.PrepareAvx
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Gcm.Prepared
-meta import VerifiedGarbage.Spec.Gcm.Prepared
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Impl.Gcm.X86_64.Prepare
+meta import VerifiedGarbage.Impl.Gcm.X86_64.PrepareAvx
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Spec.Gcm.Prepared
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
 
 /-!
 # Preparing a key context's powers in place: the contract on the registers

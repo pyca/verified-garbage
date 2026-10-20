@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.AesCtr.Inc
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Impl.Modes.X86.Counter
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Spec.Ctr
 import VerifiedGarbage.Proof.Framework.Offset
 

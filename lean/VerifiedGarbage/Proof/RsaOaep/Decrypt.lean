@@ -5,11 +5,15 @@ import VerifiedGarbage.Proof.RsaPss.Sign
 public import VerifiedGarbage.Spec.RsaOaep.Contract
 public import Mathlib.Data.Nat.Prime.Defs
 public import VerifiedGarbage.Proof.Mgf1.Basic
-import Mathlib.FieldTheory.Finite.Basic
-import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Rsa.Checked
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
 
 /-!
 # RSAES-OAEP decryption: one error, and the round trip

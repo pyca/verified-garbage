@@ -1,8 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Bignum.Arm.MontFn
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Mont
 
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
@@ -12,6 +10,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.MontCore
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Arm.MontMath
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The native Montgomery body meets the existing RSA arithmetic postcondition -/
 

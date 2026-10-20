@@ -2,8 +2,7 @@ module
 public import VerifiedGarbage.Proof.X448.X86.Env
 
 import VerifiedGarbage.Proof.X448.X86.Iter
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # X448 on x86 (32-bit): the final ladder swap

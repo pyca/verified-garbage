@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
-public import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Spec.Weierstrass.Point
 
 
 /-! # Public cdecl observations supplied by the shared DSA contracts -/

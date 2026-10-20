@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Bignum.ReverseEncoding
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Byte reversal implements RSA's OS2IP -/
 

@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareGrouped
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Block
 
 /-! Exact equations for the two independent live carry chains of a square. -/
 

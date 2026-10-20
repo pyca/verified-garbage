@@ -4,11 +4,11 @@ public import VerifiedGarbage.Impl.Argon2.X86_64.ReducePointers
 import VerifiedGarbage.Proof.Argon2.X86_64.BlockAddress
 public import VerifiedGarbage.Proof.Argon2.Matrix
 public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Argon2.X86_64.Memory
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! The last-lane address calculation preserves all callee-saved registers. -/
 

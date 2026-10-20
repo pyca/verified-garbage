@@ -5,8 +5,9 @@ import VerifiedGarbage.Proof.P256.VerifySparse.Sub
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 public import VerifiedGarbage.Impl.P256.VerifySparse
 public import VerifiedGarbage.Proof.P256.VerifySparse.Arithmetic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

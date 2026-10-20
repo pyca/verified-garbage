@@ -5,12 +5,12 @@ import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
 public import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wDiv
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.WordStep
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-!
 # `R² mod m` by word steps on x86-64

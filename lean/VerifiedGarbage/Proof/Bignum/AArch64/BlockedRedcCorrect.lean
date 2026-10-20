@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcBody
 
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcEnd
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLoop
 
 @[expose] public section

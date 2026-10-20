@@ -3,8 +3,9 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
 public import VerifiedGarbage.Proof.MlKem.Bits
 
 import VerifiedGarbage.Proof.MlDsa.Pack.Bits
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

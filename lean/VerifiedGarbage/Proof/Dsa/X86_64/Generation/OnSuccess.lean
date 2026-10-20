@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! # Native phase chaining stops on retry or witness exhaustion -/

@@ -3,24 +3,17 @@ public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSymMono
 
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
-meta import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
 import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
-meta import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
-meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
-import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSymMono
+meta import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
+meta import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
+meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
-meta import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
-meta import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # Ed448 verification's equation on AArch64: constant time of the entry, the table and `[S]B`

@@ -2,8 +2,9 @@ module
 public import VerifiedGarbage.Proof.Rsa.Ranges
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpBase
 
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Impl.Rsa.X86_64.Recover
+import VerifiedGarbage.TCB.X86_64.State
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: what the pieces change

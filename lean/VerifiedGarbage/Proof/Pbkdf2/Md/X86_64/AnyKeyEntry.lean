@@ -3,12 +3,12 @@ module
 import VerifiedGarbage.Proof.Framework.EntryBranch
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AnyKey.X86_64
 public import VerifiedGarbage.Spec.Hmac.Generic
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Common
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # HMAC's `init` for a key of any length on x86-64, choosing on entry

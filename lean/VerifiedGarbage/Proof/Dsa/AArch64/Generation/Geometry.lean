@@ -12,6 +12,7 @@ import VerifiedGarbage.Impl.Dsa.Layout
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Shared concrete arena geometry for composing parameter-generation phases -/
 

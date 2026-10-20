@@ -22,6 +22,8 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import Std.Tactic.BVDecide.Normalize.Prop
 meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The initial paired matrix parse observes only the public seed -/
 @[expose] public section

@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Base
 public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Byte
-public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # Input bytes and the CBD2 specification -/
 

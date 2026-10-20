@@ -4,12 +4,7 @@ public import VerifiedGarbage.Proof.Scrypt.AArch64.Whole.Steps
 import VerifiedGarbage.Proof.Scrypt.AArch64.RoMixCT
 import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Contract
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Omega
-public import Mathlib.Tactic.DefEqTransformations
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Scrypt.AArch64.Common
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Scrypt.AArch64.Salsa
 import VerifiedGarbage.Proof.Scrypt.Whole
 import VerifiedGarbage.Proof.Scrypt.BlockMix
@@ -17,15 +12,8 @@ import VerifiedGarbage.Proof.Scrypt.Memory
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Hmac.Generic.Implies
-import VerifiedGarbage.Proof.Sha256.Stream
 
 @[expose] public section
 

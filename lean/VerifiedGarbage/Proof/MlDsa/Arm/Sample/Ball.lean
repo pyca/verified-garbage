@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.BallLoop
 import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_sample_in_ball`, correctness

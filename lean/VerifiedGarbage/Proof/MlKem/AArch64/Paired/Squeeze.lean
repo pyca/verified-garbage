@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeStep
 public import VerifiedGarbage.Impl.MlKem.AArch64.Paired
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Three native SHAKE128 blocks for each matrix stream -/
 @[expose] public section

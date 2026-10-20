@@ -3,22 +3,15 @@ module
 import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Ecb
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.ConstantTime
 public import VerifiedGarbage.Proof.TripleDes.X86_64.ConstantTime
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.TripleDes.Scratch
 public import VerifiedGarbage.TCB.X86_64.Target
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
-import VerifiedGarbage.Proof.TripleDes.Permutation
-import VerifiedGarbage.Proof.TripleDes.Round
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Round
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Step
-import VerifiedGarbage.Proof.TripleDes.X86_64.Sbox
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Lit
+import VerifiedGarbage.Proof.TripleDes.X86_64.FunctionsLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 
 /-! # The bitsliced ECB functions meet their contracts -/
 

@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverGeometry
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Decode checked RSA's cdecl arguments into its public buffer geometry -/
 

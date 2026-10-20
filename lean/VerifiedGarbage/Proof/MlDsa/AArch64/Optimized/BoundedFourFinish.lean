@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFlagValue
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Env
+import VerifiedGarbage.Impl.MlKem.AArch64.Cbd16
 
 /-! ## From `BoundedFourMasked.lean` -/
 

@@ -3,14 +3,16 @@ module
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 import VerifiedGarbage.Proof.Bignum.X86_64.Store
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Rsa.X86_64.Keys
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Rsa.KeyMath
 
 /-!
 # RSA private keys on x86-64: the working space and its pieces

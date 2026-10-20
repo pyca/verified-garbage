@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.SignificantCT
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Dsa.X86_64.Operands
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
 
 /-! # Constant-time public width scans through the saved field bindings -/
 

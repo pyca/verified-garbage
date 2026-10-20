@@ -5,12 +5,15 @@ import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawRange
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawControl
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomMask
 public import VerifiedGarbage.Spec.Dsa.Random
-public import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
-public import VerifiedGarbage.Proof.Dsa.AArch64.Run
 public import VerifiedGarbage.Proof.Dsa.DomainShape
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! A full scalar draw: copy, account for bytes, compare and update fuel. -/
 @[expose] public section

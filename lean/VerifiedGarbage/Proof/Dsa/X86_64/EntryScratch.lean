@@ -4,9 +4,12 @@ public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.Set
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Push
+import Aesop.BuiltinRules
+import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Impl.Dsa.X86_64.Arithmetic
 import VerifiedGarbage.Proof.Bignum.X86_64.Words
 

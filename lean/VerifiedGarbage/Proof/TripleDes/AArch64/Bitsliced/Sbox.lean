@@ -3,18 +3,8 @@ module
 public import VerifiedGarbage.Proof.TripleDes.SboxTables
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
 public import VerifiedGarbage.Proof.Framework.AArch64.StraightV
-public import VerifiedGarbage.Proof.Framework.PlainSimp
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Machine
 
 /-!
 # The AdvSIMD S-box circuits' machine code

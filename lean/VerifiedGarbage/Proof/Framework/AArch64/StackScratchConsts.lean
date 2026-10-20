@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

@@ -1,11 +1,13 @@
 module
-public import Mathlib.Data.Nat.GCD.Basic
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-public import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
 import VerifiedGarbage.Proof.Dsa.Generation.Trial
+public import VerifiedGarbage.Spec.RsaKeyGen
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
 
 /-! # DSA uses RSA's complete native small-prime table and trial loop -/
 

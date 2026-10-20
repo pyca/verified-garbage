@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 import VerifiedGarbage.Proof.Rsa.ZeroTest32
 import VerifiedGarbage.Proof.Bignum.Arm.CompareByteStep
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # A full byte comparison terminates without disclosing the first mismatch -/
 

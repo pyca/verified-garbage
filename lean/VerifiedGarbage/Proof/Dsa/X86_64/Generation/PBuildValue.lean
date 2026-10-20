@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PShapeValue
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PHash
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashSequence
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! # Exact public bytes produced by the complete p hash-and-shape stage -/
 

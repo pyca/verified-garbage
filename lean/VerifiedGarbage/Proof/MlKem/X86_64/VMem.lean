@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.VLanes
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MlKem.Ntt
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 public import VerifiedGarbage.Impl.MlKem.X86_64.Ntt
 import VerifiedGarbage.Proof.Framework.X86_64.Words
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM on x86-64: polynomials as words in the working space

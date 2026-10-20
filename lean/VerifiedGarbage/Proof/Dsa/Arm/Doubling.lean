@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.Stream
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Context
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Mont.Arm.Dyn.PowerTwo
 import VerifiedGarbage.Proof.Framework.Arm.Inline
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.Arm.Dyn.Csub
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Counted modular doubling on ARMv7
 

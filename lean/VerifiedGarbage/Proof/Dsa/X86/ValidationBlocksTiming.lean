@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Dsa.X86.ChecksTiming
 public import VerifiedGarbage.Impl.Dsa.X86.Validate
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 

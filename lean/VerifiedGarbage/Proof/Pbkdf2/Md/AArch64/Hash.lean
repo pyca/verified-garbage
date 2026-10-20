@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Calls
 public import VerifiedGarbage.Spec.Mgf1
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.AArch64.Iterate
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Proof.Pbkdf2.AArch64.IterateCT
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: the hash function

@@ -5,10 +5,11 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailTraversal
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalCorrect
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## From `Mem.lean` -/
 

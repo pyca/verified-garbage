@@ -20,6 +20,10 @@ meta import VerifiedGarbage.Proof.AesOcb.X86.Nonce
 meta import VerifiedGarbage.Proof.AesOcb.X86.LNtz
 meta import VerifiedGarbage.Proof.AesOcb.X86.Run
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-OCB on x86: the data and the tag in constant time

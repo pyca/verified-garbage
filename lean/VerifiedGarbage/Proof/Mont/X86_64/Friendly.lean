@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Mont.X86_64.Row
 import VerifiedGarbage.Proof.Mont.X86_64.Round
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Montgomery arithmetic on x86-64: the reduction for a friendly modulus

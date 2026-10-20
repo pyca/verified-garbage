@@ -2,10 +2,16 @@ module
 
 import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
 public import VerifiedGarbage.Proof.Framework.PowLit
-public import Mathlib.Data.Int.ModEq
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Spec.RsaKeyGen
 import VerifiedGarbage.Proof.Rsa.Octets
+import Mathlib.Order.RelClasses
+import Mathlib.Data.Nat.Basic
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rsa.KeyMath
 
 /-!
 # An RSA key from its primes: the checks

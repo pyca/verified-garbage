@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Seed.X86_64.Setup
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Seed.X86_64.Batch
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Seed.Memory
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset

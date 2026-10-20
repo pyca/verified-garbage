@@ -4,8 +4,7 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

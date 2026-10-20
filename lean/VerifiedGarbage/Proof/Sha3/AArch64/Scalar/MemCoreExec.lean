@@ -3,13 +3,16 @@ module
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.MemLower
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
 public import VerifiedGarbage.Proof.Framework.Mem
-public import Mathlib.Tactic.IntervalCases
 public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lower
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
 
 /-!
 # The scalar round with its temporary lanes in memory, run

@@ -1,25 +1,21 @@
 module
 
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
-meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
-meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
-meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 

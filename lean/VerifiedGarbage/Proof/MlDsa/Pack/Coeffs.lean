@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ML-DSA: coefficients written in order, for every target

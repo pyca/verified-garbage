@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrExp
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Bignum.CrtExp
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-!
 # A candidate on x86-64: `mrRound`

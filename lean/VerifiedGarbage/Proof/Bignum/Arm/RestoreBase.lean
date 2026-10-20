@@ -1,10 +1,10 @@
 module
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.TCB.Arm.Isa
 
 /-! # Recover the workspace pointer saved by the outer RSA frame -/
 

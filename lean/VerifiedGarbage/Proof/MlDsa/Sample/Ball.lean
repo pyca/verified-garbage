@@ -1,10 +1,11 @@
 module
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Spec.MlDsa
 
 import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 import VerifiedGarbage.Proof.MlDsa.Sample.Mem
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # ML-DSA: `SampleInBall` a byte at a time

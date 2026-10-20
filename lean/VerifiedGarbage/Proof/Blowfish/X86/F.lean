@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.X86.Lookup
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Blowfish.X86.Run
 import VerifiedGarbage.Proof.Blowfish.Schedule
 

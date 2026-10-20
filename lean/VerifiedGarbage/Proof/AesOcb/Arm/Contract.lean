@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.Ocb
-import VerifiedGarbage.Spec.Ocb.Contract
 
 /-!
 # AES-OCB on ARMv7: the contracts the proofs are written against

@@ -2,12 +2,14 @@ module
 public import VerifiedGarbage.Proof.Dsa.DomainShape
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomMask
 public import VerifiedGarbage.Spec.Dsa.Random
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyCandidate
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-! A complete draw from the random tape, with derived memory permissions. -/
 @[expose] public section

@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.ExponentScan
 import VerifiedGarbage.Proof.Bignum.X86.ExponentTest
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The i686 validator implements the shared public-exponent predicate -/
 

@@ -5,9 +5,10 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Memory
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.Loop
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.First
 import VerifiedGarbage.Proof.X448.X86_64.Inv
-import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseLoop
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseStep
 
 /-! End-to-end joint multiplication, including runtime table construction. -/
 

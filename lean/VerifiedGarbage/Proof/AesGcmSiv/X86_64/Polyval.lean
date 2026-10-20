@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Absorb
 public import VerifiedGarbage.Proof.GcmSiv.Spec
 import VerifiedGarbage.Proof.Gcm.X86_64.Bits
@@ -13,6 +12,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM-SIV on x86-64: POLYVAL and the tag input (`polyval`)

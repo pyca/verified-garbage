@@ -1,15 +1,18 @@
 module
-public import Mathlib.Data.Int.ModEq
-public import VerifiedGarbage.Proof.RsaKeyGen.Table
 public import VerifiedGarbage.Impl.Dsa.Generation.Layout
-public import VerifiedGarbage.Proof.Dsa.AArch64.Run
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Shared memory plan for native generator filtering and exponentiation -/
 

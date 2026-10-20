@@ -4,13 +4,10 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddChain
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddClose
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Add
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Word
 
 @[expose] public section
 

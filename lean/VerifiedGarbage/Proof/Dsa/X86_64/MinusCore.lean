@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.MinusHead
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.MinusStep
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import Mathlib.Tactic.Finiteness.Attr
 
 /-! # Complete subtraction for DSA modulus-minus constants -/
 

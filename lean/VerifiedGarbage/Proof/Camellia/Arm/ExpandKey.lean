@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Camellia.Arm.KeyStore
 public import VerifiedGarbage.Proof.Camellia.Common
 import VerifiedGarbage.Proof.Camellia.Scratch
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Camellia.Arm.KaKb
 import VerifiedGarbage.Proof.Camellia.Arm.KeyLoad
 import VerifiedGarbage.Proof.Camellia.Arm.KeyInit

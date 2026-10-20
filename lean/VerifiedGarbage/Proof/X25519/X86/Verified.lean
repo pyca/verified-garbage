@@ -1,46 +1,23 @@
 module
 
 import VerifiedGarbage.Proof.X25519.X86.Main
-meta import VerifiedGarbage.Proof.X25519.X86.Main
-public import VerifiedGarbage.Proof.X25519.X86.Lit
-meta import VerifiedGarbage.Proof.X25519.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.X25519.X86.Contract
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.X25519.X86.Lit
+public import VerifiedGarbage.Impl.X25519.X86.Fn
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.X25519.X86.Field32.Call
-import VerifiedGarbage.Proof.X25519.X86.Field32.Verified
-import VerifiedGarbage.Proof.X25519.X86.Finish
-import VerifiedGarbage.Proof.X25519.X86.Fold
-import VerifiedGarbage.Proof.X25519.X86.Setup
-import VerifiedGarbage.Spec.Rc2
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.X25519.X86.Main
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.X25519.X86.Contract
+meta import VerifiedGarbage.Proof.X25519.X86.Lit
+meta import VerifiedGarbage.Impl.X25519.X86.Fn
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.CallWith
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.X25519.X86.Field32.Call
-meta import VerifiedGarbage.Proof.X25519.X86.Field32.Verified
-meta import VerifiedGarbage.Proof.X25519.X86.Finish
-meta import VerifiedGarbage.Proof.X25519.X86.Fold
-meta import VerifiedGarbage.Proof.X25519.X86.Setup
-meta import VerifiedGarbage.Spec.Rc2
 
 /-!
 # X25519 on x86 (32-bit): `Verified`

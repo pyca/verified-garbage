@@ -3,11 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackStreamMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackGroup
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackAdvance
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWritten
 import VerifiedGarbage.Proof.MlDsa.Pack.Stream
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `KeygenPackTailMemory.lean` -/
 

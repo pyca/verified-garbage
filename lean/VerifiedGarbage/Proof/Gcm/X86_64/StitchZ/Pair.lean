@@ -1,7 +1,5 @@
 module
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZ
-public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
 public import VerifiedGarbage.Proof.Framework.X86_64.ZLaneSse
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
@@ -11,6 +9,9 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Gh
 import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Interleaved counter mode and GHASH with AVX-512: a pair of loads

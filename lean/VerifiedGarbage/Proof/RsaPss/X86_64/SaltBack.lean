@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltBack
 import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
 
 /-! Public dispatch between fixed and inferred salt lengths. -/
 

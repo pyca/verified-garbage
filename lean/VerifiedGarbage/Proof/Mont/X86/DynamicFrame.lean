@@ -1,5 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Mont.X86.DynamicOps
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 
 /-! # Memory frames for composing runtime-modulus operations -/

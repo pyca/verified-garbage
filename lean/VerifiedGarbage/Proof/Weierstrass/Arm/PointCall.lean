@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.Arm.Point
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Weierstrass.Arm.MontCall
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Calls of the Montgomery functions with operands in registers, on 32-bit ARM

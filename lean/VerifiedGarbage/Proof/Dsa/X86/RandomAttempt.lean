@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.RandomAttemptState
 public import VerifiedGarbage.Impl.Dsa.X86.RandomSign
 public import VerifiedGarbage.Proof.Dsa.RandomSignTrace
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86.RandomCallArgs
 import VerifiedGarbage.Proof.Dsa.X86.RandomSample
 import VerifiedGarbage.Proof.Mont.X86.Instr

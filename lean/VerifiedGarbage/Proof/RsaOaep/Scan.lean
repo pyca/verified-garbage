@@ -1,9 +1,10 @@
 module
 
-public import Batteries.Tactic.Init
-public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.TCB.Mem
 import VerifiedGarbage.Proof.Mgf1.Bytes
+import Batteries.Tactic.Init
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # RSAES-OAEP decryption: the masks and the scan, whatever the target

@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.RandomCTDefs
 public import VerifiedGarbage.Proof.Dsa.X86.RandomCall
 
 import VerifiedGarbage.Proof.Dsa.X86.RandomAttempt
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import Batteries.Logic
 

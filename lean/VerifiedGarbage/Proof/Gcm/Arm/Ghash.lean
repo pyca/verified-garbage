@@ -1,38 +1,29 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Gcm.Arm.Step
-meta import VerifiedGarbage.Proof.Gcm.Arm.Step
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
-meta import VerifiedGarbage.Proof.Framework.Arm.Bytes
 public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
-meta import VerifiedGarbage.Proof.Framework.Bitslice.Sym
 import VerifiedGarbage.Proof.Aes.Blocks
-meta import VerifiedGarbage.Proof.Aes.Blocks
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Spec.Gcm.Contract
-meta import VerifiedGarbage.Spec.Gcm.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Straight
-import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.Arm.Straight
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Call
-meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Gcm.Arm.Step
+meta import VerifiedGarbage.Proof.Framework.Arm.Bytes
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Sym
+meta import VerifiedGarbage.Proof.Aes.Blocks
+meta import VerifiedGarbage.Spec.Gcm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Straight
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # GHASH on ARMv7: the whole function

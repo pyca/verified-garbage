@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
 import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderWords
 import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressSetup
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Argon2.X86_64.AddressHeaderCorrect`. -/
 

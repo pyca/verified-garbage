@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.X448.Wide.Memory
 public import VerifiedGarbage.Proof.X448.Wide.Product
 
 import VerifiedGarbage.Proof.X448.Wide.AccumSquareBody
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.Wide.Column
 import VerifiedGarbage.Proof.Framework.Block
 

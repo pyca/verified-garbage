@@ -1,10 +1,9 @@
 module
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCT
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCorrect
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

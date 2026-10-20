@@ -4,9 +4,8 @@ public import VerifiedGarbage.Proof.X448.Arm.Mem
 
 import VerifiedGarbage.Proof.X448.Arm.Step
 import VerifiedGarbage.Proof.Framework.Range
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.X25519.Arm.Pass
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: carry propagation

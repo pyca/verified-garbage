@@ -1,14 +1,13 @@
 module
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
 
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # Ed448 verification's equation on AArch64: the checks

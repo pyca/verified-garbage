@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Reloc
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnX
 import VerifiedGarbage.Proof.Framework.KernelRfl
-meta import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Mont.X86_64.MulF
 import VerifiedGarbage.Proof.Weierstrass.Unch

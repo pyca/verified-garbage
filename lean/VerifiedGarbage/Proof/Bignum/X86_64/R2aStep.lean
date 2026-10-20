@@ -3,8 +3,6 @@ module
 import VerifiedGarbage.Proof.Bignum.X86_64.R2aD3
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 public import VerifiedGarbage.Impl.Bignum.X86_64.R2Adx
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wDiv
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
 import VerifiedGarbage.Proof.Bignum.X86_64.R2aSub

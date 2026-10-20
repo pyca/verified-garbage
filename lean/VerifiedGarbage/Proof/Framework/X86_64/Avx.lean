@@ -2,9 +2,11 @@ module
 
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 public import VerifiedGarbage.TCB.X86_64.Avx
-public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.InstancePriority
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # x86-64: AVX registers lane by lane

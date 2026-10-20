@@ -3,6 +3,15 @@ module
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Preserve
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+public import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Merged from `Proof.Ed25519.AArch64.SignCached.CTCommon`. -/
 

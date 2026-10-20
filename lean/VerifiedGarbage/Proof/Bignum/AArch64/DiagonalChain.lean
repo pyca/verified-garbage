@@ -7,10 +7,8 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
 public import VerifiedGarbage.Impl.Bignum.AArch64.DiagonalChain
 public import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChainMath
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalLoop
 
 /-! The single-carry diagonal pass retains the existing full-width postcondition. -/
 

@@ -3,14 +3,10 @@ module
 import VerifiedGarbage.Proof.MdStream.AArch64.Common
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Impl.Rc2.AArch64.Stream
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
-public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Semantics
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Streaming RC2-CBC on AArch64: the byte copy

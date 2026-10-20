@@ -2,10 +2,11 @@ module
 
 import VerifiedGarbage.Proof.X448.X86.RowPass
 public import VerifiedGarbage.Proof.X448.X86.Args
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.X448.X86.Carry
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on x86 (32-bit): modular reduction

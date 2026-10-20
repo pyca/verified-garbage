@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Modes.Arm.SeqCT
 public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Modes.Arm.SeqLoop
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # CBC as a mode one block at a time on ARMv7

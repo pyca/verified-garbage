@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Register records shared by paired samplers -/
 @[expose] public section

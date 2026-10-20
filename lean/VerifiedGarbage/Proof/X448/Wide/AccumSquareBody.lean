@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.X448.Wide.Product
 public import VerifiedGarbage.Proof.X448.Wide.Word
 import VerifiedGarbage.Proof.X448.Wide.SquareProduct
 import VerifiedGarbage.Proof.X448.Wide.DoubleTerm
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.X448.Wide.Term
 

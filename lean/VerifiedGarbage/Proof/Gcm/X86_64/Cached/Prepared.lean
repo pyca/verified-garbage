@@ -8,12 +8,12 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Loop
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
 import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Load
 import VerifiedGarbage.Proof.Framework.X86_64.HighKeep
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Prepared tables and the cached-key loop setup -/
 

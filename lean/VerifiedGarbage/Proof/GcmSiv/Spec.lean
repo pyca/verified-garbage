@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.Cmac.Mem32
 public import VerifiedGarbage.Spec.GcmSiv
 public import VerifiedGarbage.Proof.GcmSiv.MulX
 import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # AES-GCM-SIV: lemmas on the specification

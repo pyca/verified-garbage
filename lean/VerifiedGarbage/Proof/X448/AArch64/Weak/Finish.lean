@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.X448.AArch64.Freeze
 import VerifiedGarbage.Proof.X448.AArch64.Output
 import VerifiedGarbage.Proof.X448.Bytes
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

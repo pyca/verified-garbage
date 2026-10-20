@@ -14,6 +14,12 @@ meta import VerifiedGarbage.Proof.AesOcb.AArch64.Hash
 meta import VerifiedGarbage.Proof.AesOcb.AArch64.PadTo
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Env
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Impl.AesOcb.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.TCB.AArch64.Isa
+meta import VerifiedGarbage.Impl.AesOcb.AArch64
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # AES-OCB on AArch64: `HASH` is constant time

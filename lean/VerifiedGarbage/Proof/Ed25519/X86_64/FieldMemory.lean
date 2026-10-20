@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Field
-public import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.X25519.X86_64.Ops
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Field constants and copies, with the surrounding memory preserved. -/
 

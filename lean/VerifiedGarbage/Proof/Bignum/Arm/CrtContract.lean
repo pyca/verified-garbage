@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Bignum.Arm.CrtFn
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! # Private CRT RSA satisfies its shared contract under AAPCS -/
 

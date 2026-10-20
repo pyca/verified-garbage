@@ -3,12 +3,12 @@ module
 public import VerifiedGarbage.Proof.Cmac.Dbl
 public import VerifiedGarbage.Proof.Cmac.Mem
 public import VerifiedGarbage.TCB.X86_64.Gpr
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Gcm.Bits
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.Gcm.X86_64.Bits
-import VerifiedGarbage.TCB.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # AES-CMAC on x86-64: doubling a block in two 64-bit words

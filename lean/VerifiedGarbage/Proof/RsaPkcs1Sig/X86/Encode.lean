@@ -3,6 +3,8 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeContext
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeHash
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeChecks
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Complete byte-string correctness of the i686 EMSA encoder -/
 

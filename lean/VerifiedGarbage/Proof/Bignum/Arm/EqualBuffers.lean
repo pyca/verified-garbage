@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.SubCompareRow
 import VerifiedGarbage.Proof.Bignum.Arm.SelectPrepare
 import VerifiedGarbage.Proof.Bignum.Arm.SubCompare
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Both unsigned comparisons yield exact equality without secret-dependent branches -/
 

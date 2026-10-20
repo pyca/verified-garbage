@@ -1,17 +1,13 @@
 module
-public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Lay
-public import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Sign
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Hash
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
+import VerifiedGarbage.Impl.MlKem.X86_64.NttRegs
 
 /-!
 # ML-DSA signing on x86-64: blocks that leak only their pointers

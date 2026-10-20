@@ -4,9 +4,6 @@ import VerifiedGarbage.Proof.Hmac.Generic.Implies
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.OmegaLit
 
 /-!

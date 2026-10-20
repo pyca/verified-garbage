@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Spec.Sha256
 public import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.TCB.Artifact
-import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # SHA-256: the AArch64 contract

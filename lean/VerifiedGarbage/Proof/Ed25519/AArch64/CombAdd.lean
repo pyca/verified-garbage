@@ -4,10 +4,8 @@ import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Step
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Point64.Fn
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Comb
 public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Env
-public import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # The comb's addition, on the `_alt` operations

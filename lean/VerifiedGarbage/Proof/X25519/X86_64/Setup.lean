@@ -4,10 +4,10 @@ import VerifiedGarbage.Proof.X25519.X86_64.Freeze
 import VerifiedGarbage.Proof.X25519.Bytes
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 public import VerifiedGarbage.Proof.X25519.X86_64.Env
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Spec.X25519.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X25519 on x86-64: reading the arguments

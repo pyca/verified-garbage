@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Finalize
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Update

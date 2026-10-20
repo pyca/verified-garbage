@@ -4,9 +4,12 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Layout
 public import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Search
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Data
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # The key-generation controller's entry -/
 

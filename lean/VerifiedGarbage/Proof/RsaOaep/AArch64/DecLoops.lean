@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.WordMemory
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Loops
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

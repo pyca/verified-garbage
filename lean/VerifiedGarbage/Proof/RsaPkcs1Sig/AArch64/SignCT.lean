@@ -1,31 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCorrect
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCorrect
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCorrect
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCorrect
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCorrect
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 
 /-!
 # `vg_rsa_pkcs1_sign` on AArch64: constant time

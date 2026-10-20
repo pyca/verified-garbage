@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.X448.X86_64.Field
 public import VerifiedGarbage.Proof.X448.X86_64.Chain
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on x86-64: addition, subtraction, `a24` and the swap

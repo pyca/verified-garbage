@@ -1,12 +1,10 @@
 module
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Output
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OutputArgs
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CopyDigest
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Copy accepted packed parameters to the caller and return success -/

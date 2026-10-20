@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCode
 import VerifiedGarbage.Proof.Dsa.AArch64.PublicSlices
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! Public argument and key-prefix agreement for randomized signing. -/
 @[expose] public section

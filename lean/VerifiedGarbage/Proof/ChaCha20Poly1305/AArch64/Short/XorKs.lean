@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Store
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Zero
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ChaCha20-Poly1305 on AArch64, 64 to 256 bytes: the data XORed with its keystream

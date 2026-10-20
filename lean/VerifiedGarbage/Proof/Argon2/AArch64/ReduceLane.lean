@@ -6,10 +6,9 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.ReducePointers
 import VerifiedGarbage.Proof.Argon2.AArch64.ReduceBlock
 public import VerifiedGarbage.Proof.Argon2.FinalReduction
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressCall
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceCount
 
 /-! Merged from `Proof.Argon2.AArch64.ReductionState`. -/
 

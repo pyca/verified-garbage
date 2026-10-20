@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Seed4
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Call4
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Blocks
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-! Signing matrix expansion in batches of four: sampler outcomes, bounded failure, and the single-stream remainder. -/
 

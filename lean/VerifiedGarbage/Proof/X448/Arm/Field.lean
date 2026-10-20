@@ -2,8 +2,8 @@ module
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Proof.X448.Arm.Mem
 public import VerifiedGarbage.Proof.X448.Field
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # X448 on ARMv7: field operations and their frame

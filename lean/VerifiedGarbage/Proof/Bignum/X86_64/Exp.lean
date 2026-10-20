@@ -1,11 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # Multiword arithmetic on x86-64: the exponentiation of `vg_rsa_public`

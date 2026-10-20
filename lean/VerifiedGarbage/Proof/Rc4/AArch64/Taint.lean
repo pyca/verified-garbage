@@ -1,13 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.AArch64.Lit
-meta import VerifiedGarbage.Proof.Rc4.AArch64.Lit
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Proof.Rc4.AArch64.Lit
+public import VerifiedGarbage.Impl.Rc4.AArch64
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.Rc4.AArch64.Lit
+meta import VerifiedGarbage.Impl.Rc4.AArch64
 
 @[expose] public section
 

@@ -3,11 +3,8 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Pbkdf2
 import VerifiedGarbage.Proof.MdStream.AArch64.Words
 import VerifiedGarbage.Proof.Pbkdf2.Memory
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Pbkdf2.AArch64.Copy
 import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: `pbkdf2`'s loop

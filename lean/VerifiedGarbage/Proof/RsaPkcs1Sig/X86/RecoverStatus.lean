@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverLocal
 import VerifiedGarbage.Proof.Rsa.X86.PrivZeroTest
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackWord
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Save and mask the public operation's status without branching on it -/
 

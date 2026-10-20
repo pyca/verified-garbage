@@ -1,51 +1,33 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Loop
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Loop
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Scratch
-meta import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.AesGcm.Arm.Run
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Run
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
-import VerifiedGarbage.Proof.AesGcm.Arm.Env
-import VerifiedGarbage.Proof.AesGcm.Arm.Loops
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.Arm.Bytes
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Gcm.SealGather
-import VerifiedGarbage.Proof.Gcm.Stream
-import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Env
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Loops
-meta import VerifiedGarbage.Proof.Cmac.Frame
-meta import VerifiedGarbage.Proof.Cmac.Mem
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.Framework.Arm.Bytes
-meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
-meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Loop
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Call
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.Scratch
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Run
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Gcm.SealGather
-meta import VerifiedGarbage.Proof.Gcm.Stream
-meta import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Env
 
 /-!
 # Gathering a list of slices, ARMv7: constant time

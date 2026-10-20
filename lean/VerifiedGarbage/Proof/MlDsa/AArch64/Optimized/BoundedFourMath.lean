@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Sample.HalfByte
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BoundedFour
 
 /-! The bounded sampler's vector groups preserve the standard nibble order.

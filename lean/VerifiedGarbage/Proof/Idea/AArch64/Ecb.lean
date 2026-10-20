@@ -3,21 +3,20 @@ module
 import VerifiedGarbage.Proof.Idea.AArch64.Block
 public import VerifiedGarbage.Proof.Idea.AArch64.ConstantTime
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Idea.Contract
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Idea.AArch64.Mul
 import VerifiedGarbage.Proof.Idea.Memory
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Idea.KeyBits
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Idea.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
 
 /-!
 # IDEA ECB on AArch64

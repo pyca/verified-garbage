@@ -1,19 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Lit
-meta import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Lit
 public import VerifiedGarbage.Proof.TripleDes.AArch64.ConstantTime
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Lit
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Bitsliced
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
+import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.ConstantTime
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-meta import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Lit
+meta import VerifiedGarbage.Impl.TripleDes.AArch64.Bitsliced
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
 
 /-!
 # Constant time

@@ -10,6 +10,11 @@ import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
+import Mathlib.Order.Defs.PartialOrder
+import Mathlib.Tactic.Set
+import Mathlib.Data.Int.GCD
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
 
 /-!
 # RSASSA-PSS verification on x86-64: after the checks

@@ -2,8 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Idea.KeyBits
 public import VerifiedGarbage.Proof.Framework.AArch64.Linear
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Idea.AArch64.ConstantTime
 public import VerifiedGarbage.Spec.Idea.Contract
 import VerifiedGarbage.Proof.Idea.KeyLit
@@ -12,14 +10,10 @@ import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Idea.AArch64.Block
-import VerifiedGarbage.Proof.Idea.AArch64.Ecb
-import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Idea.AArch64.Lit
 
 /-!
 # IDEA key expansion on AArch64

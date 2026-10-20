@@ -1,9 +1,10 @@
 module
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Impl.Bignum.X86.PublicContext
 public import VerifiedGarbage.Proof.Mont.Words32
 
 import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Public precomputation validation leaves the packed key arrays untouched -/
 

@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Impl.Seed.AArch64.G16
 public import VerifiedGarbage.Proof.Seed.G16
 public import VerifiedGarbage.Proof.Aes.AArch64.Encrypt
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # `g16` on AArch64

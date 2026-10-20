@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 public import VerifiedGarbage.Proof.Bignum.Words
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! # Preserve the hash frame while writing an external candidate buffer -/
 

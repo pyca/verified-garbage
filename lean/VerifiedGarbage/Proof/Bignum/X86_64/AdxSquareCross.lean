@@ -3,12 +3,9 @@ module
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideGeneral
 public import VerifiedGarbage.Proof.Bignum.Square
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
-public import VerifiedGarbage.Proof.Bignum.X86_64.Words
-public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRow
 
 /-! The rows of the off-diagonal part of an ADX square. -/

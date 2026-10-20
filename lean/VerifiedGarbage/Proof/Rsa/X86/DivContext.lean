@@ -1,9 +1,13 @@
 module
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Mont.Words32
 
 import VerifiedGarbage.Proof.Rsa.WordRanges
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Public geometry for fixed-width native RSA division -/
 

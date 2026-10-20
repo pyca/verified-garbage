@@ -3,6 +3,8 @@ public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 public import VerifiedGarbage.Spec.Rsa.Contract
 
 import VerifiedGarbage.Proof.Rsa.BytesFrame
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Buffer geometry and immutable input bytes of checked public RSA -/
 

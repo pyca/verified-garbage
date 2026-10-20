@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Cmac.Mem32
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Spec.Ccm
 import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # AES-CCM: the bytes of a buffer after writes

@@ -1,10 +1,7 @@
 module
 public import VerifiedGarbage.Impl.Camellia.Arm.Ecb
-public import VerifiedGarbage.Proof.Camellia.SboxTable
 public import VerifiedGarbage.Proof.Framework.Arm.Straight
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Camellia.Common
 import VerifiedGarbage.Proof.Camellia.Arm.Core
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd

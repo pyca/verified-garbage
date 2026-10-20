@@ -1,5 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 
 /-!

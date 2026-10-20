@@ -3,13 +3,6 @@ module
 public import VerifiedGarbage.Proof.Cast5.AArch64.KeyGroup
 import VerifiedGarbage.Proof.Cast5.AArch64.Run
 import VerifiedGarbage.Proof.Cast5.Memory
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Cast5.AArch64.Block
-public import VerifiedGarbage.Proof.Cast5.AArch64.KeyLine
-public import VerifiedGarbage.Proof.Cast5.Memory
-public import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Cast5.AArch64.Block
-import VerifiedGarbage.Proof.Cast5.AArch64.KeyLine
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

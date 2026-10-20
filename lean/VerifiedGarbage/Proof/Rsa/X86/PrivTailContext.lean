@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Rsa.X86.PrivCrtCall
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackWord
 import VerifiedGarbage.Proof.Rsa.X86.PrivRegions
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Retained caller arguments supply the final fault comparison and output release -/
 

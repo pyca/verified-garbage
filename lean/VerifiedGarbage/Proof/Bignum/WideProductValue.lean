@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.Words32
+import Batteries.Tactic.Init
 
 /-! # A full product occupies exactly twice the operand width -/
 

@@ -4,10 +4,10 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Hash
 
 import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCorrect
 import VerifiedGarbage.Proof.MlDsa.X86_64.Message.HashCT
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 
 /-!

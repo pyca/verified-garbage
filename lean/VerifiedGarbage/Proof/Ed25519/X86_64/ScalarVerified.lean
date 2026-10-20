@@ -1,38 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Ed25519.Scalar
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
-import VerifiedGarbage.Proof.Framework.AddrArith
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.X25519.X86_64.AddSub
-import VerifiedGarbage.Proof.X25519.X86_64.Finish
-import VerifiedGarbage.Proof.X25519.X86_64.Freeze
-import VerifiedGarbage.Proof.X25519.X86_64.Inv
-meta import VerifiedGarbage.Proof.Ed25519.Scalar
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.X25519.X86_64.AddSub
-meta import VerifiedGarbage.Proof.X25519.X86_64.Finish
-meta import VerifiedGarbage.Proof.X25519.X86_64.Freeze
-meta import VerifiedGarbage.Proof.X25519.X86_64.Inv
 
 /-! Merged from `Proof.Ed25519.X86_64.ScalarLit`. -/
 

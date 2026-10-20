@@ -4,7 +4,8 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashCopyCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashStep
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Constant time of the complete p-candidate hash sequence -/
 

@@ -1,28 +1,21 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Pass2
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttCommon
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.MlKem.AArch64.Barrett
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lane
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Last
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
-import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
-import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Pass2
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+meta import VerifiedGarbage.Proof.MlKem.AArch64.NttCommon
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM's 16-bit NTT on AArch64: `vg_mlkem_ntt`

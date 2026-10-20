@@ -3,7 +3,8 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFrame
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignEntry
 
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSaved
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Saved public arguments retained throughout randomized signing. -/
 @[expose] public section

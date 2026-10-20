@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeBlock
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # One matrix-squeeze iteration and its public counter -/
 @[expose] public section

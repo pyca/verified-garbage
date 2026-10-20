@@ -2,12 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.NttLayer
 import VerifiedGarbage.Proof.MlKem.AArch64.Barrett
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # ML-KEM's 16-bit NTT on AArch64: the butterflies on rows

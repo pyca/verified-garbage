@@ -26,6 +26,8 @@ meta import VerifiedGarbage.Impl.StackScratch.X86_64
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Idea.ModeBytes
+meta import VerifiedGarbage.Proof.Idea.ModeBytes
 
 /-!
 # IDEA-OFB and -CFB64 on x86-64 meet their contracts

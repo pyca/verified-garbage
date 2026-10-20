@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Add
 public import VerifiedGarbage.Impl.Ed448.Wnaf
 import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
+import Mathlib.Tactic.Abel
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! The sparse loop's group interpretation. -/
 

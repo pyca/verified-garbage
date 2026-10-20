@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivGeometry
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Impl.Rsa.Arm.PrivChecked
 import VerifiedGarbage.Proof.Bignum.Arm.MontMath
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.TCB.Arm.Isa
+import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Mont.Words
 
 /-! # Decode the native AAPCS private-key arguments into a public layout -/

@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.CvFinish
 
 import VerifiedGarbage.Proof.Rsa.Arm.CvValid
 import VerifiedGarbage.Proof.Rsa.Arm.CvSpec
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! # `vg_rsa_crt_values` on ARMv7: correctness
 

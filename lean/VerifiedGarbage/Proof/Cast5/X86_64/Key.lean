@@ -1,5 +1,4 @@
 module
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Cast5.X86_64
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
@@ -8,7 +7,11 @@ import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Cast5.X86_64.KeyLine
 import VerifiedGarbage.Proof.Cast5.Memory
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Spec.Cast5
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
 
 /-!
 # CAST5 key expansion on x86-64

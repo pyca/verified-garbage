@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.MlKem.X86.DecapsBody
 import VerifiedGarbage.Proof.MlKem1024.X86.Kem
 public import VerifiedGarbage.Spec.MlKem.Contract1024
 public import VerifiedGarbage.Impl.MlKem1024.X86.Kem
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM-1024 on x86 (32-bit): `vg_mlkem1024_decaps`

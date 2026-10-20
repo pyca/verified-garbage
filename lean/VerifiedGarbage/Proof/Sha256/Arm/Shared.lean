@@ -12,6 +12,8 @@ public import VerifiedGarbage.Proof.Sha256.Arm.Lit
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Impl.StackScratch.Arm
+import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Sha256 on Arm: the shared contracts

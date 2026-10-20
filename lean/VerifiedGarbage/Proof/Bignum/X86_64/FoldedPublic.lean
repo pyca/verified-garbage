@@ -2,8 +2,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
 import VerifiedGarbage.Proof.Bignum.FoldedPublic
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The last public-exponent multiplication also leaves Montgomery form. -/
 

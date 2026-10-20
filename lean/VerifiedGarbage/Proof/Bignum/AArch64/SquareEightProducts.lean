@@ -2,10 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEight
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Ed25519.Word64
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.TCB.AArch64.Isa
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

@@ -1,9 +1,10 @@
 module
 public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Call
 
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Rc2.AArch64.Lit
 
 /-! # Permissions and separation for one CBC step -/
 

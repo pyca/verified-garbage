@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Chain
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Sum
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8RowCore
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory

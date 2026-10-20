@@ -1,49 +1,35 @@
 module
 
 import VerifiedGarbage.Proof.Sm4.Arm.EcbAny
-meta import VerifiedGarbage.Proof.Sm4.Arm.EcbAny
 public import VerifiedGarbage.Impl.Sm4.Arm.Cbc
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Sm4.Arm.Ecb
-public import VerifiedGarbage.Proof.Sm4.Arm.Lit
-meta import VerifiedGarbage.Impl.Sm4.Arm.Cbc
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
-meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.MdStream.Arm.Common
-meta import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.Argon2.Arm.Push
-meta import VerifiedGarbage.Proof.Argon2.Arm.Push
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Sm4.Arm.Copy
-import VerifiedGarbage.Proof.Sm4.Arm.Crypt8
-import VerifiedGarbage.Proof.Sm4.Layout
-import VerifiedGarbage.Spec.Ctr.Contract
-meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
+import VerifiedGarbage.Proof.Sm4.Arm.Lit
+meta import VerifiedGarbage.Proof.Sm4.Arm.EcbAny
+meta import VerifiedGarbage.Impl.Sm4.Arm.Cbc
+meta import VerifiedGarbage.Proof.Framework.Arm.CallF
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Sm4.Arm.Ecb
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.MdStream.Arm.Common
+meta import VerifiedGarbage.Proof.Argon2.Arm.Push
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Sm4.Arm.Copy
-meta import VerifiedGarbage.Proof.Sm4.Arm.Crypt8
-meta import VerifiedGarbage.Proof.Sm4.Layout
-meta import VerifiedGarbage.Spec.Ctr.Contract
+meta import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
+meta import VerifiedGarbage.Proof.Sm4.Arm.Lit
 
 /-!
 # SM4 ECB on ARMv7: the functions of one direction

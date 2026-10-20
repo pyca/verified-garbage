@@ -6,8 +6,9 @@ public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateWidth
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
 
 /-! # Undersized p candidates retry without consuming witness bytes -/
 

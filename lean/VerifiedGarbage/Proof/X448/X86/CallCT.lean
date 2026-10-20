@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.X448.X86.Ops
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.TaintErase
 public import VerifiedGarbage.Proof.X448.X86.FnContract
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.X448.X86.FnVerified
 
 /-!

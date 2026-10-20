@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Arithmetic
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Mont.AArch64.P256Square
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 public import VerifiedGarbage.Proof.Ed25519.Word64
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Words
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

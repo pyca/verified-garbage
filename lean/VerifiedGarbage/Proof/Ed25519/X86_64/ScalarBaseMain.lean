@@ -9,6 +9,9 @@ import VerifiedGarbage.Proof.X25519.X86_64.Finish
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-! Merged from `Proof.Ed25519.X86_64.ScalarBaseMemory`. -/
 

@@ -1,9 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcWord
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcRow
-import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 @[expose] public section
 

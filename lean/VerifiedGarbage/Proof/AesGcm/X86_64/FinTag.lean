@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Gcm.Be64
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on x86-64: the tag of a streaming state (`finTag o`)

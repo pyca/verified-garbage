@@ -3,48 +3,25 @@ module
 public import VerifiedGarbage.Proof.MdStream.X86_64.OneShotCT
 public import VerifiedGarbage.Spec.Sha512.Contract
 public import VerifiedGarbage.Proof.Sha512.Md
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Sha512.X86_64.Stream
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.MdStream.X86_64.OneShotCT
 import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
 import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Digest
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Digest
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.MdStream.OneShot
-import VerifiedGarbage.Proof.MdStream.X86_64.Words
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Sha512.X86_64.Shared
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.MdStream.X86_64.OneShotCT
+meta import VerifiedGarbage.Spec.Sha512.Contract
+meta import VerifiedGarbage.Proof.Sha512.Md
+meta import VerifiedGarbage.Impl.Sha512.X86_64.Stream
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Digest
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.MdStream.OneShot
-meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
-meta import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Sha512.Word64
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Shared
 
 /-!
 # The one-shot SHA-512 family digests on x86-64

@@ -3,9 +3,9 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.TCB.AArch64.Isa
 
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-! AArch64 vector loads, stores, and byte reversal. -/
 

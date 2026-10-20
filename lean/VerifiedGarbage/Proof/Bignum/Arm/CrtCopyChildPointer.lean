@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.CrtProduct
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Copy a factor's modulus pointer into the multiplication header -/
 

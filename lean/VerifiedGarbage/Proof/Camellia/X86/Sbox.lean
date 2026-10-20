@@ -4,9 +4,6 @@ public import VerifiedGarbage.Impl.Camellia.X86.Sbox
 public import VerifiedGarbage.Proof.Camellia.SboxTable
 public import VerifiedGarbage.Proof.Framework.X86.Straight
 public import VerifiedGarbage.Proof.Camellia.Bitsliced32
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Camellia.Bitsliced
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!

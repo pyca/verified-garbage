@@ -1,8 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.MlKem.AArch64.Vec

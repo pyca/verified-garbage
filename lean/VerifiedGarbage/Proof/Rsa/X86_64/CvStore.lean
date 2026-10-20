@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvHead
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
 
 /-!
 # `vg_rsa_crt_values` on x86-64: the results

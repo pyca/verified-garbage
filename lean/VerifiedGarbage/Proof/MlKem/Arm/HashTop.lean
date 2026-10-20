@@ -3,9 +3,10 @@ module
 public import VerifiedGarbage.Proof.MlKem.Arm.Lay
 public import VerifiedGarbage.Proof.MlKem.KPke
 public import VerifiedGarbage.Impl.MlKem.Arm.Top
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.Arm.Prims
 import VerifiedGarbage.Proof.MlKem.Arm.Sample
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM-768 on 32-bit ARM: the hash routine

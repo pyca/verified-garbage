@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.X448.Arm.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.X25519.Arm.Pass
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: arithmetic steps

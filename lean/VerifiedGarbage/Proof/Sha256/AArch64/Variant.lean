@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Md
 import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
 public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
 import VerifiedGarbage.Proof.Sha256.AArch64.Stream.InitPairs
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # SHA-256 compression backends on AArch64

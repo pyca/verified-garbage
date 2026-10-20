@@ -1,8 +1,17 @@
 module
 
 import VerifiedGarbage.Proof.Rsa.Octets
-public import Mathlib.Data.Fintype.Card
 public import VerifiedGarbage.Spec.RsaPkcs1Enc
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Tactic.Basic
+public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Push
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # RSAES-PKCS1-v1_5 decryption with implicit rejection: the steps of an implementation

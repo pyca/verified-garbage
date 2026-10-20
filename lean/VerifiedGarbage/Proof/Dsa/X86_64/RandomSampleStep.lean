@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSamplePublic
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawResult
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.RandomTrace
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
 

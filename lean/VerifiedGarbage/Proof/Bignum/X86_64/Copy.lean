@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Row
 public import VerifiedGarbage.Impl.Rsa.X86_64
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!

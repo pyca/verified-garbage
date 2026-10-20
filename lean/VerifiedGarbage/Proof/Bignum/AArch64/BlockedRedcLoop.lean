@@ -2,10 +2,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcBody
 
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcExtend
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcColumns
-import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
-import VerifiedGarbage.Proof.Bignum.Layout
 
 @[expose] public section
 

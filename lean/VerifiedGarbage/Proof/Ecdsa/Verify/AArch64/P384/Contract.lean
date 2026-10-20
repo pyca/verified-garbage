@@ -4,8 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Tables
 public import VerifiedGarbage.Spec.Ecdsa.P384
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ECDSA verification over P-384 on AArch64: the contract the proof is written against

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-! # Endian conversion of ordinary disjoint byte buffers -/
 

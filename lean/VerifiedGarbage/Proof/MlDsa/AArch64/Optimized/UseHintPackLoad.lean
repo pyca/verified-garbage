@@ -5,9 +5,9 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintVec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackBlock
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.UseHintPack
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## From `UseHintPackVec.lean` -/
 

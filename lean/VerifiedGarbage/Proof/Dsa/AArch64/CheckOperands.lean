@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.CheckEffects
+import Batteries.Logic
 
 /-! # Validation preserves every operand outside the arithmetic prefix -/
 

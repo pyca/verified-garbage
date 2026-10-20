@@ -7,29 +7,25 @@ import VerifiedGarbage.Proof.Bignum.Arm.ShiftArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Impl.Bignum.Arm.Round
-public import Batteries.Logic
 import VerifiedGarbage.Proof.Bignum.Arm.RowFullCT
 import VerifiedGarbage.Proof.Bignum.Arm.ShiftCT
 import VerifiedGarbage.Proof.Bignum.Arm.Shift
-meta import VerifiedGarbage.Impl.Bignum.Arm.Round
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Bignum.Arm.RowAdvance
-import VerifiedGarbage.Proof.Bignum.Arm.RowStep
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftStep
-import VerifiedGarbage.Proof.Bignum.Arm.WideMath
-import VerifiedGarbage.Proof.Bignum.Arm.WideValue
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Bignum.Arm.ArgsCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.ProductArgs
+meta import VerifiedGarbage.Proof.Bignum.Arm.ReductionArgs
+meta import VerifiedGarbage.Proof.Bignum.Arm.ShiftArgs
+meta import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Impl.Bignum.Arm.Round
+meta import VerifiedGarbage.Proof.Bignum.Arm.RowFullCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.ShiftCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.Shift
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! # Relational leakage proofs for the three Montgomery stages -/
 

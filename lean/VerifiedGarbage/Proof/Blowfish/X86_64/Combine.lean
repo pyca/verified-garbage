@@ -3,9 +3,9 @@ module
 import VerifiedGarbage.Proof.Blowfish.X86_64.Reduce
 public import VerifiedGarbage.Proof.Blowfish.X86_64.Row
 import VerifiedGarbage.Proof.Blowfish.Schedule
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Words
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # An S-box entry from its byte planes; the index in every lane -/
 

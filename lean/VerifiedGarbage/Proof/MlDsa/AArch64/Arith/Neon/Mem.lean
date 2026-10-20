@@ -3,11 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Bfly
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

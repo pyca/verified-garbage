@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecOut
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecKdk
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
+import Mathlib.Data.Fintype.Card
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: correctness

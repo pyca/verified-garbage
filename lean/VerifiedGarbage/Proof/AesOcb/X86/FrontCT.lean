@@ -16,6 +16,8 @@ meta import VerifiedGarbage.Proof.AesOcb.X86.NonceBlock
 meta import VerifiedGarbage.Proof.AesOcb.X86.Run
 meta import VerifiedGarbage.Proof.AesGcm.X86.Top
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-OCB on x86: the entry, the setup and `Offset_0` in constant time

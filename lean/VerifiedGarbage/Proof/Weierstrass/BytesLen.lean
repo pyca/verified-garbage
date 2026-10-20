@@ -5,6 +5,9 @@ public import VerifiedGarbage.Spec.Ecdsa.Generic
 
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Short Weierstrass curves: numbers of `len` bytes in `n` words

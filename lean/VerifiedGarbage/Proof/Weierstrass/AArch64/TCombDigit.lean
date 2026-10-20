@@ -4,11 +4,10 @@ public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
 public import VerifiedGarbage.Proof.Weierstrass.CombDigitW
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CombDigit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # The comb from tables in memory on AArch64: digits

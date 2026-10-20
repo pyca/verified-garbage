@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashCT
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
 
 /-! Constant time of MGF1's fixed-length padding. -/

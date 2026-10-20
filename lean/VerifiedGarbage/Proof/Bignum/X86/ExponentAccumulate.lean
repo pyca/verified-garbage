@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Bignum.X86.ByteOps
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Native-word effects of the public-exponent accumulation step -/
 

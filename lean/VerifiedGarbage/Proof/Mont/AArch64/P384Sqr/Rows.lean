@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Mont.AArch64.Row
 
 import VerifiedGarbage.Proof.Mont.AArch64.Round
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
 
 /-!

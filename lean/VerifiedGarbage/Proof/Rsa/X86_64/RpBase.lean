@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Impl.Bignum.Layout
+import VerifiedGarbage.Impl.Rsa.X86_64.Keys
 import VerifiedGarbage.Impl.Rsa.X86_64.Recover
-import VerifiedGarbage.Proof.Rsa.Ranges
+import VerifiedGarbage.TCB.X86_64.State
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: the working space

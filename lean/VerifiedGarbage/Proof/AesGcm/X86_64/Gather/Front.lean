@@ -3,23 +3,17 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitPath
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCT
 import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
 import VerifiedGarbage.Proof.AesGcm.X86_64.Run
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Run
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.AesGcm.X86_64.Env
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Env
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 
 /-!

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sha3.X86_64.Permute
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Sha3.Arith
 public import VerifiedGarbage.Proof.Sha3.Stream
-public import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # The SHA-3 sponge on x86-64: the test for a lane at a time

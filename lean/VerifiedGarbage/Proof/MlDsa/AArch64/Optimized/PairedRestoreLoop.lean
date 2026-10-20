@@ -4,7 +4,11 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSaved
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCallFrame
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckModel
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! ## From `PairedReturn.lean` -/
 

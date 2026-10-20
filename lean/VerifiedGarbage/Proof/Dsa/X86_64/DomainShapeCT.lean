@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeTail
 
 import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizesCT
 import VerifiedGarbage.Proof.Dsa.X86_64.ShapeTailCT
-import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! # Constant time of the entire public DSA domain-shape check -/
 

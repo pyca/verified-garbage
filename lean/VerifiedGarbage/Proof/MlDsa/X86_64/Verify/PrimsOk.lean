@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Entry
-public import VerifiedGarbage.Proof.Sha3.X86_64.Round
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-DSA verification on x86-64: what the proofs need of the primitives

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtProduct
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Copy a public buffer pointer between header slots -/
 

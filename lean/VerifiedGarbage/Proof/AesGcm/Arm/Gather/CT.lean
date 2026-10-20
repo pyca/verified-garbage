@@ -1,55 +1,29 @@
 module
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.AesGcm.Arm.SealGather
 public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Callee
 public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Contract
 
 import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Fn
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Fn
 import VerifiedGarbage.Proof.AesGcm.Arm.Gather.LoopCT
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.LoopCT
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
-meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
-import VerifiedGarbage.Proof.AesGcm.Arm.Env
-import VerifiedGarbage.Proof.AesGcm.Arm.Loops
-import VerifiedGarbage.Proof.AesGcm.Arm.Run
-import VerifiedGarbage.Proof.AesGcm.CtxFrame
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Bytes
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Gcm.SealGather
-import VerifiedGarbage.Proof.Gcm.Stream
-import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Env
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Loops
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Run
-meta import VerifiedGarbage.Proof.AesGcm.CtxFrame
-meta import VerifiedGarbage.Proof.Cmac.Frame
-meta import VerifiedGarbage.Proof.Cmac.Mem
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Bytes
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-meta import VerifiedGarbage.Proof.Framework.Bswap
-meta import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Impl.AesGcm.Arm.SealGather
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Callee
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Contract
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Fn
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.LoopCT
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Aes.KeyExp
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Gcm.SealGather
-meta import VerifiedGarbage.Proof.Gcm.Stream
-meta import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, ARMv7: constant time

@@ -9,6 +9,11 @@ import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
 import VerifiedGarbage.Proof.AesCtr.X86_64.CT
 import VerifiedGarbage.Proof.AesCtr.X86_64.Iter
 import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CTR on x86-64: `Verified`

@@ -3,7 +3,6 @@ public import VerifiedGarbage.Impl.Dsa.X86.RandomSign
 public import VerifiedGarbage.Proof.Dsa.X86.RandomCallPre
 public import VerifiedGarbage.Proof.Mont.Words32
 
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-!

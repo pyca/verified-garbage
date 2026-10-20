@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.DivContext
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Rsa.X86.DivReduce
 import VerifiedGarbage.Proof.Rsa.X86.DivBit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Native i686 division implements the shared bit-serial step -/
 

@@ -18,6 +18,10 @@ meta import VerifiedGarbage.Proof.Framework.TaintSumGeneric
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegSet
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 @[expose] public section
 

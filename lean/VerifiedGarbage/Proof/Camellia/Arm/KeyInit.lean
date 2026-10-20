@@ -4,11 +4,10 @@ public import VerifiedGarbage.Proof.Camellia.Arm.Prologue
 public import VerifiedGarbage.Proof.Camellia.Common
 public import VerifiedGarbage.Impl.Camellia.Arm.ExpandKey
 public import VerifiedGarbage.Proof.Camellia.Arm.Core
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Camellia.Arm.Copy
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Camellia.Arm.KeyPair
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Camellia.Planes32
 
 /-!

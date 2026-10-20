@@ -8,32 +8,10 @@ import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Implies
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.CmacTripleDes.StreamScratch
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Lit
-meta import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.Cmac.Block
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Cmac.Stream
-import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Common
-import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Implies
-import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Init
-import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Update
-import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Verified
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 /-!
 # Streaming TDEA-CMAC on x86-64: `Verified`

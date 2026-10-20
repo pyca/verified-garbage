@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Wp
 public import VerifiedGarbage.Proof.Sha3.X86_64.Permute
 public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Round
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Keccak-f[1600] four times at once, in registers: one round

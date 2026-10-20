@@ -3,10 +3,15 @@ module
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtFix
 public import VerifiedGarbage.Proof.Bignum.CrtKey
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Algebra.GroupWithZero.Nat
+import Mathlib.Tactic.Push
+import Mathlib.Algebra.GroupWithZero.Basic
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-!
 # RSA with the CRT on x86-64: the checks

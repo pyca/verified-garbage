@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86.KeyGenPre
 public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86.TopKem
 import VerifiedGarbage.Proof.MlKem.X86.TopLocal
 import VerifiedGarbage.Proof.MlKem.X86.TopHash
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM on x86 (32-bit): the start of key generation

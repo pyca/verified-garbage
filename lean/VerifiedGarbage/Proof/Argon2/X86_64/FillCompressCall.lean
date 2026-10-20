@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Argon2.X86_64.CompressImpl
 import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Invoke the verified compression primitive with narrowed permissions,
 retaining the surrounding matrix and derivation frame. -/

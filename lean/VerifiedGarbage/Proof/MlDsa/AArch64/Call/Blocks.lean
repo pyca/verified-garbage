@@ -1,11 +1,12 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Base
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!

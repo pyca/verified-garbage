@@ -1,21 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.X86.Ctr32
-meta import VerifiedGarbage.Impl.Aes.X86.Ctr32
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Aes.X86.Common
-meta import VerifiedGarbage.Proof.Aes.X86.Common
 public import VerifiedGarbage.Spec.Gcm
-meta import VerifiedGarbage.Spec.Gcm
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.Wp
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Impl.Aes.X86.Ctr32
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Aes.X86.Common
+meta import VerifiedGarbage.Spec.Gcm
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-!
 # AES counter mode on x86 (32-bit): the contract, and constant time

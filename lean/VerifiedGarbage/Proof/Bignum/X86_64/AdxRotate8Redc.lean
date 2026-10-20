@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Loop
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Edges
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 

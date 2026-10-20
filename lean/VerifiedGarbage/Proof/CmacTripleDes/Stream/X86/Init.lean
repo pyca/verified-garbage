@@ -2,44 +2,22 @@ module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Common
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Inline
-meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Common
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.CmacTripleDes.Words
 import VerifiedGarbage.Proof.CmacTripleDes.X86.Update
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.Cmac.Block
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Cmac.Stream
-import VerifiedGarbage.Proof.CmacTripleDes.InlineCT
-import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize
-import VerifiedGarbage.Proof.CmacTripleDes.X86.FinalizeCorrect
-import VerifiedGarbage.Proof.CmacTripleDes.X86.Init
+import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Aes.Blocks
-meta import VerifiedGarbage.Proof.Cmac.Block
-meta import VerifiedGarbage.Proof.Cmac.Frame
-meta import VerifiedGarbage.Proof.Cmac.Spec
-meta import VerifiedGarbage.Proof.Cmac.Stream
-meta import VerifiedGarbage.Proof.CmacTripleDes.InlineCT
+meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Common
 meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Inline
-meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize
-meta import VerifiedGarbage.Proof.CmacTripleDes.X86.FinalizeCorrect
-meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Init
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.CmacTripleDes.Words
+meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Update
 meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Mmx
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.RelCT
-meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming TDEA-CMAC on x86: `vg_cmac_triple_des_stream_init`

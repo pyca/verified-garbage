@@ -12,6 +12,10 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Front
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 
 /-!
 # An RSA key from its primes on x86-64: constant time, `lcm(p − 1, q − 1)`

@@ -1,13 +1,10 @@
 module
-public import Mathlib.Tactic.Conv
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Spec.Blake2
 
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Blake2.Stream
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # H′: the memory changed by hashing a workspace buffer -/
 

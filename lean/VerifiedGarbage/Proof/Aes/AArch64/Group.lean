@@ -3,11 +3,10 @@ module
 public import VerifiedGarbage.Proof.Aes.AArch64.Encrypt
 public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
 public import VerifiedGarbage.Proof.Aes.Blocks
-public import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

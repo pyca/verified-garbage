@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Restore
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Restore preserved registers and return the round's secret Boolean -/
 

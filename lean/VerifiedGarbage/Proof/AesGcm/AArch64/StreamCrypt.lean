@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInit
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_stream_encrypt` and `vg_aes_gcm_stream_decrypt`

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecMul
 public import VerifiedGarbage.Spec.MlKem.Kpke16
 import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

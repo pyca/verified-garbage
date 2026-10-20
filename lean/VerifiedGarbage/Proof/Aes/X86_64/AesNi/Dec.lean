@@ -5,6 +5,8 @@ public import VerifiedGarbage.Impl.Aes.X86_64.AesNiBlocks
 public import VerifiedGarbage.Proof.Aes.InvRounds
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # AES-NI: decryption

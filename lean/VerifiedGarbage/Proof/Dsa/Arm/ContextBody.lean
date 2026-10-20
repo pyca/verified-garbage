@@ -1,37 +1,25 @@
 module
 
-meta import VerifiedGarbage.Impl.Dsa.Arm.Context
 public import VerifiedGarbage.Proof.Dsa.Arm.RegisterSave
 import VerifiedGarbage.Proof.Mont.Arm.Dyn.Timing
-meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.Timing
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.TaintErase
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Context
-meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.Arm.Dyn.ContextInit
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.Csub
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.Digit
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.DigitRow
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.Inverse
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.MulRow
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ops
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.PowerTwo
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.Select
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
-import VerifiedGarbage.Proof.Mont.Arm.Step
-import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Dsa.Arm.RegisterSave
+meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.Timing
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.Context
+meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.ContextInit
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! # Correctness and contract of shared ARMv7 Montgomery setup -/
 

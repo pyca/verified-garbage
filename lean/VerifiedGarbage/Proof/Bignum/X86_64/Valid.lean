@@ -3,10 +3,10 @@ public import VerifiedGarbage.Impl.Bignum.X86_64
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Spec.Rsa
 
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Multiword arithmetic on x86-64: `vg_rsa_public`'s check of the modulus

@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWin
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-!
 # A candidate on x86-64: Miller–Rabin's exponentiation loops

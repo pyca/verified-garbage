@@ -8,7 +8,8 @@ import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Common
 import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.CmacTripleDes.Block
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
+import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 /-!
 # Streaming TDEA-CMAC on ARMv7: `vg_cmac_triple_des_absorb` up to the first run of `update`

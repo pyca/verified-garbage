@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
+import VerifiedGarbage.Proof.Framework.SigEval
 
 /-!
 # AES-GCM on whole blocks, x86-64: the contracts the proofs are written against

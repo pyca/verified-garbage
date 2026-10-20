@@ -2,16 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.RoundLoop
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRound
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwLanes
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # The rounds in a loop, on both lanes

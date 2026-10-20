@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitCall
 public import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
 
 /-! Merged from `Proof.Argon2.AArch64.MemoryInitArgs`. -/
 

@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Bignum.Arm.SquareInit
 import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeft
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The square's cross products doubled -/
 

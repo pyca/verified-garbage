@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Impl.StackScratch.X86
 meta import VerifiedGarbage.Spec.Blowfish.Cfb
 meta import VerifiedGarbage.Proof.Modes.X86.Seq
 meta import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # Blowfish-OFB and Blowfish-CFB64 on x86 (32-bit) meet their contracts

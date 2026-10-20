@@ -1,13 +1,14 @@
 module
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
-public import Mathlib.Data.Nat.ModEq
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Mul
 
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Powers
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Gpr
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Block
+public import Mathlib.Tactic.Basic
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # Poly1305 on x86-64 with AVX-512: the multipliers into the state

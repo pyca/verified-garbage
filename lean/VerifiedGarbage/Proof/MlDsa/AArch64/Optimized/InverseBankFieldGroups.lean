@@ -2,6 +2,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 
 import VerifiedGarbage.Proof.MlDsa.Arith.VectorNtt
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

@@ -5,9 +5,9 @@ public import VerifiedGarbage.Proof.Blake2.X86_64.Contract
 import VerifiedGarbage.Proof.MdStream.X86_64.Common
 public import VerifiedGarbage.Impl.Blake2.X86_64.Stream
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Streaming BLAKE2 on x86-64: common lemmas

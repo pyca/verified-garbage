@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.SignEntry
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyEntry
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeFrame
-import Mathlib.Tactic.Set
 
 /-! # Every saved argument has a defined value after the public shape check -/
 

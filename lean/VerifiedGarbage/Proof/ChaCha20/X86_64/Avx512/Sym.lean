@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Rounds
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # ChaCha20 on x86-64 with AVX-512: straight-line code, doubleword by doubleword

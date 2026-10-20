@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicSelect
 public import VerifiedGarbage.Impl.Dsa.X86_64.PublicPower
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
-import Mathlib.Tactic.Set
 
 /-! # Correctness of public windows and zero-digit skipping -/
 

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulFn
 import VerifiedGarbage.Proof.Framework.AArch64.Call
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!

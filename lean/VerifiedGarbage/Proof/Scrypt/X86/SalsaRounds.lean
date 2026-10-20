@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 import VerifiedGarbage.Proof.Framework.X86.SseDword
 public import VerifiedGarbage.Proof.Scrypt.Spec
 public import VerifiedGarbage.Impl.Scrypt.X86.Salsa
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.X86.Sse
 

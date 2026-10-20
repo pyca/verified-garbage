@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.X86.Lookup
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Rc4.Dword
+import VerifiedGarbage.Proof.Rc4.X86.Lookup
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
+public import VerifiedGarbage.Impl.Rc4.X86
+public import VerifiedGarbage.Proof.Rc4.Scan32
 
 /-! # RC4 on x86 (32-bit): replacing a secret-indexed byte of the table -/
 

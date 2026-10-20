@@ -4,6 +4,14 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashDepth
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateDepth
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PowerDepth
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! # Search controllers inherit their bodies’ stack bounds -/
 

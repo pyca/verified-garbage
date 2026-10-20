@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Spec.Ocb
-import VerifiedGarbage.Spec.Ocb.Contract
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # AES-OCB on x86-64: the contracts the proofs are written against

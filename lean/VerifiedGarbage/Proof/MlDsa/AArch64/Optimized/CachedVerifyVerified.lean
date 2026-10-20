@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyCorrect
 import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

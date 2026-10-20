@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Cmac.Mem
 public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Spec.Gcm
 import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # GCM: the lengths block from byte-reversed words

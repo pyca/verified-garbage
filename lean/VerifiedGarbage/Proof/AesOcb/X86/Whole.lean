@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.AesOcb.X86.Calls
 import VerifiedGarbage.Proof.Ocb.State
 import VerifiedGarbage.Proof.AesOcb.X86.Nonce
 import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-OCB on x86: the whole blocks (`whole`)

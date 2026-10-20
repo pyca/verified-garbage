@@ -1,16 +1,18 @@
 module
 public import VerifiedGarbage.Impl.Sm4.Arm.ExpandKey
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sm4.Arm.Crypt8
 public import VerifiedGarbage.Proof.Sm4.Arm.Prologue
 
 import VerifiedGarbage.Proof.Sm4.Planes
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
 import VerifiedGarbage.Proof.Sm4.Layout
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
 
 /-!
 # The start of the SM4 key schedule on ARMv7

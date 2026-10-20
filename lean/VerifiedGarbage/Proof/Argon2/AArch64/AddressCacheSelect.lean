@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCacheMeta
 public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCallsPrepare
 public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCalls
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceStart
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset

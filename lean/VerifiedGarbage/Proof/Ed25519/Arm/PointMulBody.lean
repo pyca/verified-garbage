@@ -4,6 +4,8 @@ public import VerifiedGarbage.Impl.Ed25519.Arm.PointMul
 public import VerifiedGarbage.Proof.Ed25519.Arm.MulInput
 import VerifiedGarbage.Proof.Ed25519.Arm.BatchBits
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Ed25519.Arm.BatchFrame`. -/
 

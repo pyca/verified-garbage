@@ -4,8 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Tables
 public import VerifiedGarbage.Spec.Ecdsa.P256
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ECDSA verification over P-256 on AArch64: the contract the proof is written against

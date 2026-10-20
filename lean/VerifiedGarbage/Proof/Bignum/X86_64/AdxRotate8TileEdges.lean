@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Accumulate
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Frame
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Math
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit

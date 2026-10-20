@@ -3,9 +3,8 @@ public import VerifiedGarbage.Impl.Rsa.AArch64.Folded
 public import VerifiedGarbage.Proof.Bignum.AArch64.PdExp
 
 import VerifiedGarbage.Proof.Bignum.AArch64.FoldedLoop
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.AArch64.FoldedCounter
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Mont.X86.WordOps
 
 import VerifiedGarbage.Proof.Rsa.X86.DivCopy
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The division shift returns the high bit without branching on it -/
 

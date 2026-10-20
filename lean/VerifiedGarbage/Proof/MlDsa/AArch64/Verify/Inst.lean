@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Final
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA verification on AArch64, with this library's primitives

@@ -6,14 +6,11 @@ public import VerifiedGarbage.Proof.CmacTripleDes.Des
 public import VerifiedGarbage.Proof.CmacTripleDes.Rows
 public import VerifiedGarbage.Proof.Framework.Arm.Linear
 public import VerifiedGarbage.Proof.Framework.Bitslice.Rows
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # A DES round on 32-bit ARM

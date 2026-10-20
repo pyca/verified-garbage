@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFrame
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.Arith
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Data.Nat.Basic
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignABI
 
 /-! Memory layout of the supplied-nonce call within the randomized wrapper. -/
 @[expose] public section

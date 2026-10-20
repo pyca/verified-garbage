@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Sm4.X86_64.Core
 import VerifiedGarbage.Proof.Sm4.Layout
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
 
 /-!
 # The transposes, and sixteen blocks of bitsliced SM4 on x86-64

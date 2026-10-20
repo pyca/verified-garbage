@@ -2,12 +2,11 @@ module
 
 import VerifiedGarbage.Proof.MlKem.X86.Red
 public import VerifiedGarbage.Proof.MlKem.Ntt
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.MlKem.X86.Ntt
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.MlKem.Mem
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # ML-KEM on x86 (32-bit): the butterflies

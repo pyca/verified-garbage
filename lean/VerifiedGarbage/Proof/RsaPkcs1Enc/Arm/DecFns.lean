@@ -6,6 +6,9 @@ public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyEntry
 public import VerifiedGarbage.Spec.Sha256.Contract
 import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeySha256
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Sha1.Arm.Lit
+import VerifiedGarbage.Proof.Sha512.Arm.Lit
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: the SHA-256 and HMAC-SHA-256 functions it calls

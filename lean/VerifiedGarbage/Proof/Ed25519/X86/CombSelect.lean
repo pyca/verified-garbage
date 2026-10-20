@@ -2,12 +2,20 @@ module
 
 import VerifiedGarbage.Proof.Ed25519.X86.CombDigit
 public import VerifiedGarbage.Proof.Ed25519.X86.CombTbl
-public import Mathlib.FieldTheory.Finite.Basic
-public import Mathlib.Tactic.NormNum.Prime
 public import VerifiedGarbage.Proof.Ed25519.X86.Field
 import VerifiedGarbage.Proof.Framework.ReadHalves
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Nat.Totient
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The comb's constant-time selection, for two digits at once

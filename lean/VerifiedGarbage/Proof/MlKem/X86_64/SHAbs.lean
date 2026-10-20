@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.SHSq
 public import VerifiedGarbage.Impl.MlKem.X86_64.SampleH
 import all Init.Data.Nat.Bitwise.Basic
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.MlKem.Mem

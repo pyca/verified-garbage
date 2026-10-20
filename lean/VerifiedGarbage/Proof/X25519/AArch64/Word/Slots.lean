@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.X25519.AArch64.Word
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Field
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Ed25519.Canonical64
 import VerifiedGarbage.Proof.Ed25519.AArch64.Swap
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! The four-word field backend in X25519's existing 4 KiB workspace. -/
 

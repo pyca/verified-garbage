@@ -1,14 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Precompute
-public import Batteries.Logic
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Spec.Rsa.Mont
 import VerifiedGarbage.Proof.Bignum.Arm.ModulusReady
 import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFn
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Import the modulus while preserving its workspace layout -/
 

@@ -4,7 +4,10 @@ public import VerifiedGarbage.Proof.AesCbc.X86.Loop
 public import VerifiedGarbage.Proof.AesCbc.Mem32
 import VerifiedGarbage.Proof.CmacAes.X86.UpdateLoop
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CBC on x86: one block

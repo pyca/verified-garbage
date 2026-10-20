@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.TripleDes.X86_64.WordState
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.TripleDes.X86_64.RoundLit
 
 @[expose] public section
 

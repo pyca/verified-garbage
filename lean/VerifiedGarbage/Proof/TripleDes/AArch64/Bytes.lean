@@ -1,12 +1,9 @@
 module
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.TCB.AArch64.Isa
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.TripleDes
 
 import VerifiedGarbage.Proof.TripleDes.Bytes
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Bswap
 
 @[expose] public section

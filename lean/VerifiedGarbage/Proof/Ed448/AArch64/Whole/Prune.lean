@@ -1,11 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.AArch64.Whole
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 import VerifiedGarbage.Proof.Ed448.Prune

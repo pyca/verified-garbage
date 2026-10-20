@@ -1,19 +1,21 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86.Point
-meta import VerifiedGarbage.Impl.Weierstrass.X86.Point
 public import VerifiedGarbage.Impl.Secp256k1.Point
-meta import VerifiedGarbage.Impl.Secp256k1.Point
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.Secp256k1
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.Secp256k1
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Impl.Weierstrass.X86.Point
+meta import VerifiedGarbage.Impl.Secp256k1.Point
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.Secp256k1
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # Literals of secp256k1's x86 point addition and doubling

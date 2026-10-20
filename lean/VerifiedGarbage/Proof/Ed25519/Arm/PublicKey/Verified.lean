@@ -14,6 +14,9 @@ import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
 import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.Prune
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.Arm.PublicKey.Correct`. -/
 

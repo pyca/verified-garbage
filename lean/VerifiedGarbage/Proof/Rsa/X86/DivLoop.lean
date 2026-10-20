@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.DivContext
 import VerifiedGarbage.Proof.Rsa.X86.DivStep
 import VerifiedGarbage.Proof.Rsa.X86.DivInit
 import VerifiedGarbage.Proof.Framework.X86.Wp
-import VerifiedGarbage.Proof.Mont.X86.Loop
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Termination and quotient/remainder correctness of fixed-count division -/
 

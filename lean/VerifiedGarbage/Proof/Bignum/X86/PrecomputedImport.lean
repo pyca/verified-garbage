@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Bignum.PackedRead
 import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.Layout
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-! # Both imported arrays equal the caller's stored precomputation -/
 

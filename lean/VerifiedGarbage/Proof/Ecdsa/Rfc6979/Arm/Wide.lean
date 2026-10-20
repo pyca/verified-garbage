@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Steps
-public import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.Mont.Arm.Words
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Reduce
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
@@ -12,8 +11,12 @@ import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Weierstrass.Arm.Const
-import VerifiedGarbage.Proof.X25519.Arm.Limbs
+public import Mathlib.Tactic.ToDual
+import Batteries.Logic
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: scalars longer than the hash

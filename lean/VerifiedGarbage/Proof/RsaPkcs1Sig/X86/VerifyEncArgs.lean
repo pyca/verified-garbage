@@ -1,9 +1,9 @@
 module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyContext
-public import Mathlib.Tactic.SplitIfs
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackWord
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Load the public encoder arguments without changing memory -/
 

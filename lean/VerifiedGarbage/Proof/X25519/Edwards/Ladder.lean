@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.X25519.Edwards.URep
 public import VerifiedGarbage.Proof.X25519.Ladder
 import VerifiedGarbage.Proof.X25519.Bytes
 public import VerifiedGarbage.Proof.Framework.PowLit
+import Mathlib.FieldTheory.Finite.Basic
 
 /-!
 # X25519 of the base point is the u-coordinate of a multiple of Ed25519's

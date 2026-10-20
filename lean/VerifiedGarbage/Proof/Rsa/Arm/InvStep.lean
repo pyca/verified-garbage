@@ -3,6 +3,11 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.InvU
 public import VerifiedGarbage.Proof.Rsa.Arm.InvHalf
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Basic.IsEmpty.Defs
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Rsa.KeyMath
 
 /-! # `inverse` on ARMv7: one step is `invStep` -/
 

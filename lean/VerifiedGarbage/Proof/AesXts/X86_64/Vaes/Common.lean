@@ -1,14 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
-public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 public import VerifiedGarbage.Proof.AesCbc.Spec
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.AesXts.Alpha16
 import VerifiedGarbage.Proof.AesXts.Alpha
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # One-pass XTS-AES on x86-64: blocks as words

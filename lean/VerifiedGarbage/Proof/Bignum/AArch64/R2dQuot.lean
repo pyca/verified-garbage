@@ -5,10 +5,8 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dSub
 import VerifiedGarbage.Proof.Bignum.WordStep
 import VerifiedGarbage.Proof.Poly1305.Limbs64
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 /-!
 # `R² mod m` by long division on AArch64: the estimate of the quotient

@@ -74,6 +74,12 @@ meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.Loop
 meta import VerifiedGarbage.Proof.Rc2.X86.KeyIO
 meta import VerifiedGarbage.Proof.Rc2.X86.KeyLookup
 meta import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
+import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.Contract
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

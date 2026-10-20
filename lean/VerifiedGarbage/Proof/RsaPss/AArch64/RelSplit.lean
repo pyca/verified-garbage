@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.Mem
 
 
 /-!

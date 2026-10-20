@@ -1,17 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Framework.OffsetBelow
-import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Sha256.X86.Compress
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!

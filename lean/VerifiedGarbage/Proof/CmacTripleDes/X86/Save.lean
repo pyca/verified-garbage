@@ -3,13 +3,10 @@ module
 public import VerifiedGarbage.Proof.MdStream.X86.Common
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Impl.CmacTripleDes.X86
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
-import VerifiedGarbage.Proof.TripleDes.SboxTables
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.CmacTripleDes.X86.Round
+import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
+import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 /-!
 # TDEA-CMAC on x86: saving and restoring the registers, and the arguments

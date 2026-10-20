@@ -1,10 +1,6 @@
 module
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.AesOcb.AArch64
-public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Spec.Ocb
 
@@ -14,6 +10,7 @@ import VerifiedGarbage.Proof.Ocb.Spec
 import VerifiedGarbage.Proof.AesGcm.AArch64.Env
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # AES-OCB on AArch64: `L_{ntz(i)}` (`lNtz`)

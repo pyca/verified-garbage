@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressCall
 import VerifiedGarbage.Proof.Argon2.AArch64.FillWriteCover
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillCompress
 public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset

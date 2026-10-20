@@ -2,17 +2,18 @@ module
 
 import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
 public import VerifiedGarbage.Proof.Weierstrass.BytesLen32
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Weierstrass.X86
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-!
 # Short Weierstrass curves on x86 (32-bit): numbers of `len` bytes

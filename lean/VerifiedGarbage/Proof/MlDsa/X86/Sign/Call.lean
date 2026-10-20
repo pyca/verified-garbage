@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Base
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86.CallRet
 import VerifiedGarbage.Proof.MlKem.X86.TopCall
-import VerifiedGarbage.Proof.MlKem.X86.Table
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on x86 (32-bit): calls

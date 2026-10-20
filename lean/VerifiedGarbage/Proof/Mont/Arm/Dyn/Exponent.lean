@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.ExponentProduct
 import VerifiedGarbage.Proof.Dsa.Arithmetic
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.Arm.Dyn.ExponentParts
 import VerifiedGarbage.Proof.Mont.Arm.Dyn.PowerTwo
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Runtime-modulus Montgomery arithmetic on 32-bit ARM: exponentiation

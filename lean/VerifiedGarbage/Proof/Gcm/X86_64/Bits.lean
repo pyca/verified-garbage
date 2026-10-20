@@ -4,12 +4,11 @@ import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 import VerifiedGarbage.Proof.Gcm.Bits
 import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.TCB.X86_64.Gpr
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Impl.Gcm.X86_64
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # GHASH on x86-64: shifting a block left, and loading blocks

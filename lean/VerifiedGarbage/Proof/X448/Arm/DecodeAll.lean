@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.X448.Radix16Bytes
 import VerifiedGarbage.Proof.X448.Arm.Decode
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.X448.Arm.Swap
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: decoding the whole coordinate

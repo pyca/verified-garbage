@@ -3,11 +3,10 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Dsa.X86_64.Operands
-import Mathlib.Tactic.Set
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
 
 /-! # Saving sign and verify arguments without changing stack inputs -/
 

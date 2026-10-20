@@ -1,24 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Pre
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.TripleDes.Contract
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Rc2.AArch64.BlockIO
-import VerifiedGarbage.Proof.Rc2.AArch64.Cipher
-import VerifiedGarbage.Proof.Rc2.AArch64.MemOps
-import VerifiedGarbage.Proof.TripleDes.AArch64.Box
-import VerifiedGarbage.Proof.TripleDes.AArch64.RoundBody
-import VerifiedGarbage.Proof.TripleDes.Permutation
+import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
+import VerifiedGarbage.Proof.TripleDes.AArch64.RoundLit
 
 @[expose] public section
 

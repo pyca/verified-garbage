@@ -3,6 +3,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.SubRow
 public import VerifiedGarbage.Proof.Bignum.Arm.SubState
 
 import VerifiedGarbage.Proof.Bignum.Arm.SubBody
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Termination and exact value of a runtime-length subtraction -/
 

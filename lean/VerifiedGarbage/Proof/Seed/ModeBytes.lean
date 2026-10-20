@@ -3,8 +3,10 @@ module
 import VerifiedGarbage.Proof.Seed.Memory
 public import VerifiedGarbage.Spec.Seed.Cbc
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # SEED's blocks and schedule as the modes see them

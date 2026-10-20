@@ -14,6 +14,8 @@ public import VerifiedGarbage.Proof.MlKem.Arm.Prims
 public import VerifiedGarbage.Proof.MlKem.Arm.Sample
 import VerifiedGarbage.Proof.MlKem.Arm.NttInv
 import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM-768 on 32-bit ARM: calling the primitives on buffers

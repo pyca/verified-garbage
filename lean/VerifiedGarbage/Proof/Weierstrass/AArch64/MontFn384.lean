@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
 import VerifiedGarbage.Proof.Mont.AArch64.Ops
 import VerifiedGarbage.Proof.Mont.AArch64.Chain
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # P-384's Montgomery product modulo `p` as a function on AArch64

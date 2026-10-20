@@ -1,12 +1,12 @@
 module
 
 import VerifiedGarbage.Proof.TripleDes.X86.BlockCT
-public import VerifiedGarbage.Proof.Framework.Contract
-public import Batteries.Logic
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.TripleDes.X86.Sbox
 public import VerifiedGarbage.Spec.TripleDes.Contract
 public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Impl.TripleDes.X86.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
 
 @[expose] public section
 

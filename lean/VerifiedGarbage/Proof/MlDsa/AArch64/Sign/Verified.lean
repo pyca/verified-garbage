@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Correct
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on AArch64: verified

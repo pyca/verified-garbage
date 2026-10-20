@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash

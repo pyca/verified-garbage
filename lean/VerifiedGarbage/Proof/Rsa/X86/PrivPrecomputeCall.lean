@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Rsa.X86.PrivCall
 import VerifiedGarbage.Proof.Rsa.X86.PrivCrtCall
 import VerifiedGarbage.Proof.Rsa.X86.PrivRegions
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Call the verified public precomputation without changing the private intermediate -/
 

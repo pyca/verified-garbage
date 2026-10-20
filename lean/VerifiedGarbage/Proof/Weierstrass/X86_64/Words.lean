@@ -1,13 +1,11 @@
 module
 public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.TCB.X86_64.Gpr
 
 import VerifiedGarbage.Proof.Weierstrass.Words
-import Mathlib.Tactic.Tauto
-import Mathlib.Util.CompileInductive
-import VerifiedGarbage.TCB.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Short Weierstrass curves on x86-64: numbers as words, bits and bytes

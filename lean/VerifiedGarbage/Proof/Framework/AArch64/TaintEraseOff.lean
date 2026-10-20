@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Taint tracking for AArch64: code without its immediates and offsets

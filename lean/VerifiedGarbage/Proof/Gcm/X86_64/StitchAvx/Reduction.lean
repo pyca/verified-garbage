@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Folding the three GHASH product words directly

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Ctr
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Copy
 
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
@@ -14,7 +13,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM's short path on x86-64: the keystream

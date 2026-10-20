@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Aes.Arm.Ctr32
 public import VerifiedGarbage.Proof.Aes.Arm.Linear
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Encrypting two blocks, bitsliced, on ARMv7

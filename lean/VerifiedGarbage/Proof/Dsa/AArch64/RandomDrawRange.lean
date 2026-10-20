@@ -1,15 +1,16 @@
 module
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
-public import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Impl.Dsa.AArch64.Random
-public import VerifiedGarbage.Proof.Dsa.AArch64.Run
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Dsa.DomainShape
 
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomInRange
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Range-check a copied candidate against a possibly zero-padded modulus. -/
 @[expose] public section

@@ -3,11 +3,11 @@ module
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Column
 public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.Vector
 public import VerifiedGarbage.Proof.Sha3.Spec
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Parity
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

@@ -4,10 +4,10 @@ public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Add
 import VerifiedGarbage.Proof.Mont.Arm.Dyn.DigitRow
 import VerifiedGarbage.Proof.Mont.Arm.Dyn.Csub
 import VerifiedGarbage.Proof.Mont.Arm.Loop
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.Arm.Dyn.MulRow
 import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Runtime-modulus Montgomery arithmetic on 32-bit ARM: the multiplication

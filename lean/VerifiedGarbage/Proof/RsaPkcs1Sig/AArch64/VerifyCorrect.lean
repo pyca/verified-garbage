@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Framework.Offset

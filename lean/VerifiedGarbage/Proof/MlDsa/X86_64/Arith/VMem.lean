@@ -7,9 +7,7 @@ public import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Ntt
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 
 /-!
 # ML-DSA on x86-64: four coefficients at a time in memory

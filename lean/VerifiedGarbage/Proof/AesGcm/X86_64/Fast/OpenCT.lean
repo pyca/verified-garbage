@@ -20,6 +20,12 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenTag
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM `open`'s path for TLS records, in two runs

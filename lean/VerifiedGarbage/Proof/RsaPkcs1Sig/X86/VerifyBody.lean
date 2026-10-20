@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifySpec
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLength
 import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-! # Verification calls RSA, checks the padding, and returns the specified bit -/
 

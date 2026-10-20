@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseK
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseC
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on AArch64: the rejection sampling loop

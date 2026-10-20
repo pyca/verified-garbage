@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Bignum.X86.CopyArray
 import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # A padded transfer retains both the narrow and double-width integer values -/
 

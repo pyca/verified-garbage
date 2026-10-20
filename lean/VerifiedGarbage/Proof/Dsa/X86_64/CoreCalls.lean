@@ -4,7 +4,9 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Call
 import VerifiedGarbage.Proof.Dsa.X86_64.Power
 import VerifiedGarbage.Proof.Dsa.X86_64.Multiply
-import Mathlib.Tactic.Set
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! # Exponentiation and multiplication in the DSA parent workspace -/
 

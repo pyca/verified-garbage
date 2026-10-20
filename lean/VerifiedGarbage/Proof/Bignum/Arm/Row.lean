@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.RowState
 import VerifiedGarbage.Proof.Bignum.Arm.RowBody2
 import VerifiedGarbage.Proof.Bignum.Arm.RowBody
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Bignum.Arm.WideMul
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Termination, memory safety and correctness of a runtime-length ARMv7 row -/
 

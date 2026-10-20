@@ -3,8 +3,11 @@ module
 import VerifiedGarbage.Proof.TripleDes.X86_64.BlockIO
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Save
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Ready
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.TripleDes.X86_64.RoundLit
 
 @[expose] public section
 

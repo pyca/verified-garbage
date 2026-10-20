@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.ParametersCT
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.X86_64.ABIRegions
-import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # The x86-64 DSA domain check verified against the shared contract -/
 

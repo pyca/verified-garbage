@@ -4,7 +4,6 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomFunctional
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomNonceEncoding
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 
 /-! Entry and exit of the complete 128-draw sampler. -/

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Public tape bounds and status writes for a scalar draw. -/
 @[expose] public section

@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Common
-import VerifiedGarbage.Proof.Framework.OmegaLit
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 
 /-!

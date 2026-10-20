@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8ScalarCT
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Public
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8BatchCT
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # Public invariants across vector and scalar rejection steps -/
 

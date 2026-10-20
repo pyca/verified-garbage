@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointBuildContext
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointWindow
 
-import Mathlib.Tactic.Set
 
 /-! # Public exponent pointers for joint DSA verification -/
 

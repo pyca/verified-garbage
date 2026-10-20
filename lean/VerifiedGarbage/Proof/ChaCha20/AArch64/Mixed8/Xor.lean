@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Lit
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Xor
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Lit
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

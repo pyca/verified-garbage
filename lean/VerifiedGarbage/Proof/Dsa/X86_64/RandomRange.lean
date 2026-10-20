@@ -2,11 +2,14 @@ module
 
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomBorrow
 public import VerifiedGarbage.Proof.Dsa.RandomRange
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Impl.Dsa.X86_64.Random
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-! Correctness of the sampler's right-to-left range check. -/
 @[expose] public section

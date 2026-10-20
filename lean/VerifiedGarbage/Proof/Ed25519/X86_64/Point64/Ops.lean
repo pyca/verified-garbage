@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Fn
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Keeps
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # The point operations a caller runs

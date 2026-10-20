@@ -2,11 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16W.Loop
 import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Prepare
-meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Proof.Rc4.AArch64.Rows
 import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Stores
-import VerifiedGarbage.Proof.Rc4.AArch64.Group
 
 /-! # `vg_mlkem16_cbd2` on AArch64: an iteration, and the loop -/
 

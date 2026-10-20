@@ -1,11 +1,8 @@
 module
 public import VerifiedGarbage.Impl.Camellia.X86.Ecb
-public import VerifiedGarbage.Proof.Camellia.SboxTable
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Camellia.Common
 import VerifiedGarbage.Proof.Camellia.X86.Core
 import VerifiedGarbage.Proof.Framework.X86.RegUpd

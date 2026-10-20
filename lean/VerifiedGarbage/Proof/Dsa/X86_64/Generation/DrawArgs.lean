@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.DrawCopy
-public import Mathlib.Data.Nat.GCD.Basic
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-public import VerifiedGarbage.Proof.RsaKeyGen.Table
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Address and tape accounting for a complete witness draw -/
 

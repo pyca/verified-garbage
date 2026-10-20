@@ -3,10 +3,11 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Seed
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Words
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.PadMem
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Tail
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

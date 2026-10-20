@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Basic.IsEmpty.Defs
 
 /-!
 # `vg_rsa_crt_values` on x86-64: the loads and the check of `p q = n`

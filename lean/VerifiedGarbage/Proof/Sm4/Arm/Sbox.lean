@@ -1,15 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Sm4.Arm.Sbox
-public import VerifiedGarbage.Proof.Sm4.SboxTable
 public import VerifiedGarbage.Proof.Framework.Arm.Straight
 public import VerifiedGarbage.Proof.Sm4.Bitsliced32
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # The bitsliced SM4 S-box on ARMv7

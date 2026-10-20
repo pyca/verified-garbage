@@ -1,13 +1,12 @@
 module
 public import VerifiedGarbage.Impl.MdStream.AArch64
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.MdStream.Spec
 
 import VerifiedGarbage.Proof.MdStream.AArch64.Common
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!

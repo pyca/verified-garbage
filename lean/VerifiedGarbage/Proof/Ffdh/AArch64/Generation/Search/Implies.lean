@@ -2,9 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Contract
 public import VerifiedGarbage.Spec.Ffdh.GenerationContract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The parameter search's contract is its shared callable contract (AArch64) -/
 

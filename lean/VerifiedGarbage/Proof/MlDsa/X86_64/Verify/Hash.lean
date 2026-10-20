@@ -4,12 +4,12 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Call
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Entry
 import VerifiedGarbage.Proof.MlKem.X86_64.Zero
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.MlKem.X86_64.KCall
 import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA verification on x86-64: `H(a ‖ b)` through the sponge

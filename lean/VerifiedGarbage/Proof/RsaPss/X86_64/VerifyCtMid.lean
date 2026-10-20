@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFixed
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
 
 /-!
 # RSASSA-PSS verification on x86-64: `DB` in two runs

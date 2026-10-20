@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! The P-521 square through the existing field-program call protocol. -/
 

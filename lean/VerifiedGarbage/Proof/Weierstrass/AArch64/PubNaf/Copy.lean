@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNaf
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombPublic
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # The public NAF's table: loads and stores through a pointer and an offset

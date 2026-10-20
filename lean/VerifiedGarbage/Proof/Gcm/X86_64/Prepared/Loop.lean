@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
@@ -14,7 +13,9 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Loading the larger GHASH tables from a prepared context -/
 

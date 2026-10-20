@@ -1,7 +1,9 @@
 module
-public import VerifiedGarbage.Proof.Framework.Mem
 
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.TCB.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! # RC2 block memory as pairs of 32-bit words -/
 

@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Spec.Ocb.Contract
+import Mathlib.Tactic.Set
 
 /-!
 # AES-OCB on x86: `vg_aes_ocb_seal` and `vg_aes_ocb_open`

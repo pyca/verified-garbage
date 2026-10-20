@@ -3,18 +3,22 @@ public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.Proof.Curve448.AArch64.Memory
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.SplitIfs
 
 import VerifiedGarbage.Proof.X448.AArch64.BitWrite
 import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Impl.X448.AArch64.Field56
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
-import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
-import VerifiedGarbage.Proof.X448.AArch64.Inv
+import VerifiedGarbage.Proof.X448.AArch64.Env
+import VerifiedGarbage.Proof.X448.AArch64.Mem
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
+import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 import VerifiedGarbage.Proof.X448.AArch64.Setup
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
+import VerifiedGarbage.Spec.X448.Field56
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Ops
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Inv
 
 /-!

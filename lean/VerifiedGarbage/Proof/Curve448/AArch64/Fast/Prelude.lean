@@ -3,9 +3,7 @@ public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.MOp
 
 import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Finish
 import VerifiedGarbage.Proof.Framework.Range
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Impl.X448.AArch64
 
 /-!
 # The start of a product: operands in registers, constants, operand sums

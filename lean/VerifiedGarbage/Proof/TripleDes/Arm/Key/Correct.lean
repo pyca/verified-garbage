@@ -4,9 +4,10 @@ public import VerifiedGarbage.Proof.TripleDes.Arm.Key.Body
 import VerifiedGarbage.Proof.TripleDes.Arm.Key.Save
 public import VerifiedGarbage.Proof.TripleDes.Arm.ConstantTime
 public import VerifiedGarbage.TCB.Arm.Target
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.TripleDes.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
 
 /-! ## `Contract` -/
 

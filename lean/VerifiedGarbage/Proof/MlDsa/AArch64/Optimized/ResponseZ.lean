@@ -2,9 +2,11 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseWord
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseMath
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
 
 @[expose] public section
 

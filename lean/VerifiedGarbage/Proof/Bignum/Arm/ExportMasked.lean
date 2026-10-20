@@ -3,13 +3,13 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.ExportMasked
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Mont
 import VerifiedGarbage.Proof.Bignum.Arm.ExportBE
 import VerifiedGarbage.Proof.Bignum.Arm.MaskOutput
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The serialized result and return status implement secret input acceptance -/
 

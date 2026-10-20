@@ -4,8 +4,9 @@ import VerifiedGarbage.Proof.X448.AArch64.PointwiseOps
 import VerifiedGarbage.Proof.X448.Wide.TailMul
 public import VerifiedGarbage.Proof.X448.AArch64.Swap
 public import Mathlib.Logic.Function.Basic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.AArch64.Copy
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on AArch64: the working space as field-element slots

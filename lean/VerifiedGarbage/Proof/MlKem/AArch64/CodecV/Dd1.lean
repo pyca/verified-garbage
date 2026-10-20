@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM on AArch64: an iteration of `dd1Body`

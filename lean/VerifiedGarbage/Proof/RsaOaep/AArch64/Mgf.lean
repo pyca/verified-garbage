@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Loops
 public import VerifiedGarbage.Proof.RsaOaep.Mask
 import VerifiedGarbage.Proof.Mgf1.Bytes
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith

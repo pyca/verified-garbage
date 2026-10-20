@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareFinish
 
 /-!
 # Clearing the window and the final subtraction, eight words at a time

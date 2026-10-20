@@ -2,27 +2,29 @@ module
 
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Sha256.X86.Compress
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.X86.Call
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Impl.Sha256.X86
 import VerifiedGarbage.Proof.Sha256.X86.Lit
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Sha256.Stream
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Set
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Streaming SHA-256 on x86 (32-bit): common lemmas
 
 Memory, state and constant-time facts shared by the x86 proofs that
 import it. Per-instruction WP rules that expose only what changes, and
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Sha256.Stream
 arithmetic on 32-bit values.
 -/
 

@@ -6,9 +6,10 @@ import VerifiedGarbage.Proof.Pbkdf2.Memory
 public import VerifiedGarbage.Proof.Pbkdf2.MdStep
 public import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.Framework.OmegaLit
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # HMAC and PBKDF2-HMAC over a Merkle–Damgård hash function on ARMv7: words

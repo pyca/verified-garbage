@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Arm.Fn
-public import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Call
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.Arm.Mul
 import VerifiedGarbage.Proof.X448.Arm.Small
 import VerifiedGarbage.Proof.X448.Arm.AddSub
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: calls of the field functions

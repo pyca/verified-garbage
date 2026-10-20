@@ -2,30 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.PcCorrect
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCT
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.PcCorrect
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.PcCorrect
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCT
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
 
 /-!
 # RSAES-PKCS1-v1_5 encryption with a precomputed public key on AArch64: constant time

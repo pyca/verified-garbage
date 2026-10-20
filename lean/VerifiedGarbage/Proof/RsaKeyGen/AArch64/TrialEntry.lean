@@ -3,15 +3,11 @@ public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
-import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 import VerifiedGarbage.Proof.Bignum.AArch64.Setup
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # A candidate on AArch64: trial division by one prime

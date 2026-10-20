@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintWord
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseWord
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintContract
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintField
 
 @[expose] public section

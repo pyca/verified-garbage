@@ -5,7 +5,8 @@ public import VerifiedGarbage.Proof.AesOcb.AArch64.Env
 import VerifiedGarbage.Proof.AesGcm.AArch64.Env
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.AesOcb.AArch64.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-OCB on AArch64: the calls of the block functions

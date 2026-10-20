@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecLanes
 public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecBase
 import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # Decoded lanes implement ByteDecode12 for arbitrary input bytes -/
 

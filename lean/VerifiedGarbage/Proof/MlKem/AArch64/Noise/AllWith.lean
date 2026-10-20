@@ -1,9 +1,13 @@
 module
 
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
 public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.Proof.MlKem.AArch64.Lay
+public import VerifiedGarbage.Proof.MlKem.Mem16
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
+public import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 
 /-! # Accumulating all paired noise outputs -/
 @[expose] public section

@@ -2,14 +2,13 @@ module
 public import VerifiedGarbage.Impl.Blowfish.X86_64
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 
 import VerifiedGarbage.Proof.Blowfish.X86_64.Block
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Blowfish.X86_64.Round
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Key expansion: the initial schedule

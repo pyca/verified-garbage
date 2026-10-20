@@ -3,12 +3,13 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWitAll
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrTab
 public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontRest
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
 

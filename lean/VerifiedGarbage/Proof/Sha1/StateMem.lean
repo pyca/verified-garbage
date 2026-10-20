@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.Sha1
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # SHA-1: the hash value in memory

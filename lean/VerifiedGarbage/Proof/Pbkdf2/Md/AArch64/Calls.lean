@@ -7,8 +7,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Spec.Hmac.Generic
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: the calls

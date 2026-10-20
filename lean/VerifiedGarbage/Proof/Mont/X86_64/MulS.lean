@@ -1,5 +1,4 @@
 module
-public import Mathlib.Tactic.Tauto
 public import VerifiedGarbage.Proof.Mont.X86_64.Words
 
 import VerifiedGarbage.Proof.Mont.X86_64.SqrS
@@ -10,6 +9,7 @@ import VerifiedGarbage.Proof.Mont.X86_64.SparseX
 import VerifiedGarbage.Proof.Mont.X86_64.Sparse
 import VerifiedGarbage.Proof.Mont.X86_64.Friendly
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Montgomery arithmetic on x86-64: the rounds of P-384's multiplication with BMI2 and ADX

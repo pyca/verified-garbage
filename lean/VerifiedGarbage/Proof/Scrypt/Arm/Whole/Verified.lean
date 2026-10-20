@@ -1,59 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
-meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Scrypt.Arm.Whole.Calls
-meta import VerifiedGarbage.Proof.Scrypt.Arm.Whole.Calls
 import VerifiedGarbage.Proof.Scrypt.Arm.RoMixCT
-meta import VerifiedGarbage.Proof.Scrypt.Arm.RoMixCT
 import VerifiedGarbage.Proof.Scrypt.Whole
-meta import VerifiedGarbage.Proof.Scrypt.Whole
 import VerifiedGarbage.Proof.Scrypt.Memory
-meta import VerifiedGarbage.Proof.Scrypt.Memory
-import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Framework.OffsetBelow
-import VerifiedGarbage.Proof.Framework.OmegaLit
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Proof.Hmac.Generic.Implies
-import VerifiedGarbage.Proof.Md5.Arm.Shared
-import VerifiedGarbage.Proof.Pbkdf2.Memory
-import VerifiedGarbage.Proof.Sha1.Arm.Shared
-import VerifiedGarbage.Proof.Sha256.Arm.Shared
-import VerifiedGarbage.Proof.Sha256.Arm.Stream.Common
-import VerifiedGarbage.Proof.Sha256.Scratch
-import VerifiedGarbage.Proof.Sha256.StateMem
-import VerifiedGarbage.Proof.Sha512.Arm.Shared
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Scrypt.Arm.Lit
+import VerifiedGarbage.Proof.Sha1.Arm.Lit
+import VerifiedGarbage.Proof.Sha256.Arm.Lit
+import VerifiedGarbage.Proof.Sha512.Arm.Lit
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
+meta import VerifiedGarbage.Proof.Scrypt.Arm.Whole.Calls
+meta import VerifiedGarbage.Proof.Scrypt.Arm.RoMixCT
+meta import VerifiedGarbage.Proof.Scrypt.Whole
+meta import VerifiedGarbage.Proof.Scrypt.Memory
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
-meta import VerifiedGarbage.Proof.Framework.OffsetBelow
-meta import VerifiedGarbage.Proof.Framework.OmegaLit
-meta import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Hmac.Common
-meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
-meta import VerifiedGarbage.Proof.Md5.Arm.Shared
-meta import VerifiedGarbage.Proof.Pbkdf2.Memory
-meta import VerifiedGarbage.Proof.Sha1.Arm.Shared
-meta import VerifiedGarbage.Proof.Sha256.Arm.Shared
-meta import VerifiedGarbage.Proof.Sha256.Arm.Stream.Common
-meta import VerifiedGarbage.Proof.Sha256.Scratch
-meta import VerifiedGarbage.Proof.Sha256.StateMem
-meta import VerifiedGarbage.Proof.Sha512.Arm.Shared
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Scrypt.Arm.Lit
+meta import VerifiedGarbage.Proof.Sha1.Arm.Lit
+meta import VerifiedGarbage.Proof.Sha256.Arm.Lit
+meta import VerifiedGarbage.Proof.Sha512.Arm.Lit
 
 @[expose] public section
 

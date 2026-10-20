@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Iterate
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Pbkdf2.Memory
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # PBKDF2-HMAC's iteration over a Merkle–Damgård hash function on ARMv7: constant time

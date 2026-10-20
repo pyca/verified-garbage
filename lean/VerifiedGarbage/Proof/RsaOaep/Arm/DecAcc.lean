@@ -30,6 +30,8 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.RsaPss.Arm.Step
+meta import VerifiedGarbage.Proof.RsaPss.Arm.Step
 
 /-!
 # RSAES-OAEP decryption on ARMv7: `EM`'s first byte and `lHash`

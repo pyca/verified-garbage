@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Tag
 public import VerifiedGarbage.Proof.GcmSiv.Ctr
 import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Derive
@@ -10,7 +9,7 @@ import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Siv.Spec
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM-SIV on AArch64: counter mode (`crypt`)

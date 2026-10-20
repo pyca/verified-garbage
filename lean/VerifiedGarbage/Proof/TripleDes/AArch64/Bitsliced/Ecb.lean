@@ -1,47 +1,21 @@
 module
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
-public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
-public import VerifiedGarbage.Proof.TripleDes.SboxTables
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+public import VerifiedGarbage.Spec.TripleDes
+public import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Proof.Framework.InstancePriority
+public import VerifiedGarbage.Proof.Framework.PowLit
+import Mathlib.Tactic.Linter.Style
+import Batteries.Tactic.Init
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Batch
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Copy
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Sbox
-import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
-import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
-import VerifiedGarbage.Proof.TripleDes.Bytes
-import VerifiedGarbage.Proof.TripleDes.Permutation
-import VerifiedGarbage.Proof.TripleDes.Round
-public import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Batch
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Sbox
-public import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
-public import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
-public import VerifiedGarbage.Proof.TripleDes.Bytes
-public import VerifiedGarbage.Proof.TripleDes.Permutation
-public import VerifiedGarbage.Proof.TripleDes.Round
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
+import VerifiedGarbage.Proof.TripleDes.SboxTables
+import VerifiedGarbage.Proof.Framework.AArch64.StraightV
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Tdea
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # The function's environment

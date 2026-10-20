@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Ed25519.AArch64.Scalar
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 public import VerifiedGarbage.Proof.Ed25519.Canonical64
 public import VerifiedGarbage.Spec.Ed25519
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 

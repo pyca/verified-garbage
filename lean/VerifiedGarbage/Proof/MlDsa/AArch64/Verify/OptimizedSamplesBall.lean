@@ -2,11 +2,10 @@ module
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
 
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MatrixMask
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Blocks
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

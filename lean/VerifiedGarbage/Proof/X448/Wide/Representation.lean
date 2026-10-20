@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Wide.Limbs
-public import Batteries.Logic
 public import VerifiedGarbage.Proof.X448.Field
+import Batteries.Tactic.Init
+import Batteries.Logic
 
 /-!
 # Headroom-aware X448 field representation

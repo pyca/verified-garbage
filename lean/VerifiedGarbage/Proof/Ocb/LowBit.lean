@@ -1,11 +1,12 @@
 module
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Spec.Ocb
 
 import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.Framework.InstancePriority
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # `ntz` as the lowest set bit

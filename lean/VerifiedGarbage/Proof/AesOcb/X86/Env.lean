@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.AesGcm.X86.Fn
 import VerifiedGarbage.Proof.AesGcm.X86.Top
 public import VerifiedGarbage.Impl.AesOcb.X86
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.VariantProof
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-OCB on x86: where everything is

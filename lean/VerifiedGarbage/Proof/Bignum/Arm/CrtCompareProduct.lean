@@ -1,6 +1,4 @@
 module
-public import Batteries.Logic
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Proof.Bignum.Arm.SubState
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtCompareProduct
@@ -10,6 +8,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.EqualBuffers
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Exact branchless equality of the factor product and padded modulus -/
 

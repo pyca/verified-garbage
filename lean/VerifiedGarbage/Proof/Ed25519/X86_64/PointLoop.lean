@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
 import VerifiedGarbage.Proof.Ed25519.X86_64.Points
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Sixteen exact doublings, preserving the saved accumulator. -/
 

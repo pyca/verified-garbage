@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Memory
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X25519.AArch64.Ladder
 
 /-! Load a scalar bit and turn the old/new swap XOR into a selection mask. -/

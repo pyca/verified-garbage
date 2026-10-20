@@ -3,11 +3,6 @@ module
 import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Impl.Subst
 public import VerifiedGarbage.TCB.Artifact
-public import Batteries.Tactic.Init
-public import Batteries.Tactic.PermuteGoals
-public import Batteries.Tactic.SeqFocus
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Replacing a piece of code by one that simulates it

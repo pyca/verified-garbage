@@ -4,10 +4,10 @@ public import VerifiedGarbage.Proof.Mont.AArch64.Ops
 public import VerifiedGarbage.Proof.P256.VerifySparse.Arithmetic
 
 import VerifiedGarbage.Proof.P256.VerifySparse.Correct
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Mont.AArch64.Chain
 import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! The existing Montgomery setup/round and addition-chain proofs are reused here.
 Only their final conditional subtraction is replaced with the sparse P-256 proof. -/

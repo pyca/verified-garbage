@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointFprog
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Complete point addition and doubling as functions, on x86 (32-bit): correctness

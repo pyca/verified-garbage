@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Spec.Ccm
-public import Mathlib.Data.List.Induction
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Cmac
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Batteries.Tactic.SeqFocus
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # AES-CCM: the MAC as chaining over pieces

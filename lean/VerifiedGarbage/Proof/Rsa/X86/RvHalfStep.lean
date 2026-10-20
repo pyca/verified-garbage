@@ -8,6 +8,10 @@ import VerifiedGarbage.Proof.Rsa.RecoverHalving
 import VerifiedGarbage.Proof.Rsa.X86.RvCount
 import VerifiedGarbage.Proof.Rsa.X86.RvOps
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # One fixed-schedule halving iteration -/
 

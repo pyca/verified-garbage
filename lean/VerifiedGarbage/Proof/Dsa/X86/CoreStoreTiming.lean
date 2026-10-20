@@ -1,12 +1,11 @@
 module
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Dsa.X86.Core
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 
 import VerifiedGarbage.Proof.Dsa.X86.BytesTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Constant-time release of internal arithmetic results -/
 

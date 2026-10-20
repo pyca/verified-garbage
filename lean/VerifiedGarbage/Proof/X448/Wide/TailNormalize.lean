@@ -5,11 +5,9 @@ public import VerifiedGarbage.Proof.X448.Wide.Column
 
 import VerifiedGarbage.Proof.X448.Wide.Fold
 import VerifiedGarbage.Proof.X448.Wide.TailPass
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.Wide.TailBounds
 import VerifiedGarbage.Proof.X448.Wide.Pass
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Impl.X448.AArch64
 
 /-! Untrusted: normalize wide coefficients and restore the field-slot interface. -/
 

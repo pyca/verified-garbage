@@ -1,21 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallTaint
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallTaint
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Lit
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Lit
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
+public import VerifiedGarbage.Impl.Weierstrass.X86.Mont
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallTaint
 meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
+meta import VerifiedGarbage.Impl.Weierstrass.X86.Mont
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Lit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ECDSA verification over P-521 on x86 (32-bit): summaries of the field functions modulo `n`

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchBody
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchControlCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchCTState
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Impl.Sha512.X86_64.Avx2Rolled
 
 /-! # A completed p attempt returns a public status and next witness cursor -/
 

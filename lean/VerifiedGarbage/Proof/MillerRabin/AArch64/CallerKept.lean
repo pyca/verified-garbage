@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerSave
 public import VerifiedGarbage.Spec.MillerRabin
 
 import VerifiedGarbage.Proof.MillerRabin.Keeps
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Recover the caller's header and padding after the prepared round -/
 

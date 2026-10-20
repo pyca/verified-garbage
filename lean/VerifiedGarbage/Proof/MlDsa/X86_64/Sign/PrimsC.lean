@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Prims
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Sign
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on x86-64: calls of rounding, norms, hints and packing

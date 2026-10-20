@@ -1,15 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Wide.Bridge
-public import Mathlib.Tactic.SplitIfs
-public import Batteries.Logic
 public import VerifiedGarbage.Impl.X448.AArch64.Wide
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Impl.X448.AArch64
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Untrusted: staging normalized 28-bit field slots for the wide kernel. -/
 

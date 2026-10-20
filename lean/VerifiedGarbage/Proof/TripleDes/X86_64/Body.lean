@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Ready
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.TripleDes.X86_64.RoundLit
 
 @[expose] public section
 

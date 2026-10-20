@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Rsa.X86.Recover
 public import VerifiedGarbage.Proof.Bignum.X86.CrtStackSafety
 import VerifiedGarbage.Proof.Rsa.X86.CvStackSafety
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-! # Stack-pointer safety throughout prime recovery -/
 

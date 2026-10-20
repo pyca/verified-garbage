@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, ARMv7: the function called

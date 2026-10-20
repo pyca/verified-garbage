@@ -3,6 +3,8 @@ public import VerifiedGarbage.Proof.Ed25519.Arm.MulKeep
 
 import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Point engines preserve register saves, the output pointer, and
 the three packed points reserved for verification. -/

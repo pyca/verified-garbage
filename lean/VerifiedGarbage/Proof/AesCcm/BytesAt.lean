@@ -2,11 +2,12 @@ module
 
 import VerifiedGarbage.Proof.AesCcm.Ctr
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Spec.Ccm
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # AES-CCM: bytes of a buffer

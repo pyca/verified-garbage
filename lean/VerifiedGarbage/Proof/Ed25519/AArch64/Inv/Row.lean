@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Half
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Divstep
-public import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X25519.AArch64.Ops
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 

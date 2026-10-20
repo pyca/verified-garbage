@@ -7,11 +7,11 @@ public import VerifiedGarbage.TCB.X86_64.Target
 
 import VerifiedGarbage.Proof.Modes.X86_64.Cfb8Loop
 import VerifiedGarbage.Proof.Modes.X86_64.Fb
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Modes.X86_64.Ctr
 import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
 import VerifiedGarbage.Proof.Modes.X86_64.Steps
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # CFB8 on x86-64, for any core: the whole function

@@ -3,10 +3,11 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.RandomRemaining
 
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomFunctional
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomNonceEncoding
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
 
 /-! Entry and exit of the complete 128-draw sampler. -/
 @[expose] public section

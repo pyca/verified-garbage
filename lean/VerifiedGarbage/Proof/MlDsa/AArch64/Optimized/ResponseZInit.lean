@@ -3,8 +3,9 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

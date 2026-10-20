@@ -3,7 +3,14 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Rest
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Head
-import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: correctness

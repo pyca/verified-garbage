@@ -3,9 +3,11 @@ public import VerifiedGarbage.Impl.Rsa.X86_64.Recover
 public import VerifiedGarbage.Proof.Rsa.Ranges
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpBase
 
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
 import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: the candidates' constants

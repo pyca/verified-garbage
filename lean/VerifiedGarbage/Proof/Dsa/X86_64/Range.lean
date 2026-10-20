@@ -4,7 +4,8 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.CheckFrame
 
 import VerifiedGarbage.Proof.Dsa.X86_64.CheckCall
 import VerifiedGarbage.Proof.Dsa.X86_64.LoadRange
-import Mathlib.Tactic.Set
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
 
 /-! # DSA range validation through the parent calling convention -/
 

@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomState
 public import VerifiedGarbage.Spec.Dsa.Random
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawRange
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawCopy
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
 
 /-! Isolate the draw prefix before the acceptance branch. -/
 @[expose] public section

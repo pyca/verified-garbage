@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFrame
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTry
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejValue
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! ## From `ResidentRejWide.lean` -/
 

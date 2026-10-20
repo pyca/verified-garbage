@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Bignum.X86.WideMultiplier
 import VerifiedGarbage.Proof.Bignum.X86.WideAdvance
 import VerifiedGarbage.Proof.Bignum.WideWindow
 import VerifiedGarbage.Proof.Mont.X86.RowW
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # A full multiplication row adds its shifted partial product -/
 

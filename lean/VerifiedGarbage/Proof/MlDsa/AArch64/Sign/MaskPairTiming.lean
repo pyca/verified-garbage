@@ -3,10 +3,9 @@ module
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.MaskPairLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Rel
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseDCT
 import VerifiedGarbage.Proof.MlDsa.Sign.Mem
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

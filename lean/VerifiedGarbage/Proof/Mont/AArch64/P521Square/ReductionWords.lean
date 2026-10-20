@@ -1,30 +1,12 @@
 module
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Ed25519.Word64
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Mont.AArch64.Blocks
-public import VerifiedGarbage.Proof.Mont.AArch64.Chain
-import VerifiedGarbage.Proof.Mont.AArch64.Csub
-import VerifiedGarbage.Proof.Mont.AArch64.Rounds
-public import VerifiedGarbage.Impl.Mont.AArch64.P521Square
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Mont.AArch64.Blocks
-public import VerifiedGarbage.Proof.Mont.AArch64.Csub
-public import VerifiedGarbage.Proof.Mont.AArch64.Rounds
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.TCB.AArch64.Simd
+import VerifiedGarbage.Impl.Mont.AArch64.P521Square
 
 
 @[expose] public section

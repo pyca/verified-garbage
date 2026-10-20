@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PointMul
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

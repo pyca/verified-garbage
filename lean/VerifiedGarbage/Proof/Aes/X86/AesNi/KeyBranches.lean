@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyPrologue
 
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

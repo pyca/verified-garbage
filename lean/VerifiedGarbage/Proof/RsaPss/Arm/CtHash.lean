@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.RsaPss.Arm.Step
 
 /-!
 # RSASSA-PSS on ARMv7: hashing a message of secret length

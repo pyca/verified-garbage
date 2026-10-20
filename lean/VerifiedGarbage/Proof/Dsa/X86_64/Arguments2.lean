@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Arguments
-import Mathlib.Tactic.Set
+import Mathlib.Tactic.Finiteness.Attr
 
 /-! # Input and output bindings for streaming reduction -/
 

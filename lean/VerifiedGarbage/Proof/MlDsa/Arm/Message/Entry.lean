@@ -3,10 +3,14 @@ public import VerifiedGarbage.Impl.MlDsa.Arm.Message
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Layout
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Step
 
-import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.KernelList
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.MlKem.Arm.Common
+import VerifiedGarbage.Proof.Sha512.Arm.Rounds
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: entry and exit

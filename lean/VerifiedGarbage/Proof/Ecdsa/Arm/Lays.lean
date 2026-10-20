@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # ECDSA on 32-bit ARM: where the ladder's and the powers' slots are

@@ -3,7 +3,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WideInit
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNafWide
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WideLoop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 @[expose] public section
 namespace VG.Proof.Weierstrass.AArch64.PubNafWide
 open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass.AArch64.PubNaf

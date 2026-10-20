@@ -2,18 +2,13 @@ module
 
 import VerifiedGarbage.Proof.AesCtr.Ctr32
 public import VerifiedGarbage.Impl.AesCtr.AArch64
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
-public import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Proof.AesCtr.Inc
 import VerifiedGarbage.Proof.AesCbc.AArch64.Block
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-CTR on AArch64: the code between the calls

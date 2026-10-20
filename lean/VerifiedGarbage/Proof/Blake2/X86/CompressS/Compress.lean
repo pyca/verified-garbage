@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Blake2.X86.CompressS.Body
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.MdStream.X86.Common
 
 /-!

@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightProducts
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightWord
-import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

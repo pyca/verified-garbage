@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourMath
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackLoad
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWidth
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 

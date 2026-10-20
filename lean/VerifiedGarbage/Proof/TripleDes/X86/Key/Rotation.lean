@@ -3,10 +3,9 @@ module
 public import VerifiedGarbage.Impl.TripleDes.X86.ExpandKey
 public import VerifiedGarbage.Proof.Rc2.X86.KeySteps
 import VerifiedGarbage.Proof.TripleDes.X86.Word
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

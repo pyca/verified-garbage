@@ -2,14 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.Bitsliced32
 public import VerifiedGarbage.Proof.Sm4.Arm.LinG
-public import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
-import VerifiedGarbage.Impl.Sm4.Arm.ExpandKey
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
+public import VerifiedGarbage.Impl.Sm4.Arm.Layers
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # The linear layers of bitsliced SM4 on ARMv7, by evaluation

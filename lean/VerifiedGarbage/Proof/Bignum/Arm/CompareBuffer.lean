@@ -6,6 +6,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.Arm.CompareBytes
 import VerifiedGarbage.Proof.Rsa.PrivCheck
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Byte-exact equality for two readable buffers without input-dependent branches -/
 

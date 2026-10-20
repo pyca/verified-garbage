@@ -1,30 +1,17 @@
 module
-public import VerifiedGarbage.Proof.Framework.TaintSum
-public import VerifiedGarbage.Proof.Seed.SboxLit
 public import VerifiedGarbage.Proof.Seed.Scratch
-public import VerifiedGarbage.Proof.Seed.X86_64.Lit
 public import VerifiedGarbage.Impl.StackScratch.X86_64
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
 import VerifiedGarbage.Proof.Seed.X86_64.KeyVerified
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Seed.X86_64.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Seed.X86_64.Lit
+public import VerifiedGarbage.Impl.Seed.X86_64.ExpandKey
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-import VerifiedGarbage.Proof.Seed.X86_64.Setup
-import VerifiedGarbage.Proof.Seed.X86_64.Swap
+import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-!
 # SEED on x86-64, with its working space on the stack

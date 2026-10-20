@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Seed.Memory
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # SEED key expansion on ARMv7: the whole function

@@ -1,9 +1,16 @@
 module
-public import Mathlib.Data.Fintype.Fin
-public import Mathlib.Tactic.FinCases
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedState
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintWord
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 
 @[expose] public section

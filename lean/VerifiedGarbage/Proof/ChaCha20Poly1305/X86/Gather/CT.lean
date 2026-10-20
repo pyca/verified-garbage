@@ -12,6 +12,8 @@ meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Contract
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Fn
 meta import VerifiedGarbage.Proof.AesGcm.X86.Gather.LoopCT
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86: constant time

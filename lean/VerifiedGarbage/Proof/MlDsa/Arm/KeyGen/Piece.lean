@@ -1,11 +1,8 @@
 module
-public import Batteries.Logic
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.Set
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.MlDsa.Arm.KeyGen.Frag
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 
 /-!

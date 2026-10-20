@@ -4,7 +4,7 @@ public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP384r1
 public import VerifiedGarbage.Spec.Ecdh.Generic
-import VerifiedGarbage.Spec.Ecdh.BrainpoolP384r1
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ECDH over brainpoolP384r1 on x86-64: the contract the proof is written against

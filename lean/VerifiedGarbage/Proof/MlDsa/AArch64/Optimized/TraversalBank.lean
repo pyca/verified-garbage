@@ -4,12 +4,11 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterRun
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalSlice
 public import VerifiedGarbage.Proof.MlDsa.Arith.Pairs
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Taint
 
 @[expose] public section
 

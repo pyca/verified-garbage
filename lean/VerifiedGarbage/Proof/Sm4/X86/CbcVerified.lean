@@ -1,53 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86.FbVerified
-meta import VerifiedGarbage.Proof.Sm4.X86.FbVerified
 import VerifiedGarbage.Proof.Modes.X86.CbcChained
-meta import VerifiedGarbage.Proof.Modes.X86.CbcChained
 public import VerifiedGarbage.Proof.Sm4.CbcScratch
-meta import VerifiedGarbage.Proof.Sm4.CbcScratch
-public import VerifiedGarbage.Proof.Sm4.X86.CbcLit
-meta import VerifiedGarbage.Proof.Sm4.X86.CbcLit
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Sm4.X86.CbcLit
+import VerifiedGarbage.Proof.Sm4.X86.Lit
+import VerifiedGarbage.Proof.Sm4.X86.LayersLit
+meta import VerifiedGarbage.Proof.Sm4.X86.FbVerified
+meta import VerifiedGarbage.Proof.Modes.X86.CbcChained
+meta import VerifiedGarbage.Proof.Sm4.CbcScratch
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import VerifiedGarbage.Proof.AesCtr.Inc
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Framework.X86.Syms
-import VerifiedGarbage.Proof.Modes.StepsChained
-import VerifiedGarbage.Proof.Modes.X86.Counter
-import VerifiedGarbage.Proof.Modes.X86.Ops
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
-import VerifiedGarbage.Proof.Sm4.CtrCipher
-import VerifiedGarbage.Proof.Sm4.Layout
-import VerifiedGarbage.Proof.Sm4.Planes
-import VerifiedGarbage.Proof.Sm4.X86.Copy
-import VerifiedGarbage.Proof.Sm4.X86.Crypt8
-import VerifiedGarbage.Spec.Ctr.Contract
-meta import VerifiedGarbage.Proof.AesCtr.Inc
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import VerifiedGarbage.Proof.Framework.X86.Syms
-meta import VerifiedGarbage.Proof.Modes.StepsChained
-meta import VerifiedGarbage.Proof.Modes.X86.Counter
-meta import VerifiedGarbage.Proof.Modes.X86.Ops
-meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
-meta import VerifiedGarbage.Proof.Sm4.CtrCipher
-meta import VerifiedGarbage.Proof.Sm4.Layout
-meta import VerifiedGarbage.Proof.Sm4.Planes
-meta import VerifiedGarbage.Proof.Sm4.X86.Copy
-meta import VerifiedGarbage.Proof.Sm4.X86.Crypt8
-meta import VerifiedGarbage.Spec.Ctr.Contract
+meta import VerifiedGarbage.Proof.Sm4.X86.CbcLit
+meta import VerifiedGarbage.Proof.Sm4.X86.Lit
+meta import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 
 /-!
 # SM4-CBC on x86 (32-bit) meets its contracts

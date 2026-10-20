@@ -2,9 +2,11 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpIn
 
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: the outputs

@@ -3,9 +3,14 @@ module
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 public import VerifiedGarbage.Spec.RsaPss.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
-public import Mathlib.Data.Int.GCD
-public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Contract
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.Words
+public import Mathlib.Data.Int.GCD
 
 /-!
 # RSASSA-PSS verification on x86-64: the contract on the registers

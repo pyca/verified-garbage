@@ -1,12 +1,6 @@
 module
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import Batteries.Logic
 public import VerifiedGarbage.Impl.Rsa.Arm.PrivChecked
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
@@ -14,6 +8,9 @@ import VerifiedGarbage.Proof.Rsa.Arm.PrivReleaseBuffer
 import VerifiedGarbage.Proof.Rsa.Arm.PrivReleaseArgs
 import VerifiedGarbage.Proof.Rsa.Arm.PrivMask
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Fault status, branchless release, and temporary erasure as one verified stage -/
 

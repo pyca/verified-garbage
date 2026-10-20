@@ -14,6 +14,10 @@ meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacInitCT
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.IterateCT
 meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Sha256.Arm.Compress
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+meta import VerifiedGarbage.Proof.Sha256.Arm.Compress
+meta import VerifiedGarbage.Spec.Pbkdf2.Generic
 
 /-!
 # HMAC-SHA-256 and PBKDF2-HMAC-SHA-256 over the compression function on ARMv7

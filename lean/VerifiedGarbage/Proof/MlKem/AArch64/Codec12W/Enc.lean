@@ -7,10 +7,10 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Codec12W
 public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Lanes
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Spec.MlKem.Kpke16
-meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.EncMath
 import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Bytes
 import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ByteEncode₁₂ of a polynomial stored with 16 bits, on AArch64

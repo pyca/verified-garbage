@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # FFDH parameter generation on x86-64: public headers in the nested workspace -/

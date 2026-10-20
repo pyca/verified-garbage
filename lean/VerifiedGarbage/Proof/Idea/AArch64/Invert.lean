@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Idea.AArch64.Key
 public import VerifiedGarbage.Proof.Idea.Inverse
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Idea.AArch64.ConstantTime
 public import VerifiedGarbage.Proof.Idea.AArch64.Round
 public import VerifiedGarbage.Spec.Idea.Contract
@@ -14,13 +13,15 @@ import VerifiedGarbage.Proof.Idea.Memory
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.CallLay
-import VerifiedGarbage.Proof.Framework.Pratt
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Batteries.Data.List.Lemmas
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Idea.AArch64.Block
+import VerifiedGarbage.Proof.Idea.AArch64.Lit
 
 /-!
 # IDEA decryption subkeys on AArch64

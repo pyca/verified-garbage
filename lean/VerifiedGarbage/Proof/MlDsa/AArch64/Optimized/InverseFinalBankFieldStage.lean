@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalBankFieldGroups
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldStage
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalField
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

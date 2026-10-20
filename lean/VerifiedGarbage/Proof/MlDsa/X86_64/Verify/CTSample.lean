@@ -3,10 +3,10 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTBase
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.StageA
 
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTStages
-import Mathlib.Tactic.Conv
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA verification on x86-64: constant time, the samplers

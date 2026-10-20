@@ -3,10 +3,10 @@ module
 import VerifiedGarbage.Proof.Rsa.X86.CvHelperTiming
 import VerifiedGarbage.Proof.Rsa.X86.MulModTiming
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheck
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Rsa.X86.KeyTiming
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Key-validation arithmetic uses public iteration counts and fixed addresses -/
 

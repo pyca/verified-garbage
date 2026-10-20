@@ -1,15 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.AArch64.Lit
-meta import VerifiedGarbage.Proof.Seed.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Proof.Seed.AArch64.Lit
+public import VerifiedGarbage.Impl.Seed.AArch64.ExpandKey
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.Seed.AArch64.Lit
+meta import VerifiedGarbage.Impl.Seed.AArch64.ExpandKey
 
 /-!
 # Constant time

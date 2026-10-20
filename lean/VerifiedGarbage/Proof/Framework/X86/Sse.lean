@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.X86.Isa
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # x86 (32-bit): SSE values as doublewords

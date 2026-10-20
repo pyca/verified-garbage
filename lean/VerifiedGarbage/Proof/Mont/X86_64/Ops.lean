@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Mont.X86_64.AddSubP
 import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
 import VerifiedGarbage.Proof.Mont.X86_64.Sub256
 import VerifiedGarbage.Proof.Mont.X86_64.Sub384
-import VerifiedGarbage.Proof.Mont.X86_64.WideMul
 import VerifiedGarbage.Proof.Mont.X86_64.WideOps
 import VerifiedGarbage.Proof.Mont.X86_64.CsubS
 import VerifiedGarbage.Proof.Mont.X86_64.Wide

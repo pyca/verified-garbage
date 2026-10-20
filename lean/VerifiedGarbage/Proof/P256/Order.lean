@@ -4,11 +4,14 @@ import VerifiedGarbage.Proof.P256.Prime
 import VerifiedGarbage.Proof.P256.Point
 public import VerifiedGarbage.Proof.Weierstrass.Order
 public import VerifiedGarbage.Proof.Weierstrass.Booth
-public import Mathlib.Data.Finset.Card
-public import Mathlib.Data.Nat.Find
-public import Mathlib.Data.Nat.Prime.Defs
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.P256
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Pratt
 
 /-!
 # P-256: `G` has order `n`

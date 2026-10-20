@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Seed.Arm.Ecb
 public import VerifiedGarbage.Proof.Seed.Arm.G8
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Exec

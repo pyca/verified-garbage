@@ -2,35 +2,20 @@ module
 public import VerifiedGarbage.Proof.Scrypt.X86_64.FusedInvariant
 
 import VerifiedGarbage.Proof.Scrypt.X86_64.FusedBody
-meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedBody
 import VerifiedGarbage.Proof.Scrypt.X86_64.FusedHalf
-meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedHalf
 import VerifiedGarbage.Proof.Scrypt.X86_64.FusedSetup
-meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedSetup
-import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.DefEqTransformations
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Scrypt.X86_64.FusedCorrect
-import VerifiedGarbage.Proof.Scrypt.X86_64.FusedInit
-import VerifiedGarbage.Proof.Scrypt.X86_64.FusedTail
-import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedInvariant
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedBody
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedHalf
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedSetup
+meta import Mathlib.Tactic.DefEqTransformations
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.RegSetOrder
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedCorrect
-meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedInit
-meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedTail
-meta import VerifiedGarbage.Proof.Sha256.Stream
 
 @[expose] public section
 

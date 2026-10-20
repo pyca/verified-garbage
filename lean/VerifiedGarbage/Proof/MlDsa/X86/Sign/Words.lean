@@ -2,12 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inv
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Blocks
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86.TopLocal
 import VerifiedGarbage.Proof.MlKem.X86.TopSeq
 import VerifiedGarbage.Proof.MlKem.X86.TopCall
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on x86 (32-bit): words and bytes of `scratch`

@@ -5,12 +5,12 @@ public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.BatchIO
 import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Bytes
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Transpose
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Pass
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 
 /-!
 # A batch

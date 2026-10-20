@@ -4,13 +4,13 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorb
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSaved
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## From `ResidentZero.lean` -/
 

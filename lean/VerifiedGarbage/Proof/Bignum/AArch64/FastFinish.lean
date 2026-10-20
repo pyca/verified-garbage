@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 
 import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishSub
 import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishSel
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Math
 
 @[expose] public section

@@ -14,6 +14,8 @@ meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
 meta import VerifiedGarbage.Proof.Aes.KeyExp
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # `vg_chacha20_xor_split_avx512` verified

@@ -3,9 +3,9 @@ module
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Vec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerRun
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailRun
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Layout
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## From `Normalize.lean` -/
 

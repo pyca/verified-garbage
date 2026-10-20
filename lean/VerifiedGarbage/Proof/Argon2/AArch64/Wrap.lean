@@ -1,31 +1,24 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.Wrap
-meta import VerifiedGarbage.Impl.Argon2.AArch64.Wrap
 import VerifiedGarbage.Proof.Argon2.Reference
-meta import VerifiedGarbage.Proof.Argon2.Reference
 public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
 public import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
-meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Argon2.AArch64.Carry
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Argon2.AArch64.Wrap
+meta import VerifiedGarbage.Proof.Argon2.Reference
+meta import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
 meta import VerifiedGarbage.Proof.Argon2.AArch64.Carry
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Argon2.Dimensions
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Argon2.Dimensions
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Masked subtraction agrees with wrapping the reference column -/

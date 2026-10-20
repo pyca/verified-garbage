@@ -1,14 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Mem
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Rows
 public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Gb
-public import VerifiedGarbage.Proof.Argon2.X86_64.Taint
 import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Spec.Argon2.Contract
+import VerifiedGarbage.Proof.Argon2.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Argon2 on x86-64 with AVX-512: P on two rows

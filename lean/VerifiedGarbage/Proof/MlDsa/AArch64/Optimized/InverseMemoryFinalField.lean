@@ -6,9 +6,10 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSliceComposition
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## From `InverseMemoryFinalValues.lean` -/
 

@@ -1,9 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.TaintSum
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
+import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-!
 # ECDSA over P-521 on x86 (32-bit): what the multiplications' summaries start from

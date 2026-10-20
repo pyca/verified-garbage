@@ -1,16 +1,15 @@
 module
 
-import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
 public import VerifiedGarbage.Proof.Sha3.Seed34
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 public import VerifiedGarbage.Spec.MlDsa.Poly
 import VerifiedGarbage.Proof.Sha3.Arith
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
+import VerifiedGarbage.Proof.Framework.Covers
 
 @[expose] public section
 

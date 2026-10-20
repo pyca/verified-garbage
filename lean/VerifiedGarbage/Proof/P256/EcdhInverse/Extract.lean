@@ -1,17 +1,19 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Framework.PowLit
 
 import VerifiedGarbage.Proof.P256.EcdhInverse.Shift
 import VerifiedGarbage.Proof.Divstep.Packed20Extract
-import Mathlib.Data.BitVec
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Divstep.WordBasic
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Algebra.Group.Int.Defs
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import VerifiedGarbage.TCB.AArch64.Simd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 
 @[expose] public section
 

@@ -1,8 +1,5 @@
 module
-public import Mathlib.Data.Finset.Card
-public import Mathlib.Data.Nat.Find
 public import Mathlib.Data.Nat.Prime.Defs
-public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.P192
 
 import VerifiedGarbage.Proof.Framework.Pratt

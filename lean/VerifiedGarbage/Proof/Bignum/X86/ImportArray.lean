@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Bignum.X86.ImportArrayArgs
 import VerifiedGarbage.Proof.Bignum.X86.CopyRead
 import VerifiedGarbage.Proof.Bignum.PackedRead
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-! # Packed imports preserve their integer value and advance the input -/
 

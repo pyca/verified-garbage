@@ -4,10 +4,14 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Flags
 public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckPrivate
 
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Entry
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 import VerifiedGarbage.Proof.Bignum.Octets
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH private-key validation on x86-64: entry and modulus validation -/
 

@@ -20,6 +20,14 @@ meta import VerifiedGarbage.Proof.AesOcb.AArch64.CmpMask
 meta import VerifiedGarbage.Proof.Ocb.Bytes
 meta import VerifiedGarbage.Proof.AesOcb.AArch64.BodyCT
 meta import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
+import VerifiedGarbage.Impl.AesOcb.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Impl.AesOcb.AArch64
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.TCB.AArch64.Isa
+meta import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # AES-OCB on AArch64: `vg_aes_ocb_open` is constant time

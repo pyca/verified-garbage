@@ -1,9 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Bignum.X86_64
-public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.Framework.Sig
 
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp

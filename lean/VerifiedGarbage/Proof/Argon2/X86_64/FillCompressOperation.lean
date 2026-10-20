@@ -8,13 +8,7 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Argon2.X86_64.FillWritePrefix
-import VerifiedGarbage.Proof.Argon2.X86_64.Mix
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
 
 /-! Merged from `Proof.Argon2.X86_64.FillCompressArgs`. -/
 

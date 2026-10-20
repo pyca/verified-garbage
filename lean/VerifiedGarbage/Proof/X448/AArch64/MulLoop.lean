@@ -5,7 +5,8 @@ public import VerifiedGarbage.Proof.X448.AArch64.Mem
 public import VerifiedGarbage.Proof.X448.Product
 
 import VerifiedGarbage.Proof.X448.AArch64.Row
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on AArch64: multiplication loop

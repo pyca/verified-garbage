@@ -5,7 +5,9 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
 
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop48
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # The out-of-place AVX-512 loop, with the powers in the key context

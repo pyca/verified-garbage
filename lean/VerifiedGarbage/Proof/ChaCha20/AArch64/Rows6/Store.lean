@@ -1,16 +1,12 @@
 module
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Rows6
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Semantics
 
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Store
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Ops
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rounds
 
 @[expose] public section
 

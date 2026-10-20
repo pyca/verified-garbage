@@ -22,6 +22,12 @@ meta import VerifiedGarbage.Proof.TripleDes.AArch64.Link
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.BlockSum
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.SboxTable
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegSet
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-!
 # Triple DES-CBC on AArch64 meets its contracts

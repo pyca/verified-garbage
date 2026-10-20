@@ -1,14 +1,11 @@
 module
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.MlKem.Arith
 public import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.TCB.AArch64.Isa
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
 import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # ByteDecode12 contract and input representation -/
 

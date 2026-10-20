@@ -1,37 +1,19 @@
 module
 
-public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.OnePass
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PhaseOne
 import VerifiedGarbage.Proof.Framework.X86_64.HighKeep
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.LoopTo
-import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
-import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Load
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Gcm.Spec
-import VerifiedGarbage.Proof.Gcm.Stream
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Aes
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.AesTo
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Keep
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Base
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pair
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
 
 /-!
 # The 512-bit loop in one pass over a source and then in place

@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.TripleDes.Bytes
 import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
 
 /-!
 # Triple DES's core for the modes on x86 (32-bit)

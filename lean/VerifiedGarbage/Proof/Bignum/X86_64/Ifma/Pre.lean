@@ -6,6 +6,9 @@ public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
 
 /-!
 # RSA with AVX512_IFMA on x86-64: the bases in the primes' workspaces

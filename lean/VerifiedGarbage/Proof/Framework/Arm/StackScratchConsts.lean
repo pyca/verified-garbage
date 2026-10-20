@@ -3,10 +3,10 @@ public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 
 import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 import VerifiedGarbage.Proof.Framework.Arm.Syms
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # A scratch buffer on the stack, for code that reads tables of constants (ARMv7)

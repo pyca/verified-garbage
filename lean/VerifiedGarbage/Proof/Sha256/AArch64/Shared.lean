@@ -1,13 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha256.AArch64.Compress
 import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 public import VerifiedGarbage.Proof.Sha256.Digest
 public import VerifiedGarbage.Impl.StackScratch.AArch64
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Sha256 on AArch64: the shared contracts

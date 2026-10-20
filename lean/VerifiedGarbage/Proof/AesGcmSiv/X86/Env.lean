@@ -5,6 +5,9 @@ import VerifiedGarbage.Proof.AesGcm.X86.Top
 public import VerifiedGarbage.Impl.AesGcmSiv.X86
 public import VerifiedGarbage.Spec.GcmSiv
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.VariantProof
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM-SIV on x86: where everything is

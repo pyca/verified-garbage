@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Idea.Memory
 public import VerifiedGarbage.Proof.Modes.Ctr
 public import VerifiedGarbage.Spec.Idea.Cbc
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # IDEA's blocks and schedule as the modes see them

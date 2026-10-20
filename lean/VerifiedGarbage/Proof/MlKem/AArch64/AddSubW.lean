@@ -5,8 +5,9 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Lane
 public import VerifiedGarbage.Impl.MlKem.AArch64.AddSubW
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 import VerifiedGarbage.Proof.MlKem.Arith
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-!
 # Sums of polynomials stored with 16 bits, on AArch64

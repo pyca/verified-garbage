@@ -2,10 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.Pratt
 public import VerifiedGarbage.Spec.P192
-public import Mathlib.Data.Finset.Card
-public import Mathlib.Data.Nat.Find
 public import Mathlib.Data.Nat.Prime.Defs
-public import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # The P-192 field prime is prime

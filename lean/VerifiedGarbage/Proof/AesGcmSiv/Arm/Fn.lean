@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
+import VerifiedGarbage.Proof.Framework.SigEval
 
 /-!
 # AES-GCM-SIV on ARMv7: comparing the tags, and `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open`

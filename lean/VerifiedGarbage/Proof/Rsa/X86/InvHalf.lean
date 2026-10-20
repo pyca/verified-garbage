@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Rsa.X86.KeySelect
 import VerifiedGarbage.Proof.Rsa.X86.KeySub
 import VerifiedGarbage.Proof.Rsa.KeyBits32
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # `inverse` on i686: the halving modulo `m` at the end of a step -/
 

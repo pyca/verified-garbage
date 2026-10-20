@@ -2,15 +2,13 @@ module
 
 import VerifiedGarbage.Proof.Ed25519.Bytes
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PublicKey
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
-public import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Merged from `Proof.Ed25519.AArch64.PublicKey.PruneArithmetic`. -/
 

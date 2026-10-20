@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCtx
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyFrame
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Recover
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 

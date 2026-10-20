@@ -24,6 +24,8 @@ meta import Std.Tactic.BVDecide.Normalize.Prop
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

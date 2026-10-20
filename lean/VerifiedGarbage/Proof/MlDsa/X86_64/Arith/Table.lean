@@ -2,17 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-public import VerifiedGarbage.Proof.MlKem.Mem
-public import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on x86-64: tables of constants in the working space

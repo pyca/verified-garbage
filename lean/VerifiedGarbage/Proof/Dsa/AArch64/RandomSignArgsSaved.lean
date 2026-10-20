@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignEnv
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallLayout
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignArgs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Map the wrapper's saved arguments to the supplied-nonce signing ABI. -/
 @[expose] public section

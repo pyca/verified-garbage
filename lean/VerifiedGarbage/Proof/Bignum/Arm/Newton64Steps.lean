@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.Newton64
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Bignum.Arm.Sub64
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Loading, subtracting, and retaining one Newton iterate -/
 

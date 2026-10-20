@@ -1,9 +1,8 @@
 module
-public import Mathlib.Data.Int.GCD
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.TCB.AArch64.Isa
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMath
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
 
 /-! # Timing-preserving composition of adjacent DSA instruction blocks -/

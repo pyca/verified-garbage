@@ -3,8 +3,10 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Significant
 public import VerifiedGarbage.Proof.Dsa.DomainShape
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.ReduceCount
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
 
 /-! # Complete actual-width scanning for DSA's public moduli -/
 

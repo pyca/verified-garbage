@@ -1,7 +1,5 @@
 module
-public import Batteries.Logic
 public import VerifiedGarbage.Impl.Bignum.Arm.ExportBE
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Mont
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 public import VerifiedGarbage.Spec.Rsa.Contract
@@ -12,7 +10,7 @@ import VerifiedGarbage.Proof.Bignum.ReadPrefix
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.Arm.ReadPrefix
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Fixed-width I2OSP export from a shared RSA array -/
 

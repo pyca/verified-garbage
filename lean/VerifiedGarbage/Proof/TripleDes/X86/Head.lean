@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.TripleDes.X86.Body
 public import VerifiedGarbage.Proof.TripleDes.X86.Save
 import VerifiedGarbage.Proof.TripleDes.Bytes
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 @[expose] public section
 

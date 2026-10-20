@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcFastWord
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCancel
 public import VerifiedGarbage.Impl.Bignum.AArch64.BlockedRedcFast
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcFastMath
 
 @[expose] public section

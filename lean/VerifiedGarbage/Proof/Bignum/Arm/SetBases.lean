@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.SetBases
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Construct the eight shared RSA array pointers -/
 

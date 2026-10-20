@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 import VerifiedGarbage.Proof.AesGcm.ScratchTo
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Prepared-context StreamTo contracts -/
 

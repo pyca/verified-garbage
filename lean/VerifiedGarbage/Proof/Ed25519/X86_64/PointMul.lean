@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulLoop
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
@@ -10,6 +9,7 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.Points
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Checkpoint generation and batch descent implement pointMul. -/
 

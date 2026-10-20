@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 import VerifiedGarbage.Proof.Bignum.Arm.ReductionStage
 import VerifiedGarbage.Proof.Bignum.Arm.ProductStage
 import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # A Montgomery round leaks only its public layout and word count -/
 

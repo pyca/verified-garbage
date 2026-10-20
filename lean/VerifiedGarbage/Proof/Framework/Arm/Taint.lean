@@ -2,12 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Framework.RegSet
-public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import Batteries.Logic
 public import VerifiedGarbage.TCB.Arm.Isa
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import Batteries.Data.List.Basic
 
 /-!
 # Taint tracking for ARMv7

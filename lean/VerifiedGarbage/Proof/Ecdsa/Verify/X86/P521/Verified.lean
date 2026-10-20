@@ -24,6 +24,8 @@ meta import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ECDSA verification over P-521 on x86 (32-bit): `Verified`

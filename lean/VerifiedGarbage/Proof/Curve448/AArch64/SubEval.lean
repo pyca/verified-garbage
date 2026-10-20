@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.X448.AArch64.Mul
 public import VerifiedGarbage.Proof.X448.Wide.Representation
 public import VerifiedGarbage.Proof.X448.Wide.Word
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Untrusted: pointwise coefficient in registers, without an intermediate store. -/

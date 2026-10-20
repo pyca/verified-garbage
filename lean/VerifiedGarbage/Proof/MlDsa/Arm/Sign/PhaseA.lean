@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsS
 public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on ARMv7: `ExpandA`

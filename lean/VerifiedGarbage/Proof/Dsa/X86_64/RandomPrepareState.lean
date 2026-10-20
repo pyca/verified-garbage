@@ -2,8 +2,9 @@ module
 
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepare
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomState
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
 
 /-! Initialize the persistent sampler state from the public q buffer. -/
 @[expose] public section

@@ -4,10 +4,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Encrypt
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on x86-64: the contracts on the registers

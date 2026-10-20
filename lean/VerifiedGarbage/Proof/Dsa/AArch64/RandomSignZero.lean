@@ -1,14 +1,17 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.RandomSign
-public import Mathlib.Data.Int.GCD
-public import VerifiedGarbage.Proof.Dsa.AArch64.Run
-public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
 
 /-! Zero the signature output on all randomized-signing failure paths. -/
 @[expose] public section

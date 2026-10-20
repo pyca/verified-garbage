@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdLoop
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM on AArch64: an iteration of `dd4Body`

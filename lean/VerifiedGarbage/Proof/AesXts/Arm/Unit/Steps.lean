@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.AesXts.Arm.Unit.Contract
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # XTS-AES of data units on ARMv7: the code between the calls

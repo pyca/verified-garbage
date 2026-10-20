@@ -1,33 +1,25 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.Arm.ExpandKey
-meta import VerifiedGarbage.Impl.Aes.Arm.ExpandKey
 public import VerifiedGarbage.Proof.Aes.Arm.Ctr32
-meta import VerifiedGarbage.Proof.Aes.Arm.Ctr32
 public import VerifiedGarbage.Proof.Aes.KeyExp
-meta import VerifiedGarbage.Proof.Aes.KeyExp
 public import VerifiedGarbage.Spec.Aes.Contract
-meta import VerifiedGarbage.Spec.Aes.Contract
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
-meta import VerifiedGarbage.Proof.Framework.Arm.Bytes
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Arm.Call
-meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Impl.Aes.Arm.ExpandKey
+meta import VerifiedGarbage.Proof.Aes.Arm.Ctr32
+meta import VerifiedGarbage.Proof.Aes.KeyExp
+meta import VerifiedGarbage.Spec.Aes.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Bytes
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # The AES key expansion on ARMv7

@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.SegmentSetup
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillSegment
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Argon2.AArch64.Carry
 import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

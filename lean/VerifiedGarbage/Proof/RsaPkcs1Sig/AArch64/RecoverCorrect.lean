@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem

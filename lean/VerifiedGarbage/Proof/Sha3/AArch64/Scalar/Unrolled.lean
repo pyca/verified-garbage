@@ -1,57 +1,39 @@
 module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Unrolled
-meta import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Unrolled
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Control
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Control
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Round
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Round
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Wrap
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Wrap
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.ScheduleFacts
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.ScheduleFacts
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorCoreExec
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorCoreExec
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
-meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
-import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Boundary
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.AddrArith
+import Std.Tactic.BVDecide.Normalize.Prop
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Load
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lower
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Rounds
 import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.Impl.Sha3.AArch64.Callee
-meta import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Boundary
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Unrolled
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Control
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Round
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Wrap
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.ScheduleFacts
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorCoreExec
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import Std.Tactic.BVDecide.Normalize.Prop
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Load
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lower
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Rounds
 meta import VerifiedGarbage.TCB.Axioms
+import Mathlib.Tactic.ToExpr
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegSet
+meta import Mathlib.Tactic.ToExpr
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-!
 # The unrolled scalar permutation: correctness

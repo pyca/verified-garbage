@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Complete chunks of an immutable input tape -/
 

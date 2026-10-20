@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ed25519.X86.Field
 public import VerifiedGarbage.Proof.X25519.Invert
 public import VerifiedGarbage.Impl.X25519.X86.Field32
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Fixed-count squaring and compositional field exponentiation. -/
 

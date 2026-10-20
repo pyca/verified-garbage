@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import Batteries.Logic
 public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Entry
-public import VerifiedGarbage.Proof.Framework.PlainSimp
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

@@ -5,6 +5,10 @@ public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Call
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Mask32
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA key generation on x86 (32-bit): the setting

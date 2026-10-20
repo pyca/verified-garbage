@@ -6,12 +6,14 @@ import VerifiedGarbage.Proof.Ed25519.WindowConstants
 import VerifiedGarbage.Proof.Ed25519.X86.Point32.Call
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyTbl
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBody
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Ed25519.X86.PointTable
 public import VerifiedGarbage.Proof.Ed25519.X86.PowerEnv
 import VerifiedGarbage.Proof.Framework.X86.SymFrame
+import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Verification's tables: `[1]A … [15]A` and `-[1]B … -[15]B`

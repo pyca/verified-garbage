@@ -10,6 +10,10 @@ import VerifiedGarbage.Proof.AesGcm.Arm.Tag
 import VerifiedGarbage.Proof.AesCcm.Bytes
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CCM on ARMv7: a counter block `Ctrᵢ` (`ctrAt`)

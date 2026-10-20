@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Framework.EntryBranch
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Frame
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # HMAC's `init` for a key of any length on 32-bit ARM, choosing on entry

@@ -2,12 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotMemory
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

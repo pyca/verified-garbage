@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Poly1305
+import VerifiedGarbage.Proof.Framework.Omega
+import Batteries.Tactic.Init
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Poly1305 in 26-bit limbs

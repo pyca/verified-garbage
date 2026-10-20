@@ -1,9 +1,13 @@
 module
-public import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Stitch
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Weave
-import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Spec
+import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ops
 
 
 /-!

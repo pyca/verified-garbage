@@ -5,16 +5,16 @@ import VerifiedGarbage.Proof.Weierstrass.X86.Loop
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Divstep.Word32Bits
 public import VerifiedGarbage.Proof.Divstep.Word32Def
-public import Mathlib.Data.BitVec
 public import VerifiedGarbage.Proof.Weierstrass.Unch
-public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Mont.Words32
-import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! ## `InvStep` -/
 

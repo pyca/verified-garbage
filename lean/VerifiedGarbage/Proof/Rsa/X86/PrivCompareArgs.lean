@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseArgs
 public import VerifiedGarbage.Proof.Rsa.SuccessBits32
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Accumulating call status and preparing the full public-result comparison -/
 

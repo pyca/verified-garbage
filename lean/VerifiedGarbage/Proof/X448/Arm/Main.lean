@@ -8,10 +8,9 @@ import VerifiedGarbage.Proof.X448.Arm.Inv
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.X448.Arm.Env
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.X448.Arm.Setup
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # X448 on ARMv7: the whole function

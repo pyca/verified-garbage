@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.EntryFields
-import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Layout
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.KeyPointers
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import Aesop.BuiltinRules
+import Mathlib.Tactic.ToAdditive
 
 /-! # Saved arguments and the memory footprint of DSA entry stores -/
 

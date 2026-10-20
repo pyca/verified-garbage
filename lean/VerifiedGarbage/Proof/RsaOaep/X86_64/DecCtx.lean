@@ -3,11 +3,15 @@ module
 public import VerifiedGarbage.Impl.RsaOaep.X86_64
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecContract
 public import VerifiedGarbage.Spec.RsaOaep.Contract
-public import Mathlib.Data.Int.GCD
-import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-!
 # RSAES-OAEP decryption on x86-64: the contract on the registers

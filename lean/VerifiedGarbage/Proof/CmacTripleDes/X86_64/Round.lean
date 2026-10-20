@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
 public import VerifiedGarbage.Proof.TripleDes.SboxTables
 public import VerifiedGarbage.Proof.CmacTripleDes.Des
 public import VerifiedGarbage.Proof.CmacTripleDes.Rows
@@ -8,12 +7,10 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Linear
 public import VerifiedGarbage.Proof.Framework.Bitslice.Rows
 import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
+public import VerifiedGarbage.Impl.CmacTripleDes.X86_64.Round
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # A DES round on x86-64

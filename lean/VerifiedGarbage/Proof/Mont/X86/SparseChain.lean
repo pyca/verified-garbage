@@ -4,9 +4,12 @@ public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Words
 
 import VerifiedGarbage.Proof.Mont.X86.SparseStep
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Impl.Mont.X86.Sparse
 import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
 
 /-! # Carry and borrow chains for sparse x86 reduction -/
 

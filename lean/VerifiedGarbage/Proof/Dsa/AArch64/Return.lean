@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Finish
 public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Composing DSA arithmetic with result encoding and workspace return -/
 

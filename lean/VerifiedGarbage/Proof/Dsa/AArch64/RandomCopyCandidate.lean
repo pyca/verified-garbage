@@ -2,13 +2,16 @@ module
 
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopyWhole
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomMask
-public import Mathlib.Data.Int.GCD
-public import VerifiedGarbage.Proof.Dsa.AArch64.Run
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Dsa.DomainShape
 public import VerifiedGarbage.Spec.Dsa.Random
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopy
 
 /-! The copied ISA bytes encode precisely the specification's candidate. -/
 @[expose] public section

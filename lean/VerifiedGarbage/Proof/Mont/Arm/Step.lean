@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Mont.Arm.Words
 public import VerifiedGarbage.Impl.Mont.Arm
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Montgomery arithmetic on 32-bit ARM: a multiply-accumulate step

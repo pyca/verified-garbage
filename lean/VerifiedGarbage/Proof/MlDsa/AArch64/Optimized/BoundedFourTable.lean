@@ -1,8 +1,8 @@
 module
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BoundedFour
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMath
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 
 @[expose] public section

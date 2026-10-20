@@ -2,11 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFn6
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Framework.KernelRfl
-meta import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Mont.X86_64.CsubS
 import VerifiedGarbage.Proof.Mont.X86_64.Chain
 import VerifiedGarbage.Proof.Mont.X86_64.Round

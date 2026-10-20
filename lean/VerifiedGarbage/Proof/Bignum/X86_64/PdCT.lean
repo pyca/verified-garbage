@@ -8,6 +8,12 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
+public import Mathlib.Logic.Relator
+import Mathlib.Data.Int.GCD
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_public_precomputed` on x86-64: constant time but for `pre` and `e`

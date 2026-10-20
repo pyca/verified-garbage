@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.AesGcmSiv.X86.Polyval
 import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
 import VerifiedGarbage.Proof.AesGcm.X86.Contract
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Context
 
 /-!
 # AES-GCM-SIV on x86: `vg_aes_gcm_siv_open` (correctness)

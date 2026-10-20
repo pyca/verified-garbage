@@ -1,38 +1,19 @@
 module
-public import Mathlib.Logic.Function.Basic
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Spec.Weierstrass
 
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Mont.Arm.Csub
-import VerifiedGarbage.Proof.Mont.Arm.Row
-import VerifiedGarbage.Proof.Mont.Arm.Step
-import VerifiedGarbage.Proof.Weierstrass.Arm.Const
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
-import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
-import VerifiedGarbage.Proof.Weierstrass.Words
-public import VerifiedGarbage.Proof.Weierstrass.Words32
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Arm.Call
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Mont.Arm.Csub
-public import VerifiedGarbage.Proof.Mont.Arm.Row
-public import VerifiedGarbage.Proof.Mont.Arm.Step
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Const
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
-public import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Impl.Mont.Arm
+import VerifiedGarbage.TCB.Arm.Isa
+import VerifiedGarbage.Impl.Weierstrass.Arm.Mont
+import VerifiedGarbage.Proof.Mont.Arm.Words
+import VerifiedGarbage.Impl.Weierstrass.Arm
+import VerifiedGarbage.Impl.Weierstrass.Slots
 
 /-!
 # Short Weierstrass curves on 32-bit ARM: big-endian words

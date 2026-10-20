@@ -3,39 +3,14 @@ module
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Steps
 import VerifiedGarbage.Proof.Scrypt.X86_64.DirectFill
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Contract
-public import VerifiedGarbage.Proof.Framework.Contract
-public import Mathlib.Tactic.DefEqTransformations
-public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Common
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
 import VerifiedGarbage.Proof.Scrypt.Whole
 import VerifiedGarbage.Proof.Scrypt.Memory
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.OmegaLit
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Hmac.Generic.Implies
-import VerifiedGarbage.Proof.Scrypt.X86_64.FusedBody
-import VerifiedGarbage.Proof.Scrypt.X86_64.FusedCT
-import VerifiedGarbage.Proof.Scrypt.X86_64.FusedCorrect
-import VerifiedGarbage.Proof.Scrypt.X86_64.FusedHalf
-import VerifiedGarbage.Proof.Scrypt.X86_64.FusedInit
-import VerifiedGarbage.Proof.Scrypt.X86_64.FusedSetup
-import VerifiedGarbage.Proof.Scrypt.X86_64.FusedTail
-import VerifiedGarbage.Proof.Scrypt.X86_64.FusedVerified
-import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixLoops
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Sha256.X86_64.Compress
-import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
 
 @[expose] public section
 

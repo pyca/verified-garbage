@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.X448.X86.Field
 public import VerifiedGarbage.Proof.X448.X86.Args
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on x86 (32-bit): the field functions' context

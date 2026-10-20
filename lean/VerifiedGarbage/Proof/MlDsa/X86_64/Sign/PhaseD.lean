@@ -4,9 +4,9 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsD
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Hash
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseA
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsC
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on x86-64: the private key and `ρ″`

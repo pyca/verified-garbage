@@ -8,6 +8,7 @@ public import VerifiedGarbage.Impl.Rsa.X86.PrivChecked
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-! # Private-result release writes masked output and erases its temporary buffer -/
 

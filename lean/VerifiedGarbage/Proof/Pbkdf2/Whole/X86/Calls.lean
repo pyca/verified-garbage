@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
-public import VerifiedGarbage.Proof.Framework.Sig
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: the calls of HMAC's functions and of `iterate`

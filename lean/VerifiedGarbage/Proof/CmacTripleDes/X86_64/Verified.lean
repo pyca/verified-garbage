@@ -5,28 +5,14 @@ import VerifiedGarbage.Proof.CmacTripleDes.X86_64.FinalizeCorrect
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.CT
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Implies
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.CmacTripleDes.X86_64
-public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
-public import VerifiedGarbage.Proof.TripleDes.SboxTables
 public import VerifiedGarbage.Proof.CmacTripleDes.Scratch
 public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Contract
-public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Lit
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Update
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.Cmac.Block
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # TDEA-CMAC on x86-64: `Verified`

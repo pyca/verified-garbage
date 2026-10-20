@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyCallArgs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLocal
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackWord
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyRegions
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # The precomputed public call is safe after the signature-length check -/
 

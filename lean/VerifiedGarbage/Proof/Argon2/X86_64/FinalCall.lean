@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Contract
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
 
 import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitCall
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Correct
 import VerifiedGarbage.Proof.MdStream.X86_64.Common
 

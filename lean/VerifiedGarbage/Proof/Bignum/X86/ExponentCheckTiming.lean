@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Bignum.X86.ExponentScan
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Exponent-validation timing depends only on the public exponent bytes -/
 

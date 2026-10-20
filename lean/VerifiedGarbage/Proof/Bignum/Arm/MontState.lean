@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 
 import VerifiedGarbage.Proof.Bignum.Arm.Round
 import VerifiedGarbage.Proof.Bignum.Arm.MontMath
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The invariant of the runtime-length Montgomery loop -/
 

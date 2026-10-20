@@ -6,9 +6,8 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Save
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Load
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Store
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Restore
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

@@ -1,13 +1,14 @@
 module
-public import Mathlib.Data.Int.ModEq
-public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Spec.Rsa.Contract
 
-import Mathlib.Tactic.Set
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.TCB.X86_64.State
-import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! # Byte-string postconditions for masked DSA signature release -/
 

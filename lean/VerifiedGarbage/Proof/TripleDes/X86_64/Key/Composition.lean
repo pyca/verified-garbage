@@ -3,16 +3,15 @@ module
 import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Copy
 public import VerifiedGarbage.Proof.TripleDes.KeyMemory
 public import VerifiedGarbage.Impl.TripleDes.X86_64.ExpandKey
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Semantics
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.TripleDes.Schedule
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Component
 import VerifiedGarbage.Proof.TripleDes.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

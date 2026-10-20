@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
 import VerifiedGarbage.Proof.Mont.X86_64.CsubS
 import VerifiedGarbage.Proof.Mont.X86_64.Chain
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.X25519.X86_64.Mem
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # P-384 field subtraction on x86-64

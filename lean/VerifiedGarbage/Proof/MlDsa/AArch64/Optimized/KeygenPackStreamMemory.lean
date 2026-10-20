@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFields
 public import VerifiedGarbage.Proof.MlDsa.Pack.Written
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWritten
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## From `KeygenPackStream.lean` -/
 

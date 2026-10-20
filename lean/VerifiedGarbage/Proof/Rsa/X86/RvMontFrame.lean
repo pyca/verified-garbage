@@ -1,5 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Rsa.X86.RvMontGeometry
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 
 /-! # Memory and register frames of recovery's Montgomery products -/

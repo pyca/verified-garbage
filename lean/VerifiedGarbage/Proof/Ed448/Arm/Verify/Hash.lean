@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Sponge
 import VerifiedGarbage.Proof.Ed448.Arm.Shake.Header
 import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 verification on ARMv7: the hash

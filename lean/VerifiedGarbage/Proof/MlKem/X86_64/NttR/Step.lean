@@ -4,9 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Sound
 import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
-import VerifiedGarbage.Proof.Framework.X86_64.Words
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ML-KEM on x86-64: the NTT on registers, each instruction agrees

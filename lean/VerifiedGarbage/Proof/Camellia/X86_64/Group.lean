@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.Prologue
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Camellia.Common
 public import VerifiedGarbage.Proof.Camellia.X86_64.Keys
 import VerifiedGarbage.Proof.Camellia.X86_64.Copy

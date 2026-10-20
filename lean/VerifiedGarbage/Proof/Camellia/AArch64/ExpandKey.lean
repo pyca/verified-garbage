@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Camellia.AArch64.KeyContract
 public import VerifiedGarbage.Proof.Camellia.AArch64.Core
 public import VerifiedGarbage.Proof.Camellia.AArch64.Prologue
 public import VerifiedGarbage.Proof.Camellia.KeySched
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Camellia.AArch64.KeyStore
 import VerifiedGarbage.Proof.Camellia.AArch64.Keys
 import VerifiedGarbage.Proof.Camellia.AArch64.Crypt8

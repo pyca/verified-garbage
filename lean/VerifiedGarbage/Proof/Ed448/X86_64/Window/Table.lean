@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Memory
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.Ops
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Build all seventeen projective multiples without inversions. Invalid decoded points
 still execute safely; group membership is needed only when interpreting the final equation. -/

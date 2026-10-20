@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Seed.AArch64.Lanes
 
 import VerifiedGarbage.Proof.Seed.AArch64.Rounds
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset

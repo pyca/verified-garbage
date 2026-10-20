@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 public import VerifiedGarbage.Proof.Mont.X86.DynamicOps
 import VerifiedGarbage.Proof.Dsa.Frame
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Montgomery arithmetic within the prime-recovery workspace
 

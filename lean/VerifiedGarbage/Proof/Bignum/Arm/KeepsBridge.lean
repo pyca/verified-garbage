@@ -1,12 +1,11 @@
 module
-public import Batteries.Logic
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Spec.Rsa.Mont
 public import VerifiedGarbage.TCB.Arm.Isa
 
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The native arithmetic frame implies the shared RSA workspace frame -/
 

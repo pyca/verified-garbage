@@ -2,6 +2,10 @@ module
 public import VerifiedGarbage.Proof.Mont.Words
 
 import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The low half of a double-width integer -/
 

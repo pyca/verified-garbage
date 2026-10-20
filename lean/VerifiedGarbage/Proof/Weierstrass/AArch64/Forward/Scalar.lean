@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Data
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Util.CompileInductive
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 
 /-! Pure scalar effects used by the checked doubling schedule. The semantics

@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.DirectLen
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCall
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCorrect
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify

@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Camellia.Arm.KeyPair
 public import VerifiedGarbage.Proof.Camellia.Arm.Prologue
 
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Camellia.Arm.Fl
 import VerifiedGarbage.Proof.Camellia.Common
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd

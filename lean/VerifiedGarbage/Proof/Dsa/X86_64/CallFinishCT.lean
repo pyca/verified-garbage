@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Add
 import VerifiedGarbage.Proof.Dsa.X86_64.Multiply
 import VerifiedGarbage.Proof.Dsa.X86_64.Reduce
 import VerifiedGarbage.Proof.Dsa.X86_64.Power
+import Mathlib.Tactic.Finiteness.Attr
 
 /-! # Retaining public result bindings across arithmetic calls -/
 

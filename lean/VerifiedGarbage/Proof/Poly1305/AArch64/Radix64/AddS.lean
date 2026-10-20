@@ -2,10 +2,10 @@ module
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Blocks
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Steps
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Poly1305.Limbs64
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

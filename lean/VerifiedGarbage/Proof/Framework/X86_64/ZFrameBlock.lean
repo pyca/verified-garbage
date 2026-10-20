@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
 public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
 import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # x86-64: what a block of vector instructions leaves of the AVX-512 registers

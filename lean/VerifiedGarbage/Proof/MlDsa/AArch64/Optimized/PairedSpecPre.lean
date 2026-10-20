@@ -2,13 +2,12 @@ module
 
 public import VerifiedGarbage.Spec.MlDsa.PairedResponse
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedConsts
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Util.CompileInductive
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

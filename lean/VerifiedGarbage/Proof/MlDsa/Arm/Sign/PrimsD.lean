@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsC
-import Mathlib.Tactic.Conv
 import Mathlib.Tactic.Set
-import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on ARMv7: calls of the encodings with a stack argument

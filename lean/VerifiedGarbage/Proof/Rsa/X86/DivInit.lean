@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Mont.X86.Words
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Initialize division with a zero remainder and public iteration count -/
 

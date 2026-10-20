@@ -2,15 +2,20 @@ module
 
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomClear
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomMask
 public import VerifiedGarbage.Proof.Dsa.DomainShape
 public import VerifiedGarbage.Spec.Dsa.Random
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomScan
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepareFinish
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-! Initialization of the sampler, including its exact memory effects. -/
 @[expose] public section

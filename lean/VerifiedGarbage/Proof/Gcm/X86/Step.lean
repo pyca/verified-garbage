@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Gcm.X86
 public import VerifiedGarbage.Proof.Aes.X86.Common
 public import VerifiedGarbage.Proof.Gcm.Spec

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Resume
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Semantics
 
 /-! # Successful initial rejection bypasses both continuation blocks -/
 @[expose] public section

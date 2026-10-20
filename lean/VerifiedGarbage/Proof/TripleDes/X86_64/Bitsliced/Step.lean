@@ -5,17 +5,10 @@ public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
-import VerifiedGarbage.Proof.TripleDes.Permutation
-import VerifiedGarbage.Proof.TripleDes.Round
-import VerifiedGarbage.Proof.TripleDes.X86_64.Sbox
-import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 
 /-!
 # One S-box of a bitsliced round, and the exchange of the halves

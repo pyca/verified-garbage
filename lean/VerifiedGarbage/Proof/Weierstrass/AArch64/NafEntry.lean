@@ -136,6 +136,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 import VerifiedGarbage.Proof.Weierstrass.JacMul
 import VerifiedGarbage.Proof.Weierstrass.Window5
 import VerifiedGarbage.Spec.Weierstrass.Mul
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

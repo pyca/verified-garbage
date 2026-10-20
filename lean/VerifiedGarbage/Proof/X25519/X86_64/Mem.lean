@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Step
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 

@@ -2,14 +2,12 @@ module
 
 import VerifiedGarbage.Proof.Curve448.AArch64.Columns
 import VerifiedGarbage.Proof.Curve448.AArch64.Normalize
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Curve448.AArch64
 public import VerifiedGarbage.Proof.Curve448.AArch64.Memory
 public import VerifiedGarbage.Proof.X448.AArch64.Mul
 import VerifiedGarbage.Proof.X448.Wide.Reduce
 import VerifiedGarbage.Proof.Curve448.AArch64.Bounds
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.X448.Wide.Columns
 
 @[expose] public section
 

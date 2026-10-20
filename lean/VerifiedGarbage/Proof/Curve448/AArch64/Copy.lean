@@ -1,12 +1,11 @@
 module
-public import Batteries.Logic
 public import VerifiedGarbage.Impl.Curve448.AArch64
 public import VerifiedGarbage.Proof.X448.AArch64.Mul
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on AArch64: copying field elements

@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_init`

@@ -2,6 +2,10 @@ module
 public import VerifiedGarbage.Proof.Mont.Words
 
 import VerifiedGarbage.Proof.Bignum.ByteWords
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Relate packed RSA limbs to whole little-endian reads -/
 

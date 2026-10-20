@@ -6,8 +6,8 @@ public import VerifiedGarbage.Proof.MlDsa.Arith.Mont
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 public import VerifiedGarbage.Proof.MlKem.X86.Common
 public import VerifiedGarbage.Proof.MlKem.X86.Leaf
-import Mathlib.Tactic.SplitIfs
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # ML-DSA on x86 (32-bit): the reductions modulo `q`

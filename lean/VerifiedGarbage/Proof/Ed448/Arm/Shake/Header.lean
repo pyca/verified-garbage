@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Ed448 on ARMv7: the header of `dom4`

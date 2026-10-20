@@ -4,9 +4,6 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

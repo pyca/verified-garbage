@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSaves
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontRound
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Mont.AArch64.Ops
 import VerifiedGarbage.Proof.Mont.AArch64.Chain
 import VerifiedGarbage.Proof.Mont.AArch64.Rounds
@@ -11,7 +10,9 @@ import VerifiedGarbage.Proof.Mont.AArch64.Blocks
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # Montgomery products modulo a curve's `p` or `n`, as functions, on AArch64

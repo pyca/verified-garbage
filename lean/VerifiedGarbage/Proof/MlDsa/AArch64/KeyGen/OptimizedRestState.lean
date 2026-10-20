@@ -3,11 +3,12 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestBase
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.LazyInv
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallResident
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Arithmetic
 
 @[expose] public section
 

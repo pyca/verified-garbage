@@ -2,13 +2,8 @@ module
 
 import VerifiedGarbage.Proof.AesCtr.Ctr32
 public import VerifiedGarbage.Impl.AesCtr.X86_64
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
-public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
-public import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Proof.AesCtr.Inc
 import VerifiedGarbage.Proof.AesCbc.X86_64.Block
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -16,7 +11,10 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.AesCbc.X86_64.Loop
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-CTR on x86-64: the code between the calls

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseD
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimC
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimA
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimD
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimB
@@ -12,7 +11,7 @@ import VerifiedGarbage.Proof.MlKem.X86.TopSeq
 import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 import VerifiedGarbage.Proof.MlDsa.DecideAt
-import VerifiedGarbage.Proof.MlKem.X86.Table
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on x86 (32-bit): the commitment of an iteration

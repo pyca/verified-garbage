@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 on ARMv7: the calls of the sponge functions

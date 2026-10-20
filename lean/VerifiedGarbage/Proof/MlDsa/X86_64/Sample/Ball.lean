@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallLoop
 public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Sponge
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttLoop

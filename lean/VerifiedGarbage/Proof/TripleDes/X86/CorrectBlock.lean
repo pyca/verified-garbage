@@ -12,6 +12,9 @@ import VerifiedGarbage.Proof.Rc2.X86.KeyIO
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-! ## `RestoredTail` -/
 

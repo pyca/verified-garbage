@@ -5,9 +5,11 @@ import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
 public import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Impl.Aes.X86_64.Blocks
 public import VerifiedGarbage.Proof.Aes.X86_64.Encrypt
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # AES on whole blocks on x86-64: the groups

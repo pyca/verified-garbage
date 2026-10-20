@@ -9,10 +9,12 @@ import VerifiedGarbage.Proof.TripleDes.X86.Word
 import VerifiedGarbage.Proof.TripleDes.X86.Key.Compare
 import VerifiedGarbage.Proof.TripleDes.Schedule
 public import VerifiedGarbage.Proof.TripleDes.KeySchedule
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-! ## `Load` -/
 

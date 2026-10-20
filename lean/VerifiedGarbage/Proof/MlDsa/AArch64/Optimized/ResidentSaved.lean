@@ -3,10 +3,10 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentMask
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRestoreG
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## From `ResidentEpi.lean` -/
 

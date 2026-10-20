@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.X448.Wide.Column
 import VerifiedGarbage.Proof.X448.Wide.Fold
 import VerifiedGarbage.Proof.X448.Wide.TailPass
 import VerifiedGarbage.Proof.Curve448.AArch64.Collect
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.Wide.TailBounds
 import VerifiedGarbage.Proof.X448.Wide.Pass
 import VerifiedGarbage.Proof.Framework.Block

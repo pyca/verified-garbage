@@ -3,7 +3,6 @@ public import VerifiedGarbage.Impl.Seed.X86_64.ExpandKey
 public import VerifiedGarbage.Proof.Seed.X86_64.Lanes
 
 import VerifiedGarbage.Proof.Seed.X86_64.Copy
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Seed.X86_64.Round
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset

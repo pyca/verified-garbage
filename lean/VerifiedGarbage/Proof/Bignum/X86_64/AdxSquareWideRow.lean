@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareWide
-public import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRow
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock

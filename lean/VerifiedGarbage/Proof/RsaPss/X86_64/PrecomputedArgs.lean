@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCall
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
 
 @[expose] public section
 

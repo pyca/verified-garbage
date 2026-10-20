@@ -7,9 +7,7 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyReduce
 import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

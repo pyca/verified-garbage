@@ -37,6 +37,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPublic
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
 
 /-!
 # ML-DSA signing on AArch64: the primitives it calls

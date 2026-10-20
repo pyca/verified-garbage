@@ -2,12 +2,13 @@ module
 
 import VerifiedGarbage.Proof.TripleDes.Arm.Key.Verified
 public import VerifiedGarbage.Proof.TripleDes.Scratch
-public import VerifiedGarbage.Proof.TripleDes.Arm.ConstantTime
 public import VerifiedGarbage.Impl.StackScratch.Arm
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
 import VerifiedGarbage.Proof.TripleDes.Arm.Lit
 import VerifiedGarbage.Proof.TripleDes.SboxTables
 

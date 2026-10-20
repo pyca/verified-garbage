@@ -8,6 +8,10 @@ public import VerifiedGarbage.Proof.MlKem.Arm.Keccak
 import VerifiedGarbage.Proof.MlDsa.Arm.Message.Hash
 import VerifiedGarbage.Proof.MlKem.Arm.Common
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on ARMv7, `sign_message`: the call of the signing function on `μ`

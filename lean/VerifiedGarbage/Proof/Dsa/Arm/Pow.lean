@@ -5,8 +5,8 @@ public import VerifiedGarbage.Proof.Dsa.Arm.RegisterSave
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Exponent
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Timing
 public import VerifiedGarbage.Proof.Dsa.SameTrace
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # DSA's exponentiation as a function on 32-bit ARM: its code

@@ -78,6 +78,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import VerifiedGarbage.Proof.Weierstrass.WindowJ
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Windows in Jacobian coordinates on AArch64: the table into affine coordinates

@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Modes.X86_64.Ctr
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Mem
 
 import VerifiedGarbage.Proof.Framework.Offset
@@ -10,6 +9,7 @@ import VerifiedGarbage.Proof.Modes.Addr
 import VerifiedGarbage.Proof.Modes.X86_64.Steps
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # XORing blocks on x86-64

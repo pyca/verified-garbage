@@ -3,9 +3,8 @@ module
 import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
 public import VerifiedGarbage.Impl.Ed25519.AArch64.RecoverSign
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Merged from `Proof.Ed25519.AArch64.FieldCheck`. -/
 

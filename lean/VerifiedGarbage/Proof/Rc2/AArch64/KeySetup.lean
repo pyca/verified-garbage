@@ -4,11 +4,12 @@ public import VerifiedGarbage.Proof.Rc2.Expansion
 
 import VerifiedGarbage.Proof.Rc2.AArch64.FillKey
 import VerifiedGarbage.Proof.Rc2.AArch64.DescendKey
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! # Key-expansion control and register setup -/
 

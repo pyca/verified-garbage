@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.PrivFnInput
 import VerifiedGarbage.Proof.Rsa.X86.PrivRegions
-import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
 
 /-! # Native cdecl inputs before reserving the two wrapper frames -/
 

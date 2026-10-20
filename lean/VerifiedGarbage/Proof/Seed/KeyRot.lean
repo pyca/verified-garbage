@@ -1,5 +1,4 @@
 module
-import VerifiedGarbage.Proof.Seed.KeySchedule
 
 
 /-!

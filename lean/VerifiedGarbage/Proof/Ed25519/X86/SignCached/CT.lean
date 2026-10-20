@@ -46,6 +46,8 @@ meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
 meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.X86.SignCached.CTCommon`. -/
 

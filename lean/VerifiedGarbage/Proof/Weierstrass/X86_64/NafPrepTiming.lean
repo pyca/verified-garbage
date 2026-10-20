@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafPrep
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
-import Mathlib.Tactic.SplitIfs
 
 /-! Recoding branches depend only on the public scalar, never on stale scratch. -/
 

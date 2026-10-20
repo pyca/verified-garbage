@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Redc
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Bignum.LazyMath
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMont
 
 /-! The reduction of a raw product `X < R²` and the lazy final subtraction. -/
 

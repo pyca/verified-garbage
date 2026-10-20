@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.X448.Wide.Bridge
 public import VerifiedGarbage.Proof.X448.Wide.CarryStep
-import Mathlib.Tactic.SplitIfs
 
 /-! Untrusted: interpreting the normalized wide output in the original slots. -/
 

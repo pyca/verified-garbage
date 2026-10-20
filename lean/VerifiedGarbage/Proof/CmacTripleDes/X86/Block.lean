@@ -7,11 +7,10 @@ import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.RegSet
 
 /-!
 # TDEA on x86 (32-bit): the passes and the block

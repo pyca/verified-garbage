@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Base.Engine
 public import VerifiedGarbage.Spec.X25519.Contract
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
 import VerifiedGarbage.Proof.X25519.X86_64.Finish
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Memory, output encoding and ABI obligations for fixed-base X25519. -/
 

@@ -1,39 +1,47 @@
 module
 
 import VerifiedGarbage.Proof.Idea.X86.Key
-meta import VerifiedGarbage.Proof.Idea.X86.Key
 import VerifiedGarbage.Proof.Idea.X86.Block
-meta import VerifiedGarbage.Proof.Idea.X86.Block
 public import VerifiedGarbage.Proof.Idea.Inverse
-meta import VerifiedGarbage.Proof.Idea.Inverse
 public import VerifiedGarbage.Proof.Idea.Scratch32
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Idea.X86.Lit
 public import VerifiedGarbage.Proof.Idea.X86.Mul
-meta import VerifiedGarbage.Proof.Idea.Scratch32
 import VerifiedGarbage.Proof.Idea.Memory32
-meta import VerifiedGarbage.Proof.Idea.Memory32
 import VerifiedGarbage.Proof.Idea.Arith32
-meta import VerifiedGarbage.Proof.Idea.Arith32
 import VerifiedGarbage.Proof.Idea.KeyBits
-meta import VerifiedGarbage.Proof.Idea.KeyBits
 import VerifiedGarbage.Proof.Idea.Memory
-meta import VerifiedGarbage.Proof.Idea.Memory
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Idea.X86.Lit
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Batteries.Data.List.Lemmas
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.Bswap
-meta import VerifiedGarbage.Proof.Framework.Pratt
+meta import VerifiedGarbage.Proof.Idea.X86.Key
+meta import VerifiedGarbage.Proof.Idea.X86.Block
+meta import VerifiedGarbage.Proof.Idea.Inverse
+meta import VerifiedGarbage.Proof.Idea.Scratch32
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Idea.X86.Mul
+meta import VerifiedGarbage.Proof.Idea.Memory32
+meta import VerifiedGarbage.Proof.Idea.Arith32
+meta import VerifiedGarbage.Proof.Idea.KeyBits
+meta import VerifiedGarbage.Proof.Idea.Memory
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Idea.X86.Lit
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Batteries.Data.List.Lemmas
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # IDEA decryption subkeys on x86 (32-bit)

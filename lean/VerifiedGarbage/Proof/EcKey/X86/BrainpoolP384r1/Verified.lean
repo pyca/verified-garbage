@@ -24,6 +24,8 @@ meta import VerifiedGarbage.Impl.EcKey.BrainpoolP384r1.X86
 meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # brainpoolP384r1 public keys on x86 (32-bit): `Verified`
