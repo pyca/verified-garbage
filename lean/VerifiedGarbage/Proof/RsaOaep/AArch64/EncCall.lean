@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncLay
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
 
 /-!
 # RSAES-OAEP encryption on AArch64: the public-key operation

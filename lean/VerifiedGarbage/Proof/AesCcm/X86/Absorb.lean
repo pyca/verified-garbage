@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.AesGcm.X86.Callee
 import VerifiedGarbage.Proof.AesGcm.X86.Common
 import VerifiedGarbage.Proof.AesGcm.X86.Env
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
-public import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 
 /-!
 # AES-CCM on x86: a buffer padded, chained (`absorbPad y`)

@@ -30,8 +30,9 @@ import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha512.X86.Lit
-public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Offset
+-- Proofs inside exposed definitions (structure values) use these: Lean needs them public.
+public import VerifiedGarbage.Proof.Framework.AddrArith -- shake: keep
 
 /-! Merged from `Proof.Ed25519.X86.PublicKey.Setup`. -/
 

@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Bignum.ByteWords
+import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
 
 /-! # `vg_rsa_crt_values` on ARMv7: an array written out under the mask (`store_ok`) -/

@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.TCB.X86_64.Gpr
 import VerifiedGarbage.TCB.X86_64.Isa
 import VerifiedGarbage.TCB.X86_64.State
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # The blocks after the last batch of decryption

@@ -11,7 +11,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.RsaKeyGen.Table
-public import VerifiedGarbage.Proof.Bignum.Octets
+-- Proofs inside exposed definitions (structure values) use these: Lean needs them public.
+public import VerifiedGarbage.Proof.Bignum.Octets -- shake: keep
 
 /-! # Concrete generator plan over the saved p and exponent buffers -/
 

@@ -4,7 +4,8 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.ParametersCT
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.X86_64.ABIRegions
-public import VerifiedGarbage.Proof.Bignum.Octets
+-- Proofs inside exposed definitions (structure values) use these: Lean needs them public.
+public import VerifiedGarbage.Proof.Bignum.Octets -- shake: keep
 
 /-! # The x86-64 DSA domain check verified against the shared contract -/
 

@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedLoad
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 @[expose] public section

@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.WordStep
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
+import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
 
 /-!
 # `R² mod m` by word steps with ADX on x86-64

@@ -17,6 +17,8 @@ import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.AesGcm.Arm.Blocks
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
 
 /-!
 # AES-CCM on ARMv7: the encoding of the length of the associated data

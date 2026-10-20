@@ -10,9 +10,9 @@ import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.TCB.AArch64.Simd
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10Step
 import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Widths
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeSpec
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeSpec
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdLoop
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdSpec
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdSpec
 
 /-!
 # ML-KEM-1024 on AArch64: an iteration of `dd11Body`
