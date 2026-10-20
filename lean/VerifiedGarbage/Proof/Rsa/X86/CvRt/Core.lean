@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Checks
-public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Div
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Div
+public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 
 /-! # CRT parameter calculation at a run-time width: the divisions
 

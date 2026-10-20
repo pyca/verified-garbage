@@ -1,9 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Framework.Omega
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-! # The key workspace's arrays zeroed at a run-time width, and its bit count
 

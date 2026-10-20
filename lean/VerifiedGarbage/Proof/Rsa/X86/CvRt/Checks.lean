@@ -2,10 +2,22 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 public import VerifiedGarbage.Proof.Rsa.CrtValuesMask
-public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.InvLoop
-public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
-public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.InvLoop
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Framework.Mem
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.ToAdditive
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
+public import VerifiedGarbage.Proof.Rsa.X86.InvParts
+public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
+public import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 
 /-! # CRT parameter calculation at a run-time width: the checks
 

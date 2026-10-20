@@ -1,9 +1,10 @@
 module
 
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.DivStep
-public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
-import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 
 /-! # The key workspace's division at a run-time width
 

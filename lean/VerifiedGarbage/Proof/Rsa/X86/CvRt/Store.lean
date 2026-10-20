@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Load
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Bignum.ReadPrefix
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs

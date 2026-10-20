@@ -1,8 +1,11 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.InvParts
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.InvU
 public import VerifiedGarbage.Proof.Rsa.X86.InvStep
 public import VerifiedGarbage.Proof.Rsa.KeyMath
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.InvParts
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 
 /-! # The inverse at a run-time width: one step is `invStep`
 

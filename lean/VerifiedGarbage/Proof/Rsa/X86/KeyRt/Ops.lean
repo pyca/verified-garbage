@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops2
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Mont.X86.WordOps

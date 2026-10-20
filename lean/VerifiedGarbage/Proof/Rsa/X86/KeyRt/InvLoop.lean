@@ -1,11 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.InvStep
-public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.InvStep
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
 import VerifiedGarbage.Proof.Rsa.X86.DivCount
-import VerifiedGarbage.Proof.Framework.X86.Wp
 import Mathlib.Tactic.Widget.Calc
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Rsa.X86.InvParts
+public import VerifiedGarbage.Proof.Rsa.X86.InvStep
+public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-! # The inverse at a run-time width: `32 w` iterations of two steps
 

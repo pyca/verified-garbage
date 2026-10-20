@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.CvRt.TimeCheck
 import VerifiedGarbage.Proof.Rsa.X86.CvRt.Sized
 import VerifiedGarbage.Proof.Rsa.X86.CvPair
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeExp
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -12,7 +11,6 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Rsa.X86.CvInputs
 public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Load
-import VerifiedGarbage.Proof.Rsa.X86.CvRt.Load
 
 /-! # The trace of CRT parameter calculation at a run-time width, once the modulus is accepted
 

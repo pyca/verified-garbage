@@ -1,10 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 public import VerifiedGarbage.Proof.Rsa.KeyMath
 import VerifiedGarbage.Proof.Rsa.X86.DivCount
-import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Omega
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
+public import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 
 /-! # A step of the key workspace's division at a run-time width
 

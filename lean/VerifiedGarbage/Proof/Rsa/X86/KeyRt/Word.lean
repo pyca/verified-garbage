@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
+public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Rsa.KeyBits32
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Rsa.X86.KeyBits

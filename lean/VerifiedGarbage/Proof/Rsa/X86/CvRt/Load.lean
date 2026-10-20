@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Core
 public import VerifiedGarbage.Proof.Rsa.X86.CvFrames
-public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
-import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Load
@@ -12,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
 
 /-! # CRT parameter calculation at a run-time width: the inputs
 
