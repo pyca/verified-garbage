@@ -7,7 +7,6 @@ public import VerifiedGarbage.Spec.Scrypt.Contract
 import all Init.Data.Nat.Power2.Basic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
