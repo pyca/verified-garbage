@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
 meta import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched

@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Phase
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rounds
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rounds
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xar
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ChaCha20-Poly1305 on AArch64, the rest when encrypting: the rounds

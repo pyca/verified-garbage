@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitch
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Short
-public import VerifiedGarbage.Impl.ChaCha20.AArch64.Neon4
+import VerifiedGarbage.Impl.ChaCha20.AArch64.Neon4
 
 /-!
 # ChaCha20-Poly1305: AArch64, with Poly1305 inside the ChaCha20 kernel
