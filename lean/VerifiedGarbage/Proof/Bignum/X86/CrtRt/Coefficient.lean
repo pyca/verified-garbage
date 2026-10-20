@@ -38,11 +38,11 @@ theorem subMod_value {a b M W D T : Nat} {c₁ c₂ : Bool} (ha : a < M) (hb : b
 section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {c : Ctx} {M : Nat}
 
-theorem subMod_ok (C : CtxOk base bytes len args c M s) (ha : sv s.mem base len c 6 < M)
-    (hb : sv s.mem base len c 5 < M) :
+theorem subMod_raw (C : CtxOk base bytes len args c M s) :
     WP isa (subMod c 7 6 5) s fun u =>
       CtxOk base bytes len args c M u ∧ Frame (frameR base (s.gpr .esp) (subR len c)) s.mem u.mem ∧
-      sv u.mem base len c 7 = (sv s.mem base len c 6 + M - sv s.mem base len c 5) % M ∧
+      (sv s.mem base len c 6 < M → sv s.mem base len c 5 < M →
+        sv u.mem base len c 7 = (sv s.mem base len c 6 + M - sv s.mem base len c 5) % M) ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u := by
   have h := C.inp
   have f8 := h.slot_fit c (j := 8) (by decide)
@@ -101,9 +101,7 @@ theorem subMod_ok (C : CtxOk base bytes len args c M s) (ha : sv s.mem base len 
     rw [O₃.val32 (.inr (by omega)) (by omega), A]
   rw [A, M₂] at V₃
   rw [D₃] at V₅
-  have R := subMod_value (W := 2 ^ (32 * cwc len c)) ha hb (val32_lt _ _ _ _) (val32_lt _ _ _ _)
-    (by simp only [sv] at *; omega) V₃
-  refine ⟨?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, fun ha hb => ?_, ?_⟩
   · refine C.keepF2 (regs := [.eax, .ebx, .ecx, .edx, .ebp]) ?_ (by decide) (by decide) (ws := subR len c) ?_ ?_ ?_
     · exact ((((K₁.mono (by decide)).trans ((m₂.keeps []).mono (by decide))).trans (K₃.mono (by decide))).trans
         (a₄.keeps.mono (by decide))).trans (K₅.mono (by decide))
@@ -115,9 +113,19 @@ theorem subMod_ok (C : CtxOk base bytes len args c M s) (ha : sv s.mem base len 
       rcases hp with rfl | rfl | rfl <;> dsimp only <;> omega
   · exact (((frameR_of_outside O₁ (by omega) (by simp)).trans (frameR_of_outside O₂ (by omega) (by simp))).trans
       (frameR_of_outside O₃ (by omega) (by simp))).trans (by rw [← a₄.mem]; exact frameR_of_outside O₅ (by omega) (by simp))
-  · simp only [sv]; rw [V₅]; exact R.1
+  · have R := subMod_value (W := 2 ^ (32 * cwc len c)) ha hb (val32_lt _ _ _ _) (val32_lt _ _ _ _)
+      (by simp only [sv] at *; omega) V₃
+    simp only [sv]; rw [V₅]; exact R.1
   · exact ((((K₁.mono (by decide)).trans ((m₂.keeps []).mono (by decide))).trans (K₃.mono (by decide))).trans
       (a₄.keeps.mono (by decide))).trans (K₅.mono (by decide))
+
+theorem subMod_ok (C : CtxOk base bytes len args c M s) (ha : sv s.mem base len c 6 < M)
+    (hb : sv s.mem base len c 5 < M) :
+    WP isa (subMod c 7 6 5) s fun u =>
+      CtxOk base bytes len args c M u ∧ Frame (frameR base (s.gpr .esp) (subR len c)) s.mem u.mem ∧
+      sv u.mem base len c 7 = (sv s.mem base len c 6 + M - sv s.mem base len c 5) % M ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u :=
+  WP.mono (subMod_raw C) fun _ ⟨C', F, V, K⟩ => ⟨C', F, V ha hb, K⟩
 
 /-- The ranges the coefficient changes: the inverse's and the saved mask's header words, and the
 first nine wide slots. -/
