@@ -7,7 +7,6 @@ meta import VerifiedGarbage.Impl.Sm4.AArch64.Ecb
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
 meta import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.RegSet
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.RegSet
 
