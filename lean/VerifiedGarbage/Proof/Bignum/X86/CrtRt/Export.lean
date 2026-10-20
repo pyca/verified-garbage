@@ -22,13 +22,13 @@ section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
 theorem maskResult_ok (h : In base bytes len args s) {c : Bool}
-    (hm : s.mem.readW (off base accOff) 32 = cmask c) :
-    WP isa (.seq (.block (ptrTo (.slot .wide 19) .ebp .edx ++ cntTo (one .wide) .edx ++
-      [.mov .ecx (.mem (sc accOff))])) maskLoop) s fun u =>
-      Outside base (lo len (.slot .wide 19)) (bc len .wide) s.mem u.mem ∧
+    (hm : s.mem.readW (off base accOff) 32 = cmask c) {P : Prog isa} {Q : State → Prop}
+    (k : ∀ u, Outside base (lo len (.slot .wide 19)) (bc len .wide) s.mem u.mem →
       val32 u.mem base (lo len (.slot .wide 19)) (cwc len .wide) =
-        (if c then val32 s.mem base (lo len (.slot .wide 19)) (cwc len .wide) else 0) ∧
-      Keeps [.eax, .ecx, .edx, .ebp] s u := by
+        (if c then val32 s.mem base (lo len (.slot .wide 19)) (cwc len .wide) else 0) →
+      Keeps [.eax, .ecx, .edx, .ebp] s u → WP isa P u Q) :
+    WP isa (.seq (.block (ptrTo (.slot .wide 19) .ebp .edx ++ cntTo (one .wide) .edx ++
+      [.mov .ecx (.mem (sc accOff))])) (.seq maskLoop P)) s Q := by
   have f19 := h.slot_fit .wide (j := 19) (by decide)
   have bw := bc_eq_cwc len .wide
   have g := bc_ge h.lower' .wide
@@ -48,12 +48,12 @@ theorem maskResult_ok (h : In base bytes len args s) {c : Bool}
   have Kw : Keeps [.ecx, .edx, .ebp] s w :=
     ((K.mono (by decide)).trans (Kv.mono (by decide))).trans (uw.keeps.mono (by decide))
   have mw : w.mem = s.mem := by rw [uw.mem, mv, m]
-  refine WP.mono (VG.Proof.Bignum.X86.PublicRt.maskLoop_ok (h.ws.of_keeps Kw) (x := lo len (.slot .wide 19))
+  refine WP.seq (WP.mono (VG.Proof.Bignum.X86.PublicRt.maskLoop_ok (h.ws.of_keeps Kw) (x := lo len (.slot .wide 19))
     (N := cwc len .wide) (c := c) (by omega) (by omega)
     (by rw [PtrAt, uw.other _ (by decide), Kv.1 _ (by decide)]; exact p)
     (by rw [uw.other _ (by decide), cnt_toNat h.upper' (one_ok .wide) cv, cw1])
-    (by rw [uw.gpr, mv, m, hm])) fun t ⟨O, V, Kt⟩ => ⟨by rw [← mw, bw]; exact O, by rw [V, mw],
-      (Kw.mono (by decide)).trans (Kt.mono (by decide))⟩
+    (by rw [uw.gpr, mv, m, hm])) fun t ⟨O, V, Kt⟩ => k t (by rw [← mw, bw]; exact O) (by rw [V, mw])
+      ((Kw.mono (by decide)).trans (Kt.mono (by decide))))
 
 /-- The result's `n_len` bytes to `out`; they are its value's when it fits them. -/
 theorem writeResult_ok (h : In base bytes len args s) :

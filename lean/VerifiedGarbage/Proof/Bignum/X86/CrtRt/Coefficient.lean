@@ -119,9 +119,13 @@ theorem subMod_ok (C : CtxOk base bytes len args c M s) (ha : sv s.mem base len 
   · exact ((((K₁.mono (by decide)).trans ((m₂.keeps []).mono (by decide))).trans (K₃.mono (by decide))).trans
       (a₄.keeps.mono (by decide))).trans (K₅.mono (by decide))
 
-/-- The ranges the coefficient changes: the header's first four words and the first nine wide
-slots. -/
-abbrev coR (len : Nat) : List (Nat × Nat) := [(0, 16), (numBase, 9 * st len .wide)]
+/-- The ranges the coefficient changes: the inverse's and the saved mask's header words, and the
+first nine wide slots. -/
+abbrev coR (len : Nat) : List (Nat × Nat) := [(invOff, 4), (maskOff, 4), (numBase, 9 * st len .wide)]
+
+/-- A range the coefficient changes. -/
+abbrev InCo (len : Nat) (p : Nat × Nat) : Prop :=
+  p = (invOff, 4) ∨ p = (maskOff, 4) ∨ Within p (numBase, 9 * st len .wide)
 
 theorem coR_fit (h : In base bytes len args s) : ∀ q ∈ coR len, q.1 + q.2 ≤ bytes := by
   have f8 := h.slot_fit .wide (j := 8) (by decide)
@@ -129,63 +133,57 @@ theorem coR_fit (h : In base bytes len args s) : ∀ q ∈ coR len, q.1 + q.2 �
   have nb : numBase = 3336 := rfl
   intro q hq
   simp only [coR, List.mem_cons, List.not_mem_nil, or_false] at hq
-  rcases hq with rfl | rfl <;> dsimp only <;> omega
+  rcases hq with rfl | rfl | rfl <;> simp only [invOff, maskOff] <;> omega
 
 theorem co_widen {sp : BitVec 32} {ws : List (Nat × Nat)} {m m' : Mem}
     (F : Frame (frameR base sp ws) m m')
-    (hw : ∀ p ∈ ws, (p.1 + p.2 ≤ 16) ∨ Within p (numBase, 9 * st len .wide)) :
-    Frame (frameR base sp (coR len)) m m' :=
+    (hw : ∀ p ∈ ws, InCo len p) : Frame (frameR base sp (coR len)) m m' :=
   frameR_widen F fun p hp => by
-    rcases hw p hp with w | w
-    · exact ⟨(0, 16), by simp, Nat.zero_le _, by dsimp only; omega⟩
+    rcases hw p hp with rfl | rfl | w
+    · exact ⟨_, by simp, Nat.le_refl _, Nat.le_refl _⟩
+    · exact ⟨_, by simp, Nat.le_refl _, Nat.le_refl _⟩
     · exact ⟨_, by simp, w⟩
 
 theorem co_of_outside (h : In base bytes len args s) {sp : BitVec 32} {a n : Nat} {m m' : Mem}
-    (O : Outside base a n m m') (w : (a + n ≤ 16) ∨ Within (a, n) (numBase, 9 * st len .wide)) :
+    (O : Outside base a n m m') (w : Within (a, n) (numBase, 9 * st len .wide)) :
     Frame (frameR base sp (coR len)) m m' := by
   have fit := coR_fit h
   have := fit _ (by simp : (numBase, 9 * st len .wide) ∈ coR len)
-  have nb : numBase = 3336 := rfl
-  refine co_widen (ws := [(a, n)]) (frameR_of_outside O (by
-    rcases w with w | w
-    · omega
-    · obtain ⟨_, w2⟩ := w
-      simp only at w2
-      omega_using [w2, this, h.bytes_lt]) (by simp)) ?_
+  obtain ⟨_, w2⟩ := w
+  simp only at w2
+  refine co_widen (ws := [(a, n)]) (frameR_of_outside O (by omega_using [w2, this, h.bytes_lt]) (by simp)) ?_
   intro p hp
   obtain rfl := List.mem_singleton.mp hp
-  exact w
+  exact .inr (.inr ⟨by assumption, w2⟩)
 
-theorem prepR_co (h : In base bytes len args s) (c : Ctx) :
-    ∀ p ∈ prepR len c, (p.1 + p.2 ≤ 16) ∨ Within p (numBase, 9 * st len .wide) := by
+theorem prepR_co (h : In base bytes len args s) (c : Ctx) : ∀ p ∈ prepR len c, InCo len p := by
   intro p hp
   have g := bc_ge h.lower' c
   simp only [prepR, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact .inl (by simp only [invOff]; omega)
-  · exact .inr (slot_in h c (by decide))
-  · exact .inr ⟨(slot1_in h c).1, by have := (slot1_in h c).2; dsimp only at *; omega⟩
-  · exact .inr (slot_in h c (by decide))
-  · exact .inr (slot_in h c (by decide))
-  · exact .inr (slot_in h c (by decide))
+  · exact .inl rfl
+  · exact .inr (.inr (slot_in h c (by decide)))
+  · exact .inr (.inr ⟨(slot1_in h c).1, by have := (slot1_in h c).2; dsimp only at *; omega⟩)
+  · exact .inr (.inr (slot_in h c (by decide)))
+  · exact .inr (.inr (slot_in h c (by decide)))
+  · exact .inr (.inr (slot_in h c (by decide)))
 
 theorem mulR_co (h : In base bytes len args s) (c : Ctx) {j : Nat} (hj : j ≤ 8) :
-    ∀ p ∈ mulR len c j, (p.1 + p.2 ≤ 16) ∨ Within p (numBase, 9 * st len .wide) := by
+    ∀ p ∈ mulR len c j, InCo len p := by
   intro p hp
   simp only [mulR, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl
-  · exact .inr (slot_in h c hj)
-  · exact .inr (slot1_in h c)
+  · exact .inr (.inr (slot_in h c hj))
+  · exact .inr (.inr (slot1_in h c))
 
-theorem subR_co (h : In base bytes len args s) (c : Ctx) :
-    ∀ p ∈ subR len c, (p.1 + p.2 ≤ 16) ∨ Within p (numBase, 9 * st len .wide) := by
+theorem subR_co (h : In base bytes len args s) (c : Ctx) : ∀ p ∈ subR len c, InCo len p := by
   intro p hp
   simp only [subR, List.mem_cons, List.not_mem_nil, or_false] at hp
   have g := bc_ge h.lower' c
   rcases hp with rfl | rfl | rfl
-  · exact .inl (by simp only [maskOff]; omega)
-  · exact .inr ⟨(slot1_in h c).1, by have := (slot1_in h c).2; dsimp only at *; omega⟩
-  · exact .inr (slot_in h c (by decide))
+  · exact .inr (.inl rfl)
+  · exact .inr (.inr ⟨(slot1_in h c).1, by have := (slot1_in h c).2; dsimp only at *; omega⟩)
+  · exact .inr (.inr (slot_in h c (by decide)))
 
 /-- A subtraction modulo `M` keeps slots 3, 4 and 8. -/
 theorem subR_sv (h : In base bytes len args s) (c : Ctx) {sp : BitVec 32} {m m' : Mem}
@@ -313,7 +311,7 @@ theorem coR_keep (h : In base bytes len args s) {sp : BitVec 32} {m m' : Mem}
   have nb : numBase = 3336 := rfl
   refine low_keep h F R (coR_fit h) ?_ hd hk
   intro p hp; simp only [coR, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl <;> dsimp only <;> omega
+  rcases hp with rfl | rfl | rfl <;> simp only [invOff, maskOff] <;> omega
 
 /-- `h = (m_p - m_q mod p) qInv mod p` into the wide slot 7, for `p` (wide slot 10), `m_p` and `m_q`
 (wide slots 16 and 17) and `qInv` (wide slot 14), in the context of `p`. -/
@@ -355,7 +353,7 @@ theorem coefficient_ok (h : In base bytes len args s) {p mp mq qi : Nat}
   unfold coefficient
   refine WP.seq (WP.mono (copyDown_ok h (j := 10) (d := 0) (by decide) (by decide) (by decide))
     fun u₁ ⟨O₁, V₁, K₁⟩ => ?_)
-  have F₁ : Frame (frameR base (s.gpr .esp) (coR len)) s.mem u₁.mem := co_of_outside h O₁ (.inr (cs (by decide)))
+  have F₁ : Frame (frameR base (s.gpr .esp) (coR len)) s.mem u₁.mem := co_of_outside h O₁ (cs (by decide))
   have h₁ := h.keepF K₁ (by decide) (by decide) F₁ (coR_fit h)
   refine WP.seq (WP.mono (prepCtx_ok h₁ .wide) fun u₂ ⟨C₂, one₂, R₂, F₂, K₂⟩ => ?_)
   rw [V₁, hp] at C₂ R₂
@@ -366,17 +364,17 @@ theorem coefficient_ok (h : In base bytes len args s) {p mp mq qi : Nat}
   refine WP.seq (WP.mono (copyDown_ok h₂ (j := 16) (d := 6) (by decide) (by decide) (by decide))
     fun u₃ ⟨O₃, V₃, K₃⟩ => ?_)
   rw [rd F₁₂ (by decide) (by decide), hmp] at V₃
-  have F₃ := F₁₂.trans (co_of_outside h O₃ (.inr (cs (by decide))))
+  have F₃ := F₁₂.trans (co_of_outside h O₃ (cs (by decide)))
   have h₃ := h₂.keep K₃ (by decide) (by decide) (O₃.mono (Nat.zero_le _) (by omega))
   refine WP.seq (WP.mono (copyDown_ok h₃ (j := 17) (d := 5) (by decide) (by decide) (by decide))
     fun u₄ ⟨O₄, V₄, K₄⟩ => ?_)
   rw [rd F₃ (by decide) (by decide), hmq] at V₄
-  have F₄ := F₃.trans (co_of_outside h O₄ (.inr (cs (by decide))))
+  have F₄ := F₃.trans (co_of_outside h O₄ (cs (by decide)))
   have h₄ := h₃.keep K₄ (by decide) (by decide) (O₄.mono (Nat.zero_le _) (by omega))
   refine WP.seq (WP.mono (copyDown_ok h₄ (j := 14) (d := 8) (by decide) (by decide) (by decide))
     fun u₅ ⟨O₅, V₅, K₅⟩ => ?_)
   rw [rd F₄ (by decide) (by decide), hqi] at V₅
-  have F₅ := F₄.trans (co_of_outside h O₅ (.inr (cs (by decide))))
+  have F₅ := F₄.trans (co_of_outside h O₅ (cs (by decide)))
   -- The context, kept by the copies.
   have K₃₅ : Keeps [.eax, .ebx, .ecx, .edx, .ebp] u₂ u₅ := (K₃.trans K₄).trans K₅
   have C₅ : CtxOk base bytes len args .wide (safeM p) u₅ := by
