@@ -22,6 +22,10 @@ and the sums `AddSubW.addW`, and keys are encoded and decoded by
 `Codec12W`. Compression still reads 32-bit coefficients: each row of `u` and
 `v` is widened (`Widen16.widen`) into `PP` first, and `v` adds the decoded
 message there with `vg_mlkem_add`. Decapsulation's decryption stays 32-bit.
+Key generation (`keyGenH`) computes each row of `t̂` as soon as the matrix
+has sampled it, and absorbs `ek` into the third state of the matrix's
+`vg_keccak_f1600_x3_sha3` calls as the rows encode it, so that `H(ek)` takes
+single-state permutations only for the blocks of the last rows.
 -/
 
 @[expose] public section
@@ -108,16 +112,6 @@ def kgRow (L : KemLay) (i : Nat) : Prog isa :=
   seqs [dotAt (KG.TP L) ((List.range L.k).map fun j => (KG.aOff L i j, KG.sOff L j)),
     addWAt (KG.TP L) (noiseOff L i), enc12WAt (KG.TP L) .x26 (384 * i),
     enc12WAt (KG.TP L) .x27 (384 * L.k + 384 * i)]
-
-/-- Key generation after the matrix. -/
-def kgRest (hash : FixedHashCallers.HashFn) (L : KemLay) : Prog isa :=
-  .seq (noiseAllWith nttAtWithW L true) (seqs (
-    ((List.range L.k).map fun j => enc12WAt (KG.sOff L j) .x27 (384 * j)) ++
-    ((List.range L.k).map (kgRow L)) ++ [FixedHashCallers.kgEndUsing hash L]))
-
-/-- The key generation. -/
-def keyGen (hash : FixedHashCallers.HashFn) (L : KemLay) : Prog isa :=
-  .seq (FixedHashCallers.kgAUsing hash L) (.seq (Paired.matrix L true true) (kgRest hash L))
 
 /-- `ek`, absorbed into the third state for `H(ek)` (SHA3-256) in key generation. -/
 def kgSrc (L : KemLay) : Hybrid.HSrc := ⟨.x26, 0, L.ekLen, 6⟩

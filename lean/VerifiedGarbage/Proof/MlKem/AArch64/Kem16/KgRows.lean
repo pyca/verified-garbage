@@ -43,12 +43,12 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
 import VerifiedGarbage.Proof.Framework.Block
 
-/-! # The 16-bit key generation is correct
+/-! # The 16-bit key generation's steps
 
-As `Optimized/KeyGen*.lean` and `FixedHash/KeyGenUsing.lean`, for
-`Kem16.keyGen`: the noise with 16 bits, the encodings of `ŝ` (`encode_okW`),
-the rows of `t̂` (`rows_okW`: the fused dot product, the sum with `ê` and the
-encodings, all with 16 bits), the end, and the whole (`using_correctW`). -/
+As `Optimized/KeyGen*.lean`, with 16 bits: the noise, the encodings of `ŝ`
+(`encode_okW`), and a row of `t̂` (`row_readyW`, `fused_row_readyW`: the
+fused dot product, the sum with `ê` and the encodings), which
+`KgH/` composes into `Kem16.keyGenH`. -/
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.KeyGen

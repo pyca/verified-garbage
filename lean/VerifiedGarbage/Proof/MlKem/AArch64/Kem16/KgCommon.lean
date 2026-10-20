@@ -7,8 +7,7 @@ import VerifiedGarbage.Proof.Framework.Block
 /-! # The 16-bit key generation's invariants
 
 `CInvW`, `TLW`, `EndInvW` and `DoneW`: `CInv`, `TL`, `EndInv` and `Done` with
-`Â` and `ŝ` stored with 16 bits, and the end of key generation over them
-(`end_using_okW`), whose code reads only the encoded keys. -/
+`Â` and `ŝ` stored with 16 bits, over the first `n` entries of `Â`. -/
 
 @[expose] public section
 
