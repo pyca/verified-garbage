@@ -16,7 +16,7 @@ fn unhex(text: &str) -> Vec<u8> {
         .collect()
 }
 
-fn modp_groups() -> Vec<Vec<u8>> {
+pub(super) fn modp_groups() -> Vec<Vec<u8>> {
     include_str!("../../vectors/cryptography-ffdh/rfc3526/rfc3526.txt")
         .lines()
         .filter_map(|line| line.strip_prefix("P = "))
@@ -62,6 +62,9 @@ fn generate_from(params: &Parameters, draw: &[u8]) -> PrivateKey {
         .unwrap();
     assert_eq!(calls, 1);
     // The retained schedule is a public encoding width, even for x = 3.
+    #[cfg(target_arch = "arm")]
+    assert_eq!(key.exponent_len, params.domain.exponent_len());
+    #[cfg(not(target_arch = "arm"))]
     assert_eq!(
         key.exponent_len,
         params.q.as_ref().map_or(params.p.len(), Vec::len)
@@ -79,6 +82,7 @@ fn vetted_rfc_groups_use_exact_public_bit_caps() {
             let key = generate_from(&params, &draw);
             #[cfg(target_arch = "arm")]
             {
+                assert_eq!(key.exponent_len, cap.div_ceil(8));
                 assert_eq!(canonical(key.private_component()), &[3]);
                 assert_eq!(key.public_key().component(), &[8]);
             }
@@ -133,7 +137,7 @@ fn vetted_matching_requires_exact_prime_generator_and_subgroup() {
 }
 
 #[test]
-fn vetted_generation_preserves_entropy_refills_and_full_attempt_api() {
+fn vetted_generation_preserves_entropy_refills_and_uncapped_fallback() {
     let p = modp_groups().remove(0);
     let params = Parameters::from_components(&p, &[2], None).unwrap();
     let mut calls = 0;
@@ -177,7 +181,9 @@ fn vetted_generation_preserves_entropy_refills_and_full_attempt_api() {
         Error::Randomness
     );
     assert_eq!(calls, 2);
-    // Existing full-width native attempt keeps its original distribution.
+    // An unrecognized generator retains the full-width distribution,
+    // including through ARM's cached attempt. No legacy emission is needed.
+    let params = Parameters::from_components(&p, &[5], None).unwrap();
     let draw = marked_draw(p.len(), 225);
     let (mut x, mut y) = (vec![0; p.len()], vec![0; p.len()]);
     assert_eq!(params.domain.generate_key(&draw, &mut x, &mut y), 1);

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+import Mathlib.Tactic.CasesM
 import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! Public bounded counters and native-pointer bounds supplied by the shared
@@ -25,8 +26,8 @@ structure KeyBounds (p : KeyPublic sampling) : Prop where
   scratchSpace : Spec.Rsa.scratchWords p.len ≤ p.capacity
   randomFits : p.randLen < 2 ^ 32
   capacityFits : p.capacity < 2 ^ 32
-  stackFits : stackUse ≤ p.sp.toNat
-  argsFit : p.sp.toNat + 36 ≤ 2 ^ 32
+  stackFits : (stackUse sampling) ≤ p.sp.toNat
+  argsFit : p.sp.toNat + argsBytes sampling ≤ 2 ^ 32
   controlFit : p.control.toNat + 128 ≤ 2 ^ 32
   xFit : p.xp.toNat + p.len ≤ 2 ^ 32
   yFit : p.yp.toNat + p.len ≤ 2 ^ 32
@@ -36,24 +37,21 @@ structure KeyBounds (p : KeyPublic sampling) : Prop where
   scratchFit : p.scratch.toNat + 8 * p.capacity ≤ 2 ^ 32
 
 theorem KeyInput.bounds {p : KeyPublic sampling} {s : State} (h : KeyInput p s) : KeyBounds p := by
-  have pre := h.1
-  cases h.2.1
-  sig_pre [GenerationPolicy.searchContract, keySearchSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
-  simp only [KeyConstants.stackArg_stripConsts, KeyConstants.stackArgAddr_stripConsts] at pre
-  obtain ⟨stackFit, argsFit, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, xFit, yFit, usedFit, domainFit, randomFit, scratchFit, controlFit, lengths, domainLength, xLen, yLen, scratchSpace, domainValid, keys, scalars, _⟩ := pre
-  rw [xLen] at xFit
-  rw [yLen] at yFit
-  refine ⟨lengths.1, lengths.2, domainLength, domainValid, ?_, keys, scalars, scratchSpace,
-    (stackArg s 5).isLt, (stackArg s 7).isLt, stackFit, ?_, ?_, xFit, yFit,
-    randomFit, domainFit, ?_, ?_⟩
-  · exact VG.Proof.Bignum.bytesAt_length _ _ _
-  · change s.sp.toNat + 36 ≤ 2 ^ 32
-    omega
-  · change (stackArg s 8).toNat + 128 ≤ 2 ^ 32
-    omega
-  · change (stackArg s 0).toNat + 8 ≤ 2 ^ 32
-    omega
-  · change (stackArg s 6).toNat + 8 * (stackArg s 7).toNat ≤ 2 ^ 32
-    simpa only [Nat.mul_comm] using scratchFit
+  cases sampling <;> (
+    have pre := h.1
+    cases h.2.1
+    sig_pre [GenerationPolicy.searchContract, GenerationPolicy.legacySearchContract,
+      cachedKeySearchContract, cachedKeySearchSig, keySearchSig, abi, argRegs,
+      reduceClassify, Loc.val, State.addr] at pre
+    simp only [KeyConstants.stackArg_stripConsts, KeyConstants.stackArgAddr_stripConsts] at pre
+    simp only [pLenValid] at pre
+    clear h
+    have randBound := (stackArg s 5).isLt
+    have capacityBound := (stackArg s 7).isLt
+    cases_type* And
+    constructor <;> simp only [keyOfState, argsBytes, GenerationPolicy.cachedContext,
+      State.addr, VG.Proof.Mont.off, Bool.false_eq_true, ite_false, ite_true]
+    sig_close
+    all_goals first | exact VG.Proof.Bignum.bytesAt_length _ _ _ | omega)
 
 end VG.Proof.Ffdh.Arm.KeySearch

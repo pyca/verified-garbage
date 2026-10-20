@@ -22,7 +22,16 @@ variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
 
 open VG VG.Arm VG.Spec.Ffdh VG.Proof.Mont
 
-abbrev stackUse : Nat := 232
+abbrev stackUse (sampling : GenerationPolicy := .full) : Nat := sampling.searchStack
+
+theorem stackUse_min (sampling : GenerationPolicy) : 232 ≤ stackUse sampling := by
+  cases sampling <;> decide
+
+theorem argumentBytes_min (sampling : GenerationPolicy) : 32 ≤ sampling.argumentBytes := by
+  cases sampling <;> decide
+
+theorem argumentBytes_max (sampling : GenerationPolicy) : sampling.argumentBytes ≤ 40 := by
+  cases sampling <;> decide
 
 def inX (s : State) : Region := ⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩
 def inY (s : State) : Region := ⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩
@@ -31,11 +40,28 @@ def inDomain (s : State) : Region := ⟨State.addr (stackArg s 1), (stackArg s 2
 def inRand (s : State) : Region := ⟨State.addr (stackArg s 4), (stackArg s 5).toNat⟩
 def inScratch (s : State) : Region := ⟨State.addr (stackArg s 6), (stackArg s 7).toNat * 8⟩
 def inControl (s : State) : Region := ⟨State.addr (stackArg s 8), 128⟩
-def inArgs (s : State) : Region := ⟨stackArgAddr s 0, 36⟩
+def argsBytes (sampling : GenerationPolicy) : Nat := if sampling.cachedContext then 44 else 36
+
+def inArgs (sampling : GenerationPolicy) (s : State) : Region := ⟨stackArgAddr s 0, argsBytes sampling⟩
+
+def inContext (s : State) : Region := ⟨State.addr (stackArg s 9), 8 * (stackArg s 10).toNat⟩
+
+def contextReads (sampling : GenerationPolicy) (s : State) : List Region :=
+  if sampling.cachedContext then [inContext s] else []
 
 def writes (s : State) : List Region := [inX s, inY s, inUsed s, inScratch s, inControl s]
 def reads (sampling : VG.Proof.Ffdh.GenerationPolicy) (s : State) : List Region :=
-  [inDomain s, inRand s, inArgs s] ++ constRegs (KeyConstants.consts sampling) s
+  [inDomain s, inRand s] ++ contextReads sampling s ++ [inArgs sampling s] ++ constRegs (KeyConstants.consts sampling) s
+
+structure KeyLayout (s : State) : Prop where
+  rd : s.rd = reads sampling s
+  wr : s.wr = writes s
+  nowrap : ∀ r ∈ writes s ++ reads sampling s, r.base.toNat + r.len ≤ 2 ^ 32
+  pairwise : (writes s).Pairwise Region.Disjoint
+  separate : ∀ w ∈ writes s, ∀ r ∈ reads sampling s, w.Disjoint r
+  stack : ∀ r ∈ writes s ++ reads sampling s,
+    (⟨State.addr s.sp - BitVec.ofNat 64 (stackUse sampling), (stackUse sampling)⟩ : Region).Disjoint r
+
 
 structure KeyPublic (sampling : VG.Proof.Ffdh.GenerationPolicy := .full) where
   xp : BitVec 32
@@ -54,6 +80,8 @@ structure KeyPublic (sampling : VG.Proof.Ffdh.GenerationPolicy := .full) where
   scalars : Nat
   dom : List Byte
   tablePtr : BitVec 32
+  context : BitVec 32
+  contextWords : Nat
 
 def keyOfState (sampling : VG.Proof.Ffdh.GenerationPolicy) (s : State) : KeyPublic sampling where
   xp := s.gpr .r0
@@ -72,10 +100,12 @@ def keyOfState (sampling : VG.Proof.Ffdh.GenerationPolicy) (s : State) : KeyPubl
   scalars := (s.mem.readW (off (State.addr (stackArg s 8)) 8) 64).toNat
   dom := Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 1)) (stackArg s 2).toNat
   tablePtr := KeyConstants.tablePtr sampling s
+  context := if sampling.cachedContext then stackArg s 9 else 0
+  contextWords := if sampling.cachedContext then (stackArg s 10).toNat else 0
 
 def KeyInput (p : KeyPublic sampling) (s : State) : Prop :=
-  (GenerationPolicy.searchContract sampling abi stackUse).pre (stripConsts (KeyConstants.consts sampling) s) ∧
-    keyOfState sampling s = p ∧ ConstsOk (KeyConstants.consts sampling) stackUse s
+  (GenerationPolicy.searchContract sampling abi (stackUse sampling)).pre (stripConsts (KeyConstants.consts sampling) s) ∧
+    keyOfState sampling s = p ∧ ConstsOk (KeyConstants.consts sampling) (stackUse sampling) s
 
 abbrev KeyPublic.a (p : KeyPublic sampling) : Parameters := domainOf p.len p.dom
 
@@ -97,6 +127,15 @@ def KeyOutput (p : KeyPublic sampling) (result : KeySearchResult) (m : Mem) : Pr
   | _ => Spec.Rsa.bytesAt m (State.addr p.xp) p.len = List.replicate p.len 0 ∧
       Spec.Rsa.bytesAt m (State.addr p.yp) p.len = List.replicate p.len 0
 
+def CachedHeld (p : KeyPublic sampling) (m : Mem) : Prop :=
+  sampling.cachedContext = true →
+    generationContextAt m (State.addr p.context) p.contextWords p.len p.dom
+
+def CachedSlots (p : KeyPublic sampling) (m : Mem) : Prop :=
+  sampling.cachedContext = true →
+    m.readW (off (State.addr p.control) 32) 32 = p.context ∧
+      m.readW (off (State.addr p.control) 36) 32 = BitVec.ofNat 32 p.contextWords
+
 structure KeyLive (p : KeyPublic sampling) (original : State) (used keys scalars : Nat) (s : State) : Prop where
   input : KeyInput p original
   used_le : used ≤ p.randLen
@@ -114,6 +153,8 @@ structure KeyLive (p : KeyPublic sampling) (original : State) (used keys scalars
   high : ∀ j < 3, s.mem.readW (off (State.addr p.control) (8 * j + 4)) 32 = 0
   tablePtr : KeyConstants.tablePtr sampling s = p.tablePtr
   held : KeyConstants.held sampling p.tablePtr s.mem
+  cachedHeld : CachedHeld p s.mem
+  cachedSlots : CachedSlots p s.mem
 
 structure KeyDone (p : KeyPublic sampling) (original : State) (result : KeySearchResult) (s : State) : Prop where
   input : KeyInput p original

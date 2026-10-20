@@ -63,7 +63,7 @@ theorem KeyDone.loop_guard {p : KeyPublic sampling} {original s : State} {result
 def AttemptRunOk (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) : Prop :=
   ∀ (p : KeyPublic sampling) (original s : State) (used keys scalars : Nat),
     KeyLive p original used keys scalars s → used + p.len ≤ p.randLen →
-      WP isa (VG.Impl.Ffdh.Arm.KeySearch.attemptRun (.call backend.keyName backend.generateKey)) s fun t =>
+      WP isa (VG.Impl.Ffdh.Arm.KeySearch.attemptRunFor sampling.cachedContext (.call backend.keyName backend.generateKey)) s fun t =>
         KeyLive p original used keys scalars t ∧ AttemptPost p original used t
 
 end VG.Proof.Ffdh.Arm.KeySearch

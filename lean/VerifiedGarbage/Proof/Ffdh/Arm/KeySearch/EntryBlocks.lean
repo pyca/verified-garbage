@@ -27,7 +27,7 @@ theorem entryHead_ok (s : State) {p : KeyPublic sampling} (h : EntryArguments p 
     have ne : r ≠ .r4 := by simpa only [List.mem_singleton] using hr
     rcases hi with rfl | rfl | rfl <;>
       simp [VG.Impl.Ffdh.Arm.KeySearch.stf, clobbers, dstOf, Ne.symm ne]) (by rfl)
-  have arg := h.incoming 8 (by decide)
+  have arg := h.incoming 8 (by have := entryWords_min sampling; omega)
   have addr56 : State.addr (s.sp + 56#32) = off (State.addr s.sp) 56 :=
     VG.Arm.addr_add (by have := arg.fits; omega)
   have addr40 : State.addr (p.control + 40#32) = off (State.addr p.control) 40 :=

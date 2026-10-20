@@ -6,7 +6,8 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 words hold the two bounded retry counters, width, and next entropy request;
 the last twelve words retain arguments across calls. r4 holds the controller
 pointer and is preserved by the selected key-generation attempt. The outer
-frame saves r4, r9–r11 and lr; each attempt allocates its seven stack arguments. -/
+frame saves r4, r9–r12 and lr. Legacy attempts allocate seven stack arguments
+in 32 bytes; cached attempts append the context pointer and length in 40 bytes. -/
 
 @[expose] public section
 namespace VG.Impl.Ffdh.Arm.KeySearch
@@ -28,6 +29,15 @@ def arguments : List Instr := [
   ldf .r9 7, .str .r9 .r12 0, ldf .r9 8, .str .r9 .r12 4,
   .str .r1 .r12 8, ldf .r9 9, .str .r9 .r12 12, .str .r1 .r12 16,
   ldf .r9 12, .str .r9 .r12 20, ldf .r9 13, .str .r9 .r12 24]
+
+/-- Cached calls retain the appended public context in the unused state word 4. -/
+def entryFor (cached : Bool) : List Instr := entry ++ if cached then [
+  .ldrSp .r3 60, .str .r3 .r4 32, .ldrSp .r3 64, .str .r3 .r4 36] else []
+
+def argumentsFor (cached : Bool) : List Instr := arguments ++ if cached then [
+  .ldr .r9 .r4 32, .str .r9 .r12 28, .ldr .r9 .r4 36, .str .r9 .r12 32] else []
+
+def argumentBytes (cached : Bool) : Nat := if cached then 40 else 32
 
 def terminal (status : Nat) : List Instr := [
   .mov .r10 (.imm 0), .mov .r11 (.imm (BitVec.ofNat 32 status)),
@@ -68,23 +78,34 @@ def room : List Instr := [
   ldf .r9 10, ldf .r10 2, .subs .r11 .r9 (.reg .r10), .mov .r11 (.imm 0),
   .adc .r11 .r11 (.imm 0), .cmp .r11 (.imm 0)]
 
-def attemptRun (attempt : Prog isa) : Prog isa :=
-  .frame (.alloc 32) (.seq (.block arguments) attempt) (.free 32)
+def attemptRunFor (cached : Bool) (attempt : Prog isa) : Prog isa :=
+  .frame (.alloc (argumentBytes cached))
+    (.seq (.block (argumentsFor cached)) attempt) (.free (argumentBytes cached))
 
-def attemptOrRequest (attempt : Prog isa) : Prog isa := .seq (.block room)
-  (.ite .eq request (.seq (attemptRun attempt) classify))
+def attemptOrRequestFor (cached : Bool) (attempt : Prog isa) : Prog isa := .seq (.block room)
+  (.ite .eq request (.seq (attemptRunFor cached attempt) classify))
 
-def branch (attempt : Prog isa) : Prog isa := .ite .eq exhausted
-  (.seq (.block [ldf .r9 1, .cmp .r9 (.imm 0)]) (.ite .eq exhausted (attemptOrRequest attempt)))
+def branchFor (cached : Bool) (attempt : Prog isa) : Prog isa := .ite .eq exhausted
+  (.seq (.block [ldf .r9 1, .cmp .r9 (.imm 0)]) (.ite .eq exhausted (attemptOrRequestFor cached attempt)))
 
-def iteration (attempt : Prog isa) : Prog isa := .seq (.block [ldf .r9 0, .cmp .r9 (.imm 0)])
-  (.seq (branch attempt) (.block [ldf .r9 14, .cmp .r9 (.imm 4)]))
+def iterationFor (cached : Bool) (attempt : Prog isa) : Prog isa := .seq (.block [ldf .r9 0, .cmp .r9 (.imm 0)])
+  (.seq (branchFor cached attempt) (.block [ldf .r9 14, .cmp .r9 (.imm 4)]))
+
+abbrev attemptRun := attemptRunFor false
+abbrev attemptOrRequest := attemptOrRequestFor false
+abbrev branch := branchFor false
+abbrev iteration := iterationFor false
 
 def finish : List Instr := [
   ldf .r1 15, ldf .r2 11, ldf .r0 14, .mov .r3 (.imm 0), .str .r2 .r1 0, .str .r3 .r1 4,
   .ldrSp .r9 4, .ldrSp .r10 8, .ldrSp .r11 12, .ldrSp .lr 20]
 
-def code (attempt : Prog isa) : Prog isa := .frame (.push [.r4, .r9, .r10, .r11, .r12, .lr])
-  (.seq (.block entry) (.seq (.loop (iteration attempt) .eq) (.block finish))) (.pop .r4 24)
+def codeFor (cached : Bool) (attempt : Prog isa) : Prog isa :=
+  .frame (.push [.r4, .r9, .r10, .r11, .r12, .lr])
+    (.seq (.block (entryFor cached))
+      (.seq (.loop (iterationFor cached attempt) .eq) (.block finish))) (.pop .r4 24)
+
+abbrev code := codeFor false
+
 
 end VG.Impl.Ffdh.Arm.KeySearch

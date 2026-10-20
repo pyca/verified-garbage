@@ -41,7 +41,7 @@ open VG VG.Arm VG.Proof.Mont
   · intro c member i hi
     have word := held c member i hi
     cases sampling with
-    | full => exact False.elim (List.not_mem_nil member)
+    | full | cached => exact False.elim (List.not_mem_nil member)
     | vetted =>
       simp only [KeyConstants.consts, VG.Impl.Ffdh.Arm.VettedGroups.tableConsts, List.mem_singleton] at member
       subst c
@@ -51,7 +51,7 @@ open VG VG.Arm VG.Proof.Mont
       exact word
   · intro table member
     rw [regions] at member
-    have initial : ConstsOk (KeyConstants.consts sampling) stackUse original := h.input.2.2
+    have initial : ConstsOk (KeyConstants.consts sampling) (stackUse sampling) original := h.input.2.2
     have originalMember : table ∈ constRegs (KeyConstants.consts sampling) original := by
       rw [h.input.constant_regions]; exact member
     have facts := initial.2.2 table originalMember
@@ -68,8 +68,9 @@ open VG VG.Arm VG.Proof.Mont
       subst r
       rw [sp]
       have fit : 176 ≤ (callSp p).toNat := by
-        have enough : 232 ≤ p.sp.toNat := h.input.bounds.stackFits
-        rw [callSp, FrameStack.sub_toNat' (by omega : 56 ≤ p.sp.toNat)]
+        have enough := h.input.bounds.stackFits
+        change 24 + sampling.argumentBytes + 176 ≤ p.sp.toNat at enough
+        rw [callSp, FrameStack.sub_toNat' (by omega : 24 + sampling.argumentBytes ≤ p.sp.toNat)]
         omega
       rw [← FrameStack.addr_sub' fit]
       exact (h.input.constants_stack table member).sub_right (callStack_sub h.input.bounds.stackFits)
@@ -81,6 +82,6 @@ open VG VG.Arm VG.Proof.Mont
     (GenerationPolicy.attemptContract sampling (KeyConstants.abi sampling) 176).pre (callState p used u) := by
   apply selected_attempt_pre.mpr
   rw [strip_call]
-  exact ⟨call_pre_plain (live.input.callFacts room) args sp mem, call_consts live mem sp syms⟩
+  exact ⟨call_pre_plain live room args sp mem, call_consts live mem sp syms⟩
 
 end VG.Proof.Ffdh.Arm.KeySearch

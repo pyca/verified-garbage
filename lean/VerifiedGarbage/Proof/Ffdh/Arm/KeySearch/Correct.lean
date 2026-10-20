@@ -30,14 +30,15 @@ def searchResult (p : KeyPublic sampling) (s : State) : KeySearchResult :=
 
 theorem function_ok (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) {p : KeyPublic sampling} {s : State}
     (h : KeyInput p s) :
-    WP isa (VG.Impl.Ffdh.Arm.KeySearch.code (.call backend.keyName backend.generateKey)) s fun t =>
+    WP isa (VG.Impl.Ffdh.Arm.KeySearch.codeFor sampling.cachedContext (.call backend.keyName backend.generateKey)) s fun t =>
       abiPreserved s t ∧ ResultPost p (searchResult p s) t := by
   have fit : 24 ≤ s.sp.toNat := by
     have fits := h.bounds.stackFits
     rw [← h.2.1] at fits
-    change 232 ≤ s.sp.toNat at fits
+    change stackUse sampling ≤ s.sp.toNat at fits
+    have min := stackUse_min sampling
     omega
-  unfold VG.Impl.Ffdh.Arm.KeySearch.code
+  unfold VG.Impl.Ffdh.Arm.KeySearch.codeFor
   refine WP.frame (by decide) fit (by decide) ?_
   rw [WP.seq_iff]
   refine WP.mono (start_ok h) ?_
@@ -51,9 +52,9 @@ theorem function_ok (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) {p : KeyPu
   exact finish_ok finished
 
 theorem correct (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (s : State)
-    (pre : (GenerationPolicy.searchContract sampling (KeyConstants.abi sampling) stackUse).pre s) :
-    ∃ tr t, Exec isa (VG.Impl.Ffdh.Arm.KeySearch.code (.call backend.keyName backend.generateKey)) s tr t ∧
-      abiPreserved s t ∧ (GenerationPolicy.searchContract sampling (KeyConstants.abi sampling) stackUse).post s t := by
+    (pre : (GenerationPolicy.searchContract sampling (KeyConstants.abi sampling) (stackUse sampling)).pre s) :
+    ∃ tr t, Exec isa (VG.Impl.Ffdh.Arm.KeySearch.codeFor sampling.cachedContext (.call backend.keyName backend.generateKey)) s tr t ∧
+      abiPreserved s t ∧ (GenerationPolicy.searchContract sampling (KeyConstants.abi sampling) (stackUse sampling)).post s t := by
   let p := keyOfState sampling s
   have parts := selected_pre.mp pre
   have input : KeyInput p s := ⟨parts.1, rfl, parts.2⟩
@@ -62,15 +63,19 @@ theorem correct (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (s : State)
   apply selected_post.mpr
   have statusFits : (searchResult p s).status < 2 ^ 32 := by
     cases outcome : (searchResult p s).outcome <;> simp [KeySearchResult.status, outcome]
-  sig_post [GenerationPolicy.searchContract, keySearchSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
-  rw [BitVec.setWidth_append_eq_right]
-  change (t.gpr .r0).toNat = (searchResult p s).status ∧
-    KeyOutput p (searchResult p s) t.mem ∧
-    Spec.Rsa.wordsAt t.mem (State.addr p.control) 4 =
-      [BitVec.ofNat 64 (searchResult p s).retries.keys, BitVec.ofNat 64 (searchResult p s).retries.scalars,
-        BitVec.ofNat 64 p.len, BitVec.ofNat 64 (if (searchResult p s).status = 0 then p.len else 0)] ∧
-    Spec.Rsa.wordsAt t.mem (State.addr p.up) 1 = [BitVec.ofNat 64 (searchResult p s).used]
-  refine ⟨?_, result.output, result.policy, result.used⟩
-  rw [result.status, BitVec.toNat_ofNat, Nat.mod_eq_of_lt statusFits]
+  cases sampling <;>
+    sig_post [GenerationPolicy.searchContract, GenerationPolicy.legacySearchContract,
+      cachedKeySearchContract, cachedKeySearchSig, keySearchSig, abi, argRegs,
+      reduceClassify, Loc.val, State.addr]
+  all_goals
+    rw [BitVec.setWidth_append_eq_right]
+    change (t.gpr .r0).toNat = (searchResult p s).status ∧
+      KeyOutput p (searchResult p s) t.mem ∧
+      Spec.Rsa.wordsAt t.mem (State.addr p.control) 4 =
+        [BitVec.ofNat 64 (searchResult p s).retries.keys, BitVec.ofNat 64 (searchResult p s).retries.scalars,
+          BitVec.ofNat 64 p.len, BitVec.ofNat 64 (if (searchResult p s).status = 0 then p.len else 0)] ∧
+      Spec.Rsa.wordsAt t.mem (State.addr p.up) 1 = [BitVec.ofNat 64 (searchResult p s).used]
+    refine ⟨?_, result.output, result.policy, result.used⟩
+    rw [result.status, BitVec.toNat_ofNat, Nat.mod_eq_of_lt statusFits]
 
 end VG.Proof.Ffdh.Arm.KeySearch

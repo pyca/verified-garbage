@@ -37,25 +37,37 @@ theorem argumentHead_ok (s : State) {base x y : BitVec 32} {n : Nat}
     h.read (by decide : 5 < 16), h.read (by decide : 6 < 16), h.read (by decide : 2 < 16),
     xvalue, yvalue, width, BitVec.add_zero]
 
-theorem argumentCopy_ok (s : State) {base value : BitVec 32} {j d : Nat}
-    (h : Controller base s) (slot : j < 16) (stack : Workspace s s.sp 32) (fit : d + 4 ≤ 32)
-    (stackBase : s.gpr .r12 = s.sp) (source : lowWord s.mem base j = value) :
-    WP isa (.block [VG.Impl.Ffdh.Arm.KeySearch.ldf .r9 j, .str .r9 .r12 d]) s fun t =>
+theorem argumentCopyAt_ok (s : State) {base value : BitVec 32} {offset d bytes : Nat}
+    (h : Controller base s) (sourceFit : offset + 4 ≤ 128)
+    (stack : Workspace s s.sp bytes) (fit : d + 4 ≤ bytes)
+    (stackBase : s.gpr .r12 = s.sp)
+    (source : s.mem.readW (off (State.addr base) offset) 32 = value)
+    (small : d < 4096 := by omega) :
+    WP isa (.block [.ldr .r9 .r4 offset, .str .r9 .r12 d]) s fun t =>
       t.mem = s.mem.writeW (off (State.addr s.sp) d) value ∧ Rest [.r9] s t := by
   refine withRest [.r9] ?_ (by
     intro r hr i hi
     simp only [instrs, List.mem_cons, List.not_mem_nil, or_false] at hi
     have ne : r ≠ .r9 := by simpa only [List.mem_singleton] using hr
-    rcases hi with rfl | rfl <;> simp [VG.Impl.Ffdh.Arm.KeySearch.ldf, clobbers, dstOf, Ne.symm ne]) (by rfl)
+    rcases hi with rfl | rfl <;> simp [clobbers, dstOf, Ne.symm ne]) (by rfl)
   have address : State.addr (s.sp + BitVec.ofNat 32 d) = off (State.addr s.sp) d :=
     VG.Arm.addr_add (by have := stack.nowrap; omega)
-  unfold VG.Impl.Ffdh.Arm.KeySearch.ldf lowWord at *
-  ffrun [(by omega : 8 * j < 4096), (by omega : d < 4096), h.addr slot, h.read slot,
+  have sourceAddress : State.addr (base + BitVec.ofNat 32 offset) = off (State.addr base) offset :=
+    VG.Arm.addr_add (by have := h.space.nowrap; omega)
+  ffrun [(by omega : offset < 4096), small, h.ptr, sourceAddress, h.space.read sourceFit,
     stackBase, address, stack.write fit, source]
 
-theorem argumentStore_ok (s : State) {value : BitVec 32} {d : Nat} (r : Reg)
-    (stack : Workspace s s.sp 32) (fit : d + 4 ≤ 32) (stackBase : s.gpr .r12 = s.sp)
-    (source : s.gpr r = value) :
+theorem argumentCopy_ok (s : State) {base value : BitVec 32} {j d bytes : Nat}
+    (h : Controller base s) (slot : j < 16) (stack : Workspace s s.sp bytes) (fit : d + 4 ≤ bytes)
+    (stackBase : s.gpr .r12 = s.sp) (source : lowWord s.mem base j = value)
+    (small : d < 4096 := by omega) :
+    WP isa (.block [VG.Impl.Ffdh.Arm.KeySearch.ldf .r9 j, .str .r9 .r12 d]) s fun t =>
+      t.mem = s.mem.writeW (off (State.addr s.sp) d) value ∧ Rest [.r9] s t := by
+  exact argumentCopyAt_ok s h (by omega) stack fit stackBase source small
+
+theorem argumentStore_ok (s : State) {value : BitVec 32} {d bytes : Nat} (r : Reg)
+    (stack : Workspace s s.sp bytes) (fit : d + 4 ≤ bytes) (stackBase : s.gpr .r12 = s.sp)
+    (source : s.gpr r = value) (small : d < 4096 := by omega) :
     WP isa (.block [.str r .r12 d]) s fun t =>
       t.mem = s.mem.writeW (off (State.addr s.sp) d) value ∧ Rest [] s t := by
   refine withRest [] ?_ (by
@@ -65,6 +77,6 @@ theorem argumentStore_ok (s : State) {value : BitVec 32} {d : Nat} (r : Reg)
     rfl) (by rfl)
   have address : State.addr (s.sp + BitVec.ofNat 32 d) = off (State.addr s.sp) d :=
     VG.Arm.addr_add (by have := stack.nowrap; omega)
-  ffrun [(by omega : d < 4096), stackBase, address, stack.write fit, source]
+  ffrun [small, stackBase, address, stack.write fit, source]
 
 end VG.Proof.Ffdh.Arm.KeySearch

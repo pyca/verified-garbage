@@ -25,7 +25,7 @@ theorem entryValues_bound (p : KeyPublic sampling) : ∀ e ∈ entryValues p, e.
   simp only [entryValues, List.mem_cons, List.not_mem_nil, or_false]
   rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> dsimp only <;> decide
 
-theorem entry_ok (s : State) {p : KeyPublic sampling} (h : EntryArguments p s)
+theorem entry_base_ok (s : State) {p : KeyPublic sampling} (h : EntryArguments p s)
     (space : Workspace s p.control 128) (x : s.gpr .r0 = p.xp) (y : s.gpr .r2 = p.yp) :
     WP isa (.block VG.Impl.Ffdh.Arm.KeySearch.entry) s fun t =>
       (EntryContext p t ∧ t.mem = writeLow s.mem p.control (entryValues p)) ∧ Rest [.r3, .r4] s t := by
@@ -46,13 +46,13 @@ theorem entry_ok (s : State) {p : KeyPublic sampling} (h : EntryArguments p s)
     rw [mem]; exact writeLow_frame _ _ _ (by simp)
   have context : EntryContext p u :=
     ⟨h.after rest frame, ⟨space.congr rest.wr, pointer⟩⟩
-  refine wp_entryCopy (i := 0) (j := 15) context (by decide) (by decide) fun s1 c1 m1 _ => ?_
-  refine wp_entryCopy (i := 1) (j := 7) c1 (by decide) (by decide) fun s2 c2 m2 _ => ?_
-  refine wp_entryCopy (i := 2) (j := 8) c2 (by decide) (by decide) fun s3 c3 m3 _ => ?_
-  refine wp_entryCopy (i := 4) (j := 9) c3 (by decide) (by decide) fun s4 c4 m4 _ => ?_
-  refine wp_entryCopy (i := 5) (j := 10) c4 (by decide) (by decide) fun s5 c5 m5 _ => ?_
-  refine wp_entryCopy (i := 6) (j := 12) c5 (by decide) (by decide) fun s6 c6 m6 _ => ?_
-  refine wp_entryCopy (i := 7) (j := 13) c6 (by decide) (by decide) fun s7 c7 m7 _ => ?_
+  refine wp_entryCopy (i := 0) (j := 15) context (by have := entryWords_min sampling; omega) (by decide) fun s1 c1 m1 _ => ?_
+  refine wp_entryCopy (i := 1) (j := 7) c1 (by have := entryWords_min sampling; omega) (by decide) fun s2 c2 m2 _ => ?_
+  refine wp_entryCopy (i := 2) (j := 8) c2 (by have := entryWords_min sampling; omega) (by decide) fun s3 c3 m3 _ => ?_
+  refine wp_entryCopy (i := 4) (j := 9) c3 (by have := entryWords_min sampling; omega) (by decide) fun s4 c4 m4 _ => ?_
+  refine wp_entryCopy (i := 5) (j := 10) c4 (by have := entryWords_min sampling; omega) (by decide) fun s5 c5 m5 _ => ?_
+  refine wp_entryCopy (i := 6) (j := 12) c5 (by have := entryWords_min sampling; omega) (by decide) fun s6 c6 m6 _ => ?_
+  refine wp_entryCopy (i := 7) (j := 13) c6 (by have := entryWords_min sampling; omega) (by decide) fun s7 c7 m7 _ => ?_
   refine WP.mono (entryZero_ok s7 c7) ?_
   rintro t ⟨m8, r8⟩
   have frame8 : Frame [⟨State.addr p.control, 128⟩] s7.mem t.mem := by

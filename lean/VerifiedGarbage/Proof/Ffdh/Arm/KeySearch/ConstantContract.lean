@@ -7,37 +7,44 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
 open VG VG.Arm
 
 theorem selected_pre {sampling : GenerationPolicy} {s : State} :
-    (sampling.searchContract (KeyConstants.abi sampling) stackUse).pre s ↔
-      (sampling.searchContract abi stackUse).pre (stripConsts (KeyConstants.consts sampling) s) ∧
-        ConstsOk (KeyConstants.consts sampling) stackUse s := by
+    (sampling.searchContract (KeyConstants.abi sampling) (stackUse sampling)).pre s ↔
+      (sampling.searchContract abi (stackUse sampling)).pre (stripConsts (KeyConstants.consts sampling) s) ∧
+        ConstsOk (KeyConstants.consts sampling) (stackUse sampling) s := by
   cases sampling with
-  | full =>
-    simp only [KeyConstants.consts, KeyConstants.abi_full]
+  | full | cached =>
+    simp only [KeyConstants.consts, KeyConstants.abi_full, KeyConstants.abi_cached]
     have strip : stripConsts [] s = s := by simp [stripConsts, State.withRegions]
     rw [strip]
     simp [ConstsOk, Abi.constRegions, Abi.constsHeld]
-  | vetted => exact pre_consts
+  | vetted =>
+    unfold GenerationPolicy.searchContract GenerationPolicy.legacySearchContract KeyConstants.abi KeyConstants.consts
+    exact pre_consts
 
 theorem selected_post {sampling : GenerationPolicy} {s t : State} :
-    (sampling.searchContract (KeyConstants.abi sampling) stackUse).post s t ↔
-      (sampling.searchContract abi stackUse).post s t := by
+    (sampling.searchContract (KeyConstants.abi sampling) (stackUse sampling)).post s t ↔
+      (sampling.searchContract abi (stackUse sampling)).post s t := by
   cases sampling with
-  | full => rfl
-  | vetted => exact post_consts
+  | full | cached => rfl
+  | vetted =>
+    unfold GenerationPolicy.searchContract GenerationPolicy.legacySearchContract KeyConstants.abi KeyConstants.consts
+    exact post_consts
 
 theorem selected_pub {sampling : GenerationPolicy} {s t : State} :
-    (sampling.searchContract (KeyConstants.abi sampling) stackUse).pub s t ↔
-      (sampling.searchContract abi stackUse).pub s t ∧
+    (sampling.searchContract (KeyConstants.abi sampling) (stackUse sampling)).pub s t ↔
+      (sampling.searchContract abi (stackUse sampling)).pub s t ∧
         KeyConstants.tablePtr sampling s = KeyConstants.tablePtr sampling t := by
   cases sampling with
-  | full => simp only [KeyConstants.abi_full, KeyConstants.tablePtr, and_true]
+  | full | cached => simp only [KeyConstants.abi_full, KeyConstants.abi_cached, KeyConstants.tablePtr, and_true]
   | vetted =>
-    have bridge : (GenerationPolicy.vetted.searchContract (KeyConstants.abi .vetted) stackUse).pub s t ↔
-        (GenerationPolicy.vetted.searchContract abi stackUse).pub s t ∧
-          ∀ c ∈ VG.Impl.Ffdh.Arm.VettedGroups.tableConsts, symAddr s c.1 = symAddr t c.1 := pub_consts
+    have bridge : (GenerationPolicy.vetted.searchContract (KeyConstants.abi .vetted) (stackUse .vetted)).pub s t ↔
+        (GenerationPolicy.vetted.searchContract abi (stackUse .vetted)).pub s t ∧
+          ∀ c ∈ VG.Impl.Ffdh.Arm.VettedGroups.tableConsts, symAddr s c.1 = symAddr t c.1 := by
+      unfold GenerationPolicy.searchContract GenerationPolicy.legacySearchContract KeyConstants.abi KeyConstants.consts
+      exact pub_consts
     constructor
     · intro h
       have parts := bridge.mp h
@@ -55,30 +62,36 @@ theorem selected_attempt_pre {sampling : GenerationPolicy} {s : State} :
       (sampling.attemptContract abi 176).pre (stripConsts (KeyConstants.consts sampling) s) ∧
         ConstsOk (KeyConstants.consts sampling) 176 s := by
   cases sampling with
-  | full =>
-    simp only [KeyConstants.consts, KeyConstants.abi_full]
+  | full | cached =>
+    simp only [KeyConstants.consts, KeyConstants.abi_full, KeyConstants.abi_cached]
     have strip : stripConsts [] s = s := by simp [stripConsts, State.withRegions]
     rw [strip]
     simp [ConstsOk, Abi.constRegions, Abi.constsHeld]
-  | vetted => exact pre_consts
+  | vetted =>
+    unfold GenerationPolicy.attemptContract GenerationPolicy.legacyAttemptContract KeyConstants.abi KeyConstants.consts
+    exact pre_consts
 
 theorem selected_attempt_post {sampling : GenerationPolicy} {s t : State} :
     (sampling.attemptContract (KeyConstants.abi sampling) 176).post s t ↔
       (sampling.attemptContract abi 176).post s t := by
   cases sampling with
-  | full => rfl
-  | vetted => exact post_consts
+  | full | cached => rfl
+  | vetted =>
+    unfold GenerationPolicy.attemptContract GenerationPolicy.legacyAttemptContract KeyConstants.abi KeyConstants.consts
+    exact post_consts
 
 theorem selected_attempt_pub {sampling : GenerationPolicy} {s t : State} :
     (sampling.attemptContract (KeyConstants.abi sampling) 176).pub s t ↔
       (sampling.attemptContract abi 176).pub s t ∧
         KeyConstants.tablePtr sampling s = KeyConstants.tablePtr sampling t := by
   cases sampling with
-  | full => simp only [KeyConstants.abi_full, KeyConstants.tablePtr, and_true]
+  | full | cached => simp only [KeyConstants.abi_full, KeyConstants.abi_cached, KeyConstants.tablePtr, and_true]
   | vetted =>
     have bridge : (GenerationPolicy.vetted.attemptContract (KeyConstants.abi .vetted) 176).pub s t ↔
         (GenerationPolicy.vetted.attemptContract abi 176).pub s t ∧
-          ∀ c ∈ VG.Impl.Ffdh.Arm.VettedGroups.tableConsts, symAddr s c.1 = symAddr t c.1 := pub_consts
+          ∀ c ∈ VG.Impl.Ffdh.Arm.VettedGroups.tableConsts, symAddr s c.1 = symAddr t c.1 := by
+      unfold GenerationPolicy.attemptContract GenerationPolicy.legacyAttemptContract KeyConstants.abi KeyConstants.consts
+      exact pub_consts
     constructor
     · intro h
       have parts := bridge.mp h

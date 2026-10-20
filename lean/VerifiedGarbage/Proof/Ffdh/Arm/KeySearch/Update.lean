@@ -46,7 +46,7 @@ theorem KeyLive.advance {p : KeyPublic sampling} {original s : State} {used keys
         Frame [⟨State.addr p.control, 128⟩] s.mem t.mem := by
   refine WP.mono_syms (advance_ok s h.controller) ?_
   rintro t ⟨⟨status, mem⟩, rest⟩ syms
-  refine ⟨h.update rest syms (by decide) (advanceValues s.mem p.control) (by simp [advanceValues])
+  refine ⟨h.update rest syms (by decide) (advanceValues s.mem p.control) (by simp [advanceValues]) (by simp [advanceValues])
     mem room h.keys_le h.scalars_le ?_, status, ?_⟩
   · rw [mem]; exact h.advance_fields room
   · rw [mem]; exact writeLow_frame _ _ _ (by simp [advanceValues])
@@ -72,7 +72,7 @@ theorem KeyLive.reject_scalar {p : KeyPublic sampling} {original s : State} {use
       KeyLive p original used keys (scalars - 1) t ∧ lowWord t.mem p.control 14 = 4 := by
   refine WP.mono_syms (rejectedScalar_ok s h.controller) ?_
   rintro t ⟨mem, rest⟩ syms
-  refine ⟨h.update rest syms (by decide) (scalarValues s.mem p.control) (by simp [scalarValues])
+  refine ⟨h.update rest syms (by decide) (scalarValues s.mem p.control) (by simp [scalarValues]) (by simp [scalarValues])
     mem h.used_le h.keys_le (by have := h.scalars_le; omega) ?_, ?_⟩
   · rw [mem]; exact h.scalar_fields positive
   · rw [mem, lowWord_writeLow _ _ _ (by simp [scalarValues]) 14 (by decide)]
@@ -99,7 +99,7 @@ theorem KeyLive.reject_public {p : KeyPublic sampling} {original s : State} {use
       KeyLive p original used (keys - 1) 128 t ∧ lowWord t.mem p.control 14 = 4 := by
   refine WP.mono_syms (rejectedPublic_ok s h.controller) ?_
   rintro t ⟨mem, rest⟩ syms
-  refine ⟨h.update rest syms (by decide) (publicValues s.mem p.control) (by simp [publicValues])
+  refine ⟨h.update rest syms (by decide) (publicValues s.mem p.control) (by simp [publicValues]) (by simp [publicValues])
     mem h.used_le (by have := h.keys_le; omega) (by decide) ?_, ?_⟩
   · rw [mem]; exact h.public_fields positive
   · rw [mem, lowWord_writeLow _ _ _ (by simp [publicValues]) 14 (by decide)]

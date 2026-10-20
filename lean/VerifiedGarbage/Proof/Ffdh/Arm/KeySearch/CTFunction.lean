@@ -21,7 +21,7 @@ open VG VG.Arm
 
 private theorem loop_ready (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (a : KeyPublic sampling × List Nat) (s : State)
     (h : Entered a s) :
-    WP isa (.loop (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) .eq)
+    WP isa (.loop ((VG.Impl.Ffdh.Arm.KeySearch.iterationFor sampling.cachedContext) (.call backend.keyName backend.generateKey)) .eq)
       s (KeyCTDone a.1) := by
   obtain ⟨original, live, _⟩ := h
   refine WP.mono (loop backend (attemptRun_ok backend)
@@ -30,12 +30,12 @@ private theorem loop_ready (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (a 
   exact ⟨0, a.1.keys, a.1.scalars, rfl, live, rfl, rfl⟩
 
 theorem body_ct (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) : RelCT isa (Two (PushedStart (sampling := sampling)))
-    (.seq (.block VG.Impl.Ffdh.Arm.KeySearch.entry)
-      (.seq (.loop (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) .eq)
+    (.seq (.block (VG.Impl.Ffdh.Arm.KeySearch.entryFor sampling.cachedContext))
+      (.seq (.loop ((VG.Impl.Ffdh.Arm.KeySearch.iterationFor sampling.cachedContext) (.call backend.keyName backend.generateKey)) .eq)
         (.block VG.Impl.Ffdh.Arm.KeySearch.finish))) (fun _ _ => True) := by
   refine RelCT.seq (two_post entry_ct entry_ready) ?_
   have loopCT : RelCT isa (Two (Entered (sampling := sampling)))
-      (.loop (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) .eq) (fun _ _ => True) :=
+      (.loop ((VG.Impl.Ffdh.Arm.KeySearch.iterationFor sampling.cachedContext) (.call backend.keyName backend.generateKey)) .eq) (fun _ _ => True) :=
     (loop_ct backend).mono (fun _ _ ⟨a, h₁, h₂, sp⟩ => ⟨initialPoint a, h₁, h₂, sp⟩) (fun _ _ h => h)
   refine RelCT.seq (two_post loopCT (loop_ready backend)) ?_
   exact finish_ct.mono (fun _ _ ⟨a, h₁, h₂, sp⟩ => ⟨a.1, h₁, h₂, sp⟩) (fun _ _ h => h)
@@ -47,8 +47,8 @@ private theorem push_search_eq {s t : State}
   rfl
 
 theorem function_ct (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) : RelCT isa (Two (KeyStart (sampling := sampling)))
-    (VG.Impl.Ffdh.Arm.KeySearch.code (.call backend.keyName backend.generateKey)) (fun _ _ => True) := by
-  unfold VG.Impl.Ffdh.Arm.KeySearch.code
+    ((VG.Impl.Ffdh.Arm.KeySearch.codeFor sampling.cachedContext) (.call backend.keyName backend.generateKey)) (fun _ _ => True) := by
+  unfold VG.Impl.Ffdh.Arm.KeySearch.codeFor
   refine RelCT.frame (fun _ _ ⟨_, _, _, sp⟩ => sp) ?_
   refine (body_ct backend).mono ?_ (fun _ _ h => h)
   rintro a b ⟨s, t, ⟨q, h₁, h₂, sp⟩, push₁, push₂⟩

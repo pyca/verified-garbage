@@ -40,7 +40,7 @@ theorem finish_ok {p : KeyPublic sampling} {original s : State} {result : Spec.F
     rw [rest.wr, rest.sp, h.sp, h.wr]
     exact List.mem_cons_self
   have fit : u.sp.toNat + 24 ≤ 2 ^ 32 := by
-    rw [rest.sp, h.sp, FrameStack.sub_toNat' (by have := h.input.bounds.stackFits; change 232 ≤ p.sp.toNat at this; omega)]
+    rw [rest.sp, h.sp, FrameStack.sub_toNat' (by have := h.input.bounds.stackFits; have min := stackUse_min sampling; omega)]
     have := p.sp.isLt
     omega
   refine WP.mono (restoreSlots_ok finishRestoreSlots u original.gpr (by decide) fit read

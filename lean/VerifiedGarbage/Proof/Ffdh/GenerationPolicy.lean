@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Ffdh.VettedKeyGenerationContract
+public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 
 /-! A proof-side policy index shares the native controller across the two
 reviewed sampling contracts. These definitions are convertible to those
@@ -12,6 +13,7 @@ namespace VG.Proof.Ffdh
 inductive GenerationPolicy where
   | full
   | vetted
+  | cached
 
 namespace GenerationPolicy
 open VG.Spec.Ffdh
@@ -19,13 +21,13 @@ open VG.Spec.Rsa (bytesAt wordsAt os2ip i2osp powMod scratchWords)
 
 def scalar : GenerationPolicy → Parameters → List Byte → Nat
   | .full => scalarOfOctets
-  | .vetted => vettedScalarOfOctets
+  | .vetted | .cached => vettedScalarOfOctets
 
 def search : GenerationPolicy → Parameters → Nat → KeyRetries → List Byte → KeySearchResult
   | .full => keySearch
-  | .vetted => vettedKeySearch
+  | .vetted | .cached => vettedKeySearch
 
-def attemptContract (policy : GenerationPolicy) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+def legacyAttemptContract (policy : GenerationPolicy) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   generateKeySig.contract A
     (pre := fun _x xLen _y yLen _domain domainLen pLen _rand randLen _scratch scratchLen _ =>
       pLenValid pLen.toNat ∧ domainLenValid pLen.toNat domainLen.toNat ∧
@@ -48,7 +50,7 @@ def attemptContract (policy : GenerationPolicy) {M : ISA} (A : Abi M) (stack : N
       let a := domainOf pLen.toNat dom
       dom.map (·.toNat) ++ [keyStatus a (policy.scalar a (bytesAt m rand randLen.toNat))])
 
-def searchContract (policy : GenerationPolicy) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+def legacySearchContract (policy : GenerationPolicy) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   keySearchSig.contract A
     (pre := fun _x xLen _y yLen _used domain domainLen pLen _rand _randLen _scratch scratchLen state m =>
       pLenValid pLen.toNat ∧ domainLenValid pLen.toNat domainLen.toNat ∧
@@ -80,6 +82,25 @@ def searchContract (policy : GenerationPolicy) {M : ISA} (A : Abi M) (stack : Na
       dom.map (·.toNat) ++ (wordsAt m state 4).map (·.toNat) ++
         (policy.search a pLen.toNat retries (bytesAt m rand randLen.toNat)).statuses)
 
+/-- Whether this controller consumes an immutable public comb context. -/
+def cachedContext : GenerationPolicy → Bool
+  | .cached => true
+  | _ => false
+
+def argumentBytes (policy : GenerationPolicy) : Nat := if policy.cachedContext then 40 else 32
+
+def searchStack (policy : GenerationPolicy) : Nat := 24 + policy.argumentBytes + 176
+
+def attemptContract (policy : GenerationPolicy) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  match policy with
+  | .cached => Spec.Ffdh.cachedGenerateKeyContract A stack
+  | .full | .vetted => legacyAttemptContract policy A stack
+
+def searchContract (policy : GenerationPolicy) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  match policy with
+  | .cached => Spec.Ffdh.cachedKeySearchContract A stack
+  | .full | .vetted => legacySearchContract policy A stack
+
 theorem attemptContract_full {M : ISA} (A : Abi M) (stack : Nat) :
     attemptContract .full A stack = generateKeyContract A stack := rfl
 
@@ -91,6 +112,12 @@ theorem searchContract_full {M : ISA} (A : Abi M) (stack : Nat) :
 
 theorem searchContract_vetted {M : ISA} (A : Abi M) (stack : Nat) :
     searchContract .vetted A stack = vettedKeySearchContract A stack := rfl
+
+theorem attemptContract_cached {M : ISA} (A : Abi M) (stack : Nat) :
+    attemptContract .cached A stack = cachedGenerateKeyContract A stack := rfl
+
+theorem searchContract_cached {M : ISA} (A : Abi M) (stack : Nat) :
+    searchContract .cached A stack = cachedKeySearchContract A stack := rfl
 
 end GenerationPolicy
 end VG.Proof.Ffdh
