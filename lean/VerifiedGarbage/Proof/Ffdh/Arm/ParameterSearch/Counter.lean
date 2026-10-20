@@ -54,4 +54,30 @@ theorem decrementWords_ok (s : State) {n : Nat} (positive : 0 < n) (bound : n �
     show (1 : BitVec 32).toNat = 1 from rfl, decide_eq_true_eq]
   exact upper
 
+theorem budgetGuard_ok (s : State) {n : Nat} (bound : n ≤ 2 ^ 32)
+    (low : s.gpr .r9 = BitVec.ofNat 32 n)
+    (high : s.gpr .r10 = BitVec.ofNat 32 (n / 2 ^ 32)) :
+    WP isa (.block VG.Impl.Ffdh.Arm.ParameterSearch.budgetGuard) s fun t =>
+      (t.z = decide (n = 0) ∧ t.mem = s.mem) ∧ Rest [.r9] s t := by
+  have zero : ((BitVec.ofNat 32 n ||| BitVec.ofNat 32 (n / 2 ^ 32)) == (0 : BitVec 32)) =
+      decide (n = 0) := by
+    by_cases small : n < 2 ^ 32
+    · rw [Nat.div_eq_of_lt small]
+      change ((BitVec.ofNat 32 n ||| 0#32) == (0 : BitVec 32)) = _
+      rw [BitVec.or_zero, VG.Proof.X25519.Arm.ofNat_beq_zero small]
+    · have full : n = 2 ^ 32 := by omega
+      subst n
+      rfl
+  refine withRest [.r9] ?_ (by
+    intro r hr op hop
+    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterSearch.budgetGuard : Prog isa)).all
+        (fun op => !(clobbers op r)) = true := by
+      cases r <;> try rfl
+      all_goals exact False.elim (hr (by decide))
+    have h := List.all_eq_true.mp checked op hop
+    cases hc : clobbers op r <;> simp_all) (by rfl)
+  unfold VG.Impl.Ffdh.Arm.ParameterSearch.budgetGuard
+  ffrun [low, high, show (0 : BitVec 32) = 0#32 from rfl, BitVec.sub_zero]
+  exact zero
+
 end VG.Proof.Ffdh.Arm.ParameterSearch

@@ -78,8 +78,10 @@ def classify : Prog isa := .seq (.block [.cmp .r0 (.imm 1)])
 def candidateRun (candidate : Prog isa) : Prog isa :=
   .frame (.alloc 24) (.seq (.block arguments) candidate) (.free 24)
 
+def budgetGuard : List Instr := [.dp .orr .r9 .r9 (.reg .r10), .cmp .r9 (.imm 0)]
+
 def iteration (candidate : Prog isa) : Prog isa := .seq
-  (.block [ldf .r9 0, .ldr .r10 .r4 4, .dp .orr .r9 .r9 (.reg .r10), .cmp .r9 (.imm 0)])
+  (.block ([ldf .r9 0, .ldr .r10 .r4 4] ++ budgetGuard))
   (.seq (.ite .eq exhausted (.seq (candidateRun candidate) classify))
     (.block [ldf .r9 13, .cmp .r9 (.imm 4)]))
 

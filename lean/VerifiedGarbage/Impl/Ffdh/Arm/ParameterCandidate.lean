@@ -65,17 +65,22 @@ def witnessRoom : List Instr :=
 def maskStep : List Instr :=
   [.dp .add .r7 .r7 (.reg .r7), .dp .add .r7 .r7 (.imm 1), .subs .r6 .r6 (.imm 1)]
 
+def shapeFirst : List Instr :=
+  [.ldrSp .r4 4, .ldrb .r3 .r4 0, .dp .and .r3 .r3 (.reg .r7),
+    .mov .r9 (.shifted .r7 .lsr 1), .dp .add .r9 .r9 (.imm 1),
+    .dp .orr .r3 .r3 (.reg .r9), .strb .r3 .r4 0]
+
+def shapeLast : List Instr :=
+  [.ldrSp .r5 12, .dp .add .r4 .r4 (.reg .r5), .dp .sub .r4 .r4 (.imm 1),
+    .ldrb .r3 .r4 0, .dp .orr .r3 .r3 (.imm 1), .strb .r3 .r4 0]
+
 /-- Copy the first k tape bytes, mask to bits, and set the high and low bits. -/
 def shapeP : Prog isa := seqs [
   .block [.ldrSp .r0 4, .ldrSp .r1 16, .ldrSp .lr 12], copyBytes,
   .block [.ldrSp .r6 24, .dp .sub .r6 .r6 (.imm 1), .dp .and .r6 .r6 (.imm 7),
     .dp .add .r6 .r6 (.imm 1), .mov .r7 (.imm 0)],
   .loop (.block maskStep) .ne,
-  .block [.ldrSp .r4 4, .ldrb .r3 .r4 0, .dp .and .r3 .r3 (.reg .r7),
-    .mov .r9 (.shifted .r7 .lsr 1), .dp .add .r9 .r9 (.imm 1),
-    .dp .orr .r3 .r3 (.reg .r9), .strb .r3 .r4 0,
-    .ldrSp .r5 12, .dp .add .r4 .r4 (.reg .r5), .dp .sub .r4 .r4 (.imm 1),
-    .ldrb .r3 .r4 0, .dp .orr .r3 .r3 (.imm 1), .strb .r3 .r4 0]]
+  .block shapeFirst, .block shapeLast]
 
 /-- One binary remainder step, selecting the subtraction without a branch. -/
 def modBit : List Instr :=
@@ -123,19 +128,24 @@ def trialDigitHigh : List Instr :=
 def trialDigit : Prog isa := .seq (.block trialDigitHead)
   (.ite .eq (.block []) (.block trialDigitHigh))
 
+/-- Set up RSA’s negative inverse, the input end pointer and zero accumulator. -/
+def trialStart : List Instr := [.mov .r3 (.reg .r7), .mov .r4 (.reg .r3)] ++
+    TrialDivision16.newton ++ TrialDivision16.newton ++ TrialDivision16.newton ++
+    [.mov .r5 (.imm 0), .dp .sub .r4 .r5 (.reg .r4),
+      .mov .r4 (.shifted .r4 .lsl 16), .mov .r4 (.shifted .r4 .lsr 16),
+      .ldrSp .r0 4, .ldrSp .r1 12, .dp .add .r0 .r0 (.reg .r1), .mov .r2 (.imm 0)]
+
+def trialStep : Prog isa := .seq trialDigit
+  (.block (TrialDivision16.redc ++ [.cmp .r1 (.imm 0)]))
+
+def trialFlag : Prog isa := .seq (.block [.cmp .r2 (.imm 0)])
+  (.ite .eq (.block []) (.block [.cmp .r2 (.reg .r3)]))
+
 /-- Trial division by the odd prime in r7 using RSA's radix-2^16 reducer.
 Read octet pairs backwards, with a zero high octet for an odd byte length.
 The final accumulator is below twice the prime, so zero or the prime
 means divisibility. Z reports that result; r10/r11 remain the sieve cursor. -/
-def trialSmall : Prog isa := seqs [
-  .block ([.mov .r3 (.reg .r7), .mov .r4 (.reg .r3)] ++
-    TrialDivision16.newton ++ TrialDivision16.newton ++ TrialDivision16.newton ++
-    [.mov .r5 (.imm 0), .dp .sub .r4 .r5 (.reg .r4),
-      .mov .r4 (.shifted .r4 .lsl 16), .mov .r4 (.shifted .r4 .lsr 16),
-      .ldrSp .r0 4, .ldrSp .r1 12, .dp .add .r0 .r0 (.reg .r1), .mov .r2 (.imm 0)]),
-  .loop (seqs [trialDigit, .block (TrialDivision16.redc ++ [.cmp .r1 (.imm 0)])]) .ne,
-  .block [.cmp .r2 (.imm 0)],
-  .ite .eq (.block []) (.block [.cmp .r2 (.reg .r3)])]
+def trialSmall : Prog isa := seqs [.block trialStart, .loop trialStep .ne, trialFlag]
 
 def sieve : Prog isa := seqs [
   .block (tablePointer ++ [.mov .r10 (.reg .r11), .mov .r11 (.imm 53), .mov .r1 (.imm 0)] ++ save .r1 64),
