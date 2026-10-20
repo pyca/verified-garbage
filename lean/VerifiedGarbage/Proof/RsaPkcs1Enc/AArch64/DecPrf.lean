@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecMac
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Sha256.AArch64.Compress
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: a block of IRPRF
