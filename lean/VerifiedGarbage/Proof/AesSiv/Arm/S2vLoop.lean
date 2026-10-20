@@ -10,9 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Impl.AesSiv.Arm
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # AES-SIV on ARMv7: S2V over the components of associated data

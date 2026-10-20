@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
 import VerifiedGarbage.Proof.AesSiv.AArch64.Init
 import VerifiedGarbage.Proof.AesSiv.Key
 import VerifiedGarbage.Proof.AesSiv.Words
