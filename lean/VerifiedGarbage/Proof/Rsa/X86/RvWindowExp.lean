@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvWindowLoop
 public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateSet
 public import VerifiedGarbage.Proof.Rsa.X86.RvArguments
 public import VerifiedGarbage.Proof.Rsa.RecoverExp
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 
 /-! # A recovery candidate's power by fixed 4-bit windows
 
@@ -25,7 +26,7 @@ theorem windowLoop_ok {g : Geo} {s0 s : State} {T AW V : Nat → Nat} {m b E C :
     (value : T mBase = m) (bound : m < 2 ^ (64 * g.n))
     (inverse : (m * V sInv + 1) % 2 ^ 32 = 0) (odd : m % 2 = 1) (positive : 0 < m)
     (count : 0 < C) (hC : C < 2 ^ 32) :
-    WP isa (.loop (windowBody g.n) .ne) s (WI g s0 T AW V m b E C C) := by
+    WP isa (.loop VG.Impl.Rsa.X86.RecoverRt.windowBody .ne) s (WI g s0 T AW V m b E C C) := by
   refine WP.loop (M := isa)
     (fun j u => ∃ k, k + j = C ∧ 0 < j ∧ WI g s0 T AW V m b E C k u)
     ?_ C s ⟨0, by omega, count, h⟩
@@ -48,10 +49,10 @@ def AI (g : Geo) (s0 : State) (A AW V : Nat → Nat) (r C j : Nat) (s : State) :
 
 theorem alignBody_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {r C j : Nat}
     (h : AI g s0 A AW V r C j s) (hj : j < C) (hC : C < 2 ^ 32) :
-    WP isa (alignBody g.n) s fun t => AI g s0 A AW V r C (j + 1) t ∧
+    WP isa VG.Impl.Rsa.X86.RecoverRt.alignBody s fun t => AI g s0 A AW V r C (j + 1) t ∧
       t.zf = some (decide (C - (j + 1) = 0)) := by
-  unfold alignBody AI at *
-  refine WP.seq (WP.mono (h.shiftUp_W (j := wRc) (by simp) (by decide)) fun u ⟨hu, _⟩ => ?_)
+  unfold VG.Impl.Rsa.X86.RecoverRt.alignBody AI at *
+  refine WP.seq (WP.mono (h.shiftUp_W (by simp) (by decide)) fun u ⟨hu, _⟩ => ?_)
   rw [upd_self, upd_twice] at hu
   have hu' := hu.mono (liveW' := [wRc, wR]) (fun j hj => ⟨hj, rfl⟩)
     (fun j hj => ⟨by simp [hj], rfl⟩) (fun d hd => ⟨hd, rfl⟩)
@@ -70,7 +71,7 @@ theorem alignBody_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {r C j : Na
 
 theorem alignLoop_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {r C : Nat}
     (h : AI g s0 A AW V r C 0 s) (count : 0 < C) (hC : C < 2 ^ 32) :
-    WP isa (.loop (alignBody g.n) .ne) s (AI g s0 A AW V r C C) := by
+    WP isa (.loop VG.Impl.Rsa.X86.RecoverRt.alignBody .ne) s (AI g s0 A AW V r C C) := by
   refine WP.loop (M := isa)
     (fun j u => ∃ k, k + j = C ∧ 0 < j ∧ AI g s0 A AW V r C k u)
     ?_ C s ⟨0, by omega, count, h⟩
@@ -92,25 +93,35 @@ theorem alignCount_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Na
     (ae : CallArgument s0 g.B g.Z 7 (BitVec.ofNat 32 eLen))
     (ad : CallArgument s0 g.B g.Z 9 (BitVec.ofNat 32 dLen))
     (wide : 8 * (dLen + eLen) < 32 * g.W) (fits : 8 * g.W < 2 ^ 32) :
-    WP isa (.block (alignCount g.n)) s fun t =>
+    WP isa (.block VG.Impl.Rsa.X86.RecoverRt.alignCount) s fun t =>
       KS g s0 A live AW liveW (upd V sCnt (8 * g.W - 2 * (dLen + eLen))) (sCnt :: ls) t := by
-  have hW : g.W = VG.Impl.Rsa.X86.Recover.wide g.n := rfl
-  unfold alignCount
+  unfold VG.Impl.Rsa.X86.RecoverRt.alignCount
+  simp only [List.cons_append, List.nil_append]
   refine wp_movS (h.arg ae (by decide)).readSrc fun u U _ => ?_
   have hu := h.of_rest U.keeps (by decide) U.mem
   refine wp_addS (hu.arg ad (by decide)).readSrc fun v D _ => ?_
   refine wp_addS rfl fun w W _ => ?_
-  refine wp_movS rfl fun x X _ => ?_
-  refine wp_subS rfl fun y Y _ => ?_
-  have hy := (((hu.of_rest D.keeps (by decide) D.mem).of_rest W.keeps (by decide) W.mem).of_rest
-    X.keeps (by decide) X.mem).of_rest Y.keeps (by decide) Y.mem
-  have value : y.gpr .edx = BitVec.ofNat 32 (8 * g.W - 2 * (dLen + eLen)) := by
-    rw [Y.gpr, X.gpr, X.other _ (by decide), W.gpr, D.gpr, U.gpr]
+  have hw := (hu.of_rest D.keeps (by decide) D.mem).of_rest W.keeps (by decide) W.mem
+  have ea : w.gpr .eax = BitVec.ofNat 32 (2 * (dLen + eLen)) := by
+    rw [W.gpr, D.gpr, U.gpr]
     simp only [← BitVec.ofNat_add]
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)]
     congr 1
     omega
-  refine WP.mono (hy.storeSlot (d := sCnt) (by decide) .edx) fun t ⟨ht, _, _⟩ => ?_
+  refine VG.Proof.Rsa.X86.KeyRt.bytesB_ok (VG.Proof.Rsa.X86.KeyRt.lenSrc hw.rtW) hw.rtW.lenLe
+    fun x K m e => ?_
+  rw [kw_wid] at e
+  have hx := hw.of_rest K (by decide) m
+  refine wp_addS rfl fun y Y _ => wp_subS rfl fun z Z _ => ?_
+  have hz := (hx.of_rest Y.keeps (by decide) Y.mem).of_rest Z.keeps (by decide) Z.mem
+  have exa : y.gpr .eax = BitVec.ofNat 32 (2 * (dLen + eLen)) := by
+    rw [Y.other _ (by decide), K.1 _ (by decide), ea]
+  have ey : (y.gpr .edx).toNat = 8 * g.W := by
+    rw [Y.gpr, BitVec.toNat_add, e]; simp only [Geo.W] at fits ⊢; omega
+  have value : z.gpr .edx = BitVec.ofNat 32 (8 * g.W - 2 * (dLen + eLen)) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [Z.gpr, BitVec.toNat_sub, ey, exa, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+    omega
+  refine WP.mono (hz.storeSlot (d := sCnt) (by decide) .edx) fun t ⟨ht, _, _⟩ => ?_
   rw [value, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at ht
   exact ht
 
