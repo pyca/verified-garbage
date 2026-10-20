@@ -13,10 +13,10 @@ namespace VG.Proof.Ffdh.Arm.KeyGenerate
 open VG VG.Arm VG.Proof.Bignum.Arm
 
 def backend (b : MontBackend) : KeyBackend where
-  generateKey := code b
-  generateKey_verified := keyGenerate_verified (prepare b) (tail b)
-    (normalizedPrepareLaw b) (tailLaw b)
-  keyStack := stack_ok b
+  generateKey := b.caller.code (code b)
+  generateKey_verified := b.caller.verified (keyGenerate_verified (prepare b) (tail b)
+    (normalizedPrepareLaw b) (tailLaw b))
+  keyStack := Nat.le_trans (b.caller.stack_le _) (stack_ok b)
   suffix := b.suffix
   features := b.features
 

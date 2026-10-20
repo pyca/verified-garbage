@@ -21,17 +21,17 @@ open VG.Impl.Ffdh.Arm.VettedGroups (tableConsts)
 
 def sample : Prog isa := VG.Impl.Ffdh.Arm.SampleScalar.code VettedBound.code
 
-def code (b : MontBackend) : Prog isa := SampleKeyGenerate.code b sample
+def code (b : MontBackend) : Prog isa := b.caller.code (SampleKeyGenerate.code b sample)
 
 theorem verified (b : MontBackend) : Verified target (code b)
     (Spec.Ffdh.vettedGenerateKeyContract (abi.withConsts tableConsts) 176) :=
-  vettedKeyGenerate_verified (KeyGenerate.prepare b) sample (SampleKeyGenerate.tail b)
+  b.caller.verified (vettedKeyGenerate_verified (KeyGenerate.prepare b) sample (SampleKeyGenerate.tail b)
     VettedGroups.environment (normalizedPrepareLaw b)
     (sampleLaw _ _ _ VettedBound.law) (SampleKeyGenerate.tailLaw b)
-    vettedKeyGenerate_environment (fun _ _ h => h)
+    vettedKeyGenerate_environment (fun _ _ h => h))
 
 theorem stack_ok (b : MontBackend) : FrameStack.armStack (code b) ≤ 176 :=
-  SampleKeyGenerate.stack_ok b sample (by rfl)
+  Nat.le_trans (b.caller.stack_le _) (SampleKeyGenerate.stack_ok b sample (by rfl))
 
 def backend (b : MontBackend) : KeyBackend .vetted where
   generateKey := code b
