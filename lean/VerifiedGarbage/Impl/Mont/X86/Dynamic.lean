@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.X86.Words
+public import VerifiedGarbage.Impl.Mont.X86.Mac
 
 /-!
 # Runtime-modulus Montgomery arithmetic on 32-bit x86
@@ -28,10 +29,7 @@ def redDigit (acc inv mult : Nat) : List Instr :=
 from one word to the next passes through one addition (`add`, `adc`) rather
 than two. -/
 def macW (acc b mult d : Nat) : List Instr :=
-  [.mov .eax (.mem (sc mult)), .mov .edx (.mem (at_ .ecx (b + d))), .mul .edx,
-    .alu .add .eax (.mem (at_ .ebp (acc + d))), .alu .adc .edx (.imm 0),
-    .alu .add .eax (.reg .ebx), .alu .adc .edx (.imm 0),
-    .store (at_ .ebp (acc + d)) .eax, .mov .ebx (.reg .edx)]
+  macWord (acc + d) (b + d) mult
 
 /-- The words `j` and `j + 1` that `ecx` points to, then both pointers move
 up two words: the loop's own instructions run once for two words. -/

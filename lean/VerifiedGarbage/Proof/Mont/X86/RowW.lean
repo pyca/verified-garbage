@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Mont.X86.Row
 import VerifiedGarbage.Proof.Mont.X86.Loop
 import VerifiedGarbage.Proof.Mont.X86.WordOps
-import VerifiedGarbage.Proof.Mont.X86.Step
+import VerifiedGarbage.Proof.Mont.X86.Mac
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PlainSimp
@@ -55,67 +55,20 @@ theorem macW_ok {t : State} {base : Addr} {size : Nat} (hs : Scr t base size) {a
       (u.gpr .ebx).toNat = (w32 t.mem base mult * w32 t.mem base (b + o) + (t.gpr .ebx).toNat +
           w32 t.mem base (w + o)) / 2 ^ 32 ∧
       Keeps [.eax, .ebx, .edx] t u := by
-  have hn := hs.nowrap
-  have eb : 4 * j + (b + d) = b + o := by omega
+  have edi : Rt.PtrAt t base .edi 0 := by
+    rw [Rt.PtrAt, hs.edi_toNat, Nat.add_zero]
+    exact (Nat.mod_eq_of_lt (by rw [← hs.edi_toNat]; exact (t.gpr .edi).isLt)).symm
+  have ecx : Rt.PtrAt t base .ecx (4 * j) := by
+    rw [Rt.PtrAt, hecx, BitVec.toNat_add, hs.edi_toNat, BitVec.toNat_ofNat]
+    omega
+  have ebp : Rt.PtrAt t base .ebp (4 * (i + j)) := by
+    rw [Rt.PtrAt, hp, BitVec.toNat_add, hs.edi_toNat, BitVec.toNat_ofNat]
+    omega
   have ew : 4 * (i + j) + (acc + d) = w + o := by omega
-  simp only [macW]
-  refine wp_movS (readSrc_sc hs hm) fun s₀ u₀ _ => ?_
-  have hs₀ := hs.of_keeps u₀.keeps (by decide)
-  have hecx₀ : s₀.gpr .ecx = s₀.gpr .edi + BitVec.ofNat 32 (4 * j) := by
-    rw [u₀.other _ (by decide), u₀.other _ (by decide)]; exact hecx
-  refine wp_movS (readSrc_regAt hs₀ hecx₀ (d := b + d) (by omega)) fun s₁ u₁ _ => ?_
-  refine wp_mul fun s₂ m₂ => ?_
-  have K₂ : Keeps [.eax, .edx] t s₂ := ((u₀.keeps.mono (by decide)).widen u₁.keeps).widen m₂.keeps
-  have hs₂ := hs.of_keeps K₂ (by decide)
-  have hp₂ : s₂.gpr .ebp = s₂.gpr .edi + BitVec.ofNat 32 (4 * (i + j)) := by
-    rw [K₂.1 _ (by decide), K₂.1 _ (by decide)]; exact hp
-  refine wp_addS (readSrc_regAt hs₂ hp₂ (d := acc + d) (by omega)) fun s₃ u₃ c₃ => ?_
-  refine wp_adcS rfl c₃ fun s₄ u₄ c₄ => ?_
-  refine wp_addS rfl fun s₅ u₅ c₅ => ?_
-  refine wp_adcS rfl c₅ fun s₆ u₆ c₆ => ?_
-  have K₄ : Keeps [.eax, .edx] t s₄ := (K₂.widen u₃.keeps).widen u₄.keeps
-  have K₆ : Keeps [.eax, .edx] t s₆ := (K₄.widen u₅.keeps).widen u₆.keeps
-  have hs₆ := hs.of_keeps K₆ (by decide)
-  have hp₆ : s₆.gpr .ebp = s₆.gpr .edi + BitVec.ofNat 32 (4 * (i + j)) := by
-    rw [K₆.1 _ (by decide), K₆.1 _ (by decide)]; exact hp
-  refine wp_storeS (hs₆.ea_regAt hp₆ (d := acc + d) (by omega))
-    (hs₆.write (d := 4 * (i + j) + (acc + d)) (n := 4) (by omega)) fun s₇ m₇ => ?_
-  refine wp_movS rfl fun s₈ u₈ _ => WP.block_nil ?_
-  -- The registers and memory along the way.
-  have m₂' : s₂.mem = t.mem := by rw [m₂.mem, u₁.mem, u₀.mem]
-  have m₄ : s₄.mem = t.mem := by rw [u₄.mem, u₃.mem, m₂']
-  have m₆ : s₆.mem = t.mem := by rw [u₆.mem, u₅.mem, m₄]
-  have eax₁ : s₁.gpr .eax = t.mem.readW (off base mult) 32 := by rw [u₁.other _ (by decide), u₀.gpr]
-  have eax₂ := m₂.eax
-  have edx₂ := m₂.edx
-  rw [eax₁, u₁.gpr, u₀.mem, eb] at eax₂ edx₂
-  have ebx₂ : s₂.gpr .ebx = t.gpr .ebx := by
-    rw [m₂.other _ (by decide) (by decide), u₁.other _ (by decide), u₀.other _ (by decide)]
-  have eax₃ : s₃.gpr .eax = s₂.gpr .eax + t.mem.readW (off base (w + o)) 32 := by
-    rw [u₃.gpr, m₂', ew]
-  have edx₄ : s₄.gpr .edx = s₃.gpr .edx + 0 + (BitVec.ofBool _).setWidth 32 := u₄.gpr
-  have eax₄ : s₄.gpr .eax = s₃.gpr .eax := u₄.other _ (by decide)
-  have edx₃ : s₃.gpr .edx = s₂.gpr .edx := u₃.other _ (by decide)
-  have ebx₄ : s₄.gpr .ebx = t.gpr .ebx := by rw [u₄.other _ (by decide), u₃.other _ (by decide), ebx₂]
-  have eax₅ : s₅.gpr .eax = s₄.gpr .eax + s₄.gpr .ebx := u₅.gpr
-  have edx₆ : s₆.gpr .edx = s₅.gpr .edx + 0 + (BitVec.ofBool _).setWidth 32 := u₆.gpr
-  have eax₆ : s₆.gpr .eax = s₅.gpr .eax := u₆.other _ (by decide)
-  have edx₅ : s₅.gpr .edx = s₄.gpr .edx := u₅.other _ (by decide)
-  have hpost := step_regs (t.mem.readW (off base (b + o)) 32) (t.mem.readW (off base mult) 32)
-    (t.mem.readW (off base (w + o)) 32) (t.gpr .ebx) _ _ rfl rfl
-  rw [Nat.mul_comm (t.mem.readW (off base (b + o)) 32).toNat] at hpost
-  have ex₆ : s₆.gpr .eax = BitVec.ofNat 32 ((t.mem.readW (off base mult) 32).toNat *
-      (t.mem.readW (off base (b + o)) 32).toNat) + t.mem.readW (off base (w + o)) 32 + t.gpr .ebx := by
-    rw [eax₆, eax₅, ebx₄, eax₄, eax₃, eax₂]
-  have dx₆ := edx₆
-  rw [edx₅, edx₄, edx₃, edx₂, ebx₄, eax₄, eax₃, eax₂, m₂', ew] at dx₆
-  have hx : s₆.gpr .eax = BitVec.ofNat 32 (w32 t.mem base mult * w32 t.mem base (b + o) +
-      (t.gpr .ebx).toNat + w32 t.mem base (w + o)) := by
-    apply BitVec.eq_of_toNat_eq
-    rw [ex₆, hpost.1, BitVec.toNat_ofNat, Nat.add_right_comm]
-  have K₇ : Keeps [.eax, .edx] t s₇ := K₆.widen (m₇.keeps [])
-  refine ⟨by rw [u₈.mem, m₇.mem, m₆, hx, ew], ?_, (K₇.mono (by decide)).widen u₈.keeps⟩
-  rw [u₈.gpr, m₇.gpr, dx₆, hpost.2, Nat.add_right_comm]
+  have eb : 4 * j + (b + d) = b + o := by omega
+  simpa only [macW, Nat.zero_add, ew, eb] using
+    (Rt.macWord_ok (output := acc + d) (input := b + d) (mo := mult)
+      ⟨hs.wr, hs.nowrap⟩ edi ecx ebp (by omega) (by omega) (by omega))
 
 /-- One word of the row, as a step of the row's invariant: the window's low
 `j` words and the carry word hold the window's start plus `[mult] · [b]`'s

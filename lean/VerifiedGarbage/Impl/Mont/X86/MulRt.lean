@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Mont.X86
+public import VerifiedGarbage.Impl.Mont.X86.Mac
 public import VerifiedGarbage.Spec.Rsa.MontMul
 
 /-! # Montgomery multiplication at a width given at run time (32-bit x86)
@@ -81,10 +81,7 @@ def zeroAcc : Prog isa :=
 
 /-- `[ebp + d] += [edi + mo] · [ecx + d]` with the carry `ebx`. -/
 def macAt (mo d : Nat) : List Instr :=
-  [.mov .eax (.mem (sc mo)), .mov .edx (.mem (at_ .ecx d)), .mul .edx,
-   .alu .add .eax (.mem (at_ .ebp d)), .alu .adc .edx (.imm 0),
-   .alu .add .eax (.reg .ebx), .alu .adc .edx (.imm 0),
-   .store (at_ .ebp d) .eax, .mov .ebx (.reg .edx)]
+  macWord d d mo
 
 /-- One step of a row, two words: `[ebp] += [multOff] · [ecx]` and the same a
 word up, with the carry `ebx`, both pointers up two words, `esi` down 8; ZF
@@ -95,11 +92,8 @@ def pairStep : List Instr :=
 /-- One word of a row, with the multiplier at `[edi + mo]`, both pointers up a
 word, `esi` down 4; ZF when it reaches zero. -/
 def mulStepAt (mo : Nat) : List Instr :=
-  [.mov .eax (.mem (sc mo)), .mov .edx (.mem (at_ .ecx 0)), .mul .edx,
-   .alu .add .eax (.mem (at_ .ebp 0)), .alu .adc .edx (.imm 0),
-   .alu .add .eax (.reg .ebx), .alu .adc .edx (.imm 0),
-   .store (at_ .ebp 0) .eax, .mov .ebx (.reg .edx),
-   .alu .add .ecx (.imm 4), .alu .add .ebp (.imm 4), .alu .sub .esi (.imm 4)]
+  macWord 0 0 mo ++
+  [.alu .add .ecx (.imm 4), .alu .add .ebp (.imm 4), .alu .sub .esi (.imm 4)]
 
 /-- The carry `ebx` into the two words at `ebp`. -/
 def carryWords : List Instr :=
