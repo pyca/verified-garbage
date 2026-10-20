@@ -160,12 +160,15 @@ def kgTail (c : Impl.Sha3.AArch64.Callee) (L : KemLay) : Prog isa :=
         .ldr .x .x25 .x28 (KG.SV L + 8), .ldr .x .x26 .x28 (KG.SV L + 16),
         .ldr .x .x27 .x28 (KG.SV L + 24), .ldr .x .x28 .x28 (KG.SV L + 32)])])
 
+/-- The noise, `ŝ` into `dk`, and the all-zero third state. -/
+def kgPre (L : KemLay) : Prog isa :=
+  seqs ([noiseAllWith nttAtWithW L true] ++ ((List.range L.k).map fun j => enc12WAt (KG.sOff L j) .x27 (384 * j)) ++
+    [.block (zeroState .x28 KG.ST)])
+
 /-- The key generation, hashing `ek` during the matrix: `G`, the noise, `ŝ` into `dk`,
 the all-zero third state, the matrix with each row of `t̂` after its entries
 (`kgMatrixRows`), and the rest of `H(ek)` (`kgTail`). -/
 def keyGenH (hash : FixedHashCallers.HashFn) (c : Impl.Sha3.AArch64.Callee) (L : KemLay) : Prog isa :=
-  seqs ([FixedHashCallers.kgAUsing hash L, noiseAllWith nttAtWithW L true] ++
-    ((List.range L.k).map fun j => enc12WAt (KG.sOff L j) .x27 (384 * j)) ++
-    [.block (zeroState .x28 KG.ST)] ++ kgMatrixRows L ++ [kgTail c L])
+  seqs [FixedHashCallers.kgAUsing hash L, kgPre L, seqs (kgMatrixRows L), kgTail c L]
 
 end VG.Impl.MlKem.AArch64.Kem16

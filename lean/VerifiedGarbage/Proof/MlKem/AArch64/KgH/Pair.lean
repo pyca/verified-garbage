@@ -231,4 +231,84 @@ theorem pair_step {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (hr :
   · exact Hybrid.tables_frame128 H.tables H.tstk sy post.keep.rd post.keep.wr post.keep.sp
       (fr.sub (pairH_wr hp kb (by omega)))
 
+/-- `matrix_singleton`, with what it writes. -/
+theorem matrix_singletonF {s₀ s : State} (hp : Pre P s₀) {e : Nat} (he : e<P.k*P.k)
+    (h : BInvW true P s₀ e s) (tb : MatrixTable P s₀ s) :
+    WP isa (Paired.lastCode SB SS e P.k (AH+1024*e) true) s fun t =>
+      BInvW true P s₀ (e+1) t ∧ Frame (lastWrites s₀ e) s.mem t.mem ∧ Keep Paired.pairRegs s t ∧
+        t.syms = s.syms := by
+  have hw := hp.wf
+  have f0 : SS+2048≤kL P 3 := by kl
+  have f1 : AH+1024*e+1024≤kL P 3 := matrixEntry_fit hw he
+  have ctx := singleton_context hp he h.kb tb
+  refine WP.mono_syms (Paired.lastCode_ok (sb:=SB) (ss:=SS) (a:=e) (k:=P.k) (off:=AH+1024*e)
+    (p:=kA s₀ 3+BitVec.ofNat 64 SS) (seed:=kA s₀ 3+BitVec.ofNat 64 SB)
+    (out:=kA s₀ 3+BitVec.ofNat 64 (AH+1024*e))
+    (by decide) (by decide) (by decide) (by lom) (by lom) (by lom)
+    (by rw [h.kb.x28]) (by rw [h.kb.x28]) (by rw [h.kb.x28])
+    (by
+      intro j hj
+      rw [ptr_add]
+      exact in_R (cov_r hp h.kb (b:=3) (o:=SB) (l:=32) (by decide) (by kl))
+        (k:=8*j) (by omega) (by omega))
+    (hp.args.rdisj (b₁:=3) (b₂:=3) (o₁:=SB) (l₁:=32) (o₂:=SS) (l₂:=2048)
+      (by decide) (by decide) (by kl) f0 (by decide))
+    (hp.args.rdisj (b₁:=3) (b₂:=3) (o₁:=SB) (l₁:=32) (o₂:=AH+1024*e) (l₂:=1024)
+      (by decide) (by decide) (by kl) f1 (by lom)) ctx rfl
+    (by
+      rw [h.acc]
+      by_cases hh : allOk P s₀ e
+      · rw [ite_eq_left hh]; exact Or.inr rfl
+      · rw [ite_eq_right hh]; exact Or.inl rfl)) fun t ht sy=>?_
+  have out := ht.outcome
+  simp only [Paired.seedBytes,h.rho] at out
+  exact ⟨h.singleton hp he out, out.frame, out.keep, sy⟩
+
+/-- **The final entry** of an odd matrix, between the rows of `t̂`. -/
+theorem last_step {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) {r h : Nat}
+    (hodd : P.k * P.k % 2 = 1) (H : IL P s₀ (P.k * P.k - 1) r h s) :
+    WP isa (Paired.lastSample P true true) s (IL P s₀ (P.k * P.k) r h) := by
+  have hw := hp.wf
+  have kb := H.b.kb
+  have hk1 : 0 < P.k * P.k := by omega
+  have he : P.k * P.k - 1 < P.k * P.k := by omega
+  have hrn := H.rn
+  have hrk := H.rk
+  rw [Paired.lastSample_eq]
+  simp only [ite_true]
+  refine WP.mono (matrix_singletonF hp he H.b (matrixTable_of hp kb H.tables))
+    fun t ⟨bt, fr, kt, sy⟩ => ?_
+  rw [Nat.sub_add_cancel hk1] at bt
+  have kbt := bt.kb
+  have far {o l : Nat} (hf : o+l≤kL P 3) (hs : AH + 1024 * (P.k * P.k) ≤ o) :=
+    last_far hp he (b := 3) (o := o) (l := l) (by decide) hf (.inr ⟨.inr (by lom), .inr (by omega)⟩)
+  have fS : 0 + 200 ≤ kL P 3 := by
+    show 0 + 200 ≤ P.scl; omega_using [hw.facts.2.2.2.2.2.2.2.2.1]
+  refine ⟨bt, fun j hj => ?_, fun j hj => ?_, fun j hj => ?_, ?_, by omega, Nat.le_refl _, H.rk, ?_, H.hr, ?_,
+    H.tstk.of sy (by rw [kbt.sp, kb.sp])⟩
+  · exact polyIsW_frame_poly (w16 := true) fr (far (by kl) (by lom)) (H.sp j hj)
+  · exact polyIsW_frame_poly (w16 := true) fr (far (Noise.noise_fits hr hj)
+      (by have := Noise.noise_past_kg hr j; lom)) (H.errors j hj)
+  · rw [bytesAt_frame fr (last_far hp he (by decide) (by kl) (.inl (by decide))) (by decide)]
+    exact H.dk j hj
+  · refine IL.rowsDone_frame H.rn H.rows fr (fun e' he' q hq => ?_) (fun i' hi' q hq =>
+      ⟨last_far hp he (by decide) (by kl) (.inl (by decide)) q hq,
+        last_far hp he (by decide) (by kl) (.inl (by decide)) q hq⟩)
+    exact last_far hp he (b := 3) (o := AH+1024*e') (l := 1024) (by decide) (by simp only [kL]; lom)
+      (.inr ⟨.inr (by lom), .inl (by lom)⟩) q hq
+  · rw [VG.Proof.Sha3.AArch64.Hybrid.X3.stateAt_frame fr (fun q hq => by
+      rw [stR_scratch]; exact last_far hp he (b := 3) (o := 0) (l := 200) (by decide) fS
+        (.inr ⟨.inl (by lom), .inl (by lom)⟩) q hq), H.hash]
+    rw [show kA s₀ 1 = kA s₀ 1 + BitVec.ofNat 64 0 from (ptr_zero _).symm,
+      bytesAt_frame (p := kA s₀ 1 + BitVec.ofNat 64 0) (len := P.ekLen) fr
+        (last_far hp he (b := 1) (o := 0) (l := kL P 1) (by decide) (by omega) (.inl (by decide)))
+        (by have := kL_le hw 1; simp only [kL] at this; omega)]
+  · exact H.tables.frame sy kt.rd kt.wr kt.sp (fr.sub fun q hq => by
+      rw [kb.wr, hp.wr]
+      simp only [lastWrites, Paired.fullWrites, List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with rfl | rfl
+      · exact ⟨⟨kA s₀ 3, kL P 3⟩, by simp, R.sub (A := kA s₀) (b := 3) (o := SS) (l := 2048) (by kl)⟩
+      · exact ⟨⟨kA s₀ 3, kL P 3⟩, by simp, R.sub (A := kA s₀) (b := 3) (o := AH+1024*(P.k*P.k-1)) (l := 1024)
+          (matrixEntry_fit hw he)⟩)
+
 end VG.Proof.MlKem.AArch64.KeyGen
