@@ -12,6 +12,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.X86.TaintSym
 meta import VerifiedGarbage.Spec.Cast5.Contract
 meta import VerifiedGarbage.Proof.Cast5.X86.KeyGroup
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # CAST5 key expansion on 32-bit x86: verified against the shared contract

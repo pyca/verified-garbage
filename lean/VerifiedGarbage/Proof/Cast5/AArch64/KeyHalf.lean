@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Cast5.AArch64.KeyGroup
 import VerifiedGarbage.Proof.Cast5.AArch64.Run
 import VerifiedGarbage.Proof.Cast5.Memory
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
 # CAST5 key expansion on AArch64: a half

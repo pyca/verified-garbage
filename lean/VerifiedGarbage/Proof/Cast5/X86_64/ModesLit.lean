@@ -12,7 +12,6 @@ meta import VerifiedGarbage.Proof.Cast5.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-! # CAST5-CBC, -OFB and -CFB64's x86-64 code as literals, for kernel-evaluated checks -/
