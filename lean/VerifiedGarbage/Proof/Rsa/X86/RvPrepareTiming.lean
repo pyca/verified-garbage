@@ -1,8 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvHalfTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvHalfTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvCandidateTiming
 public import VerifiedGarbage.Proof.Rsa.X86.RvRestFacts
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Rsa.X86.RvHalfStep
+import VerifiedGarbage.Proof.Rsa.X86.RvLoopTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvAddressTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvHalving
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Preparing recovery uses public lengths for every fixed loop -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86.Layout
 public import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Impl.Mont.X86.Context
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Bounds for the reused arithmetic context and persistent DSA values -/

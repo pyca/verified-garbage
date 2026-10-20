@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseKCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseKCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseL
-import VerifiedGarbage.Proof.MlKem.Arm.Prf
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Rel
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseCCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 
 /-!
 # ML-DSA signing on ARMv7: the loop leaks what `signLeakT` says

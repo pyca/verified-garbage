@@ -2,10 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitch
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Poly
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Rounds
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # ChaCha20 and Poly1305 together (AArch64): a counted phase

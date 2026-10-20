@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRect8
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddInput
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
+public import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
 /-! ## AdxRect8Product -/
 

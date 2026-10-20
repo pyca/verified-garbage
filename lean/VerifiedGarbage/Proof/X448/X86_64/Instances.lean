@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
 public import VerifiedGarbage.Proof.X448.X86_64.Adx.Verified
+import VerifiedGarbage.Proof.X448.X86_64.Verified
 
 /-!
 # X448 on x86-64, with each Curve448 field backend

@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.TCB.X86_64.Sse
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # x86-64: SSE values as words

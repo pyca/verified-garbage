@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Arithmetic
-public import VerifiedGarbage.Proof.Mont.AArch64.Csub
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Mont.AArch64.Csub
+public import VerifiedGarbage.Proof.Ed25519.Word64
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Word-level identities for the shift/subtract P-256 reduction. -/
 

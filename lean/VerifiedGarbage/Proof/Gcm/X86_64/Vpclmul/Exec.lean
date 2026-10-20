@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 public import VerifiedGarbage.Impl.Gcm.X86_64.Vpclmul
 public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
 public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # GHASH with VPCLMULQDQ: what the instruction groups compute, as bits
@@ -17,6 +19,7 @@ compute in the field is in `Vpclmul/Ghash.lean`, which needs the algebra of
 `Proof/Gcm/Poly.lean`; this module does not, so that proofs about where the
 products go (such as the interleaved loops of `Proof/Gcm/X86_64/Stitch/`)
 import it alone.
+import VerifiedGarbage.Proof.Framework.Mem
 -/
 
 @[expose] public section

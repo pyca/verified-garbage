@@ -1,21 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Sha512.Arm.Rounds
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sha512.Arm.Lit
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sha512.Arm.Rounds
-public import Mathlib.Tactic.Set
-meta import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-public import VerifiedGarbage.Proof.Framework.Arm.Spill
-meta import VerifiedGarbage.Proof.Framework.Arm.Spill
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Sha512
-meta import VerifiedGarbage.Spec.Sha512
-public import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Sha512.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Sha512.Arm.Lit
+meta import Mathlib.Tactic.Set
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # SHA-512 compression function on ARMv7: the whole function

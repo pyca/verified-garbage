@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarBaseOk
 public import VerifiedGarbage.Proof.Ed448.X86.SignCached.Verified
 import VerifiedGarbage.Proof.Sha3.X86.Lit
-public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
 import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
 public import VerifiedGarbage.Proof.Framework.Registration
 

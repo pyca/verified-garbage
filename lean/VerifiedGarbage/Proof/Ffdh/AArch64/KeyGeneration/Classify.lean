@@ -2,6 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.AttemptRun
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Writes
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Outputs
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Live
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # After an attempt: the key, or one fewer scalar or key (AArch64) -/
 

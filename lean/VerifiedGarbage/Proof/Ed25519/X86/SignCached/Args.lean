@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.X86.SignCached
-public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Layout
-public import VerifiedGarbage.Proof.Ed25519.Bytes
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Setup
 public import VerifiedGarbage.Proof.Ed25519.X86.CombTbl
+public import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.X86.SignCached.Layout`. -/
 

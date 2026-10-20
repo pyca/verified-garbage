@@ -1,6 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.CrtMath
+import VerifiedGarbage.Proof.Bignum.CrtMath
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
 
 /-! # The natural residue difference is the RSA specification's signed difference -/
 

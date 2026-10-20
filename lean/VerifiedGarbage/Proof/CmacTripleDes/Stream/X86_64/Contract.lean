@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Impl.CmacTripleDes.Stream.X86_64
 public import VerifiedGarbage.Spec.Cmac.TripleDesContract
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Streaming TDEA-CMAC on x86-64: the contracts the proofs are written against

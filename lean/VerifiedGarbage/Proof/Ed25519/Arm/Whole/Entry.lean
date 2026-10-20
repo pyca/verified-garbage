@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Entry
-public import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

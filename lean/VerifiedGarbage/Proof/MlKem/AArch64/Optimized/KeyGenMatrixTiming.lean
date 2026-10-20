@@ -1,8 +1,16 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgB
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixTable
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullPrefix
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Last
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.BeginTiming
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrix
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixLast
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixPair
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! # Public-seed timing of the optimized encryption matrix -/
 @[expose] public section

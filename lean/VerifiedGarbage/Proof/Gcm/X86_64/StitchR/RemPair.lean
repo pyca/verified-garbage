@@ -2,15 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopOneD
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchR
-public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
 import VerifiedGarbage.Proof.Framework.X86_64.Lane0Zero
 import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Base
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
-import VerifiedGarbage.Proof.Gcm.X86_64.Rev
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
-import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemBodyD
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # The blocks after the last group, decrypted two at a time

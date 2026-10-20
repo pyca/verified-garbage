@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenPack
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWord
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVec
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVec
 
 @[expose] public section
 

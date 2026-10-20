@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.KcFnBase
-public import VerifiedGarbage.Proof.Framework.Arm.Spill
-public import VerifiedGarbage.Proof.Rsa.Arm.CvLoads
+import VerifiedGarbage.Proof.Framework.Arm.Spill
+import VerifiedGarbage.Proof.Rsa.Arm.KcStart
+import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
+import VerifiedGarbage.Proof.Rsa.Arm.InvParts
+import VerifiedGarbage.Proof.Bignum.Arm.Zero
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 
 /-! # The checks of an RSA key on ARMv7: the entry's first block, and every array zeroed
 

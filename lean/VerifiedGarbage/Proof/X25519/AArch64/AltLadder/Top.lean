@@ -1,16 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Ladder
-public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Ends
-public import VerifiedGarbage.Proof.X25519.Bytes
+import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Ladder
+import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Ends
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Top
-public import VerifiedGarbage.Proof.X25519.AArch64.Word.Output
-public import VerifiedGarbage.Proof.X25519.AArch64.Word.Input
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Impl.X25519.AArch64.AltLadder
+import VerifiedGarbage.Proof.X25519.AArch64.Word.Output
 import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Lit
 import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddMemory
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # X25519 on AArch64: the `_alt` ladder's whole function

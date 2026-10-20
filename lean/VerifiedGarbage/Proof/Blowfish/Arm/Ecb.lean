@@ -1,10 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.Arm.Cipher
-public import VerifiedGarbage.Proof.Blowfish.Blocks
+import VerifiedGarbage.Proof.Blowfish.Blocks
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Blowfish.Schedule
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # Blowfish on ARMv7: ECB

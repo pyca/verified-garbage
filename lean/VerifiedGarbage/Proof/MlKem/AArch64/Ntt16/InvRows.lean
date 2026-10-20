@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.InvPass1
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Rows
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Gs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # ML-KEM's 16-bit inverse NTT on AArch64: the butterflies on rows

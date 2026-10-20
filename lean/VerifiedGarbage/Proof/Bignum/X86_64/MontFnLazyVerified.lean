@@ -1,12 +1,21 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
+public import VerifiedGarbage.Impl.Bignum.X86_64.MontFnLazy
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxVerified
-meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxVerified
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyCT
 import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazy
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
+meta import VerifiedGarbage.Impl.Bignum.X86_64.MontFnLazy
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxVerified
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazy
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # `vg_rsa_lazy_mont_mul` and `vg_rsa_lazy_mont_mul_adx` meet `mulLazyContract` -/
 

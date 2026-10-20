@@ -2,6 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameDerivations
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameDerived
+import VerifiedGarbage.Proof.Framework.AArch64.StackStore
+import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Initialize the three workspace pointers and the witness cursor -/
 

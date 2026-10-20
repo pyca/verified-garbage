@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Random
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Random
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Leakage proofs for the sampler's secret-byte operations.
 Only pointer and loop-count registers are shared between runs; neither

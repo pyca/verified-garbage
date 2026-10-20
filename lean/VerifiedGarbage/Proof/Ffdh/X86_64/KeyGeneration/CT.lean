@@ -1,9 +1,27 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Search
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Attempt
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Data
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.LoopCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Correct
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.LoopCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Correct
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Loop
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Start
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Search
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Attempt
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Data
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.LoopCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Correct
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Loop
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Start
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-! # The key search's timing depends on its public descriptor and statuses -/
 

@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSubgroup
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SubgroupCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometrySubgroup
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSeed
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSubgroup
 
 /-! # Public seed-attempt inputs exclude unused frame words -/
 

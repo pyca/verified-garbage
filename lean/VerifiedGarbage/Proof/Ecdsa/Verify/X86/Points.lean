@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Scalars
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdh.X86.Peer
+import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
+import VerifiedGarbage.Proof.Ecdsa.X86.Lays
+import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
+import VerifiedGarbage.Proof.Weierstrass.X86.Bits
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 
 /-!
 # ECDSA verification on x86 (32-bit): `[u]G + [v]Q`

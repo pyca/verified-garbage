@@ -1,10 +1,11 @@
 module
+public import Mathlib.Data.Nat.Prime.Defs
+public import VerifiedGarbage.Impl.Ecdsa.X86_64
+public import Mathlib.Tactic.Tauto
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
 
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsWrap
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsWrap
 
 /-!
 # The functions of four words: the callee-saved registers come back

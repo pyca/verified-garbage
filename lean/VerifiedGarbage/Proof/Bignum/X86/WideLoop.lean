@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.WideProduct
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Mont.Words32
 
-public import VerifiedGarbage.Proof.Bignum.X86.WideRow
-public import VerifiedGarbage.Proof.Bignum.WideBounds
-public import VerifiedGarbage.Proof.Mont.X86.Dynamic
+import VerifiedGarbage.Proof.Bignum.X86.WideRow
+import VerifiedGarbage.Proof.Bignum.WideBounds
+import VerifiedGarbage.Proof.Mont.X86.Dynamic
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Terminating schoolbook multiplication over a public operand width -/
 

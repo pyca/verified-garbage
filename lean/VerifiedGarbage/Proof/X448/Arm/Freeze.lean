@@ -3,8 +3,10 @@ module
 import VerifiedGarbage.Proof.X448.Arm.FreezePrep
 import VerifiedGarbage.Proof.X448.Arm.Select
 public import VerifiedGarbage.Proof.X448.Arm.Env
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: canonical reduction

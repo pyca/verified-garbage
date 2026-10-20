@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Pbkdf2CT
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AnyKey.AArch64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Pbkdf2
+import VerifiedGarbage.Proof.Hmac.Generic.Common
 
 /-!
 # HMAC's `init` for a key of any length over any Merkle–Damgård hash function on AArch64: correct

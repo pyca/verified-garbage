@@ -2,12 +2,23 @@ module
 
 import VerifiedGarbage.Proof.Ed25519.Group.Double
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombAdd
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombSelect
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombSelect
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
 import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
-import VerifiedGarbage.Proof.Ed25519.Recode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Bound
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lanes
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part1
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Phase
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Stage
 
 /-!
 # Ed25519's comb with AVX512_IFMA: a step

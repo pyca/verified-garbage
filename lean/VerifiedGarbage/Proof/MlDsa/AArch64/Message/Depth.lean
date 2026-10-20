@@ -1,60 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Verified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Inst
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Ntt
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecrets
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourStore
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCall
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackDigits
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Indexed
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryTraversal
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdvance
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBytes
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejGuard
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.StaticCore
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Table
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalChecked
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpack
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.UseHint
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMask
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbArgs
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Epi
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Squeeze
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Zero
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedCT
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Final
-public import VerifiedGarbage.Proof.MlDsa.Sample.LeWord
-public import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Restore
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Save
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Store
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-public import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-public import VerifiedGarbage.Proof.MlKem.AArch64.Common
-public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inst
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
 
 /-!
 # ML-DSA on AArch64: how deep the frames of signing and verification nest

@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.WinSelect
+import VerifiedGarbage.Proof.Weierstrass.X86.WinSelect
 public import VerifiedGarbage.Proof.Weierstrass.Window
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Weierstrass.X86.Window
+import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
+import VerifiedGarbage.Proof.Weierstrass.CombLay
 
 @[expose] public section
 

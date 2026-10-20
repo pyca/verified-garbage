@@ -1,10 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightTile
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Batteries.Tactic.Init
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMath
+import VerifiedGarbage.TCB.AArch64.Simd
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcWord
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.ProductEight

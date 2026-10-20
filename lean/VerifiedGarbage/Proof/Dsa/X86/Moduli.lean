@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
+public import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-! # Validated modulus inputs shared by all DSA arithmetic stages -/
 

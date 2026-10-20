@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Impl.Sm4.AArch64.Sbox
 public import VerifiedGarbage.Proof.Sm4.SboxTable
 public import VerifiedGarbage.Proof.Framework.AArch64.Straight
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Aes.Bitsliced
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The bitsliced SM4 S-box on AArch64

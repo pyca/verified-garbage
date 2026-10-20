@@ -1,7 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecScan
-import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecTaint
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Select
+import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Encode
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: the validity and the length

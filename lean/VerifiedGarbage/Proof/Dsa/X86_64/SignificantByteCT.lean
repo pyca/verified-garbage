@@ -1,17 +1,25 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Significant
+import VerifiedGarbage.Proof.Dsa.X86_64.Significant
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.Attr.Core
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Checks
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Significant
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.RsaPss
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-meta import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Spec.RsaPss
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.Attr.Core
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.CrtMath
+meta import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-! # Timing of one public modulus-width scan byte -/
 

@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Framework.Block
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.RoundBody
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.TripleDes.X86_64.Box
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Impl.TripleDes.X86_64.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 @[expose] public section
 

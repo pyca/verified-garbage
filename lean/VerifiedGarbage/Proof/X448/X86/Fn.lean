@@ -1,9 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.X448.X86.Mul
-public import VerifiedGarbage.Proof.X448.X86.Small
+import VerifiedGarbage.Proof.X448.X86.Small
 public import VerifiedGarbage.Proof.Framework.X86.Spill
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.X448.X86.AddSub
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # X448 on x86 (32-bit): the field functions

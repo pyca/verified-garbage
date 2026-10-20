@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Table
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.Arith.VectorNtt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Step
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

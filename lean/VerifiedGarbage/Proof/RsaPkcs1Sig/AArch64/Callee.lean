@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 public import VerifiedGarbage.Proof.Framework.Sig
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Rsa.Scratch
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # The RSA operations the signatures call, on AArch64

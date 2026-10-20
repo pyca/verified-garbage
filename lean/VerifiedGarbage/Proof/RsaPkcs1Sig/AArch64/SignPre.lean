@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Sign
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

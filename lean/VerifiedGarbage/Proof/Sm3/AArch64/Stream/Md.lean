@@ -1,21 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.AArch64.Update
-meta import VerifiedGarbage.Proof.MdStream.AArch64.Update
 public import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
-meta import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
-public import VerifiedGarbage.Proof.MdStream.AArch64.Words
-meta import VerifiedGarbage.Proof.MdStream.AArch64.Words
+import VerifiedGarbage.Proof.MdStream.AArch64.Words
 public import VerifiedGarbage.Proof.Sm3.Md
+import VerifiedGarbage.Proof.Sm3.AArch64.Compress
+public import VerifiedGarbage.Proof.Sm3.AArch64.Contract
+import VerifiedGarbage.Proof.Sm3.AArch64.Lit
+public import VerifiedGarbage.Impl.Sm3.AArch64.Stream
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Update
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Words
 meta import VerifiedGarbage.Proof.Sm3.Md
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sm3.AArch64.Compress
 meta import VerifiedGarbage.Proof.Sm3.AArch64.Compress
-import VerifiedGarbage.Impl.Sm3.AArch64.Stream
+meta import VerifiedGarbage.Proof.Sm3.AArch64.Contract
+meta import VerifiedGarbage.Proof.Sm3.AArch64.Lit
 meta import VerifiedGarbage.Impl.Sm3.AArch64.Stream
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming SM3 on AArch64: `update` and `finalize`

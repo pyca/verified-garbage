@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesXts.X86_64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.AesXts.X86_64.Body
 
 /-!
 # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on x86-64

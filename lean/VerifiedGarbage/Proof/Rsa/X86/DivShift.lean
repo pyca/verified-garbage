@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Rsa.X86.Div
+public import VerifiedGarbage.Proof.Mont.X86.WordOps
 
-public import VerifiedGarbage.Proof.Rsa.X86.DivCopy
+import VerifiedGarbage.Proof.Rsa.X86.DivCopy
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The division shift returns the high bit without branching on it -/
 

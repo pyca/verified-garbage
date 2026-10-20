@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # A scratch buffer on the stack, for code that reads tables of constants (AArch64)

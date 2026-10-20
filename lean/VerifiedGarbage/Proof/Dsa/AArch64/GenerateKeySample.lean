@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCheckStep
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSample
-public import VerifiedGarbage.Proof.Dsa.RandomResult
-public import VerifiedGarbage.Proof.Dsa.Derive
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignBody
+import VerifiedGarbage.Proof.Dsa.Derive
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomPrepareState
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
+import VerifiedGarbage.Proof.Dsa.SizeBounds
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Key generation's sampling of x and its derivation -/
 

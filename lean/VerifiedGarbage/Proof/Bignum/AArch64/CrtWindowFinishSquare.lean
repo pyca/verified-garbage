@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowTail
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBuild
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPendingInv
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
 
 /-! Final pending bits need exactly their own count of squares, without padding. -/
 

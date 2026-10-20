@@ -1,18 +1,33 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Blocks
-public import VerifiedGarbage.Spec.Gcm.Contract
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
 public import VerifiedGarbage.Proof.Aes.X86_64.Variant
-public import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
-public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 public import VerifiedGarbage.Proof.Gcm.X86_64.Contract
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Gcm.Stream
-import VerifiedGarbage.Spec.TripleDes
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.AesGcm.X86_64.Blocks
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
+meta import VerifiedGarbage.Proof.Aes.X86_64.Variant
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Contract
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Gcm.Stream
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+meta import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+meta import VerifiedGarbage.Proof.Aes.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 
 /-!
 # AES-GCM on x86-64: the functions called

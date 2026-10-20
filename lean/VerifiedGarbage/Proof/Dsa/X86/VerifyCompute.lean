@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.PublicKey
-public import VerifiedGarbage.Proof.Dsa.X86.VerifyArithmetic
+import VerifiedGarbage.Proof.Dsa.X86.PublicKey
+import VerifiedGarbage.Proof.Dsa.X86.VerifyArithmetic
 public import VerifiedGarbage.Impl.Dsa.X86.SignVerify
+public import VerifiedGarbage.Proof.Dsa.Accepted
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Proof.Dsa.X86.Execution
+public import VerifiedGarbage.Proof.Dsa.X86.Moduli
+import VerifiedGarbage.Proof.Dsa.X86.StageChecks
+import VerifiedGarbage.Proof.Dsa.X86.Persistent
 
 /-! # Verification arithmetic and all post-shape acceptance conditions -/
 

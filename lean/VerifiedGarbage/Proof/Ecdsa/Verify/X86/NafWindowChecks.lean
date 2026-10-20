@@ -1,17 +1,39 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPointChecks
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPointChecks
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafWindowTiming
-meta import VerifiedGarbage.Proof.Weierstrass.X86.NafWindowTiming
-import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafAddShared
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
+import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
+import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPointChecks
+meta import VerifiedGarbage.Proof.Weierstrass.X86.NafWindowTiming
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafAddShared
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import Mathlib.Tactic.Attr.Core
+meta import Aesop.BuiltinRules
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+meta import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
+meta import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Weierstrass.X86.FieldTiming
+import VerifiedGarbage.Proof.Weierstrass.X86.RegFieldTiming
+meta import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Weierstrass.X86.FieldTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86.RegFieldTiming
 
 @[expose] public section
 

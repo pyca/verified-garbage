@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Wide.Column
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 
 /-! Untrusted: the complete two-word coefficient array of a wide product. -/

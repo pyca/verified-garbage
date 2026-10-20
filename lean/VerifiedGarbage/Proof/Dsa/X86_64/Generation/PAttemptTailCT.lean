@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructTestCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructTest
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructTestCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructTest
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptBlocksCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PPrimalityCTState
 
 /-! # Return the verified p-test result to the bounded search controller -/
 

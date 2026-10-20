@@ -1,11 +1,20 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicArithmetic
+public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseInput
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicApply
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicImportCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicAcceptCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicControlsCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicFinishCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseCT
+import VerifiedGarbage.Proof.Bignum.Arm.PublicImportCT
+import VerifiedGarbage.Proof.Bignum.Arm.PublicAcceptCT
+import VerifiedGarbage.Proof.Bignum.Arm.PublicControlsCT
+import VerifiedGarbage.Proof.Bignum.Arm.PublicFinishCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseCT
+import VerifiedGarbage.Proof.Bignum.Arm.PublicControls
+import VerifiedGarbage.Proof.Bignum.Arm.PublicAccept
+import VerifiedGarbage.Proof.Bignum.Arm.PublicImport
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Bignum.Arm.SquareRedCT
 
 /-! # The complete public RSA arithmetic path is constant-time with respect to the input -/
 

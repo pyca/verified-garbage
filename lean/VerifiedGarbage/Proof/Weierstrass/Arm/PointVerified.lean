@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.PointContract
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontVerified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Taint
 
 /-!
 # Complete point addition and doubling as functions, on 32-bit ARM: verified

@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Validate
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 
 /-! # Set the packed-domain checker's arguments from the persistent frame -/
 

@@ -1,7 +1,22 @@
 module
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Idea.X86.Round
 
-public import VerifiedGarbage.Proof.Idea.X86.Invert
-public import VerifiedGarbage.Proof.Idea.X86.Block
+import VerifiedGarbage.Proof.Idea.X86.Invert
+import VerifiedGarbage.Proof.Idea.X86.Block
+import VerifiedGarbage.Proof.Idea.X86.Key
+import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Idea.X86.Lit
 
 /-!
 # IDEA ECB on x86 (32-bit)

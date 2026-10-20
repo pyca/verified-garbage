@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSetup
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductLoad
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductFirstLoop
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

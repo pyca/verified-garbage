@@ -1,29 +1,33 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceCount
-meta import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceCount
-public import VerifiedGarbage.Proof.Argon2.Reference
-meta import VerifiedGarbage.Proof.Argon2.Reference
-public import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Argon2.AArch64.CountCandidates
-meta import VerifiedGarbage.Proof.Argon2.AArch64.CountCandidates
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
-meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Impl.Argon2.AArch64.CountCandidates
-meta import VerifiedGarbage.Impl.Argon2.AArch64.CountCandidates
-import VerifiedGarbage.Impl.Argon2.AArch64.SelectWindow
-meta import VerifiedGarbage.Impl.Argon2.AArch64.SelectWindow
-import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
-meta import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Spec.Argon2
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
 import VerifiedGarbage.Proof.Argon2.AArch64.Carry
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceCount
+meta import VerifiedGarbage.Proof.Argon2.AArch64.CountCandidates
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Spec.Argon2
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
 meta import VerifiedGarbage.Proof.Argon2.AArch64.Carry
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-! Merged from `Proof.Argon2.AArch64.SelectWindow`. -/
 

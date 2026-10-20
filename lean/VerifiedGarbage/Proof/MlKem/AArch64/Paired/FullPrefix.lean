@@ -1,12 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastStart
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullPrepare
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SingleStep
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import Std.Tactic.BVDecide.Normalize.Prop
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastStart
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeTiming
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import Std.Tactic.BVDecide.Normalize.Prop
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! # Complete singleton stream and vector parser entry for relational timing -/
 @[expose] public section

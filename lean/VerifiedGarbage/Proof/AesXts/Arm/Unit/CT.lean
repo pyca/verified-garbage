@@ -1,11 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.AesXts.Arm.Unit.Dec
-meta import VerifiedGarbage.Proof.AesXts.Arm.Unit.Dec
+import VerifiedGarbage.Proof.AesXts.Arm.Unit.Dec
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+public import VerifiedGarbage.Proof.AesXts.Arm.Unit.Enc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.AesXts.Arm.Unit.Dec
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.AesXts.Arm.Unit.Enc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Aes.KeyExp
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # XTS-AES of data units on ARMv7: constant time

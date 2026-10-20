@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackWord
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.HighPack
 import Mathlib.Tactic.SplitIfs
 
 @[expose] public section

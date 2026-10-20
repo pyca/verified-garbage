@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.Arm.Top
-public import VerifiedGarbage.Spec.MlDsa
 
 /-!
 # ML-DSA on 32-bit ARM: the pieces of the top-level functions

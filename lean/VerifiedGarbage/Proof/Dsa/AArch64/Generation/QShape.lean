@@ -1,9 +1,23 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.QShape
+public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ShapeOctets
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QShapeEnds
-public import VerifiedGarbage.Proof.Dsa.Generation.QShapeMemory
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QShapeEnds
+import VerifiedGarbage.Proof.Dsa.Generation.QShapeMemory
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopy
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! The native digest-to-subgroup-candidate operation. -/
 @[expose] public section

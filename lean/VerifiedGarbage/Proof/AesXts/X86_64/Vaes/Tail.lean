@@ -2,6 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Loop
 import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.TailOps
+import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # One-pass XTS-AES on x86-64: the blocks left

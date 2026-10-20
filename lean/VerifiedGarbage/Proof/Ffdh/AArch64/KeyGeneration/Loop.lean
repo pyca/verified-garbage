@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Classify
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Guards
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Guards
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Live
 
 /-! # Total correctness of the key-generation controller's loop (AArch64) -/
 

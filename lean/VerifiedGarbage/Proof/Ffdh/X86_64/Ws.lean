@@ -1,8 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Data.Nat.Basic
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-! # FFDH on x86-64: the nested workspaces -/
 

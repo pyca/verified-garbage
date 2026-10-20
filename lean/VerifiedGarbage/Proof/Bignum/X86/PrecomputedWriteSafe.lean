@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
-public import VerifiedGarbage.Proof.Bignum.X86.ExportBE
-public import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Bignum.X86.ExportBE
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-! # Export remains safe even when malformed packed keys produce oversized integers -/
 

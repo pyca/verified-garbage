@@ -3,15 +3,18 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.KeygenEntry
 public import VerifiedGarbage.Proof.Dsa.AArch64.SigningKey
 public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeSpec
-public import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
-public import VerifiedGarbage.Proof.Dsa.Derive
-import VerifiedGarbage.Proof.Dsa.AArch64.SigningShape
+public import VerifiedGarbage.Proof.Dsa.AArch64.InitializedLayout
+public import VerifiedGarbage.Spec.Dsa.Derive
+import VerifiedGarbage.Proof.Dsa.Derive
 import VerifiedGarbage.Proof.Dsa.AArch64.SigningOperands
-import VerifiedGarbage.Proof.Dsa.AArch64.SourceSlices
 import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceReady
 import VerifiedGarbage.Proof.Dsa.AArch64.Result
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Dsa.SizeBounds
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Functional correctness of the AArch64 DSA domain check
 

@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtPoweredState
+public import VerifiedGarbage.Proof.Bignum.Arm.PreparePrime
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidateStage
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPowerStage
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptedFactors
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPowerStage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptedFactors
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Both private exponentiations retain their completed arithmetic states -/
 

@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Impl.P256.VerifyAllocated
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Observed
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

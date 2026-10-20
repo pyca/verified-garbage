@@ -1,19 +1,25 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Base
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Call
-meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Call
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.MlKem.KPke
-import VerifiedGarbage.Proof.MlKem.X86.NttLoop
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+import VerifiedGarbage.Proof.MlKem.X86.TopHash
+import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+import VerifiedGarbage.Proof.MlKem.X86.TopCall
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Base
 meta import VerifiedGarbage.Proof.MlKem.KPke
-meta import VerifiedGarbage.Proof.MlKem.X86.NttLoop
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+meta import VerifiedGarbage.Proof.MlKem.X86.TopHash
+meta import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+meta import VerifiedGarbage.Proof.MlKem.X86.TopCall
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA signing on x86 (32-bit): copies and hashes

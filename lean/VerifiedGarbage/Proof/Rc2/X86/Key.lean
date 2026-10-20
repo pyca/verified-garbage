@@ -1,17 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.X86.KeyCorrect
-meta import VerifiedGarbage.Proof.Rc2.X86.KeyCorrect
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Spec.Rc2.Contract
+import VerifiedGarbage.Proof.Rc2.X86.KeyLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Rc2.X86.KeyCorrect
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-public import VerifiedGarbage.Proof.Rc2.X86.KeyLit
+meta import VerifiedGarbage.Spec.Rc2.Contract
 meta import VerifiedGarbage.Proof.Rc2.X86.KeyLit
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-! # RC2 key expansion against the shared API contract -/
 

@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCall
+import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCall
 public import VerifiedGarbage.Impl.Dsa.Arm.SignVerify
 public import VerifiedGarbage.Proof.Dsa.Arm.Verify
+public import VerifiedGarbage.Proof.Dsa.Arm.Sign
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

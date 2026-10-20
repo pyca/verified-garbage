@@ -3,8 +3,11 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintVec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZInit
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## From `ResponseHintGroup.lean` -/
 

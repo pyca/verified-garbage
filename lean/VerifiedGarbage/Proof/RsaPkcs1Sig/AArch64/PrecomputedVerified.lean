@@ -1,13 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyVerified
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyVerified
-public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCT
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_pkcs1_verify_precomputed` on AArch64: `Verified`

@@ -1,8 +1,14 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTCode
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTCode
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyImplies
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # `vg_rsa_check_key` on x86-64: verified against the shared contract

@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdh.P224
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.P224
+public import VerifiedGarbage.Spec.Ecdh.Generic
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ECDH over P-224 on x86-64: the contract the proof is written against

@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KEnd
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import VerifiedGarbage.Proof.RsaKeyGen.Generate
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrMain
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 
 /-!
 # A candidate on x86-64: Montgomery setup, Miller–Rabin and the result

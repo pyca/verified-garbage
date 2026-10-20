@@ -1,11 +1,37 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+public import VerifiedGarbage.Impl.Dsa.AArch64.Random
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomPrepare
-public import VerifiedGarbage.Proof.Dsa.AArch64.SignificantCT
+import VerifiedGarbage.Proof.Dsa.AArch64.SignificantCT
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomScan
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomClear
+import VerifiedGarbage.Proof.Dsa.AArch64.SignificantLoop
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Random
 meta import VerifiedGarbage.Proof.Dsa.AArch64.SignificantCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomPrepare
+meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomScan
+meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomClear
+meta import VerifiedGarbage.Proof.Dsa.AArch64.SignificantLoop
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import Mathlib.Algebra.Group.Nat.Defs
+meta import Mathlib.Tactic.Attr.Core
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! Preparing the sampler leaks public pointers and lengths only. -/
 @[expose] public section

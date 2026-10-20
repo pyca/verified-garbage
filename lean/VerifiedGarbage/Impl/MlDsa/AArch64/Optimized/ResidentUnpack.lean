@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Stream
+import VerifiedGarbage.Impl.MlKem.AArch64.Basic
+public import VerifiedGarbage.Impl.MlKem.AArch64.Basic
 
 @[expose] public section
 

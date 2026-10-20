@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.X86.Body
-meta import VerifiedGarbage.Proof.AesXts.X86.Body
 public import VerifiedGarbage.Proof.AesCbc.X86.CT
+import VerifiedGarbage.Proof.MdStream.X86.Common
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.AesXts.X86.Body
 meta import VerifiedGarbage.Proof.AesCbc.X86.CT
+meta import VerifiedGarbage.Proof.MdStream.X86.Common
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # XTS-AES on x86: constant time

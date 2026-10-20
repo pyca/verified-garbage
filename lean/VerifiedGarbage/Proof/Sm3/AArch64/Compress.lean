@@ -1,33 +1,33 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.Framework.Block
-meta import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Mem
-meta import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Sm3.Spec
-meta import VerifiedGarbage.Proof.Sm3.Spec
 public import VerifiedGarbage.Impl.Sm3.AArch64
-meta import VerifiedGarbage.Impl.Sm3.AArch64
-public import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Sm3.StateMem
-meta import VerifiedGarbage.Proof.Sm3.StateMem
 public import VerifiedGarbage.Proof.Sm3.AArch64.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sm3.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Sm3.Spec
+meta import VerifiedGarbage.Impl.Sm3.AArch64
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Sm3.StateMem
 meta import VerifiedGarbage.Proof.Sm3.AArch64.Contract
-public import VerifiedGarbage.Proof.Sm3.AArch64.Lit
+meta import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.Framework.Semantics
+meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Sm3.AArch64.Lit
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Bswap
-meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # SM3 compression function on AArch64: the message expansion and the iterations

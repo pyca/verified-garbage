@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Data
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.CallPre
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Where the attempt's buffers are, from the controller's
 

@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Impl.Bignum.CrtLayout
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Multiword arithmetic: workspaces within a working space

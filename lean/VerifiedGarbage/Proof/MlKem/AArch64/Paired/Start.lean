@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.InitCall
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Squeeze
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Saved-register initialization and the first three matrix blocks -/
 @[expose] public section

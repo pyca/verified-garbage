@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Impl.Mont.AArch64.P384Mul
-public import VerifiedGarbage.Proof.Mont.AArch64.Rounds
-public import VerifiedGarbage.Proof.Mont.AArch64.Chain
-public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Mont.AArch64.Rounds
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
+public import VerifiedGarbage.Proof.Mont.AArch64.Row
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # P-384's Montgomery product on AArch64: the product

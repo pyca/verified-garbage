@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Proof.Framework.RelCT
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # Constant time of code that leaks memory both runs agree on (ARMv7)

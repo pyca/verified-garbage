@@ -1,12 +1,29 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowSelectVector
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore
-import Mathlib.Data.Int.ModEq
-meta import Mathlib.Data.Int.ModEq
+meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowSelectVector
+meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! Select SIMD only for complete public-width tiles, with a scalar fallback. -/
 

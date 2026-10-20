@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.StreamStep
 
-public import VerifiedGarbage.Proof.Dsa.X86.StreamLoop
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Mont.X86.WordOps
 
 /-! # Initializing the streaming accumulator and byte padding -/
 

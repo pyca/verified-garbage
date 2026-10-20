@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecEntry
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCallee
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: the private-key operation

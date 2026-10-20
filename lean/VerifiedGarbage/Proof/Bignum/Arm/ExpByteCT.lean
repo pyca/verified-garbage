@@ -1,9 +1,25 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.ExpState
+public import VerifiedGarbage.Impl.Bignum.Arm.Exp
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpByteHeadCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpBitsCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExpByteHeadCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExpBitsCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExpByteHead
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.ExpState
 meta import VerifiedGarbage.Impl.Bignum.Arm.Exp
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.ExpByteHeadCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.ExpBitsCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.ExpByteHead
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Processing one exponent byte reveals only that public byte and its address -/
 

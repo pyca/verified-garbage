@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupFrame
 public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandState
-public import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceState
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupContext
 
 /-! # State carried from CRT workspace initialization to modulus import -/
 

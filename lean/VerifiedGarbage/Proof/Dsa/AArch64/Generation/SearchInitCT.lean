@@ -1,7 +1,21 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchCTState
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PSearchLoopCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PSearchLoopCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchStable
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchAdvance
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.AttemptStatus
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchCTState
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchStable
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchAdvance
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.AttemptStatus
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Initialize the bounded p search without assumptions about old controller words -/
 

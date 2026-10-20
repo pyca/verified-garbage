@@ -1,8 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignZero
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignZero
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublish
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Dsa.AArch64.RandomSign
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
 
 /-! All exits clear failed output, wipe the nonce, and publish consumption. -/
 @[expose] public section

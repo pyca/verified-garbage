@@ -1,15 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningShapeCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.BodyCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Dsa.Encoding
 public import VerifiedGarbage.Proof.Dsa.SizeBounds
-import VerifiedGarbage.Proof.Dsa.X86_64.BodyCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
-import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyMinusCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyRangeCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
 
 /-! # The public schedule after independent signing-workspace initialization -/
 

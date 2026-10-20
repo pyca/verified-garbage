@@ -1,11 +1,21 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoop
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTableCT
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTableCT
-import Mathlib.Data.Int.ModEq
-meta import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorStart
+import Mathlib.Algebra.GroupWithZero.Nat
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoop
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorStart
+meta import Mathlib.Algebra.GroupWithZero.Nat
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! A vector tile leaks only public addresses; the table digit remains secret. -/
 

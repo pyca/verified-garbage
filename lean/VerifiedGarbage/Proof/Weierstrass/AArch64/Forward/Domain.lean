@@ -1,10 +1,12 @@
 module
-
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Data
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Scalar
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.TCB.AArch64.Simd
+import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Mont.AArch64.Words
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+
 
 @[expose] public section
 

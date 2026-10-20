@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Taint
 
-public import VerifiedGarbage.Proof.MdStream.X86.Common
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Streaming Merkle–Damgård hash functions on x86 (32-bit): argument words

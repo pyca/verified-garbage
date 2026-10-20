@@ -1,17 +1,21 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+public import VerifiedGarbage.Proof.Dsa.X86_64.JointEntries
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.SmallCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.SmallCT
+import VerifiedGarbage.Proof.Dsa.X86_64.SmallCT
 import VerifiedGarbage.Proof.Dsa.X86_64.JointTableInit
-meta import VerifiedGarbage.Proof.Dsa.X86_64.JointTableInit
-public import VerifiedGarbage.Proof.Dsa.X86_64.JointBuild
-meta import VerifiedGarbage.Proof.Dsa.X86_64.JointBuild
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
+import VerifiedGarbage.Proof.Dsa.X86_64.JointStore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Dsa.X86_64.JointEntries
+meta import VerifiedGarbage.Proof.Dsa.X86_64.SmallCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.JointTableInit
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
-public import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
-import VerifiedGarbage.Spec.Dsa
-meta import VerifiedGarbage.Spec.Dsa
+meta import VerifiedGarbage.Proof.Dsa.X86_64.JointStore
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant-time construction of the joint power table -/
 

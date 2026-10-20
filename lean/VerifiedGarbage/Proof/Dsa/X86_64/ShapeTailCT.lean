@@ -1,17 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.LastByteCT
+import VerifiedGarbage.Proof.Dsa.X86_64.LastByteCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeCTState
+public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeTail
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Dsa.X86_64.Masks
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.LastByteCT
-import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.Dsa.SignVerify
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-meta import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ShapeCTState
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ShapeTail
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Masks
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Timing of the oddness and digest-prefix selection tail -/
 

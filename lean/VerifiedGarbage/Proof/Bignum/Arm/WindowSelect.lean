@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.WindowExp
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 
-public import VerifiedGarbage.Proof.Bignum.Arm.WindowCtl
-public import VerifiedGarbage.Proof.Bignum.Arm.SelectArray
+import VerifiedGarbage.Proof.Bignum.Arm.SelectArray
+import VerifiedGarbage.Proof.Bignum.Arm.SelectAliasRow
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Selections among the layout's arrays and the table's entries -/
 

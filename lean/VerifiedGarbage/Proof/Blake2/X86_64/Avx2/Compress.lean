@@ -1,11 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Blake2.X86_64.Avx2.Round
-meta import VerifiedGarbage.Proof.Blake2.X86_64.Avx2.Round
-public import VerifiedGarbage.Proof.Blake2.X86_64.Avx2.Lit
-meta import VerifiedGarbage.Proof.Blake2.X86_64.Avx2.Lit
 public import VerifiedGarbage.Proof.Blake2.X86_64.Compress
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Blake2.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Blake2.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Blake2.X86_64.Avx2.Round
 meta import VerifiedGarbage.Proof.Blake2.X86_64.Compress
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Blake2.X86_64.Avx2.Lit
+meta import VerifiedGarbage.Proof.Blake2.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
+meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
 /-!
 # BLAKE2b compression function on x86-64 with AVX2

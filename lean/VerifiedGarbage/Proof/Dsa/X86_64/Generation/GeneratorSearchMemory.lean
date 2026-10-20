@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorSearchPlan
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceSlice
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
 
 /-! # Preserve the whole h tape while testing successive complete chunks -/
 

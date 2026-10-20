@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtBothPowers
+import VerifiedGarbage.Proof.Bignum.Arm.CrtBothPowers
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPowerSelection
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidateStage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptedFactors
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPowerStage
 
 /-! # Exact validation evidence entering the two private powers -/
 

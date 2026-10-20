@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowTail
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTakeBit
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPendingMath
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPending
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailBit
 
 /-! A tail bit's branch depends only on the public pending-bit count. -/
 

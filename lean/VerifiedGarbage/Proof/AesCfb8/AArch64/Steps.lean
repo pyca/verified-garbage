@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.AesCfb8.AArch64
+public import VerifiedGarbage.Proof.AesCfb8.Mem
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.TCB.AArch64.Target
 
-public import VerifiedGarbage.Proof.AesCfb8.AArch64.Loop
-import VerifiedGarbage.Proof.AesCbc.AArch64.Body
+import VerifiedGarbage.Proof.AesCbc.AArch64.Block
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-CFB8 on AArch64: the code between the calls

@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Entry
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Loop
-public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Start
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Loop
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Start
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Outputs
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Live
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 
 /-! # The key-generation controller's correctness (AArch64)
 

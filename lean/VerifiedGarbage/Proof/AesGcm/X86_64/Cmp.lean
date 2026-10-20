@@ -1,8 +1,19 @@
 module
+public import VerifiedGarbage.Impl.AesGcm.X86_64
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Spec.Gcm
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.J0
 import VerifiedGarbage.Proof.AesGcm.X86_64.CopyTag
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on x86-64: checking a received tag (`tagLenOk`, `recv`, `cmp o`)

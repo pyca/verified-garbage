@@ -4,8 +4,11 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.CoreSign
 public import VerifiedGarbage.Proof.Dsa.AArch64.PublicKey
 public import VerifiedGarbage.Proof.Dsa.AArch64.SigningKey
 import VerifiedGarbage.Proof.Dsa.AArch64.PrivateKey
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleState
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
+import VerifiedGarbage.Proof.Dsa.AArch64.CallOperands
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.Arithmetic
 
 /-! # Signing computation, including every key and scalar rejection mask -/
 

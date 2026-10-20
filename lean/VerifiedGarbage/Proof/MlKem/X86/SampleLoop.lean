@@ -1,13 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.SampleCalls
-meta import VerifiedGarbage.Proof.MlKem.X86.SampleCalls
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.MlKem.X86.Common
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.MlKem.X86.SampleCalls
 meta import VerifiedGarbage.Proof.MlKem.X86.Common
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-KEM on x86 (32-bit): the loop of `vg_mlkem_sample_ntt`

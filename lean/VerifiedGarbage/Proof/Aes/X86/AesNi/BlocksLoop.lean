@@ -1,7 +1,15 @@
 module
+public import VerifiedGarbage.Spec.Aes.Contract
+public import VerifiedGarbage.Impl.Aes.X86.AesNiBlocks
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Arith
+public import VerifiedGarbage.Proof.Framework.X86.Exec
 
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Imc
-public import VerifiedGarbage.Proof.Aes.X86.BlocksContract
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Imc
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Aes.X86.BlocksContract
 
 /-!
 # AES-NI on x86 (32-bit): the loops over whole blocks

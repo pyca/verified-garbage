@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.WindowLazy
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowLazyLoop
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowLazyLoop
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcEnd
 import VerifiedGarbage.Proof.Bignum.LazyMath
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareCount
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowLazy

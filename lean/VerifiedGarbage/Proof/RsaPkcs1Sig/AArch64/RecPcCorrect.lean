@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcCall
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcTail
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcTail
 
 /-!
 # `vg_rsa_pkcs1_recover_precomputed` on AArch64: correctness

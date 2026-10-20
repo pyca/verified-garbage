@@ -1,10 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Stack
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Impl.RsaOaep.X86_64
 
 /-!
 # RSAES-OAEP on x86-64: the pieces that keep `rsp`, MXCSR and the stack

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.RsaPkcs1Enc
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # RSAES-PKCS1-v1_5 with implicit rejection: the contracts, on every target

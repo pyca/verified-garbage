@@ -1,19 +1,17 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
-meta import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+public import VerifiedGarbage.Impl.MlKem1024.X86_64.Compress
+public import VerifiedGarbage.Proof.MlKem1024.X86_64.Contracts
+import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
+meta import VerifiedGarbage.Impl.MlKem1024.X86_64.Compress
+meta import VerifiedGarbage.Proof.MlKem1024.X86_64.Contracts
 meta import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-meta import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-meta import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM-1024 on x86-64: `vg_mlkem1024_decode_decompress`

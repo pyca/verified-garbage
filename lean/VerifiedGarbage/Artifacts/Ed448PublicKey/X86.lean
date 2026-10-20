@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarBaseOk
 public import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Verified
-public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Sha3.X86.Lit
 

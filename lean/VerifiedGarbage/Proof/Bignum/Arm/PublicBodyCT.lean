@@ -1,10 +1,31 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicPrepare
+public import VerifiedGarbage.Proof.Bignum.Arm.ExponentScanCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicModulusCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicBody
-public import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheckCT
-meta import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
+import VerifiedGarbage.Proof.Bignum.Arm.PublicModulusCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheckCT
+import VerifiedGarbage.Proof.Bignum.Arm.PublicFailCT
+import VerifiedGarbage.Proof.Bignum.Arm.PublicArgsCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExponentFlag
+import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheck
+import VerifiedGarbage.Proof.Bignum.Arm.PublicArgs
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.PublicPrepare
+meta import VerifiedGarbage.Proof.Bignum.Arm.ExponentScanCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.PublicModulusCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheckCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.PublicFailCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.PublicArgsCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.ExponentFlag
+meta import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheck
+meta import VerifiedGarbage.Proof.Bignum.Arm.PublicArgs
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Checked public RSA permits different secret inputs with identical leakage -/
 

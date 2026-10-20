@@ -1,17 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.AnyKeyCT
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.AnyKeyEntry
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-public import VerifiedGarbage.Proof.Hmac.AnyKey
+import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.AnyKeyEntry
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+import VerifiedGarbage.Proof.Hmac.AnyKey
 public import VerifiedGarbage.TCB.Registration
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 public import VerifiedGarbage.Proof.Sha512.AArch64.Variant
 public import VerifiedGarbage.Proof.Sha256.AArch64.Variant
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Proof.Hmac.Scratch
 
 /-!
 # Merkle–Damgård hash functions on AArch64, as variants

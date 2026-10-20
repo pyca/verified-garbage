@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeader
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Changes permitted while initializing one DSA child -/
 

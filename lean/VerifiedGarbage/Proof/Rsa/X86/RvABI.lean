@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvBody
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Dsa.X86.ABIResources
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.X86.RvInputs
+public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+public import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-! # Resources supplied by the shared prime-recovery cdecl contract -/
 

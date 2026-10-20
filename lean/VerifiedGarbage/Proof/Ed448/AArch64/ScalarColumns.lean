@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarOperands
-public import VerifiedGarbage.Proof.Ed448.ScalarWords
+public import VerifiedGarbage.Proof.Ed448.AArch64.Chain
+import VerifiedGarbage.Proof.Ed448.ScalarWords
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarWord
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed448 scalar multiply-add on AArch64: product scanning

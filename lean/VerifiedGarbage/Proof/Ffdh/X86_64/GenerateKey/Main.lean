@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Core
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Scalar
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Zero
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Scalar
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Zero
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Sample
+import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 
 /-! # FFDH on x86-64: a complete key-generation attempt -/
 

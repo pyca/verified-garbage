@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Args
-public import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Spec.Ed25519.CachedSign
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

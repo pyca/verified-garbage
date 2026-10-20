@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.RandomSign
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawControl
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawControl
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 
 /-! Update the bounded signing-attempt counter after a supplied-nonce call. -/
 @[expose] public section

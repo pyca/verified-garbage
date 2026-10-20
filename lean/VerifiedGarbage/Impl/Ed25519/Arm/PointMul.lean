@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointBatch
 public import VerifiedGarbage.Impl.Ed25519.Arm.BatchBits
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointAccumulate
 
 /-! Scalar multiplication with sixteen-bit batches and compact checkpoints.
 The scalar pointer is saved at offset 52; the batch count is public. -/

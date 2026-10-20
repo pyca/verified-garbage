@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ParameterCTState
+public import VerifiedGarbage.Proof.Dsa.Generation.SeedResult
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedAttempt
 
 /-! # One public seed attempt advances the outer search and witness cursor -/
 

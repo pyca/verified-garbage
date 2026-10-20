@@ -1,8 +1,13 @@
 module
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.Positivity
+public import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Divstep.Alg
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatchStart
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.InvToM
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyFinish
-import VerifiedGarbage.Proof.Divstep.Bound
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyFinish
 import VerifiedGarbage.Proof.Divstep.Iter
 
 @[expose] public section

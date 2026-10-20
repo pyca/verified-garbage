@@ -1,13 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86_64
-meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86_64
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-public import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # `vg_brainpoolp512r1_mul` on x86-64: the code, as literals

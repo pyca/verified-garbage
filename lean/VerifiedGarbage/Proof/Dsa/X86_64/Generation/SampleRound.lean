@@ -1,12 +1,17 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SampleRound
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Sample
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RoundHeader
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RoundTail
-public import VerifiedGarbage.Proof.Dsa.Generation.WorkFrame
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRound
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TestWitness
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Sample
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RoundHeader
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RoundTail
+import VerifiedGarbage.Proof.Dsa.Generation.WorkFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Round
+import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrRound
 
 /-! # A complete DSA primality iteration through the callable RSA round -/
 

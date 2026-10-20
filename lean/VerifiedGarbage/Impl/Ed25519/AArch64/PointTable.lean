@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Word
 
-public import VerifiedGarbage.Impl.Ed25519.AArch64.PointLoop
 
 /-! Points in bounded tables; x8 is the current public entry pointer. -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.AArch64.WideLoops
 public import VerifiedGarbage.Impl.Bignum.AArch64.FastFinish
+public import VerifiedGarbage.Impl.Bignum.AArch64.BlockedRedc
 
 @[expose] public section
 

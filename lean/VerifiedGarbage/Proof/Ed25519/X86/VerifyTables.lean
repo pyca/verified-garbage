@@ -1,14 +1,13 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.X86.Verify
-import VerifiedGarbage.Proof.Ed25519.X86.PointTable
+public import VerifiedGarbage.Proof.Ed25519.X86.PointTable
+public import VerifiedGarbage.Proof.Ed25519.X86.CommonContract
+public import VerifiedGarbage.Impl.Ed25519.X86.VerifyWindow
 import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFrame
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignArgs
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Memory layout of the supplied-nonce call within the randomized wrapper. -/

@@ -2,7 +2,11 @@ module
 
 import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # A scratch buffer in a register, wiped after use, for code that reads tables of constants (ARMv7)

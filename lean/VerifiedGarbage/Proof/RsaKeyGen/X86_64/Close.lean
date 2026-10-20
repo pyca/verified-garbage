@@ -1,14 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.LoadC
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
-public import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.R2
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.RsaKeyGen.CandMath
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
+import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.Octets
+import Mathlib.Algebra.GroupWithZero.Nat
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Push
+import Mathlib.Algebra.NeZero
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-!
 # A candidate on x86-64: too close to `p`

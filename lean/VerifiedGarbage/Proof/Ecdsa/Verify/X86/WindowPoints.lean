@@ -1,10 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Points
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombLays
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombPoints
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombPoints
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMul
 import VerifiedGarbage.Proof.Ecdsa.X86.GMul
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Weierstrass.X86.Rep
 
 /-! # Comb and signed-window products for x86 P-256 verification -/
 

@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86.Entry
+public import VerifiedGarbage.Proof.Dsa.X86.Pointer
 
-public import VerifiedGarbage.Proof.Dsa.X86.PublicCompare
+import VerifiedGarbage.Proof.Dsa.X86.PublicCompare
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Testing two public component widths with one fallback continuation -/
 

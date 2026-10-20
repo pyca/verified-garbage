@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Batteries.Tactic.Init
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Framework.RegSet
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowLazyFinish
-public import VerifiedGarbage.Proof.Bignum.LazyMath
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareFinish
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowLazy

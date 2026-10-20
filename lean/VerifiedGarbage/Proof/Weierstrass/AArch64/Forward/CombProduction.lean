@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombMixed
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombOut
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.FprogJ
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 @[expose] public section
 

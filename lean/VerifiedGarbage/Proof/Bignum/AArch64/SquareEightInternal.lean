@@ -3,9 +3,6 @@ module
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRowMath
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightTile
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMath
 
 @[expose] public section

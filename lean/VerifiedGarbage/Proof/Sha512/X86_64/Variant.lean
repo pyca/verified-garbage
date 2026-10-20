@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Md
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
-public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
-public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
-public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Implementations of the SHA-512 compression function on x86-64

@@ -1,10 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Common
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Common
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Contract
+public import VerifiedGarbage.Impl.CmacTripleDes.Stream.X86_64
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Inline
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Save
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 /-!
 # Streaming TDEA-CMAC on x86-64: `vg_cmac_triple_des_finish`

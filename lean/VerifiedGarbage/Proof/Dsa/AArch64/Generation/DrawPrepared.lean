@@ -1,10 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopy
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusHeader
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusWords
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopy
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusHeader
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusWords
 public import VerifiedGarbage.Proof.Bignum.WorkFrame
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeSetup
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.DrawCopy
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.ExternalWords
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! Drawing witness bytes preserves the modulus and advances only the entropy cursor. -/
 @[expose] public section

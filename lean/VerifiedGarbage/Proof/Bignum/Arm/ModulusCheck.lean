@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Impl.Bignum.Arm.ModulusCheck
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckRead
-public import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckCalc
+import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckRead
+import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckCalc
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # ARMv7 modulus validation is exactly the shared RSA validity predicate -/
 

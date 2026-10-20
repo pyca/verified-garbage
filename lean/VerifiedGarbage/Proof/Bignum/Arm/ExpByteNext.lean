@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.Exp
+public import VerifiedGarbage.Proof.Bignum.Arm.ExpState
+public import VerifiedGarbage.Proof.Bignum.Words
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpByteHead
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Advance the exponent pointer and remaining-byte counter -/
 

@@ -1,11 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Aes.AArch64.Callee
+public import VerifiedGarbage.Proof.Aes.AArch64.Blocks
+public import VerifiedGarbage.Proof.AesCbc.Spec
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.AesCbc.Mem
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Proof.Aes.AArch64.BlocksVariant
-import VerifiedGarbage.Impl.AesCbc.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-CBC on AArch64: the contracts, and a call of a block function

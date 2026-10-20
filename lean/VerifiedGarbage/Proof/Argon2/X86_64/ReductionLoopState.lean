@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.ReduceLane
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
-import VerifiedGarbage.Proof.Argon2.X86_64.CompressImpl
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Argon2.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Public loop metadata survives accumulator writes and register-only advancement. -/
 

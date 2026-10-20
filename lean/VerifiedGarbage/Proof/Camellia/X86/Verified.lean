@@ -1,23 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Camellia.X86.Ecb
-meta import VerifiedGarbage.Proof.Camellia.X86.Ecb
-public import VerifiedGarbage.Proof.Camellia.X86.Lit
-meta import VerifiedGarbage.Proof.Camellia.X86.Lit
 public import VerifiedGarbage.Proof.Camellia.Scratch
-meta import VerifiedGarbage.Proof.Camellia.Scratch
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Camellia.X86.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Camellia.X86.Ecb
+meta import VerifiedGarbage.Proof.Camellia.Scratch
 meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
-public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Impl.StackScratch.X86
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Camellia.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Camellia ECB on x86 (32-bit) meets its contracts

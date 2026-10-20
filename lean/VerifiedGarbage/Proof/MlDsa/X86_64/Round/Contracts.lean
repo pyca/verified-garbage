@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Spec.MlDsa.Poly
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.MlDsa.Round.Mem

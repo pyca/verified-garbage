@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.Keeps
+import VerifiedGarbage.Proof.MillerRabin.Keeps
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerSave
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Spec.MillerRabin
 
 /-! # Recover the caller's header and padding after the prepared round -/
 

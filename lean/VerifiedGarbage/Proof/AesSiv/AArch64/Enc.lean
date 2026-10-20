@@ -1,10 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.AArch64.Open
+import VerifiedGarbage.Proof.AesSiv.AArch64.Open
 import VerifiedGarbage.Proof.AesSiv.AArch64.S2vAd
 import VerifiedGarbage.Proof.AesSiv.AArch64.Call
 public import VerifiedGarbage.Spec.Siv.Contract
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Seal
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-SIV on AArch64: `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`

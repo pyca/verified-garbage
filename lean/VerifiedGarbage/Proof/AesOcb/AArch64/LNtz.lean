@@ -1,7 +1,16 @@
 module
+public import VerifiedGarbage.Impl.AesOcb.AArch64
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Spec.Ocb
 
-public import VerifiedGarbage.Proof.AesOcb.AArch64.Args
 import VerifiedGarbage.Proof.AesOcb.AArch64.Words
+import VerifiedGarbage.Proof.AesOcb.AArch64.Env
+import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # AES-OCB on AArch64: `L_{ntz(i)}` (`lNtz`)

@@ -1,17 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay21
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay21
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay21
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
-meta import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay21
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_ntt`

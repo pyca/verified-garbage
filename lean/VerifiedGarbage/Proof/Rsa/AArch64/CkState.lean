@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.CkHead
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvCheck
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Impl.Rsa.AArch64.CheckKey
 
 /-!
 # `vg_rsa_check_key` on AArch64: the inputs and what the pieces keep

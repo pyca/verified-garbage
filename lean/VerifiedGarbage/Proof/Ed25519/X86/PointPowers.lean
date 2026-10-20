@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.PointTable
-import VerifiedGarbage.Impl.Ed25519.X86.PointLoop
 import VerifiedGarbage.Proof.Ed25519.X86.Points
 public import VerifiedGarbage.Proof.Ed25519.X86.PowerEnv
 public import VerifiedGarbage.Proof.Ed25519.ScalarMul
 public import VerifiedGarbage.Impl.Ed25519.X86.PointPowers
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X25519.X86.Fold
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Ed25519.X86.PointPowersFrame`. -/
 

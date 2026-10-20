@@ -4,8 +4,9 @@ public import VerifiedGarbage.Impl.ChaCha20.AArch64.Mixed5
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rounds
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xar
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Block
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Interleaving independent integer and vector operations preserves both streams. -/
 

@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.ModulusCheck
-public import VerifiedGarbage.Proof.Bignum.X86.ByteOps
-public import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+import VerifiedGarbage.Proof.Bignum.X86.ByteOps
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Reading the first and last modulus bytes without crossing its buffer -/
 

@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Impl.Bignum.Arm.ReduceOperand
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ReduceOperand
-public import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
+import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
+import VerifiedGarbage.Proof.Bignum.Arm.MontOp
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Packed operand reduction does not reveal the modulus or operand -/
 

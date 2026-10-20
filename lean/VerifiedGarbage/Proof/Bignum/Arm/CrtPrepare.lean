@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtInitialize
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSaveMain
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtImportModulus
+import VerifiedGarbage.Proof.Bignum.Arm.CrtInitialize
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSaveMain
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Complete CRT preparation imports n and preserves all three workspace layouts -/
 

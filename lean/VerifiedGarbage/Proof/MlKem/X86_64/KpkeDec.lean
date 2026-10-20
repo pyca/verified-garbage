@@ -1,15 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.InlinePrim
-public import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kpke16
-public import VerifiedGarbage.Spec.MlKem.Kpke16
-public import VerifiedGarbage.Proof.MlKem.KPke
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncBase
 import VerifiedGarbage.Proof.MlKem.X86_64.DcDec
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem*_kpke_decrypt`

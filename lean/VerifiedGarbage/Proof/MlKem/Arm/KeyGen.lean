@@ -1,6 +1,36 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.Arm.Encrypt
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.Arm.HashTop
+import VerifiedGarbage.Proof.MlKem.Arm.Loops
+public import VerifiedGarbage.Proof.MlKem.Arm.HashTop
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.MlKem.Arm.HashCT
+public import VerifiedGarbage.Proof.MlKem.Arm.Loops
+public import VerifiedGarbage.Proof.MlKem.Arm.NttInv
+public import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
+public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Sha3.Arith
+public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
+public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.Arm.HashCT
+import VerifiedGarbage.Proof.MlKem.Arm.NttInv
+import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 
 /-!
 # ML-KEM on 32-bit ARM: key generation, correctness

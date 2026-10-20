@@ -1,18 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.SignBody
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyBody
 public import VerifiedGarbage.Proof.Dsa.X86_64.ComputeCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.SignReleaseCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
-import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyMinusCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyRangeCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.RsaPss
+import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 
 /-! # Constant time through validation, computation and the ABI return -/
 

@@ -1,9 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Apply
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Apply
+public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Calls
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Apply
+meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Calls
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming ChaCha20 on x86-64: `apply`, constant time

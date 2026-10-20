@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Group
-import VerifiedGarbage.Proof.Poly1305.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: a group, modulo `p`

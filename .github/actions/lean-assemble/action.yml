@@ -49,6 +49,19 @@ runs:
         # Warnings and errors only: not the profile every module records
         # (lean/lakefile.toml), which Lake replays for each one it finds built.
         lake build --log-level=warning 2>&1 | tee "$RUNNER_TEMP/assembly.log"
+    # With the build's `.olean`s: `lake shake` on the modules the change
+    # edited (the plan's `edited`) that it gave a new `public import`,
+    # seconds for a few. Pull requests and the merge queue only: a push to
+    # main is what the queue checked.
+    - name: Check that the edited modules import privately what they use privately
+      if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
+      shell: bash
+      working-directory: lean
+      env:
+        BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+      run: |
+        git -C .. fetch -q --depth=1 origin "$BASE"
+        python3 ../ci/check_lean_public_imports.py "$RUNNER_TEMP/lean-plan.json" --base "$BASE"
     # In the merge queue, what this build built, for the push to main to reuse.
     - name: Collect the outputs of this build
       if: ${{ github.event_name == 'merge_group' }}

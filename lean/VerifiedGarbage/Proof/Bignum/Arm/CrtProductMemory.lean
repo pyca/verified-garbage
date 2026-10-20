@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Mont.Words
 
-public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Exact header writes for the factor-product loop controls -/
 

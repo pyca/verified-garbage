@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedWriteSafe
-public import VerifiedGarbage.Proof.Bignum.X86.PublicExport
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedWriteSafe
+import VerifiedGarbage.Proof.Bignum.X86.PublicMask
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
 
 /-! # Masking and byte export remain safe for malformed stored precomputations -/
 

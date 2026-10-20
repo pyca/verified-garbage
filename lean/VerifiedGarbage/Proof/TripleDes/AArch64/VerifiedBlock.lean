@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Pre
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.TripleDes.Contract
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
+import VerifiedGarbage.Proof.TripleDes.AArch64.RoundLit
 
 @[expose] public section
 

@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomCopy
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.RandomRange
+import VerifiedGarbage.Proof.Dsa.Arm.RandomPrepare
+import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
+import VerifiedGarbage.Proof.Dsa.Zero
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Whether a candidate is in range (32-bit ARM)

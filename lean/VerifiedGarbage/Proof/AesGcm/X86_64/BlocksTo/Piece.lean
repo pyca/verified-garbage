@@ -1,9 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecTo
 public import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksTo
-import VerifiedGarbage.Spec.TripleDes
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # AES-GCM on whole blocks out of place, x86-64: what the interleaved loops need

@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Stage
 
 /-! # Staging saved words does not change the prepared workspace -/
 

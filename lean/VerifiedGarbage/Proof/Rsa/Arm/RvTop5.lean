@@ -1,6 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.Rsa.Arm.RvTop2
 
-public import VerifiedGarbage.Proof.Rsa.Arm.RvTop4
+import VerifiedGarbage.Proof.Rsa.Arm.RvTop4
+import VerifiedGarbage.Proof.Rsa.Arm.RvTop3
+import VerifiedGarbage.Proof.Rsa.Arm.RvBody
+import VerifiedGarbage.Proof.Rsa.Arm.RvTaint5
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # `vg_rsa_recover_primes` on ARMv7: constant time (`rv_ct`)
 

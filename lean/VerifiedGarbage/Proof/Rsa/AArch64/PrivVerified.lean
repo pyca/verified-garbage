@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCorrect
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCT
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Rsa.AArch64.PrivCT
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_private_checked` on AArch64: the shared contract

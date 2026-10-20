@@ -1,9 +1,19 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchStart
-public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchEntry
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchEntry
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-! # Native search entry exposes pointers and public policy, never saved registers -/
 

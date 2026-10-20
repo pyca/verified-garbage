@@ -3,7 +3,12 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Steps
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Copy
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): scalars longer than the hash

@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KcFrames
-public import VerifiedGarbage.Proof.Rsa.X86.KcZero
+public import VerifiedGarbage.Proof.Rsa.X86.KeyArrs
+import VerifiedGarbage.Proof.Rsa.X86.KcLoad
 
 /-! # Importing all key components while preserving the input buffers -/
 

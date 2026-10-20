@@ -1,10 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.SubState
+public import VerifiedGarbage.Impl.Bignum.Arm.Csub
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CsubValue
-public import VerifiedGarbage.Proof.Bignum.Arm.ReduceChoice
-public import VerifiedGarbage.Proof.Bignum.Arm.SelectPrepare
-public import VerifiedGarbage.Proof.Bignum.Arm.SelectRow
-public import VerifiedGarbage.Proof.Bignum.Arm.SubRow
+import VerifiedGarbage.Proof.Bignum.Arm.CsubValue
+import VerifiedGarbage.Proof.Bignum.Arm.ReduceChoice
+import VerifiedGarbage.Proof.Bignum.Arm.SelectPrepare
+import VerifiedGarbage.Proof.Bignum.Arm.SelectRow
+import VerifiedGarbage.Proof.Bignum.Arm.SubRow
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Final modular reduction: subtraction followed by secret-bit selection -/
 

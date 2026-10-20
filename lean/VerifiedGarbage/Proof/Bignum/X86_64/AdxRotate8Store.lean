@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Storing a register block preserves every byte outside that block. -/
 

@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignPrivateCall
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignObservations
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignFn
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignFnTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignObservations
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignFn
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignFnTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignContractInput
+import VerifiedGarbage.Proof.Rsa.X86.PrivObservations
 
 /-! # PKCS #1 signing implements the shared contract and permitted leakage -/
 

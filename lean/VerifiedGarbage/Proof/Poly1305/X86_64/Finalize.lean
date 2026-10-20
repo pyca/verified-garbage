@@ -1,19 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Buffer
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Buffer
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Poly1305.Contract
-meta import VerifiedGarbage.Spec.Poly1305.Contract
-public import VerifiedGarbage.Proof.Framework.PowLit
-meta import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
 import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
 import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.Poly1305.Stream
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Buffer
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
 meta import VerifiedGarbage.Proof.Poly1305.Limbs64
+meta import VerifiedGarbage.Proof.Poly1305.Stream
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Poly1305 on x86-64: `finalize`

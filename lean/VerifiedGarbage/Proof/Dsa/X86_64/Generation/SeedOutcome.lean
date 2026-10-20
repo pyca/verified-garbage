@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchPlan
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorSearchMemory
-public import VerifiedGarbage.Proof.Dsa.Generation.SeedResult
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 
 /-! # A native seed attempt returns either exhaustion, retry, or packed parameters -/
 

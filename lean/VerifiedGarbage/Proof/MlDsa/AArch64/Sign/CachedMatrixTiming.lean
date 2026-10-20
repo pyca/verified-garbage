@@ -1,29 +1,33 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixCall
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixCall
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixBatch
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixBatch
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixRoots
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedSignTiming
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedMatrix
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.MlKem.Bits
+import VerifiedGarbage.Proof.MlKem.Mem
+import Std.Tactic.BVDecide.Normalize.Prop
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixCall
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixBatch
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixRoots
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedSignTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedMatrix
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.Proof.MlKem.Bits
+meta import VerifiedGarbage.Proof.MlKem.Mem
+meta import Std.Tactic.BVDecide.Normalize.Prop
+meta import VerifiedGarbage.Proof.MlDsa.DecideAt
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! ## From `CachedMatrixCallTiming.lean` -/
 

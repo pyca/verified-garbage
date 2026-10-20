@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Rc2.Arm.ExpandKey
+public import VerifiedGarbage.Proof.Rc2.Arm.Lookup
 
-public import VerifiedGarbage.Proof.Rc2.Arm.KeySteps
-import VerifiedGarbage.Proof.Rc2.Table
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rc2.Arm.KeySteps
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Rc2.PiLit
 
 /-!
 # RC2 on ARMv7: the scan of PITABLE

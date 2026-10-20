@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecScan
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: the checks of the padding

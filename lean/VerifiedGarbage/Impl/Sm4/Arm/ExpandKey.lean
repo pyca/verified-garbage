@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Sm4.Arm.Ecb
-public import VerifiedGarbage.Spec.Sm4
 public import VerifiedGarbage.Impl.Sm4.Planes
 
 /-!

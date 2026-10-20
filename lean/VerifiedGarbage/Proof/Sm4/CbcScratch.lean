@@ -2,7 +2,10 @@ module
 
 public import VerifiedGarbage.Spec.Sm4.Cbc
 import VerifiedGarbage.Proof.Sm4.CtrCipher
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # SM4-CBC with its working space as an argument

@@ -3,8 +3,9 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Common
 public import VerifiedGarbage.Proof.Pbkdf2.MdKeys
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # HMAC over any Merkle–Damgård hash function on AArch64: `init`

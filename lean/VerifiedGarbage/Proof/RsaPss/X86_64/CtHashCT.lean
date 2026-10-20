@@ -1,19 +1,55 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
-meta import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
+import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
 public import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
-meta import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
+meta import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
+import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PadW
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
+import VerifiedGarbage.Proof.Sha256.StateMem
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha256.X86_64.Compress
+meta import Mathlib.Tactic.Set
+meta import VerifiedGarbage.Proof.Bignum.Math
+meta import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+meta import VerifiedGarbage.Proof.Framework.OffsetBelow
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
+meta import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
+meta import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
+meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PadW
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
+meta import VerifiedGarbage.Proof.Sha256.StateMem
+meta import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 
 /-!
 # RSASSA-PSS on x86-64: `ctHash` is constant time

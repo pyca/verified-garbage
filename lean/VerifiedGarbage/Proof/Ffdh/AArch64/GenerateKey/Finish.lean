@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Tail
 import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Ffdh.AArch64.Exchange.Stages
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # `vg_ffdh_generate_key` on AArch64: the results

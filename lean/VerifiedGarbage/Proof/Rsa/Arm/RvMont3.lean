@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.RvHalf
 
-public import VerifiedGarbage.Proof.Rsa.Arm.RvStage
-public import VerifiedGarbage.Proof.Rsa.Arm.RvHalving
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Rsa.Arm.RvStage
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Rsa.Arm.RvMmul2
+import VerifiedGarbage.Proof.Rsa.Arm.RvCtx
+import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
+import VerifiedGarbage.Proof.Rsa.Arm.RvOps2
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # `vg_rsa_recover_primes` on ARMv7: the numbers 0 and 1, and Montgomery multiplication's base
 

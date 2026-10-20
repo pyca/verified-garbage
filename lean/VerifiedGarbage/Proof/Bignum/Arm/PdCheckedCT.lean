@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PdStages
-public import VerifiedGarbage.Proof.Bignum.Arm.PdChecksCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PdApplyCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PdFailCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
+import VerifiedGarbage.Proof.Bignum.Arm.PdChecksCT
+import VerifiedGarbage.Proof.Bignum.Arm.PdApplyCT
+import VerifiedGarbage.Proof.Bignum.Arm.PdFailCT
+import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
+import VerifiedGarbage.Proof.Bignum.Arm.PdInverse
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 
 /-! # Packed-key checks branch only on public values -/
 

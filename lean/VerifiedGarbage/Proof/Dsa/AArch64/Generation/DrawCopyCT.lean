@@ -1,11 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeState
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.DrawCopy
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopyArgs
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeState
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopy
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopy
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.DrawCopy
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopyArgs
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Run
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! Witness draws reveal their public tape position and widths. -/
 @[expose] public section

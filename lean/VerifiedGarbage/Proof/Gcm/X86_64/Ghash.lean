@@ -1,55 +1,37 @@
 module
 
 import VerifiedGarbage.Proof.Gcm.X86_64.Lit
-meta import VerifiedGarbage.Proof.Gcm.X86_64.Lit
-public import Mathlib.Algebra.Polynomial.Expand
-meta import Mathlib.Algebra.Polynomial.Expand
-public import Mathlib.Algebra.Polynomial.Inductions
-meta import Mathlib.Algebra.Polynomial.Inductions
-public import Mathlib.Algebra.Polynomial.Reverse
-meta import Mathlib.Algebra.Polynomial.Reverse
 public import VerifiedGarbage.Proof.Gcm.Poly
-meta import VerifiedGarbage.Proof.Gcm.Poly
 public import VerifiedGarbage.Proof.Gcm.X86_64.Contract
-meta import VerifiedGarbage.Proof.Gcm.X86_64.Contract
 public import VerifiedGarbage.Impl.Gcm.X86_64
-meta import VerifiedGarbage.Impl.Gcm.X86_64
-public import Mathlib.Tactic.Ring.RingNF
-meta import Mathlib.Tactic.Ring.RingNF
-public import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.PowLit
-meta import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.Range
-public import Mathlib.Tactic.LinearCombination
-meta import Mathlib.Tactic.LinearCombination
-import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-meta import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 import VerifiedGarbage.Proof.Gcm.X86_64.Bits
-meta import VerifiedGarbage.Proof.Gcm.X86_64.Bits
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
-meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
-import VerifiedGarbage.Spec.Gcm
-meta import VerifiedGarbage.Spec.Gcm
-import VerifiedGarbage.TCB.X86_64.Target
-meta import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Spec.Gcm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Lit
+meta import VerifiedGarbage.Proof.Gcm.Poly
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Contract
+meta import VerifiedGarbage.Impl.Gcm.X86_64
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Bits
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Spec.Gcm.Contract
-public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 -- Formerly the module `VerifiedGarbage.Proof.Gcm.X86_64.Parts`.
 

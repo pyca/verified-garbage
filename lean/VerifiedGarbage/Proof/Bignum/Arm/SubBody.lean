@@ -1,6 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SubState
+public import VerifiedGarbage.Impl.Bignum.Arm.SubRow
+import VerifiedGarbage.Proof.Bignum.Arm.SubAdvance
+import VerifiedGarbage.Proof.Bignum.Arm.SubStep
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # One subtraction iteration preserves the full prefix invariant -/
 

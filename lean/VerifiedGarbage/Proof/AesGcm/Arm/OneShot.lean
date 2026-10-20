@@ -1,10 +1,16 @@
 module
 
-import VerifiedGarbage.Proof.AesGcm.Arm.StreamVerify
 import VerifiedGarbage.Proof.AesGcm.Arm.Init
 public import VerifiedGarbage.Proof.AesGcm.Arm.Args
+public import VerifiedGarbage.Proof.AesGcm.Arm.Fn
 import VerifiedGarbage.Proof.AesGcm.Arm.FinTag
 import VerifiedGarbage.Proof.AesGcm.Arm.StreamCrypt
+import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.SigEval
 
 /-!
 # AES-GCM on ARMv7: the pieces of `vg_aes_gcm_seal` and `vg_aes_gcm_open`

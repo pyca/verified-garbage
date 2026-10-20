@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirectCT
+import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirectCT
 public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashCT
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirect
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
 
 /-!
 # RSASSA-PSS on x86-64: MGF1 is constant time

@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.CompressContract
+public import VerifiedGarbage.Proof.Argon2.Arm.Words
+import VerifiedGarbage.Proof.Argon2.Arm.Rounds
+import VerifiedGarbage.Proof.Argon2.Permutation
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Argon2 compression on ARMv7: correctness

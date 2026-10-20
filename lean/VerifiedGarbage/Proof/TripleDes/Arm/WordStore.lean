@@ -1,6 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import Lean.Elab.Tactic.Omega.Frontend
+public import VerifiedGarbage.TCB.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

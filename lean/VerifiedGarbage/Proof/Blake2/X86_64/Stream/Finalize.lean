@@ -1,8 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Init
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Init
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Common
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Blake2.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Streaming BLAKE2 on x86-64: `finalize`

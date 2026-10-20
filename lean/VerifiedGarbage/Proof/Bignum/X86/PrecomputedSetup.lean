@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedSetup
-public import VerifiedGarbage.Proof.Bignum.X86.PublicSetup
+public import VerifiedGarbage.Proof.Bignum.X86.PublicContext
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
+import VerifiedGarbage.Proof.Bignum.X86.PublicSetup
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Mont.X86.Inverse
+import VerifiedGarbage.Proof.Mont.X86.PowerInit
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # Set the inverse and one without recomputing the stored Montgomery power -/
 

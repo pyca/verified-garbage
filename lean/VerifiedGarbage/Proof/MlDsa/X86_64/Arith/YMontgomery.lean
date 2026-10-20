@@ -1,9 +1,19 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
+public import VerifiedGarbage.Spec.MlDsa.Montgomery
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.MontgomeryCore
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.MontgomeryCore
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.MontgomeryCore
 import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMul
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
+meta import VerifiedGarbage.Spec.MlDsa.Montgomery
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.MontgomeryCore
 meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMul
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

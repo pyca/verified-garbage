@@ -1,13 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacCoZField
-public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import VerifiedGarbage.Proof.Weierstrass.X86.WinJacBuildInit
-import VerifiedGarbage.Proof.Weierstrass.X86.WinJacBuildState
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Weierstrass.X86.WinJacDouble
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
+import VerifiedGarbage.Proof.Weierstrass.X86.JacState
+import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Mont.X86.Chain
+import VerifiedGarbage.Proof.Weierstrass.X86.TCombSelect
 
 /-! ## `WinJacCoZState` -/
 

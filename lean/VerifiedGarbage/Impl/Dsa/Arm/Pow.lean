@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.Context
-public import VerifiedGarbage.Spec.Dsa.ModPow
 
 /-! # DSA's exponentiation as a function on 32-bit ARM
 

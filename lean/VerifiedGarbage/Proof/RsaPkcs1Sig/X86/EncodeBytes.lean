@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Encode
-public import VerifiedGarbage.Proof.Bignum.X86.ByteOps
-public import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Bignum.X86.ByteOps
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Byte-exact encoding writes and register preservation on i686 -/
 

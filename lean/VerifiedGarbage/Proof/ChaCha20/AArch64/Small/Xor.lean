@@ -3,8 +3,13 @@ module
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Step
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xor
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Lit
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Backends
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

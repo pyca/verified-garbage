@@ -1,12 +1,37 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowResult
-public import VerifiedGarbage.Proof.Bignum.Arm.TransferPaddedCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
-public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ActivateWorkspaceCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowResult
+import VerifiedGarbage.Proof.Bignum.Arm.TransferPaddedCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Bignum.Arm.ActivateWorkspaceCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.ActivateWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowResult
+meta import VerifiedGarbage.Proof.Bignum.Arm.TransferPaddedCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.ActivateWorkspaceCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
+meta import VerifiedGarbage.Proof.Bignum.Arm.ActivateWorkspace
+meta import VerifiedGarbage.Proof.Bignum.Arm.Stack
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Returning the narrow power reveals only the public workspace addresses -/
 

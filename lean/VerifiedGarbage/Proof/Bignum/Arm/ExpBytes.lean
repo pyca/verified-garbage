@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.Exp
+public import VerifiedGarbage.Proof.Bignum.Arm.ExpState
+public import VerifiedGarbage.Spec.Rsa
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpByte
+import VerifiedGarbage.Proof.Bignum.Arm.ExpByte
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.CallLay
 
 /-! # The complete exponent-buffer loop computes its big-endian integer power -/
 

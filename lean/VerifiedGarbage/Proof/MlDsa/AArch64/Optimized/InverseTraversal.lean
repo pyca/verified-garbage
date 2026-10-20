@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
 public import VerifiedGarbage.Proof.MlDsa.Arith.Schedule
+import VerifiedGarbage.Proof.MlDsa.Arith.Zq
 
 @[expose] public section
 

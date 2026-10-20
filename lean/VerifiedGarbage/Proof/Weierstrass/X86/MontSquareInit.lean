@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.X86.Arith
+import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontBase
-import VerifiedGarbage.Impl.Weierstrass.X86.Mont
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ## `MontSquareColumns` -/
 

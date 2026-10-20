@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedSearchPlanCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedSubgroup
 
 /-! # Subgroup outcomes determine the public phase status and entropy cursor -/
 

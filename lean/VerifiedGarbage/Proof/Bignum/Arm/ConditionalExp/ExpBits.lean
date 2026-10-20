@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.Exp
+public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpRound
-public import VerifiedGarbage.Proof.Bignum.Layout
+import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpRound
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Eight verified bit steps append one byte to the RSA exponent -/
 

@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Direct lookup addresses are determined by the public scalar and table. -/
 

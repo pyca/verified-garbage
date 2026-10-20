@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedCTState
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedCTState
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Compose seed argument setup with the complete subgroup-generation phase -/
 

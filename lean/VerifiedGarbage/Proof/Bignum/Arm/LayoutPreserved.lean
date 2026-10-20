@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Spec.Rsa.Mont
 
-public import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-! # Saving registers outside the workspace preserves its shared RSA precondition -/
 

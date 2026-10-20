@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Seed.X86_64.G16
 public import VerifiedGarbage.Proof.Seed.G16
-import VerifiedGarbage.Proof.Framework.X86_64.Linear
 public import VerifiedGarbage.Proof.Aes.X86_64.Encrypt
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # `g16` on x86-64

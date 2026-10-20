@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PShape
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashPlan
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! # Native arguments for the full-width candidate shaper -/
 

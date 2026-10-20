@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.X25519.Arm
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import VerifiedGarbage.Proof.X25519.Arm.Limbs
+public import VerifiedGarbage.Proof.X25519.Field
 
-public import VerifiedGarbage.Proof.X25519.Arm.Pass
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X25519.Arm.Pass
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # X25519 on 32-bit ARM: field elements in the working space

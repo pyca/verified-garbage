@@ -1,19 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
-public import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
-meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafPrepTiming
+public import VerifiedGarbage.Impl.Ecdsa.Verify.X86
+public import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+import VerifiedGarbage.Proof.Weierstrass.WinLay
+import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
+import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 meta import VerifiedGarbage.Proof.Weierstrass.X86.NafPrepTiming
-import VerifiedGarbage.Proof.Framework.X86.TaintSym
-meta import VerifiedGarbage.Proof.Framework.X86.TaintSym
-import VerifiedGarbage.Proof.Framework.X86.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import VerifiedGarbage.Proof.Framework.X86.Sse
-meta import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.X86
+meta import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import Mathlib.Tactic.Attr.Core
+meta import Aesop.BuiltinRules
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+meta import VerifiedGarbage.Proof.Weierstrass.WinLay
+meta import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
+meta import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 @[expose] public section
 

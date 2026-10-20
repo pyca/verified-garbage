@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Crypted
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Seal
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Seal
 import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Rest
 
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: `open`

@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Setup
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Common
+import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: a block of the output, up to `U₁`

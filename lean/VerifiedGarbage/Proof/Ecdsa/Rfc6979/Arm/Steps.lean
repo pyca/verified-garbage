@@ -2,8 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Msg
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hmac
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Reduce
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: the steps on `K` and `V`

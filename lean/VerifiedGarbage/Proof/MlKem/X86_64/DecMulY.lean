@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecMul
-public import VerifiedGarbage.Proof.MlKem.X86_64.RowEY
+import VerifiedGarbage.Proof.MlKem.X86_64.RowEY
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttAccY
+import VerifiedGarbage.Proof.MlKem.X86_64.AccInvY
+import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16
 
 /-!
 # ML-KEM on x86-64: the products of K-PKE.Decrypt with AVX2, row by row

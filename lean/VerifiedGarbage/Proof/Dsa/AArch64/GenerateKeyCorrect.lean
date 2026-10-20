@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCheck
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyBody
+import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyBody
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! # Key generation's functional correctness against its shared contract -/
 

@@ -1,9 +1,16 @@
 module
+public import VerifiedGarbage.Spec.TripleDes.Contract
+public import VerifiedGarbage.Impl.StackScratch.X86
 
 import VerifiedGarbage.Proof.TripleDes.X86.Key.Verified
-public import VerifiedGarbage.Proof.TripleDes.X86.Ecb.Verified
-import VerifiedGarbage.Proof.TripleDes.Scratch
-public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.TripleDes.X86.Ecb.Verified
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.Impl.TripleDes.X86.Ecb
+public import VerifiedGarbage.Impl.TripleDes.X86.ExpandKey
+public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
 
 /-!
 # Triple DES key expansion and ECB on x86, with their working space on the stack

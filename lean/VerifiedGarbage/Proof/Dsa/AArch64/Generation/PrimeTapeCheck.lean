@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PrimeLoop
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrame
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Draw
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeState
+import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Draw
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Reuse the shared whole-draw availability check before reading entropy. -/

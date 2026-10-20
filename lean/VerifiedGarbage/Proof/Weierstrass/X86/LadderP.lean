@@ -14,6 +14,13 @@ public import VerifiedGarbage.Proof.Weierstrass.Words
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontBody
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareBody
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareInit
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Weierstrass.X86.Bits
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import VerifiedGarbage.Proof.Weierstrass.X86.Loop
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # The ladder by calls of the point functions, on x86 (32-bit)

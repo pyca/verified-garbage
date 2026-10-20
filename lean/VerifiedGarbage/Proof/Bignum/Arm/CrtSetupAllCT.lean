@@ -1,9 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupMainCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupMainCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupStages
-meta import VerifiedGarbage.Impl.Bignum.Arm.CrtSetup
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupPrimeCT
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupMainCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupStages
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupPrimeCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Complete three-workspace CRT setup is constant time -/
 

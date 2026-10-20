@@ -1,10 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.RandomEncoding
+import VerifiedGarbage.Proof.Dsa.RandomEncoding
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomClear
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomScan
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomPrepareFinish
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomMask
+public import VerifiedGarbage.Proof.Dsa.DomainShape
+public import VerifiedGarbage.Spec.Dsa.Random
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomScan
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomPrepareFinish
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Dsa.AArch64.Significant
 
 /-! Initialization of the sampler, including its exact memory effects. -/
 @[expose] public section

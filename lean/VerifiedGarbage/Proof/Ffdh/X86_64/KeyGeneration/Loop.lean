@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Attempt
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Classify
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Guards
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Guards
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.AttemptStep
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Exits
 
 /-! # Total correctness of the key-generation controller's loop -/
 

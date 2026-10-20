@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.Poly
-import VerifiedGarbage.Proof.GcmSiv.Spec
 public import VerifiedGarbage.Proof.GcmSiv.Words
 
 /-!

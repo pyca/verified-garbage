@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorRangeCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorArguments
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorRangeCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorArguments
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArgumentBlocksCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorStep
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorLoadsCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorArguments
 import VerifiedGarbage.Proof.Framework.Omega
 

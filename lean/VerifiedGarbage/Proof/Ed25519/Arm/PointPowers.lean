@@ -1,11 +1,15 @@
 module
 
-import VerifiedGarbage.Impl.Ed25519.Arm.PointLoop
 import VerifiedGarbage.Proof.Ed25519.Arm.Points
-public import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
+import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
 public import VerifiedGarbage.Proof.Ed25519.ScalarMul
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointPowers
 public import VerifiedGarbage.Proof.Ed25519.Arm.PointTableLoad
+public import VerifiedGarbage.Proof.Ed25519.Arm.Power
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Ed25519.Arm.PointTableAddr`. -/
 

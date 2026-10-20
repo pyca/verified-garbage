@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorPower
-public import VerifiedGarbage.Proof.Dsa.X86_64.Parent
-import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import Aesop.BuiltinRules
 
 /-! # Initialize the generator exponentiation's saved parent operands -/
 

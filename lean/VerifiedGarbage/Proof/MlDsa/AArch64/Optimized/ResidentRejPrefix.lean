@@ -1,9 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejRows
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatch
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 
 @[expose] public section
 

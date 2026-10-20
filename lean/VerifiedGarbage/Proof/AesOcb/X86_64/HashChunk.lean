@@ -1,8 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.X86_64.HashFill
+import VerifiedGarbage.Proof.AesOcb.X86_64.HashFill
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Args
+public import VerifiedGarbage.Proof.AesOcb.X86_64.LNtz
+public import VerifiedGarbage.Proof.Ocb.Spec
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.AesOcb.X86_64.Run
+import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+import VerifiedGarbage.Proof.AesCcm.X86_64.Env
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
+import VerifiedGarbage.Proof.AesOcb.X86_64.Contract
 
 /-!
 # AES-OCB on x86-64: a chunk of `HASH` (`hashChunk`)

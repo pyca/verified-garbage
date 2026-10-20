@@ -1,10 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.Arm.Blocks
-public import VerifiedGarbage.Proof.Poly1305.Stream
-public import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Poly1305.Stream
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Poly1305.Arm.Lit
 
 /-!
 # Poly1305 on 32-bit ARM: the steps of `update` and `finalize`

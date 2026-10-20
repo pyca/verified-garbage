@@ -1,15 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.CombEntry
+import VerifiedGarbage.Proof.Ed25519.AArch64.CombEntry
 public import VerifiedGarbage.Proof.Ed25519.CombDigits64
 import VerifiedGarbage.Proof.Ed25519.AArch64.CombStart
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CombAdd
-public import VerifiedGarbage.Proof.Ed25519.AArch64.PointSelect
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
-import VerifiedGarbage.Proof.Ed25519.AArch64.Sub
+public import VerifiedGarbage.Proof.Ed25519.AArch64.CombSelect
+public import VerifiedGarbage.Proof.Ed25519.Canonical64
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # The comb's loop

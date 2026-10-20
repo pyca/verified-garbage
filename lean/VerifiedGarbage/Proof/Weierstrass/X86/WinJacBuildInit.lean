@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacBuildState
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Weierstrass.X86.JacState
 
 /-! Initialize the cached table point from an affine input. -/
 

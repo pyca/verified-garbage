@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.AccumulateStep
-import VerifiedGarbage.Impl.Ed25519.X86.PointBatch
 import VerifiedGarbage.Proof.Ed25519.X86.PointPowersLoop
 import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
 public import VerifiedGarbage.Impl.Ed25519.X86.PointMul
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ed25519.X86.PointPowers
 import VerifiedGarbage.Proof.Ed25519.X86.Points
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Ed25519.X86.PointMulFrame`. -/
 

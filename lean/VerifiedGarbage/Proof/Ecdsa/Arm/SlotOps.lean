@@ -1,9 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
-import VerifiedGarbage.Proof.Weierstrass.Layout
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
 
 /-!
 # ECDSA on 32-bit ARM: field operations on numbered slots

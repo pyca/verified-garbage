@@ -1,7 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.AesCbc.Arm.CT
+public import VerifiedGarbage.Impl.AesCbc.Arm
+public import VerifiedGarbage.Spec.Cbc.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.AesCbc.Arm.CT
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CBC on ARMv7: `Verified`

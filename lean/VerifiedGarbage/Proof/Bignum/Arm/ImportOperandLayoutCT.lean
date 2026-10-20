@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.ImportOperand
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ImportOperandLayout
-public import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFnCT
+import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFnCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.ImportOperand
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
 
 /-! # Fixed-array operand imports do not expose operand bytes -/
 

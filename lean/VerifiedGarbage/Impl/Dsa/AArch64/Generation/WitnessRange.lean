@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Impl.MillerRabin.AArch64.Layout
+public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
 
-public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
 
 /-! Classify the truncated witness using the shared RSA range comparison. -/
 @[expose] public section

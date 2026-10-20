@@ -1,11 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
-meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-! # The interleaved loops on 512-bit registers, as literals
 

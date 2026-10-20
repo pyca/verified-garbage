@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

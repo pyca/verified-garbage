@@ -1,12 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomAttemptCT
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomPrepareCT
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomSignCorrect
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomFinish
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomSampleCT
+import VerifiedGarbage.Proof.Dsa.Arm.RandomPrepareCT
+import VerifiedGarbage.Proof.Dsa.Arm.RandomBody
+import VerifiedGarbage.Proof.Dsa.RandomTraceResult
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.Arm.RandomAttemptCT
+meta import VerifiedGarbage.Proof.Dsa.Arm.RandomFinish
+meta import VerifiedGarbage.Proof.Dsa.Arm.RandomSampleCT
 meta import VerifiedGarbage.Proof.Dsa.Arm.RandomPrepareCT
-meta import VerifiedGarbage.Proof.Dsa.Arm.RandomSignCorrect
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.Arm.RandomBody
+meta import VerifiedGarbage.Proof.Dsa.RandomTraceResult
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The randomized signer's body leaks only its public data (32-bit ARM)

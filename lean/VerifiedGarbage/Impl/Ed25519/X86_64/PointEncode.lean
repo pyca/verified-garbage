@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Field
 
-public import VerifiedGarbage.Impl.Ed25519.X86_64.FieldMemory
 
 /-! Encode the current extended point, leaving four output words in r8-r11. -/
 

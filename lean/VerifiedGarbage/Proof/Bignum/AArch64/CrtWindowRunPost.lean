@@ -3,6 +3,11 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunContext
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTails
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailLoop
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroups
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroupLoop
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoopControl
+import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 /-! Functional postconditions used to carry the constant-time loop invariants. -/
 

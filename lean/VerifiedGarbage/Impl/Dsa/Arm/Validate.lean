@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Dsa.Arm.Core
 
-public import VerifiedGarbage.Impl.Dsa.Arm.Shape
 
 /-! # DSA domain, key, and scalar validation on 32-bit ARM
 

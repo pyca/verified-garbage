@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Csub
 public import VerifiedGarbage.Proof.Bignum.Arm.WideMul
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Rewind the two sources and restore the selection loop's public count -/
 

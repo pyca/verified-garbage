@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Points
-public import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.Sub
+public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Ed25519's point functions on AArch64: their bodies

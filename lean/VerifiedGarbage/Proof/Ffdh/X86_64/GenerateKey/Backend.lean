@@ -2,16 +2,28 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Safety
 public import VerifiedGarbage.Spec.Ffdh.Contract
-public meta import VerifiedGarbage.Impl.Ffdh.X86_64.GenerateKey
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Verified
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
+import VerifiedGarbage.Proof.Bignum.X86_64.Template
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Safety
+meta import VerifiedGarbage.Spec.Ffdh.Contract
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Verified
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Contract
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
-import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Template
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-! # Verify FFDH key-generation attempts for every Montgomery backend -/
 

@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotContract
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotContract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotContract
+meta import Init.Data.Nat.Bitwise.Basic
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

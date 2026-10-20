@@ -1,6 +1,17 @@
 module
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealGather
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Callee
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Contract
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: `Verified`

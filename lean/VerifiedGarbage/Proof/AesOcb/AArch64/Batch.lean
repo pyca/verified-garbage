@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Pass
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Cached increments for batches of eight payload blocks. -/
 

@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvSlots
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+import VerifiedGarbage.TCB.X86.Target
 
 /-! # Public cdecl arguments remain available throughout recovery -/
 

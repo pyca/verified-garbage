@@ -1,16 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointLoad
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointLoad
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Joint
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 @[expose] public section
 

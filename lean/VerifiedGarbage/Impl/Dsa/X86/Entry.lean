@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86.SignVerify
+public import VerifiedGarbage.Impl.Dsa.X86.Shape
 
 /-! # x86 cdecl entry, public-width dispatch, and register restoration
 

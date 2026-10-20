@@ -2,15 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Impl.X25519.AArch64.Base
-public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
-public import VerifiedGarbage.Proof.Ed25519.AArch64.BitByte
-public import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
+import VerifiedGarbage.Proof.Ed25519.AArch64.BitByte
 import VerifiedGarbage.Proof.X25519.Edwards.Base
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
-import VerifiedGarbage.Impl.Mont.Mod
+public import VerifiedGarbage.Proof.Ed25519.AArch64.CombSelect
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
+public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Ed25519.AArch64.CombClamped
+import VerifiedGarbage.Proof.X25519.Edwards.Ladder
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.X25519.AArch64.Ops
 
 /-!
 # X25519 of the base point on AArch64: the engine

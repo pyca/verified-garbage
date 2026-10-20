@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86.Validate
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
+public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
 
-public import VerifiedGarbage.Proof.Dsa.X86.RawInputs
-public import VerifiedGarbage.Proof.Dsa.X86.ValidateMasks
+import VerifiedGarbage.Proof.Dsa.X86.RawInputs
+import VerifiedGarbage.Proof.Dsa.X86.ValidateMasks
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Equality validation of encoded DSA values -/
 

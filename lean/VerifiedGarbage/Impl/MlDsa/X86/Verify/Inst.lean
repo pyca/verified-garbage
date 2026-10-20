@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.MlDsa.X86.Verify.Verify
 public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Ntt
 public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Mul
-public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Basic
 public import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejNtt
 public import VerifiedGarbage.Impl.MlDsa.X86.Sample.Ball
 public import VerifiedGarbage.Impl.MlDsa.X86.Round.Round

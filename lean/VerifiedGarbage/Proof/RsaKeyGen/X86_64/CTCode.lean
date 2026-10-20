@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTFront
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTFront
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Code
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTFront
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Code
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
 # A candidate on x86-64: constant time

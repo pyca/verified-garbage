@@ -1,8 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Encrypt
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Encrypt
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Tail
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutAll
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Start
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenNoise
 
 /-! # The 16-bit hashing encapsulation is correct
 

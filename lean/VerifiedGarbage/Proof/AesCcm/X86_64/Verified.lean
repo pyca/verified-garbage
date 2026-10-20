@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.X86_64.OpenCT
-import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
+import VerifiedGarbage.Proof.AesCcm.X86_64.OpenCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.AesCcm.Scratch
-import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+public import VerifiedGarbage.Impl.AesCcm.X86_64
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Contract
+public import VerifiedGarbage.Proof.CmacAes.X86_64.Variant
 import VerifiedGarbage.Proof.AesCcm.X86_64.Open
+import VerifiedGarbage.Proof.AesCcm.X86_64.Seal
 
 /-!
 # AES-CCM on x86-64: `Verified`

@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowTable
-public import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
-public import VerifiedGarbage.Proof.Bignum.Arm.HeaderStore
-public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Impl.Bignum.Arm.WindowExp
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Bignum.Arm.WideMul
 
 /-! # The control blocks of the windowed ARMv7 exponentiation
 

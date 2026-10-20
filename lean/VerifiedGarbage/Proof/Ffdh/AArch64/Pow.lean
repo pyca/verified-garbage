@@ -1,11 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
+public import VerifiedGarbage.Impl.Ffdh.AArch64.Domain
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Ws
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExp
+import VerifiedGarbage.Proof.Ffdh.AArch64.Ws
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExp
 import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # FFDH on AArch64: an exponentiation

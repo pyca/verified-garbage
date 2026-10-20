@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Live
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Live
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.Frame
+public import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Search
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Data
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The attempt's arguments -/
 

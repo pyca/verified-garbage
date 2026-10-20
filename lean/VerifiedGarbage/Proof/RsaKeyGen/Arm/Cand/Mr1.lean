@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont10
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint7
 public import VerifiedGarbage.Proof.RsaKeyGen.MrIter
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont7
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
 
 /-! # A candidate on ARMv7: the stages of Miller–Rabin
 

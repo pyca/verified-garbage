@@ -1,9 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Spec.Dsa
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Arguments
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFootprint
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeResult
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFootprint
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeResult
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
 
 /-! # Complete primality call returning its cursor and status to the generation frame -/
 

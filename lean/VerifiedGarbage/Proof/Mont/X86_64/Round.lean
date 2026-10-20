@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Mont.X86_64.Row
 
-public import VerifiedGarbage.Proof.Mont.X86_64.Blocks
+import VerifiedGarbage.Proof.Mont.X86_64.Blocks
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Montgomery arithmetic on x86-64: a round of the multiplication

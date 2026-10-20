@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86.Red
+import VerifiedGarbage.Proof.MlKem.X86.Red
 public import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Impl.MlDsa.X86.Round.Round
 public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
-import VerifiedGarbage.Proof.MlDsa.Round.Mem
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # ML-DSA on x86 (32-bit): what the rounding code computes

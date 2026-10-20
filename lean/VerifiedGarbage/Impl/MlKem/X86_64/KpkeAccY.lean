@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.Arith
+public import VerifiedGarbage.Impl.MlKem.X86_64.NttRegs
 
 /-!
 # ML-KEM on x86-64: sums of products in words, with AVX2

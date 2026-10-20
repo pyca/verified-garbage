@@ -1,7 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Rc4.AArch64.Lookup
 
-public import VerifiedGarbage.Proof.Rc4.AArch64.Prga
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # The rotation after a group

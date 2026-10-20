@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Spec.Rsa
 
-public import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Std.Data.DTreeMap.Internal.Balancing
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH parameter candidates: halving a big-endian encoding -/
 

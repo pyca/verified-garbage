@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Encode
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Sign
 
 /-! # i686 verification with a precomputed public key

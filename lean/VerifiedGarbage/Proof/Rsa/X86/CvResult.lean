@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.CvSized
-public import VerifiedGarbage.Proof.Rsa.CrtValuesMath
-public import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Rsa.CrtValuesMath
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # The calculated and masked CRT outputs satisfy the shared RSA result definition -/
 

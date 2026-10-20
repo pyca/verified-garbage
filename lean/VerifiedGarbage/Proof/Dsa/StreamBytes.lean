@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Digest
+import VerifiedGarbage.Proof.Dsa.Digest
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Dsa
 
 /-! # Streaming big-endian prefixes for DSA reduction -/
 

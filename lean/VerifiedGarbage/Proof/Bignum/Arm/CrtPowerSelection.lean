@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPowerStage
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtWorkspaceCall
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimePowerInput
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedPowerSources
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Public selection geometry and secret safe-modulus evidence for a factor power -/
 

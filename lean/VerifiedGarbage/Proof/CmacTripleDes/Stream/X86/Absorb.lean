@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.AbsorbBlocks
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
+import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 /-!
 # Streaming TDEA-CMAC on x86: `vg_cmac_triple_des_absorb` around the runs of `update`

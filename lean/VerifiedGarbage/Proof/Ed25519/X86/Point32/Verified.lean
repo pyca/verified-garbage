@@ -1,25 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.Point32.Fn
-meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.Fn
-public import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
-meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.X86.CallWith
-meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.Fn
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Mont.Words32
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
-meta import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_ed25519_r32_point_add` on x86 (32-bit): its `Verified`

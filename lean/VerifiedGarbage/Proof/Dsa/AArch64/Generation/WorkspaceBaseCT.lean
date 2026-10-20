@@ -1,10 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrameCTState
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrameCTState
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WorkspaceBase
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WorkspaceBase
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrameCTState
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
 
 /-! # Recover the arithmetic base from the persistent frame -/
 

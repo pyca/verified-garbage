@@ -1,10 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.CandidateArithmetic
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArithmetic
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WorkspaceWords
-public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
-public import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArithmetic
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WorkspaceWords
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.ExternalWords
+import VerifiedGarbage.Proof.Dsa.Digest
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Preserve p and the generator exponent across primality testing -/
 

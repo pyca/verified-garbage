@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Impl.Bignum.Arm.R2
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.R2Constants
-public import VerifiedGarbage.Proof.Bignum.Arm.R2CountInit
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleCountMemory
+import VerifiedGarbage.Proof.Bignum.Arm.R2Constants
+import VerifiedGarbage.Proof.Bignum.Arm.R2CountInit
+import VerifiedGarbage.Proof.Bignum.Arm.DoubleCountMemory
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Initialize every loop invariant for RSA R-squared precomputation -/
 

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.RsaPss.Arm
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Hash
 public import VerifiedGarbage.Spec.Mgf1
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
 import all Init.Data.Nat.Bitwise.Basic
 
 /-!

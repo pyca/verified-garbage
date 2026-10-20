@@ -1,7 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvCountInit
+import VerifiedGarbage.Proof.Rsa.X86.RvCountInit
 public import VerifiedGarbage.Proof.Rsa.RecoverExp
+public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+import VerifiedGarbage.Proof.Rsa.X86.RvSlots
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Initializing the masked squaring search -/
 

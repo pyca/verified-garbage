@@ -158,10 +158,8 @@ def merged(times: dict[str, float], merges: dict[str, list[str]]) -> dict[str, f
     return out
 
 
-def imports_at(ref: str) -> dict[str, list[str]]:
-    """The modules of the project at the git revision `ref`, and the
-    modules of the project each imports, as `lean_shards.imports` reads them
-    from the working tree."""
+def sources_at(ref: str) -> dict[str, str]:
+    """The source of each module of the project at the git revision `ref`."""
     names = subprocess.run(
         ["git", "-C", str(ROOT), "ls-tree", "-r", "--name-only", ref, "lean/"],
         capture_output=True, text=True, check=True,
@@ -176,13 +174,27 @@ def imports_at(ref: str) -> dict[str, list[str]]:
         ["git", "-C", str(ROOT), "cat-file", "--batch"],
         input="".join(f"{ref}:{files[m]}\n" for m in files).encode(), capture_output=True, check=True,
     ).stdout
-    imps, pos = {}, 0
+    texts, pos = {}, 0
     for m in files:
         header_end = batch.index(b"\n", pos)
         size = int(batch[pos:header_end].split()[2])
-        imps[m] = shards.imported_by(batch[header_end + 1:header_end + 1 + size].decode(), files)
+        texts[m] = batch[header_end + 1:header_end + 1 + size].decode()
         pos = header_end + 1 + size + 1
-    return dict(sorted(imps.items()))
+    return dict(sorted(texts.items()))
+
+
+def imports_at(ref: str) -> dict[str, list[str]]:
+    """The modules of the project at the git revision `ref`, and the
+    modules of the project each imports, as `lean_shards.imports` reads them
+    from the working tree."""
+    texts = sources_at(ref)
+    return {m: shards.imported_by(t, texts) for m, t in texts.items()}
+
+
+def visibilities_at(ref: str) -> dict[str, tuple[list[str], list[str]] | None]:
+    """`lean_shards.visibility` of each module of the project at `ref`."""
+    texts = sources_at(ref)
+    return {m: shards.visibility(t, texts) for m, t in texts.items()}
 
 
 def sinks_of(imps: dict[str, list[str]]) -> list[str]:
@@ -260,9 +272,12 @@ def full_plan(imps, times, count=None):
     return plan
 
 
-def run_plan(imps, times, changed):
+def run_plan(imps, times, changed, vis=None):
+    """The plan of a run that changed `changed`, with the imports `imps`
+    (whose `lean_shards.visibility` is `vis`; without it, every import
+    passes on what it imports)."""
     closure = shards.closures(imps)
-    stale = {m for m in imps if closure[m] & changed}
+    stale = shards.stale_of(changed, shards.reads(imps, closure, vis or {}))
     work, path, (loads, _, _) = shards.schedule(imps, closure, stale, times)
     longest = max((path[m] for m in stale), default=0.0)
     if loads:
@@ -272,9 +287,10 @@ def run_plan(imps, times, changed):
     return {"stale": len(stale), "shards": len(loads), "time": time}
 
 
-def score(base, new, times, runs, branch=None, merges=None):
+def score(base, new, times, runs, branch=None, merges=None, base_vis=None, new_vis=None):
     """The full rebuild's plans and each run's, with the imports `base` and
-    `new`; with `new`, the modules of `branch` take its times, and those of
+    `new` (whose `lean_shards.visibility` are `base_vis` and `new_vis`);
+    with `new`, the modules of `branch` take its times, and those of
     `merges` theirs together."""
     branch = branch or {}
     # A merged module the branch has a time for takes that time.
@@ -287,7 +303,8 @@ def score(base, new, times, runs, branch=None, merges=None):
         changed = first_built(base, built)
         run = {**times, **built}
         new_changed = {into.get(m, m) for m in changed} & set(new)
-        rows.append((name, run_plan(base, run, changed), run_plan(new, merged({**run, **branch}, merges), new_changed)))
+        rows.append((name, run_plan(base, run, changed, base_vis),
+                     run_plan(new, merged({**run, **branch}, merges), new_changed, new_vis)))
     return rows
 
 
@@ -347,12 +364,16 @@ def main(argv=None) -> int:
     else:
         fork = merge_base(args.base)
         base = imports_at(fork)
+        base_vis = visibilities_at(fork)
         new = {m: list(v) for m, v in imps.items()}
+        new_vis = shards.visibilities(mods)
         for edge in args.drop:
             a, _, b = edge.partition(":")
             if b not in new.get(a, []):
                 raise SystemExit(f"{a} does not import {b}")
             new[a].remove(b)
+            if new_vis.get(a) is not None and b not in new[a]:
+                new_vis[a] = tuple([i for i in v if i != b] for v in new_vis[a])
         merges = {}
         for spec in args.merge:
             target, _, parts = spec.partition("=")
@@ -371,7 +392,7 @@ def main(argv=None) -> int:
                   file=sys.stderr)
             for m in stale:
                 print(f"  {m}", file=sys.stderr)
-        rows = score(base, new, times, runs[-args.runs:], branch, merges)
+        rows = score(base, new, times, runs[-args.runs:], branch, merges, base_vis, new_vis)
         (_, b, n), runs_rows = rows[0], rows[1:]
         print(f"full rebuild: {b['shards']} -> {n['shards']} shards, slowest {b['slowest']:.0f} -> {n['slowest']:.0f} s"
               f" ({n['slowest'] - b['slowest']:+.0f}; {n['slowest_at'] - b['slowest']:+.0f} on {b['shards']} shards),"

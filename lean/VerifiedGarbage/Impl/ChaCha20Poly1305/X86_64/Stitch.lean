@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64
-public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
 
 /-!
 # ChaCha20-Poly1305: x86-64, with Poly1305 inside the AVX2 ChaCha20 kernel

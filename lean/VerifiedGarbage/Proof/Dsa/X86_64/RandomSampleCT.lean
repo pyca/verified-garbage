@@ -1,9 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSamplePublic
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleLoopCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSample
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleLoopCT
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSample
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSamplePublic
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleLoopCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSample
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! The complete sampler's leakage is determined by its public decision trace. -/
 @[expose] public section

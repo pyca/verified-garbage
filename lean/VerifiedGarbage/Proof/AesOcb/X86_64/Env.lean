@@ -1,9 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
 
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Contract
 import VerifiedGarbage.Proof.AesCcm.X86_64.Env
-import VerifiedGarbage.Proof.Ocb.Spec
-public import VerifiedGarbage.Impl.AesOcb.X86_64
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Spec.Aes
 
 /-!
 # AES-OCB on x86-64: where everything is

@@ -2,7 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicArithmetic
 public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
-public import VerifiedGarbage.Proof.Bignum.Arm.PcPrepare
+public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
+import VerifiedGarbage.Proof.Bignum.Arm.Precompute
+import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
+import VerifiedGarbage.Proof.Bignum.Arm.PcHead
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Prepare the shared workspace for a validated public RSA modulus -/
 

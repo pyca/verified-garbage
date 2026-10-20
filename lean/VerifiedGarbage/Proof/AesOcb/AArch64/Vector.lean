@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Batch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! Vector block transfers and XOR, against the existing OCB block specification. -/
 

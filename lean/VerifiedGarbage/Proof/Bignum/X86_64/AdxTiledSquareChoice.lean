@@ -1,9 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquare
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledInit
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Block
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Block
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+import VerifiedGarbage.Proof.Bignum.Triangular
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! ## AdxTri8FullBlock -/
 

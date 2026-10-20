@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivContext
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivSlots
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivSaveIncoming
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivCopyArgs
+import VerifiedGarbage.Proof.Rsa.Arm.PrivSaveIncoming
+import VerifiedGarbage.Proof.Rsa.Arm.PrivCopyArgs
+import VerifiedGarbage.Proof.Rsa.Arm.PrivSaveRegs
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Prepare all register and stack arguments of the private CRT call -/
 

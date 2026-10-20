@@ -11,6 +11,8 @@ public import VerifiedGarbage.Proof.Mont.X86_64.MulS
 public import VerifiedGarbage.Proof.Mont.X86_64.ProdX
 public import VerifiedGarbage.Proof.Mont.X86_64.SqrM
 public import VerifiedGarbage.Proof.Mont.X86_64.WideMul
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Montgomery arithmetic on x86-64: P-521's product by rows, with BMI2 and ADX

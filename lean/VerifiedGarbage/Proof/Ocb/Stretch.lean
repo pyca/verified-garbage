@@ -1,6 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # OCB: `Offset_0` in 64-bit words

@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.StraightY
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # x86-64: straight-line bitwise AVX-512 code, quadword lane by quadword lane

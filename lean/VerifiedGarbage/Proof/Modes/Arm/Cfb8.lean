@@ -1,13 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 public import VerifiedGarbage.Spec.Cfb8
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.SboxSpec
+public import VerifiedGarbage.Proof.Modes.Arm.SeqBody
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # CFB8 as a mode a byte at a time on ARMv7

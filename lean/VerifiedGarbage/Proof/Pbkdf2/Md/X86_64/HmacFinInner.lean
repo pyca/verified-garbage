@@ -2,11 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Common
 import VerifiedGarbage.Proof.Framework.OffsetBelow
-public import VerifiedGarbage.Proof.Framework.OmegaLit
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 
 /-!
 # HMAC over any Merkle–Damgård hash function on x86-64: `finalize` up to the inner digest

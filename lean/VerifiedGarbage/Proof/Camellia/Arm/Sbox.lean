@@ -3,9 +3,10 @@ module
 public import VerifiedGarbage.Impl.Camellia.Arm.Sbox
 public import VerifiedGarbage.Proof.Camellia.SboxTable
 public import VerifiedGarbage.Proof.Framework.Arm.Straight
-import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Camellia.Bitsliced32
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # The bitsliced Camellia S-box on ARMv7

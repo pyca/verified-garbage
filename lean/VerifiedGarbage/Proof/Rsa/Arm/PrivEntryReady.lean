@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivEntryInput
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
+import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 
 /-! # Entering both frames preserves every input and incoming stack argument -/
 

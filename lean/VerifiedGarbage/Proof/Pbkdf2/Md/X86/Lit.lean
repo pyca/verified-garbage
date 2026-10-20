@@ -1,9 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Hashes
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Md5.X86.Lit
+import VerifiedGarbage.Proof.Sha512.X86.Lit
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Hashes
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Md5.X86.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # HMAC's `init` and `finalize` and PBKDF2's `iterate` on x86 (32-bit): the code as literals

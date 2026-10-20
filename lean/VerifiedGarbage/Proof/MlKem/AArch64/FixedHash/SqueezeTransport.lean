@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.SqueezePiece
 
 /-! # Output pointers and permissions survive fixed word copies -/
 @[expose] public section

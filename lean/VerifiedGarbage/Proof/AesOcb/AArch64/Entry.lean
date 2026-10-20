@@ -1,9 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.AesOcb.AArch64.Callee
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Env
+public import VerifiedGarbage.Spec.Ocb
 import VerifiedGarbage.Proof.AesOcb.AArch64.Words
+import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-OCB on AArch64: the entry (`entry`)

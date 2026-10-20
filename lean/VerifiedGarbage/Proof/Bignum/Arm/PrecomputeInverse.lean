@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.Precompute
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 
-public import VerifiedGarbage.Proof.Bignum.Arm.InverseArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.ModulusReady
+import VerifiedGarbage.Proof.Bignum.Arm.InverseArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ModulusReady
+import VerifiedGarbage.Proof.Bignum.Arm.InverseReady
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Establish arithmetic readiness from an imported odd RSA modulus -/
 

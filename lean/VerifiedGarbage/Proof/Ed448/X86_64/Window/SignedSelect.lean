@@ -3,8 +3,9 @@ module
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.Sign
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectBase
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectKey
-import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! Signed selection composes full scans with conditional point negation. -/
 

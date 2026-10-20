@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Layout
 
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Copy
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
 import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Deterministic ECDSA on AArch64: the blocks between the calls

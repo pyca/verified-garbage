@@ -1,16 +1,33 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Common
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Contract
-meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Contract
 import VerifiedGarbage.Proof.CmacTripleDes.Arm.Lit
-meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.Lit
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Impl.CmacTripleDes.Stream.Arm
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.CmacTripleDes.Words
-import VerifiedGarbage.Proof.MdStream.Arm.Common
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Inline
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
+import VerifiedGarbage.Proof.CmacTripleDes.Stream
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Contract
+meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Impl.CmacTripleDes.Stream.Arm
+meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.CmacTripleDes.Words
+meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Inline
+meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
+meta import VerifiedGarbage.Proof.CmacTripleDes.Stream
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming TDEA-CMAC on ARMv7: `vg_cmac_triple_des_stream_init`

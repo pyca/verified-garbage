@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Init
 public import VerifiedGarbage.Spec.Ffdh.Generation
-public import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Bignum.Layout
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-! # Native FFDH generation initialization: policy arithmetic -/
 

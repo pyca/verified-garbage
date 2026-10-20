@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Loop
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Loop
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # Preserve the accepted prefix and report bounded sampling success -/
 

@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
+public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCallCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 
 /-! # Joint-call timing in the persistent verification workspace -/
 

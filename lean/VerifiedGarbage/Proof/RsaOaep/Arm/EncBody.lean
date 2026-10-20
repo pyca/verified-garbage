@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Callees
+public import VerifiedGarbage.Proof.RsaOaep.Arm.EncEm
 
-public import VerifiedGarbage.Proof.RsaOaep.Arm.EncMask
-public import VerifiedGarbage.Proof.RsaOaep.Arm.EncCall
+import VerifiedGarbage.Proof.RsaOaep.Arm.EncMask
+import VerifiedGarbage.Proof.RsaOaep.Arm.EncCall
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # RSAES-OAEP encryption with a precomputed public key on ARMv7: the body

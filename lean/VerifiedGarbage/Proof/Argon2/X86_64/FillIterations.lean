@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillIterationsBody
 public import VerifiedGarbage.Proof.Argon2.Iterations
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Termination and correctness of every requested filling pass. -/
 

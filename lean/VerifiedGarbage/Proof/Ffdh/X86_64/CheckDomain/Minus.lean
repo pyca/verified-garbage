@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Parent
+public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckDomain
 import VerifiedGarbage.Proof.Ffdh.WordPred
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # FFDH domain validation on x86-64: p minus one -/
 

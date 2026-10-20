@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombFrontCT
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Front
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMidCT
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombTailCT
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombFinalCT
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombPointTail
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombCode
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombStagesCT
 
 @[expose] public section
 

@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Impl.Sha512.AArch64.Stream
+public import VerifiedGarbage.Proof.Sha512.AArch64.Compress
 
-public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
-public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
+import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
 import VerifiedGarbage.Proof.Sha512.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Streaming SHA-512 on AArch64: `initPairs`

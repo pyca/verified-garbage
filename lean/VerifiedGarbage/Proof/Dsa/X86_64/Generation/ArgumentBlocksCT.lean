@@ -1,9 +1,23 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Arguments
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Push
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Arguments
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import Mathlib.Tactic.Attr.Core
+meta import Mathlib.Tactic.Push
+meta import Aesop.BuiltinRules
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Argument transfer touches fixed offsets of public frame and workspace pointers -/
 

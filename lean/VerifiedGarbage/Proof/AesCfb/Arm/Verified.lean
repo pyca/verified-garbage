@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Impl.AesCfb.Arm
+public import VerifiedGarbage.Spec.Cfb.Contract
+public import VerifiedGarbage.TCB.Arm.Target
 
 import VerifiedGarbage.Proof.AesCbc.Arm.Verified
-public import VerifiedGarbage.Proof.AesCfb.Arm.Body
+import VerifiedGarbage.Proof.AesCfb.Arm.Body
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CFB128 on ARMv7: `Verified`

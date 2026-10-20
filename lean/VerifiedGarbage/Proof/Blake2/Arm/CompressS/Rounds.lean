@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha512.Arm.Rounds
 public import VerifiedGarbage.Proof.Blake2.Spec
 public import VerifiedGarbage.Impl.Blake2.Arm.CompressS
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

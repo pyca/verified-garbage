@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
 
 /-! # The narrow CRT workspace: its width, and the shared state around it
 

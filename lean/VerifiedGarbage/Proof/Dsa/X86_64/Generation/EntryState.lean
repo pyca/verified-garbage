@@ -1,8 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySetup
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! # ABI arguments and writable regions required to initialize the native search -/
 

@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Lay
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Wrap
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The ARMv7 PKCS #1 v1.5 functions: the entry

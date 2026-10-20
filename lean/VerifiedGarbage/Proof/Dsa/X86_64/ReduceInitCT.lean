@@ -1,15 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceInit
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceInit
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 public import VerifiedGarbage.Impl.Dsa.Layout
+public import VerifiedGarbage.Impl.Dsa.X86_64.Arithmetic
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import VerifiedGarbage.Impl.Dsa.Layout
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Arithmetic
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant-time loading of reduction pointers and lengths -/
 

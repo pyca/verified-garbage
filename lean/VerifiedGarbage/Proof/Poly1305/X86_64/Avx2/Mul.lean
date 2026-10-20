@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Bound
 public import VerifiedGarbage.Proof.Poly1305.Limbs26
+public import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Poly1305 on x86-64 with AVX2: the product

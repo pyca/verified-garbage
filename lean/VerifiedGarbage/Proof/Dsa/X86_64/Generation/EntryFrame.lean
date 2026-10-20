@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ABI
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryInitial
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySave
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Finiteness.Attr
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! # Allocate and release the nested parameter-generation stack frames -/
 

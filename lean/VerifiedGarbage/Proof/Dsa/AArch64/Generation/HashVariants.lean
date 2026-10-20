@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hashes
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+import VerifiedGarbage.Impl.MlKem.AArch64.Compress
 
 /-! # Select the SHA-1 and SHA-256 stream implementations for DSA generation -/
 

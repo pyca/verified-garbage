@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mul
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Field
 import VerifiedGarbage.Proof.Ed25519.AArch64.Sub

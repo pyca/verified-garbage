@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntry
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 
 @[expose] public section
 

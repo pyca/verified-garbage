@@ -1,10 +1,16 @@
 module
+public import VerifiedGarbage.Proof.AesCbc.X86.Call
+public import VerifiedGarbage.Proof.AesXts.Spec
 
-public import VerifiedGarbage.Proof.AesXts.X86.Verified
-public import VerifiedGarbage.Proof.AesXts.X86.Unit.Contract
-public import VerifiedGarbage.Proof.Framework.X86.CallWith
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.AesXts.Unit
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Impl.AesGcm.X86
 
 /-!
 # XTS-AES of data units on x86: a call of a whole-block function

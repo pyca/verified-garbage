@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedVerified
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackSafety
 
 /-! # Bind the verified baseline precomputed RSA operation -/
 

@@ -1,8 +1,20 @@
 module
+public import VerifiedGarbage.Impl.CmacTripleDes.Stream.X86_64
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.TCB.X86_64.Target
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Common
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Common
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Save
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 @[expose] public section
 

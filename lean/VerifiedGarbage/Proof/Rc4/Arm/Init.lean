@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.Arm.Schedule
+import VerifiedGarbage.Proof.Rc4.Arm.Schedule
 public import VerifiedGarbage.Proof.Rc4.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Rc4.Arm.Run
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! # RC4 on ARMv7: checked initialization -/
 

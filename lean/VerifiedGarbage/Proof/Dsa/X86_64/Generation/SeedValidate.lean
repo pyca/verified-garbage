@@ -1,9 +1,20 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Validate
+public import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArenaSource
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Validate
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArenaSource
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Validate
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
 
 /-! # Apply the final domain check without leaving the native seed controller -/
 

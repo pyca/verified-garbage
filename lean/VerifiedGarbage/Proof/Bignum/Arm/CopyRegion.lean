@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CopyBytes
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Copying of ordinary disjoint byte buffers -/
 

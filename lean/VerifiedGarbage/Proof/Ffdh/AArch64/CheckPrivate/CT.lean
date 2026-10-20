@@ -2,16 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPrivate.Correct
 import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.CT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExpCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPrivate.Correct
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.CT
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.PowLit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Spec.Dsa.SignVerify
-meta import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExpCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # `vg_ffdh_check_private` on AArch64: constant time

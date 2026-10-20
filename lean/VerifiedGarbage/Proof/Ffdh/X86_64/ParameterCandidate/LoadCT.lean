@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Load
-meta import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Load
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Load
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMs
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH parameter generation on x86-64: timing of candidate and witness loading -/
 

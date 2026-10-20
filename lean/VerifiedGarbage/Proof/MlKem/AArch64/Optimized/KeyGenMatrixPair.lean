@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixTable
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgB
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixPost
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Pair
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Invoke the paired sampler in the existing key-generation workspace -/
 @[expose] public section

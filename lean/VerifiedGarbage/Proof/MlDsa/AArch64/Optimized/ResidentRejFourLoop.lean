@@ -4,10 +4,8 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideBody
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdvance
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejLoopState
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejGuard
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! ## From `ResidentRejFourBody.lean` -/
 

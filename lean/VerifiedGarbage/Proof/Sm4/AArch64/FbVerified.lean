@@ -1,47 +1,33 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.AArch64.Link
-meta import VerifiedGarbage.Proof.Sm4.AArch64.Link
-public import VerifiedGarbage.Proof.Modes.AArch64.Fb
-meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
-public import VerifiedGarbage.Proof.Modes.AArch64.ViaV
-meta import VerifiedGarbage.Proof.Modes.AArch64.ViaV
+import VerifiedGarbage.Proof.Sm4.AArch64.Link
+import VerifiedGarbage.Proof.Modes.AArch64.Fb
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
-meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 public import VerifiedGarbage.Proof.Sm4.FbScratch
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+public import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
+public import VerifiedGarbage.Spec.Sm4.Cfb
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+import VerifiedGarbage.Proof.Sm4.AArch64.FbLit
+public import VerifiedGarbage.Impl.Sm4.AArch64.Fb
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sm4.AArch64.Link
+meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 meta import VerifiedGarbage.Proof.Sm4.FbScratch
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sm4.AArch64.FbLit
-public import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
-meta import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
+meta import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
+meta import VerifiedGarbage.Spec.Sm4.Cfb
+meta import VerifiedGarbage.Impl.StackScratch.AArch64
 meta import VerifiedGarbage.Proof.Sm4.AArch64.FbLit
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.AesSiv.Ctr32
-public import VerifiedGarbage.Proof.AesSiv.Words
-public import VerifiedGarbage.Proof.Cmac.Stream
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Gcm.Bits
-public import VerifiedGarbage.Proof.Modes.AArch64.Ctr
-public import VerifiedGarbage.Proof.Modes.AArch64.Xor
-public import VerifiedGarbage.Proof.Sm4.AArch64.Imm
-public import VerifiedGarbage.Proof.Sm4.AArch64.Lit
-meta import VerifiedGarbage.Proof.AesSiv.Ctr32
-meta import VerifiedGarbage.Proof.AesSiv.Words
-meta import VerifiedGarbage.Proof.Cmac.Stream
-meta import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Gcm.Bits
-meta import VerifiedGarbage.Proof.Modes.AArch64.Ctr
-meta import VerifiedGarbage.Proof.Modes.AArch64.Xor
-meta import VerifiedGarbage.Proof.Sm4.AArch64.Imm
-meta import VerifiedGarbage.Proof.Sm4.AArch64.Lit
+meta import VerifiedGarbage.Impl.Sm4.AArch64.Fb
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegSet
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-!
 # SM4-OFB and SM4-CFB128 on AArch64 meet their contracts

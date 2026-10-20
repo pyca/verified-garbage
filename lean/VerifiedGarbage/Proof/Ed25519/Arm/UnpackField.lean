@@ -1,6 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.Packed
+public import VerifiedGarbage.Impl.Ed25519.Arm.Packed
+public import VerifiedGarbage.Proof.Ed25519.Arm.Field
+import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Load a compact field into bounded sixteen-bit limbs. -/
 

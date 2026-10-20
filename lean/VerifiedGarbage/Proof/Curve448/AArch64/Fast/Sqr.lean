@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Mul
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Columns
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Squaring

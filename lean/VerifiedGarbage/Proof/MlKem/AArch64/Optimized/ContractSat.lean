@@ -1,6 +1,8 @@
 module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Contracts
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ConstsSat
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.Decaps
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Optimized

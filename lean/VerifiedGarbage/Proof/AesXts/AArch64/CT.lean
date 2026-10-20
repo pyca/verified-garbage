@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.AArch64.Body
-meta import VerifiedGarbage.Proof.AesXts.AArch64.Body
 import VerifiedGarbage.Proof.AesCbc.AArch64.CT
-import VerifiedGarbage.Proof.AesOcb.AArch64.Env
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.AesXts.AArch64.Body
 meta import VerifiedGarbage.Proof.AesCbc.AArch64.CT
-meta import VerifiedGarbage.Proof.AesOcb.AArch64.Env
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # XTS-AES on AArch64: constant time

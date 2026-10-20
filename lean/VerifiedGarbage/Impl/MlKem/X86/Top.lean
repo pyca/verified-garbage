@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86.Sample
-public import VerifiedGarbage.Impl.MlKem.X86.CheckEk
 public import VerifiedGarbage.Impl.MlKem.X86.Compress
 public import VerifiedGarbage.Impl.MlKem.X86.Encode
 public import VerifiedGarbage.Impl.MlKem.X86.Cbd

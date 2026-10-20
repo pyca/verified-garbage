@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductGeometry
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineProduct
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationGeometry
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombine
+import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationGeometry
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 
 /-! # The extended product buffers contain every possible CRT reconstruction -/
 

@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Spec.Cfb8
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Spec.Cfb8.Contract
-public import VerifiedGarbage.Proof.AesCbc.Spec
 
 /-!
 # CFB8: the mode one byte at a time

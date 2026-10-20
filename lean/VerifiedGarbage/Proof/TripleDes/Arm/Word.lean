@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.TripleDes.Word
-import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+import VerifiedGarbage.Proof.Framework.PowLit
 
 @[expose] public section
 

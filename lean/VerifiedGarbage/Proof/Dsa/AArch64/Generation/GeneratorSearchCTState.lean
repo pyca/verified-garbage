@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.TapeLoop
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchMemory
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStepCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorInvariant
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorInvariant
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ChunkTake
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ChunkCheck
 
 /-! # Public cursor and exact chunk state of the generator search -/
 

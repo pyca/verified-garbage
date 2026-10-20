@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Impl.Dsa.X86.Bytes
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 
 /-! # Component loads and masked stores have secret-independent traces -/
 

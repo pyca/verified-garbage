@@ -1,8 +1,11 @@
 module
 
 import VerifiedGarbage.Proof.Rc4.X86.Schedule
-public import VerifiedGarbage.Proof.Rc4.X86.Save
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Rc4.X86.Save
+import VerifiedGarbage.Proof.Rc4.X86.Lookup
+public import VerifiedGarbage.Impl.Rc4.X86
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
+public import VerifiedGarbage.Proof.Rc4.Memory
 
 /-! # RC4 on x86 (32-bit): checked initialization -/
 

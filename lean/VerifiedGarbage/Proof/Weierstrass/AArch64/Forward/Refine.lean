@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Run
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

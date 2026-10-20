@@ -1,11 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Base
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4`, sampling

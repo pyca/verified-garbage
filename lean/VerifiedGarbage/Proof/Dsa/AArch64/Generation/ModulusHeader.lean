@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeSetup
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusFrame
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Policy-header writes leave the prepared modulus and exponent intact. -/

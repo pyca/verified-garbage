@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.CallFacts
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Attempt
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.CallPre
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The attempt's precondition holds at its entry -/

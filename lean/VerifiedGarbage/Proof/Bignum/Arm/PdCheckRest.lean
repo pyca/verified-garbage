@@ -1,7 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PdCheckState
-public import VerifiedGarbage.Proof.Bignum.Arm.PdOdd
+public import VerifiedGarbage.Impl.Bignum.Arm.PdChecks
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Bignum.Arm.PdOdd
+import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceLayout
+import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptanceLayout
+import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompare
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Check the supplied R² range and modulus parity, retaining the public conjunction -/
 

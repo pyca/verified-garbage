@@ -2,12 +2,67 @@ module
 
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Proof.Weierstrass.X86.PointCurves
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P192
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P224
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P256
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P384
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointCurves
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X25519.X86.Column
 import VerifiedGarbage.Proof.X25519.X86.Arith
 import VerifiedGarbage.Spec.Rc2
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.NativeTaint
+public import VerifiedGarbage.Proof.Framework.NativeTaintCore
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Mmx
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Mont.X86.Chain
+public import VerifiedGarbage.Proof.Mont.X86.Csub
+public import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Mont.X86.P256Red
+public import VerifiedGarbage.Proof.Mont.X86.RedRow
+public import VerifiedGarbage.Proof.Mont.X86.Row
+public import VerifiedGarbage.Proof.Mont.X86.SparseShift
+public import VerifiedGarbage.Proof.Mont.X86.SparseStep
+public import VerifiedGarbage.Proof.Mont.X86.Step
+public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointVerified
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.NativeTaint
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Mont.X86.Chain
+import VerifiedGarbage.Proof.Mont.X86.Csub
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Mont.X86.P256Red
+import VerifiedGarbage.Proof.Mont.X86.RedRow
+import VerifiedGarbage.Proof.Mont.X86.Row
+import VerifiedGarbage.Proof.Mont.X86.SparseShift
+import VerifiedGarbage.Proof.Mont.X86.SparseStep
+import VerifiedGarbage.Proof.Mont.X86.Step
+import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
+import VerifiedGarbage.Proof.Weierstrass.X86.PointVerified
+import VerifiedGarbage.Proof.X25519.Field
+import VerifiedGarbage.Proof.X25519.X86.Fold
 
 /-!
 # P-192's point addition and doubling on x86 (32-bit)

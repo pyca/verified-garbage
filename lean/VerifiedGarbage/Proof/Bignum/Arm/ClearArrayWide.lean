@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ClearOperandBuffer
+import VerifiedGarbage.Proof.Bignum.Arm.ClearOperandBuffer
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Impl.Bignum.Arm.ClearOperandBuffer
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 
 /-! # Clear an arithmetic result including its native carry words -/
 

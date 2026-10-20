@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Spec.Sm3
-public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # SM3: the x86-64 contracts

@@ -1,10 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombInput
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombPointTail
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafCallerKeep
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafCallerCT
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafCallerCT
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombFinalCT
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMidCT
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombStagesCT
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMain
+import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
+import VerifiedGarbage.Proof.Ecdsa.X86.CombMain
 
 @[expose] public section
 

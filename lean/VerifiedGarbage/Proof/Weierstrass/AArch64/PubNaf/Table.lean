@@ -1,13 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Copy
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Add
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Copy
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
-import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # The public NAF's table

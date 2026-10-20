@@ -1,13 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateCall
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateCall
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateCall
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.Poly1305.Scratch
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Update
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateCall
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Poly1305.Scratch
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Update
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 
 /-!
 # Poly1305 on x86-64: `update`, constant time and `Verified`

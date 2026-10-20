@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CompareBytes
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CompareBytes
-public import VerifiedGarbage.Proof.Rsa.PrivCheck
+import VerifiedGarbage.Proof.Bignum.Arm.CompareBytes
+import VerifiedGarbage.Proof.Rsa.PrivCheck
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Byte-exact equality for two readable buffers without input-dependent branches -/
 

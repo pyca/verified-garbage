@@ -1,9 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
 /-!
 # `vg_rsa_public` on x86-64: the entry

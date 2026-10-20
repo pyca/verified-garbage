@@ -1,13 +1,33 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Blocks
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Blocks
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Dec
+import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Imc
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Blocks
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Dec
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Imc
+meta import VerifiedGarbage.Proof.Framework.X86.Wp
+meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Aes.Contract
-meta import VerifiedGarbage.Spec.Aes.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
+import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.Proof.Framework.X86.Exec
+meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+meta import VerifiedGarbage.TCB.X86.Isa
+meta import VerifiedGarbage.TCB.X86.State
+meta import VerifiedGarbage.TCB.X86.Target
 
 /-!
 # AES-NI on x86 (32-bit): `vg_aes_encrypt_blocks_aesni` and `vg_aes_decrypt_blocks_aesni`

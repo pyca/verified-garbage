@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Short
-public import VerifiedGarbage.Impl.Aes.X86_64.AesNi
 
 /-!
 # AES-GCM on x86-64: `seal` ending without calls, with AES-NI

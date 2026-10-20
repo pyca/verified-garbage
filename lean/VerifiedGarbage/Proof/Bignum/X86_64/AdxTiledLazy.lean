@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMont
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxLazy8
-import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcChoice
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxLazy8
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxLazy8
+public import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Redc
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Bignum.LazyMath
 
 /-! The reduction of a raw product `X < R²` and the lazy final subtraction. -/
 

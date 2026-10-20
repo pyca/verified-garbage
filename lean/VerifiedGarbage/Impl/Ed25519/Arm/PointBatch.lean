@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Impl.Ed25519.Arm.FieldMemory
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointPowers
 
-public import VerifiedGarbage.Impl.Ed25519.Arm.PointAccumulate
 
 /-! Rebuild sixteen adjacent powers from a checkpoint while preserving the accumulator. -/
 

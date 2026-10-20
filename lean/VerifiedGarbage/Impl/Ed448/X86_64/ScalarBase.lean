@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
 public import VerifiedGarbage.Impl.Ed448.X86_64.Scalar
-public import VerifiedGarbage.Spec.Ed448
 public import VerifiedGarbage.Impl.Ed448.Comb
 
 /-!

@@ -1,11 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.PdCTRest
+public import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
+import VerifiedGarbage.Proof.Bignum.AArch64.PdLoad
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PdCTRest
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PdLoad
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # `vg_rsa_public_precomputed` on AArch64: constant time but for `pre` and `e`

@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.MontInit
+public import VerifiedGarbage.Impl.Bignum.Arm.MontFn
 
-public import VerifiedGarbage.Proof.Bignum.Arm.LoadArray
-public import VerifiedGarbage.Proof.Bignum.Arm.BasesTail
+import VerifiedGarbage.Proof.Bignum.Arm.LoadArray
+import VerifiedGarbage.Proof.Bignum.Arm.BasesTail
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Native register arguments from RSA's public indices and workspace header -/
 

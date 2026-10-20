@@ -1,14 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Verified
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Tables
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P224
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha224
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P224Sha224
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Sha256.AArch64.Compress
 
 /-!
 # Deterministic ECDSA over P-224 with HMAC-SHA-224 on AArch64

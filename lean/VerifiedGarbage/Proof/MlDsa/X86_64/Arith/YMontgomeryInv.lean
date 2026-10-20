@@ -1,11 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomery
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomery
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
+public import VerifiedGarbage.Spec.MlDsa.Montgomery
 import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
+meta import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
+meta import VerifiedGarbage.Spec.MlDsa.Montgomery
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

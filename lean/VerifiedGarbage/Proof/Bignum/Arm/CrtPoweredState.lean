@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimePowerInput
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceState
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 
 /-! # A completed factor power independent of the currently selected workspace -/
 

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpBits
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Install an exponent byte and initialize its eight-bit loop -/
 

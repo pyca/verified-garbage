@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.SigningReturn
-public import VerifiedGarbage.Proof.Dsa.AArch64.Sequences
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Dsa.AArch64.Sequences
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Functional correctness of the complete AArch64 DSA signing program -/
 

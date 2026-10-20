@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseCCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseCCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseK
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Rel
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseDCT
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on x86-64: the checks leak only the pointers and whether they passed

@@ -1,34 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlDsa.DecideAt
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Blocks
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.MlDsa.Sign.Mem
-public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Local
-public import VerifiedGarbage.Proof.MlKem.X86.AddSub
-public import VerifiedGarbage.Proof.MlKem.X86.CallRet
-public import VerifiedGarbage.Proof.MlKem.X86.Cbd
-public import VerifiedGarbage.Proof.MlKem.X86.CompressEncode
-public import VerifiedGarbage.Proof.MlKem.X86.Decode12
-public import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
-public import VerifiedGarbage.Proof.MlKem.X86.Encode12
-public import VerifiedGarbage.Proof.MlKem.X86.Mul
-public import VerifiedGarbage.Proof.MlKem.X86.NttInv
-public import VerifiedGarbage.Proof.MlKem.X86.Sample
-public import VerifiedGarbage.Proof.MlKem.X86.TopPrim3
-public import VerifiedGarbage.Proof.Sha256.Stream
-public import VerifiedGarbage.Proof.Sha256.X86.Compress
+import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 public import VerifiedGarbage.Proof.Sha256.X86.Lit
-public import VerifiedGarbage.Proof.Sha3.Arith
 public import VerifiedGarbage.Proof.Sha3.X86.Lit
-public import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
-public import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
-public import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Params
+public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
+import VerifiedGarbage.Proof.MlKem.X86.TopCall
+import VerifiedGarbage.Proof.MlKem.X86.Table
 
 /-!
 # ML-DSA signing on x86 (32-bit): what the pieces keep

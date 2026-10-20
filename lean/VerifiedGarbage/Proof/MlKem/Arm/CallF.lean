@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
-public import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Calls of code with frames (ARMv7)

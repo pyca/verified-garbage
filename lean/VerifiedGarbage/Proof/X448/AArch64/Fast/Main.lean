@@ -7,6 +7,10 @@ import VerifiedGarbage.Proof.X448.AArch64.BitBody
 public import VerifiedGarbage.Proof.X448.AArch64.FinalSwap
 public import VerifiedGarbage.Proof.X448.AArch64.Ladder
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Ladder
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.X448.AArch64.Bits
+import VerifiedGarbage.Proof.X448.AArch64.Finish
+import VerifiedGarbage.Proof.X448.AArch64.Inv
 
 /-!
 # X448 on AArch64: the whole function, with register-resident field arithmetic

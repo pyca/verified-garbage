@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Sm4.X86.Core
 
-public import VerifiedGarbage.Proof.Sm4.X86.Copy
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Sm4.X86.Keys
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 
 /-!
 # Slots, and saving and restoring registers, on x86 (32-bit)

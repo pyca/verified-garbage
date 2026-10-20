@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.X86.Lit
-meta import VerifiedGarbage.Proof.Sm4.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import VerifiedGarbage.Proof.Sm4.X86.Lit
+public import VerifiedGarbage.Impl.Sm4.X86.Prepared
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Proof.Sm4.X86.Lit
+meta import VerifiedGarbage.Impl.Sm4.X86.Prepared
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 
 /-!
 # The constant-time analysis of the x86 modes' calls of SM4, once

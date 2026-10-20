@@ -1,8 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.SubModArray
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
-public import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.SubModBuffers
+import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
+import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayArgs
+import VerifiedGarbage.Proof.Bignum.Arm.SubModBuffers
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Modular subtraction preserves the shared workspace invariant -/
 

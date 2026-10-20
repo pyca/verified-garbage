@@ -1,20 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86_64.Ecb
-meta import VerifiedGarbage.Proof.Aes.X86_64.Ecb
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import Mathlib.Data.List.Induction
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Aes.X86_64.Ecb
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES on whole blocks on x86-64: the whole functions

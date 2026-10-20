@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
 
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedKMain
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Code
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Entry
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedKMain
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Code
 
 /-! # Correctness of the RSA candidate calling shared Miller–Rabin -/
 

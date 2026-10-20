@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Hash
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedAdd
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.WitnessCut
+public import VerifiedGarbage.Impl.RsaOaep.X86_64
 
 /-! # Native hash contributions for DSA parameter generation
 

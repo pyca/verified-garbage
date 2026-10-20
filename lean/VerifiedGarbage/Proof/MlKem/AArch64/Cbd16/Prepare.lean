@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Lanes
 public import VerifiedGarbage.Impl.MlKem.AArch64.Cbd16
 meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-! # The CBD2 byte arithmetic instruction block -/
 

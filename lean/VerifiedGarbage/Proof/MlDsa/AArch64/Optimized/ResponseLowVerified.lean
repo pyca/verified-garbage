@@ -1,21 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowCore
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowCore
 public import VerifiedGarbage.Spec.MlDsa.ResponseLow
-meta import VerifiedGarbage.Spec.MlDsa.ResponseLow
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowCore
+meta import VerifiedGarbage.Spec.MlDsa.ResponseLow
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-! ## From `ResponseLowCorrect.lean` -/
 

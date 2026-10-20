@@ -2,9 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inst
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Lit
 
 /-!

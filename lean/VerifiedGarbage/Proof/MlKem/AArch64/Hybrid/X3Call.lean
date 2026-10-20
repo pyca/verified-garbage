@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Hybrid.X3
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Call
-public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Calls of `vg_keccak_f1600_x3_sha3` from ML-KEM's matrix

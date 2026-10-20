@@ -4,12 +4,14 @@ public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Proof.Aes.X86.Variant
 import VerifiedGarbage.Proof.Cmac.Frame
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Impl.CmacAes.X86
 public import VerifiedGarbage.Proof.Cmac.Block32
 public import VerifiedGarbage.Proof.MdStream.X86.Common
+public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

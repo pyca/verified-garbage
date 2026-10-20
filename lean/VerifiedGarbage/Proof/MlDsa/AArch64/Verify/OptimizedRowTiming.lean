@@ -1,13 +1,14 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowState
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedTimingBase
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowArithmeticTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowArithmeticTiming
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedDotTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowStartTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowReady
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedHintPack
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 
 @[expose] public section
 

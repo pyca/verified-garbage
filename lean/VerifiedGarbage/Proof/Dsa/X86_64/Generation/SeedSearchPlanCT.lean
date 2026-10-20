@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedCTState
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPrime
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.NativeSearchCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSearch
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchCTState
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Public seed inputs instantiate the bounded prime-search plan -/

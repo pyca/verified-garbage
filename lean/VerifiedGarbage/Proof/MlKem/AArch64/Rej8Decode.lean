@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Parse
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Spec.MlKem
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Prefix
 
 /-! # Agreement between packed candidates and the specified byte decoder -/
 

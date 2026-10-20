@@ -1,10 +1,21 @@
 module
+public import VerifiedGarbage.Impl.Rsa.Arm.Div
+public import VerifiedGarbage.Proof.Rsa.Arm.DivContext
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Rsa.Arm.DivArgsCT
-public import VerifiedGarbage.Proof.Bignum.Arm.StageCT
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Rsa.Arm.Div
+meta import VerifiedGarbage.Proof.Rsa.Arm.DivContext
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Appending the secret quotient bit has a fixed memory trace -/
 

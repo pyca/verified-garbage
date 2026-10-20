@@ -1,11 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
+import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
 import VerifiedGarbage.Proof.Argon2.Divide
 public import VerifiedGarbage.Impl.Argon2.Arm.Divide
-public import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Blake2.Arm.CompressB
+public import VerifiedGarbage.Proof.MdStream.Arm.Common
 
 /-!
 # Fixed-time division on ARMv7

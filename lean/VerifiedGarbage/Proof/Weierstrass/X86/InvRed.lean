@@ -1,12 +1,22 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop
+public import VerifiedGarbage.Proof.Divstep.Alg32Def
+public import VerifiedGarbage.Impl.Weierstrass.X86.InvMemory
+public import VerifiedGarbage.Proof.Mont.Words32
 
-public import VerifiedGarbage.Proof.Divstep.Red32
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvRedSum
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
+import VerifiedGarbage.Proof.Divstep.Red32
+import VerifiedGarbage.Proof.Weierstrass.X86.InvRedSum
+import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Mont.X86.Csub
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Data.BitVec
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Reduction of a signed divstep coefficient row -/
 

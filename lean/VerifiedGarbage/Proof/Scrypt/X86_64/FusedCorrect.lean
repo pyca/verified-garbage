@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Scrypt.X86_64.FusedInvariant
 
-public import VerifiedGarbage.Proof.Scrypt.X86_64.FusedBody
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedBody
 import VerifiedGarbage.Proof.Scrypt.Memory
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedSetup
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

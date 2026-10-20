@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPrimeResultCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedGeneratorFinishCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPrimeCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedGeneratorFinishCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPrimeCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OnSuccessCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPhaseStableCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
 
 /-! # Prime search composes with generator selection and final domain checking -/
 

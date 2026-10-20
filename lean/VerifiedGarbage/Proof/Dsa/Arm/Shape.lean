@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.Shape
-public import VerifiedGarbage.Proof.Dsa.Arm.Body
-public import VerifiedGarbage.Proof.Dsa.BitLengthBounds
+public import VerifiedGarbage.Proof.Dsa.Accepted
+public import VerifiedGarbage.Proof.Dsa.Arm.ValidateOps
+import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.ExponentParts
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 
 /-!
 # DSA on 32-bit ARM: the public checks of the domain's shape

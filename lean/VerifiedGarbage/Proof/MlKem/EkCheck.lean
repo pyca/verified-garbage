@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Spec.MlKem
 
-public import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.Arith
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # ML-KEM: the encapsulation key check, for every target

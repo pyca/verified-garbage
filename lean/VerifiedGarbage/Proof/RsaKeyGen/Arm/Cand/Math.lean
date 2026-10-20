@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Spec.RsaKeyGen
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
+import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # A candidate on ARMv7: the bits the code sets and clears
 

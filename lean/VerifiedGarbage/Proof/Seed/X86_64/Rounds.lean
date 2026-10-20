@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Seed.X86_64.Round
 public import VerifiedGarbage.Proof.Seed.Rounds
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Sixteen rounds on x86-64

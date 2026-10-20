@@ -1,8 +1,23 @@
 module
+public import VerifiedGarbage.Proof.AesCcm.X86.Env
+public import VerifiedGarbage.Proof.Cmac.Block32
+public import VerifiedGarbage.Spec.Ccm
 
-public import VerifiedGarbage.Proof.AesCcm.X86.Blocks
+import VerifiedGarbage.Proof.AesCcm.X86.Blocks
 import VerifiedGarbage.Proof.AesCcm.BytesAt
-import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import VerifiedGarbage.Proof.AesCcm.X86.Callee
+import VerifiedGarbage.Proof.AesCcm.X86.Run
+import VerifiedGarbage.Proof.AesCcm.Mac
+import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.AesGcm.X86.Callee
+import VerifiedGarbage.Proof.AesGcm.X86.Common
+import VerifiedGarbage.Proof.AesGcm.X86.Env
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+public import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 
 /-!
 # AES-CCM on x86: a buffer padded, chained (`absorbPad y`)

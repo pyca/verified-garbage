@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlKem.Arm.Keccak
+public import VerifiedGarbage.Spec.MlKem.Poly
 
-public import VerifiedGarbage.Proof.MlKem.Arm.Prims
-public import VerifiedGarbage.Proof.MlKem.Arm.KemLay
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.Arm.Reduce
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM on 32-bit ARM: the buffers of the top-level functions

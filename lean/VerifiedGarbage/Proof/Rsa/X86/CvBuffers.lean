@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.CvABI
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvResources
+import VerifiedGarbage.Proof.Rsa.X86.CvResources
 
 /-! # Public buffer bounds and separation for CRT inputs and outputs -/
 

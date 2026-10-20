@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Context
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Zero
+public import VerifiedGarbage.Impl.MlKem.AArch64.Paired
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Checkpoint
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Zero
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Memory
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Finalize both bounded matrix samples, retaining zero-filled failure outputs -/
 @[expose] public section

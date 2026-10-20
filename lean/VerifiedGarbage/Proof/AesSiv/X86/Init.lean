@@ -1,23 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Common
-meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Common
 public import VerifiedGarbage.Proof.AesSiv.X86.Contract
-meta import VerifiedGarbage.Proof.AesSiv.X86.Contract
 import VerifiedGarbage.Proof.AesSiv.Key
-meta import VerifiedGarbage.Proof.AesSiv.Key
 public import VerifiedGarbage.Impl.AesSiv.X86
-meta import VerifiedGarbage.Impl.AesSiv.X86
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Common
+meta import VerifiedGarbage.Proof.AesSiv.X86.Contract
+meta import VerifiedGarbage.Proof.AesSiv.Key
+meta import VerifiedGarbage.Impl.AesSiv.X86
+meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Aes.KeyExp
-meta import VerifiedGarbage.Proof.Aes.SboxSpec
-meta import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-meta import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Straight
-meta import VerifiedGarbage.Proof.Framework.X86.Straight
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-SIV on x86: `vg_aes_siv_init`'s code

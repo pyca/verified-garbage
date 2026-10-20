@@ -1,11 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86.Validate
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Proof.Dsa.X86.Moduli
+public import VerifiedGarbage.Proof.Dsa.X86.StageFrame
 
-public import VerifiedGarbage.Proof.Dsa.X86.Persistent
-public import VerifiedGarbage.Proof.Dsa.X86.Execution
-public import VerifiedGarbage.Proof.Dsa.X86.ValidateRange
-public import VerifiedGarbage.Proof.Dsa.X86.ValidateEqual
-public import VerifiedGarbage.Proof.Dsa.X86.ValidateOne
-public import VerifiedGarbage.Proof.Dsa.X86.ValidateZero
+import VerifiedGarbage.Proof.Dsa.X86.Persistent
+import VerifiedGarbage.Proof.Dsa.X86.ValidateRange
+import VerifiedGarbage.Proof.Dsa.X86.ValidateEqual
+import VerifiedGarbage.Proof.Dsa.X86.ValidateOne
+import VerifiedGarbage.Proof.Dsa.X86.ValidateZero
+import VerifiedGarbage.Proof.Dsa.X86.StageValues
+import VerifiedGarbage.Proof.Dsa.X86.Layout
 
 /-! # Validation stages preserve moduli and persistent intermediate values -/
 

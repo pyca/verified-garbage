@@ -2,12 +2,21 @@ module
 
 import VerifiedGarbage.Proof.Ed25519.X86_64.WindowStep
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CombConstants
-public import VerifiedGarbage.Proof.Ed25519.X86_64.CombNeg
+import VerifiedGarbage.Proof.Ed25519.X86_64.CombNeg
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointSelect
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMul
-public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowEntry
-public import Mathlib.Tactic.Module
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Keeps
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
+import VerifiedGarbage.Proof.Ed25519.X86_64.Points
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Ed25519.X86_64.CombDigit`. -/
 

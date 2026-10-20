@@ -4,9 +4,13 @@ public import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
 import VerifiedGarbage.Proof.Ed448.X86.BaseSetup
 public import VerifiedGarbage.Proof.Ed448.X86.BaseStep
 import VerifiedGarbage.Proof.Ed448.X86.BaseEncode
-public import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
 public import VerifiedGarbage.Proof.X448.X86.Runs
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarIO
 import VerifiedGarbage.Proof.X448.X86.FnLit
+import VerifiedGarbage.Proof.X448.X86.Frame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Impl.X25519.X86
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit): the whole function

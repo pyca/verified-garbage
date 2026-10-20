@@ -1,14 +1,12 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Optimized
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedState
+public import VerifiedGarbage.Spec.MlDsa.Montgomery
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedDot
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedNtt
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 @[expose] public section
 

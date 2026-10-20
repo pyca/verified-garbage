@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.TCB.X86_64.Gpr
 
 import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # `bswap` of a little-endian load is a big-endian load

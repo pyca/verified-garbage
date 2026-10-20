@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.Core
 
-public import VerifiedGarbage.Impl.Bignum.AArch64
 
 /-! The shared RSA sampler's forced branch at the candidate's byte width. -/
 @[expose] public section

@@ -1,8 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Step
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
 import VerifiedGarbage.Proof.X448.X86_64.Bits
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! The recoder changes only its bounded digit array. -/
 

@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Verified
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Prepared
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Prepared
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Verified
 
 /-!
 # The instances of `seal` that `seal_gather` calls

@@ -22,6 +22,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Blocks
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Bytes
 
 /-!
 # ECDSA on x86-64: the curve, the arguments and the working space

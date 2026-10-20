@@ -1,8 +1,8 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
+import VerifiedGarbage.Impl.MlKem.AArch64.Noise
+import VerifiedGarbage.Proof.MlKem.AArch64.KemCommon
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReady
-public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
 
 /-! # One fused ciphertext row using retained noise -/
 

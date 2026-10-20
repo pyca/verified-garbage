@@ -2,16 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHintCallTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintRow
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintRow
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintState
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedHints
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintDecompose
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `OptimizedPairedHintLayout.lean` -/
 

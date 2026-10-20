@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Double
-public import VerifiedGarbage.Proof.Bignum.Arm.ProductStage
+import VerifiedGarbage.Proof.Bignum.Arm.ProductStage
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCoreCT
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The doubled extended accumulator and its reduction metadata -/
 

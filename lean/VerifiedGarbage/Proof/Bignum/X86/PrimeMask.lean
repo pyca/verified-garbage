@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.PrimeMask
+public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrimeMaskFinish
-public import VerifiedGarbage.Proof.Bignum.X86.SmallConstant
-public import VerifiedGarbage.Proof.Mont.X86.ContextInit
+import VerifiedGarbage.Proof.Bignum.X86.PrimeMaskFinish
+import VerifiedGarbage.Proof.Bignum.X86.SmallConstant
+import VerifiedGarbage.Proof.Mont.X86.ContextInit
+import VerifiedGarbage.Proof.Dsa.X86.Checks
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # The mask accepts exactly odd secret factors greater than one -/
 

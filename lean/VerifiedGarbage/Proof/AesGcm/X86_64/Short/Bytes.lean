@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Small
-public import VerifiedGarbage.Proof.Gcm.Compose
-import VerifiedGarbage.Proof.Gcm.Stream
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Xor
 import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Gh
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
 
 /-!
 # AES-GCM's short path on x86-64: the bytes

@@ -1,17 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Loop
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Loop
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopOne
-import Mathlib.Data.List.Induction
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Proof.Framework.X86_64.Avx512
-import VerifiedGarbage.Impl.Aes.X86_64.Alloc
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Straight
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # The blocks after the pipeline's

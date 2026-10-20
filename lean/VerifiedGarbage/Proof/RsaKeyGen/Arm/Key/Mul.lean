@@ -2,9 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 public import VerifiedGarbage.Proof.Rsa.Arm.MulMod
-public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
-public import VerifiedGarbage.Proof.Bignum.Arm.Stack
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Taint0
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
+import VerifiedGarbage.Proof.Rsa.Arm.RvStage
 
 /-! # An RSA key on ARMv7: the frame's words, and products
 

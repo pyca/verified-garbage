@@ -1,7 +1,13 @@
 module
 
 import VerifiedGarbage.Proof.CmacTripleDes.Block
-public import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
+import VerifiedGarbage.Proof.CmacTripleDes.Des
+import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
+import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Impl.CmacTripleDes.Index
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # DES's key schedule, bit by bit

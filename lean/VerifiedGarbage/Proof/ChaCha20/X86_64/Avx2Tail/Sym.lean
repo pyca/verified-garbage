@@ -1,7 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Sym
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ChaCha20 on x86-64 with AVX2, the last bytes: straight-line code

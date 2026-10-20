@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Attr.Core
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Scratch prefixes and stack-argument regions used by the DSA ABI -/
 

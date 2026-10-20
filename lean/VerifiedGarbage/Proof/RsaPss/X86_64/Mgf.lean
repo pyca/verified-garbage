@@ -1,10 +1,18 @@
 module
+public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Loops
+public import VerifiedGarbage.Proof.Mgf1.Basic
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirect
+import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirect
 import VerifiedGarbage.Proof.RsaPss.X86_64.BufferXor
-public import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.RsaPss.X86_64.BufferCopy
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
+import Mathlib.Tactic.Set
 
 /-!
 # RSASSA-PSS on x86-64: MGF1

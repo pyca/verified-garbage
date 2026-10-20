@@ -1,21 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P256
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P256
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P256
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
 
 /-!
 # Deterministic ECDSA on x86-64: P-256 with BMI2 and ADX

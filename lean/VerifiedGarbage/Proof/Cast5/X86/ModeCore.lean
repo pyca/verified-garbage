@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.X86.Ecb
 public import VerifiedGarbage.Proof.Modes.X86.Core
 public import VerifiedGarbage.Impl.Cast5.X86.Modes
 public import VerifiedGarbage.Proof.Cast5.ModeCipher
+public import VerifiedGarbage.Proof.Cast5.X86.Block
 import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Cast5.X86.Ecb
 
 /-!
 # CAST5's core for the modes on x86 (32-bit)

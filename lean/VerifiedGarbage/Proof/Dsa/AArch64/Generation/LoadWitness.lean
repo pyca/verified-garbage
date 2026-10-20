@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Sample
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusFrame
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeSetup
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusFrame
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Loading a padded witness preserves the prepared modulus and exponent. -/

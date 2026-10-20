@@ -4,10 +4,17 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.SetupCT
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ChecksCT
 public import VerifiedGarbage.Proof.Ffdh.AArch64.PowCT
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Scan
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Front
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
+import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # FFDH on AArch64: the stages of a run

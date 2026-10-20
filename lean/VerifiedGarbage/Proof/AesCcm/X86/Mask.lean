@@ -1,11 +1,33 @@
 module
+public import VerifiedGarbage.Proof.AesCcm.X86.Env
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Spec.Ccm
 
-public import VerifiedGarbage.Proof.AesCcm.X86.Top
-meta import VerifiedGarbage.Proof.AesCcm.X86.Top
 import VerifiedGarbage.Proof.AesCcm.BytesAt
-import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import VerifiedGarbage.Proof.AesCcm.X86.Run
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.AesCcm.X86.Env
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Spec.Ccm
 meta import VerifiedGarbage.Proof.AesCcm.BytesAt
+meta import VerifiedGarbage.Proof.AesCcm.X86.Run
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Aes.X86.ExpandKey
+import VerifiedGarbage.Proof.AesGcm.X86.CT
+import VerifiedGarbage.Proof.AesGcm.X86.Callee
+import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import VerifiedGarbage.Proof.AesGcm.X86.Common
+import VerifiedGarbage.Proof.AesGcm.X86.Env
+import VerifiedGarbage.Proof.Cmac.Block
+meta import VerifiedGarbage.Proof.Aes.X86.ExpandKey
+meta import VerifiedGarbage.Proof.AesGcm.X86.CT
+meta import VerifiedGarbage.Proof.AesGcm.X86.Callee
 meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+meta import VerifiedGarbage.Proof.AesGcm.X86.Common
+meta import VerifiedGarbage.Proof.AesGcm.X86.Env
+meta import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-CCM on x86: masking the data, and the tag copied out

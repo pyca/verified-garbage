@@ -1,13 +1,10 @@
 module
 
-public import Batteries.Tactic.Init
-public import Batteries.Tactic.PermuteGoals
-public import Batteries.Tactic.SeqFocus
 public import Batteries.Data.List.Basic
 public import VerifiedGarbage.TCB.Mem
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.GetElem
-public import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Memory: reads after writes, regions, frames

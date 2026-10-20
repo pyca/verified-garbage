@@ -2,6 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Update
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
+import VerifiedGarbage.Proof.Poly1305.Stream
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 
 /-!
 # Poly1305 on x86-64: `update`, from the call on

@@ -1,12 +1,22 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtPoweredState
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimePowerInput
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnter
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrime
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowInput
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowExp
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowResult
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSavedSources
-public import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnter
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrime
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowInput
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowExp
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowResult
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSavedSources
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # One CRT factor's private power, computed at the factor's own width
 

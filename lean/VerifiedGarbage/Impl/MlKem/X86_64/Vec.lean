@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Common
-public import VerifiedGarbage.Spec.MlKem
 
 /-!
 # ML-KEM on x86-64: arithmetic modulo `q` in the words of SSE registers

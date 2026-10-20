@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Impl.AesGcm.AArch64.Stitch
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Verified
+public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ops
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.OpenPw
+import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.OpenPw
+import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.SealPw
 
 /-!
 # AES-GCM on AArch64: the code of each function, with or without the interleaved loops

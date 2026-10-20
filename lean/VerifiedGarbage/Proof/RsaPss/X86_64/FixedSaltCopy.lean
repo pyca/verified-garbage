@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Loops
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Spec.RsaPss
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Copying the requested salt directly, with no secret-dependent offset. -/
 

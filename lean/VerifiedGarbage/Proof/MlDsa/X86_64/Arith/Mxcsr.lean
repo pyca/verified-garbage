@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
+public import VerifiedGarbage.Impl.MlKem.X86_64.Vec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on x86-64: MXCSR through the end of a polynomial

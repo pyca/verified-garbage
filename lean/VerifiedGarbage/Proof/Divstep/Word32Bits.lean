@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Divstep.Word32Def
 public import Mathlib.Data.BitVec
 
 /-! # Word-only arithmetic for the 32-bit divstep implementation -/

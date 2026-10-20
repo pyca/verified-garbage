@@ -1,11 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorLoadsCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DecrementOdd
-public import VerifiedGarbage.Proof.Dsa.X86_64.RangeCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DecrementOdd
+import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorLoads
+import VerifiedGarbage.Proof.Dsa.X86_64.RangeHead
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorLoadsCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DecrementOdd
-meta import VerifiedGarbage.Proof.Dsa.X86_64.RangeCT
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorLoads
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RangeHead
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Timing of generator-input and generator-output range filtering -/
 

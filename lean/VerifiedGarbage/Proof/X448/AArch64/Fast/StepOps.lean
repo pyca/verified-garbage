@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Env
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # X448 on AArch64: the field operations of a ladder step

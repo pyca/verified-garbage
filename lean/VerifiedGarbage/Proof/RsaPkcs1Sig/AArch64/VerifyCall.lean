@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyFrame
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 
 /-!

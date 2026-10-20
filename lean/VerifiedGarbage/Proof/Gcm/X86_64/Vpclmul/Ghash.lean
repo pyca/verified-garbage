@@ -1,17 +1,21 @@
 module
 
 import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Lit
-meta import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Lit
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
-meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Lit
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
-public import VerifiedGarbage.Impl.Gcm.X86_64.Vpclmul
-meta import VerifiedGarbage.Impl.Gcm.X86_64.Vpclmul
-public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
-meta import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
-import VerifiedGarbage.Proof.Framework.X86_64.YFrame
-meta import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # GHASH with VPCLMULQDQ

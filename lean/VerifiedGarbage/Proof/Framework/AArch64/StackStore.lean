@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.TCB.AArch64.Isa
+import Std.Data.DTreeMap.Internal.Balancing
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 
-public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 
 /-! Execution of an aligned stack-relative word store. -/
 @[expose] public section

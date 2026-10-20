@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
+public import VerifiedGarbage.Proof.MlKem.Bits
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackMath
-public import VerifiedGarbage.Proof.MlDsa.Pack.Bits
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlDsa.Pack.Bits
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

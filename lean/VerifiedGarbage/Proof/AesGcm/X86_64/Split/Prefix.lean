@@ -1,11 +1,19 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Entry
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
-import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Piece
+public import VerifiedGarbage.Impl.AesGcm.X86_64.SealSplit
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Steps
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Impl.Gcm.X86_64
 
 /-!
 # AES-GCM `seal_split` on x86-64: the whole blocks at `src`

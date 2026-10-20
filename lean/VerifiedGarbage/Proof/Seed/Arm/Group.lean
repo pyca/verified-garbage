@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.Arm.Prologue
+import VerifiedGarbage.Proof.Seed.Arm.Crypt8
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # A group of blocks of SEED ECB on ARMv7

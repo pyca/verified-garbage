@@ -1,9 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Context
 
-public import VerifiedGarbage.Proof.Mont.Arm.Dyn.ContextInit
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Dsa.Arithmetic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Runtime-modulus Montgomery arithmetic on 32-bit ARM: the exponent's bits

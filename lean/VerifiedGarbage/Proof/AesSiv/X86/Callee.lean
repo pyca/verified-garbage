@@ -1,9 +1,15 @@
 module
+public import VerifiedGarbage.Proof.AesSiv.X86.Env
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Call
 
-public import VerifiedGarbage.Proof.AesSiv.X86.Run
+import VerifiedGarbage.Proof.AesSiv.X86.Run
+import VerifiedGarbage.Proof.AesSiv.X86.FinRaw
+meta import VerifiedGarbage.Proof.AesSiv.X86.Env
+meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Call
 meta import VerifiedGarbage.Proof.AesSiv.X86.Run
-public import VerifiedGarbage.Proof.AesSiv.X86.FinRaw
 meta import VerifiedGarbage.Proof.AesSiv.X86.FinRaw
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-SIV on x86: the functions called

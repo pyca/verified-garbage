@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideGeneral
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideGeneral
 public import VerifiedGarbage.Proof.Bignum.Square
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRow
 
 /-! The rows of the off-diagonal part of an ADX square. -/
 

@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareMac
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBlock
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! Accumulating the ADX square's multiply-add blocks into a row. -/
 

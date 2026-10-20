@@ -1,7 +1,8 @@
 module
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptStart
-public import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Entry
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
+public import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenTiming
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Optimized
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Proof.MlKem

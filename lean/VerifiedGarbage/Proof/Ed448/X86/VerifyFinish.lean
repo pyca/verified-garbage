@@ -1,10 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Ed448.X86.VerifyEquation
+public import VerifiedGarbage.Proof.Ed448.Formulas
+public import VerifiedGarbage.Proof.X448.X86.Ops
+public import VerifiedGarbage.Proof.X448.X86.Save
 
-public import VerifiedGarbage.Proof.Ed448.X86.VerifyChecks
 import VerifiedGarbage.Proof.Ed448.X86.VerifySign
-public import VerifiedGarbage.Proof.X448.X86.Restore
+import VerifiedGarbage.Proof.X448.X86.Restore
 import VerifiedGarbage.Proof.X448.X86.Counters
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Ed448.VerifyFormulas
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): the comparison and the result

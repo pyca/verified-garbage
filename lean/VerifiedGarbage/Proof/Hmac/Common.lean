@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Sha256.Stream
-public import VerifiedGarbage.Proof.Sha256.StateMem
 public import VerifiedGarbage.Spec.Hmac
-public import VerifiedGarbage.Proof.Framework.OmegaLit
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Sha256.StateMem
 
 /-!
 # HMAC-SHA-256: lemmas shared by every target

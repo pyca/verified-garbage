@@ -1,13 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Crypt
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Crypt
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
-public import VerifiedGarbage.Proof.AesGcm.AArch64.J0
-public import VerifiedGarbage.Proof.Cmac.Dbl32
-public import VerifiedGarbage.Proof.Cmac.Stream
-public import VerifiedGarbage.Proof.Gcm.Be64
+public import VerifiedGarbage.Impl.AesGcmSiv.AArch64
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Save
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Env
+public import VerifiedGarbage.Proof.GcmSiv.Words
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
+import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Polyval
+import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Keys
+import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Derive
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.AesGcm.AArch64.Tag
 
 /-!
 # AES-GCM-SIV on AArch64: comparing the tags, and `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open`

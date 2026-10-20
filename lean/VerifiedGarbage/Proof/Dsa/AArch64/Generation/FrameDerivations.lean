@@ -1,6 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.Core
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameDerived
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameDerived
+import VerifiedGarbage.Proof.Framework.AArch64.StackStore
+import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Derive several arena pointers from the preserved scratch base -/
 

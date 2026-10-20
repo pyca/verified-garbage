@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowShared
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
+public import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawTriangle
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedStep
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedStep
 import Mathlib.Data.Int.ModEq
 
 @[expose] public section

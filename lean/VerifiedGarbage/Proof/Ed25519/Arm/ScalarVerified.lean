@@ -1,31 +1,33 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
-meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
-public import VerifiedGarbage.Spec.Ed25519.Contract
-meta import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
-meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
-meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
-import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
-meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
-public import VerifiedGarbage.Proof.Framework.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
+meta import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-import Mathlib.Logic.Function.Basic
-import VerifiedGarbage.Proof.Framework.Arm.Call
-meta import Mathlib.Logic.Function.Basic
-meta import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Framework.Arm.Spill
-meta import VerifiedGarbage.Proof.Framework.Arm.Spill
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarMain`. -/
 

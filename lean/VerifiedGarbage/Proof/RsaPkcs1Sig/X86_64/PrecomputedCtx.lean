@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
-public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Precomputed
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyFrame
 
 @[expose] public section
 

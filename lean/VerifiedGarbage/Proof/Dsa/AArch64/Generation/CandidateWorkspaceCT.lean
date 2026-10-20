@@ -1,12 +1,31 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateFrameCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameWord
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Workspace
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateFrameCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CheckPrime
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CheckPrime
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WorkspaceBase
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WorkspaceBase
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameWord
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Workspace
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Run
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
 
 /-! # Initialize candidate-reduction scratch while retaining source bytes and frame arguments -/
 

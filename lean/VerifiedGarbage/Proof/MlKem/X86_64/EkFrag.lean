@@ -1,16 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.EkScalar
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkScalar
 public import VerifiedGarbage.Proof.MlKem.HSponge
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Absorb
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgA
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.MlKem.X86_64.Zero
 import all Init.Data.Nat.Bitwise.Basic
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.X86_64.EkBase
 
 /-!
 # ML-KEM on x86-64: encapsulation hashing the key in the matrix's fragments, what does not depend on the layout

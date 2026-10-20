@@ -2,8 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.PreparePrime
 public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
-public import VerifiedGarbage.Proof.Bignum.Arm.R2
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
+import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
+import VerifiedGarbage.Proof.Bignum.Arm.R2
+import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulus
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Invalid secret factors still enter well-defined Montgomery arithmetic -/
 

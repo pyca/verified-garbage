@@ -1,17 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombArithmetic
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombArithmetic
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombArithmetic
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
-meta import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

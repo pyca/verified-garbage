@@ -1,19 +1,27 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCrt
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivPd
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
-meta import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
-import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-meta import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Rsa.X86_64.PrivCrt
+meta import VerifiedGarbage.Proof.Rsa.X86_64.PrivPd
+meta import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
+meta import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
+meta import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_private_checked` on x86-64: constant time

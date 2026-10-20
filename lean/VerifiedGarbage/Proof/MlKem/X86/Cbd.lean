@@ -1,21 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.Common
-meta import VerifiedGarbage.Proof.MlKem.X86.Common
 public import VerifiedGarbage.Proof.MlKem.Encode
-meta import VerifiedGarbage.Proof.MlKem.Encode
 public import VerifiedGarbage.Impl.MlKem.X86.Cbd
+public import VerifiedGarbage.Proof.MlKem.X86.Leaf
+import VerifiedGarbage.Proof.Framework.Contract
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.X86.Common
+meta import VerifiedGarbage.Proof.MlKem.Encode
 meta import VerifiedGarbage.Impl.MlKem.X86.Cbd
-import VerifiedGarbage.Spec.MlKem.Poly
-meta import VerifiedGarbage.Spec.MlKem.Poly
-public import VerifiedGarbage.TCB.X86.Target
-meta import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Framework.Sig
-meta import VerifiedGarbage.Proof.Framework.Sig
-public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.MlKem.X86.Leaf
 meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.Set
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM on x86 (32-bit): `vg_mlkem_cbd2`

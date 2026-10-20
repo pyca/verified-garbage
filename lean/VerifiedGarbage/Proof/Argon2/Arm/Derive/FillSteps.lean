@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Parameters
 
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
-public import VerifiedGarbage.Proof.Argon2.Arm.Mix
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
+import VerifiedGarbage.Proof.Argon2.Arm.Mix
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
+import VerifiedGarbage.Proof.Argon2.Dimensions
+public import VerifiedGarbage.Proof.Sha512.Arm.Rounds
+import VerifiedGarbage.Proof.Blake2.Arm.CompressB
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # Argon2 on ARMv7: the steps of the filling loops

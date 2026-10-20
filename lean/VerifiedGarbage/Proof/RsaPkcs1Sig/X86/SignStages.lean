@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEncoding
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignPrivateCall
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignAfter
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignCallPublic
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEncArgs
 
 /-! # Intermediate signing states for relating independent secret digests -/
 

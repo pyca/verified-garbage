@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Impl.Camellia.X86_64.Sbox
 public import VerifiedGarbage.Proof.Camellia.SboxTable
 public import VerifiedGarbage.Proof.Framework.X86_64.Straight
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Aes.Bitsliced
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The bitsliced Camellia S-box on x86-64

@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecOut
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecKdk
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
+import Mathlib.Data.Fintype.Card
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: correctness

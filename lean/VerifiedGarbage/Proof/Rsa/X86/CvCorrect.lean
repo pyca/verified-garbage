@@ -1,6 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.CvABI
+public import VerifiedGarbage.Proof.Rsa.X86.CvResult
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvReturn
+import VerifiedGarbage.Proof.Rsa.X86.CvReturn
+import VerifiedGarbage.Proof.Rsa.X86.CvInstalled
+import VerifiedGarbage.Proof.Rsa.X86.CvResources
+import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
+import VerifiedGarbage.Proof.Bignum.X86.PublicSave
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # Functional correctness and cdecl preservation of i686 CRT parameter calculation -/
 

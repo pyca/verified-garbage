@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenFinish
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutAll
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgCommon
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Offsets
 
 /-! # Paired noise preserves key-generation inputs and caller state -/
 

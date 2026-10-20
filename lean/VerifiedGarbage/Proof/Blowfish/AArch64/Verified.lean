@@ -1,11 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
+import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
 public import VerifiedGarbage.Proof.Blowfish.AArch64.ConstantTime
 public import VerifiedGarbage.Proof.Blowfish.Scratch
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Batch
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Copy
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Blowfish.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # The ECB functions meet their contracts, with the working space as an argument -/
 

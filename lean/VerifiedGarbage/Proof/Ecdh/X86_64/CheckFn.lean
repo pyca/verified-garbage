@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Check
-public import VerifiedGarbage.Proof.Ecdh.Exchange
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
-public import VerifiedGarbage.Proof.Mont.Read
-public import VerifiedGarbage.Spec.Weierstrass.CheckPoint
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
+import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
+import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Ecdh.Exchange
+import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-!
 # `vg_<curve>_check_point` on x86-64: correctness

@@ -4,6 +4,9 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.TestWitness
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SampleState
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Uniform
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRange
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoadWitness
 
 /-! # The complete native uniform-range test preserves the original draw -/
 

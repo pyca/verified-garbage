@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Execution
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+public import VerifiedGarbage.Proof.Dsa.X86_64.Workspaces
 import VerifiedGarbage.Proof.Dsa.Layout
+import Mathlib.Tactic.Set
 
 /-! # Establishing the persistent DSA context from caller scratch -/
 

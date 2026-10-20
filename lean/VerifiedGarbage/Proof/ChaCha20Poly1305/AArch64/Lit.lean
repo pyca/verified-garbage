@@ -1,17 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
-meta import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
-meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
-meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Lit
-meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Lit
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Lit
 meta import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # ChaCha20-Poly1305 on AArch64: the code as literals

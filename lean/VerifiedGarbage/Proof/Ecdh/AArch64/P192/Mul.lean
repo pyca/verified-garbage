@@ -2,9 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.GMul
 public import VerifiedGarbage.Impl.Ecdh.P192.AArch64
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 
 /-! # p192 multiplication of a point, by a call of `vg_p192_mul` -/
 

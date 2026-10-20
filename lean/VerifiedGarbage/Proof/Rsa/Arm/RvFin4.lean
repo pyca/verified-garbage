@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvFin3
+import VerifiedGarbage.Proof.Rsa.Arm.RvTaint4
+import VerifiedGarbage.Proof.Rsa.Arm.RvSlots
+import VerifiedGarbage.Proof.Rsa.Arm.RvMmul2
+import VerifiedGarbage.Proof.Rsa.Arm.RvCtx
 
 /-! # `vg_rsa_recover_primes` on ARMv7: the factors ordered (`order_vp`) -/
 

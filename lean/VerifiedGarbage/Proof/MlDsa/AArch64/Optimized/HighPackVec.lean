@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackMath
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.HighPack
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

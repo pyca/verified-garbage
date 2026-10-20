@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
+import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Persistent scratch buffers as arithmetic operands -/
 

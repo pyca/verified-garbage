@@ -1,13 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinish
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinish
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinish
 public import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTag
+import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinish
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTag
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+import VerifiedGarbage.Impl.AesGcm.X86_64
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Impl.AesGcm.X86_64
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
+meta import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_finish` is constant time

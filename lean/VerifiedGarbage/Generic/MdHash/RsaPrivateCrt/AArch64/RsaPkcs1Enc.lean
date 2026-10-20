@@ -6,6 +6,7 @@ import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCTBase
 
 /-!
 # RSAES-PKCS1-v1_5 decryption with implicit rejection on AArch64

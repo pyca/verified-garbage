@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.DotW
+public import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
+public import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Lane
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Finish
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-!
 # ML-KEM's fused dot product of polynomials stored with 16 bits, on AArch64: the store

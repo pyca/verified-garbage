@@ -3,7 +3,10 @@ module
 public import VerifiedGarbage.Impl.Ed25519.Arm.MulFn
 public import VerifiedGarbage.Proof.X25519.Arm.Mul
 import VerifiedGarbage.Proof.Ed25519.Arm.Field
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X25519.Arm.Pass
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # `vg_gf25519_r16_mul` on ARMv7: the rows

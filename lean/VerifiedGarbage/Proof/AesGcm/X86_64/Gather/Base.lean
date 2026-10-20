@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Contract
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Mid
-public import VerifiedGarbage.Proof.Gcm.SealGather
 public import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: the setting

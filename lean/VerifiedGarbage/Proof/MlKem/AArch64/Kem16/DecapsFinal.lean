@@ -1,14 +1,39 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbolsMono
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Contracts
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Decaps
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsChecks
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsPrefix
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Decaps
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsChecks
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsPrefix
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
+import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
-meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
+meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
+meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbolsMono
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Contracts
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Decaps
+meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsChecks
+meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsPrefix
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
+meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsTiming
+meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
+meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
+meta import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! # The 16-bit `vg_mlkem768_decaps` and `vg_mlkem1024_decaps`
 

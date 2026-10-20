@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.Spec.Scrypt.Contract
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import Lean.Elab.Tactic.Omega.Frontend
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # scrypt: memory lemmas

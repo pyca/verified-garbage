@@ -1,11 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
-import VerifiedGarbage.Impl.Ecdh.AArch64
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Scalar
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
+import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # ECDH on AArch64: reading and checking the peer's key

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKeyCore
+public import VerifiedGarbage.Impl.Rsa.X86_64.Checked
 
 /-!
 # The checks of `RSA_check_key` on the CRT form on x86-64

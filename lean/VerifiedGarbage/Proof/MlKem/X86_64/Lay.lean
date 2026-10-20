@@ -1,11 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragBase
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragK
-public import VerifiedGarbage.Proof.Framework.CallLay
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-KEM-768 on x86-64: the buffers of the top-level functions

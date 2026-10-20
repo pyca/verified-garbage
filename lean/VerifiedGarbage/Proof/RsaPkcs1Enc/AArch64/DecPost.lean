@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecPriv
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Calls
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecLay
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: after the private-key operation

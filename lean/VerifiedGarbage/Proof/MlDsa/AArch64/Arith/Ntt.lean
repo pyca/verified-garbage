@@ -1,11 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.NttLoop
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.NttLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
+import VerifiedGarbage.Proof.MlDsa.Round.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.NttLoop
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.MlDsa.Round.Mem
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_ntt`

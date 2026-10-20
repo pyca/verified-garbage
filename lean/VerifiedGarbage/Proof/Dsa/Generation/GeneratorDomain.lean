@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.Generation.Search
-public import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Dsa.Generation.Search
+import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # A successful generator search returns a nontrivial residue -/

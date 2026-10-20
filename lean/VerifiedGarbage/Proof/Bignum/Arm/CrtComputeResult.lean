@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtResultBound
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtComputeStage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtComputeStage
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # The computed output satisfies the shared private-CRT result specification -/
 

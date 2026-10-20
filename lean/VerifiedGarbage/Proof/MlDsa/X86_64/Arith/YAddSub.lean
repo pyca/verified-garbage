@@ -1,9 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Avx2
+public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
+meta import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Avx2
+meta import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_add_avx2` and `vg_mldsa_sub_avx2`

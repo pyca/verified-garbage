@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicStack
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Saved public arguments survive workspace and acceptance-slot writes -/
 

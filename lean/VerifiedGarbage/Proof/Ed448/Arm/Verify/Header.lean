@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Layout
+public import VerifiedGarbage.Impl.Ed448.Arm.Verify
 import VerifiedGarbage.Proof.Ed448.Arm.Shake.Header
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed448 verification on ARMv7: the header of `dom4`

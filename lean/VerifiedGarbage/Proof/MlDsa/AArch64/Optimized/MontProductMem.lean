@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MontProduct
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Word
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lanes
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFrame
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Word
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! ## From `MontProductVec.lean` -/
 

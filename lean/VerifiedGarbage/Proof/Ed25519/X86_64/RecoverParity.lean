@@ -1,9 +1,12 @@
 module
 
-import VerifiedGarbage.Impl.Ed25519.X86_64.FieldCheck
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointEncode
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointEncode
 public import VerifiedGarbage.Impl.Ed25519.X86_64.RecoverSign
-import VerifiedGarbage.Impl.Mont.Mod
+public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.X86_64.Lit
 
 /-! Merged from `Proof.Ed25519.X86_64.FieldCheck`. -/
 

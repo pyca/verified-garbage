@@ -1,9 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Rsa.X86_64.Folded
+public import VerifiedGarbage.Proof.Bignum.X86_64.Exp
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedStep
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedStep
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 @[expose] public section
 

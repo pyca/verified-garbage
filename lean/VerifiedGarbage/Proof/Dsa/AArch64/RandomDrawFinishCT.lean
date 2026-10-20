@@ -1,9 +1,25 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Impl.Dsa.AArch64.Random
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawControl
-meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomCT
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawControl
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Random
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawControl
+meta import Mathlib.Algebra.Group.Nat.Defs
+meta import Mathlib.Tactic.Attr.Core
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! The draw's final branches reveal only acceptance and its public retry budget. -/
 @[expose] public section

@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Table
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Index
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Stable compaction and widening stores of an eight-candidate batch -/
 

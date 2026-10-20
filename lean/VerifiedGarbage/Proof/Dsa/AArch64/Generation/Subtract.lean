@@ -1,7 +1,9 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
 
-public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Reduce
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Reuse RSA's array subtraction for the candidate's division remainder. -/

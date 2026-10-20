@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyChecks
+public import VerifiedGarbage.Proof.X448.Radix16Bytes
+public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.X86.ScalarStep
-import VerifiedGarbage.Proof.Ed448.Scalar
-public import VerifiedGarbage.Proof.X448.X86.Decode
-import VerifiedGarbage.Impl.X25519.X86
+import VerifiedGarbage.Proof.X448.X86.Decode
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.X448.X86.Carry
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): limbs from bytes, and `S < L`

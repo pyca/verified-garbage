@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PdCheckState
-public import VerifiedGarbage.Impl.Bignum.Arm.PdChecks
+public import VerifiedGarbage.Impl.Bignum.Arm.ArrayCompare
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompare
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayout
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Check that the public packed modulus exceeds one -/
 

@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgBase
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.VfPost
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
-public import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 
 /-!
 # RSASSA-PKCS1-v1_5 signing on ARMv7: the encoding

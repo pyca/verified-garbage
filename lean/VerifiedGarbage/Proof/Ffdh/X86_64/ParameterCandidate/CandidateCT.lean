@@ -1,10 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCTData
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.GeneratorCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.InitialStages
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.GeneratorCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.InitialStages
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.GeneratorCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.TestQCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrimeCheckCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCT
 
 /-! # FFDH parameter generation on x86-64: timing of the complete candidate flow -/
 

@@ -1,21 +1,22 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailSeed
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailInitial
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailPro
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailOutput
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailHash
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailSaved
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailSaved
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `CommitTailSponge.lean` -/
 

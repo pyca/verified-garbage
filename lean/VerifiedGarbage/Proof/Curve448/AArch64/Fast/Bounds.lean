@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Carry
+public import VerifiedGarbage.Proof.X448.Wide.Product
 
 /-!
 # Bounds of a product's coefficients and carries

@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Base
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.ShapeOk
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
-import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
+import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Rsa.Ranges
 
 /-!
 # An FFDH parameter candidate on AArch64: Montgomery arithmetic modulo `N`

@@ -1,9 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
+public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RangeMask
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.X86_64.RangeMask
+import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Dsa.X86_64.RangeHead
 
 /-! # Scalar range checks on caller or scratch byte buffers -/
 

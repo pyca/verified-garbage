@@ -2,15 +2,26 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Safety
 public import VerifiedGarbage.Spec.Ffdh.Contract
-public meta import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Verified
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
+import VerifiedGarbage.Proof.Bignum.X86_64.Template
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Safety
+meta import VerifiedGarbage.Spec.Ffdh.Contract
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Verified
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Contract
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
-import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Template
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-! # Verify FFDH public-key validation for every Montgomery backend -/
 

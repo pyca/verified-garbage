@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoadWitness
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.StoredWitness
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Uniform
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # State preserved while selecting a DSA Miller–Rabin witness -/
 

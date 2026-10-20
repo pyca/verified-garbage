@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Main
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.Domain
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH domain validation on x86-64: relation to the specification -/
 

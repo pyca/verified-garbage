@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepare
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
 
 /-! # Enter private CRT computation with immutable arguments and three valid layouts -/
 

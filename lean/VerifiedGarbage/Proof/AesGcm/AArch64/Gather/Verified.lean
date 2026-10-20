@@ -1,8 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.CT
 public import VerifiedGarbage.Impl.StackScratch.AArch64
-import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+public import VerifiedGarbage.Impl.AesGcm.AArch64.SealGather
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Callee
+import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Fn
+import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.CT
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, AArch64: `Verified`

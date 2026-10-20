@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.PowABI
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86.PowTiming
+import VerifiedGarbage.Proof.Dsa.X86.PowBody
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Correctness and secrecy of callable IA-32 exponentiation -/
 

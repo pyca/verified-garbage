@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 
-public import VerifiedGarbage.Proof.Framework.X86.Syms
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # Constant-time analysis of x86 static-table frames

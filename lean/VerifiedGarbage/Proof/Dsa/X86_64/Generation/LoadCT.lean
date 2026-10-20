@@ -1,13 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArithmetic
-public import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArithmetic
-meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 import VerifiedGarbage.Proof.Rsa.X86_64.CvCT
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+import VerifiedGarbage.Proof.Rsa.Ranges
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCT
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+meta import VerifiedGarbage.Proof.Rsa.Ranges
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant time of padded candidate loads from public pointers and lengths -/
 

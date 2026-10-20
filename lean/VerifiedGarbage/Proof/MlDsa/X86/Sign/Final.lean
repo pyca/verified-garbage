@@ -1,13 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseO
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseL
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.Words
+import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlDsa.DecideAt
 meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseO
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseL
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Words
+meta import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+meta import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+meta import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.DecideAt
 
 /-!
 # ML-DSA signing on x86 (32-bit): the body

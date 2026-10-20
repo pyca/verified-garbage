@@ -1,23 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-public import VerifiedGarbage.Proof.Md5.AArch64.Shared
-meta import VerifiedGarbage.Proof.Md5.AArch64.Shared
-import VerifiedGarbage.Proof.Md5.Md
-meta import VerifiedGarbage.Proof.Md5.Md
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-meta import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Md5.AArch64.Stream.Md
-import VerifiedGarbage.Proof.Sha512.Word64
+public import VerifiedGarbage.Proof.Md5.AArch64.Stream.Init
+public import VerifiedGarbage.Spec.Md5.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Md5.AArch64.Stream.Md
-meta import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Md5.AArch64.Stream.Init
+meta import VerifiedGarbage.Spec.Md5.Contract
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # MD5 on AArch64, as a Merkle–Damgård hash function

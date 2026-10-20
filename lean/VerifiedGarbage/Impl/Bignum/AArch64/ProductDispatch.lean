@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.AArch64.ProductEight
 public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightCall
 
 @[expose] public section

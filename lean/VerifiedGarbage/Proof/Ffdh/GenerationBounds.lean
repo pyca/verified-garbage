@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Spec.Ffdh.Generation
 
-public import VerifiedGarbage.Proof.Ffdh.GenerationTape
+import VerifiedGarbage.Proof.Ffdh.GenerationTape
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Native generation control: byte accounting and bounded persistent state -/

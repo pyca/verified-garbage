@@ -1,8 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvInputs
-public import VerifiedGarbage.Proof.Rsa.X86.InvParts
-public import VerifiedGarbage.Proof.Bignum.X86.ExportTruncated
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
+import VerifiedGarbage.Proof.Bignum.X86.ExportTruncated
+import VerifiedGarbage.Proof.Rsa.X86.KeySelect
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Masked recovery output preserves the workspace header and other arrays -/
 

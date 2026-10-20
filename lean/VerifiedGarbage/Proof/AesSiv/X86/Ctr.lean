@@ -4,6 +4,12 @@ public import VerifiedGarbage.Proof.AesSiv.X86.Callee
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 public import VerifiedGarbage.Proof.AesSiv.Ctr32
 import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.AesSiv.X86.Run
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-SIV on x86: CTR (`ctr`)

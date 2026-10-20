@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtSetup
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimeArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimeEnter
-public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimeArgs
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimeEnter
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Entering a CRT factor changes only its parent-link word -/
 

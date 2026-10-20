@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRawFinalSlice
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

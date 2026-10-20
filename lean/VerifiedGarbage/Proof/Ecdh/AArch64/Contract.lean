@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdh.P256
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.P256
+public import VerifiedGarbage.Spec.Ecdh.Generic
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ECDH over P-256 on AArch64: the contract the proof is written against

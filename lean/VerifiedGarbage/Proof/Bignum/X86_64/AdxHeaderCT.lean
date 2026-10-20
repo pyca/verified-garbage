@@ -1,15 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderFrame
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderFrame
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderSave
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderSave
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Saving and restoring header words uses only the public scratch layout. -/
 

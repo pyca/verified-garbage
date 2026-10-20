@@ -3,7 +3,10 @@ module
 import VerifiedGarbage.Proof.X448.X86.Initial
 import VerifiedGarbage.Proof.X448.X86.DecodeAll
 public import VerifiedGarbage.Proof.X448.X86.Save
-import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.X448.X86.Env
+import VerifiedGarbage.Proof.X448.X86.Frame
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # X448 on x86 (32-bit): reading the arguments

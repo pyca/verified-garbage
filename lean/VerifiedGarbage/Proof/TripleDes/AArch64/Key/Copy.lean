@@ -1,9 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Component
 public import VerifiedGarbage.Proof.Rc2.AArch64.Lookup
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
 
 @[expose] public section
 

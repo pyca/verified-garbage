@@ -4,7 +4,11 @@ public import VerifiedGarbage.Proof.Modes.Ops
 public import VerifiedGarbage.Spec.Ofb
 public import VerifiedGarbage.Spec.Cfb
 public import VerifiedGarbage.Spec.Cfb8
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # The modes, one step at a time, for any target

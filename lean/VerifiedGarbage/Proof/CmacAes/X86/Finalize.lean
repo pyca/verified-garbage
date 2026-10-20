@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.CmacAes.X86.UpdateLoop
 
-public import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
 import VerifiedGarbage.Proof.Cmac.Block
-import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-CMAC on x86: `vg_cmac_aes_finalize`, the last block

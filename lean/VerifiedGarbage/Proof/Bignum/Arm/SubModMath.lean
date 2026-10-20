@@ -1,6 +1,8 @@
 module
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SubCompare
 
 /-! # A borrow-masked addition implements modular subtraction -/
 

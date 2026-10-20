@@ -1,12 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Curve448.AArch64.Bounds
+import VerifiedGarbage.Proof.Curve448.AArch64.Bounds
 public import VerifiedGarbage.Impl.X448.AArch64.Symmetric
-public import VerifiedGarbage.Proof.X448.Wide.LoadCached
-import VerifiedGarbage.Proof.X448.Wide.SquareProduct
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+public import VerifiedGarbage.Proof.X448.Wide.CacheRegs
+public import VerifiedGarbage.Proof.X448.Wide.Word
+public import VerifiedGarbage.Proof.X448.Wide.Product
+public import VerifiedGarbage.Proof.X448.Wide.Representation
 import VerifiedGarbage.Proof.X448.Wide.DoubleTerm
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.X448.Wide.Term
 
 /-! Untrusted: accumulate a square diagonal into an existing coefficient. -/
 

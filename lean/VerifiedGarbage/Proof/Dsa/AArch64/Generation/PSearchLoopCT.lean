@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchIterationCTState
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchIterationCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchIterationCT
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Timing of the bounded native p search, including its exact retry cursor -/

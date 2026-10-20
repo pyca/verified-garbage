@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNaf
 public import VerifiedGarbage.Proof.Weierstrass.Naf5
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # The public NAF: what its proofs share

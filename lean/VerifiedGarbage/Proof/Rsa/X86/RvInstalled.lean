@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvABI
+public import VerifiedGarbage.Proof.Framework.X86.Spill
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvBuffers
-public import VerifiedGarbage.Proof.Rsa.X86.RvEntry
+import VerifiedGarbage.Proof.Rsa.X86.RvBuffers
+import VerifiedGarbage.Proof.Rsa.X86.RvEntry
+import VerifiedGarbage.Proof.Rsa.X86.RvResources
 
 /-! # Install recovery caller resources while saving the callee-saved registers -/
 

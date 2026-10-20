@@ -3,9 +3,10 @@ module
 public import VerifiedGarbage.Proof.TripleDes.X86.Key.Rotation
 public import VerifiedGarbage.Proof.TripleDes.X86.RoundStep
 import VerifiedGarbage.Proof.TripleDes.KeySchedule
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 @[expose] public section
 

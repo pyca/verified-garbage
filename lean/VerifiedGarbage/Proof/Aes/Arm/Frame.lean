@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Aes.Arm.ExpandKey
+public import VerifiedGarbage.Spec.Aes.Contract
+public import VerifiedGarbage.Impl.StackScratch.Arm
+public import VerifiedGarbage.TCB.Arm.Target
 
-public import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
+import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
 import VerifiedGarbage.Proof.Aes.Scratch
-public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # The AES key expansion on ARMv7, with its working space on the stack

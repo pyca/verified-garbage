@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.MontBody
 public import VerifiedGarbage.Proof.Bignum.Arm.MontInit
-public import VerifiedGarbage.Proof.Bignum.Arm.MontInitCT
+import VerifiedGarbage.Proof.Bignum.Arm.MontInitCT
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Constant-time complete Montgomery arithmetic, including initialization -/
 

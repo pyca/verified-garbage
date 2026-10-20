@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtABI
-public import VerifiedGarbage.Proof.Bignum.X86.CrtInputs
-public import VerifiedGarbage.Proof.Dsa.X86.ABIResources
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Impl.Bignum.X86.CrtLayout
+public import VerifiedGarbage.Proof.Dsa.X86.StackArgument
+import VerifiedGarbage.Proof.Dsa.X86.ABIResources
 import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
 
 /-! # Caller resources for the public RSA workspace -/
 

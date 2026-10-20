@@ -1,11 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLayout
+public import VerifiedGarbage.Proof.Weierstrass.Jac
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeFetch
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+import VerifiedGarbage.Proof.Weierstrass.Comb
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Tree precomputation: even multiples double a previous table entry;
 odd multiples add the original public point to the accumulator. -/

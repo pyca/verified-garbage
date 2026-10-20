@@ -1,21 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
-meta import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
-public import VerifiedGarbage.Proof.MlDsa.Sample.Signs
-meta import VerifiedGarbage.Proof.MlDsa.Sample.Signs
+import VerifiedGarbage.Proof.MlDsa.Sample.Signs
 public import VerifiedGarbage.Impl.MlDsa.X86.Sample.Ball
-meta import VerifiedGarbage.Impl.MlDsa.X86.Sample.Ball
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.Sponge
+public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
 import VerifiedGarbage.Proof.MlKem.X86.Common
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.MlDsa.Sample.Signs
+meta import VerifiedGarbage.Impl.MlDsa.X86.Sample.Ball
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sample.Sponge
+meta import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
 meta import VerifiedGarbage.Proof.MlKem.X86.Common
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_sample_in_ball`, the state of the loop

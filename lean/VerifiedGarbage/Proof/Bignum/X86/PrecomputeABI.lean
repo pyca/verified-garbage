@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
 

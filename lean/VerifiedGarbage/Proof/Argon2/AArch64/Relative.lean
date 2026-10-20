@@ -1,19 +1,25 @@
 module
 
 import VerifiedGarbage.Proof.Argon2.AArch64.Carry
-meta import VerifiedGarbage.Proof.Argon2.AArch64.Carry
 public import VerifiedGarbage.Impl.Argon2.AArch64.Relative
-meta import VerifiedGarbage.Impl.Argon2.AArch64.Relative
+public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Argon2.Reference
-meta import VerifiedGarbage.Proof.Argon2.Reference
 import VerifiedGarbage.Proof.Argon2.AArch64.Mix
-meta import VerifiedGarbage.Proof.Argon2.AArch64.Mix
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
-meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Argon2.AArch64.Carry
+meta import VerifiedGarbage.Impl.Argon2.AArch64.Relative
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Argon2.Reference
+meta import VerifiedGarbage.Proof.Argon2.AArch64.Mix
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # The baseline reference-window mapping is fixed time and preserves memory -/
 

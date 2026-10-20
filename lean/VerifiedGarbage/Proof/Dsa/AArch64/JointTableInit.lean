@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.JointEntries
-import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtBuild
 
 /-! # Initializing joint table pointers -/
 

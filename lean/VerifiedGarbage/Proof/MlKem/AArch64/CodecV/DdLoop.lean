@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd4
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdSpec
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeRun
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ML-KEM on AArch64: the loop of the vector decompression

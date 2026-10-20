@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCorrect
 public import VerifiedGarbage.Proof.Dsa.Arm.KeyTrace
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationBody
+import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationABI
 
 /-! # Constant-time traces of the callable public-key checks -/
 

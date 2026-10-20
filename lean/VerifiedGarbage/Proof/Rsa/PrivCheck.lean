@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Rsa.Octets
 public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # The checked RSA private-key operation: the check's logic, on every target

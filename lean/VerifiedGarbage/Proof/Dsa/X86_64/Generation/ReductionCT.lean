@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Reduce
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Reduce
-public import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Public-width arithmetic pieces used in p-candidate reduction -/
 

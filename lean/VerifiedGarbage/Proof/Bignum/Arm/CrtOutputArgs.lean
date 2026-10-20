@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtQSource
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Set the byte-export pointers and public output length -/
 

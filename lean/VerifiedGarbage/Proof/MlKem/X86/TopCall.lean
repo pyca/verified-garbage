@@ -2,10 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86.Top
 import VerifiedGarbage.Proof.MlKem.X86.CallRet
-public import VerifiedGarbage.Proof.Framework.Sig
-public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-KEM on x86 (32-bit): calls in the top-level functions

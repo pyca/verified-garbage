@@ -1,23 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Main
-meta import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Main
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Base
+public import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Hash
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Main
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Base
+meta import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Hash
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
-meta import VerifiedGarbage.Spec.X25519
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Ed448 public-key derivation on AArch64: `Verified`

@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryState
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameStore
 
 /-! # ABI initialization establishes every invariant of the complete native generator -/
 

@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEntryInput
-public import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRegions
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Entering the wrapper preserves all sources and incoming arguments -/
 

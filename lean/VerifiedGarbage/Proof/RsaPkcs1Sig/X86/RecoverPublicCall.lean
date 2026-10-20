@@ -3,6 +3,12 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverPublicPre
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverLocal
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRegions
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-! # Calling checked public RSA retains every immutable verification input -/
 

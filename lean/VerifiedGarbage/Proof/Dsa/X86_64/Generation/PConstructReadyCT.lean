@@ -2,6 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructCTState
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PBuildValue
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PBuild
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 
 /-! # Preserve public candidate bytes and persistent arguments across hashing -/
 

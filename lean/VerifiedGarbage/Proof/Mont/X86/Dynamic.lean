@@ -2,7 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Mont.X86.Dynamic
 public import VerifiedGarbage.Proof.Mont.X86.Loop
-public import VerifiedGarbage.Proof.Mont.X86.RowW
+import VerifiedGarbage.Proof.Mont.X86.RowW
+import VerifiedGarbage.Proof.Mont.X86.Row
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Runtime-modulus Montgomery rows on 32-bit x86 -/
 

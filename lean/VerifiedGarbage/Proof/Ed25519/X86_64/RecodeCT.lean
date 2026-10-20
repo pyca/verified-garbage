@@ -1,13 +1,29 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeLoop
+public import VerifiedGarbage.Spec.Ed25519.Contract
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeAll
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeAll
-public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
+import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
+import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Block
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeLoop
+meta import VerifiedGarbage.Spec.Ed25519.Contract
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-meta import VerifiedGarbage.Impl.Mont.Mod
-meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import Mathlib.Algebra.Group.Nat.Defs
+meta import Aesop.BuiltinRules
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The recoding: what its trace depends on

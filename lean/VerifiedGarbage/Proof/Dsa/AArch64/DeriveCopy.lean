@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generate
-public import VerifiedGarbage.Proof.Dsa.AArch64.CopyMasked
-public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCalls
-import VerifiedGarbage.Proof.Dsa.AArch64.MaskContext
-public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Dsa.AArch64.Execution
+import VerifiedGarbage.Proof.Dsa.AArch64.CopyMasked
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Layout
+import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # Copying the derived y past the signer's layout
 

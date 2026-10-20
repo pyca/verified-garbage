@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicInputs
 public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 
 /-! # Relate two calls with the same public lengths and pointers -/
 

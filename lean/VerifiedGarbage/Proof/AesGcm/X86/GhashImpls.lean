@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Callee
 public import VerifiedGarbage.Proof.Gcm.X86.Pclmul.Ghash
-import VerifiedGarbage.Spec.TripleDes
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.VariantProof
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on x86: `vg_ghash_pclmul`

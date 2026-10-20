@@ -1,7 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PHash
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashPlan
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashStep
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashStep
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import Mathlib.Tactic.Basic
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! # All p-candidate hash contributions, with bounded public sequencing -/
 

@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCT
+import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationABI
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCorrect
 
 /-! # The callable public-key validator satisfies its shared contract -/
 

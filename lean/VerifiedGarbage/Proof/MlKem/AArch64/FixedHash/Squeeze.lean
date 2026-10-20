@@ -1,6 +1,13 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.SqueezeCode
+public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.SqueezeTransport
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.SqueezeTransport
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.SqueezePiece
+import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Complete fixed-length single-block squeezing into disjoint output pieces -/
 @[expose] public section

@@ -1,9 +1,11 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCallCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCallCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
+import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
 
 /-! # Byte validation timing from the persistent public field bindings -/
 

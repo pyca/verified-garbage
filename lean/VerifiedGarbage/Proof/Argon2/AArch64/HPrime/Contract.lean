@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Spec.Argon2.Contract
-import VerifiedGarbage.TCB.AArch64.Target
 import Mathlib.Tactic.SplitIfs
 
 /-! # H′: a local ARM64 contract -/

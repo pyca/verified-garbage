@@ -7,6 +7,18 @@ import Mathlib.Data.Sym.Sym2.Init
 import Mathlib.Tactic.ContinuousFunctionalCalculus
 import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.Positivity.Finset
+public import VerifiedGarbage.Proof.Framework.Pratt
+public import VerifiedGarbage.Proof.P256.Point
+public import VerifiedGarbage.Proof.P256.Prime
+public import VerifiedGarbage.Proof.Weierstrass.Cubic
+public import VerifiedGarbage.Proof.Weierstrass.Group
+public import VerifiedGarbage.Proof.Weierstrass.RcbIdent
+import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.P256.Point
+import VerifiedGarbage.Proof.P256.Prime
+import VerifiedGarbage.Proof.Weierstrass.Cubic
+import VerifiedGarbage.Proof.Weierstrass.Group
+import VerifiedGarbage.Proof.Weierstrass.RcbIdent
 
 /-!
 # P-256's group law, on 32-bit ARM

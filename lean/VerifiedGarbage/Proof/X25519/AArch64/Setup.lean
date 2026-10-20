@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Proof.X25519.AArch64.Codec
+public import VerifiedGarbage.Proof.X25519.AArch64.Slots
 
-public import VerifiedGarbage.Proof.X25519.AArch64.Final
-import VerifiedGarbage.Proof.X25519.Bytes
 
 /-!
 # X25519 on AArch64: the setup

@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Impl.Mont.X86.Context
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 
-public import VerifiedGarbage.Proof.Mont.X86.ExponentTimingBlocks
+import VerifiedGarbage.Proof.Mont.X86.ExponentTimingBlocks
 
 /-! # Secret-independent branches and addresses for modular exponentiation -/
 

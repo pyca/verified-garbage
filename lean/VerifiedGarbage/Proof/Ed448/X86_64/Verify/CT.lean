@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.HashCT
+import VerifiedGarbage.Proof.Ed448.X86_64.Verify.HashCT
 public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Correct
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Rel
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLit
+import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
 
 /-!
 # Ed448 verification on x86-64: constant time

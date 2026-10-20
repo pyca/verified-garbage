@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.RsaPss.Arm.Base
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 
 /-!
 # RSASSA-PSS on ARMv7: running a block symbolically

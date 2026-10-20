@@ -1,11 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce1Step
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce1Step
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce10Step
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeRun
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeRun
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4Step
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce1Step
 meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce10Step
 meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeRun
+meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4Step
+meta import VerifiedGarbage.Proof.MlKem.Compress
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem_compress_encode`

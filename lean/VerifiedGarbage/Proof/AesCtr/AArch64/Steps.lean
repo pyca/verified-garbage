@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.AesCtr.Ctr32
-public import VerifiedGarbage.Proof.AesCbc.AArch64.Body
+import VerifiedGarbage.Proof.AesCtr.Ctr32
 public import VerifiedGarbage.Impl.AesCtr.AArch64
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.AesCtr.Inc
+import VerifiedGarbage.Proof.AesCbc.AArch64.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-CTR on AArch64: the code between the calls

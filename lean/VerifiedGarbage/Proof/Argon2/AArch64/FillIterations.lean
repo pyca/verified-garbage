@@ -4,9 +4,7 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.FillIterationsBody
 public import VerifiedGarbage.Proof.Argon2.Iterations
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
-import VerifiedGarbage.Impl.MdStream.AArch64
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Termination and correctness of every requested filling pass. -/
 

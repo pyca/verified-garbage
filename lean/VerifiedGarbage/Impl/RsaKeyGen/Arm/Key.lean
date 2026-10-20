@@ -1,9 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Rsa.Arm.MulMod
-public import VerifiedGarbage.Impl.Rsa.Arm.CrtValues
 public import VerifiedGarbage.Impl.Rsa.Arm.Recover
-public import VerifiedGarbage.Impl.Bignum.Arm.PcFn
 
 /-! # An RSA key from its two primes on ARMv7
 

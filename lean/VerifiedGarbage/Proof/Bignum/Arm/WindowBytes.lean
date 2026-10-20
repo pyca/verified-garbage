@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowBit
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpByteLoad
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpByteNext
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpByteState
-public import VerifiedGarbage.Proof.Bignum.Layout
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Bignum.Arm.ExpByteLoad
+import VerifiedGarbage.Proof.Bignum.Layout
+import VerifiedGarbage.Proof.Bignum.Arm.WindowState
+import VerifiedGarbage.Proof.Bignum.Arm.ExpControl
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # The exponent's bytes in the windowed exponentiation -/
 

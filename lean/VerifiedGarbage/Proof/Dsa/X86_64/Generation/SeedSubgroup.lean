@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSeed
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSeed
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedArguments
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Subgroup
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
 
 /-! # Complete first phase of a seed attempt, retaining every retry input -/
 

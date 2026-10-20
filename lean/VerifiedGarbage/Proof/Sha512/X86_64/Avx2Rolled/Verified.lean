@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.CT
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.CT
-public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
-import VerifiedGarbage.TCB.X86_64.Target
-meta import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.CT
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Compress
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-!
 # SHA-512 with AVX2 on x86-64, rolled: verified

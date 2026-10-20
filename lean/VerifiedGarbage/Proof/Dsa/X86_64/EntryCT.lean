@@ -1,15 +1,25 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.EntryScratch
+import VerifiedGarbage.Proof.Dsa.X86_64.EntryScratch
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Dsa.X86_64.EntryFields
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Proof.Dsa.X86_64.EntryScratch
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-meta import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Proof.Dsa.X86_64.EntryFields
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToAdditive
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant-time argument capture and packed-key pointer setup -/
 

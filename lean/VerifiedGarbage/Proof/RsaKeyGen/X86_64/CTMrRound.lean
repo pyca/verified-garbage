@@ -1,21 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrExp
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrRoundAll
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Copy
+import VerifiedGarbage.Proof.Bignum.CrtExp
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrExp
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-public import VerifiedGarbage.Proof.RsaKeyGen.Bits
-public import VerifiedGarbage.Proof.RsaKeyGen.MrMont
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
-import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-import VerifiedGarbage.Proof.RsaKeyGen.Slots
-meta import VerifiedGarbage.Proof.RsaKeyGen.Bits
-meta import VerifiedGarbage.Proof.RsaKeyGen.MrMont
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrRoundAll
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Copy
+meta import VerifiedGarbage.Proof.Bignum.CrtExp
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Bignum.Math
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # A candidate on x86-64: constant time of a round of Miller–Rabin

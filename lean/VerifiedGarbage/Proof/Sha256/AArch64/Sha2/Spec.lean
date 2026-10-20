@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
 public import VerifiedGarbage.Proof.Sha256.Spec
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! SHA-256 rounds and scheduling as computed by the AArch64 SHA instructions. -/
 

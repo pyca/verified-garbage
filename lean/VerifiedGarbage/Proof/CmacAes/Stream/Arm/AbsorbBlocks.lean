@@ -1,7 +1,19 @@
 module
+public import VerifiedGarbage.Impl.CmacAes.Stream.Arm
+public import VerifiedGarbage.Proof.Cmac.Stream
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 
-public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Common
+import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Common
 import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.CmacAes.Arm.Finalize
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

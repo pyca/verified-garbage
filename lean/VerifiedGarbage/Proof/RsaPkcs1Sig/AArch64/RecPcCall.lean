@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.RecoverPrecomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # `vg_rsa_pkcs1_recover_precomputed` on AArch64: the call

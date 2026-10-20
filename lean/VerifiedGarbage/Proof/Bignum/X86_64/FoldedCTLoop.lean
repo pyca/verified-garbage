@@ -1,15 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedLoop
+import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedLoop
-public import VerifiedGarbage.Proof.Bignum.X86_64.PdCTExp
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCTExp
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import Mathlib.Tactic.Set
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

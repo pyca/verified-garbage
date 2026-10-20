@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicSized
-public import VerifiedGarbage.Proof.Bignum.X86.PublicControls
-public import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
+public import VerifiedGarbage.Proof.Bignum.ExponentCheckMath
+import VerifiedGarbage.Proof.Bignum.X86.PublicControls
+import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
 
 /-! # A validated public key reaches the correctly sized RSA operation -/
 

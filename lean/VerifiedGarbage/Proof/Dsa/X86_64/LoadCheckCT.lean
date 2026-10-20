@@ -1,19 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RangeCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.RangeCT
+import VerifiedGarbage.Proof.Dsa.X86_64.RangeCT
 import VerifiedGarbage.Proof.Dsa.X86_64.RangeMask
-meta import VerifiedGarbage.Proof.Dsa.X86_64.RangeMask
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceInitCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceInitCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
+import VerifiedGarbage.Proof.Dsa.X86_64.RangeHead
+import VerifiedGarbage.Proof.Dsa.X86_64.Load
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RangeCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RangeMask
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceInitCT
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Checks
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
-meta import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RangeHead
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Load
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Loading a checked operand and returning its secret mask -/
 

@@ -1,15 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulY
-meta import VerifiedGarbage.Proof.MlKem.X86_64.EncMulY
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgMul16
-meta import VerifiedGarbage.Proof.MlKem.X86_64.KgMul16
+import VerifiedGarbage.Proof.MlKem.X86_64.KgMul16
 import VerifiedGarbage.Proof.MlKem.X86_64.Lit
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgMul
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: `encrypt_mul` and `keygen_mul` reading `Â` as `u16`s, for each rank

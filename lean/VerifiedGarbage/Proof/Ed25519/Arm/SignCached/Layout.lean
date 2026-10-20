@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
-public import VerifiedGarbage.Proof.Ed25519.Bytes
+public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

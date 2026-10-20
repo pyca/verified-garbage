@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Key2
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Taint3
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Mul
+import VerifiedGarbage.Proof.Bignum.Arm.WideMul
+import VerifiedGarbage.Proof.Rsa.Arm.RvRest
+import VerifiedGarbage.Proof.Rsa.RecoverSubtract
 
 /-! # An RSA key on ARMv7: `n = p q` (`n_vp`) and the mask of the checks (`mask_vp`) -/
 

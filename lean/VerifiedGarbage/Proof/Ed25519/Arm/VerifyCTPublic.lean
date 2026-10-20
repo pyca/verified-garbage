@@ -6,12 +6,16 @@ import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
 import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
-public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
+public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
 import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
 import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
 import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
+import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
+import VerifiedGarbage.Proof.Ed25519.Arm.Points
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.Arm.VerifyBody`. -/
 

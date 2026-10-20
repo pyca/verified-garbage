@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Cast5.X86.Round
+public import VerifiedGarbage.Proof.Framework.X86.Spill
 
 import VerifiedGarbage.Proof.Cast5.X86.KeyHalf
-public import VerifiedGarbage.Proof.Cast5.X86.Ecb
+import VerifiedGarbage.Proof.Cast5.X86.Ecb
+import VerifiedGarbage.Proof.Framework.CallLay
 
 /-!
 # CAST5 key expansion on 32-bit x86

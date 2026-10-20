@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Spec.Blowfish
 
-public import VerifiedGarbage.Proof.Blowfish.Feistel
 
 /-!
 # The key schedule, one encryption at a time

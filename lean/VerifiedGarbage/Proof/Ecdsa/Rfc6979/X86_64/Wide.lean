@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Steps
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.BytesLen
+public import VerifiedGarbage.Proof.Mont.X86_64.Words
+import VerifiedGarbage.Proof.Weierstrass.X86_64.BytesLen
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Blocks
 
 /-!
 # Deterministic ECDSA on x86-64: scalars longer than the hash

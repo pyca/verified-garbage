@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.Ed448.Formulas
 public import VerifiedGarbage.Impl.Ed448.AArch64.CombBase
-public import VerifiedGarbage.Spec.Ed448
+public import VerifiedGarbage.Impl.Ed448.AArch64.Point56
 
 /-!
 # Ed448 base-point multiplication on AArch64

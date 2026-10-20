@@ -4,13 +4,22 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejCounts
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatchGeometry
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSamplerState
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourRead
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPro
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorb
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BoundedFour
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorb
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbPair
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Zero
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Absorb
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SeedFrame
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Semantics
 
 /-! ## From `BoundedFourCounts.lean` -/
 

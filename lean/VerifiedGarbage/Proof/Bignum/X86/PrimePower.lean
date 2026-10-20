@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PrimePower
-public import VerifiedGarbage.Proof.Bignum.X86.PrimeSetupFrame
-public import VerifiedGarbage.Proof.Mont.X86.Exponentiate
+public import VerifiedGarbage.Proof.Bignum.X86.PreparePrime
+public import VerifiedGarbage.Proof.Mont.X86.ExponentBody
+import VerifiedGarbage.Proof.Bignum.X86.PrimeSetupFrame
+import VerifiedGarbage.Proof.Mont.X86.Exponentiate
 
 /-! # The secret factor power is defined even for rejected keys -/
 

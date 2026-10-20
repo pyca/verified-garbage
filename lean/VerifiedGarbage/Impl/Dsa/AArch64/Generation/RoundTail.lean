@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.Core
+public import VerifiedGarbage.Impl.MillerRabin.AArch64.Layout
+import VerifiedGarbage.Impl.Rsa.AArch64.CarrySelect
+import VerifiedGarbage.Impl.Rsa.AArch64.Keys
 
-public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
 
 /-! RSA's blinded-round policy with the caller's uniform-witness target. -/
 @[expose] public section

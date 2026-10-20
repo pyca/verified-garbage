@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.SignVerify
+public import VerifiedGarbage.Impl.Dsa.Arm.Shape
 
 /-! # AAPCS entry, public-width dispatch and register restoration on ARM
 

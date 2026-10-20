@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerFrame
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.CrtExp
+import VerifiedGarbage.Proof.Rsa.Ranges
 
 /-! # Recover the arithmetic context after a shared-round call -/
 

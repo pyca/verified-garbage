@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.CoreOps
 public import VerifiedGarbage.Proof.Dsa.Arm.Leaves
-public import VerifiedGarbage.Proof.Dsa.SameTrace
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.ArithCall
+import VerifiedGarbage.Proof.Dsa.Arm.PowCall
 
 /-!
 # DSA on 32-bit ARM: the arithmetic's traces

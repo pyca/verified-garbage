@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvBody
+public import VerifiedGarbage.Proof.Rsa.X86.RvPair
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvValidTiming
-public import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 
 /-! # Loading and validating the public modulus preserves all call inputs -/
 

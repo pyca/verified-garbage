@@ -1,17 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.Ecb
-meta import VerifiedGarbage.Proof.Sm4.X86_64.Ecb
 public import VerifiedGarbage.Proof.Sm4.Scratch
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Sm4.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
+meta import VerifiedGarbage.Proof.Sm4.X86_64.Ecb
 meta import VerifiedGarbage.Proof.Sm4.Scratch
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sm4.X86_64.Lit
+meta import VerifiedGarbage.Impl.StackScratch.X86_64
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Sm4.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
 
 /-!
 # SM4 ECB on x86-64 meets its contracts

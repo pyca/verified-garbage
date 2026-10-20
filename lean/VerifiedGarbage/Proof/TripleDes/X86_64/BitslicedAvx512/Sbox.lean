@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.SboxLit
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Sbox
 public import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
+import VerifiedGarbage.Proof.Framework.X86_64.Straight
+import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 
 /-!
 # The AVX-512 S-box circuits' machine code

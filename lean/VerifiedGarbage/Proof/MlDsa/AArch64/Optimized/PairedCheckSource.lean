@@ -1,8 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRawField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowRun
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedProductField
 
 @[expose] public section
 

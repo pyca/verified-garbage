@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.Arm.Ops
 public import VerifiedGarbage.Proof.Weierstrass.Unch
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Impl.Mont.Arm
+public import VerifiedGarbage.Proof.Mont.Arm.Words
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Saving and restoring registers in the working space, on 32-bit ARM

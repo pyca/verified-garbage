@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.Arm.CTMac
+public import VerifiedGarbage.Proof.AesSiv.Long
+import VerifiedGarbage.Proof.AesSiv.Arm.FinishLong
+import VerifiedGarbage.Proof.AesSiv.Arm.FinishShort
 meta import VerifiedGarbage.Proof.AesSiv.Arm.CTMac
+meta import VerifiedGarbage.Proof.AesSiv.Long
+meta import VerifiedGarbage.Proof.AesSiv.Arm.FinishLong
+meta import VerifiedGarbage.Proof.AesSiv.Arm.FinishShort
 
 /-!
 # AES-SIV on ARMv7: S2V's end is constant time

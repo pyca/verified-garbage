@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.AArch64.Invert
 public import VerifiedGarbage.Proof.X25519.AArch64.Codec
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.X25519.AArch64.Ops
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.SetNotationForOrder
 
 /-!
 # X25519 on AArch64: the full reduction and the result

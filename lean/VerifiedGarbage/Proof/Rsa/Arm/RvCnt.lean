@@ -1,6 +1,10 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Rsa.Arm.RvKS
 
-public import VerifiedGarbage.Proof.Rsa.Arm.RvSlots
+import VerifiedGarbage.Proof.Rsa.Arm.RvSlots
+import VerifiedGarbage.Proof.Bignum.Arm.MontMath
 
 /-! # `vg_rsa_recover_primes` on ARMv7: the loops' count (`cntNext_ok`) -/
 

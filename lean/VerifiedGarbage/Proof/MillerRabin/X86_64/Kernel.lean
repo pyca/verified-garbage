@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerResult
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerResult
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerCall
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerCT
 
 /-! # A callable prepared round for generic RSA and FFDH policies -/

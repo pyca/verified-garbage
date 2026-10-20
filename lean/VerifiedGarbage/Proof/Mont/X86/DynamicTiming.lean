@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Impl.Mont.X86.Context
 public import VerifiedGarbage.Impl.Mont.X86.Inverse
 public import VerifiedGarbage.Proof.Framework.X86.TaintErase
+public import VerifiedGarbage.Impl.Mont.X86.Dynamic
+public import VerifiedGarbage.Impl.Mont.X86.Exponent
+public import VerifiedGarbage.Impl.Mont.X86.Power
 
 /-!
 # Taint checks for runtime-modulus Montgomery arithmetic on x86

@@ -2,8 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Seed.Arm.Round
 public import VerifiedGarbage.Proof.Seed.Rounds
-public import VerifiedGarbage.Proof.Seed.Memory
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Seed.Memory
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Eight blocks of SEED on ARMv7

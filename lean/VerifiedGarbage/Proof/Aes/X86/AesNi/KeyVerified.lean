@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyDispatch
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBranches
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.CT
+import VerifiedGarbage.Proof.Aes.X86.AesNi.CT
 import VerifiedGarbage.Proof.Aes.X86.ExpandKey
 public import VerifiedGarbage.Spec.Aes.Contract
-public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
 
 @[expose] public section
 

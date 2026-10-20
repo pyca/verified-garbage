@@ -1,12 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntry
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntry
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacNorm
-public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Weierstrass.Window5
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacSelect
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
+import VerifiedGarbage.Proof.Mont.X86_64.Ops
+import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # 5-bit windows with an affine table on x86-64: the entry of a digit

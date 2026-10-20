@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtCompute
-public import VerifiedGarbage.Proof.Bignum.CrtNatural
+import VerifiedGarbage.Proof.Bignum.CrtNatural
 public import VerifiedGarbage.Proof.Bignum.CrtResult
+public import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.X86.SafePrime
 
 /-! # Accepted i686 CRT arithmetic agrees with the RSA specification -/
 

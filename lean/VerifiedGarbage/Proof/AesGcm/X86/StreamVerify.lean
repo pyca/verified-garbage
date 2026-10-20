@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.StreamFinish
-meta import VerifiedGarbage.Proof.AesGcm.X86.StreamFinish
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+meta import VerifiedGarbage.Proof.AesGcm.X86.StreamFinish
 meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on x86: `vg_aes_gcm_stream_verify`

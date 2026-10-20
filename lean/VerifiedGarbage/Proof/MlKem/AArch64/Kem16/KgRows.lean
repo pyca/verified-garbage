@@ -1,14 +1,46 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.KgOps
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
-public import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenPrefix
-public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrix
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.KgOps
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenPrefix
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrix
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.DotReady
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
+public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.KgCommon
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutAll
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenTables
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenNoise
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenFinish
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DotSpec
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdSplit
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
 
 /-! # The 16-bit key generation is correct
 

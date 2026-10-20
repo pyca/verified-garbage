@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ffdh.Lead
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.PowLit
+import Batteries.Tactic.Init
 
 /-!
 # FFDH: the scalar of a key-generation attempt, from its octets

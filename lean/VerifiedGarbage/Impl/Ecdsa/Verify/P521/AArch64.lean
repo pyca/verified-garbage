@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P521Joint
-public import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
 
 /-! # ECDSA verification over P-521 on AArch64: nine-word field elements and scalars.
 

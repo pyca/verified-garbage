@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedLanes
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.Arith.VectorNtt
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

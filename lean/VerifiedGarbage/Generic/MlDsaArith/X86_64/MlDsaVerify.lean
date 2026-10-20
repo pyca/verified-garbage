@@ -1,12 +1,49 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Prims
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Instrs
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Instrs
 import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Instrs
+public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+public import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+public import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
+public import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintPack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintUnpack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTCompute
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTSample
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTStages
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Correct
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Verified
+public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
+import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintPack
+import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintUnpack
+import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
+import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTCompute
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTSample
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTStages
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Correct
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Verified
+import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 
 /-!
 # ML-DSA (FIPS 204) on x86-64: verification

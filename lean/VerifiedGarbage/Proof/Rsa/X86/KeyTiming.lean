@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86.Inverse
-public import VerifiedGarbage.Proof.Mont.X86.ExponentTiming
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+import VerifiedGarbage.Proof.Mont.X86.ExponentTiming
+import VerifiedGarbage.Proof.Mont.X86.ExponentTimingBlocks
 
 /-! # Taint summaries for the RSA inverse workspace operations -/
 

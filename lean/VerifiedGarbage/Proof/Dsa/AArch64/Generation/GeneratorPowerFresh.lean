@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorPower
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+public import VerifiedGarbage.Proof.Dsa.AArch64.Finish
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorModulus
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorFootprint
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorModulus
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorFootprint
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorPower
 
 /-! # Initialize and evaluate one generator power from arbitrary scratch -/
 

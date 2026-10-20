@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
-public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverSign
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverParity
+import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverSign
+import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Projective comparison implements the specification's pointEqual. -/
 

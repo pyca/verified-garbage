@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AnyKey.X86
-import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Common
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Key
+import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Sha256.X86.Lit
+import VerifiedGarbage.Proof.Sha256.X86.Compress
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # HMAC's `init` for a key of any length on x86 (32-bit): correct

@@ -1,27 +1,25 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.AArch64.KeyGeneration.Init
-public import VerifiedGarbage.Proof.Ffdh.ControlMemory
+import VerifiedGarbage.Proof.Ffdh.ControlMemory
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
-public import VerifiedGarbage.Proof.Framework.Contract
-public meta import VerifiedGarbage.Impl.Ffdh.AArch64.KeyGeneration.Init
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
-import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Impl.Ffdh.AArch64.KeyGeneration.Init
 meta import VerifiedGarbage.Proof.Ffdh.ControlMemory
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Run
 meta import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
-meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
-meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.Sig
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Native FFDH key-generation initialization on AArch64: correctness, constant time -/
 

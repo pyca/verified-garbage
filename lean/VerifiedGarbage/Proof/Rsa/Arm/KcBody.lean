@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.KcChecks
+import VerifiedGarbage.Proof.Rsa.Arm.KcOps
+import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 
 /-! # The checks of an RSA key on ARMv7: `crtBody` and `keyBody`
 

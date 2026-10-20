@@ -1,13 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.X86_64.Ecb
 public import VerifiedGarbage.Proof.Camellia.X86_64.PreparedVerified
 public import VerifiedGarbage.Proof.Modes.X86_64.Core
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Impl.Camellia.X86_64.Ctr
-public import VerifiedGarbage.Proof.Camellia.CtrCipher
 public import VerifiedGarbage.Spec.Camellia.Cbc
-meta import VerifiedGarbage.Proof.Camellia.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Camellia.CtrCipher
+import VerifiedGarbage.Proof.Camellia.X86_64.Lit
+import VerifiedGarbage.Proof.Camellia.X86_64.PairSum
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Camellia's core for the modes on x86-64

@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Step
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Pass
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Round
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Keys
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Round
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 
 /-!
 # An AVX2 DES pass on the machine

@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Window
 public import VerifiedGarbage.Proof.Weierstrass.Booth
-public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 
 /-!
 # Signed windows in Jacobian coordinates, on any target

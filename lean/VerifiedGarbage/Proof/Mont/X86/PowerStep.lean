@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Mont.X86.Power
+public import VerifiedGarbage.Proof.Mont.X86.DynamicOps
 
-public import VerifiedGarbage.Proof.Mont.X86.PowerInit
+import VerifiedGarbage.Proof.Mont.X86.PowerInit
+import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
+import VerifiedGarbage.Proof.Mont.X86.DynamicAdd
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # A modular doubling with a public countdown -/
 

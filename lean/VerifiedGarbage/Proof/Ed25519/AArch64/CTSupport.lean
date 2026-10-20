@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! Relational constant-time composition with a public stack pointer.
 The AArch64 taint domain always includes sp; this wrapper carries its agreement

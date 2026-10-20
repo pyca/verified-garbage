@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemBody
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # The mask of the last blocks after the last group

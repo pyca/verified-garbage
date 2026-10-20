@@ -2,7 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.ShapeOperands
 public import VerifiedGarbage.Proof.Dsa.X86.Moduli
-public import VerifiedGarbage.Proof.Dsa.SizeBounds
+public import VerifiedGarbage.Impl.Dsa.X86.Shape
+public import VerifiedGarbage.Proof.Dsa.Accepted
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+import VerifiedGarbage.Proof.Dsa.SizeBounds
+import VerifiedGarbage.Proof.Dsa.X86.Shape
 
 /-! # Successful public shape validation establishes the arithmetic invariants -/
 

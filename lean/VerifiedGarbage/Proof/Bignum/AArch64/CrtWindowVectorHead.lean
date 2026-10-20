@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorSetup
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Impl.Rsa.AArch64.WindowSelectVector
 
 /-! Start each SIMD block at the same public offset in every table entry. -/
 

@@ -1,13 +1,25 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
 
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YNorm
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YNorm
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YNorm
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.OneOut
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YNorm
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
-import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.Conv
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.OneOut
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_make_hint_avx2`

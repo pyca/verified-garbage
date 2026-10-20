@@ -1,13 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86.Ecb
-public import VerifiedGarbage.Proof.Camellia.X86.Crypt8
-public import VerifiedGarbage.Proof.Camellia.CtrCipher
 public import VerifiedGarbage.Spec.Camellia.Cbc
 public import VerifiedGarbage.Proof.Modes.X86.Core
 public import VerifiedGarbage.Impl.Camellia.X86.Modes
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Camellia.CtrCipher
+import VerifiedGarbage.Proof.Camellia.X86.Crypt8
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # Camellia's core for the modes on x86 (32-bit)

@@ -1,15 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTMain
-meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTMain
 public import VerifiedGarbage.Proof.Rsa.X86_64.Guarded
+public import VerifiedGarbage.Impl.Rsa.X86_64.Folded
+public import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIOCT
+import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTMain
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Guarded
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Impl.Rsa.X86_64.Folded
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIOCT
+meta import VerifiedGarbage.Proof.Bignum.Octets
 
 @[expose] public section
 

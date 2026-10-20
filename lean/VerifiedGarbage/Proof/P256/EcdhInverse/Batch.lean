@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.P256.EcdhInverse.Words
-public import VerifiedGarbage.Proof.P256.EcdhInverse.RawUpdate
+import VerifiedGarbage.Proof.P256.EcdhInverse.RawUpdate
 public import VerifiedGarbage.Proof.P256.EcdhInverse.Update
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+public import Mathlib.Tactic.Positivity
+public import VerifiedGarbage.Proof.Divstep.Alg
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatch
 
 @[expose] public section
 
