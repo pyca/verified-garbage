@@ -28,7 +28,7 @@ theorem maskResult_ok (h : In base bytes len args s) {c : Bool}
         (if c then val32 s.mem base (lo len (.slot .wide 19)) (cwc len .wide) else 0) →
       Keeps [.eax, .ecx, .edx, .ebp] s u → WP isa P u Q) :
     WP isa (.seq (.block (ptrTo (.slot .wide 19) .ebp .edx ++ cntTo (one .wide) .edx ++
-      [.mov .ecx (.mem (sc accOff))])) (.seq maskLoop P)) s Q := by
+      ([.mov .ecx (.mem (sc accOff))] : List Instr))) (.seq maskLoop P)) s Q := by
   have f19 := h.slot_fit .wide (j := 19) (by decide)
   have bw := bc_eq_cwc len .wide
   have g := bc_ge h.lower' .wide
@@ -58,7 +58,7 @@ theorem maskResult_ok (h : In base bytes len args s) {c : Bool}
 /-- The result's `n_len` bytes to `out`; they are its value's when it fits them. -/
 theorem writeResult_ok (h : In base bytes len args s) :
     WP isa (.seq (.block (PublicFn.outputArgs ++ ptrTo (.slot .wide 19) .esi .edx ++
-      [.alu .add .esi (.reg .ecx), .alu .sub .esi (.imm 1)]))
+      ([.alu .add .esi (.reg .ecx), .alu .sub .esi (.imm 1)] : List Instr)))
       (.seq reverseBytes (.block [.mov .eax (.mem (sc accOff)), .alu .and .eax (.imm 1)]))) s fun t =>
       (val32 s.mem base (lo len (.slot .wide 19)) (cwc len .wide) < 2 ^ (8 * len) →
         Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len =

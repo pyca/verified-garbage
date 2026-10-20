@@ -29,7 +29,7 @@ theorem copySetup_ok (h : In base bytes len args s) {x j : Nat} (hx : x ≤ 8) (
     (k : ∀ w, Keeps [.ebx, .ecx, .edx, .ebp, .edi] s w → w.mem = s.mem →
       PtrAt w base .ebp (lo len (.slot c x)) → PtrAt w base .ebx (te len c j) →
       (w.gpr .edi).toNat = 4 * cwc len c → w.gpr .ecx = cmask true → Q w) :
-    WP isa (.block ([.mov .ecx (.imm (BitVec.allOnes 32))] ++ ptrTo (.slot c x) .ebp .edx ++
+    WP isa (.block (([.mov .ecx (.imm (BitVec.allOnes 32))] : List Instr) ++ ptrTo (.slot c x) .ebp .edx ++
       entryPtr c .ebx j .edx ++ cntTo (one c) .edi)) s Q := by
   have f8 := h.slot_fit c (j := 8) (by decide)
   have T := h.table_fit c
@@ -61,7 +61,7 @@ theorem copyEntry_ok (h : In base bytes len args s) {x j : Nat} (hx : x ≤ 8) (
     (k : ∀ u, Outside base (te len c j) (bc len c) s.mem u.mem →
       val32 u.mem base (te len c j) (cwc len c) = sv s.mem base len c x →
       Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u → WP isa P u Q) :
-    WP isa (.seq (.block ([.mov .ecx (.imm (BitVec.allOnes 32))] ++ ptrTo (.slot c x) .ebp .edx ++
+    WP isa (.seq (.block (([.mov .ecx (.imm (BitVec.allOnes 32))] : List Instr) ++ ptrTo (.slot c x) .ebp .edx ++
       entryPtr c .ebx j .edx ++ cntTo (one c) .edi)) (.seq (.seq selectLoop (.block restoreEdi)) P)) s Q := by
   have f8 := h.slot_fit c (j := 8) (by decide)
   have T := h.table_fit c

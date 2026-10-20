@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtPair
-public import VerifiedGarbage.Proof.Bignum.X86.CrtOutputMath
+public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
 
 /-! # Invalid public keys clear a public-length output with a fixed trace -/
 

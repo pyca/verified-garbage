@@ -172,7 +172,7 @@ theorem windowLoop_relCT (hc : WinChecks c) {N : Nat} (hN : 0 < N) (hN32 : N < 2
   exact ⟨⟨W₁, z₁⟩, ⟨W₂, z₂⟩⟩
 
 theorem count_wst (W : TSt base bytes len args sp c [3, 5, 6] 16 s) :
-    WP isa (.block (widthC 0 c .esi ++ [.alu .add .esi (.reg .esi)])) s
+    WP isa (.block (widthC 0 c .esi ++ ([.alu .add .esi (.reg .esi)] : List Instr))) s
       (WinSt base bytes len args sp c [3, 6] (2 * bc len c)) := by
   obtain ⟨⟨M, C, Hk, He, A, sp₀⟩, -⟩ := W
   have h := C.inp

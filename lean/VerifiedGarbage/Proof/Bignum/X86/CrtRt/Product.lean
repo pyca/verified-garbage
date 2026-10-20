@@ -82,8 +82,8 @@ theorem rowSetup_ok (h : In base bytes len args s) {b : Loc} (hb : lo len b + bc
     (k : ∀ u, Keeps [.eax, .ebx, .ecx, .edx, .esi] s u → Outside base multOff 4 s.mem u.mem →
       w32 u.mem base multOff = w32 s.mem base (mulAOff + 4 * i) → PtrAt u base .ecx (lo len b) →
       (u.gpr .esi).toNat = 4 * cwc len .wide → u.gpr .ebx = 0 → Q u) :
-    WP isa (.block ([.mov .eax (.mem (at_ .ebp (mulAOff - prodOff))), .store (sc multOff) .eax] ++
-      ptrTo b .ecx .edx ++ widthC 0 .wide .esi ++ [.mov .ebx (.imm 0)])) s Q := by
+    WP isa (.block (([.mov .eax (.mem (at_ .ebp (mulAOff - prodOff))), .store (sc multOff) .eax] : List Instr) ++
+      ptrTo b .ecx .edx ++ widthC 0 .wide .esi ++ ([.mov .ebx (.imm 0)] : List Instr))) s Q := by
   have pf := h.prod_fit
   have bw := bc_eq_cwc len .wide
   have bl := h.bytes_lt
@@ -117,9 +117,9 @@ theorem rowSetup_ok (h : In base bytes len args s) {b : Loc} (hb : lo len b + bc
 /-- The end of a row: its carry word stored, `ebp` at the next row, and ZF after the last. -/
 theorem rowTail_ok (h : In base bytes len args s) {i : Nat} (hi : i < cwc len .wide)
     (hp : PtrAt s base .ebp (prodOff + 4 * i + 4 * cwc len .wide)) :
-    WP isa (.block ([.store (at_ .ebp 0) .ebx] ++ widthC 0 .wide .eax ++
-      [.alu .sub .ebp (.reg .eax), .alu .add .ebp (.imm 4), .alu .add .eax (.reg .edi),
-        .alu .add .eax (.imm (BitVec.ofNat 32 prodOff)), .alu .cmp .ebp (.reg .eax)])) s fun u =>
+    WP isa (.block (([.store (at_ .ebp 0) .ebx] : List Instr) ++ widthC 0 .wide .eax ++
+      ([.alu .sub .ebp (.reg .eax), .alu .add .ebp (.imm 4), .alu .add .eax (.reg .edi),
+        .alu .add .eax (.imm (BitVec.ofNat 32 prodOff)), .alu .cmp .ebp (.reg .eax)] : List Instr))) s fun u =>
       Outside base (prodOff + 4 * (i + cwc len .wide)) 4 s.mem u.mem ∧
       w32 u.mem base (prodOff + 4 * (i + cwc len .wide)) = (s.gpr .ebx).toNat ∧
       PtrAt u base .ebp (prodOff + 4 * (i + 1)) ∧ u.zf = some (decide (i + 1 = cwc len .wide)) ∧

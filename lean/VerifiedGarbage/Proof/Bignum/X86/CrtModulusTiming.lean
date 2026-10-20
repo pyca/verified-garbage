@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtPair
-public import VerifiedGarbage.Proof.Bignum.X86.CrtOutputMath
+public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
 public import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
 
 /-! # Loading and validating the public modulus preserves all call inputs -/

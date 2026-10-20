@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Sized
 public import VerifiedGarbage.Proof.Bignum.X86.CrtInstalled
-public import VerifiedGarbage.Proof.Bignum.X86.CrtReturn
-public import VerifiedGarbage.Proof.Bignum.X86.CrtPost
 public import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
+public import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Functional correctness and cdecl preservation of private CRT RSA at a run-time width
@@ -52,6 +52,20 @@ theorem frameRt_full {base out : Addr} {bytes len : Nat} {sp : BitVec 32} {m m' 
   · exact ⟨⟨base, bytes⟩, by simp, Offset.sub_base base (by omega)⟩
   · exact ⟨⟨out, len⟩, by simp, fun _ h => h⟩
   · exact ⟨_, by simp, fun _ h => h⟩
+
+theorem restored_abi {s t u : State} (R : Restored t u s.gpr Crt.savedRegisters)
+    (sp : t.gpr .esp = s.gpr .esp)
+    (ret : t.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32) :
+    abiPreserved s u := by
+  refine ⟨?_, by rw [R.mem]; exact ret⟩
+  intro reg hr
+  simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact R.regs _ (by decide)
+  · exact R.regs _ (by decide)
+  · exact R.regs _ (by decide)
+  · exact R.regs _ (by decide)
+  · exact (R.other _ (by decide)).trans sp
 
 theorem ret_zone40 {sp : BitVec 32} (h : 40 ≤ sp.toNat) :
     Region.Disjoint ⟨sp.setWidth 64, 4⟩ (below sp 40) := by
@@ -177,7 +191,7 @@ theorem operation_ok {s : State} (A : CrtABI s) :
   rw [restore_eq]
   refine WP.mono (Crt.entryRestore_ok (I.scratch.of_keeps Kv (by decide) (by decide)) low
     (savedRegisters_eq ▸ Saved)) fun t R => ?_
-  refine ⟨?_, Crt.restored_abi R ((Kv.1 _ (by decide)).trans (K.1 _ (by decide))) Ret⟩
+  refine ⟨?_, restored_abi R ((Kv.1 _ (by decide)).trans (K.1 _ (by decide))) Ret⟩
   rw [R.mem, R.other .eax (by decide)]
   have B (i : Nat) (hi : i ∈ componentArguments) :
       Spec.Rsa.bytesAt u.mem (byteAddr (arg s i)) (arg s (i + 1)).toNat =

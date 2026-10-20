@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Import
-public import VerifiedGarbage.Proof.Bignum.X86.CrtResult
-public import VerifiedGarbage.Proof.Bignum.X86.CrtOutputMath
+public import VerifiedGarbage.Proof.Bignum.CrtNatural
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Private CRT at a run-time width, from the arguments to the result
@@ -19,7 +18,7 @@ namespace VG.Proof.Bignum.X86.CrtRt
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
-open VG.Proof.Bignum.X86.Crt (componentValue componentArguments accepted outputValue resultValue)
+open VG.Proof.Bignum.X86.Crt (componentValue componentArguments accepted outputValue)
 
 /-- What private CRT at a run-time width writes: the working space but its saved registers, the
 output and the zone below `sp` its calls write. -/
@@ -54,7 +53,22 @@ theorem comp_lt (m : Mem) (args : Nat → BitVec 32) (i : Nat) :
   have B := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt m (byteAddr (args i)) (args (i + 1)).toNat)
   simpa only [componentValue, VG.Proof.Bignum.bytesAt_length, VG.Proof.Bignum.pow256_eq] using B
 
-theorem safeM_eq (m : Nat) : safeM m = VG.Proof.Bignum.X86.safePrime m := rfl
+/-- An accepted key's recombination is the CRT's result, below the modulus. -/
+theorem accepted_result {N p q dp dq qi x : Nat} (odd : N % 2 = 1) (pBound : p < N) (qBound : q < N)
+    (product : p * q = N) :
+    x ^ dq % safeM q + q * ((x ^ dp % safeM p + safeM p - x ^ dq % safeM q % safeM p) % safeM p * qi % safeM p) =
+        VG.Proof.Bignum.crtResult p q dp dq qi x ∧
+      x ^ dq % safeM q + q * ((x ^ dp % safeM p + safeM p - x ^ dq % safeM q % safeM p) % safeM p * qi % safeM p) <
+        N := by
+  obtain ⟨hq, hoq⟩ := VG.Proof.Bignum.factor_facts product pBound odd
+  obtain ⟨hp, hop⟩ := VG.Proof.Bignum.factor_facts (by rw [Nat.mul_comm]; exact product) qBound odd
+  have sp : safeM p = p := ite_eq_left ⟨hp, hop⟩
+  have sq : safeM q = q := ite_eq_left ⟨hq, hoq⟩
+  rw [sp, sq]
+  refine ⟨?_, ?_⟩
+  · unfold VG.Proof.Bignum.crtResult
+    rw [VG.Proof.Bignum.crt_coefficient_natural (by omega)]
+  · rw [← product]; exact VG.Proof.Bignum.crt_recombine_bound (by omega) (Nat.mod_lt _ (by omega))
 
 section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
@@ -374,19 +388,13 @@ theorem sized_ok (h : In base bytes len args s)
   have mql : (componentValue s.mem args 4) ^ componentValue s.mem args 12 % safeM (componentValue s.mem args 8) < safeM (componentValue s.mem args 8) := Nat.mod_lt _ (by have := safeM_gt (componentValue s.mem args 8); omega)
   refine WP.mono (back_ok h₂ c₂ MP mpl (by omega) MQ (by omega) (cb := decide (accepted s.mem args))
     (by rw [A₂, A₁])) fun t ⟨B, E, F, K⟩ => ⟨?_, E, ?_, ?_⟩
-  · have r_eq : (componentValue s.mem args 4) ^ componentValue s.mem args 12 % safeM (componentValue s.mem args 8) + (componentValue s.mem args 8) * (((componentValue s.mem args 4) ^ componentValue s.mem args 10 % safeM (componentValue s.mem args 6) +
-        safeM (componentValue s.mem args 6) - (componentValue s.mem args 4) ^ componentValue s.mem args 12 % safeM (componentValue s.mem args 8) % safeM (componentValue s.mem args 6)) % safeM (componentValue s.mem args 6) * componentValue s.mem args 14 %
-          safeM (componentValue s.mem args 6)) = resultValue (componentValue s.mem args 6) (componentValue s.mem args 8) (componentValue s.mem args 10) (componentValue s.mem args 12)
-            (componentValue s.mem args 14) (componentValue s.mem args 4) := by
-      unfold resultValue Crt.coefficientValue Crt.residueValue
-      rw [← safeM_eq, ← safeM_eq, Nat.add_comm]
-    by_cases acc : accepted s.mem args
-    · obtain ⟨R, Rlt⟩ := VG.Proof.Bignum.X86.Crt.accepted_result (dp := componentValue s.mem args 10)
+  · by_cases acc : accepted s.mem args
+    · obtain ⟨R, Rlt⟩ := accepted_result (dp := componentValue s.mem args 10)
         (dq := componentValue s.mem args 12) (qi := componentValue s.mem args 14) (x := (componentValue s.mem args 4)) facts.1 facts.2.1
         facts.2.2 acc.1
-      have B' := B (fun _ => by rw [r_eq]; omega)
+      have B' := B (fun _ => by omega)
       simp only [acc, decide_true, ↓reduceIte] at B' ⊢
-      rw [B', r_eq, R]; rfl
+      rw [B', R]; rfl
     · have B' := B (fun hc => absurd (of_decide_eq_true hc) acc)
       simp only [acc, decide_false, Bool.false_eq_true, ↓reduceIte] at B' ⊢
       exact B'

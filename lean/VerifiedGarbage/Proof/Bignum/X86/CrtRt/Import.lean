@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Export
-public import VerifiedGarbage.Proof.Bignum.X86.CrtImportFrame
+public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
+public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Load
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -26,7 +27,7 @@ variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 /-- A wide slot's change keeps the other wide slots. -/
 theorem wide_keep (h : In base bytes len args s) {a b n k : Nat} (hb : b ≤ 19) (hab : a ≠ b)
     (hn : n ≤ st len .wide) (hk : 4 * k ≤ st len .wide) {m m' : Mem}
-    (O : Outside base (lo len (.slot .wide a)) n m m') :
+    (O : VG.Proof.Mont.Outside base (lo len (.slot .wide a)) n m m') :
     val32 m' base (lo len (.slot .wide b)) k = val32 m base (lo len (.slot .wide b)) k := by
   have f := h.slot_fit .wide (j := 19) (by decide)
   have bl := h.bytes_lt
@@ -46,7 +47,7 @@ theorem loadComp_ok (h : In base bytes len args s) {j : Nat} (hj : j ≤ 19) {n 
     (hn : cb len n ≤ st len .wide) (hlen : len ≤ cb len n) {i : Nat} (hi : i ∈ componentArguments) :
     WP isa (load (.slot .wide j) n i (i + 1)) s fun t =>
       val32 t.mem base (lo len (.slot .wide j)) (cw len n) = componentValue s.mem args i ∧
-      Outside base (lo len (.slot .wide j)) (cb len n) s.mem t.mem ∧
+      VG.Proof.Mont.Outside base (lo len (.slot .wide j)) (cb len n) s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have f := h.slot_fit .wide (j := j) (by omega)
   have hi18 : i + 1 < 18 := by
@@ -63,7 +64,7 @@ abbrev imR (len : Nat) : List (Nat × Nat) := [(lo len (.slot .wide 9), 7 * st l
 /-- The key's components read into the wide slots 9 to 15. -/
 theorem importComponents_ok (h : In base bytes len args s) :
     WP isa importComponents s fun u =>
-      Outside base (lo len (.slot .wide 9)) (7 * st len .wide) s.mem u.mem ∧
+      VG.Proof.Mont.Outside base (lo len (.slot .wide 9)) (7 * st len .wide) s.mem u.mem ∧
       val32 u.mem base (lo len (.slot .wide 9)) (2 * cwc len .wide) = componentValue s.mem args 2 ∧
       val32 u.mem base (lo len (.slot .wide 15)) (cwc len .wide) = componentValue s.mem args 4 ∧
       val32 u.mem base (lo len (.slot .wide 10)) (cwc len .wide) = componentValue s.mem args 6 ∧
@@ -92,18 +93,18 @@ theorem importComponents_ok (h : In base bytes len args s) :
   have k2 : 4 * (2 * cwc len .wide) ≤ st len .wide := by omega
   -- An import's slot within the wide slots 9 to 15.
   have within : ∀ {j : Nat} {m m' : Mem}, 9 ≤ j → j ≤ 15 → ∀ {n : Nat}, n ≤ st len .wide →
-      Outside base (lo len (.slot .wide j)) n m m' → Outside base (lo len (.slot .wide 9)) (7 * st len .wide) m m' :=
+      VG.Proof.Mont.Outside base (lo len (.slot .wide j)) n m m' → VG.Proof.Mont.Outside base (lo len (.slot .wide 9)) (7 * st len .wide) m m' :=
     fun {j} {_ _} hj9 hj {_} hn O => O.mono
       (by have := Nat.mul_le_mul_right (st len .wide) hj9; show _ ≤ numBase + j * st len .wide; omega)
       (by have := Nat.mul_le_mul_right (st len .wide) (show j + 1 ≤ 16 by omega); rw [Nat.succ_mul] at this
           show numBase + j * st len .wide + _ ≤ _; omega)
   -- The components' bytes, outside the working space.
-  have cv : ∀ {m : Mem}, Outside base 0 bytes s.mem m → ∀ {i}, i ∈ componentArguments →
+  have cv : ∀ {m : Mem}, VG.Proof.Mont.Outside base 0 bytes s.mem m → ∀ {i}, i ∈ componentArguments →
       componentValue m args i = componentValue s.mem args i := fun O i hi => by
     unfold componentValue
     rw [VG.Proof.Bignum.scratch_bytes O (by have := (args (i + 1)).isLt; omega) (h.crt.apart i hi)]
-  have wide : ∀ {t : State} {m m' : Mem}, Outside base (lo len (.slot .wide 9)) (7 * st len .wide) m m' →
-      Outside base 0 bytes m m' := fun O => O.mono (Nat.zero_le _) (by omega)
+  have wide : ∀ {t : State} {m m' : Mem}, VG.Proof.Mont.Outside base (lo len (.slot .wide 9)) (7 * st len .wide) m m' →
+      VG.Proof.Mont.Outside base 0 bytes m m' := fun O => O.mono (Nat.zero_le _) (by omega)
   unfold importComponents
   refine WP.seq (WP.mono (loadComp_ok h (j := 9) (by decide) (two_ok .wide) n2 l2 (i := 2) (by decide))
     fun u₁ ⟨V₁, O₁, K₁⟩ => ?_)
@@ -142,7 +143,7 @@ theorem importComponents_ok (h : In base bytes len args s) :
   rw [cv (wide (t := s) O₅') (by decide)] at V₆
   rw [cv (wide (t := s) O₆') (by decide)] at V₇
   have kw : ∀ {a b k : Nat} {m m' : Mem}, a ≤ 19 → b ≤ 19 → a ≠ b → 4 * k ≤ st len .wide →
-      Outside base (lo len (.slot .wide a)) (cb len (one .wide)) m m' →
+      VG.Proof.Mont.Outside base (lo len (.slot .wide a)) (cb len (one .wide)) m m' →
       val32 m' base (lo len (.slot .wide b)) k = val32 m base (lo len (.slot .wide b)) k :=
     fun _ hb hab hk O => wide_keep h hb hab n1 hk O
   refine ⟨O₇', ?_, ?_, ?_, ?_, ?_, ?_, ?_, ((((((K₁.trans K₂).trans K₃).trans K₄).trans K₅).trans K₆).trans K₇)⟩

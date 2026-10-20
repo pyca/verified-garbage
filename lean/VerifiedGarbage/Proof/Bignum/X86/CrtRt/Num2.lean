@@ -26,7 +26,7 @@ theorem chainSetup_ok (h : In base bytes len args s) {o a b : Loc} {n : Cnt} (N 
       PtrAt w base .ebx (lo len b) → PtrAt w base .edi (lo len o) → (w.gpr .edx).toNat = 4 * cw len n →
       w.gpr .ecx = cmask false → Q w) :
     WP isa (.block (ptrTo a .ebp .edx ++ ptrTo b .ebx .edx ++ ptrTo o .eax .edx ++ cntTo n .edx ++
-      [.mov .edi (.reg .eax), .mov .ecx (.imm 0)])) s Q := by
+      ([.mov .edi (.reg .eax), .mov .ecx (.imm 0)] : List Instr))) s Q := by
   have bl := h.bytes_lt
   simp only [List.append_assoc]
   refine ptrTo_ok (r := .ebp) (t := .edx) (by decide) (by decide) h.edi h.width h.upper' (by omega)
