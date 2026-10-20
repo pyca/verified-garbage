@@ -6,12 +6,16 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbolsMono
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Contracts
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Absorb
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.DecapsStart
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.DecapsTop
-public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Final
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsChecks
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.DecapsTop
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Final
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsChecks
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.Decaps
@@ -22,6 +26,7 @@ meta import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Verified
 import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Decaps
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
 import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
@@ -37,6 +42,11 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.TCB.Axioms
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.Attr.Core
+public import Mathlib.Tactic.ToAdditive
+public import Mathlib.Tactic.ToDual
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 
 /-! # The 16-bit `vg_mlkem768_decaps` and `vg_mlkem1024_decaps`
 

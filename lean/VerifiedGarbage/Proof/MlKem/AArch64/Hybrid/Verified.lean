@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Absorb
 
 import VerifiedGarbage.Proof.Framework.AArch64.DepthFill
 import VerifiedGarbage.Proof.Framework.KernelRfl

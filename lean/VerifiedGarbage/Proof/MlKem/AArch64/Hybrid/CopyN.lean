@@ -1,8 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.MlKem.Mem
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-! # Copying `n` words through `x9` (`Kem16.copyN`), as `KeyGen.copy_ok` copies 32 bytes -/
 

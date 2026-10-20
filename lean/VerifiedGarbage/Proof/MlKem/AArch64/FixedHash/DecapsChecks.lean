@@ -1,9 +1,9 @@
 module
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptStart
-public import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptStart
+import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
 public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHashDecaps
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
@@ -18,6 +18,7 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbolsMono
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.AArch64.DepthFill
 meta import VerifiedGarbage.TCB.Axioms
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 
 /-! # The checks of the hashing decapsulation, for any permutation (as `KeyGenChecks`) -/
 @[expose] public section

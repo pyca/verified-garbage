@@ -6,23 +6,26 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Encrypt
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVDecode
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVInv
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReadonlyTransform
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemTransformFrames
-public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHashDecaps
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptStart
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrix
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Encrypt
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVDecode
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVInv
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReadonlyTransform
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemTransformFrames
+import VerifiedGarbage.Impl.MlKem.AArch64.FixedHashDecaps
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptStart
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrix
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.DecapsStart
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
 import VerifiedGarbage.Proof.MlKem.AArch64.DecapsCmp
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenNoise
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Tail
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! # The 16-bit decapsulation is correct
 

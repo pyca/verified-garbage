@@ -1,10 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
-public import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
+import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
-public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.CopyN
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Absorb
+public import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
+import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.CopyN
 meta import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.Attr.Core
+public import Mathlib.Tactic.ToAdditive
+public import Mathlib.Tactic.ToDual
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemCommon
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 
 /-!
 # The hashing decapsulation's message
