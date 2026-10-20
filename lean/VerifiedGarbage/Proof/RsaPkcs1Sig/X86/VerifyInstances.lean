@@ -1,13 +1,9 @@
 module
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedVerified
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
 
-<<<<<<< HEAD
-=======
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackSafety
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Verified
->>>>>>> origin/claude/x86-rsa-crt-rt
 
 /-! # Bind the verified baseline precomputed RSA operation -/
 

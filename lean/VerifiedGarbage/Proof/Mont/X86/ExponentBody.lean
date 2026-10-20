@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.ExponentProduct
-<<<<<<< HEAD
 import VerifiedGarbage.Proof.Mont.X86.ExponentShift
 import VerifiedGarbage.Proof.Mont.X86.ContextMul
 import VerifiedGarbage.Proof.Mont.X86.ContextMath
@@ -9,9 +8,7 @@ import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Framework.X86.Wp
-=======
 public import VerifiedGarbage.Proof.Mont.X86.ShiftDown
->>>>>>> origin/claude/x86-rsa-crt-rt
 
 /-! # The arithmetic and exponent update of one iteration -/
 

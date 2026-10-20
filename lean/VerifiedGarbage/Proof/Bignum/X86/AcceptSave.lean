@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.InputCompare
 public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 public import VerifiedGarbage.Proof.Framework.X86.Wp

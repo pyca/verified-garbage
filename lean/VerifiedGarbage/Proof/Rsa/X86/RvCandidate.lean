@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Rsa.X86.RvSquareStep
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
-public import VerifiedGarbage.Proof.Rsa.X86.RvExpStep
 
 import VerifiedGarbage.Proof.Rsa.X86.RvCandidateExp
 import VerifiedGarbage.Proof.Rsa.X86.RvCandidateSquare

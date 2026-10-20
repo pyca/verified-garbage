@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicPre
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyCall
-<<<<<<< HEAD
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLocal
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyRegions
 import VerifiedGarbage.Proof.Rsa.BytesFrame
@@ -10,9 +9,7 @@ import VerifiedGarbage.Proof.Framework.Sig
 public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Weierstrass.Point
-=======
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedABI
->>>>>>> origin/claude/x86-rsa-crt-rt
 
 /-! # Calling checked public RSA retains every immutable verification input -/
 

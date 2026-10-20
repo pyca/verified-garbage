@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtPair
 public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Spec.Weierstrass.Point
 public import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Bignum.X86.CrtOutputMath
 public import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 public import VerifiedGarbage.Proof.Bignum.X86.CrtValue

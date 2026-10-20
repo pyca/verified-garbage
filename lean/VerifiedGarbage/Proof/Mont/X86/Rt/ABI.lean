@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Zero
-public import VerifiedGarbage.Proof.Mont.X86.MulAtABI
+public import VerifiedGarbage.Proof.Mont.X86.ArgWs
+public import VerifiedGarbage.Proof.Mont.X86.ArgFar
+public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 

@@ -3,22 +3,14 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
 public import VerifiedGarbage.Spec.Weierstrass.Point
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
 public import VerifiedGarbage.Proof.Rsa.X86.RvMont
-public import VerifiedGarbage.Proof.Rsa.X86.RvExpInvariant
 
-<<<<<<< HEAD
-import VerifiedGarbage.Proof.Rsa.X86.RvAddressTiming
-import VerifiedGarbage.Proof.Rsa.X86.RvExpTiming
-import VerifiedGarbage.Proof.Rsa.X86.RvCandidateExpInit
-import VerifiedGarbage.Proof.Rsa.X86.RvLoopTiming
+public import VerifiedGarbage.Proof.Rsa.X86.RvAddressTiming
+public import VerifiedGarbage.Proof.Rsa.X86.RvLoopTiming
 import VerifiedGarbage.Proof.Rsa.X86.RvCandidateSet
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
-=======
-public import VerifiedGarbage.Proof.Rsa.X86.RvAddressTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvLoopTiming
 public import VerifiedGarbage.Proof.Rsa.X86.RvHelperTiming
 public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateExp
->>>>>>> origin/claude/x86-rsa-crt-rt
 
 /-! # Candidate exponentiation relates different private exponents -/
 

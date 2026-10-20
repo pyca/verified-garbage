@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
-public import VerifiedGarbage.Proof.Mont.X86.MulAtRow
+public import VerifiedGarbage.Proof.Mont.X86.ArgFar
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The arguments of the run-time width multiplication

@@ -1,18 +1,12 @@
 module
 
-<<<<<<< HEAD:lean/VerifiedGarbage/Proof/Bignum/X86/PublicPost.lean
-public import VerifiedGarbage.Proof.Bignum.X86.PublicSized
-import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
+public import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
 import VerifiedGarbage.Proof.Bignum.PublicWritten
-import VerifiedGarbage.Proof.Bignum.MemoryFrame
+public import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Spec.RsaKeyGen
-=======
-public import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
 public import VerifiedGarbage.Proof.Bignum.X86.PublicInputs
-public import VerifiedGarbage.Proof.Bignum.MemoryFrame
->>>>>>> origin/claude/x86-rsa-crt-rt:lean/VerifiedGarbage/Proof/Bignum/X86/PublicFailurePost.lean
 
 /-! # The checked-RSA contract's postcondition, and the failure path meeting it -/
 

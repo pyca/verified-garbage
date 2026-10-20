@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.SparseStep
 public import VerifiedGarbage.Proof.Bignum.X86.PublicTiming
-public import VerifiedGarbage.Proof.Bignum.MontRepresentation
 public import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 

@@ -82,16 +82,4 @@ theorem exponentiate_check (n expWords : Nat) :
   refine exponent_check_seq taint (u := workspaceTaint true) (by rfl) (by rfl) ?_
   exact exponent_check_seq taint loop (by rfl) (mul_check false _ _ _ _ _ _)
 
-<<<<<<< HEAD
-=======
-/-- Neither the modulus, base, exponent nor intermediate values need to be
-public. Only the common workspace pointer is public on entry. -/
-theorem exponentiate_constantTime (n expWords : Nat) :
-    ConstantTime isa (fun _ => True) (VG.X86.Taint.Agree (workspaceTaint false)) (exponentiate n expWords) := by
-  refine VG.Taint.constantTime (A := taint) (workspaceTaint false) (fun _ _ _ _ h => h)
-    (hc := exponentiateHint) ?_
-  rw [exponentiate_check n expWords]
-  rfl
-
->>>>>>> origin/claude/x86-rsa-crt-rt
 end VG.Proof.Mont.X86.Dynamic

@@ -1,19 +1,14 @@
 module
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
-public import VerifiedGarbage.Proof.Rsa.X86.RvExpInvariant
 public import VerifiedGarbage.Proof.Rsa.X86.RvMont
 
-<<<<<<< HEAD
 import VerifiedGarbage.Proof.Rsa.X86.RvCandidateSet
-import VerifiedGarbage.Proof.Rsa.X86.RvExpLoop
 import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
 import VerifiedGarbage.Proof.Rsa.X86.RvMontStage
 import VerifiedGarbage.Proof.Rsa.RecoverMath
 import VerifiedGarbage.Proof.Bignum.Math
-=======
 public import VerifiedGarbage.Proof.Rsa.X86.RvWindowExp
 public import VerifiedGarbage.Proof.Rsa.X86.RvSquareStep
->>>>>>> origin/claude/x86-rsa-crt-rt
 
 /-! # Exponentiation of a recovery candidate in Montgomery form -/
 

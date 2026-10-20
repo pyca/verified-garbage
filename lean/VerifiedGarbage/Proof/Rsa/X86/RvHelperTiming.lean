@@ -1,13 +1,9 @@
 module
 
-<<<<<<< HEAD
-import VerifiedGarbage.Proof.Mont.X86.PowerTiming
-=======
+public import VerifiedGarbage.Proof.Mont.X86.PowerTiming
 public import VerifiedGarbage.Proof.Rsa.X86.CvHelperTiming
 public import VerifiedGarbage.Proof.Rsa.X86.MulModTiming
-public import VerifiedGarbage.Proof.Mont.X86.PowerTiming
 public import VerifiedGarbage.Proof.Mont.X86.WindowTiming
->>>>>>> origin/claude/x86-rsa-crt-rt
 public import VerifiedGarbage.Impl.Rsa.X86.Recover
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
