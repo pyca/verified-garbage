@@ -36,13 +36,14 @@ theorem KeyLive.advance_fields {p : KeyPublic} {original s : State} {used keys s
 theorem KeyLive.advance {p : KeyPublic} {original s : State} {used keys scalars : Nat}
     (h : KeyLive p original used keys scalars s) (room : used + p.len ≤ p.randLen) :
     WP isa (.block VG.Impl.Ffdh.Arm.KeySearch.advance) s fun t =>
-      KeyLive p original (used + p.len) keys scalars t ∧ t.gpr .r9 = s.gpr .r0 := by
+      KeyLive p original (used + p.len) keys scalars t ∧ t.gpr .r9 = s.gpr .r0 ∧
+        Frame [⟨State.addr p.control, 128⟩] s.mem t.mem := by
   refine WP.mono (advance_ok s h.controller) ?_
   rintro t ⟨⟨status, mem⟩, rest⟩
   refine ⟨h.update rest (by decide) (advanceValues s.mem p.control) (by simp [advanceValues])
-    mem room h.keys_le h.scalars_le ?_, status⟩
-  rw [mem]
-  exact h.advance_fields room
+    mem room h.keys_le h.scalars_le ?_, status, ?_⟩
+  · rw [mem]; exact h.advance_fields room
+  · rw [mem]; exact writeLow_frame _ _ _ (by simp [advanceValues])
 
 theorem KeyLive.scalar_fields {p : KeyPublic} {original s : State} {used keys scalars : Nat}
     (h : KeyLive p original used keys scalars s) (positive : 0 < scalars) :

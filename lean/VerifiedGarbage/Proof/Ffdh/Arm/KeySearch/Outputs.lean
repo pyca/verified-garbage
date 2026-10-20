@@ -59,6 +59,18 @@ theorem KeyLive.zero_outputs {p : KeyPublic} {original s : State} {used keys sca
     (by simpa using h.input.output_regions_disjoint.1)
     (by change p.len ≤ 2 ^ 64; have := h.input.bounds.maxLength; omega)).trans xzero
 
+theorem KeyOutput.control_frame {p : KeyPublic} {original : State} {result : Spec.Ffdh.KeySearchResult}
+    {m m' : Mem} (h : KeyInput p original) (before : KeyOutput p result m)
+    (frame : Frame [rControl p] m m') : KeyOutput p result m' := by
+  have xeq := bytesAt_frame (r := rX p) frame
+    (by simpa using h.output_regions_disjoint.2.2.2.1.symm)
+    (by change p.len ≤ 2 ^ 64; have := h.bounds.maxLength; omega)
+  have yeq := bytesAt_frame (r := rY p) frame
+    (by simpa using h.output_regions_disjoint.2.2.2.2.1.symm)
+    (by change p.len ≤ 2 ^ 64; have := h.bounds.maxLength; omega)
+  cases outcome : result.outcome <;> simp only [KeyOutput, outcome] at before ⊢ <;>
+    exact ⟨xeq.trans before.1, yeq.trans before.2⟩
+
 theorem KeyLive.done {p : KeyPublic} {original s : State} {used keys scalars : Nat}
     {result : Spec.Ffdh.KeySearchResult} (h : KeyLive p original used keys scalars s)
     (count : result.used = used) (status : lowWord s.mem p.control 14 = BitVec.ofNat 32 result.status)
