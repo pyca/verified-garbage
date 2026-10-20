@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaOaep.X86_64.EncEm
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSelV
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT

@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncLay
 import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLay
 
 /-!

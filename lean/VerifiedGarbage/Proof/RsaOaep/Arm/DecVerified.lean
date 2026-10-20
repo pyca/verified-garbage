@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecChk
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.RsaOaep.Arm.DecFail
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!

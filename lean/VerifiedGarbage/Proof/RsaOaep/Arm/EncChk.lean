@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaOaep.Arm.EncBase
 public import VerifiedGarbage.Proof.RsaOaep.Arm.Mgf
 import VerifiedGarbage.Proof.RsaOaep.Encode
 import all Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -26,6 +25,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.RsaPss.Arm.CtXor
+meta import VerifiedGarbage.Proof.RsaPss.Arm.CtXor
 
 /-!
 # RSAES-OAEP encryption with a precomputed public key on ARMv7: the checks

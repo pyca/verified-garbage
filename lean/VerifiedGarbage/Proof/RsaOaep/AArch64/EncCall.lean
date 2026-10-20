@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncLay
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
 
 /-!

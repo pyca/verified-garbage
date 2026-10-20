@@ -6,7 +6,6 @@ meta import VerifiedGarbage.Impl.RsaOaep.Arm
 import VerifiedGarbage.Proof.RsaOaep.Arm.DecSpec
 import VerifiedGarbage.Proof.RsaOaep.Arm.DecFail
 import VerifiedGarbage.Proof.Mgf1.Bytes
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith

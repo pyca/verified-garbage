@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.PrivCall
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Rsa.Arm.PrivVerified
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
