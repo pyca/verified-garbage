@@ -2,9 +2,14 @@ module
 
 public import VerifiedGarbage.Impl.P384.Linear
 public import VerifiedGarbage.Proof.P384.Ops
-public import VerifiedGarbage.Proof.Mont.AArch64.RowInit
-public import VerifiedGarbage.Proof.Mont.AArch64.Round
+import VerifiedGarbage.Proof.Mont.AArch64.RowInit
+import VerifiedGarbage.Proof.Mont.AArch64.Round
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
 
 /-!
 # P-384's small linear combinations on AArch64

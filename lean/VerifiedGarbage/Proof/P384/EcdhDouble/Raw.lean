@@ -6,7 +6,8 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 import VerifiedGarbage.Proof.Weierstrass.JacMul
 import VerifiedGarbage.Proof.P384.Linear
-public import VerifiedGarbage.Proof.P384.EcdhDouble.Vals
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.P384.EcdhDouble.Vals
 
 /-!
 # P-384's raw doubling
