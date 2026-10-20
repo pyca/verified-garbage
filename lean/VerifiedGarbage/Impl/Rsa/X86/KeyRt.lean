@@ -38,10 +38,9 @@ def sQb : Nat := 140
 
 variable (L : Lay)
 
-/-- `r = B = 8 ⌈len / 8⌉`, the bytes of a number. -/
-def bytesB (r : Reg) : List Instr :=
-  [.mov r (.mem (argOp L.len)), .alu .add r (.imm 7), .shift .shr r 3, .alu .add r (.reg r),
-    .alu .add r (.reg r), .alu .add r (.reg r)]
+/-- `r = B = 8 ⌈len / 8⌉`, the bytes of a number: `PublicRt.widthB`, its argument at `L.len`
+(`argAt (L.len - 1) 1`, for `1 ≤ L.len`). -/
+def bytesB (r : Reg) : List Instr := PublicRt.widthB (L.len - 1) r
 
 /-- `r = edi + hdr + j (B + 8)`, array `j`, and `t = B + 8`. -/
 def arrPtr (r : Reg) (j : Nat) (t : Reg) : List Instr :=
