@@ -127,10 +127,10 @@ theorem KS.mono (h : KS g s0 A live AW liveW V ls s)
     fun j hj => h.liveW_lt j (hlW j hj).1,
     fun d hd => h.ls_ok d (hls d hd).1⟩
 
-theorem KS.keepBody (h : KS g s0 A live AW liveW V ls s) {v : Nat} {js ds : List Nat}
-    (k : Keep g.B v js ds s.mem t.mem) (hj : ∀ j ∈ js, arr v j + S v ≤ g.Z)
-    (hd : ∀ d ∈ ds, SlotOk d) : Outside g.B 16 (g.Z - 16) s.mem t.mem := by
-  have header := h.ws.hdr_le
+/-- A step that keeps the header's first 16 bytes keeps everything outside the stage's range. -/
+theorem keepBody_of {g : Geo} {m m' : Mem} (header : hdr ≤ g.Z) {v : Nat} {js ds : List Nat}
+    (k : Keep g.B v js ds m m') (hj : ∀ j ∈ js, arr v j + S v ≤ g.Z)
+    (hd : ∀ d ∈ ds, SlotOk d) : Outside g.B 16 (g.Z - 16) m m' := by
   intro a ha
   apply k a
   intro r hr
@@ -146,6 +146,11 @@ theorem KS.keepBody (h : KS g s0 A live AW liveW V ls s) {v : Nat} {js ds : List
     unfold SlotOk hdr at bound
     unfold hdr at header
     omega
+
+theorem KS.keepBody (h : KS g s0 A live AW liveW V ls s) {v : Nat} {js ds : List Nat}
+    (k : Keep g.B v js ds s.mem t.mem) (hj : ∀ j ∈ js, arr v j + S v ≤ g.Z)
+    (hd : ∀ d ∈ ds, SlotOk d) : Outside g.B 16 (g.Z - 16) s.mem t.mem :=
+  keepBody_of h.ws.hdr_le k hj hd
 
 theorem KS.core (h : KS g s0 A live AW liveW V ls s) {v : Nat} {js ds : List Nat}
     (k : Keep g.B v js ds s.mem t.mem) (hj : ∀ j ∈ js, arr v j + S v ≤ g.Z)
