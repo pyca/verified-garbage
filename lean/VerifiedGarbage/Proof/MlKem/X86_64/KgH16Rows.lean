@@ -463,15 +463,9 @@ section
 variable {K : Kem16} (W : KgH16Wf K) {σ : State} (hp : (keyGenK K.L).pre σ)
 include W hp
 
-/-- The rows, and the tail if every `SampleNTT` succeeded. -/
-theorem rows_ok (hK : KgRowsOk K.L) (v : Sample4Impl) {b : Nat → Prog isa} (hb : v.callee.batchHM16 = some b)
-    {s : State} (h : KH K σ 0 0 s) : WP isa (rows K b) s (KEnd K.L σ) := by
-  unfold rows
-  refine WP.seq (WP.mono (frag_ok W hp v hb (i := 0) (by decide) h) fun s₁ h₁ => ?_)
-  refine WP.seq (WP.mono (rowIf_ok W hp hK (i := 0) (by decide) h₁) fun s₂ h₂ => ?_)
-  refine WP.seq (WP.mono (frag_ok W hp v hb (i := 1) (by decide) h₂) fun s₃ h₃ => ?_)
-  refine WP.seq (WP.mono (rowIf_ok W hp hK (i := 1) (by decide) h₃) fun s₄ h₄ => ?_)
-  refine WP.seq (WP.mono (frag_ok W hp v hb (i := 2) (by decide) h₄) fun s₅ (h₅ : KH K σ 2 9 s₅) => ?_)
+/-- The last row and the tail, if every `SampleNTT` succeeded. -/
+theorem last_ok (hK : KgRowsOk K.L) {s : State} (h₅ : KH K σ 2 9 s) :
+    WP isa (ifOk (.seq (rowAt K 2) (tail K))) s (KEnd K.L σ) := by
   have k3 := W.k3
   have hf := W.flg 2 (by decide)
   simp only [Bool.and_eq_true] at hf
@@ -485,6 +479,16 @@ theorem rows_ok (hK : KgRowsOk K.L) (v : Sample4Impl) {b : Nat → Prog isa} (hb
   · have h₆ := h₅.keep W hp hP.b (hP.cs .r15 (by decide)) hkc hr fun _ => hf.2
     have ho := r15_no h₅.mat.r15 he
     exact ⟨h₆.kc, by rw [e9]; exact h₆.mat.r15, fun h => absurd (by rwa [e9] at h) ho⟩
+
+/-- The rows, and the tail if every `SampleNTT` succeeded. -/
+theorem rows_ok (hK : KgRowsOk K.L) (v : Sample4Impl) {b : Nat → Prog isa} (hb : v.callee.batchHM16 = some b)
+    {s : State} (h : KH K σ 0 0 s) : WP isa (rows K b) s (KEnd K.L σ) := by
+  unfold rows
+  refine WP.seq (WP.mono (frag_ok W hp v hb (i := 0) (by decide) h) fun s₁ h₁ => ?_)
+  refine WP.seq (WP.mono (rowIf_ok W hp hK (i := 0) (by decide) h₁) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (frag_ok W hp v hb (i := 1) (by decide) h₂) fun s₃ h₃ => ?_)
+  refine WP.seq (WP.mono (rowIf_ok W hp hK (i := 1) (by decide) h₃) fun s₄ h₄ => ?_)
+  exact WP.seq (WP.mono (frag_ok W hp v hb (i := 2) (by decide) h₄) fun s₅ h₅ => last_ok W hp hK h₅)
 
 end
 
