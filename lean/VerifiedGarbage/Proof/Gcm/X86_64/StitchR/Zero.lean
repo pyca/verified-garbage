@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.RemE
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.RemE
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGD
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Rem
 
 /-!
 # The prepared 256-bit loops on fewer blocks than a group
