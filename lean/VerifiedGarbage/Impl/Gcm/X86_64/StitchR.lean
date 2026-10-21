@@ -11,7 +11,10 @@ public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
 already in the representation the loops multiply by, in pairs: instead of
 computing `H'`–`H'¹⁶` on every call (`Stitch.setupG`), the setup loads the
 eight pairs `ymm3`–`ymm6`, `ymm12`–`ymm15` with one 256-bit load each
-(`StitchZR.setupGP`, which needs no AVX-512). The rest is the loops'.
+(`StitchZR.setupGP`, which needs no AVX-512). The rest is the loops', but for
+the blocks after the last group (1 to 15), which they also take: `decR`
+decrypts them after its loop (`remD`), and `encR` and `encToR` encrypt them
+after theirs (`remE`), two at a time, with the powers of the last `r` blocks.
 -/
 
 @[expose] public section
@@ -26,37 +29,15 @@ open VG.Impl.Gcm.X86_64.StitchZTo (setupCTo)
 /-- `Stitch.setup` with the powers loaded. -/
 def setup : List Instr := StitchZR.setupGP ++ storesK .r11 pregs 0 ++ setupC
 
-/-- `Stitch.enc` with the powers loaded. -/
-def enc : Prog isa :=
-  .seq (.block setup)
-    (.seq first
-      (.seq (.block [.alu .cmp .r9 (.imm 32)])
-        (.seq (.ite .b (.block []) (.loop body .ae))
-          (.block (storeCtr ++ lastG ++ storeY)))))
-
-/-- `Stitch.dec` with the powers loaded. -/
-def dec : Prog isa :=
-  .seq (.block setup)
-    (.seq (.loop dbody .ae)
-      (.block (storeCtr ++ storeY)))
-
 /-- `StitchTo.setup` with the powers loaded. -/
 def setupTo : List Instr := StitchZR.setupGP ++ storesK .r11 pregs 0 ++ setupCTo
 
-/-- `StitchTo.enc` with the powers loaded. -/
-def encTo : Prog isa :=
-  .seq (.block setupTo)
-    (.seq StitchTo.firstTo
-      (.seq (.block [.alu .cmp .r9 (.imm 32)])
-        (.seq (.ite .b (.block []) (.loop StitchTo.bodyTo .ae))
-          (.block (storeCtr ++ lastG ++ storeY)))))
-
-/-- `encTo` in one pass over the blocks at `src` (`r9` of them, a multiple of
-16) and then, in place, over the whole groups after them at `dst`: after the
-loop at `src`, `r8 ← rbx` (`dst`) and `r9 += rbp` (the number of blocks
-after them at `dst`, a multiple of 16), and the in-place loop (`Stitch.body`) goes on from
-the group the out-of-place one encrypted last, with one setup and one last
-reduction for both. -/
+/-- `StitchTo.enc` with the powers loaded, in one pass over the blocks at
+`src` (`r9` of them, a multiple of 16) and then, in place, over the whole
+groups after them at `dst`: after the loop at `src`, `r8 ← rbx` (`dst`) and
+`r9 += rbp` (the number of blocks after them at `dst`, a multiple of 16), and
+the in-place loop (`Stitch.body`) goes on from the group the out-of-place one
+encrypted last, with one setup and one last reduction for both. -/
 def encN : Prog isa :=
   .seq (.block setupTo)
     (.seq StitchTo.firstTo
@@ -130,5 +111,61 @@ def decR : Prog isa :=
     (.seq (.loop dbody .ae)
       (.seq (.block [.alu .test .r9 (.reg .r9)])
         (.ite .e (.block (storeCtr ++ storeY)) (.seq (.block [.alu .add .r9 (.imm 16)]) remD))))
+
+/-! ## Encryption: the blocks after the last group -/
+
+/-- `remPairD` for encryption: blocks `r10 / 16` and the next, read at
+`src + r10`, their keystream added from `r11 + r10 + 768` in `ymm13`, stored
+to `rdx + r10`, and the ciphertext, byte-reversed and with the lanes of
+`ymm2` added, multiplied by the powers at `rax + r10` and added to the
+products in each lane of `ymm8`–`ymm10`; `ymm2` cleared. -/
+def remPairE (src : Reg) : List Instr :=
+  ([.vmovdquLoad .l256 .xmm13 (StitchZTo.atIx src .r10 0), .vmovdquLoad .l256 .xmm12 (StitchZTo.atIx .r11 .r10 768),
+    .vop (.vbin .vpxor .l256 .xmm13 .xmm13 .xmm12), .vmovdquStore .l256 (StitchZTo.atIx .rdx .r10 0) .xmm13,
+    .vmovdquLoad .l256 .xmm12 (StitchZTo.atIx .rax .r10 0),
+    .vop (.vbin .vpshufb .l256 .xmm13 .xmm13 .xmm0), .vop (.vbin .vpxor .l256 .xmm13 .xmm13 .xmm2),
+    .vop (.vbin .vpxor .l256 .xmm2 .xmm2 .xmm2)] : List Instr) ++ Vpclmul.acc .xmm13 .xmm12
+
+/-- `remD` for encryption, the `r9 - 16` blocks read at `src` after the last
+group and written at `rdx`, the last group and `Y` before them already
+hashed: the counter after them stored and `rax` at their powers
+(`StitchZH.remSetup`), their keystream (`ksSel`), then each block encrypted
+and its ciphertext hashed, the first alone if `r` is odd (`StitchZH.remBody`)
+and the rest two at a time (`remPairE`); the products of the two lanes added,
+reduced into `Y`, and `Y` stored. -/
+def remE (src : Reg) : Prog isa :=
+  .seq (.block StitchZH.remSetup)
+    (.seq ksSel
+      (.seq (.block (([.alu .sub .r11 (.imm 512), .mov32 .r10 (.imm 0)] : List Instr) ++ StitchAvx.zero ++
+          ([.alu .test .r9 (.imm 1)] : List Instr)))
+        (.seq (.ite .e (.block [.alu .cmp .r9 (.imm 16)]) (.block (StitchZH.remBody src ++ StitchZH.remNext)))
+          (.seq (.ite .e (.block []) (.seq (.loop (.block (remPairE src ++ remNextPair)) .ne) (.block foldLanes)))
+            (.block (StitchAvx.reduceHash ++ ([.alu .add .r11 (.imm 512)] : List Instr) ++ storeY))))))
+
+/-- The end of `encR` and `encToR`, with `r9 = 16 + r` once the last group is
+encrypted: with no blocks after it (`r = 0`), the last group hashed as
+`Stitch.enc` does; otherwise the last group hashed, `rdx` moved to the blocks after it,
+`pre`, and `remE src`. -/
+def tailE (pre : List Instr) (src : Reg) : Prog isa :=
+  .seq (.block [.alu .cmp .r9 (.imm 16)])
+    (.ite .e (.block (storeCtr ++ lastG ++ storeY))
+      (.seq (.block (lastG ++ ([.alu .add .rdx (.imm 256)] : List Instr) ++ pre)) (remE src)))
+
+/-- `Stitch.enc` with the powers loaded, for any number of blocks from 16 on:
+the blocks after the last group, if any, by `remE`. -/
+def encR : Prog isa :=
+  .seq (.block setup)
+    (.seq first
+      (.seq (.block [.alu .cmp .r9 (.imm 32)])
+        (.seq (.ite .b (.block []) (.loop body .ae)) (tailE [] .rdx))))
+
+/-- `StitchTo.enc` with the powers loaded, for any number of blocks from 16
+on: the blocks after the last group read at `r8 + rdx` (`r8 = src - dst`), by `remE .r8` once `r8` is
+pointed at them. -/
+def encToR : Prog isa :=
+  .seq (.block setupTo)
+    (.seq StitchTo.firstTo
+      (.seq (.block [.alu .cmp .r9 (.imm 32)])
+        (.seq (.ite .b (.block []) (.loop StitchTo.bodyTo .ae)) (tailE [.alu .add .r8 (.reg .rdx)] .r8))))
 
 end VG.Impl.Gcm.X86_64.StitchR
