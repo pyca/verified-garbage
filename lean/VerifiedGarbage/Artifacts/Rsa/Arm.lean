@@ -61,12 +61,10 @@ def artifacts : List Artifact := [
     verified := Proof.Bignum.Arm.crt_verified },
   Spec.Rsa.privateCrtApi.artifact Arm.target {
     suffix := "_umaal"
-    notes := ["`vg_rsa_private_crt`'s code, with each word of a Montgomery row by one `umaal` \
-        (`hi:lo := n * m + hi + lo`) of the scalar, the input word, the carry and the accumulator word, \
-        in place of four 16 × 16-bit `mul`s and their additions; after a row's loop, the registers its \
-        16-bit steps would leave are set from the last word, so that each row ends as the baseline's \
-        does and the baseline's proofs carry over."]
-    code := Impl.Bignum.Arm.umaalArithmetic Impl.Bignum.Arm.CrtFn.code
+    notes := ["The shared UMAAL integrated Montgomery scan supplies the private exponentiation's \
+        products and squares through the same window and CRT proofs. Other arithmetic rows use \
+        the shared exact UMAAL row transformation."]
+    code := Impl.Bignum.Arm.CrtFios.code
     stack := 56
     verified := Proof.Bignum.Arm.crtUmaal_verified
     features := ["umaal"] },

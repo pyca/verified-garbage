@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPoweredState
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimePowerInput
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
@@ -40,8 +42,8 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
     (pair : (j = 1 ∧ i = 3) ∨ (j = 2 ∧ i = 4))
     (input : CrtPrimePowerInput child g.input (g.source i.succ) (workspaceWords g.words) g.words g.length
       (g.sourceLength i.succ) (56 + 8 * i.val) (bs 1) (bs i.succ) s)
-    (prime : numAt s.mem (State.addr child) g.words 0 = Spec.Rsa.os2ip (bs j.succ)) :
-    WP isa (narrowPower slot (56 + 8 * j.val) (56 + 8 * i.val)) s fun t =>
+    (prime : numAt s.mem (State.addr child) g.words 0 = Spec.Rsa.os2ip (bs j.succ)) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa ((narrowPowerWith kernel.code) slot (56 + 8 * j.val) (56 + 8 * i.val)) s fun t =>
       let M := safePrime (s.mem.readW (off (State.addr s.sp) 48) 32).toNat (numAt s.mem (State.addr child) g.words 0)
       CrtShared g bs t ∧ LayoutFrameReady child (workspaceWords g.words) g.words t ∧
       CrtPoweredState child (workspaceWords g.words) g.words M
@@ -66,7 +68,7 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
     intro r hr; simp only [List.mem_singleton] at hr; subst r; exact sepCN
   let M := safePrime (s.mem.readW (off (State.addr s.sp) 48) 32).toNat (numAt s.mem (State.addr child) g.words 0)
   -- The input modulo the factor, at the modulus width.
-  rw [narrowPower, WP.seq_iff]
+  rw [narrowPowerWith, WP.seq_iff]
   refine WP.mono (crt_narrowReduce_ok s input (by change 128 * Spec.Rsa.modulusWords g.length < _; omega)) ?_
   rintro u ⟨readyU, reducedU, frameU, restU⟩
   have sharedU : CrtShared g bs u := by
@@ -128,7 +130,7 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
       · change g.qLength < _; have := h.buffers.qShort; omega
     · exact table_fits le
   rw [WP.seq_iff]
-  refine WP.mono (crt_narrowExp_ok x expIn) ?_
+  refine WP.mono ((crt_narrowExp_ok (kernel := kernel)) x expIn) ?_
   rintro e ⟨readyE, valueE, frameE, restE⟩
   have sharedE := sharedX.after_narrow (frameE.mono (by simp)) restE
   have reducedE := reducedX.congr (sharedX.eq_of_frame (sharedX.child kind).2.1 member

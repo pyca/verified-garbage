@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowReduce
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrime
@@ -166,16 +168,16 @@ theorem crt_narrowCopied_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → Lis
     · change g.qLength < _; have := shared.buffers.qShort; omega
 
 theorem crt_narrowPowered_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {j i : Fin 6}
-    (h : NarrowCopied g bs j i s) :
-    WP isa (narrowExp (56 + 8 * i.val)) s fun t => CrtShared g bs t ∧
+    (h : NarrowCopied g bs j i s) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa ((narrowExpWith kernel.code) (56 + 8 * i.val)) s fun t => CrtShared g bs t ∧
       ArithmeticReady (crtN g.base g.words) (workspaceWords g.words) (narrowWords (g.sourceLength j.succ)) t := by
   obtain ⟨shared, M, x, input⟩ := h
-  refine WP.mono (crt_narrowExp_ok s input) ?_
+  refine WP.mono ((crt_narrowExp_ok (kernel := kernel)) s input) ?_
   rintro t ⟨ready, _, frame, rest⟩
   exact ⟨shared.after_narrow (frame.mono (by simp)) rest, ready⟩
 
 theorem crt_narrowPower_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {child : BitVec 32} {slot : Nat}
-    (kind : CrtChild g child slot) (j i : Fin 6) (pair : (j = 1 ∧ i = 3) ∨ (j = 2 ∧ i = 4)) :
+    (kind : CrtChild g child slot) (j i : Fin 6) (pair : (j = 1 ∧ i = 3) ∨ (j = 2 ∧ i = 4)) (kernel : WindowKernel := baselineWindowKernel) :
     RelCT isa (fun s t =>
       (CrtShared g bs1 s ∧ CrtPrimePowerInput child g.input (g.source i.succ) (workspaceWords g.words) g.words
         g.length (g.sourceLength i.succ) (56 + 8 * i.val) (bs1 1) (bs1 i.succ) s ∧
@@ -183,7 +185,7 @@ theorem crt_narrowPower_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {ch
       (CrtShared g bs2 t ∧ CrtPrimePowerInput child g.input (g.source i.succ) (workspaceWords g.words) g.words
         g.length (g.sourceLength i.succ) (56 + 8 * i.val) (bs2 1) (bs2 i.succ) t ∧
         numAt t.mem (State.addr child) g.words 0 = Spec.Rsa.os2ip (bs2 j.succ)) ∧ s.sp = t.sp)
-      (narrowPower slot (56 + 8 * j.val) (56 + 8 * i.val)) (fun _ _ => True) := by
+      ((narrowPowerWith kernel.code) slot (56 + 8 * j.val) (56 + 8 * i.val)) (fun _ _ => True) := by
   have primeJ : j = 1 ∨ j = 2 := by rcases pair with ⟨rfl, _⟩ | ⟨rfl, _⟩ <;> simp
   intro s t tr1 tr2 u w h e1 e2
   obtain ⟨two, le, _, _, _, arrays⟩ := h.1.1.narrow_fits j primeJ
@@ -218,12 +220,12 @@ theorem crt_narrowPower_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {ch
     (P' := fun (s t : State) => NarrowPrepared g bs1 child j s ∧ NarrowPrepared g bs2 child j t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨⟨h.1.1, h.1.2.1⟩, ⟨h.2.1.1, h.2.1.2.1⟩, h.2.2⟩) (fun _ _ _ => trivial)
   have expCT : RelCT isa (fun s t => NarrowCopied g bs1 j i s ∧ NarrowCopied g bs2 j i t ∧ s.sp = t.sp)
-      (narrowExp (56 + 8 * i.val)) (fun _ _ => True) := by
+      ((narrowExpWith kernel.code) (56 + 8 * i.val)) (fun _ _ => True) := by
     intro s t tr1 tr2 u w h e1 e2
     obtain ⟨⟨_, M1, x1, h1⟩, ⟨_, M2, x2, h2⟩, sp⟩ := h
-    exact crt_narrowExp_ct fitV (table_fits le) s t tr1 tr2 u w ⟨h1, h2, sp⟩ e1 e2
+    exact (crt_narrowExp_ct (kernel := kernel)) fitV (table_fits le) s t tr1 tr2 u w ⟨h1, h2, sp⟩ e1 e2
   have resultCT := crt_narrowResult_ct (bs1 := bs1) (bs2 := bs2) kind le
-  rw [narrowPower] at e1 e2
+  rw [narrowPowerWith] at e1 e2
   exact (crt_seq_ct reduceCT (fun s h => crt_narrowReduced_ready s h.1 kind h.2.1 h.2.2)
       (fun s h => crt_narrowReduced_ready s h.1 kind h.2.1 h.2.2)
     (crt_seq_ct enterCT (fun s h => crt_narrowEntered_ready s h kind primeJ)
@@ -232,7 +234,7 @@ theorem crt_narrowPower_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {ch
       (fun s h => crt_narrowPrepared_ready s h kind primeJ)
     (crt_seq_ct inputCT (fun s h => crt_narrowCopied_ready s h kind pair)
       (fun s h => crt_narrowCopied_ready s h kind pair)
-    (crt_seq_ct expCT (fun s h => crt_narrowPowered_ready s h) (fun s h => crt_narrowPowered_ready s h)
+    (crt_seq_ct expCT (fun s h => (crt_narrowPowered_ready (kernel := kernel)) s h) (fun s h => (crt_narrowPowered_ready (kernel := kernel)) s h)
       resultCT))))) s t tr1 tr2 u w h e1 e2
 
 end VG.Proof.Bignum.Arm

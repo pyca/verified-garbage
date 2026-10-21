@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
+
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
 import VerifiedGarbage.Proof.Bignum.Arm.WindowPhase
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtLayout
@@ -94,17 +96,17 @@ theorem crt_narrowControls_ready (s : State) {base ep : BitVec 32} {len v M x eL
   · rw [exponent.length]; exact h.separate
 
 theorem crt_narrowExp_ok (s : State) {base ep : BitVec 32} {len v M x eLen es : Nat} {eb : List Byte}
-    (h : NarrowExpInput base ep len v M x eLen es eb s) :
-    WP isa (narrowExp es) s fun t => ArithmeticReady base len v t ∧
+    (h : NarrowExpInput base ep len v M x eLen es eb s) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa ((narrowExpWith kernel.code) es) s fun t => ArithmeticReady base len v t ∧
       numAt t.mem (State.addr base) v 6 = Spec.Rsa.powMod x (Spec.Rsa.os2ip eb) M ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  rw [narrowExp, WP.seq_iff]
+  rw [narrowExpWith, WP.seq_iff]
   refine WP.mono (crt_exponentArgs_ok s h) ?_
   rintro u ⟨pointerU, countU, memU, restU⟩
   rw [WP.seq_iff]
   refine WP.mono (crt_narrowControls_ready u (h.of_mem memU restU) pointerU countU) ?_
   rintro z ⟨input, frameZ, restZ⟩
-  refine WP.mono (windowExpPhase_ok z input h.tableFits) ?_
+  refine WP.mono (kernel.correct z input h.tableFits) ?_
   rintro t ⟨ready, value, _, _, _, frameT, restT⟩
   rw [memU] at frameZ
   exact ⟨ready, value, frameZ.trans frameT, (restU.mono (by simp [roundClobbers])).trans (restZ.trans restT)⟩

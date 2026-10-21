@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtResultBound
 
 import VerifiedGarbage.Proof.Bignum.Arm.CrtComputeStage
@@ -32,15 +34,15 @@ theorem crt_computed_written {s t : State} {g : CrtGeometry} {bs : Fin 7 → Lis
     exact ⟨trivial, bytes⟩
 
 theorem crt_validatedCompute_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
-    (h : CrtShared g bs s) (ready : LayoutFrameReady g.base (VG.Impl.Bignum.Arm.Crt.workspaceWords g.words) g.words s) :
-    WP isa (.seq CrtFn.validate CrtFn.compute) s fun t =>
+    (h : CrtShared g bs s) (ready : LayoutFrameReady g.base (VG.Impl.Bignum.Arm.Crt.workspaceWords g.words) g.words s) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa (.seq CrtFn.validate (CrtFn.computeWith kernel.code)) s fun t =>
       Spec.Rsa.written t.mem (State.addr g.output) g.length (t.gpr .r0)
         (Spec.Rsa.privateCrt (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6)) ∧
       Frame (crtLiveMutable g s.sp ++ [⟨State.addr g.output, g.length⟩]) s.mem t.mem ∧ Rest roundClobbers s t := by
   rw [WP.seq_iff]
   refine WP.mono (crt_validateStage_ok s h ready) ?_
   rintro u ⟨sharedU, readyU, p, q, flag, frameU, restU⟩
-  refine WP.mono (crt_computeStage_ok u sharedU readyU p q flag) ?_
+  refine WP.mono ((crt_computeStage_ok (kernel := kernel)) u sharedU readyU p q flag) ?_
   rintro t ⟨bytes, status, frameT, restT⟩
   rw [restU.sp] at frameT
   exact ⟨crt_computed_written h bytes status,

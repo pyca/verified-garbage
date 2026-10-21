@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
 public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
@@ -22,15 +24,15 @@ theorem crt_valid_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
     (ptr : s.gpr .r0 = g.base) (count : s.gpr .r6 = BitVec.ofNat 32 g.length)
     (saved : s.mem.readW (State.addr s.sp) 32 = g.base)
     (modulusPtr : s.mem.readW (off (State.addr s.sp) 8) 32 = g.modulus)
-    (valid : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (bs 0)) g.length = true) :
-    WP isa CrtFn.valid s fun t =>
+    (valid : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (bs 0)) g.length = true) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa (CrtFn.validWith kernel.code) s fun t =>
       Spec.Rsa.written t.mem (State.addr g.output) g.length (t.gpr .r0)
         (Spec.Rsa.privateCrt (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6)) ∧
       Frame (crtMutable g s.sp ++ [⟨State.addr g.output, g.length⟩]) s.mem t.mem ∧ Rest roundClobbers s t := by
-  rw [CrtFn.valid, WP.seq_iff]
+  rw [CrtFn.validWith, WP.seq_iff]
   refine WP.mono (crt_begin_ok s buffers stack ptr count saved modulusPtr valid) ?_
   rintro u ⟨sharedU, readyU, frameU, restU⟩
-  refine WP.mono (crt_validatedCompute_ok u sharedU readyU) ?_
+  refine WP.mono ((crt_validatedCompute_ok (kernel := kernel)) u sharedU readyU) ?_
   rintro t ⟨written, frameT, restT⟩
   rw [restU.sp] at frameT
   refine ⟨written, (frameU.mono (fun _ hr => List.mem_append_left _ hr)).trans (frameT.mono ?_), restU.trans restT⟩

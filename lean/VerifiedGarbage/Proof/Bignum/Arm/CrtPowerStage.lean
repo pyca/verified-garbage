@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
+
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPoweredState
 import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedPowerSources
 import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
@@ -25,8 +27,8 @@ theorem crt_powerStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
     (bit : (s.mem.readW (off (State.addr s.sp) 48) 32).toNat ≤ 1)
     (valid : (s.mem.readW (off (State.addr s.sp) 48) 32).toNat ≠ 0 →
       1 < numAt s.mem (State.addr child) g.words 0 ∧ numAt s.mem (State.addr child) g.words 0 % 2 = 1)
-    (prime : numAt s.mem (State.addr child) g.words 0 = Spec.Rsa.os2ip (bs j.succ)) :
-    WP isa (CrtFn.power slot (56 + 8 * j.val) (56 + 8 * i.val)) s fun t =>
+    (prime : numAt s.mem (State.addr child) g.words 0 = Spec.Rsa.os2ip (bs j.succ)) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa ((CrtFn.powerWith kernel.code) slot (56 + 8 * j.val) (56 + 8 * i.val)) s fun t =>
       let M := safePrime (s.mem.readW (off (State.addr s.sp) 48) 32).toNat (numAt s.mem (State.addr child) g.words 0)
       CrtShared g bs t ∧ LayoutFrameReady g.base (workspaceWords g.words) g.words t ∧
       CrtPoweredState child (workspaceWords g.words) g.words M
@@ -37,7 +39,7 @@ theorem crt_powerStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
       Rest roundClobbers s t := by
   obtain ⟨member, ws, layout, _, slotFit, slotSmall, link⟩ := h.child kind
   have exponent : i = 3 ∨ i = 4 := by rcases pair with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> simp
-  rw [CrtFn.power, WP.seq_iff]
+  rw [CrtFn.powerWith, WP.seq_iff]
   refine WP.mono (crt_selectLinked_ready s h ws layout member slotFit slotSmall ready.ptr link) ?_
   rintro u ⟨sharedU, readyU, frameU, restU⟩
   have eqU := h.workspace_eq_after_base ws member frameU
@@ -49,7 +51,7 @@ theorem crt_powerStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
       by rw [flagU]; exact bit, by rw [flagU, modulusU]; exact valid⟩,
       sharedU.power_sources i exponent member⟩
   rw [WP.seq_iff]
-  refine WP.mono (crt_narrowPower_ok u sharedU kind j i pair input (by rw [modulusU]; exact prime)) ?_
+  refine WP.mono ((crt_narrowPower_ok (kernel := kernel)) u sharedU kind j i pair input (by rw [modulusU]; exact prime)) ?_
   rintro v ⟨sharedV, _, powered, flagV, frameV, restV⟩
   rw [flagU, modulusU] at powered
   refine WP.mono (crt_selectMain_ready v sharedV) ?_

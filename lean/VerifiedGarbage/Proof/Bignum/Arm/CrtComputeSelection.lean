@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
+
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckedState
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientSelection
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishSelection
@@ -40,9 +42,9 @@ theorem CrtPoweredPair.coefficientSelection {s : State} {g : CrtGeometry} {bs : 
   ⟨h.selected, _, _, h.p, h.odd, h.bound⟩
 
 theorem crt_bothPowers_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
-    (h : CrtCheckedState g bs s) :
-    WP isa (.seq (CrtFn.power 224 64 80) (CrtFn.power 228 72 88)) s (CrtPoweredPair g bs) :=
-  (crt_bothPowers_ok s h.selected.1 h.selected.2 h.p h.q h.flag).mono
+    (h : CrtCheckedState g bs s) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa (.seq ((CrtFn.powerWith kernel.code) 224 64 80) ((CrtFn.powerWith kernel.code) 228 72 88)) s (CrtPoweredPair g bs) :=
+  ((crt_bothPowers_ok (kernel := kernel)) s h.selected.1 h.selected.2 h.p h.q h.flag).mono
     (fun _ j => ⟨⟨j.1, j.2.1⟩, j.2.2.1, j.2.2.2.1, j.2.2.2.2.1⟩)
 
 theorem crt_coefficientFinish_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
