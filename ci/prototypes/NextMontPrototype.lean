@@ -515,6 +515,12 @@ def body : Prog isa := .seq (.block (VG.Impl.Rsa.X86.CrtValues.inputArgs 4))
  (.seq (.block VG.Impl.Bignum.X86.modulusCheck) (.ite .e sized VG.Impl.Rsa.X86.Recover.failure))
 def code : Prog isa := .seq (.block VG.Impl.Rsa.X86.Recover.entry)
  (.seq body (.block VG.Impl.Bignum.X86.PublicFn.restore))
+def windowRest : Prog isa := VG.Impl.Rsa.X86.Keys.seqs [halving,mont,candLoop,BatchGcdProto.newFin]
+def windowSized : Prog isa := .seq numbers (.ite .e windowRest VG.Impl.Rsa.X86.Recover.failure)
+def windowBody : Prog isa := .seq (.block (VG.Impl.Rsa.X86.CrtValues.inputArgs 4))
+ (.seq (.block VG.Impl.Bignum.X86.modulusCheck) (.ite .e windowSized VG.Impl.Rsa.X86.Recover.failure))
+def windowCode : Prog isa := .seq (.block VG.Impl.Rsa.X86.Recover.entry)
+ (.seq windowBody (.block VG.Impl.Bignum.X86.PublicFn.restore))
 end FastR2Proto
 
 def main : IO Unit := do
@@ -538,6 +544,10 @@ def main : IO Unit := do
    NextMont.printFn "proto_recover17" (FastDoubleProto.tune (replaceGcd FastR2Proto.code)) "proto_mont8" ++
    String.join ((List.range 4).map fun i => NextMont.printFn ("proto_recover"++toString (18+i))
      (FastDoubleProto.tune (replaceGcd FastR2Proto.code)) ("proto_mont"++toString (10+i))) ++
+   NextMont.printFn "proto_recover22" (replaceGcd FastR2Proto.windowCode) "proto_mont3" ++
+   NextMont.printFn "proto_recover23" (replaceGcd FastR2Proto.windowCode) "proto_mont7" ++
+   NextMont.printFn "proto_recover24" (replaceGcd FastR2Proto.windowCode) "proto_mont8" ++
+   NextMont.printFn "proto_recover25" (FastDoubleProto.tune (replaceGcd FastR2Proto.code)) "proto_mont3" ++
    NextMont.printFn "proto_check0" (VG.Impl.Rsa.X86.KeyCheckRt.code false) ++
    NextMont.printFn "proto_check1" (KeyCheckMontProto.code false) ++
    NextMont.printFn "proto_crt0" VG.Impl.Rsa.X86.CrtValuesRt.code ++
