@@ -1334,16 +1334,10 @@ impl AesGcm {
     /// Whether `encrypt_in_place` and `encrypt` take the `_prepared`
     /// instance of `seal` for a message of `len` bytes, shorter than
     /// `POWERS_MIN_LEN`: once the powers are ready (`Powers::short_ready`),
-    /// but on x86-64's 256-bit backend, whose `_prepared` instance of `seal`
-    /// has no path for TLS records, and on AArch64 for at most
-    /// `PLAIN_MAX` bytes.
+    /// but on AArch64 for at most `PLAIN_MAX` bytes.
     #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
     #[inline(always)]
     fn short_seal(&self, len: usize) -> bool {
-        #[cfg(target_arch = "x86_64")]
-        if self.backend == Backend::VaesVpclmul {
-            return false;
-        }
         #[cfg(target_arch = "aarch64")]
         if len <= PLAIN_MAX {
             return false;
