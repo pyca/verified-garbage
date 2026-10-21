@@ -118,3 +118,11 @@ The override preserves the other capability vectors. This is diagnostic only:
 the submission comparison remains against normal, fully enabled OpenSSL.
 The diagnostic includes all key widths and the selected parameter width,
 and saves estimates in `diagnostic.json` in the workflow artifact.
+
+Keygen-only promotion sweep: `k` emits only the comb helpers and keygen caller.
+All ordinary powers, signing, verification, import/derivation, and parameter
+generation retain their checked baseline code. `mk` uses the existing arithmetic;
+`mfk` adds public-modulus setup; `mfkr4` adds four-word multiply rows;
+`mfkscvru4` also adds triangular squares; `mfkh` instead calls the existing
+shared RSA multiplication helper. This isolates the minimum changes needed for
+keygen and avoids promoting the unrelated oversized window stack arenas.

@@ -433,6 +433,10 @@ def main (args : List String) : IO Unit := do
       (name.replace "proto_dsa_" "proto_dsa_abi_", Prototype.abiNamed name)) else if mode == "abi" then Prototype.widths.map (fun (n,e) =>
     ("proto_dsa_abi_pow_" ++ toString n ++ "_" ++ toString e, Prototype.abiWrapper n e)) else Prototype.functions (mode.contains 'd') (mode.contains 'w') (mode.contains 'p')
   let fs := if mode.contains 'm' then Prototype.combFunctions fs else fs
+  -- Isolate promotion candidates: ordinary powers, signing, verification and
+  -- parameter generation retain their checked baseline bodies.
+  let fs := if mode.contains 'k' then fs.filter (fun (name, _) =>
+    name == "vg_dsa_generate_key" || name.startsWith "proto_dsa_comb_") else fs
   let json := fs.map fun (name, p) =>
     let p := if mode.contains 'q' then Prototype.replace [(exponentiate 3 6, Prototype.window 3 6 true)] p else p
     let p := if mode.contains 'z' then Prototype.replace
