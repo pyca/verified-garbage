@@ -8,12 +8,11 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 /-!
 # ML-KEM on AArch64: the runs of the 16-bit NTT of a polynomial stored with 32 bits
 
-`fwd` and the end of `ntt` (`nttTail`) read and write coefficient `p` as
-the word at `4p`, halfwords `2p` (the coefficient) and `2p + 1` (zero). Their
-regions (`rsU`, `rsN`: the table in the working space, as `ntt` stores it),
-the terms they start from (`initU`), and the checks, by the kernel, that the
-runs leave the reduced coefficients of `NTT` in the low halfwords and zero
-in the high ones (`checkU_ok`, `checkN_ok`).
+The end of `ntt` (`nttTail`) reads and writes coefficient `p` as the word at `4p`, halfwords
+`2p` (the coefficient) and `2p + 1` (zero). Its regions (`rsN`: the table in the working space,
+as `ntt` stores it), the terms it starts from (`initU`), and the check, by the kernel, that the
+run leaves the reduced coefficients of `NTT` in the low halfwords and zero in the high ones
+(`checkN_ok`).
 -/
 
 @[expose] public section
@@ -24,8 +23,6 @@ open VG VG.AArch64
 
 /-- The polynomial at `x0`, the working space at `x1`, the table at `sym`. -/
 def rsUs (sym : String) : List Rg := [⟨.reg .x0, 0, 64, true⟩, ⟨.reg .x1, 0, 32, true⟩, ⟨.sym sym, 0, 32, false⟩]
-
-def rsU : List Rg := rsUs "VG_MLKEM_NTT16_ZETAS"
 
 def rsN : List Rg :=
   [⟨.reg .x0, 0, 64, true⟩, ⟨.reg .x1, 0, 32, true⟩, ⟨.reg .x1, 512, 32, false⟩]
@@ -45,10 +42,6 @@ def initU : St := initUs tabT
 def outU (σ : St) : Bool :=
   (List.range 64).all fun j => (List.range 8).all fun e =>
     Nat.beq ((σ.chunk 0 j).get e) (if e % 2 = 0 then outT (4 * j + e / 2) else cT 0)
-
-theorem checkU_ok :
-    (initU.runP fwdRules rsU 16 Impl.MlKem.AArch64.Ntt16.Readonly.fwd).elim false outU = true := by
-  lit_decide
 
 theorem checkN_ok : (initU.runP fwdRules rsN 16 nttTail).elim false outU = true := by
   lit_decide

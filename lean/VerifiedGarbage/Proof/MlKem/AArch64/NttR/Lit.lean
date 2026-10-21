@@ -15,12 +15,6 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 @[expose] public section
 
-namespace VG.Impl.MlKem.AArch64.Ntt16.Readonly
-
-materialize_code fwd
-
-end VG.Impl.MlKem.AArch64.Ntt16.Readonly
-
 namespace VG.Impl.MlKem.AArch64.Ntt16
 
 materialize_value tableHalves

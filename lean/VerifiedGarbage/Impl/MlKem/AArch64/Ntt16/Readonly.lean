@@ -9,17 +9,8 @@ namespace VG.Impl.MlKem.AArch64.Ntt16.Readonly
 open VG.AArch64
 open VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.Ntt16
 
-def fwd : Prog isa :=
- .seq (.block (consts ++ [mov .x2 .x0,mov .x3 .x1,.movz .x .x5 4 0]))
- (.seq (.loop (.block pass1Body) (.nonzero .x .x5))
- (.seq (.block [mov .x2 .x1,.adrSym .x6 "VG_MLKEM_NTT16_ZETAS",mov .x4 .x0,.movz .x .x5 8 0])
- (.loop (.block pass2Body) (.nonzero .x .x5))))
-def inv : Prog isa :=
- .seq (.block (qConsts ++ [mov .x2 .x0,mov .x3 .x1,.adrSym .x6 "VG_MLKEM_INTT16_ZETAS",.movz .x .x5 8 0]))
- (.seq (.loop (.block invPass1Body) (.nonzero .x .x5))
- (.seq (.block (invConsts ++ [mov .x2 .x1,mov .x3 .x0,.movz .x .x5 4 0]))
- (.loop (.block invPass2Body) (.nonzero .x .x5))))
-/-- `inv` of a polynomial stored with 16-bit coefficients (`invPass1BodyW`, `invPass2BodyW`). -/
+/-- The inverse transform of a polynomial stored with 16-bit coefficients (`invPass1BodyW`,
+`invPass2BodyW`). -/
 def invW : Prog isa :=
  .seq (.block (qConsts ++ [mov .x2 .x0,mov .x3 .x1,.adrSym .x6 "VG_MLKEM_INTT16_ZETAS",.movz .x .x5 8 0]))
  (.seq (.loop (.block invPass1BodyW) (.nonzero .x .x5))

@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Encrypt
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Decaps
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVDecode
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReadonlyTransform
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise

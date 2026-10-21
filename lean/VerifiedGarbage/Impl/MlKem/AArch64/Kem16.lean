@@ -2,10 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
 public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHashDecaps
-public import VerifiedGarbage.Impl.MlKem.AArch64.AddSubW
-public import VerifiedGarbage.Impl.MlKem.AArch64.Codec12W
-public import VerifiedGarbage.Impl.MlKem.AArch64.DotW
-public import VerifiedGarbage.Impl.MlKem.AArch64.Widen16
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ops16
 public import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
 public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
 import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
@@ -21,7 +18,8 @@ the sampler and the CBD write halfwords (`w16`), the transforms are
 and the sums `AddSubW.addW`, and keys are encoded and decoded by
 `Codec12W`. Compression still reads 32-bit coefficients: each row of `u` and
 `v` is widened (`Widen16.widen`) into `PP` first, and `v` adds the decoded
-message there with `vg_mlkem_add`. Decapsulation's decryption stays 32-bit.
+message there with `vg_mlkem_add`. Decapsulation's decryption (`Optimized.decryptM`) is
+16-bit too.
 The pieces of key generation (`Kem16P.keyGen`): each row of `t̂` (`kgRow`)
 as soon as the matrix has sampled it, the pairs absorbing `ek` into the third
 state of the matrix's `vg_keccak_f1600_x3_sha3` calls as the rows encode it
@@ -34,25 +32,6 @@ namespace VG.Impl.MlKem.AArch64.Kem16
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KEM
 open VG.Impl.MlKem.AArch64.Noise (noiseOff noiseAllWith)
 open VG.Impl.MlKem.AArch64.Ntt16.Readonly (nttAtWithW nttInvAtWithW)
-
-/-- `f ← f + g`, both stored with 16 bits in `scratch`. -/
-def addWAt (f g : Nat) : Prog isa :=
-  .seq (.block (ptrTo .x0 .x28 f ++ ptrTo .x1 .x28 g)) AddSubW.addW
-
-/-- The polynomial at `f`, stored with 16 bits, at `g` with 32. -/
-def widenAt (f g : Nat) : Prog isa :=
-  .seq (.block (ptrTo .x0 .x28 f ++ ptrTo .x1 .x28 g)) Widen16.widen
-
-/-- `ByteDecode₁₂` of the 384 bytes at `b + o` into `off`, with 16 bits. -/
-def dec12WAt (b : Reg) (o off : Nat) : Prog isa :=
-  .seq (.block (ptrTo .x0 b o ++ ptrTo .x1 .x28 off)) Codec12W.decW
-
-/-- `ByteEncode₁₂` of the polynomial at `off`, stored with 16 bits, into `b + o`. -/
-def enc12WAt (off : Nat) (b : Reg) (o : Nat) : Prog isa :=
-  .seq (.block (ptrTo .x0 .x28 off ++ ptrTo .x1 b o)) Codec12W.encW
-
-/-- The fused dot product into `out`, of terms in `scratch`. -/
-def dotAt (out : Nat) (terms : List (Nat × Nat)) : Prog isa := DotW.dotW .x28 .x28 .x28 out terms
 
 /-- Row `i` of `u`: `NTT⁻¹(Σⱼ Âⱼᵢ ∘ ŷⱼ) + e₁[i]`, widened, compressed and encoded. -/
 def uRow (L : KemLay) (ct : Reg) (co i : Nat) : Prog isa :=

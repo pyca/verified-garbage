@@ -20,9 +20,8 @@ import VerifiedGarbage.Proof.Framework.Block
 Coefficient `p` of the polynomial at `x0` is the word at `4p`: the machine
 follows its low halfword, `Wu p` (`initU_rel`), and finds the reduced
 coefficients of `NTT` in the low halfwords and zero in the high ones
-(`polyIs_of_outU`). So `fwd` (`fwd_run`), with the table at its symbol, and
-`ntt` (`ntt_run`), which first stores the table in the working space
-(`halves_ok`), transform the polynomial in place.
+(`polyIs_of_outU`). So `ntt` (`ntt_run`), which first stores the table in the working space
+(`halves_ok`), transforms the polynomial in place.
 -/
 
 @[expose] public section
@@ -177,21 +176,6 @@ theorem ctxU {sym : String} {H : List Nat} {s₀ : State} (hi : InU sym H s₀) 
       | exact absurd rfl hne
       | exact d01 | exact d01.symm | exact hi.apartOutput | exact hi.apartOutput.symm
       | exact d12 | exact d12.symm
-
-theorem fwd_run (s₀ : State) (hi : InU "VG_MLKEM_NTT16_ZETAS" Impl.MlKem.AArch64.Ntt16.tableHalves s₀) :
-    WP isa Impl.MlKem.AArch64.Ntt16.Readonly.fwd s₀ fun s' =>
-      s'.sp = s₀.sp ∧ PolyIs s'.mem (s₀.gpr .x0) (ntt (polyAt s₀.mem (s₀.gpr .x0))) := by
-  have hc := checkU_ok
-  generalize hx : initU.runP fwdRules rsU 16 Impl.MlKem.AArch64.Ntt16.Readonly.fwd = x at hc
-  cases x with
-  | none => cases hc
-  | some σ =>
-    have hrel := initU_rel (rs := rsU) (s₀ := s₀) (tb := s₀.syms "VG_MLKEM_NTT16_ZETAS") (L := Lf (Wu s₀))
-      (O := Of (Wu s₀)) (fun _ => rfl) rfl rfl rfl rfl rfl
-      (by show s₀.syms _ + BitVec.ofNat 64 0 = _; rw [ptr_zero]) tabT_get
-      (fun j hj => by rw [Nat.zero_add]; exact hi.table j hj)
-    refine WP.mono (runP_ok (model (Wu s₀)) (ctxU hi) 16 _ hrel hx) fun s' h' => ⟨h'.sp, ?_⟩
-    exact polyIs_of_outU rfl rfl rfl h' hc fun p hp => Of_ntt (Wu s₀) _ (fun p hp => lrep_redU hi.red hp) hp
 
 /-- What `ntt` needs: the polynomial at `x0` and the working space at `x1`, writable and apart,
 and the polynomial reduced. -/

@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Encrypt
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVDecode
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReadonlyTransform
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
