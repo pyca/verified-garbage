@@ -18,6 +18,7 @@ pub fn bench(c: &mut Criterion) {
     // aws-lc-rs has no HMAC with MD5.
     crate::hmac_group(c, "hmac-md5", Hmac::<Md5>::mac, MessageDigest::md5(), None);
     crate::hmac_verify_group::<Md5>(c, "hmac-md5-verify", MessageDigest::md5(), None);
+    crate::hmac_keyed_group::<Md5>(c, "hmac-md5-keyed", MessageDigest::md5(), None);
 }
 
 #[cfg(not(any(

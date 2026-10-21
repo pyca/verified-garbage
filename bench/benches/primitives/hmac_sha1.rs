@@ -28,6 +28,12 @@ pub fn bench(c: &mut Criterion) {
         MessageDigest::sha1(),
         Some(aws_lc_rs::hmac::HMAC_SHA1_FOR_LEGACY_USE_ONLY),
     );
+    crate::hmac_keyed_group::<Sha1>(
+        c,
+        "hmac-sha1-keyed",
+        MessageDigest::sha1(),
+        Some(aws_lc_rs::hmac::HMAC_SHA1_FOR_LEGACY_USE_ONLY),
+    );
 }
 
 #[cfg(not(any(
