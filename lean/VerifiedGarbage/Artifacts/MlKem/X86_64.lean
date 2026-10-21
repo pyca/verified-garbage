@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.CheckEk
+public import VerifiedGarbage.Proof.MlKem.X86_64.CheckEkAvx2
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
@@ -121,6 +122,12 @@ def artifacts : List Artifact := [
   Spec.MlKem.checkEkApi.artifact X86_64.target {
     code := Impl.MlKem.X86_64.checkEk
     verified := Proof.MlKem.X86_64.checkEk_verified },
+  Spec.MlKem.checkEkApi.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["The function checks eight fields at a time, from 12 bytes, in the doublewords of an AVX2 register."]
+    code := Impl.MlKem.X86_64.checkEkAvx2
+    verified := Proof.MlKem.X86_64.checkEkAvx2_verified
+    features := ["avx", "avx2"] },
   Spec.MlKem.sampleNTT4Api.artifact X86_64.target {
     notes := ["The function calls `vg_mlkem_sample_ntt` on each seed, with 24 bytes of stack below its \
         return address."]
