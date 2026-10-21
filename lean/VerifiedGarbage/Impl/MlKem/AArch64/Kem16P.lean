@@ -55,13 +55,21 @@ def target (L : KemLay) (N : Nat) : Nat :=
 
 /-! ## A PRF in the third state -/
 
-/-- `PRF₂(r, N)`'s padded block into the zeroed third state at `ST`:
-`r`, then `N` and the suffix `0x1f`, and the final bit `0x80` of byte 135. -/
-def prfBlock (N : Nat) : List Instr :=
-  zeroState .x28 KEM.ST ++
-    (List.range 4).flatMap (fun k => [.ldr .x .x9 .x28 (RB + 8 * k), .str .x .x9 .x28 (KEM.ST + 8 * k)]) ++
-    [.movz .x .x9 (BitVec.ofNat 16 (N + 0x1f00)) 0, .str .x .x9 .x28 (KEM.ST + 32),
-      .movz .x .x9 0x8000 3, .str .x .x9 .x28 (KEM.ST + 128)]
+/-- Word `k` of `PRF₂(r, N)`'s padded block (`Noise.seedState`) to `dst + off k`,
+through `x9`: word `k` of `r` from `RB`, `N` and the suffix `0x1f`, the final
+bit `0x80` of byte 135, or zero. -/
+def prfWord (dst : Reg) (off : Nat → Nat) (N k : Nat) : List Instr :=
+  if k < 4 then [.ldr .x .x9 .x28 (RB + 8 * k), .str .x .x9 dst (off k)]
+  else if k = 4 then [.movz .x .x9 (BitVec.ofNat 16 (N + 0x1f00)) 0, .str .x .x9 dst (off k)]
+  else if k = 16 then [.movz .x .x9 0x8000 3, .str .x .x9 dst (off k)]
+  else [.movz .x .x9 0 0, .str .x .x9 dst (off k)]
+
+/-- The 25 words of `PRF₂(r, N)`'s padded block to `dst + off 0`, …. -/
+def prfWords (dst : Reg) (off : Nat → Nat) (N : Nat) : List Instr :=
+  (List.range 25).flatMap (prfWord dst off N)
+
+/-- `PRF₂(r, N)`'s padded block into the third state at `ST`. -/
+def prfBlock (N : Nat) : List Instr := prfWords .x28 (fun k => KEM.ST + 8 * k) N
 
 /-- The first 128 bytes of the third state to buffer `N`, through `x2`. -/
 def prfOut (L : KemLay) (N : Nat) : List Instr :=
@@ -91,11 +99,7 @@ def pairP (L : KemLay) (a N₀ m : Nat) : Prog isa :=
 /-! ## PRFs in the singleton's second state -/
 
 /-- The second state of the pair at `x19` set to `PRF₂(r, N)`'s padded block. -/
-def reinitB (N : Nat) : List Instr :=
-  .movz .x .x9 0 0 :: (List.range 25).map (fun w => .str .x .x9 .x19 (16 * w + 8)) ++
-    (List.range 4).flatMap (fun k => [.ldr .x .x9 .x28 (RB + 8 * k), .str .x .x9 .x19 (16 * k + 8)]) ++
-    [.movz .x .x9 (BitVec.ofNat 16 (N + 0x1f00)) 0, .str .x .x9 .x19 (16 * 4 + 8),
-      .movz .x .x9 0x8000 3, .str .x .x9 .x19 (16 * 16 + 8)]
+def reinitB (N : Nat) : List Instr := prfWords .x19 (fun w => 8 + 16 * w) N
 
 /-- A main squeeze of the singleton, whose second state computes `PRF₂(r, N)`
 into the buffer at `x21`. -/
