@@ -62,8 +62,7 @@ theorem inRegions_prefix {rs : List Region} {a : Addr} {n L : Nat} (h : InRegion
   exact ⟨r, hr, by unfold Region.Contains at *; omega⟩
 
 /-- The in-place loops' view of the out-of-place one's start. -/
-theorem _root_.VG.Proof.Gcm.X86_64.Stitch.SPreTo.toD {M : CtxMode} {s₀ : State} {lo : Nat} (hp : SPreTo M s₀ lo) :
-    SPre (dst s₀) lo where
+theorem _root_.VG.Proof.Gcm.X86_64.Stitch.SPreTo.toD {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) : SPre (dst s₀) where
   rounds := hp.rounds
   nb16 := hp.nb16
   k_in := inRegions_prefix hp.k_in M.ge

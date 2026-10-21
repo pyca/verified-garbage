@@ -112,7 +112,7 @@ structure Ready2To (s₀ : State) (P : Nat → Nat → Block) (s : State) : Prop
 
 /-- The setup after the powers: they are stored in the working space, then
 `Y`, the counter, the increment and the pointers. -/
-theorem setupTTo_ok {M : CtxMode} {s₀ : State} {lo : Nat} (hp : SPreTo M s₀ lo) {s₁ : State}
+theorem setupTTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {s₁ : State}
     (l0 : ∀ l < 2, s₁.lane .xmm0 l = revMask) (l1 : ∀ l < 2, s₁.lane .xmm1 l = poly)
     (g₁ : ∀ r, r ≠ .rax → s₁.gpr r = s₀.gpr r) (m₁ : s₁.mem = s₀.mem) (rd₁ : s₁.rd = s₀.rd) (wr₁ : s₁.wr = s₀.wr) :
     WP isa (.block (storesK .r11 pregs 0 ++ setupCTo)) s₁ (Ready2To s₀ fun k l => s₁.lane (preg16 k) l) := by
@@ -309,7 +309,7 @@ theorem bodyTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat →
 theorem firstTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} {s : State}
     (hR : ReadyTo s₀ P s) : WP isa firstTo s (EInvTo s₀ P 1) := by
   have hd := hp.toD
-  have h16 : 16 ≤ nb s₀ := hp.nb16
+  have h16 := hp.nb16
   have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   have none : ∀ j, 1 ≤ j → j ≤ 9 → ∀ t, Keys (nr s₀) (sch s₀) t → (fun _ _ => True) j t →
       WP isa (.block ((fun _ => []) j)) t fun t' => (fun (_ : Nat) (_ : State) => True) (j + 1) t' ∧ ZFrame [] t t' :=

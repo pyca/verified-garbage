@@ -34,9 +34,9 @@ abbrev oR : Region := ⟨op s₀, 16 * nb s₀⟩
 
 end
 
-structure SPreTo (M : CtxMode) (s₀ : State) (lo : Nat := 16) : Prop where
+structure SPreTo (M : CtxMode) (s₀ : State) : Prop where
   rounds : nr s₀ = 10 ∨ nr s₀ = 12 ∨ nr s₀ = 14
-  nb16 : lo ≤ nb s₀
+  nb16 : 16 ≤ nb s₀
   k_in : InRegions (s₀.rd ++ s₀.wr) (kp s₀) M.len
   c_in : InRegions s₀.wr (cp s₀) 16
   y_in : InRegions s₀.wr (yp s₀) 16
@@ -80,9 +80,8 @@ structure EPostTo (s₀ s : State) : Prop where
 
 /-- An out-of-place interleaved encryption loop `enc`, for a key context of
 kind `M`, meets these contracts for a number of blocks that is a multiple of
-`w` (16, or 1 for loops that also take the blocks after the last 16), from
-`lo` blocks on (16, or 1 for loops that also take fewer than a group). -/
-def StitchToOkM (M : CtxMode) (enc : Prog isa) (w : Nat := 16) (lo : Nat := 16) : Prop :=
-  ∀ s₀, SPreTo M s₀ lo → nb s₀ % w = 0 → WP isa enc s₀ (EPostTo s₀)
+`w` (16, or 1 for loops that also take the blocks after the last 16). -/
+def StitchToOkM (M : CtxMode) (enc : Prog isa) (w : Nat := 16) : Prop :=
+  ∀ s₀, SPreTo M s₀ → nb s₀ % w = 0 → WP isa enc s₀ (EPostTo s₀)
 
 end VG.Proof.Gcm.X86_64.Stitch

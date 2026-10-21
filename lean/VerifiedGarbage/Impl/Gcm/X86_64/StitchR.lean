@@ -165,16 +165,13 @@ def encR : Prog isa :=
           (.seq (.block [.alu .cmp .r9 (.imm 32)])
             (.seq (.ite .b (.block []) (.loop body .ae)) (tailE [] .rdx))))))
 
-/-- `StitchTo.enc` with the powers loaded, for any number of blocks from 1
-on: the blocks after the last group (all of them, with fewer than 16) read
-at `r8 + rdx` (`r8 = src - dst`), by `remE .r8` once `r8` is pointed at
-them. -/
+/-- `StitchTo.enc` with the powers loaded, for any number of blocks from 16
+on: the blocks after the last group read at `r8 + rdx` (`r8 = src - dst`),
+by `remE .r8` once `r8` is pointed at them. -/
 def encToR : Prog isa :=
   .seq (.block setupTo)
-    (.seq (.block [.alu .cmp .r9 (.imm 16)])
-      (.ite .b (.seq (.block [.alu .add .r9 (.imm 16), .alu .add .r8 (.reg .rdx)]) (remE .r8))
-        (.seq StitchTo.firstTo
-          (.seq (.block [.alu .cmp .r9 (.imm 32)])
-            (.seq (.ite .b (.block []) (.loop StitchTo.bodyTo .ae)) (tailE [.alu .add .r8 (.reg .rdx)] .r8))))))
+    (.seq StitchTo.firstTo
+      (.seq (.block [.alu .cmp .r9 (.imm 32)])
+        (.seq (.ite .b (.block []) (.loop StitchTo.bodyTo .ae)) (tailE [.alu .add .r8 (.reg .rdx)] .r8))))
 
 end VG.Impl.Gcm.X86_64.StitchR
