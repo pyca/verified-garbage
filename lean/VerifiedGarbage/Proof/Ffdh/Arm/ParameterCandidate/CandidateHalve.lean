@@ -25,7 +25,7 @@ private theorem table_after_output {s t : State} {p : CandidateParams}
     (table : TableData p.base p.length s.mem) (changed : Frame [⟨State.addr p.out, p.length⟩] s.mem t.mem) :
     TableData p.base p.length t.mem := by
   intro i hi
-  have fit : arrAt ((p.length + 7) / 8) 34 + 212 ≤ 8 * p.capacity := p.table_fits
+  have fit : arrAt ((p.length + 7) / 8) 34 + 4096 ≤ 8 * p.capacity := p.table_fits
   have equal := changed.readW (a := off (State.addr p.base) (arrAt ((p.length + 7) / 8) 34 + 4 * i)) (w := 32)
     (r := ⟨State.addr p.base, 8 * p.capacity⟩)
     (Offset.contains_base _ (by omega) (by have := p.scratchFits; omega)) (by

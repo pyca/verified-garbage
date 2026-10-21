@@ -2,11 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ReadContext
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Table
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SievePolicy
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! The sieve reads the candidate and RSA table and writes only local word 64. -/
 
@@ -23,11 +25,11 @@ structure SieveContext (dst base : BitVec 32) (n : Nat) (s : State) : Prop where
   read : ReadContext dst n s
   widthBound : n ≤ 1024
   savedBase : s.mem.readW (State.addr s.sp) 32 = base
-  tableFits : base.toNat + (arrAt ((n + 7) / 8) 34 + 212) ≤ 2 ^ 32
+  tableFits : base.toNat + (arrAt ((n + 7) / 8) 34 + 4096) ≤ 2 ^ 32
   table : TableData base n s.mem
-  tableReadable : ∀ i < 53, InRegions (s.rd ++ s.wr)
+  tableReadable : ∀ i < 1024, InRegions (s.rd ++ s.wr)
     (off (State.addr base) (arrAt ((n + 7) / 8) 34 + 4 * i)) 4
-  tableStack : ∀ i < 53, (⟨off (State.addr base) (arrAt ((n + 7) / 8) 34 + 4 * i), 4⟩ : Region).Disjoint
+  tableStack : ∀ i < 1024, (⟨off (State.addr base) (arrAt ((n + 7) / 8) 34 + 4 * i), 4⟩ : Region).Disjoint
     ⟨State.addr s.sp, 72⟩
   outputStack : (⟨State.addr dst, n⟩ : Region).Disjoint ⟨State.addr s.sp, 72⟩
 

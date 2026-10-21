@@ -23,7 +23,8 @@ structure CandidateSieveStart (q : Bool) (p : CandidatePoint) (s : State) : Prop
 
 structure CandidateSieved (q : Bool) (p : CandidatePoint) (s : State) : Prop where
   start : CandidateSieveStart q p s
-  zero : s.z = Spec.Ffdh.primeShape (candidatePhase p.params q).modulus
+  zero : s.z = (Spec.Ffdh.primeShape (candidatePhase p.params q).modulus &&
+    !Spec.RsaKeyGen.obviouslyComposite p.params.bits (candidatePhase p.params q).modulus)
 
 theorem candidateSieved_ok (q : Bool) (p : CandidatePoint) (s : State) (h : CandidateSieveStart q p s) :
     WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.sieve s (CandidateSieved q p) := by

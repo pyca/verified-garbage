@@ -43,7 +43,7 @@ theorem candidateScreenP_ok (v : RoundImpl) {s : State} {p : CandidateParams}
   have numberW : Spec.Rsa.os2ip (Spec.Rsa.bytesAt w.mem (State.addr p.out) p.length) = p.candidate := by
     rw [bytesW]
     exact numberU
-  by_cases prime : Spec.Ffdh.primeShape p.candidate = true
+  by_cases prime : (Spec.Ffdh.primeShape p.candidate && !Spec.RsaKeyGen.obviouslyComposite p.bits p.candidate) = true
   · refine WP.seq (WP.ite true (by change some w.z = some true; rw [flag, prime]) ?_ (by intro h; cases h))
     intro _
     refine WP.mono (candidateScreenQ_ok v ctxW enough tableW numberW) ?_
@@ -52,7 +52,7 @@ theorem candidateScreenP_ok (v : RoundImpl) {s : State} {p : CandidateParams}
     rw [candidateScreenP, prime]
     exact (returned.trans_pre (candidate_local_frame ctx (by decide) (by decide) changedW) restW (fun _ h => h)).trans_pre
       (changed.mono (by simp [candidateRegions])) rest (fun _ h => h)
-  · have composite : Spec.Ffdh.primeShape p.candidate = false := Bool.eq_false_iff.mpr prime
+  · have composite : (Spec.Ffdh.primeShape p.candidate && !Spec.RsaKeyGen.obviouslyComposite p.bits p.candidate) = false := Bool.eq_false_iff.mpr prime
     refine WP.seq (WP.ite false (by change some w.z = some false; rw [flag, composite]) (by intro h; cases h) ?_)
     intro _
     refine WP.mono (candidateRejected_ok ctxW) ?_

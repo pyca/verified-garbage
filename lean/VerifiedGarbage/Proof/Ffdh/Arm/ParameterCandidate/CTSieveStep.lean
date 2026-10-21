@@ -12,11 +12,13 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialSmall
 import VerifiedGarbage.Proof.Bignum.Arm.StackOnlyCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SievePolicy
 
 /-! Each sieve step reads the same public table entry and candidate octets. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG.Impl.Ffdh.Arm.ParameterCandidate (trialCount)
 open VG VG.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Ffdh.Arm.KeySearch (Two two_post two_taint two_map two_ite)
 
@@ -27,14 +29,14 @@ structure SieveData where
 
 structure SieveStepStart (p : SieveData × Nat) (s : State) : Prop where
   context : SieveContext p.1.dst p.1.base p.1.bytes.length s
-  index : p.2 < 53
+  index : p.2 < trialCount p.1.bytes.length
   cursor : s.gpr .r10 = p.1.base + BitVec.ofNat 32 (Spec.Rsa.Mont.arrAt ((p.1.bytes.length + 7) / 8) 34 + 4 * p.2)
   bytes : Spec.Rsa.bytesAt s.mem (State.addr p.1.dst) p.1.bytes.length = p.1.bytes
   bad : s.mem.readW (State.addr (s.sp + 64#32)) 32 = if sieveAny (Spec.Rsa.os2ip p.1.bytes) p.2 then 1 else 0
 
 private structure SieveEntryReady (p : SieveData × Nat) (s : State) : Prop where
   context : SieveContext p.1.dst p.1.base p.1.bytes.length s
-  index : p.2 < 53
+  index : p.2 < trialCount p.1.bytes.length
   prime : s.gpr .r7 = BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry p.2)
   bytes : Spec.Rsa.bytesAt s.mem (State.addr p.1.dst) p.1.bytes.length = p.1.bytes
 
@@ -65,7 +67,7 @@ theorem sieveActiveStep_ct : RelCT isa (Two SieveStepStart)
   have trial : RelCT isa (Two SieveEntryReady) VG.Impl.Ffdh.Arm.ParameterCandidate.trialSmall (Two SieveDivided) :=
     two_post trialTrace (fun p s h => by
       refine WP.mono (trialSmall_ok s p.1.dst h.context.read.positive h.context.read.countFits h.context.read.bufferFits
-        (by have := h.index; omega : p.2 < 1024) h.prime (h.context.read.frame.read (by decide))
+        (by have := h.index; have := trialCount_bound p.1.bytes.length; omega : p.2 < 1024) h.prime (h.context.read.frame.read (by decide))
         (h.context.read.frame.read (by decide)) h.context.read.out h.context.read.width h.context.read.readable) ?_
       rintro t ⟨flag, _, _⟩
       rwa [h.bytes] at flag)

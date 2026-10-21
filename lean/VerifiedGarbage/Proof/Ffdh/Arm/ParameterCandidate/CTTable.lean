@@ -30,7 +30,7 @@ theorem tableWrite_ct : RelCT isa (Two TableStart)
       rintro t ⟨⟨ptr, _⟩, _⟩
       exact ptr)
   obtain ⟨hint, checked⟩ := tableWrites_taint
-  have writes : RelCT isa (Two TablePointer) (.block (VG.Impl.Ffdh.Arm.ParameterCandidate.tableWrites 53))
+  have writes : RelCT isa (Two TablePointer) (.block (VG.Impl.Ffdh.Arm.ParameterCandidate.tableWrites 1024))
       (fun _ _ => True) := by
     refine two_taint [.r11] ?_ checked
     intro p s t a b r hr

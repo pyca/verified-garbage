@@ -30,7 +30,7 @@ theorem shapeLastTail_taint : CandidateCert [.r4, .r5]
     (.block (VG.Impl.Ffdh.Arm.ParameterCandidate.shapeLast.drop 1)) := ⟨_, by taint_decide⟩
 
 theorem tableWrites_taint : CandidateCert [.r11]
-    (.block (VG.Impl.Ffdh.Arm.ParameterCandidate.tableWrites 53)) := ⟨_, by taint_decide⟩
+    (.block (VG.Impl.Ffdh.Arm.ParameterCandidate.tableWrites 1024)) := ⟨_, by taint_decide⟩
 
 theorem sieveEntry_taint : CandidateCert [.r10]
     (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveEntry) := ⟨_, by taint_decide⟩

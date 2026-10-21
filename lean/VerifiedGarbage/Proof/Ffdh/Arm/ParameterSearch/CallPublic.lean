@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Bounds
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Spec.Ffdh.ScreenedContract
+public import VerifiedGarbage.Spec.Ffdh.SievedContract
 
 /-! Equal public search positions supply equal public candidate arguments and entropy suffixes. -/
 
@@ -20,7 +20,7 @@ namespace VG.Proof.Ffdh.Arm.ParameterSearch
 open VG VG.Arm
 
 theorem call_public {q : SearchPoint} {s t : State} (hs : CallCT q s) (ht : CallCT q t) (sp : s.sp = t.sp) :
-    (Spec.Ffdh.screenedParameterCandidateContract abi 184).pub (callState q.inputs q.used s) (callState q.inputs q.used t) := by
+    (Spec.Ffdh.sievedParameterCandidateContract abi 184).pub (callState q.inputs q.used s) (callState q.inputs q.used t) := by
   obtain ⟨originalS, liveS, roomS, argsS, memS, restS⟩ := hs
   obtain ⟨originalT, liveT, roomT, argsT, memT, restT⟩ := ht
   have spS : s.sp = originalS.sp - 24#32 := restS.sp
@@ -47,7 +47,7 @@ theorem call_public {q : SearchPoint} {s t : State} (hs : CallCT q s) (ht : Call
   have tapeNat : (BitVec.ofNat 32 (q.inputs.c.bytes.length - q.used)).toNat = q.inputs.c.bytes.length - q.used := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := q.inputs.c.tapeCount; omega)]
   simp only [State.addr] at bytesS bytesT
-  sig_pub [Spec.Ffdh.screenedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig,
+  sig_pub [Spec.Ffdh.sievedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr]
   simp only [argsS.out, argsS.width, argsS.usedPtr, argsS.bits,
     argsT.out, argsT.width, argsT.usedPtr, argsT.bits,

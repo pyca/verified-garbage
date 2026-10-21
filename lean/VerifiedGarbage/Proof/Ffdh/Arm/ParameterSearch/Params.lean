@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateParams
 public import VerifiedGarbage.Spec.Ffdh.Generation
-import VerifiedGarbage.Spec.Ffdh.ScreenedContract
-public import VerifiedGarbage.Spec.Ffdh.ScreenedGeneration
+import VerifiedGarbage.Spec.Ffdh.SievedContract
+public import VerifiedGarbage.Spec.Ffdh.SievedGeneration
 
 /-! Public inputs for the native parameter retry/refill controller. -/
 
@@ -26,7 +26,7 @@ structure SearchParams where
 abbrev SearchParams.c (p : SearchParams) := p.candidate
 
 def SearchParams.tail (p : SearchParams) (used remaining : Nat) : Spec.Ffdh.ParameterSearchResult :=
-  (Spec.Ffdh.screenedParameterSearch p.c.bits p.c.generator remaining (p.c.bytes.drop used)).consume used
+  (Spec.Ffdh.sievedParameterSearch p.c.bits p.c.generator remaining (p.c.bytes.drop used)).consume used
 
 def searchValues (p : SearchParams) (used : Nat) : Nat → BitVec 32
   | 1 => BitVec.ofNat 32 p.c.length

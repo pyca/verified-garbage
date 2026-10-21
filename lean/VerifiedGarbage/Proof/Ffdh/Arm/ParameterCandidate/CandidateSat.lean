@@ -10,7 +10,7 @@ import Mathlib.Util.CompileInductive
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ffdh.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Spec.Ffdh.ScreenedContract
+public import VerifiedGarbage.Spec.Ffdh.SievedContract
 
 /-! The public ARMv7 candidate contract has a concrete allowed call. -/
 
@@ -30,8 +30,8 @@ private def candidateSat : State where
   rd := [⟨0x2000, 0⟩, ⟨0x8000, 20⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x1100, 8⟩, ⟨0x3000, 8448⟩]
 
-theorem candidate_sat : ∃ s, (Spec.Ffdh.screenedParameterCandidateContract abi 184).pre s := by
-  sig_implies_sat [Spec.Ffdh.screenedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig,
+theorem candidate_sat : ∃ s, (Spec.Ffdh.sievedParameterCandidateContract abi 184).pre s := by
+  sig_implies_sat [Spec.Ffdh.sievedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr]
     [candidateSat, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.scratchWords] using candidateSat
 

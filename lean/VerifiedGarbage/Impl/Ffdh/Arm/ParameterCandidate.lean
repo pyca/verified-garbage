@@ -101,10 +101,13 @@ def tablePointer : List Instr :=
     .mov .r11 (.imm 34), .mul .r11 .r11 .r7, .dp .add .r11 .r11 (.reg .r0),
     .dp .add .r11 .r11 (.imm 256)]
 
-def tableWrites (count : Nat) : List Instr := (List.range count).flatMap fun j =>
-  [.mov .r1 (.imm (BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry j))), .str .r1 .r11 (4 * j)]
+/-- RSA's requested-width trial bound, shared by p and q. -/
+def trialCount (octets : Nat) : Nat := if octets ≤ 128 then 512 else 1024
 
-def tableWrite : List Instr := tablePointer ++ tableWrites 53
+def tableWrites (count : Nat) : List Instr := (List.range count).flatMap fun j =>
+  [.movw .r1 (BitVec.ofNat 16 (VG.Impl.RsaKeyGen.tabEntry j)), .str .r1 .r11 (4 * j)]
+
+def tableWrite : List Instr := tablePointer ++ tableWrites 1024
 
 /-- Consume the next least-significant radix-2^16 digit of the big-endian
 buffer ending at r0, with r1 octets left. The final odd octet is zero-padded. -/
@@ -161,8 +164,12 @@ def residue5 : Prog isa := residuePrime 5 [2, 3, 7, 8]
 
 def residue : Prog isa := .seq (.block [.ldrSp .r1 28, .cmp .r1 (.imm 2)]) (.ite .eq residue2 residue5)
 
-def sieveInitTail : List Instr :=
-  [.mov .r10 (.reg .r11), .mov .r11 (.imm 53), .mov .r1 (.imm 0)] ++ save .r1 64
+def sieveInitRegisters : List Instr :=
+  [.mov .r10 (.reg .r11), .ldrSp .r11 12, .subs .r11 .r11 (.imm 129),
+    .mov .r11 (.imm 0), .adc .r11 .r11 (.imm 0), .mov .r11 (.shifted .r11 .lsl 9),
+    .dp .add .r11 .r11 (.imm 512), .mov .r1 (.imm 0)]
+
+def sieveInitTail : List Instr := sieveInitRegisters ++ save .r1 64
 
 def sieveInit : Prog isa := .seq (.block tablePointer) (.block sieveInitTail)
 
@@ -177,8 +184,9 @@ def sieveActiveStep : Prog isa := seqs [.block sieveEntry, trialSmall, sieveFlag
 
 def sieveFinish : List Instr := [.ldrSp .r1 64, .cmp .r1 (.imm 0)]
 
-/-- Once a divisor has been found, only advance the bounded loop controls. -/
-def sieveSkip : List Instr := [.dp .add .r10 .r10 (.imm 4)] ++ sieveCount
+/-- Once a divisor has been found, jump directly to the table end. -/
+def sieveSkip : List Instr :=
+  [.dp .add .r10 .r10 (.shifted .r11 .lsl 2), .subs .r11 .r11 (.reg .r11)]
 
 def sieveStep : Prog isa := .seq (.block sieveFinish) (.ite .eq sieveActiveStep (.block sieveSkip))
 
