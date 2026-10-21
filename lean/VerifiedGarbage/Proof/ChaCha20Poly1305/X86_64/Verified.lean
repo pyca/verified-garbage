@@ -179,20 +179,27 @@ theorem padRest_xdepth (c : Bool) (b : Impl.Poly1305.X86_64.Blocks) (k : Nat) :
   · exact Nat.le_max_right _ _
   · exact Nat.le_max_left _ _
 
+/-- `padSite`'s depth, whichever it is. -/
+theorem padSite_xdepth (c : Bool) (b : Impl.Poly1305.X86_64.Blocks) (p n : Reg) :
+    (padSite c b p n).x86_64Depth ≤ max (padCopy b 1).x86_64Depth (padTail b 1).x86_64Depth := by
+  cases c <;> simp only [padSite, cond, Code.iteCold, Code.x86_64Depth] <;> omega
+
 theorem seal_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («seal» v.callee v.poly).x86_64Depth ≤ 24 := by
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
   have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
-  simp only [«seal», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, Bool.cond_true, padCopy, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTag, finalizeWith,
-    Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hc ⊢
+  have ha := padSite_xdepth (dataCopy v.poly) v.poly .rbx .rbp
+  simp only [«seal», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, padCopy, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTag, finalizeWith,
+    Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hc ha ⊢
   omega
 
 theorem open_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («open» v.callee v.poly).x86_64Depth ≤ 24 := by
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
   have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
-  simp only [«open», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, Bool.cond_true, padCopy, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTo, finalizeWith,
-    Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hc ⊢
+  have ha := padSite_xdepth (dataCopy v.poly) v.poly .rbx .rbp
+  simp only [«open», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, padCopy, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTo, finalizeWith,
+    Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hc ha ⊢
   omega
 
 /-- A state satisfying `seal`'s precondition, without the working space. -/
