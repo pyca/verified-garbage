@@ -1,0 +1,58 @@
+name: Label
+
+# Labels a pull request `untrusted-only` while every file it touches (and,
+# for a rename, the path it was renamed from) is an implementation
+# (`lean/VerifiedGarbage/Impl/`), a proof (`lean/VerifiedGarbage/Proof/`) or
+# generated assembly (`src/asm/`), and removes the label otherwise: such a
+# pull request changes nothing Lean does not check (lean/README.md, "What you
+# need to trust").
+#
+# `pull_request_target` runs this file as it is on the base branch, so a pull
+# request cannot change how it is labeled; nothing here checks out or runs
+# its code. Labels this job adds or removes start no run of their own (they
+# are the GITHUB_TOKEN's), and `labeled`/`unlabeled` undo anyone else's.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  untrusted-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      # `issues: write` lets the first run create the label.
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Label
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          CHANGED: ${{ github.event.pull_request.changed_files }}
+          LABEL: untrusted-only
+          UNTRUSTED: '^(lean/VerifiedGarbage/(Impl|Proof)/|src/asm/)'
+        run: |
+          set -euo pipefail
+          files=$(gh api --paginate "repos/$REPO/pulls/$PR/files" \
+            --jq '.[] | [.filename, .previous_filename // empty] | @json')
+          # The API lists at most 3,000 files: label nothing it cut off.
+          listed=$(printf '%s\n' "$files" | grep -c . || true)
+          trusted=$(printf '%s\n' "$files" | jq -r --arg re "$UNTRUSTED" \
+            '.[] | select(test($re) | not)')
+          if [ "$listed" -eq "$CHANGED" ] && [ -z "$trusted" ]; then
+            echo "Every file is an implementation, a proof or generated assembly."
+            gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=$LABEL" > /dev/null
+          else
+            echo "Files outside Impl/, Proof/ and src/asm/ ($listed of $CHANGED listed):"
+            printf '%s\n' "$trusted"
+            if gh api "repos/$REPO/issues/$PR/labels" --jq '.[].name' | grep -qx -- "$LABEL"; then
+              gh api -X DELETE "repos/$REPO/issues/$PR/labels/$LABEL" > /dev/null
+            fi
+          fi
