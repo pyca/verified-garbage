@@ -10,11 +10,11 @@
 #define MODES 10
 #define DECL(i) extern void proto_mont##i(uint64_t*,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned); \
 extern unsigned proto_recover##i(unsigned char*,unsigned,unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,uint64_t*,unsigned)
-DECL(0);DECL(1);DECL(2);DECL(3);DECL(4);DECL(5);DECL(6);DECL(7);DECL(8);DECL(9);DECL(10);DECL(11);DECL(12);DECL(13);DECL(14);DECL(15);
+DECL(0);DECL(1);DECL(2);DECL(3);DECL(4);DECL(5);DECL(6);DECL(7);DECL(8);DECL(9);DECL(10);DECL(11);DECL(12);DECL(13);DECL(14);DECL(15);DECL(16);DECL(17);
 typedef void (*montfn)(uint64_t*,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned);
 static montfn ms[]={proto_mont0,proto_mont1,proto_mont2,proto_mont3,proto_mont4,proto_mont5,proto_mont6,proto_mont7,proto_mont8,proto_mont9};
 typedef unsigned (*recfn)(unsigned char*,unsigned,unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,uint64_t*,unsigned);
-static recfn rs[]={proto_recover0,proto_recover1,proto_recover2,proto_recover3,proto_recover4,proto_recover5,proto_recover6,proto_recover7,proto_recover8,proto_recover9,proto_recover10,proto_recover11,proto_recover12,proto_recover13,proto_recover14,proto_recover15};
+static recfn rs[]={proto_recover0,proto_recover1,proto_recover2,proto_recover3,proto_recover4,proto_recover5,proto_recover6,proto_recover7,proto_recover8,proto_recover9,proto_recover10,proto_recover11,proto_recover12,proto_recover13,proto_recover14,proto_recover15,proto_recover16,proto_recover17};
 static double now(void){struct timespec t;clock_gettime(CLOCK_MONOTONIC,&t);return t.tv_sec+t.tv_nsec*1e-9;}
 static uint32_t rng=1;
 static uint32_t rnd(void){rng^=rng<<13;rng^=rng>>17;rng^=rng<<5;return rng;}
@@ -229,13 +229,13 @@ static __attribute__((always_inline)) inline int full_apis(const char*dir,int ju
    unsigned a=proto_check0(nb,k,eb,el,pm,pl,qm,ql,dm,pl,em,ql,im,pl,w,wl),b=proto_check1(nb,k,eb,el,pm,pl,qm,ql,dm,pl,em,ql,im,pl,w,wl);
    if(a!=b){printf("CHECK DIFFERENTIAL FAIL bits=%u case=%u base=%u new=%u\n",bits,t,a,b);return 5;}
   }
-  for(unsigned mode=10;mode<16;mode++){unsigned char xp[1024],xq[1024];unsigned ok=rs[mode](xp,k,xq,k,nb,k,eb,el,db,dl,w,wl);if(ok!=1||memcmp(xp,pp,k)||memcmp(xq,qq,k)){printf("GCD RECOVER DIFF bits=%u mode=%u\n",bits,mode);return 26;}}
+  for(unsigned mode=10;mode<18;mode++){unsigned char xp[1024],xq[1024];unsigned ok=rs[mode](xp,k,xq,k,nb,k,eb,el,db,dl,w,wl);if(ok!=1||memcmp(xp,pp,k)||memcmp(xq,qq,k)){printf("GCD RECOVER DIFF bits=%u mode=%u\n",bits,mode);return 26;}}
   printf("check_differential_passed,bits=%u,cases=12\n",bits);fflush(stdout);if(justdiff){free(w);continue;}
-  for(unsigned rr=0;rr<3;rr++)for(unsigned seq=0;seq<15;seq++){
-   unsigned mode=(seq+rr)%15;double start=now();unsigned ok=0;
+  for(unsigned rr=0;rr<3;rr++)for(unsigned seq=0;seq<17;seq++){
+   unsigned mode=(seq+rr)%17;double start=now();unsigned ok=0;
    for(unsigned rep=0;rep<3;rep++){
-    if(mode==14)ok=openssl_import(nb,k,eb,el,db,dl);
-    else{unsigned recmode=mode==12?14:mode==13?15:mode==10?12:mode==11?13:mode==8?10:mode==9?11:mode==6?7:mode==7?8:(mode==1||mode>=3)?3:0;ok=rs[recmode](pp,k,qq,k,nb,k,eb,el,db,dl,w,wl);if(ok!=1)return 6;p=pp;q=qq;pl=trimlen(&p,k);ql=trimlen(&q,k);
+    if(mode==16)ok=openssl_import(nb,k,eb,el,db,dl);
+    else{unsigned recmode=mode==14?16:mode==15?17:mode==12?14:mode==13?15:mode==10?12:mode==11?13:mode==8?10:mode==9?11:mode==6?7:mode==7?8:(mode==1||mode>=3)?3:0;ok=rs[recmode](pp,k,qq,k,nb,k,eb,el,db,dl,w,wl);if(ok!=1)return 6;p=pp;q=qq;pl=trimlen(&p,k);ql=trimlen(&q,k);
      ok=mode==4?proto_crt2(dp,pl,dq,ql,qi,pl,nb,k,p,pl,q,ql,db,dl,w,wl):mode>=5?proto_crt3(dp,pl,dq,ql,qi,pl,nb,k,p,pl,q,ql,db,dl,w,wl):proto_crt0(dp,pl,dq,ql,qi,pl,nb,k,p,pl,q,ql,db,dl,w,wl);if(ok!=1)return 7;
      checkfn check=mode<2?proto_check0:proto_check1;ok=check(nb,k,eb,el,p,pl,q,ql,dp,pl,dq,ql,qi,pl,w,wl);
     }if(ok!=1)return 8;

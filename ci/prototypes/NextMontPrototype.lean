@@ -372,6 +372,34 @@ def tune : Prog isa → Prog isa
  | a => a
 end FastDoubleProto
 
+namespace FastR2Proto
+open VG VG.X86 VG.Impl.Rsa.X86.KeyRt VG.Impl.Rsa.X86.RecoverRt
+open VG.Impl.Rsa.X86.Recover (mR2 aOne aZ aN mAcc mBase mXm)
+open VG.Impl.Rsa.X86.Keys (seqs)
+def rMinus (t j : Nat) : Prog isa := VG.Impl.Rsa.X86.Keys.seqs [
+ copy nar mR2 aZ,
+ .block (arrPtr nar .eax mR2 .edx ++ [.alu .add .eax (.reg .edx),.alu .sub .eax (.imm 16),
+   .mov .ecx (.imm 1),.store (at_ .eax 0) .ecx]),
+ sub3 nar mR2 mR2 aN,
+ VG.Impl.Rsa.X86.Keys.seqs ((List.range t).flatMap fun _ => addMod nar mR2 mR2 mR2 aN aZ mAcc),
+ .block [.mov .esi (.imm (BitVec.ofNat 32 j))],
+ .loop (.seq (mmul mR2 mR2 mR2) (.block [.alu .sub .esi (.imm 1),.alu .cmp .esi (.imm 0)])) .ne]
+def choose (len t j : Nat) (fallback : Prog isa) : Prog isa :=
+ .seq (.block [.mov .eax (.mem (argOp 5)),.alu .cmp .eax (.imm (BitVec.ofNat 32 len))])
+ (.ite .e (rMinus t j) fallback)
+def setup : Prog isa := choose 256 1 11 (choose 384 3 10 (choose 512 1 12 setupR2))
+def mont : Prog isa := VG.Impl.Rsa.X86.Keys.seqs [sub3 nar aZ aN aN,copy nar aOne aZ,
+ .block (setOne nar aOne),copy nar mBase aN,.block setupInverse,setup,copy nar mXm aOne,
+ mmul mXm mXm mR2,montTail]
+def fused : Prog isa := VG.Impl.Rsa.X86.Keys.seqs [fusedPrepare,mont,fusedLoop,BatchGcdProto.newFin]
+def selected : Prog isa := .seq (.block recoveryChoice) (.iteCold .b BatchGcdProto.newRest fused)
+def sized : Prog isa := .seq numbers (.ite .e selected VG.Impl.Rsa.X86.Recover.failure)
+def body : Prog isa := .seq (.block (VG.Impl.Rsa.X86.CrtValues.inputArgs 4))
+ (.seq (.block VG.Impl.Bignum.X86.modulusCheck) (.ite .e sized VG.Impl.Rsa.X86.Recover.failure))
+def code : Prog isa := .seq (.block VG.Impl.Rsa.X86.Recover.entry)
+ (.seq body (.block VG.Impl.Bignum.X86.PublicFn.restore))
+end FastR2Proto
+
 def main : IO Unit := do
  let modes := [VG.Impl.Mont.X86.Rt.body, NextMont.tune 2 VG.Impl.Mont.X86.Rt.body,
    NextMont.tune 4 VG.Impl.Mont.X86.Rt.body, NextMont.tune 8 VG.Impl.Mont.X86.Rt.body,
@@ -388,6 +416,8 @@ def main : IO Unit := do
    NextMont.printFn "proto_recover13" (replaceGcd BatchGcdProto.code) "proto_mont8" ++
    NextMont.printFn "proto_recover14" (FastDoubleProto.tune (replaceGcd BatchGcdProto.code)) "proto_mont7" ++
    NextMont.printFn "proto_recover15" (FastDoubleProto.tune (replaceGcd BatchGcdProto.code)) "proto_mont8" ++
+   NextMont.printFn "proto_recover16" (FastDoubleProto.tune (replaceGcd FastR2Proto.code)) "proto_mont7" ++
+   NextMont.printFn "proto_recover17" (FastDoubleProto.tune (replaceGcd FastR2Proto.code)) "proto_mont8" ++
    NextMont.printFn "proto_check0" (VG.Impl.Rsa.X86.KeyCheckRt.code false) ++
    NextMont.printFn "proto_check1" (KeyCheckMontProto.code false) ++
    NextMont.printFn "proto_crt0" VG.Impl.Rsa.X86.CrtValuesRt.code ++
