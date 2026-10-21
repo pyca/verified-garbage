@@ -38,6 +38,8 @@ jobs:
             echo "ROUND $round"
             ./prototype keys
           done | tee prototype-results.txt
+          gcc -O3 ci/prototypes/generate_small.c -lcrypto -o generate-small
+          ./generate-small
           gcc -O3 -Wall -Wextra ci/prototypes/rsa_machine.c ci/prototypes/rsa_machine_generated.S -o machine
           ./machine keys | tee machine-results.txt
           cat prototype-results.txt machine-results.txt >> "$GITHUB_STEP_SUMMARY"
