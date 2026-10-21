@@ -53,11 +53,16 @@ theorem initW_f : ∀ j < 32, ∀ e < 8, (initW.chunk 0 j).get e = lvT 0 (8 * j 
 
 theorem initW_s : ∀ j < 32, ∀ e < 8, (initW.chunk 1 j).get e = 0 := by decide +kernel
 
-theorem initW_t {j e : Nat} (hj : j < 32) (he : e < 8) :
-    (initW.chunk 2 j).get e = cT (Impl.MlKem.AArch64.Ntt16.tableHalves.getD (8 * j + e) 0) := by
+/-- Lane `e` of chunk `j` of the table. -/
+theorem tabT_get {j e : Nat} (hj : j < 32) (he : e < 8) :
+    Y.get (slot yw tabT j) e = cT (Impl.MlKem.AArch64.Ntt16.tableHalves.getD (8 * j + e) 0) := by
   have hl : Impl.MlKem.AArch64.Ntt16.tableHalves.length = 256 := by
     rw [Impl.MlKem.AArch64.Ntt16.tableHalves.lit_eq]; decide +kernel
   show slot tw (slot (tw * 8) tabT j) e = _
   rw [slot_slot _ _ _ _ _ he, tabT, slot_foldr cT (fun h => Nat.lt_trans (mk_lt _ _ _ _ _) (by decide)) _ _ (by omega)]
+
+theorem initW_t {j e : Nat} (hj : j < 32) (he : e < 8) :
+    (initW.chunk 2 j).get e = cT (Impl.MlKem.AArch64.Ntt16.tableHalves.getD (8 * j + e) 0) :=
+  tabT_get hj he
 
 end VG.Proof.MlKem.AArch64.NttR

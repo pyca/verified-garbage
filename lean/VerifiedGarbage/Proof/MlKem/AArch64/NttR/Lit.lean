@@ -39,3 +39,21 @@ def tabT : Nat := Impl.MlKem.AArch64.Ntt16.tableHalves.foldr (fun h acc => cT h 
 materialize_value tabT
 
 end VG.Proof.MlKem.AArch64.NttR
+
+namespace VG.Proof.MlKem.AArch64.NttR
+
+open VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.Ntt16
+
+/-- `ntt` after the table (`halves`): the constants and the pointers, then the passes. -/
+def nttHead : List Instr := consts ++ ([mov .x2 .x0, .addImm .x .x3 .x1 0, .movz .x .x5 4 0] : List Instr)
+
+def nttRest : Prog isa :=
+  .seq (.loop (.block pass1Body) (.nonzero .x .x5)) <|
+  .seq (.block [.addImm .x .x2 .x1 0, .addImm .x .x6 .x1 512, mov .x4 .x0, .movz .x .x5 8 0])
+    (.loop (.block pass2Body) (.nonzero .x .x5))
+
+def nttTail : Prog isa := .seq (.block nttHead) nttRest
+
+materialize_code nttTail
+
+end VG.Proof.MlKem.AArch64.NttR

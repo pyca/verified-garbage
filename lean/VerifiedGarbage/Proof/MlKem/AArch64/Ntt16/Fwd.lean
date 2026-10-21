@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Pass2
+import VerifiedGarbage.Proof.MlKem.AArch64.NttR.FwdU
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttCommon
 import VerifiedGarbage.Proof.Framework.Range
@@ -128,60 +129,7 @@ theorem correct (s₀ : State) (hs : (inPlaceAArch64 Spec.MlKem.ntt).pre s₀) :
       (inPlaceAArch64 Spec.MlKem.ntt).post s₀ s' by
     obtain ⟨t, s', he, hsp, hpost⟩ := h
     exact ⟨t, s', he, abi_of rfl (by lit_decide) he (by lit_decide), hpost⟩
-  refine WP.seq ?_
-  rw [WP.block_append_iff, WP.block_append_iff]
-  have hreg : (⟨s₀.gpr .x1, 1024⟩ : Region) ∈ s₀.wr := by rw [hp.wr]; simp
-  refine WP.mono (halves_ok tableHalves (r := .x1) (by decide) (off := 512)
-    (by rw [length_tableHalves]) (by decide) hreg) fun s₁ h₁ => ?_
-  refine WP.mono (consts_ok s₁) fun s₂ c₂ => ?_
-  refine WP.mono (WP.keepV (Q := fun s₃ => Keep [.x2, .x3, .x5] s₂ s₃ ∧ s₃.mem = s₂.mem ∧
-      s₃.gpr .x2 = s₂.gpr .x0 ∧ s₃.gpr .x3 = s₂.gpr .x1 + BitVec.ofNat 64 0 ∧ (s₃.gpr .x5).toNat = 4)
-    (by decide) (wp_mov fun w₁ k₁ e₁ => wp_addImm (by decide) fun w₂ k₂ e₂ => wp_movz fun w₃ k₃ e₃ =>
-      wp_nil ⟨((k₁.keep.trans k₂.keep).trans k₃.keep).mono, by rw [k₃.mem, k₂.mem, k₁.mem],
-        by rw [k₃.get .x2, k₂.get .x2, e₁], by rw [k₃.get .x3, e₂, k₁.get .x1], by rw [e₃]; rfl⟩))
-    fun s₃ ⟨⟨k₃, m₃, e2, e3, e5⟩, hv₃⟩ => ?_
-  have kk := (h₁.keep.trans c₂.keep).trans k₃
-  have st₃ : St s₀ s₃ := ⟨kk.rd, kk.wr, kk.sp, kk.get .x0, kk.get .x1⟩
-  have i₀ : L1 s₀ 0 s₃ := by
-    refine ⟨st₃, ?_, ?_, by rw [e5], ?_, fun j hj => ?_, fun r _ c' hc' => absurd hc' (Nat.not_lt_zero _),
-      fun k hk => by rw [hv₃]; exact c₂.z k hk, by rw [hv₃]; exact c₂.q, by rw [hv₃]; exact c₂.c10,
-      by rw [hv₃]; exact c₂.c0⟩
-    · rw [e2, c₂.keep.get .x0, h₁.keep.get .x0]; exact (BitVec.add_zero _).symm
-    · rw [e3, c₂.keep.get .x1, h₁.keep.get .x1]
-    · rw [m₃, c₂.mem]; exact h₁.frame
-    · rw [m₃, c₂.mem]; exact h₁.tab j (by rw [length_tableHalves]; exact hj)
-  refine WP.seq (WP.mono (count_loop (n := 4) (by decide) (L1 s₀) (fun c hc w hw => p1_body hp hc hw) i₀)
-    fun s₄ h₄ => ?_)
-  refine WP.seq ?_
-  refine WP.mono (WP.keepV (Q := fun s₅ => Keep [.x2, .x6, .x4, .x5] s₄ s₅ ∧ s₅.mem = s₄.mem ∧
-      s₅.gpr .x2 = s₄.gpr .x1 + BitVec.ofNat 64 0 ∧ s₅.gpr .x6 = s₄.gpr .x1 + BitVec.ofNat 64 512 ∧
-      s₅.gpr .x4 = s₄.gpr .x0 ∧ (s₅.gpr .x5).toNat = 8)
-    (by decide) (wp_addImm (by decide) fun w₁ k₁ e₁ => wp_addImm (by decide) fun w₂ k₂ e₂ =>
-      wp_mov fun w₃ k₃ e₃ => wp_movz fun w₄ k₄ e₄ =>
-      wp_nil ⟨(((k₁.keep.trans k₂.keep).trans k₃.keep).trans k₄.keep).mono,
-        by rw [k₄.mem, k₃.mem, k₂.mem, k₁.mem],
-        by rw [k₄.get .x2, k₃.get .x2, k₂.get .x2, e₁],
-        by rw [k₄.get .x6, k₃.get .x6, e₂, k₁.get .x1],
-        by rw [k₄.get .x4, e₃, k₂.get .x0, k₁.get .x0], by rw [e₄]; rfl⟩))
-    fun s₅ ⟨⟨k₅, m₅, e2', e6', e4', e5'⟩, hv₅⟩ => ?_
-  have j₀ : L2 s₀ s₄.mem 0 s₅ := by
-    refine ⟨h₄.st.keep k₅, ?_, ?_, ?_, by rw [e5'], by rw [m₅]; exact Frame.refl _ _,
-      (fun o ho => by
-        rw [BitVec.add_assoc,←BitVec.ofNat_add]
-        exact in_rd_wr (in_regions hreg (contains_off (by omega) (by decide)))),
-      hp.disj.sub_right (Offset.sub_base _ (by decide)),
-      (fun j hj => by rw [BitVec.add_assoc,←BitVec.ofNat_add]; exact h₄.tab j hj),
-      fun r hr c' hc' => h₄.scr r hr c' hc', ?_, by rw [hv₅]; exact h₄.q, by rw [hv₅]; exact h₄.c10,
-      by rw [hv₅]; exact h₄.c0⟩
-    · rw [e2', h₄.st.x1]
-    · rw [e6', h₄.st.x1]; exact (BitVec.add_zero _).symm
-    · rw [e4', h₄.st.x0]; exact (BitVec.add_zero _).symm
-    · rw [m₅]; exact CoeffsUpTo.zero _
-  refine WP.mono (count_loop (n := 8) (by decide) (L2 s₀ s₄.mem) (fun b hb w hw => p2_body hp hb hw) j₀)
-    fun s' h' => ⟨h'.st.sp, ?_⟩
-  show PolyIs s'.mem (fP s₀) (Spec.MlKem.ntt (P₀ s₀))
-  rw [ntt_eq_nttL]
-  exact h'.out.polyIs fun i _ => rfl
+  exact NttR.ntt_run s₀ ⟨hp.wr, hp.disj, hp.red⟩
 
 theorem ct : ConstantTime isa (inPlaceAArch64 Spec.MlKem.ntt).pre (inPlaceAArch64 Spec.MlKem.ntt).pub
     Impl.MlKem.AArch64.Ntt16.ntt :=

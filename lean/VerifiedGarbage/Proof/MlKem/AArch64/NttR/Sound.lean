@@ -170,6 +170,9 @@ theorem upd_lt {w n i x k : Nat} (hn : n < 2 ^ (w * k)) (hx : x < 2 ^ w) (hi : i
     rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hQ
   omega
 
+theorem slot_zero (w i : Nat) : slot w 0 i = 0 := by
+  rw [slot_def, Nat.zero_div, Nat.zero_mod]
+
 /-- Slot `e` of slot `j` of `k` slots each. -/
 theorem slot_slot (w k n j e : Nat) (he : e < k) : slot w (slot (w * k) n j) e = slot w n (k * j + e) := by
   rw [slot_def, slot_def, slot_def]
