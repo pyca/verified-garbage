@@ -1055,30 +1055,24 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        // Every message once the powers are ready, called inline: each
-        // `_prepared` (or `_with_powers`) instance chooses its path for every
-        // length itself. Before, a message long enough to gain from them
-        // counts towards computing them. A key without them pays one load
-        // (`short_ready`), as before.
+        // Every message once the powers are ready (`short_ready`, tested
+        // after the length, so that longer messages pay nothing for it),
+        // called inline: each `_prepared` (or `_with_powers`) instance
+        // chooses its path for every length itself. Before, a message long
+        // enough to gain from them counts towards computing them.
         #[cfg(all(
             any(target_arch = "x86_64", target_arch = "aarch64"),
             feature = "alloc"
         ))]
-        if self.powers.short_ready()
-            && let Some((ctx, fns)) = self.powers.ready()
-        {
-            #[cfg(target_arch = "aarch64")]
-            let ctx = Got::Ready(ctx);
-            return Ok(self.seal_with(ctx, fns, nonce, aad, data));
-        }
-        #[cfg(all(
-            any(target_arch = "x86_64", target_arch = "aarch64"),
-            feature = "alloc"
-        ))]
-        if data.len() >= POWERS_MIN_LEN
-            && let Some(tag) = self.seal_prepared(nonce, aad, data)
-        {
-            return Ok(tag);
+        if data.len() >= POWERS_MIN_LEN || self.powers.short_ready() {
+            if let Some((ctx, fns)) = self.powers.ready() {
+                #[cfg(target_arch = "aarch64")]
+                let ctx = Got::Ready(ctx);
+                return Ok(self.seal_with(ctx, fns, nonce, aad, data));
+            }
+            if let Some(tag) = self.seal_prepared(nonce, aad, data) {
+                return Ok(tag);
+            }
         }
         let seal = instance!(self.backend, vg_aes_gcm_seal,
             x86_64: [vg_aes_gcm_seal_aesni, vg_aes_gcm_seal_pclmul, vg_aes_gcm_seal_aesni_pclmul],
@@ -1235,17 +1229,15 @@ impl AesGcm {
             return Err(Error::InvalidOutputLength);
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
+        // As in `encrypt_in_place`.
         #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
-        if self.powers.short_ready()
-            && let Some((ctx, fns)) = self.powers.ready()
-        {
-            return Ok(self.seal_pieces_with(Got::Ready(ctx), fns, nonce, aad, plaintext, out));
-        }
-        #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
-        if out.len() >= POWERS_MIN_LEN
-            && let Some(tag) = self.seal_pieces_prepared(nonce, aad, plaintext, out)
-        {
-            return Ok(tag);
+        if out.len() >= POWERS_MIN_LEN || self.powers.short_ready() {
+            if let Some((ctx, fns)) = self.powers.ready() {
+                return Ok(self.seal_pieces_with(Got::Ready(ctx), fns, nonce, aad, plaintext, out));
+            }
+            if let Some(tag) = self.seal_pieces_prepared(nonce, aad, plaintext, out) {
+                return Ok(tag);
+            }
         }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
