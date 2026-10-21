@@ -326,4 +326,14 @@ theorem msg_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hdi : t.gpr .rdi =
       simp only [ite_true, hPart]
       exact tailW_ok hL hcu hdi' hsi' ((hg _ (by decide)).trans (hdx rfl)) hD hD8' h8 hQD hQD8 hq hdn
 
+/-- `scratch` in `rdi`. -/
+theorem scrPtr_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
+    WP isa (.block Cfg.scrPtr) t fun u => Ctx L g m₀ u ∧ u.mem = t.mem ∧ u.gpr .rdi = L.scr := by
+  have h208 := hc.inFr (d := 208) (by omega_arith) (by omega_arith)
+  apply WP.of_runBlock
+  simp only [Cfg.scrPtr, fScratch, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64, ea_stk,
+    hc.rsp, Offset.add_add, Nat.reduceAdd, h208, ite_true, Option.map_some, hc.pScr, RegUpd.gpr_setReg_self,
+    RegUpd.mem_setReg, Option.some.injEq, exists_eq_left']
+  exact ⟨hc.set hL (d := .rdi) (by decide) rfl rfl rfl rfl fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr, trivial, trivial⟩
+
 end VG.Proof.Ecdsa.Rfc6979.X86_64
