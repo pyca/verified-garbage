@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.MlKem1024.AArch64.Decaps
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Final
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.DecapsFinal
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Inst
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.EncapsFinal
+public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.EncapsFinal
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -68,6 +68,11 @@ def hybridNote : String :=
   "Computes `H(ek)` in the third state of `vg_keccak_f1600_x3_sha3`, one block of `ek` per main \
   squeeze of the matrix's first pairs, while the vector unit runs their SHAKE128 states."
 
+def prfNote : String :=
+  "Computes `G(m ‖ H(ek))` right after the pairs hashing `ek`, then `PRF₂(r, N)` for the first noise \
+  polynomials in the third state of the pairs after it and the second state of the singleton, one per \
+  main squeeze, while the vector unit runs their SHAKE128 states."
+
 def hybridKgNote : String :=
   "Computes `H(ek)` in the third state of `vg_keccak_f1600_x3_sha3`, one block of `ek` per main \
   squeeze of the matrix's pairs once the rows of `t̂` before them have encoded it; the noise and `ŝ` \
@@ -94,11 +99,11 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem.encapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
-    notes := [hybridNote]
+    notes := [hybridNote, prfNote]
     consts := Proof.MlKem.AArch64.Optimized.constants
-    code := Impl.MlKem.AArch64.Kem16.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768
+    code := Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768
     stack := 128
-    verified := Proof.MlKem.AArch64.Hybrid.encapsHW768_verified v },
+    verified := Proof.MlKem.AArch64.Kem16P.encapsP768_verified v },
   Spec.MlKem.decapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
@@ -118,11 +123,11 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem1024.encapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
-    notes := [hybridNote]
+    notes := [hybridNote, prfNote]
     consts := Proof.MlKem.AArch64.Optimized.constants
-    code := Impl.MlKem.AArch64.Kem16.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024
+    code := Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024
     stack := 128
-    verified := Proof.MlKem.AArch64.Hybrid.encapsHW1024_verified v },
+    verified := Proof.MlKem.AArch64.Kem16P.encapsP1024_verified v },
   Spec.MlKem1024.decapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
