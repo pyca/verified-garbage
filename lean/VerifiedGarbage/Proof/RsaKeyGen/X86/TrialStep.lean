@@ -54,7 +54,7 @@ theorem redc32_code (s : State) :
 /-- The machine remainder stays below twice the trial prime and carries the
 same modular invariant as the x86-64 sieve. -/
 theorem redc32_ok (s : State)
-    (primeLow : 3 ≤ (s.gpr .ebx).toNat) (primeHigh : (s.gpr .ebx).toNat ≤ 8161)
+    (primeLow : 3 ≤ (s.gpr .ebx).toNat) (primeHigh : (s.gpr .ebx).toNat ≤ 65537)
     (accBound : (s.gpr .ebp).toNat < 2 * (s.gpr .ebx).toNat)
     (inverse : ((s.gpr .ebx).toNat * (s.gpr .esi).toNat + 1) % 2 ^ 32 = 0) :
     WP isa (.block redc32) s fun t => t.mem = s.mem ∧ Keeps [.eax, .edx, .ecx, .ebp] s t ∧

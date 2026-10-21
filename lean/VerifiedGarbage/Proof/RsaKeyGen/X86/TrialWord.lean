@@ -36,7 +36,7 @@ theorem carry_toNat (a b : BitVec 32) : (carry a b).toNat = (a.toNat + b.toNat) 
     omega
 
 theorem quotient_correct (h acc prime inv : BitVec 32)
-    (primeLow : 3 ≤ prime.toNat) (primeHigh : prime.toNat ≤ 8161)
+    (primeLow : 3 ≤ prime.toNat) (primeHigh : prime.toNat ≤ 65537)
     (accBound : acc.toNat < 2 * prime.toNat)
     (inverse : (prime.toNat * inv.toNat + 1) % 2 ^ 32 = 0) :
     (quotient h acc prime inv).toNat =

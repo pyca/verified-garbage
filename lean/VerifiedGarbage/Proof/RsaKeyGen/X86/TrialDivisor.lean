@@ -22,7 +22,7 @@ theorem divisor_ok (s : State) (p : BitVec 32) (w endOffset : Nat)
     (endRead : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) endOffset) 4)
     (endValue : s.mem.readW (addr (s.gpr .esp) endOffset) 32 = p + BitVec.ofNat 32 (4 * (2 * w)))
     (ptr : s.gpr .edi = p) (zero : s.gpr .ebp = 0)
-    (primeLow : 3 ≤ (s.gpr .ebx).toNat) (primeHigh : (s.gpr .ebx).toNat ≤ 8161)
+    (primeLow : 3 ≤ (s.gpr .ebx).toNat) (primeHigh : (s.gpr .ebx).toNat ≤ 65537)
     (odd : (s.gpr .ebx).toNat % 2 = 1)
     (inverse : ((s.gpr .ebx).toNat * (s.gpr .esi).toNat + 1) % 2 ^ 32 = 0) :
     WP isa (divisor endOffset) s fun t =>

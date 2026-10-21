@@ -28,7 +28,7 @@ theorem words_ok (s : State) (p : BitVec 32) (n endOffset : Nat)
     (endRead : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) endOffset) 4)
     (endValue : s.mem.readW (addr (s.gpr .esp) endOffset) 32 = p + BitVec.ofNat 32 (4 * n))
     (ptr : s.gpr .edi = p) (zero : s.gpr .ebp = 0)
-    (primeLow : 3 ≤ (s.gpr .ebx).toNat) (primeHigh : (s.gpr .ebx).toNat ≤ 8161)
+    (primeLow : 3 ≤ (s.gpr .ebx).toNat) (primeHigh : (s.gpr .ebx).toNat ≤ 65537)
     (inverse : ((s.gpr .ebx).toNat * (s.gpr .esi).toNat + 1) % 2 ^ 32 = 0) :
     WP isa (words endOffset) s fun t => t.mem = s.mem ∧
       Keeps [.eax, .edx, .ecx, .ebp, .edi] s t ∧
