@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Step
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Loop
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xor
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Lit
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Backends
@@ -213,18 +214,76 @@ theorem short_ok (s : State) (hp : xorAArch64.pre s) (hl : L s < 256) :
       exact ((step_ok b (XPre.of b (hb.pre (ha.pre hp))) 3 (by decide) hlen).mono fun c hc =>
         (tail_ok (XPre.of b (hb.pre (ha.pre hp))) hc hlen).mono fun _ hu => ha.finish (hb.finish hu))
 
+theorem short_noFrames : Impl.ChaCha20.AArch64.Small.short.noFrames = true := by lit_decide
+
+/-- `short` after the four-block chunks: run on the data the chunks left. -/
+theorem tail_short {s₀ : State} (hp : XPre s₀) {t : Nat} {s : State} (h : Neon4.LInv s₀ t s)
+    (hlt : L s₀ - 256 * t < 256) :
+    WP isa Impl.ChaCha20.AArch64.Small.short s fun s' =>
+      GprAbi s₀ s' ∧ xorAArch64.post s₀ s' ∧
+      s'.gpr .x0 = s₀.gpr .x0 ∧ s'.gpr .x1 = s₀.gpr .x3 := by
+  have hL := Xor.L_lt s₀
+  have hle := h.le
+  have hn : (BitVec.ofNat 64 (L s₀ - 256 * t)).toNat = L s₀ - 256 * t :=
+    by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  let wr := [stR s₀, Neon4.tailR s₀ t, bR s₀]
+  have hs : xorAArch64.pre (s.withRegions [] wr) := by
+    simp only [xorAArch64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
+      h.x0, h.x1, h.x2, h.x3, hn]
+    have ts := Neon4.tail_sub h.le
+    exact ⟨trivial, rfl, hp.st_d.sub_right ts, hp.st_b, hp.d_b.sub_left ts, by
+      have := hp.nowrap
+      simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
+      omega⟩
+  have hc : Covers wr s.wr := by
+    rw [h.wr, hp.wr]
+    refine Covers.of_sub fun r hr => ?_
+    simp only [wr, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨stR s₀, by simp, 0, by simp, by simp⟩
+    · exact ⟨dR s₀, by simp, 256 * t, rfl, by dsimp; omega⟩
+    · exact ⟨bR s₀, by simp, 0, by simp, by simp⟩
+  have hw := short_ok _ hs (by simp only [L, State.withRegions_gpr, h.x2, hn]; exact hlt)
+  refine WP.narrow hw ?_ hc ?_ short_noFrames
+  · rw [h.rd, hp.rd]; exact hc
+  · intro u _ _ hsp hf ⟨ha, hpost, h0, h1⟩
+    simp only [State.withRegions_gpr, State.withRegions_sp, GprAbi] at ha
+    simp only [xorAArch64, State.withRegions_gpr, State.withRegions_mem,
+      h.x0, h.x1, h.x2, hn, h.cnt] at hpost
+    simp only [State.withRegions_gpr] at h0 h1
+    refine ⟨⟨?_, hsp.trans h.sp⟩, ?_, h0.trans h.x0, h1.trans h.x3⟩
+    · intro r hr
+      rw [ha.1 r hr]
+      apply h.keep r <;> intro he <;> subst r <;> simp [preserved] at hr
+    · refine bytesAt_xor (length_keystream _ _) fun k hk => ?_
+      have hk2 : k < L s₀ := hk
+      have ns : ¬ (stR s₀).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
+        fun hh => hp.st_d _ hh (data_in hk)
+      have nb : ¬ (bR s₀).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
+        fun hh => hp.d_b _ (data_in hk) hh
+      by_cases hk' : k < 256 * t
+      · rw [hf _ (by
+          intro r hr; simp only [wr, List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl | rfl
+          · exact ns
+          · exact Neon4.not_tail hk' h.le
+          · exact nb), h.data k hk, ite_eq_left hk']
+      · have ea : dp s₀ + BitVec.ofNat 64 (256 * t) + BitVec.ofNat 64 (k - 256 * t) =
+            dp s₀ + BitVec.ofNat 64 k := by
+          rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' (by omega)]
+        have x := bytes_of_bytesAt (length_keystream _ _) hpost (k := k - 256 * t) (by omega)
+        rw [ea, h.data k hk, ite_eq_right hk', keystream_getD _ (by omega)] at x
+        rw [x, Neon4.ks_shift _ hk (t := t) (by omega)]
+
 theorem correct (s : State) (hp : xorAArch64.pre s) :
     WP isa Impl.ChaCha20.AArch64.Small.xor s fun u =>
       abiPreserved s u ∧ xorAArch64.post s u ∧ u.gpr .x0=s.gpr .x0 ∧ u.gpr .x1=s.gpr .x3 := by
   apply WP.withPreservedV (hc := by lit_decide)
   apply WP.seq
-  refine (check_ok s 8 (by decide)).mono fun a ⟨ha,h5⟩ => ?_
-  apply WP.ite (decide (L s < 256)) (check_zero (by decide) (Xor.L_lt s) h5)
-  · intro hshort
-    have hlen : L a < 256 := by simp only [L,ha.gpr .x2 (by decide)];exact of_decide_eq_true hshort
-    exact (short_ok a (ha.pre hp) hlen).mono fun _ hu => ha.finish hu
-  · intro _
-    exact (Neon4.correct a (ha.pre hp)).mono fun _ h => ha.finish ⟨⟨h.1.1,h.1.2.1⟩,h.2⟩
+  refine (Neon4.init_ok s).mono fun u ⟨hi, h5⟩ => ?_
+  apply WP.seq
+  refine (Neon4.bulk_ok (XPre.of s hp) hi h5).mono fun v ⟨t, hlt, hv⟩ => ?_
+  exact tail_short (XPre.of s hp) hv hlt
 
 theorem xor_noFrames : Impl.ChaCha20.AArch64.Small.xor.noFrames=true := by lit_decide
 

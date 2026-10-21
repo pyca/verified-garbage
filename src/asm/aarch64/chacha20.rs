@@ -2336,9 +2336,7 @@ b 21f
 21:
 lsr x5, x2, #8
 cbz x5, 25f
-lsr x5, x2, #8
-cbz x5, 27f
-29:
+27:
 ldr w4, [x0, #0]
 dup v0.4s, w4
 ldr w4, [x0, #4]
@@ -2388,7 +2386,7 @@ movk x4, #3087, lsl #32
 movk x4, #3597, lsl #48
 mov v30.d[1], x4
 movz x4, #10, lsl #0
-210:
+28:
 add v0.4s, v0.4s, v4.4s
 add v1.4s, v1.4s, v5.4s
 add v2.4s, v2.4s, v6.4s
@@ -2502,7 +2500,7 @@ eor v31.16b, v4.16b, v17.16b
 ushr v4.4s, v31.4s, #25
 sli v4.4s, v31.4s, #7
 sub x4, x4, #1
-cbnz x4, 210b
+cbnz x4, 28b
 ldr w4, [x0, #0]
 dup v31.4s, w4
 add v0.4s, v0.4s, v31.4s
@@ -2643,55 +2641,16 @@ str w4, [x0, #48]
 add x1, x1, #256
 sub x2, x2, #256
 lsr x5, x2, #8
-cbnz x5, 29b
-b 28f
-27:
-28:
-str x19, [x3, #256]
-str x20, [x3, #264]
-str x30, [x3, #272]
-add x19, x1, #0
-add x20, x2, #0
-add x1, x3, #0
-cbz x20, 211f
-213:
-bl {vg_chacha20_block}
-lsr x9, x20, #6
-add x2, x20, #0
-cbz x9, 214f
-movz x2, #64, lsl #0
-b 215f
-214:
-215:
-sub x20, x20, x2
-add x7, x1, #0
-216:
-ldrb w6, [x19, #0]
-ldrb w8, [x7, #0]
-eor w6, w6, w8
-strb w6, [x19, #0]
-add x19, x19, #1
-add x7, x7, #1
-sub x2, x2, #1
-cbnz x2, 216b
-ldr w3, [x0, #48]
-add w3, w3, #1
-str w3, [x0, #48]
-cbnz x20, 213b
-b 212f
-211:
-212:
-ldr x19, [x1, #256]
-ldr x20, [x1, #264]
-ldr x30, [x1, #272]
+cbnz x5, 27b
 b 26f
 25:
+26:
 lsr x5, x2, #7
-cbz x5, 217f
+cbz x5, 29f
 lsr x5, x2, #6
 sub x5, x5, #3
 lsr x5, x5, #63
-cbnz x5, 219f
+cbnz x5, 211f
 ldr w4, [x0, #0]
 dup v0.4s, w4
 ldr w4, [x0, #4]
@@ -2741,7 +2700,7 @@ movk x4, #3087, lsl #32
 movk x4, #3597, lsl #48
 mov v30.d[1], x4
 movz x4, #10, lsl #0
-221:
+213:
 add v0.4s, v0.4s, v4.4s
 add v1.4s, v1.4s, v5.4s
 add v2.4s, v2.4s, v6.4s
@@ -2855,7 +2814,7 @@ eor v31.16b, v4.16b, v17.16b
 ushr v4.4s, v31.4s, #25
 sli v4.4s, v31.4s, #7
 sub x4, x4, #1
-cbnz x4, 221b
+cbnz x4, 213b
 ldr w4, [x0, #0]
 dup v31.4s, w4
 add v0.4s, v0.4s, v31.4s
@@ -2983,8 +2942,8 @@ add w4, w4, #3
 str w4, [x0, #48]
 add x1, x1, #192
 sub x2, x2, #192
-b 220f
-219:
+b 212f
+211:
 ldr w4, [x0, #0]
 dup v0.4s, w4
 ldr w4, [x0, #4]
@@ -3034,7 +2993,7 @@ movk x4, #3087, lsl #32
 movk x4, #3597, lsl #48
 mov v30.d[1], x4
 movz x4, #10, lsl #0
-222:
+214:
 add v0.4s, v0.4s, v4.4s
 add v1.4s, v1.4s, v5.4s
 add v2.4s, v2.4s, v6.4s
@@ -3148,7 +3107,7 @@ eor v31.16b, v4.16b, v17.16b
 ushr v4.4s, v31.4s, #25
 sli v4.4s, v31.4s, #7
 sub x4, x4, #1
-cbnz x4, 222b
+cbnz x4, 214b
 ldr w4, [x0, #0]
 dup v31.4s, w4
 add v0.4s, v0.4s, v31.4s
@@ -3264,65 +3223,26 @@ add w4, w4, #2
 str w4, [x0, #48]
 add x1, x1, #128
 sub x2, x2, #128
-220:
+212:
 str x19, [x3, #256]
 str x20, [x3, #264]
 str x30, [x3, #272]
 add x19, x1, #0
 add x20, x2, #0
 add x1, x3, #0
-cbz x20, 223f
-225:
-bl {vg_chacha20_block}
-lsr x9, x20, #6
-add x2, x20, #0
-cbz x9, 226f
-movz x2, #64, lsl #0
-b 227f
-226:
-227:
-sub x20, x20, x2
-add x7, x1, #0
-228:
-ldrb w6, [x19, #0]
-ldrb w8, [x7, #0]
-eor w6, w6, w8
-strb w6, [x19, #0]
-add x19, x19, #1
-add x7, x7, #1
-sub x2, x2, #1
-cbnz x2, 228b
-ldr w3, [x0, #48]
-add w3, w3, #1
-str w3, [x0, #48]
-cbnz x20, 225b
-b 224f
-223:
-224:
-ldr x19, [x1, #256]
-ldr x20, [x1, #264]
-ldr x30, [x1, #272]
-b 218f
+cbz x20, 215f
 217:
-str x19, [x3, #256]
-str x20, [x3, #264]
-str x30, [x3, #272]
-add x19, x1, #0
-add x20, x2, #0
-add x1, x3, #0
-cbz x20, 229f
-231:
 bl {vg_chacha20_block}
 lsr x9, x20, #6
 add x2, x20, #0
-cbz x9, 232f
+cbz x9, 218f
 movz x2, #64, lsl #0
-b 233f
-232:
-233:
+b 219f
+218:
+219:
 sub x20, x20, x2
 add x7, x1, #0
-234:
+220:
 ldrb w6, [x19, #0]
 ldrb w8, [x7, #0]
 eor w6, w6, w8
@@ -3330,19 +3250,57 @@ strb w6, [x19, #0]
 add x19, x19, #1
 add x7, x7, #1
 sub x2, x2, #1
-cbnz x2, 234b
+cbnz x2, 220b
 ldr w3, [x0, #48]
 add w3, w3, #1
 str w3, [x0, #48]
-cbnz x20, 231b
-b 230f
-229:
-230:
+cbnz x20, 217b
+b 216f
+215:
+216:
 ldr x19, [x1, #256]
 ldr x20, [x1, #264]
 ldr x30, [x1, #272]
-218:
-26:
+b 210f
+29:
+str x19, [x3, #256]
+str x20, [x3, #264]
+str x30, [x3, #272]
+add x19, x1, #0
+add x20, x2, #0
+add x1, x3, #0
+cbz x20, 221f
+223:
+bl {vg_chacha20_block}
+lsr x9, x20, #6
+add x2, x20, #0
+cbz x9, 224f
+movz x2, #64, lsl #0
+b 225f
+224:
+225:
+sub x20, x20, x2
+add x7, x1, #0
+226:
+ldrb w6, [x19, #0]
+ldrb w8, [x7, #0]
+eor w6, w6, w8
+strb w6, [x19, #0]
+add x19, x19, #1
+add x7, x7, #1
+sub x2, x2, #1
+cbnz x2, 226b
+ldr w3, [x0, #48]
+add w3, w3, #1
+str w3, [x0, #48]
+cbnz x20, 223b
+b 222f
+221:
+222:
+ldr x19, [x1, #256]
+ldr x20, [x1, #264]
+ldr x30, [x1, #272]
+210:
 ret
 .p2align 6",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
@@ -4736,9 +4694,7 @@ b 21f
 21:
 lsr x5, x2, #8
 cbz x5, 25f
-lsr x5, x2, #8
-cbz x5, 27f
-29:
+27:
 ldr w4, [x0, #0]
 dup v0.4s, w4
 ldr w4, [x0, #4]
@@ -4788,7 +4744,7 @@ movk x4, #3087, lsl #32
 movk x4, #3597, lsl #48
 mov v30.d[1], x4
 movz x4, #10, lsl #0
-210:
+28:
 add v0.4s, v0.4s, v4.4s
 add v1.4s, v1.4s, v5.4s
 add v2.4s, v2.4s, v6.4s
@@ -4902,7 +4858,7 @@ eor v31.16b, v4.16b, v17.16b
 ushr v4.4s, v31.4s, #25
 sli v4.4s, v31.4s, #7
 sub x4, x4, #1
-cbnz x4, 210b
+cbnz x4, 28b
 ldr w4, [x0, #0]
 dup v31.4s, w4
 add v0.4s, v0.4s, v31.4s
@@ -5043,55 +4999,16 @@ str w4, [x0, #48]
 add x1, x1, #256
 sub x2, x2, #256
 lsr x5, x2, #8
-cbnz x5, 29b
-b 28f
-27:
-28:
-str x19, [x3, #256]
-str x20, [x3, #264]
-str x30, [x3, #272]
-add x19, x1, #0
-add x20, x2, #0
-add x1, x3, #0
-cbz x20, 211f
-213:
-bl {vg_chacha20_block}
-lsr x9, x20, #6
-add x2, x20, #0
-cbz x9, 214f
-movz x2, #64, lsl #0
-b 215f
-214:
-215:
-sub x20, x20, x2
-add x7, x1, #0
-216:
-ldrb w6, [x19, #0]
-ldrb w8, [x7, #0]
-eor w6, w6, w8
-strb w6, [x19, #0]
-add x19, x19, #1
-add x7, x7, #1
-sub x2, x2, #1
-cbnz x2, 216b
-ldr w3, [x0, #48]
-add w3, w3, #1
-str w3, [x0, #48]
-cbnz x20, 213b
-b 212f
-211:
-212:
-ldr x19, [x1, #256]
-ldr x20, [x1, #264]
-ldr x30, [x1, #272]
+cbnz x5, 27b
 b 26f
 25:
+26:
 lsr x5, x2, #7
-cbz x5, 217f
+cbz x5, 29f
 lsr x5, x2, #6
 sub x5, x5, #3
 lsr x5, x5, #63
-cbnz x5, 219f
+cbnz x5, 211f
 ldr w4, [x0, #0]
 dup v0.4s, w4
 ldr w4, [x0, #4]
@@ -5141,7 +5058,7 @@ movk x4, #3087, lsl #32
 movk x4, #3597, lsl #48
 mov v30.d[1], x4
 movz x4, #10, lsl #0
-221:
+213:
 add v0.4s, v0.4s, v4.4s
 add v1.4s, v1.4s, v5.4s
 add v2.4s, v2.4s, v6.4s
@@ -5255,7 +5172,7 @@ eor v31.16b, v4.16b, v17.16b
 ushr v4.4s, v31.4s, #25
 sli v4.4s, v31.4s, #7
 sub x4, x4, #1
-cbnz x4, 221b
+cbnz x4, 213b
 ldr w4, [x0, #0]
 dup v31.4s, w4
 add v0.4s, v0.4s, v31.4s
@@ -5383,8 +5300,8 @@ add w4, w4, #3
 str w4, [x0, #48]
 add x1, x1, #192
 sub x2, x2, #192
-b 220f
-219:
+b 212f
+211:
 ldr w4, [x0, #0]
 dup v0.4s, w4
 ldr w4, [x0, #4]
@@ -5434,7 +5351,7 @@ movk x4, #3087, lsl #32
 movk x4, #3597, lsl #48
 mov v30.d[1], x4
 movz x4, #10, lsl #0
-222:
+214:
 add v0.4s, v0.4s, v4.4s
 add v1.4s, v1.4s, v5.4s
 add v2.4s, v2.4s, v6.4s
@@ -5548,7 +5465,7 @@ eor v31.16b, v4.16b, v17.16b
 ushr v4.4s, v31.4s, #25
 sli v4.4s, v31.4s, #7
 sub x4, x4, #1
-cbnz x4, 222b
+cbnz x4, 214b
 ldr w4, [x0, #0]
 dup v31.4s, w4
 add v0.4s, v0.4s, v31.4s
@@ -5664,65 +5581,26 @@ add w4, w4, #2
 str w4, [x0, #48]
 add x1, x1, #128
 sub x2, x2, #128
-220:
+212:
 str x19, [x3, #256]
 str x20, [x3, #264]
 str x30, [x3, #272]
 add x19, x1, #0
 add x20, x2, #0
 add x1, x3, #0
-cbz x20, 223f
-225:
-bl {vg_chacha20_block}
-lsr x9, x20, #6
-add x2, x20, #0
-cbz x9, 226f
-movz x2, #64, lsl #0
-b 227f
-226:
-227:
-sub x20, x20, x2
-add x7, x1, #0
-228:
-ldrb w6, [x19, #0]
-ldrb w8, [x7, #0]
-eor w6, w6, w8
-strb w6, [x19, #0]
-add x19, x19, #1
-add x7, x7, #1
-sub x2, x2, #1
-cbnz x2, 228b
-ldr w3, [x0, #48]
-add w3, w3, #1
-str w3, [x0, #48]
-cbnz x20, 225b
-b 224f
-223:
-224:
-ldr x19, [x1, #256]
-ldr x20, [x1, #264]
-ldr x30, [x1, #272]
-b 218f
+cbz x20, 215f
 217:
-str x19, [x3, #256]
-str x20, [x3, #264]
-str x30, [x3, #272]
-add x19, x1, #0
-add x20, x2, #0
-add x1, x3, #0
-cbz x20, 229f
-231:
 bl {vg_chacha20_block}
 lsr x9, x20, #6
 add x2, x20, #0
-cbz x9, 232f
+cbz x9, 218f
 movz x2, #64, lsl #0
-b 233f
-232:
-233:
+b 219f
+218:
+219:
 sub x20, x20, x2
 add x7, x1, #0
-234:
+220:
 ldrb w6, [x19, #0]
 ldrb w8, [x7, #0]
 eor w6, w6, w8
@@ -5730,19 +5608,57 @@ strb w6, [x19, #0]
 add x19, x19, #1
 add x7, x7, #1
 sub x2, x2, #1
-cbnz x2, 234b
+cbnz x2, 220b
 ldr w3, [x0, #48]
 add w3, w3, #1
 str w3, [x0, #48]
-cbnz x20, 231b
-b 230f
-229:
-230:
+cbnz x20, 217b
+b 216f
+215:
+216:
 ldr x19, [x1, #256]
 ldr x20, [x1, #264]
 ldr x30, [x1, #272]
-218:
-26:
+b 210f
+29:
+str x19, [x3, #256]
+str x20, [x3, #264]
+str x30, [x3, #272]
+add x19, x1, #0
+add x20, x2, #0
+add x1, x3, #0
+cbz x20, 221f
+223:
+bl {vg_chacha20_block}
+lsr x9, x20, #6
+add x2, x20, #0
+cbz x9, 224f
+movz x2, #64, lsl #0
+b 225f
+224:
+225:
+sub x20, x20, x2
+add x7, x1, #0
+226:
+ldrb w6, [x19, #0]
+ldrb w8, [x7, #0]
+eor w6, w6, w8
+strb w6, [x19, #0]
+add x19, x19, #1
+add x7, x7, #1
+sub x2, x2, #1
+cbnz x2, 226b
+ldr w3, [x0, #48]
+add w3, w3, #1
+str w3, [x0, #48]
+cbnz x20, 223b
+b 222f
+221:
+222:
+ldr x19, [x1, #256]
+ldr x20, [x1, #264]
+ldr x30, [x1, #272]
+210:
 ret
 .arch_extension nosve2
 .p2align 6",
