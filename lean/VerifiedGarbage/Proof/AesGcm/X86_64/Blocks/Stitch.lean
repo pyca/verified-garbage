@@ -222,18 +222,15 @@ theorem cmp16_ok {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) :
   simp
 
 omit hp in
-/-- `test r9, r9`: whether there are no blocks. -/
-theorem test9_ok {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) :
-    WP isa (.block [.alu .test .r9 (.reg .r9)]) s₁ fun s₂ => s₂.gpr = s₁.gpr ∧ s₂.mem = s₁.mem ∧
-      s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr ∧ s₂.zf = some (decide (n s = 0)) := by
+/-- `cmp r9, 2`. -/
+theorem cmp2_ok {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) :
+    WP isa (.block [.alu .cmp .r9 (imm 2)]) s₁ fun s₂ => s₂.gpr = s₁.gpr ∧ s₂.mem = s₁.mem ∧
+      s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr ∧ s₂.cf = some (decide (n s < 2)) := by
+  have e2 : BitVec.signExtend 64 (BitVec.ofNat 32 2) = 2 := by decide
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags,
-    isa, h9, BitVec.and_self, Option.bind_some, Option.some.injEq, exists_eq_left']
-  refine ⟨trivial, trivial, trivial, trivial, ?_⟩
-  by_cases h : n s = 0
-  · rw [decide_eq_true h, show s.gpr .r9 = 0 from BitVec.eq_of_toNat_eq h]; rfl
-  · rw [decide_eq_false h]
-    exact beq_false_of_ne fun e => h (by rw [show n s = (s.gpr .r9).toNat from rfl, e]; rfl)
+  simp only [imm, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags,
+    isa, e2, h9, Option.bind_some, Option.some.injEq, exists_eq_left']
+  simp
 
 /-- The interleaved part and `rest`, from the state after the entry, given
 what the loops leave (`post`) as `Mid` for the blocks hashed `ys q`. -/

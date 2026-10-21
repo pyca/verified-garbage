@@ -48,7 +48,7 @@ theorem scratch_ok (s₁ : State) :
     | simp [AlignedScratch.ptr, gpr_setReg, gpr_arithFlags, mem_arithFlags, mem_setReg,
         rd_arithFlags, rd_setReg, wr_arithFlags, wr_setReg]
 
-/-- With `full`: at least 16 blocks (or, if `small`, at least 1) all by
+/-- With `full`: at least 16 blocks (or, if `small`, at least 2) all by
 `piece`, which leaves `Done` (`hpost`), or fewer by `rest` and the calls
 (`hsmall`). -/
 theorem fullBody_ok {small : Bool} {piece first second : Prog isa} {Post : State → State → Prop}
@@ -95,8 +95,8 @@ theorem fullBody_ok {small : Bool} {piece first second : Prog isa} {Post : State
     cases small with
     | false => exact cl hlt s₂ g₂ m₂ rd₂ wr₂
     | true =>
-      refine WP.seq (WP.mono (test9_ok (s := s) (by rw [g₂]; exact hg _ (by decide))) fun s₃ ⟨g₃, m₃, rd₃, wr₃, zf₃⟩ => ?_)
-      refine WP.ite (decide (n s = 0)) (by simp only [eval, zf₃]) (fun h0 => ?_) (fun h0 => ?_)
+      refine WP.seq (WP.mono (cmp2_ok (s := s) (by rw [g₂]; exact hg _ (by decide))) fun s₃ ⟨g₃, m₃, rd₃, wr₃, cf₃⟩ => ?_)
+      refine WP.ite (decide (n s < 2)) (by simp only [eval, cf₃]) (fun h0 => ?_) (fun h0 => ?_)
       · exact cl hlt s₃ (g₃.trans g₂) (m₃.trans m₂) (rd₃.trans rd₂) (wr₃.trans wr₂)
       · exact pc (by simp at h0 ⊢; omega) s₃ (g₃.trans g₂) (m₃.trans m₂) (rd₃.trans rd₂) (wr₃.trans wr₂)
   · exact pc (by simp at h; cases small <;> simp <;> omega) s₂ g₂ m₂ rd₂ wr₂

@@ -98,17 +98,17 @@ def head (piece : Option (Prog isa)) (aligned : Bool := false) : Prog isa :=
   | none => .block []
 
 /-- With a `piece` that takes all the blocks: all of them by it if at least
-16 (or, if `small`, at least 1), else all of them with `first` and `second`. -/
+16 (or, if `small`, at least 2), else all of them with `first` and `second`. -/
 def fullBody (piece first second : Prog isa) (aligned : Bool := false) (small : Bool := false) : Prog isa :=
   .seq (.block [.alu .cmp .r9 (imm 16)])
     (.ite .b
       (if small then
-        .seq (.block [.alu .test .r9 (.reg .r9)])
-          (.ite .e (.seq (.block rest) (tail first second)) (stitchPart piece aligned true))
+        .seq (.block [.alu .cmp .r9 (imm 2)])
+          (.ite .b (.seq (.block rest) (tail first second)) (stitchPart piece aligned true))
       else .seq (.block rest) (tail first second))
       (stitchPart piece aligned true))
 
-/-- After the entry: the blocks by `piece` (all of them if `full`, from 1 on
+/-- After the entry: the blocks by `piece` (all of them if `full`, from 2 on
 if also `small`), and the rest with `first` and `second`. -/
 def body (piece : Option (Prog isa)) (first second : Prog isa) (aligned : Bool := false) (full : Bool := false)
     (small : Bool := false) : Prog isa :=

@@ -189,7 +189,7 @@ theorem cmp_check : ∃ hc, ((taint.check (Taint.ofRegs (.r11 :: args)) (.block 
     fun τ' => (RegSet.ofList (.r11 :: args)).subset τ'.regs && (!false || τ'.flags)) = some true :=
   ⟨_, by taint_decide⟩
 
-theorem test_check : ∃ hc, ((taint.check (Taint.ofRegs (.r11 :: args)) (.block [.alu .test .r9 (.reg .r9)]) hc).map
+theorem cmp2_check : ∃ hc, ((taint.check (Taint.ofRegs (.r11 :: args)) (.block [.alu .cmp .r9 (imm 2)]) hc).map
     fun τ' => (RegSet.ofList (.r11 :: args)).subset τ'.regs && (!false || τ'.flags)) = some true :=
   ⟨_, by taint_decide⟩
 
@@ -330,7 +330,7 @@ theorem part_rel (aligned : Bool) (piece : Option (Prog isa)) {ys : State → Na
       fun _ _ h => ⟨n s₀ - n s₀ % 16, h.2.1, ?_⟩
     rw [← pb.en]; exact h.2.2
 
-/-- With a `piece` that takes all the blocks (from 1 on if `small`): the
+/-- With a `piece` that takes all the blocks (from 2 on if `small`): the
 comparison, then `piece`, or `rest` and the calls, in two runs. -/
 theorem fullBody_rel (aligned small : Bool) (p first second : Prog isa) {ys : State → Nat → List Block}
     (hys : ∀ s, ys s 0 = [])
@@ -349,9 +349,9 @@ theorem fullBody_rel (aligned small : Bool) (p first second : Prog isa) {ys : St
     fun {s} _ {s₁} h => WP.mono (cmp16_ok (s := s) (h.2.1 _ (by decide)))
       fun s₂ ⟨g₂, m₂, rd₂, wr₂, cf₂⟩ => ⟨keep h g₂ m₂ rd₂ wr₂, cf₂⟩
   have postT : ∀ {s : State}, BP M s → ∀ {s₁ : State}, EntryPost s s₁ →
-      WP isa (.block [.alu .test .r9 (.reg .r9)]) s₁ fun s₂ => EntryPost s s₂ ∧ s₂.zf = some (decide (n s = 0)) :=
-    fun {s} _ {s₁} h => WP.mono (test9_ok (s := s) (h.2.1 _ (by decide)))
-      fun s₂ ⟨g₂, m₂, rd₂, wr₂, zf₂⟩ => ⟨keep h g₂ m₂ rd₂ wr₂, zf₂⟩
+      WP isa (.block [.alu .cmp .r9 (imm 2)]) s₁ fun s₂ => EntryPost s s₂ ∧ s₂.cf = some (decide (n s < 2)) :=
+    fun {s} _ {s₁} h => WP.mono (cmp2_ok (s := s) (h.2.1 _ (by decide)))
+      fun s₂ ⟨g₂, m₂, rd₂, wr₂, cf₂⟩ => ⟨keep h g₂ m₂ rd₂ wr₂, cf₂⟩
   have a := rel_wp (P := fun s₁ s₂ => (∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) ∧ EntryPost s₀ s₁ ∧
       EntryPost s₀' s₂) (rel_regs (.r11 :: args) (.r11 :: args) false (fun _ _ h => h.1) cmp_check) (fun _ _ h => h.2)
     (fun _ h => post hp h) (fun _ h => post hp' h)
@@ -384,9 +384,9 @@ theorem fullBody_rel (aligned small : Bool) (p first second : Prog isa) {ys : St
   | true =>
     have c := rel_wp (P := fun s₁ s₂ => (∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) ∧ n s₀ < 16 ∧
         EntryPost s₀ s₁ ∧ EntryPost s₀' s₂)
-      (rel_regs (.r11 :: args) (.r11 :: args) false (fun _ _ h => h.1) test_check)
+      (rel_regs (.r11 :: args) (.r11 :: args) false (fun _ _ h => h.1) cmp2_check)
       (F₁ := fun t => n s₀ < 16 ∧ EntryPost s₀ t) (F₂ := EntryPost s₀')
-      (G₁ := fun t => n s₀ < 16 ∧ EntryPost s₀ t ∧ t.zf = some (decide (n s₀ = 0)))
+      (G₁ := fun t => n s₀ < 16 ∧ EntryPost s₀ t ∧ t.cf = some (decide (n s₀ < 2)))
       (fun _ _ h => ⟨⟨h.2.1, h.2.2.1⟩, h.2.2.2⟩)
       (fun _ h => WP.mono (postT hp h.2) fun _ h' => ⟨h.1, h'⟩) (fun _ h => postT hp' h)
     refine (RelCT.seq c (RelCT.ite (fun s₁ s₂ h => by

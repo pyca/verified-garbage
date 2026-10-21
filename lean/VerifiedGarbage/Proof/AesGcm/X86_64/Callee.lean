@@ -479,7 +479,7 @@ theorem decSmall_code (st : Option StitchImpl) (M : Gcm.X86_64.Stitch.CtxMode) :
 
 /-- A property of `Blocks.blocks` for the loops of `st`, from its three
 shapes: no loops, loops taking the first `16 ⌊n / 16⌋` blocks, and loops
-taking all of them (from 1 on, if `h`). -/
+taking all of them (from 2 on, if `h`). -/
 theorem blocks_cases {α : Type} (st : Option α) (f : α → Prog isa) (g h : α → Bool) (aligned : Bool)
     (first second : Prog isa) (P : Prog isa → Prop)
     (hnone : P (Blocks.blocks none first second aligned))
