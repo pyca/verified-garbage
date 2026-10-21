@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hmac
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Msg
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Msg
+public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86_64
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Layout
 
 /-!
 # Deterministic ECDSA on x86-64: HMAC's states for a key, saved and restored
