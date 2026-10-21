@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragKgRows
-public import VerifiedGarbage.Proof.MlKem.X86_64.Kg16
-public import VerifiedGarbage.Proof.MlKem.X86_64.EkInline16
+import VerifiedGarbage.Proof.MlKem.X86_64.Kg16
+public import VerifiedGarbage.Impl.MlKem.X86_64.Kem16
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragS4_16
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgA16
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgB
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
 public import VerifiedGarbage.Proof.MlKem.HSponge
 public import VerifiedGarbage.Impl.MlKem.X86_64.KeyGenH16
 import VerifiedGarbage.Proof.MlKem.X86_64.EkFused16

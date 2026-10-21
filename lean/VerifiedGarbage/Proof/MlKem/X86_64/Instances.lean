@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
 import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
 import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
+import VerifiedGarbage.Impl.MlKem.X86_64.KeyGenH16
 
 /-!
 # ML-KEM on x86-64: the stack pointer, for each implementation of `Sample4`

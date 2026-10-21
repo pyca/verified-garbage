@@ -4,12 +4,11 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.KgH16Base
 public import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
 import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag16
-import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag
+import VerifiedGarbage.Proof.MlKem.X86_64.Kg16
+public import VerifiedGarbage.Proof.MlKem.X86_64.EkInline16
+import VerifiedGarbage.Proof.MlKem.X86_64.Kg16Tail
+import VerifiedGarbage.Proof.MlKem.X86_64.SHM
 import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.Bits
-import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
-import VerifiedGarbage.Proof.MlKem.X86_64.KgB
 import VerifiedGarbage.Proof.MlKem.X86_64.FragC
 import Mathlib.Tactic.Conv
 

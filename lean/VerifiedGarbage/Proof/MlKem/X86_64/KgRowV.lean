@@ -5,7 +5,6 @@ public import VerifiedGarbage.Spec.MlKem.KpkeKgRows
 import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKgV
 import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEncV
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KgRow
