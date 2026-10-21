@@ -23,9 +23,16 @@ def contextMod (n : Nat) : Mod := { n, mo := slot n 0, tmp := slot n 1, minv := 
 /-- Slots: modulus, subtraction temporary, accumulator, one, R², base,
 result, conditional product, mutable exponent. The header stores the inverse
 and selection mask. All offsets depend only on public widths. -/
-def contextSetup (n : Nat) : Prog isa :=
-  .seq (.block (setupInverse (slot n 0) 0)) (.seq (one n (slot n 3))
-    (powerTwo (contextMod n) (slot n 2) (slot n 4) (128 * n)))
+def contextStart (n : Nat) : Prog isa :=
+  .seq (.block (setupInverse (slot n 0) 0)) (one n (slot n 3))
+
+/-- Initialize the shared prefix and a publicly chosen power of two. -/
+def contextSeed (n bits : Nat) : Prog isa :=
+  .seq (contextStart n) (powerTwo (contextMod n) (slot n 2) (slot n 4) bits)
+
+/-- Ordinary power setup retains its original fixed schedule. Public-modulus
+callers may reuse the seed construction with a shorter exponent. -/
+def contextSetup (n : Nat) : Prog isa := contextSeed n (128 * n)
 
 def exponentProduct (n : Nat) : Prog isa :=
   .seq (.block (exponentMask (slot n 8) 4))

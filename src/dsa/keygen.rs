@@ -2,7 +2,7 @@
 //! `[1, q)` by rejection, then `y = g^x mod p`, for a domain the caller
 //! assures is prime.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
 
 use alloc::{vec, vec::Vec};
 
@@ -12,13 +12,21 @@ use crate::arch::dsa::vg_dsa_generate_key;
 use crate::arch::dsa::vg_dsa_generate_key_adx;
 use crate::cpu::detected;
 
+// Keep common rejections inside one verified sampler invocation instead of
+// repeating the x86 domain check's modular exponentiation. Eight draws use
+// at most 256 random bytes; the sampler still enforces its 128-draw limit.
+#[cfg(target_arch = "x86")]
+const DRAW_BATCH: usize = 8;
+#[cfg(not(target_arch = "x86"))]
+const DRAW_BATCH: usize = 1;
+
 impl PrivateKey {
     /// Import big-endian `p`, `q`, `g` and `x`, deriving `y = g^x mod p`.
     /// This accepts private components from PKCS#8, which omits `y`.
     /// `g` must have `p`'s width and `x` must have `q`'s width.
     /// Checks the domain's algebraic consistency and `0 < x < q`;
     /// callers must assure domain primality separately.
-    /// Available on x86-64 and AArch64.
+    /// Available on x86, x86-64 and AArch64.
     pub fn from_private_components(p: &[u8], q: &[u8], g: &[u8], x: &[u8]) -> Result<Self, Error> {
         if !matches!(
             (p.len(), q.len()),
@@ -105,8 +113,8 @@ impl PrivateKey {
             params.extend_from_slice(component);
         }
         let backend = Backend::select(detected());
-        // One draw's worth of bytes up front: a draw never takes more than q_len.
-        let mut tape = Secret(vec![0u8; q_len]);
+        // A draw never takes more than q_len bytes.
+        let mut tape = Secret(vec![0u8; DRAW_BATCH * q_len]);
         random(&mut tape.0)?;
         let mut scratch = Secret(vec![0u64; 64 * p_len + 1024]);
         let mut output = Secret(vec![0u8; 3 * p_len + 2 * q_len]);
@@ -148,7 +156,7 @@ impl PrivateKey {
                     // The contract permits extending an exhausted tape and
                     // replaying the same generation; never reuse it for another.
                     let start = tape.0.len();
-                    tape.0.resize(start + q_len, 0);
+                    tape.0.resize(start + DRAW_BATCH * q_len, 0);
                     random(&mut tape.0[start..])?;
                 }
                 _ => return Err(Error::InvalidKeyOrNonce),

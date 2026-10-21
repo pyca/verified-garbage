@@ -26,7 +26,9 @@ fn cavp_generated_keys() {
         let x = hex(&v["X"], q.len());
         // A published x is below q, so it is accepted as the first draw.
         let key = PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
-            buf.copy_from_slice(&x);
+            for chunk in buf.chunks_exact_mut(q.len()) {
+                chunk.copy_from_slice(&x);
+            }
             Ok(())
         })
         .unwrap();
@@ -51,7 +53,9 @@ fn generated_key_rejection_and_replay() {
         if draws == 0 {
             buf.fill(0);
         } else {
-            buf.copy_from_slice(&x);
+            for chunk in buf.chunks_exact_mut(q.len()) {
+                chunk.copy_from_slice(&x);
+            }
         }
         draws += 1;
         Ok(())
@@ -62,6 +66,30 @@ fn generated_key_rejection_and_replay() {
     let digest = [0x42; 32];
     let signature = key.sign(&digest).unwrap();
     assert!(key.public_key().verify(&digest, &signature));
+}
+
+#[test]
+#[cfg(target_arch = "x86")]
+fn generated_key_rejection_within_batch() {
+    let cases = vectors(
+        include_str!("../../../vectors/nist-cavp-dsa/SigGen.txt"),
+        true,
+    );
+    let (p, q, g) = domain(&cases[0]);
+    let x = hex(&cases[0]["X"], q.len());
+    let y = hex(&cases[0]["Y"], p.len());
+    let mut requests = 0;
+    let key = PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
+        requests += 1;
+        buf.fill(0);
+        // Reject the first draw and accept the published scalar next,
+        // without returning to Rust for another entropy request.
+        buf[q.len()..2 * q.len()].copy_from_slice(&x);
+        Ok(())
+    })
+    .unwrap();
+    assert_eq!(requests, 1);
+    assert_eq!(key.packed.0, [&p[..], &q, &g, &y, &x].concat());
 }
 
 #[test]
@@ -132,7 +160,7 @@ fn generation_errors() {
         .unwrap_err(),
         Error::InvalidKeyOrNonce
     );
-    assert_eq!(draws, 128);
+    assert_eq!(draws, 128 / DRAW_BATCH);
     // g = p - 1 has order two, so the domain check fails before any draw is used.
     let mut minus_one = p.clone();
     *minus_one.last_mut().unwrap() -= 1;
@@ -195,7 +223,7 @@ fn imported_private_components() {
 fn legacy_2048_160_key_generation() {
     let (p, q, g) = crate::dsa::tests::legacy_vectors::parameters();
     let key = PrivateKey::generate_with_rng(&p, &q, &g, |buf| {
-        assert_eq!(buf.len(), 20);
+        assert_eq!(buf.len(), DRAW_BATCH * 20);
         buf.fill(0);
         buf[19] = 1;
         Ok(())

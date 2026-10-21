@@ -1,0 +1,107 @@
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+import VerifiedGarbage.Proof.Dsa.X86.KeyPartsReady
+import VerifiedGarbage.Proof.Dsa.X86.Persistent
+import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
+import VerifiedGarbage.Proof.Dsa.X86.ShapeSavedFrame
+import VerifiedGarbage.Proof.Dsa.X86.RunBytes
+import VerifiedGarbage.Proof.Dsa.Encoding
+public import VerifiedGarbage.Impl.Dsa.X86.Generate
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Proof.Dsa.X86.Moduli
+public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
+import VerifiedGarbage.Proof.Dsa.X86.DeriveCompute
+import VerifiedGarbage.Proof.Dsa.X86.WriteKey
+
+/-! # Derivation writes the original domain, the computed public key, and x -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
+open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86 VG.Proof.Ecdsa.X86
+
+theorem maskedBytes (bs : List Byte) (accepted : Prop) [Decidable accepted] :
+    bs.map (fun b => (b.setWidth 32 &&& mask32 accepted).setWidth 8) =
+      if accepted then bs else List.replicate bs.length 0 := by
+  by_cases H : accepted
+  · simp only [mask32, H, ite_true, BitVec.and_allOnes]
+    simpa only [BitVec.setWidth_setWidth_of_le _ (by decide : 8 ≤ 32), BitVec.setWidth_eq] using List.map_id' bs
+  · simp only [mask32, H, ite_false, BitVec.ofNat_eq_ofNat, BitVec.and_zero, BitVec.setWidth_zero]
+    exact List.map_const'
+
+theorem deriveBytes_ok {base : Addr} {size pLen qLen p q g x : Nat} {s : State} {out : BitVec 32}
+    (M : Moduli base size pLen qLen p q s)
+    (Params : CallerBuffer s base size (.input .p) (2 * pLen + qLen))
+    (G : CallerBuffer s base size (.input .g) pLen)
+    (X : CallerBuffer s base size (.input .nonce) qLen)
+    (hg : operandValue s base (.input .g) pLen = g)
+    (hx : operandValue s base (.input .nonce) qLen = x)
+    (mask : flagW base (Layout.field .mask) s = BitVec.allOnes 32)
+    (hp : pointerValue base s (.input .out) = out)
+    (hf : out.toNat + (3 * pLen + 2 * qLen) ≤ 2 ^ 32)
+    (hw : ∀ i < 3 * pLen + 2 * qLen, InRegions s.wr (off (out.setWidth 64) i) 1)
+    (ha : Region.Disjoint ⟨base, size⟩ ⟨out.setWidth 64, 3 * pLen + 2 * qLen⟩)
+    (pa : Region.Disjoint ⟨(pointerValue base s (.input .p)).setWidth 64, 2 * pLen + qLen⟩
+      ⟨out.setWidth 64, 3 * pLen + 2 * qLen⟩)
+    (xa : Region.Disjoint ⟨(pointerValue base s (.input .nonce)).setWidth 64, qLen⟩
+      ⟨out.setWidth 64, 3 * pLen + 2 * qLen⟩) :
+    let accepted := ((1 < g ∧ g < p) ∧ (p - 1) % q = 0 ∧ g ^ q % p = 1) ∧
+      (0 < x ∧ x < q) ∧ (1 < g ^ x % p ∧ g ^ x % p < p)
+    WP isa (.seq (Generate.deriveCompute pLen qLen) (Generate.writeKey pLen qLen)) s fun sf =>
+      sf.gpr .eax = (if accepted then 1 else 0) ∧
+      Spec.Rsa.bytesAt sf.mem (out.setWidth 64) (3 * pLen + 2 * qLen) =
+        (if accepted then
+          Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input .p)).setWidth 64) (2 * pLen + qLen) ++
+          Spec.Dsa.encodeBE pLen (g ^ x % p) ++
+          Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input .nonce)).setWidth 64) qLen
+        else List.replicate (3 * pLen + 2 * qLen) 0) ∧
+      Keeps powerClob s sf ∧ StackOutputFrame (s.gpr .esp) base (out.setWidth 64) usedBytes
+        (3 * pLen + 2 * qLen) s.mem sf.mem ∧
+      ∀ regs, VG.X86.Spill.Saved s.mem (off base) regs Entry.savedRegisters →
+        VG.X86.Spill.Saved sf.mem (off base) regs Entry.savedRegisters := by
+  intro accepted
+  have L := M.lengths
+  refine WP.seq (WP.mono (deriveCompute_ok M G X hg hx) fun t ⟨Mt, F, Y, E⟩ => ?_)
+  have ptr (f : Field) (stable : StablePointer (.input f)) :
+      pointerValue base t (.input f) = pointerValue base s (.input f) :=
+    runFrame_pointer E.mem E.keeps (by decide) stable
+  have bytes {len : Nat} {f : Field} (B : CallerBuffer s base size (.input f) len)
+      (stable : StablePointer (.input f)) :
+      Spec.Rsa.bytesAt t.mem ((pointerValue base t (.input f)).setWidth 64) len =
+        Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input f)).setWidth 64) len := by
+    rw [ptr f stable]
+    exact runFrame_bytes E.mem M.extent (by have := B.fits; omega) B.apart B.stack
+  have partP := (E.buffer Params (by decide)).keyPart (by omega) (by rw [ptr .p (by decide)]; exact pa)
+  have partX := (E.buffer X (by decide)).keyPart (by omega) (by rw [ptr .nonce (by decide)]; exact xa)
+  have partY := localKeyPart Mt.scr (by omega : 0 < pLen)
+    (Nat.le_trans (Mt.wideFit (d := t2) (by decide)) Mt.extent) ha
+  refine WP.mono (writeKey_ok Mt.scr Mt.saved accepted (by rw [F, mask, BitVec.allOnes_and])
+    ((ptr .out (by decide)).trans hp)
+    (by intro part member; simp only [List.mem_cons, List.not_mem_nil, or_false] at member
+        rcases member with rfl | rfl | rfl; exact partP; exact partY; exact partX)
+    hf (by omega) ha (by rw [E.keeps.2.2]; exact hw)) fun sf ⟨V, B, O, K⟩ => ?_
+  have keyBytes : keyPartsBytes t base [(.input .p, 2 * pLen + qLen), (.local t2, pLen), (.input .nonce, qLen)] =
+      Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input .p)).setWidth 64) (2 * pLen + qLen) ++
+        Spec.Dsa.encodeBE pLen (g ^ x % p) ++
+        Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input .nonce)).setWidth 64) qLen := by
+    simp only [keyPartsBytes, List.flatMap_cons, List.flatMap_nil, List.append_nil]
+    have Ybytes : Spec.Rsa.bytesAt t.mem ((pointerValue base t (.local t2)).setWidth 64) pLen =
+        Spec.Dsa.encodeBE pLen (g ^ x % p) := by
+      rw [← Y]
+      simpa only [operandValue, Spec.Rsa.bytesAt, List.length_map, List.length_range] using
+        (encodeBE_decodeBE (Spec.Rsa.bytesAt t.mem ((pointerValue base t (.local t2)).setWidth 64) pLen)).symm
+    rw [bytes Params (by decide), bytes X (by decide), Ybytes, List.append_assoc]
+  refine ⟨V, ?_, E.keeps.trans (K.mono (by decide)), ?_, ?_⟩
+  · rw [B, maskedBytes, keyBytes]
+    split_ifs <;> simp only [List.length_append, Spec.Rsa.bytesAt, List.length_map, List.length_range, encodeBE_length]
+    congr 1; omega
+  · intro a hb ho hstack
+    exact (O a (.inr (by omega))).trans ((execution_outside E) a hb hstack)
+  · intro regs saved
+    have O' : OutputFrame base (out.setWidth 64) 0 (3 * pLen + 2 * qLen) t.mem sf.mem :=
+      fun a _ h => O a (.inr (by omega))
+    exact O'.saved ha (by decide) (by have H : 15712 ≤ size := Mt.extent; omega)
+      (by have := Mt.scr.nowrap; omega) (E.saved saved)
+
+end VG.Proof.Dsa.X86

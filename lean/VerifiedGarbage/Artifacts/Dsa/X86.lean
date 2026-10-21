@@ -1,7 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Instance
 public import VerifiedGarbage.Proof.Dsa.X86.RandomSignInstance
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Registration
+import VerifiedGarbage.Proof.Framework.Registration
 
 /-! DSA signing with a supplied or a sampled nonce, and verification, on baseline i686. -/
 
@@ -10,6 +12,29 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Dsa.X86
 
 def artifacts : List Artifact := [
+  Spec.Dsa.generateKeyApi.artifact X86.target {
+    notes := ["Checks the domain before rejection sampling, then calls the verified key derivation. \
+      Bounded sampling follows the same random-tape contract as x86-64. Every exit clears the \
+      sampled scalar; failure clears the output and reports the exact tape consumption."]
+    code := Impl.Dsa.X86.GenerateKey.code Proof.Dsa.X86.KeyRandom.checkFn.name
+      Proof.Dsa.X86.KeyRandom.deriveFn.name Proof.Dsa.X86.KeyRandom.checkFn.code
+      Proof.Dsa.X86.KeyRandom.deriveFn.code
+    verified := Proof.Dsa.X86.KeyRandom.keyGeneration_verified
+    stack := 156 },
+  Spec.Dsa.deriveKeyApi.artifact X86.target {
+    notes := ["Checks the generator subgroup once and derives the public key with fixed-iteration \
+      Montgomery exponentiation. The public key subgroup identity follows from the generator \
+      check. A mask clears every output component on failure; saved registers reside in scratch."]
+    code := Impl.Dsa.X86.Generate.deriveKey
+    verified := Proof.Dsa.X86.deriving_verified
+    stack := 32 },
+  Spec.Dsa.checkParametersApi.artifact X86.target {
+    notes := ["Uses the signer's public-width dispatch and Montgomery arithmetic. \
+      The domain's generator range and subgroup power are checked once; the mask \
+      also checks that q divides p-1. Callee-saved registers reside in scratch."]
+    code := Impl.Dsa.X86.Generate.checkParameters
+    verified := Proof.Dsa.X86.checking_verified
+    stack := 32 },
   Spec.Dsa.randomSignApi.artifact X86.target {
     notes := ["Rejection sampling and signing retries are verified against the bounded \
       random-tape specification; each signing attempt calls `vg_dsa_sign`. Every failure zeros \
