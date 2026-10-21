@@ -708,14 +708,6 @@ const SHORT_READY: u32 = u32::MAX;
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
 const PLAIN_MAX: usize = 16;
 
-/// The shortest message, in bytes, that x86-64's 256-bit backend seals with
-/// the `_prepared` instance of `seal` before `POWERS_MIN_LEN`: from 4
-/// blocks on, the prepared loops take the blocks at once (`StitchR.encR`),
-/// 17–34% faster from 64 to 255 bytes on Emerald Rapids; below that, the
-/// path of `vg_aes_gcm_seal` for short messages costs 4–20% less.
-#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-const SHORT_SEAL_VAES_MIN: usize = 64;
-
 /// What `Powers::get` gives a call on AArch64 with the `_with_powers`
 /// instances: the powers, or that the call computes them.
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
@@ -1074,7 +1066,7 @@ impl AesGcm {
             any(target_arch = "x86_64", target_arch = "aarch64"),
             feature = "alloc"
         ))]
-        if (data.len() >= POWERS_MIN_LEN || self.short_seal(data.len()))
+        if (data.len() >= POWERS_MIN_LEN || self.short(data.len()))
             && let Some(tag) = self.seal_prepared(nonce, aad, data)
         {
             return Ok(tag);
@@ -1165,7 +1157,7 @@ impl AesGcm {
             any(target_arch = "x86_64", target_arch = "aarch64"),
             feature = "alloc"
         ))]
-        if (data.len() >= POWERS_MIN_LEN || self.short_open(data.len()))
+        if (data.len() >= POWERS_MIN_LEN || self.short(data.len()))
             && let Some(r) = self.open_prepared(nonce, aad, data, tag)
         {
             return r;
@@ -1231,7 +1223,7 @@ impl AesGcm {
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
-        if (out.len() >= POWERS_MIN_LEN || self.short_seal(out.len()))
+        if (out.len() >= POWERS_MIN_LEN || self.short(out.len()))
             && let Some(tag) = self.seal_pieces_prepared(nonce, aad, plaintext, out)
         {
             return Ok(tag);
@@ -1339,32 +1331,14 @@ impl AesGcm {
     feature = "alloc"
 ))]
 impl AesGcm {
-    /// Whether `encrypt_in_place` and `encrypt` take the `_prepared`
-    /// instance of `seal` for a message of `len` bytes, shorter than
+    /// Whether `encrypt_in_place`, `encrypt` and `open` take the
+    /// `_prepared` instances for a message of `len` bytes, shorter than
     /// `POWERS_MIN_LEN`: once the powers are ready (`Powers::short_ready`),
-    /// but on x86-64's 256-bit backend from `SHORT_SEAL_VAES_MIN` bytes on,
-    /// and on AArch64 for more than `PLAIN_MAX` bytes.
+    /// but on AArch64 for more than `PLAIN_MAX` bytes. On x86-64 each
+    /// `_prepared` instance chooses its path for every length itself.
     #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
     #[inline(always)]
-    fn short_seal(&self, len: usize) -> bool {
-        #[cfg(target_arch = "x86_64")]
-        if self.backend == Backend::VaesVpclmul && len < SHORT_SEAL_VAES_MIN {
-            return false;
-        }
-        #[cfg(target_arch = "aarch64")]
-        if len <= PLAIN_MAX {
-            return false;
-        }
-        self.powers.short_ready()
-    }
-
-    /// Whether `open` takes the `_prepared` instance of `open` for a message
-    /// of `len` bytes, shorter than `POWERS_MIN_LEN`: once the powers are
-    /// ready (`Powers::short_ready`), but on AArch64 for at most `PLAIN_MAX`
-    /// bytes.
-    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-    #[inline(always)]
-    fn short_open(&self, len: usize) -> bool {
+    fn short(&self, len: usize) -> bool {
         #[cfg(target_arch = "aarch64")]
         if len <= PLAIN_MAX {
             return false;
