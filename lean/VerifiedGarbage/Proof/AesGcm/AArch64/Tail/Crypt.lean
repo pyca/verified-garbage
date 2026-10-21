@@ -194,6 +194,12 @@ theorem crTailT_ok {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D 
       InRegions s.wr E 16) :
     WP isa crTailT s (CrOut Ctx St W SP k R icb P D n m₀) := by
   have hj := h.lt16
+  refine WP.ite (decide (n - j = 0)) (eval_zero h.x24 (by have := h.data.ok.lt; omega)) (fun ht => ?_)
+    (fun hf' => ?_)
+  · have h0 : n - j = 0 := of_decide_eq_true ht
+    refine WP.block_nil (crOut_of_xor h ?_ (fun _ _ => rfl) rfl rfl rfl)
+    rw [h0]; exact (writeBytes_nil _ _).symm
+  have h0 : n - j ≠ 0 := of_decide_eq_false hf'
   obtain ⟨s₁, run₁, x9₁, r₁⟩ : ∃ s₁, runBlock isa [.lsr .x .x9 .x26 4] s = some s₁ ∧
       s₁.gpr .x9 = BitVec.ofNat 64 (N / 16) ∧ Regs [.x9] s s₁ := by
     refine ⟨_, by arun [], ?_⟩
@@ -203,19 +209,13 @@ theorem crTailT_ok {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D 
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.ite (decide (N / 16 = 0)) (eval_zero x9₁ (by omega)) (fun _ => crTail_ok h₁) (fun hf => ?_)
   have hbN : 16 ≤ N := by have := of_decide_eq_false hf; omega
-  refine WP.ite (decide (n - j = 0)) (eval_zero h₁.x24 (by have := h₁.data.ok.lt; omega)) (fun ht => ?_)
-    (fun hf' => ?_)
-  · have h0 : n - j = 0 := of_decide_eq_true ht
-    refine WP.block_nil (crOut_of_xor h₁ ?_ (fun _ _ => rfl) rfl rfl rfl)
-    rw [h0]; exact (writeBytes_nil _ _).symm
-  · have h0 : n - j ≠ 0 := of_decide_eq_false hf'
-    obtain ⟨E, hE, hEw⟩ := hbig hbN h0
-    obtain ⟨s₂, run₂, m₂, g₂, sp₂, rd₂, wr₂⟩ := ksTail_run (r := n - j) (by omega) h₁.env
-      (by rw [h₁.x23, hE]) h₁.x24 (by rw [r₁.wr]; exact hEw)
-    refine WP.of_runBlock ⟨s₂, run₂, crOut_of_xor h₁ ?_ (fun r hr => g₂ r (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₂ rd₂ wr₂⟩
-    rw [m₂, Tail.ks_mem _ _ _ (by omega), hE]
+  obtain ⟨E, hE, hEw⟩ := hbig hbN h0
+  obtain ⟨s₂, run₂, m₂, g₂, sp₂, rd₂, wr₂⟩ := ksTail_run (r := n - j) (by omega) h₁.env
+    (by rw [h₁.x23, hE]) h₁.x24 (by rw [r₁.wr]; exact hEw)
+  refine WP.of_runBlock ⟨s₂, run₂, crOut_of_xor h₁ ?_ (fun r hr => g₂ r (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₂ rd₂ wr₂⟩
+  rw [m₂, Tail.ks_mem _ _ _ (by omega), hE]
 
 /-- `cryptAlT`: `crypt` from the start of a keystream block, for a text of
 `N` bytes (in `x26`) whose last 16 bytes, if it is at least a block long and

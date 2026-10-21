@@ -65,11 +65,11 @@ def padMul : Prog isa :=
   .ite (.zero .x .x13) (.block [])
     (.seq (.block (zeroT ++ [ptr .x11 .x19 tO])) (.seq copy (.block mulT)))
 
-/-- `padMul` for the last bytes of the text (`x26` bytes): from the 16 bytes
-that end it (`Tail.padVec`) if it is at least a block long. -/
+/-- `padMul` for the last bytes of the text (`x26` bytes), if there are any:
+from the 16 bytes that end it (`Tail.padVec`) if it is at least a block long. -/
 def padMulT : Prog isa :=
-  .seq (.block [.lsr .x .x9 .x26 4])
-    (.ite (.zero .x .x9) padMul (.ite (.zero .x .x13) (.block []) (.block Tail.padVec)))
+  .ite (.zero .x .x13) (.block [])
+    (.seq (.block [.lsr .x .x9 .x26 4]) (.ite (.zero .x .x9) padMul (.block Tail.padVec)))
 
 /-- The accumulator stored at `x20 + 16`, as `vg_ghash` keeps it. -/
 def storeY : List Instr := [.vop (.rev .rev64b Y Y), .strq Y .x20 16]

@@ -74,10 +74,11 @@ def crSeg2T : Prog isa :=
       (.block [imm .x4 1, .vop (.movi0 .v0), .strq .v0 .x20 64]))
     (.block (ctrArgs ++ [ptr .x3 .x20 64]))
 
-/-- `crTail`, or `ksTail` if the text is at least a block long. -/
+/-- Nothing if there are no last bytes; else `crTail`, or `ksTail` if the
+text is at least a block long. -/
 def crTailT : Prog isa :=
-  .seq (.block [.lsr .x .x9 .x26 4])
-    (.ite (.zero .x .x9) crTail (.ite (.zero .x .x24) (.block []) (.block ksTail)))
+  .ite (.zero .x .x24) (.block [])
+    (.seq (.block [.lsr .x .x9 .x26 4]) (.ite (.zero .x .x9) crTail (.block ksTail)))
 
 /-- `cryptAl` with `crSeg2T` and `crTailT`. -/
 def cryptAlT : Prog isa :=
