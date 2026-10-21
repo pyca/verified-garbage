@@ -89,4 +89,23 @@ def sampleH (fast : Bool := false) (w16 : Bool := false) : Prog isa :=
   .seq (.block (pro ++ rcTable .rbx (oRc / 32) ++ absorb4)) (.seq (.block hload) (.seq (squeezesH fast)
     (.seq (.block hsave) (.seq (.block tabAddr) (.seq (run1 0 w16) (.seq (run1 1 w16) (.seq (run1 2 w16) (tail3 fast w16))))))))
 
+/-- The three squeezes, the first `m ≤ 3` each absorbing a block from
+`scratch + oHB`, with the fourth state saved as the sponge's after the
+`m`-th (before the first, for `m = 0`). -/
+def squeezesHM (fast : Bool) (m : Nat) : Prog isa :=
+  .seq (if m = 0 then .block [] else squeezesH' fast m)
+    (.seq (.block hsave) (if m = 3 then .block [] else squeezes m (3 - m) fast))
+where
+  /-- The first `m` squeezes, each absorbing a block. -/
+  squeezesH' (fast : Bool) (m : Nat) : Prog isa :=
+    .seq (.block [.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 oHB))])
+      (blocks oBuf 168 m (squeezeH fast))
+
+/-- `sampleH` absorbing only the first `m ≤ 3` of the three blocks: three
+entries of the matrix, with 16-bit coefficients, and `m` blocks of `H`'s
+sponge. -/
+def sampleHM (fast : Bool) (m : Nat) : Prog isa :=
+  .seq (.block (pro ++ rcTable .rbx (oRc / 32) ++ absorb4)) (.seq (.block hload) (.seq (squeezesHM fast m)
+    (.seq (.block tabAddr) (.seq (run1 0 true) (.seq (run1 1 true) (.seq (run1 2 true) (tail3 fast true)))))))
+
 end VG.Impl.MlKem.X86_64.Sample4

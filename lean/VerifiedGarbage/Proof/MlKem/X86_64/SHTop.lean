@@ -63,6 +63,23 @@ def sampleHK : Contract isa where
 
 theorem sampleHK_eq : sampleHK = sampleHKW false := rfl
 
+/-- The contract of `Sample4.sampleHM m`: as `sampleHKW`, with the sponge
+absorbing the first `m` blocks. -/
+def sampleHMKW (w16 : Bool) (m : Nat) : Contract isa where
+  pre := (sample4KW w16).pre
+  post s s' :=
+    (s'.gpr .rax).setWidth 32 =
+        (if (List.range 3).all fun k => (sampleNTT minIterations (seed4 s.mem (s.gpr .rdi) k)).isSome
+          then 1 else 0) ∧
+      (∀ k < 3, ∀ f, sampleNTT minIterations (seed4 s.mem (s.gpr .rdi) k) = some f →
+        PolyIsW (cw w16) s'.mem (poly4W w16 (s.gpr .rsi) k) f) ∧
+      stateAt s'.mem (s.gpr .rdx + BitVec.ofNat 64 Impl.MlKem.X86_64.Sample4.oHS) =
+        SH.habs (stateAt s.mem (s.gpr .rdx + BitVec.ofNat 64 Impl.MlKem.X86_64.Sample4.oHS))
+          (fun i => bytesAt s.mem (s.gpr .rdx + BitVec.ofNat 64 (Impl.MlKem.X86_64.Sample4.oHB + 136 * i)) 136) m
+  pub := sample4K.pub
+
+theorem sampleHKW_eq (w16 : Bool) : sampleHKW w16 = sampleHMKW w16 3 := rfl
+
 namespace SH
 
 variable {w16 : Bool}
@@ -75,8 +92,8 @@ variable {σ : State} (hp : PreW w16 σ)
 include hp
 
 /-- The return value, and the callee-saved registers restored. -/
-theorem end3_ok {s : State} (h : Done3 w16 σ (hst σ 3) s) :
-    WP isa (.block epi) s fun s' => (sampleHKW w16).post σ s' ∧ gprPreserved σ s' := by
+theorem end3_ok {m : Nat} {s : State} (h : Done3 w16 σ (hst σ m) s) :
+    WP isa (.block epi) s fun s' => (sampleHMKW w16 m).post σ s' ∧ gprPreserved σ s' := by
   have hin : ∀ i < 5, InRegions (s.rd ++ s.wr) (scr σ + BitVec.ofNat 64 (oSave + 8 * i)) 8 := fun i hi =>
     in_scr' hp h.env.rd h.env.wr (by simp only [oSave]; omega)
   rw [epi_eq]
@@ -112,9 +129,10 @@ theorem end3_ok {s : State} (h : Done3 w16 σ (hst σ 3) s) :
       (by decide)
 
 /-- After the squeezes, with the sponge's state stored back. -/
-theorem run3_ok {fast : Bool} {s : State} (h : SqY w16 σ (hst σ 3) 0 3 s) (hs : HS σ (hst σ 3) s.mem) :
+theorem run3_ok {fast : Bool} {m : Nat} {Y : Spec.Sha3.State} {s : State} (h : SqY w16 σ Y 0 3 s)
+    (hs : HS σ (hst σ m) s.mem) :
     WP isa (.seq (.block tabAddr) (.seq (run1 0 w16) (.seq (run1 1 w16) (.seq (run1 2 w16) (tail3 fast w16))))) s fun s' =>
-      (sampleHKW w16).post σ s' ∧ gprPreserved σ s' := by
+      (sampleHMKW w16 m).post σ s' ∧ gprPreserved σ s' := by
   refine WP.seq (WP.mono (tabY_ok h hs) fun _ p₀ => ?_)
   refine WP.seq (WP.mono (run1Y_ok hp (by decide) p₀) fun _ p₁ => WP.seq (WP.mono (run1Y_ok hp (by decide) p₁)
     fun _ p₂ => WP.seq (WP.mono (run1Y_ok hp (by decide) p₂) fun _ p₃ => ?_)))
@@ -128,6 +146,7 @@ end
 
 theorem correctW {fast : Bool} (σ : State) (hs : (sampleHKW w16).pre σ) :
     ∃ t s', Exec isa (sampleH fast w16) σ t s' ∧ abiPreserved σ s' ∧ (sampleHKW w16).post σ s' := by
+  rw [sampleHKW_eq] at hs ⊢
   have hp := preW_of hs
   obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (startF_ok hp) fun s₁ ⟨h₁, r₁⟩ =>
     WP.seq (WP.mono (hload_ok hp h₁ r₁) fun s₂ ⟨h₂, r₂⟩ =>
