@@ -184,7 +184,12 @@ pub fn bench(c: &mut Criterion) {
     g.finish();
 }
 
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 fn bench_candidate(
     c: &mut Criterion,
     sizes: &[usize],
