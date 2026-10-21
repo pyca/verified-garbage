@@ -20,7 +20,7 @@ on:
         description: The commit to compare against (empty to run the branch alone, next to OpenSSL and aws-lc-rs)
         required: false
       arches:
-        description: Space-separated architectures to run (x86_64 aarch64 x86 arm, or aarch64-apple, which only a run by hand measures; empty for all but aarch64-apple)
+        description: Space-separated architectures to run (x86_64 aarch64 x86 arm, or thumb and aarch64-apple, which run only when named; empty for x86_64 aarch64 x86 arm)
         required: false
       cpu_features:
         description: Space-separated VG_CPU_FEATURES configurations to run on each, `-` for none (empty for those that choose among the modules' implementations; `python3 ci/bench_arches.py --choices` lists them)
@@ -114,6 +114,14 @@ jobs:
       - name: Install Rust
         # ci.yml's `rust` job lints the benchmarks, once per architecture.
         run: rustup toolchain install stable --profile minimal
+      - name: Select the Thumb target
+        if: ${{ matrix.target }}
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          rustup target add "$TARGET"
+          echo "CARGO_BUILD_TARGET=$TARGET" >> "$GITHUB_ENV"
+          echo "PKG_CONFIG_LIBDIR=/usr/lib/arm-linux-gnueabihf/pkgconfig:/usr/share/pkgconfig" >> "$GITHUB_ENV"
       # The dependencies (aws-lc-sys, criterion, ...) are the same for every
       # configuration and shard of an architecture, and about a third of the
       # job; ci.yml's `rust` job saves them on main whenever the key changes.
