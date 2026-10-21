@@ -109,7 +109,7 @@ theorem setup_ok {s₀ : State} (hp : SPre s₀) :
     WP isa (.block setup) s₀ fun s => ∃ P, Ready s₀ P s ∧
       ∀ k < 4, ∀ l < 4, x * φ (P k l) = φ (hk s₀) ^ (16 - 4 * k - l) := by
   rw [setup, WP.block_append_iff]
-  exact WP.mono (Stitch.setup_ok hp) fun _ ⟨_, hR, hpw⟩ => WP.mono (setupZ_ok hR) fun _ hR' =>
+  exact WP.mono (Stitch.setup_ok hp) fun _ ⟨_, hR, hpw⟩ => WP.mono (setupZ_ok hp hR) fun _ hR' =>
     ⟨_, hR', fun k hk l hl => by
       rw [show 16 - 4 * k - l = 16 - 2 * (2 * k + l / 2) - l % 2 by omega]
       exact hpw _ (by omega) _ (by omega)⟩

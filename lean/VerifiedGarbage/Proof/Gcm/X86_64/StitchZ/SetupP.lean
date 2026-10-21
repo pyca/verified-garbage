@@ -141,7 +141,7 @@ theorem setupP_ok {s₀ : State} (hp : SPreP s₀) :
   rw [setupP, List.append_assoc, List.append_assoc, WP.block_append_iff, ← List.append_assoc]
   refine WP.mono (setupGP_ok hp) fun s₁ ⟨l0, l1, pw, g₁, m₁, rd₁, wr₁⟩ => ?_
   rw [WP.block_append_iff]
-  exact WP.mono (setupT_ok hp.base l0 l1 g₁ m₁ rd₁ wr₁) fun _ hR => WP.mono (StitchZ.setupZ_ok hR) fun _ hR' =>
+  exact WP.mono (setupT_ok hp.base l0 l1 g₁ m₁ rd₁ wr₁) fun _ hR => WP.mono (StitchZ.setupZ_ok hp.base hR) fun _ hR' =>
     ⟨_, hR', fun k hk l hl => by
       rw [show 16 - 4 * k - l = 16 - 2 * (2 * k + l / 2) - l % 2 by omega]
       exact pw _ (by omega) _ (by omega)⟩
