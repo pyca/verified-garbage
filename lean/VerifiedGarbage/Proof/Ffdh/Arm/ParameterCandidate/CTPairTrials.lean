@@ -5,8 +5,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveContext
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairEntry
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialSmall
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTTrialOffset
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTTrialPair
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTTrialBuffers
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SievePolicy
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -34,10 +33,6 @@ structure PairTrialsStart (p : PairData × Nat) (s : State) : Prop where
 private structure PrimeReady (p : PairData × Nat) (s : State) : Prop where
   start : PairTrialsStart p s
   prime : s.gpr .r7=BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry p.2)
-
-private structure PairDivided (p : PairData × Nat) (s : State) : Prop where
-  start : PairTrialsStart p s
-  zero : s.z=decide (Spec.Rsa.os2ip p.1.bytes%VG.Impl.RsaKeyGen.tabEntry p.2=0)
 
 private def trialData (p : PairData × Nat) : TrialData :=
   ⟨p.1.dst,p.1.bytes.length,BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry p.2),p.1.bytes.reverse⟩
@@ -71,33 +66,9 @@ theorem pairTrials_ct : RelCT isa (Two PairTrialsStart)
   have entry : RelCT isa (Two PairTrialsStart)
       (.block VG.Impl.Ffdh.Arm.ParameterCandidate.pairEntry) (Two PrimeReady) :=
     two_post entryTrace entry_ready
-  have normalTrace : RelCT isa (Two PrimeReady) VG.Impl.Ffdh.Arm.ParameterCandidate.trialSmall
+  have trials : RelCT isa (Two PrimeReady) VG.Impl.Ffdh.Arm.ParameterCandidate.trialPair
       (fun _ _ => True) :=
-    (two_map trialData prime_trialState trialSmall_ct).mono (fun _ _ h => h) (fun _ _ _ => trivial)
-  have normal : RelCT isa (Two PrimeReady) VG.Impl.Ffdh.Arm.ParameterCandidate.trialSmall (Two PairDivided) := by
-    refine two_post normalTrace ?_
-    intro p s h
-    have ctx := h.start.context
-    refine WP.mono (trialSmall_ok s p.1.dst ctx.read.positive ctx.read.countFits ctx.read.bufferFits
-      (by have := h.start.index; have := trialCount_bound p.1.bytes.length; omega : p.2<1024)
-      h.prime (ctx.read.frame.read (by decide)) (ctx.read.frame.read (by decide))
-      ctx.read.out ctx.read.width ctx.read.readable) ?_
-    rintro t ⟨flag,memory,rest⟩
-    refine ⟨⟨ctx.after_memory memory rest,h.start.index,
-      (rest.gpr .r10 (by simp)).trans h.start.cursor,by rw [memory]; exact h.start.bytes⟩,?_⟩
-    rwa [h.start.bytes] at flag
-  have offset : RelCT isa (Two PrimeReady) VG.Impl.Ffdh.Arm.ParameterCandidate.trialOffset
-      (fun _ _ => True) :=
-    (two_map trialData prime_trialState trialOffset_ct).mono (fun _ _ h => h) (fun _ _ _ => trivial)
-  have branch : RelCT isa (Two PairDivided)
-      (.ite .eq (.block []) (.seq (.block VG.Impl.Ffdh.Arm.ParameterCandidate.pairEntry)
-        VG.Impl.Ffdh.Arm.ParameterCandidate.trialOffset)) (fun _ _ => True) := by
-    refine two_ite ?_ (RelCT.block_nil (fun _ _ _ => trivial)) ?_
-    · intro p s t a b
-      change some s.z=some t.z
-      rw [a.zero,b.zero]
-    · exact (entry.seq offset).mono
-        (fun _ _ ⟨p,a,b,sp⟩ => ⟨p,a.1.start,b.1.start,sp⟩) (fun _ _ _ => trivial)
-  exact entry.seq (normal.seq (branch.seq (RelCT.block_nil (fun _ _ _ => trivial))))
+    (two_map trialData prime_trialState trialPair_ct).mono (fun _ _ h => h) (fun _ _ _ => trivial)
+  exact entry.seq trials
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

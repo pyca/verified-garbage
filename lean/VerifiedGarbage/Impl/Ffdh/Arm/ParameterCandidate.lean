@@ -205,9 +205,23 @@ def sieve : Prog isa := seqs [sieveInit, .loop sieveStep .ne, .block sieveFinish
 def pairEntry : List Instr := [.ldr .r7 .r10 0]
 def pairAdvance : List Instr := [.dp .add .r10 .r10 (.imm 4)]
 
-/-- Test p and q against each prime before advancing the public table cursor. -/
-def pairTrials : Prog isa := seqs [.block pairEntry, trialSmall,
-  .ite .eq (.block []) (.seq (.block pairEntry) trialOffset)]
+/-- The offset accumulator uses the shared reducer with a separate digit register. -/
+def trialPairRedc : List Instr := TrialDivision16.redcAt .r8 .r7
+
+def trialPairStep : Prog isa := .seq trialDigit (.block
+  ([.mov .r7 (.reg .r5)] ++ TrialDivision16.redc ++ trialPairRedc ++ [.cmp .r1 (.imm 0)]))
+
+def trialPairInit : List Instr := [.dp .sub .r8 .r3 (.imm 1)]
+
+def trialPairFlag : Prog isa := .seq trialFlag
+  (.ite .eq (.block []) (.seq (.block [.mov .r2 (.reg .r8)]) trialFlag))
+
+/-- Reduce p and p-1 in one traversal, sharing each digit load and the inverse. -/
+def trialPair : Prog isa := .seq (.block trialStart)
+  (.seq (.block trialPairInit) (.seq (.loop trialPairStep .ne) trialPairFlag))
+
+/-- Test both divisibility conditions before advancing the public prime-table cursor. -/
+def pairTrials : Prog isa := .seq (.block pairEntry) trialPair
 
 def pairActiveStep : Prog isa := seqs [pairTrials, sieveFlag, .block (pairAdvance ++ sieveCount)]
 def pairStep : Prog isa := .seq (.block sieveFinish) (.ite .eq pairActiveStep (.block sieveSkip))

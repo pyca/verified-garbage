@@ -17,7 +17,7 @@ theorem redcWord_ok (s : State) :
     WP isa (.block VG.Impl.Bignum.Arm.TrialDivision16.redc) s fun t =>
       (t.gpr .r2 = redcWord (s.gpr .r5) (s.gpr .r2) (s.gpr .r4) (s.gpr .r3) ∧ t.mem = s.mem) ∧
       Rest [.r2, .r5, .r6] s t := by
-  unfold VG.Impl.Bignum.Arm.TrialDivision16.redc
+  unfold VG.Impl.Bignum.Arm.TrialDivision16.redc VG.Impl.Bignum.Arm.TrialDivision16.redcAt
   refine wp_dp (op2_reg _ _) fun u1 v1 => wp_mul fun u2 v2 => wp_mov (op2_lsl (by decide)) fun u3 v3 =>
     wp_mov (op2_lsr (by decide)) fun u4 v4 => wp_mul fun u5 v5 => wp_dp (op2_reg _ _) fun u6 v6 =>
       wp_mov (op2_lsr (by decide)) fun t v7 => WP.block_nil ?_
