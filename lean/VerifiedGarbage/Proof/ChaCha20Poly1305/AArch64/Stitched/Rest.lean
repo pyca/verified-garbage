@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Piece
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: the rest of the data
