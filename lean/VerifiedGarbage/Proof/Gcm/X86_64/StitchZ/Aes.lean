@@ -66,6 +66,20 @@ theorem AInv.zframe {s₀ : State} {c : Nat} {s s' : State} {rs : List XReg} (h 
     by rw [f.mem]; exact h.frame, fun k hk => by rw [f.mem]; exact h.blocks k hk, by rw [f.rd]; exact h.rd,
     by rw [f.wr]; exact h.wr⟩
 
+/-- `AInv` is kept by code that writes only `rax`, `rdx` and `r9`, no vector
+register but `zmm0`'s other copies, and no memory. -/
+theorem AInv.keep {s₀ : State} {c : Nat} {s s' : State} (h : AInv s₀ c s) (hm : s'.mem = s.mem)
+    (hg : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r9 → s'.gpr r = s.gpr r) (h0 : ∀ l < 4, s'.zlane .xmm0 l = s.zlane .xmm0 l)
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : AInv s₀ c s' :=
+  ⟨h.le, by rw [hm]; exact h.slot, by rw [hm]; exact h.ysv, fun l hl => by rw [h0 l hl]; exact h.msk l hl,
+    by rw [hg _ (by decide) (by decide) (by decide)]; exact h.rcx,
+    by rw [hg _ (by decide) (by decide) (by decide)]; exact h.r11,
+    by rw [hg _ (by decide) (by decide) (by decide)]; exact h.rdi,
+    by rw [hg _ (by decide) (by decide) (by decide)]; exact h.rsi,
+    by rw [hg _ (by decide) (by decide) (by decide)]; exact h.r10,
+    by rw [hm]; exact h.frame, fun k hk => by rw [hm]; exact h.blocks k hk, by rw [hrd]; exact h.rd,
+    by rw [hwr]; exact h.wr⟩
+
 /-- The key schedule, from `rdi` and the memory apart from what the loops write. -/
 theorem keys_of {s₀ : State} (hp : SPre s₀) {s : State} (hrdi : s.gpr .rdi = kp s₀)
     (hf : Frame [dR s₀, pR s₀] s₀.mem s.mem) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
