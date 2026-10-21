@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Branch
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Rest
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Seal
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Lit
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Open
@@ -96,9 +97,15 @@ theorem sealMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
   · have hL₁ : L s₁ ≤ 256 := by
       rw [L, ag.gpr .x5 (by decide) (by decide)]; exact (of_decide_eq_true h).2
     exact WP.mono (Short.sealMain_ok hp₁ hL₁) fun _ h => Short.MainS.agree ag h
-  · split
-    · exact WP.mono (sealStitchedMain_ok v hp₁) fun _ h => Short.MainS.agree ag h
-    · exact WP.mono (sealMain_ok v hp₁) fun _ h => Short.MainS.agree ag h
+  · refine WP.seq (WP.mono (ShortRest.check_ok s₁) fun s₂ ⟨ag₂, x9₂⟩ => ?_)
+    have hp₂ := Short.APre.agree ag₂ hp₁
+    refine WP.ite (decide (257 ≤ L s₁ ∧ L s₁ ≤ 511)) (ShortRest.check_eval x9₂) (fun h => ?_) (fun _ => ?_)
+    · have hL₂ : 256 ≤ L s₂ := by
+        rw [L, ag₂.gpr .x5 (by decide) (by decide)]; have := (of_decide_eq_true h).1; simp only [L] at this; omega
+      exact WP.mono (ShortRest.sealMain_ok v hp₂ hL₂) fun _ h => Short.MainS.agree ag (Short.MainS.agree ag₂ h)
+    · split
+      · exact WP.mono (sealStitchedMain_ok v hp₂) fun _ h => Short.MainS.agree ag (Short.MainS.agree ag₂ h)
+      · exact WP.mono (sealMain_ok v hp₂) fun _ h => Short.MainS.agree ag (Short.MainS.agree ag₂ h)
 
 theorem openMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre false s₀) :
     WP isa (openMainCode v.callee v.stitched) s₀ (MainO s₀) := by
@@ -109,9 +116,15 @@ theorem openMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
   · have hL₁ : L s₁ ≤ 256 := by
       rw [L, ag.gpr .x5 (by decide) (by decide)]; exact (of_decide_eq_true h).2
     exact WP.mono (Short.openMain_ok hp₁ hL₁) fun _ h => Short.MainO.agree ag h
-  · split
-    · exact WP.mono (openStitchedMain_ok v hp₁) fun _ h => Short.MainO.agree ag h
-    · exact WP.mono (openMain_ok v hp₁) fun _ h => Short.MainO.agree ag h
+  · refine WP.seq (WP.mono (ShortRest.check_ok s₁) fun s₂ ⟨ag₂, x9₂⟩ => ?_)
+    have hp₂ := Short.APre.agree ag₂ hp₁
+    refine WP.ite (decide (257 ≤ L s₁ ∧ L s₁ ≤ 511)) (ShortRest.check_eval x9₂) (fun h => ?_) (fun _ => ?_)
+    · have hL₂ : 256 ≤ L s₂ := by
+        rw [L, ag₂.gpr .x5 (by decide) (by decide)]; have := (of_decide_eq_true h).1; simp only [L] at this; omega
+      exact WP.mono (ShortRest.openMain_ok v hp₂ hL₂) fun _ h => Short.MainO.agree ag (Short.MainO.agree ag₂ h)
+    · split
+      · exact WP.mono (openStitchedMain_ok v hp₂) fun _ h => Short.MainO.agree ag (Short.MainO.agree ag₂ h)
+      · exact WP.mono (openMain_ok v hp₂) fun _ h => Short.MainO.agree ag (Short.MainO.agree ag₂ h)
 
 theorem seal_ok (v : Proof.ChaCha20.AArch64.XorImpl) (s : State) (hs : sealAArch64.pre s) :
     ∃ t s', Exec isa (sealCode v.callee v.stitched) s t s' ∧
