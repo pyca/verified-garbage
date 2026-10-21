@@ -20,7 +20,12 @@ jobs:
           ref: 1043b94af7ee892919f5aaf9020956698bb6455f
           path: base
           persist-credentials: false
-      - name: Measure real Rust API, paired with merged 2987 and OpenSSL
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 841ac5bef24abe9a38c9c468dc3dc2439a5ef241
+          path: previous
+          persist-credentials: false
+      - name: Compare compact dispatch with 3027, 2987 and OpenSSL
         shell: bash
         run: |
           rustc -vV
