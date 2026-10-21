@@ -17,7 +17,8 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 namespace VG.Proof.Gcm.X86_64.StitchZH
 open VG VG.X86_64
-open VG.Impl.Gcm.X86_64.Stitch (storeCtr storeY)
+open VG.Impl.Gcm.X86_64.Stitch (storeY)
+open VG.Impl.Gcm.X86_64.Slot (storeCtr)
 open VG.Proof.Gcm.X86_64.Stitch (SPre EPost DPost nb nr kp pp cp yp cb dp dR pR cR yR bAddr blk ctb ciph
   sch hk y₀ ite_t ite_f addr_eq in_sub in_sub_int in_rdwr ghash_append16 ghash16)
 open VG.Proof.Gcm.X86_64.Pclmul (Prod reduceB prod toNat_ofNat_lt ofNat_sub_ofNat ea_at)
@@ -151,11 +152,11 @@ theorem bigRest_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (
       WP isa (.block ((fun _ => []) j)) t fun t' => (fun (_ : Nat) (_ : State) => True) (j + 1) t' ∧ ZFrame [] t t' :=
     fun _ _ _ _ _ _ => WP.block_nil ⟨trivial, ZFrame.refl _ _⟩
   refine WP.seq (WP.mono (batch_ok hp (fun _ => []) [] (by simp) (fun _ _ => True) none
-    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 16 * 1) (j := 4) (by omega_arith) hA₁ hCache (fun _ => rfl)
+    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 16 * 1) (j := 4) (by omega_arith) hA₁ hCache (fun _ => rfl)
     (by have := hI.rdx; rw [hg₁]; omega_arith) trivial) fun s₂ ⟨hA₂, _, hg₂, hl₂, hf₂, hCache₂⟩ => ?_)
   obtain ⟨hv₂, hm₂⟩ := keepT hp (by omega_arith) hf₂ hv₁ hm₁
   refine WP.seq (WP.mono (batch_ok hp (fun _ => []) [] (by simp) (fun _ _ => True) none
-    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 16 * 1 + 16) (j := 8) (by omega_arith) hA₂ hCache₂ (fun _ => rfl)
+    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 16 * 1 + 16) (j := 8) (by omega_arith) hA₂ hCache₂ (fun _ => rfl)
     (by have := hI.rdx; rw [hg₂, hg₁]; omega_arith) trivial) fun s₃ ⟨hA₃, _, hg₃, hl₃, hf₃, hCache₃⟩ => ?_)
   obtain ⟨hv₃, hm₃⟩ := keepT hp (by omega_arith) hf₃ hv₂ hm₂
   have g₃ : s₃.gpr = s.gpr := by rw [hg₃, hg₂, hg₁]

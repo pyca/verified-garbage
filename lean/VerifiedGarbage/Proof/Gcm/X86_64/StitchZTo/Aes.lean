@@ -37,16 +37,13 @@ open VG.Proof.Aes.X86_64.AesNi (Keys aesWith_eq blockAt_frame)
 open VG.Spec.Gcm (Block blockAt inc32 aesWith)
 
 /-- The encryption after `c` blocks: the slot holding the next group's
-counter blocks, the address of `Y` kept after it and in `rcx`, the mask, the
-key schedule and its last round key, `src - dst` in `r8`, nothing written but
-the output and the working space, and output blocks below `c` the ciphertext
-of the plaintext's. -/
+counter blocks, the mask, the key schedule and its last round key, `src -
+dst` in `r8`, nothing written but the output and the working space, and
+output blocks below `c` the ciphertext of the plaintext's. -/
 structure AInvTo (s₀ : State) (c : Nat) (s : State) : Prop where
   le : c ≤ nb s₀
   slot : Slot.SlotOk (pp s₀) (cb s₀) (fun i => c + i) s.mem
-  ysv : s.mem.readW (pp s₀ + BitVec.ofNat 64 Impl.Gcm.X86_64.Slot.ySave) 64 = yp s₀
   msk : ∀ l < 4, s.zlane .xmm0 l = revMask
-  rcx : s.gpr .rcx = yp s₀
   r11 : s.gpr .r11 = pp s₀
   rdi : s.gpr .rdi = kp s₀
   rsi : s.gpr .rsi = s₀.gpr .rsi
@@ -59,8 +56,8 @@ structure AInvTo (s₀ : State) (c : Nat) (s : State) : Prop where
 
 theorem AInvTo.zframe {s₀ : State} {c : Nat} {s s' : State} {rs : List XReg} (h : AInvTo s₀ c s)
     (f : ZFrame rs s s') (_h14 : .xmm14 ∉ rs) (h0 : .xmm0 ∉ rs) (_h15 : .xmm15 ∉ rs) : AInvTo s₀ c s' :=
-  ⟨h.le, by rw [f.mem]; exact h.slot, by rw [f.mem]; exact h.ysv,
-    fun l hl => by rw [f.zlane _ h0 l hl]; exact h.msk l hl, by rw [f.gpr]; exact h.rcx,
+  ⟨h.le, by rw [f.mem]; exact h.slot,
+    fun l hl => by rw [f.zlane _ h0 l hl]; exact h.msk l hl,
     by rw [f.gpr]; exact h.r11, by rw [f.gpr]; exact h.rdi,
     by rw [f.gpr]; exact h.rsi, by rw [f.gpr]; exact h.r10, by rw [f.gpr]; exact h.r8, by rw [f.mem]; exact h.frame,
     fun k hk => by rw [f.mem]; exact h.blocks k hk, by rw [f.rd]; exact h.rd, by rw [f.wr]; exact h.wr⟩
@@ -69,8 +66,8 @@ theorem AInvTo.zframe {s₀ : State} {c : Nat} {s s' : State} {rs : List XReg} (
 theorem AInvTo.gpr2 {s₀ : State} {c : Nat} {s s' : State} (h : AInvTo s₀ c s)
     (hg : ∀ r, r ≠ .rdx → r ≠ .r9 → s'.gpr r = s.gpr r) (hl : ∀ r l, s'.zlane r l = s.zlane r l)
     (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : AInvTo s₀ c s' :=
-  ⟨h.le, by rw [hm]; exact h.slot, by rw [hm]; exact h.ysv, fun l hl' => by rw [hl]; exact h.msk l hl',
-    by rw [hg _ (by decide) (by decide)]; exact h.rcx, by rw [hg _ (by decide) (by decide)]; exact h.r11,
+  ⟨h.le, by rw [hm]; exact h.slot, fun l hl' => by rw [hl]; exact h.msk l hl',
+    by rw [hg _ (by decide) (by decide)]; exact h.r11,
     by rw [hg _ (by decide) (by decide)]; exact h.rdi, by rw [hg _ (by decide) (by decide)]; exact h.rsi,
     by rw [hg _ (by decide) (by decide)]; exact h.r10, by rw [hg _ (by decide) (by decide)]; exact h.r8,
     by rw [hm]; exact h.frame, fun k hk => by rw [hm]; exact h.blocks k hk, by rw [hrd]; exact h.rd,
@@ -117,7 +114,8 @@ theorem ctrsTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (Q : State �
       Slot.SlotOk (pp s₀) (cb s₀) (fun i => c + 16 + i) s₁.mem ∧ Frame [Slot.slotR (pp s₀)] s.mem s₁.mem ∧
       s₁.gpr = s.gpr ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr ∧ (∀ r, r ∉ aregs → ∀ l < 4, s₁.zlane r l = s.zlane r l) ∧
       Frame [oR s₀, pR s₀] s₀.mem s₁.mem ∧ Keys (nr s₀) (sch s₀) s₁ ∧ Q s₁ := by
-  refine WP.mono (StitchZ.ctrsG_ok Q hq1 hI.slot hI.ysv hI.rcx hI.r11 hI.wr hp.p_in hQ)
+  refine WP.mono (StitchZ.ctrsG_ok Q hq1 hI.slot (by rw [hI.r10, Slot.kAddr, hI.rdi, hI.rsi]) hI.r11 hI.wr
+    hp.p_in hQ)
     fun s₁ ⟨e₁, c₁, m₁, g₁, rd₁, wr₁, z₁, hQ₁⟩ => ?_
   have hF₁ : Frame [oR s₀, pR s₀] s₀.mem s₁.mem :=
     hI.frame.trans (m₁.sub fun r hr => ⟨pR s₀, by simp, by
@@ -188,20 +186,13 @@ theorem xorTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (Q : State �
   have fr₃' : Frame [⟨oAddr s₀ c, 256⟩, Slot.slotR (pp s₀)] s.mem s₃.mem :=
     (hm.mono (by simp)).trans (fr'.mono (by simp))
   have gs : s₃.gpr = s.gpr := by rw [g₃, hg]
-  refine ⟨⟨by omega, ?_, ?_, fun l hl => by rw [x₃ _ (by decide) (by decide) l hl, hmsk l hl],
-    by rw [gs, hI.rcx], by rw [gs, hI.r11], by rw [gs, hI.rdi],
+  refine ⟨⟨by omega, ?_, fun l hl => by rw [x₃ _ (by decide) (by decide) l hl, hmsk l hl],
+    by rw [gs, hI.r11], by rw [gs, hI.rdi],
     by rw [gs, hI.rsi], by rw [gs, hI.r10], by rw [gs, hI.r8], ?_, ?_,
     by rw [rd₃, hrd, hI.rd], by rw [wr₃, hwr, hI.wr]⟩,
     hqx s₂ s₃ hQ g₃ rd₃ wr₃ (fun r h1 h2 l hl => x₃ r h1 h2 l hl) fr', gs, x₃, fr₃'⟩
   · have := hS.frame fr' fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hdat
     simpa [Nat.add_assoc] using this
-  · rw [← hI.ysv]
-    exact fr₃'.readW (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact (hp.o_p.sub_right (StitchZ.ysv_sub s₀)).symm.sub_right
-          fun _ ha => VG.Proof.Aes.X86_64.AesNi.run_in hw hc (n := 16) ha
-      · exact StitchZ.ysv_slot s₀) (by decide)
   · -- The data written is only in the output, and the slot in the working space.
     refine hI.frame.trans (fr₃'.sub fun r hr => ?_)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

@@ -40,15 +40,12 @@ open VG.Proof.Aes.X86_64.AesNi (Keys aesWith_eq blockAt_frame)
 open VG.Spec.Gcm (Block blockAt inc32 aesWith)
 
 /-- The encryption after `c` blocks: the slot holds the next group's counter
-blocks (`Slot.SlotOk`), the address of `Y` is kept after it and in `rcx`,
-the mask, the key schedule and its last round key, and the data (blocks below
-`c` encrypted, the others as they were). -/
+blocks (`Slot.SlotOk`), the mask, the key schedule and its last round key,
+and the data (blocks below `c` encrypted, the others as they were). -/
 structure AInv (s₀ : State) (c : Nat) (s : State) : Prop where
   le : c ≤ nb s₀
   slot : Slot.SlotOk (pp s₀) (cb s₀) (fun i => c + i) s.mem
-  ysv : s.mem.readW (pp s₀ + BitVec.ofNat 64 Impl.Gcm.X86_64.Slot.ySave) 64 = yp s₀
   msk : ∀ l < 4, s.zlane .xmm0 l = revMask
-  rcx : s.gpr .rcx = yp s₀
   r11 : s.gpr .r11 = pp s₀
   rdi : s.gpr .rdi = kp s₀
   rsi : s.gpr .rsi = s₀.gpr .rsi
@@ -60,8 +57,8 @@ structure AInv (s₀ : State) (c : Nat) (s : State) : Prop where
 
 theorem AInv.zframe {s₀ : State} {c : Nat} {s s' : State} {rs : List XReg} (h : AInv s₀ c s)
     (f : ZFrame rs s s') (_h14 : .xmm14 ∉ rs) (h0 : .xmm0 ∉ rs) (_h15 : .xmm15 ∉ rs) : AInv s₀ c s' :=
-  ⟨h.le, by rw [f.mem]; exact h.slot, by rw [f.mem]; exact h.ysv,
-    fun l hl => by rw [f.zlane _ h0 l hl]; exact h.msk l hl, by rw [f.gpr]; exact h.rcx,
+  ⟨h.le, by rw [f.mem]; exact h.slot,
+    fun l hl => by rw [f.zlane _ h0 l hl]; exact h.msk l hl,
     by rw [f.gpr]; exact h.r11, by rw [f.gpr]; exact h.rdi, by rw [f.gpr]; exact h.rsi, by rw [f.gpr]; exact h.r10,
     by rw [f.mem]; exact h.frame, fun k hk => by rw [f.mem]; exact h.blocks k hk, by rw [f.rd]; exact h.rd,
     by rw [f.wr]; exact h.wr⟩
@@ -71,14 +68,17 @@ register but `zmm0`'s other copies, and no memory. -/
 theorem AInv.keep {s₀ : State} {c : Nat} {s s' : State} (h : AInv s₀ c s) (hm : s'.mem = s.mem)
     (hg : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r9 → s'.gpr r = s.gpr r) (h0 : ∀ l < 4, s'.zlane .xmm0 l = s.zlane .xmm0 l)
     (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : AInv s₀ c s' :=
-  ⟨h.le, by rw [hm]; exact h.slot, by rw [hm]; exact h.ysv, fun l hl => by rw [h0 l hl]; exact h.msk l hl,
-    by rw [hg _ (by decide) (by decide) (by decide)]; exact h.rcx,
+  ⟨h.le, by rw [hm]; exact h.slot, fun l hl => by rw [h0 l hl]; exact h.msk l hl,
     by rw [hg _ (by decide) (by decide) (by decide)]; exact h.r11,
     by rw [hg _ (by decide) (by decide) (by decide)]; exact h.rdi,
     by rw [hg _ (by decide) (by decide) (by decide)]; exact h.rsi,
     by rw [hg _ (by decide) (by decide) (by decide)]; exact h.r10,
     by rw [hm]; exact h.frame, fun k hk => by rw [hm]; exact h.blocks k hk, by rw [hrd]; exact h.rd,
     by rw [hwr]; exact h.wr⟩
+
+/-- The last round key's address, as `Slot.restoreK` computes it. -/
+theorem AInv.k10 {s₀ : State} {c : Nat} {s : State} (h : AInv s₀ c s) : s.gpr .r10 = Slot.kAddr s := by
+  rw [h.r10, Slot.kAddr, h.rdi, h.rsi]
 
 /-- The key schedule, from `rdi` and the memory apart from what the loops write. -/
 theorem keys_of {s₀ : State} (hp : SPre s₀) {s : State} (hrdi : s.gpr .rdi = kp s₀)
@@ -99,14 +99,6 @@ theorem aregs_ok : aregs.Nodup ∧ .xmm13 ∉ aregs ∧ ∀ r ∈ aregs, r ≠ .
 theorem slot_sub (s₀ : State) : Region.Sub (Slot.slotR (pp s₀)) (pR s₀) :=
   Offset.sub_base _ (by decide)
 
-/-- Where the address of `Y` is kept, in the working space, apart from the slot. -/
-theorem ysv_sub (s₀ : State) : Region.Sub ⟨pp s₀ + BitVec.ofNat 64 Impl.Gcm.X86_64.Slot.ySave, 8⟩ (pR s₀) :=
-  Offset.sub_base _ (by decide)
-
-theorem ysv_slot (s₀ : State) :
-    Region.Disjoint ⟨pp s₀ + BitVec.ofNat 64 Impl.Gcm.X86_64.Slot.ySave, 8⟩ (Slot.slotR (pp s₀)) :=
-  Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)
-
 /-- The data's blocks `c` … `c + 15`, apart from the working space. -/
 theorem run_pR {s₀ : State} (hp : SPre s₀) {c : Nat} (hc : c + 16 ≤ nb s₀) :
     Region.Sub ⟨bAddr s₀ c, 256⟩ (dR s₀) :=
@@ -120,8 +112,7 @@ theorem ctrsG_ok {s₀ : State} (Q : State → Prop)
       (∀ r, r ∉ aregs → ∀ l < 4, s'.zlane r l = s.zlane r l) →
       Frame [Slot.slotR (pp s₀)] s.mem s'.mem → Q s')
     {c : Nat} {s : State} (hS : Slot.SlotOk (pp s₀) (cb s₀) (fun i => c + i) s.mem)
-    (hy : s.mem.readW (pp s₀ + BitVec.ofNat 64 Impl.Gcm.X86_64.Slot.ySave) 64 = yp s₀)
-    (hrcx : s.gpr .rcx = yp s₀) (hr11 : s.gpr .r11 = pp s₀) (hwr : s.wr = s₀.wr)
+    (h10 : s.gpr .r10 = Slot.kAddr s) (hr11 : s.gpr .r11 = pp s₀) (hwr : s.wr = s₀.wr)
     (hpin : InRegions s₀.wr (pp s₀) 1344) (hQ : Q s) :
     WP isa (.block (Impl.Gcm.X86_64.Slot.ctrsM aregs)) s fun s₁ =>
       (∀ k (h : k < aregs.length), ∀ l < 4,
@@ -129,8 +120,8 @@ theorem ctrsG_ok {s₀ : State} (Q : State → Prop)
       Slot.SlotOk (pp s₀) (cb s₀) (fun i => c + 16 + i) s₁.mem ∧ Frame [Slot.slotR (pp s₀)] s.mem s₁.mem ∧
       s₁.gpr = s.gpr ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr ∧ (∀ r, r ∉ aregs → ∀ l < 4, s₁.zlane r l = s.zlane r l) ∧
       Q s₁ := by
-  refine WP.mono (Slot.ctrsM_ok aregs s (C := cb s₀) (c := c) (by rw [hr11]; exact hS)
-    (by rw [hr11, hy, hrcx]) (by rw [hr11, hwr]; exact in_sub hpin (by decide))
+  refine WP.mono (Slot.ctrsM_ok aregs s (C := cb s₀) (c := c) (by rw [hr11]; exact hS) h10
+    (by rw [hr11, hwr]; exact in_sub hpin (by decide))
     (by decide) aregs_ok.1) fun s₁ ⟨e₁, c₁, m₁, g₁, rd₁, wr₁, z₁⟩ => ?_
   rw [hr11] at c₁ m₁
   exact ⟨e₁, by simpa [aregs] using c₁, m₁, g₁, rd₁, wr₁, z₁, hq1 _ _ hQ g₁ rd₁ wr₁ z₁ m₁⟩
@@ -147,7 +138,7 @@ theorem ctrs_ok {s₀ : State} (hp : SPre s₀) (Q : State → Prop)
       Slot.SlotOk (pp s₀) (cb s₀) (fun i => c + 16 + i) s₁.mem ∧ Frame [Slot.slotR (pp s₀)] s.mem s₁.mem ∧
       s₁.gpr = s.gpr ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr ∧ (∀ r, r ∉ aregs → ∀ l < 4, s₁.zlane r l = s.zlane r l) ∧
       Keys (nr s₀) (sch s₀) s₁ ∧ Q s₁ := by
-  refine WP.mono (ctrsG_ok Q hq1 hI.slot hI.ysv hI.rcx hI.r11 hI.wr hp.p_in hQ)
+  refine WP.mono (ctrsG_ok Q hq1 hI.slot hI.k10 hI.r11 hI.wr hp.p_in hQ)
     fun s₁ ⟨e₁, c₁, m₁, g₁, rd₁, wr₁, z₁, hQ₁⟩ => ?_
   have hF₁ : Frame [dR s₀, pR s₀] s₀.mem s₁.mem :=
     hI.frame.trans (m₁.sub fun r hr => ⟨pR s₀, by simp, by
@@ -203,19 +194,13 @@ theorem xor_ok {s₀ : State} (hp : SPre s₀) (Q : State → Prop) {c j : Nat}
   have hdat : Region.Disjoint (Slot.slotR (pp s₀)) ⟨bAddr s₀ c, 256⟩ := hdS.symm.sub_right (run_pR hp hc)
   have fr₃' : Frame [⟨bAddr s₀ c, 256⟩, Slot.slotR (pp s₀)] s.mem s₃.mem :=
     (hm.mono (by simp)).trans (fr'.mono (by simp))
-  refine ⟨⟨by omega, ?_, ?_, fun l hl => ?_, by rw [g₃, hg, hI.rcx], by rw [g₃, hg, hI.r11],
+  refine ⟨⟨by omega, ?_, fun l hl => ?_, by rw [g₃, hg, hI.r11],
     by rw [g₃, hg, hI.rdi], by rw [g₃, hg, hI.rsi], by rw [g₃, hg, hI.r10], ?_, ?_,
     by rw [rd₃, hrd, hI.rd], by rw [wr₃, hwr, hI.wr]⟩,
     hqx s₂ s₃ hQ g₃ rd₃ wr₃ (fun r h1 h2 l hl => x₃ r h1 h2 l hl) fr',
     by rw [g₃, hg], x₃, fr₃'⟩
   · have := hS.frame fr' fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hdat
     simpa [Nat.add_assoc] using this
-  · rw [← hI.ysv]
-    exact fr₃'.readW (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact (hp.d_p.sub_right (ysv_sub s₀)).symm.sub_right (run_pR hp hc)
-      · exact ysv_slot s₀) (by decide)
   · rw [x₃ _ (by decide) (by decide) l hl, hmsk l hl]
   · -- The data written is only in the data, and the slot in the working space.
     refine hI.frame.trans (fr₃'.sub fun r hr => ?_)

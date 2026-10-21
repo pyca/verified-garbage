@@ -21,7 +21,8 @@ open VG.Proof.Gcm.X86_64.Stitch (SPre EPost DPost StitchOk nb nr kp pp cp yp cb 
   sch hk y₀ ite_t ite_f addr_eq in_sub in_sub_int in_rdwr ghash_append16 ghash16 blockAt_writeW_sep' blocks_ctr32)
 open VG.Proof.Gcm.X86_64.Pclmul (Prod reduce prod toNat_ofNat_lt ofNat_sub_ofNat)
 open VG.Impl.Gcm.X86_64.Pclmul (poly)
-open VG.Impl.Gcm.X86_64.Stitch (aregs storeCtr storeY)
+open VG.Impl.Gcm.X86_64.Stitch (aregs storeY)
+open VG.Impl.Gcm.X86_64.Slot (storeCtr)
 open VG.Impl.Gcm.X86_64.StitchZ (gq ghLoad ord setupZ lastG fin)
 open VG.Impl.Gcm.X86_64.StitchZH (batch body first dbody)
 open VG.Proof.Gcm.X86_64.StitchZ hiding batch_ok body_ok first_ok dbody_ok
@@ -71,7 +72,9 @@ theorem body_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf 
   refine WP.seq (WP.mono (batch_ok hp gq gRegs gRegs_ok (QG s₀ (fun _ => 0) a X P yl)
     (gq_ok (fun _ => Nat.le_refl _) (fun _ _ _ => Nat.zero_le _))
     (fun j t t' h f => h.zframe f (by decide))
-    (fun t t' h hg hrd hwr hl hf => QG.data hp (by omega) (by omega) ha (fun i _ hi => by omega) h hg hrd hwr hl hf)
+    (fun t t' h hg hrd hwr hl hf => QG.slot hp (by omega) ha h hg hrd hwr hl hf)
+    (fun t t' h hg hrd hwr hl hf => QG.data hp (c := 16 * e) (by omega) (by omega) ha (fun i _ hi => by omega) h hg hrd hwr hl
+      (hf.mono (by simp)))
     (c := 16 * e) (j := 4) (by omega) hA₁ hCache gq_keeps hrdx₁
     ⟨hE₁, fun l hl => by
       rw [f₁.zlane _ (by decide) l hl]; exact hI.m1 l hl,
@@ -84,11 +87,7 @@ theorem body_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf 
   have gk : ∀ r, r ≠ .rdx → r ≠ .r9 → s'.gpr r = s.gpr r := fun r h1 h2 => by rw [fg r h1 h2, hg₂, f₁.gpr]
   have hA' : AInv s₀ (16 * (e + 1)) s' := by
     rw [show 16 * (e + 1) = 16 * e + 16 by omega]
-    exact ⟨hA₂.le, fun l hl => by rw [fl]; exact hA₂.ctr l hl, fun l hl => by rw [fl]; exact hA₂.msk l hl,
-      fun l hl => by rw [fl]; exact hA₂.inc l hl,
-      by rw [fg _ (by decide) (by decide)]; exact hA₂.rdi, by rw [fg _ (by decide) (by decide)]; exact hA₂.rsi,
-      by rw [fg _ (by decide) (by decide)]; exact hA₂.r10, by rw [fm]; exact hA₂.frame,
-      fun k hk => by rw [fm]; exact hA₂.blocks k hk, by rw [frd]; exact hA₂.rd, by rw [fwr]; exact hA₂.wr⟩
+    exact hA₂.keep fm (fun r _ h2 h3 => fg r h2 h3) (fun l _ => fl _ l) frd fwr
   have hr9 : s₂.gpr .r9 - 16 = BitVec.ofNat 64 (nb s₀ - 16 * (e + 1 - 1)) := by
     rw [hg₂, f₁.gpr, hI.r9, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl,
       ofNat_sub_ofNat (by omega) (by omega)]
@@ -121,7 +120,7 @@ theorem first_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} {s 
       WP isa (.block ((fun _ => []) j)) t fun t' => (fun (_ : Nat) (_ : State) => True) (j + 1) t' ∧ ZFrame [] t t' :=
     fun _ _ _ _ _ _ => WP.block_nil ⟨trivial, ZFrame.refl _ _⟩
   refine WP.mono (batch_ok hp (fun _ => []) [] (by simp) (fun _ _ => True) none
-    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 0) (j := 0) (by omega) hR.a hCache (fun _ => rfl)
+    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 0) (j := 0) (by omega) hR.a hCache (fun _ => rfl)
     (by rw [hR.rdx]) trivial) fun s₁ ⟨hA₁, _, hg₁, hl₁, hm₁, _⟩ => ?_
   have lk : ∀ r, r ≠ .xmm13 → r ≠ .xmm14 → r ∉ aregs → ∀ l < 4, s₁.zlane r l = s.zlane r l :=
     fun r h13 h14 hr l hl => hl₁ r h13 h14 hr (by simp) l hl
@@ -174,8 +173,9 @@ theorem dbody_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
     (gq_ok (fun j => by simp only [loD]; split <;> split <;> omega) (fun j hj1 hj4 => by
       simp only [loD, show j < 5 by omega, ite_true]; exact Nat.zero_le _))
     (fun j t t' h f => h.zframe f (by decide))
-    (fun t t' h hg hrd hwr hl hf => QG.data hp (by omega) (by omega) ha
-      (fun i hi _ => by have : 16 ≤ i := hi; omega) h hg hrd hwr hl hf)
+    (fun t t' h hg hrd hwr hl hf => QG.slot hp (by omega) ha h hg hrd hwr hl hf)
+    (fun t t' h hg hrd hwr hl hf => QG.data hp (c := 16 * e) (by omega) (by omega) ha
+      (fun i hi _ => by have : 16 ≤ i := hi; omega) h hg hrd hwr hl (hf.mono (by simp)))
     (c := 16 * e) (j := 0) (by omega) hA₁ hCache gq_keeps (by rw [f₁.gpr]; show a.toNat + _ = _; omega)
     ⟨hE₁, fun l hl => by
       rw [f₁.zlane _ (by decide) l hl]; exact hI.m1 l hl,
@@ -188,11 +188,7 @@ theorem dbody_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
   have gk : ∀ r, r ≠ .rdx → r ≠ .r9 → s'.gpr r = s.gpr r := fun r h1 h2 => by rw [fg r h1 h2, hg₂, f₁.gpr]
   have hA' : AInv s₀ (16 * (e + 1)) s' := by
     rw [show 16 * (e + 1) = 16 * e + 16 by omega]
-    exact ⟨hA₂.le, fun l hl => by rw [fl]; exact hA₂.ctr l hl, fun l hl => by rw [fl]; exact hA₂.msk l hl,
-      fun l hl => by rw [fl]; exact hA₂.inc l hl,
-      by rw [fg _ (by decide) (by decide)]; exact hA₂.rdi, by rw [fg _ (by decide) (by decide)]; exact hA₂.rsi,
-      by rw [fg _ (by decide) (by decide)]; exact hA₂.r10, by rw [fm]; exact hA₂.frame,
-      fun k hk => by rw [fm]; exact hA₂.blocks k hk, by rw [frd]; exact hA₂.rd, by rw [fwr]; exact hA₂.wr⟩
+    exact hA₂.keep fm (fun r _ h2 h3 => fg r h2 h3) (fun l _ => fl _ l) frd fwr
   have hr9 : s₂.gpr .r9 - 16 = BitVec.ofNat 64 (nb s₀ - 16 * (e + 1)) := by
     rw [hg₂, f₁.gpr, hI.r9, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl,
       ofNat_sub_ofNat (by omega) (by omega)]

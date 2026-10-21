@@ -75,12 +75,23 @@ def enc : Prog isa :=
 
 /-! ## The blocks after the last group -/
 
-/-- The counter after the last of the `r = r9 - 16` blocks, stored
+/-- The counter after the last of the `r = r9 - 16` blocks, stored; `r10 =
+16 r`, and `rax` pointed at the powers `H'ʳ` … `H'`. -/
+def remSetup : List Instr :=
+  [.mov .r10 (.reg .r9), .alu .sub .r10 (.imm 16), .vop (.vmovq .xmm13 .r10),
+   .vop (.vbin .vpaddd .l128 .xmm13 .xmm14 .xmm13), .vop (.vbin .vpshufb .l128 .xmm13 .xmm13 .xmm0),
+   .vmovdquStore .l128 (at_ .rax 0) .xmm13,
+   .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10),
+   .mov .rax (.reg .r11), .alu .add .rax (.imm 256), .alu .sub .rax (.reg .r10)]
+
+/-- `remSetup` for the loops with the counter blocks in the slot: the
+counter after the last of the `r = r9 - 16` blocks stored from the slot
 (`Slot.storeCtrAt`); `r10 = 16 r`, and `rax` pointed at the powers `H'ʳ` …
 `H'`. -/
-def remSetup : List Instr :=
-  ([.mov .r10 (.reg .r9), .alu .sub .r10 (.imm 16)] : List Instr) ++ Slot.storeCtrAt ++
-  ([.alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10),
+def remSetupM : List Instr :=
+  Slot.storeCtrAt ++
+  ([.mov .r10 (.reg .r9), .alu .sub .r10 (.imm 16),
+   .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10),
    .mov .rax (.reg .r11), .alu .add .rax (.imm 256), .alu .sub .rax (.reg .r10)] : List Instr)
 
 /-- Block `r10 / 16` of the last `r`, read at `src + r10`: its keystream from
@@ -175,7 +186,7 @@ def ksSelG (pre : List Instr) (src : Reg) : Prog isa :=
 /-- The `r9 - 16` blocks after the last group, the last group hashed, and
 `Y` stored, as a masked group. -/
 def remG (pre : List Instr) (src : Reg) : Prog isa :=
-  .seq (.block remSetup) (.seq (ksSelG pre src) (.block storeY))
+  .seq (.block remSetupM) (.seq (ksSelG pre src) (.block storeY))
 
 /-- The blocks after the last group, in place. -/
 def rem : Prog isa := remG [] .rdx
@@ -237,7 +248,7 @@ def ksSelGD : Prog isa :=
 
 /-- The `r9 - 16` blocks at `rdx` after the last group, which the loop has
 already hashed, hashed and decrypted as a masked group, and `Y` stored. -/
-def remGD : Prog isa := .seq (.block remSetup) (.seq ksSelGD (.block storeY))
+def remGD : Prog isa := .seq (.block remSetupM) (.seq ksSelGD (.block storeY))
 
 /-- `dec`, for any number of blocks from 16 on: the `r9` blocks after the
 last group, if any, by `remGD`. -/

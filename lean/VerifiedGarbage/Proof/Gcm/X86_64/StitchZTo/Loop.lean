@@ -172,8 +172,7 @@ theorem setupZTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
   have p1 : s.ymmHi .xmm1 = poly := by
     have h := hR.m1 1 (by decide); simp only [State.lane, Nat.one_ne_zero, ite_false] at h; exact h
   have hr11 : s.gpr .r11 = pp s₀ := hR.gpr _ (by decide) (by decide) (by decide) (by decide)
-  have hrcx : s.gpr .rcx = yp s₀ := hR.gpr _ (by decide) (by decide) (by decide) (by decide)
-  have iS : Region.Sub (Slot.initR (pp s₀)) (pR s₀) := Offset.sub_base _ (by decide)
+  have iS : Region.Sub (Slot.slotR (pp s₀)) (pR s₀) := StitchZ.slot_sub s₀
   rw [setupZ, WP.block_append_iff]
   refine WP.mono (WP.zframe (is := [.zop (.vshufi32x4 .xmm0 .xmm0 .xmm0 0x44), .zop (.vshufi32x4 .xmm1 .xmm1 .xmm1 0x44),
       .vop (.vmovdqa .l128 .xmm2 .xmm2)]) (rs := [.xmm0, .xmm1, .xmm2]) (by decide)
@@ -195,10 +194,10 @@ theorem setupZTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
   have g₁ : s₁.gpr = s.gpr := f.gpr
   refine WP.mono (Slot.init_ok s₁ (by rw [g₁, hr11, f.wr, hR.wr]; exact in_sub hp.p_in (by decide))
     (by rw [g₁, hR.rax, f.rd, f.wr, hR.rd, hR.wr]; exact Stitch.in_rdwr hp.c_in)
-    (by rw [g₁, hR.rax, hr11]; exact hp.p_c.symm.sub_right iS)) fun t ⟨hS, hy, hF, gt, rdt, wrt, zt⟩ => ?_
+    (by rw [g₁, hR.rax, hr11]; exact hp.p_c.symm.sub_right iS)
+    (by rw [Slot.kAddr, g₁, hR.r10, hR.rdi, hR.rsi])) fun t ⟨hS, hF, gt, rdt, wrt, zt⟩ => ?_
   rw [g₁, hR.rax, hr11, f.mem] at hS
   rw [g₁, hr11, f.mem] at hF
-  rw [g₁, hr11, hrcx] at hy
   have hc : blockAt s.mem (cp s₀) = cb s₀ := blockAt_frame hR.frame fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hp.p_c.symm
   rw [hc] at hS
@@ -208,8 +207,8 @@ theorem setupZTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
       simp only [List.mem_singleton] at hr; subst hr
       exact Offset.disjoint _ (.inl (by show _ ≤ 1024; omega_arith)) (by have := hp.wrap_p; omega_arith)
         (by decide)) (by decide)
-  refine ⟨⟨Nat.zero_le _, hS, hy, fun l hl => by rw [zt _ (by decide) l hl]; exact z0 l hl,
-      by rw [gt, g₁, hrcx], by rw [gt, g₁, hr11], by rw [gt, g₁]; exact hR.rdi,
+  refine ⟨⟨Nat.zero_le _, hS, fun l hl => by rw [zt _ (by decide) l hl]; exact z0 l hl,
+      by rw [gt, g₁, hr11], by rw [gt, g₁]; exact hR.rdi,
       by rw [gt, g₁]; exact hR.rsi, by rw [gt, g₁]; exact hR.r10, by rw [gt, g₁]; exact hR.r8,
       (hR.frame.trans (hF.sub fun r hr => ⟨pR s₀, by simp, by
         simp only [List.mem_singleton] at hr; subst hr; exact iS⟩)).mono fun r hr => by

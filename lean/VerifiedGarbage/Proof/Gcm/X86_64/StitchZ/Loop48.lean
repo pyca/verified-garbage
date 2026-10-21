@@ -160,13 +160,8 @@ theorem AInv.pow {s₀ : State} (hp : SPre s₀) {c : Nat} {s s' : State} (h : A
   refine ⟨h.le, h.slot.frame hf fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact Offset.disjoint_base _ (by decide) (by unfold Impl.Gcm.X86_64.Slot.slot; omega_arith),
-    by
-      rw [← h.ysv]
-      exact hf.readW (Region.contains_self _ _) (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.disjoint_base _ (by decide) (by unfold Impl.Gcm.X86_64.Slot.ySave; omega_arith)) (by decide),
     fun l hl' => by rw [hl _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) l hl']; exact h.msk l hl',
-    by rw [hg]; exact h.rcx, by rw [hg]; exact h.r11,
+    by rw [hg]; exact h.r11,
     by rw [hg]; exact h.rdi, by rw [hg]; exact h.rsi, by rw [hg]; exact h.r10,
     h.frame.trans (hf.sub fun r hr => ⟨pR s₀, by simp, by
       simp only [List.mem_singleton] at hr; subst hr; exact hsub⟩),

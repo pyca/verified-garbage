@@ -28,7 +28,8 @@ loop after the setup, for any code `bigC` of 256 blocks on that ends in
 namespace VG.Proof.Gcm.X86_64.StitchZTo
 
 open VG VG.X86_64
-open VG.Impl.Gcm.X86_64.Stitch (storeCtr storeY)
+open VG.Impl.Gcm.X86_64.Stitch (storeY)
+open VG.Impl.Gcm.X86_64.Slot (storeCtr)
 open VG.Proof.Gcm.X86_64.Stitch (SPre SPreTo EPostTo CtxMode sp op sR oR nb nr kp cp yp pp cb ciph sch hk y₀
   dp dR pR cR yR bAddr addr_eq in_sub in_sub_int in_rdwr ite_t ite_f ghash_append16)
 open VG.Proof.Gcm.X86_64.StitchZ (GEnv GEnv48 QG48 gRegs48 gRegs48_ok gq48_ok QG48.data QG48.next keepW T48
@@ -295,11 +296,11 @@ theorem bigRestTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb 
       WP isa (.block ((fun _ => []) j)) t fun t' => (fun (_ : Nat) (_ : State) => True) (j + 1) t' ∧ ZFrame [] t t' :=
     fun _ _ _ _ _ _ => WP.block_nil ⟨trivial, ZFrame.refl _ _⟩
   refine WP.seq (WP.mono (batchTo_ok hp (fun _ => []) [] (by simp) (fun _ _ => True) none
-    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 16 * 1) (j := 4) (by omega_arith) hA₁
+    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 16 * 1) (j := 4) (by omega_arith) hA₁
     (by have := hI.rdx; rw [hg₁]; omega_arith) trivial) fun s₂ ⟨hA₂, _, hg₂, hl₂, hf₂⟩ => ?_)
   obtain ⟨hv₂, hm₂⟩ := keepTTo hp (by omega_arith) hf₂ hv₁ hm₁
   refine WP.seq (WP.mono (batchTo_ok hp (fun _ => []) [] (by simp) (fun _ _ => True) none
-    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 16 * 1 + 16) (j := 8) (by omega_arith) hA₂
+    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 16 * 1 + 16) (j := 8) (by omega_arith) hA₂
     (by have := hI.rdx; rw [hg₂, hg₁]; omega_arith) trivial) fun s₃ ⟨hA₃, _, hg₃, hl₃, hf₃⟩ => ?_)
   obtain ⟨hv₃, hm₃⟩ := keepTTo hp (by omega_arith) hf₃ hv₂ hm₂
   have g₃ : s₃.gpr = s.gpr := by rw [hg₃, hg₂, hg₁]
