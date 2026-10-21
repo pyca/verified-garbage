@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.Widen16
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.InvPass2
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Pass1
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 public import VerifiedGarbage.Spec.MlKem.Kpke16
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
 import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
@@ -10,6 +11,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!
 # ML-KEM on AArch64: a polynomial from 16-bit to 32-bit coefficients
@@ -24,8 +27,36 @@ and `zip2` with zero (`v29`) widen into two vectors of four (`Ntt16.vword_zip_ze
 namespace VG.Proof.MlKem.AArch64.Widen16
 
 open VG VG.AArch64 VG.Proof.MlKem VG.Proof.MlKem.AArch64 VG.Spec.MlKem
-open VG.Proof.MlKem.AArch64.Ntt16 (CoeffsIn vword_zip_zero)
+open VG.Proof.MlKem.AArch64.Ntt16 (vword_zip_zero)
 open VG.Impl.MlKem.AArch64.Widen16 (widenBody widen)
+
+/-- The coefficients `i ∈ S` of the polynomial at `p` are `G i`, the others `old i`. -/
+def CoeffsIn (m : Mem) (p : Addr) (S : Nat → Prop) [DecidablePred S] (G old : Nat → BitVec 32) :
+    Prop :=
+  ∀ i < 256, coeffAt m p i = if S i then G i else old i
+
+theorem CoeffsIn.congr {m : Mem} {p : Addr} {S S' : Nat → Prop} [DecidablePred S] [DecidablePred S']
+    {G old : Nat → BitVec 32} (h : CoeffsIn m p S G old) (hS : ∀ i < 256, (S' i ↔ S i)) :
+    CoeffsIn m p S' G old := fun i hi => by
+  rw [h i hi]
+  by_cases c : S i
+  · rw [ite_eq_left c, ite_eq_left ((hS i hi).2 c)]
+  · rw [ite_eq_right c, ite_eq_right (fun h' => c ((hS i hi).1 h'))]
+
+/-- Storing four coefficients `t, …, t + 3`. -/
+theorem CoeffsIn.write16 {m : Mem} {p : Addr} {S S' : Nat → Prop} [DecidablePred S]
+    [DecidablePred S'] {G old : Nat → BitVec 32} (h : CoeffsIn m p S G old) {t : Nat} (ht : t + 4 ≤ 256)
+    {x : BitVec 128} (hx : ∀ e < 4, vword x e = G (t + e))
+    (hS : ∀ i < 256, (S' i ↔ S i ∨ (t ≤ i ∧ i < t + 4))) :
+    CoeffsIn (m.write (coeffAddr p t) 16 x) p S' G old := fun i hi => by
+  rw [coeffAt_write16 _ _ ht _ hi, h i hi]
+  by_cases c : t ≤ i ∧ i < t + 4
+  · rw [ite_eq_left c, ite_eq_left ((hS i hi).2 (Or.inr c)), hx _ (by omega),
+      show t + (i - t) = i by omega]
+  · rw [ite_eq_right c]
+    by_cases c' : S i
+    · rw [ite_eq_left c', ite_eq_left ((hS i hi).2 (Or.inl c'))]
+    · rw [ite_eq_right c', ite_eq_right (fun h' => ((hS i hi).1 h').elim c' c)]
 
 /-- The registers `widen` writes. -/
 abbrev clob : List Reg := [.x0, .x1, .x10]
