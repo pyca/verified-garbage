@@ -37,9 +37,14 @@ structure Cfg where
   (`Naf.tableCoZ`, from an affine `Q`) rather than by Jacobian additions
   (`Naf.table`). -/
   coZ : Bool := false
+  /-- The width of the generator's digits: seven, stored as bytes, or nine,
+  as sixteen-bit words (`FastNaf.prepN16`), for a table of `[m]G` for
+  `m ≤ 256` at `tsym`. -/
+  gw : Nat := 7
 
 def prep (c : Cfg) (u v : Nat) : Prog isa :=
-  .seq (FastNaf.prepN c.K.M.n u c.gBits 7) (FastNaf.prepN c.K.M.n v c.K.bits 5)
+  .seq (if c.gw=9 then FastNaf.prepN16 c.K.M.n u c.gBits else FastNaf.prepN c.K.M.n u c.gBits 7)
+    (FastNaf.prepN c.K.M.n v c.K.bits 5)
 
 /-- `R = R + E`, `E`'s `Z²` and `Z³` at `selected`. -/
 def cachedAdd (c : Cfg) : Prog isa :=
@@ -57,9 +62,15 @@ def cachedDigit (c : Cfg) : Prog isa :=
   .seq (.block (Naf.digitRead c.K)) <|
     .ite .e (.block []) (.seq (Naf.signedCachedEntry c.K c.cache c.selected) (cachedAdd c))
 
+/-- The generator's digit `rbx`, zero-extended into `r8`, and its test. -/
+def fixedRead (c : Cfg) : List Instr :=
+  if c.gw=9 then [.movzx16 .r8 (FastNaf.tbl16 c.gBits),.alu .test .r8 (.reg .r8)]
+  else Naf.digitRead {c.K with bits := c.gBits}
+
 def fixedDigit (c : Cfg) : Prog isa :=
-  .seq (.block (Naf.digitRead {c.K with bits := c.gBits})) <|
-    .ite .e (.block []) (.seq (fixedEntry c.K c.tsym) (fixedAdd c))
+  .seq (.block (fixedRead c)) <|
+    .ite .e (.block []) (.seq (if c.gw=9 then fixedEntryW c.K c.tsym else fixedEntry c.K c.tsym)
+      (fixedAdd c))
 
 def digits (c : Cfg) : Prog isa := .seq (cachedDigit c) (fixedDigit c)
 

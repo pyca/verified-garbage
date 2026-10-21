@@ -43,37 +43,38 @@ theorem Law.joint_double (hC : Law C) {P Q : Point C}
   rw [ha,hb,Lean.Grind.IntModule.add_zsmul,Lean.Grind.IntModule.add_zsmul]
   grind
 
-/-- The accumulator after processing all digits down to j. -/
-def jointPoint (P Q : Point C) (u v j : Nat) : Point C :=
-  add (mul (FastNaf.residual 7 u j) P) (mul (FastNaf.residual 5 v j) Q)
+/-- The accumulator after processing all digits down to j, the generator's of
+width `gw`. -/
+def jointPoint (P Q : Point C) (u v j : Nat) (gw : Nat := 7) : Point C :=
+  add (mul (FastNaf.residual gw u j) P) (mul (FastNaf.residual 5 v j) Q)
 
 theorem jointPoint_curve (hC : Law C) {P Q : Point C}
-    (hP : onCurve C P=true) (hQ : onCurve C Q=true) (u v j : Nat) :
-    onCurve C (jointPoint P Q u v j)=true :=
+    (hP : onCurve C P=true) (hQ : onCurve C Q=true) (u v j : Nat) (gw : Nat := 7) :
+    onCurve C (jointPoint P Q u v j gw)=true :=
   hC.onCurve_add (hC.onCurve_mul hP _) (hC.onCurve_mul hQ _)
 
-theorem jointPoint_zero (P Q : Point C) (u v : Nat) :
-    jointPoint P Q u v 0=add (mul u P) (mul v Q) := by
+theorem jointPoint_zero (P Q : Point C) (u v : Nat) (gw : Nat := 7) :
+    jointPoint P Q u v 0 gw=add (mul u P) (mul v Q) := by
   simp only [jointPoint,FastNaf.residual_zero]
 
 theorem jointPoint_topB (P Q : Point C) {B u v : Nat}
-    (hu : u<2^B) (hv : v<2^B) : jointPoint P Q u v (B+1)=.infinity := by
-  rw [jointPoint,FastNaf.residual_zero_top 7 hu,FastNaf.residual_zero_top 5 hv]
+    (hu : u<2^B) (hv : v<2^B) (gw : Nat := 7) : jointPoint P Q u v (B+1) gw=.infinity := by
+  rw [jointPoint,FastNaf.residual_zero_top gw hu,FastNaf.residual_zero_top 5 hv]
   have h0 (X : Point C) : mul 0 X=.infinity := by rw [Spec.Weierstrass.mul]; rfl
   rw [h0 P,h0 Q]; rfl
 
 theorem jointPoint_top (P Q : Point C) {u v : Nat}
-    (hu : u<2^256) (hv : v<2^256) : jointPoint P Q u v 257=.infinity :=
-  jointPoint_topB P Q hu hv
+    (hu : u<2^256) (hv : v<2^256) (gw : Nat := 7) : jointPoint P Q u v 257 gw=.infinity :=
+  jointPoint_topB P Q hu hv gw
 
 /-- The shared double followed by the peer digit and then generator digit is one Horner step. -/
 theorem jointPoint_step (hC : Law C) {P Q : Point C}
-    (hP : onCurve C P=true) (hQ : onCurve C Q=true) (u v j : Nat) :
-    add (add (add (jointPoint P Q u v (j+1)) (jointPoint P Q u v (j+1)))
-      (FastNaf.point C Q 5 v j)) (FastNaf.point C P 7 u j)=jointPoint P Q u v j := by
+    (hP : onCurve C P=true) (hQ : onCurve C Q=true) (u v j : Nat) (gw : Nat := 7) :
+    add (add (add (jointPoint P Q u v (j+1) gw) (jointPoint P Q u v (j+1) gw))
+      (FastNaf.point C Q 5 v j)) (FastNaf.point C P gw u j)=jointPoint P Q u v j gw := by
   rw [jointPoint,hC.joint_double hP hQ]
   rw [hC.joint_add (hC.onCurve_mul hP _) (hC.onCurve_mul hQ _)
-    (FastNaf.onCurve_point hC hP 7 u j) (FastNaf.onCurve_point hC hQ 5 v j)]
+    (FastNaf.onCurve_point hC hP gw u j) (FastNaf.onCurve_point hC hQ 5 v j)]
   rw [FastNaf.add_step hC hP,FastNaf.add_step hC hQ]
   rfl
 

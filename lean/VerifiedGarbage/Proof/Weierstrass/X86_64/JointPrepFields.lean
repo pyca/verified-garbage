@@ -16,10 +16,10 @@ structure JointPrepLayout (c : Joint.Cfg) (size u v : Nat) : Prop where
   n : c.K.M.n=4 ∨ c.K.M.n=6 ∨ c.K.M.n=9
   sourceU : u+8*c.K.M.n≤size
   sourceV : v+8*c.K.M.n≤size
-  generator : c.gBits+64*c.K.M.n+8≤size
+  generator : c.gBits+jointGSpan c≤size
   peer : c.K.bits+64*c.K.M.n+8≤size
-  separate : c.gBits+64*c.K.M.n+8≤c.K.bits ∨ c.K.bits+64*c.K.M.n+8≤c.gBits
-  keepV : v+8*c.K.M.n≤c.gBits ∨ c.gBits+64*c.K.M.n+8≤v
+  separate : c.gBits+jointGSpan c≤c.K.bits ∨ c.K.bits+64*c.K.M.n+8≤c.gBits
+  keepV : v+8*c.K.M.n≤c.gBits ∨ c.gBits+jointGSpan c≤v
   field : ∀ x∈winRo c.K,∀ w∈jointPrepRanges c,x+8*c.K.M.n≤w.1 ∨ w.1+w.2≤x
   modulus : ∀ w∈jointPrepRanges c,c.K.M.mo+8*c.K.M.n≤w.1 ∨ w.1+w.2≤c.K.M.mo
 
@@ -56,8 +56,8 @@ theorem jointPrepFields_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v
     (he : JointGenerator c C base T size row s) :
     WP isa (Joint.prep c u v) s fun t =>
       Inv c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E t ∧
-      (∀ j<64*c.K.M.n+1,t.mem (off base (c.gBits+j))=
-        FastNaf.byte 7 (wordsVal s.mem base u c.K.M.n) j) ∧
+      (∀ j<jointGLen c,t.mem (off base (c.gBits+j))=
+        jointGByte c (wordsVal s.mem base u c.K.M.n) j) ∧
       (∀ j<64*c.K.M.n+1,t.mem (off base (c.K.bits+j))=
         FastNaf.byte 5 (wordsVal s.mem base v c.K.M.n) j) ∧
       JointGenerator c C base T size row t ∧ KeepRegs (nafPrepClobN c.K.M.n) s t ∧

@@ -88,4 +88,53 @@ theorem FastPrepState16.of_keeps {s t : State} {base : Addr} {size n bits k j : 
   · rw [hk.2.1]
     exact h.digits
 
+/-- Two bytes, little-endian, are the word they were cut from. -/
+theorem readW16_bytes (m : Mem) (a : Addr) {d : BitVec 16} (h0 : m a=d.extractLsb' 0 8)
+    (h1 : m (a+1)=d.extractLsb' 8 8) : m.readW a 16=d := by
+  simp only [Mem.readW,Nat.reduceDiv,Mem.read,h0,h1]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [BitVec.getLsbD_setWidth,BitVec.getLsbD_append,BitVec.getLsbD_extractLsb']
+  by_cases h8 : i<8
+  · simp [h8,hi]
+  · have h16 : i-8<8 := by omega
+    simp only [h8,ite_false]
+    simp only [h16,hi,decide_true,Bool.true_and]
+    rw [show 8+(i-8)=i by omega]
+    simp only [ite_true]
+
+/-- `r8` = the sixteen-bit digit `rbx` at `bits`, and its test. -/
+theorem nafRead16_ok {s : State} {base : Addr} {size bits j : Nat} {d : BitVec 16}
+    (hs : Scr s base size) (hj : bits+2*j+2≤size) (hc : s.gpr .rbx=BitVec.ofNat 64 j)
+    (h0 : s.mem (off base (bits+2*j))=d.extractLsb' 0 8)
+    (h1 : s.mem (off base (bits+2*j+1))=d.extractLsb' 8 8) :
+    WP isa (.block [.movzx16 .r8 (FastNaf.tbl16 bits),.alu .test .r8 (.reg .r8)]) s fun t =>
+      t.gpr .r8=d.setWidth 64 ∧ t.zf=some (decide (d=0)) ∧ Keeps [.r8] s t := by
+  have hr : InRegions (s.rd++s.wr) (off base (bits+2*j)) 2 :=
+    ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega) (by decide)⟩
+  have h1' : s.mem (off base (bits+2*j)+1)=d.extractLsb' 8 8 := by
+    rw [← h1]; simp only [off]
+    rw [BitVec.add_assoc,show BitVec.ofNat 64 (bits+2*j)+1=BitVec.ofNat 64 (bits+2*j+1) from by
+      simp only [BitVec.ofNat_add]; rfl]
+  have hw := readW16_bytes s.mem _ h0 h1'
+  have hz : ((d.setWidth 64 &&& d.setWidth 64)==0)=decide (d=0) := by
+    rw [BitVec.and_self]
+    by_cases h : d=0
+    · subst h; rfl
+    · have : d.setWidth 64≠0 := by
+        intro he; apply h; apply BitVec.eq_of_toNat_eq
+        have := congrArg BitVec.toNat he
+        simp only [BitVec.toNat_setWidth] at this ⊢
+        rwa [Nat.mod_eq_of_lt (by have := d.isLt; omega)] at this
+      rw [beq_false_of_ne this,decide_eq_false h]
+  apply WP.of_runBlock
+  simp only [runBlock_cons,runStep_some,runBlock_nil,exec,execAlu,readSrc,
+    Option.map_some,Option.bind_some,State.load16,ea_tbl16 hs.rdi hc,hr,hw,
+    RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,RegUpd.zf_arithFlags,
+    ite_true,Option.some.injEq,exists_eq_left']
+  refine ⟨trivial,?_,fun r hr => ?_,rfl,rfl,rfl⟩
+  · exact hz
+  · simp only [List.mem_singleton] at hr
+    simp only [RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,hr,ite_false]
+
 end VG.Proof.Weierstrass.X86_64

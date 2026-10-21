@@ -30,8 +30,21 @@ def jointWork (c : Joint.Cfg) : List Nat := winOther c.K++[c.selected,c.selected
 
 def jointStableFields (c : Joint.Cfg) : List Nat := winRo c.K++nafTblSlots c.K++jointCacheSlots c
 
+/-- The bytes of the generator's `64 n + 1` digits: one each, or two for width nine. -/
+def jointGLen (c : Joint.Cfg) : Nat := if c.gw=9 then 2*(64*c.K.M.n+1) else 64*c.K.M.n+1
+
+/-- The bytes the generator's recoder writes. -/
+def jointGSpan (c : Joint.Cfg) : Nat := if c.gw=9 then 128*c.K.M.n+8 else 64*c.K.M.n+8
+
+/-- Byte `i` of the generator's digits. -/
+def jointGByte (c : Joint.Cfg) (u i : Nat) : BitVec 8 :=
+  if c.gw=9 then FastNaf.wbyte u i else FastNaf.byte 7 u i
+
+theorem jointGLen_lt_span (c : Joint.Cfg) : jointGLen c<jointGSpan c := by
+  unfold jointGLen jointGSpan; split <;> omega
+
 def jointStableRanges (c : Joint.Cfg) : List (Nat×Nat) :=
-  (jointStableFields c).map (·,8*c.K.M.n)++[(c.K.bits,64*c.K.M.n+1),(c.gBits,64*c.K.M.n+1)]
+  (jointStableFields c).map (·,8*c.K.M.n)++[(c.K.bits,64*c.K.M.n+1),(c.gBits,jointGLen c)]
 
 structure JointStable (c : Joint.Cfg) (C : Curve) (base : Addr)
     (Q : Point C) (u v : Nat) (s : State) : Prop where
@@ -39,7 +52,7 @@ structure JointStable (c : Joint.Cfg) (C : Curve) (base : Addr)
   table : ∀ a,1≤a → a≤8 → InvJ C (tmv C c.K.M.n base s (c.K.tblPt a).x)
     (tmv C c.K.M.n base s (c.K.tblPt a).y) (tmv C c.K.M.n base s (c.K.tblPt a).z) (mul (2*a-1) Q)
   peer : ∀ j<64*c.K.M.n+1,s.mem (off base (c.K.bits+j))=FastNaf.byte 5 v j
-  generator : ∀ j<64*c.K.M.n+1,s.mem (off base (c.gBits+j))=FastNaf.byte 7 u j
+  generator : ∀ j<jointGLen c,s.mem (off base (c.gBits+j))=jointGByte c u j
   cache2 : ∀ i<8,tmv C c.K.M.n base s (c.cache+16*c.K.M.n*i)=
     tmv C c.K.M.n base s (c.K.tblPt (i+1)).z*tmv C c.K.M.n base s (c.K.tblPt (i+1)).z
   cache3 : ∀ i<8,tmv C c.K.M.n base s (c.cache+16*c.K.M.n*i+8*c.K.M.n)=
@@ -85,7 +98,7 @@ theorem JointStable.keep {c : Joint.Cfg} {C : Curve} {base : Addr} {Q : Point C}
       tmv C c.K.M.n base t x=tmv C c.K.M.n base s x := by
     unfold tmv
     rw [hk.unch.wordsVal (hsep _ (hrange x hx)) (hb _ (hrange x hx))]
-  have hbits (d : Nat) (ho : (d,64*c.K.M.n+1)∈jointStableRanges c) (j : Nat) (hj : j<64*c.K.M.n+1) :
+  have hbits (d l : Nat) (ho : (d,l)∈jointStableRanges c) (j : Nat) (hj : j<l) :
       t.mem (off base (d+j))=s.mem (off base (d+j)) := by
     apply hk.unch.byte
     · intro w hw
@@ -100,10 +113,10 @@ theorem JointStable.keep {c : Joint.Cfg} {C : Curve} {base : Addr} {Q : Point C}
       hf _ (jointStable_table c ha (by omega) (by simp [jacCoords]))]
     exact h.table a ha hb
   · intro j hj
-    rw [hbits c.K.bits (by simp [jointStableRanges]) j hj]
+    rw [hbits c.K.bits _ (by simp [jointStableRanges]) j hj]
     exact h.peer j hj
   · intro j hj
-    rw [hbits c.gBits (by simp [jointStableRanges]) j hj]
+    rw [hbits c.gBits _ (by simp [jointStableRanges]) j hj]
     exact h.generator j hj
   · intro i hi
     rw [hf _ (jointStable_cache2 c hi),hf _ (jointStable_table c (a:=i+1) (by omega) (by omega) (by simp [jacCoords]))]
