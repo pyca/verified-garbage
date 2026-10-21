@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbolsMono
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsChecks
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Entry
 import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
 import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
 import VerifiedGarbage.TCB.Axioms
@@ -26,6 +25,8 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Entry
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
 meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Decaps
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Decaps
 
 /-!
 # `vg_mlkem768_decaps` and `vg_mlkem1024_decaps` computing PRF outputs in the matrix

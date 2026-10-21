@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.MatrixTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Decaps
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.MatrixTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Decaps
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.DecapsStart
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Entry
@@ -12,6 +12,12 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
+public import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
 
 /-! # The decapsulation computing PRF outputs in the matrix is constant time
 
