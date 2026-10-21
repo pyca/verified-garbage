@@ -66,8 +66,8 @@ theorem padRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APr
     (hdata : ∀ k < L s₀, w.mem (dp s₀ + BitVec.ofNat 64 k) =
       if k < P then s.mem (dp s₀ + BitVec.ofNat 64 k) ^^^ (KS1 s₀).getD k 0
       else s.mem (dp s₀ + BitVec.ofNat 64 k)) :
-    WP isa (.seq (.block (Pad.zero ++ [.addImm .x .x0 .x21 64, .addImm .x .x1 .x21 768,
-        .movz .x .x2 512 0, .addImm .x .x3 .x21 128]))
+    WP isa (.seq (.block (Pad.zero ++ ([.addImm .x .x0 .x21 64, .addImm .x .x1 .x21 768,
+        .movz .x .x2 512 0, .addImm .x .x3 .x21 128] : List Instr)))
       (.seq (.call v.callee.name v.callee.code) (.seq (Short.xorKsFrom 768) (.block Pad.zero)))) w
       fun s' =>
       (∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64) ∧
