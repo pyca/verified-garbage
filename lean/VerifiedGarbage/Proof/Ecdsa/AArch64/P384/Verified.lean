@@ -11,8 +11,12 @@ import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import VerifiedGarbage.Proof.P384.Prime
 import VerifiedGarbage.Proof.P384.Order
-import VerifiedGarbage.Proof.Ecdsa.AArch64.CombJ
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.CombJ
+import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.CombChecks
+import VerifiedGarbage.Proof.P384.CombArithmetic
+import VerifiedGarbage.Proof.Ecdsa.AArch64.CombJP2
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.CombChecks
+meta import VerifiedGarbage.Proof.P384.CombArithmetic
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.CombJP2
 meta import VerifiedGarbage.Proof.P384.Order
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
@@ -100,12 +104,12 @@ theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p384 s := by
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
     ⟨by rw [h1]; simp, held, fit, hdw _ (by simp)⟩⟩
 
-/-- The comb by Jacobian mixed additions gives what the signing's stages need. -/
-theorem combJ_ok (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
+/-- The pipelined comb gives what the signing's stages need. -/
+theorem comb_ok (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
-    CombCorrect p384 p384.combCfg.combJ :=
-  combJ_correct (p384_ok hI) hL hT (by decide) (by decide) (Proof.P384.booth hL rfl rfl)
-    (by decide +kernel)
+    CombCorrect p384 Impl.P384.CombArithmetic.comb :=
+  combJP2_correct (p384_ok hI) hL hT (Proof.P384.CombArithmetic.compiler_on _) (by decide) (by decide)
+    (by decide) (Proof.P384.booth hL rfl rfl) (by decide +kernel) rfl jp2_checks
 
 theorem sign_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) (s : State)
@@ -117,7 +121,7 @@ theorem sign_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch6
   have hu : KeepsUntouched signP384 := by lit_decide
   have hv : signP384.allInstrs keepsV = true := by lit_decide
   obtain ⟨t, s', he, hsv, hpost⟩ :=
-    signWith_ok (p384_ok hI).toBaseCfgOk hL _ (combJ_ok hL hI hT) (pre_of hs)
+    signWith_ok (p384_ok hI).toBaseCfgOk hL _ (comb_ok hL hI hT) (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, hpost⟩
 
 theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP384 :=

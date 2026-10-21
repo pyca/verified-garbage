@@ -131,7 +131,7 @@ theorem prep_tcombClob (n : Nat) (hn : n ≤ 9) :
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals first
     | exact combClob_tcombClob _ (List.mem_cons_self ..)
-    | exact List.mem_append_right _ (List.mem_singleton_self _)
+    | exact List.mem_append_right _ (List.mem_cons_self ..)
     | exact tcombClob_sub _ hn _ (List.mem_append_left _ (by decide))
 
 /-- Before window `j`'s addition (`1 ≤ j`, `j + 2 ≤ J`): digit `j + 1`'s
@@ -360,7 +360,8 @@ selection's pass and then the addition; then `x19 = j + 1`, its entry in
 theorem stepJP_ok {arithmetic : Mod → List FOp → Prog isa} {mc : List Instr} {K : TCombCfg} {C : Curve}
     {base : Addr} {size k : Nat} {T : Addr}
     {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hA : CombA K.toComb)
-    (hcompiler : FieldCompilerCorrect arithmetic size) (hJenc : K.J<4096) (hC : Law C) (hM3 : AM3 C)
+    {X : List Reg} (hcompiler : FieldCompilerOn K.M C X arithmetic size)
+    (hX : ∀ r ∈ X, r ∈ tcombClob K.M.n ∧ r ≠ .x19) (hJenc : K.J<4096) (hC : Law C) (hM3 : AM3 C)
     (hG : onCurve C (G C) = true) (hV : TCombVals K C tbl) (hpn : C.p < 2 ^ (64 * K.M.n))
     (hb1 : 1 ≤ K.bits) {kmax : Nat} (hB : BoothOk C K.w K.J kmax) (hk : k < kmax) {s₀ : State}
     (hF : TCombFixed K C base size s₀ k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
@@ -402,7 +403,7 @@ theorem stepJP_ok {arithmetic : Mod → List FOp → Prog isa} {mc : List Instr}
   have hsq : Scr q base size := Ip.scr.of_keeps kq.keeps (by decide)
   have Iq := Ip.of_keep kq' kq.mem (by rw [kq.gpr _ List.not_mem_nil]; exact Ip.x19) syq hsq
   have Eq : TEntryPostJ K C base size k j q q := E.self (by rw [kq.mem, hmp]) hsq
-  have hT := tailJ_ok hL hA hcompiler hJenc hC hM3 hG hV hb1 hB hk hF hj (by omega_using [hjn]) Iq Eq rfl
+  have hT := tailJ_ok hL hA hcompiler hX hJenc hC hM3 hG hV hb1 hB hk hF hj (by omega_using [hjn]) Iq Eq rfl
   rw [hblk] at hT
   have hT' := WP.mono_syms (WP.novec hT (by
     simp only [instrs, List.all_append, hck.mcv, hck.fixv, Bool.and_self])) fun u hu syu => And.intro hu syu
@@ -434,7 +435,8 @@ theorem stepJP_ok {arithmetic : Mod → List FOp → Prog isa} {mc : List Instr}
 theorem combJPLoop_ok {arithmetic : Mod → List FOp → Prog isa} {mc : List Instr} {K : TCombCfg} {C : Curve}
     {base : Addr} {size k : Nat} {T : Addr}
     {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hA : CombA K.toComb)
-    (hcompiler : FieldCompilerCorrect arithmetic size) (hJenc : K.J<4096) (hC : Law C) (hM3 : AM3 C)
+    {X : List Reg} (hcompiler : FieldCompilerOn K.M C X arithmetic size)
+    (hX : ∀ r ∈ X, r ∈ tcombClob K.M.n ∧ r ≠ .x19) (hJenc : K.J<4096) (hC : Law C) (hM3 : AM3 C)
     (hG : onCurve C (G C) = true) (hV : TCombVals K C tbl) (hpn : C.p < 2 ^ (64 * K.M.n))
     (hb1 : 1 ≤ K.bits) {kmax : Nat} (hB : BoothOk C K.w K.J kmax) (hk : k < kmax) {s₀ : State}
     (hF : TCombFixed K C base size s₀ k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
@@ -451,7 +453,7 @@ theorem combJPLoop_ok {arithmetic : Mod → List FOp → Prog isa} {mc : List In
     (fun r s' ⟨hr,hrJ,hi,he⟩ => ?_) (K.J-2) s
     ⟨by omega_arith,by omega_arith,by simpa [show K.J-1-(K.J-2)=1 by omega_arith] using hI,
       by simpa [show K.J-1-(K.J-2)=1 by omega_arith] using E⟩
-  refine WP.mono (stepJP_ok hL hA hcompiler hJenc hC hM3 hG hV hpn hb1 hB hk hF hblk hck
+  refine WP.mono (stepJP_ok hL hA hcompiler hX hJenc hC hM3 hG hV hpn hb1 hB hk hF hblk hck
     (j:=K.J-1-r) (by omega_arith) (by omega_arith) hi he) fun t ⟨ht,et,hx⟩ => ?_
   have hz : (t.read .x .x4 != 0)=decide (r-1≠0) := by
     rw [read_x,hx]
@@ -483,7 +485,8 @@ theorem combJPLoop_ok {arithmetic : Mod → List FOp → Prog isa} {mc : List In
 theorem tcombJP_ok {arithmetic : Mod → List FOp → Prog isa} {mc : List Instr} {K : TCombCfg} {C : Curve}
     {base : Addr} {size k : Nat} {T : Addr}
     {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hA : CombA K.toComb)
-    (hcompiler : FieldCompilerCorrect arithmetic size) (hJenc : K.J<4096) (hC : Law C) (hM3 : AM3 C)
+    {X : List Reg} (hcompiler : FieldCompilerOn K.M C X arithmetic size)
+    (hX : ∀ r ∈ X, r ∈ tcombClob K.M.n ∧ r ≠ .x19) (hJenc : K.J<4096) (hC : Law C) (hM3 : AM3 C)
     (hG : onCurve C (G C) = true) (hV : TCombVals K C tbl) (hpn : C.p < 2 ^ (64 * K.M.n))
     (hb1 : 1 ≤ K.bits) {kmax : Nat} (hB : BoothOk C K.w K.J kmax) (hk : k < kmax)
     (hblk : arithmetic K.M (maddJ K.S K.A K.E K.D) = .block mc) (hck : JPChecks K size mc) {s : State}
@@ -504,13 +507,13 @@ theorem tcombJP_ok {arithmetic : Mod → List FOp → Prog isa} {mc : List Instr
   refine WP.seq (tentryJ_ok hL hA hC hV hpn I₁.scr I₁.mod (i := 1) (by omega_arith) I₁.x19 hb1 (c := true)
     (Or.inl ⟨rfl, Nat.le_refl _⟩) I₁.bits hz I₁.tsym I₁.tbl hF.out fun s₂ E₂ sy₂ => ?_)
   have I₂ := I₁.after_entry hL hF E₂ sy₂
-  refine WP.seq (WP.mono (combJPLoop_ok hL hA hcompiler hJenc hC hM3 hG hV hpn hb1 hB hk hF hblk hck I₂
+  refine WP.seq (WP.mono (combJPLoop_ok hL hA hcompiler hX hJenc hC hM3 hG hV hpn hb1 hB hk hF hblk hck I₂
     (E₂.self rfl E₂.scr)) fun s₃ ⟨I₃, E₃⟩ => ?_)
-  have hT := tailJ_ok hL hA hcompiler hJenc hC hM3 hG hV hb1 hB hk hF (j := K.J - 1) (by omega_arith)
+  have hT := tailJ_ok hL hA hcompiler hX hJenc hC hM3 hG hV hb1 hB hk hF (j := K.J - 1) (by omega_arith)
     (by omega_arith) I₃ E₃ rfl
   rw [hblk] at hT
   refine WP.seq (WP.mono hT fun s₄ ⟨I₄, _⟩ => ?_)
   rw [show K.J - 1 + 1 = K.J by omega_arith] at I₄
-  exact tcombJOut_ok hL hA hcompiler hJenc hC hV hpn hB hk hs hM hF I₄
+  exact tcombJOut_ok hL hA hcompiler hX hJenc hC hV hpn hB hk hs hM hF I₄
 
 end VG.Proof.Weierstrass.AArch64

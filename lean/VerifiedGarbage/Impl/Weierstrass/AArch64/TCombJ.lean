@@ -154,5 +154,56 @@ def combJP (arithmetic : Mod → List FOp → Prog isa) (mc : List Instr) : Prog
   .seq (.seq (.block mc) K.fixJ) <|
     .seq (.block K.outFix) (arithmetic K.M K.outOps)
 
+/-! ### Two passes, for six-word entries
+
+An entry of `2n` words for even `n` with `n / 2 ≤ 3` (P-384's) takes two passes
+of the selection, `x`'s pairs then `y`'s, both woven into the addition: the
+first pass's accumulators are moved to `selKeep`, which neither pass writes,
+while the second runs. The table's address is in `x30`, which the inline
+addition (`Impl/P384/CombArithmetic.lean`) leaves alone, as it makes no calls. -/
+
+/-- `x30` = table `x19 + 1`'s address, from the static `tsym`'s, through `x5`
+and `x17`. -/
+def selSetupNext2 : List Instr :=
+  [.adrSym .x30 K.tsym, .movz .x .x17 (BitVec.ofNat 16 K.tblBytes) 0, .addImm .x .x5 .x19 1,
+    .mul .x .x17 .x5 .x17, .add .x .x30 .x30 .x17]
+
+/-- `prepNext`, the table's address in `x30`. -/
+def prepNext2 : List Instr :=
+  [.addImm .x .x19 .x19 1] ++ K.bdigit true ++ [.subImm .x .x19 .x19 1] ++ K.selSetupNext2 ++
+    [.movz .x .x5 1 0] ++ selBcast
+
+/-- Window `x19 + 1`'s selection from the table at `x30`, in two passes:
+`x`'s `n / 2` pairs into `selA`'s accumulators, moved to `selKeep`, then
+`y`'s. -/
+def selPass2 : List Instr :=
+  K.selPass 0 (K.M.n / 2) .x30 ++
+  ((List.range (K.M.n / 2)).map fun i =>
+    .vop (.mov (selKeep.getD i .v3) ((selA (K.M.n / 2)).acc.getD i .v0)) : List Instr) ++
+  K.selPass (8 * K.M.n) (K.M.n / 2) .x30
+
+/-- `finNext`, of the two passes: `y = R` for a zero magnitude, `x` stored
+from `selKeep` and `y` from `selA`'s accumulators. -/
+def finNext2 : List Instr :=
+  K.bdigit true ++ [zero7, .movz .x .x5 1 0] ++ selOne K.one (K.M.n / 2) 0 (K.M.n / 2) ++
+    ((List.range (K.M.n / 2)).map fun i => .strq (selKeep.getD i .v3) .x0 (K.E.x + 16 * i)) ++
+    selStore (K.M.n / 2) 0 (K.M.n / 2) K.E.y ++ K.selZ
+
+/-- `stepJP`, of the two passes. -/
+def stepJP2 (mc : List Instr) : Prog isa :=
+  .seq (.block K.prepNext2) <|
+  .seq (.block (Impl.Weave.weave mc K.selPass2)) <|
+  .seq K.fixJ <|
+  .seq (.block K.finNext2) <|
+  .block (K.bnegY ++ [.subImm .x .x4 .x19 (K.J - 1)])
+
+/-- `combJP`, of the two passes. -/
+def combJP2 (arithmetic : Mod → List FOp → Prog isa) (mc : List Instr) : Prog isa :=
+  .seq K.first <|
+  .seq (.block (K.bdigit true ++ K.select)) <| .seq (.block K.bnegY) <|
+  .seq (.loop (K.stepJP2 mc) (.nonzero .x .x4)) <|
+  .seq (.seq (.block mc) K.fixJ) <|
+    .seq (.block K.outFix) (arithmetic K.M K.outOps)
+
 end TCombCfg
 end VG.Impl.Weierstrass.AArch64

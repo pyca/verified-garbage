@@ -64,8 +64,9 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) : Lis
       reductions by the three nonzero words of `2^384 - p`, and a final conditional subtraction); \
       `[d]G` is `vg_ecdsa_p384_sign`'s fixed-base comb of 55 width-7 Booth digits from the 55 \
       tables of `[m 2^(7j)]G` (`m = 1 … 64`) in the static `VG_P384_COMB`, each entry selected in \
-      constant time by loading the whole table and added to a Jacobian accumulator by a mixed \
-      addition, with no doublings; and \
+      constant time by loading the whole table and added to a Jacobian accumulator by an inline \
+      mixed addition, into which the next window's selection is interleaved, with no doublings; \
+      and \
       `Z⁻¹` is a call of `vg_p384_inv_mod_p`, by divsteps (Bernstein and Yang's safegcd, half-delta form): 15 batches of 59 \
       divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`), each giving a matrix of \
       64-bit entries that updates `f`, `g` (divided by 2⁵⁹) and the coefficients `a`, `b` \

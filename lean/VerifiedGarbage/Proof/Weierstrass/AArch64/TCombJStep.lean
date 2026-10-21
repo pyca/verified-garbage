@@ -25,7 +25,8 @@ out the remaining equal-point case for the incomplete mixed-add formula.
 The field compiler may forward loads while preserving its exact field result. -/
 theorem tailJ_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Addr}
     {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hA : CombA K.toComb)
-    (hcompiler : FieldCompilerCorrect arithmetic size) (hJenc : K.J<4096) (hC : Law C) (hM3 : AM3 C)
+    {X : List Reg} (hcompiler : FieldCompilerOn K.M C X arithmetic size)
+    (hX : ∀ r ∈ X, r ∈ tcombClob K.M.n ∧ r ≠ .x19) (hJenc : K.J<4096) (hC : Law C) (hM3 : AM3 C)
     (hG : onCurve C (G C) = true) (hV : TCombVals K C tbl)
     (hb1 : 1 ≤ K.bits) {kmax : Nat} (hB : BoothOk C K.w K.J kmax) (hk : k < kmax) {s₀ : State}
     (hF : TCombFixed K C base size s₀ k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
@@ -92,7 +93,7 @@ theorem tailJ_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg} {C 
   dsimp only [TCombCfg.toComb] at P₄ I₄ t₄
   have hs₄ := I₄.scr
   have hb₄ : s₄.gpr .x19 = BitVec.ofNat 64 j := by
-    rw [P₄.gpr _ (x19_not_clob _), E₃.x19, hI.x19]
+    rw [P₄.gpr _ fun h => (List.mem_append.mp h).elim (x19_not_clob _) fun h' => (hX _ h').2 rfl, E₃.x19, hI.x19]
   have U₄ : Unch base (combW K.toComb) s₃.mem s₄.mem := P₄.unch.mono fun w hw => by
     simp only [combW, List.mem_append, List.mem_map, List.mem_singleton] at hw ⊢
     rcases hw with ⟨y, hy, rfl⟩ | h
@@ -194,7 +195,7 @@ theorem tailJ_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg} {C 
       intro r hr
       exact combClob_tcombClob r (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_right _ hr)))
     have c₄ : KeepRegs (tcombClob K.M.n) s₃ s₄ :=
-      (⟨P₄.gpr,P₄.rd,P₄.wr,P₄.sp⟩ : KeepRegs (clob K.M.n) s₃ s₄).mono cc
+      P₄.keepRegs.mono fun r hr => (List.mem_append.mp hr).elim (cc r) fun h => (hX r h).1
     have c₅ : KeepRegs (tcombClob K.M.n) s₄ s₅ := (Keeps.regs k₅).mono (by intro r hr; apply cl r; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp)
     have c₆ : KeepRegs (tcombClob K.M.n) s₅ s₆ := k₆.mono (by intro r hr; apply cl r; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr; rcases hr with rfl | rfl <;> simp)
     have c₇ : KeepRegs (tcombClob K.M.n) s₆ s₇ := (Keeps.regs k₇).mono (by intro r hr; apply cl r; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> simp)
@@ -318,7 +319,8 @@ out the remaining equal-point case for the incomplete mixed-add formula.
 The field compiler may forward loads while preserving its exact field result. -/
 theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Addr}
     {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hA : CombA K.toComb)
-    (hcompiler : FieldCompilerCorrect arithmetic size) (hJenc : K.J<4096) (hC : Law C) (hM3 : AM3 C)
+    {X : List Reg} (hcompiler : FieldCompilerOn K.M C X arithmetic size)
+    (hX : ∀ r ∈ X, r ∈ tcombClob K.M.n ∧ r ≠ .x19) (hJenc : K.J<4096) (hC : Law C) (hM3 : AM3 C)
     (hG : onCurve C (G C) = true) (hV : TCombVals K C tbl) (hpn : C.p < 2 ^ (64 * K.M.n))
     (hb1 : 1 ≤ K.bits) {kmax : Nat} (hB : BoothOk C K.w K.J kmax) (hk : k < kmax) {s₀ : State}
     (hF : TCombFixed K C base size s₀ k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
@@ -345,6 +347,6 @@ theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
       (by have := hle K.zero (by tcomb_mem); omega_arith), hF.zero]
   refine tentryJ_ok hL hA hC hV hpn hI.scr hI.mod hjn hI.x19 hb1 (c := true) (Or.inl ⟨rfl, hj⟩)
     hI.bits hz hI.tsym hI.tbl hF.out fun s₃ E₃ sy₃ =>
-    tailJ_ok hL hA hcompiler hJenc hC hM3 hG hV hb1 hB hk hF hj hjn hI E₃ sy₃
+    tailJ_ok hL hA hcompiler hX hJenc hC hM3 hG hV hb1 hB hk hF hj hjn hI E₃ sy₃
 
 end VG.Proof.Weierstrass.AArch64
