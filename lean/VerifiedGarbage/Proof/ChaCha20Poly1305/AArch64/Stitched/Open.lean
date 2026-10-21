@@ -10,7 +10,8 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Rest
 # ChaCha20-Poly1305 on AArch64, stitched: `open`
 
 The chunks decrypt the data's whole chunks and absorb them as they were;
-the rest is absorbed, then decrypted by `vg_chacha20_xor`.
+the rest is absorbed, then decrypted from the counter after them
+(`Rest.crypt`).
 -/
 
 @[expose] public section
@@ -43,7 +44,7 @@ theorem rest_orig {s₀ s u : State} {key msg : List Byte} {T : Nat}
 theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre false s₀) :
     WP isa (openStitchedMain v.callee) s₀ (MainO s₀) := by
   have hL' := (Nat.le_of_lt (s₀.gpr .x5).isLt)
-  unfold openStitchedMain cryptRest
+  unfold openStitchedMain
   refine WP.seq (WP.mono (WP.preservedV (prologue_ok hp) (by lit_decide)) fun s₁ ⟨h₁, v₁⟩ => ?_)
   have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ :=
     bytesAt_frame h₁.inv.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x3).isLt)
@@ -68,18 +69,14 @@ theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
   have hd₅ : ∀ r ∈ macR s₀, (dR s₀).Disjoint r := by
     intro r hr; simp only [macR, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact hp.c_d.symm.sub_right (sub_ctx s₀ (by lit_omega))
-  refine WP.seq (WP.seq ((restArgs_ok i₅.x21).mono fun w ⟨⟨a0, a1, a2, a3, kw⟩, vw⟩ => ?_))
-  have mw := kw.mem_eq
-  refine (rest_call v hp (s := s₃) (P := 512 * T) hle (fun _ => by omega) a0
-    (by rw [a1, k₅.cs _ (pres .x22) (pres30 .x22), hc.x22, hpre])
-    (by rw [a2, k₅.cs _ (pres .x23) (pres30 .x23), hc.x23, hpre]) a3 (by rw [kw.wr, i₅.wr])
-    (fun _ => by rw [mw, stateAt_frame k₅.frame (by rdisj_all), hc.cnt,
+  refine WP.seq ((crypt_call hp (s := s₃) (P := 512 * T) hle hc.lt (fun _ => by omega) i₅.x21
+    (by rw [k₅.cs _ (pres .x22) (pres30 .x22), hc.x22, hpre])
+    (by rw [k₅.cs _ (pres .x23) (pres30 .x23), hc.x23, hpre]) i₅.rd i₅.wr
+    (fun _ => by rw [stateAt_frame k₅.frame (by rdisj_all), hc.cnt,
       show 512 * T / 64 = 8 * T by omega])
-    (fun k hk => by rw [mw, data_frame k₅.frame hd₅ hk, hc.data k hk])).mono
-    fun s₆ ⟨v₆, k₆, _, pt₆⟩ => ?_
+    (fun k hk => by rw [data_frame k₅.frame hd₅ hk, hc.data k hk])).mono
+    fun s₆ ⟨v₆, k₅₆, _, pt₆⟩ => ?_)
   rw [D₃] at pt₆
-  have k₅₆ : Kept [sub s₀ 64 384, dR s₀] s₅ s₆ :=
-    (kw.sub fun _ hr => absurd hr List.not_mem_nil).trans k₆
   have i₆ : Inv0 s₀ s₆ := i₅.step k₅₆ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -105,8 +102,8 @@ theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
       bytesAt_frame hc.frame (by rdisj_all) (by lit_omega), len₃]
   rw [L₆, hA] at T₈
   refine ⟨i₇.step k₈ (fun r hr => ?_) (fun r hr => ?_), fun r hr => (v₈ r hr).trans ((v₇ r hr).trans
-      ((v₆ r hr).trans ((vw r hr).trans ((v₅ r hr).trans ((hc.vec r hr).trans
-      ((v₃ r hr).trans ((v₂ r hr).trans (v₁ r hr)))))))), ?_, ?_⟩
+      ((v₆ r hr).trans ((v₅ r hr).trans ((hc.vec r hr).trans
+      ((v₃ r hr).trans ((v₂ r hr).trans (v₁ r hr))))))), ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩

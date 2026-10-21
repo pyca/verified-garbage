@@ -13,7 +13,7 @@ import VerifiedGarbage.Impl.ChaCha20.AArch64.Neon4
 call and absorb it with another. With the eight-block kernel, `sealStitched`
 and `openStitched` instead process the data's whole chunks of 512 bytes with
 `Stitch.bulk`, which absorbs the ciphertext while it computes the keystream,
-and only the rest with those calls:
+and the rest, fewer than 512 bytes, with the four-block kernel:
 
 * the counter is set to 1 and the stream's arguments to the data
   (`cryptSetup`); with fewer than 512 bytes, nothing more happens here;
@@ -28,8 +28,10 @@ and only the rest with those calls:
 * when encrypting, if data follows the chunks, the last chunk is
   absorbed while the keystream of the next four blocks is computed, and up to
   256 bytes of the rest encrypted with it (`Tail.rest`, below);
-* the rest of the data is encrypted (`vg_chacha20_xor`, from where the
-  chunks, or `Tail.rest`, stopped) and absorbed (from `x22`), in the order the
+* the rest of the data is encrypted from where the chunks, or `Tail.rest`,
+  stopped, 256 bytes at a time: the keystream of four blocks from the counter
+  at `ctx[128, 384)` (`Neon4.chunk`, `Rest.piece`), XORed into the data
+  (`Short.xorKs`) (`Rest.crypt`); and absorbed (from `x22`), in the order the
   direction needs.
 
 The registers `x21`–`x25` and `x30` hold other values meanwhile; the
@@ -163,11 +165,42 @@ def cryptStitched (sve enc : Bool) : Prog isa :=
     (.ite (.nonzero .x .x5) (.block [])
       (.seq (.block polyIn) (.seq (Stitch.bulk sve enc) (afterBulk sve enc))))
 
-/-- The data from `x22` (`x23` bytes) encrypted or decrypted, continuing the
-stream's counter. -/
-def cryptRest (c : XorCallee) : Prog isa :=
-  .seq (.block [.addImm .x .x0 .x21 64, mov .x1 .x22, mov .x2 .x23, .addImm .x .x3 .x21 128])
-    (.call c.name c.code)
+namespace Rest
+
+/-- The keystream of the four blocks from the stream's counter (`ctx + 64`)
+at `ctx[128, 384)`, which is zeroed first, and the counter advanced past
+them. -/
+def piece : Prog isa :=
+  .seq (.block ([.vop (.logic .eor .v0 .v0 .v0)] ++
+      (List.range 16).map (fun i => .strq .v0 .x21 (128 + 16 * i)) ++
+      [.addImm .x .x0 .x21 64, .addImm .x .x1 .x21 128]))
+    (.seq VG.Impl.ChaCha20.AArch64.Neon4.chunk
+      (.block (VG.Impl.ChaCha20.AArch64.Mixed5.counter 4)))
+
+/-- The data at `x22` (`x23` bytes, at most 256) XORed with the keystream
+from the counter. -/
+def step : Prog isa := .seq piece Short.xorKs
+
+/-- The data at `x22` (`x23` bytes, fewer than 512) XORed with the keystream
+from the counter, 256 bytes at a time; `x22` and `x23` are restored. -/
+def crypt : Prog isa :=
+  .ite (.zero .x .x23) (.block [])
+    (.seq (.block [mov .x7 .x23, .subImm .x .x9 .x23 1, .lsr .x .x9 .x9 8])
+    (.seq (.ite (.zero .x .x9) (.block []) (.block [.movz .x .x23 256 0]))
+    (.seq step
+    (.seq (.block [.subImm .x .x9 .x7 1, .lsr .x .x9 .x9 8, mov .x23 .x7])
+      (.ite (.zero .x .x9) (.block [])
+        (.seq (.block [.addImm .x .x22 .x22 256, .subImm .x .x23 .x7 256])
+          (.seq step (.block [.subImm .x .x22 .x22 256, mov .x23 .x7]))))))))
+
+/-- `Tail.rest`'s rest (the stream's arguments: `x2` bytes at `x1`, fewer
+than 512), XORed with the keystream from the counter; `x22` and `x23` are
+kept. -/
+def sealRest : Prog isa :=
+  .seq (.block [mov .x14 .x22, mov .x15 .x23, mov .x22 .x1, mov .x23 .x2])
+    (.seq crypt (.block [mov .x22 .x14, mov .x23 .x15]))
+
+end Rest
 
 /-- `sealStitched` but for the tag. -/
 def sealStitchedMain (c : XorCallee) : Prog isa :=
@@ -175,7 +208,7 @@ def sealStitchedMain (c : XorCallee) : Prog isa :=
   (.seq (macPad .x24 .x25)
   (.seq (.block lengths)
   (.seq (cryptStitched c.sve true)
-  (.seq (.call c.name c.code)
+  (.seq Rest.sealRest
   (.seq (macPad .x22 .x23)
     absorbLengths)))))
 
@@ -188,7 +221,7 @@ def openStitchedMain (c : XorCallee) : Prog isa :=
   (.seq (.block lengths)
   (.seq (cryptStitched c.sve false)
   (.seq (macPad .x22 .x23)
-  (.seq (cryptRest c)
+  (.seq Rest.crypt
   (.seq absorbLengths
     (finalizeTo 48)))))))
 

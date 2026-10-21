@@ -128,7 +128,8 @@ theorem sealStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
       bytesAt_frame h₁.fine (by rdisj_all) hL']
   have R₃ := Repr.frame k₃.frame (by rdisj_all) (r₂ (otk s₀) [] h₁.poly)
   refine WP.seq ((Tail.cryptStitchedSeal_ok v.callee.sve hp i₃ st₃ R₃).mono fun s₄ ⟨P, A, hc⟩ => ?_)
-  refine WP.seq (rest_call v hp hc.le hc.p64 hc.x0 hc.x1 hc.x2 hc.x3 hc.inv.wr hc.cnt hc.data
+  refine WP.seq (sealRest_call hp hc.le hc.lt hc.p64 hc.inv.x21 hc.x1 hc.x2 hc.inv.rd hc.inv.wr
+    hc.cnt hc.data
     |>.mono fun s₅ ⟨v₅, k₅, f₅, ct₅⟩ => ?_)
   rw [D₃] at ct₅
   have i₅ := sealed_inv hp hc k₅

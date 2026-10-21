@@ -66,6 +66,7 @@ abbrev KS1 (s₀ : State) : List Byte :=
 structure Crypted (enc : Bool) (s₀ s : State) (key msg : List Byte) (T : Nat) (u : State) : Prop where
   inv : Inv0 s₀ u
   le : 512 * T ≤ L s₀
+  lt : L s₀ - 512 * T < 512
   x0 : u.gpr .x0 = off (cx s₀) 64
   x1 : u.gpr .x1 = dp s₀ + BitVec.ofNat 64 (512 * T)
   x2 : u.gpr .x2 = BitVec.ofNat 64 (L s₀ - 512 * T)
@@ -165,13 +166,14 @@ theorem short_crypted (enc : Bool) {s₀ : State} (hp : APre e s₀) {s : State}
     (m₂ : s₂.mem = s.mem.writeW (off (cx s₀) 112) (1 : BitVec 32))
     (x0₂ : s₂.gpr .x0 = off (cx s₀) 64) (x1₂ : s₂.gpr .x1 = dp s₀) (x2₂ : s₂.gpr .x2 = s₀.gpr .x5)
     (x3₂ : s₂.gpr .x3 = off (cx s₀) 128) (k₂ : Kept [sub s₀ 64 64] s s₂)
-    (v₂ : ∀ r ∈ preservedV, (s₂.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) :
+    (v₂ : ∀ r ∈ preservedV, (s₂.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64)
+    (hs : L s₀ < 512) :
     Crypted enc s₀ s key msg 0 s₂ := by
   have i₂ := h.step1 k₂ (by lit_omega) (by lit_omega) (by lit_omega)
   have hd : ∀ r ∈ [sub s₀ 64 64], (dR s₀).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
     exact hp.c_d.symm.sub_right (sub_ctx s₀ (by lit_omega))
-  refine ⟨i₂.inv0, by omega, x0₂, ?_, ?_, x3₂, ?_, ?_, ?_, fun k hk => ?_, ?_, ?_, v₂⟩
+  refine ⟨i₂.inv0, by omega, by omega, x0₂, ?_, ?_, x3₂, ?_, ?_, ?_, fun k hk => ?_, ?_, ?_, v₂⟩
   · rw [x1₂, Nat.mul_zero, Poly1305.AArch64.add_ofNat_zero]
   · rw [x2₂, Nat.mul_zero, Nat.sub_zero, hL]
   · rw [pre_zero, i₂.x22, Poly1305.AArch64.add_ofNat_zero]
@@ -449,7 +451,7 @@ theorem long_crypted (enc : Bool) {s₀ : State} (hp : APre e s₀) {s : State} 
   rw [k24] at hr1
   refine ⟨⟨x21₅, un₅, by rw [sp₅, sp₄, sp₃, k₂.sp, h.sp], by rw [rd₅, rd₄, rd₃, i₂.rd],
       by rw [wr₅, wr₄, wr₃, i₂.wr], h.saved.frame hF ?_, h.frame.trans (hF.sub ?_)⟩,
-    le₄, by rw [g₅ _ (by decide), x0₄], by rw [g₅ _ (by decide), x1₄], by rw [g₅ _ (by decide), x2₄],
+    le₄, by have e := hB.rest; rw [hLB] at e; exact e, by rw [g₅ _ (by decide), x0₄], by rw [g₅ _ (by decide), x1₄], by rw [g₅ _ (by decide), x2₄],
     by rw [g₅ _ (by decide), x3₄], by rw [x22₅, x1₄, x2₄, restP_eq enc _ hB.pos le₄],
     by rw [x23₅, x1₄, x2₄, restP_eq enc _ hB.pos le₄], cnt₅, data₅, hF, ⟨?_, ?_, ?_⟩, fun r hr => ?_⟩
   · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -500,8 +502,8 @@ theorem cryptStitched_ok (enc : Bool) (he : enc = false) {s₀ : State} (hp : AP
     ite_false]]
   refine WP.seq ((setup_ok hp h).mono fun s₂ ⟨m₂, x0₂, x1₂, x2₂, x3₂, x5₂, _, _, k₂, v₂⟩ => ?_)
   apply WP.ite (decide (L s₀ < 512)) (VG.Proof.ChaCha20.AArch64.Mixed8.nonzero_short x5₂)
-  · intro _
-    exact WP.block_nil ⟨0, short_crypted enc hp h hst hr m₂ x0₂ x1₂ x2₂ x3₂ k₂ v₂⟩
+  · intro hs
+    exact WP.block_nil ⟨0, short_crypted enc hp h hst hr m₂ x0₂ x1₂ x2₂ x3₂ k₂ v₂ (of_decide_eq_true hs)⟩
   · intro hs
     exact (long_crypted enc hp h hst hr m₂ x0₂ x1₂ x2₂ x3₂ k₂ v₂
       (by have := of_decide_eq_false hs; omega)).mono fun _ ⟨T, _, hc⟩ => ⟨T, hc⟩
@@ -515,6 +517,7 @@ and the rest's pointer and length in `x22`, `x23`. -/
 structure Sealed (s₀ s : State) (key msg : List Byte) (P A : Nat) (u : State) : Prop where
   inv : Inv0 s₀ u
   le : P ≤ L s₀
+  lt : L s₀ - P < 512
   aP : A ≤ P
   a16 : A % 16 = 0
   p64 : P < L s₀ → P % 64 = 0
@@ -535,7 +538,7 @@ structure Sealed (s₀ s : State) (key msg : List Byte) (P A : Nat) (u : State) 
 
 theorem Crypted.sealed {s₀ s : State} {key msg : List Byte} {T : Nat} {u : State}
     (h : Crypted true s₀ s key msg T u) : Sealed s₀ s key msg (512 * T) (pre true T) u :=
-  ⟨h.inv, h.le, pre_le true T, pre_mod true T, fun _ => by omega, h.x0, h.x1, h.x2, h.x3, h.x22, h.x23,
+  ⟨h.inv, h.le, h.lt, pre_le true T, pre_mod true T, fun _ => by omega, h.x0, h.x1, h.x2, h.x3, h.x22, h.x23,
     fun _ => by rw [h.cnt, show 512 * T / 64 = 8 * T by omega], h.data, h.frame,
     by simpa only [ite_true] using h.mac, h.vec⟩
 

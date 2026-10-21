@@ -424,7 +424,8 @@ theorem rest_ok (sve : Bool) {s₀ s u : State} (hp : APre true s₀) {key msg :
     rw [List.length_append, Poly1305.length_bytesAt] at this
     omega
   refine ⟨⟨x21₇, un₇, by rw [spw, hc.inv.sp], rd₇', wr₇', hc.inv.saved.frame F (fun r hr => ?_),
-      hc.inv.frame.trans (F.sub fun r hr => ?_)⟩, hM, by omega, by omega, fun h => by omega,
+      hc.inv.frame.trans (F.sub fun r hr => ?_)⟩, hM, by have := hc.lt; omega, by omega, by omega,
+    fun h => by omega,
     x0₇, by rw [x1₇, VG.Proof.ChaCha20.AArch64.Xor.add_ofNat],
     by rw [x2₇, show L s₀ - 512 * T - min (L s₀ - 512 * T) 256 =
       L s₀ - (512 * T + min (L s₀ - 512 * T) 256) by omega], x3₇, x22₇, x23₇, fun hlt => ?_,
@@ -508,8 +509,9 @@ theorem cryptStitchedSeal_ok (sve : Bool) {s₀ : State} (hp : APre true s₀) {
   simp only [ite_true]
   refine WP.seq ((setup_ok hp h).mono fun s₂ ⟨m₂, x0₂, x1₂, x2₂, x3₂, x5₂, _, _, k₂, v₂⟩ => ?_)
   apply WP.ite (decide (L s₀ < 512)) (VG.Proof.ChaCha20.AArch64.Mixed8.nonzero_short x5₂)
-  · intro _
-    exact WP.block_nil ⟨_, _, (short_crypted true hp h hst hr m₂ x0₂ x1₂ x2₂ x3₂ k₂ v₂).sealed⟩
+  · intro hs
+    exact WP.block_nil ⟨_, _, (short_crypted true hp h hst hr m₂ x0₂ x1₂ x2₂ x3₂ k₂ v₂
+      (of_decide_eq_true hs)).sealed⟩
   · intro hs
     refine wp_seq3 (long_crypted (sve := sve) true hp h hst hr m₂ x0₂ x1₂ x2₂ x3₂ k₂ v₂
       (by have := of_decide_eq_false hs; omega)) fun u ⟨T, hT, hc⟩ => ?_
