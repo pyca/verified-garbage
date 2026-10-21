@@ -14,8 +14,8 @@ def StageCovers (n : Nat) (js : List Nat) (d count : Nat) : Prop :=
   ∃ r ∈ stageRanges n js, r.1 ≤ d ∧ d + count ≤ r.1 + r.2
 
 theorem stage_cover_header {n d count : Nat} {js : List Nat}
-    (lower : kOk ≤ d) (upper : d + count ≤ kOk + 44) : StageCovers n js d count :=
-  ⟨(kOk, 44), List.mem_append_left _ (List.mem_cons_self ..), lower, upper⟩
+    (lower : kOk ≤ d) (upper : d + count ≤ kOk + 68) : StageCovers n js d count :=
+  ⟨(kOk, 68), List.mem_append_left _ (List.mem_cons_self ..), lower, upper⟩
 
 theorem stage_cover_temp {n d count : Nat} {js : List Nat}
     (lower : hdr ≤ d) (upper : d + count ≤ hdr + 15 * S n) : StageCovers n js d count :=

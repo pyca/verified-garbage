@@ -51,7 +51,7 @@ theorem stage_temps {m m' : Mem} {B : Addr} {n : Nat} {js : List Nat}
 
 theorem stage_keep {m m' : Mem} {B : Addr} {n k : Nat} {js is ds : List Nat}
     (width : k ≤ n) (arrays : ∀ j ∈ is, j < 15 ∨ (k = n ∧ j ∈ js))
-    (scalars : ∀ d ∈ ds, kOk ≤ d ∧ d + 4 ≤ kOk + 44) (O : Keep B k is ds m m') :
+    (scalars : ∀ d ∈ ds, kOk ≤ d ∧ d + 4 ≤ kOk + 68) (O : Keep B k is ds m m') :
     Outs B (stageRanges n js) m m' := by
   apply VG.Proof.Rsa.outs_cover O
   intro r hr
@@ -65,7 +65,7 @@ theorem stage_keep {m m' : Mem} {B : Addr} {n k : Nat} {js is ds : List Nat}
       exact Nat.le_trans last small
     · exact ⟨(arr k j, S k), List.mem_append_right _
         (List.mem_append_left _ (List.mem_map.mpr ⟨j, result, rfl⟩)), Nat.le_refl _, Nat.le_refl _⟩
-  · exact ⟨(kOk, 44), by simp [stageRanges, exponentTemps], (scalars d hd).1, (scalars d hd).2⟩
+  · exact ⟨(kOk, 68), by simp [stageRanges, exponentTemps], (scalars d hd).1, (scalars d hd).2⟩
 
 theorem stage_inverse {m m' : Mem} {B : Addr} {n k : Nat} {js : List Nat} (width : k ≤ n)
     (O : Outs B (inverseRanges k invSlots) m m') : Outs B (stageRanges n js) m m' :=
@@ -98,7 +98,7 @@ theorem stage_preserves_num {m m' : Mem} {B : Addr} {n j : Nat} {js : List Nat}
   rcases List.mem_append.mp hr with temp | output
   · simp only [exponentTemps, List.mem_cons, List.not_mem_nil, or_false] at temp
     rcases temp with rfl | rfl
-    · exact Or.inr (Nat.le_trans (by decide : kOk + 44 ≤ hdr) (Nat.le_add_right ..))
+    · exact Or.inr (Nat.le_trans (by decide : kOk + 68 ≤ hdr) (Nat.le_add_right ..))
     · exact Or.inr (arr_mono persistent)
   · simp only [ranges, List.map_nil, List.append_nil, List.mem_map] at output
     obtain ⟨a, ha, rfl⟩ := output

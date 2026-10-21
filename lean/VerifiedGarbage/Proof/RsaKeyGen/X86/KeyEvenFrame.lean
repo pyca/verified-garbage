@@ -14,7 +14,7 @@ open VG.Impl.RsaKeyGen.X86.Key
 
 theorem exponent_keep_frame {m m' : Mem} {B : Addr} {n : Nat} {js ds : List Nat}
     (arrays : ∀ j ∈ js, j < 15 ∨ j ∈ exponentArrays)
-    (scalars : ∀ d ∈ ds, kOk ≤ d ∧ d + 4 ≤ kOk + 44) (O : Keep B n js ds m m') :
+    (scalars : ∀ d ∈ ds, kOk ≤ d ∧ d + 4 ≤ kOk + 68) (O : Keep B n js ds m m') :
     Outs B (exponentRanges n) m m' := by
   apply VG.Proof.Rsa.outs_cover O
   intro r hr
@@ -28,7 +28,7 @@ theorem exponent_keep_frame {m m' : Mem} {B : Addr} {n : Nat} {js ds : List Nat}
         exact endN
     · exact ⟨(arr n j, S n), List.mem_append_right _
         (List.mem_append_left _ (List.mem_map.mpr ⟨j, result, rfl⟩)), Nat.le_refl _, Nat.le_refl _⟩
-  · exact ⟨(kOk, 44), by simp [exponentRanges, exponentTemps], (scalars d hd).1, (scalars d hd).2⟩
+  · exact ⟨(kOk, 68), by simp [exponentRanges, exponentTemps], (scalars d hd).1, (scalars d hd).2⟩
 
 theorem arrayDivision_preserves_header {m m' : Mem} {B : Addr} {n q r d count : Nat}
     (bound : d + 4 * count ≤ hdr)

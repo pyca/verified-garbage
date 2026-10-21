@@ -43,22 +43,22 @@ theorem cmp_flag_trace {P : State → State → Prop} (bit : Bool)
   obtain ⟨Z, eqZ, neZ⟩ := wp_result (cmp_bool flagT) B
   exact ⟨(raw _ _ _ _ _ _ empty A B).1, ⟨keep _ _ _ _ H U Z, eqU, eqZ⟩, ⟨keep _ _ _ _ H U Z, neU, neZ⟩⟩
 
-theorem branch_true {P : State → State → Prop} {c : Cond} {th el : Prog isa}
-    (H : RelCT isa P th (fun _ _ => True)) :
-    RelCT isa (WithCondition P c true) (.ite c th el) (fun _ _ => True) := by
+theorem branch_true {P Q : State → State → Prop} {c : Cond} {th el : Prog isa}
+    (H : RelCT isa P th Q) :
+    RelCT isa (WithCondition P c true) (.ite c th el) Q := by
   apply VG.RelCT.ite (fun _ _ P => P.2.1.trans P.2.2.symm)
-  · exact H.mono (fun _ _ P => P.1.1) (fun _ _ _ => trivial)
+  · exact H.mono (fun _ _ P => P.1.1) (fun _ _ P => P)
   · intro s t tr ur u z P _ _
     have impossible := P.1.2.1.symm.trans P.2
     cases impossible
 
-theorem branch_false {P : State → State → Prop} {c : Cond} {th el : Prog isa}
-    (H : RelCT isa P el (fun _ _ => True)) :
-    RelCT isa (WithCondition P c false) (.ite c th el) (fun _ _ => True) := by
+theorem branch_false {P Q : State → State → Prop} {c : Cond} {th el : Prog isa}
+    (H : RelCT isa P el Q) :
+    RelCT isa (WithCondition P c false) (.ite c th el) Q := by
   apply VG.RelCT.ite (fun _ _ P => P.2.1.trans P.2.2.symm)
   · intro s t tr ur u z P _ _
     have impossible := P.1.2.1.symm.trans P.2
     cases impossible
-  · exact H.mono (fun _ _ P => P.1.1) (fun _ _ _ => trivial)
+  · exact H.mono (fun _ _ P => P.1.1) (fun _ _ P => P)
 
 end VG.Proof.RsaKeyGen.X86.Candidate

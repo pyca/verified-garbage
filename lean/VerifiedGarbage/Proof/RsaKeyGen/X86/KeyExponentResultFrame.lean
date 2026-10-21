@@ -22,7 +22,7 @@ theorem exponent_result_frame {m m' : Mem} {B : Addr} {n : Nat}
   intro r hr
   simp only [exponentResultRanges, List.mem_cons] at hr
   rcases hr with rfl | rfl | array
-  · exact ⟨(kOk, 44), by simp [exponentRanges, exponentTemps], by decide, by decide⟩
+  · exact ⟨(kOk, 68), by simp [exponentRanges, exponentTemps], by decide, by decide⟩
   · exact ⟨(hdr, 15 * S n), by simp [exponentRanges, exponentTemps], Nat.le_refl _, Nat.le_refl _⟩
   · exact ⟨r, List.mem_append_right _ array, Nat.le_refl _, Nat.le_refl _⟩
 

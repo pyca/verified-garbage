@@ -18,13 +18,13 @@ open VG VG.Proof.Mont VG.Proof.Rsa.X86.Keys
 open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.RsaKeyGen.X86.Key
 
-def exponentTemps (n : Nat) : List (Nat × Nat) := [(kOk, 44), (hdr, 15 * S n)]
+def exponentTemps (n : Nat) : List (Nat × Nat) := [(kOk, 68), (hdr, 15 * S n)]
 def exponentArrays : List Nat := [aD, aDen, aU, aV]
 def exponentRanges (n : Nat) : List (Nat × Nat) := exponentTemps n ++ ranges n exponentArrays []
 
 theorem exponent_temps_keep {m m' : Mem} {B : Addr} {k n : Nat} {js ds : List Nat}
     (width : k ≤ n) (arrays : ∀ j ∈ js, j < 15)
-    (scalars : ∀ d ∈ ds, kOk ≤ d ∧ d + 4 ≤ kOk + 44) (O : Keep B k js ds m m') :
+    (scalars : ∀ d ∈ ds, kOk ≤ d ∧ d + 4 ≤ kOk + 68) (O : Keep B k js ds m m') :
     Outs B (exponentTemps n) m m' := by
   apply VG.Proof.Rsa.outs_cover O
   intro r hr
@@ -38,7 +38,7 @@ theorem exponent_temps_keep {m m' : Mem} {B : Addr} {k n : Nat} {js ds : List Na
       have E : arr n 15 = hdr + 15 * S n := rfl
       rw [E] at growth
       omega
-  · exact ⟨(kOk, 44), by simp [exponentTemps], (scalars d hd).1, (scalars d hd).2⟩
+  · exact ⟨(kOk, 68), by simp [exponentTemps], (scalars d hd).1, (scalars d hd).2⟩
 
 theorem exponent_temps_inverse {m m' : Mem} {B : Addr} {k n : Nat} (width : k ≤ n)
     (O : Outs B (inverseRanges k invSlots) m m') : Outs B (exponentTemps n) m m' := by
@@ -50,7 +50,7 @@ theorem exponent_temps_inverse {m m' : Mem} {B : Addr} {k n : Nat} (width : k �
   · refine ⟨(hdr, 15 * S n), by simp [exponentTemps], Nat.le_refl _, ?_⟩
     unfold S
     omega
-  all_goals exact ⟨(kOk, 44), by simp [exponentTemps], by decide, by decide⟩
+  all_goals exact ⟨(kOk, 68), by simp [exponentTemps], by decide, by decide⟩
 
 theorem exponent_temps_preserves_num {m m' : Mem} {B : Addr} {n j : Nat}
     (persistent : 15 ≤ j) (fit : arr n j + S n ≤ 2 ^ 64)
@@ -61,7 +61,7 @@ theorem exponent_temps_preserves_num {m m' : Mem} {B : Addr} {n j : Nat}
   simp only [exponentTemps, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · have lower : hdr ≤ arr n j := Nat.le_add_right ..
-    exact Or.inr (Nat.le_trans (by decide : kOk + 44 ≤ hdr) lower)
+    exact Or.inr (Nat.le_trans (by decide : kOk + 68 ≤ hdr) lower)
   · exact Or.inr (arr_mono persistent)
 
 theorem exponent_preserves_num {m m' : Mem} {B : Addr} {n j : Nat}
@@ -75,7 +75,7 @@ theorem exponent_preserves_num {m m' : Mem} {B : Addr} {n j : Nat}
   · simp only [exponentTemps, List.mem_cons, List.not_mem_nil, or_false] at temp
     rcases temp with rfl | rfl
     · have lower : hdr ≤ arr n j := Nat.le_add_right ..
-      exact Or.inr (Nat.le_trans (by decide : kOk + 44 ≤ hdr) lower)
+      exact Or.inr (Nat.le_trans (by decide : kOk + 68 ≤ hdr) lower)
     · exact Or.inr (arr_mono persistent)
   · simp only [ranges, List.map_nil, List.append_nil, List.mem_map] at output
     obtain ⟨a, ha, rfl⟩ := output

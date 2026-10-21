@@ -35,16 +35,17 @@ theorem Context.address {base : Addr} {size : Nat} {p : BitVec 32} {inputs : Nat
   rw [start]
   simp only [off, BitVec.ofNat_add, BitVec.add_assoc]
 
-theorem Context.keep {base : Addr} {size : Nat} {p : BitVec 32} {inputs : Nat → BitVec 32} {s t : State}
-    (C : Context base size p inputs s) (K : Keeps [.eax] s t) (F : Frame [⟨base, size⟩] s.mem t.mem) :
+theorem Context.keep {base : Addr} {size : Nat} {p : BitVec 32} {inputs : Nat → BitVec 32} {s t : State} {rs : List Reg}
+    (C : Context base size p inputs s) (K : Keeps rs s t) (F : Frame [⟨base, size⟩] s.mem t.mem)
+    (edi : .edi ∉ rs := by decide) (esp : .esp ∉ rs := by decide) :
     Context base size p inputs t := by
-  have spT : t.gpr .esp = p := (K.1 .esp (by decide)).trans C.sp
+  have spT : t.gpr .esp = p := (K.1 .esp esp).trans C.sp
   have C0 : Context base size p inputs t := by
-    refine ⟨C.scratch.of_keeps K (by decide), C.header, spT, C.fit, C.separate, ?_⟩
+    refine ⟨C.scratch.of_keeps K edi esp, C.header, spT, C.fit, C.separate, ?_⟩
     intro i index
     have eaT : t.ea (arg i) = s.ea (arg i) := by
       change addr (t.gpr .esp) _ = addr (s.gpr .esp) _
-      rw [K.1 .esp (by decide)]
+      rw [K.1 .esp esp]
     have memory : t.mem.readW (s.ea (arg i)) 32 = s.mem.readW (s.ea (arg i)) 32 := by
       rw [C.address index]
       exact F.readW (r := argsRegion p)

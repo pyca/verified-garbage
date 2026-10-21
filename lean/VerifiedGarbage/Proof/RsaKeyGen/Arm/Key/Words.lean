@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Key
 public import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Mont.WriteWord32
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
@@ -22,29 +23,8 @@ open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 /-- Word `i` written, of a number below `2^(32 i)`. -/
 theorem val32_write_word (m : Mem) (base : Addr) {d i k : Nat} (v : BitVec 32) (hi : i < k)
     (fit : d + 4 * k ≤ 2 ^ 64) (hl : val32 m base d k < 2 ^ (32 * i)) :
-    val32 (m.writeW (off base (d + 4 * i)) v) base d k = val32 m base d k + 2 ^ (32 * i) * v.toNat := by
-  have o := writeW32_outside m base (d := d + 4 * i) v (by omega)
-  obtain ⟨r, rfl⟩ : ∃ r, k = i + (r + 1) := ⟨k - i - 1, by omega⟩
-  rw [val32_append _ base d i (r + 1), val32_append m base d i (r + 1)]
-  rw [val32_append m base d i (r + 1)] at hl
-  simp only [val32] at hl ⊢
-  have e1 : val32 (m.writeW (off base (d + 4 * i)) v) base d i = val32 m base d i := o.val32 (by omega) (by omega)
-  have e2 : w32 (m.writeW (off base (d + 4 * i)) v) base (d + 4 * i) = v.toNat := by
-    simp only [w32]; rw [Mem.readW_writeW_self32]
-  have e3 : val32 (m.writeW (off base (d + 4 * i)) v) base (d + 4 * i + 4) r = val32 m base (d + 4 * i + 4) r :=
-    o.val32 (by omega) (by omega)
-  have lo := val32_lt m base d i
-  have z : w32 m base (d + 4 * i) + 2 ^ 32 * val32 m base (d + 4 * i + 4) r = 0 := by
-    rcases Nat.eq_zero_or_pos (w32 m base (d + 4 * i) + 2 ^ 32 * val32 m base (d + 4 * i + 4) r) with h | h
-    · exact h
-    · have := Nat.le_mul_of_pos_right (2 ^ (32 * i)) h; omega
-  have z1 : w32 m base (d + 4 * i) = 0 := by omega
-  have z2 : val32 m base (d + 4 * i + 4) r = 0 := by
-    rcases Nat.eq_zero_or_pos (val32 m base (d + 4 * i + 4) r) with h | h
-    · exact h
-    · have := Nat.le_mul_of_pos_right (2 ^ 32) h; omega
-  rw [e1, e2, e3, z1, z2]
-  simp only [Nat.mul_zero, Nat.add_zero]
+    val32 (m.writeW (off base (d + 4 * i)) v) base d k = val32 m base d k + 2 ^ (32 * i) * v.toNat :=
+  VG.Proof.Mont.val32_write_word m base v hi fit hl
 
 /-- `setWd j o x`: word `o / 4` of `[j]` := `x`. -/
 theorem setWd_ok {s : State} {B : BitVec 32} {Z w N j o x : Nat} (h : Ws s B Z w N)

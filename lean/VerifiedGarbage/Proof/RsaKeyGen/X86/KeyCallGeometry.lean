@@ -19,7 +19,7 @@ open VG VG.X86 VG.Proof.Mont.X86
 
 def callSp (s : State) : BitVec 32 := s.gpr .esp - 16#32
 
-private theorem disjoint_bounds {a b : Addr} {n k : Nat}
+theorem disjoint_bounds {a b : Addr} {n k : Nat}
     (positive : 0 < n) (otherPositive : 0 < k) (D : (⟨a, n⟩ : Region).Disjoint ⟨b, k⟩) :
     a.toNat + n ≤ b.toNat ∨ b.toNat + k ≤ a.toNat := by
   by_contra bad

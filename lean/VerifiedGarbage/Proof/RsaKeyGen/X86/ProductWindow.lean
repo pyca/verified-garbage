@@ -44,4 +44,25 @@ theorem window_add {m m' : Mem} {base : Addr} {out total i len increment : Nat}
   parts_add fits (changed.val32 (Or.inl (Nat.le_refl _)) (by omega))
     (changed.val32 (by omega) (by omega)) value
 
+/-- A product window may also update a disjoint header or scratch range. -/
+theorem window_add_with_scratch {m m' : Mem} {base : Addr}
+    {out total i len increment scratch size : Nat}
+    (bound : out + 4 * total ≤ 2 ^ 64) (fits : i + len ≤ total)
+    (separate : scratch + size ≤ out ∨ out + 4 * total ≤ scratch)
+    (changed : Outs base [(scratch, size), (out + 4 * i, 4 * len)] m m')
+    (value : val32 m' base (out + 4 * i) len =
+      val32 m base (out + 4 * i) len + increment) :
+    val32 m' base out total = val32 m base out total + 2 ^ (32 * i) * increment := by
+  have keep {d k : Nat} (lo : out ≤ d) (hi : d + 4 * k ≤ out + 4 * total)
+      (sep : d + 4 * k ≤ out + 4 * i ∨ out + 4 * i + 4 * len ≤ d) :
+      val32 m' base d k = val32 m base d k := by
+    apply changed.val32 _ (by omega)
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact separate.elim (fun h => Or.inr (by omega)) (fun h => Or.inl (by omega))
+    · exact sep
+  exact parts_add fits (keep (Nat.le_refl _) (by omega) (by omega))
+    (keep (by omega) (by omega) (by omega)) value
+
 end VG.Proof.RsaKeyGen.X86.Product
