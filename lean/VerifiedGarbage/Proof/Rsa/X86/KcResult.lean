@@ -13,7 +13,7 @@ import VerifiedGarbage.Spec.RsaKeyGen
 namespace VG.Proof.Rsa.X86.KeyCheck
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.Rsa.X86.Keys hiding slot
-open VG.Impl.Rsa.X86.KeyCheck
+open VG.Impl.Rsa.X86.KeyCheck VG.Impl.Rsa.X86.KeyCheckRt
 open VG.Proof.Rsa.X86.Keys
 
 def validity (full : Bool) (k : Nat) (v : Vals) : Bool :=
@@ -42,22 +42,23 @@ theorem ProdsOk.exact {g : Geo} {v : Vals} {k R₁ R₂ R₃ : Nat}
 
 theorem checks_ok {g : Geo} {v : Vals} {s : State} {k : Nat} (h : BodyIn g v s)
     (b : Bounds g k v) (hm : Spec.Rsa.modulusValid v.n k = true)
-    (he : Spec.Rsa.exponentValid v.e = true) (full : Bool) :
-    WP isa (if full then keyBody g.w else crtBody g.w) s fun t =>
-      ∃ A live, Stg g s A live (validity full k v) t := by
+    (he : Spec.Rsa.exponentValid v.e = true) :
+    WP isa (if g.full then keyBody g.full else crtBody g.full) s fun t =>
+      ∃ A live, Stg g s A live (validity g.full k v) t := by
+  obtain ⟨B, Z, len, full⟩ := g
   cases full
   · refine WP.mono (crtBody_ok h) fun t ⟨X₁, X₂, R₁, R₂, R₃, hX, hR, ht⟩ => ?_
     obtain ⟨h1, h2, h3⟩ := hR.exact b he
     have eq := VG.Proof.Rsa.crtKeyValid_bits hm he b.pShort b.qShort
       (fun pos => ⟨(hX pos).2, (hX pos).1⟩) h1 h2 h3
     refine ⟨aFin v, liveFin, ?_⟩
-    change Stg g s (aFin v) liveFin (Spec.Rsa.crtKeyValid k v.n v.e v.p v.q v.dP v.dQ v.qI) t
+    change Stg ⟨B, Z, len, false⟩ s (aFin v) liveFin (Spec.Rsa.crtKeyValid k v.n v.e v.p v.q v.dP v.dQ v.qI) t
     rw [eq]; exact ht
   · refine WP.mono (keyBody_ok h) fun t ⟨X₁, X₂, R₁, R₂, R₃, Y₁, Y₂, hX, hR, hY₁, hY₂, A, live, ht⟩ => ?_
     obtain ⟨h1, h2, h3⟩ := hR.exact b he
     have eq := VG.Proof.Rsa.keyValid_bits hm he b.pShort b.qShort
       (fun pos => ⟨(hX pos).2, (hX pos).1⟩) h1 h2 h3 hY₁ hY₂
     refine ⟨A, live, ?_⟩
-    change Stg g s A live (Spec.Rsa.keyValid k v.n v.e v.d v.p v.q v.dP v.dQ v.qI) t
+    change Stg ⟨B, Z, len, true⟩ s A live (Spec.Rsa.keyValid k v.n v.e v.d v.p v.q v.dP v.dQ v.qI) t
     rw [eq]; exact ht
 end VG.Proof.Rsa.X86.KeyCheck

@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KcLoadList
 public import VerifiedGarbage.Proof.Rsa.X86.KcStart
-import VerifiedGarbage.Proof.Rsa.X86.KcZero
+import VerifiedGarbage.Proof.Rsa.X86.KcLoad
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 
 /-! # Initialized RSA key workspace from the caller's byte arrays -/
@@ -13,8 +14,9 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.Rsa.X86.KeyCheck
 open VG.Proof.Rsa.X86.Keys
+open VG.Proof.Rsa.X86.KeyRt (kw zeroArrays_ok)
 
-def geometry (g : CallGeometry) : Geo := ⟨g.base, g.size, 2 * g.n⟩
+def geometry (g : CallGeometry) : Geo := ⟨g.base, g.size, (g.args 1).toNat, g.full⟩
 
 def numbers (g : CallGeometry) (m : Mem) : Vals :=
   let v := fun i => Spec.Rsa.os2ip (inputBytes g m i)
@@ -23,7 +25,10 @@ def numbers (g : CallGeometry) (m : Mem) : Vals :=
     if g.full then v 2 else 0⟩
 
 theorem inputs_fit (full : Bool) : ∀ p ∈ inputs full,
-    2 * p.1 < scratchArg full ∧ p.2 < nArr ∧ p.2 ≠ aVD := by cases full <;> decide
+    2 * p.1 < scratchArg full ∧ p.2 < nArr ∧ p.2 ≠ aVD ∧ (fun _ => 0 : Nat → Nat) p.2 = 0 := by
+  cases full <;> decide
+
+theorem inputs_nodup (full : Bool) : ((inputs full).map Prod.snd).Nodup := by cases full <;> decide
 
 theorem loaded_values (g : CallGeometry) (m : Mem) :
     loadValues g m (fun _ => 0) (inputs g.full) = vals (numbers g m) := by
@@ -34,34 +39,40 @@ theorem loaded_values (g : CallGeometry) (m : Mem) :
       aN, aE, aD, aP, aQ, aDP, aDQ, aQI]
   all_goals repeat' first | split | rfl | omega
 
-theorem loads_ok {g : CallGeometry} {s : State} (h : Inputs g s) :
-    WP isa (loads g.full g.n) s fun t => Inputs g t ∧ BodyIn (geometry g) (numbers g s.mem) t ∧
+theorem loads_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :
+    WP isa (VG.Impl.Rsa.X86.KeyCheckRt.loads g.full) s fun t => Inputs g t ∧
+      BodyIn (geometry g) (numbers g s.mem) t ∧
       Outside g.base 16 (g.size - 16) s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
-  have header := h.ws.hdr_le
-  have fits := h.ws.fits
-  unfold loads
+  have r := inputsRt h len
+  have header := r.ws.hdr_le
+  have fits := r.ws.fits
+  have nw := r.ws.workspace.nowrap
+  have kwEq : kw (g.args 1).toNat = 2 * g.n := by rw [len.width]
+  unfold VG.Impl.Rsa.X86.KeyCheckRt.loads
   rw [WP.seq_iff]
-  refine WP.mono (zeroArrays_ok h) fun z ⟨hz, oz, zeros, rz⟩ => ?_
-  have Oz : Outside g.base 0 g.size s.mem z.mem := oz.mono (by omega) (by
-    change hdr + nArr * (4 * (2 * g.n + 2)) ≤ g.size at fits
-    unfold nArr at fits ⊢; omega)
-  have Bz : Outside g.base 16 (g.size - 16) s.mem z.mem := oz.mono (by unfold hdr; omega) (by
-    change hdr + nArr * (4 * (2 * g.n + 2)) ≤ g.size at fits
-    unfold nArr at fits ⊢; unfold hdr at header; omega)
-  have az : Arrs z.mem g.base (2 * g.n) (fun _ => 0) (List.range nArr) := by
+  refine WP.mono (zeroArrays_ok r (n := nArr) (by decide) (by decide)) fun z ⟨rz, oz, zeros, kz⟩ => ?_
+  have a0 : arr (kw (g.args 1).toNat) 0 = hdr := by simp [arr]
+  have fitsN : hdr + 4 * (nArr * (kw (g.args 1).toNat + 2)) ≤ g.size := by
+    simp only [arr, S] at fits; rw [Nat.mul_left_comm] at fits; exact fits
+  rw [a0] at oz
+  have Oz : Outside g.base 0 g.size s.mem z.mem := oz.mono (Nat.zero_le _) (by omega)
+  have Bz : Outside g.base 16 (g.size - 16) s.mem z.mem := oz.mono (by unfold hdr; omega) (by unfold hdr at *; omega)
+  have hz := h.after (kz.mono (rs' := [.eax, .ecx, .edx, .ebp]) (by decide)) (by decide) (by decide) (h.scratchFrame Oz)
+  have az : Arrs z.mem g.base (kw (g.args 1).toNat) (fun _ => 0) (List.range nArr) := by
     intro j hj
     have part := VG.Proof.Rsa.KeyWorkspace.val32_zero_part (zeros j (List.mem_range.mp hj))
-      (a := 0) (c := 2 * g.n) (by omega)
+      (a := 0) (c := kw (g.args 1).toNat) (by omega)
     simpa only [Nat.mul_zero, Nat.add_zero] using part
-  have tz : w32 z.mem g.base (arr (2 * g.n) aVD + 4 * (2 * g.n)) = 0 := by
+  have tz : w32 z.mem g.base (arr (kw (g.args 1).toNat) aVD + 4 * kw (g.args 1).toNat) = 0 := by
     have part := VG.Proof.Rsa.KeyWorkspace.val32_zero_part (zeros aVD (by decide))
-      (a := 2 * g.n) (c := 1) (by omega)
+      (a := kw (g.args 1).toNat) (c := 1) (by omega)
     simpa only [val32, Nat.mul_zero, Nat.add_zero] using part
-  refine WP.mono (loadInputs_ok hz _ az tz (inputs g.full) (inputs_fit _))
+  refine WP.mono (loadInputs_ok hz len _ az tz (inputs g.full) (inputs_fit _) (inputs_nodup _))
     fun t ⟨ht, kt, vt, tt, rt⟩ => ?_
   rw [loadValues_frame h Oz _ _ (fun p hp => (inputs_fit _ p hp).1), loaded_values] at vt
-  exact ⟨ht, ⟨ht.ws, vt, tt⟩,
-    Bz.trans (hz.keepBody kt (fun j hj => List.mem_range.mp hj) (by simp)),
-    (rz.mono (by decide)).trans rt⟩
+  have kt' : Keep g.base (2 * g.n) (List.range nArr) [] z.mem t.mem := by rw [← kwEq]; exact kt
+  exact ⟨ht, ⟨inputsRt ht len, vt, tt⟩,
+    Bz.trans (hz.keepBody kt' (fun j hj => List.mem_range.mp hj) (by simp)),
+    (kz.mono (by decide)).trans rt⟩
 end VG.Proof.Rsa.X86.KeyCheck

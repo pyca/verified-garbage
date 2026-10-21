@@ -17,7 +17,7 @@ modulo `p - 1` and `q - 1` equal to `dP` and `dQ` (`KeyOut`).
 namespace VG.Proof.Rsa.X86.KeyCheck
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.Rsa.X86.Keys hiding slot
-open VG.Impl.Rsa.X86.KeyCheck
+open VG.Impl.Rsa.X86.KeyCheck VG.Impl.Rsa.X86.KeyCheckRt
 open VG.Proof.Rsa.X86.Keys
 
 /-- What the products are, when their factors are below their moduli. -/
@@ -39,15 +39,15 @@ def CrtOut (g : Geo) (s0 : State) (v : Vals) (t : State) : Prop := ∃ X₁ X₂
   Stg g s0 (aFin v) liveFin (VG.Proof.Rsa.crtBits v.p v.q v.dP v.dQ v.qI X₁ X₂ R₁ R₂ R₃) t
 
 theorem crtChecks_ok' {g : Geo} {s0 s : State} {v : Vals} (h : DivN g s0 v s) :
-    WP isa (crtChecks g.w) s (CrtOut g s0 v) := by
+    WP isa (crtChecks g.full) s (CrtOut g s0 v) := by
   obtain ⟨X₁, X₂, hX, h⟩ := h
   exact WP.mono (crtChecks_ok h) fun t ⟨R₁, R₂, R₃, h1, h2, h3, ht⟩ => ⟨X₁, X₂, R₁, R₂, R₃, hX, ⟨h1, h2, h3⟩, ht⟩
 
 theorem start_ok' {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) :
-    WP isa (start g.w) s fun u => WP isa (division g.w) u (DivN g s v) :=
+    WP isa (start g.full) s fun u => WP isa (division g.full) u (DivN g s v) :=
   WP.mono (start_ok h) fun _ w => WP.mono w fun _ ⟨X₁, X₂, hX, ht⟩ => ⟨X₁, X₂, hX, ht⟩
 
-theorem crtBody_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) : WP isa (crtBody g.w) s (CrtOut g s v) := by
+theorem crtBody_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) : WP isa (crtBody g.full) s (CrtOut g s v) := by
   unfold crtBody
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (start_ok' h) fun u hu => ?_
@@ -81,7 +81,7 @@ def KeyOut (g : Geo) (s0 : State) (v : Vals) (t : State) : Prop := ∃ X₁ X₂
     (VG.Proof.Rsa.keyBits' v.n v.d v.p v.q v.dP v.dQ v.qI X₁ X₂ R₁ R₂ R₃ Y₁ Y₂) t
 
 theorem dChecks1_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0 (aFin v) liveFin c s) :
-    WP isa (dChecks1 g.w) s fun u => WP isa (division g.w) u (DivP g s0 v c) := by
+    WP isa (dChecks1 g.full) s fun u => WP isa (division g.full) u (DivP g s0 v c) := by
   unfold dChecks1
   rw [wp_seqs_append (by simp [ltA]) (by simp [divSet])]
   refine WP.mono (h.ltA_ok (a := aD) (b := aN) (by decide) (by decide) (by decide)) fun t1 h1 => ?_
@@ -89,7 +89,7 @@ theorem dChecks1_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0
     fun u wu => WP.mono wu fun t ⟨Xq, Xr, hv, ht⟩ => ⟨Xq, Xr, fun pos => hv pos, ht⟩
 
 theorem dChecks2_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : DivP g s0 v c s) :
-    WP isa (dChecks2 g.w) s fun u => WP isa (division g.w) u (DivQ g s0 v c) := by
+    WP isa (dChecks2 g.full) s fun u => WP isa (division g.full) u (DivQ g s0 v c) := by
   obtain ⟨Xq, Y₁, hY, h⟩ := h
   unfold dChecks2
   rw [wp_seqs_append (by simp [eqA]) (by simp [divSet])]
@@ -100,14 +100,14 @@ theorem dChecks2_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : DivP g s
       ⟨Y₁, Xq', Y₂, fun pos => (hY pos).1, fun pos => hv pos, ht⟩
 
 theorem dChecks3_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : DivQ g s0 v c s) :
-    WP isa (dChecks3 g.w) s fun t => ∃ Y₁ Y₂, (0 < 2 * (v.p / 2) → Y₁ = v.d % (2 * (v.p / 2))) ∧
+    WP isa (dChecks3 g.full) s fun t => ∃ Y₁ Y₂, (0 < 2 * (v.p / 2) → Y₁ = v.d % (2 * (v.p / 2))) ∧
       (0 < 2 * (v.q / 2) → Y₂ = v.d % (2 * (v.q / 2))) ∧
       ∃ A live, Stg g s0 A live (c && decide (v.d < v.n) && decide (Y₁ = v.dP) && decide (Y₂ = v.dQ)) t := by
   obtain ⟨Y₁, Xq, Y₂, h1, h2, h⟩ := h
   exact WP.mono (h.eqA_ok (a := aVR) (b := aDQ) (by decide) (by decide) (by decide))
     fun t ht => ⟨Y₁, Y₂, h1, fun pos => (h2 pos).1, _, _, ht⟩
 
-theorem keyBody_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) : WP isa (keyBody g.w) s (KeyOut g s v) := by
+theorem keyBody_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) : WP isa (keyBody g.full) s (KeyOut g s v) := by
   unfold keyBody
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (crtBody_ok h) fun t1 ⟨X₁, X₂, R₁, R₂, R₃, hX, hR, h1⟩ => ?_

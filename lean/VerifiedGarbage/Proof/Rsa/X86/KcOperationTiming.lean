@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.KcABI
 public import VerifiedGarbage.Proof.Rsa.X86.KcFrames
 
 import VerifiedGarbage.Proof.Rsa.X86.KcBodyTiming
+public import VerifiedGarbage.Impl.Rsa.X86.KeyCheckRt
 import VerifiedGarbage.Proof.Rsa.X86.KcEntryTiming
 import VerifiedGarbage.Proof.Rsa.X86.KcArgumentsEq
 import VerifiedGarbage.Proof.Rsa.X86.KcObservations
@@ -23,6 +24,7 @@ namespace VG.Proof.Rsa.X86.KeyCheck
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Bignum.X86 VG.Proof.Dsa.X86
 open VG.Impl.Rsa.X86.KeyCheck
+open VG.Impl.Rsa.X86.KeyCheckRt (code)
 
 theorem operation_trace {full : Bool} {s t : State} (a : ABI full s) (b : ABI full t)
     (args : ∀ i < scratchArg full + 2, arg s i = arg t i) (sp : s.gpr .esp = t.gpr .esp)
@@ -61,14 +63,28 @@ theorem operation_trace {full : Bool} {s t : State} (a : ABI full s) (b : ABI fu
           simp only [inputBytes, caller, CallGeometry.buffer]
           rw [args (2 * i) (by omega), args (2 * i + 1) (by omega)]
         exact ns.trans (initial.trans (align.trans nt).symm)
-      have len : Lengths (caller full s) := ⟨a.lengths.1, a.lengths.2, rfl⟩
+      have len : Lengths (caller full s) := a.lengths_ok
       cases er with
       | @seq _ _ _ x _ _ _ e2 e3 =>
         cases fr with
         | @seq _ _ _ y _ _ _ f2 f3 =>
-          have eq2 := (body_relCT (caller full s) len _ _ _ _ _ _ ⟨pair, same 0 (by cases full <;> decide) modulus, same 1 (by cases full <;> decide) exponent⟩ e2 f2).1
-          obtain ⟨hx, kx⟩ := wp_result (body_ok hs len.lower len.upper len.width (a.numberBounds u.mem)) e2
-          obtain ⟨hy, ky⟩ := wp_result (body_ok hv len.lower len.upper len.width (a.numberBounds v.mem)) f2
+          have espu : u.gpr .esp = s.gpr .esp := ks.1 _ (by decide)
+          have span : argSpan full = 4 + 4 * (scratchArg full + 2) := by unfold argSpan; omega
+          have fit : (u.gpr .esp).toNat + argSpan (caller full s).full ≤ 2 ^ 32 := by
+            rw [espu]; change _ + argSpan full ≤ _; have := a.stackBound; omega
+          have apart : ∀ r ∈ (caller full s).writes,
+              Region.Disjoint ⟨(u.gpr .esp).setWidth 64, argSpan (caller full s).full⟩ r := by
+            intro r hr
+            simp only [CallGeometry.writes, List.mem_singleton] at hr
+            subst r
+            rw [espu]
+            change Region.Disjoint ⟨_, argSpan full⟩ _
+            rw [span]
+            exact VG.X86.Taint.frame_disjoint (by have := a.stackBound; omega) a.retApart a.argsApart
+          have eq2 := (body_relCT (caller full s) len _ fit apart _ _ _ _ _ _
+            ⟨⟨pair, rfl⟩, same 0 (by cases full <;> decide) modulus, same 1 (by cases full <;> decide) exponent⟩ e2 f2).1
+          obtain ⟨hx, kx⟩ := wp_result (body_ok hs len (a.numberBounds u.mem)) e2
+          obtain ⟨hy, ky⟩ := wp_result (body_ok hv len (a.numberBounds v.mem)) f2
           have next := pair.after hx.1 hy.1 kx ky (by decide)
           have eq3 := (publicRestore_relCT _ _ _ _ _ _ next.workspace e3 f3).1
           rw [eq1, eq2, eq3]

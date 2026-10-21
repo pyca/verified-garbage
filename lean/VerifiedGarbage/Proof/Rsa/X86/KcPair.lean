@@ -37,4 +37,10 @@ theorem Pair.after {g : CallGeometry} {s t u v : State} {regs : List Reg} (h : P
     (sp : .esp ∉ regs) : Pair g u v :=
   ⟨hu, hv, (ku.1 _ sp).trans (h.sp.trans (kv.1 _ sp).symm)⟩
 
+theorem Pair.keepMem {g : CallGeometry} {s t u v : State} {regs : List Reg} (h : Pair g s t)
+    (ks : Keeps regs s u) (kt : Keeps regs t v) (di : .edi ∉ regs) (sp : .esp ∉ regs)
+    (ms : u.mem = s.mem) (mt : v.mem = t.mem) : Pair g u v :=
+  h.after (h.left.after ks di sp (by rw [ms]; exact Frame.refl _ _))
+    (h.right.after kt di sp (by rw [mt]; exact Frame.refl _ _)) ks kt sp
+
 end VG.Proof.Rsa.X86.KeyCheck

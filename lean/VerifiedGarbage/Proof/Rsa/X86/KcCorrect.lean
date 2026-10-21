@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Rsa.X86.KcABI
+public import VerifiedGarbage.Impl.Rsa.X86.KeyCheckRt
 
 import VerifiedGarbage.Proof.Rsa.X86.KcReturn
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -14,7 +15,7 @@ private theorem bool_result (b : Bool) : BitVec.ofNat 32 b.toNat = (if b then 1 
   cases b <;> rfl
 
 theorem correct (full : Bool) (s : State) (h : (contract full).pre s) :
-    ∃ trace t, Exec isa (VG.Impl.Rsa.X86.KeyCheck.code full) s trace t ∧ abiPreserved s t ∧
+    ∃ trace t, Exec isa (VG.Impl.Rsa.X86.KeyCheckRt.code full) s trace t ∧ abiPreserved s t ∧
       (contract full).post s t := by
   have a := abi_of h
   obtain ⟨trace, t, run, value, preserved⟩ := operation_ok a

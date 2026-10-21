@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Rsa.X86.KcFrames
-public import VerifiedGarbage.Proof.Rsa.X86.KcValidTiming
+public import VerifiedGarbage.Proof.Rsa.X86.KcPair
+public import VerifiedGarbage.Proof.Rsa.X86.KcTimeCheck
 
 import VerifiedGarbage.Proof.Rsa.X86.KcBranchTiming
 import VerifiedGarbage.Proof.Rsa.X86.KcPublic
@@ -12,6 +13,7 @@ import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 namespace VG.Proof.Rsa.X86.KeyCheck
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Dsa.X86
 open VG.Proof.Bignum.X86 VG.Impl.Rsa.X86.KeyCheck
+open VG.Impl.Rsa.X86.KeyCheckRt (body checkExponent)
 
 theorem modulus_relCT (g : CallGeometry) :
     RelCT isa (Pair g) (.seq (.block (VG.Impl.Rsa.X86.CrtValues.inputArgs 0))
@@ -29,16 +31,18 @@ theorem modulus_relCT (g : CallGeometry) :
       (h.right.arguments 1 (by cases g.full <;> decide)).readSrc⟩
   · exact fun _ _ h => h
 
-theorem body_relCT (g : CallGeometry) (len : Lengths g) :
-    RelCT isa (fun s t => Pair g s t ∧ inputBytes g s.mem 0 = inputBytes g t.mem 0 ∧
+theorem body_relCT (g : CallGeometry) (len : Lengths g) (sp : BitVec 32)
+    (fit : sp.toNat + argSpan g.full ≤ 2 ^ 32)
+    (apart : ∀ r ∈ g.writes, Region.Disjoint ⟨sp.setWidth 64, argSpan g.full⟩ r) :
+    RelCT isa (fun s t => (Pair g s t ∧ s.gpr .esp = sp) ∧ inputBytes g s.mem 0 = inputBytes g t.mem 0 ∧
       inputBytes g s.mem 1 = inputBytes g t.mem 1) (body g.full) (fun _ _ => True) := by
-  let r := fun s t => Pair g s t ∧ inputBytes g s.mem 1 = inputBytes g t.mem 1 ∧ s.zf = t.zf
+  let r := fun s t => (Pair g s t ∧ s.gpr .esp = sp) ∧ inputBytes g s.mem 1 = inputBytes g t.mem 1 ∧ s.zf = t.zf
   have branch : RelCT isa r (.ite .e (checkExponent g.full) failure) (fun _ _ => True) := by
     apply VG.RelCT.ite (M := isa) (c := .e) (P := r)
     · exact fun _ _ h => h.2.2
-    · exact (checkExponent_relCT g len).mono (fun _ _ h => ⟨h.1.1, h.1.2.1⟩) (fun _ _ h => h)
+    · exact (checkExponent_relCT g len sp fit apart).mono (fun _ _ h => ⟨h.1.1, h.1.2.1⟩) (fun _ _ h => h)
     · exact failure_relCT.mono (fun _ _ _ => trivial) (fun _ _ h => h)
-  intro s t tr ur sf tf ⟨h, modulus, exponent⟩ es et
+  intro s t tr ur sf tf ⟨⟨h, esp⟩, modulus, exponent⟩ es et
   cases es with
   | @seq _ _ _ u _ _ _ e1 e2 =>
     cases et with
@@ -51,6 +55,7 @@ theorem body_relCT (g : CallGeometry) (len : Lengths g) :
         rw [zs, zt]
         change some (Spec.Rsa.modulusValid (Spec.Rsa.os2ip (inputBytes g s.mem 0)) _) = _
         rw [modulus]; rfl
-      have eq2 := (branch _ _ _ _ _ _ ⟨next, by rw [ms, mt]; exact exponent, flags⟩ e2 f2).1
+      have eq2 := (branch _ _ _ _ _ _ ⟨⟨next, (ks.1 _ (by decide)).trans esp⟩, by rw [ms, mt]; exact exponent, flags⟩
+        e2 f2).1
       exact ⟨by rw [eq1, eq2], trivial⟩
 end VG.Proof.Rsa.X86.KeyCheck

@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Rsa.X86.KcABI
+public import VerifiedGarbage.Impl.Rsa.X86.KeyCheckRt
 
 import VerifiedGarbage.Proof.Rsa.X86.KcOperationTiming
 import VerifiedGarbage.Proof.Rsa.X86.KcCorrect
@@ -10,6 +11,7 @@ import VerifiedGarbage.Proof.Rsa.X86.KcCorrect
 namespace VG.Proof.Rsa.X86.KeyCheck
 open VG VG.X86
 open VG.Impl.Rsa.X86.KeyCheck
+open VG.Impl.Rsa.X86.KeyCheckRt (code)
 
 def crtState : State where
   gpr r := if r = .esp then 0x20000 else 0

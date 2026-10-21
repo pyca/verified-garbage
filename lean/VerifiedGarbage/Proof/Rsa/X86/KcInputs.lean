@@ -1,6 +1,7 @@
 module
 public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheck
+public import VerifiedGarbage.Spec.Rsa
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
@@ -41,6 +42,13 @@ structure Inputs (g : CallGeometry) (s : State) : Prop where
   inputFit : ∀ j : Nat, 2 * j < scratchArg g.full → (g.args (2 * j)).toNat + (g.buffer (2 * j)).len ≤ 2 ^ 32
   inputRead : ∀ j : Nat, 2 * j < scratchArg g.full → InRegions (s.rd ++ s.wr) (g.buffer (2 * j)).base (g.buffer (2 * j)).len
   inputApart : ∀ j : Nat, 2 * j < scratchArg g.full → ∀ r ∈ g.writes, (g.buffer (2 * j)).Disjoint r
+
+/-- The modulus's length, of the width the arrays have, and the working space argument at the working space. -/
+structure Lengths (g : CallGeometry) : Prop where
+  lower : 64 ≤ (g.args 1).toNat
+  upper : (g.args 1).toNat ≤ 1024
+  width : g.n = Spec.Rsa.modulusWords (g.args 1).toNat
+  scratch : g.args (scratchArg g.full) = BitVec.ofNat 32 g.base.toNat
 
 theorem Inputs.after {g : CallGeometry} {s t : State} {regs : List Reg} (h : Inputs g s)
     (rest : Keeps regs s t) (di : .edi ∉ regs) (sp : .esp ∉ regs) (frame : Frame g.writes s.mem t.mem) :
