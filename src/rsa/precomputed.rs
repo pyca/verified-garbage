@@ -14,6 +14,17 @@ use core::{
 use crate::arch::rsa::vg_rsa_public_precompute;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa::vg_rsa_public_precompute_adx;
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+use crate::arch::rsa::vg_rsa_public_precompute_umaal;
 use crate::cpu::detected;
 
 /// The words of a modulus' precomputed values for an `n_len`-byte modulus
@@ -52,7 +63,7 @@ fn precompute(n: &[u8], scratch: &mut [u64]) -> (Vec<u64>, u32) {
                 target_os = "openbsd"
             )
         ))]
-        Backend::Umaal => vg_rsa_public_precompute,
+        Backend::Umaal => vg_rsa_public_precompute_umaal,
     };
     // SAFETY: each pointer is valid for its length (`pre` and `scratch` for
     // writes), and none overlaps another or wraps around, as they are

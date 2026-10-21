@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
 import VerifiedGarbage.Proof.Bignum.Arm.CrtContract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import Mathlib.Data.Int.ModEq
@@ -54,7 +55,7 @@ theorem crt_contract_sat : ∃ s, (Spec.Rsa.privateCrtContract abi 56).pre s := 
     [crtSatState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid,
       Spec.Rsa.scratchWords] using crtSatState
 
-theorem crt_verified : Verified target CrtFn.code (Spec.Rsa.privateCrtContract abi 56) :=
-  ⟨crt_contract_correct, crt_contract_ct, crt_contract_sat⟩
+theorem crt_verified (kernel : WindowKernel := baselineWindowKernel) : Verified target (CrtFn.codeWith kernel.code) (Spec.Rsa.privateCrtContract abi 56) :=
+  ⟨(crt_contract_correct (kernel := kernel)), (crt_contract_ct (kernel := kernel)), crt_contract_sat⟩
 
 end VG.Proof.Bignum.Arm

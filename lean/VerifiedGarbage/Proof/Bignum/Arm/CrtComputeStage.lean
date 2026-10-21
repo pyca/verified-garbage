@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
 import VerifiedGarbage.Proof.Bignum.Arm.CrtBothPowers
 import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientStage
 import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishStage
@@ -22,16 +23,16 @@ theorem crt_computeStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List B
     (h : CrtShared g bs s) (ready : LayoutFrameReady g.base (workspaceWords g.words) g.words s)
     (p : numAt s.mem (State.addr (crtP g.base g.words)) g.words 0 = Spec.Rsa.os2ip (bs 2))
     (q : numAt s.mem (State.addr (crtQ g.base g.words)) g.words 0 = Spec.Rsa.os2ip (bs 3))
-    (flag : s.mem.readW (off (State.addr s.sp) 48) 32 = (if crtAccepted bs then 1 else 0)) :
-    WP isa CrtFn.compute s fun t =>
+    (flag : s.mem.readW (off (State.addr s.sp) 48) 32 = (if crtAccepted bs then 1 else 0)) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa (CrtFn.computeWith kernel.code) s fun t =>
       Spec.Rsa.bytesAt t.mem (State.addr g.output) g.length =
         (if crtAccepted bs then Spec.Rsa.i2osp (crtPrivateValue bs) g.length else List.replicate g.length 0) ∧
       t.gpr .r0 = (if crtAccepted bs then 1 else 0) ∧
       Frame (crtLiveMutable g s.sp ++ [⟨State.addr g.output, g.length⟩]) s.mem t.mem ∧ Rest roundClobbers s t := by
-  unfold CrtFn.compute
+  unfold CrtFn.computeWith
   apply WP.assoc
   rw [WP.seq_iff]
-  refine WP.mono (crt_bothPowers_ok s h ready p q flag) ?_
+  refine WP.mono ((crt_bothPowers_ok (kernel := kernel)) s h ready p q flag) ?_
   rintro u ⟨sharedU, readyU, poweredP, poweredQ, flagU, frameU, restU⟩
   have odd : crtFactor bs 2 % 2 = 1 := by
     by_cases accepted : crtAccepted bs

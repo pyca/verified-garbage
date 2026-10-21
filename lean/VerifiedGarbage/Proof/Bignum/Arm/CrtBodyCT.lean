@@ -1,8 +1,9 @@
 module
+
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtBodyInput
 public import VerifiedGarbage.Proof.Framework.RelCT
-
 import VerifiedGarbage.Proof.Bignum.Arm.CrtValidCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtFailCT
 import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckCT
@@ -31,9 +32,9 @@ theorem crt_modulusCheck_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → Lis
   exact ⟨h.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.ptr)
     ((rest.gpr .r4 (by simp)).trans h.source) ((rest.gpr .r6 (by simp)).trans h.count), flag⟩
 
-theorem crt_body_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (modulus : bs1 0 = bs2 0) :
+theorem crt_body_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (modulus : bs1 0 = bs2 0) (kernel : WindowKernel := baselineWindowKernel) :
     RelCT isa (fun s t => CrtBodyInput g bs1 s ∧ CrtBodyInput g bs2 t ∧ s.sp = t.sp)
-      CrtFn.body (fun _ _ => True) := by
+      (CrtFn.bodyWith kernel.code) (fun _ _ => True) := by
   have check : RelCT isa (fun s t => CrtBodyInput g bs1 s ∧ CrtBodyInput g bs2 t ∧ s.sp = t.sp)
       (.block modulusCheck) (fun _ _ => True) := by
     intro s t tr1 tr2 u v h e1 e2
@@ -45,7 +46,7 @@ theorem crt_body_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (modulus :
   · intro s t h
     change some s.z = some t.z
     rw [h.2.1.flag, h.2.2.flag, modulus]
-  · apply (crt_valid_ct (g := g) (bs1 := bs1) (bs2 := bs2)).mono ?_ (fun _ _ _ => trivial)
+  · apply (crt_valid_ct (kernel := kernel) (g := g) (bs1 := bs1) (bs2 := bs2)).mono ?_ (fun _ _ _ => trivial)
     intro s t h
     have flag : s.z = true := Option.some.inj h.2
     have good := h.1.2.1.flag.symm.trans flag

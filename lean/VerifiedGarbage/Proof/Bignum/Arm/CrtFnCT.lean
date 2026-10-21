@@ -1,7 +1,8 @@
 module
+
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtInput
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
-
 import VerifiedGarbage.Proof.Bignum.Arm.CrtEntryCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtEntryReady
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
@@ -13,10 +14,10 @@ import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 
-theorem crtFn_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (modulus : bs1 0 = bs2 0) :
+theorem crtFn_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (modulus : bs1 0 = bs2 0) (kernel : WindowKernel := baselineWindowKernel) :
     RelCT isa (fun s t => CrtFnInput g bs1 s ∧ CrtFnInput g bs2 t ∧ s.sp = t.sp)
-      CrtFn.code (fun _ _ => True) := by
-  unfold CrtFn.code
+      (CrtFn.codeWith kernel.code) (fun _ _ => True) := by
+  unfold CrtFn.codeWith
   apply RelCT.frame (fun _ _ h => h.2.2)
   intro s t tr1 tr2 u v hp e1 e2
   obtain ⟨s0, t0, ⟨hs, ht, sp⟩, ps, pt⟩ := hp
@@ -37,7 +38,7 @@ theorem crtFn_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (modulus : bs
       obtain ⟨-, rfl⟩ := Exec.det entry1 run1
       obtain ⟨-, rfl⟩ := Exec.det entry2 run2
       have body := relCT_keep_sp
-        (crt_body_scoped_ct (g := g) modulus)
+        (crt_body_scoped_ct (kernel := kernel) (g := g) modulus)
         (fun _ _ h => h.2.2)
       have restore : RelCT isa (fun s t => s.sp = t.sp) (.block PcFn.restore) (fun s t => s.sp = t.sp) :=
         stackLoads_ct pcCalleeSaved

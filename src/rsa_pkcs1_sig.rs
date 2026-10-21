@@ -41,6 +41,15 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
+use crate::arch::rsa_pkcs1_sig::{
+    vg_rsa_pkcs1_recover_precomputed, vg_rsa_pkcs1_sign, vg_rsa_pkcs1_verify_precomputed,
+};
+#[cfg(target_arch = "x86_64")]
+use crate::arch::rsa_pkcs1_sig::{
+    vg_rsa_pkcs1_recover_precomputed_adx, vg_rsa_pkcs1_recover_precomputed_ifma,
+    vg_rsa_pkcs1_sign_adx, vg_rsa_pkcs1_sign_ifma, vg_rsa_pkcs1_verify_precomputed_adx,
+    vg_rsa_pkcs1_verify_precomputed_ifma,
+};
 #[cfg(all(
     target_arch = "arm",
     any(
@@ -51,15 +60,9 @@ use core::fmt;
         target_os = "openbsd"
     )
 ))]
-use crate::arch::rsa_pkcs1_sig::vg_rsa_pkcs1_sign_umaal;
 use crate::arch::rsa_pkcs1_sig::{
-    vg_rsa_pkcs1_recover_precomputed, vg_rsa_pkcs1_sign, vg_rsa_pkcs1_verify_precomputed,
-};
-#[cfg(target_arch = "x86_64")]
-use crate::arch::rsa_pkcs1_sig::{
-    vg_rsa_pkcs1_recover_precomputed_adx, vg_rsa_pkcs1_recover_precomputed_ifma,
-    vg_rsa_pkcs1_sign_adx, vg_rsa_pkcs1_sign_ifma, vg_rsa_pkcs1_verify_precomputed_adx,
-    vg_rsa_pkcs1_verify_precomputed_ifma,
+    vg_rsa_pkcs1_recover_precomputed_umaal, vg_rsa_pkcs1_sign_umaal,
+    vg_rsa_pkcs1_verify_precomputed_umaal,
 };
 use crate::cpu::detected;
 use crate::rsa::{Backend, PrivateKey, PublicKey, public_scratch_words, scratch_words};
@@ -233,7 +236,7 @@ pub fn verify(key: &PublicKey, signature: &[u8], digest: &[u8], hash: Hash) -> b
                 target_os = "openbsd"
             )
         ))]
-        Backend::Umaal => vg_rsa_pkcs1_verify_precomputed,
+        Backend::Umaal => vg_rsa_pkcs1_verify_precomputed_umaal,
     };
     // SAFETY: each pointer is valid for its length (`scratch` for writes),
     // and none overlaps another or wraps around, as they are distinct Rust
@@ -286,7 +289,7 @@ pub fn recover(key: &PublicKey, signature: &[u8], hash: Hash) -> Result<Vec<u8>,
                 target_os = "openbsd"
             )
         ))]
-        Backend::Umaal => vg_rsa_pkcs1_recover_precomputed,
+        Backend::Umaal => vg_rsa_pkcs1_recover_precomputed_umaal,
     };
     // SAFETY: each pointer is valid for its length (`out` and `scratch` for
     // writes), and none overlaps another or wraps around, as they are
