@@ -180,11 +180,10 @@ meta import VerifiedGarbage.Spec.Weierstrass.Mul
 /-!
 # ECDSA verification over P-384 on AArch64: what taint tracking checks
 
-Each piece of the verifier whose timing the relational proof
-(`pubNafVerify_public_ct`) takes from taint tracking, with the registers it
-may branch on or address by: the pointer `x0` for the field arithmetic, and
-the loop counters, the digits' and entries' registers and the recoding's
-residual elsewhere.
+Each piece of the public NAF of `v` whose timing the relational proof of the joint loop
+(`Joint.verify_public_ct`) takes from taint tracking, with the registers it may branch on or
+address by: the pointer `x0` for the field arithmetic, and the loop counters, the digits' and
+entries' registers and the recoding's residual elsewhere.
 -/
 
 @[expose] public section
@@ -269,17 +268,5 @@ theorem window_checks : PubNaf.WindowChecks Kq where
 theorem prep_checks : PubNaf.PrepChecks Kq (p384.sl V) where
   init := by reg_ct [.x0]
   step := by reg_ct (PubNaf.prepPublic Kq.M.n)
-
-/-- The public comb's iterations, and the code before and after the multiplications. -/
-theorem verify_checks : PubNafVerifyChecks p384 where
-  before := by reg_ct [.x0, .x1, .x2, .x3]
-  comb := {
-    init := by reg_ct [.x0]
-    head := by reg_ct [.x0, .x19]
-    tail := by reg_ct [.x0, .x19, .x16] }
-  save := by reg_ct [.x0]
-  prep := prep_checks
-  window := window_checks
-  tail := by reg_ct [.x0]
 
 end VG.Proof.Ecdsa.Verify.AArch64.P384
