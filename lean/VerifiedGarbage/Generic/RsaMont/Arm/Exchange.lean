@@ -17,7 +17,7 @@ def artifacts (b : Proof.Bignum.Arm.MontBackend) : List Artifact :=
     code := Proof.Ffdh.Arm.SharedExchange.calledCode b
     verified := Proof.Ffdh.Arm.SharedExchange.called_verified b
     notes := ["ARMv7: RSA's fixed three-bit windows process every supplied private-scalar byte. \
-      Normalized modulus setup, products and specialized squares call the shared RSA arithmetic helper. \
+      Normalized modulus setup, products and squares call the shared RSA arithmetic helper. \
       Shared-value range checking, fixed-width export and rejection masking remain in verified code."] }]
 
 end VG.Generic.RsaMont.Arm.Exchange

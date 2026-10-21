@@ -43913,7 +43913,7 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
-/// ARMv7: RSA's fixed three-bit windows process every supplied private-scalar byte. Normalized modulus setup, products and specialized squares call the shared RSA arithmetic helper. Shared-value range checking, fixed-width export and rejection masking remain in verified code.
+/// ARMv7: RSA's fixed three-bit windows process every supplied private-scalar byte. Normalized modulus setup, products and squares call the shared RSA arithmetic helper. Shared-value range checking, fixed-width export and rejection masking remain in verified code.
 ///
 /// # Safety
 ///
@@ -48892,7 +48892,7 @@ pub(crate) const VG_FFDH_EXCHANGE_UMAAL_FEATURES: crate::cpu::Features = crate::
 ///
 /// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
-/// ARMv7: RSA's fixed three-bit windows process every supplied private-scalar byte. Normalized modulus setup, products and specialized squares call the shared RSA arithmetic helper. Shared-value range checking, fixed-width export and rejection masking remain in verified code.
+/// ARMv7: RSA's fixed three-bit windows process every supplied private-scalar byte. Normalized modulus setup, products and squares call the shared RSA arithmetic helper. Shared-value range checking, fixed-width export and rejection masking remain in verified code.
 ///
 /// # Safety
 ///
