@@ -8,9 +8,9 @@ public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Base
 import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
-import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
+import VerifiedGarbage.Proof.MillerRabin.Arm.ArithmeticCT
 import VerifiedGarbage.Proof.MillerRabin.Arm.Ops
-import VerifiedGarbage.Proof.Bignum.Arm.MontOp
+import VerifiedGarbage.Proof.MillerRabin.Arm.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Arm.SquareOp
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Rsa.Arm.KeyDiv
@@ -111,8 +111,8 @@ structure AfterM (P : MP) (E : State → Prop) (A : State → Nat → Nat) (L : 
 
 /-- `mulY b`: `[aY] := mm c w [aY] [b]`. -/
 theorem St.pmulY {b : Nat} (hb : b = aY ∨ b = aX) (hYl : aY ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L) (hbL : b ∈ aY :: L)
-    (hYv : ∀ σ, E σ → A σ aY < cOf P σ.mem) (hbv : ∀ σ, E σ → A σ b < cOf P σ.mem) :
-    VP (St P E A (aY :: L) V LS) (seqs (mulY b))
+    (hYv : ∀ σ, E σ → A σ aY < cOf P σ.mem) (hbv : ∀ σ, E σ → A σ b < cOf P σ.mem) (fios : Bool := false) :
+    VP (St P E A (aY :: L) V LS) (seqs (mulY (fios := fios) b))
       (St P E (fun σ => upd (A σ) aY (mm (cOf P σ.mem) P.w (A σ aY) (A σ b))) (aY :: L) V LS) := by
   have opd : Operand aY ∧ Operand b := by
     refine ⟨by simp [Operand, aY, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp], ?_⟩
@@ -147,7 +147,7 @@ theorem St.pmulY {b : Nat} (hb : b = aY ∨ b = aX) (hYl : aY ∉ L) (h2 : 2 ∉
     refine VP.of_ct (fun σ₁ σ₂ => ?_) fun σ s hs => ?_
     · intro s₁ s₂ t₁ t₂ u₁ u₂ hp e₁ e₂
       have len := hp.1.1.2.1.pre.len
-      have ct := montOp_ct (base := P.ws) (len := P.len) (w := P.w) opd.1 opd.1 opd.2
+      have ct := Arithmetic.product_ct fios (base := P.ws) (len := P.len) (w := P.w) opd.1 opd.1 opd.2
         (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega)
       exact ct s₁ s₂ t₁ t₂ u₁ u₂ ⟨rdy _ _ hp.1, rdy _ _ hp.2, by
         rw [hp.1.1.2.1.sp, hp.1.1.2.1.pre.sp, hp.2.1.2.1.sp, hp.2.1.2.1.pre.sp]⟩ e₁ e₂
@@ -162,7 +162,7 @@ theorem St.pmulY {b : Nat} (hb : b = aY ∨ b = aX) (hYl : aY ∉ L) (h2 : 2 ∉
       have eB : numAt s.mem (State.addr P.ws) P.w b = A σ b := by
         rw [pre.numAt_eq (by rw [hB]; have := hbv σ e; omega), hB]
       have c0 : numAt s.mem (State.addr P.ws) P.w 0 = cOf P σ.mem := h.c_eq
-      refine WP.mono (montOp_ok s ar opd.1 opd.1 opd.2 (by decide) lt)
+      refine WP.mono (Arithmetic.product_ok fios s ar opd.1 opd.1 opd.2 (by decide) lt)
         fun t ⟨ar', _, lt', v, keeps, frame, rest⟩ => ?_
       have k := keep_of_mont pre keeps frame
       have hL : KS P σ (A σ) L (V σ) LS s := h.mono (fun j hj => ⟨List.mem_cons_of_mem _ hj, rfl⟩)
@@ -200,8 +200,8 @@ theorem St.pmulY {b : Nat} (hb : b = aY ∨ b = aX) (hYl : aY ∉ L) (h2 : 2 ∉
 
 
 /-- `sqY`: `[aY] := mm c w [aY] [aY]`, by the dedicated square. -/
-theorem St.psqY (hYl : aY ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L) (hYv : ∀ σ, E σ → A σ aY < cOf P σ.mem) :
-    VP (St P E A (aY :: L) V LS) (seqs sqY)
+theorem St.psqY (hYl : aY ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L) (hYv : ∀ σ, E σ → A σ aY < cOf P σ.mem) (fios : Bool := false) :
+    VP (St P E A (aY :: L) V LS) (seqs (sqY (fios := fios)))
       (St P E (fun σ => upd (A σ) aY (mm (cOf P σ.mem) P.w (A σ aY) (A σ aY))) (aY :: L) V LS) := by
   have opd : Operand aY := by simp [Operand, aY, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
   have hbL : aY ∈ aY :: L := List.mem_cons_self
@@ -235,7 +235,9 @@ theorem St.psqY (hYl : aY ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L) (hYv : ∀ σ, E 
       exact hbv σ e
     refine VP.of_ct (fun σ₁ σ₂ => ?_) fun σ s hs => ?_
     · intro s₁ s₂ t₁ t₂ u₁ u₂ hp e₁ e₂
-      have ct := squareOp_ct (base := P.ws) (len := P.len) (w := P.w) opd opd
+      have len := hp.1.1.2.1.pre.len
+      have ct := Arithmetic.square_ct fios (base := P.ws) (len := P.len) (w := P.w) opd opd
+        (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega)
       exact ct s₁ s₂ t₁ t₂ u₁ u₂ ⟨rdy _ _ hp.1, rdy _ _ hp.2, by
         rw [hp.1.1.2.1.sp, hp.1.1.2.1.pre.sp, hp.2.1.2.1.sp, hp.2.1.2.1.pre.sp]⟩ e₁ e₂
     · obtain ⟨ar, lt⟩ := rdy σ s hs
@@ -249,7 +251,7 @@ theorem St.psqY (hYl : aY ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L) (hYv : ∀ σ, E 
       have eB : numAt s.mem (State.addr P.ws) P.w aY = A σ aY := by
         rw [pre.numAt_eq (by rw [hB]; have := hbv σ e; omega), hB]
       have c0 : numAt s.mem (State.addr P.ws) P.w 0 = cOf P σ.mem := h.c_eq
-      refine WP.mono (squareOp_ok s ar opd opd (by decide) lt)
+      refine WP.mono (Arithmetic.square_ok fios s ar opd opd (by decide) lt)
         fun t ⟨ar', _, lt', v, keeps, frame, rest⟩ => ?_
       have k := keep_of_mont pre keeps frame
       have hL : KS P σ (A σ) L (V σ) LS s := h.mono (fun j hj => ⟨List.mem_cons_of_mem _ hj, rfl⟩)

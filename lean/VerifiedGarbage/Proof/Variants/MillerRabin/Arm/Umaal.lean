@@ -287,9 +287,9 @@ import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 # The shared round on ARMv7 with `umaal`: the variant's code and proofs
 
 The variant `VG.Variants.MillerRabin.Arm.Umaal.variant`
-(`Variants/MillerRabin/Arm/Umaal.lean`): `umaalArithmetic` replaces product
-and fused reduction rows with UMAAL implementations. The exact execution
-simulation transfers the baseline proof through `umaalArithmetic_verified`.
+(`Variants/MillerRabin/Arm/Umaal.lean`): the same pipelined fused Montgomery kernel as the shared Montgomery backend
+handles products and squares. The generic round proof covers that kernel;
+`umaalArithmetic_verified` transfers any remaining row substitutions.
 -/
 
 @[expose] public section
@@ -298,13 +298,13 @@ namespace VG.Proof.Variants.MillerRabin.Arm.Umaal
 
 open VG.Arm VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm VG.Proof.MillerRabin.Arm
 
-theorem round_verified : Verified target (umaalArithmetic Impl.MillerRabin.Arm.code) roundContract :=
-  umaalArithmetic_verified round_verified_lite
+theorem round_verified : Verified target (umaalArithmetic (Impl.MillerRabin.Arm.code true)) roundContract :=
+  umaalArithmetic_verified (round_verified_lite true)
 
 def variant : RoundImpl where
-  code := umaalArithmetic Impl.MillerRabin.Arm.code
+  code := umaalArithmetic (Impl.MillerRabin.Arm.code true)
   verified := round_verified
-  stack := (armStack_umaalArithmetic _).trans Base.variant.stack
+  stack := (armStack_umaalArithmetic _).trans (by decide +kernel)
   suffix := "_umaal"
   features := ["umaal"]
 

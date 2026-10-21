@@ -111,24 +111,24 @@ theorem round_implies : roundContract.Implies
     exact ⟨by decide, by decide, by decide, Region.disjoint_of_le (by decide) (by decide) (by decide), by decide,
       sat_layout, sat_prepared⟩
 
-theorem round_correct (s : State) (h : roundContract.pre s) :
-    ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ roundContract.post s t :=
-  round_ok h
+theorem round_correct (s : State) (h : roundContract.pre s) (fios : Bool := false) :
+    ∃ tr t, Exec isa (code (fios := fios)) s tr t ∧ abiPreserved s t ∧ roundContract.post s t :=
+  round_ok (fios := fios) h
 
-theorem round_ct' : ConstantTime isa roundContract.pre roundContract.pub code := by
+theorem round_ct' (fios : Bool := false) : ConstantTime isa roundContract.pre roundContract.pub (code (fios := fios)) := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   obtain ⟨sp, h0, h1, hw⟩ := hp
   have hP : mkP s = mkP t := by
     simp only [mkP]; rw [sp, h1, hw, h0]
-  exact (round_ct s t tr1 tr2 u v ⟨hs, ht, sp, hP⟩ e1 e2).1
+  exact (round_ct (fios := fios) s t tr1 tr2 u v ⟨hs, ht, sp, hP⟩ e1 e2).1
 
 /-- `vg_miller_rabin_round` against the contract its callers use. -/
-theorem round_verified_lite : Verified Arm.target code roundContract :=
-  ⟨round_correct, round_ct', round_implies.sat_left⟩
+theorem round_verified_lite (fios : Bool := false) : Verified Arm.target (code (fios := fios)) roundContract :=
+  ⟨(round_correct (fios := fios)), (round_ct' (fios := fios)), round_implies.sat_left⟩
 
 /-- `vg_miller_rabin_round`. -/
-theorem round_verified : Verified Arm.target code
+theorem round_verified (fios : Bool := false) : Verified Arm.target (code (fios := fios))
     (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 56) :=
-  round_verified_lite.of_implies round_implies
+  (round_verified_lite (fios := fios)).of_implies round_implies
 
 end VG.Proof.MillerRabin.Arm

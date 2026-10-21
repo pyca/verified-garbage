@@ -123,9 +123,9 @@ theorem rEnd_eq {σ : State} (pre : In P σ) :
   obtain ⟨e1, e2⟩ := pre.ew_low
   rw [e1, e2, foldR_eq _ (Nat.mod_lt _ (by decide)), ofNat_toNat32 (by omega)]
 
-theorem body_vp : VP (Start P) body (Done P) := by
+theorem body_vp (fios : Bool := false) : VP (Start P) (body (fios := fios)) (Done P) := by
   simp only [body, seqs]
-  refine VP.seq tabInit_vp (VP.seq tab_loop (VP.seq winInit_vp (VP.seq words_loop ?_)))
+  refine VP.seq tabInit_vp (VP.seq (tab_loop (fios := fios)) (VP.seq winInit_vp (VP.seq (words_loop (fios := fios)) ?_)))
   refine VP.mono (F := St P (In P) (AW P (16 * P.w)) LW
     (fun σ => upd (upd (fun _ => 0) sF (wst P σ (16 * P.w)).2.toNat) sK 0) [sK, sF]) ?_ (fun σ s h => h.2)
     (fun _ _ h => h)
@@ -144,7 +144,7 @@ theorem body_vp : VP (Start P) body (Done P) := by
         exact rEnd_eq h.1
       · simp only [V', upd, show sK ≠ sQ by decide, show sK ≠ sF by decide, show sK ≠ sR by decide, ↓reduceIte]
       · simp only [V', upd, show sF ≠ sQ by decide, show sF ≠ sR by decide, ↓reduceIte]; rfl
-  refine VP.seq (sq_loop (fun σ e => e) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+  refine VP.seq (sq_loop (fios := fios) (fun σ e => e) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (fun σ _ => rfl) (fun σ _ => upd_self _ _ _)
     (fun σ _ => by show 4 - sigOf (tOf P σ % 64) < 2 ^ 31; omega) (by decide) (fun σ e => wst_lt e _) 2) ?_
   refine VP.kv ret_taint (fun _ _ h => h.2.2.2) fun σ s ⟨_, e, h, hw⟩ => ?_
