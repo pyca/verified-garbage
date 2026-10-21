@@ -7,9 +7,9 @@
 //! blocks with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)` from the block at `iv`,
 //! which it replaces with the last output block, in constant time: its
 //! timing depends on none of the key, the chaining value and the data. It is
-//! the modes' generic OFB over SM4's bitsliced ECB code, one block at a time
-//! (in a batch of sixteen on x86-64 and AArch64 and of eight on ARMv7 and x86, so
-//! about that many times ECB's cost). This module holds the key schedule and
+//! bitsliced SM4, one feedback block at a time. ARMv7 prepares the round keys
+//! once per call and retains them across feedback blocks. This module holds
+//! the key schedule and
 //! handles a partial last block (§6.4,
 //! `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block is the next output block,
 //! whose first bytes it XORs into the rest of the input.
