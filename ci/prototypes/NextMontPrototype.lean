@@ -644,6 +644,15 @@ def dispatch : Prog isa := .seq
  (.block [.mov .eax (.mem argA),.mov .edx (.mem argB),.alu .cmp .eax (.reg .edx)])
  (.ite .e (.seq (.block [.mov .eax (.mem argN),.alu .cmp .eax (.imm 32)])
   (.ite .e (square 64) (ScalarCombaProto.square 4))) VG.Impl.Mont.X86.Rt.scalarBody)
+def selectSize (N : Nat) (fallback : Prog isa) : Prog isa :=
+ .seq (.block [.mov .eax (.mem argN),.alu .cmp .eax (.imm (BitVec.ofNat 32 (N/2)))])
+ (.ite .e (square N) fallback)
+def dispatchAll : Prog isa := .seq
+ (.block [.mov .eax (.mem argA),.mov .edx (.mem argB),.alu .cmp .eax (.reg .edx)])
+ (.ite .e (selectSize 64 (selectSize 96 (selectSize 128 VG.Impl.Mont.X86.Rt.Square.square))) VG.Impl.Mont.X86.Rt.scalarBody)
+def dispatch64 : Prog isa := .seq
+ (.block [.mov .eax (.mem argA),.mov .edx (.mem argB),.alu .cmp .eax (.reg .edx)])
+ (.ite .e (selectSize 64 VG.Impl.Mont.X86.Rt.Square.square) VG.Impl.Mont.X86.Rt.scalarBody)
 end StaticCombaProto
 
 def main : IO Unit := do
@@ -651,7 +660,7 @@ def main : IO Unit := do
    NextMont.tune 4 VG.Impl.Mont.X86.Rt.body, NextMont.tune 8 VG.Impl.Mont.X86.Rt.body,
    NextMont.combined 4, NextMont.combined 8,
    ScalarCombaProto.dispatch 2, ScalarCombaProto.dispatch 4, ScalarCombaProto.dispatch 8, ScalarCombaProto.dispatch 16,
-   StackCombaProto.dispatch 2, StackCombaProto.dispatch 4, StackCombaProto.dispatch 8, StackCombaProto.dispatch 16, StaticCombaProto.dispatch]
+   StackCombaProto.dispatch 2, StackCombaProto.dispatch 4, StackCombaProto.dispatch 8, StackCombaProto.dispatch 16, StaticCombaProto.dispatch, StaticCombaProto.dispatchAll, StaticCombaProto.dispatch64]
  let codes := (modes.zipIdx).map fun (p,i) =>
    NextMont.printFn ("proto_mont"++toString i) p ++
    (if i<10 then NextMont.printFn ("proto_recover"++toString i) VG.Impl.Rsa.X86.RecoverRt.code ("proto_mont"++toString i) else "")
@@ -673,6 +682,8 @@ def main : IO Unit := do
    NextMont.printFn "proto_recover25" (FastDoubleProto.tune (replaceGcd FastR2Proto.code)) "proto_mont3" ++
    NextMont.printFn "proto_recover26" (FastDoubleProto.tune (replaceGcd FastR2Proto.code)) "proto_mont0" ++
    NextMont.printFn "proto_recover27" (FastDoubleProto.tune (replaceGcd FastR2Proto.code)) "proto_mont14" ++
+   NextMont.printFn "proto_recover28" (FastDoubleProto.tune (replaceGcd FastR2Proto.code)) "proto_mont15" ++
+   NextMont.printFn "proto_recover29" (FastDoubleProto.tune (replaceGcd FastR2Proto.code)) "proto_mont16" ++
    NextMont.printFn "proto_check0" (VG.Impl.Rsa.X86.KeyCheckRt.code false) ++
    NextMont.printFn "proto_check1" (KeyCheckMontProto.code false) ++
    NextMont.printFn "proto_crt0" VG.Impl.Rsa.X86.CrtValuesRt.code ++
