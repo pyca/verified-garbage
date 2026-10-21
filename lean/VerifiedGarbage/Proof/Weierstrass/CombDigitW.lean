@@ -89,4 +89,13 @@ theorem hornerVal_congr {v v' : Nat → Nat} : ∀ {d d' k : Nat}, (∀ i < k, v
     simp only [Nat.add_zero] at this
     rw [this]
 
+/-- The 32-bit signed-digit magnitude, shared by the x86 and ARM combs. -/
+theorem magH_fact : ∀ w < 9, ∀ v < 2 ^ w,
+    (BitVec.ofNat 32 v - BitVec.ofNat 32 (2 ^ (w - 1)) ^^^
+        ((0 : BitVec 32) - (BitVec.ofNat 32 v - BitVec.ofNat 32 (2 ^ (w - 1))) >>> 31)) -
+      ((0 : BitVec 32) - (BitVec.ofNat 32 v - BitVec.ofNat 32 (2 ^ (w - 1))) >>> 31) =
+      BitVec.ofNat 32 (magH (2 ^ (w - 1)) v) := by
+  decide +kernel
+
+
 end VG.Proof.Weierstrass
