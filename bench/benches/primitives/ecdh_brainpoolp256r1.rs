@@ -2,7 +2,11 @@
 
 use criterion::Criterion;
 
-pub const USES: &[&str] = &["ecdh_brainpoolp256r1", "ec_brainpoolp256r1"];
+pub const USES: &[&str] = &[
+    "ecdh_brainpoolp256r1",
+    "ec_brainpoolp256r1",
+    "ec_brainpoolp256r1_validate",
+];
 
 #[cfg(any(
     target_arch = "x86_64",
@@ -59,6 +63,29 @@ pub fn bench(c: &mut Criterion) {
         })
     });
     g.finish();
+
+    #[cfg(target_arch = "x86_64")]
+    {
+        let mut g = c.benchmark_group("ec_validate_brainpoolp256r1");
+        g.bench_function(BenchmarkId::new(VG, 65), |b| {
+            b.iter(|| BrainpoolP256r1::validate_public_key(black_box(&peer)))
+        });
+        g.bench_function(BenchmarkId::new(OPENSSL, 65), |b| {
+            b.iter(|| {
+                let point = EcPoint::from_bytes(&group, black_box(&peer), &mut ctx).unwrap();
+                // OpenSSL validates coordinates and the curve equation while decoding.
+                !point.is_infinity(&group)
+            })
+        });
+        // aws-lc-rs has no standalone public-point validation API.
+        let mut one = [0; 32];
+        one[31] = 1;
+        let key = PrivateKey::<BrainpoolP256r1>::from_bytes(&one);
+        g.bench_function(BenchmarkId::new("scalar-multiply", 65), |b| {
+            b.iter(|| black_box(&key).diffie_hellman(black_box(&peer)).is_ok())
+        });
+        g.finish();
+    }
 }
 
 #[cfg(not(any(
