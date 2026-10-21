@@ -60,8 +60,8 @@ open VG.Proof.MlKem.AArch64.Paired (LastInput seedBytes fullWrites exec_post seq
 /-- The singleton's start, three main squeezes and constants. -/
 def lastPrep (sb ss a k bo N₀ : Nat) : Prog isa :=
   .seq (.seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a a k ++ Impl.MlKem.AArch64.ptrTo .x21 .x28 bo))
-    (.seq (Impl.MlKem.AArch64.Kem16P.stepB N₀) (.seq (Impl.MlKem.AArch64.Kem16P.stepB (N₀ + 1))
-      (Impl.MlKem.AArch64.Kem16P.stepB (N₀ + 2)))))
+    (.seq (Impl.MlKem.AArch64.Kem16P.stepB Impl.MlKem.AArch64.KEM.RB N₀) (.seq (Impl.MlKem.AArch64.Kem16P.stepB Impl.MlKem.AArch64.KEM.RB (N₀ + 1))
+      (Impl.MlKem.AArch64.Kem16P.stepB Impl.MlKem.AArch64.KEM.RB (N₀ + 2)))))
     (.block Impl.MlKem.AArch64.Rej8.rejConsts)
 
 theorem lastPrep_erase {sb ss a k bo N₀ : Nat} (hss : ss < 4096) (hbo : 4096 ≤ bo) :
@@ -88,14 +88,14 @@ structure LastPreparedP (w16 : Bool) (B : Nat → Byte) (p out table : Addr) (s 
 
 theorem lastPrepP_ok (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s : State}
     {p seed out table R B₀ : Addr} {sb ss a off N₀ : Nat}
-    (hN : N₀ + 2 < 256) (hbo : Impl.MlKem.AArch64.Kem16P.bufOff L N₀ < 65536)
+    (hN : N₀ + 2 < 256) (hbo : Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀ < 65536)
     (hss : ss < 65536) (hsb : sb + 32 ≤ 32768) (h8 : sb % 8 = 0)
     (hk : 0 < L.k) (hk256 : L.k ≤ 256)
     (ps : LastInput sb ss off p seed out table s)
     (hl : LayB p R B₀ s) (ap : BufApart p seed out table R B₀)
     (hR : s.gpr .x28 + BitVec.ofNat 64 Impl.MlKem.AArch64.KEM.RB = R)
-    (hB : s.gpr .x28 + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff L N₀) = B₀) :
-    WP isa (lastPrep sb ss a L.k (Impl.MlKem.AArch64.Kem16P.bufOff L N₀) N₀) s
+    (hB : s.gpr .x28 + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) = B₀) :
+    WP isa (lastPrep sb ss a L.k (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀) s
       (LastPreparedP w16 (xofByte (seedBytes s.mem seed a L.k)) p out table s) := by
   refine WP.seq (WP.mono_syms (startB_ok L (a := a) hN hbo hss hsb h8 ps.ptr ps.seedPtr ps.readable
     ps.separate hl hR hB) fun u ⟨ku, fu, _, u19, bu, _⟩ sy => ?_)
@@ -131,27 +131,27 @@ theorem lastPrepP_ok (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s : State}
 /-- The singleton's start and rejection (`lastStartP`). -/
 theorem lastStartP_relCT (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s u : State}
     {p seed out table R B₀ : Addr} {sb ss a off N₀ : Nat}
-    (hN : N₀ + 2 < 256) (hbo : Impl.MlKem.AArch64.Kem16P.bufOff L N₀ < 65536)
-    (h4 : 4096 ≤ Impl.MlKem.AArch64.Kem16P.bufOff L N₀)
+    (hN : N₀ + 2 < 256) (hbo : Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀ < 65536)
+    (h4 : 4096 ≤ Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀)
     (hss : ss < 4096) (hsb : sb + 32 ≤ 32768) (h8 : sb % 8 = 0) (hoff : off < 65536)
     (hk : 0 < L.k) (hk256 : L.k ≤ 256)
     (ps : LastInput sb ss off p seed out table s) (pu : LastInput sb ss off p seed out table u)
     (hls : LayB p R B₀ s) (hlu : LayB p R B₀ u) (ap : BufApart p seed out table R B₀)
     (hR : s.gpr .x28 + BitVec.ofNat 64 Impl.MlKem.AArch64.KEM.RB = R)
-    (hB : s.gpr .x28 + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff L N₀) = B₀)
+    (hB : s.gpr .x28 + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) = B₀)
     (sp : s.sp = u.sp) (base : s.gpr .x28 = u.gpr .x28)
     (seedEq : seedBytes s.mem seed a L.k = seedBytes u.mem seed a L.k) :
     RelCT isa (fun t v => t = s ∧ v = u)
-      (lastStartP sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff L N₀) N₀ w16)
+      (lastStartP sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀ w16)
       (fun t v => LastStartPostP w16 (xofByte (seedBytes s.mem seed a L.k)) p out table R B₀ N₀ s t ∧
         LastStartPostP w16 (xofByte (seedBytes u.mem seed a L.k)) p out table R B₀ N₀ u v) := by
   have hRu : u.gpr .x28 + BitVec.ofNat 64 Impl.MlKem.AArch64.KEM.RB = R := by rw [← base]; exact hR
-  have hBu : u.gpr .x28 + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff L N₀) = B₀ := by
+  have hBu : u.gpr .x28 + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) = B₀ := by
     rw [← base]; exact hB
   let Rr := fun t v : State => LastPreparedP w16 (xofByte (seedBytes s.mem seed a L.k)) p out table s t ∧
     LastPreparedP w16 (xofByte (seedBytes u.mem seed a L.k)) p out table u v
   have start : RelCT isa (fun t v => t = s ∧ v = u)
-      (lastPrep sb ss a L.k (Impl.MlKem.AArch64.Kem16P.bufOff L N₀) N₀) Rr := by
+      (lastPrep sb ss a L.k (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀) Rr := by
     intro t v tr ur t' v' h et ev
     rcases h with ⟨ht, hv⟩; subst t; subst v
     exact ⟨lastPrep_ct hss h4 s u tr ur t' v' trivial trivial
@@ -159,7 +159,7 @@ theorem lastStartP_relCT (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s u : Sta
       exec_post (lastPrepP_ok L hN hbo (by omega) hsb h8 hk hk256 ps hls ap hR hB) et,
       exec_post (lastPrepP_ok L hN hbo (by omega) hsb h8 hk hk256 pu hlu ap hRu hBu) ev⟩
   have grouped : RelCT isa (fun t v => t = s ∧ v = u)
-      (.seq (lastPrep sb ss a L.k (Impl.MlKem.AArch64.Kem16P.bufOff L N₀) N₀)
+      (.seq (lastPrep sb ss a L.k (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀)
         (Impl.MlKem.AArch64.Paired.reject 400 off .x22 w16)) (fun _ _ => True) := by
     refine RelCT.seq start ?_
     intro t v tr ur t' v' h et ev
@@ -174,7 +174,7 @@ theorem lastStartP_relCT (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s u : Sta
       t v tr ur t' v' ⟨rfl, rfl⟩ et ev
     exact ⟨rr.1, trivial⟩
   have trace : RelCT isa (fun t v => t = s ∧ v = u)
-      (lastStartP sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff L N₀) N₀ w16) (fun _ _ => True) :=
+      (lastStartP sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀ w16) (fun _ _ => True) :=
     RelCT.assoc (RelCT.assoc grouped)
   intro t v tr ur t' v' h et ev
   rcases h with ⟨ht, hv⟩; subst t; subst v
@@ -221,24 +221,24 @@ theorem lastP_exec {w16 : Bool} {sb ss a k off bo N₀ : Nat} {s t : State} {tr 
 /-- **The singleton computing PRF outputs** leaks only public pointers and the public seed. -/
 theorem lastCodeP_relCT (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s u : State}
     {p seed out table R B₀ : Addr} {sb ss a off N₀ : Nat}
-    (hN : N₀ + 2 < 256) (hbo : Impl.MlKem.AArch64.Kem16P.bufOff L N₀ < 65536)
-    (h4 : 4096 ≤ Impl.MlKem.AArch64.Kem16P.bufOff L N₀)
+    (hN : N₀ + 2 < 256) (hbo : Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀ < 65536)
+    (h4 : 4096 ≤ Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀)
     (hss : ss < 4096) (hsb : sb + 32 ≤ 32768) (h8 : sb % 8 = 0) (hoff : off < 65536)
     (hk : 0 < L.k) (hk256 : L.k ≤ 256)
     (ps : LastInput sb ss off p seed out table s) (pu : LastInput sb ss off p seed out table u)
     (ho : (Region.mk seed 32).Disjoint (polyRegion out))
     (hls : LayB p R B₀ s) (hlu : LayB p R B₀ u) (ap : BufApart p seed out table R B₀)
     (hR : s.gpr .x28 + BitVec.ofNat 64 Impl.MlKem.AArch64.KEM.RB = R)
-    (hB : s.gpr .x28 + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff L N₀) = B₀)
+    (hB : s.gpr .x28 + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) = B₀)
     (sp : s.sp = u.sp) (base : s.gpr .x28 = u.gpr .x28)
     (seedEq : seedBytes s.mem seed a L.k = seedBytes u.mem seed a L.k) :
     RelCT isa (fun t v => t = s ∧ v = u)
-      (lastCodeP sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff L N₀) N₀ w16) (fun _ _ => True) := by
+      (lastCodeP sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀ w16) (fun _ _ => True) := by
   let Rr := fun t v : State => LastStartPostP w16 (xofByte (seedBytes s.mem seed a L.k)) p out table R B₀ N₀ s t ∧
     LastStartPostP w16 (xofByte (seedBytes u.mem seed a L.k)) p out table R B₀ N₀ u v ∧
     t.syms = s.syms ∧ v.syms = u.syms
   have start : RelCT isa (fun t v => t = s ∧ v = u)
-      (lastStartP sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff L N₀) N₀ w16) Rr := by
+      (lastStartP sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀ w16) Rr := by
     intro t v tr ur t' v' h et ev
     have hh := lastStartP_relCT L hN hbo h4 hss hsb h8 hoff hk hk256 ps pu hls hlu ap hR hB sp base seedEq
       t v tr ur t' v' h et ev
@@ -268,7 +268,7 @@ theorem lastCodeP_relCT (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s u : Stat
     · intro t v h
       exact ⟨h.1.1.keep.sp.trans (sp.trans h.1.2.1.keep.sp.symm), h.1.1.ptr.trans h.1.2.1.ptr.symm⟩
   have grouped : RelCT isa (fun t v => t = s ∧ v = u)
-      (.seq (lastStartP sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff L N₀) N₀ w16)
+      (.seq (lastStartP sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀ w16)
         (Paired.lastTail sb ss a L.k off w16)) (fun _ _ => True) := by
     refine RelCT.seq start (RelCT.seq branch ?_)
     intro t v tr ur t' v' h et ev

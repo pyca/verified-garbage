@@ -3,11 +3,13 @@ module
 import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Pair
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Inv
 import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Row
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
 
 /-! # The matrix with the rows of `t̂` between its pairs
 
-`matrixRows_ok`: `Kem16.kgMatrixRows`, from the interleaved invariant with
-nothing done to the whole matrix, every row and the blocks `hashedBy (k² / 2)`
+`matrixRows_ok`: `Kem16P.kgMatrixRows`, from the interleaved invariant with
+the first two pairs done (`Kem16P.kgPairP`, which absorb nothing,
+`rowsBy_two`) to the whole matrix, every row and the blocks `hashedBy (k² / 2)`
 of `ek`. Pair `p` starts after `2 p` entries, `rowsBy p` rows and
 `hashedBy p` blocks; it absorbs only blocks the rows before it encoded
 (`hashed_le`), and the rows after it use only entries it or its predecessors
@@ -18,7 +20,7 @@ sampled. -/
 namespace VG.Proof.MlKem.AArch64.KeyGen
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KG VG.Proof.MlKem.AArch64
-open VG.Impl.MlKem.AArch64.Kem16 (rowsBy hashedBy kgRows kgPair kgMatrixRows)
+open VG.Impl.MlKem.AArch64.Kem16 (rowsBy hashedBy kgRows kgPair)
 
 variable {P : KemLay}
 
@@ -78,57 +80,82 @@ theorem rows_ok {s₀ : State} (hp : Pre P s₀) (hr : Noise.Room P) {n h : Nat}
     have r := rows_ok hp hr d (a + 1) (by omega) (by rw [e2]; exact hn) ht
     exact WPs.mono r fun u hu => by rwa [e2] at hu
 
-/-- **The matrix and the rows of `t̂`.** -/
-theorem matrixRows_ok {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (hr : Noise.Room P)
-    (H : IL P s₀ 0 0 0 s) :
-    WPs (kgMatrixRows P) s (IL P s₀ (P.k * P.k) P.k (hashedBy P (P.k * P.k / 2))) := by
+/-- Pair `p` of the matrix and the rows of `t̂` it completes. -/
+theorem pairRows_ok {s₀ : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (hr : Noise.Room P) {p : Nat}
+    (hp' : p < P.k * P.k / 2) {s : State} (Hs : IL P s₀ (2 * p) (rowsBy P p) (hashedBy P p) s) :
+    WPs (kgPair P p :: kgRows P (rowsBy P p) (rowsBy P (p + 1))) s
+      (IL P s₀ (2 * (p + 1)) (rowsBy P (p + 1)) (hashedBy P (p + 1))) := by
   have hw := hp.wf
   have hf := hw.facts
   have hek : 384 * P.k < P.ekLen := by simp only [KemLay.ekLen]; omega
-  have pairs := wps_flatMap_range (n := P.k * P.k / 2)
-    (I := fun p s => IL P s₀ (2 * p) (rowsBy P p) (hashedBy P p) s)
-    (f := fun p => kgPair P p :: kgRows P (rowsBy P p) (rowsBy P (p + 1)))
-    (fun p hp' s Hs => by
-      have hmono := rowsBy_mono P p
-      have hle := rowsBy_le P (p + 1)
-      have h2 := hashed_le P (p + 1)
-      have hrk := rowsBy_le P p
-      refine WPs.cons (WP.mono (pair_step hp hk hr (p := p) (r := rowsBy P p) (h := hashedBy P p)
-        (m := hashedBy P (p + 1) - hashedBy P p) (by omega)
-        (by simp only [hashedBy]; omega) (fun k hk' => ?_) ?_ Hs) fun t ht => ?_)
-      · have := Nat.mul_le_mul_left 384 hrk
-        have h3 := hashed_le P (p + 1)
-        simp only [hashedBy] at h3 hk' ⊢
-        have : 136 * (384 * rowsBy P p / 136) ≤ 384 * rowsBy P p := Nat.mul_div_le _ _
-        omega
-      · rw [← hashed_succ]
-        have hA : hashedBy P p ≤ 384 * rowsBy P p / 136 :=
-          (Nat.le_div_iff_mul_le (by decide)).2 (by have := hashed_le P p; omega)
-        have hB : 136 * (384 * rowsBy P p / 136) ≤ 384 * rowsBy P p := Nat.mul_div_le _ _
-        simp only [hashedBy]
-        have := Nat.min_le_right 3 (384 * rowsBy P p / 136 - hashedBy P p)
-        omega
-      · rw [← hashed_succ] at ht
-        have r := rows_ok hp hr (n := 2 * p + 2) (rowsBy P (p + 1) - rowsBy P p) (rowsBy P p) (by omega)
-          (by rw [Nat.add_sub_cancel' hmono]; exact Nat.le_trans (rowsBy_mul P (p + 1)) (by omega)) ht
-        rw [Nat.add_sub_cancel' hmono] at r
-        exact r) (by simpa [rowsBy, hashedBy] using H)
-  rw [kgMatrixRows]
-  refine WPs.append (WPs.mono pairs fun t ht => ?_)
+  have hmono := rowsBy_mono P p
+  have hle := rowsBy_le P (p + 1)
+  have h2 := hashed_le P (p + 1)
+  have hrk := rowsBy_le P p
+  refine WPs.cons (WP.mono (pair_step hp hk hr (p := p) (r := rowsBy P p) (h := hashedBy P p)
+    (m := hashedBy P (p + 1) - hashedBy P p) (by omega)
+    (by simp only [hashedBy]; omega) (fun k hk' => ?_) ?_ Hs) fun t ht => ?_)
+  · have := Nat.mul_le_mul_left 384 hrk
+    have h3 := hashed_le P (p + 1)
+    simp only [hashedBy] at h3 hk' ⊢
+    have : 136 * (384 * rowsBy P p / 136) ≤ 384 * rowsBy P p := Nat.mul_div_le _ _
+    omega
+  · rw [← hashed_succ]
+    have hA : hashedBy P p ≤ 384 * rowsBy P p / 136 :=
+      (Nat.le_div_iff_mul_le (by decide)).2 (by have := hashed_le P p; omega)
+    have hB : 136 * (384 * rowsBy P p / 136) ≤ 384 * rowsBy P p := Nat.mul_div_le _ _
+    simp only [hashedBy]
+    have := Nat.min_le_right 3 (384 * rowsBy P p / 136 - hashedBy P p)
+    omega
+  · rw [← hashed_succ] at ht
+    have r := rows_ok hp hr (n := 2 * p + 2) (rowsBy P (p + 1) - rowsBy P p) (rowsBy P p) (by omega)
+      (by rw [Nat.add_sub_cancel' hmono]; exact Nat.le_trans (rowsBy_mul P (p + 1)) (by omega)) ht
+    rw [Nat.add_sub_cancel' hmono] at r
+    exact r
+
+/-- No row is complete, and no block of `ek` absorbed, before the third pair. -/
+theorem rowsBy_two (hk3 : 3 ≤ P.k) : rowsBy P 1 = 0 ∧ hashedBy P 2 = 0 := by
+  have r1 : rowsBy P 1 = 0 := by
+    simp only [rowsBy, Nat.mul_one, Nat.div_eq_of_lt (show 2 < P.k by omega), Nat.min_zero]
+  refine ⟨r1, ?_⟩
+  simp only [hashedBy, r1, show rowsBy P 0 = 0 by simp [rowsBy]]
+  rfl
+
+/-- **The matrix after its first two pairs, and the rows of `t̂`.** -/
+theorem matrixRows_ok {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (hr : Noise.Room P)
+    (hk3 : 3 ≤ P.k) (H : IL P s₀ 4 0 0 s) :
+    WPs (Impl.MlKem.AArch64.Kem16P.kgMatrixRows P) s
+      (IL P s₀ (P.k * P.k) P.k (hashedBy P (P.k * P.k / 2))) := by
+  have hw := hp.wf
+  have hf := hw.facts
+  have hkk := Nat.mul_le_mul hk3 hk3
+  have h2 := (rowsBy_two (P := P) hk3).2
+  have first := rows_ok hp hr (n := 4) (h := 0) (rowsBy P 2) 0 (by have := rowsBy_le P 2; omega)
+    (by rw [Nat.zero_add]; exact rowsBy_mul P 2) H
+  rw [Nat.zero_add] at first
+  unfold Impl.MlKem.AArch64.Kem16P.kgMatrixRows Impl.MlKem.AArch64.Kem16P.pairs
+    Impl.MlKem.AArch64.Kem16P.single
+  refine WPs.append (WPs.append (WPs.mono first fun t ht => WPs.mono (wps_flatMap_range (n := P.k * P.k / 2 - 2)
+    (I := fun q s => IL P s₀ (2 * (q + 2)) (rowsBy P (q + 2)) (hashedBy P (q + 2)) s)
+    (f := fun q => kgPair P (q + 2) :: kgRows P (rowsBy P (q + 2)) (rowsBy P (q + 3)))
+    (fun q hq s Hs => pairRows_ok hp hk hr (p := q + 2) (by omega) Hs)
+    (show IL P s₀ 4 (rowsBy P 2) (hashedBy P 2) t by rw [h2]; exact ht)) fun u hu => ?_))
+  have e2 : P.k * P.k / 2 - 2 + 2 = P.k * P.k / 2 := by omega
+  rw [e2] at hu
+  have hle := rowsBy_le P (P.k * P.k / 2)
   by_cases ho : P.k * P.k % 2 = 1
-  · rw [ite_eq_left ho]
+  · rw [show decide (P.k * P.k % 2 = 1) = true from decide_eq_true ho, ite_eq_left rfl]
     have e : 2 * (P.k * P.k / 2) = P.k * P.k - 1 := by omega
-    rw [e] at ht
-    refine WPs.cons (WP.mono (last_step hp hr ho ht) fun u hu => ?_)
-    have hle := rowsBy_le P (P.k * P.k / 2)
+    rw [e] at hu
+    refine WPs.cons (WP.mono (last_step hp hr ho hu) fun v hv => ?_)
     have r := rows_ok hp hr (n := P.k * P.k) (P.k - rowsBy P (P.k * P.k / 2)) (rowsBy P (P.k * P.k / 2))
-      (by omega) (by rw [Nat.add_sub_cancel' hle]) hu
+      (by omega) (by rw [Nat.add_sub_cancel' hle]) hv
     rwa [Nat.add_sub_cancel' hle] at r
-  · rw [ite_eq_right ho]
+  · rw [show decide (P.k * P.k % 2 = 1) = false from decide_eq_false ho, ite_eq_right Bool.false_ne_true]
     have e : 2 * (P.k * P.k / 2) = P.k * P.k := by omega
     have er : rowsBy P (P.k * P.k / 2) = P.k := by
       simp only [rowsBy, e, Nat.mul_div_cancel_left _ (show 0 < P.k by omega), Nat.min_self]
-    rw [e, er] at ht
-    exact ht
+    rw [e, er] at hu
+    exact hu
 
 end VG.Proof.MlKem.AArch64.KeyGen

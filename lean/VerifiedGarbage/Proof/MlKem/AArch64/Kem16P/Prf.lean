@@ -19,7 +19,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 /-! # The padded block of `PRF₂(r, N)`, written word by word
 
 `prfWords_ok`: `Kem16P.prfWords` writes word `k` of `Noise.seedState`
-(`r` from `RB`, then `N` and the suffix, then the final bit) to `D + o + st k`.
+(`r` from `sd`, then `N` and the suffix, then the final bit) to `D + o + st k`.
 `prfBlock_ok`: so the third state at `ST` is `PRF₂(r, N)`'s padded block;
 `reinitB_ok`: so is the second state of the pair at `x19`, its first kept. -/
 
@@ -79,10 +79,11 @@ theorem store_step {dst : Reg} {o st N k : Nat} {s t : State} {D R : Addr} {W : 
 /-- **The 25 words of `PRF₂(r, N)`'s padded block**, `r` at `R`. -/
 theorem prfWords_ok {dst : Reg} {o st N : Nat} (hN : N < 256) (hd9 : dst ≠ .x9) (hst : 8 ≤ st)
     (ho : o % 8 = 0) (hs8 : st % 8 = 0) (hlim : o + st * 24 + 8 ≤ 32768)
-    {s : State} {D R : Addr} (hD : s.gpr dst = D) (hR : s.gpr .x28 + BitVec.ofNat 64 Impl.MlKem.AArch64.KEM.RB = R)
+    {s : State} {D R : Addr} {sd : Nat} (hsd : sd % 8 = 0) (hsd' : sd + 32 ≤ 32768) (hD : s.gpr dst = D)
+    (hR : s.gpr .x28 + BitVec.ofNat 64 sd = R)
     {W : Region} (hW : ∀ k < 25, W.Contains (D + BitVec.ofNat 64 (o + st * k)) 8)
     (hWin : Covers [W] s.wr) (hRW : W.Disjoint ⟨R, 32⟩) (hRin : Covers [⟨R, 32⟩] (s.rd ++ s.wr)) :
-    WP isa (.block (Impl.MlKem.AArch64.Kem16P.prfWords dst (fun k => o + st * k) N)) s
+    WP isa (.block (Impl.MlKem.AArch64.Kem16P.prfWords sd dst (fun k => o + st * k) N)) s
       (WInv o st N s D R W 25) := by
   refine wp_range_flatMap (M := isa) (WInv o st N s D R W) (fun k t hk hI => ?_) 25 (Nat.le_refl _) s
     ⟨Keep.refl _ _, Frame.refl _ _, fun j hj => absurd hj (Nat.not_lt_zero _), fun _ _ => rfl⟩
@@ -94,8 +95,7 @@ theorem prfWords_ok {dst : Reg} {o st N : Nat} (hN : N < 256) (hd9 : dst ≠ .x9
     have ft := hI.2.1
     have hc : (⟨R, 32⟩ : Region).Contains (R + BitVec.ofNat 64 (8 * k)) 8 :=
       Offset.contains_base R (by omega) (by omega)
-    refine wp_ldrx (a := R + BitVec.ofNat 64 (8 * k)) ⟨by
-        simp only [Impl.MlKem.AArch64.KEM.RB]; omega, by simp only [Impl.MlKem.AArch64.KEM.RB]; omega⟩
+    refine wp_ldrx (a := R + BitVec.ofNat 64 (8 * k)) ⟨by omega, by omega⟩
       (by rw [kt.get .x28 (by decide), ← hR, ptr_add])
       (by rw [kt.rd, kt.wr]; exact hRin _ _ ⟨_, List.mem_singleton_self _, hc⟩) fun u hu e => ?_
     refine store_step hd9 hst ho hs8 hlim hk hD hW hWin ?_ ?_
@@ -130,19 +130,20 @@ theorem prfWords_ok {dst : Reg} {o st N : Nat} (hN : N < 256) (hd9 : dst ≠ .x9
         rw [pw, hget, ite_eq_right h4, ite_eq_right h4', ite_eq_right h16]; rfl
 
 /-- **The third state at `ST` set to `PRF₂(r, N)`'s padded block.** -/
-theorem prfBlock_ok {N : Nat} (hN : N < 256) {s : State} {R : Addr}
-    (hR : s.gpr .x28 + BitVec.ofNat 64 Impl.MlKem.AArch64.KEM.RB = R)
+theorem prfBlock_ok {N : Nat} (hN : N < 256) {s : State} {R : Addr} {sd : Nat}
+    (hR : s.gpr .x28 + BitVec.ofNat 64 sd = R) (hsd : sd % 8 = 0 := by decide)
+    (hsd' : sd + 32 ≤ 32768 := by decide)
     (hWin : Covers [VG.Proof.Sha3.AArch64.Hybrid.X3.stR (s.gpr .x28)] s.wr)
     (hRW : (VG.Proof.Sha3.AArch64.Hybrid.X3.stR (s.gpr .x28)).Disjoint ⟨R, 32⟩)
     (hRin : Covers [⟨R, 32⟩] (s.rd ++ s.wr)) :
-    WP isa (.block (Impl.MlKem.AArch64.Kem16P.prfBlock N)) s fun t =>
+    WP isa (.block (Impl.MlKem.AArch64.Kem16P.prfBlock sd N)) s fun t =>
       Keep [.x9] s t ∧ Frame [VG.Proof.Sha3.AArch64.Hybrid.X3.stR (s.gpr .x28)] s.mem t.mem ∧
       stateAt t.mem (s.gpr .x28) = Noise.seedState s.mem R N := by
   have hc : ∀ k < 25, (VG.Proof.Sha3.AArch64.Hybrid.X3.stR (s.gpr .x28)).Contains
       (s.gpr .x28 + BitVec.ofNat 64 (0 + 8 * k)) 8 := fun k hk =>
     Offset.contains_base _ (by omega) (by omega)
   refine WP.mono (prfWords_ok (o := 0) (st := 8) hN (by decide) (by decide) (by decide) (by decide)
-    (by decide) rfl hR hc hWin hRW hRin) fun t ⟨kt, ft, wt, _⟩ => ⟨kt, ft, ?_⟩
+    (by decide) hsd hsd' rfl hR hc hWin hRW hRin) fun t ⟨kt, ft, wt, _⟩ => ⟨kt, ft, ?_⟩
   refine Vector.ext fun i hi => ?_
   have := wt i hi
   rw [Nat.zero_add] at this
@@ -150,17 +151,17 @@ theorem prfBlock_ok {N : Nat} (hN : N < 256) {s : State} {R : Addr}
   rw [this, pw, getElem!_pos _ i hi]
 
 /-- **The second state of the pair at `p` set to `PRF₂(r, N)`'s padded block**, the first kept. -/
-theorem reinitB_ok {N : Nat} (hN : N < 256) {s : State} {p R : Addr} {A B : Spec.Sha3.State}
-    (hp : s.gpr .x19 = p) (hR : s.gpr .x28 + BitVec.ofNat 64 Impl.MlKem.AArch64.KEM.RB = R)
+theorem reinitB_ok {N : Nat} (hN : N < 256) {s : State} {p R : Addr} {A B : Spec.Sha3.State} {sd : Nat}
+    (hp : s.gpr .x19 = p) (hR : s.gpr .x28 + BitVec.ofNat 64 sd = R)
     (pair : PairAt s.mem p A B)
     (hWin : Covers [pairR p] s.wr) (hRW : (pairR p).Disjoint ⟨R, 32⟩)
-    (hRin : Covers [⟨R, 32⟩] (s.rd ++ s.wr)) :
-    WP isa (.block (Impl.MlKem.AArch64.Kem16P.reinitB N)) s fun t =>
+    (hRin : Covers [⟨R, 32⟩] (s.rd ++ s.wr)) (hsd : sd % 8 = 0 := by decide) (hsd' : sd + 32 ≤ 32768 := by decide) :
+    WP isa (.block (Impl.MlKem.AArch64.Kem16P.reinitB sd N)) s fun t =>
       Keep [.x9] s t ∧ Frame [pairR p] s.mem t.mem ∧ PairAt t.mem p A (Noise.seedState s.mem R N) := by
   have hc : ∀ k < 25, (pairR p).Contains (p + BitVec.ofNat 64 (8 + 16 * k)) 8 := fun k hk =>
     Offset.contains_base _ (by omega) (by omega)
   refine WP.mono (prfWords_ok (o := 8) (st := 16) hN (by decide) (by decide) (by decide) (by decide)
-    (by decide) hp hR hc hWin hRW hRin) fun t ⟨kt, ft, wt, ot⟩ => ⟨kt, ft, fun i hi => ?_⟩
+    (by decide) hsd hsd' hp hR hc hWin hRW hRin) fun t ⟨kt, ft, wt, ot⟩ => ⟨kt, ft, fun i hi => ?_⟩
   have hlo : t.mem.readW (wordAddr p i) 64 = s.mem.readW (wordAddr p i) 64 :=
     ot _ fun j hj => sep_off p (by
       rcases Nat.lt_or_ge j i with h | h

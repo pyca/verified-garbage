@@ -40,9 +40,9 @@ open VG.Proof.MlKem.AArch64.Hybrid (CallLay x3call_relCT regEq)
 open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_taint)
 open VG.Spec.Sha3 (stateAt)
 
-theorem prfWords_eraseOff (dst : Reg) (off : Nat → Nat) (N : Nat) :
-    (Impl.MlKem.AArch64.Kem16P.prfWords dst off N).map Instr.eraseOff =
-      (Impl.MlKem.AArch64.Kem16P.prfWords dst (fun _ => 0) 0).map Instr.eraseOff := by
+theorem prfWords_eraseOff (sd : Nat) (dst : Reg) (off : Nat → Nat) (N : Nat) :
+    (Impl.MlKem.AArch64.Kem16P.prfWords sd dst off N).map Instr.eraseOff =
+      (Impl.MlKem.AArch64.Kem16P.prfWords 0 dst (fun _ => 0) 0).map Instr.eraseOff := by
   simp only [Impl.MlKem.AArch64.Kem16P.prfWords, List.map_flatMap]
   refine congrArg (List.flatMap · (List.range 25)) (funext fun k => ?_)
   simp only [Impl.MlKem.AArch64.Kem16P.prfWord]
@@ -50,10 +50,10 @@ theorem prfWords_eraseOff (dst : Reg) (off : Nat → Nat) (N : Nat) :
 
 /-- `prfBlock` without its immediates and offsets. -/
 def prfBlockE : Prog isa :=
-  .block ((Impl.MlKem.AArch64.Kem16P.prfWords .x28 (fun _ => 0) 0).map Instr.eraseOff)
+  .block ((Impl.MlKem.AArch64.Kem16P.prfWords 0 .x28 (fun _ => 0) 0).map Instr.eraseOff)
 
-theorem prfBlock_eraseOff (N : Nat) :
-    Code.eraseOff (.block (Impl.MlKem.AArch64.Kem16P.prfBlock N)) = prfBlockE := by
+theorem prfBlock_eraseOff (sd N : Nat) :
+    Code.eraseOff (.block (Impl.MlKem.AArch64.Kem16P.prfBlock sd N)) = prfBlockE := by
   simp only [Code.eraseOff, Impl.MlKem.AArch64.Kem16P.prfBlock, prfBlockE, prfWords_eraseOff]
 
 /-- The squeeze's tail and `prfOut`, without their immediates and offsets. -/
@@ -62,12 +62,12 @@ def outE : Prog isa :=
     ([.movz .x .x2 0 0, .add .x .x2 .x28 .x2] : List Instr) ++
     (List.range 16).flatMap fun _ => ([.ldr .x .x9 .x28 0, .str .x .x9 .x2 0] : List Instr)).map Instr.eraseOff)
 
-theorem out_eraseOff (L : Impl.MlKem.AArch64.KemLay) (N : Nat)
-    (h : 4096 ≤ Impl.MlKem.AArch64.Kem16P.bufOff L N) :
-    Code.eraseOff (.block (Impl.MlKem.AArch64.Hybrid.squeezeTail ++ Impl.MlKem.AArch64.Kem16P.prfOut L N)) =
+theorem out_eraseOff (bt N : Nat)
+    (h : 4096 ≤ Impl.MlKem.AArch64.Kem16P.bufOff bt N) :
+    Code.eraseOff (.block (Impl.MlKem.AArch64.Hybrid.squeezeTail ++ Impl.MlKem.AArch64.Kem16P.prfOut bt N)) =
       outE := by
   simp only [Code.eraseOff, outE, Impl.MlKem.AArch64.Kem16P.prfOut, Impl.MlKem.AArch64.ptrTo,
-    ite_eq_right (show ¬ Impl.MlKem.AArch64.Kem16P.bufOff L N < 4096 by omega), List.map_append,
+    ite_eq_right (show ¬ Impl.MlKem.AArch64.Kem16P.bufOff bt N < 4096 by omega), List.map_append,
     List.map_flatMap, List.append_assoc]
   rfl
 
@@ -83,22 +83,22 @@ theorem SlotLay.callLay {p a b st R Bf : Addr} {s : State} (h : SlotLay p a b st
   ⟨rfl, h.dPS, h.dPC, h.dSC, h.sp, h.fP, h.fS, h.fC, h.cov⟩
 
 /-- **A PRF slot** leaks only its public pointers. -/
-theorem slotPrf_relCT (L : Impl.MlKem.AArch64.KemLay) {N : Nat} (hN : N < 256)
-    (h4 : 4096 ≤ Impl.MlKem.AArch64.Kem16P.bufOff L N) {σ₁ σ₂ : State} {p a b st R Bf : Addr}
+theorem slotPrf_relCT (sd bt : Nat) {N : Nat} (hN : N < 256)
+    (h4 : 4096 ≤ Impl.MlKem.AArch64.Kem16P.bufOff bt N) {σ₁ σ₂ : State} {p a b st R Bf : Addr}
     (h19₁ : σ₁.gpr .x19 = p) (h20₁ : σ₁.gpr .x20 = a) (h21₁ : σ₁.gpr .x21 = b) (h28₁ : σ₁.gpr .x28 = st)
     (h19₂ : σ₂.gpr .x19 = p) (h20₂ : σ₂.gpr .x20 = a) (h21₂ : σ₂.gpr .x21 = b) (h28₂ : σ₂.gpr .x28 = st)
-    (sp : σ₁.sp = σ₂.sp) (hR : st + BitVec.ofNat 64 Impl.MlKem.AArch64.KEM.RB = R)
+    (sp : σ₁.sp = σ₂.sp) (hR : st + BitVec.ofNat 64 sd = R) (hsd : sd % 8 = 0) (hsd' : sd + 32 ≤ 32768)
     {A₁ B₁ A₂ B₂ : Spec.Sha3.State} (pair₁ : PairAt σ₁.mem p A₁ B₁) (pair₂ : PairAt σ₂.mem p A₂ B₂)
     (hl₁ : SlotLay p a b st R Bf σ₁) (hl₂ : SlotLay p a b st R Bf σ₂) :
-    RelCT isa (Eq2 σ₁ σ₂) (Impl.MlKem.AArch64.Kem16P.slotPrf L N) TT := by
+    RelCT isa (Eq2 σ₁ σ₂) (Impl.MlKem.AArch64.Kem16P.slotPrf sd bt N) TT := by
   unfold Impl.MlKem.AArch64.Kem16P.slotPrf
   refine rel_seq (rel_taint [.x28] sp (by
       intro r hr; rw [List.mem_singleton.mp hr, h28₁, h28₂])
       (by obtain ⟨hc, h⟩ := prfBlockE_taint
-          exact ⟨hc, VG.AArch64.Taint.isSome_check_of_eraseOff (prfBlock_eraseOff N) h⟩))
-    (prfBlock_ok hN (by rw [h28₁]; exact hR)
+          exact ⟨hc, VG.AArch64.Taint.isSome_check_of_eraseOff (prfBlock_eraseOff sd N) h⟩))
+    (prfBlock_ok hN (by rw [h28₁]; exact hR) (hsd := hsd) (hsd' := hsd')
       (by rw [h28₁]; exact Hybrid.covers_mono hl₁.cov (by simp)) (by rw [h28₁]; exact hl₁.dSR) hl₁.rin)
-    (prfBlock_ok hN (by rw [h28₂]; exact hR)
+    (prfBlock_ok hN (by rw [h28₂]; exact hR) (hsd := hsd) (hsd' := hsd')
       (by rw [h28₂]; exact Hybrid.covers_mono hl₂.cov (by simp)) (by rw [h28₂]; exact hl₂.dSR) hl₂.rin)
     fun u₁ u₂ ⟨ku₁, fu₁, su₁⟩ ⟨ku₂, fu₂, su₂⟩ => ?_
   rw [h28₁] at fu₁ su₁
@@ -131,6 +131,6 @@ theorem slotPrf_relCT (L : Impl.MlKem.AArch64.KemLay) {N : Nat} (hN : N < 256)
       · rw [k₁.get .x21 (by simp [Hybrid.clobbered]), k₂.get .x21 (by simp [Hybrid.clobbered]), h21₁, h21₂]
       · rw [k₁.get .x28 (by simp [Hybrid.clobbered]), k₂.get .x28 (by simp [Hybrid.clobbered]), h28₁, h28₂])
     (by obtain ⟨hc, h⟩ := outE_taint
-        exact ⟨hc, VG.AArch64.Taint.isSome_check_of_eraseOff (out_eraseOff L N h4) h⟩)
+        exact ⟨hc, VG.AArch64.Taint.isSome_check_of_eraseOff (out_eraseOff bt N h4) h⟩)
 
 end VG.Proof.MlKem.AArch64.Kem16P

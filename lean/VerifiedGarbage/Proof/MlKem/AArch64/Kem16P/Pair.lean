@@ -39,15 +39,15 @@ open VG.Spec.Sha3 (stateAt bytesAt)
 open VG.Spec.MlKem
 open VG.Proof.MlKem
 
-def beginPCode (L : KemLay) (sb ss a b N₀ m oa ob : Nat) (w16 : Bool := false) : Prog isa :=
+def beginPCode (L : KemLay) (sd bt sb ss a b N₀ m oa ob : Nat) (w16 : Bool := false) : Prog isa :=
   .seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a b L.k))
-    (.seq (.seq (Impl.MlKem.AArch64.Kem16P.stepP L N₀ m 0)
-      (.seq (Impl.MlKem.AArch64.Kem16P.stepP L N₀ m 1) (Impl.MlKem.AArch64.Kem16P.stepP L N₀ m 2)))
+    (.seq (.seq (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 0)
+      (.seq (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 1) (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 2)))
       (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob w16)))
 
-theorem pairP_iff (L : KemLay) (a N₀ m : Nat) (s : State) (Q : State → Prop) :
-    WP isa (Impl.MlKem.AArch64.Kem16P.pairP L a N₀ m) s Q ↔
-    WP isa (.seq (beginPCode L KEM.SB KEM.SS a (a+1) N₀ m (KEM.AH+1024*a) (KEM.AH+1024*(a+1)) true) (finishCode true)) s Q := by
+theorem pairP_iff (sb ss off sd bt : Nat) (L : KemLay) (a N₀ m : Nat) (s : State) (Q : State → Prop) :
+    WP isa (Impl.MlKem.AArch64.Kem16P.pairP sb ss off sd bt L a N₀ m) s Q ↔
+    WP isa (.seq (beginPCode L sd bt sb ss a (a+1) N₀ m (off+1024*a) (off+1024*(a+1)) true) (finishCode true)) s Q := by
   simp only [Impl.MlKem.AArch64.Kem16P.pairP, beginPCode, initialCode, finishCode, seqs,
     show [Instr.str .x .x3 .x19 1696,.str .x .x4 .x19 1704,.logic .and .x .x6 .x22 .x23]=
       [.str .x .x3 .x19 1696,.str .x .x4 .x19 1704]++[.logic .and .x .x6 .x22 .x23] from rfl]
@@ -94,18 +94,18 @@ structure BeginPPostW (w16 : Bool) (A B : Spec.Sha3.State) (p a b c st R B₀ : 
   flag : (t.gpr .x6).toNat = if (accepted A 3).length = 256 ∧ (accepted B 3).length = 256 then 1 else 0
   prf : PrfBufs t.mem B₀ s.mem R N₀ (min 3 m)
 
-theorem beginP_ok {w16 : Bool} (L : KemLay) {s : State}
+theorem beginP_ok {w16 : Bool} (L : KemLay) (sd bt : Nat) {s : State}
     {p seed outA outB table st R B₀ : Addr} {sb ss a b N₀ m oa ob : Nat}
-    (hN : N₀ + 2 < 256) (hbo : Impl.MlKem.AArch64.Kem16P.bufOff L (N₀ + 2) < 65536)
+    (hN : N₀ + 2 < 256) (hbo : Impl.MlKem.AArch64.Kem16P.bufOff bt (N₀ + 2) < 65536)
     (hss : ss < 65536) (hsb : sb + 32 ≤ 32768) (h8b : sb % 8 = 0) (hoa : oa < 65536) (hob : ob < 65536)
     (h : Paired.BeginInput sb ss oa ob p seed outA outB table s) (hh : PrfInput p outA outB table st R B₀ s)
-    (hR : st + BitVec.ofNat 64 Impl.MlKem.AArch64.KEM.RB = R)
-    (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff L N₀) = B₀) :
-    WP isa (beginPCode L sb ss a b N₀ m oa ob w16) s
+    (hR : st + BitVec.ofNat 64 sd = R) (hsd : sd % 8 = 0) (hsd' : sd + 32 ≤ 32768)
+    (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff bt N₀) = B₀) :
+    WP isa (beginPCode L sd bt sb ss a b N₀ m oa ob w16) s
       (BeginPPostW w16 (seedState s.mem seed a L.k) (seedState s.mem seed b L.k) p outA outB table st R B₀ N₀ m s) := by
   have ctx := h.context
-  have combined := WP.mono_syms (startP_ok (a := a) (b := b) (m := m) L hN hbo hss hsb h8b h.ptr h.seedPtr
-    h.readable h.separate hh.lay hh.h28 hR hB)
+  have combined := WP.mono_syms (startP_ok (a := a) (b := b) (m := m) L sd bt hN hbo hss hsb h8b h.ptr h.seedPtr
+    h.readable h.separate hh.lay hh.h28 hR hsd hsd' hB)
     (R := fun u => WP isa (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob w16)) u
       (BeginPPostW w16 (seedState s.mem seed a L.k) (seedState s.mem seed b L.k) p outA outB table st R B₀ N₀ m s))
     (fun u ⟨ku, fu, svu, u19, pu, buA, buB, pfu⟩ sy => by
@@ -209,17 +209,17 @@ structure PairPPostW (w16 : Bool) (A B : Spec.Sha3.State) (p a b st R B₀ : Add
     (if (accepted A 5).length=256 ∧ (accepted B 5).length=256 then 1 else 0)
   prf : PrfBufs t.mem B₀ s.mem R N₀ (min 3 m)
 
-theorem pairPCode_ok {w16 : Bool} (L : KemLay) {s : State}
+theorem pairPCode_ok {w16 : Bool} (L : KemLay) (sd bt : Nat) {s : State}
     {p seed outA outB table st R B₀ : Addr} {sb ss a N₀ m oa ob : Nat}
-    (hN : N₀ + 2 < 256) (hbo : Impl.MlKem.AArch64.Kem16P.bufOff L (N₀ + 2) < 65536)
+    (hN : N₀ + 2 < 256) (hbo : Impl.MlKem.AArch64.Kem16P.bufOff bt (N₀ + 2) < 65536)
     (hss : ss < 65536) (hsb : sb + 32 ≤ 32768) (h8b : sb % 8 = 0) (hoa : oa < 65536) (hob : ob < 65536)
     (h : Paired.BeginInput sb ss oa ob p seed outA outB table s) (hh : PrfInput p outA outB table st R B₀ s)
-    (hR : st + BitVec.ofNat 64 Impl.MlKem.AArch64.KEM.RB = R)
-    (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff L N₀) = B₀)
+    (hR : st + BitVec.ofNat 64 sd = R) (hsd : sd % 8 = 0) (hsd' : sd + 32 ≤ 32768)
+    (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff bt N₀) = B₀)
     (h24 : s.gpr .x24 = 0 ∨ s.gpr .x24 = 1) :
-    WP isa (.seq (beginPCode L sb ss a (a+1) N₀ m oa ob w16) (finishCode w16)) s
+    WP isa (.seq (beginPCode L sd bt sb ss a (a+1) N₀ m oa ob w16) (finishCode w16)) s
       (PairPPostW w16 (seedState s.mem seed a L.k) (seedState s.mem seed (a+1) L.k) p outA outB st R B₀ N₀ m s) := by
-  refine WP.seq (WP.mono_syms (beginP_ok L hN hbo hss hsb h8b hoa hob h hh hR hB) fun u hu sy => ?_)
+  refine WP.seq (WP.mono_syms (beginP_ok L sd bt hN hbo hss hsb h8b hoa hob h hh hR hsd hsd' hB) fun u hu sy => ?_)
   let initial : State := { s with mem := u.mem }
   have hk : Keep pairWorkingRegs initial u :=
     let k := hu.keep.mono (rs' := pairWorkingRegs) (by decide)

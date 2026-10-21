@@ -1,9 +1,13 @@
 """The run's metrics (ci_metrics.py) from its jobs and their logs; no API."""
 
 import json
+import io
 import os
+import pathlib
 import subprocess
+import tempfile
 import unittest
+import zipfile
 from unittest import mock
 
 import ci_metrics
@@ -79,6 +83,24 @@ class Collect(unittest.TestCase):
         # A job still running has no duration.
         self.assertIsNone(m["jobs"][3]["duration_s"])
 
+    def test_native_facets_are_retained_separately_from_proofs(self):
+        one = self.metrics()["lean"]["jobs"][1]
+        self.assertEqual(one["facets"], {SHARD_BUILD: {"VerifiedGarbage.A:c.o": 9.0}})
+        self.assertEqual(one["phases"], {"queued_s": 60, "prepare_s": 60, "proof_s": 120,
+                                        "unpack_s": None, "assemble_s": 299, "planning_s": None})
+        self.assertIn("### Lean wall time by phase", ci_metrics.summary(self.metrics()))
+
+    def test_missing_logs_are_explicit(self):
+        m = ci_metrics.collect({}, self.jobs, {"Lean: plan and build": PLAN_LOG})
+        self.assertEqual(m["lean"]["missing_logs"], ["Lean: shard (1)", "Lean: shard (2)"])
+        self.assertIn("Missing job logs", ci_metrics.summary(m))
+
+    def test_build_at_a_step_boundary_belongs_to_the_new_step(self):
+        steps = [step("Restore", "01:00", "02:00"), step(SHARD_BUILD, "02:00", "03:00")]
+        log = line("02:00", "Built A (20ms)") + line("02:00", "Built A:c.o (50ms)")
+        self.assertEqual(ci_metrics.built_by_step(log, steps), {SHARD_BUILD: {"A": 0.02}})
+        self.assertEqual(ci_metrics.built_by_step(log, steps, facets=True), {SHARD_BUILD: {"A:c.o": 0.05}})
+
     def test_summary(self):
         text = ci_metrics.summary(self.metrics())
         self.assertIn("Plan: 1168 modules to build, about 7208 s of work, 2 shards.", text)
@@ -125,6 +147,80 @@ class CollectThisRun(unittest.TestCase):
         self.assertEqual(m["lean"]["plan"]["stale"], 1168)
         self.assertEqual([j["name"] for j in m["lean"]["jobs"]], ["Lean: plan and build"])
         self.assertEqual(len(m["jobs"]), 2)
+
+    def test_local_fallback_assembly_survives_an_unfinished_job(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = pathlib.Path(tmp) / "assembly.log"
+            path.write_text("Built A (2s)\nBuilt A:c.o (300ms)\nBuilt Native:shared (1s)\n")
+            env = {"GH_REPO": "o/r", "GITHUB_RUN_ID": "7", "GITHUB_RUN_ATTEMPT": "1",
+                   "CI_METRICS_ASSEMBLY_LOG": str(path)}
+            def gh(url, *args):
+                return b'' if "/jobs?" in url else b'{"id": 7}'
+            with mock.patch.object(ci_metrics, "gh", gh), mock.patch.dict(os.environ, env), \
+                    mock.patch("sys.stderr"):
+                m = ci_metrics.collect_this_run()
+            self.assertEqual(m["lean"]["fallback_assembly"],
+                             {"built": {"A": 2.0}, "facets": {"A:c.o": 0.3, "Native:shared": 1.0}})
+            self.assertIn("Fallback assembly in all-green: 1 modules and 2 native facets",
+                          ci_metrics.summary(m))
+
+
+class RetainedPlan(unittest.TestCase):
+    def fetch(self, plan, attempt="1"):
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, "w") as z:
+            z.writestr("lean-plan.json", json.dumps(plan))
+        def gh(path, *args):
+            if "artifacts?" in path:
+                return b'{"artifacts": [{"id": 42, "expired": false}]}'
+            return data.getvalue()
+        with mock.patch.object(ci_metrics, "gh", gh):
+            return ci_metrics.fetch_plan("o/r", "7", attempt)
+
+    def test_exact_artifact_is_embedded_in_metrics(self):
+        plan = {"targets": [["A"]], "owner": {"A": 0},
+                "diagnostics": {"run_id": "7", "run_attempt": "1", "historical_times": {"A": 2.5}}}
+        planning = self.fetch(plan)
+        self.assertEqual(planning, {"status": "available", "artifact_id": 42, "plan": plan})
+        self.assertEqual(ci_metrics.collect({}, [], {}, planning)["lean"]["planning"], planning)
+
+    def test_older_attempt_and_legacy_provenance_are_not_claimed_as_current(self):
+        plan = {"diagnostics": {"run_id": "7", "run_attempt": "1"}}
+        self.assertEqual(self.fetch(plan, attempt="2")["status"], "different_attempt")
+        self.assertEqual(self.fetch({"targets": []})["status"], "unverified")
+
+    def test_missing_and_invalid_artifacts_preserve_collection(self):
+        for response in [b'{"artifacts": []}', b'{"artifacts": [{"id": 1, "expired": false}]}']:
+            with self.subTest(response=response), mock.patch.object(ci_metrics, "gh", return_value=response), \
+                    mock.patch("sys.stderr"):
+                self.assertEqual(ci_metrics.fetch_plan("o/r", "7", "1")["status"], "unavailable")
+
+
+class FetchHistory(unittest.TestCase):
+    def test_paginate_past_100_without_repeating_or_exceeding_the_window(self):
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, "w") as z:
+            z.writestr("ci-metrics.json", '{"version": 2}')
+        paths = []
+        def gh(path, *args):
+            paths.append(path)
+            if "workflows/ci.yml/runs?" in path:
+                first = 1 if path.endswith("page=1") else 101
+                return json.dumps({"workflow_runs": [{"id": i} for i in range(first, first + 100)]}).encode()
+            if "artifacts?" in path:
+                return b'{"artifacts": [{"id": 42, "expired": false}]}'
+            return data.getvalue()
+        with tempfile.TemporaryDirectory() as tmp:
+            out = pathlib.Path(tmp)
+            for i in range(1, 101):
+                (out / f"{i}.json").write_text("existing")
+            with mock.patch.object(ci_metrics, "gh", gh), mock.patch("sys.stderr"):
+                ci_metrics.fetch(out, 105, "o/r")
+            self.assertEqual(len(list(out.glob("*.json"))), 105)
+            self.assertEqual((out / "1.json").read_text(), "existing")
+            self.assertEqual(json.loads((out / "105.json").read_text()), {"version": 2})
+        self.assertIn("repos/o/r/actions/workflows/ci.yml/runs?per_page=100&page=2", paths)
+        self.assertEqual(sum("artifacts?" in p for p in paths), 5)
 
 
 if __name__ == "__main__":

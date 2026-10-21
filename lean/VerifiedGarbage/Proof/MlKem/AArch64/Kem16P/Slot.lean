@@ -39,12 +39,12 @@ theorem rate21_frame {m m' : Mem} {p : Addr} {A : Spec.Sha3.State} {rs : List Re
     exact h i hi
 
 /-- **The first 16 words of the third state at `st` to buffer `N`.** -/
-theorem prfOut_ok (L : Impl.MlKem.AArch64.KemLay) (N : Nat) {s : State} {st Bf : Addr} {S : Spec.Sha3.State}
-    (hbo : Impl.MlKem.AArch64.Kem16P.bufOff L N < 65536)
-    (h28 : s.gpr .x28 = st) (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff L N) = Bf)
+theorem prfOut_ok (bt N : Nat) {s : State} {st Bf : Addr} {S : Spec.Sha3.State}
+    (hbo : Impl.MlKem.AArch64.Kem16P.bufOff bt N < 65536)
+    (h28 : s.gpr .x28 = st) (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff bt N) = Bf)
     (hS : stateAt s.mem st = S) (hin : Covers [stR st] (s.rd ++ s.wr)) (hout : Covers [rateR Bf] s.wr)
     (hd : (stR st).Disjoint (rateR Bf)) :
-    WP isa (.block (Impl.MlKem.AArch64.Kem16P.prfOut L N)) s fun t =>
+    WP isa (.block (Impl.MlKem.AArch64.Kem16P.prfOut bt N)) s fun t =>
       Keep [.x2, .x9] s t ∧ Frame [rateR Bf] s.mem t.mem ∧ Rate128 t.mem Bf S := by
   unfold Impl.MlKem.AArch64.Kem16P.prfOut
   refine wp_ptrTo (by decide) hbo fun s₁ h₁ e₁ => ?_
@@ -106,14 +106,14 @@ structure SlotLay (p a b st R Bf : Addr) (s : State) : Prop where
   dPF : (pairR p).Disjoint (rateR Bf)
 
 /-- **A main squeeze computing `PRF₂(r, N)` in the third state.** -/
-theorem slotPrf_ok (L : Impl.MlKem.AArch64.KemLay) {N : Nat} (hN : N < 256)
-    (hbo : Impl.MlKem.AArch64.Kem16P.bufOff L N < 65536) {s : State} {p a b st R Bf : Addr}
+theorem slotPrf_ok (sd bt : Nat) {N : Nat} (hN : N < 256)
+    (hbo : Impl.MlKem.AArch64.Kem16P.bufOff bt N < 65536) {s : State} {p a b st R Bf : Addr}
     {A B : Spec.Sha3.State}
     (h19 : s.gpr .x19 = p) (h20 : s.gpr .x20 = a) (h21 : s.gpr .x21 = b) (h28 : s.gpr .x28 = st)
-    (hR : st + BitVec.ofNat 64 Impl.MlKem.AArch64.KEM.RB = R)
-    (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff L N) = Bf)
+    (hR : st + BitVec.ofNat 64 sd = R) (hsd : sd % 8 = 0) (hsd' : sd + 32 ≤ 32768)
+    (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff bt N) = Bf)
     (pair : PairAt s.mem p A B) (hl : SlotLay p a b st R Bf s) :
-    WP isa (Impl.MlKem.AArch64.Kem16P.slotPrf L N) s fun t =>
+    WP isa (Impl.MlKem.AArch64.Kem16P.slotPrf sd bt N) s fun t =>
       Keep stepRegs s t ∧
       Frame (step3Writes p a b st s.sp ++ [rateR Bf]) s.mem t.mem ∧
       PairAt t.mem p (keccakF A) (keccakF B) ∧
@@ -121,7 +121,7 @@ theorem slotPrf_ok (L : Impl.MlKem.AArch64.KemLay) {N : Nat} (hN : N < 256)
       t.gpr .x20 = a + 168 ∧ t.gpr .x21 = b + 168 ∧
       Rate128 t.mem Bf (keccakF (Noise.seedState s.mem R N)) := by
   unfold Impl.MlKem.AArch64.Kem16P.slotPrf
-  refine WP.seq (WP.mono (prfBlock_ok hN (by rw [h28]; exact hR)
+  refine WP.seq (WP.mono (prfBlock_ok hN (by rw [h28]; exact hR) (hsd := hsd) (hsd' := hsd')
     (by rw [h28]; exact Hybrid.covers_mono hl.cov (by simp)) (by rw [h28]; exact hl.dSR) hl.rin)
     fun u ⟨ku, fu, su⟩ => ?_)
   rw [h28] at fu su
@@ -146,7 +146,7 @@ theorem slotPrf_ok (L : Impl.MlKem.AArch64.KemLay) {N : Nat} (hN : N < 256)
   have sw : stateAt w.mem st = keccakF (Noise.seedState s.mem R N) := by
     rw [VG.Proof.Sha3.AArch64.Hybrid.X3.stateAt_frame fw svt, sv]
   have kuw := kuv.trans kw
-  refine WP.mono (prfOut_ok L N hbo (by rw [kuw.get .x28, h28]) hB sw
+  refine WP.mono (prfOut_ok bt N hbo (by rw [kuw.get .x28, h28]) hB sw
     (by rw [kuw.rd, kuw.wr]; exact Covers.right (Hybrid.covers_mono hl.cov (by simp)))
     (by rw [kuw.wr]; exact hl.bout) hl.dSF) fun t ⟨kt, ft, rt⟩ => ?_
   have fpt : ∀ r ∈ [rateR Bf], (pairR p).Disjoint r := by
