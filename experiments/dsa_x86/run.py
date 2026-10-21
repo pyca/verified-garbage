@@ -84,4 +84,11 @@ if env.get('PROTOTYPE_PARAMETERS')=='1':
     print('\n'.join(lines),flush=True)
     if 'GITHUB_STEP_SUMMARY' in env:
         with open(env['GITHUB_STEP_SUMMARY'],'a') as f:f.write('\n'.join(lines)+'\n')
+if env.get('PROTOTYPE_OPENSSL_SCALAR')=='1':
+    assert 'baseline' in variants
+    for label,mask in [('openssl-default',''),('openssl-no-sse2','~0x4000000')]:
+        extra={'OPENSSL_ia32cap':mask, 'CRITERION_HOME':str(out/'diagnostic'/label)}
+        run([str(out/'baseline'),'--bench','^dsa_generate_key.*/openssl/','--warm-up-time','0.1','--measurement-time','0.3','--sample-size','25','--noplot'],label+'-keys.log',extra)
+        run([str(out/'baseline'),'--bench','^dsa_generate_parameters/openssl/','--warm-up-time','0.1','--measurement-time','0.3','--sample-size','10','--noplot'],label+'-parameters.log',extra|{'VG_BENCHES':'dsa_parameters'})
+    (out/'diagnostic.json').write_text(json.dumps({str(p.relative_to(out/'diagnostic')):json.loads(p.read_text()) for p in (out/'diagnostic').rglob('new/estimates.json')},indent=2))
 for mode in variants:(out/mode).unlink()

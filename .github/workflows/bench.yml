@@ -2,6 +2,10 @@ name: Unproven x86 DSA experiments
 on:
   workflow_dispatch:
     inputs:
+      openssl_scalar:
+        description: Diagnose OpenSSL SSE2 on versus off
+        default: false
+        type: boolean
       variants:
         description: Space-separated experiment variants
         default: baseline dwpr4 dwpr0 dwprt4 dwprst4 dwprsct4
@@ -49,6 +53,7 @@ jobs:
         env:
           VG_DSA_PARAM_BITS: ${{ inputs.parameter_bits }}
           VG_DSA_PARAM_SAMPLES: ${{ inputs.parameter_samples }}
+          PROTOTYPE_OPENSSL_SCALAR: ${{ inputs.openssl_scalar && '1' || '0' }}
           PROTOTYPE_VARIANTS: ${{ inputs.variants }}
           PROTOTYPE_PARAMETER_ALL: ${{ inputs.parameter_all && '1' || '0' }}
           PROTOTYPE_PARAMETERS: ${{ inputs.parameters && '1' || '0' }}

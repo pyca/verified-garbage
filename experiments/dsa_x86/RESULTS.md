@@ -138,3 +138,22 @@ OpenSSL 172.473 ms (95% CI 158.479–206.022), previous stack 268.868
 (264.830–328.419). Random intervals overlap between prototypes; these
 results do not establish a parameter-generation improvement. All remain
 behind OpenSSL. Keep the fixed-search and random-API conclusions separate.
+
+## Parameter-gap investigation
+
+Source inspection of OpenSSL 3.5.7 identifies a concrete next experiment,
+not a measured attribution: its IA-32 Montgomery implementation in
+[`crypto/bn/asm/x86-mont.pl`](https://github.com/openssl/openssl/blob/openssl-3.5.7/crypto/bn/asm/x86-mont.pl)
+uses SSE2 `pmuludq` and scheduled accumulation. Our x86 SSE model explicitly
+omits vector integer multiplication with the MCDT hazard. A controlled
+OpenSSL SSE2-on/off comparison and an isolated vector-kernel prototype would
+separate this hardware-path difference from the scalar algorithm changes.
+Any production ISA support requires a separately reviewed TCB change and
+correct MXCSR handling; the current prototype does not change that model.
+
+OpenSSL's
+[`ffc_params_generate.c`](https://github.com/openssl/openssl/blob/openssl-3.5.7/crypto/ffc/ffc_params_generate.c)
+uses `BN_check_prime` with the same 64/128 minimum round policy. Reducing the
+round count is not a valid optimization of our existing contract. Witness
+sampling and trial-division work still differ and need separate profiling;
+the source comparison does not prove that SSE2 accounts for the entire gap.
