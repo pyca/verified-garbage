@@ -58,18 +58,10 @@ def ksTail : List Instr :=
    .ldrq .v2 .x20 64, .vop (.tbl .v2 .v2 .v0),
    .sub .x .x10 .x23 .x9, .ldrq .v3 .x10 0, .vop (.logic .eor .v3 .v3 .v2), .strq .v3 .x10 0]
 
-/-- Eleven instructions that do nothing (`add x9, x9, #0`), on `padVec`'s
-path only: with them `Fast.padMulT` is a multiple of 64 bytes longer than
-`padMul`, so the code after it (the lengths block, the tag) keeps its offset
-in a 64-byte line from before. Without them, a text of whole blocks sealed
-on CPUs with AES but not SHA-3 (`_aes`) measured 1.5–2% slower on Neoverse
-N2, with fewer instructions run. -/
-def fill : List Instr := List.replicate 11 (.addImm .x .x9 .x9 0)
-
 /-- The `x13` (1 to 15) bytes at `x12`, ending the text, padded with zeros as
 `loadRev` leaves a block, and absorbed. -/
 def padVec : List Instr :=
-  fill ++ shift .x13 A .x11 ++
+  shift .x13 A .x11 ++
   [.ldrqTbl T .x11 16 idxName idxTable, .vop (.add .b16 T T A),
    .sub .x .x11 .x12 .x9, .ldrq A .x11 0, .vop (.tbl A A T),
    .vop (.logic .eor A A Y)] ++ mul Y A (sReg 1) (tReg 1)

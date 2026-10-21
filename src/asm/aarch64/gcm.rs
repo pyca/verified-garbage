@@ -2554,17 +2554,6 @@ add x12, x23, #0
 cbz x13, 2156f
 lsr x9, x26, #4
 cbz x9, 2158f
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
 movz x9, #16, lsl #0
 sub x9, x9, x13
 dup v6.16b, w9",
@@ -3714,17 +3703,6 @@ add x12, x23, #0
 cbz x13, 2152f
 lsr x9, x26, #4
 cbz x9, 2154f
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
 movz x9, #16, lsl #0
 sub x9, x9, x13
 dup v6.16b, w9",
@@ -6728,17 +6706,6 @@ add x12, x23, #0
 cbz x13, 2156f
 lsr x9, x26, #4
 cbz x9, 2158f
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
 movz x9, #16, lsl #0
 sub x9, x9, x13
 dup v6.16b, w9",
@@ -7890,17 +7857,6 @@ add x12, x23, #0
 cbz x13, 2152f
 lsr x9, x26, #4
 cbz x9, 2154f
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
 movz x9, #16, lsl #0
 sub x9, x9, x13
 dup v6.16b, w9",
@@ -9254,17 +9210,6 @@ add x12, x23, #0
 cbz x13, 2156f
 lsr x9, x26, #4
 cbz x9, 2158f
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
 movz x9, #16, lsl #0
 sub x9, x9, x13
 dup v6.16b, w9",
@@ -10417,17 +10362,6 @@ add x12, x23, #0
 cbz x13, 2152f
 lsr x9, x26, #4
 cbz x9, 2154f
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
 movz x9, #16, lsl #0
 sub x9, x9, x13
 dup v6.16b, w9",
@@ -11852,17 +11786,6 @@ add x12, x23, #0
 cbz x13, 2156f
 lsr x9, x26, #4
 cbz x9, 2158f
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
 movz x9, #16, lsl #0
 sub x9, x9, x13
 dup v6.16b, w9",
@@ -13012,17 +12935,6 @@ add x12, x23, #0
 cbz x13, 2152f
 lsr x9, x26, #4
 cbz x9, 2154f
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
 movz x9, #16, lsl #0
 sub x9, x9, x13
 dup v6.16b, w9",
@@ -18174,17 +18086,6 @@ add x12, x23, #0
 cbz x13, 2175f
 lsr x9, x26, #4
 cbz x9, 2177f
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
 movz x9, #16, lsl #0
 sub x9, x9, x13
 dup v6.16b, w9",
@@ -18642,17 +18543,6 @@ add x12, x23, #0
 cbz x13, 2228f
 lsr x9, x26, #4
 cbz x9, 2230f
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
 movz x9, #16, lsl #0
 sub x9, x9, x13
 dup v6.16b, w9",
@@ -20310,17 +20200,6 @@ add x12, x23, #0
 cbz x13, 2335f
 lsr x9, x26, #4
 cbz x9, 2337f
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
 movz x9, #16, lsl #0
 sub x9, x9, x13
 dup v6.16b, w9",
@@ -22588,17 +22467,6 @@ add x12, x23, #0
 cbz x13, 2165f
 lsr x9, x26, #4
 cbz x9, 2167f
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
 movz x9, #16, lsl #0
 sub x9, x9, x13
 dup v6.16b, w9",
@@ -23269,17 +23137,6 @@ add x12, x23, #0
 cbz x13, 2254f
 lsr x9, x26, #4
 cbz x9, 2256f
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
 movz x9, #16, lsl #0
 sub x9, x9, x13
 dup v6.16b, w9",
@@ -28203,17 +28060,6 @@ add x12, x23, #0
 cbz x13, 2173f
 lsr x9, x26, #4
 cbz x9, 2175f
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
 movz x9, #16, lsl #0
 sub x9, x9, x13
 dup v6.16b, w9",
@@ -28671,17 +28517,6 @@ add x12, x23, #0
 cbz x13, 2226f
 lsr x9, x26, #4
 cbz x9, 2228f
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
 movz x9, #16, lsl #0
 sub x9, x9, x13
 dup v6.16b, w9",
@@ -31078,17 +30913,6 @@ add x12, x23, #0
 cbz x13, 2163f
 lsr x9, x26, #4
 cbz x9, 2165f
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
 movz x9, #16, lsl #0
 sub x9, x9, x13
 dup v6.16b, w9",
@@ -31759,17 +31583,6 @@ add x12, x23, #0
 cbz x13, 2252f
 lsr x9, x26, #4
 cbz x9, 2254f
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
-add x9, x9, #0
 movz x9, #16, lsl #0
 sub x9, x9, x13
 dup v6.16b, w9",

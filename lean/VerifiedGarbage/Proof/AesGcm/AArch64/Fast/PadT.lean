@@ -26,7 +26,7 @@ open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcm.AArch64 VG.WriteBytes
 open VG.Proof.AesGcm.AArch64
 open VG.Proof.Gcm.AArch64.Pmull
 open VG.Impl.Gcm.AArch64.Pmull (LO MID HI A T C Y tReg sReg poly)
-open VG.Impl.AesGcm.AArch64.Tail (idxName idxTable padVec shift fill)
+open VG.Impl.AesGcm.AArch64.Tail (idxName idxTable padVec shift)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt ghashFrom ghash blocks zeros padLen ofBytes)
 
@@ -46,7 +46,7 @@ into the padded block in `A`. -/
 theorem padPre_run {E : Addr} {r : Nat} (hr : r < 16) {s : State}
     (h12 : s.gpr .x12 = E + BitVec.ofNat 64 (16 - r)) (h13 : s.gpr .x13 = BitVec.ofNat 64 r)
     (hE : InRegions (s.rd ++ s.wr) E 16) :
-    ∃ s', runBlock isa (fill ++ shift .x13 A .x11 ++ ([.ldrqTbl T .x11 16 idxName idxTable, .vop (.add .b16 T T A),
+    ∃ s', runBlock isa (shift .x13 A .x11 ++ ([.ldrqTbl T .x11 16 idxName idxTable, .vop (.add .b16 T T A),
         .sub .x .x11 .x12 .x9, .ldrq A .x11 0, .vop (.tbl A A T)] : List Instr)) s = some s' ∧
       s'.v A = Tail.downV (s.mem.read E 16) r ∧ (∀ v, v ≠ A → v ≠ T → s'.v v = s.v v) ∧
       Others [.x9, .x11] s s' ∧ s'.mem = s.mem ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
@@ -55,7 +55,7 @@ theorem padPre_run {E : Addr} {r : Nat} (hr : r < 16) {s : State}
     BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)
   have hx11 : E + BitVec.ofNat 64 (16 - r) - BitVec.ofNat 64 (16 - r) = E := BitVec.add_sub_cancel _ _
   refine ⟨_, by
-    simp only [fill, shift, List.replicate, List.cons_append, List.nil_append]
+    simp only [shift, List.cons_append, List.nil_append]
     arun [h12, h13, h16, hsub, hx11, hE, VOp.eval, RegUpd.v_setV, RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.wr_setV, RegUpd.rd_setV,
       RegUpd.sp_setV, RegUpd.rd_write, syms_write', syms_setV', idxTable_length', Nat.reduceDiv, RegUpd.v_write, BitVec.add_zero]
     , ?_⟩
@@ -112,7 +112,7 @@ theorem padMulT_ok (hM : MulKey) {Ctx St W SP : Addr} {H y : Block} {P : Addr} {
   have he₂ : Env Ctx St W SP s₂ := he₁.keep (fun r hr => g₂ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide)) sp₂ rd₂ wr₂
-  have hpv : padVec = (fill ++ shift .x13 A .x11 ++ [.ldrqTbl T .x11 16 idxName idxTable, .vop (.add .b16 T T A),
+  have hpv : padVec = (shift .x13 A .x11 ++ [.ldrqTbl T .x11 16 idxName idxTable, .vop (.add .b16 T T A),
       .sub .x .x11 .x12 .x9, .ldrq A .x11 0, .vop (.tbl A A T)]) ++
       (([.vop (.logic .eor A A Y)] : List Instr) ++ Impl.Gcm.AArch64.Pmull.mul Y A (sReg 1) (tReg 1)) := by
     simp [padVec]
