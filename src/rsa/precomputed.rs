@@ -216,6 +216,39 @@ mod tests {
     }
 
     #[test]
+    fn r2_normalization_boundary() {
+        for k in [128, 256] {
+            let mut below = vec![0xff; k];
+            below[0] = 0x7f;
+            let mut above = vec![0; k];
+            above[0] = 0x80;
+            above[k - 1] = 1;
+            // With R = 2^(8k), R is respectively 2 or -2 modulo n.
+            for n in [below, above] {
+                let mut scratch = vec![0; public_scratch_words(k)];
+                let (values, valid) = precompute(&n, &mut scratch);
+                assert_eq!(valid, 1);
+                let r2 = &values[k / 8..];
+                assert_eq!(r2[0], 4);
+                assert!(r2[1..].iter().all(|&word| word == 0));
+            }
+        }
+        // Non-multiple-of-eight lengths use the original setup. For n =
+        // 2^(8k)-1, powers of two repeat with period 8k.
+        for k in [65, 129] {
+            let n = vec![0xff; k];
+            let w = k.div_ceil(8);
+            let bit = (128 * w) % (8 * k);
+            let mut scratch = vec![0; public_scratch_words(k)];
+            let (values, valid) = precompute(&n, &mut scratch);
+            assert_eq!(valid, 1);
+            let mut expected = vec![0; w];
+            expected[bit / 64] = 1 << (bit % 64);
+            assert_eq!(&values[w..], &expected);
+        }
+    }
+
+    #[test]
     fn computed_once_and_shared_by_clones() {
         let n = number(64, 0x80);
         let mut scratch = vec![0; public_scratch_words(64)];

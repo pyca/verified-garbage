@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicPrecomputeKernel
+
 public import VerifiedGarbage.Proof.Bignum.Arm.PcPrepare
 public import VerifiedGarbage.Proof.Bignum.Arm.ExportState
 import VerifiedGarbage.Proof.Bignum.Arm.Precompute
@@ -21,9 +23,10 @@ structure PcComputed (base dst src : BitVec 32) (len k : Nat) (s : State) : Prop
   ptr : s.gpr .r0 = base
 
 theorem pcComputed_ready (s : State) {base dst src : BitVec 32} {len k : Nat}
-    (h : PcPrepared base dst src len k s) : WP isa precompute s (PcComputed base dst src len k) := by
+    (h : PcPrepared base dst src len k s)
+    (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : WP isa kernel.code s (PcComputed base dst src len k) := by
   have countFit := (pc_dimensions h.buffers.minLength h.buffers.maxLength h.buffers.space).2.2.2.2
-  refine WP.mono (precompute_ok s h.input.workspace h.input.layout h.input.width h.input.positive
+  refine WP.mono (kernel.correct s h.input.workspace h.input.layout h.input.width h.input.positive
     h.input.fits h.input.sourceFits h.input.readable h.input.separate h.input.ptr h.input.source h.input.count
     h.input.stackRead h.input.stackSep h.input.saved h.input.large h.input.odd countFit) ?_
   rintro t ⟨ready, _, _, frame, rest⟩

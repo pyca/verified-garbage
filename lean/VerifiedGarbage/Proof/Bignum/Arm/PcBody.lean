@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicPrecomputeKernel
 public import VerifiedGarbage.Proof.Bignum.Arm.PcStack
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Spec.Rsa.Contract
@@ -26,22 +28,22 @@ theorem pcBody_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
     (dstFit : dst.toNat + 16 * Spec.Rsa.modulusWords k ≤ 2 ^ 32)
     (write : InRegions s.wr (State.addr dst) (16 * Spec.Rsa.modulusWords k))
     (dstSep : Region.Disjoint ⟨State.addr base, 8 * len⟩ ⟨State.addr dst, 16 * Spec.Rsa.modulusWords k⟩)
-    (ptr : s.gpr .r0 = base) (source : s.gpr .r4 = src) (count : s.gpr .r6 = BitVec.ofNat 32 k) :
-    WP isa PcFn.body s fun t =>
+    (ptr : s.gpr .r0 = base) (source : s.gpr .r4 = src) (count : s.gpr .r6 = BitVec.ofNat 32 k)
+    (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : WP isa (PcFn.bodyWith kernel.code) s fun t =>
       (match Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (State.addr src) k) with
       | some words => t.gpr .r0 = 1 ∧ Spec.Rsa.wordsAt t.mem (State.addr dst) (2 * Spec.Rsa.modulusWords k) = words
       | none => t.gpr .r0 = 0 ∧ Spec.Rsa.wordsAt t.mem (State.addr dst) (2 * Spec.Rsa.modulusWords k) =
           List.replicate (2 * Spec.Rsa.modulusWords k) 0) ∧
       Frame [⟨State.addr base, 8 * len⟩, ⟨State.addr dst, 16 * Spec.Rsa.modulusWords k⟩] s.mem t.mem ∧
       Rest roundClobbers s t := by
-  rw [PcFn.body, WP.seq_iff]
+  rw [PcFn.bodyWith, WP.seq_iff]
   refine WP.mono (modulusCheck_ok s hk hk' srcFit read source count) ?_
   rintro u ⟨flag, mem, rest⟩
   have frame : Frame [⟨State.addr base, 8 * len⟩] s.mem u.mem := by rw [mem]; exact Frame.refl _ _
   have stackU := stack.after_workspace frame rest
   refine WP.ite _ (by change some u.z = some _; rw [flag]) ?_ ?_
   · intro valid
-    refine WP.mono (pcValid_ok u (ws.congr rest.wr) stackU hk hk' space srcFit
+    refine WP.mono (pcValid_ok (kernel := kernel) u (ws.congr rest.wr) stackU hk hk' space srcFit
       (by rw [rest.rd, rest.wr]; exact read) srcSep dstFit (by rw [rest.wr]; exact write) dstSep
       ((rest.gpr .r0 (by simp)).trans ptr) ((rest.gpr .r6 (by simp)).trans count)
       (by rw [mem]; exact valid)) ?_
