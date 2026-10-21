@@ -7,11 +7,11 @@
 #ifdef OPENSSL_REF
 #include <openssl/bn.h>
 #endif
-#define MODES 9
+#define MODES 17
 #define DECL(i) extern void compact_mont##i(uint64_t*,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned)
-DECL(0);DECL(1);DECL(2);DECL(3);DECL(4);DECL(5);DECL(6);DECL(7);DECL(8);
+DECL(0);DECL(1);DECL(2);DECL(3);DECL(4);DECL(5);DECL(6);DECL(7);DECL(8);DECL(9);DECL(10);DECL(11);DECL(12);DECL(13);DECL(14);DECL(15);DECL(16);
 typedef void (*montfn)(uint64_t*,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned);
-static montfn ms[]={compact_mont0,compact_mont1,compact_mont2,compact_mont3,compact_mont4,compact_mont5,compact_mont6,compact_mont7,compact_mont8};
+static montfn ms[]={compact_mont0,compact_mont1,compact_mont2,compact_mont3,compact_mont4,compact_mont5,compact_mont6,compact_mont7,compact_mont8,compact_mont9,compact_mont10,compact_mont11,compact_mont12,compact_mont13,compact_mont14,compact_mont15,compact_mont16};
 static double now(void){struct timespec t;clock_gettime(CLOCK_MONOTONIC,&t);return t.tv_sec+t.tv_nsec*1e-9;}
 static uint32_t rng=1;
 static uint32_t rnd(void){rng^=rng<<13;rng^=rng>>17;rng^=rng<<5;return rng;}
