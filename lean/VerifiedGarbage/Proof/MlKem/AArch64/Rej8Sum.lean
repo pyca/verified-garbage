@@ -19,16 +19,22 @@ def sum8 (x : BitVec 128) : BitVec 16 :=
 theorem laneSum_h8 (x : BitVec 128) :
     VArr.h8.laneSum x = (vhalf x 0).toNat + (vhalf x 1).toNat + (vhalf x 2).toNat + (vhalf x 3).toNat +
       (vhalf x 4).toNat + (vhalf x 5).toNat + (vhalf x 6).toNat + (vhalf x 7).toNat := by
-  simp [VArr.laneSum, VArr.lanes, vhalf, BitVec.toNat_setWidth]
+  have h : ∀ i, (BitVec.setWidth 128 (vhalf x i)).toNat = (vhalf x i).toNat := fun i => by
+    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (vhalf x i).isLt (by decide))]
+  rw [VArr.laneSum, VArr.lanes, show List.range 8 = [0, 1, 2, 3, 4, 5, 6, 7] from rfl]
+  simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, h]
   omega
 
-/-- Lane 0 of `addv h, v.8h` is the sum of the eight halfwords. -/
+theorem sum8_toNat (x : BitVec 128) : (sum8 x).toNat = ((vhalf x 0).toNat + (vhalf x 1).toNat + (vhalf x 2).toNat +
+    (vhalf x 3).toNat + (vhalf x 4).toNat + (vhalf x 5).toNat + (vhalf x 6).toNat + (vhalf x 7).toNat) % 2 ^ 16 := by
+  simp only [sum8, BitVec.toNat_add, Nat.mod_add_mod]
+
 theorem addv_half (x : BitVec 128) :
     vhalf (BitVec.ofNat 128 (VArr.h8.laneSum x % 2 ^ 16)) 0 = sum8 x := by
   apply BitVec.eq_of_toNat_eq
-  rw [laneSum_h8]
-  simp only [vhalf, sum8, BitVec.toNat_add, BitVec.toNat_extractLsb', BitVec.toNat_ofNat]
-  omega
+  rw [sum8_toNat, ← laneSum_h8, vhalf, BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.mul_zero, Nat.shiftRight_zero,
+    Nat.mod_eq_of_lt (show VArr.h8.laneSum x % 2 ^ 16 < 2 ^ 128 from Nat.lt_of_lt_of_le (Nat.mod_lt _ (by decide)) (by decide)),
+    Nat.mod_mod]
 
 /-- The horizontal sum before UMOV: `addv h1, v1.8h`. -/
 def sumCode : List Instr := [.vop (.addv .h8 .v1 .v1)]
