@@ -76,16 +76,17 @@ def beforeInverse (c : Cfg) : Prog isa :=
   .seq (Impl.Ecdh.AArch64.Cfg.validate c) <|
   .seq (Impl.Ecdsa.Verify.AArch64.Cfg.scalars c) (.block [])
 
-theorem beforeInverse_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) :
+theorem beforeInverse_ok (hc : CfgOk c) {ts : String} {ws : List (BitVec 64)} {s₀ : State}
+    (hp : VPreT c ts ws s₀) :
     WP isa (beforeInverse c) s₀ (InverseInput c s₀ (s₀.gpr .x3)) := by
-  exact front_ok hc hp fun _ _ _ hf => scalarInput_ok hc hf
+  exact front_ok hc hp.front fun _ _ _ hf => scalarInput_ok hc hf
 
 theorem beforeInverse_ct : ConstantTime isa (fun _ => True)
     (AArch64.Taint.Agree (Taint.ofRegs [.x0,.x1,.x2,.x3])) (beforeInverse p256) := by
   jac_reg_ct [.x0,.x1,.x2,.x3]
 
 theorem InverseInput.eq {s₀ t₀ s t : State} {base : Addr}
-    (hc : CfgOk c) (hp : JacPublic c s₀ t₀)
+    (hc : CfgOk c) {ts : String} (hp : JacPublicT c ts s₀ t₀)
     (hs : InverseInput c s₀ base s) (ht : InverseInput c t₀ base t) :
     wordsVal s.mem base (c.sl KM) c.n=wordsVal t.mem base (c.sl KM) c.n := by
   have he := hs.val.trans ((congrArg (Fin.ofNat c.C.n) hp.signature.2).trans ht.val.symm)

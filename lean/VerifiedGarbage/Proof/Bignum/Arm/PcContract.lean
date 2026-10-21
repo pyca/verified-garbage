@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicPrecomputeKernel
+
 import VerifiedGarbage.Proof.Bignum.Arm.PcFn
 import VerifiedGarbage.Proof.Bignum.Arm.PcFnCT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -43,10 +45,10 @@ theorem pc_contract_pre (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 
   · rw [frame]; exact stackOut
   · rw [frame]; exact stackArgs
 
-theorem pc_contract_correct (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 56).pre s) :
-    ∃ tr t, Exec isa PcFn.code s tr t ∧ abiPreserved s t ∧
+theorem pc_contract_correct (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 56).pre s)
+    (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : ∃ tr t, Exec isa (PcFn.codeWith kernel.code) s tr t ∧ abiPreserved s t ∧
       (Spec.Rsa.publicPrecomputeContract abi 56).post s t := by
-  obtain ⟨tr, t, run, preserved, post⟩ := pcFn_ok s (pc_contract_pre s h)
+  obtain ⟨tr, t, run, preserved, post⟩ := pcFn_ok (kernel := kernel) s (pc_contract_pre s h)
   refine ⟨tr, t, run, preserved, ?_⟩
   sig_post [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   sig_pre [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
@@ -55,8 +57,9 @@ theorem pc_contract_correct (s : State) (h : (Spec.Rsa.publicPrecomputeContract 
   rw [outLen, BitVec.setWidth_append_eq_right]
   exact post
 
-theorem pc_contract_ct : ConstantTime isa (Spec.Rsa.publicPrecomputeContract abi 56).pre
-    (Spec.Rsa.publicPrecomputeContract abi 56).pub PcFn.code := by
+theorem pc_contract_ct
+    (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : ConstantTime isa (Spec.Rsa.publicPrecomputeContract abi 56).pre
+    (Spec.Rsa.publicPrecomputeContract abi 56).pub (PcFn.codeWith kernel.code) := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   have is := pc_contract_pre s hs
   have it := pc_contract_pre t ht
@@ -66,6 +69,6 @@ theorem pc_contract_ct : ConstantTime isa (Spec.Rsa.publicPrecomputeContract abi
   simp only [List.map_map, Function.comp_def, BitVec.ofNat_toNat, BitVec.setWidth_eq, List.map_id'] at byteEq
   rw [← p0, ← p2, ← p3, ← p4, ← p5] at it
   rw [← p2, ← p3] at byteEq
-  exact (pcFn_ct s t tr1 tr2 u v ⟨⟨is, rfl⟩, ⟨it, byteEq.symm⟩, sp⟩ e1 e2).1
+  exact (pcFn_ct (kernel := kernel) s t tr1 tr2 u v ⟨⟨is, rfl⟩, ⟨it, byteEq.symm⟩, sp⟩ e1 e2).1
 
 end VG.Proof.Bignum.Arm

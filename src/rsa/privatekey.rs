@@ -15,6 +15,14 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use super::{Backend, Error, MAX_MODULUS_LEN, MIN_MODULUS_LEN, exponent, scratch_words, trim};
+use crate::arch::rsa::{
+    vg_rsa_check_crt_key, vg_rsa_check_key, vg_rsa_crt_values, vg_rsa_private_checked,
+    vg_rsa_recover_primes,
+};
+#[cfg(target_arch = "x86_64")]
+use crate::arch::rsa::{
+    vg_rsa_private_checked_adx, vg_rsa_private_checked_ifma, vg_rsa_recover_primes_adx,
+};
 #[cfg(all(
     target_arch = "arm",
     any(
@@ -25,15 +33,7 @@ use super::{Backend, Error, MAX_MODULUS_LEN, MIN_MODULUS_LEN, exponent, scratch_
         target_os = "openbsd"
     )
 ))]
-use crate::arch::rsa::vg_rsa_private_checked_umaal;
-use crate::arch::rsa::{
-    vg_rsa_check_crt_key, vg_rsa_check_key, vg_rsa_crt_values, vg_rsa_private_checked,
-    vg_rsa_recover_primes,
-};
-#[cfg(target_arch = "x86_64")]
-use crate::arch::rsa::{
-    vg_rsa_private_checked_adx, vg_rsa_private_checked_ifma, vg_rsa_recover_primes_adx,
-};
+use crate::arch::rsa::{vg_rsa_private_checked_umaal, vg_rsa_recover_primes_umaal};
 use crate::cpu::detected;
 
 /// `x` (big-endian) in `len` bytes, if it fits.
@@ -285,7 +285,7 @@ impl PrivateKey {
                     target_os = "openbsd"
                 )
             ))]
-            Backend::Umaal => vg_rsa_recover_primes,
+            Backend::Umaal => vg_rsa_recover_primes_umaal,
         };
         // SAFETY: each pointer is valid for its length (`p`, `q` and
         // `scratch` for writes), and none overlaps another or wraps around,

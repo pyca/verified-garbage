@@ -90,3 +90,50 @@ impl Drop for Sm4Ecb {
         zeroize(&mut self.schedule);
     }
 }
+
+#[cfg(all(test, target_arch = "arm"))]
+mod prepared_tests {
+    use super::*;
+    use crate::arch::sm4::{vg_sm4_crypt_prepared, vg_sm4_prepare_keys};
+
+    #[test]
+    fn prepared_batches_match_ecb_and_keep_extra_workspace() {
+        let ctx = Sm4Ecb::new(&[0x63; 16]);
+        for decrypt in [false, true] {
+            let mut workspace = [0x7171_7171_7171_7171u64; 200];
+            // SAFETY: the schedule and working space are separate valid
+            // objects, the space exceeds 182 words, and the direction is 0 or 1.
+            unsafe {
+                vg_sm4_prepare_keys(
+                    &ctx.schedule,
+                    usize::from(decrypt),
+                    workspace.as_mut_ptr(),
+                    workspace.len(),
+                );
+            }
+            assert!(workspace[182..].iter().all(|&w| w == 0x7171_7171_7171_7171));
+            for batch in 0..2 {
+                let input: [u8; 128] = core::array::from_fn(|i| (i * 19 + batch * 7) as u8);
+                let mut expected = input;
+                if decrypt {
+                    ctx.decrypt(&mut expected).unwrap();
+                } else {
+                    ctx.encrypt(&mut expected).unwrap();
+                }
+                for (word, bytes) in workspace[32..48].iter_mut().zip(input.as_chunks::<8>().0) {
+                    *word = u64::from_le_bytes(*bytes);
+                }
+                // SAFETY: the space holds the table left by the preparation;
+                // writing the batch at bytes 256..384 preserves that table.
+                unsafe {
+                    vg_sm4_crypt_prepared(workspace.as_mut_ptr(), workspace.len());
+                }
+                for (word, bytes) in workspace[32..48].iter().zip(expected.as_chunks::<8>().0) {
+                    assert_eq!(word.to_le_bytes(), *bytes);
+                }
+                assert!(workspace[182..].iter().all(|&w| w == 0x7171_7171_7171_7171));
+            }
+            zeroize(&mut workspace);
+        }
+    }
+}

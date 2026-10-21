@@ -89,8 +89,42 @@ theorem jointFixedPoint_ok (c : Joint.Cfg) {s : State} {base T : Addr} {size a :
   rw [hn,vx,vy]
   exact hJ
 
+/-- The signed entry, from any read of the sign into `x3`. -/
+theorem jointSignEntryG_ok (c : Joint.Cfg) {s : State} {base : Addr} {size : Nat} {C : Curve}
+    {Sl : Nat → Prop} {V : List Nat} {E : Nat → Fe C} (neg : Bool)
+    (hL : Lay c.K.M size Sl) (hAl : Aligned c.K.M Sl)
+    (hm : UnitMod C.p (2^(64*c.K.M.n))) (hi : Inv c.K.M base size C.p Sl V E s)
+    (hV : ∀ x∈[c.K.E.x,c.K.E.y,c.K.E.z,c.K.zero],x∈V)
+    (hxy : c.K.E.x≠c.K.E.y) (hzy : c.K.E.z≠c.K.E.y) (hzero : E c.K.zero=0)
+    (hread : WP isa (.block (Joint.signRead c)) s fun t =>
+      t.gpr .x3=BitVec.ofNat 64 neg.toNat ∧ VG.Proof.Ed25519.AArch64.Keeps [.x3,.x16] s t)
+    {P : Point C} (hp : InvJ C (E c.K.E.x) (E c.K.E.y) (E c.K.E.z) P) (hz : E c.K.E.z=1) :
+    WP isa (Joint.signEntry c) s fun t =>
+      ∃ E', ProgKeep c.K.M base [c.K.E.y] s t ∧ Inv c.K.M base size C.p Sl V E' t ∧
+      InvJ C (E' c.K.E.x) (E' c.K.E.y) (E' c.K.E.z) (if neg then negPt P else P) ∧
+      E' c.K.E.z=1 := by
+  rw [Joint.signEntry]
+  apply WP.seq
+  refine WP.mono hread fun a ⟨a3,ka⟩ => ?_
+  have ia := hi.of_keeps ka (by decide)
+  have kp : ProgKeep c.K.M base [c.K.E.y] s a := keeps_prog ka (by
+    intro r hr
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl <;> simp [clob])
+  refine WP.ite neg (by
+    change some (a.read .x .x3 != 0)=some neg
+    rw [VG.Proof.Ed25519.AArch64.read_x,a3]
+    cases neg <;> decide) (fun hn => ?_) (fun hn => ?_)
+  · refine WP.mono (nafNeg_ok hL hAl hm ia hV hxy hzy hzero hp) fun t ⟨kt,it,jt⟩ => ?_
+    refine ⟨_,kp.trans kt,it,?_,?_⟩
+    · simpa only [hn,ite_true] using jt
+    · rw [Function.update_of_ne hzy,hz]
+  · apply WP.block_nil
+    refine ⟨E,kp,ia,?_,hz⟩
+    simpa only [hn,Bool.false_eq_true,ite_false] using hp
+
 theorem jointSignEntry_ok (c : Joint.Cfg) {s : State} {base : Addr} {size j : Nat} {C : Curve}
-    {Sl : Nat → Prop} {V : List Nat} {E : Nat → Fe C} {b : BitVec 8}
+    {Sl : Nat → Prop} {V : List Nat} {E : Nat → Fe C} {b : BitVec 8} (h9 : c.gw≠9)
     (hL : Lay c.K.M size Sl) (hAl : Aligned c.K.M Sl)
     (hm : UnitMod C.p (2^(64*c.K.M.n))) (hi : Inv c.K.M base size C.p Sl V E s)
     (hV : ∀ x∈[c.K.E.x,c.K.E.y,c.K.E.z,c.K.zero],x∈V)
@@ -101,25 +135,8 @@ theorem jointSignEntry_ok (c : Joint.Cfg) {s : State} {base : Addr} {size j : Na
     WP isa (Joint.signEntry c) s fun t =>
       ∃ E', ProgKeep c.K.M base [c.K.E.y] s t ∧ Inv c.K.M base size C.p Sl V E' t ∧
       InvJ C (E' c.K.E.x) (E' c.K.E.y) (E' c.K.E.z) (if nafNegative b then negPt P else P) ∧
-      E' c.K.E.z=1 := by
-  rw [Joint.signEntry]
-  apply WP.seq
-  refine WP.mono (nafSignRead_ok (K:=c.G) hi.scr hBits hj h19 hb) fun a ⟨a3,ka⟩ => ?_
-  have ia := hi.of_keeps ka (by decide)
-  have kp : ProgKeep c.K.M base [c.K.E.y] s a := keeps_prog ka (by
-    intro r hr
-    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl | rfl <;> simp [clob])
-  refine WP.ite (nafNegative b) (by
-    change some (a.read .x .x3 != 0)=some (nafNegative b)
-    rw [VG.Proof.Ed25519.AArch64.read_x,a3]
-    cases nafNegative b <;> decide) (fun hn => ?_) (fun hn => ?_)
-  · refine WP.mono (nafNeg_ok hL hAl hm ia hV hxy hzy hzero hp) fun t ⟨kt,it,jt⟩ => ?_
-    refine ⟨_,kp.trans kt,it,?_,?_⟩
-    · simpa only [hn,ite_true] using jt
-    · rw [Function.update_of_ne hzy,hz]
-  · apply WP.block_nil
-    refine ⟨E,kp,ia,?_,hz⟩
-    simpa only [hn,Bool.false_eq_true,ite_false] using hp
+      E' c.K.E.z=1 :=
+  jointSignEntryG_ok c (nafNegative b) hL hAl hm hi hV hxy hzy hzero
+    (by rw [Joint.signRead,ite_eq_right h9]; exact nafSignRead_ok (K:=c.G) hi.scr hBits hj h19 hb) hp hz
 
 end VG.Proof.Weierstrass.AArch64

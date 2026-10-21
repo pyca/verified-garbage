@@ -75,6 +75,16 @@ fn ecdh_brainpoolp512r1_test() {
             assert_ne!(test.result, Expectation::Valid, "tcId {}", test.tc_id);
             return;
         };
+        #[cfg(target_arch = "x86_64")]
+        {
+            let mut one = [0; 64];
+            let last = one.len() - 1;
+            one[last] = 1;
+            let reference = PrivateKey::<BrainpoolP512r1>::from_bytes(&one);
+            let valid = BrainpoolP512r1::validate_public_key(&public);
+            let expected = reference.diffie_hellman(&public).is_ok();
+            assert_eq!(valid, expected, "point check, tcId {}", test.tc_id);
+        }
         let result = key.diffie_hellman(&public).map(|z| z.to_vec());
         let shared = Ok(test.case.shared.0.clone());
         match test.result {

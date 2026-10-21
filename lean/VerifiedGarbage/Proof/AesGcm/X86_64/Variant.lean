@@ -64,7 +64,7 @@ def decP : StitchName → Prog isa
 
 /-- Encryption using a prepared context, if supported by the variant. -/
 def encR : StitchName → Prog isa
-  | .vaes => Impl.Gcm.X86_64.StitchR.enc
+  | .vaes => Impl.Gcm.X86_64.StitchR.encR
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.encR
   | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.encR
 
@@ -72,9 +72,9 @@ def encR : StitchName → Prog isa
 the blocks, from 16 on (`Blocks.stitchPart`'s `full`), and not only the
 first `16 ⌊n / 16⌋`. -/
 def fullR : StitchName → Bool
+  | .vaes => true
   | .vaesAvx512 => true
   | .aesniAvx => true
-  | _ => false
 
 /-- Whether `seal` calling the loops named `n` ends without calls
 (`GcmImpl.fin`): the loops in `VEX.128` with AES-NI and PCLMULQDQ, whose CPU
@@ -156,7 +156,7 @@ def encP : StitchToName → Prog isa
 
 /-- Out-of-place encryption using a prepared context. -/
 def encR : StitchToName → Prog isa
-  | .vaes => Impl.Gcm.X86_64.StitchR.encTo
+  | .vaes => Impl.Gcm.X86_64.StitchR.encToR
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZHTo.encR
   | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.encToR
 
@@ -170,9 +170,9 @@ def full : StitchToName → Bool
 from 16 on (`BlocksTo.stitchPart`'s `full`), and not only the first
 `16 ⌊n / 16⌋`. -/
 def fullR : StitchToName → Bool
+  | .vaes => true
   | .vaesAvx512 => true
   | .aesniAvx => true
-  | _ => false
 
 end StitchToName
 

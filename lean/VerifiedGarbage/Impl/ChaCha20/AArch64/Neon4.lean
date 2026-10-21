@@ -69,16 +69,18 @@ def half (qs : List (Fin 16 × Fin 16 × Fin 16 × Fin 16)) (r₁ r₂ : Fin 32)
 def quarters (qs : List (Fin 16 × Fin 16 × Fin 16 × Fin 16)) : List Op :=
   half qs 16 12 ++ half qs 8 7
 
-def doubleRound : List Instr := (quarters cols ++ quarters diags).flatMap Op.code
+/-- A double round, with SVE2's XAR for the rotations if `sve` (`Op.codeFor`). -/
+def doubleRound (sve : Bool := false) : List Instr :=
+  (quarters cols ++ quarters diags).flatMap (Op.codeFor sve)
 
 def rounds : Nat → Prog isa
   | 0 => .block []
   | n + 1 => .seq (rounds n) (.block doubleRound)
 
 /-- Keep the double-round instruction body compact and repeat it ten times. -/
-def roundLoop : Prog isa :=
+def roundLoop (sve : Bool := false) : Prog isa :=
   .seq (.block [.movz .x .x4 10 0])
-    (.loop (.seq (.block doubleRound) (.block [.subImm .x .x4 .x4 1])) (.nonzero .x .x4))
+    (.loop (.seq (.block (doubleRound sve)) (.block [.subImm .x .x4 .x4 1])) (.nonzero .x .x4))
 
 /-- Broadcast an input word; word 12 instead has consecutive counters. -/
 def inputWordInto (k : Fin 16) (d : VReg) : List Instr :=
@@ -126,14 +128,14 @@ def finishRow (r : Fin 4) : List Instr := finishRowFor (List.finRange 4) r
 def finish : List Instr :=
   (List.finRange 16).flatMap addWord ++ (List.finRange 4).flatMap finishRow
 
-def chunk : Prog isa := .seq (.block setup) (.seq roundLoop (.block finish))
+def chunk (sve : Bool := false) : Prog isa := .seq (.block setup) (.seq (roundLoop sve) (.block finish))
 
 /-- Advance four counters and one 256-byte chunk; x5 tests for another chunk. -/
 def next : List Instr :=
   [.ldr .w .x4 .x0 48, .addImm .w .x4 .x4 4, .str .w .x4 .x0 48,
    .addImm .x .x1 .x1 256, .subImm .x .x2 .x2 256, .lsr .x .x5 .x2 8]
 
-def body : Prog isa := .seq chunk (.block next)
+def body (sve : Bool := false) : Prog isa := .seq (chunk sve) (.block next)
 
 /-- Short inputs and the remaining bytes use the scalar stream implementation. -/
 def xor : Prog isa :=

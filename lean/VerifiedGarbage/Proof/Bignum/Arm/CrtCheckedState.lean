@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
 import VerifiedGarbage.Proof.Bignum.Arm.CrtBothPowers
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPowerSelection
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidateStage
@@ -30,10 +31,10 @@ theorem CrtCheckedState.pSelection {s : State} {g : CrtGeometry} {bs : Fin 7 →
     · simp [accepted]
 
 theorem crt_firstPower_qInput (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
-    (h : CrtCheckedState g bs s) :
-    WP isa (CrtFn.power 224 64 80) s (CrtPowerSelection g bs (crtQ g.base g.words) 228 2) := by
+    (h : CrtCheckedState g bs s) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa ((CrtFn.powerWith kernel.code) 224 64 80) s (CrtPowerSelection g bs (crtQ g.base g.words) 228 2) := by
   have input := h.pSelection
-  refine WP.mono (crt_powerStage_ok s h.selected.1 h.selected.2 input.kind 1 3 (Or.inl ⟨rfl, rfl⟩)
+  refine WP.mono ((crt_powerStage_ok (kernel := kernel)) s h.selected.1 h.selected.2 input.kind 1 3 (Or.inl ⟨rfl, rfl⟩)
     input.bit input.valid input.prime) ?_
   rintro t ⟨sharedT, readyT, _, flag, frame, _⟩
   have eq := h.selected.1.workspace_eq_after_power h.selected.1.buffers.context.q (by simp [crtRegions])

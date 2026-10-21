@@ -447,8 +447,7 @@ fn call_verify<const N: usize>(
 /// calling the x86-64 RSA backends (`verify_adx`, `verify_ifma`, `adx`, `ifma`) are given for
 /// the variants that have them, and used on x86-64 only; the signature
 /// calling the private-key operation with ARMv7's `umaal` (`umaal`), on
-/// ARMv7 only (verification calls the baseline's public-key operation
-/// there).
+/// ARMv7 only, together with verification through its UMAAL public operation.
 macro_rules! pss_hash {
     (
         $n:literal, $backend:ident {
@@ -463,7 +462,8 @@ macro_rules! pss_hash {
                         ifma: $ifma:path [$($ireq:path),*]
                     )?
                     $(,
-                        umaal: $umaal:path [$($ureq:path),*]
+                        umaal: $umaal:path [$($ureq:path),*],
+                        verify_umaal: $verify_umaal:path [$($vureq:path),*]
                     )? $(,)?
                 }
             ),* $(,)?
@@ -491,7 +491,7 @@ macro_rules! pss_hash {
                         target_os = "openbsd"
                     )
                 ))]
-                const _: &[$crate::cpu::Features] = &[$($ureq,)*];
+                const _: &[$crate::cpu::Features] = &[$($ureq,)* $($vureq,)*];
             )?
         )*
 
@@ -533,17 +533,19 @@ macro_rules! pss_hash {
                                 #[cfg(target_arch = "x86_64")]
                                 $crate::rsa::Backend::Ifma => $verify_ifma,
                             )?
-                            #[cfg(all(
-                                target_arch = "arm",
-                                any(
-                                    target_os = "linux",
-                                    target_os = "android",
-                                    target_os = "freebsd",
-                                    target_os = "netbsd",
-                                    target_os = "openbsd"
-                                )
-                            ))]
-                            $crate::rsa::Backend::Umaal => $verify,
+                            $(
+                                #[cfg(all(
+                                    target_arch = "arm",
+                                    any(
+                                        target_os = "linux",
+                                        target_os = "android",
+                                        target_os = "freebsd",
+                                        target_os = "netbsd",
+                                        target_os = "openbsd"
+                                    )
+                                ))]
+                                $crate::rsa::Backend::Umaal => $verify_umaal,
+                            )?
                         },
                     ),
                 )*
@@ -575,17 +577,19 @@ macro_rules! pss_hash {
                                     #[cfg(target_arch = "x86_64")]
                                     $crate::rsa::Backend::Ifma => Features::all(&[$($vireq),*]),
                                 )?
-                                #[cfg(all(
-                                    target_arch = "arm",
-                                    any(
-                                        target_os = "linux",
-                                        target_os = "android",
-                                        target_os = "freebsd",
-                                        target_os = "netbsd",
-                                        target_os = "openbsd"
-                                    )
-                                ))]
-                                $crate::rsa::Backend::Umaal => Features::all(&[$($vreq),*]),
+                                $(
+                                    #[cfg(all(
+                                        target_arch = "arm",
+                                        any(
+                                            target_os = "linux",
+                                            target_os = "android",
+                                            target_os = "freebsd",
+                                            target_os = "netbsd",
+                                            target_os = "openbsd"
+                                        )
+                                    ))]
+                                    $crate::rsa::Backend::Umaal => Features::all(&[$($vureq),*]),
+                                )?
                             };
                             let s: Features = match crt {
                                 $crate::rsa::Backend::Baseline => Features::all(&[$($sreq),*]),

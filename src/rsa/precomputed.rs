@@ -14,6 +14,17 @@ use core::{
 use crate::arch::rsa::vg_rsa_public_precompute;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa::vg_rsa_public_precompute_adx;
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+use crate::arch::rsa::vg_rsa_public_precompute_umaal;
 use crate::cpu::detected;
 
 /// The words of a modulus' precomputed values for an `n_len`-byte modulus
@@ -52,7 +63,7 @@ fn precompute(n: &[u8], scratch: &mut [u64]) -> (Vec<u64>, u32) {
                 target_os = "openbsd"
             )
         ))]
-        Backend::Umaal => vg_rsa_public_precompute,
+        Backend::Umaal => vg_rsa_public_precompute_umaal,
     };
     // SAFETY: each pointer is valid for its length (`pre` and `scratch` for
     // writes), and none overlaps another or wraps around, as they are
@@ -201,6 +212,39 @@ mod tests {
         }
         for n in [vec![], number(63, 0x80), number(1025, 0x80)] {
             assert!(!modulus_valid(&n));
+        }
+    }
+
+    #[test]
+    fn r2_normalization_boundary() {
+        for k in [128, 256] {
+            let mut below = vec![0xff; k];
+            below[0] = 0x7f;
+            let mut above = vec![0; k];
+            above[0] = 0x80;
+            above[k - 1] = 1;
+            // With R = 2^(8k), R is respectively 2 or -2 modulo n.
+            for n in [below, above] {
+                let mut scratch = vec![0; public_scratch_words(k)];
+                let (values, valid) = precompute(&n, &mut scratch);
+                assert_eq!(valid, 1);
+                let r2 = &values[k / 8..];
+                assert_eq!(r2[0], 4);
+                assert!(r2[1..].iter().all(|&word| word == 0));
+            }
+        }
+        // Non-multiple-of-eight lengths use the original setup. For n =
+        // 2^(8k)-1, powers of two repeat with period 8k.
+        for k in [65, 129] {
+            let n = vec![0xff; k];
+            let w = k.div_ceil(8);
+            let bit = (128 * w) % (8 * k);
+            let mut scratch = vec![0; public_scratch_words(k)];
+            let (values, valid) = precompute(&n, &mut scratch);
+            assert_eq!(valid, 1);
+            let mut expected = vec![0; w];
+            expected[bit / 64] = 1 << (bit % 64);
+            assert_eq!(&values[w..], &expected);
         }
     }
 

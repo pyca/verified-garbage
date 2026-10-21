@@ -19,7 +19,7 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 Spec.Weierstrass
 open VG.Proof.Weierstrass.AArch64.PubNaf
 
 def fixedCfg : Impl.Weierstrass.AArch64.Joint.Cfg :=
- ⟨P521Joint.K,P521Joint.KG.bits,p521.sl ONEP,"VG_P521_COMB"⟩
+ ⟨P521Joint.K,P521Joint.KG.bits,p521.sl ONEP,"VG_P521_COMB",7⟩
 
 theorem fixedLoad_eq : P521Joint.fixedLoad = Naf.digitIndex ++ fixedLoadBody := by
  simp only [P521Joint.fixedLoad,fixedLoadBody,fixedAddress,Impl.Weierstrass.AArch64.Joint.loadWords,List.append_assoc]
@@ -146,7 +146,7 @@ theorem fixedEntry_ok {s : State} {base T : Addr} {u j : Nat} {C : Curve} {G : P
    · exact List.mem_append_left _ (by simp [fixedCoords])
    · exact List.mem_append_right _ (hV _ (by simp))
  change WP isa (Impl.Weierstrass.AArch64.Joint.signEntry fixedCfg) d _
- refine WP.mono (jointSignEntry_ok fixedCfg hL.win.lay hL.al.al (by
+ refine WP.mono (jointSignEntry_ok fixedCfg (by decide) hL.win.lay hL.al.al (by
    simpa only [fixedCfg] using hm) id vv
    (by decide) (by decide) vz (by decide) (by change 3304+j<8192; omega) dj db jd zd) fun t ⟨Et,kt,it,jt,zt⟩ => ?_
  refine ⟨Et,(kp.mono (by simp)).trans (kd.trans (kt.mono (by simp [fixedCfg]))),it,?_,zt⟩

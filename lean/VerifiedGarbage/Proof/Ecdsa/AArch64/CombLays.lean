@@ -164,14 +164,15 @@ theorem tcombVals (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW 
 
 /-- The tables, from the arguments' facts, at a state whose regions are the
 arguments' and whose memory changed only in the working space. -/
-theorem tbl_of {s₀ s : State} {T base : Addr} (hp : TblPre c s₀ T base) (hrd : s.rd = s₀.rd)
+theorem tbl_of {ws : List (BitVec 64)} {s₀ s : State} {T base : Addr} (hp : TblPreW ws s₀ T base)
+    (hrd : s.rd = s₀.rd)
     (hu : Unch base [(0, size)] s₀.mem s.mem) :
-    TblMem s T c.combWords ∧ ∀ i < c.combWords.length, ∀ b < 8,
+    TblMem s T ws ∧ ∀ i < ws.length, ∀ b < 8,
       size ≤ ofs base (T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) := by
   have hf := hp.fit
-  have hout : ∀ i < c.combWords.length, ∀ b < 8,
+  have hout : ∀ i < ws.length, ∀ b < 8,
       size ≤ ofs base (T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) := fun i hi b hb => by
-    have hc : (⟨T, 8 * c.combWords.length⟩ : Region).Contains
+    have hc : (⟨T, 8 * ws.length⟩ : Region).Contains
         (T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) 1 := by
       rw [Offset.add_add]; exact Offset.contains_base T (by omega_arith) (by omega_arith)
     have := hp.sc _ hc

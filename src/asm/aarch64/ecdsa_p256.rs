@@ -12624,7 +12624,7 @@ ret
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
 ///
-/// The function saves the callee-saved registers `x19`–`x28` and `x30` in its 8 KB scratch buffer. Field elements and scalars are four 64-bit words in Montgomery form; field squares use the specialized P-256 Montgomery square. The key is checked without branches, and multiplication uses the key's point if valid, else `G`. The scalar inverse uses nine batches of 59 divsteps, with a tenth batch when the public input requires it. `[u]G + [v]Q` uses one joint Jacobian accumulator with width-7 and width-5 sparse signed digits, respectively. Generator digits reuse the odd multiples in the first row of `VG_P256_COMB`. The eight odd multiples of `Q` are built with co-Z arithmetic (ECDH's DBLU and ZADDU, adding `2Q` at a shared `Z`), which also yields the `Z²` and `Z³` values they cache. The joint loop doubles its accumulator in place with five squares and three products, each linear combination (`12a − 9b`, `4a − b`, `3a − 8b`) reduced once (ECDH's doubling), specializes arithmetic to the sparse P-256 prime, and keeps field values in scalar registers across operations with checked scheduling and allocation, then converts once to homogeneous coordinates. Verification compares the projective x-coordinate with `r` and, when in range, `r + n`, without a field inversion. Table lookups, skipped zero digits and exceptional-point branches depend on the public key, digest and signature already declared public by the contract. The result combines the key and scalar checks, rejection of infinity, and `x ≡ r` modulo `n` into a mask.
+/// The function saves the callee-saved registers `x19`–`x28` and `x30` in its 8 KB scratch buffer. Field elements and scalars are four 64-bit words in Montgomery form; field squares use the specialized P-256 Montgomery square. The key is checked without branches, and multiplication uses the key's point if valid, else `G`. The scalar inverse uses nine batches of 59 divsteps, with a tenth batch when the public input requires it. `[u]G + [v]Q` uses one joint Jacobian accumulator with width-9 and width-5 sparse signed digits, respectively. Generator digits, stored as sixteen-bit words, index the affine multiples `[m]G`, `m = 1 … 256`, in the static `VG_P256_GTAB` (16 KB). The eight odd multiples of `Q` are built with co-Z arithmetic (ECDH's DBLU and ZADDU, adding `2Q` at a shared `Z`), which also yields the `Z²` and `Z³` values they cache. The joint loop doubles its accumulator in place with five squares and three products, each linear combination (`12a − 9b`, `4a − b`, `3a − 8b`) reduced once (ECDH's doubling), specializes arithmetic to the sparse P-256 prime, and keeps field values in scalar registers across operations with checked scheduling and allocation, then converts once to homogeneous coordinates. Verification compares the projective x-coordinate with `r` and, when in range, `r + n`, without a field inversion. Table lookups, skipped zero digits and exceptional-point branches depend on the public key, digest and signature already declared public by the contract. The result combines the key and scalar checks, rejection of infinity, and `x ≡ r` modulo `n` into a mask.
 ///
 /// # Safety
 ///
@@ -17967,45 +17967,77 @@ ldr x6, [x0, #1160]
 ldr x7, [x0, #1168]
 ldr x8, [x0, #1176]
 movz x9, #0, lsl #0
-movz x10, #127, lsl #0
-movz x11, #64, lsl #0
+movz x10, #511, lsl #0
+movz x11, #256, lsl #0
 movz x12, #0, lsl #0
 movz x13, #1, lsl #0
 movz x19, #257, lsl #0
-add x20, x0, #1504
-str x12, [x0, #1504]
-str x12, [x0, #1512]
-str x12, [x0, #1520]
-str x12, [x0, #1528]
-str x12, [x0, #1536]
-str x12, [x0, #1544]
-str x12, [x0, #1552]
-str x12, [x0, #1560]
-str x12, [x0, #1568]
-str x12, [x0, #1576]
-str x12, [x0, #1584]
-str x12, [x0, #1592]
-str x12, [x0, #1600]
-str x12, [x0, #1608]
-str x12, [x0, #1616]
-str x12, [x0, #1624]
-str x12, [x0, #1632]
-str x12, [x0, #1640]
-str x12, [x0, #1648]
-str x12, [x0, #1656]
-str x12, [x0, #1664]
-str x12, [x0, #1672]
-str x12, [x0, #1680]
-str x12, [x0, #1688]
-str x12, [x0, #1696]
-str x12, [x0, #1704]
-str x12, [x0, #1712]
-str x12, [x0, #1720]
-str x12, [x0, #1728]
-str x12, [x0, #1736]
-str x12, [x0, #1744]
-str x12, [x0, #1752]
-str x12, [x0, #1760]
+add x20, x0, #2112
+str x12, [x0, #2112]
+str x12, [x0, #2120]
+str x12, [x0, #2128]
+str x12, [x0, #2136]
+str x12, [x0, #2144]
+str x12, [x0, #2152]
+str x12, [x0, #2160]
+str x12, [x0, #2168]
+str x12, [x0, #2176]
+str x12, [x0, #2184]
+str x12, [x0, #2192]
+str x12, [x0, #2200]
+str x12, [x0, #2208]
+str x12, [x0, #2216]
+str x12, [x0, #2224]
+str x12, [x0, #2232]
+str x12, [x0, #2240]
+str x12, [x0, #2248]
+str x12, [x0, #2256]
+str x12, [x0, #2264]
+str x12, [x0, #2272]
+str x12, [x0, #2280]
+str x12, [x0, #2288]
+str x12, [x0, #2296]
+str x12, [x0, #2304]
+str x12, [x0, #2312]
+str x12, [x0, #2320]
+str x12, [x0, #2328]
+str x12, [x0, #2336]
+str x12, [x0, #2344]
+str x12, [x0, #2352]
+str x12, [x0, #2360]
+str x12, [x0, #2368]
+str x12, [x0, #2376]
+str x12, [x0, #2384]
+str x12, [x0, #2392]
+str x12, [x0, #2400]
+str x12, [x0, #2408]
+str x12, [x0, #2416]
+str x12, [x0, #2424]
+str x12, [x0, #2432]
+str x12, [x0, #2440]
+str x12, [x0, #2448]
+str x12, [x0, #2456]
+str x12, [x0, #2464]
+str x12, [x0, #2472]
+str x12, [x0, #2480]
+str x12, [x0, #2488]
+str x12, [x0, #2496]
+str x12, [x0, #2504]
+str x12, [x0, #2512]
+str x12, [x0, #2520]
+str x12, [x0, #2528]
+str x12, [x0, #2536]
+str x12, [x0, #2544]
+str x12, [x0, #2552]
+str x12, [x0, #2560]
+str x12, [x0, #2568]
+str x12, [x0, #2576]
+str x12, [x0, #2584]
+str x12, [x0, #2592]
+str x12, [x0, #2600]
+str x12, [x0, #2608]
+str x12, [x0, #2616]
+str x12, [x0, #2624]
 24:
 and x1, x5, x13
 cbnz x1, 25f
@@ -18014,7 +18046,7 @@ extr x6, x7, x6, #1
 extr x7, x8, x7, #1
 extr x8, x9, x8, #1
 lsr x9, x9, #1
-add x20, x20, #1
+add x20, x20, #2
 b 26f
 25:
 and x2, x5, x10
@@ -18022,6 +18054,8 @@ and x3, x2, x11
 lsl x3, x3, #1
 sub x2, x2, x3
 strb w2, [x20, #0]
+lsr x3, x2, #8
+strb w3, [x20, #1]
 lsr x3, x2, #63
 sub x3, x12, x3
 subs x5, x5, x2
@@ -18029,12 +18063,12 @@ sbcs x6, x6, x3
 sbcs x7, x7, x3
 sbcs x8, x8, x3
 sbc x9, x9, x3
-extr x5, x6, x5, #7
-extr x6, x7, x6, #7
-extr x7, x8, x7, #7
-extr x8, x9, x8, #7
-lsr x9, x9, #7
-add x20, x20, #7
+extr x5, x6, x5, #9
+extr x6, x7, x6, #9
+extr x7, x8, x7, #9
+extr x8, x9, x8, #9
+lsr x9, x9, #9
+add x20, x20, #18
 26:
 orr x19, x5, x6
 orr x19, x19, x7
@@ -23797,11 +23831,13 @@ ldr x1, [x0, #696]
 str x1, [x0, #600]
 212:
 add x16, x0, x19
-ldrb w2, [x16, #1504]
+add x16, x16, x19
+ldrb w2, [x16, #2112]
+ldrb w3, [x16, #2113]
 cbnz x2, 223f
 b 224f
 223:
-lsr x3, x2, #7
+lsr x3, x3, #7
 lsl x4, x3, #8
 sub x2, x2, x4
 movz x4, #0, lsl #0
@@ -23812,8 +23848,8 @@ add x2, x2, #1
 lsr x2, x2, #1
 sub x2, x2, #1
 lsl x2, x2, #7",
-        concat!("adrp x16, ", vg_sym_page!("{VG_P256_COMB}")),
-        concat!("add x16, x16, ", vg_sym_pageoff!("{VG_P256_COMB}")),
+        concat!("adrp x16, ", vg_sym_page!("{VG_P256_GTAB}")),
+        concat!("add x16, x16, ", vg_sym_pageoff!("{VG_P256_GTAB}")),
         r"add x16, x16, x2
 ldr x4, [x16, #0]
 str x4, [x0, #704]
@@ -23840,7 +23876,8 @@ str x1, [x0, #784]
 ldr x1, [x0, #248]
 str x1, [x0, #792]
 add x16, x0, x19
-ldrb w3, [x16, #1504]
+add x16, x16, x19
+ldrb w3, [x16, #2113]
 lsr x3, x3, #7
 cbnz x3, 225f
 b 226f
@@ -30893,11 +30930,13 @@ ldr x1, [x0, #696]
 str x1, [x0, #600]
 235:
 add x16, x0, x19
-ldrb w2, [x16, #1504]
+add x16, x16, x19
+ldrb w2, [x16, #2112]
+ldrb w3, [x16, #2113]
 cbnz x2, 246f
 b 247f
 246:
-lsr x3, x2, #7
+lsr x3, x3, #7
 lsl x4, x3, #8
 sub x2, x2, x4
 movz x4, #0, lsl #0
@@ -30908,8 +30947,8 @@ add x2, x2, #1
 lsr x2, x2, #1
 sub x2, x2, #1
 lsl x2, x2, #7",
-        concat!("adrp x16, ", vg_sym_page!("{VG_P256_COMB}")),
-        concat!("add x16, x16, ", vg_sym_pageoff!("{VG_P256_COMB}")),
+        concat!("adrp x16, ", vg_sym_page!("{VG_P256_GTAB}")),
+        concat!("add x16, x16, ", vg_sym_pageoff!("{VG_P256_GTAB}")),
         r"add x16, x16, x2
 ldr x4, [x16, #0]
 str x4, [x0, #704]
@@ -30936,7 +30975,8 @@ str x1, [x0, #784]
 ldr x1, [x0, #248]
 str x1, [x0, #792]
 add x16, x0, x19
-ldrb w3, [x16, #1504]
+add x16, x16, x19
+ldrb w3, [x16, #2113]
 lsr x3, x3, #7
 cbnz x3, 248f
 b 249f
@@ -34814,6 +34854,6 @@ and x0, x3, x1
 ret
 .p2align 6",
         vg_p256_check_point = sym super::p256_check_point::vg_p256_check_point,
-        VG_P256_COMB = sym super::consts::VG_P256_COMB,
+        VG_P256_GTAB = sym super::consts::VG_P256_GTAB,
     )
 }

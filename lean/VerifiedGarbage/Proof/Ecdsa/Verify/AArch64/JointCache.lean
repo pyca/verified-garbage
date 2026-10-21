@@ -18,7 +18,7 @@ private theorem cache_sources : ∀ x∈CachedInit.sources,x∈nafLive cfg.K := 
 private theorem cache_slots : ∀ op∈CachedInit.ops,∀ x∈op.out::op.ins,x∈jointSlots cfg := by decide +kernel
 private theorem live_bounds : ∀ x∈nafLive cfg.K,x<6000 := by decide +kernel
 private theorem cache_zero : ∀ w∈CachedInit.outputs.map (·,32)++[(128,32)],160+32≤w.1 ∨ w.1+w.2≤160 := by decide +kernel
-private theorem cache_bits : ∀ w∈CachedInit.outputs.map (·,32)++[(128,32)],2088≤w.1 ∨ w.1+w.2≤1504 := by decide +kernel
+private theorem cache_bits : ∀ w∈CachedInit.outputs.map (·,32)++[(128,32)],2632≤w.1 ∨ w.1+w.2≤1824 := by decide +kernel
 
 /-- Initialize cached powers, leaving the original table and both scalar buffers intact. -/
 theorem jointCache_ok {C : Curve} {base : Addr} {size u v : Nat} {Q : Point C} {s : State}
@@ -26,7 +26,7 @@ theorem jointCache_ok {C : Curve} {base : Addr} {size u v : Nat} {Q : Point C} {
     (hI : Inv cfg.K.M base size C.p (·∈jointSlots cfg) (nafLive cfg.K)
       (tmv C cfg.K.M.n base s) s)
     (hp : NafStable cfg.K C base Q (FastNaf.byte 5 v) s)
-    (hg : ∀ j<257,s.mem (off base (cfg.gBits+j))=FastNaf.byte 7 u j)
+    (hg : ∀ j<jointGLen cfg,s.mem (off base (cfg.gBits+j))=jointGByte cfg u j)
     (hone : tmv C cfg.K.M.n base s cfg.onep=1) :
     WP isa (CachedJac.cache cfg.K) s fun t =>
       ProgKeep cfg.K.M base CachedInit.outputs s t ∧
@@ -56,7 +56,7 @@ theorem jointCache_ok {C : Curve} {base : Addr} {size u v : Nat} {Q : Point C} {
     · exact List.mem_map.mpr ⟨3*(a-1),List.mem_range.mpr (by omega),by omega⟩
     · exact List.mem_map.mpr ⟨3*(a-1)+1,List.mem_range.mpr (by omega),by omega⟩
     · exact List.mem_map.mpr ⟨3*(a-1)+2,List.mem_range.mpr (by omega),by omega⟩
-  have bytes (d : Nat) (hd : d=cfg.K.bits ∨ d=cfg.gBits) (j : Nat) (hj : j<257) :
+  have bytes (d : Nat) (hd : d=cfg.K.bits ∨ d=cfg.gBits) (j : Nat) (hj : j<514) :
       t.mem (off base (d+j))=s.mem (off base (d+j)) := by
     apply kt.unch.byte
     · intro w hw
@@ -64,11 +64,11 @@ theorem jointCache_ok {C : Curve} {base : Addr} {size u v : Nat} {Q : Point C} {
       rcases hd with rfl | rfl
       · change 1824+j<w.1 ∨ w.1+w.2≤1824+j
         omega
-      · change 1504+j<w.1 ∨ w.1+w.2≤1504+j
+      · change 2112+j<w.1 ∨ w.1+w.2≤2112+j
         omega
     · rcases hd with rfl | rfl
       · change 1824+j<2^64; omega
-      · change 1504+j<2^64; omega
+      · change 2112+j<2^64; omega
   refine ⟨kt,ni.to_tmv,⟨⟨?_,?_,?_⟩,?_,?_,?_,?_⟩⟩
   · change wordsVal t.mem base 160 4=0
     rw [kt.unch.wordsVal (d:=160) (k:=4) cache_zero (by decide)]
@@ -76,8 +76,8 @@ theorem jointCache_ok {C : Curve} {base : Addr} {size u v : Nat} {Q : Point C} {
   · intro a ha ha8
     rw [same _ (ht a ha ha8 _ (by simp)),same _ (ht a ha ha8 _ (by simp)),same _ (ht a ha ha8 _ (by simp))]
     exact hp.table a ha ha8
-  · intro j hj; rw [bytes _ (Or.inl rfl) j hj]; exact hp.bits j hj
-  · intro j hj; rw [bytes _ (Or.inr rfl) j hj]; exact hg j hj
+  · intro j hj; rw [bytes _ (Or.inl rfl) j (by omega)]; exact hp.bits j hj
+  · intro j hj; rw [bytes _ (Or.inr rfl) j (by change j<514 at hj; omega)]; exact hg j hj
   · rw [same _ (by decide +kernel),hone]
   · intro i hi
     have p := CachedInit.pow_values (tmv C cfg.K.M.n base s) i hi

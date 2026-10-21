@@ -56,9 +56,7 @@ def accept : List Instr :=
 
 /-- Sum the lane weights, then compact according to the low-byte mask. -/
 def compact (w16 : Bool := false) : List Instr :=
- [.vop (.ext .v2 .v1 .v1 8),.vop (.add .h8 .v1 .v1 .v2),
- .vop (.ext .v2 .v1 .v1 4),.vop (.add .h8 .v1 .v1 .v2),
- .vop (.ext .v2 .v1 .v1 2),.vop (.add .h8 .v1 .v1 .v2),.umov .w .x6 .v1 0,
+ [.vop (.addv .h8 .v1 .v1),.umov .w .x6 .v1 0,
  .movz .x .x7 255 0,.logic .and .x .x7 .x6 .x7,.lsl .x .x7 .x7 4,.add .x .x7 .x16 .x7,
  .ldrq .v2 .x7 0,.vop (.tbl .v0 .v0 .v2)] ++
  (if w16 then [.strq .v0 .x3 0] else [.vop (.perm .zip1 .h8 .v1 .v0 .v21),

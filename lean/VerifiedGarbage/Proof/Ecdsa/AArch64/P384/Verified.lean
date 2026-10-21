@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Contract
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 public import VerifiedGarbage.Proof.Weierstrass.CombW
@@ -10,6 +10,10 @@ import VerifiedGarbage.Proof.P384.Point
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import VerifiedGarbage.Proof.P384.Prime
+import VerifiedGarbage.Proof.P384.Order
+import VerifiedGarbage.Proof.Ecdsa.AArch64.CombJ
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.CombJ
+meta import VerifiedGarbage.Proof.P384.Order
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Contract
@@ -96,6 +100,13 @@ theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p384 s := by
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
     ⟨by rw [h1]; simp, held, fit, hdw _ (by simp)⟩⟩
 
+/-- The comb by Jacobian mixed additions gives what the signing's stages need. -/
+theorem combJ_ok (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
+    (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
+    CombCorrect p384 p384.combCfg.combJ :=
+  combJ_correct (p384_ok hI) hL hT (by decide) (by decide) (Proof.P384.booth hL rfl rfl)
+    (by decide +kernel)
+
 theorem sign_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) (s : State)
     (hs : signAArch64.pre s) :
@@ -105,7 +116,8 @@ theorem sign_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch6
   have hn : CallsKeep signP384 := by lit_decide
   have hu : KeepsUntouched signP384 := by lit_decide
   have hv : signP384.allInstrs keepsV = true := by lit_decide
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p384_ok hI) hL hT (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ :=
+    signWith_ok (p384_ok hI).toBaseCfgOk hL _ (combJ_ok hL hI hT) (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, hpost⟩
 
 theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP384 :=

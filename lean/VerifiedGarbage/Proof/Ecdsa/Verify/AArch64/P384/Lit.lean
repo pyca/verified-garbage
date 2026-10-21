@@ -10,6 +10,7 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
 
 /-!
 # ECDSA verification over P-384 on AArch64: the code as a literal

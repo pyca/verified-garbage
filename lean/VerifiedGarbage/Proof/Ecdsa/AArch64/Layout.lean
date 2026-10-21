@@ -130,13 +130,16 @@ structure CfgOk (c : Cfg) : Prop extends BaseCfgOk c where
 
 instance {c : Cfg} : Coe (CfgOk c) (BaseCfgOk c) := ⟨CfgOk.toBaseCfgOk⟩
 
-/-- The comb's tables (`Cfg.combWords`) at `T`: readable, held, not
-wrapping around, and apart from the working space at `base`. -/
-structure TblPre (c : Cfg) (s : State) (T base : Addr) : Prop where
-  rd : (⟨T, 8 * c.combWords.length⟩ : Region) ∈ s.rd
-  held : ∀ i < c.combWords.length, s.mem.readW (T + BitVec.ofNat 64 (8 * i)) 64 = c.combWords.getD i 0
-  fit : T.toNat + 8 * c.combWords.length ≤ 2 ^ 64
-  sc : Region.Disjoint ⟨T, 8 * c.combWords.length⟩ ⟨base, size⟩
+/-- A table of constants `ws` at `T`: readable, held, not wrapping around,
+and apart from the working space at `base`. -/
+structure TblPreW (ws : List (BitVec 64)) (s : State) (T base : Addr) : Prop where
+  rd : (⟨T, 8 * ws.length⟩ : Region) ∈ s.rd
+  held : ∀ i < ws.length, s.mem.readW (T + BitVec.ofNat 64 (8 * i)) 64 = ws.getD i 0
+  fit : T.toNat + 8 * ws.length ≤ 2 ^ 64
+  sc : Region.Disjoint ⟨T, 8 * ws.length⟩ ⟨base, size⟩
+
+/-- The comb's tables (`Cfg.combWords`) at `T`. -/
+abbrev TblPre (c : Cfg) := TblPreW c.combWords
 
 /-- The arguments: `out = x0` (`2 len` bytes), `d = x1`, `digest = x2`,
 `k = x3` (`len` bytes each) and `scratch = x4`, and the comb's tables at

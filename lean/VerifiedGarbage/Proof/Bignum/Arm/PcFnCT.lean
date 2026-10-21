@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicPrecomputeKernel
 public import VerifiedGarbage.Proof.Bignum.Arm.PcInput
 
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
@@ -14,12 +16,12 @@ import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 
-theorem pcFn_ct {base dst src : BitVec 32} {len k : Nat} {nb : List Byte} :
-    RelCT isa (fun s t =>
+theorem pcFn_ct {base dst src : BitVec 32} {len k : Nat} {nb : List Byte}
+    (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : RelCT isa (fun s t =>
       (PcFnInput base dst src len k s ∧ Spec.Rsa.bytesAt s.mem (State.addr src) k = nb) ∧
       (PcFnInput base dst src len k t ∧ Spec.Rsa.bytesAt t.mem (State.addr src) k = nb) ∧ s.sp = t.sp)
-      PcFn.code (fun _ _ => True) := by
-  unfold PcFn.code
+      (PcFn.codeWith kernel.code) (fun _ _ => True) := by
+  unfold PcFn.codeWith
   apply RelCT.frame (fun _ _ h => h.2.2)
   intro s t tr1 tr2 u v hp e1 e2
   obtain ⟨s0, t0, ⟨⟨hs, bs⟩, ⟨ht, bt⟩, sp⟩, ps, pt⟩ := hp
@@ -46,7 +48,7 @@ theorem pcFn_ct {base dst src : BitVec 32} {len k : Nat} {nb : List Byte} :
         (by have := ht.maxLength; omega)
         (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact ht.stackInput.symm)).trans bt
       have body := relCT_keep_sp
-        (pcBody_ct (base := base) (dst := dst) (src := src) (len := len) (nb := nb) hs.maxLength)
+        (pcBody_ct (kernel := kernel) (base := base) (dst := dst) (src := src) (len := len) (nb := nb) hs.maxLength)
         (fun _ _ h => h.2.2)
       have restore : RelCT isa (fun s t => s.sp = t.sp) (.block PcFn.restore) (fun s t => s.sp = t.sp) :=
         stackLoads_ct pcCalleeSaved

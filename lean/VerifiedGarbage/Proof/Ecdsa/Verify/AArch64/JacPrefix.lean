@@ -228,9 +228,9 @@ theorem publicKey_congr {c : Cfg} {s t : State}
   simpa only [keyY,BitVec.ofNat_add,BitVec.add_assoc] using hy'
 
 /-- The stronger internal relation uses only bytes the existing specification makes public. -/
-structure JacPublic (c : Cfg) (s t : State) : Prop where
+structure JacPublicT (c : Cfg) (tsym : String) (s t : State) : Prop where
   ptrs : AArch64.Taint.Agree (Taint.ofRegs [.x0,.x1,.x2,.x3]) s t
-  table : s.syms c.tsym = t.syms c.tsym
+  table : s.syms tsym = t.syms tsym
   key : Spec.Ecdsa.bytesAt s.mem (s.gpr .x0) (1+2*c.C.len) =
     Spec.Ecdsa.bytesAt t.mem (t.gpr .x0) (1+2*c.C.len)
   digest : Spec.Ecdsa.bytesAt s.mem (s.gpr .x1) c.C.len =
@@ -238,26 +238,29 @@ structure JacPublic (c : Cfg) (s t : State) : Prop where
   sig : Spec.Ecdsa.bytesAt s.mem (s.gpr .x2) (2*c.C.len) =
     Spec.Ecdsa.bytesAt t.mem (t.gpr .x2) (2*c.C.len)
 
-theorem JacPublic.u {c : Cfg} {s t : State} (h : JacPublic c s t) : publicU c s = publicU c t :=
+/-- `JacPublicT` with the comb's tables at `c.tsym`. -/
+abbrev JacPublic (c : Cfg) := JacPublicT c c.tsym
+
+theorem JacPublicT.u {c : Cfg} {tsym : String} {s t : State} (h : JacPublicT c tsym s t) : publicU c s = publicU c t :=
   publicU_congr h.digest h.sig
 
-theorem JacPublic.signature {c : Cfg} {s t : State} (h : JacPublic c s t) :
+theorem JacPublicT.signature {c : Cfg} {tsym : String} {s t : State} (h : JacPublicT c tsym s t) :
     sigR c s = sigR c t ∧ sigS c s = sigS c t := by
   have hs := h.sig
   rw [Nat.two_mul,bytesAt_add,bytesAt_add] at hs
   obtain ⟨hr,hs⟩ := List.append_inj hs (by simp only [length_bytesAt])
   exact ⟨congrArg Spec.Weierstrass.ofBytes hr,congrArg Spec.Weierstrass.ofBytes hs⟩
 
-theorem JacPublic.v {c : Cfg} {s t : State} (h : JacPublic c s t) : publicV c s = publicV c t := by
+theorem JacPublicT.v {c : Cfg} {tsym : String} {s t : State} (h : JacPublicT c tsym s t) : publicV c s = publicV c t := by
   rw [publicV,publicV,h.signature.1,h.signature.2]
 
-theorem JacPublic.keyOk {c : Cfg} {s t : State} (h : JacPublic c s t) : KeyOk c s ↔ KeyOk c t := by
+theorem JacPublicT.keyOk {c : Cfg} {tsym : String} {s t : State} (h : JacPublicT c tsym s t) : KeyOk c s ↔ KeyOk c t := by
   obtain ⟨tag,x,y⟩ := publicKey_congr h.key
   simp only [KeyOk,tag,x,y]
 
 /-- The initialized peer coordinates are equal in the two executions. -/
 theorem mid_peer_public {c : Cfg} {s₀ t₀ s t : State} {base : Addr}
-    {g₁ g₂ : Reg → BitVec 64} (h : JacPublic c s₀ t₀)
+    {g₁ g₂ : Reg → BitVec 64} {ts : String} (h : JacPublicT c ts s₀ t₀)
     (hs : Mid c s₀ base g₁ s) (ht : Mid c t₀ base g₂ t) :
     VG.Proof.Weierstrass.AArch64.tmv c.C c.n base s (c.sl VG.Impl.Ecdh.AArch64.PX) =
       VG.Proof.Weierstrass.AArch64.tmv c.C c.n base t (c.sl VG.Impl.Ecdh.AArch64.PX) ∧
@@ -291,7 +294,7 @@ theorem Mid.peer_rep {c : Cfg} (hc : CfgOk c) (hC : Law c.C)
   rw [onep_tmv hc h.fixed]
   exact peerPt_rep hC _ _ _ h.px h.py
 
-theorem JacPublic.peerPoint {c : Cfg} {s t : State} (h : JacPublic c s t) :
+theorem JacPublicT.peerPoint {c : Cfg} {tsym : String} {s t : State} (h : JacPublicT c tsym s t) :
     peerPt c (s.mem (s.gpr .x0)=4) (keyX c s) (keyY c s) =
       peerPt c (t.mem (t.gpr .x0)=4) (keyX c t) (keyY c t) := by
   obtain ⟨tag,x,y⟩ := publicKey_congr h.key

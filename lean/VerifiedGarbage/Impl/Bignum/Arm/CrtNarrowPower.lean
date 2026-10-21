@@ -53,15 +53,19 @@ def narrowInputArgs : List Instr :=
 def narrowInput (slot : Nat) : Prog isa :=
   .seq (.block (narrowSource slot)) (.seq (.block narrowInputArgs) (.seq copyBytes (.block [.mov .r0 (.reg .r5)])))
 def exponentArgs (exponentSlot : Nat) : List Instr := [.ldrSp .r1 exponentSlot, .ldrSp .r2 (exponentSlot + 4)]
-def narrowExp (exponentSlot : Nat) : Prog isa :=
-  .seq (.block (exponentArgs exponentSlot)) (.seq (.block expControls) windowExpPhase)
+def narrowExpWith (phase : Prog isa) (exponentSlot : Nat) : Prog isa :=
+  .seq (.block (exponentArgs exponentSlot)) (.seq (.block expControls) phase)
 /-- Reselect the factor's full-width workspace, with the narrow one in r1. -/
+def narrowExp (exponentSlot : Nat) : Prog isa := narrowExpWith windowExpPhase exponentSlot
+
 def leaveNarrow (slot : Nat) : List Instr := [.mov .r1 (.reg .r0), .ldrSp .r0 8, .ldr .r0 .r0 slot]
 def narrowResult (slot : Nat) : Prog isa :=
   .seq (.block (leaveNarrow slot)) (.seq (.block activateWorkspace) (transferArray 6 6))
 
-def narrowPower (slot primeSlot exponentSlot : Nat) : Prog isa :=
+def narrowPowerWith (phase : Prog isa) (slot primeSlot exponentSlot : Nat) : Prog isa :=
   .seq reducePrime (.seq (enterNarrow (primeSlot + 4)) (.seq (narrowPrime primeSlot) (.seq (narrowInput slot)
-    (.seq (narrowExp exponentSlot) (narrowResult slot)))))
+    (.seq (narrowExpWith phase exponentSlot) (narrowResult slot)))))
+
+def narrowPower (slot primeSlot exponentSlot : Nat) : Prog isa := narrowPowerWith windowExpPhase slot primeSlot exponentSlot
 
 end VG.Impl.Bignum.Arm.Crt

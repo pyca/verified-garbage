@@ -69,7 +69,7 @@ theorem tail_ok {s₀ : State} (hp : XPre s₀) {t : Nat} {s : State} (h : LInv 
       abiPreserved (s.withRegions [] wr) u ∧ xorAArch64.post (s.withRegions [] wr) u ∧
       u.gpr .x0 = s.gpr .x0 ∧ u.gpr .x1 = s.gpr .x3 :=
     VG.Proof.ChaCha20.AArch64.Small.correct _ hs
-  refine WP.narrow hw ?_ hc ?_ VG.Proof.ChaCha20.AArch64.Small.xor_noFrames
+  refine WP.narrow hw ?_ hc ?_ (VG.Proof.ChaCha20.AArch64.Small.xor_noFrames false)
   · rw [h.rd, hp.rd]; exact hc
   · intro u _ _ hsp hf ⟨ha, hpost, h0, h1⟩
     simp only [State.withRegions_gpr, State.withRegions_sp, abiPreserved] at ha

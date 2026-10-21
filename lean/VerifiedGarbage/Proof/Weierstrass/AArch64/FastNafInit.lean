@@ -16,7 +16,7 @@ namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64 VG.Proof.Mont.AArch64 VG.Proof.Mont
 open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 
-theorem fastInit_ok (K : WinCfg) {w : Nat} (hw : FastNaf.Width w) {s : State} {base : Addr} {size src : Nat}
+theorem fastInit_ok (K : WinCfg) {w : Nat} (hw : FastNaf.Wide w) {s : State} {base : Addr} {size src : Nat}
     (hs : Scr s base size) (hsrc : src+32≤size) (hsrc8 : src%8=0) (hbits : K.bits<4096) :
     WP isa (.block (Impl.Weierstrass.AArch64.FastNaf.init K src w)) s fun t =>
       FastPrepCore base size K.bits w (wordsVal s.mem base src 4) 0 t ∧
@@ -38,8 +38,8 @@ theorem fastInit_ok (K : WinCfg) {w : Nat} (hw : FastNaf.Width w) {s : State} {b
     simp only [regsVal] at va
     change _+2^256*0=_
     omega
-  · rcases hw with rfl | rfl <;> rfl
-  · rcases hw with rfl | rfl <;> rfl
+  · rcases hw with rfl | rfl | rfl <;> rfl
+  · rcases hw with rfl | rfl | rfl <;> rfl
   · rfl
   · rfl
   · simpa only [Nat.add_zero,RegUpd.gpr_write,ite_true,BitVec.setWidth_eq] using congrArg (fun x => x+BitVec.ofNat 64 K.bits) sa.x0

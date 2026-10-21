@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Setup
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xar
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -36,9 +37,9 @@ theorem roundCounterDec_ok (s : State) {n : Nat} (hn : 0 < n ∧ n ≤ 10)
   rw [RegUpd.gpr_write_self, BitVec.setWidth_eq, hc]
   exact Offset.ofNat_sub_ofNat (by omega)
 
-theorem roundLoop_ok {vs : Nat → CState} {s : State} (h : Holds vs s)
+theorem roundLoop_ok {sve : Bool} {vs : Nat → CState} {s : State} (h : Holds vs s)
     (ht : s.v .v30 = rol8Table) :
-    WP isa roundLoop s fun u =>
+    WP isa (roundLoop sve) s fun u =>
       Holds (fun j => Nat.repeat innerBlock 10 (vs j)) u ∧ LoadSame s u := by
   apply WP.seq
   refine (roundCounterInit_ok s).mono fun a ⟨ha, hav, hsa⟩ => ?_
@@ -49,7 +50,7 @@ theorem roundLoop_ok {vs : Nat → CState} {s : State} (h : Holds vs s)
   refine WP.loop (M := isa) Inv ?_ 10 a ?_
   · intro n u ⟨hn, hle, hc, hu, hut, hsu⟩
     apply WP.seq
-    refine (doubleRound_ok hu hut).mono fun b ⟨hb, hub⟩ => ?_
+    refine (doubleRound_ok (sve := sve) hu hut).mono fun b ⟨hb, hub⟩ => ?_
     have hcb : b.gpr .x4 = BitVec.ofNat 64 n := by rw [hub.gpr]; exact hc
     refine (roundCounterDec_ok b ⟨hn, hle⟩ hcb).mono fun c ⟨hcc, hcv, hbc⟩ => ?_
     have hsc : LoadSame s c := (hsu.trans

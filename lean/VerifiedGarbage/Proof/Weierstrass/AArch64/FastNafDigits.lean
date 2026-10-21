@@ -35,7 +35,7 @@ theorem fastSetup_ok (K : WinCfg) {w : Nat} (hw : FastNaf.Width w)
       FastPrepState base size K.bits w (wordsVal s.mem base src 4) 0 t ∧
       KeepRegs nafPrepClob s t ∧ Outside base K.bits 264 s.mem t.mem := by
   rw [WP.block_append_iff]
-  refine WP.mono (fastInit_ok K hw hs hsrc hsrc8 hbits) fun a ⟨ia,ka,ma⟩ => ?_
+  refine WP.mono (fastInit_ok K hw.wide hs hsrc hsrc8 hbits) fun a ⟨ia,ka,ma⟩ => ?_
   refine WP.mono (fastClear_ok K ia.scr ia.zero hbits8 hb) fun t ⟨zt,kt,ot⟩ => ?_
   refine ⟨⟨ia.next (kt.mono (by simp)) ?_ ?_,?_⟩,ka.trans (kt.mono (by simp)),?_⟩
   · simp only [kt.gpr _ List.not_mem_nil,ia.value]

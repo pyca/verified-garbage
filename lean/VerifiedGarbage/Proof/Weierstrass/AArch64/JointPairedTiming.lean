@@ -59,7 +59,7 @@ theorem jointPair_digits {c : Joint.Cfg} {o : Joint.Ops} {C : Curve} {base : Add
     (hC : Law C) (hQ : onCurve C Q=true) (hA : onCurve C A=true) (hj : j<257)
     (hw : JointOpsOk c o C base W Core P Q u v) (ht : JointOpsTiming c o C base size Core) :
     RelCT isa (JointPair c C base size Core A j) (Joint.digits c o)
-      (JointPair c C base size Core (add (add A (FastNaf.point C Q 5 v j)) (FastNaf.point C P 7 u j)) j) := by
+      (JointPair c C base size Core (add (add A (FastNaf.point C Q 5 v j)) (FastNaf.point C P c.gw u j)) j) := by
   apply RelCT.seq (jointPair_stage (fun s hs h19 => hw.peer A j s hj hA hs h19) (ht.peer A j hj))
   exact jointPair_stage (fun s hs h19 => hw.generator _ j s hj
     (hC.onCurve_add hA (FastNaf.onCurve_point hC hQ 5 v j)) hs h19) (ht.generator _ j hj)
@@ -90,12 +90,12 @@ theorem jointPair_step {c : Joint.Cfg} {o : Joint.Ops} {C : Curve} {base : Addr}
     (hC : Law C) (hP : onCurve C P=true) (hQ : onCurve C Q=true) (hj : j<256)
     (hw : JointOpsOk c o C base W Core P Q u v) (ht : JointOpsTiming c o C base size Core)
     (hc : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x19])) (.block [decCounter])) :
-    RelCT isa (JointPair c C base size Core (jointPoint P Q u v (j+1)) (j+1))
-      (Joint.step c o) (JointPair c C base size Core (jointPoint P Q u v j) j) := by
-  have hA := jointPoint_curve hC hP hQ u v (j+1)
+    RelCT isa (JointPair c C base size Core (jointPoint P Q u v (j+1) c.gw) (j+1))
+      (Joint.step c o) (JointPair c C base size Core (jointPoint P Q u v j c.gw) j) := by
+  have hA := jointPoint_curve hC hP hQ u v (j+1) c.gw
   apply RelCT.seq (jointPair_counter hw.keep hj hc)
   apply RelCT.seq (jointPair_stage (fun s hs _ => hw.double _ s hA hs) (ht.double _ j))
-  simpa only [jointPoint_step hC hP hQ] using
+  simpa only [jointPoint_step hC hP hQ (gw:=c.gw)] using
     jointPair_digits hC hQ (hC.onCurve_add hA hA) (by omega : j<257) hw ht
 
 theorem jointPair_run {c : Joint.Cfg} {o : Joint.Ops} {C : Curve} {base : Addr}
@@ -107,15 +107,15 @@ theorem jointPair_run {c : Joint.Cfg} {o : Joint.Ops} {C : Curve} {base : Addr}
     RelCT isa (JointPair c C base size Core .infinity 256) (Joint.run c o)
       (JointPair c C base size Core (add (mul u P) (mul v Q)) 0) := by
   have seed := jointPair_digits (j:=256) (A:=.infinity) hC hQ rfl (by decide) hw ht
-  have he := jointPoint_step hC hP hQ u v 256
-  rw [jointPoint_top P Q hu hv] at he
+  have he := jointPoint_step hC hP hQ u v 256 c.gw
+  rw [jointPoint_top P Q hu hv c.gw] at he
   change add (add .infinity (FastNaf.point C Q 5 v 256))
-    (FastNaf.point C P 7 u 256)=jointPoint P Q u v 256 at he
+    (FastNaf.point C P c.gw u 256)=jointPoint P Q u v 256 c.gw at he
   rw [he] at seed
   have out := jointRun_relCT (c:=c) (o:=o)
-    (fun j => JointPair c C base size Core (jointPoint P Q u v j) j)
+    (fun j => JointPair c C base size Core (jointPoint P Q u v j c.gw) j)
     (fun _ _ _ h => ⟨h.2.2.2.1,h.2.2.2.2⟩) seed
     (fun j hj => jointPair_step hC hP hQ hj hw ht hc)
-  simpa only [jointPoint_zero] using out
+  simpa only [jointPoint_zero (gw:=c.gw)] using out
 
 end VG.Proof.Weierstrass.AArch64

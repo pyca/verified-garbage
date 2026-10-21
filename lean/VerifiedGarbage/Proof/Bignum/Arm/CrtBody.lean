@@ -1,8 +1,9 @@
 module
+
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtBodyInput
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-
 import VerifiedGarbage.Proof.Bignum.Arm.CrtFail
 import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
 import VerifiedGarbage.Proof.Bignum.Arm.CrtValid
@@ -16,12 +17,12 @@ namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 open VG.Proof.X25519.Arm (Rest)
 
-theorem crt_body_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : CrtBodyInput g bs s) :
-    WP isa CrtFn.body s fun t =>
+theorem crt_body_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : CrtBodyInput g bs s) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa (CrtFn.bodyWith kernel.code) s fun t =>
       Spec.Rsa.written t.mem (State.addr g.output) g.length (t.gpr .r0)
         (Spec.Rsa.privateCrt (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6)) ∧
       Frame (crtMutable g s.sp ++ [⟨State.addr g.output, g.length⟩]) s.mem t.mem ∧ Rest roundClobbers s t := by
-  rw [CrtFn.body, WP.seq_iff]
+  rw [CrtFn.bodyWith, WP.seq_iff]
   refine WP.mono (modulusCheck_ok s h.buffers.lengthValid.1 h.buffers.lengthValid.2
     (h.buffers.source 0).fits (h.buffers.source 0).read h.source h.count) ?_
   rintro u ⟨flag, mem, rest⟩
@@ -32,7 +33,7 @@ theorem crt_body_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h 
     ((rest.gpr .r4 (by simp)).trans h.source) ((rest.gpr .r6 (by simp)).trans h.count)
   refine WP.ite (Spec.Rsa.modulusValid (Spec.Rsa.os2ip (bs 0)) g.length) (by change some u.z = _; rw [flag]) ?_ ?_
   · intro valid
-    refine WP.mono (crt_valid_ok u hu.buffers hu.stack hu.ptr hu.count hu.saved hu.modulusPtr valid) ?_
+    refine WP.mono ((crt_valid_ok (kernel := kernel)) u hu.buffers hu.stack hu.ptr hu.count hu.saved hu.modulusPtr valid) ?_
     rintro t ⟨written, frame, restT⟩
     rw [mem, rest.sp] at frame
     exact ⟨written, frame, (rest.mono (by simp [roundClobbers])).trans restT⟩

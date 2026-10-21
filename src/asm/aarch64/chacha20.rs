@@ -4749,114 +4749,66 @@ add v0.4s, v0.4s, v4.4s
 add v1.4s, v1.4s, v5.4s
 add v2.4s, v2.4s, v6.4s
 add v3.4s, v3.4s, v7.4s
-eor v31.16b, v20.16b, v0.16b
-rev32 v20.8h, v31.8h
-eor v31.16b, v21.16b, v1.16b
-rev32 v21.8h, v31.8h
-eor v31.16b, v22.16b, v2.16b
-rev32 v22.8h, v31.8h
-eor v31.16b, v23.16b, v3.16b
-rev32 v23.8h, v31.8h
+xar z20.s, z20.s, z0.s, #16
+xar z21.s, z21.s, z1.s, #16
+xar z22.s, z22.s, z2.s, #16
+xar z23.s, z23.s, z3.s, #16
 add v16.4s, v16.4s, v20.4s
 add v17.4s, v17.4s, v21.4s
 add v18.4s, v18.4s, v22.4s
 add v19.4s, v19.4s, v23.4s
-eor v31.16b, v4.16b, v16.16b
-ushr v4.4s, v31.4s, #20
-sli v4.4s, v31.4s, #12
-eor v31.16b, v5.16b, v17.16b
-ushr v5.4s, v31.4s, #20
-sli v5.4s, v31.4s, #12
-eor v31.16b, v6.16b, v18.16b
-ushr v6.4s, v31.4s, #20
-sli v6.4s, v31.4s, #12
-eor v31.16b, v7.16b, v19.16b
-ushr v7.4s, v31.4s, #20
-sli v7.4s, v31.4s, #12
+xar z4.s, z4.s, z16.s, #20
+xar z5.s, z5.s, z17.s, #20
+xar z6.s, z6.s, z18.s, #20
+xar z7.s, z7.s, z19.s, #20
 add v0.4s, v0.4s, v4.4s
 add v1.4s, v1.4s, v5.4s
 add v2.4s, v2.4s, v6.4s
 add v3.4s, v3.4s, v7.4s
-eor v31.16b, v20.16b, v0.16b
-tbl v20.16b, {{v31.16b}}, v30.16b
-eor v31.16b, v21.16b, v1.16b
-tbl v21.16b, {{v31.16b}}, v30.16b
-eor v31.16b, v22.16b, v2.16b
-tbl v22.16b, {{v31.16b}}, v30.16b
-eor v31.16b, v23.16b, v3.16b
-tbl v23.16b, {{v31.16b}}, v30.16b
+xar z20.s, z20.s, z0.s, #24
+xar z21.s, z21.s, z1.s, #24
+xar z22.s, z22.s, z2.s, #24
+xar z23.s, z23.s, z3.s, #24
 add v16.4s, v16.4s, v20.4s
 add v17.4s, v17.4s, v21.4s
 add v18.4s, v18.4s, v22.4s
 add v19.4s, v19.4s, v23.4s
-eor v31.16b, v4.16b, v16.16b
-ushr v4.4s, v31.4s, #25
-sli v4.4s, v31.4s, #7
-eor v31.16b, v5.16b, v17.16b
-ushr v5.4s, v31.4s, #25
-sli v5.4s, v31.4s, #7
-eor v31.16b, v6.16b, v18.16b
-ushr v6.4s, v31.4s, #25
-sli v6.4s, v31.4s, #7
-eor v31.16b, v7.16b, v19.16b
-ushr v7.4s, v31.4s, #25
-sli v7.4s, v31.4s, #7
+xar z4.s, z4.s, z16.s, #25
+xar z5.s, z5.s, z17.s, #25
+xar z6.s, z6.s, z18.s, #25
+xar z7.s, z7.s, z19.s, #25
 add v0.4s, v0.4s, v5.4s
 add v1.4s, v1.4s, v6.4s
 add v2.4s, v2.4s, v7.4s
 add v3.4s, v3.4s, v4.4s
-eor v31.16b, v23.16b, v0.16b
-rev32 v23.8h, v31.8h
-eor v31.16b, v20.16b, v1.16b
-rev32 v20.8h, v31.8h
-eor v31.16b, v21.16b, v2.16b
-rev32 v21.8h, v31.8h
-eor v31.16b, v22.16b, v3.16b
-rev32 v22.8h, v31.8h
+xar z23.s, z23.s, z0.s, #16
+xar z20.s, z20.s, z1.s, #16
+xar z21.s, z21.s, z2.s, #16
+xar z22.s, z22.s, z3.s, #16
 add v18.4s, v18.4s, v23.4s
 add v19.4s, v19.4s, v20.4s
 add v16.4s, v16.4s, v21.4s
 add v17.4s, v17.4s, v22.4s
-eor v31.16b, v5.16b, v18.16b
-ushr v5.4s, v31.4s, #20
-sli v5.4s, v31.4s, #12
-eor v31.16b, v6.16b, v19.16b
-ushr v6.4s, v31.4s, #20
-sli v6.4s, v31.4s, #12
-eor v31.16b, v7.16b, v16.16b
-ushr v7.4s, v31.4s, #20
-sli v7.4s, v31.4s, #12
-eor v31.16b, v4.16b, v17.16b
-ushr v4.4s, v31.4s, #20
-sli v4.4s, v31.4s, #12
+xar z5.s, z5.s, z18.s, #20
+xar z6.s, z6.s, z19.s, #20
+xar z7.s, z7.s, z16.s, #20
+xar z4.s, z4.s, z17.s, #20
 add v0.4s, v0.4s, v5.4s
 add v1.4s, v1.4s, v6.4s
 add v2.4s, v2.4s, v7.4s
 add v3.4s, v3.4s, v4.4s
-eor v31.16b, v23.16b, v0.16b
-tbl v23.16b, {{v31.16b}}, v30.16b
-eor v31.16b, v20.16b, v1.16b
-tbl v20.16b, {{v31.16b}}, v30.16b
-eor v31.16b, v21.16b, v2.16b
-tbl v21.16b, {{v31.16b}}, v30.16b
-eor v31.16b, v22.16b, v3.16b
-tbl v22.16b, {{v31.16b}}, v30.16b
+xar z23.s, z23.s, z0.s, #24
+xar z20.s, z20.s, z1.s, #24
+xar z21.s, z21.s, z2.s, #24
+xar z22.s, z22.s, z3.s, #24
 add v18.4s, v18.4s, v23.4s
 add v19.4s, v19.4s, v20.4s
 add v16.4s, v16.4s, v21.4s
 add v17.4s, v17.4s, v22.4s
-eor v31.16b, v5.16b, v18.16b
-ushr v5.4s, v31.4s, #25
-sli v5.4s, v31.4s, #7
-eor v31.16b, v6.16b, v19.16b
-ushr v6.4s, v31.4s, #25
-sli v6.4s, v31.4s, #7
-eor v31.16b, v7.16b, v16.16b
-ushr v7.4s, v31.4s, #25
-sli v7.4s, v31.4s, #7
-eor v31.16b, v4.16b, v17.16b
-ushr v4.4s, v31.4s, #25
-sli v4.4s, v31.4s, #7
+xar z5.s, z5.s, z18.s, #25
+xar z6.s, z6.s, z19.s, #25
+xar z7.s, z7.s, z16.s, #25
+xar z4.s, z4.s, z17.s, #25
 sub x4, x4, #1
 cbnz x4, 28b
 ldr w4, [x0, #0]
@@ -5063,114 +5015,66 @@ add v0.4s, v0.4s, v4.4s
 add v1.4s, v1.4s, v5.4s
 add v2.4s, v2.4s, v6.4s
 add v3.4s, v3.4s, v7.4s
-eor v31.16b, v20.16b, v0.16b
-rev32 v20.8h, v31.8h
-eor v31.16b, v21.16b, v1.16b
-rev32 v21.8h, v31.8h
-eor v31.16b, v22.16b, v2.16b
-rev32 v22.8h, v31.8h
-eor v31.16b, v23.16b, v3.16b
-rev32 v23.8h, v31.8h
+xar z20.s, z20.s, z0.s, #16
+xar z21.s, z21.s, z1.s, #16
+xar z22.s, z22.s, z2.s, #16
+xar z23.s, z23.s, z3.s, #16
 add v16.4s, v16.4s, v20.4s
 add v17.4s, v17.4s, v21.4s
 add v18.4s, v18.4s, v22.4s
 add v19.4s, v19.4s, v23.4s
-eor v31.16b, v4.16b, v16.16b
-ushr v4.4s, v31.4s, #20
-sli v4.4s, v31.4s, #12
-eor v31.16b, v5.16b, v17.16b
-ushr v5.4s, v31.4s, #20
-sli v5.4s, v31.4s, #12
-eor v31.16b, v6.16b, v18.16b
-ushr v6.4s, v31.4s, #20
-sli v6.4s, v31.4s, #12
-eor v31.16b, v7.16b, v19.16b
-ushr v7.4s, v31.4s, #20
-sli v7.4s, v31.4s, #12
+xar z4.s, z4.s, z16.s, #20
+xar z5.s, z5.s, z17.s, #20
+xar z6.s, z6.s, z18.s, #20
+xar z7.s, z7.s, z19.s, #20
 add v0.4s, v0.4s, v4.4s
 add v1.4s, v1.4s, v5.4s
 add v2.4s, v2.4s, v6.4s
 add v3.4s, v3.4s, v7.4s
-eor v31.16b, v20.16b, v0.16b
-tbl v20.16b, {{v31.16b}}, v30.16b
-eor v31.16b, v21.16b, v1.16b
-tbl v21.16b, {{v31.16b}}, v30.16b
-eor v31.16b, v22.16b, v2.16b
-tbl v22.16b, {{v31.16b}}, v30.16b
-eor v31.16b, v23.16b, v3.16b
-tbl v23.16b, {{v31.16b}}, v30.16b
+xar z20.s, z20.s, z0.s, #24
+xar z21.s, z21.s, z1.s, #24
+xar z22.s, z22.s, z2.s, #24
+xar z23.s, z23.s, z3.s, #24
 add v16.4s, v16.4s, v20.4s
 add v17.4s, v17.4s, v21.4s
 add v18.4s, v18.4s, v22.4s
 add v19.4s, v19.4s, v23.4s
-eor v31.16b, v4.16b, v16.16b
-ushr v4.4s, v31.4s, #25
-sli v4.4s, v31.4s, #7
-eor v31.16b, v5.16b, v17.16b
-ushr v5.4s, v31.4s, #25
-sli v5.4s, v31.4s, #7
-eor v31.16b, v6.16b, v18.16b
-ushr v6.4s, v31.4s, #25
-sli v6.4s, v31.4s, #7
-eor v31.16b, v7.16b, v19.16b
-ushr v7.4s, v31.4s, #25
-sli v7.4s, v31.4s, #7
+xar z4.s, z4.s, z16.s, #25
+xar z5.s, z5.s, z17.s, #25
+xar z6.s, z6.s, z18.s, #25
+xar z7.s, z7.s, z19.s, #25
 add v0.4s, v0.4s, v5.4s
 add v1.4s, v1.4s, v6.4s
 add v2.4s, v2.4s, v7.4s
 add v3.4s, v3.4s, v4.4s
-eor v31.16b, v23.16b, v0.16b
-rev32 v23.8h, v31.8h
-eor v31.16b, v20.16b, v1.16b
-rev32 v20.8h, v31.8h
-eor v31.16b, v21.16b, v2.16b
-rev32 v21.8h, v31.8h
-eor v31.16b, v22.16b, v3.16b
-rev32 v22.8h, v31.8h
+xar z23.s, z23.s, z0.s, #16
+xar z20.s, z20.s, z1.s, #16
+xar z21.s, z21.s, z2.s, #16
+xar z22.s, z22.s, z3.s, #16
 add v18.4s, v18.4s, v23.4s
 add v19.4s, v19.4s, v20.4s
 add v16.4s, v16.4s, v21.4s
 add v17.4s, v17.4s, v22.4s
-eor v31.16b, v5.16b, v18.16b
-ushr v5.4s, v31.4s, #20
-sli v5.4s, v31.4s, #12
-eor v31.16b, v6.16b, v19.16b
-ushr v6.4s, v31.4s, #20
-sli v6.4s, v31.4s, #12
-eor v31.16b, v7.16b, v16.16b
-ushr v7.4s, v31.4s, #20
-sli v7.4s, v31.4s, #12
-eor v31.16b, v4.16b, v17.16b
-ushr v4.4s, v31.4s, #20
-sli v4.4s, v31.4s, #12
+xar z5.s, z5.s, z18.s, #20
+xar z6.s, z6.s, z19.s, #20
+xar z7.s, z7.s, z16.s, #20
+xar z4.s, z4.s, z17.s, #20
 add v0.4s, v0.4s, v5.4s
 add v1.4s, v1.4s, v6.4s
 add v2.4s, v2.4s, v7.4s
 add v3.4s, v3.4s, v4.4s
-eor v31.16b, v23.16b, v0.16b
-tbl v23.16b, {{v31.16b}}, v30.16b
-eor v31.16b, v20.16b, v1.16b
-tbl v20.16b, {{v31.16b}}, v30.16b
-eor v31.16b, v21.16b, v2.16b
-tbl v21.16b, {{v31.16b}}, v30.16b
-eor v31.16b, v22.16b, v3.16b
-tbl v22.16b, {{v31.16b}}, v30.16b
+xar z23.s, z23.s, z0.s, #24
+xar z20.s, z20.s, z1.s, #24
+xar z21.s, z21.s, z2.s, #24
+xar z22.s, z22.s, z3.s, #24
 add v18.4s, v18.4s, v23.4s
 add v19.4s, v19.4s, v20.4s
 add v16.4s, v16.4s, v21.4s
 add v17.4s, v17.4s, v22.4s
-eor v31.16b, v5.16b, v18.16b
-ushr v5.4s, v31.4s, #25
-sli v5.4s, v31.4s, #7
-eor v31.16b, v6.16b, v19.16b
-ushr v6.4s, v31.4s, #25
-sli v6.4s, v31.4s, #7
-eor v31.16b, v7.16b, v16.16b
-ushr v7.4s, v31.4s, #25
-sli v7.4s, v31.4s, #7
-eor v31.16b, v4.16b, v17.16b
-ushr v4.4s, v31.4s, #25
-sli v4.4s, v31.4s, #7
+xar z5.s, z5.s, z18.s, #25
+xar z6.s, z6.s, z19.s, #25
+xar z7.s, z7.s, z16.s, #25
+xar z4.s, z4.s, z17.s, #25
 sub x4, x4, #1
 cbnz x4, 213b
 ldr w4, [x0, #0]
@@ -5356,114 +5260,66 @@ add v0.4s, v0.4s, v4.4s
 add v1.4s, v1.4s, v5.4s
 add v2.4s, v2.4s, v6.4s
 add v3.4s, v3.4s, v7.4s
-eor v31.16b, v20.16b, v0.16b
-rev32 v20.8h, v31.8h
-eor v31.16b, v21.16b, v1.16b
-rev32 v21.8h, v31.8h
-eor v31.16b, v22.16b, v2.16b
-rev32 v22.8h, v31.8h
-eor v31.16b, v23.16b, v3.16b
-rev32 v23.8h, v31.8h
+xar z20.s, z20.s, z0.s, #16
+xar z21.s, z21.s, z1.s, #16
+xar z22.s, z22.s, z2.s, #16
+xar z23.s, z23.s, z3.s, #16
 add v16.4s, v16.4s, v20.4s
 add v17.4s, v17.4s, v21.4s
 add v18.4s, v18.4s, v22.4s
 add v19.4s, v19.4s, v23.4s
-eor v31.16b, v4.16b, v16.16b
-ushr v4.4s, v31.4s, #20
-sli v4.4s, v31.4s, #12
-eor v31.16b, v5.16b, v17.16b
-ushr v5.4s, v31.4s, #20
-sli v5.4s, v31.4s, #12
-eor v31.16b, v6.16b, v18.16b
-ushr v6.4s, v31.4s, #20
-sli v6.4s, v31.4s, #12
-eor v31.16b, v7.16b, v19.16b
-ushr v7.4s, v31.4s, #20
-sli v7.4s, v31.4s, #12
+xar z4.s, z4.s, z16.s, #20
+xar z5.s, z5.s, z17.s, #20
+xar z6.s, z6.s, z18.s, #20
+xar z7.s, z7.s, z19.s, #20
 add v0.4s, v0.4s, v4.4s
 add v1.4s, v1.4s, v5.4s
 add v2.4s, v2.4s, v6.4s
 add v3.4s, v3.4s, v7.4s
-eor v31.16b, v20.16b, v0.16b
-tbl v20.16b, {{v31.16b}}, v30.16b
-eor v31.16b, v21.16b, v1.16b
-tbl v21.16b, {{v31.16b}}, v30.16b
-eor v31.16b, v22.16b, v2.16b
-tbl v22.16b, {{v31.16b}}, v30.16b
-eor v31.16b, v23.16b, v3.16b
-tbl v23.16b, {{v31.16b}}, v30.16b
+xar z20.s, z20.s, z0.s, #24
+xar z21.s, z21.s, z1.s, #24
+xar z22.s, z22.s, z2.s, #24
+xar z23.s, z23.s, z3.s, #24
 add v16.4s, v16.4s, v20.4s
 add v17.4s, v17.4s, v21.4s
 add v18.4s, v18.4s, v22.4s
 add v19.4s, v19.4s, v23.4s
-eor v31.16b, v4.16b, v16.16b
-ushr v4.4s, v31.4s, #25
-sli v4.4s, v31.4s, #7
-eor v31.16b, v5.16b, v17.16b
-ushr v5.4s, v31.4s, #25
-sli v5.4s, v31.4s, #7
-eor v31.16b, v6.16b, v18.16b
-ushr v6.4s, v31.4s, #25
-sli v6.4s, v31.4s, #7
-eor v31.16b, v7.16b, v19.16b
-ushr v7.4s, v31.4s, #25
-sli v7.4s, v31.4s, #7
+xar z4.s, z4.s, z16.s, #25
+xar z5.s, z5.s, z17.s, #25
+xar z6.s, z6.s, z18.s, #25
+xar z7.s, z7.s, z19.s, #25
 add v0.4s, v0.4s, v5.4s
 add v1.4s, v1.4s, v6.4s
 add v2.4s, v2.4s, v7.4s
 add v3.4s, v3.4s, v4.4s
-eor v31.16b, v23.16b, v0.16b
-rev32 v23.8h, v31.8h
-eor v31.16b, v20.16b, v1.16b
-rev32 v20.8h, v31.8h
-eor v31.16b, v21.16b, v2.16b
-rev32 v21.8h, v31.8h
-eor v31.16b, v22.16b, v3.16b
-rev32 v22.8h, v31.8h
+xar z23.s, z23.s, z0.s, #16
+xar z20.s, z20.s, z1.s, #16
+xar z21.s, z21.s, z2.s, #16
+xar z22.s, z22.s, z3.s, #16
 add v18.4s, v18.4s, v23.4s
 add v19.4s, v19.4s, v20.4s
 add v16.4s, v16.4s, v21.4s
 add v17.4s, v17.4s, v22.4s
-eor v31.16b, v5.16b, v18.16b
-ushr v5.4s, v31.4s, #20
-sli v5.4s, v31.4s, #12
-eor v31.16b, v6.16b, v19.16b
-ushr v6.4s, v31.4s, #20
-sli v6.4s, v31.4s, #12
-eor v31.16b, v7.16b, v16.16b
-ushr v7.4s, v31.4s, #20
-sli v7.4s, v31.4s, #12
-eor v31.16b, v4.16b, v17.16b
-ushr v4.4s, v31.4s, #20
-sli v4.4s, v31.4s, #12
+xar z5.s, z5.s, z18.s, #20
+xar z6.s, z6.s, z19.s, #20
+xar z7.s, z7.s, z16.s, #20
+xar z4.s, z4.s, z17.s, #20
 add v0.4s, v0.4s, v5.4s
 add v1.4s, v1.4s, v6.4s
 add v2.4s, v2.4s, v7.4s
 add v3.4s, v3.4s, v4.4s
-eor v31.16b, v23.16b, v0.16b
-tbl v23.16b, {{v31.16b}}, v30.16b
-eor v31.16b, v20.16b, v1.16b
-tbl v20.16b, {{v31.16b}}, v30.16b
-eor v31.16b, v21.16b, v2.16b
-tbl v21.16b, {{v31.16b}}, v30.16b
-eor v31.16b, v22.16b, v3.16b
-tbl v22.16b, {{v31.16b}}, v30.16b
+xar z23.s, z23.s, z0.s, #24
+xar z20.s, z20.s, z1.s, #24
+xar z21.s, z21.s, z2.s, #24
+xar z22.s, z22.s, z3.s, #24
 add v18.4s, v18.4s, v23.4s
 add v19.4s, v19.4s, v20.4s
 add v16.4s, v16.4s, v21.4s
 add v17.4s, v17.4s, v22.4s
-eor v31.16b, v5.16b, v18.16b
-ushr v5.4s, v31.4s, #25
-sli v5.4s, v31.4s, #7
-eor v31.16b, v6.16b, v19.16b
-ushr v6.4s, v31.4s, #25
-sli v6.4s, v31.4s, #7
-eor v31.16b, v7.16b, v16.16b
-ushr v7.4s, v31.4s, #25
-sli v7.4s, v31.4s, #7
-eor v31.16b, v4.16b, v17.16b
-ushr v4.4s, v31.4s, #25
-sli v4.4s, v31.4s, #7
+xar z5.s, z5.s, z18.s, #25
+xar z6.s, z6.s, z19.s, #25
+xar z7.s, z7.s, z16.s, #25
+xar z4.s, z4.s, z17.s, #25
 sub x4, x4, #1
 cbnz x4, 214b
 ldr w4, [x0, #0]

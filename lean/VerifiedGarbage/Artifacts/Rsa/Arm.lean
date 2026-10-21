@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.CvVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.CckVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.CkVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.RvVerified
+public import VerifiedGarbage.Proof.Rsa.Arm.RecoverUmaal
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # RSA (RFC 8017) on ARMv7 -/
@@ -30,21 +31,8 @@ def artifacts : List Artifact := [
     code := Impl.Bignum.Arm.PublicFn.code
     stack := 56
     verified := Proof.Bignum.Arm.public_verified },
-  Spec.Rsa.publicPrecomputeApi.artifact Arm.target {
-    notes := ["Baseline ARMv7: `n` is checked and read into 32-bit limbs, its 64-bit Montgomery \
-        inverse computed from pairs of them, and R² mod n by a fixed number of modular \
-        doublings. The output is cleared for an invalid modulus."]
-    code := Impl.Bignum.Arm.PcFn.code
-    stack := 56
-    verified := Proof.Bignum.Arm.precompute_verified },
-  Spec.Rsa.publicPrecomputedCheckedApi.artifact Arm.target {
-    notes := ["Baseline ARMv7: `pre` is read and checked (`n` odd, its top word not zero, \
-        `R² mod n` below it) before any arithmetic, so that values of no modulus are safe; then \
-        `vg_rsa_public_checked`'s Montgomery inverse and exponentiation. The input's acceptance \
-        and the clearing of the output are under masks."]
-    code := Impl.Bignum.Arm.PdFn.code
-    stack := 56
-    verified := Proof.Bignum.Arm.pd_verified },
+
+
   Spec.Rsa.privateCrtApi.artifact Arm.target {
     notes := ["Baseline ARMv7: the checks of the input and the key give a mask; rejected primes \
         are replaced, so that the arithmetic is the same whatever the key, and a rejected result \
@@ -60,12 +48,10 @@ def artifacts : List Artifact := [
     verified := Proof.Bignum.Arm.crt_verified },
   Spec.Rsa.privateCrtApi.artifact Arm.target {
     suffix := "_umaal"
-    notes := ["`vg_rsa_private_crt`'s code, with each word of a Montgomery row by one `umaal` \
-        (`hi:lo := n * m + hi + lo`) of the scalar, the input word, the carry and the accumulator word, \
-        in place of four 16 × 16-bit `mul`s and their additions; after a row's loop, the registers its \
-        16-bit steps would leave are set from the last word, so that each row ends as the baseline's \
-        does and the baseline's proofs carry over."]
-    code := Impl.Bignum.Arm.umaalArithmetic Impl.Bignum.Arm.CrtFn.code
+    notes := ["The shared UMAAL integrated Montgomery scan supplies the private exponentiation's \
+        products and squares through the same window and CRT proofs. Other arithmetic rows use \
+        the shared exact UMAAL row transformation."]
+    code := Impl.Bignum.Arm.CrtFios.code
     stack := 56
     verified := Proof.Bignum.Arm.crtUmaal_verified
     features := ["umaal"] },
@@ -121,6 +107,14 @@ def artifacts : List Artifact := [
         whether a candidate gave them, and zeros otherwise."]
     code := Impl.Rsa.Arm.Recover.code
     stack := 56
-    verified := Proof.Rsa.Arm.Recover.recover_primes_verified }]
+    verified := Proof.Rsa.Arm.Recover.recover_primes_verified },
+  Spec.Rsa.recoverPrimesApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := ["The baseline prime recovery with the shared UMAAL row transformation used \
+        by private RSA, retaining the same arithmetic, checks and timing contract."]
+    code := Impl.Bignum.Arm.umaalArithmetic Impl.Rsa.Arm.Recover.code
+    stack := 56
+    verified := Proof.Rsa.Arm.Recover.recover_primes_umaal_verified
+    features := ["umaal"] }]
 
 end VG.Artifacts.Rsa.Arm

@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicPrecomputeKernel
 public import VerifiedGarbage.Proof.Bignum.Arm.PcInput
 
 import VerifiedGarbage.Proof.Bignum.Arm.PcValidCT
@@ -29,11 +31,11 @@ theorem pcChecked_ready (s : State) {base dst src : BitVec 32} {len k : Nat} {nb
     (rest.gpr .r0 (by simp)).trans h.ptr, (rest.gpr .r4 (by simp)).trans h.source,
     (rest.gpr .r6 (by simp)).trans h.count⟩, by rw [mem]; exact bytes, by rw [bytes] at flag; exact flag⟩
 
-theorem pcBody_ct {base dst src : BitVec 32} {len k : Nat} {nb : List Byte} (hk : k ≤ 1024) :
-    RelCT isa (fun s t =>
+theorem pcBody_ct {base dst src : BitVec 32} {len k : Nat} {nb : List Byte} (hk : k ≤ 1024)
+    (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : RelCT isa (fun s t =>
       (PcBodyInput base dst src len k s ∧ Spec.Rsa.bytesAt s.mem (State.addr src) k = nb) ∧
       (PcBodyInput base dst src len k t ∧ Spec.Rsa.bytesAt t.mem (State.addr src) k = nb) ∧ s.sp = t.sp)
-      PcFn.body (fun _ _ => True) := by
+      (PcFn.bodyWith kernel.code) (fun _ _ => True) := by
   let P := fun (s t : State) =>
     (PcBodyInput base dst src len k s ∧ Spec.Rsa.bytesAt s.mem (State.addr src) k = nb) ∧
     (PcBodyInput base dst src len k t ∧ Spec.Rsa.bytesAt t.mem (State.addr src) k = nb) ∧ s.sp = t.sp
@@ -47,12 +49,12 @@ theorem pcBody_ct {base dst src : BitVec 32} {len k : Nat} {nb : List Byte} (hk 
   · intro s t h
     change some s.z = some t.z
     rw [h.2.1.flag, h.2.2.flag]
-  · apply (pcValid_ct (base := base) (dst := dst) (src := src) (len := len) hk).mono ?_ (fun _ _ h => h)
+  · apply (pcValid_ct (nb := nb) (kernel := kernel) (base := base) (dst := dst) (src := src) (len := len) hk).mono ?_ (fun _ _ h => h)
     intro s t h
     have flag : s.z = true := Option.some.inj h.2
     have good : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true := h.1.2.1.flag.symm.trans flag
-    exact ⟨⟨h.1.2.1.input, by rw [h.1.2.1.bytes]; exact good⟩,
-      ⟨h.1.2.2.input, by rw [h.1.2.2.bytes]; exact good⟩, h.1.1⟩
+    exact ⟨⟨⟨h.1.2.1.input, by rw [h.1.2.1.bytes]; exact good⟩, h.1.2.1.bytes⟩,
+      ⟨⟨h.1.2.2.input, by rw [h.1.2.2.bytes]; exact good⟩, h.1.2.2.bytes⟩, h.1.1⟩
   · apply (pcFail_ct (base := base) (dst := dst) (src := src) (len := len) hk).mono ?_ (fun _ _ h => h)
     intro s t h
     exact ⟨h.1.2.1.input.stack, h.1.2.2.input.stack,

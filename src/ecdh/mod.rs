@@ -10,6 +10,9 @@
 //! §2.3.3, both coordinates below `p`, on the curve), checks the private key,
 //! and returns the x-coordinate of `dQ`, in constant time. The public key is
 //! one call too (`vg_ec_<curve>_public_key`).
+//!
+//! On x86-64, `P256::validate_public_key` (and the same method on each
+//! curve) validates an uncompressed public key without scalar multiplication.
 
 #![cfg(any(
     target_arch = "x86_64",

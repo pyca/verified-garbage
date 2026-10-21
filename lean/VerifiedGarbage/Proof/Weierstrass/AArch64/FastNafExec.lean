@@ -81,6 +81,51 @@ theorem fastChoose_ok (s : State) {w : Nat} (hw : FastNaf.Width w) (k j : Nat)
   have hh : r≠.x2 ∧ r≠.x3 := by simpa using hr
   simp only [RegUpd.gpr_write,hh.1,hh.2,ite_false]
 
+/-- `(y &&& 256) <<< 1` for `y < 512`: `512` when `y ≥ 256`, else `0`. -/
+theorem fastBit256 : ∀ r : Fin 512,(r.val &&& 256)*2=if r.val<256 then 0 else 512 := by decide +kernel
+
+theorem fastChoice9_eq (x : BitVec 64) (k j : Nat)
+    (hx : x.toNat%512=FastNaf.residual 9 k j%512)
+    (ho : FastNaf.residual 9 k j%2≠0) :
+    (x &&& BitVec.ofNat 64 511)-(((x &&& BitVec.ofNat 64 511) &&& BitVec.ofNat 64 256) <<< 1)=
+      BitVec.ofInt 64 (FastNaf.digit 9 k j) := by
+  have hm : (x &&& BitVec.ofNat 64 511).toNat=x.toNat%512 := by
+    simp only [BitVec.toNat_and,BitVec.toNat_ofNat]
+    change x.toNat &&& (2^9-1)=_
+    rw [Nat.and_two_pow_sub_one_eq_mod]
+  have hb := fastBit256 ⟨x.toNat%512,Nat.mod_lt _ (by decide)⟩
+  have hd : FastNaf.digit 9 k j=FastNaf9.digit k j := by
+    simp only [FastNaf.digit,FastNaf.ne_9_7,ite_true,ite_false]
+  have hr : FastNaf.residual 9 k j=FastNaf9.residual k j := by
+    simp only [FastNaf.residual,FastNaf.ne_9_7,ite_true,ite_false]
+  rw [hd,FastNaf9.digit_mod512]
+  rw [hr] at hx ho
+  have hp : FastNaf9.residual k j%512%2≠0 := by omega
+  simp only [hp,ite_false]
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_sub,BitVec.toNat_shiftLeft,BitVec.toNat_and,hm,BitVec.toNat_ofNat,
+    Nat.shiftLeft_eq] at hb ⊢
+  change _=(BitVec.ofInt 64 (if FastNaf9.residual k j%512<256 then _ else _)).toNat
+  rw [show (x.toNat%512 &&& 256%2^64)*2^1%2^64=(x.toNat%512 &&& 256)*2 from by
+    rw [show 256%2^64=256 from rfl]; have : (x.toNat%512 &&& 256)≤256 := Nat.and_le_right; omega,hb]
+  split <;> split <;> simp only [BitVec.toNat_ofInt] <;> omega
+
+theorem fastChoose9_ok (s : State) (k j : Nat)
+    (hm : s.gpr .x10=BitVec.ofNat 64 511) (hs : s.gpr .x11=BitVec.ofNat 64 256)
+    (hv : nafVal5 (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) (s.gpr .x8) (s.gpr .x9)=FastNaf.residual 9 k j)
+    (ho : FastNaf.residual 9 k j%2≠0) :
+    WP isa (.block Impl.Weierstrass.AArch64.FastNaf.choose) s fun t =>
+      t.gpr .x2=BitVec.ofInt 64 (FastNaf.digit 9 k j) ∧ Keeps [.x2,.x3] s t := by
+  have he := fastChoice9_eq (s.gpr .x5) k j (by dsimp only [nafVal5] at hv; omega) ho
+  apply WP.of_runBlock
+  simp only [Impl.Weierstrass.AArch64.FastNaf.choose,runBlock_cons,runStep_some,runBlock_nil,exec,read_x,
+    RegUpd.gpr_write,BitVec.setWidth_eq,ite_true,ite_false,reduceCtorEq,hm,hs,
+    show 1<Size.x.bits from by decide,Option.some.injEq,exists_eq_left']
+  refine ⟨he,?_,rfl,rfl,rfl,rfl⟩
+  intro r hr
+  have hh : r≠.x2 ∧ r≠.x3 := by simpa using hr
+  simp only [RegUpd.gpr_write,hh.1,hh.2,ite_false]
+
 theorem fastSubtract_ok (s : State) (w k j : Nat) (h12 : s.gpr .x12=0)
     (h2 : s.gpr .x2=BitVec.ofInt 64 (FastNaf.digit w k j))
     (hv : nafVal5 (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) (s.gpr .x8) (s.gpr .x9)=FastNaf.residual w k j)
@@ -100,12 +145,12 @@ theorem fastSubtract_ok (s : State) (w k j : Nat) (h12 : s.gpr .x12=0)
     have hh : r≠.x3 ∧ r≠.x5 ∧ r≠.x6 ∧ r≠.x7 ∧ r≠.x8 ∧ r≠.x9 := by simpa using hr
     simp only [RegUpd.gpr_write,RegUpd.gpr_addWithCarry,hh.1,hh.2.1,hh.2.2.1,hh.2.2.2.1,hh.2.2.2.2.1,hh.2.2.2.2.2,ite_false]
 
-theorem fastShift_ok (s : State) (w : Nat) (hw : w=1 ∨ w=5 ∨ w=7) :
+theorem fastShift_ok (s : State) (w : Nat) (hw : w=1 ∨ w=5 ∨ w=7 ∨ w=9) :
     WP isa (.block (Impl.Weierstrass.AArch64.FastNaf.shift w)) s fun t =>
       nafVal5 (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) (t.gpr .x8) (t.gpr .x9)=
       nafVal5 (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) (s.gpr .x8) (s.gpr .x9)/2^w ∧
       Keeps [.x5,.x6,.x7,.x8,.x9] s t := by
-  have hw64 : w<Size.x.bits := by rcases hw with rfl | rfl | rfl <;> decide
+  have hw64 : w<Size.x.bits := by rcases hw with rfl | rfl | rfl | rfl <;> decide
   apply WP.of_runBlock
   simp only [Impl.Weierstrass.AArch64.FastNaf.shift,runBlock_cons,runStep_some,runBlock_nil,exec,read_x,
     RegUpd.gpr_write,BitVec.setWidth_eq,ite_true,ite_false,reduceCtorEq,hw64,

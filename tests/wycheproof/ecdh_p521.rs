@@ -53,6 +53,18 @@ fn ecdh_secp521r1_ecpoint_test() {
             return;
         };
         let result = key.diffie_hellman(&public);
+        #[cfg(target_arch = "x86_64")]
+        {
+            // A scalar of one makes ECDH an independent reference for the
+            // standalone point check, regardless of this case's scalar.
+            let mut one = [0; 66];
+            let last = one.len() - 1;
+            one[last] = 1;
+            let reference = PrivateKey::<P521>::from_bytes(&one);
+            let valid = P521::validate_public_key(&public);
+            let expected = reference.diffie_hellman(&public).is_ok();
+            assert_eq!(valid, expected, "point check, tcId {}", test.tc_id);
+        }
         match test.result {
             Expectation::Valid => {
                 let shared = result.map(|z| z.to_vec());
