@@ -523,6 +523,90 @@ def windowCode : Prog isa := .seq (.block VG.Impl.Rsa.X86.Recover.entry)
  (.seq windowBody (.block VG.Impl.Bignum.X86.PublicFn.restore))
 end FastR2Proto
 
+namespace IsaBatchInverseProto
+open VG VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86
+open VG.Impl.Weierstrass.X86.Inv
+open VG.Impl.Rsa.X86.KeyRt
+
+def off (w j : Nat) := 160+j*(4*w+8)
+def seqs := VG.Impl.Rsa.X86.Keys.seqs
+def config (w n : Nat) : Mod := {n:=n/2,mo:=off w 2,tmp:=off w 12,minv:=0}
+def quo (acc tmp iv : Nat) : List Instr :=
+ [.mov .eax (.mem (sc acc)),.mov .ecx (.mem (sc iv)),.mul .ecx,.store (sc tmp) .eax]
+def reduce (w n out : Nat) : List Instr :=
+ let T:=off w 11; let U:=off w 12; let M:=off w 2
+ maskOf (T+4*n) ++ [.mov .esi (.reg .ecx)] ++ zeros (T+4*(n+1)) 1 ++
+ quo T U (off w 3+28) ++ rowAdd U T M n ++ addSignWord (T+4*(n+1)) ++
+ addIfNeg (T+4) M U n ++ csub (config w n) (T+4) out
+
+def init (w n : Nat) : List Instr :=
+ let M:=off w 2; let F:=off w 4; let G:=off w 5; let A:=off w 6; let B:=off w 7; let U:=off w 12; let W:=off w 3
+ VG.Impl.Weierstrass.X86.copy n M (off w 8) ++
+ [.mov .eax (.mem (sc M)),.alu .xor .eax (.imm 1)] ++
+ (List.range (n-1)).map (fun j => .alu .or .eax (.mem (sc (M+4*(j+1))))) ++
+ [.mov .edx (.imm 0),.alu .sub .edx (.reg .eax),.alu .or .eax (.reg .edx),.shift .shr .eax 31,
+  .alu .xor .eax (.imm 1),.alu .add .eax (.reg .eax),.mov .ecx (.mem (sc M)),.alu .or .ecx (.reg .eax),.store (sc M) .ecx] ++
+ VG.Impl.Weierstrass.X86.copy n F M ++ zeros (F+4*n) 1 ++
+ VG.Impl.Weierstrass.X86.copy n G (off w 0) ++ zeros (G+4*n) 1 ++
+ [.mov .ecx (.mem (sc G)),.alu .and .ecx (.imm 1),.alu .sub .ecx (.imm 1)] ++
+ maskCopy n U M ++ zeros (U+4*n) 1 ++ addInPlace G U (n+1) ++
+ zeros A (n+1) ++ zeros B (n+1) ++
+ [.mov .eax (.imm 1),.store (sc B) .eax,.store (sc W) .eax,
+ .mov .ebx (.mem (sc M))] ++ Dynamic.inverse ++ [.store (sc (W+28)) .eax,
+ .mov .eax (.imm (BitVec.ofNat 32 (3*(n+1)))),.store (sc 100) .eax]
+
+def start (w : Nat) : List Instr :=
+ let W:=off w 3
+ VG.Impl.Weierstrass.X86.copy 1 (W+4) (off w 4) ++ VG.Impl.Weierstrass.X86.copy 1 (W+8) (off w 5) ++
+ setConst 2 (W+12) (1+2^96)
+
+def update (w n : Nat) : List Instr :=
+ let F:=off w 4; let G:=off w 5; let A:=off w 6; let B:=off w 7; let T:=off w 11; let U:=off w 12; let W:=off w 3
+ linear (W+12) (W+16) T F G U (n+1) (n-1) ++ shr30 (off w 0) T (n+1) ++
+ linear (W+20) (W+24) T F G U (n+1) (n-1) ++ shr30 (off w 1) T (n+1) ++
+ linear (W+12) (W+16) T A B U n (n-1) ++ reduce w n (off w 13) ++
+ linear (W+20) (W+24) T A B U n (n-1) ++ reduce w n (off w 14) ++
+ VG.Impl.Weierstrass.X86.copy (n+1) F (off w 0) ++ VG.Impl.Weierstrass.X86.copy (n+1) G (off w 1) ++
+ VG.Impl.Weierstrass.X86.copy n A (off w 13) ++ VG.Impl.Weierstrass.X86.copy n B (off w 14)
+
+def normalize (w n : Nat) : List Instr :=
+ let F:=off w 4; let A:=off w 6; let U:=off w 12
+ VG.Impl.Weierstrass.X86.copy n U (off w 2) ++ subInPlace U A n ++ maskOf (F+4*n) ++
+ VG.Impl.Weierstrass.X86.sel n A A U ++ csub (config w n) A A
+
+def twice (w n : Nat) : List Instr :=
+ let A:=off w 6
+ addInPlace A A (n+1) ++ csub (config w n) A A ++ zeros (A+4*n) 1
+
+def finish (w n : Nat) : List Instr :=
+ let F:=off w 4; let O:=off w 1
+ zeros O w ++ subInPlace O F n ++ maskOf (F+4*n) ++ VG.Impl.Weierstrass.X86.sel n O F O ++
+ zeros (off w 3) w ++ VG.Impl.Weierstrass.X86.copy n (off w 3) (off w 6)
+
+def body (w n : Nat) : Prog isa := seqs [
+ .block (init w n),
+ .loop (seqs [.block (start w),wordSteps (off w 3) 30,.block (update w n),
+   .block [.mov .esi (.mem (sc 100)),decCounter,.store (sc 100) .esi,testCounter]]) .ne,
+ .block (normalize w n ++ [.mov .esi (.imm (BitVec.ofNat 32 (6*(n+1))))]),
+ .loop (.block (twice w n ++ [decCounter,testCounter])) .ne,
+ .block (finish w n)]
+
+def choose (len w n : Nat) (fallback : Prog isa) : Prog isa :=
+ .seq (.block [.mov .eax (.mem (argOp 7)),.alu .cmp .eax (.imm (BitVec.ofNat 32 len))])
+ (.ite .e (.seq (.block [.mov .eax (.mem (argOp 9)),.alu .cmp .eax (.imm (BitVec.ofNat 32 (4*n+1)))])
+   (.ite .b (.seq (.block [.mov .eax (.mem (argOp 11)),.alu .cmp .eax (.imm (BitVec.ofNat 32 (4*n+1)))])
+     (.ite .b (body w n) fallback)) fallback)) fallback)
+def code : Prog isa := choose 256 64 32 (choose 384 96 48 (choose 512 128 64
+ (VG.Impl.Rsa.X86.KeyRt.inverse VG.Impl.Rsa.X86.CrtValuesRt.lay)))
+end IsaBatchInverseProto
+
+def replaceInv : Prog isa → Prog isa
+ | .seq a b => .seq (replaceInv a) (replaceInv b)
+ | .ite c a b => .ite c (replaceInv a) (replaceInv b)
+ | .loop a c => .loop (replaceInv a) c
+ | .frame a b c => if a = .alloc 16 then IsaBatchInverseProto.code else .frame a (replaceInv b) c
+ | a => a
+
 def main : IO Unit := do
  let modes := [VG.Impl.Mont.X86.Rt.body, NextMont.tune 2 VG.Impl.Mont.X86.Rt.body,
    NextMont.tune 4 VG.Impl.Mont.X86.Rt.body, NextMont.tune 8 VG.Impl.Mont.X86.Rt.body,
@@ -548,9 +632,11 @@ def main : IO Unit := do
    NextMont.printFn "proto_recover23" (replaceGcd FastR2Proto.windowCode) "proto_mont7" ++
    NextMont.printFn "proto_recover24" (replaceGcd FastR2Proto.windowCode) "proto_mont8" ++
    NextMont.printFn "proto_recover25" (FastDoubleProto.tune (replaceGcd FastR2Proto.code)) "proto_mont3" ++
+   NextMont.printFn "proto_recover26" (FastDoubleProto.tune (replaceGcd FastR2Proto.code)) "proto_mont0" ++
    NextMont.printFn "proto_check0" (VG.Impl.Rsa.X86.KeyCheckRt.code false) ++
    NextMont.printFn "proto_check1" (KeyCheckMontProto.code false) ++
    NextMont.printFn "proto_crt0" VG.Impl.Rsa.X86.CrtValuesRt.code ++
    NextMont.printFn "proto_crt2" BatchCrtProto.code "proto_inv_C" ++
    NextMont.printFn "proto_crt3" BatchCrtProto.code "proto_inv_active_C" ++
+   NextMont.printFn "proto_crt4" (replaceInv BatchCrtProto.code) ++
    ".section .note.GNU-stack,\"\",@progbits\n")
