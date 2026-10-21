@@ -22,7 +22,7 @@ open VG.Impl.Ecdsa.Verify.AArch64 (U V)
 variable {c : Cfg}
 
 /-- Any proven joint multiplication can feed the unchanged verifier prefix and final check. -/
-theorem verify_of_joint_inverse (hc : CfgOk c) (hC : Law c.C) (inverse points program : Prog isa)
+theorem verify_of_joint_inverse (hc : CfgOk c) {ts : String} {ws : List (BitVec 64)} (hC : Law c.C) (inverse points program : Prog isa)
     (hmid : ∀ {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State},
       Front c s₀ base g s → ∀ {rest : Prog isa} {Q : State → Prop},
       (∀ s',Mid c s₀ base g s' → WP isa rest s' Q) →
@@ -36,7 +36,7 @@ theorem verify_of_joint_inverse (hc : CfgOk c) (hC : Law c.C) (inverse points pr
       (.seq inverse (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.uv c)
       (.seq points (Impl.Ecdsa.Verify.AArch64.Cfg.tail c))))))))))
     (hpoints : ∀ {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State},
-      Mid c s₀ base g s → TblPre c s₀ (s₀.syms c.tsym) base →
+      Mid c s₀ base g s → TblPreW ws s₀ (s₀.syms ts) base →
       ∀ {P : Point c.C},onCurve c.C P=true →
       Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
         (tmv c.C c.n base s (c.sl ONEP)) P →
@@ -44,12 +44,12 @@ theorem verify_of_joint_inverse (hc : CfgOk c) (hC : Law c.C) (inverse points pr
         Rep c.C (tmv c.C c.n base t (c.sl RX)) (tmv c.C c.n base t (c.sl RY))
           (tmv c.C c.n base t (c.sl RZ))
           (add (mul (sv c base s U) (G c.C)) (mul (sv c base s V) P)))
-    {s₀ : State} (hp : VPre c s₀) :
+    {s₀ : State} (hp : VPreT c ts ws s₀) :
     WP isa program s₀ fun s' =>
       (∀ r∈Cfg.saved.map Prod.fst,s'.gpr r=s₀.gpr r) ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   rw [heq]
-  refine front_ok hc hp fun g s₁ hg hF => hmid hF fun s₂ hM => ?_
+  refine front_ok hc hp.front fun g s₁ hg hF => hmid hF fun s₂ hM => ?_
   have F₂ := hM.fixed
   have h1 := onep_tmv hc F₂
   -- The point the window method multiplies.

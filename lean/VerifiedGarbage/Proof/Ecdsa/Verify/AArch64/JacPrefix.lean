@@ -260,7 +260,7 @@ theorem JacPublicT.keyOk {c : Cfg} {tsym : String} {s t : State} (h : JacPublicT
 
 /-- The initialized peer coordinates are equal in the two executions. -/
 theorem mid_peer_public {c : Cfg} {s₀ t₀ s t : State} {base : Addr}
-    {g₁ g₂ : Reg → BitVec 64} (h : JacPublic c s₀ t₀)
+    {g₁ g₂ : Reg → BitVec 64} {ts : String} (h : JacPublicT c ts s₀ t₀)
     (hs : Mid c s₀ base g₁ s) (ht : Mid c t₀ base g₂ t) :
     VG.Proof.Weierstrass.AArch64.tmv c.C c.n base s (c.sl VG.Impl.Ecdh.AArch64.PX) =
       VG.Proof.Weierstrass.AArch64.tmv c.C c.n base t (c.sl VG.Impl.Ecdh.AArch64.PX) ∧

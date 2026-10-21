@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedInput
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.GTable
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
@@ -28,7 +29,7 @@ open VG.Impl.Ecdsa.Verify.AArch64 (U V)
 variable {c : Cfg}
 
 /-- Any proven joint multiplication can feed the unchanged verifier prefix and final check. -/
-theorem verify_of_joint (hc : CfgOk c) (hC : Law c.C) (points program : Prog isa)
+theorem verify_of_joint (hc : CfgOk c) {ts : String} {ws : List (BitVec 64)} (hC : Law c.C) (points program : Prog isa)
     (heq : program =
       .seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.args c)) (.seq (.seq (.block (c.setupWith (some D)))
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8*c.n)) (.block [])))
@@ -37,7 +38,7 @@ theorem verify_of_joint (hc : CfgOk c) (hC : Law c.C) (points program : Prog isa
       (.seq c.nPow (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.uv c)
       (.seq points (Impl.Ecdsa.Verify.AArch64.Cfg.tail c))))))))))
     (hpoints : ∀ {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State},
-      Mid c s₀ base g s → TblPre c s₀ (s₀.syms c.tsym) base →
+      Mid c s₀ base g s → TblPreW ws s₀ (s₀.syms ts) base →
       ∀ {P : Point c.C},onCurve c.C P=true →
       Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
         (tmv c.C c.n base s (c.sl ONEP)) P →
@@ -45,12 +46,12 @@ theorem verify_of_joint (hc : CfgOk c) (hC : Law c.C) (points program : Prog isa
         Rep c.C (tmv c.C c.n base t (c.sl RX)) (tmv c.C c.n base t (c.sl RY))
           (tmv c.C c.n base t (c.sl RZ))
           (add (mul (sv c base s U) (G c.C)) (mul (sv c base s V) P)))
-    {s₀ : State} (hp : VPre c s₀) :
+    {s₀ : State} (hp : VPreT c ts ws s₀) :
     WP isa program s₀ fun s' =>
       (∀ r∈Cfg.saved.map Prod.fst,s'.gpr r=s₀.gpr r) ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   rw [heq]
-  refine front_ok hc hp fun g s₁ hg hF => mid_ok hc hF fun s₂ hM => ?_
+  refine front_ok hc hp.front fun g s₁ hg hF => mid_ok hc hF fun s₂ hM => ?_
   have F₂ := hM.fixed
   have h1 := onep_tmv hc F₂
   -- The point the window method multiplies.
@@ -127,9 +128,10 @@ def jointPrefix (c : Cfg) : Prog isa :=
   .seq (Impl.Ecdsa.Verify.AArch64.Cfg.scalars c) <| .seq c.nPow <|
   .seq (Impl.Ecdsa.Verify.AArch64.Cfg.uv c) (.block [])
 
-theorem jointPrefix_ok {c : Cfg} (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) :
+theorem jointPrefix_ok {c : Cfg} (hc : CfgOk c) {ts : String} {ws : List (BitVec 64)} {s₀ : State}
+    (hp : VPreT c ts ws s₀) :
     WP isa (jointPrefix c) s₀ fun t => ∃ g,Mid c s₀ (s₀.gpr .x3) g t := by
-  refine front_ok hc hp fun g s₁ _ hF => mid_ok hc hF fun s₂ hM => ?_
+  refine front_ok hc hp.front fun g s₁ _ hF => mid_ok hc hF fun s₂ hM => ?_
   exact WP.block_nil ⟨g,hM⟩
 
 theorem jointVerify_cut {s s' : State} {t : List Leak}
@@ -153,20 +155,26 @@ theorem jointVerify_cut {s s' : State} {t : List Leak}
                     exact ⟨_,_,_,_,_,pre,ep,et,by simp only [List.append_nil,List.append_assoc]⟩
 
 /-- At the joint multiplication boundary, public inputs determine both initialized states. -/
-def JointBoundary (c : Cfg) (s₀ t₀ : State) (s t : State) : Prop :=
-  JacPublic c s₀ t₀ ∧ (∃ g,Mid c s₀ (s₀.gpr .x3) g s) ∧
+def JointBoundaryT (c : Cfg) (tsym : String) (s₀ t₀ : State) (s t : State) : Prop :=
+  JacPublicT c tsym s₀ t₀ ∧ (∃ g,Mid c s₀ (s₀.gpr .x3) g s) ∧
     (∃ g,Mid c t₀ (s₀.gpr .x3) g t) ∧ s.sp=t.sp
+
+/-- `JointBoundaryT` with the comb's tables. -/
+abbrev JointBoundary (c : Cfg) := JointBoundaryT c c.tsym
+
+/-- `JointBoundaryG` with the verifier's table (`JacPublicG`). -/
+abbrev JointBoundaryG := JointBoundaryT p256 Impl.Ecdsa.Verify.AArch64.P256Joint.p256v.tsym
 
 /-- The new points stage has the same public leakage boundary as the original verifier. -/
 theorem jointVerify_ct_of_points
     (hc : CfgOk p256)
     (hbefore : ConstantTime isa (fun _ => True)
       (AArch64.Taint.Agree (Taint.ofRegs [.x0,.x1,.x2,.x3])) (jointPrefix p256))
-    (hpoints : ∀ s₀ t₀,VPre p256 s₀ → VPre p256 t₀ →
-      RelCT isa (JointBoundary p256 s₀ t₀) Impl.Ecdsa.Verify.AArch64.P256Joint.points
+    (hpoints : ∀ s₀ t₀,VPreG s₀ → VPreG t₀ →
+      RelCT isa (JointBoundaryG s₀ t₀) Impl.Ecdsa.Verify.AArch64.P256Joint.points
         (AArch64.Taint.Agree (Taint.ofRegs [.x0])))
     (htail : FieldCT (Impl.Ecdsa.Verify.AArch64.Cfg.tail p256)) :
-    ConstantTime isa (VPre p256) (JacPublic p256) Impl.Ecdsa.Verify.AArch64.P256Joint.verify := by
+    ConstantTime isa (VPreG) (JacPublicG) Impl.Ecdsa.Verify.AArch64.P256Joint.verify := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
   obtain ⟨a₁,b₁,tp₁,tq₁,tt₁,ep₁,eq₁,et₁,h₁⟩ := jointVerify_cut e₁
   obtain ⟨a₂,b₂,tp₂,tq₂,tt₂,ep₂,eq₂,et₂,h₂⟩ := jointVerify_cut e₂
@@ -178,7 +186,7 @@ theorem jointVerify_ct_of_points
   have base : s₁.gpr .x3=s₂.gpr .x3 := pub.ptrs.2 .x3 (by decide)
   have sp : a₁.sp=a₂.sp := (Exec.rdwr ep₁).2.2.trans
     (pub.ptrs.1.trans (Exec.rdwr ep₂).2.2.symm)
-  have boundary : JointBoundary p256 s₁ s₂ a₁ a₂ := by
+  have boundary : JointBoundaryG s₁ s₂ a₁ a₂ := by
     refine ⟨pub,m₁,?_,sp⟩
     rw [base]; exact m₂
   obtain ⟨hq,tailpub⟩ := hpoints s₁ s₂ pre₁ pre₂ _ _ _ _ _ _ boundary eq₁ eq₂
@@ -233,11 +241,11 @@ theorem allocatedPrefix_cut {s s' : State} {trace : List Leak}
                   exact ⟨_,_,_,_,_,pre,ei,eu,by simp only [List.append_nil,List.append_assoc]⟩
 
 theorem allocatedPrefix_ct (hc : CfgOk p256)
-    (hinv : ∀ s₀ t₀,JacPublic p256 s₀ t₀ →
+    (hinv : ∀ s₀ t₀,JacPublicG s₀ t₀ →
       RelCT isa (InversePair s₀ t₀) P256Allocated.inverse
         (AArch64.Taint.Agree (Taint.ofRegs [.x0])))
     (huv : FieldCT (Cfg.uv p256)) :
-    ConstantTime isa (VPre p256) (JacPublic p256) allocatedPrefix := by
+    ConstantTime isa (VPreG) (JacPublicG) allocatedPrefix := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
   obtain ⟨a₁,b₁,tp₁,ti₁,tu₁,ep₁,ei₁,eu₁,h₁⟩ := allocatedPrefix_cut e₁
   obtain ⟨a₂,b₂,tp₂,ti₂,tu₂,ep₂,ei₂,eu₂,h₂⟩ := allocatedPrefix_cut e₂
@@ -278,14 +286,14 @@ theorem allocatedVerify_cut {s s' : State} {t : List Leak}
 
 /-- The new points stage has the same public leakage boundary as the original verifier. -/
 theorem allocatedVerify_ct_of_points
-    (hprefix : ∀ s,VPre p256 s → WP isa allocatedPrefix s fun t => ∃ g,Mid p256 s (s.gpr .x3) g t)
-    (hbefore : ConstantTime isa (VPre p256)
-      (JacPublic p256) allocatedPrefix)
-    (hpoints : ∀ s₀ t₀,VPre p256 s₀ → VPre p256 t₀ →
-      RelCT isa (JointBoundary p256 s₀ t₀) Impl.Ecdsa.Verify.AArch64.P256Allocated.points
+    (hprefix : ∀ s,VPreG s → WP isa allocatedPrefix s fun t => ∃ g,Mid p256 s (s.gpr .x3) g t)
+    (hbefore : ConstantTime isa (VPreG)
+      (JacPublicG) allocatedPrefix)
+    (hpoints : ∀ s₀ t₀,VPreG s₀ → VPreG t₀ →
+      RelCT isa (JointBoundaryG s₀ t₀) Impl.Ecdsa.Verify.AArch64.P256Allocated.points
         (AArch64.Taint.Agree (Taint.ofRegs [.x0])))
     (htail : FieldCT (Impl.Ecdsa.Verify.AArch64.Cfg.tail p256)) :
-    ConstantTime isa (VPre p256) (JacPublic p256) Impl.Ecdsa.Verify.AArch64.P256Allocated.verify := by
+    ConstantTime isa (VPreG) (JacPublicG) Impl.Ecdsa.Verify.AArch64.P256Allocated.verify := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
   obtain ⟨a₁,b₁,tp₁,tq₁,tt₁,ep₁,eq₁,et₁,h₁⟩ := allocatedVerify_cut e₁
   obtain ⟨a₂,b₂,tp₂,tq₂,tt₂,ep₂,eq₂,et₂,h₂⟩ := allocatedVerify_cut e₂
@@ -297,7 +305,7 @@ theorem allocatedVerify_ct_of_points
   have base : s₁.gpr .x3=s₂.gpr .x3 := pub.ptrs.2 .x3 (by decide)
   have sp : a₁.sp=a₂.sp := (Exec.rdwr ep₁).2.2.trans
     (pub.ptrs.1.trans (Exec.rdwr ep₂).2.2.symm)
-  have boundary : JointBoundary p256 s₁ s₂ a₁ a₂ := by
+  have boundary : JointBoundaryG s₁ s₂ a₁ a₂ := by
     refine ⟨pub,m₁,?_,sp⟩
     rw [base]; exact m₂
   obtain ⟨hq,tailpub⟩ := hpoints s₁ s₂ pre₁ pre₂ _ _ _ _ _ _ boundary eq₁ eq₂

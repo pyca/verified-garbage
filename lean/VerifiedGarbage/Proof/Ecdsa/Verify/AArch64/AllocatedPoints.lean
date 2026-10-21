@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.GTable
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointPoints
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
@@ -379,7 +380,7 @@ theorem points_ok (hc : CfgOk p256) (hC : Law p256.C) (hO : PrimeOrder p256.C)
 /-- The extra-register wrapper preserves precisely the verifier's untouched registers. -/
 theorem points_untouched (hc : CfgOk p256) (hC : Law p256.C) (hO : PrimeOrder p256.C)
     (hT : CombOkW p256.C 9 1 P256Joint.p256v.tbl P256Joint.p256v.start)
-    {s₀ s : State} {g : Reg → BitVec 64} (hp : VPre p256 s₀)
+    {s₀ s : State} {g : Reg → BitVec 64} (hp : VPreG s₀)
     (hm : Mid p256 s₀ (s₀.gpr .x3) g s) :
     WP isa P256Allocated.points s fun t => ∀ r∈untouched,t.gpr r=s.gpr r := by
   let P := peerPt p256 (s₀.mem (s₀.gpr .x0)=4) (keyX p256 s₀) (keyY p256 s₀)
