@@ -99,9 +99,9 @@ theorem rest_call (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨ctxR s₀, by rw [hwr]; first | exact hp.ctx_wr | exact hp.d_wr, 64, rfl, by show 64 + 64 ≤ 760; omega⟩
+    · exact ⟨ctxR s₀, by rw [hwr]; first | exact hp.ctx_wr | exact hp.d_wr, 64, rfl, by show 64 + 64 ≤ 1280; omega⟩
     · exact ⟨dR s₀, by rw [hwr]; first | exact hp.ctx_wr | exact hp.d_wr, P, rfl, by show P + (L s₀ - P) ≤ L s₀; omega⟩
-    · exact ⟨ctxR s₀, by rw [hwr]; first | exact hp.ctx_wr | exact hp.d_wr, 128, rfl, by show 128 + 320 ≤ 760; omega⟩
+    · exact ⟨ctxR s₀, by rw [hwr]; first | exact hp.ctx_wr | exact hp.d_wr, 128, rfl, by show 128 + 320 ≤ 1280; omega⟩
   refine xor_call v hx0 hx1 hx2 hx3 (by omega)
     ((hp.c_d.sub_left (sub_ctx s₀ (k := 64) (n := 64) (by lit_omega))).sub_right ts)
     (sub_disj s₀ (a := 64) (n := 64) (b := 128) (m := 320) (by lit_omega) (by lit_omega) (by lit_omega))

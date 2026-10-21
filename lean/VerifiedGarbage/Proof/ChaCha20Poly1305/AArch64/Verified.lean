@@ -9,6 +9,7 @@ public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Branch
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Rest
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Pad
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Seal
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Lit
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Open
@@ -29,7 +30,7 @@ Correctness (`Correct.lean`, and `Stitched/` for the eight-block stream's
 own code), constant time, and a state satisfying the precondition: of the
 code with its working space as its last argument (`sealScratchContract`,
 `openScratchContract`), and then of the functions, which allocate it in a
-frame of 768 bytes on the stack and wipe it after the code
+frame of 1280 bytes on the stack and wipe it after the code
 (`Verified.stackScratchWiped`).
 
 The taint analysis runs through the callees' code: it knows `x21`–`x25`
@@ -98,7 +99,10 @@ theorem sealMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
       have := (of_decide_eq_true h).1
       have : 1 ≤ Short.lo v.callee.sve := by cases v.callee.sve <;> decide
       rw [L, ag.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega
-    exact WP.mono (ShortRest.sealMain_ok v hp₁ hlo) fun _ h => Short.MainS.agree ag h
+    have h511 : L s₁ ≤ 511 := by
+      have := (of_decide_eq_true h).2
+      rw [L, ag.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega
+    exact WP.mono (Pad.sealRoute_ok v hp₁ hlo h511) fun _ h => Short.MainS.agree ag h
   · split
     · exact WP.mono (sealStitchedMain_ok v hp₁) fun _ h => Short.MainS.agree ag h
     · exact WP.mono (sealMain_ok v hp₁) fun _ h => Short.MainS.agree ag h
@@ -113,7 +117,10 @@ theorem openMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
       have := (of_decide_eq_true h).1
       have : 1 ≤ Short.lo v.callee.sve := by cases v.callee.sve <;> decide
       rw [L, ag.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega
-    exact WP.mono (ShortRest.openMain_ok v hp₁ hlo) fun _ h => Short.MainO.agree ag h
+    have h511 : L s₁ ≤ 511 := by
+      have := (of_decide_eq_true h).2
+      rw [L, ag.gpr .x5 (by decide) (by decide)]; simp only [L] at *; omega
+    exact WP.mono (Pad.openRoute_ok v hp₁ hlo h511) fun _ h => Short.MainO.agree ag h
   · split
     · exact WP.mono (openStitchedMain_ok v hp₁) fun _ h => Short.MainO.agree ag h
     · exact WP.mono (openMain_ok v hp₁) fun _ h => Short.MainO.agree ag h
@@ -206,7 +213,7 @@ def sealSat : State where
   sp := 0x9000
   mem _ := 0
   rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩]
-  wr := [⟨0x2100, 0⟩, ⟨0x3000, 16⟩, ⟨0x4000, 760⟩]
+  wr := [⟨0x2100, 0⟩, ⟨0x3000, 16⟩, ⟨0x4000, 1280⟩]
 
 /-- A state satisfying `open`'s precondition (as `sealSat`, with `tag` read). -/
 def openSat : State where
@@ -216,10 +223,10 @@ def openSat : State where
   sp := 0x9000
   mem _ := 0
   rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x3000, 16⟩]
-  wr := [⟨0x2100, 0⟩, ⟨0x4000, 760⟩]
+  wr := [⟨0x2100, 0⟩, ⟨0x4000, 1280⟩]
 
 theorem seal_verified (v : Proof.ChaCha20.AArch64.XorImpl) :
-    Verified AArch64.target (sealCode v.callee v.stitched) (sealScratchContract AArch64.abi 95) :=
+    Verified AArch64.target (sealCode v.callee v.stitched) (sealScratchContract AArch64.abi 160) :=
   Verified.of_correct (seal_ok v) (seal_ct v) (by
     sig_implies [Proof.ChaCha20Poly1305.sealScratchContract, Proof.ChaCha20Poly1305.sealScratchSig,
       Spec.ChaCha20Poly1305.sealPost, Proof.ChaCha20Poly1305.sealAArch64,
@@ -229,7 +236,7 @@ theorem seal_verified (v : Proof.ChaCha20.AArch64.XorImpl) :
 /-- The postconditions match on `decrypt` through different auxiliary
 functions, so the implication splits on it. -/
 theorem open_verified (v : Proof.ChaCha20.AArch64.XorImpl) :
-    Verified AArch64.target (openCode v.callee v.stitched) (openScratchContract AArch64.abi 95) :=
+    Verified AArch64.target (openCode v.callee v.stitched) (openScratchContract AArch64.abi 160) :=
   Verified.of_correct (open_ok v) (open_ct v)
     { pre := by
         sig_implies_pre [Proof.ChaCha20Poly1305.openScratchContract,
@@ -270,35 +277,35 @@ theorem open_verified (v : Proof.ChaCha20.AArch64.XorImpl) :
 /-- A state satisfying `seal`'s precondition, without the working space. -/
 def sealFrameSat : State := { sealSat with wr := [⟨0x2100, 0⟩, ⟨0x3000, 16⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealContract AArch64.abi 768).pre s := by
+theorem sealFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealContract AArch64.abi 1280).pre s := by
   implies_sat [Spec.ChaCha20Poly1305.sealContract, Spec.ChaCha20Poly1305.sealSig,
     Spec.ChaCha20Poly1305.sealPost, AArch64.abi, AArch64.argRegs] [sealFrameSat, sealSat]
     using sealFrameSat
 
 theorem seal_framed (v : Proof.ChaCha20.AArch64.XorImpl) :
     Verified AArch64.target
-      (Impl.StackScratch.AArch64.withStackScratchWiped 768 .x7 95 (sealCode v.callee v.stitched))
-      (Spec.ChaCha20Poly1305.sealContract AArch64.abi 768) :=
+      (Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 95 (sealCode v.callee v.stitched))
+      (Spec.ChaCha20Poly1305.sealContract AArch64.abi 1280) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.ChaCha20Poly1305.sealSig) (nm := "work") (e := .u64)
-    (n := 95) (post := Spec.ChaCha20Poly1305.sealPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 768) (words := 95) (seal_verified v) (by decide) (by decide) (by decide)
+    (n := 160) (post := Spec.ChaCha20Poly1305.sealPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 1280) (words := 95) (seal_verified v) (by decide) (by decide) (by decide)
     (sealPost_out _) sealFrameSat_pre
 
 /-- A state satisfying `open`'s precondition, without the working space. -/
 def openFrameSat : State := { openSat with wr := [⟨0x2100, 0⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openContract AArch64.abi 768).pre s := by
+theorem openFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openContract AArch64.abi 1280).pre s := by
   implies_sat [Spec.ChaCha20Poly1305.openContract, Spec.ChaCha20Poly1305.openSig,
     Spec.ChaCha20Poly1305.openPost, AArch64.abi, AArch64.argRegs] [openFrameSat, openSat]
     using openFrameSat
 
 theorem open_framed (v : Proof.ChaCha20.AArch64.XorImpl) :
     Verified AArch64.target
-      (Impl.StackScratch.AArch64.withStackScratchWiped 768 .x7 95 (openCode v.callee v.stitched))
-      (Spec.ChaCha20Poly1305.openContract AArch64.abi 768) :=
+      (Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 95 (openCode v.callee v.stitched))
+      (Spec.ChaCha20Poly1305.openContract AArch64.abi 1280) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
-    (n := 95) (post := Spec.ChaCha20Poly1305.openPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 768) (words := 95) (open_verified v) (by decide) (by decide) (by decide)
+    (n := 160) (post := Spec.ChaCha20Poly1305.openPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 1280) (words := 95) (open_verified v) (by decide) (by decide) (by decide)
     (openPost_out _) openFrameSat_pre
 
 end VG.Proof.ChaCha20Poly1305.AArch64

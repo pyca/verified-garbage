@@ -12,7 +12,7 @@ arguments, returning `w0`), composed of calls of the verified ChaCha20 and
 Poly1305 functions. `work` is the working space, which the artifact's frame
 allocates on the stack (`withStackScratchWiped`).
 
-The working space (`workLen` = 760 bytes, called the context below):
+The working space (`workLen` = 1280 bytes, called the context below):
 
 * `[0, 16)`: the lengths block;
 * `[16, 32)`: the padded last block of the additional data or the data;
@@ -24,7 +24,9 @@ The working space (`workLen` = 760 bytes, called the context below):
 * `[448, 576)`: the Poly1305 state;
 * `[576, 624)`: our caller's `x21`–`x25` and our return address `x30`;
 * `[624, 632)`: the address of `tag`;
-* `[632, 760)`: the working space of `vg_poly1305_finalize_scratch` (`scratch`).
+* `[632, 760)`: the working space of `vg_poly1305_finalize_scratch` (`scratch`);
+* `[768, 1280)`: the keystream of eight blocks, for 257 to 511 bytes
+  (`Pad.lean`), zeroed after it is used.
 
 `x21` holds the context, `x22` the data, `x23` its length, `x24` the
 additional data and `x25` its length throughout: they are callee-saved, and
@@ -55,7 +57,7 @@ open VG.Impl.ChaCha20.AArch64 (XorCallee)
 open VG.Impl.ChaCha20.AArch64.Xor (mov)
 
 /-- The size of the working space, in bytes. -/
-def workLen : Nat := 760
+def workLen : Nat := 1280
 
 /-- The registers saved in the context, and where: our caller's, our return
 address and `tag` (`x6`). -/
@@ -148,14 +150,16 @@ def finalizeTag : Prog isa :=
   .seq (.block [.addImm .x .x0 .x21 448, .movz .x .x1 0 0, .addImm .x .x3 .x21 632])
     (.call "vg_poly1305_finalize_scratch" Impl.Poly1305.AArch64.Radix64.finalize)
 
-/-- `seal` but for the tag. -/
-def sealMain (c : XorCallee) : Prog isa :=
+/-- `seal` but for the tag, with `crypt` encrypting the data. -/
+def sealMainWith (crypt : Prog isa) : Prog isa :=
   .seq prologue
   (.seq (macPad .x24 .x25)
   (.seq (.block lengths)
-  (.seq (cryptWith c)
+  (.seq crypt
   (.seq (macPad .x22 .x23)
     absorbLengths))))
+
+def sealMain (c : XorCallee) : Prog isa := sealMainWith (cryptWith c)
 
 /-- The tag written to `tag`, whose address is loaded from the context, and
 the registers restored. -/
@@ -174,15 +178,17 @@ def compare : List Instr :=
    .movz .x .x10 0 0, .sub .x .x10 .x10 .x9, .logic .orr .x .x9 .x9 .x10, .lsr .x .x9 .x9 63,
    .movz .x .x10 1 0, .sub .x .x0 .x10 .x9]
 
-/-- `open` up to the tag computed. -/
-def openMain (c : XorCallee) : Prog isa :=
+/-- `open` up to the tag computed, with `crypt` decrypting the data. -/
+def openMainWith (crypt : Prog isa) : Prog isa :=
   .seq prologue
   (.seq (macPad .x24 .x25)
   (.seq (macPad .x22 .x23)
   (.seq (.block lengths)
   (.seq absorbLengths
-  (.seq (cryptWith c)
+  (.seq crypt
     (finalizeTo 48))))))
+
+def openMain (c : XorCallee) : Prog isa := openMainWith (cryptWith c)
 
 /-- The tags compared, with the address of `tag` loaded from the context,
 and the registers restored. -/

@@ -14,10 +14,11 @@ Poly1305 key and the data's keystream together
 (`Impl/ChaCha20Poly1305/AArch64/Short.lean`); otherwise the one-time key uses
 the scalar block function. The code
 uses no stack: its calls (`bl`) keep the return address in `x30`, which it
-saves in its working space. Each function keeps its working space (760
-bytes, `work`) in a frame of 768 bytes on the stack
-(`withStackScratchWiped`), zeroed after the code, as it holds the one-time
-Poly1305 key and keystream. With the eight-block stream
+saves in its working space. Each function keeps its working space (1280
+bytes, `work`) in a frame of 1280 bytes on the stack
+(`withStackScratchWiped`), whose first 760 bytes are zeroed after the code,
+as they hold the one-time Poly1305 key and keystream; the code for 257 to 511
+bytes zeroes the keystream it keeps in the rest itself. With the eight-block stream
 (`XorImpl.stitched`), the integer units absorb the data's whole chunks of 512
 bytes into Poly1305 while the stream computes their keystream
 (`Impl/ChaCha20Poly1305/AArch64/Stitched.lean`), and `seal` also absorbs
@@ -54,24 +55,24 @@ def artifacts (v : Proof.ChaCha20.AArch64.XorImpl) : List Artifact := [
     suffix := v.callee.suffix
     features := v.features
     notes := sealNotes v
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 768 .x7 95
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 95
       (Impl.ChaCha20Poly1305.AArch64.sealCode v.callee v.stitched)
-    stack := 768
+    stack := 1280
     verified := Proof.ChaCha20Poly1305.AArch64.seal_framed v },
   Spec.ChaCha20Poly1305.openApi.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
     notes := notes v
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 768 .x7 95
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 95
       (Impl.ChaCha20Poly1305.AArch64.openCode v.callee v.stitched)
-    stack := 768
+    stack := 1280
     verified := Proof.ChaCha20Poly1305.AArch64.open_framed v },
   Spec.ChaCha20Poly1305.sealGatherApi.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
     notes := [gatherNote (Proof.ChaCha20Poly1305.AArch64.sealFn v).name]
     code := Impl.ChaCha20Poly1305.AArch64.SealGather.sealGather (Proof.ChaCha20Poly1305.AArch64.sealFn v).name (Proof.ChaCha20Poly1305.AArch64.sealFn v).code
-    stack := 784
+    stack := 1296
     verified := Proof.ChaCha20Poly1305.AArch64.Gather.sealGather_verified (Proof.ChaCha20Poly1305.AArch64.sealFn v) }]
 
 end VG.Generic.ChaCha20Xor.AArch64.ChaCha20Poly1305
