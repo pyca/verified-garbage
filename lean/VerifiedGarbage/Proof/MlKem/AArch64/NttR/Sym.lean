@@ -110,8 +110,11 @@ structure Rules where
   layers : Nat
   zeta : Nat → Nat
 
+/-- `ζ_k`, as the code takes it. -/
+def zetaN (k : Nat) : Nat := Impl.MlKem.AArch64.Ntt16.zeta k
+
 /-- `NTT`: seven Cooley–Tukey layers. -/
-def fwdRules : Rules := ⟨7, Impl.MlKem.AArch64.Ntt16.zeta⟩
+def fwdRules : Rules := ⟨7, zetaN⟩
 
 /-- The Cooley–Tukey butterfly of `p` and `p'` in layer `st`, with the zeta
 `z` of their block and its `tw` `t`. -/

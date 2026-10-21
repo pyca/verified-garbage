@@ -170,6 +170,26 @@ theorem upd_lt {w n i x k : Nat} (hn : n < 2 ^ (w * k)) (hx : x < 2 ^ w) (hi : i
     rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hQ
   omega
 
+/-- Slot `e` of slot `j` of `k` slots each. -/
+theorem slot_slot (w k n j e : Nat) (he : e < k) : slot w (slot (w * k) n j) e = slot w n (k * j + e) := by
+  rw [slot_def, slot_def, slot_def]
+  obtain ⟨d, rfl⟩ : ∃ d, k = e + 1 + d := ⟨k - e - 1, by omega⟩
+  have e1 : 2 ^ (w * (e + 1 + d)) = 2 ^ (w * e) * (2 ^ w * 2 ^ (w * d)) := by
+    rw [← Nat.pow_add, ← Nat.pow_add, Nat.mul_add, Nat.mul_add, Nat.mul_one, Nat.add_assoc]
+  rw [e1, Nat.mod_mul_right_div_self, Nat.mod_mul_right_mod, Nat.div_div_eq_div_mul, ← Nat.pow_add]
+  congr 3
+  grind
+
+/-- Slot `i` of the list `L` packed `w` bits apart. -/
+theorem slot_foldr {w : Nat} (f : Nat → Nat) (hf : ∀ h, f h < 2 ^ w) :
+    ∀ (L : List Nat) (i : Nat), i < L.length →
+      slot w (L.foldr (fun h acc => f h + 2 ^ w * acc) 0) i = f (L.getD i 0)
+  | [], _, h => absurd h (Nat.not_lt_zero _)
+  | a :: _, 0, _ => slot_zero_cons (hf a)
+  | a :: L, i + 1, h => by
+    rw [List.foldr_cons, slot_succ_cons (hf a)]
+    exact slot_foldr f hf L i (by simp only [List.length_cons] at h; omega)
+
 /-! ## Terms -/
 
 theorem code_lt (k : K) : k.code < 16 := by cases k <;> decide
