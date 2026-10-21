@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
+import VerifiedGarbage.Proof.P384.Order
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.PubVerify
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
 public import VerifiedGarbage.Impl.P384.X86_64.Joint
@@ -29,7 +30,7 @@ open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64.P384 VG.Proof.Weierstrass VG.Pr
 open VG.Proof.Weierstrass.X86_64 (InvSounds)
 
 /-- The comb's data, as `p384.comb` has it. -/
-def p384Table : CombData := ⟨7,Impl.P384.p384Comb7,Impl.P384.p384Comb7Start,"VG_P384_COMB",false,false⟩
+def p384Table : CombData := ⟨7,Impl.P384.p384Comb7,Impl.P384.p384Comb7Start,"VG_P384_COMB",true,true⟩
 
 /-! The fields of `p384v` and `p384vx` that are `p384`'s, rewritten rather than
 compared by unfolding (which would evaluate the order's bits). -/
@@ -55,11 +56,13 @@ theorem p384v_ok (hI : InvSounds) : CfgOk p384v := cfgOk_pubVerify (p384_ok hI) 
 
 theorem p384vx_ok (hI : InvSounds) : CfgOk p384vx := cfgOk_pubVerify (p384x_ok hI) true
 
-theorem p384v_tbls (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
-    CombTbls p384v := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩
+theorem p384v_tbls (hL : Law Spec.P384.curve)
+    (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
+    CombTbls p384v := fun d h => by cases h; exact ⟨hT, fun _ => Proof.P384.booth hL rfl rfl⟩
 
-theorem p384vx_tbls (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
-    CombTbls p384vx := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩
+theorem p384vx_tbls (hL : Law Spec.P384.curve)
+    (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
+    CombTbls p384vx := fun d h => by cases h; exact ⟨hT, fun _ => Proof.P384.booth hL rfl rfl⟩
 
 theorem pre_of {s : State} (h : verifyX86_64.pre s) : VPre p384v s := by
   obtain ⟨h1, h2, h3, h4, h5, -, h7, held, fit, hdw⟩ := h

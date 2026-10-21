@@ -151,14 +151,14 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
       registers in `scratch`. Field elements and scalars are six 64-bit words in Montgomery form, \
       " ++ Proof.Ecdsa.X86_64.P384.mulNote adx ++ ". `[k]G` is a call of `vg_p384_mul_base" ++ (if adx then "_adx" else "") ++ "`, which \
       expands `k` into a table of its bits and runs a fixed-base comb of 7-bit signed digits, its \
-      products written out: the 55 windows `k_j` of \
-      `k`'s bits as digits `k_j - 64` from `-64` to `63`, `[k]G = [64 Σ 2^(7j)]G + Σ [(k_j - 64) \
-      2^(7j)]G`, from 55 tables of `[m 2^(7j)]G` (`m = 1 … 64`, affine, in Montgomery form) in the \
-      static `VG_P384_COMB` (330 KB), with no doublings: each entry is selected in constant time \
-      by loading every entry of its table, " ++ Proof.Ecdsa.X86_64.P384.selNote adx ++ " the one \
+      products written out: the 55 windows of `k`'s bits as Booth's digits from `-64` to `64`, \
+      `[k]G = Σ [d_j 2^(7j)]G`, from 55 tables of `[m 2^(7j)]G` (`m = 1 … 64`, affine, in \
+      Montgomery form) in the static `VG_P384_COMB` (330 KB), with no doublings: each entry is \
+      selected in constant time by loading every entry of its table, " ++ Proof.Ecdsa.X86_64.P384.selNote adx ++ " the one \
       of the digit's magnitude (or the point at infinity for a zero digit), negated by a mask of \
-      its sign, and added by the mixed complete addition formulas of Renes, Costello and Batina \
-      for `a = -3` (Algorithm 5: the entry's `Z` is 1), the sum replacing the accumulator \
+      its sign, and added to a Jacobian accumulator by the mixed addition formulas \
+      madd-2004-hmv, which never meet equal points here (`n` is prime, and the kernel checks \
+      that the partial sums are never the next digit's term), the sum replacing the accumulator \
       unless the digit is zero; the \
       inversion modulo `p` is a call of `vg_p384_inv_mod_p" ++ (if adx then "_adx" else "") ++ "`, \
       by divsteps (Bernstein and Yang's safegcd, half-delta form): 15 \
