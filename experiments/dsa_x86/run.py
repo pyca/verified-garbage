@@ -12,7 +12,7 @@ if len(sys.argv)>1:variants=sys.argv[1:]
 assert all(v.isalnum() and v.isascii() for v in variants), 'Invalid variant name'
 def run(cmd,log,extra=None):
     with open(out/log,'w') as f:
-        subprocess.run(cmd,env=env| (extra or {}),stdout=f,stderr=subprocess.STDOUT,check=True)
+        subprocess.run(cmd,env={k:v for k,v in (env| (extra or {})).items() if v is not None},stdout=f,stderr=subprocess.STDOUT,check=True)
 def build(cmd,log):
     run(cmd+['--message-format=json'],log)
     messages=[]
@@ -86,7 +86,7 @@ if env.get('PROTOTYPE_PARAMETERS')=='1':
         with open(env['GITHUB_STEP_SUMMARY'],'a') as f:f.write('\n'.join(lines)+'\n')
 if env.get('PROTOTYPE_OPENSSL_SCALAR')=='1':
     assert 'baseline' in variants
-    for label,mask in [('openssl-default',''),('openssl-no-sse2','~0x4000000')]:
+    for label,mask in [('openssl-default',None),('openssl-no-sse2','~0x4000000:~0x0:~0x0:~0x0:~0x0')]:
         extra={'OPENSSL_ia32cap':mask, 'CRITERION_HOME':str(out/'diagnostic'/label)}
         run([str(out/'baseline'),'--bench','^dsa_generate_key.*/openssl/','--warm-up-time','0.1','--measurement-time','0.3','--sample-size','25','--noplot'],label+'-keys.log',extra)
         run([str(out/'baseline'),'--bench','^dsa_generate_parameters/openssl/','--warm-up-time','0.1','--measurement-time','0.3','--sample-size','10','--noplot'],label+'-parameters.log',extra|{'VG_BENCHES':'dsa_parameters'})
