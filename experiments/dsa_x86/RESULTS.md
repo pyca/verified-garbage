@@ -116,3 +116,25 @@ The 1024-bit gap against OpenSSL is real. Full-stack keygen is 12–18% slower
 than OpenSSL on this CPU too. The portable OpenSSL submission gate is unmet.
 The next experiment chunks the square's triangular inner loop, retaining a
 compact outer loop and comparing four/eight-product chunks.
+
+## Seventh native sweep: chunked triangular square
+
+Run [39519470801](https://github.com/pyca/verified-garbage/actions/runs/39519470801),
+commit `0ebfba6c9`, AMD EPYC 7763. Three alternating keygen rounds;
+100 random 1024-bit parameter samples per candidate.
+
+| Candidate | 1024/160 ms | 2048/160 | 2048/224 | 2048/256 | 3072/256 | DSA bytes |
+|---|---:|---:|---:|---:|---:|---:|
+| OpenSSL | .6265 | 2.3981 | 3.2034 | 3.6382 | 8.1427 | — |
+| Previous stack | .7462 | 2.8275 | 3.8069 | 4.2874 | 9.4550 | 708736 |
+| Square chunk 4 | .7325 | 2.7204 | 3.6536 | 4.1203 | 9.0578 | 747456 |
+| Square and row chunk 8 | .7269 | 2.6907 | 3.6108 | 4.0616 | 8.9604 | 832768 |
+
+Chunking improves keygen 2–5%, but remains 10–16% slower than OpenSSL.
+The larger chunk has a weak code-size tradeoff: another 85 KB for about 1%.
+Fixed-search parameter times improve 2–5%. Random 1024-bit medians:
+OpenSSL 172.473 ms (95% CI 158.479–206.022), previous stack 268.868
+(246.150–310.295), chunk 4 303.840 (273.940–352.840), chunk 8 307.593
+(264.830–328.419). Random intervals overlap between prototypes; these
+results do not establish a parameter-generation improvement. All remain
+behind OpenSSL. Keep the fixed-search and random-API conclusions separate.

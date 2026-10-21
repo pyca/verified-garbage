@@ -3,6 +3,7 @@ import VerifiedGarbage.Impl.Dsa.X86.Generate
 import VerifiedGarbage.Impl.Dsa.X86.Generation.Entry
 import VerifiedGarbage.Impl.Mont.X86.Window
 import VerifiedGarbage.TCB.X86.Print
+import VerifiedGarbage.Spec.Rsa.FixedBaseComb
 import Lean
 
 /- Unproven experiments. No Artifact, Verified value, or exported proof is constructed. -/
@@ -239,15 +240,15 @@ def fastSquare (compact deferred : Bool) (crossChunk n o a : Nat) : Prog isa :=
 
 /-- Fixed-address masked table scan, accumulating each output word in a
 register. Masks are computed once per window, without secret indexing. -/
-def wordSelect (n tab dst : Nat) : Prog isa :=
-  .frame (.alloc 64) (seq [
-    .block ((List.range 16).flatMap fun j => windowMask j ++ [.store (at_ .esp (4*j)) .ecx]),
+def wordSelect (n tab dst : Nat) (entries : Nat := 16) : Prog isa :=
+  .frame (.alloc (4*entries)) (seq [
+    .block ((List.range entries).flatMap fun j => windowMask j ++ [.store (at_ .esp (4*j)) .ecx]),
     .block [.mov .ebp (.reg .edi)],
-    .loop (.block ([.mov .ebx (imm 0)] ++ (List.range 16).flatMap (fun j => [
+    .loop (.block ([.mov .ebx (imm 0)] ++ (List.range entries).flatMap (fun j => [
       .mov .eax (.mem (at_ .ebp (entry n tab j))), .alu .and .eax (.mem (at_ .esp (4*j))),
       .alu .or .ebx (.reg .eax)]) ++ [
       .store (at_ .ebp dst) .ebx, .alu .add .ebp (imm 4),
-      .mov .eax (.reg .edi), .alu .add .eax (imm (8*n)), .alu .cmp .ebp (.reg .eax)])) .ne]) (.free 64)
+      .mov .eax (.reg .edi), .alu .add .eax (imm (8*n)), .alu .cmp .ebp (.reg .eax)])) .ne]) (.free (4*entries))
 
 /-- Public high-bit fast paths seed a reduced power of two immediately.
 The original setup remains the fallback for other modulus shapes. -/
@@ -299,6 +300,93 @@ def functions (dedup win pub : Bool) : List (String × Prog isa) := Id.run do
           "vg_dsa_check_parameters" check))]
   return fs
 
+/-- Persistent key-generation comb storage, disjoint from the DSA fields
+and scalar suffix and inside the existing minimum scratch allocation. -/
+def combBase (n : Nat) : Nat := if n == 16 then 9216 else 16384
+def combTable (n : Nat) : Nat := combBase n + 16*n
+
+def copyToComb (n src : Nat) : Prog isa := seq [
+  .block [.mov .eax (.reg .esi), .mov .edx (imm (8*n)), .mul .edx,
+    .alu .add .eax (.reg .edi), .alu .add .eax (imm (combTable n)),
+    .mov .ecx (.reg .eax), .mov .ebp (.reg .edi), .mov .ebx (imm (2*n))],
+  .loop (.block [.mov .eax (.mem (at_ .ebp src)), .store (at_ .ecx 0) .eax,
+    .alu .add .ecx (imm 4), .alu .add .ebp (imm 4), .alu .sub .ebx (imm 1)]) .ne]
+
+def combBuild (n e : Nat) : Prog isa :=
+  let d := VG.Spec.Rsa.FixedBaseComb.rows (32*e)
+  let tab := combTable n
+  seq [copyWords n (slot n 0) (combBase n), copyWords n (slot n 4) (combBase n+8*n),
+    mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 4) (slot n 3),
+    mul (contextMod n) 0 (slot n 2) (slot n 5) (slot n 5) (slot n 4),
+    copyWords n (slot n 6) tab, copyWords n (slot n 5) (entry n tab 1),
+    .block [.mov .eax (imm 1), .store (sc 28) .eax],
+    .loop (seq [
+      .block [.mov .esi (imm d)],
+      .loop (.seq (mul (contextMod n) 0 (slot n 2) (slot n 5) (slot n 5) (slot n 5))
+        (.block [.alu .sub .esi (imm 1), .alu .cmp .esi (imm 0)])) .ne,
+      .block [.mov .esi (.mem (sc 28)), .alu .add .esi (.reg .esi), .store (sc 28) .esi],
+      copyToComb n (slot n 5), .block [.alu .cmp .esi (imm 16)]]) .ne,
+    .block [.mov .esi (imm 1)],
+    .loop (seq [
+      .block [.mov .eax (imm 0), .alu .sub .eax (.reg .esi), .alu .and .eax (.reg .esi),
+        .store (sc 28) .eax, .mov .edx (.reg .esi), .alu .sub .edx (.reg .eax), .store (sc windowOffset) .edx],
+      publicSelect n tab (slot n 6),
+      .block [.mov .eax (.mem (sc 28)), .store (sc windowOffset) .eax],
+      publicSelect n tab (slot n 5),
+      mul (contextMod n) 0 (slot n 2) (slot n 7) (slot n 6) (slot n 5),
+      copyToComb n (slot n 7), .block [.alu .add .esi (imm 1), .alu .cmp .esi (imm 32)]]) .ne]
+
+def combPower (n e : Nat) (pub : Bool) : Prog isa :=
+  let d := VG.Spec.Rsa.FixedBaseComb.rows (32*e)
+  let ew := (5*d+31)/32
+  let digit := .block ([.mov .ebx (imm 0)] ++ (List.range 5).flatMap (fun j =>
+    let bit := (j+1)*d-1
+    [.mov .eax (.mem (sc (slot n 8+4*(bit/32))))] ++
+    (if bit%32 == 0 then [] else [.shift .shr .eax (bit%32)]) ++
+    [.alu .and .eax (imm 1)] ++ List.replicate j (.alu .add .eax (.reg .eax)) ++
+    [.alu .or .ebx (.reg .eax)]) ++ [.store (sc windowOffset) .ebx])
+  let shiftOne := .seq (.block [.mov .ecx (imm 0)]) (wordLoop ew [
+    .mov .eax (.mem (at_ .ebp (slot n 8))), .mov .ebx (.reg .eax), .shift .shr .ebx 31,
+    .alu .add .eax (.reg .eax), .alu .add .eax (.reg .ecx),
+    .store (at_ .ebp (slot n 8)) .eax, .mov .ecx (.reg .ebx)])
+  seq [copyWords n (combTable n) (slot n 6),
+    (if e < ew then zerosW (slot n 8+4*e) (ew-e) else .block []),
+    .block [.mov .esi (imm d)],
+    .loop (seq [square n, digit, shiftOne,
+      (if pub then publicSelect n (combTable n) (slot n 7) else wordSelect n (combTable n) (slot n 7) 32),
+      mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 6) (slot n 7),
+      .block [.alu .sub .esi (imm 1), .alu .cmp .esi (imm 0)]]) .ne,
+    mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 6) (slot n 3)]
+
+def combName (prepare : Bool) (n e : Nat) : String :=
+  (if prepare then "proto_dsa_comb_build_" else "proto_dsa_comb_power_") ++ toString n ++ "_" ++ toString e
+
+def combBody (prepare : Bool) (n e : Nat) : Prog isa := seq [
+  .block VG.Impl.Dsa.X86.Pow.save,
+  (if prepare then .seq (contextSetup n) (combBuild n e)
+    else .seq (.block (setupInverse (slot n 0) 0)) (one n (slot n 3))),
+  combPower n e prepare, .block VG.Impl.Dsa.X86.Pow.restore]
+
+def combCall (prepare : Bool) (n e : Nat) : Prog isa :=
+  .seq (.block [.mov .eax (imm ((combBase n+34*8*n)/8))])
+    (.frame (.push [.eax, .edi]) (.call (combName prepare n e) (combBody prepare n e)) (.pop .eax 2))
+
+def combFunctions (fs : List (String × Prog isa)) : List (String × Prog isa) := Id.run do
+  let pairs := [(16,5),(32,5),(32,7),(32,8),(48,8)]
+  let check := replace (pairs.map fun (n,e) => (VG.Impl.Dsa.X86.Pow.call n e, combCall true n e))
+    VG.Impl.Dsa.X86.Generate.checkParameters
+  let derive := replace (pairs.map fun (n,e) => (VG.Impl.Dsa.X86.Pow.call n e, combCall false n e))
+    (replace (domains.map fun (p,q) => (VG.Impl.Dsa.X86.Generate.parameters p q, .block []))
+      VG.Impl.Dsa.X86.Generate.deriveKey)
+  let mut result := fs.filter fun f => f.1 != "vg_dsa_generate_key" && f.1 != "proto_dsa_derive_prevalidated"
+  result := result ++ [("proto_dsa_comb_check_parameters", check), ("proto_dsa_comb_derive_key", derive),
+    ("vg_dsa_generate_key", VG.Impl.Dsa.X86.GenerateKey.code "proto_dsa_comb_check_parameters"
+      "proto_dsa_comb_derive_key" check derive)]
+  for (n,e) in pairs do
+    for prepare in [true,false] do
+      result := result ++ [(combName prepare n e, combBody prepare n e)]
+  return result
+
 /-- Reuse RSA's existing runtime-width multiplication helper. Its scratch
 range fits in the unused modulus padding plus slots one and two for n>=3. -/
 def sharedMul (n o a b : Nat) : Prog isa :=
@@ -320,7 +408,7 @@ def sharedRules : List (Prog isa × Prog isa) :=
       (mul (contextMod n) 0 (slot n 2) (slot n o) (slot n a) (slot n b),
         sharedMul n (slot n o) (slot n a) (slot n b))
 
-def abiWrapper (n e : Nat) : Prog isa :=
+def abiNamed (callee : String) : Prog isa :=
   let saved := [(Reg.ebx, 0), (.esi, 4), (.ebp, 8), (.edi, 12)]
   let sentinels := [(Reg.ebx, 305419896), (.esi, 591751049), (.ebp, 878082202), (.edi, 1164413355)]
   .frame (.alloc 16) (seq [
@@ -328,17 +416,23 @@ def abiWrapper (n e : Nat) : Prog isa :=
       .mov .eax (.mem (at_ .esp 20)), .mov .edx (.mem (at_ .esp 24))]),
     .frame (.push [.edx, .eax]) (seq [
       .block (sentinels.map fun (r,v) => .mov r (imm v)),
-      .call (VG.Impl.Dsa.X86.Pow.name n e) (.block []),
+      .call callee (.block []),
       .block ([.mov .eax (imm 0)] ++ sentinels.flatMap (fun (r,v) =>
         [.alu .xor r (imm v), .alu .or .eax (.reg r)]))]) (.pop .edx 2),
     .block (saved.map fun (r,d) => .mov r (.mem (at_ .esp d)))]) (.free 16)
+
+def abiWrapper (n e : Nat) : Prog isa := abiNamed (VG.Impl.Dsa.X86.Pow.name n e)
 
 end Prototype
 
 def main (args : List String) : IO Unit := do
   let mode := args.head!
-  let fs := if mode == "abi" then Prototype.widths.map (fun (n,e) =>
+  let fs := if mode == "abic" then [(16,5),(32,5),(32,7),(32,8),(48,8)].flatMap (fun (n,e) =>
+    [true,false].map fun prepare =>
+      let name := Prototype.combName prepare n e
+      (name.replace "proto_dsa_" "proto_dsa_abi_", Prototype.abiNamed name)) else if mode == "abi" then Prototype.widths.map (fun (n,e) =>
     ("proto_dsa_abi_pow_" ++ toString n ++ "_" ++ toString e, Prototype.abiWrapper n e)) else Prototype.functions (mode.contains 'd') (mode.contains 'w') (mode.contains 'p')
+  let fs := if mode.contains 'm' then Prototype.combFunctions fs else fs
   let json := fs.map fun (name, p) =>
     let p := if mode.contains 'q' then Prototype.replace [(exponentiate 3 6, Prototype.window 3 6 true)] p else p
     let p := if mode.contains 'z' then Prototype.replace

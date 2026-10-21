@@ -91,3 +91,17 @@ Square-loop follow-up: `u` processes four triangular products per inner-loop
 iteration; `j` processes eight. A scalar prefix handles the public remainder
 of each row length. The outer loop and prefix remain compact. The numeric
 suffix still controls the Montgomery row chunk, so `...j8` stacks both choices.
+The prototype printer also emits large stack arenas directly; proof promotion
+must split them into nested allocations below the ISA model's 4096-byte limit
+and establish the total stack bounds. No model relaxation is intended.
+
+`m` shares a five-tooth fixed-base comb between keygen's public subgroup
+validation and private exponentiation. The table lives in disjoint caller
+scratch, is local to one keygen call, and follows the existing RSA comb
+representation. Private exponent lookup scans all 32 entries; public
+validation uses direct lookup. There is no persistent global cache.
+`abic` renders ABI-check wrappers for the comb helpers. `comb_tests.rs`
+checks algebraic results, callee-saved registers, and reuse after clobbering
+the arithmetic context. Promotion requires DSA-specific table-lifetime and
+public-modulus contracts; the RSA contract is not claimed to cover padded
+DSA domains. This experiment adds no trusted declarations or proofs.
