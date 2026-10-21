@@ -70,6 +70,9 @@ theorem body48_ok {s₀ : State} (hp : SPre s₀) {T : Nat → Nat → Nat → B
     gq48_ok hb (fun _ => Nat.le_refl _) (Nat.zero_le _) (Nat.zero_le _)
   have hq : ∀ b j t t', Q b j t → ZFrame (.xmm13 :: .xmm14 :: aregs) t t' → Q b j t' :=
     fun _ _ _ _ h f => h.zframe f (by decide)
+  have hq1 : ∀ b t t', Q b 1 t → t'.gpr = t.gpr → t'.rd = t.rd → t'.wr = t.wr →
+      (∀ r, r ∉ aregs → ∀ l < 4, t'.zlane r l = t.zlane r l) → Frame [Slot.slotR (pp s₀)] t.mem t'.mem → Q b 1 t' :=
+    fun _ _ _ h hg hrd hwr hl hf => QG48.slot hp (g := e - 1) (by omega_arith) ha h hg hrd hwr hl hf
   have hqx : ∀ b c, c + 16 ≤ nb s₀ → 16 * (e - 1) + 48 ≤ c → ∀ t t', Q b 10 t → t'.gpr = t.gpr → t'.rd = t.rd →
       t'.wr = t.wr → (∀ r, r ≠ .xmm13 → r ∉ aregs → ∀ l < 4, t'.zlane r l = t.zlane r l) →
       Frame [⟨bAddr s₀ c, 256⟩] t.mem t'.mem → Q b 10 t' :=
@@ -78,14 +81,14 @@ theorem body48_ok {s₀ : State} (hp : SPre s₀) {T : Nat → Nat → Nat → B
   have hQ₀ : Q 0 1 s := ⟨hE, by
     rw [ite_f (by decide)]; exact ⟨fun h => absurd h (by decide), fun _ _ _ => rfl⟩⟩
   -- Group `e + 2`, hashing group `e - 1`.
-  refine WP.seq (WP.mono (batch_ok hp (gq48 0) gRegs48 gRegs48_ok (Q 0) (hgq 0 (by decide)) (hq 0)
+  refine WP.seq (WP.mono (batch_ok hp (gq48 0) gRegs48 gRegs48_ok (Q 0) (hgq 0 (by decide)) (hq 0) (hq1 0)
     (hqx 0 _ (by omega_arith) (by omega_arith)) (c := 16 * (e + 2)) (j := 12) (by omega_arith) hI.a hCache (gq48_keeps 0)
     (by show a.toNat + _ = _; omega_arith) hQ₀) fun s₁ ⟨hA₁, hQ₁, hg₁, _, _, hCache₁⟩ => ?_)
-  refine WP.seq (WP.mono (batch_ok hp (gq48 1) gRegs48 gRegs48_ok (Q 1) (hgq 1 (by decide)) (hq 1)
+  refine WP.seq (WP.mono (batch_ok hp (gq48 1) gRegs48 gRegs48_ok (Q 1) (hgq 1 (by decide)) (hq 1) (hq1 1)
     (hqx 1 _ (by omega_arith) (by omega_arith)) (c := 16 * (e + 2) + 16) (j := 16) (by omega_arith) hA₁ hCache₁ (gq48_keeps 1)
     (by rw [hg₁]; show a.toNat + _ = _; omega_arith) (hQ₁.next (by decide) (Nat.le_refl _)))
     fun s₂ ⟨hA₂, hQ₂, hg₂, _, _, hCache₂⟩ => ?_)
-  refine WP.seq (WP.mono (batch_ok hp (gq48 2) gRegs48 gRegs48_ok (Q 2) (hgq 2 (by decide)) (hq 2)
+  refine WP.seq (WP.mono (batch_ok hp (gq48 2) gRegs48 gRegs48_ok (Q 2) (hgq 2 (by decide)) (hq 2) (hq1 2)
     (hqx 2 _ (by omega_arith) (by omega_arith)) (c := 16 * (e + 2) + 16 + 16) (j := 20) (by omega_arith) hA₂ hCache₂ (gq48_keeps 2)
     (by rw [hg₂, hg₁]; show a.toNat + _ = _; omega_arith) (hQ₂.next (by decide) (Nat.le_refl _)))
     fun s₃ ⟨hA₃, hQ₃, hg₃, _, _, _⟩ => ?_)
@@ -282,6 +285,9 @@ theorem dbody48_ok {s₀ : State} (hp : SPre s₀) {T : Nat → Nat → Nat → 
       (by simp only [loD48]; rw [ite_t (by decide)]; omega_arith)
   have hq : ∀ b j t t', Q b j t → ZFrame (.xmm13 :: .xmm14 :: aregs) t t' → Q b j t' :=
     fun _ _ _ _ h f => h.zframe f (by decide)
+  have hq1 : ∀ b t t', Q b 1 t → t'.gpr = t.gpr → t'.rd = t.rd → t'.wr = t.wr →
+      (∀ r, r ∉ aregs → ∀ l < 4, t'.zlane r l = t.zlane r l) → Frame [Slot.slotR (pp s₀)] t.mem t'.mem → Q b 1 t' :=
+    fun _ _ _ h hg hrd hwr hl hf => QG48.slot hp (g := e) (by omega_arith) ha h hg hrd hwr hl hf
   have hqx : ∀ b, 16 * (e + b) + 16 ≤ nb s₀ → ∀ t t', Q b 10 t → t'.gpr = t.gpr → t'.rd = t.rd →
       t'.wr = t.wr → (∀ r, r ≠ .xmm13 → r ∉ aregs → ∀ l < 4, t'.zlane r l = t.zlane r l) →
       Frame [⟨bAddr s₀ (16 * (e + b)), 256⟩] t.mem t'.mem → Q b 10 t' :=
@@ -293,15 +299,15 @@ theorem dbody48_ok {s₀ : State} (hp : SPre s₀) {T : Nat → Nat → Nat → 
   have hQ₀ : Q 0 1 s := ⟨hE.mono (Nat.zero_le _), by
     rw [ite_f (by decide)]; exact ⟨fun h => absurd h (by decide), fun _ _ _ => rfl⟩⟩
   -- Each group is hashed after rounds 1 and 3, before its blocks are decrypted.
-  refine WP.seq (WP.mono (batch_ok hp (gq48 0) gRegs48 gRegs48_ok (Q 0) (hgq 0 (by decide)) (hq 0)
+  refine WP.seq (WP.mono (batch_ok hp (gq48 0) gRegs48 gRegs48_ok (Q 0) (hgq 0 (by decide)) (hq 0) (hq1 0)
     (hqx 0 (by omega_arith)) (c := 16 * (e + 0)) (j := 0) (by omega_arith) (by simpa using hI.a) hCache (gq48_keeps 0)
     (by show a.toNat + _ = _; omega_arith) hQ₀) fun s₁ ⟨hA₁, hQ₁, hg₁, _, _, hCache₁⟩ => ?_)
-  refine WP.seq (WP.mono (batch_ok hp (gq48 1) gRegs48 gRegs48_ok (Q 1) (hgq 1 (by decide)) (hq 1)
+  refine WP.seq (WP.mono (batch_ok hp (gq48 1) gRegs48 gRegs48_ok (Q 1) (hgq 1 (by decide)) (hq 1) (hq1 1)
     (hqx 1 (by omega_arith)) (c := 16 * (e + 1)) (j := 4) (by omega_arith)
     (by rw [show 16 * (e + 1) = 16 * (e + 0) + 16 by omega_arith]; exact hA₁) hCache₁ (gq48_keeps 1)
     (by rw [hg₁]; show a.toNat + _ = _; omega_arith) (hQ₁.next (by decide) (hnx 0)))
     fun s₂ ⟨hA₂, hQ₂, hg₂, _, _, hCache₂⟩ => ?_)
-  refine WP.seq (WP.mono (batch_ok hp (gq48 2) gRegs48 gRegs48_ok (Q 2) (hgq 2 (by decide)) (hq 2)
+  refine WP.seq (WP.mono (batch_ok hp (gq48 2) gRegs48 gRegs48_ok (Q 2) (hgq 2 (by decide)) (hq 2) (hq1 2)
     (hqx 2 (by omega_arith)) (c := 16 * (e + 2)) (j := 8) (by omega_arith)
     (by rw [show 16 * (e + 2) = 16 * (e + 1) + 16 by omega_arith]; exact hA₂) hCache₂ (gq48_keeps 2)
     (by rw [hg₂, hg₁]; show a.toNat + _ = _; omega_arith) (hQ₂.next (by decide) (hnx 1)))

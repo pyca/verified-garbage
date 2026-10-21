@@ -32,7 +32,7 @@ open VG.Impl.Gcm.X86_64.Stitch (storeY)
 open VG.Impl.Gcm.X86_64.Slot (storeCtr)
 open VG.Proof.Gcm.X86_64.Stitch (SPre SPreTo EPostTo CtxMode sp op sR oR nb nr kp cp yp pp cb ciph sch hk y₀
   dp dR pR cR yR bAddr addr_eq in_sub in_sub_int in_rdwr ite_t ite_f ghash_append16)
-open VG.Proof.Gcm.X86_64.StitchZ (GEnv GEnv48 QG48 gRegs48 gRegs48_ok gq48_ok QG48.data QG48.next keepW T48
+open VG.Proof.Gcm.X86_64.StitchZ (GEnv GEnv48 QG48 gRegs48 gRegs48_ok gq48_ok QG48.data QG48.slot QG48.next keepW T48
   FinOk FinOk48 ghRun_ok ghFin adv_ok next48_ok cmp_ok reload_ok ghash_append48 pw16 pow48_ok)
 open VG.Proof.Gcm.X86_64.Pclmul (Prod reduceB prod toNat_ofNat_lt ofNat_sub_ofNat)
 open VG.Impl.Gcm.X86_64.Pclmul (at_ poly)
@@ -161,6 +161,9 @@ theorem body48To_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {T : Nat �
     gq48_ok (s₀ := dst s₀) hb (fun _ => Nat.le_refl _) (Nat.zero_le _) (Nat.zero_le _)
   have hq : ∀ b j t t', Q b j t → ZFrame (.xmm13 :: .xmm14 :: aregs) t t' → Q b j t' :=
     fun _ _ _ _ h f => h.zframe f (by decide)
+  have hq1 : ∀ b t t', Q b 1 t → t'.gpr = t.gpr → t'.rd = t.rd → t'.wr = t.wr →
+      (∀ r, r ∉ aregs → ∀ l < 4, t'.zlane r l = t.zlane r l) → Frame [Slot.slotR (pp s₀)] t.mem t'.mem → Q b 1 t' :=
+    fun _ _ _ h hg hrd hwr hl hf => QG48.slot hd (g := e - 1) (by omega_arith) ha h hg hrd hwr hl hf
   have hqx : ∀ b c, c + 16 ≤ nb s₀ → 16 * (e - 1) + 48 ≤ c → ∀ t t', Q b 10 t → t'.gpr = t.gpr → t'.rd = t.rd →
       t'.wr = t.wr → (∀ r, r ≠ .xmm13 → r ∉ aregs → ∀ l < 4, t'.zlane r l = t.zlane r l) →
       Frame [⟨oAddr s₀ c, 256⟩] t.mem t'.mem → Q b 10 t' :=
@@ -169,14 +172,14 @@ theorem body48To_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {T : Nat �
   have hQ₀ : Q 0 1 s := ⟨hE, by
     rw [ite_f (by decide)]; exact ⟨fun h => absurd h (by decide), fun _ _ _ => rfl⟩⟩
   -- Group `e + 2`, hashing group `e - 1`.
-  refine WP.seq (WP.mono (batchTo_ok hp (gq48 0) gRegs48 gRegs48_ok (Q 0) (hgq 0 (by decide)) (hq 0)
+  refine WP.seq (WP.mono (batchTo_ok hp (gq48 0) gRegs48 gRegs48_ok (Q 0) (hgq 0 (by decide)) (hq 0) (hq1 0)
     (hqx 0 _ (by omega_arith) (by omega_arith)) (c := 16 * (e + 2)) (j := 12) (by omega_arith) hI.a
     (by show a.toNat + _ = _; omega_arith) hQ₀) fun s₁ ⟨hA₁, hQ₁, hg₁, _, _⟩ => ?_)
-  refine WP.seq (WP.mono (batchTo_ok hp (gq48 1) gRegs48 gRegs48_ok (Q 1) (hgq 1 (by decide)) (hq 1)
+  refine WP.seq (WP.mono (batchTo_ok hp (gq48 1) gRegs48 gRegs48_ok (Q 1) (hgq 1 (by decide)) (hq 1) (hq1 1)
     (hqx 1 _ (by omega_arith) (by omega_arith)) (c := 16 * (e + 2) + 16) (j := 16) (by omega_arith) hA₁
     (by rw [hg₁]; show a.toNat + _ = _; omega_arith) (hQ₁.next (by decide) (Nat.le_refl _)))
     fun s₂ ⟨hA₂, hQ₂, hg₂, _, _⟩ => ?_)
-  refine WP.seq (WP.mono (batchTo_ok hp (gq48 2) gRegs48 gRegs48_ok (Q 2) (hgq 2 (by decide)) (hq 2)
+  refine WP.seq (WP.mono (batchTo_ok hp (gq48 2) gRegs48 gRegs48_ok (Q 2) (hgq 2 (by decide)) (hq 2) (hq1 2)
     (hqx 2 _ (by omega_arith) (by omega_arith)) (c := 16 * (e + 2) + 16 + 16) (j := 20) (by omega_arith) hA₂
     (by rw [hg₂, hg₁]; show a.toNat + _ = _; omega_arith) (hQ₂.next (by decide) (Nat.le_refl _)))
     fun s₃ ⟨hA₃, hQ₃, hg₃, _, _⟩ => ?_)
@@ -219,26 +222,27 @@ theorem loop48To_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s
 
 /-! ## The tables of 48 blocks -/
 
-/-- The encryption state kept by writes to the working space alone. -/
+/-- The encryption state kept by writes to the first 1024 bytes of the
+working space alone, before the slot. -/
 theorem AInvTo.pow {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {s s' : State} (h : AInvTo s₀ c s)
-    (hf : Frame [pR s₀] s.mem s'.mem) (hg : s'.gpr = s.gpr) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    (hf : Frame [⟨pp s₀, 1024⟩] s.mem s'.mem) (hg : s'.gpr = s.gpr) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     (hl : ∀ r, r ≠ .xmm7 → r ≠ .xmm8 → r ≠ .xmm9 → r ≠ .xmm10 → r ≠ .xmm11 → r ≠ .xmm12 → ∀ l < 4,
       s'.zlane r l = s.zlane r l) : AInvTo s₀ c s' := by
   have hw := hp.wrap_o
-  have k : ∀ r ∈ ([.xmm14, .xmm0, .xmm15] : List XReg), ∀ l < 4, s'.zlane r l = s.zlane r l := by
-    intro r hr l hl'
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> exact hl _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) l hl'
-  refine ⟨h.le, fun l hl' => by rw [k _ (by decide) l hl']; exact h.ctr l hl',
-    fun l hl' => by rw [k _ (by decide) l hl']; exact h.msk l hl',
-    fun l hl' => by rw [k _ (by decide) l hl']; exact h.inc l hl',
-    by rw [hg]; exact h.rdi, by rw [hg]; exact h.rsi, by rw [hg]; exact h.r10, by rw [hg]; exact h.r8,
-    h.frame.trans (hf.sub fun r hr => ⟨pR s₀, by simp, fun a ha => by
-      simp only [List.mem_singleton] at hr; subst hr; exact ha⟩),
+  have hwp := hp.wrap_p
+  have hsub : Region.Sub ⟨pp s₀, 1024⟩ (pR s₀) := Region.sub_prefix (by decide)
+  refine ⟨h.le, h.slot.frame hf fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact Offset.disjoint_base _ (by decide) (by unfold Impl.Gcm.X86_64.Slot.slot; omega_arith),
+    fun l hl' => by rw [hl _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) l hl']; exact h.msk l hl',
+    by rw [hg]; exact h.r11, by rw [hg]; exact h.rdi, by rw [hg]; exact h.rsi, by rw [hg]; exact h.r10,
+    by rw [hg]; exact h.r8,
+    h.frame.trans (hf.sub fun r hr => ⟨pR s₀, by simp, by
+      simp only [List.mem_singleton] at hr; subst hr; exact hsub⟩),
     fun k hk => ?_, by rw [hrd]; exact h.rd, by rw [hwr]; exact h.wr⟩
   rw [blockAt_frame hf fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact hp.o_p.sub_left (Offset.sub_base _ (by have := h.le; omega_arith))]
+    exact (hp.o_p.sub_right hsub).sub_left (Offset.sub_base _ (by have := h.le; omega_arith))]
   exact h.blocks k hk
 
 /-- `pow48`, from the sixteen powers `P` in the working space. -/
@@ -256,8 +260,7 @@ theorem powSetupTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat
   rw [hr11] at t0 t1 t2 tm fr
   have pw : ∀ k < 4, ∀ l < 4, pw16 s k l = P k l := fun k hk l hl => by
     show s.mem.readW (s.gpr .r11 + _) 128 = _; rw [hr11]; exact hpw k hk l hl
-  refine ⟨hA.pow hp (fr.sub fun r hr => ⟨pR s₀, List.mem_singleton_self _, by
-    simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by decide)⟩) g rd wr x,
+  refine ⟨hA.pow hp fr g rd wr x,
     fun g' hg' k hk l hl => ?_, tm, g, x⟩
   rcases (by omega_arith : g' = 0 ∨ g' = 1 ∨ g' = 2) with rfl | rfl | rfl
   · rw [show tab 0 + 64 * k + 16 * l = 512 + 64 * k + 16 * l from rfl, t2 k hk l hl, pw k hk l hl,
@@ -271,7 +274,7 @@ theorem powSetupTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat
 
 /-- The tables kept by the output written. -/
 theorem keepTTo {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {T : Nat → Nat → Nat → Block} {c : Nat}
-    (hc : c + 16 ≤ nb s₀) {m m' : Mem} (hf : Frame [⟨oAddr s₀ c, 256⟩] m m')
+    (hc : c + 16 ≤ nb s₀) {m m' : Mem} (hf : Frame [⟨oAddr s₀ c, 256⟩, Slot.slotR (pp s₀)] m m')
     (hv : ∀ g < 3, ∀ k < 4, ∀ l < 4, m.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l)
     (hm : ∀ l < 4, m.readW (pp s₀ + BitVec.ofNat 64 (832 + 16 * l)) 128 = poly) :
     (∀ g < 3, ∀ k < 4, ∀ l < 4, m'.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l) ∧

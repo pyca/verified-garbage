@@ -3,6 +3,7 @@ public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
 public import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Gcm.X86_64.Rev
+public import VerifiedGarbage.Proof.Gcm.X86_64.Slot
 
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
@@ -29,7 +30,7 @@ namespace VG.Proof.Gcm.X86_64.StitchZH
 
 open VG VG.X86_64
 open VG.Impl.Gcm.X86_64.Pclmul (at_)
-open VG.Impl.Gcm.X86_64.StitchZH (remSetup)
+open VG.Impl.Gcm.X86_64.StitchZH (remSetup remSetupM)
 open VG.Proof.Aes.X86_64.AesNi (one paddd_one)
 open VG.Proof.Gcm.X86_64 (revMask)
 open VG.Spec.Gcm (Block blockAt inc32)
@@ -160,6 +161,33 @@ theorem remSetup_ok (s : State) {r : Nat} (h1 : 1 ≤ r) (h15 : r ≤ 15)
   · rw [ax', g₃, f₂.gpr, g₁ _ (by decide)]
   · rw [g' q h1 h2, g₃, f₂.gpr, g₁ q h1]
   · rw [z', z₃, f₂.zlane x (by simp [hx]) l hl, z₁]
+
+/-- The setup of the `r` blocks, `r9 = 16 + r`, with the counter blocks in
+the slot: the counter after them stored from the slot (`Slot.storeCtrAt_ok`). -/
+theorem remSetupM_ok (s : State) {C : Block} {c r : Nat} (_h1 : 1 ≤ r) (h15 : r ≤ 15)
+    (h9 : s.gpr .r9 = BitVec.ofNat 64 (16 + r)) (hS : Slot.SlotOk (s.gpr .r11) C (fun i => c + i) s.mem)
+    (hr : InRegions (s.rd ++ s.wr) (s.gpr .r11 + BitVec.ofNat 64 Impl.Gcm.X86_64.Slot.slot) 256)
+    (hw : InRegions s.wr (s.gpr .rax) 16) (hd : Region.Disjoint ⟨s.gpr .rax, 16⟩ (Slot.slotR (s.gpr .r11))) :
+    WP isa (.block remSetupM) s fun s' =>
+      blockAt s'.mem (s.gpr .rax) = Nat.repeat inc32 (c + r) C ∧ Frame [⟨s.gpr .rax, 16⟩] s.mem s'.mem ∧
+      s'.gpr .r10 = BitVec.ofNat 64 (16 * r) ∧ s'.gpr .rax = s.gpr .r11 + BitVec.ofNat 64 (256 - 16 * r) ∧
+      (∀ q, q ≠ .r10 → q ≠ .rax → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (∀ x, x ≠ .xmm13 → ∀ l < 4, s'.zlane x l = s.zlane x l) := by
+  rw [remSetupM, WP.block_append_iff]
+  refine WP.mono (Slot.storeCtrAt_ok s hS (r := r) (by rw [h9, BitVec.setWidth_ofNat_of_le (by decide : 32 ≤ 64)])
+    hr hw hd) fun s₁ ⟨b₁, f₁, g₁, rd₁, wr₁, z₁⟩ => ?_
+  rw [show ([.mov .r10 (.reg .r9), .alu .sub .r10 (.imm 16),
+      .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10),
+      .mov .rax (.reg .r11), .alu .add .rax (.imm 256), .alu .sub .rax (.reg .r10)] : List Instr) =
+    [.mov .r10 (.reg .r9), .alu .sub .r10 (.imm 16)] ++
+      [.alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10),
+      .mov .rax (.reg .r11), .alu .add .rax (.imm 256), .alu .sub .rax (.reg .r10)] from rfl, WP.block_append_iff]
+  refine WP.mono (remAlu1_ok s₁ h15 (by rw [g₁ _ (by decide)]; exact h9))
+    fun s₂ ⟨a₂, g₂, z₂, _, m₂, rd₂, wr₂⟩ => ?_
+  refine WP.mono (remAlu2_ok s₂ h15 a₂) fun s' ⟨a', ax', g', z', m', rd', wr'⟩ =>
+    ⟨by rw [m', m₂]; exact b₁, by rw [m', m₂]; exact f₁, a', by rw [ax', g₂ _ (by decide), g₁ _ (by decide)],
+      fun q h1 h2 => by rw [g' q h1 h2, g₂ q h1, g₁ q h1], by rw [rd', rd₂, rd₁], by rw [wr', wr₂, wr₁],
+      fun x hx l _ => by rw [z', z₂, z₁ x hx l]⟩
 
 /-- `cmp r9, 16`: whether blocks are left after the last group. -/
 theorem cmp16_ok (s : State) :

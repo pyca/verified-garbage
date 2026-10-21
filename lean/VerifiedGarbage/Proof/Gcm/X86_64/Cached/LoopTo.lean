@@ -21,7 +21,7 @@ open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Stitch (SPre SPreTo EPostTo CtxMode sp op sR oR nb nr kp cp yp pp cb ciph sch hk y₀
   dp dR pR cR yR bAddr addr_eq in_sub in_sub_int in_rdwr ite_t ite_f ghash_append16 blockAt_writeW_sep'
   storesK_ok pregs_get blockAt_outP)
-open VG.Proof.Gcm.X86_64.StitchZ (GEnv QG gRegs gRegs_ok gq_ok QG.data keepP nextE_ok FinOk ghRun_ok ghFin
+open VG.Proof.Gcm.X86_64.StitchZ (GEnv QG gRegs gRegs_ok gq_ok QG.data QG.slot keepP nextE_ok FinOk ghRun_ok ghFin
   store16Z_ok State.zlane_setV256 paddd_two_two lane0_zlane lane1_zlane shuf44_0 shuf44_1 shuf44_2 shuf44_3)
 open VG.Proof.Gcm.X86_64.Pclmul (Prod prod toNat_ofNat_lt ofNat_sub_ofNat)
 open VG.Impl.Gcm.X86_64.Pclmul (poly)
@@ -62,7 +62,9 @@ theorem bodyTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat →
   refine WP.seq (WP.mono (batchTo_ok hp gq gRegs gRegs_ok (QG (dst s₀) (fun _ => 0) a X P yl)
     (gq_ok (s₀ := dst s₀) (fun _ => Nat.le_refl _) (fun _ _ _ => Nat.zero_le _))
     (fun j t t' h f => h.zframe f (by decide))
-    (fun t t' h hg hrd hwr hl hf => QG.data hd (by omega) (by omega) ha (fun i _ hi => by omega) h hg hrd hwr hl hf)
+    (fun t t' h hg hrd hwr hl hf => QG.slot hd (by omega) ha h hg hrd hwr hl hf)
+    (fun t t' h hg hrd hwr hl hf => QG.data hd (c := 16 * e) (by omega) (by omega) ha (fun i _ hi => by omega) h hg hrd hwr hl
+      (hf.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self))
     (c := 16 * e) (j := 4) (by omega) hI.a hCache gq_keeps hrdx₁
     ⟨hE₁, hI.m1, by rw [ite_f (by decide)]; exact ⟨fun h => absurd h (by decide), fun l hl => rfl⟩⟩)
     fun s₂ ⟨hA₂, hQ₂, hg₂, hl₂, hm₂, _⟩ => ?_)

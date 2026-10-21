@@ -183,6 +183,12 @@ theorem frame_pR {s₀ : State} {e k : Nat} (h : e + k ≤ 1024) {m m' : Mem}
   f.sub fun r hr => ⟨_, List.mem_singleton_self _, by
     simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base _ (by omega)⟩
 
+/-- As `frame_pR`, within the first 1024 bytes of the working space, before the slot. -/
+theorem frame_p1k {s₀ : State} {e k : Nat} (h : e + k ≤ 1024) {m m' : Mem}
+    (f : Frame [⟨pp s₀ + BitVec.ofNat 64 e, k⟩] m m') : Frame [⟨pp s₀, 1024⟩] m m' :=
+  f.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+    simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base _ (by omega)⟩
+
 /-- The first `n` pairs of table `g`. -/
 theorem powRun_ok {s₀ : State} (hp : SPreP s₀) {g : Nat} (hg : g < 2) :
     ∀ n, n ≤ 8 → ∀ s, CvtEnv s₀ s →
@@ -227,7 +233,7 @@ theorem powP48_ok {s₀ : State} (hp : SPreP s₀) {s : State} (hdi : s.gpr .rdi
         hInvF (Spec.Gcm.hpow (Spec.Gcm.ctxH s.mem (kp s₀)) (48 - 16 * g - 4 * k - l))) ∧
       (∀ l < 4, s'.mem.readW (pp s₀ + BitVec.ofNat 64 (832 + 16 * l)) 128 = poly) ∧
       (∀ o, o + 16 ≤ 256 → s'.mem.readW (pp s₀ + BitVec.ofNat 64 o) 128 = s.mem.readW (pp s₀ + BitVec.ofNat 64 o) 128) ∧
-      Frame [pR s₀] s.mem s'.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      Frame [⟨pp s₀, 1024⟩] s.mem s'.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r, r ≠ .xmm7 → r ≠ .xmm8 → r ≠ .xmm9 → r ≠ .xmm10 → r ≠ .xmm12 → ∀ l < 4, s'.zlane r l = s.zlane r l) := by
   have hwp := hp.base.wrap_p
   rw [powP48, List.append_assoc, List.append_assoc, WP.block_append_iff]
@@ -284,7 +290,7 @@ theorem powP48_ok {s₀ : State} (hp : SPreP s₀) {s : State} (hdi : s.gpr .rdi
   · rw [State.setMem_mem, k₅ _ (by omega), keepAt f₃ (by simp only [tab]; omega) (by simp only [tab]; omega) (by omega),
       keepAt f₂ (by simp only [tab]; omega) (by simp only [tab]; omega) (by omega), z₁.mem]
   · rw [State.setMem_mem, ← z₁.mem]
-    exact ((frame_pR (by simp only [tab]; omega) f₂).trans (frame_pR (by simp only [tab]; omega) f₃)).writeW
+    exact ((frame_p1k (by simp only [tab]; omega) f₂).trans (frame_p1k (by simp only [tab]; omega) f₃)).writeW
       (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by decide))
 
 /-! ## From 256 blocks on -/

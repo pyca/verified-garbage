@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGLanes
 public import VerifiedGarbage.Proof.Framework.X86_64.HighKeep
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
+public import VerifiedGarbage.Proof.Gcm.X86_64.Slot
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGHash
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Ks
@@ -42,7 +44,7 @@ open VG.Proof.Gcm.X86_64.StitchZ (aregs_ok fin_ok)
 open VG.Proof.Aes.X86_64.AesNi (blockAt_frame)
 open VG.Proof.Gcm.X86_64 (revMask)
 open VG.Spec.Gcm (Block blockAt inc32)
-open VG.Proof.Gcm.X86_64.Stitch (SPre nr kp pp cb dR pR cR ciph sch)
+open VG.Proof.Gcm.X86_64.Stitch (SPre nr kp pp cb dR pR cR ciph sch in_rdwr in_sub)
 open VG.Proof.Aes.X86_64.VaesZ (ctrsZ_ok four ZFrame.of_keys)
 open VG.Proof.Aes.X86_64.AesNi (Keys aesWith_eq)
 
@@ -190,8 +192,8 @@ theorem ksBatchG_ok {s₀ : State} (hp : SPre s₀) {k r : Nat} (hk4 : k ≤ 4) 
       t'.gpr .rdx = A ∧ t'.gpr src = S ∧ (∀ q, q ≠ .rdx → q ≠ src → t'.gpr q = t.gpr q) ∧
       (∀ x l, t'.zlane x l = t.zlane x l) ∧ t'.mem = t.mem ∧ t'.rd = t.rd ∧ t'.wr = t.wr)
     (hQ10 : ∀ t, Q 10 t → (∀ l < 4, t.zlane .xmm1 l = poly) ∧ ∀ l < 4, t.zlane .xmm2 l = if l = 0 then y else 0)
-    (hctr : ∀ l < 4, s.zlane .xmm14 l = Nat.repeat inc32 (c + l) (cb s₀))
-    (hmsk : ∀ l < 4, s.zlane .xmm0 l = revMask) (hinc : ∀ l < 4, s.zlane .xmm15 l = four)
+    (hS : Slot.SlotOk (pp s₀) (cb s₀) (fun i => c + i) s.mem) (hr11 : s.gpr .r11 = pp s₀)
+    (hmsk : ∀ l < 4, s.zlane .xmm0 l = revMask)
     (hrdi : s.gpr .rdi = kp s₀) (hrsi : s.gpr .rsi = s₀.gpr .rsi)
     (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) (hfr : Frame [dR s₀, pR s₀, cR s₀] s₀.mem s.mem)
     (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s)
@@ -223,14 +225,14 @@ theorem ksBatchG_ok {s₀ : State} (hp : SPre s₀) {k r : Nat} (hk4 : k ≤ 4) 
   have hx' : ∀ r ∈ aregs.take k, r ≠ .xmm14 ∧ r ≠ .xmm0 ∧ r ≠ .xmm15 := fun r hr => hx r (List.mem_of_mem_take hr)
   have h13' : .xmm13 ∉ aregs.take k := fun h => h13 (List.mem_of_mem_take h)
   have hlen : (aregs.take k).length = k := by simp [aregs]; omega
-  refine WP.seq (WP.mono (WP.hkeep (ctrsZ_keeps _ _ _ _) (ctrsZ_ok .xmm14 .xmm0 .xmm15 (by decide) (by decide)
-    (aregs.take k) s (cb s₀) c hnd' hx' hctr hmsk hinc)) fun s₁ ⟨⟨e₁, c₁, f₁⟩, hh₁⟩ => ?_)
+  refine WP.seq (WP.mono (WP.hkeep (loads_keeps _ _) (Slot.loads_ok (C := cb s₀) (f := fun i => c + i) (aregs.take k) 0 s
+    (by rw [hr11]; exact hS) (by omega) hnd'
+    (by rw [hr11, hrd, hwr]; exact in_rdwr (in_sub hp.p_in (by decide)))))
+    fun s₁ ⟨⟨e₁, f₁⟩, hh₁⟩ => ?_)
   have hK₁ : Keys (nr s₀) (sch s₀) s₁ := ZFrame.of_keys hK f₁
   have hCache₁ := hCache.keep hh₁ hK₁
-  have hQ₁ : Q 1 s₁ := hq _ _ _ hQ (f₁.mono fun r hr => by
-    rcases List.mem_cons.mp hr with rfl | hr
-    · exact List.mem_cons_of_mem _ List.mem_cons_self
-    · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_of_mem_take hr)))
+  have hQ₁ : Q 1 s₁ := hq _ _ _ hQ (f₁.mono fun r hr =>
+    List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_of_mem_take hr)))
   refine WP.seq (WP.mono (VG.Proof.Aes.X86_64.VaesZH.aes_ok .xmm13 (aregs.take k) hnd' h13' hp.rounds g G
     (fun r h hm => (hG r h).1 (List.mem_of_mem_take hm)) Q
     (fun j hj h9 t hk hq => WP.mono (WP.hkeep (hgh j) (hg j hj h9 t hk.base hq))
@@ -246,7 +248,7 @@ theorem ksBatchG_ok {s₀ : State} (hp : SPre s₀) {k r : Nat} (hk4 : k ≤ 4) 
     have h : n / 4 < (aregs.take k).length := by rw [hlen]; omega
     rw [← List.getElem_eq_getD (h := h),
       (aesWith_eq _ _ _ _ (by rw [e₂ _ (List.getElem_mem h) _ (by omega), e₁ _ h _ (by omega)])).symm,
-      show c + 4 * (n / 4) + n % 4 = c + n by omega]
+      show c + (4 * (0 + n / 4) + n % 4) = c + n by omega]
   have hg₂ : s₂.gpr = s.gpr := by rw [f₂.gpr, f₁.gpr]
   have hm₂ : s₂.mem = s.mem := by rw [f₂.mem, f₁.mem]
   have hrd₂ : s₂.rd = s.rd := by rw [f₂.rd, f₁.rd]
@@ -256,9 +258,7 @@ theorem ksBatchG_ok {s₀ : State} (hp : SPre s₀) {k r : Nat} (hk4 : k ≤ 4) 
       rw [f₂.zlane x (by
         simp only [List.mem_cons, List.mem_append, not_or]
         exact ⟨h13, fun h => hx (List.mem_of_mem_take h), hg⟩) l hl,
-        f₁.zlane x (by
-          simp only [List.mem_cons, not_or]
-          exact ⟨h14, fun h => hx (List.mem_of_mem_take h)⟩) l hl]
+        f₁.zlane x (fun h => hx (List.mem_of_mem_take h)) l hl]
   obtain ⟨q1, q2⟩ := hQ10 s₂ hQ₂
   refine WP.seq (WP.mono (hpre s₂ hg₂) fun s₃ ⟨d₃, src₃, g₃, l₃, m₃, rd₃, wr₃⟩ => ?_)
   have gk₃ : ∀ q, q ≠ .rdx → q ≠ src → s₃.gpr q = s.gpr q := fun q h1 h2 => by rw [g₃ q h1 h2, hg₂]

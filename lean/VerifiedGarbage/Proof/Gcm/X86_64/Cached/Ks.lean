@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Aes.X86_64.VaesZ
+public import VerifiedGarbage.Impl.Gcm.X86_64.Slot
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
 public import VerifiedGarbage.Proof.Framework.X86_64.HighKeep
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
@@ -60,6 +61,11 @@ theorem keys_of {s₀ : State} (hp : SPre s₀) {t : State} (h1 : t.gpr .rdi = k
     fun j hj => by
       rw [h2, h3, h1]
       exact Stitch.in_sub_int hp.k_in (by rcases hp.rounds with h | h | h <;> omega)⟩
+
+theorem loads_keeps : ∀ (rs : List XReg) (k : Nat), (Impl.Gcm.X86_64.Slot.loads rs k).all Instr.keepsH = true
+  | [], _ => rfl
+  | _ :: bs, k => by
+    simp only [Impl.Gcm.X86_64.Slot.loads, List.all_cons, loads_keeps bs (k + 1), Bool.and_true]; rfl
 
 theorem ctrsZ_keeps (c m i : XReg) : ∀ regs : List XReg,
     (Impl.Aes.X86_64.VaesZ.ctrsZ c m i regs).all Instr.keepsH = true
