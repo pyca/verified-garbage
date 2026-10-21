@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
+public import VerifiedGarbage.Impl.Rsa.X86.InvBatch
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
 
 /-! # CRT parameter calculation at a width read at run time (i686)
@@ -26,11 +27,16 @@ def invSetup : List (Prog isa) := [
   copy lay 0 aQ, copy lay aM aP, .block (orOne lay aM), copy lay 1 aM,
   .block (setOne lay 2 ++ setOne lay aOne), sub3 lay aNM aZero aM]
 
-def checks : Prog isa := seqs ([
-  eqS lay sE1 aDQ aQ aT1, eqS lay sE2 aDR aZero aT1] ++ invSetup ++ [
-  inverse lay, eqS lay sE3 1 aOne aT1,
+def inverseChoice : Prog isa := InvBatch.dispatch (inverse lay)
+
+def checksPrefix : List (Prog isa) := [
+  eqS lay sE1 aDQ aQ aT1,eqS lay sE2 aDR aZero aT1] ++ invSetup
+
+def checksSuffix : List (Prog isa) := [eqS lay sE3 1 aOne aT1,
   .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
-  copy lay aDQ aD, copy lay aDD aP, .block (clrLow lay aDD)])
+  copy lay aDQ aD,copy lay aDD aP,.block (clrLow lay aDD)]
+
+def checks : Prog isa := seqs (checksPrefix ++ inverseChoice::checksSuffix)
 
 def firstDiv : Prog isa := seqs [
   copy lay aDD aP, .block (bitOf lay sPodd aP), div aDR]

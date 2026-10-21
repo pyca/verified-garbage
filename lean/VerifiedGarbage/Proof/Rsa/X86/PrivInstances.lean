@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.Rsa.X86.PrivImpl
 public import VerifiedGarbage.Proof.Rsa.X86.PrivVerified
+public import VerifiedGarbage.Proof.Rsa.X86.RtShape
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeTop
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Verified
 
@@ -39,8 +40,8 @@ def baseline : CrtImpl where
   name := "vg_rsa_private_crt"
   code := Impl.Bignum.X86.CrtRt.code
   verified := Bignum.X86.CrtRt.verified
-  stack := by decide +kernel
-  noSp := NoSp.of_all (by decide +kernel)
+  stack := by rw [RtShape.privateCrt_stack]
+  noSp := allStack_noSp RtShape.privateCrt_spSafe
   pcName := "vg_rsa_public_precompute"
   pc := Impl.Bignum.X86.PrecomputeFn.code
   pcVerified := Bignum.X86.precompute_verified
@@ -49,7 +50,7 @@ def baseline : CrtImpl where
   pdName := "vg_rsa_public_precomputed_checked"
   pd := Impl.Bignum.X86.PrecomputedRt.code
   pdVerified := Bignum.X86.PrecomputedRt.verified
-  pdStack := by decide +kernel
-  pdNoSp := NoSp.of_all (by decide +kernel)
+  pdStack := by rw [RtShape.precomputed_stack]
+  pdNoSp := allStack_noSp RtShape.precomputed_spSafe
 
 end VG.Proof.Rsa.X86.PrivChecked

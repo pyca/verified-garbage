@@ -1,11 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.Mont.X86.Square.Verified
+import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Verified
 import VerifiedGarbage.Proof.Mont.X86.Rt.ScalarVerified
 public import Init.Core
-public import VerifiedGarbage.Impl.Mont.X86.MulRt
+public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
 public import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Mont.X86.Square.Time
+import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Time
 public import Mathlib.Tactic.Set
 public import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -19,11 +19,11 @@ open VG VG.X86 VG.Impl.Mont.X86
 
 theorem rt_correct (s : State) (h : (Spec.Rsa.MontMul.mulContract abi 0).pre s) :
     ∃ tr t, Exec isa Rt.body s tr t ∧ abiPreserved s t ∧ (Spec.Rsa.MontMul.mulContract abi 0).post s t := by
-  simpa only [Rt.body] using Square.correct s h
+  simpa only [Rt.body] using StaticSquare.correct s h
 
 theorem rt_constantTime :
     ConstantTime isa (Spec.Rsa.MontMul.mulContract abi 0).pre (Spec.Rsa.MontMul.mulContract abi 0).pub Rt.body := by
-  simpa only [Rt.body] using Square.constantTime
+  simpa only [Rt.body] using StaticSquare.constantTime
 
 theorem rt_verified : Verified target Rt.body (Spec.Rsa.MontMul.mulContract abi 0) :=
   ⟨rt_correct,rt_constantTime,rt_satisfiable⟩

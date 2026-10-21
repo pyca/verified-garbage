@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Rsa.X86.PrivInstances
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackSafety
@@ -15,7 +16,7 @@ def baseline : PublicImpl where
   name := Spec.Rsa.publicPrecomputedCheckedApi.name
   code := Impl.Bignum.X86.PrecomputedRt.code
   verified := VG.Proof.Bignum.X86.PrecomputedRt.verified
-  stack := by decide +kernel
-  noSp := NoSp.of_all (by decide +kernel)
+  stack := by rw [VG.Proof.Rsa.X86.RtShape.precomputed_stack]
+  noSp := VG.Proof.Rsa.X86.PrivChecked.allStack_noSp VG.Proof.Rsa.X86.RtShape.precomputed_spSafe
 
 end VG.Proof.RsaPkcs1Sig.X86.Ver

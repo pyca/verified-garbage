@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvRestFacts
 import VerifiedGarbage.Proof.Rsa.X86.RvSearchLoop
@@ -9,6 +10,8 @@ import VerifiedGarbage.Proof.Rsa.X86.RvHalving
 /-! # The complete recovery arithmetic after the initial validity test -/
 
 @[expose] public section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.Rsa.X86.Keys hiding slot

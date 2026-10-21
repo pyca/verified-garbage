@@ -3,10 +3,15 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Sized
 import VerifiedGarbage.Proof.Rsa.CrtValuesMath
 import VerifiedGarbage.Proof.Bignum.Octets
+public import Init.Data.Fin.Basic
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.TCB.X86.State
 
 /-! # The calculated and masked CRT outputs satisfy the shared RSA result definition -/
 
 @[expose] public section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.CrtValues
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Bignum VG.Proof.Bignum.X86
@@ -22,6 +27,7 @@ def Written (g : CallGeometry) (m : Mem) (t : State) : Prop :=
   Spec.Rsa.writtenAll t.mem (outputBuffers g) (t.gpr .eax)
     ((calculated g m).map fun v => [v.1, v.2.1, v.2.2])
 
+omit rsaBatchLaw in
 theorem written_arithmetic {g : CallGeometry} {m : Mem} {t : State} (h : ArithmeticPost g m t)
     (valid : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (inputBytes g m 0)) (inputBytes g m 0).length = true)
     (pl : (inputBytes g m 1).length < (inputBytes g m 0).length)

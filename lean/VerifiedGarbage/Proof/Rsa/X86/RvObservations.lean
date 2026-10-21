@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.RvABI
 public import VerifiedGarbage.Proof.Rsa.X86.RvResult
 import VerifiedGarbage.Proof.Bignum.Octets
+public import Init.Data.Fin.Basic
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # The shared recovery contract exposes call geometry and modulus bytes -/
 

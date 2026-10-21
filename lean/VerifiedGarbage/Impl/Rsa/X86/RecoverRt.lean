@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.X86.Recover
 public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
+public import VerifiedGarbage.Impl.Rsa.X86.GcdDispatch
 import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
-public import VerifiedGarbage.Impl.Mont.X86.MulRt
+public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
 public import VerifiedGarbage.Impl.Bignum.X86.CrtRt
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
 
@@ -227,7 +228,9 @@ def store (arg j : Nat) : Prog isa := seqs [
 
 def stores : Prog isa := seqs [store 0 5, store 2 6, .block [.mov .eax (.mem (sc sMask))]]
 
-def factors : Prog isa := seqs [gcdSet, gcd nar, divSet, div nar aQ aRm aDv aDt, order]
+def factorTail : Prog isa := seqs [divSet, div nar aQ aRm aDv aDt, order]
+
+def factors : Prog isa := seqs [gcdSet, GcdBatch.dispatch (gcd nar), factorTail]
 
 def fin : Prog isa := seqs [finY, factors, stores]
 

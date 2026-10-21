@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 public import VerifiedGarbage.Impl.Rsa.X86.RecoverRt
 public import Mathlib.Data.Int.ModEq
 public import Mathlib.Tactic.Set
@@ -15,6 +16,8 @@ import VerifiedGarbage.Proof.Rsa.X86.RvCorrect
 /-! # Complete i686 certificate for RSA prime recovery -/
 
 @[expose] public section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.Impl.Rsa.X86.Recover
 

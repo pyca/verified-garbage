@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Bignum.X86.CrtResources
 import VerifiedGarbage.Proof.Bignum.X86.CrtSave
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # Functional correctness and cdecl preservation of private CRT RSA at a run-time width
 

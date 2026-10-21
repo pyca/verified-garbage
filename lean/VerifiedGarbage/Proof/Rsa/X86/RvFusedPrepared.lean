@@ -6,6 +6,9 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvNumbers
 import VerifiedGarbage.Proof.Rsa.X86.RvHalving
 public import VerifiedGarbage.Proof.Rsa.X86.RvLoads
 public import VerifiedGarbage.Proof.Rsa.X86.RvMont
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # Arithmetic preparation supplies the candidate search's public context -/
 

@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
@@ -15,6 +16,8 @@ under the checks' mask, as `ArithmeticPost` states them.
 -/
 
 @[expose] public section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.CrtValuesRt
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Bignum VG.Proof.Bignum.X86
@@ -48,7 +51,7 @@ theorem sized_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths 
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (loads_ok h len) fun u ⟨hu, start, ou, ru⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (core_ok start) fun v ⟨kv, rv, zero, X₁, X₂, division, computed⟩ => ?_
+  refine WP.mono (core_ok start (inputsGate hu s.mem)) fun v ⟨kv, rv, zero, X₁, X₂, division, computed⟩ => ?_
   have ru' := inputsRt hu len
   have ov := keep_outside ru'.ws kv (by decide) (by decide)
   have kwEq : kw (g.args 7).toNat = 2 * g.n := by rw [len.width]

@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvTimePrepare
 import VerifiedGarbage.Proof.Rsa.X86.RvPrepared
@@ -7,12 +8,11 @@ import VerifiedGarbage.Proof.Rsa.X86.RvTimeSearch
 import VerifiedGarbage.Proof.Rsa.X86.RvSearchLoop
 import VerifiedGarbage.Proof.Rsa.X86.RvFinishY
 import VerifiedGarbage.Proof.Rsa.X86.RvFactors
+import VerifiedGarbage.Proof.Rsa.X86.RvBatchGcdTime
 import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateData
 public import VerifiedGarbage.Proof.Rsa.X86.RvNumbers
-public import VerifiedGarbage.Proof.Rsa.X86.RvSearchState
-public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateData
 public import VerifiedGarbage.Proof.Rsa.X86.RvSearchState
 
 /-! # The recovery after the size checks leaks only the declared attempt count
@@ -24,6 +24,8 @@ export.
 -/
 
 @[expose] public section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Dsa.X86
 open VG.Impl.Rsa.X86.Keys hiding slot
@@ -75,7 +77,14 @@ theorem fin_relCT {g : Geo} (pg : PubG g) {s0 t0 : State} {A B AW BW V W : Nat �
       KS g t0 (upd B mY tt.1) [mY, aN, aZ, aOne] (fun _ => 0) [] (fun _ => b2n tt.2.2) [sMask] t)
     (stage_relCT finY (fun _ hs => finY_ok hs valueA bound invA odd large oneA yl)
       (fun _ ht => finY_ok ht valueB bound invB odd large oneB zl)) ?_
-  refine VG.RelCT.seq (pub_relCT pg factorsCheck (fun _ hs => KS.stage hs) (fun _ ht => KS.stage ht)
+  refine VG.RelCT.seq (stage_relCT (factors_relCT pg
+      (by simpa only [upd_ne _ _ (by decide : aN ≠ mY)] using modA)
+      (by simpa only [upd_ne _ _ (by decide : aN ≠ mY)] using modB)
+      (by rw [upd_self]) (by rw [upd_self])
+      (by simpa only [upd_ne _ _ (by decide : aZ ≠ mY)] using zeroA)
+      (by simpa only [upd_ne _ _ (by decide : aZ ≠ mY)] using zeroB)
+      (by simpa only [upd_ne _ _ (by decide : aOne ≠ mY)] using oneA)
+      (by simpa only [upd_ne _ _ (by decide : aOne ≠ mY)] using oneB) odd large)
     (fun _ cs => factors_ok cs
       (by simpa only [upd_ne _ _ (by decide : aN ≠ mY)] using modA)
       (by rw [upd_self]) (by simpa only [upd_ne _ _ (by decide : aZ ≠ mY)] using zeroA)
@@ -86,6 +95,7 @@ theorem fin_relCT {g : Geo} (pg : PubG g) {s0 t0 : State} {A B AW BW V W : Nat �
       (by simpa only [upd_ne _ _ (by decide : aOne ≠ mY)] using oneB) odd large))
     (pub_relCT' pg storesCheck (fun _ hs => KS.stage hs) (fun _ ht => KS.stage ht))
 
+omit rsaBatchLaw in
 theorem CandidateData.search_ok {g : Geo} {m eLen dLen : Nat} (C : CandidateData g m eLen dLen)
     {s : State} (h : KS g C.s0 C.A liveM C.AW [wR] C.V [sInv, sTc, sCnt] s)
     (vc : C.V sCnt = 0) (tc : 1 ≤ C.V sTc) :

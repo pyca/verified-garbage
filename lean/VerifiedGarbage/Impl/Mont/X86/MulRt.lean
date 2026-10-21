@@ -272,10 +272,3 @@ def dispatch : Prog isa := .seq (.block [.mov .eax (.mem argA), .mov .edx (.mem 
 
 
 end VG.Impl.Mont.X86.Rt.Square
-
-namespace VG.Impl.Mont.X86.Rt
-
-/-- Equal public input offsets use the symmetric column square. -/
-def body : Prog VG.X86.isa := Square.dispatch
-
-end VG.Impl.Mont.X86.Rt

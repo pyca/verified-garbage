@@ -1,4 +1,5 @@
 module
+
 public import VerifiedGarbage.Proof.Rsa.X86.KcLoads
 public import VerifiedGarbage.Proof.Rsa.X86.KcResult
 
@@ -6,6 +7,7 @@ import VerifiedGarbage.Proof.Rsa.X86.KcPublic
 import VerifiedGarbage.Proof.Rsa.X86.KcSized
 import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
 import VerifiedGarbage.Spec.RsaKeyGen
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # Public rejection branches and full key validation have the same result contract -/
 

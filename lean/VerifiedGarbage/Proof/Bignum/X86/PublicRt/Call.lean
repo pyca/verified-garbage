@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
+
+public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
 import VerifiedGarbage.Proof.Mont.X86.Rt.ScalarVerified
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Callee
 import VerifiedGarbage.Proof.Framework.Omega
@@ -89,9 +92,9 @@ theorem ofs_in {base x : Addr} {k : Nat} (h : (⟨base, k⟩ : Region).Contains 
 theorem ofs_eq (base x : Addr) : x = base + BitVec.ofNat 64 (ofs base x) := by
   simp only [ofs, BitVec.ofNat_toNat, BitVec.setWidth_eq]; rw [BitVec.add_comm, BitVec.sub_add_cancel]
 
-theorem rtBody_noSp : NoSp Rt.body := NoSp.of_all (by decide)
+theorem rtBody_noSp : NoSp Rt.body := VG.Proof.Mont.X86.StaticSquare.body_NoSp
 
-theorem rtBody_stackUse : stackUse Rt.body = 0 := rfl
+theorem rtBody_stackUse : stackUse Rt.body = 0 := VG.Proof.Mont.X86.StaticSquare.body_stack
 
 theorem mulBody_noSp (o a b : Nat) :
     NoSp (.seq (.block (mulArgs o a b)) (.call Spec.Rsa.MontMul.mulApi.name Rt.body)) := by
@@ -101,7 +104,8 @@ theorem mulBody_noSp (o a b : Nat) :
   simp only [instrs, mulArgs, widthB, offEax, List.all_append, List.all_cons, List.all_nil, List.all_replicate, e,
     ite_self]
   rw [← Code.allInstrs_eq]
-  exact (by decide : Rt.body.allInstrs (fun i => !Taint.clobbers i .esp) = true) ▸ rfl
+  rw [show Rt.body.allInstrs (fun i => !Taint.clobbers i .esp)=true from VG.Proof.Mont.X86.StaticSquare.body_noSp]
+  rfl
 
 theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
     (h : RtIn base bytes len args s) (hbytes : bytes = (args 9).toNat * 8)

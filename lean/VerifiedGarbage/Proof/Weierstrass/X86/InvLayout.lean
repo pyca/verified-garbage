@@ -72,11 +72,6 @@ section
 namespace VG.Proof.Weierstrass.X86.Inv
 open VG VG.Impl.Weierstrass.X86 VG.Proof.Mont VG.Proof.Weierstrass
 
-theorem read32_unch {base : Addr} {W : List (Nat × Nat)} {m m' : Mem}
-    (U : Unch base W m m') {d : Nat}
-    (hd : ∀ w ∈ W, d + 4 ≤ w.1 ∨ w.1 + w.2 ≤ d) (hb : d + 4 ≤ 2 ^ 64) :
-    m'.readW (off base d) 32 = m.readW (off base d) 32 :=
-  BitVec.eq_of_toNat_eq (word_unch U hd hb)
 
 theorem fgLayout {P : InvCfg} {size row : Nat} (ht : P.tbl + 320 ≤ size) (hr : row ≤ 1) :
     LinearLay size (P.sW + 12 + 8 * row) (P.sW + 16 + 8 * row)

@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 public import VerifiedGarbage.Proof.Rsa.X86.CvABI
 public import VerifiedGarbage.Proof.Rsa.X86.CvFrames
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
@@ -18,6 +19,8 @@ import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 /-! # The complete CRT operation leaks only the contract's declared public inputs -/
 
 @[expose] public section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.CrtValues
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Bignum.X86 VG.Proof.Dsa.X86

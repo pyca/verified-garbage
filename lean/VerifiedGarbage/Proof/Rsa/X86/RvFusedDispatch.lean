@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedRest
 import VerifiedGarbage.Proof.Rsa.X86.RvArguments
@@ -7,10 +8,13 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvRest
 
 /-! Public modulus length selects the recovery schedule. -/
 @[expose] public section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Rsa.X86.Keys
 
+omit rsaBatchLaw in
 theorem recoveryChoice_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {live liveW ls : List Nat}
     (h : KS g s0 A live AW liveW V ls s) :
     WP isa (.block VG.Impl.Rsa.X86.RecoverRt.recoveryChoice) s fun t =>

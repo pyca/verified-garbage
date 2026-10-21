@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareBody
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareInit
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
 
 /-! # Applying both matrix rows to the signed divstep values -/
 

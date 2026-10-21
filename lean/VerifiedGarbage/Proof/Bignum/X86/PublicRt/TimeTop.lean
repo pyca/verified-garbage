@@ -12,6 +12,10 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicObservations
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Bignum.X86.PublicResources
+public import VerifiedGarbage.TCB.Artifact
+meta import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.X86.Isa
+meta import VerifiedGarbage.TCB.X86.Isa
 
 /-! # The trace of public RSA at a run-time width, from the entry to the return
 

@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 public import VerifiedGarbage.Proof.Rsa.X86.CvResult
 
 import VerifiedGarbage.Proof.Rsa.X86.CvFailure
@@ -9,6 +10,8 @@ import VerifiedGarbage.Proof.Bignum.Octets
 /-! # Both CRT modulus-validation branches satisfy the shared result definition -/
 
 @[expose] public section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.CrtValues
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Bignum VG.Proof.Bignum.X86

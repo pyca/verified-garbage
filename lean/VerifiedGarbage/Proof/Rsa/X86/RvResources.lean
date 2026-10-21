@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvBody
 import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 import VerifiedGarbage.Proof.Dsa.X86.ABIResources
 import VerifiedGarbage.Proof.Framework.Offset
+public import Init.Data.List.Basic
+public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
+public import VerifiedGarbage.Spec.Rsa
 
 /-! # The shared scratch allowance covers the native-word recovery arrays -/
 

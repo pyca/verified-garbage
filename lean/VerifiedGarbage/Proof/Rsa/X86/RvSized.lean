@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvResult
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedDispatch
@@ -8,11 +9,14 @@ import VerifiedGarbage.Proof.Bignum.MemoryFrame
 /-! # Recovery and refusal for a selected public modulus width -/
 
 @[expose] public section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Bignum
 open VG.Impl.Rsa.X86.Recover
 open VG.Proof.Rsa.X86.Keys
 
+omit rsaBatchLaw in
 theorem calculated_none_skip {g : CallGeometry} {m : Mem} (skip : ¬GoOn (product g m)) :
     (calculated g m).1 = none := by
   have refused : inputValue g m 2 * inputValue g m 1 < 2 ∨
@@ -26,6 +30,7 @@ theorem calculated_none_skip {g : CallGeometry} {m : Mem} (skip : ¬GoOn (produc
     rw [VG.Proof.Rsa.recoverPrimes_none refused]
   · rfl
 
+omit rsaBatchLaw in
 theorem written_failure {g : CallGeometry} {m : Mem} {t : State}
     (none : (calculated g m).1 = none)
     (p : Spec.Rsa.bytesAt t.mem (g.buffer 0).base (g.buffer 0).len = List.replicate (g.buffer 0).len 0)

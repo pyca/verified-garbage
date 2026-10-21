@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvRest
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedSearch
@@ -7,6 +8,8 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 
 /-! Complete fused recovery after the initial validity test. -/
 @[expose] public section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Bignum.X86
 open VG.Impl.Rsa.X86.Keys hiding slot
@@ -14,6 +17,7 @@ open VG.Impl.Rsa.X86.Recover
 open VG.Proof.Rsa.X86.Keys
 open VG.Spec.Rsa (recoverPrimes)
 
+ omit rsaBatchLaw in
  theorem fusedPrepare_ok {g : Geo} {s0 s : State} {A AW : Nat → Nat} {e : Nat}
     (h : KS g s0 A [aN] AW [wM] (fun _ => 0) [] s) (value : AW wM=e) :
     WP isa VG.Impl.Rsa.X86.RecoverRt.fusedPrepare s fun t =>

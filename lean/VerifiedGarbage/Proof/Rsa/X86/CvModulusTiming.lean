@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.Rsa.X86.CvPair
 
 import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+public import VerifiedGarbage.Impl.Bignum.X86.ModulusCheck
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Spec.Rsa
 
 /-! # Loading and validating the public modulus preserves all call inputs -/
 

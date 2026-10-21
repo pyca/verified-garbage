@@ -2,6 +2,8 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.RvABI
 
 import VerifiedGarbage.Proof.Rsa.X86.RvResources
+public import Init.Data.List.Basic
+public import VerifiedGarbage.TCB.X86.State
 
 /-! # Public buffer bounds and separation for recovery inputs and outputs -/
 

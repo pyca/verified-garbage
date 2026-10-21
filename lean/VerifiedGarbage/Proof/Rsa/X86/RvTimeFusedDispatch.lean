@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
 import VerifiedGarbage.Proof.Rsa.X86.RvTimeFusedRest
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedDispatch
@@ -15,10 +16,13 @@ meta import VerifiedGarbage.Proof.Rsa.X86.RvTimeRest
 
 /-! The modulus-length dispatch leaks only a public argument. -/
 @[expose] public section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Spec.Rsa (recoverPrimes)
 
+omit rsaBatchLaw in
 theorem recoveryChoiceCheck : (VG.Taint.check taint τA (.block VG.Impl.Rsa.X86.RecoverRt.recoveryChoice)
     (VG.Taint.hintOf taint τA (.block VG.Impl.Rsa.X86.RecoverRt.recoveryChoice))).isSome=true := by
   taint_decide

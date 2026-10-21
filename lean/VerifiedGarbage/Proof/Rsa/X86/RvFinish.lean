@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
 import VerifiedGarbage.Proof.Rsa.X86.RvFinishY
 import VerifiedGarbage.Proof.Rsa.X86.RvFactors
@@ -10,6 +11,8 @@ import VerifiedGarbage.Proof.Bignum.MemoryFrame
 /-! # The GCD, ordered factors, masked outputs and return value -/
 
 @[expose] public section
+variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
+include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Bignum

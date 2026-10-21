@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
+
+public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
 public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.X86.RvMontFrame
 import VerifiedGarbage.Proof.Rsa.X86.RvMontArgs
@@ -38,7 +41,8 @@ theorem mulBody_noSp (o a b : Nat) :
     VG.Impl.Bignum.X86.PublicRt.widthB, VG.Impl.Rsa.X86.RecoverRt.offIn, List.all_append, List.all_cons,
     List.all_nil, List.all_replicate, e, ite_self]
   rw [← Code.allInstrs_eq]
-  exact (by decide : Rt.body.allInstrs (fun i => !Taint.clobbers i .esp) = true) ▸ rfl
+  rw [show Rt.body.allInstrs (fun i => !Taint.clobbers i .esp)=true from VG.Proof.Mont.X86.StaticSquare.body_noSp]
+  rfl
 
 /-- The callee's offsets: the operands apart from its range, the result apart from the modulus. -/
 theorem mont_offs {g : Geo} {Z : Nat} (fits : arr g.w nArr ≤ Z) {o a b : Nat} (ho : MontIndex o)

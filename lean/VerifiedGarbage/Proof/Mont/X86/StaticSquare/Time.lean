@@ -1,0 +1,52 @@
+module
+
+import VerifiedGarbage.Proof.Mont.X86.StaticSquare.TimeCheck
+import VerifiedGarbage.Proof.Mont.X86.StaticSquare.TimePrefix
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Impl.Mont.X86.MulRt
+meta import VerifiedGarbage.Proof.Mont.X86.Rt.ScalarVerified
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
+meta import VerifiedGarbage.Impl.Mont.X86.StaticSquare
+public import VerifiedGarbage.Proof.Mont.X86.Rt.ScalarVerified
+public import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCT
+
+/-! # Constant-time public dispatch over the fixed and runtime square paths -/
+
+@[expose] public section
+namespace VG.Proof.Mont.X86.StaticSquare
+open VG VG.X86 VG.Proof.Mont.X86.Rt
+
+ theorem oldSquare_relCT : RelCT isa (VG.X86.Taint.Agree rtTaint) Impl.Mont.X86.Rt.Square.square (fun _ _ => True) :=
+  VG.RelCT.taint (A:=sseTaint) rtTaint (fun _ _ h => h) (by taint_decide)
+ theorem scalar_relCT : RelCT isa (VG.X86.Taint.Agree rtTaint) Impl.Mont.X86.Rt.scalarBody (fun _ _ => True) :=
+  VG.RelCT.taint (A:=taint) rtTaint (fun _ _ h => h) (by taint_decide)
+
+ theorem selectSize_relCT (K : Nat) {fallback : Prog isa}
+    (body : RelCT isa (VG.X86.Taint.Agree rtTaint) (Impl.Mont.X86.Rt.StaticSquare.square K) (fun _ _ => True))
+    (other : RelCT isa (VG.X86.Taint.Agree rtTaint) fallback (fun _ _ => True)) :
+    RelCT isa (VG.X86.Taint.Agree rtTaint) (Impl.Mont.X86.Rt.StaticSquare.selectSize K fallback) (fun _ _ => True) := by
+  unfold Impl.Mont.X86.Rt.StaticSquare.selectSize
+  refine VG.RelCT.seq (sizeChoice_relCT K) ?_
+  refine VG.RelCT.ite (fun _ _ h => h.2) ?_ ?_
+  · exact body.mono (fun _ _ h => h.1.1) (fun _ _ _ => trivial)
+  · exact other.mono (fun _ _ h => h.1.1) (fun _ _ _ => trivial)
+
+ theorem dispatch_relCT : RelCT isa (VG.X86.Taint.Agree rtTaint) Impl.Mont.X86.Rt.StaticSquare.dispatch (fun _ _ => True) := by
+  unfold Impl.Mont.X86.Rt.StaticSquare.dispatch
+  refine VG.RelCT.seq aliasChoice_relCT ?_
+  refine VG.RelCT.ite (fun _ _ h => h.2) ?_ ?_
+  · exact (selectSize_relCT 64 (VG.RelCT.taint (A:=taint) rtTaint (fun _ _ h => h) square64_check)
+      (selectSize_relCT 96 (VG.RelCT.taint (A:=taint) rtTaint (fun _ _ h => h) square96_check)
+        (selectSize_relCT 128 (VG.RelCT.taint (A:=taint) rtTaint (fun _ _ h => h) square128_check) oldSquare_relCT))).mono (fun _ _ h => h.1.1) (fun _ _ _ => trivial)
+  · exact scalar_relCT.mono (fun _ _ h => h.1.1) (fun _ _ _ => trivial)
+
+ theorem constantTime : ConstantTime isa (Spec.Rsa.MontMul.mulContract abi 0).pre
+    (Spec.Rsa.MontMul.mulContract abi 0).pub Impl.Mont.X86.Rt.StaticSquare.dispatch := by
+  apply VG.RelCT.constantTime
+  exact dispatch_relCT.mono (fun _ _ ⟨h1,h2,hp⟩ =>
+    rtTaint_agree (rtAbi_of h1) (rtAbi_of h2) (rt_publicArgs hp).1 (rt_publicArgs hp).2) (fun _ _ _ => trivial)
+
+end VG.Proof.Mont.X86.StaticSquare
