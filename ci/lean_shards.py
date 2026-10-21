@@ -79,9 +79,11 @@ import hashlib
 import heapq
 import json
 import math
+import os
 import pathlib
 import re
 import sys
+import time
 import tomllib
 
 LEAN = pathlib.Path(__file__).resolve().parent.parent / "lean"
@@ -597,6 +599,7 @@ def schedule(
     closure: dict[str, frozenset[str]],
     stale: set[str],
     times: dict[str, float],
+    diagnostics: dict | None = None,
 ) -> tuple[float, dict[str, float], tuple[list[float], list[list[str]], list[set[str]]]]:
     """The shards that build the modules `stale` of the modules `imps`
     (whose closures are `closure`), each taking its time in `times` (a
@@ -613,8 +616,30 @@ def schedule(
     # Include the same cached imports in the solo estimate as in the shards.
     simulator = _BuildGraph(imps, {m: cost[m] for m in needed})
     solo = simulator.time()
+    unique_work = math.fsum(cost[m] for m in needed)
+    if diagnostics is not None:
+        diagnostics.update({
+            "stale_modules": sorted(stale),
+            "timed_stale_modules": len(stale & times.keys()),
+            "fallback_time_s": default,
+            "candidates": [{"shards": 0, "finish_s": solo, "module_work_s": unique_work}],
+        })
+
+    def report(packed):
+        if diagnostics is not None:
+            loads, targets, built = packed
+            repeated = math.fsum(cost[m] for part in built for m in part) if built else unique_work
+            diagnostics["selected"] = {
+                "shards": len(targets),
+                "finish_s": max(loads) + SHARD_OVERHEAD if loads else solo,
+                "module_work_s": repeated,
+                "duplicate_work_s": repeated - unique_work,
+            }
+            diagnostics["assignments"] = [sorted(part) for part in built]
+        return packed
+
     if solo <= SHARD_OVERHEAD or len(sinks) < 2:
-        return work, path, ([], [], [])
+        return work, path, report(([], [], []))
     # Score all useful counts, rather than imposing a work-per-shard cutoff.
     # Include solo in the same latency tolerance: a marginal saving should
     # not buy many runners or repeat most of the build.
@@ -625,10 +650,15 @@ def schedule(
     # as the fastest time decreases, so it need not be simulated.
     for n in range(min(MAX_SHARDS, len(sinks)), 1, -1):
         bounds, targets, built = pack(n, sinks, closure, cost, path)
+        candidate = {"shards": n, "lower_bound_finish_s": max(bounds) + SHARD_OVERHEAD}
+        if diagnostics is not None:
+            diagnostics["candidates"].append(candidate)
         if any(not ts for ts in targets):
             # An empty target list would invoke an unscoped `lake build`.
+            candidate["excluded"] = "empty_targets"
             continue
         if max(bounds) + SHARD_OVERHEAD > fastest * (1 + SLACK):
+            candidate["excluded"] = "lower_bound"
             continue
         loads = []
         for part in built:
@@ -636,8 +666,10 @@ def schedule(
             if loads[-1] + SHARD_OVERHEAD > fastest * (1 + SLACK):
                 break
         if len(loads) != len(built) or max(loads) + SHARD_OVERHEAD > fastest * (1 + SLACK):
+            candidate["excluded"] = "simulated_finish"
             continue
         repeated = math.fsum(cost[m] for part in built for m in part)
+        candidate.update({"finish_s": max(loads) + SHARD_OVERHEAD, "module_work_s": repeated})
         candidates.append((max(loads) + SHARD_OVERHEAD, repeated, n, (loads, targets, built)))
         fastest = min(fastest, max(loads) + SHARD_OVERHEAD)
     # Work counts shared dependencies again on each runner. Within the
@@ -647,18 +679,36 @@ def schedule(
     packed = chosen[3]
     if chosen[2]:
         packed = refine(imps, closure, cost, path, packed, fastest * (1 + SLACK) - SHARD_OVERHEAD, simulator)
-    return work, path, packed
+    return work, path, report(packed)
 
 
-def plan(manifest: dict) -> dict:
+def plan(manifest: dict, diagnostics: dict | None = None) -> dict:
     mods = modules()
     imps, vis, hashes = source_info(mods)
     now = inputs()
+    if diagnostics is not None:
+        diagnostics.update({
+            "version": 1,
+            "planner_sha256": digest(pathlib.Path(__file__)),
+            "manifest_sha256": hashlib.sha256(json.dumps(manifest, sort_keys=True).encode()).hexdigest(),
+            "inputs": now,
+            "manifest_inputs": manifest.get("inputs", {}),
+            "imports": imps,
+            "visibility": vis,
+            "historical_times": manifest.get("times", {}),
+            "settings": {"max_shards": MAX_SHARDS, "shard_overhead_s": SHARD_OVERHEAD,
+                         "slack": SLACK, "parallelism": PARALLELISM, "up_to_date_s": UP_TO_DATE,
+                         "default_time_s": DEFAULT_TIME},
+        })
     then = manifest.get("inputs", {})
     sources = manifest.get("sources", {})
     if sources and sources == hashes and now == then:
         # No module, library membership, or other build input changed.
         # Neither invalidation closures nor candidate schedules are needed.
+        if diagnostics is not None:
+            diagnostics.update({"stale_modules": [], "timed_stale_modules": 0, "candidates": [],
+                                "assignments": [], "selected": {"shards": 0, "finish_s": 0.0,
+                                "module_work_s": 0.0, "duplicate_work_s": 0.0}})
         return {"stale": 0, "work": 0, "loads": [], "targets": [], "owner": {}, "edited": []}
     closure = closures(imps)
     if {k: v for k, v in then.items() if k != "libraries"} == {k: v for k, v in now.items() if k != "libraries"}:
@@ -670,7 +720,7 @@ def plan(manifest: dict) -> dict:
     else:
         changed = set(mods)
     stale = stale_of(changed, reads(imps, closure, vis))
-    work, _, (estimates, targets, shards) = schedule(imps, closure, stale, manifest.get("times", {}))
+    work, _, (estimates, targets, shards) = schedule(imps, closure, stale, manifest.get("times", {}), diagnostics)
     owner = {}
     for i, shard in enumerate(shards):
         for m in sorted(shard):
@@ -725,7 +775,13 @@ def stale_outputs(build: pathlib.Path) -> list[pathlib.Path]:
 
 def main(args: list[str]) -> int:
     if len(args) == 3 and args[0] == "plan":
-        p = plan(read_json(args[1]))
+        started = time.monotonic()
+        diagnostics = {}
+        p = plan(read_json(args[1]), diagnostics)
+        diagnostics.update({"planning_s": time.monotonic() - started,
+                            "run_id": os.environ.get("GITHUB_RUN_ID"),
+                            "run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT")})
+        p["diagnostics"] = diagnostics
         pathlib.Path(args[2]).write_text(json.dumps(p, indent=1) + "\n")
         count = len(p["targets"])
         print(

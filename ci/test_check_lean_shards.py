@@ -134,6 +134,58 @@ class SourceInfo(Project):
         self.assertIsNone(vis["VerifiedGarbage.Spec.A"])
 
 
+class Diagnostics(Project):
+    def test_cli_retains_inputs_and_still_produces_a_usable_plan(self):
+        self.manifest["times"] = {"VerifiedGarbage.Spec.A": 17.5}
+        (self.lean / "VerifiedGarbage/Spec/B.lean").write_text("-- edited\n")
+        manifest = self.lean / "manifest.json"
+        manifest.write_text(json.dumps(self.manifest))
+        dest = self.lean / "plan.json"
+        expected = shards.plan(self.manifest)
+        env = {"GITHUB_RUN_ID": "7", "GITHUB_RUN_ATTEMPT": "2"}
+        with mock.patch.dict(shards.os.environ, env), contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(shards.main(["plan", str(manifest), str(dest)]), 0)
+        actual = json.loads(dest.read_text())
+        d = actual.pop("diagnostics")
+        self.assertEqual(actual, expected)
+        self.assertEqual(d["historical_times"], self.manifest["times"])
+        self.assertEqual(d["inputs"], shards.inputs())
+        self.assertEqual((d["run_id"], d["run_attempt"]), ("7", "2"))
+        self.assertEqual(d["settings"]["parallelism"], shards.PARALLELISM)
+        self.assertEqual(len(d["stale_modules"]), actual["stale"])
+        self.assertEqual(d["timed_stale_modules"], 0)
+        self.assertEqual(d["fallback_time_s"], 17.5)
+        self.assertEqual(d["planner_sha256"], shards.digest(pathlib.Path(shards.__file__)))
+        self.assertGreaterEqual(d["planning_s"], 0)
+
+    def test_unchanged_keeps_the_fast_path_and_records_no_work(self):
+        d = {}
+        with mock.patch.object(shards, "closures", side_effect=AssertionError("unnecessary graph")):
+            p = shards.plan(self.manifest, d)
+        self.assertEqual(p["stale"], 0)
+        self.assertEqual(d["stale_modules"], [])
+        self.assertEqual(d["selected"]["finish_s"], 0)
+
+    def test_diagnostics_do_not_change_shard_selection_and_cover_duplicate_assignments(self):
+        imps = {"shared": [], **{str(i): ["shared"] for i in range(20)}}
+        closure = shards.closures(imps)
+        times = {"shared": 5.0, **dict.fromkeys(map(str, range(20)), 100.0)}
+        expected = shards.schedule(imps, closure, set(imps), times)
+        d = {}
+        actual = shards.schedule(imps, closure, set(imps), times, d)
+        self.assertEqual(actual, expected)
+        loads, targets, built = actual[2]
+        self.assertGreater(len(targets), 1)
+        self.assertEqual(d["assignments"], [sorted(part) for part in built])
+        self.assertEqual(d["selected"]["finish_s"], max(loads) + shards.SHARD_OVERHEAD)
+        work = sum(times[m] for part in built for m in part)
+        self.assertAlmostEqual(d["selected"]["duplicate_work_s"], work - sum(times.values()))
+        self.assertEqual(d["timed_stale_modules"], len(imps))
+        self.assertEqual(d["candidates"][0]["shards"], 0)
+        self.assertEqual({c["shards"] for c in d["candidates"]}, {0, *range(2, shards.MAX_SHARDS + 1)})
+
+
 class Plan(Project):
     """`plan` on the small project, against the manifest of its build."""
 
