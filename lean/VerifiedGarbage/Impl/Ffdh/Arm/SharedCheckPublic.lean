@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import VerifiedGarbage.Impl.Ffdh.Arm.SharedPrepare
+public import VerifiedGarbage.Impl.Ffdh.Arm.PublicScan
 public import VerifiedGarbage.Impl.Bignum.Arm.SharedWindow
 
 /-! Public-key validation through the shared RSA Montgomery helper. -/
@@ -14,7 +15,7 @@ def powerAt (op : Nat → Nat → Nat → Prog isa) (bs es ec : Nat) : Prog isa 
   .seq (.block (powerArgs bs es ec))
     (.seq VG.Impl.Ffdh.Arm.powerImport (SharedWindow.phase op))
 
-/-- The supplied exponent is public; retain only its nonzero suffix. -/
+/-- Skip public leading zero bytes while retaining at least one byte. -/
 def publicPowerAt (op : Nat → Nat → Nat → Prog isa) (bs es ec : Nat) : Prog isa :=
   .seq (.block (powerArgs bs es ec))
     (.seq VG.Impl.Ffdh.Arm.PublicScan.code

@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.PublicScan
+import VerifiedGarbage.Proof.Ffdh.Arm.PublicScan
 public import VerifiedGarbage.Proof.Ffdh.Arm.Power
-import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Ffdh.Arm.PublicScan
+public import VerifiedGarbage.Proof.Ffdh.Arm.Octets
+public import VerifiedGarbage.Proof.Ffdh.Lead
 
 /-! The retained public exponent suffix has the same integer value. -/
 

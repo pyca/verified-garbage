@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.PowerAtCT
-import VerifiedGarbage.Impl.Ffdh.Arm.PublicScan
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.PublicPowerInput
 import VerifiedGarbage.Proof.Ffdh.Arm.PublicScanCT

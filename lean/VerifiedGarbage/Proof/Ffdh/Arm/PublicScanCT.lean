@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.PublicScan
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyScanCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
-import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Ffdh.Arm.PublicScan
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 

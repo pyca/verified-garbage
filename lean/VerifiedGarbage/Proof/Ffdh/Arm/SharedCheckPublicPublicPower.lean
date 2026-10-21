@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Ffdh.Arm.PowerArgs
 import VerifiedGarbage.Proof.Ffdh.Arm.PublicPowerInput
-import VerifiedGarbage.Proof.Ffdh.Arm.Power
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.Ffdh.Arm.Arithmetic
