@@ -451,6 +451,7 @@ def main():
     p.add_argument("head", type=pathlib.Path)
     p.add_argument("--summary", type=pathlib.Path)
     p.add_argument("--rounds", type=int, default=1)
+    p.add_argument("--groups", default="", help="space-separated benchmark groups")
     p.add_argument("--copies", type=int, default=8,
                    help="copies of each binary that run the groups of FRESH_COPIES (1: only the binary)")
     p.add_argument("--confirm", type=int, default=2,
@@ -497,6 +498,10 @@ def main():
     # Interleaved, every group is named (base's runs of a benchmark it lacks
     # measure nothing); otherwise, unsharded, each side runs all of its own.
     selected = groups if groups is not None or owner is None else sorted(listed)
+
+    if args.groups:
+        wanted = set(args.groups.split())
+        selected = [g for g in (selected or sorted(listed)) if g in wanted]
 
     work = args.work_dir.resolve()
     shutil.rmtree(work, ignore_errors=True)
