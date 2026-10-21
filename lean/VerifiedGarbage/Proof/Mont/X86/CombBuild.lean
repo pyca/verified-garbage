@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.CombStart
+import VerifiedGarbage.Proof.Mont.X86.CombStart
 public import VerifiedGarbage.Proof.Mont.X86.CombColumns
 public import VerifiedGarbage.Proof.Mont.X86.CombSubsets
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+public import VerifiedGarbage.Proof.Mont.X86.CombFrame
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 
 /-! Compose initialization, column generation, and subset completion. -/
 
@@ -58,6 +60,34 @@ theorem subsets_prefix {n context size d : Nat} {base : Addr} {s t : Mem}
     intro r hr; simp only [subsetRanges,List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> omega) (by omega)
 
+theorem Columns.tableAt {n e context size m g : Nat} {base : Addr} {s t : State}
+    (L : Layout n context size) (nw : base.toNat+size≤2^32)
+    (I : Columns n context size m g (Spec.Rsa.FixedBaseComb.rows (32*e)) 4 base s t)
+    (zeroEntry : wordsVal s.mem base (context+16*n) n=2^(64*n)%m) :
+    TableAt n context m g (32*e) base (knownSubset 1) t.mem := by
+  have bound := L.bound
+
+  intro j hj hk
+  rcases hk with zero | tooth
+  · have eq : j=0 := by omega
+    subst j
+    have addr : entry n (context+16*n) 0 = context+16*n := by simp [entry]
+    rw [addr,columns_prefix L nw I.mem (by omega) (by omega),zeroEntry]
+    simp only [tableValue,VG.Proof.Rsa.FixedBaseComb.exponent_zero,VG.Proof.Bignum.powMod_eq,Nat.pow_zero]
+    rw [Nat.mod_mul_mod,Nat.one_mul]
+  · have jt : ∃ k, k≤4 ∧ j=2^k := by
+      rcases tooth with rfl|rfl|rfl|rfl|rfl
+      · exact ⟨0,by decide,rfl⟩
+      · exact ⟨1,by decide,rfl⟩
+      · exact ⟨2,by decide,rfl⟩
+      · exact ⟨3,by decide,rfl⟩
+      · exact ⟨4,by decide,rfl⟩
+    obtain ⟨k,hk,rfl⟩ := jt
+    rw [I.table k hk]
+    unfold tableValue columnValue
+    rw [VG.Proof.Rsa.FixedBaseComb.exponent_tooth _ _ (by omega),Nat.mul_comm k]
+
+
 theorem build_ok {n e context size m : Nat} {base : Addr} {s : State}
     (L : Layout n context size) (C : Context n m base size s)
     (one : wordsVal s.mem base (slot n 3) n = 1)
@@ -80,26 +110,7 @@ theorem build_ok {n e context size m : Nat} {base : Addr} {s : State}
     exact Nat.mod_mul_mod _ _ _
   refine WP.seq (WP.mono (buildColumns_ok L Cu hd hd32 (Vu.trans (initial _).symm)
     (Gu.trans (initial _).symm)) fun v I => ?_)
-  have Tv : TableAt n context m (wordsVal s.mem base (slot n 5) n) (32*e) base (knownSubset 1) v.mem := by
-    intro j hj hk
-    rcases hk with zero | tooth
-    · have eq : j=0 := by omega
-      subst j
-      have addr : entry n (context+16*n) 0 = context+16*n := by simp [entry]
-      rw [addr,columns_prefix L nw I.mem (by omega) (by omega),Yu]
-      simp only [tableValue,VG.Proof.Rsa.FixedBaseComb.exponent_zero,VG.Proof.Bignum.powMod_eq,Nat.pow_zero]
-      rw [Nat.mod_mul_mod,Nat.one_mul]
-    · have jt : ∃ k, k≤4 ∧ j=2^k := by
-        rcases tooth with rfl|rfl|rfl|rfl|rfl
-        · exact ⟨0,by decide,rfl⟩
-        · exact ⟨1,by decide,rfl⟩
-        · exact ⟨2,by decide,rfl⟩
-        · exact ⟨3,by decide,rfl⟩
-        · exact ⟨4,by decide,rfl⟩
-      obtain ⟨k,hk,rfl⟩ := jt
-      rw [I.table k hk]
-      unfold tableValue columnValue
-      rw [VG.Proof.Rsa.FixedBaseComb.exponent_tooth _ _ (by omega),Nat.mul_comm k]
+  have Tv := I.tableAt L nw Yu
   refine WP.seq (WP.mono (buildSubsets_ok L I.ctx Tv) fun t J => WP.block_nil ?_)
   refine ⟨J.ctx,?_,?_,?_,?_,(Ku.trans I.keeps).trans J.keeps⟩
   · rw [subsets_prefix L nw J.mem (by omega) (by omega),columns_prefix L nw I.mem (by omega) (by omega),Pu]

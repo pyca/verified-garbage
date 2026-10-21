@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.CombTooth
+import VerifiedGarbage.Proof.Mont.X86.CombTooth
 import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! Accumulate five extracted bits without value-dependent control flow. -/
 
@@ -31,7 +33,7 @@ theorem doubleBits_ok (j : Nat) {s : State} (bound : (s.gpr .eax).toNat*2^j<2^32
 
 theorem addBit_ok {s : State} {j b a : Nat} (hj : j<5) (hb : b<2) (ha : a<2^j)
     (A : (s.gpr .eax).toNat=b) (B : (s.gpr .ebx).toNat=a) :
-    WP isa (.block (List.replicate j (.alu .add .eax (.reg .eax)) ++ [.alu .or .ebx (.reg .eax)])) s
+    WP isa (.block (List.replicate j (.alu .add .eax (.reg .eax)) ++ ([.alu .or .ebx (.reg .eax)] : List Instr))) s
       fun t => t.mem=s.mem ∧ (t.gpr .ebx).toNat=a+b*2^j ∧ Keeps [.eax,.ebx] s t := by
   have p32 : 2^j ≤ 16 := by
     have finite : ∀ j<5, 2^j≤16 := by decide

@@ -148,18 +148,26 @@ theorem subsetStep_ok {n context size m g bits a : Nat} {base : Addr} {s t : Sta
     rw [finite a ha32]
 
 /-- Fill all 31 nonzero entries from their lower subsets and single teeth. -/
+theorem buildSubsets_initial {n context size m g bits : Nat} {base : Addr} {s : State}
+    (C : Context n m base size s)
+    (T : TableAt n context m g bits base (knownSubset 1) s.mem) :
+    WP isa (.block [.mov .esi (VG.Impl.Mont.X86.Comb.imm 1)]) s
+      (Subsets n context size m g bits 1 base s) := by
+  refine wp_movS rfl fun t U _ => WP.block_nil ?_
+  have K : Keeps powerClob s t := U.keeps.mono (by decide)
+  have Ct : Context n m base size t :=
+    ⟨C.scr.of_keeps K (by decide), C.size_le, U.mem ▸ C.modulus, C.gt_one, U.mem ▸ C.inverse⟩
+  have init : Subsets n context size m g bits 1 base s t :=
+    ⟨Ct, U.gpr, U.mem ▸ T, U.mem ▸ Outs.refl _ _ _, K⟩
+  exact init
+
 theorem buildSubsets_ok {n context size m g bits : Nat} {base : Addr} {s : State}
     (L : Layout n context size) (C : Context n m base size s)
     (T : TableAt n context m g bits base (knownSubset 1) s.mem) :
     WP isa (VG.Impl.Mont.X86.Comb.buildSubsets n context) s
       (Subsets n context size m g bits 32 base s) := by
   unfold VG.Impl.Mont.X86.Comb.buildSubsets
-  refine WP.seq (wp_movS rfl fun t U _ => WP.block_nil ?_)
-  have K : Keeps powerClob s t := U.keeps.mono (by decide)
-  have Ct : Context n m base size t :=
-    ⟨C.scr.of_keeps K (by decide), C.size_le, U.mem ▸ C.modulus, C.gt_one, U.mem ▸ C.inverse⟩
-  have init : Subsets n context size m g bits 1 base s t :=
-    ⟨Ct, U.gpr, U.mem ▸ T, U.mem ▸ Outs.refl _ _ _, K⟩
+  refine WP.seq (WP.mono (buildSubsets_initial C T) fun t init => ?_)
   exact VG.Proof.Bignum.X86.PublicRt.countLoop (N := 31) (by decide)
     (fun i => Subsets n context size m g bits (i+1) base s)
     (fun i t hi I => WP.mono (subsetStep_ok L I (by omega) (by omega))

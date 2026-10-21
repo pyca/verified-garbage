@@ -23,17 +23,32 @@ def digit (o d : Nat) : Prog isa :=
     toothRead o ((j+1)*d-1) ++ List.replicate j (.alu .add .eax (.reg .eax)) ++
     [.alu .or .ebx (.reg .eax)]) ++ [.store (sc windowOffset) .ebx])
 
-def combPower (n e context : Nat) (pub : Bool) : Prog isa :=
+def powerDigits (n e : Nat) : Prog isa :=
   let d := VG.Spec.Rsa.FixedBaseComb.rows (32*e)
   let ew := (5*d+31)/32
-  seq [copyWords n (context+16*n) (slot n 6),
-    (if e < ew then zerosW (slot n 8+4*e) (ew-e) else .block []),
-    .block [.mov .esi (imm d)],
-    .loop (seq [square n, digit (slot n 8) d, shiftOne ew (slot n 8),
-      (if pub then publicSelect n (context+16*n) (slot n 7) else wordSelect n (context+16*n) (slot n 7)),
-      Dynamic.mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 6) (slot n 7),
-      .block [.alu .sub .esi (imm 1), .alu .cmp .esi (imm 0)]]) .ne,
-    Dynamic.mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 6) (slot n 3)]
+  seq [square n, digit (slot n 8) d, shiftOne ew (slot n 8)]
 
+def powerLookup (n e context : Nat) (pub : Bool) : Prog isa :=
+  seq [powerDigits n e,
+    (if pub then publicSelect n (context+16*n) (slot n 7) else wordSelect n (context+16*n) (slot n 7))]
+
+def powerStep (n e context : Nat) (pub : Bool) : Prog isa :=
+  seq [powerLookup n e context pub,
+    Dynamic.mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 6) (slot n 7),
+    .block [.alu .sub .esi (imm 1), .alu .cmp .esi (imm 0)]]
+
+def padWords (o used total : Nat) : Prog isa :=
+  if used < total then zerosW (o+4*used) (total-used) else .block []
+
+def powerInit (n e context : Nat) : Prog isa :=
+  let d := VG.Spec.Rsa.FixedBaseComb.rows (32*e)
+  let ew := (5*d+31)/32
+  seq [copyWords n (context+16*n) (slot n 6), padWords (slot n 8) e ew,
+    .block [.mov .esi (imm d)]]
+
+def combPower (n e context : Nat) (pub : Bool) : Prog isa :=
+  seq [powerInit n e context,
+    .loop (powerStep n e context pub) .ne,
+    Dynamic.mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 6) (slot n 3)]
 
 end VG.Impl.Mont.X86.Comb

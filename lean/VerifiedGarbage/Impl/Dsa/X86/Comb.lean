@@ -20,7 +20,7 @@ def layout (n e : Nat) : Spec.Dsa.FixedBaseComb.Layout :=
 
 def core (prepare : Bool) (n e : Nat) : Prog isa :=
   .seq (if prepare then .seq (setup n) (Mont.X86.Comb.combBuild n e (context n))
-    else .seq (.block (setupInverse (slot n 0) 0)) (one n (slot n 3)))
+    else contextStart n)
     (Mont.X86.Comb.combPower n e (context n) prepare)
 
 def body (prepare : Bool) (n e : Nat) : Prog isa :=

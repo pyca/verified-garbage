@@ -18,7 +18,7 @@ namespace VG.Proof.Dsa.X86.Comb
 open VG VG.X86 VG.Impl.Dsa.X86.Comb
 
 def privateInputs : VG.X86.Taint.T :=
-  { regs := .ofList [.edi, .esp, .esi], flags := false }
+  { regs := .ofList [.edi], flags := false }
 
 theorem private_core_check {n e : Nat} (h : Supported n e) :
     (VG.Taint.check taint privateInputs (core false n e)

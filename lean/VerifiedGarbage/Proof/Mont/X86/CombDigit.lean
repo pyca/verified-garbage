@@ -1,7 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.CombDigitControl
+import VerifiedGarbage.Proof.Mont.X86.CombDigitControl
 import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Impl.Mont.X86.CombPower
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Rsa.FixedBaseComb
+import VerifiedGarbage.Proof.Mont.X86.CombTooth
 
 /-! The five fixed-position comb bits form a bounded table index. -/
 
@@ -44,7 +50,7 @@ theorem digitParts_ok {s : State} {base : Addr} {size o k d : Nat}
     (B : s.gpr .ebx=0) : ∀ j, j≤5 →
     WP isa (.block ((List.range j).flatMap (fun j =>
       toothRead o ((j+1)*d-1) ++ List.replicate j (.alu .add .eax (.reg .eax)) ++
-      [.alu .or .ebx (.reg .eax)]))) s fun t =>
+      ([.alu .or .ebx (.reg .eax)] : List Instr)))) s fun t =>
       t.mem=s.mem ∧ (t.gpr .ebx).toNat=partialDigit d (val32 s.mem base o k) j ∧ Keeps [.eax,.ebx] s t
   | 0, _ => WP.block_nil ⟨rfl,by rw [B]; rfl,Keeps.refl _ _⟩
   | j+1, hj => by

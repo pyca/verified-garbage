@@ -107,20 +107,18 @@ theorem columnStep_ok {n context size m g d i : Nat} {base : Addr} {s t : State}
 
 /-- Four loop iterations produce every single-tooth entry, using one shared
 multiplication body regardless of the exponent storage width. -/
-theorem buildColumns_ok {n e context size m g : Nat} {base : Addr} {s : State}
+theorem buildColumns_initial {n e context size m g : Nat} {base : Addr} {s : State}
     (L : Layout n context size) (C : Context n m base size s)
-    (hd : 0 < Spec.Rsa.FixedBaseComb.rows (32*e)) (hd32 : Spec.Rsa.FixedBaseComb.rows (32*e) < 2^32)
     (V : wordsVal s.mem base (slot n 5) n = columnValue n m g (Spec.Rsa.FixedBaseComb.rows (32*e)) 0)
     (T : wordsVal s.mem base (context+24*n) n = columnValue n m g (Spec.Rsa.FixedBaseComb.rows (32*e)) 0) :
-    WP isa (VG.Impl.Mont.X86.Comb.buildColumns n e context) s
-      (Columns n context size m g (Spec.Rsa.FixedBaseComb.rows (32*e)) 4 base s) := by
+    WP isa (.block [.mov .eax (VG.Impl.Mont.X86.Comb.imm 1), .store (sc 28) .eax]) s
+      (Columns n context size m g (Spec.Rsa.FixedBaseComb.rows (32*e)) 0 base s) := by
   have bound := L.bound
   have apart := L.apart
   have hdr := slot_header n 9
   have context32 : 32 ≤ context := by change slot n 9 ≤ context at apart; omega
   have nw := C.scr.nowrap
-  unfold VG.Impl.Mont.X86.Comb.buildColumns
-  refine WP.seq (wp_movS rfl fun u U _ => ?_)
+  refine wp_movS rfl fun u U _ => ?_
   have hu := C.scr.of_keeps U.keeps (by decide)
   refine wp_storeS (hu.ea (d := 28) (by omega)) (hu.write (d := 28) (n := 4) (by omega))
     fun t M => WP.block_nil ?_
@@ -138,6 +136,17 @@ theorem buildColumns_ok {n e context size m g : Nat} {base : Addr} {s : State}
       subst j
       have addr : entry n (context+16*n) (2^0) = context+24*n := by simp [entry]; omega
       rw [addr, O.wordsVal (.inr (by omega)) (by omega), T]
+  exact init
+
+theorem buildColumns_ok {n e context size m g : Nat} {base : Addr} {s : State}
+    (L : Layout n context size) (C : Context n m base size s)
+    (hd : 0 < Spec.Rsa.FixedBaseComb.rows (32*e)) (hd32 : Spec.Rsa.FixedBaseComb.rows (32*e) < 2^32)
+    (V : wordsVal s.mem base (slot n 5) n = columnValue n m g (Spec.Rsa.FixedBaseComb.rows (32*e)) 0)
+    (T : wordsVal s.mem base (context+24*n) n = columnValue n m g (Spec.Rsa.FixedBaseComb.rows (32*e)) 0) :
+    WP isa (VG.Impl.Mont.X86.Comb.buildColumns n e context) s
+      (Columns n context size m g (Spec.Rsa.FixedBaseComb.rows (32*e)) 4 base s) := by
+  unfold VG.Impl.Mont.X86.Comb.buildColumns
+  refine WP.seq (WP.mono (buildColumns_initial L C V T) fun t init => ?_)
   exact VG.Proof.Bignum.X86.PublicRt.countLoop (by decide)
     (Columns n context size m g (Spec.Rsa.FixedBaseComb.rows (32*e)) · base s)
     (fun i t hi I => columnStep_ok L I hi hd hd32) init
