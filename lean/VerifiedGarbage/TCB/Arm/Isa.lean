@@ -130,14 +130,16 @@ inductive Op2
   | shifted (r : Reg) (sh : Shift) (amount : Nat)
   deriving DecidableEq, Repr
 
-inductive DpOp | add | sub | and | orr | eor
+inductive DpOp | add | sub | and | orr | eor | bic
   deriving DecidableEq, Repr
 
 inductive Instr
   /-- `mov d, op2` (with a shifted register, printed as the `lsl`/`lsr`/`ror`
   alias) -/
   | mov (d : Reg) (op2 : Op2)
-  /-- `add`/`sub`/`and`/`orr`/`eor d, n, op2` (no flags set) -/
+  /-- `mvn d, op2` (bitwise NOT, no flags set). -/
+  | mvn (d : Reg) (op2 : Op2)
+  /-- `add`/`sub`/`and`/`orr`/`eor`/`bic d, n, op2` (no flags set) -/
   | dp (op : DpOp) (d n : Reg) (op2 : Op2)
   /-- `adds d, n, op2` (sets N, Z, C, V) -/
   | adds (d n : Reg) (op2 : Op2)
@@ -342,13 +344,28 @@ https://github.com/ARM-software/abi-aa/blob/2025Q4/aaelf32/aaelf32.rst.
 MOVT, `BadReg(d)`, and a branch in ADD's); `lr` is allowed. MOVW and MOVT
 are ARMv6T2 and later, in both instruction sets, and so in the ARMv7
 baseline: `requires` stays empty. All three take a time independent of
-their operands. -/
+their operands.
+
+`MVN` and `BIC` follow Arm's instruction pseudocode, with `setflags`
+false: `result = NOT(shifted)` and `result = R[n] AND NOT(shifted)` (the
+immediate forms use `imm32` instead). The existing `Op2.eval` implements
+that operand's immediate expansion and immediate shift. `Reg` excludes
+PC and SP, so none of the PC-write or exception-return cases apply. These
+are baseline ARMv7-A instructions in both A32 and T32, with no memory
+accesses and no NZCV changes. Sources: Arm ARM DDI 0406C, "MVN (immediate)",
+"MVN (register)", "BIC (immediate)" and "BIC (register)"; Arm's A32/T32
+instruction pseudocode v2023-06, mirrored at:
+https://mikhailarkhipov.github.io/ARM-doc/A32/mvn_i.html
+https://mikhailarkhipov.github.io/ARM-doc/A32/mvn_r.html
+https://mikhailarkhipov.github.io/ARM-doc/A32/bic_i.html
+https://mikhailarkhipov.github.io/ARM-doc/A32/bic_r.html -/
 def exec : Instr → State → Option State
   | .mov d op2, s => (op2.eval s).map fun x => s.setReg d x
+  | .mvn d op2, s => (op2.eval s).map fun x => s.setReg d (~~~x)
   | .dp op d n op2, s => (op2.eval s).map fun y =>
     let x := s.gpr n
     s.setReg d (match op with
-      | .add => x + y | .sub => x - y | .and => x &&& y | .orr => x ||| y | .eor => x ^^^ y)
+      | .add => x + y | .sub => x - y | .and => x &&& y | .orr => x ||| y | .eor => x ^^^ y | .bic => x &&& ~~~y)
   | .adds d n op2, s => (op2.eval s).map fun y =>
     (addFlags s (s.gpr n) y).setReg d (s.gpr n + y)
   | .adc d n op2, s => (op2.eval s).map fun y =>

@@ -62,7 +62,7 @@ variable {s : State}
 /-- The value a data-processing instruction computes. -/
 def dpv : DpOp → BitVec 32 → BitVec 32 → BitVec 32
   | .add, x, y => x + y | .sub, x, y => x - y | .and, x, y => x &&& y | .orr, x, y => x ||| y
-  | .eor, x, y => x ^^^ y
+  | .eor, x, y => x ^^^ y | .bic, x, y => x &&& ~~~y
 
 /-- The value of a shifted register. -/
 def shv : Shift → BitVec 32 → Nat → BitVec 32

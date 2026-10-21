@@ -159,6 +159,7 @@ def storeStep (τ : T) (n : Reg) (off w : Nat) (p : Bool) : Option T :=
 
 def step (τ : T) : Instr → Option T
   | .mov d op2 => some { τ with regs := set τ d (op2Pub τ op2), bases := movBases τ d op2 }
+  | .mvn d op2 => some { τ with regs := set τ d (op2Pub τ op2), bases := kill τ d }
   | .dp _ d n op2 => some { τ with regs := set τ d (pub τ n && op2Pub τ op2), bases := kill τ d }
   | .adds d n op2 | .subs d n op2 =>
     let p := pub τ n && op2Pub τ op2
@@ -566,7 +567,7 @@ theorem Agree.store {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {r : 
 /-- The register an instruction writes, if it writes one (`cmp` and stores
 do not; a frame's pop writes its register). -/
 def dst : Instr → Option Reg
-  | .mov d _ | .dp _ d _ _ | .adds d _ _ | .adc d _ _ | .subs d _ _ | .movw d _ | .movt d _ | .rev d _
+  | .mov d _ | .mvn d _ | .dp _ d _ _ | .adds d _ _ | .adc d _ _ | .subs d _ _ | .movw d _ | .movt d _ | .rev d _
   | .addSp d _ | .mul d _ _ | .mla d _ _ _ | .ldr d _ _ | .ldrb d _ _ | .ldrSp d _ | .pop d _ | .adrSym d _ => some d
   | .cmp .. | .str .. | .strb .. | .push _ | .alloc _ | .free _ | .umaal .. => none
 
@@ -636,6 +637,13 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     obtain ⟨y₁, h₁, rfl⟩ := e₁; obtain ⟨y₂, h₂, rfl⟩ := e₂
     exact ⟨rfl, ha.keep ⟨regs_set ha.rf.1 (op2_some ha h₁ h₂), fun hf => ha.rf.2 hf⟩ rfl rfl rfl rfl
       rfl rfl rfl rfl rfl rfl (movBases_ok ha.wf₁ h₁) (movBases_ok ha.wf₂ h₂)⟩
+  | mvn d o =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl rfl rfl fun _ h => h⟩
+    simp only [exec, Option.map_eq_some_iff] at e₁ e₂
+    obtain ⟨y₁, h₁, rfl⟩ := e₁; obtain ⟨y₂, h₂, rfl⟩ := e₂
+    refine ⟨regs_set ha.rf.1 fun hp => ?_, fun hf => ha.rf.2 hf⟩
+    rw [op2_some ha h₁ h₂ hp]
   | dp op d n o =>
     simp only [step, Option.some.injEq] at hs; subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl rfl rfl fun _ h => h⟩
@@ -946,6 +954,7 @@ def storeStepK (τ : T) (n : Reg) (off w : Nat) (p : Bool) : Option T :=
 
 def stepK (τ : T) : Instr → Option T
   | .mov d op2 => some { τ with regs := setK τ d (op2Pub τ op2), bases := movBasesK τ d op2 }
+  | .mvn d op2 => some { τ with regs := setK τ d (op2Pub τ op2), bases := killK τ d }
   | .dp _ d n op2 => some { τ with regs := setK τ d (pub τ n && op2Pub τ op2), bases := killK τ d }
   | .adds d n op2 | .subs d n op2 =>
     let p := pub τ n && op2Pub τ op2
@@ -1116,6 +1125,7 @@ kernel can share the classification between checks from different taints.
 Stores retain the duplicate-slot optimization of `storeStepKD`. -/
 def stepKDFn : Instr → Step
   | .mov d op2 => ⟨fun τ => some { τ with regs := setK τ d (op2Pub τ op2), bases := movBasesK τ d op2 }⟩
+  | .mvn d op2 => ⟨fun τ => some { τ with regs := setK τ d (op2Pub τ op2), bases := killK τ d }⟩
   | .dp _ d n op2 => ⟨fun τ => some { τ with regs := setK τ d (pub τ n && op2Pub τ op2), bases := killK τ d }⟩
   | .adds d n op2 | .subs d n op2 => ⟨fun τ =>
     let p := pub τ n && op2Pub τ op2

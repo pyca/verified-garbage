@@ -44,7 +44,7 @@ theorem exec_ldK {s : State} (hok : Ok layerCfg s) {r : Reg} {w : Nat} (hw : w <
 theorem exec_dp_reg {s : State} {op : DpOp} {d n m : Reg} :
     exec (.dp op d n (.reg m)) s = some (s.setReg d (match op with
       | .add => s.gpr n + s.gpr m | .sub => s.gpr n - s.gpr m | .and => s.gpr n &&& s.gpr m
-      | .orr => s.gpr n ||| s.gpr m | .eor => s.gpr n ^^^ s.gpr m)) := by
+      | .orr => s.gpr n ||| s.gpr m | .eor => s.gpr n ^^^ s.gpr m | .bic => s.gpr n &&& ~~~(s.gpr m))) := by
   cases op <;> rfl
 
 theorem exec_eor_ror {s : State} {d n m : Reg} {k : Nat} (h1 : 1 ≤ k) (h2 : k ≤ 31) :

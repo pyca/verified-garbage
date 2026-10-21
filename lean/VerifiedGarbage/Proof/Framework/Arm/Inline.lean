@@ -40,7 +40,7 @@ def State.withRegions (s : State) (rd wr : List Region) : State := { s with rd :
 /-- The register an instruction writes, if any (a frame's pop writes its
 register); for `umaal`, which writes two (`dsts`), the low one. -/
 def dstOf : Instr → Option Reg
-  | .mov d _ | .dp _ d _ _ | .adds d _ _ | .adc d _ _ | .subs d _ _ | .movw d _ | .movt d _ | .rev d _
+  | .mov d _ | .mvn d _ | .dp _ d _ _ | .adds d _ _ | .adc d _ _ | .subs d _ _ | .movw d _ | .movt d _ | .rev d _
   | .addSp d _ | .mul d _ _ | .mla d _ _ _ | .ldr d _ _ | .ldrb d _ _ | .ldrSp d _ | .pop d _ | .adrSym d _
   | .umaal d _ _ _ => some d
   | .cmp .. | .str .. | .strb .. | .push _ | .alloc _ | .free _ => none

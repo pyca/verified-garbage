@@ -177,7 +177,7 @@ theorem mstep_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
   | ldrSp => simp only [mstep, reduceCtorEq] at hs
   | push => simp only [mstep, reduceCtorEq] at hs
   | pop => simp only [mstep, reduceCtorEq] at hs
-  | mov => exact base (fun _ _ _ => by simp) hs e₁ e₂
+  | mov | mvn => exact base (fun _ _ _ => by simp) hs e₁ e₂
   | dp => exact base (fun _ _ _ => by simp) hs e₁ e₂
   | adds => exact base (fun _ _ _ => by simp) hs e₁ e₂
   | adc => exact base (fun _ _ _ => by simp) hs e₁ e₂

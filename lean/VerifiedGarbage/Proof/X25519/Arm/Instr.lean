@@ -107,7 +107,7 @@ theorem op2_lsl {s : State} {r : Reg} {n : Nat} (h : 1 ≤ n ∧ n ≤ 31) :
 /-- The value of a data-processing instruction. -/
 def dpVal (op : DpOp) (x y : BitVec 32) : BitVec 32 :=
   match op with
-  | .add => x + y | .sub => x - y | .and => x &&& y | .orr => x ||| y | .eor => x ^^^ y
+  | .add => x + y | .sub => x - y | .and => x &&& y | .orr => x ||| y | .eor => x ^^^ y | .bic => x &&& ~~~y
 
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}

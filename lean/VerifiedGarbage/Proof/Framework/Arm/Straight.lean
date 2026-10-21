@@ -389,6 +389,9 @@ theorem step_ok (hD : D.Sound R) {e e' : Env α} {s : State} (hok : Ok c s)
         refine ⟨_, by simp only [exec, op2Cst_ok hrel hy, hrel.cst n x hx, Option.map_some]; rfl, ?_⟩
         exact (const_ok hD hok hrel hd.1 hd.2).writes fun r h => by simp [dstOf, h]
       · cases h
+    | bic =>
+      simp only at h
+      split at h <;> simp [binop] at h
     | and | orr | eor =>
       simp only at h
       split at h
