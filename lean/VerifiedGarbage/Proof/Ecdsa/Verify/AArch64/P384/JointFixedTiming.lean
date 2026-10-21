@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointRead9
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointRead
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

@@ -1,14 +1,15 @@
 module
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDoubleD
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDoubleD
 public import VerifiedGarbage.Proof.Weierstrass.Joint
 public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P384Joint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Digit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDouble
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepD
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

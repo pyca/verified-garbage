@@ -8,8 +8,6 @@ import VerifiedGarbage.Proof.Weierstrass.JacAdd
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombPublic
-import VerifiedGarbage.Proof.Weierstrass.TCombWords
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

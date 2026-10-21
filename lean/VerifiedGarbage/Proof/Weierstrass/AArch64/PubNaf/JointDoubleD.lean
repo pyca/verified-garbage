@@ -1,9 +1,9 @@
 module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDouble
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepD
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepD
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
-import VerifiedGarbage.Proof.Weierstrass.JacMul
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
 
 /-! # The joint loop's shared doubling, by a given doubling
 

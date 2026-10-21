@@ -1,9 +1,14 @@
 module
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P384Joint
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMul
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMul
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State
+public import Mathlib.Tactic.ClearExcept
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Wide9
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Prep
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 
 /-! # The recoding of both scalars of P-384's joint verification

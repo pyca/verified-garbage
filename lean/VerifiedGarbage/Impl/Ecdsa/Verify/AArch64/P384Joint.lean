@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.PubNaf
+import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.PubNaf
 public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 public import VerifiedGarbage.Impl.P384.EcdhAllocatedCode
 public import VerifiedGarbage.Impl.P384.GTable9
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNafWide
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Joint
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNaf
 
 /-! # ECDSA verification over P-384 on AArch64: one loop for `[u]G + [v]Q`
 

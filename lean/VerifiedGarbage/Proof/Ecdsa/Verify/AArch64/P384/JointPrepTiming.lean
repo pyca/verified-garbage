@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P384Joint
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Wide9Timing
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Wide9
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 @[expose] public section

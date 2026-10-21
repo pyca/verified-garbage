@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.P384.Comb7
-public import VerifiedGarbage.Proof.P384.GTable9
+public import VerifiedGarbage.Proof.P384.GTable9 -- shake: keep (the artifacts' bodies use `gtabOk9`)
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.AArch64
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Verified

@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointFixedSource
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointFixedLoad
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointRead9
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafArith
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State
@@ -12,7 +11,10 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JointEntry
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+public import VerifiedGarbage.Impl.Ecdsa.AArch64
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointRead
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

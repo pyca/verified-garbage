@@ -4,11 +4,8 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDigit
 public import VerifiedGarbage.Proof.Weierstrass.Joint
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointFixedBridge
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointLoop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepDTiming
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Digit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P384.Joint

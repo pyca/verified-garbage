@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointWindow
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointFixed
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointFixedEntry
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

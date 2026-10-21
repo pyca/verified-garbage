@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointPrep
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.ProjectiveFlags
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

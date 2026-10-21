@@ -1,5 +1,5 @@
 module
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointPrep
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMul
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointFinal
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointFixedBridge
