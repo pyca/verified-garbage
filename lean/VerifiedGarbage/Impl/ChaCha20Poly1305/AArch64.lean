@@ -12,7 +12,7 @@ arguments, returning `w0`), composed of calls of the verified ChaCha20 and
 Poly1305 functions. `work` is the working space, which the artifact's frame
 allocates on the stack (`withStackScratchWiped`).
 
-The working space (`workLen` = 760 bytes, called the context below):
+The working space (`workLen` = 1280 bytes, called the context below):
 
 * `[0, 16)`: the lengths block;
 * `[16, 32)`: the padded last block of the additional data or the data;
@@ -24,7 +24,9 @@ The working space (`workLen` = 760 bytes, called the context below):
 * `[448, 576)`: the Poly1305 state;
 * `[576, 624)`: our caller's `x21`–`x25` and our return address `x30`;
 * `[624, 632)`: the address of `tag`;
-* `[632, 760)`: the working space of `vg_poly1305_finalize_scratch` (`scratch`).
+* `[632, 760)`: the working space of `vg_poly1305_finalize_scratch` (`scratch`);
+* `[768, 1280)`: the keystream of eight blocks, for 257 to 511 bytes
+  (`Pad.lean`), zeroed after it is used.
 
 `x21` holds the context, `x22` the data, `x23` its length, `x24` the
 additional data and `x25` its length throughout: they are callee-saved, and
@@ -55,7 +57,7 @@ open VG.Impl.ChaCha20.AArch64 (XorCallee)
 open VG.Impl.ChaCha20.AArch64.Xor (mov)
 
 /-- The size of the working space, in bytes. -/
-def workLen : Nat := 760
+def workLen : Nat := 1280
 
 /-- The registers saved in the context, and where: our caller's, our return
 address and `tag` (`x6`). -/

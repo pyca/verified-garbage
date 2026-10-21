@@ -162,9 +162,9 @@ theorem rest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ s : State} (hp : APre
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨ctxR s₀, by rw [wr₁]; exact hp.ctx_wr, 64, rfl, by show 64 + 64 ≤ 760; omega⟩
+    · exact ⟨ctxR s₀, by rw [wr₁]; exact hp.ctx_wr, 64, rfl, by show 64 + 64 ≤ 1280; omega⟩
     · exact ⟨dR s₀, by rw [wr₁]; exact hp.d_wr, 256, rfl, by show 256 + (L s₀ - 256) ≤ L s₀; omega⟩
-    · exact ⟨ctxR s₀, by rw [wr₁]; exact hp.ctx_wr, 128, rfl, by show 128 + 320 ≤ 760; omega⟩
+    · exact ⟨ctxR s₀, by rw [wr₁]; exact hp.ctx_wr, 128, rfl, by show 128 + 320 ≤ 1280; omega⟩
   have hn : L s₀ - 256 < 2 ^ 64 := by have := (s₀.gpr .x5).isLt; simp only [L]; omega
   refine VG.Proof.ChaCha20Poly1305.AArch64.xor_call v x0₁ x1₁ x2₁ x3₁ hn
     ((hp.c_d.sub_left (sub_ctx s₀ (k := 64) (n := 64) (by lit_omega))).sub_right (restR_sub hL))

@@ -115,17 +115,17 @@ theorem finalizeTo_ok0 {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv0 s
   rw [h.x21] at h0 h2
   have wr₁ : s₁.wr = s₀.wr := by rw [k₁.wr, h.wr]
   have m₁ := k₁.mem_eq
-  have ho : out + 16 ≤ 760 := by omega
+  have ho : out + 16 ≤ 1280 := by omega
   refine finalize_call h0 h1 h2 (sub_disj s₀ (by lit_omega) (by lit_omega) ho)
     (Covers.right (covers_sub hp wr₁ _ (by
       intro r hr; simp only [List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨448, rfl, show 448 + 128 ≤ 760 by omega⟩
+      · exact ⟨448, rfl, show 448 + 128 ≤ 1280 by omega⟩
       · exact ⟨out, rfl, ho⟩)))
     (covers_sub hp wr₁ _ (by
       intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨448, rfl, show 448 + 128 ≤ 760 by omega⟩
+      · exact ⟨448, rfl, show 448 + 128 ≤ 1280 by omega⟩
       · exact ⟨out, rfl, ho⟩))
     fun s₂ k₂ tag₂ => ?_
   exact ⟨(k₁.sub fun _ hr => absurd hr List.not_mem_nil).trans k₂,
@@ -148,9 +148,9 @@ theorem polyIn_core {s₀ : State} (hp : APre e s₀) {s : State} (hx21 : s.gpr 
       u.mem = memIn s.mem (cx s₀) (s.gpr .x27) (s.gpr .x28) ∧
       (∀ r, r ∉ [Reg.x21, .x22, .x23, .x24, .x25] → u.gpr r = s.gpr r) ∧
       u.rd = s.rd ∧ u.wr = s.wr := by
-  have o (d : Nat) (hd : d + 8 ≤ 760) : InRegions s.wr (off (cx s₀) d) 8 := by
+  have o (d : Nat) (hd : d + 8 ≤ 1280) : InRegions s.wr (off (cx s₀) d) 8 := by
     rw [hwr]; exact hp.in_ctx hd
-  have i (d : Nat) (hd : d + 8 ≤ 760) : InRegions (s.rd ++ s.wr) (off (cx s₀) d) 8 := by
+  have i (d : Nat) (hd : d + 8 ≤ 1280) : InRegions (s.rd ++ s.wr) (off (cx s₀) d) 8 := by
     rw [hrd, hwr]; exact hp.in_ctx' hd
   unfold polyIn
   simp only [List.cons_append, List.nil_append, List.append_assoc]
@@ -251,8 +251,8 @@ theorem polyOut_core {s₀ : State} (hp : APre e s₀) (enc : Bool) {s : State}
       (∀ r, r ∉ [Reg.x4, .x5, .x6, .x9, .x10, .x11, .x12, .x13, .x14, .x21, .x22, .x23, .x27, .x28] →
         u.gpr r = s.gpr r) ∧
       u.rd = s.rd ∧ u.wr = s.wr := by
-  have o (d : Nat) (hd : d + 8 ≤ 760) : InRegions s₀.wr (off (cx s₀) d) 8 := hp.in_ctx hd
-  have i (d : Nat) (hd : d + 8 ≤ 760) : InRegions (s₀.rd ++ s₀.wr) (off (cx s₀) d) 8 := hp.in_ctx' hd
+  have o (d : Nat) (hd : d + 8 ≤ 1280) : InRegions s₀.wr (off (cx s₀) d) 8 := hp.in_ctx hd
+  have i (d : Nat) (hd : d + 8 ≤ 1280) : InRegions (s₀.rd ++ s₀.wr) (off (cx s₀) d) 8 := hp.in_ctx' hd
   have hc : off (cx s₀) 64 - BitVec.ofNat 64 64 = cx s₀ := BitVec.add_sub_cancel _ _
   unfold polyOut
   simp only [List.cons_append, List.nil_append, List.append_assoc]

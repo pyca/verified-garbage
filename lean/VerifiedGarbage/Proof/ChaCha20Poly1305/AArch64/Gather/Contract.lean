@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 
 Untrusted: everything here is checked by Lean. The contract the proof of
 `vg_chacha20_poly1305_seal_gather` is written against, which the shared one
-(`Spec.ChaCha20Poly1305.sealGatherContract`, with the 784 bytes of stack
+(`Spec.ChaCha20Poly1305.sealGatherContract`, with the 1296 bytes of stack
 below the stack pointer that its frame and its call use) implies
 (`Gather/Verified.lean`): `(key = x0, nonce = x1, aad = x2, aad_len = x3,
 src = x4, src_count = x5, dst = x6, len = x7, tag = [sp])`.
@@ -48,7 +48,7 @@ abbrev lsR : List Region := Sig.listed 64 s.mem .u8 (Src s) (Cnt s)
 abbrev dR : Region := ⟨Dst s, L s⟩
 abbrev tgR : Region := ⟨Tg s, 16⟩
 abbrev argR : Region := ⟨stackArgAddr s 0, 8⟩
-abbrev stkR : Region := ⟨s.sp - BitVec.ofNat 64 784, 784⟩
+abbrev stkR : Region := ⟨s.sp - BitVec.ofNat 64 1296, 1296⟩
 
 /-- The total length of the first `i` slices, and their bytes. -/
 abbrev gl (i : Nat) : Nat := gatheredLen 64 s.mem (Src s) i
@@ -70,7 +70,7 @@ def gatherPre (s : State) : Prop :=
     (K s).toNat + 32 ≤ 2 ^ 64 ∧ (Nn s).toNat + 12 ≤ 2 ^ 64 ∧ (Ad s).toNat + AL s ≤ 2 ^ 64 ∧
     (Src s).toNat + Cnt s * 16 ≤ 2 ^ 64 ∧ (∀ r ∈ lsR s, r.base.toNat + r.len ≤ 2 ^ 64) ∧
     (Dst s).toNat + L s ≤ 2 ^ 64 ∧ (Tg s).toNat + 16 ≤ 2 ^ 64 ∧
-    784 ≤ s.sp.toNat ∧ s.sp.toNat + 8 ≤ 2 ^ 64 ∧ gl s (Cnt s) = L s ∧ L s ≤ pMax
+    1296 ≤ s.sp.toNat ∧ s.sp.toNat + 8 ≤ 2 ^ 64 ∧ gl s (Cnt s) = L s ∧ L s ≤ pMax
 
 /-- What two runs agree on: the arguments and the descriptors. -/
 def gatherPub (s₁ s₂ : State) : Prop :=

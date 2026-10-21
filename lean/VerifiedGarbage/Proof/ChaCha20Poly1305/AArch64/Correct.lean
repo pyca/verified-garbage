@@ -206,7 +206,7 @@ theorem finalizeTag_ok {s₀ : State} (hp : APre true s₀) {s : State} (h : Inv
   have hw : Covers [sub s₀ 448 128, tR s₀] s₁.wr := Covers.of_sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨ctxR s₀, by rw [wr₁]; exact hp.ctx_wr, 448, rfl, by show 448 + 128 ≤ 760; omega⟩
+    · exact ⟨ctxR s₀, by rw [wr₁]; exact hp.ctx_wr, 448, rfl, by show 448 + 128 ≤ 1280; omega⟩
     · exact ⟨tR s₀, by rw [wr₁]; exact hp.t_wr, 0, by simp, by simp⟩
   refine finalize_call h0 h1 h2 (hp.c_t.sub_left (sub_ctx s₀ (by lit_omega))) (Covers.right hw) hw
     fun s₂ k₂ tag₂ => ?_
