@@ -1,14 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeKgRows
-public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKg
+import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKg
 import VerifiedGarbage.Proof.MlKem.X86_64.KgMul16
 import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodiesY
 import VerifiedGarbage.Proof.MlKem.X86_64.EncMulY
-import VerifiedGarbage.Proof.MlKem.X86_64.DecMulY
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 import VerifiedGarbage.Proof.MlKem.PolyW
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.MlKem.X86_64.Kem
+public import VerifiedGarbage.Proof.MlKem.X86_64.InlinePrim
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem*_kpke_keygen_ntt`

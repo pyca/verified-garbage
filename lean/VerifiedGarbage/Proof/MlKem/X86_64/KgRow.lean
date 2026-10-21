@@ -1,14 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeKgRows
-public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKg
+import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKg
 import VerifiedGarbage.Proof.MlKem.X86_64.KgMul16
-import VerifiedGarbage.Proof.MlKem.X86_64.RowY
 import VerifiedGarbage.Proof.MlKem.X86_64.RowEY16
-import VerifiedGarbage.Proof.MlKem.X86_64.AccY
-import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodiesY
 import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.MlKem.X86_64.Kem
+public import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem*_kpke_keygen_row`

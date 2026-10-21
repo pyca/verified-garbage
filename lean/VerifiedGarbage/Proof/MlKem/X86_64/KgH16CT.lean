@@ -1,14 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgH16Rows
+import VerifiedGarbage.Proof.MlKem.X86_64.KgH16Rows
 import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
 import VerifiedGarbage.Proof.MlKem.X86_64.KgTop16
 import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag16
 import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag
-import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
-import VerifiedGarbage.Proof.MlKem.X86_64.FragK
 import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
 import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgH16Base
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
+public import VerifiedGarbage.Proof.MlKem.X86_64.EkInline16
 
 /-!
 # ML-KEM-768 on x86-64: key generation hashing `ek` while it samples `Â`, constant time

@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Scalar
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Verified16
 public import VerifiedGarbage.Proof.MlKem.X86_64.SHCT
-public import VerifiedGarbage.Proof.MlKem.X86_64.SHM
+import VerifiedGarbage.Proof.MlKem.X86_64.SHM
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.MlKem.X86_64.SHTop
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
 public import VerifiedGarbage.Proof.MlKem.X86_64.Prfs
 import Mathlib.Tactic.Conv

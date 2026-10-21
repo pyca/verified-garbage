@@ -37,6 +37,7 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KgH16Base
 
 /-!
 # ML-KEM-768 on x86-64: `vg_mlkem768_keygen`, `vg_mlkem768_encaps_h` and `vg_mlkem768_decaps`

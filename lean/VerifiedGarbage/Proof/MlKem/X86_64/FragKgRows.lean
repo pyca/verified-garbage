@@ -2,11 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgNtt
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgRow
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragKM
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragKpke
+import VerifiedGarbage.Proof.MlKem.X86_64.FragKpke
 import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
 import VerifiedGarbage.Proof.MlKem.X86_64.FragL
 import VerifiedGarbage.Proof.MlKem.PolyW
+public import VerifiedGarbage.Impl.MlKem.X86_64.Kem
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragOf
+public import VerifiedGarbage.Impl.MlKem.X86_64.Kem
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragOf
 
 /-!
 # ML-KEM on x86-64: the calls of K-PKE key generation a row at a time

@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.SHCT
+import VerifiedGarbage.Proof.MlKem.X86_64.SHCT
 meta import VerifiedGarbage.Proof.MlKem.X86_64.SHCT
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
+public import VerifiedGarbage.Proof.MlKem.X86_64.SHTop
+meta import VerifiedGarbage.Proof.MlKem.X86_64.SHTop
 
 /-!
 # ML-KEM on x86-64: `Sample4.sampleHM`, the sponge absorbing `m` blocks
