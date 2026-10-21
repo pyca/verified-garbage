@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ML-KEM on AArch64: the NTT halfword by halfword, the machine agrees with the code
@@ -630,6 +631,85 @@ theorem step_ok {R : Rules} (hM : Model L O R) (hc : Ctx rs s₀) {σ σ' : St} 
         · cases hs
     · cases hs
   all_goals simp only [St.step, reduceCtorEq] at hs
+
+/-! ## Runs -/
+
+theorem run_ok {R : Rules} (hM : Model L O R) (hc : Ctx rs s₀) :
+    ∀ (is : List Instr) {σ σ' : St} {s : State}, Rel rs s₀ L O σ s → σ.run R rs is = some σ' →
+      WP isa (.block is) s (Rel rs s₀ L O σ')
+  | [], σ, σ', s, h, hs => by
+    simp only [St.run, Option.some.injEq] at hs; subst hs; exact WP.block_nil h
+  | i :: is, σ, σ', s, h, hs => by
+    simp only [St.run] at hs
+    cases h₁ : σ.step R rs i with
+    | none => rw [h₁] at hs; cases hs
+    | some σ₁ =>
+      rw [h₁, Option.bind_some] at hs
+      obtain ⟨s₁, e₁, r₁⟩ := step_ok hM hc h h₁
+      exact WP.block_cons_iff.mpr ⟨s₁, e₁, run_ok hM hc is r₁ hs⟩
+
+theorem loop_ok {body : Prog isa} {f : St → Option St} {r : Reg}
+    (hf : ∀ {σ σ' : St} {s : State}, Rel rs s₀ L O σ s → f σ = some σ' → WP isa body s (Rel rs s₀ L O σ'))
+    (fuel : Nat) {σ σ' : St} {s : State} (h : Rel rs s₀ L O σ s) (hs : loopRun f r fuel σ = some σ') :
+    WP isa (.loop body (.nonzero .x r)) s (Rel rs s₀ L O σ') := by
+  refine WP.loop (M := isa) (fun n s => ∃ σ, Rel rs s₀ L O σ s ∧ loopRun f r n σ = some σ')
+    (fun n s hi => ?_) fuel s ⟨σ, h, hs⟩
+  obtain ⟨σ, h, hs⟩ := hi
+  cases n with
+  | zero => simp [loopRun] at hs
+  | succ n =>
+    simp only [loopRun] at hs
+    cases h₁ : f σ with
+    | none => rw [h₁] at hs; cases hs
+    | some σ₁ =>
+      rw [h₁, Option.bind_some] at hs
+      refine WP.mono (hf h h₁) fun s₁ r₁ => ?_
+      have hg := r₁.g r
+      cases hgr : σ₁.greg r with
+      | junk => rw [hgr] at hs; cases hs
+      | ptr k o => rw [hgr] at hs; cases hs
+      | num k =>
+        rw [hgr] at hs hg
+        obtain ⟨hlt, hv⟩ := hg
+        cases k with
+        | zero =>
+          simp only [Option.some.injEq] at hs; subst hs
+          refine .inl ⟨?_, r₁⟩
+          simp only [eval, State.read, BitVec.setWidth_eq, hv]
+          rfl
+        | succ k =>
+          refine .inr ⟨?_, n, Nat.lt_succ_self n, σ₁, r₁, hs⟩
+          simp only [eval, State.read, BitVec.setWidth_eq, hv]
+          congr 1
+          simp only [bne_iff_ne, ne_eq]
+          intro e
+          have := congrArg BitVec.toNat e
+          rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hlt] at this
+          cases this
+
+theorem runP_ok {R : Rules} (hM : Model L O R) (hc : Ctx rs s₀) (fuel : Nat) :
+    ∀ (c : Prog isa) {σ σ' : St} {s : State}, Rel rs s₀ L O σ s → σ.runP R rs fuel c = some σ' →
+      WP isa c s (Rel rs s₀ L O σ')
+  | .block is, _, _, _, h, hs => run_ok hM hc is h hs
+  | .seq a b, σ, σ', s, h, hs => by
+    simp only [St.runP] at hs
+    cases h₁ : σ.runP R rs fuel a with
+    | none => rw [h₁] at hs; cases hs
+    | some σ₁ =>
+      rw [h₁, Option.bind_some] at hs
+      exact WP.seq (WP.mono (runP_ok hM hc fuel a h h₁) fun s₁ r₁ => runP_ok hM hc fuel b r₁ hs)
+  | .loop b c, σ, σ', s, h, hs => by
+    cases c with
+    | nonzero sz r =>
+      cases sz with
+      | x =>
+        simp only [St.runP] at hs
+        exact loop_ok (fun h h' => runP_ok hM hc fuel b h h') fuel h hs
+      | w => simp [St.runP] at hs
+    | _ => simp [St.runP] at hs
+  | .ite .., _, _, _, _, hs => by simp [St.runP] at hs
+  | .call .., _, _, _, _, hs => by simp [St.runP] at hs
+  | .frame .., _, _, _, _, hs => by simp [St.runP] at hs
 
 end
 
