@@ -1,21 +1,18 @@
-//! Entropy-tape service and safe-prime parameter generation on x86-64/AArch64.
+//! Entropy-tape service and safe-prime parameter generation on x86-64/AArch64/ARMv7.
 //! The whole parameter search runs in
 //! verified code (`vg_ffdh_generate_parameters`): the candidates, their
 //! Miller–Rabin witnesses, the attempt limit and the length of each entropy
 //! request. Rust allocates, fills the random tape the controller asks for
 //! and selects the implementation for the CPU.
 use super::Error;
-#[cfg(not(target_arch = "arm"))]
 use super::Parameters;
-#[cfg(not(target_arch = "arm"))]
 use super::arithmetic::Backend;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ffdh::vg_ffdh_generate_parameters_adx;
-#[cfg(not(target_arch = "arm"))]
+#[cfg(target_arch = "arm")]
+use crate::arch::ffdh::vg_ffdh_generate_parameters_umaal;
 use crate::arch::ffdh::{vg_ffdh_generate_parameters, vg_ffdh_parameter_generation_init};
-#[cfg(not(target_arch = "arm"))]
 use crate::cpu::detected;
-#[cfg(not(target_arch = "arm"))]
 use crate::rsa::Scratch;
 use crate::zeroize::zeroize;
 use alloc::{vec, vec::Vec};
@@ -64,9 +61,7 @@ pub(super) fn serve<E>(
 /// The parameter-generation controller's 16 words: the attempts left, the
 /// width of p in bytes, the entropy cap and the next request, then private
 /// working space (`vg_ffdh_parameter_generation_init`).
-#[cfg(not(target_arch = "arm"))]
 struct Controller(Scratch);
-#[cfg(not(target_arch = "arm"))]
 impl Controller {
     fn new(bits: usize, generator: u32) -> Result<Self, Error> {
         let mut state = Self(Scratch::new(16));
@@ -97,14 +92,16 @@ impl Controller {
             Backend::Baseline => vg_ffdh_generate_parameters,
             #[cfg(target_arch = "x86_64")]
             Backend::Adx => vg_ffdh_generate_parameters_adx,
+            #[cfg(target_arch = "arm")]
+            Backend::Umaal => vg_ffdh_generate_parameters_umaal,
         };
         let mut used = [0u64; 1];
         // SAFETY: `self` was initialized for `bits` and `generator` and has
         // only been passed to this function since, which keeps its words
         // as the contract's precondition needs; `p` is its width, `ws` at
         // least `16 * p.len() + 32` words and the tape at most its cap. All
-        // are distinct Rust objects. The ADX variant is selected only when
-        // the CPU has its generated feature set.
+        // are distinct Rust objects. A variant is selected only when the CPU
+        // has its generated feature set.
         let status = unsafe {
             f(
                 p.as_mut_ptr(),
@@ -123,7 +120,6 @@ impl Controller {
     }
 }
 
-#[cfg(not(target_arch = "arm"))]
 pub(super) fn parameters<E>(
     size: usize,
     generator: u32,
@@ -132,7 +128,6 @@ pub(super) fn parameters<E>(
     search(size, generator, Controller::new(size, generator)?, fill)
 }
 
-#[cfg(not(target_arch = "arm"))]
 fn search<E>(
     size: usize,
     generator: u32,
@@ -149,7 +144,7 @@ fn search<E>(
 }
 
 /// `parameters` with at most `limit` candidates.
-#[cfg(all(test, not(target_arch = "arm")))]
+#[cfg(test)]
 fn parameters_limit<E>(
     size: usize,
     generator: u32,
@@ -161,7 +156,7 @@ fn parameters_limit<E>(
     search(size, generator, state, fill)
 }
 
-#[cfg(all(test, not(target_arch = "arm")))]
+#[cfg(test)]
 mod tests {
     use super::*;
     #[test]
@@ -283,6 +278,34 @@ mod tests {
                 assert_eq!(state.0[0], attempts);
             }
         }
+    }
+
+    #[test]
+    fn full_width_attempt_counter_and_request_words() {
+        // The maximum-size policy starts at 2^32 attempts. Its low half
+        // is zero, so both the budget test and decrement must read u64.
+        let bits = 8192;
+        let len = bits / 8;
+        let mut state = Controller::new(bits, 2).unwrap();
+        assert_eq!(state.0[0], 1u64 << 32);
+        let mut p = vec![0xaa; len];
+        let mut ws = Scratch::new(16 * len + 32);
+        state.0[3] = u64::MAX;
+        // 2^8192 - 1 fails the generator congruence. Its rejection must
+        // borrow from the high half and continue to an entropy request.
+        assert_eq!(
+            state.search(bits, 2, &vec![0xff; len], &mut p, &mut ws),
+            (0, len, 512 * len)
+        );
+        assert_eq!(state.0[0], (1u64 << 32) - 1);
+        assert_eq!(state.0[3], (512 * len) as u64);
+        assert!(p.iter().all(|&b| b == 0));
+        state.0[0] = 0;
+        state.0[3] = u64::MAX;
+        p.fill(0xaa);
+        assert_eq!(state.search(bits, 2, &[], &mut p, &mut ws), (3, 0, 0));
+        assert_eq!(state.0[3], 0);
+        assert!(p.iter().all(|&b| b == 0));
     }
 
     #[test]

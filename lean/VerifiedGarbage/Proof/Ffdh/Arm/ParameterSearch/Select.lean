@@ -12,9 +12,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 namespace VG.Proof.Ffdh.Arm.ParameterSearch
 open VG VG.Arm VG.Proof.Ffdh.Arm VG.Proof.X25519.Arm
 
-def select (maximum : Bool) : Prog isa := .seq (.block VG.Impl.Ffdh.Arm.ParameterSearch.less)
-  (.ite .eq (if maximum then .block [.mov .r9 (.reg .r10)] else .block [])
-    (if maximum then .block [] else .block [.mov .r9 (.reg .r10)]))
+abbrev select := VG.Impl.Ffdh.Arm.ParameterSearch.select
 
 theorem select_ok (maximum : Bool) (s : State) :
     WP isa (select maximum) s fun t =>
@@ -22,7 +20,7 @@ theorem select_ok (maximum : Bool) (s : State) :
         if (s.gpr .r9).toNat < (s.gpr .r10).toNat then s.gpr .r10 else s.gpr .r9
         else if (s.gpr .r9).toNat < (s.gpr .r10).toNat then s.gpr .r9 else s.gpr .r10) ∧
         t.mem = s.mem) ∧ Rest [.r9, .r11] s t := by
-  unfold select
+  unfold select VG.Impl.Ffdh.Arm.ParameterSearch.select
   refine WP.seq (WP.mono (less_ok s) fun u ⟨⟨flag, mem⟩, rest⟩ => ?_)
   refine WP.ite _ (by change some u.z = _; rw [flag]) ?_ ?_
   · intro yes

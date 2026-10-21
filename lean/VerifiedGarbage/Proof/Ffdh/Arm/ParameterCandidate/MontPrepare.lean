@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Spec.Rsa.Mont
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.MontKeySetup
-public import Mathlib.Algebra.Group.Nat.Defs
 public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyReady
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.MontOne
@@ -31,7 +30,7 @@ structure MontPrepInput (base src : BitVec 32) (capacity k : Nat) (s : State) : 
   minLength : 64 ≤ k
   maxLength : k ≤ 1024
   space : Spec.Rsa.publicScratchWords k ≤ capacity
-  sourceFits : src.toNat + k ≤ 2 ^ 32
+  sourceFits : src.toNat + k ≤ Nat.pow 2 32
   readable : InRegions (s.rd ++ s.wr) (State.addr src) k
   separate : (⟨State.addr src, k⟩ : Region).Disjoint ⟨State.addr base, 8 * capacity⟩
   large : 1 < Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k)
@@ -65,14 +64,14 @@ theorem montPrep_ok {s : State} {base src : BitVec 32} {capacity k : Nat}
       VG.Proof.Rsa.Arm.Keys.num t.mem (base + 96#32) (2 * Spec.Rsa.modulusWords k + 2) 0 =
         Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) ∧
       numAt t.mem (State.addr base) (Spec.Rsa.modulusWords k) 9 =
-        2 ^ (64 * Spec.Rsa.modulusWords k) % Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) ∧
+        Nat.pow 2 (64 * Spec.Rsa.modulusWords k) % Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) ∧
       numAt t.mem (State.addr base) (Spec.Rsa.modulusWords k) 10 =
         Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) -
-          2 ^ (64 * Spec.Rsa.modulusWords k) % Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) ∧
+          Nat.pow 2 (64 * Spec.Rsa.modulusWords k) % Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) ∧
       numAt t.mem (State.addr base) (Spec.Rsa.modulusWords k) 0 =
         Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) ∧
       numAt t.mem (State.addr base) (Spec.Rsa.modulusWords k) 4 =
-        2 ^ (128 * Spec.Rsa.modulusWords k) % Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) ∧
+        Nat.pow 2 (128 * Spec.Rsa.modulusWords k) % Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) ∧
       t.mem.readW (off (State.addr base) 224) 64 = BitVec.ofNat 64 (8 * (Spec.Rsa.modulusWords k + 2)) ∧
       Frame [⟨State.addr base, 8 * capacity⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   simp only [VG.Impl.Ffdh.Arm.ParameterCandidate.montPrep, VG.Impl.Ffdh.Arm.ParameterCandidate.seqs]

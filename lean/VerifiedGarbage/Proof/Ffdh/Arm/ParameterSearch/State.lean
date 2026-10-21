@@ -17,7 +17,7 @@ structure SearchBuffers (p : SearchParams) (s : State) : Prop where
   scratch : Workspace s p.c.base (8 * p.c.capacity)
   tapeRead : InRegions (s.rd ++ s.wr) (State.addr p.c.tape) p.c.bytes.length
   tapeBytes : Spec.Rsa.bytesAt s.mem (State.addr p.c.tape) p.c.bytes.length = p.c.bytes
-  stack : Workspace s s.sp 24
+  stack : InRegions (s.rd ++ s.wr) (State.addr s.sp) 24
   below : 208 ≤ s.sp.toNat
   stackSeparate : ∀ r ∈ [⟨State.addr p.c.out, p.c.length⟩, ⟨State.addr p.c.usedPtr, 8⟩,
     ⟨State.addr p.c.base, 8 * p.c.capacity⟩, ⟨State.addr p.control, 128⟩,

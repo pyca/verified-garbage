@@ -35,24 +35,22 @@ theorem request_ok {p : SearchParams} {used remaining : Nat} {s : State}
   have capacity := h.saved 2 (by simp [searchSlots])
   simp only [searchValues] at tape length capacity
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.request
-  rw [WP.seq_iff, WP.block_append_iff]
+  rw [WP.seq_iff]
   refine WP.mono (requestHead_ok s control tape length) ?_
   rintro a ⟨⟨leftA, rightA, memA⟩, restA⟩
-  refine WP.mono (WP.seq_iff.mp (selectNat_ok true a availableFits widthFits leftA rightA)) ?_
-  intro b chooseMax
-  refine WP.seq (WP.mono chooseMax fun c ⟨⟨peakC, memC⟩, restC⟩ => ?_)
+  refine WP.seq (WP.mono (selectNat_ok true a availableFits widthFits leftA rightA)
+    fun c ⟨⟨peakC, memC⟩, restC⟩ => ?_)
   have restSC : Rest [.r9, .r10, .r11] s c :=
     (restA.mono (by simp)).trans (restC.mono (by simp))
   have memSC : c.mem = s.mem := memC.trans memA
   have controlC : Controller p.control c :=
     ⟨control.space.congr restSC.wr, (restSC.gpr .r4 (by simp)).trans control.ptr⟩
   have capC : lowWord c.mem p.control 2 = BitVec.ofNat 32 cap := by rw [memSC]; exact capacity
-  rw [WP.seq_iff, WP.block_append_iff]
+  rw [WP.seq_iff]
   refine WP.mono (requestDouble_ok c controlC peakC capC) ?_
   rintro d ⟨⟨leftD, rightD, memD⟩, restD⟩
-  refine WP.mono (WP.seq_iff.mp (selectNat_ok false d doubleFits p.entropy_fits leftD rightD)) ?_
-  intro e chooseMin
-  refine WP.seq (WP.mono chooseMin fun f ⟨⟨requestF, memF⟩, restF⟩ => ?_)
+  refine WP.seq (WP.mono (selectNat_ok false d doubleFits p.entropy_fits leftD rightD)
+    fun f ⟨⟨requestF, memF⟩, restF⟩ => ?_)
   have restSF : Rest [.r9, .r10, .r11] s f :=
     (restSC.trans (restD.mono (by simp))).trans (restF.mono (by simp))
   have memSF : f.mem = s.mem := memF.trans (memD.trans memSC)

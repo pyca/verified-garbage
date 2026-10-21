@@ -65,12 +65,14 @@ def less : List Instr := [
   .subs .r11 .r9 (.reg .r10), .mov .r11 (.imm 0),
   .adc .r11 .r11 (.imm 0), .cmp .r11 (.imm 0)]
 
+def select (maximum : Bool) : Prog isa := .seq (.block less)
+  (.ite .eq (if maximum then .block [.mov .r9 (.reg .r10)] else .block [])
+    (if maximum then .block [] else .block [.mov .r9 (.reg .r10)]))
+
 def request : Prog isa := .seq
-  (.block ([ldf .r9 10, ldf .r10 1, .mov .r10 (.shifted .r10 .lsl 8)] ++ less))
-  (.seq (.ite .eq (.block [.mov .r9 (.reg .r10)]) (.block []))
-    (.seq (.block ([.dp .add .r9 .r9 (.reg .r9), ldf .r10 2] ++ less))
-      (.seq (.ite .eq (.block []) (.block [.mov .r9 (.reg .r10)]))
-        (.block [stf .r9 3, .mov .r11 (.imm 0), .str .r11 .r4 28, stf .r11 13]))))
+  (.block [ldf .r9 10, ldf .r10 1, .mov .r10 (.shifted .r10 .lsl 8)])
+  (.seq (select true) (.seq (.block [.dp .add .r9 .r9 (.reg .r9), ldf .r10 2])
+    (.seq (select false) (.block [stf .r9 3, .mov .r11 (.imm 0), .str .r11 .r4 28, stf .r11 13]))))
 
 def short : Prog isa := .seq (.block ([ldf .r9 10, ldf .r10 2] ++ less))
   (.ite .eq request exhausted)
@@ -100,7 +102,10 @@ def finish : List Instr := [
   ldf .r1 6, ldf .r2 4, ldf .r0 13, .mov .r3 (.imm 0), .str .r2 .r1 0, .str .r3 .r1 4,
   .ldrSp .r9 4, .ldrSp .r10 8, .ldrSp .r11 12, .ldrSp .lr 20]
 
+def body (candidate : Prog isa) : Prog isa :=
+  .seq (.block entry) (.loop (iteration candidate) .eq)
+
 def code (candidate : Prog isa) : Prog isa := .frame (.push [.r4, .r9, .r10, .r11, .r12, .lr])
-  (.seq (.block entry) (.seq (.loop (iteration candidate) .eq) (.block finish))) (.pop .r4 24)
+  (.seq (body candidate) (.block finish)) (.pop .r4 24)
 
 end VG.Impl.Ffdh.Arm.ParameterSearch

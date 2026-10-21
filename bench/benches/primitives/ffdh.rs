@@ -245,7 +245,6 @@ pub fn bench(c: &mut Criterion) {
         });
         group.finish();
     }
-    #[cfg(not(target_arch = "arm"))]
     for generator in [2, 5] {
         let mut group = c.benchmark_group(format!("ffdh_parameters_g{generator}"));
         // Safe-prime search has high variance: ten random draws can
