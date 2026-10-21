@@ -261,10 +261,29 @@ theorem openTail_ok {s₀ s : State} (hp : APre false s₀) (h : MainO s₀ s) :
 
 /-! ## The scalar backend -/
 
-theorem sealMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre true s₀) :
-    WP isa (sealMain v.callee) s₀ (MainS s₀) := by
+/-- What the step that encrypts or decrypts the data leaves (`cryptWith`,
+`Pad.cryptPad`): the data encrypted from block counter 1. -/
+def CryptPost (s₀ s s' : State) : Prop :=
+  (∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) ∧ Inv s₀ s' ∧
+    Kept [sub s₀ 64 384, dR s₀, sub s₀ 768 512] s s' ∧
+    bytesAt s'.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem (dp s₀) (L s₀))
+
+/-- `crypt` meets `CryptPost` from any state between the parts with the
+state for counter 0 at `ctx + 64`. -/
+def CryptOk (s₀ : State) (crypt : Prog isa) : Prop :=
+  ∀ s, Inv s₀ s → stateAt s.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) →
+    WP isa crypt s (CryptPost s₀ s)
+
+theorem cryptWith_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre e s₀) :
+    CryptOk s₀ (cryptWith v.callee) := fun _ h hst =>
+  (crypt_ok v hp h hst).mono fun _ ⟨v', i', k', c'⟩ => ⟨v', i', k'.sub fun r hr => ⟨r, by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+    rcases hr with rfl | rfl <;> simp, fun _ h => h⟩, c'⟩
+
+theorem sealMainWith_ok {crypt : Prog isa} {s₀ : State} (hp : APre true s₀) (hc : CryptOk s₀ crypt) :
+    WP isa (sealMainWith crypt) s₀ (MainS s₀) := by
   have hL' := (Nat.le_of_lt (s₀.gpr .x5).isLt)
-  unfold sealMain
+  unfold sealMainWith
   refine WP.seq (WP.mono (WP.preservedV (prologue_ok hp) (by lit_decide)) fun s₁ ⟨h₁, v₁⟩ => ?_)
   have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ :=
     bytesAt_frame h₁.inv.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x3).isLt)
@@ -278,7 +297,7 @@ theorem sealMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
   have D₃ : bytesAt s₃.mem (dp s₀) (L s₀) = D s₀ := by
     rw [bytesAt_frame k₃.frame (by rdisj_all) hL', bytesAt_frame k₂.frame (by rdisj_all) hL',
       bytesAt_frame h₁.fine (by rdisj_all) hL']
-  refine WP.seq (WP.mono (crypt_ok v hp i₃ st₃) fun s₄ ⟨v₄, i₄, k₄, ct₄⟩ => ?_)
+  refine WP.seq (WP.mono (hc s₃ i₃ st₃) fun s₄ ⟨v₄, i₄, k₄, ct₄⟩ => ?_)
   rw [D₃] at ct₄
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x22) (n := .x23) ⟨.inr rfl, .inr rfl⟩ (srcD hp) i₄.x21
     i₄.rd i₄.wr i₄.x22 (by rw [i₄.x23]; exact hL s₀)) (by lit_decide))
@@ -297,10 +316,10 @@ theorem sealMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
     simp only [macData, List.nil_append, List.append_assoc, VG.Proof.Poly1305.length_bytesAt, length_encrypt]
   · rw [bytesAt_frame k₆.frame (by rdisj_all) hL', bytesAt_frame k₅.frame (by rdisj_all) hL', ct₄]
 
-theorem openMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre false s₀) :
-    WP isa (openMain v.callee) s₀ (MainO s₀) := by
+theorem openMainWith_ok {crypt : Prog isa} {s₀ : State} (hp : APre false s₀) (hc : CryptOk s₀ crypt) :
+    WP isa (openMainWith crypt) s₀ (MainO s₀) := by
   have hL' := (Nat.le_of_lt (s₀.gpr .x5).isLt)
-  unfold openMain
+  unfold openMainWith
   refine WP.seq (WP.mono (WP.preservedV (prologue_ok hp) (by lit_decide)) fun s₁ ⟨h₁, v₁⟩ => ?_)
   have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ :=
     bytesAt_frame h₁.inv.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x3).isLt)
@@ -319,7 +338,7 @@ theorem openMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
   have st₅ : stateAt s₅.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) := by
     rw [stateAt_frame k₅.frame (by rdisj_all), stateAt_frame k₄.frame (by rdisj_all),
       stateAt_frame k₃.frame (by rdisj_all), stateAt_frame k₂.frame (by rdisj_all), h₁.st]
-  refine WP.seq (WP.mono (crypt_ok v hp i₅ st₅) fun s₆ ⟨v₆, i₆, k₆, pt₆⟩ => ?_)
+  refine WP.seq (WP.mono (hc s₅ i₅ st₅) fun s₆ ⟨v₆, i₆, k₆, pt₆⟩ => ?_)
   refine WP.mono (WP.preservedV (finalizeTo_ok hp i₆ (out := 48) (by omega)) (by lit_decide))
     fun s₇ ⟨⟨k₇, tag₇⟩, v₇⟩ => ?_
   have R₃ := r₃ _ _ (r₂ (otk s₀) [] h₁.poly)
@@ -337,6 +356,14 @@ theorem openMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
     simp only [macData, List.nil_append, List.append_assoc, VG.Proof.Poly1305.length_bytesAt]
   · rw [bytesAt_frame k₇.frame (by rdisj_all) hL', pt₆, bytesAt_frame k₅.frame (by rdisj_all) hL',
       bytesAt_frame k₄.frame (by rdisj_all) hL', bytesAt_frame k₃.frame (by rdisj_all) hL', D₂]
+
+theorem sealMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre true s₀) :
+    WP isa (sealMain v.callee) s₀ (MainS s₀) :=
+  sealMainWith_ok hp (cryptWith_ok v hp)
+
+theorem openMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre false s₀) :
+    WP isa (openMain v.callee) s₀ (MainO s₀) :=
+  openMainWith_ok hp (cryptWith_ok v hp)
 
 theorem seal_correct (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre true s₀) :
     WP isa (sealWith v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ sealAArch64.post s₀ s' :=
