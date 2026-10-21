@@ -124,13 +124,21 @@ def note (adx : Bool) : String :=
   are six 64-bit words in Montgomery form, multiplied modulo `p` in the code itself (no calls), " ++
   (if adx then "by rows of BMI2's `mulx` with ADX's two carry chains (`adcx`, `adox`)"
     else "by `mul` and word-by-word Montgomery reduction") ++ "; the 55 windows `k_j` of `k`'s \
-  bits are digits `k_j - 64` from `-64` to `63`, `[k]G = [64 Σ 2^(7j)]G + Σ [(k_j - 64) 2^(7j)]G`, \
-  from 55 tables of `[m 2^(7j)]G` (`m = 1 … 64`, affine, in Montgomery form) in the static \
-  `VG_P384_COMB` (330 KB), with no doublings: each entry is selected in constant time by loading \
-  every entry of its table, " ++ Proof.Ecdsa.X86_64.P384.selNote adx ++ " the one of the digit's \
-  magnitude (or the point at infinity for a zero digit), negated by a mask of its sign, and added \
-  by the mixed complete addition formulas of Renes, Costello and Batina for `a = -3` (Algorithm 5: \
-  the entry's `Z` is 1), the sum replacing the accumulator unless the digit is zero."
+  bits are Booth's digits `d_j = k_j + c_j - 128 c_(j+1)` from `-64` to `64` (`c_j` the bit below \
+  window `j`, `c_0 = 0`), `[k]G = Σ [d_j 2^(7j)]G`, from 55 tables of `[m 2^(7j)]G` \
+  (`m = 1 … 64`, affine, in Montgomery form) in the static `VG_P384_COMB` (330 KB), with no \
+  doublings: each entry is selected in constant time by loading every entry of its table, " ++
+  Proof.Ecdsa.X86_64.P384.selNote adx ++ " the one of the digit's magnitude (or the point at \
+  infinity for a zero digit), negated by a mask of its sign" ++
+  (if adx then " (the loads of window `j + 1`'s entries spread between the field operations of \
+    window `j`'s addition, whose multiplications' latency they fill)" else "") ++ ", and added, \
+  from `j = 0` up, to a Jacobian accumulator by the mixed addition formulas madd-2004-hmv, which \
+  fail only for equal points: the accumulator, the sum of the digits' terms below `j`, is never \
+  the entry, since `n` is prime, `[n]G` is the point at infinity and the sums are smaller than \
+  any nonzero digit's term modulo `n` (which the kernel checks for P-384's 55 digits). The entry \
+  replaces the sum where the accumulator is the point at infinity, and the sum replaces the \
+  accumulator unless the digit is zero; the result is `(XZ : Y : Z³)` in projective coordinates \
+  (with `Y = 1` for the point at infinity)."
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P384.curve) : List Artifact :=
   [false, true].map fun adx =>

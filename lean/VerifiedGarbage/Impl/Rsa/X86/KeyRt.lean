@@ -238,6 +238,24 @@ def inverse : Prog isa :=
   .seq (.block (bits L))
     (.loop (.seq (invStep L 0 4) (.seq (invStep L 4 0) (.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)]))) .ne)
 
+/-- The binary GCD step, omitting the inverse's unused coefficient updates. -/
+def gcdStep (A D : Nat) : Prog isa := seqs [
+  .block (bitOf L sOdd A),
+  sub3 L aT1 A (A + 1),
+  .block ([.store (sc sB) .ebx] ++ andS sC sOdd sB),
+  sub3 L aT2 (A + 1) A,
+  sel L (D + 1) (A + 1) A sC,
+  sel L aT3 aT1 aT2 sC,
+  sel L D A aT3 sOdd,
+  .block [.mov .ebx (.imm 0)],
+  half L D]
+
+/-- The same fixed schedule as `inverse`, retaining only `u` and `v`. -/
+def gcd : Prog isa :=
+  .seq (.block (bits L))
+    (.loop (.seq (gcdStep L 0 4) (.seq (gcdStep L 4 0)
+      (.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)]))) .ne)
+
 /-! ## Modular multiplication
 
 `Keys.mulMod`'s schedule: per bit of the multiplier `[y]`, from the bottom,

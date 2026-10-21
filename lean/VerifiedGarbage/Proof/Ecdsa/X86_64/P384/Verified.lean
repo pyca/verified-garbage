@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitErase
 import VerifiedGarbage.Proof.P384.Point
 import VerifiedGarbage.Proof.P384.Prime
+import VerifiedGarbage.Proof.P384.Order
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
@@ -15,6 +16,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitErase
 meta import VerifiedGarbage.Proof.P384.Point
 meta import VerifiedGarbage.Proof.P384.Prime
+import VerifiedGarbage.Proof.P384.Order
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
@@ -90,8 +92,9 @@ theorem p384_ok (hI : InvSounds) : CfgOk p384 where
   even _ := by decide
   inverse _ := ⟨by decide, rfl⟩
 
-theorem p384_tbls (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
-    CombTbls p384 := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩
+theorem p384_tbls (hL : Law Spec.P384.curve)
+    (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
+    CombTbls p384 := fun d h => by cases h; exact ⟨hT, fun _ => Proof.P384.booth hL rfl rfl⟩
 
 theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p384 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, -, -, h12, h13, held, fit, hdw⟩ := h
@@ -113,7 +116,7 @@ theorem sign_x86 (hL : Law Spec.P384.curve)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP384.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p384_ok hI) hL (p384_tbls hT) (pre_of hs) p384_mulBase
+  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p384_ok hI) hL (p384_tbls hL hT) (pre_of hs) p384_mulBase
   have hok : signP384.InlineOk = true := by lit_decide
   have hsp := Code.clobbers_rsp_of_inlineOk hok
   have hmx : signP384.inline.allInstrs (fun i => !loadsMxcsr i) = true := by

@@ -22,9 +22,9 @@ def artifacts : List Artifact := [
     verified := Base.variant.verified },
   Spec.Rsa.Mont.mulApi.artifact target {
     suffix := "_umaal"
-    notes := ["The shared callable Montgomery product and square use proven UMAAL rows. \
-        The public operand indices choose squaring, preserving the same 40-byte frame \
-        and the baseline's arithmetic and constant-time contracts."]
+    notes := ["One shared callable UMAAL kernel handles both Montgomery products and squares. \
+        Two-word pipelining fuses product and cancellation with independent carry chains, \
+        preserving the 40-byte frame and the baseline's arithmetic and constant-time contracts."]
     code := Umaal.variant.mul
     stack := 40
     verified := Umaal.variant.verified

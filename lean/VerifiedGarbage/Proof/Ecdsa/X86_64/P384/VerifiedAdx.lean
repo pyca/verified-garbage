@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.P384.Order
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Contract
@@ -118,8 +119,9 @@ theorem p384x_ok (hI : InvSounds) : CfgOk p384x where
 theorem p384x_mulBase : MulBaseOk p384x :=
   ⟨fun _ => ⟨_, rfl, by decide, by lit_decide⟩, fun h => absurd h (by decide)⟩
 
-theorem p384x_tbls (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
-    CombTbls p384x := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩
+theorem p384x_tbls (hL : Law Spec.P384.curve)
+    (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
+    CombTbls p384x := fun d h => by cases h; exact ⟨hT, fun _ => Proof.P384.booth hL rfl rfl⟩
 
 theorem pre_of_x {s : State} (h : signX86_64.pre s) : Pre p384x s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, -, -, h12, h13, held, fit, hdw⟩ := h
@@ -137,7 +139,7 @@ theorem sign_x86_adx (hL : Law Spec.P384.curve)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP384Adx.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p384x_ok hI) hL (p384x_tbls hT) (pre_of_x hs) p384x_mulBase
+  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p384x_ok hI) hL (p384x_tbls hL hT) (pre_of_x hs) p384x_mulBase
   have hok : signP384Adx.InlineOk = true := by lit_decide
   have hsp := Code.clobbers_rsp_of_inlineOk hok
   have hmx : signP384Adx.inline.allInstrs (fun i => !loadsMxcsr i) = true := by
