@@ -235,4 +235,20 @@ theorem indeps_tab {xb xt : Reg} {W T : Nat} {a b : List Instr} (ha : a.all (sca
   right y hy := vec_preserves (List.all_eq_true.mp hb y hy)
   comm x hx y hy := comm_tab (List.all_eq_true.mp ha x hx) (List.all_eq_true.mp hb y hy)
 
+theorem merge_swap {α : Type} {c a b : List α} (h : VG.Interleave.Merge c a b) : VG.Interleave.Merge c b a := by
+  induction h with
+  | nil => exact .nil
+  | left _ ih => exact .right ih
+  | right _ ih => exact .left ih
+
+/-- Scalar code woven with loads from the table, from a state where the table
+is apart: it runs as the loads and then the scalar code. -/
+theorem WP.weave_tab {xb xt : Reg} {W T : Nat} {a b : List Instr} (ha : a.all (scalOk xb xt W) = true)
+    (hb : b.all (vecOk xt T) = true) {s : State} (hs : TabApart xb xt W T s) {Q : State → Prop}
+    (h : WP isa (.block b) s fun t => WP isa (.block a) t Q) :
+    WP isa (.block (VG.Impl.Weave.weave a b)) s Q :=
+  have hi := indeps_tab ha hb
+  VG.Interleave.WP.merge (merge_swap (VG.Interleave.weave_merge a b))
+    ⟨hi.right, hi.left, fun y hy x hx => (hi.comm x hx y hy).symm⟩ hs (WP.block_append_iff.mpr h)
+
 end VG.AArch64.Interleave

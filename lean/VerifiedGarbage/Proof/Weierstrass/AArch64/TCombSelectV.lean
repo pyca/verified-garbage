@@ -758,6 +758,81 @@ theorem selXY_vals (K : TCombCfg) {t : State} {base X : Addr} {a : Nat} (hone : 
     · rw [ite_f h]
       exact wordsVal_of_shifts _ _ _ _ _ hone fun jj hj => by rw [wy jj hj, ite_f h]; rfl
 
+/-- After the pass of an entry of `n ≤ 4` pairs (its accumulators holding
+entry `a`'s pairs of the table at `tb` in `r` if `a ≥ 1`, else zeros):
+`y = R` if `a = 0`, and both stored. -/
+theorem selXY1Fin_ok (K : TCombCfg) (hn : K.M.n ≤ 4) (hn2 : K.M.n % 2 = 0) {s : State} {base : Addr}
+    {size : Nat} (hs : Scr s base size) {a : Nat} (ha64 : a < 2 ^ 64) {r : State} {tb : Reg}
+    (h19 : s.v .v19 = dup2 (BitVec.ofNat 64 a))
+    (hacc : ∀ i < K.M.n, s.v ((selA K.M.n).acc.getD i .v0) = if 1 ≤ a then ldE K.M.n 0 r a i tb else 0)
+    (hEx : K.E.x + 8 * K.M.n ≤ size) (hEy : K.E.y + 8 * K.M.n ≤ size)
+    (hE16 : K.E.x % 16 = 0 ∧ K.E.y % 16 = 0)
+    (axy : K.E.x + 8 * K.M.n ≤ K.E.y ∨ K.E.y + 8 * K.M.n ≤ K.E.x) (hone : K.one < 2 ^ (64 * K.M.n)) :
+    WP isa (.block (TCombCfg.selOne K.one K.M.n (K.M.n / 2) (K.M.n / 2) ++
+      selStore K.M.n 0 (K.M.n / 2) K.E.x ++ selStore K.M.n (K.M.n / 2) (K.M.n / 2) K.E.y)) s fun t =>
+      wordsVal t.mem base K.E.x K.M.n =
+        (if 1 ≤ a then wordsVal r.mem (r.gpr tb) (16 * K.M.n * (a - 1)) K.M.n else 0) ∧
+      wordsVal t.mem base K.E.y K.M.n =
+        (if 1 ≤ a then wordsVal r.mem (r.gpr tb) (16 * K.M.n * (a - 1) + 8 * K.M.n) K.M.n else K.one) ∧
+      KeepRegs [.x6] s t ∧ Unch base [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n)] s.mem t.mem ∧
+      Scr t base size := by
+  have hnw := hs.nowrap
+  have hA := selA_ok hn
+  iterate 2 rw [WP.block_append_iff]
+  refine WP.mono (selOneV_ok K.one (c := K.M.n) (h := K.M.n / 2) (k := K.M.n / 2) hn (by omega_using []) ha64
+    h19) fun s₂ ⟨f₂, k₂⟩ => ?_
+  have K02 : Keeps [.x6] s s₂ := k₂.keeps
+  have hs₂ : Scr s₂ base size := hs.of_keeps K02 (by decide)
+  refine WP.mono (qstoresV_ok (fun i => (selA K.M.n).acc.getD (0 + i) .v0) hs₂ hE16.1 (K.M.n / 2)
+    (by omega_using [hEx])) fun s₃ ⟨w₃, kr₃, v₃, O₃⟩ => ?_
+  have hs₃ := hs₂.of_keepRegs kr₃ (by decide)
+  refine WP.mono (qstoresV_ok (fun i => (selA K.M.n).acc.getD (K.M.n / 2 + i) .v0) hs₃ hE16.2
+    (K.M.n / 2) (by omega_using [hEy])) fun t ⟨w₄, kr₄, v₄, O₄⟩ => ?_
+  have hs₄ := hs₃.of_keepRegs kr₄ (by decide)
+  have hn16 : 16 * (K.M.n / 2) = 8 * K.M.n := by omega_using [hn2]
+  rw [hn16] at O₃ O₄
+  have vx : ∀ i < K.M.n / 2, s₂.v ((selA K.M.n).acc.getD i .v0) =
+      if 1 ≤ a then ldE K.M.n 0 r a i tb else 0 := fun i hi => by
+    have ho := selA_o _ hn i (by omega_using [hi])
+    rw [k₂.v _ (by
+      simp only [List.mem_cons, not_or]
+      exact ⟨fun e => ho (by rw [e]; simp), fun e => ho (by rw [e]; simp),
+        not_mem_map_range fun i' hi' e => hA.acc _ (by omega_using [hi]) _ (by omega_using [hi']) (by omega_using [hi]) e.symm⟩),
+      hacc i (by omega_using [hi])]
+  have vy : ∀ i < K.M.n / 2, s₂.v ((selA K.M.n).acc.getD (K.M.n / 2 + i) .v0) =
+      if 1 ≤ a then ldE K.M.n 0 r a (K.M.n / 2 + i) tb
+      else ofVDwords (wordOf K.one (2 * i)) (wordOf K.one (2 * i + 1)) := fun i hi => by
+    rw [f₂ i hi, hacc _ (by omega_using [hi])]
+    by_cases h : 1 ≤ a
+    · rw [ite_f (show ¬ a = 0 by omega_using [h]), ite_t h, ite_t h]
+    · rw [ite_t (show a = 0 by omega_using [h]), ite_f h]
+  have wx : ∀ j < K.M.n, word t.mem base (K.E.x + 8 * j) =
+      if 1 ≤ a then word r.mem (r.gpr tb) (16 * K.M.n * (a - 1) + 8 * j) else 0 := fun j hj => by
+    rw [O₄.word (by omega_using [axy, hj]) (by omega_using [hEx, hnw, hj]), w₃ j (by omega_using [hn16, hj])]
+    simp only [Nat.zero_add]
+    rw [vx _ (by omega_using [hn16, hj])]
+    by_cases h : 1 ≤ a
+    · rw [ite_t h, ite_t h, vdword_ldE _ _ _ _ _ (Nat.mod_lt _ (by decide)),
+        show 16 * K.M.n * (a - 1) + 0 + 16 * (j / 2) + 8 * (j % 2) = 16 * K.M.n * (a - 1) + 8 * j by omega_using []]
+    · rw [ite_f h, ite_f h, vdword_zero]
+  have wy : ∀ j < K.M.n, word t.mem base (K.E.y + 8 * j) =
+      if 1 ≤ a then word r.mem (r.gpr tb) (16 * K.M.n * (a - 1) + 8 * K.M.n + 8 * j) else wordOf K.one j :=
+    fun j hj => by
+      rw [w₄ j (by omega_using [hn16, hj]), v₃, vy _ (by omega_using [hn16, hj])]
+      by_cases h : 1 ≤ a
+      · rw [ite_t h, ite_t h, vdword_ldE _ _ _ _ _ (Nat.mod_lt _ (by decide)),
+          show 16 * K.M.n * (a - 1) + 0 + 16 * (K.M.n / 2 + j / 2) + 8 * (j % 2) =
+            16 * K.M.n * (a - 1) + 8 * K.M.n + 8 * j by omega_using [hn16]]
+      · rw [ite_f h, ite_f h]
+        rcases Nat.mod_two_eq_zero_or_one j with e | e
+        · rw [e, vdword_ofVDwords_0, show 2 * (j / 2) = j by omega_using [e]]
+        · rw [e, vdword_ofVDwords_1, show 2 * (j / 2) + 1 = j by omega_using [e]]
+  obtain ⟨ex, ey⟩ := selXY_vals K hone wx wy
+  refine ⟨ex, ey, ((Keeps.regs K02).trans (kr₃.mono fun _ h => absurd h List.not_mem_nil)).trans
+    (kr₄.mono fun _ h => absurd h List.not_mem_nil), fun x hx => ?_, hs₄⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hx
+  rw [O₄ x (by omega_using [hx]), O₃ x (by omega_using [hx]), K02.mem]
+
 /-- An entry of `n ≤ 4` pairs: one pass, `y = R` if `a = 0`, and both stored. -/
 theorem selXY1_ok (K : TCombCfg) (hn : K.M.n ≤ 4) (hn2 : K.M.n % 2 = 0) {s : State} {base : Addr}
     {size : Nat} (hs : Scr s base size) {a : Nat} {X : Addr} (ha : a ≤ K.H) (hH2 : K.H % 2 = 0)
@@ -770,66 +845,19 @@ theorem selXY1_ok (K : TCombCfg) (hn : K.M.n ≤ 4) (hn2 : K.M.n % 2 = 0) {s : S
     WP isa (.block (K.selPass 0 K.M.n ++ TCombCfg.selOne K.one K.M.n (K.M.n / 2) (K.M.n / 2) ++
       selStore K.M.n 0 (K.M.n / 2) K.E.x ++ selStore K.M.n (K.M.n / 2) (K.M.n / 2) K.E.y)) s
       (SelXY K base size s a X) := by
-  have hnw := hs.nowrap
-  have hA := selA_ok hn
   have ha64 : a < 2 ^ 64 := by omega_using [ha, hHlt]
-  iterate 3 rw [WP.block_append_iff]
+  simp only [List.append_assoc]
+  rw [WP.block_append_iff]
   refine WP.mono (passV_ok K (o := 0) (c := K.M.n) hn (by omega_using []) (by decide) ha hH2 (by omega_using [hH]) hHlt
     h18 h19 h28 fun e he i hi => by rw [h16]; exact tbl_region hreg (by omega_using []) e he i hi)
     fun s₁ ⟨v₁, _, a19, _, k₁⟩ => ?_
-  refine WP.mono (selOneV_ok K.one (c := K.M.n) (h := K.M.n / 2) (k := K.M.n / 2) hn (by omega_using []) ha64
-    (by rw [a19, h19])) fun s₂ ⟨f₂, k₂⟩ => ?_
-  have K02 : Keeps [.x6] s s₂ := (k₁.keeps.mono fun _ h => absurd h List.not_mem_nil).trans k₂.keeps
-  have hs₂ : Scr s₂ base size := hs.of_keeps K02 (by decide)
-  refine WP.mono (qstoresV_ok (fun i => (selA K.M.n).acc.getD (0 + i) .v0) hs₂ hE16.1 (K.M.n / 2)
-    (by omega_using [hEx])) fun s₃ ⟨w₃, kr₃, v₃, O₃⟩ => ?_
-  have hs₃ := hs₂.of_keepRegs kr₃ (by decide)
-  refine WP.mono (qstoresV_ok (fun i => (selA K.M.n).acc.getD (K.M.n / 2 + i) .v0) hs₃ hE16.2
-    (K.M.n / 2) (by omega_using [hEy])) fun t ⟨w₄, kr₄, v₄, O₄⟩ => ?_
-  have hs₄ := hs₃.of_keepRegs kr₄ (by decide)
-  have hn16 : 16 * (K.M.n / 2) = 8 * K.M.n := by omega_using [hn2]
-  rw [hn16] at O₃ O₄
-  have vx : ∀ i < K.M.n / 2, s₂.v ((selA K.M.n).acc.getD i .v0) =
-      if 1 ≤ a then ldE K.M.n 0 s a i else 0 := fun i hi => by
-    have ho := selA_o _ hn i (by omega_using [hi])
-    rw [k₂.v _ (by
-      simp only [List.mem_cons, not_or]
-      exact ⟨fun e => ho (by rw [e]; simp), fun e => ho (by rw [e]; simp),
-        not_mem_map_range fun i' hi' e => hA.acc _ (by omega_using [hi]) _ (by omega_using [hi']) (by omega_using [hi]) e.symm⟩),
-      v₁ i (by omega_using [hi])]
-  have vy : ∀ i < K.M.n / 2, s₂.v ((selA K.M.n).acc.getD (K.M.n / 2 + i) .v0) =
-      if 1 ≤ a then ldE K.M.n 0 s a (K.M.n / 2 + i)
-      else ofVDwords (wordOf K.one (2 * i)) (wordOf K.one (2 * i + 1)) := fun i hi => by
-    rw [f₂ i hi, v₁ _ (by omega_using [hi])]
-    by_cases h : 1 ≤ a
-    · rw [ite_f (show ¬ a = 0 by omega_using [h]), ite_t h, ite_t h]
-    · rw [ite_t (show a = 0 by omega_using [h]), ite_f h]
-  have wx : ∀ j < K.M.n, word t.mem base (K.E.x + 8 * j) =
-      if 1 ≤ a then word s.mem X (16 * K.M.n * (a - 1) + 8 * j) else 0 := fun j hj => by
-    rw [O₄.word (by omega_using [axy, hj]) (by omega_using [hEx, hnw, hj]), w₃ j (by omega_using [hn16, hj])]
-    simp only [Nat.zero_add]
-    rw [vx _ (by omega_using [hn16, hj])]
-    by_cases h : 1 ≤ a
-    · rw [ite_t h, ite_t h, vdword_ldE _ _ _ _ _ (Nat.mod_lt _ (by decide)), h16,
-        show 16 * K.M.n * (a - 1) + 0 + 16 * (j / 2) + 8 * (j % 2) = 16 * K.M.n * (a - 1) + 8 * j by omega_using []]
-    · rw [ite_f h, ite_f h, vdword_zero]
-  have wy : ∀ j < K.M.n, word t.mem base (K.E.y + 8 * j) =
-      if 1 ≤ a then word s.mem X (16 * K.M.n * (a - 1) + 8 * K.M.n + 8 * j) else wordOf K.one j :=
-    fun j hj => by
-      rw [w₄ j (by omega_using [hn16, hj]), v₃, vy _ (by omega_using [hn16, hj])]
-      by_cases h : 1 ≤ a
-      · rw [ite_t h, ite_t h, vdword_ldE _ _ _ _ _ (Nat.mod_lt _ (by decide)), h16,
-          show 16 * K.M.n * (a - 1) + 0 + 16 * (K.M.n / 2 + j / 2) + 8 * (j % 2) =
-            16 * K.M.n * (a - 1) + 8 * K.M.n + 8 * j by omega_using [hn16]]
-      · rw [ite_f h, ite_f h]
-        rcases Nat.mod_two_eq_zero_or_one j with e | e
-        · rw [e, vdword_ofVDwords_0, show 2 * (j / 2) = j by omega_using [e]]
-        · rw [e, vdword_ofVDwords_1, show 2 * (j / 2) + 1 = j by omega_using [e]]
-  obtain ⟨ex, ey⟩ := selXY_vals K hone wx wy
-  refine ⟨ex, ey, ((Keeps.regs K02).trans (kr₃.mono fun _ h => absurd h List.not_mem_nil)).trans
-    (kr₄.mono fun _ h => absurd h List.not_mem_nil), fun x hx => ?_, hs₄⟩
-  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hx
-  rw [O₄ x (by omega_using [hx]), O₃ x (by omega_using [hx]), K02.mem]
+  have hs₁ : Scr s₁ base size := hs.of_keeps k₁.keeps (by decide)
+  rw [← List.append_assoc]
+  refine WP.mono (selXY1Fin_ok K hn hn2 hs₁ ha64 (r := s) (by rw [a19, h19]) v₁ hEx hEy hE16 axy hone)
+    fun t ⟨ex, ey, kt, Ut, hst⟩ => ?_
+  rw [h16] at ex ey
+  refine ⟨ex, ey, ((Keeps.regs k₁.keeps).mono fun _ h => absurd h List.not_mem_nil).trans kt, ?_, hst⟩
+  rw [← k₁.mem]; exact Ut
 
 /-- An entry of `n > 4` pairs: `x`'s in one pass, stored, then `y`'s in
 another, reading the tables, which lie outside the working space (`hout`),
@@ -1162,5 +1190,86 @@ theorem tselect_ok (K : TCombCfg) (hn : K.M.n ≤ 9)
       simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
       exact ⟨hx.1, hx.2.1⟩
     rw [Ot x (by omega_using [hx]), hm₄, hxy.unch x hxy', hm₂]
+
+/-- `x7 = 0` and `x5 = 1`, the vector registers kept. -/
+theorem zero7One5_ok (s : State) :
+    WP isa (.block [zero7, .movz .x .x5 1 0]) s fun t =>
+      t.gpr .x7 = 0 ∧ t.gpr .x5 = 1 ∧ VKeep [.x5, .x7] [] s t := by
+  apply WP.of_runBlock
+  simp only [zero7, runBlock_cons, runStep_some, runBlock_nil, exec, show 16 * 0 < Size.x.bits by decide,
+    ite_true, RegUpd.gpr_write, ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left']
+  refine ⟨by decide, by decide, fun r hr => ?_, rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
+
+/-- The end of the selection of an entry of `n ≤ 4` pairs, after its pass
+(its accumulators holding entry `a`'s pairs of the table at `tb` in `r` if
+`a ≥ 1`, else zeros), with the magnitude in `x2`: what `tselect_ok` leaves. -/
+theorem tselectFin_ok (K : TCombCfg) (hn : K.M.n ≤ 4) (hn2 : K.M.n % 2 = 0) {s : State} {base : Addr}
+    {size : Nat} (hs : Scr s base size) {a : Nat} (ha64 : a < 2 ^ 64) (hx2 : s.gpr .x2 = BitVec.ofNat 64 a)
+    {r : State} {tb : Reg} (h19 : s.v .v19 = dup2 (BitVec.ofNat 64 a))
+    (hacc : ∀ i < K.M.n, s.v ((selA K.M.n).acc.getD i .v0) = if 1 ≤ a then ldE K.M.n 0 r a i tb else 0)
+    (hE : ∀ d ∈ [K.E.x, K.E.y, K.E.z], d + 8 * K.M.n ≤ size ∧ d % 8 = 0)
+    (hE16 : K.E.x % 16 = 0 ∧ K.E.y % 16 = 0)
+    (hap : (K.E.x + 8 * K.M.n ≤ K.E.y ∨ K.E.y + 8 * K.M.n ≤ K.E.x) ∧
+      (K.E.x + 8 * K.M.n ≤ K.E.z ∨ K.E.z + 8 * K.M.n ≤ K.E.x) ∧
+      (K.E.y + 8 * K.M.n ≤ K.E.z ∨ K.E.z + 8 * K.M.n ≤ K.E.y))
+    (hone : K.one < 2 ^ (64 * K.M.n)) :
+    WP isa (.block ([zero7, .movz .x .x5 1 0] ++ TCombCfg.selOne K.one K.M.n (K.M.n / 2) (K.M.n / 2) ++
+      selStore K.M.n 0 (K.M.n / 2) K.E.x ++ selStore K.M.n (K.M.n / 2) (K.M.n / 2) K.E.y ++ K.selZ)) s fun t =>
+      wordsVal t.mem base K.E.x K.M.n = (if 1 ≤ a then
+        wordsVal r.mem (r.gpr tb) (16 * K.M.n * (a - 1)) K.M.n else 0) ∧
+      wordsVal t.mem base K.E.y K.M.n = (if 1 ≤ a then
+        wordsVal r.mem (r.gpr tb) (16 * K.M.n * (a - 1) + 8 * K.M.n) K.M.n else K.one) ∧
+      wordsVal t.mem base K.E.z K.M.n = (if 1 ≤ a then K.one else 0) ∧
+      KeepRegs (.x1 :: .x2 :: .x3 :: .x4 :: .x5 :: .x6 :: .x7 :: .x16 :: .x17 :: entryRegs K.M.n) s t ∧
+      Unch base [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n)] s.mem t.mem := by
+  have hnw := hs.nowrap
+  have hEx := hE K.E.x (by simp)
+  have hEy := hE K.E.y (by simp)
+  have hEz := hE K.E.z (by simp)
+  obtain ⟨axy, axz, ayz⟩ := hap
+  simp only [List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (zero7One5_ok s) fun s₁ ⟨e7, e5, k₁⟩ => ?_
+  have hs₁ : Scr s₁ base size := hs.of_keeps k₁.keeps (by decide)
+  rw [← List.append_assoc, ← List.append_assoc, WP.block_append_iff]
+  refine WP.mono (selXY1Fin_ok K hn hn2 hs₁ ha64 (r := r) (tb := tb) (by rw [k₁.v _ List.not_mem_nil, h19])
+    (fun i hi => by rw [k₁.v _ List.not_mem_nil, hacc i hi]) hEx.1 hEy.1 hE16 axy hone)
+    fun s₃ ⟨ex₃, ey₃, kk₃, U₃, hs₃⟩ => ?_
+  have g₃ : ∀ q ∈ [Reg.x2, .x5, .x7], s₃.gpr q = s₁.gpr q := fun q hq => by
+    have : q ≠ .x6 := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with rfl | rfl | rfl <;> decide
+    rw [kk₃.gpr q (by simpa using this)]
+  rw [TCombCfg.selZ, ← List.singleton_append, WP.block_append_iff]
+  refine WP.mono (selZ_carry s₃ ha64 (by rw [g₃ _ (by simp), k₁.gpr _ (by decide), hx2])
+    (by rw [g₃ _ (by simp), e5])) fun s₄ ⟨c₄, k₄⟩ => ?_
+  have hs₄ := hs₃.of_keeps k₄ (by decide)
+  refine WP.mono (zWords_ok K hs₄ (by rw [k₄.gpr _ (by decide), g₃ _ (by simp), e7]) hEz.1 hEz.2
+    K.M.n (Nat.le_refl _)) fun t ⟨wt, _, kt, Ot⟩ => ?_
+  have hm₄ : s₄.mem = s₃.mem := k₄.mem
+  have b64 : ∀ d ∈ [K.E.x, K.E.y, K.E.z], d + 8 * K.M.n ≤ 2 ^ 64 := fun d hd => by
+    have := (hE d hd).1; omega_using [hnw, this]
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · rw [Ot.wordsVal axz (b64 _ (by simp)), hm₄, ex₃]
+  · rw [Ot.wordsVal ayz (b64 _ (by simp)), hm₄, ey₃]
+  · refine wordsVal_of_shifts _ _ _ _ _ (by split <;> [exact hone; exact Nat.two_pow_pos _])
+      fun i hi => ?_
+    rw [wt i hi, c₄]
+    by_cases h : 1 ≤ a <;> simp only [h, decide_true, decide_false, ↓reduceIte] <;> [rfl; simp]
+  · have cl : ∀ q ∈ [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17],
+        q ∈ (.x1 :: .x2 :: .x3 :: .x4 :: .x5 :: .x6 :: .x7 :: .x16 :: .x17 :: entryRegs K.M.n) :=
+      fun q hq => List.mem_append_left (as := [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17]) _ hq
+    exact (((((Keeps.regs k₁.keeps).mono fun q hq => cl q (by revert q; decide)).trans
+      (kk₃.mono fun q hq => cl q (by revert q; decide))).trans
+      ((Keeps.regs k₄).mono fun q hq => cl q (by revert q; decide))).trans
+      (kt.mono fun q hq => cl q (by revert q; decide)))
+  · intro x hx
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hx
+    have hxy' : ∀ w ∈ [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n)], ofs base x < w.1 ∨ w.1 + w.2 ≤ ofs base x := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+      exact ⟨hx.1, hx.2.1⟩
+    rw [Ot x (by omega_using [hx]), hm₄, U₃ x hxy', k₁.mem]
 
 end VG.Proof.Weierstrass.AArch64
