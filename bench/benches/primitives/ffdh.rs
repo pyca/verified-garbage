@@ -247,15 +247,25 @@ pub fn bench(c: &mut Criterion) {
     }
     for generator in [2, 5] {
         let mut group = c.benchmark_group(format!("ffdh_parameters_g{generator}"));
-        // Safe-prime search has high variance. Use 100 random draws for
-        // both implementations on every target before comparing their speed.
-        group.sample_size(100);
-        group.bench_function(BenchmarkId::new(VG, 64), |b| {
-            b.iter(|| Parameters::generate(512, generator).unwrap())
-        });
-        group.bench_function(BenchmarkId::new(OPENSSL, 64), |b| {
-            b.iter(|| Dh::generate_params(512, generator).unwrap())
-        });
+        for bits in [
+            512,
+            #[cfg(target_arch = "arm")]
+            1024,
+        ] {
+            if bits == 1024 && generator != 2 {
+                continue;
+            }
+            // Safe-prime search has high variance. Both libraries use 100
+            // random 512-bit draws. The larger ARM case uses 20 to keep
+            // the native benchmark within the job's time limit.
+            group.sample_size(if bits == 512 { 100 } else { 20 });
+            group.bench_function(BenchmarkId::new(VG, bits / 8), |b| {
+                b.iter(|| Parameters::generate(bits, generator).unwrap())
+            });
+            group.bench_function(BenchmarkId::new(OPENSSL, bits / 8), |b| {
+                b.iter(|| Dh::generate_params(bits as u32, generator).unwrap())
+            });
+        }
         group.finish();
     }
 }
