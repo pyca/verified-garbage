@@ -74,11 +74,19 @@ inductive K
   | sraN
   /-- `(n1 st p >> 15) & q`. -/
   | andN
+  /-- A Gentleman–Sande difference `lv st p - lv st p₀` (`p₀` in `z`). -/
+  | dif
+  /-- `dif st p p₀ · z` (`z` in `t`). -/
+  | mulD
+  /-- `sqrdmulh(dif st p p₀, t)`. -/
+  | qdD
+  /-- `sqrdmulh(dif st p p₀, t) · q`. -/
+  | mulQD
   deriving DecidableEq, Inhabited
 
 def K.code : K → Nat
   | .junk => 0 | .lv => 1 | .out => 2 | .c => 3 | .mulC => 4 | .qdC => 5 | .mulQ => 6 | .mm => 7
-  | .n1 => 8 | .sraN => 9 | .andN => 10
+  | .n1 => 8 | .sraN => 9 | .andN => 10 | .dif => 11 | .mulD => 12 | .qdD => 13 | .mulQD => 14
 
 def T.kind (a : T) : Nat := Nat.mod a 16
 def T.st (a : T) : Nat := Nat.mod (Nat.div a 16) 16
@@ -104,17 +112,46 @@ abbrev twN (z : Nat) : Nat := Impl.MlKem.AArch64.Ntt16.tw z
 
 /-! ## The layers -/
 
-/-- The layers of a transform: its number of Cooley–Tukey layers (layer `st`
-at distance `128 >>> st`), and its zetas by index. -/
+/-- The layers of a transform: its number of levels, its zetas by index, and
+whether it is `NTT⁻¹`. `NTT` has seven Cooley–Tukey layers (layer `st` at
+distance `128 >>> st`); `NTT⁻¹`'s levels are its Gentleman–Sande layers, the
+reductions between them (`invRed`) and the multiplication by 3303. -/
 structure Rules where
   layers : Nat
   zeta : Nat → Nat
+  inv : Bool := false
 
 /-- `ζ_k`, as the code takes it. -/
 def zetaN (k : Nat) : Nat := Impl.MlKem.AArch64.Ntt16.zeta k
 
 /-- `NTT`: seven Cooley–Tukey layers. -/
-def fwdRules : Rules := ⟨7, zetaN⟩
+def fwdRules : Rules := { layers := 7, zeta := zetaN }
+
+/-- The distance of `NTT⁻¹`'s layer at level `st`, `0` at the other levels:
+the layers with `len = 2, 4, 8`, a reduction, `16, 32, 64`, a reduction, `128`,
+then the multiplication by 3303. -/
+def invLen (st : Nat) : Nat :=
+  bif Nat.blt st 3 then 2 <<< st else bif Nat.beq st 3 then 0 else bif Nat.blt st 7 then 2 <<< (st - 1)
+  else bif Nat.beq st 8 then 128 else 0
+
+/-- The levels of `NTT⁻¹` that reduce every coefficient to `(-q, q)`. -/
+def invRed (st : Nat) : Bool := Nat.beq st 3 || Nat.beq st 7
+
+/-- The level of `NTT⁻¹`'s multiplication by 3303. -/
+def invScale : Nat := 9
+
+/-- `NTT⁻¹`: ten levels. -/
+def invRules : Rules := { layers := 10, zeta := zetaN, inv := true }
+
+/-- The Gentleman–Sande pair `p`, `p'` of `NTT⁻¹`'s level `st`. -/
+def gsPair (st p p' : Nat) : Bool :=
+  let len := invLen st
+  Nat.blt 0 len && Nat.beq p' (p + len) && Nat.blt (p % (2 * len)) len && Nat.blt p' 256
+
+/-- The zeta `z` (and its `tw` `t`) of the block of `p'` in `NTT⁻¹`'s level `st`. -/
+def gsZeta (st p' z t : Nat) : Bool :=
+  let len := invLen st
+  Nat.beq z (zetaN (256 / len - 1 - p' / (2 * len))) && Nat.beq t (twN z)
 
 /-- The Cooley–Tukey butterfly of `p` and `p'` in layer `st`, with the zeta
 `z` of their block and its `tw` `t`. -/
@@ -127,34 +164,53 @@ def bflyOk (R : Rules) (st p p' z t : Nat) : Bool :=
 def mulT (a b : T) : T :=
   bif Nat.beq a.kind 1 && Nat.beq b.kind 3 && Nat.blt b.t 4096 then mk .mulC a.st a.p b.t 0
   else bif Nat.beq a.kind 5 && Nat.beq b.kind 3 && Nat.beq b.t qN then mk .mulQ a.st a.p 0 a.t
+  else bif Nat.beq a.kind 11 && Nat.beq b.kind 3 then mk .mulD a.st a.p a.z b.t
+  else bif Nat.beq a.kind 13 && Nat.beq b.kind 3 && Nat.beq b.t qN then mk .mulQD a.st a.p a.z a.t
   else junkT
 
 /-- `SQRDMULH`. -/
-def qdT (a b : T) : T := bif Nat.beq a.kind 1 && Nat.beq b.kind 3 then mk .qdC a.st a.p 0 b.t else junkT
+def qdT (a b : T) : T :=
+  bif Nat.beq a.kind 1 && Nat.beq b.kind 3 then mk .qdC a.st a.p 0 b.t
+  else bif Nat.beq a.kind 11 && Nat.beq b.kind 3 then mk .qdD a.st a.p a.z b.t
+  else junkT
 
 /-- `a + b`: a butterfly's sum, or the end of a reduction. -/
 def addT (R : Rules) (a b : T) : T :=
-  bif Nat.beq a.kind 1 && Nat.beq b.kind 7 && Nat.beq b.st a.st && bflyOk R a.st a.p b.p b.z b.t then
+  bif !R.inv && Nat.beq a.kind 1 && Nat.beq b.kind 7 && Nat.beq b.st a.st && bflyOk R a.st a.p b.p b.z b.t then
     lvT (a.st + 1) a.p
-  else bif Nat.beq a.kind 8 && Nat.beq b.kind 10 && Nat.beq b.st a.st && Nat.beq b.p a.p &&
-      Nat.beq a.st R.layers && Nat.blt a.p 256 then outT a.p
+  else bif !R.inv && Nat.beq a.kind 8 && Nat.beq b.kind 10 && Nat.beq b.z 0 && Nat.beq b.st a.st &&
+      Nat.beq b.p a.p && Nat.beq a.st R.layers && Nat.blt a.p 256 then outT a.p
+  else bif R.inv && Nat.beq a.kind 1 && Nat.beq b.kind 1 && Nat.beq b.st a.st && gsPair a.st a.p b.p then
+    lvT (a.st + 1) a.p
+  else bif R.inv && Nat.beq a.kind 1 && Nat.beq b.kind 10 && Nat.beq b.z 1 && Nat.beq b.st a.st &&
+      Nat.beq b.p a.p && Nat.beq a.st R.layers && Nat.blt a.p 256 then outT a.p
   else junkT
 
 /-- `a - b`: a butterfly's difference, a product modulo `q`, or a reduction. -/
 def subT (R : Rules) (a b : T) : T :=
-  bif Nat.beq a.kind 1 && Nat.beq b.kind 7 && Nat.beq b.st a.st && bflyOk R a.st a.p b.p b.z b.t then
+  bif !R.inv && Nat.beq a.kind 1 && Nat.beq b.kind 7 && Nat.beq b.st a.st && bflyOk R a.st a.p b.p b.z b.t then
     lvT (a.st + 1) b.p
   else bif Nat.beq a.kind 4 && Nat.beq b.kind 6 && Nat.beq b.st a.st && Nat.beq b.p a.p then
-    mk .mm a.st a.p a.z b.t
+    bif R.inv && Nat.beq a.st invScale && Nat.beq a.z 3303 && Nat.beq b.t (twN 3303) then lvT (a.st + 1) a.p
+    else mk .mm a.st a.p a.z b.t
   else bif Nat.beq a.kind 1 && Nat.beq b.kind 6 && Nat.beq b.st a.st && Nat.beq b.p a.p && Nat.beq b.t 10 then
-    mk .n1 a.st a.p 0 0
+    bif R.inv && invRed a.st then lvT (a.st + 1) a.p else mk .n1 a.st a.p 0 0
+  else bif R.inv && Nat.beq a.kind 1 && Nat.beq b.kind 1 && Nat.beq b.st a.st && gsPair a.st b.p a.p then
+    mk .dif a.st a.p b.p 0
+  else bif R.inv && Nat.beq a.kind 12 && Nat.beq b.kind 14 && Nat.beq b.st a.st && Nat.beq b.p a.p &&
+      Nat.beq b.z a.z && gsPair a.st a.z a.p && gsZeta a.st a.p a.t b.t then
+    lvT (a.st + 1) a.p
   else junkT
 
-/-- The arithmetic shift right by 15. -/
-def sraT (a : T) : T := bif Nat.beq a.kind 8 then mk .sraN a.st a.p 0 0 else junkT
+/-- The arithmetic shift right by 15: of a reduction (`z = 0`), or of a
+coefficient (`z = 1`). -/
+def sraT (a : T) : T :=
+  bif Nat.beq a.kind 8 then mk .sraN a.st a.p 0 0
+  else bif Nat.beq a.kind 1 then mk .sraN a.st a.p 1 0
+  else junkT
 
 def andT (a b : T) : T :=
-  bif Nat.beq a.kind 9 && Nat.beq b.kind 3 && Nat.beq b.t qN then mk .andN a.st a.p 0 0 else junkT
+  bif Nat.beq a.kind 9 && Nat.beq b.kind 3 && Nat.beq b.t qN then mk .andN a.st a.p a.z 0 else junkT
 
 /-- `SQRDMULH` by `b` is defined: `b` is a constant other than `-2¹⁵`. -/
 def qdOk (b : T) : Bool := Nat.beq b.kind 3 && !Nat.beq b.t 32768

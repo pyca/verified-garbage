@@ -22,8 +22,10 @@ namespace VG.Proof.MlKem.AArch64.NttR
 
 open VG VG.AArch64
 
-def rsU : List Rg :=
-  [⟨.reg .x0, 0, 64, true⟩, ⟨.reg .x1, 0, 32, true⟩, ⟨.sym "VG_MLKEM_NTT16_ZETAS", 0, 32, false⟩]
+/-- The polynomial at `x0`, the working space at `x1`, the table at `sym`. -/
+def rsUs (sym : String) : List Rg := [⟨.reg .x0, 0, 64, true⟩, ⟨.reg .x1, 0, 32, true⟩, ⟨.sym sym, 0, 32, false⟩]
+
+def rsU : List Rg := rsUs "VG_MLKEM_NTT16_ZETAS"
 
 def rsN : List Rg :=
   [⟨.reg .x0, 0, 64, true⟩, ⟨.reg .x1, 0, 32, true⟩, ⟨.reg .x1, 512, 32, false⟩]
@@ -33,7 +35,11 @@ def fInU : Nat := packY (fun j e => if e % 2 = 0 then lvT 0 (4 * j + e / 2) else
 
 materialize_value fInU
 
-def initU : St := ((⟨0, 0, [fInU, 0, tabT]⟩ : St).setG .x0 (.ptr 0 0)).setG .x1 (.ptr 1 0)
+/-- Nothing followed but the input, the table `tab` and the pointers to the polynomial and the
+working space. -/
+def initUs (tab : Nat) : St := ((⟨0, 0, [fInU, 0, tab]⟩ : St).setG .x0 (.ptr 0 0)).setG .x1 (.ptr 1 0)
+
+def initU : St := initUs tabT
 
 /-- The polynomial's words are the reduced coefficients of `NTT`. -/
 def outU (σ : St) : Bool :=
@@ -47,14 +53,8 @@ theorem checkU_ok :
 theorem checkN_ok : (initU.runP fwdRules rsN 16 nttTail).elim false outU = true := by
   lit_decide
 
-theorem initU_f : ∀ j < 64, ∀ e < 8,
-    (initU.chunk 0 j).get e = if e % 2 = 0 then lvT 0 (4 * j + e / 2) else junkT := by
+theorem fInU_get : ∀ j < 64, ∀ e < 8,
+    Y.get (slot yw fInU j) e = if e % 2 = 0 then lvT 0 (4 * j + e / 2) else junkT := by
   decide +kernel
-
-theorem initU_s : ∀ j < 32, ∀ e < 8, (initU.chunk 1 j).get e = 0 := by decide +kernel
-
-theorem initU_t {j e : Nat} (hj : j < 32) (he : e < 8) :
-    (initU.chunk 2 j).get e = cT (Impl.MlKem.AArch64.Ntt16.tableHalves.getD (8 * j + e) 0) :=
-  tabT_get hj he
 
 end VG.Proof.MlKem.AArch64.NttR

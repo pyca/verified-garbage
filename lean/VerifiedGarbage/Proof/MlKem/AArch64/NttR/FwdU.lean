@@ -46,19 +46,20 @@ theorem coeffAt_chunk (m : Mem) (p : Addr) (j : Nat) {k : Nat} (hk : k < 4) :
 
 /-- The machine's state at the start holds of `s₀`, for regions laid out as `rsU` and `rsN`:
 the polynomial at `x0`, the working space at `x1`, the table at `tb`. -/
-theorem initU_rel {rs : List Rg} {s₀ : State} {tb : Addr} (hlen : rs.length = 3)
-    (hc0 : chunks rs 0 = 64) (hc1 : chunks rs 1 = 32) (hc2 : chunks rs 2 = 32)
+theorem initU_rel {rs : List Rg} {s₀ : State} {tb : Addr} {tab : Nat} {H : List Nat}
+    {L : Nat → Nat → BitVec 16} {O : Nat → BitVec 16} (hL : ∀ p, L 0 p = Wu s₀ p) (hlen : rs.length = 3)
+    (hc0 : chunks rs 0 = 64) (hc2 : chunks rs 2 = 32)
     (h0 : rbase rs s₀ 0 = s₀.gpr .x0 + BitVec.ofNat 64 0) (h1 : rbase rs s₀ 1 = s₀.gpr .x1 + BitVec.ofNat 64 0)
     (h2 : rbase rs s₀ 2 = tb)
-    (htab : ∀ j < 64, s₀.mem.readW (tb + BitVec.ofNat 64 (0 + 8 * j)) 64 =
-      hw4 Impl.MlKem.AArch64.Ntt16.tableHalves j) :
-    Rel rs s₀ (Lf (Wu s₀)) (Of (Wu s₀)) initU s₀ := by
+    (hT : ∀ {j e}, j < 32 → e < 8 → Y.get (slot yw tab j) e = cT (H.getD (8 * j + e) 0))
+    (htab : ∀ j < 64, s₀.mem.readW (tb + BitVec.ofNat 64 (0 + 8 * j)) 64 = hw4 H j) :
+    Rel rs s₀ L O (initUs tab) s₀ := by
   refine ⟨fun r e he => ?_, fun r => ?_, fun k hk j hj e he => ?_, rfl, rfl, rfl, rfl⟩
-  · have : (initU.vreg r).get e = junkT := by
+  · have : ((initUs tab).vreg r).get e = junkT := by
       show slot tw (slot yw 0 (vi r)) e = 0
       rw [slot_zero, slot_zero]
     rw [this]; exact Hd.junk _
-  · unfold initU
+  · unfold initUs
     rw [greg_setG, greg_setG]
     by_cases hx1 : r = .x1
     · subst hx1
@@ -75,25 +76,24 @@ theorem initU_rel {rs : List Rg} {s₀ : State} {tb : Addr} (hlen : rs.length = 
         trivial
   · rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2) with rfl | rfl | rfl
     · rw [hc0] at hj
-      rw [initU_f j hj e he]
+      rw [show ((initUs tab).chunk 0 j).get e = _ from fInU_get j hj e he]
       have ea : caddr rs s₀ 0 j = s₀.gpr .x0 + BitVec.ofNat 64 (16 * j) := by
         rw [caddr, h0, ptr_zero]
       split
       · rename_i hev
         refine (Hd.mk (by decide)).2 ?_
         rw [eval_mk, Nat.zero_mod, Nat.mod_eq_of_lt (show 4 * j + e / 2 < 512 by omega)]
-        show _ = Wu s₀ (4 * j + e / 2)
-        rw [Wu, coeffAt_chunk _ _ _ (show e / 2 < 4 by omega), vword_lo, ea,
+        rw [hL, Wu, coeffAt_chunk _ _ _ (show e / 2 < 4 by omega), vword_lo, ea,
           show 2 * (e / 2) = e by omega]
       · exact Hd.junk _
-    · rw [hc1] at hj
-      rw [initU_s j hj e he]; exact Hd.junk _
+    · rw [show ((initUs tab).chunk 1 j).get e = 0 from by
+        show slot tw (slot yw 0 j) e = 0; rw [slot_zero, slot_zero]]
+      exact Hd.junk _
     · rw [hc2] at hj
       have ea : caddr rs s₀ 2 j = tb + BitVec.ofNat 64 (0 + 16 * j) := by
         rw [caddr, h2, Nat.zero_add]
-      have hv := vhalf_table (m := s₀.mem) (p := tb) (off := 0) (N := 64)
-        (H := Impl.MlKem.AArch64.Ntt16.tableHalves) htab (i := j) (by omega) he
-      rw [initU_t hj he, ea, hv]
+      have hv := vhalf_table (m := s₀.mem) (p := tb) (off := 0) (N := 64) (H := H) htab (i := j) (by omega) he
+      rw [show ((initUs tab).chunk 2 j).get e = _ from hT hj he, ea, hv]
       exact Hd.cT _
 
 /-- The low halfwords of a reduced polynomial represent its coefficients. -/
@@ -133,34 +133,33 @@ theorem polyIs_of_outU {rs : List Rg} {s₀ s : State} {L : Nat → Nat → BitV
   rw [show (0 : BitVec 16).toNat = 0 from rfl, Nat.zero_shiftLeft, Nat.zero_or]
   exact hO i hi256
 
-/-- What `fwd` needs: the polynomial at `x0` and the working space at `x1`, writable and
-apart, the polynomial reduced, and the table, readable and apart from both. -/
-structure InU (s : State) : Prop where
+/-- What `fwd` and `inv` need: the polynomial at `x0` and the working space at `x1`, writable and
+apart, the polynomial reduced, and the table `H` at `sym`, readable and apart from both. -/
+structure InU (sym : String) (H : List Nat) (s : State) : Prop where
   wr : s.wr = [polyRegion (s.gpr .x0), polyRegion (s.gpr .x1)]
   disj : (polyRegion (s.gpr .x0)).Disjoint (polyRegion (s.gpr .x1))
   red : Reduced s.mem (s.gpr .x0)
-  table : ∀ j < 64, s.mem.readW (s.syms "VG_MLKEM_NTT16_ZETAS" + BitVec.ofNat 64 (8 * j)) 64 =
-    hw4 Impl.MlKem.AArch64.Ntt16.tableHalves j
-  readable : Covers [⟨s.syms "VG_MLKEM_NTT16_ZETAS", 512⟩] (s.rd ++ s.wr)
-  apartOutput : (polyRegion (s.gpr .x0)).Disjoint ⟨s.syms "VG_MLKEM_NTT16_ZETAS", 512⟩
-  apartScratch : (polyRegion (s.gpr .x1)).Disjoint ⟨s.syms "VG_MLKEM_NTT16_ZETAS", 512⟩
+  table : ∀ j < 64, s.mem.readW (s.syms sym + BitVec.ofNat 64 (8 * j)) 64 = hw4 H j
+  readable : Covers [⟨s.syms sym, 512⟩] (s.rd ++ s.wr)
+  apartOutput : (polyRegion (s.gpr .x0)).Disjoint ⟨s.syms sym, 512⟩
+  apartScratch : (polyRegion (s.gpr .x1)).Disjoint ⟨s.syms sym, 512⟩
 
 /-- A region within the first `n` bytes of a region of `m`. -/
 theorem disjoint_prefix {a b : Addr} {n m k : Nat} (hn : n ≤ m) (h : Region.Disjoint ⟨a, m⟩ ⟨b, k⟩) :
     Region.Disjoint ⟨a, n⟩ ⟨b, k⟩ := fun x h₁ h₂ => h x (by simp only [Region.Contains] at h₁ ⊢; omega) h₂
 
-theorem ctxU {s₀ : State} (hi : InU s₀) : Ctx rsU s₀ := by
-  have h3 : rsU.length = 3 := rfl
-  have cases3 : ∀ k < rsU.length, k = 0 ∨ k = 1 ∨ k = 2 := fun k hk => by rw [h3] at hk; omega
+theorem ctxU {sym : String} {H : List Nat} {s₀ : State} (hi : InU sym H s₀) : Ctx (rsUs sym) s₀ := by
+  have h3 : (rsUs sym).length = 3 := rfl
+  have cases3 : ∀ k < (rsUs sym).length, k = 0 ∨ k = 1 ∨ k = 2 := fun k hk => by rw [h3] at hk; omega
   have w0 : polyRegion (s₀.gpr .x0) ∈ s₀.wr := by rw [hi.wr]; exact List.mem_cons_self ..
   have w1 : polyRegion (s₀.gpr .x1) ∈ s₀.wr := by rw [hi.wr]; simp
   have c1 : ∀ a, Region.Contains ⟨s₀.gpr .x1, 512⟩ a 16 → (polyRegion (s₀.gpr .x1)).Contains a 16 :=
     fun a h => by simp only [Region.Contains] at h ⊢; omega
   refine Ctx.of (fun k => [polyRegion (s₀.gpr .x0), ⟨s₀.gpr .x1, 512⟩,
-      ⟨s₀.syms "VG_MLKEM_NTT16_ZETAS", 512⟩].getD k ⟨0, 0⟩) (by decide) (fun k hk => ?_) (fun k hk => ?_)
+      ⟨s₀.syms sym, 512⟩].getD k ⟨0, 0⟩) (by simp [rsUs]) (fun k hk => ?_) (fun k hk => ?_)
     (fun k hk a ha => ?_) (fun k hk hw a ha => ?_) (fun k k' hk hk' hne => ?_)
-  · rcases cases3 k hk with rfl | rfl | rfl <;> decide
-  · rcases cases3 k hk with rfl | rfl | rfl <;> exact contains_off (by decide) (by decide)
+  · rcases cases3 k hk with rfl | rfl | rfl <;> simp [rsUs, chunks]
+  · rcases cases3 k hk with rfl | rfl | rfl <;> exact contains_off (by simp [rsUs, chunks]) (by decide)
   · rcases cases3 k hk with rfl | rfl | rfl
     · exact in_rd_wr (in_regions w0 ha)
     · exact in_rd_wr (in_regions w1 (c1 _ ha))
@@ -168,10 +167,10 @@ theorem ctxU {s₀ : State} (hi : InU s₀) : Ctx rsU s₀ := by
   · rcases cases3 k hk with rfl | rfl | rfl
     · exact in_regions w0 ha
     · exact in_regions w1 (c1 _ ha)
-    · exact absurd hw (by decide)
+    · exact absurd hw Bool.false_ne_true
   · have d01 : Region.Disjoint (polyRegion (s₀.gpr .x0)) ⟨s₀.gpr .x1, 512⟩ :=
       (disjoint_prefix (by decide) hi.disj.symm).symm
-    have d12 : Region.Disjoint ⟨s₀.gpr .x1, 512⟩ ⟨s₀.syms "VG_MLKEM_NTT16_ZETAS", 512⟩ :=
+    have d12 : Region.Disjoint ⟨s₀.gpr .x1, 512⟩ ⟨s₀.syms sym, 512⟩ :=
       disjoint_prefix (by decide) hi.apartScratch
     rcases cases3 k hk with rfl | rfl | rfl <;> rcases cases3 k' hk' with rfl | rfl | rfl
     all_goals first
@@ -179,7 +178,7 @@ theorem ctxU {s₀ : State} (hi : InU s₀) : Ctx rsU s₀ := by
       | exact d01 | exact d01.symm | exact hi.apartOutput | exact hi.apartOutput.symm
       | exact d12 | exact d12.symm
 
-theorem fwd_run (s₀ : State) (hi : InU s₀) :
+theorem fwd_run (s₀ : State) (hi : InU "VG_MLKEM_NTT16_ZETAS" Impl.MlKem.AArch64.Ntt16.tableHalves s₀) :
     WP isa Impl.MlKem.AArch64.Ntt16.Readonly.fwd s₀ fun s' =>
       s'.sp = s₀.sp ∧ PolyIs s'.mem (s₀.gpr .x0) (ntt (polyAt s₀.mem (s₀.gpr .x0))) := by
   have hc := checkU_ok
@@ -187,8 +186,10 @@ theorem fwd_run (s₀ : State) (hi : InU s₀) :
   cases x with
   | none => cases hc
   | some σ =>
-    have hrel := initU_rel (rs := rsU) (s₀ := s₀) (tb := s₀.syms "VG_MLKEM_NTT16_ZETAS") rfl rfl rfl rfl rfl
-      rfl (by show s₀.syms _ + BitVec.ofNat 64 0 = _; rw [ptr_zero]) (fun j hj => by rw [Nat.zero_add]; exact hi.table j hj)
+    have hrel := initU_rel (rs := rsU) (s₀ := s₀) (tb := s₀.syms "VG_MLKEM_NTT16_ZETAS") (L := Lf (Wu s₀))
+      (O := Of (Wu s₀)) (fun _ => rfl) rfl rfl rfl rfl rfl
+      (by show s₀.syms _ + BitVec.ofNat 64 0 = _; rw [ptr_zero]) tabT_get
+      (fun j hj => by rw [Nat.zero_add]; exact hi.table j hj)
     refine WP.mono (runP_ok (model (Wu s₀)) (ctxU hi) 16 _ hrel hx) fun s' h' => ⟨h'.sp, ?_⟩
     exact polyIs_of_outU rfl rfl rfl h' hc fun p hp => Of_ntt (Wu s₀) _ (fun p hp => lrep_redU hi.red hp) hp
 
@@ -290,8 +291,8 @@ theorem ntt_run (s₀ : State) (hi : InN s₀) :
   cases x with
   | none => cases hc
   | some σ =>
-    have hrel := initU_rel (rs := rsN) (s₀ := s₁) (tb := s₁.gpr .x1 + BitVec.ofNat 64 512) rfl rfl rfl rfl
-      rfl rfl rfl (fun j hj => by
+    have hrel := initU_rel (rs := rsN) (s₀ := s₁) (tb := s₁.gpr .x1 + BitVec.ofNat 64 512) (L := Lf (Wu s₁))
+      (O := Of (Wu s₁)) (fun _ => rfl) rfl rfl rfl rfl rfl rfl tabT_get (fun j hj => by
         rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.zero_add, e1]
         exact h₁.tab j (by rw [hlen]; exact hj))
     refine WP.mono (runP_ok (model (Wu s₁)) (ctxN hi₁) 16 _ hrel hx) fun s' h' =>
