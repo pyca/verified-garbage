@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.P384.Comb7
+public import VerifiedGarbage.Proof.P384.GTable9
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.AArch64
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Verified
@@ -30,9 +31,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Projective
 public import VerifiedGarbage.Proof.Ecdsa.Sign
 public import VerifiedGarbage.Proof.Ecdsa.Verify
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Checks
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMain
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMul
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafPoints
 public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.P384.Point
@@ -66,9 +65,7 @@ import VerifiedGarbage.Proof.Ecdsa.Projective
 import VerifiedGarbage.Proof.Ecdsa.Sign
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Checks
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMain
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMul
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafPoints
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.P384.Point
@@ -134,7 +131,7 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) : Lis
     verified := Proof.Ecdsa.AArch64.P384.sign_verified h.law h.inv (Proof.P384.combOk7 h.law) },
   Spec.Ecdsa.P384.verifyApi.artifact AArch64.target {
     notes := ["The function is `vg_ecdsa_p384_sign`'s setup, \
-      field arithmetic, comb and inversions, with `vg_ecdh_p384`'s checks of the public key: it \
+      field arithmetic and inversions, with `vg_ecdh_p384`'s checks of the public key: it \
       saves the callee-saved registers `x19`–`x25` in `scratch`; field elements and \
       scalars are six 64-bit words in Montgomery form, field elements multiplied and squared by \
       calls of `vg_p384_mul_mod_p` and `vg_p384_sqr_mod_p` (the schedules of s2n-bignum's \
@@ -145,26 +142,28 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) : Lis
       key is checked without branches \
       (its first byte, both coordinates below `p`, and the curve's equation), and `[v]Q` is \
       computed for the key's point if it is valid, else `G`, so always on a point of the curve. \
-      `s⁻¹` modulo `n` is a call of `vg_p384_inv_mod_n`, by the signature's divsteps; `[u]G` is the \
-      signature's comb over the 7-bit windows of `u` (from the static `VG_P384_COMB`, reading the entry of each \
-      digit of the public `u` directly rather than scanning its table), and `[v]Q` the \
-      width-5 non-adjacent form of the public `v` (its 385 digits in `{0, ±1, ±3, …, ±15}` \
-      recoded into `scratch`, a table of `[1]Q, [3]Q, …, [15]Q` built by co-Z arithmetic (a \
-      doubling of the affine `Q` giving `2Q` and `Q` at one `Z`, then seven additions of `2Q` \
-      sharing each sum's `Z`, never `±2Q` itself since the curve's order is prime), each entry's `Z²` and \
-      `Z³` kept next to the table, and for each digit from the top a \
-      doubling in Jacobian coordinates and, for a digit other than 0, a complete Jacobian addition \
-      of the entry it selects, read directly, with its `y` negated for a negative digit and its \
-      `Z²` and `Z³` read rather than computed; the \
-      products and squares are calls of `vg_p384_mul_mod_p` and `vg_p384_sqr_mod_p`), converted \
-      to projective coordinates and added to `[u]G` by the complete formulas of Renes, Costello \
-      and Batina for `a = -3`. The result is the conjunction of the checks (the key, \
-      `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `X = rZ` or, when `r + n < p`, `X = (r + n)Z`, compared in projective coordinates without inverting `Z`) as a mask, so the \
-      comb's addresses depend on `u`, from the digest and the signature, the non-adjacent \
-      form's branches and addresses on `v`, from the signature, and on the key, and the rest of \
-      the time only on the pointers."]
-    consts := Impl.Ecdsa.AArch64.p384.combConsts
+      `s⁻¹` modulo `n` is a call of `vg_p384_inv_mod_n`, by the signature's divsteps; `[u]G + [v]Q` \
+      is one loop over the width-9 non-adjacent form of the public `u` (its 385 digits in \
+      `{0, ±1, ±3, …, ±255}` recoded into `scratch` as 16-bit words) and the width-5 \
+      non-adjacent form of the public `v` (its 385 digits in `{0, ±1, ±3, …, ±15}` recoded into \
+      `scratch`), with a table of `[1]Q, [3]Q, …, [15]Q` built by co-Z arithmetic (a doubling of \
+      the affine `Q` giving `2Q` and `Q` at one `Z`, then seven additions of `2Q` sharing each \
+      sum's `Z`, never `±2Q` itself since the curve's order is prime), each entry's `Z²` and `Z³` \
+      kept next to the table: for each digit from the top, one doubling in Jacobian coordinates \
+      (the register-allocated one of `vg_ecdh_p384`'s window), then for a digit of `v` other than \
+      0 a complete Jacobian addition of the entry it selects, read directly, with its `y` negated \
+      for a negative digit and its `Z²` and `Z³` read rather than computed, and for a digit of `u` \
+      other than 0 a mixed addition of the affine `[m]G` it selects, read directly from the static \
+      `VG_P384_GTAB` of `[m]G` for `m = 1, …, 256` (24 KB), with its `y` negated for a negative \
+      digit; the products and squares are calls of `vg_p384_mul_mod_p` and `vg_p384_sqr_mod_p`, \
+      and the sum is converted to projective coordinates. The result is the conjunction of the \
+      checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and \
+      `X = rZ` or, when `r + n < p`, `X = (r + n)Z`, compared in projective coordinates without \
+      inverting `Z`) as a mask, so the loop's branches and addresses depend on `u` and `v`, from \
+      the digest and the signature, and on the key, and the rest of the time only on the \
+      pointers."]
+    consts := Impl.Ecdsa.Verify.AArch64.P384Joint.p384v.combConsts
     code := Impl.Ecdsa.Verify.AArch64.verifyP384
-    verified := Proof.Ecdsa.Verify.AArch64.P384.verify_verified h.law h.prime h.inv (Proof.P384.combOk7 h.law) }]
+    verified := Proof.Ecdsa.Verify.AArch64.P384.verify_verified h.law h.prime h.inv (Proof.P384.gtabOk9 h.law) }]
 
 end VG.Generic.P384.AArch64.EcdsaP384
