@@ -170,19 +170,44 @@ def rust_metrics(j, log):
              and s.get("conclusion") != "skipped"]
     spans.sort(key=lambda s: s[1], reverse=True)
     current_step = None
+    command_step = False
+    binaries, block = [], -1
     for stamp, text in LINE.findall(ANSI.sub("", log)):
         t = parse_time(stamp)
+        header = text.startswith(("##[group]Run ", "::group::Run "))
         step = next((name for name, a, b in spans if a <= t < b), None)
-        if step != current_step:
+        # API timestamps are whole seconds: buffered output can share the
+        # next step's start second. Runner command headers preserve ordering.
+        if header and spans:
+            # The runner's command header can precede the API's rounded
+            # start by a fraction of a second. Prefer that adjacent start.
+            command = text.removeprefix("##[group]").removeprefix("::group::")
+            nearby = [span for span in spans if abs((span[1] - t).total_seconds()) < 1]
+            exact = [span for span in nearby if span[0] == command]
+            nearest = min(exact or nearby or spans,
+                          key=lambda span: (abs((span[1] - t).total_seconds()),
+                                            -(span[2] - span[1]).total_seconds()))
+            if abs((nearest[1] - t).total_seconds()) < 1:
+                step = nearest[0]
+        if header or (not command_step and step != current_step):
             feature_line, binary = None, None
+            binaries, block = [], -1
             current_step = step
+            command_step = command_step or header
+        step = current_step
         if text.startswith(("::group::VG_CPU_FEATURES=", "##[group]VG_CPU_FEATURES=")):
             feature_line = text.removeprefix("::group::").removeprefix("##[group]")
-            binary = None
-        elif text in ("::endgroup::", "##[endgroup]"):
+            binary, binaries, block = None, [], -1
+        elif text in ("::endgroup::", "##[endgroup]") and feature_line is not None:
             feature_line, binary = None, None
+            binaries, block = [], -1
         if re.match(r"^\s*(?:Running (?:unittests |tests[/\\])|Doc-tests )", text):
-            binary = text.strip()
+            binaries.append(text.strip())
+        if re.fullmatch(r"running \d+ tests?", text.strip()):
+            # Cargo headers use stderr; piped test stdout can arrive after
+            # several headers. Match stdout blocks to headers in order.
+            block += 1
+        binary = binaries[block] if 0 <= block < len(binaries) else None
         m = TEST_TIME.fullmatch(text.strip())
         if m:
             tests.append({"name": m[1], "outcome": m[2], "elapsed_s": float(m[3]),

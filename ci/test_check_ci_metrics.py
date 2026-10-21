@@ -123,9 +123,11 @@ class RustTimings(unittest.TestCase):
         j["id"] = 42
         log = (line("00:01", "##[group]VG_CPU_FEATURES=avx: rsa")
                + line("00:02", "     Running unittests src/lib.rs (target/debug/deps/vg-abc)")
+               + line("00:02", "running 2 tests")
                + line("00:03", "test rsa::sign ... \x1b[32mok\x1b[0m <0.123s>")
                + line("00:04", "test rsa::untimed ... ok")
                + line("00:05", "     Running tests/main.rs (target/debug/deps/tests-def)")
+               + line("00:05", "running 1 test")
                + line("00:06", "test rsa::sign ... FAILED <1.234s>")
                + line("00:07", "##[endgroup]")
                + line("00:08", "VG_CPU_FEATURES=avx: rsa: 2.100 0.200 s of CPU (user, system)")
@@ -146,6 +148,26 @@ class RustTimings(unittest.TestCase):
                          "wall_s": 3.5, "exit_code": 1}])
         self.assertEqual(m["lean"]["jobs"], [])
         self.assertIn("## Rust timings", ci_metrics.summary(m))
+
+    def test_buffered_stdout_uses_command_boundaries_and_ordered_binaries(self):
+        j = ci_metrics.job(api_job("Rust (Windows)", "00:00", "01:00",
+                    [step("Run rustc -vV", "00:00", "00:00"),
+                     step("Tests", "00:00", "00:40"), step("Export coverage", "00:40", "01:00")]))
+        log = (line("00:00", "##[group]Run cargo test")
+               + line("00:00", "##[endgroup]")
+               + line("00:01", "     Running unittests src\\lib.rs (lib.exe)")
+               + line("00:02", "     Running tests\\main.rs (tests.exe)")
+               + line("00:03", "   Doc-tests vg")
+               + line("00:40", "running 1 test")
+               + line("00:40", "test a ... ok <0.001s>")
+               + line("00:40", "running 1 test")
+               + line("00:40", "test b ... ok <0.002s>")
+               + line("00:40", "running 0 tests")
+               + line("00:40", "##[group]Run export coverage"))
+        tests = ci_metrics.rust_metrics(j, log)["tests"]
+        self.assertEqual([t["step"] for t in tests], ["Tests", "Tests"])
+        self.assertIn("lib.exe", tests[0]["binary"])
+        self.assertIn("tests.exe", tests[1]["binary"])
 
     def test_old_logs_and_invalid_wall_record_do_not_imply_zero(self):
         j = ci_metrics.job(api_job("Rust (native)", "00:00", "01:00"))

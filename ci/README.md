@@ -113,7 +113,10 @@ PR #3004); the collector does not enable unstable flags or change test
 execution. Untimed or filtered-out zero-duration tests do not become zero
 observations. Repeated test names are retained, with binary/step/feature-line
 context where the log supplies it. `binary` retains Cargo's identifying log
-line rather than assuming a stable path across platforms. Missing context
+line rather than assuming a stable path across platforms. Ordered libtest
+stdout blocks are matched to Cargo headers, since piped stdout can arrive
+after multiple stderr headers. Runner command boundaries keep buffered
+output in its producing step when API timestamps share a second. Missing context
 is null. An empty list is not proof that no tests ran, and successfully
 fetching a log does not establish that GitHub retained it without truncation.
 
