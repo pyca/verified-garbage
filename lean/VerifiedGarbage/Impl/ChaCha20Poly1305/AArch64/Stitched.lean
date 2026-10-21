@@ -30,7 +30,9 @@ and only the rest with those calls:
   256 bytes of the rest encrypted with it (`Tail.rest`, below);
 * the rest of the data is encrypted (`vg_chacha20_xor`, from where the
   chunks, or `Tail.rest`, stopped) and absorbed (from `x22`), in the order the
-  direction needs.
+  direction needs; when decrypting more than `Pad.threshold` bytes, the
+  stream encrypts eight blocks of zeros at `ctx[768, 1280)` instead, which
+  the rest is XORed with (`openRest`).
 
 The registers `x21`–`x25` and `x30` hold other values meanwhile; the
 prologue saved them, and `restore` restores them.
@@ -169,6 +171,18 @@ def cryptRest (c : XorCallee) : Prog isa :=
   .seq (.block [.addImm .x .x0 .x21 64, mov .x1 .x22, mov .x2 .x23, .addImm .x .x3 .x21 128])
     (.call c.name c.code)
 
+/-- The rest when decrypting (`x22`, `x23` bytes, fewer than 512): above
+`Pad.threshold`, the keystream of the eight blocks from the stream's counter
+at `ctx[768, 1280)` (as `Pad.cryptPad`, but from the counter the chunks left),
+the data XORed with it, and `ctx[768, 1280)` zeroed again; otherwise
+`cryptRest`. -/
+def openRest (c : XorCallee) : Prog isa :=
+  .seq (.block [.addImm .x .x9 .x23 (511 - Pad.threshold c.sve), .lsr .x .x9 .x9 9])
+    (.ite (.zero .x .x9) (cryptRest c)
+      (.seq (.block (Pad.zero ++ [.addImm .x .x0 .x21 64, .addImm .x .x1 .x21 768,
+          .movz .x .x2 512 0, .addImm .x .x3 .x21 128]))
+        (.seq (.call c.name c.code) (.seq (Short.xorKsFrom 768) (.block Pad.zero)))))
+
 /-- `sealStitched` but for the tag. -/
 def sealStitchedMain (c : XorCallee) : Prog isa :=
   .seq prologue
@@ -188,7 +202,7 @@ def openStitchedMain (c : XorCallee) : Prog isa :=
   (.seq (.block lengths)
   (.seq (cryptStitched c.sve false)
   (.seq (macPad .x22 .x23)
-  (.seq (cryptRest c)
+  (.seq (openRest c)
   (.seq absorbLengths
     (finalizeTo 48)))))))
 
