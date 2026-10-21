@@ -9,14 +9,15 @@
 //! `cbcDecryptChainedContract`) replace each block with its CBC encryption
 //! or decryption from the chaining value at `iv`, and the chaining value with
 //! the one to continue from (the last ciphertext block), in constant time:
-//! their timing depends on none of the key, the chaining value and the data. Both are the modes' generic CBC over SM4's
-//! bitsliced ECB code. On x86-64 and AArch64, decryption transforms sixteen
+//! their timing depends on none of the key, the chaining value and the data.
+//! Both use bitsliced SM4. On x86-64 and AArch64, decryption transforms sixteen
 //! blocks at a time, and encryption, in which each block needs the one
 //! before, one block at a time (in a batch of sixteen, so about sixteen
 //! times ECB's cost). On x86, both take one block at a time, in a batch of
-//! eight (about eight times ECB's cost). On ARMv7, encryption prepares the round keys
-//! once per call and processes the serial feedback chain; decryption calls
-//! the verified ECB function once per block. This module checks the lengths and holds the key schedule.
+//! eight (about eight times ECB's cost). ARMv7 prepares round keys once per
+//! call. Encryption follows the serial feedback chain; decryption transforms
+//! eight independent ciphertext blocks before combining them with preceding
+//! ciphertext. This module checks the lengths and holds the key schedule.
 
 #![cfg(any(
     target_arch = "x86",
