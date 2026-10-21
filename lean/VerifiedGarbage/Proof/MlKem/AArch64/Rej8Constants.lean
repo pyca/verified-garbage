@@ -20,14 +20,14 @@ open VG.Impl.MlKem.AArch64.Rej8
 open VG.Proof.Rc4.AArch64
 
 def vectorConsts : List Instr :=
- maskVec .v16 [0,1,2,255,3,4,5,255,6,7,8,255,9,10,11,255] ++
+ maskVec .v16 [0,1,1,2,3,4,4,5,6,7,7,8,9,10,10,11] ++
  maskVec .v17 [255,15,0,0,255,15,0,0,255,15,0,0,255,15,0,0] ++
  maskVec .v20 [1,1,2,1,4,1,8,1,16,1,32,1,64,1,128,1] ++
  [.movz .x .x9 3329 0,.vop (.dup .h8 .v19 .x9),.vop (.movi0 .v21)]
 
-theorem gatherIndex_value : gatherIndex=0xff0b0a09ff080706ff050403ff020100#128 := by
+theorem gatherIndex_value : gatherIndex=0x0b0a0a09080707060504040302010100#128 := by
   apply vbyte_ext
-  exact (by decide +kernel : ∀e<16,vbyte gatherIndex e=vbyte 0xff0b0a09ff080706ff050403ff020100#128 e)
+  exact (by decide +kernel : ∀e<16,vbyte gatherIndex e=vbyte 0x0b0a0a09080707060504040302010100#128 e)
 
 theorem vectorConsts_ok (s : State) : WP isa (.block vectorConsts) s fun u =>
     Keep [.x9] s u ∧ u.mem=s.mem ∧ Constants u := by

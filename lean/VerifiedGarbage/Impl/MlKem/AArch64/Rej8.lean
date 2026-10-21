@@ -38,21 +38,22 @@ def tableWord (mask j : Nat) : BitVec 64 :=
 def tableWords : List (BitVec 64) :=
   (List.range 256).flatMap fun mask => (List.range 2).map (tableWord mask)
 def rejConsts : List Instr :=
- maskVec .v16 [0,1,2,255,3,4,5,255,6,7,8,255,9,10,11,255] ++
+ maskVec .v16 [0,1,1,2,3,4,4,5,6,7,7,8,9,10,10,11] ++
  maskVec .v17 [255,15,0,0,255,15,0,0,255,15,0,0,255,15,0,0] ++
  maskVec .v20 [1,1,2,1,4,1,8,1,16,1,32,1,64,1,128,1] ++
  [.movz .x .x9 3329 0,.vop (.dup .h8 .v19 .x9),.vop (.movi0 .v21),
  .movz .x .x9 0 0,.str .x .x9 .x19 1408,.adrSym .x16 "VG_MLKEM_REJ_SHUFFLE"]
-/-- Decode twelve bytes into eight 12-bit halfwords. -/
+/-- Decode twelve bytes into eight 12-bit halfwords: the two bytes of each
+candidate into its halfword, then the low twelve bits of the even ones and
+the high twelve of the odd ones (`bif` through the low-twelve-bit mask of
+each word). -/
 def parse : List Instr :=
- [.ldrq .v0 .x2 0,.vop (.tbl .v0 .v0 .v16),.vop (.shift .ushr .s4 .v1 .v0 12),
- .vop (.logic .and .v0 .v0 .v17),.vop (.perm .uzp1 .h8 .v0 .v0 .v0),
- .vop (.perm .uzp1 .h8 .v1 .v1 .v1),.vop (.perm .zip1 .h8 .v0 .v0 .v1)]
+ [.ldrq .v0 .x2 0,.vop (.tbl .v0 .v0 .v16),.vop (.shift .ushr .h8 .v1 .v0 4),
+ .vop (.bsel .bif .v0 .v1 .v17)]
 
-/-- Each accepted lane contributes its bit position and one count. -/
+/-- Each accepted lane (below `q`) contributes its bit position and one count. -/
 def accept : List Instr :=
- [.vop (.sub .h8 .v1 .v0 .v19),.vop (.shift .ushr .h8 .v1 .v1 15),
- .vop (.mulH .mul .v1 .v1 .v20)]
+ [.vop (.cmp .hi .h8 .v1 .v19 .v0),.vop (.logic .and .v1 .v1 .v20)]
 
 /-- Sum the lane weights, then compact according to the low-byte mask. -/
 def compact (w16 : Bool := false) : List Instr :=
