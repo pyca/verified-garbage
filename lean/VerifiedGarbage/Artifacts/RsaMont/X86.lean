@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Verified
 public import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
+public import VerifiedGarbage.Proof.Mont.X86.PreparedSquare.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Montgomery multiplication at offsets of a working space, on baseline i686
@@ -26,6 +27,16 @@ def runtime : Artifact :=
     verified := Proof.Mont.X86.Rt.rt_verified
     spSafe := Proof.Mont.X86.StaticSquare.body_spSafe }
 
-def artifacts : List Artifact := [runtime]
+def prepared : Artifact :=
+  Spec.Rsa.Mont.mulApi.artifact X86.target {
+    stack := 16
+    notes := ["Equal public operand indices select symmetric product-scanning squares with scalar MUL and \
+      independent SSE2 low/high sums; other products use paired-word CIOS. Arrays 2 and 3 hold \
+      the saved registers and product. Public pointers and width use a 16-byte stack cache. \
+      The prepared modulus and inverse are reused across Miller–Rabin products without operand copies."]
+    code := Impl.Mont.X86.PreparedSquare.dispatch
+    verified := Proof.Mont.X86.PreparedSquare.verified }
+
+def artifacts : List Artifact := [runtime, prepared]
 
 end VG.Artifacts.RsaMont.X86

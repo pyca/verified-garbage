@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Base
+import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
@@ -22,15 +23,11 @@ def xv (P : CP) (σ : State) : Nat := Spec.Rsa.os2ip (xB P σ)
 def cv (P : CP) (σ : State) : Nat := Spec.RsaKeyGen.candidate (8 * P.L) (xv P σ)
 
 theorem seg_bytesAt (m : Mem) (p : Addr) {a n k : Nat} (h : a + n ≤ k) :
-    VG.Proof.RsaKeyGen.seg (Spec.Rsa.bytesAt m p k) a n = Spec.Rsa.bytesAt m (p + BitVec.ofNat 64 a) n := by
-  unfold VG.Proof.RsaKeyGen.seg Spec.Rsa.bytesAt
-  apply List.ext_getElem (by simp; omega)
-  intro i h1 h2
-  simp only [List.getElem_take, List.getElem_drop, List.getElem_map, List.getElem_range]
-  rw [BitVec.add_assoc, BitVec.ofNat_add]
+    VG.Proof.RsaKeyGen.seg (Spec.Rsa.bytesAt m p k) a n = Spec.Rsa.bytesAt m (p + BitVec.ofNat 64 a) n :=
+  VG.Proof.RsaKeyGen.seg_bytesAt m p h
 
-theorem bytesAt_length (m : Mem) (p : Addr) (n : Nat) : (Spec.Rsa.bytesAt m p n).length = n := by
-  simp [Spec.Rsa.bytesAt]
+theorem bytesAt_length (m : Mem) (p : Addr) (n : Nat) : (Spec.Rsa.bytesAt m p n).length = n :=
+  VG.Proof.RsaKeyGen.rand_bytes_length m p n
 
 section
 variable {P : CP} {σ : State}
