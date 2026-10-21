@@ -508,8 +508,9 @@ theorem cryptStitchedSeal_ok (sve : Bool) {s₀ : State} (hp : APre true s₀) {
   simp only [ite_true]
   refine WP.seq ((setup_ok hp h).mono fun s₂ ⟨m₂, x0₂, x1₂, x2₂, x3₂, x5₂, _, _, k₂, v₂⟩ => ?_)
   apply WP.ite (decide (L s₀ < 512)) (VG.Proof.ChaCha20.AArch64.Mixed8.nonzero_short x5₂)
-  · intro _
-    exact WP.block_nil ⟨_, _, (short_crypted true hp h hst hr m₂ x0₂ x1₂ x2₂ x3₂ k₂ v₂).sealed⟩
+  · intro hs
+    exact WP.block_nil ⟨_, _, (short_crypted true hp h hst hr m₂ x0₂ x1₂ x2₂ x3₂ k₂ v₂
+      (of_decide_eq_true hs)).sealed⟩
   · intro hs
     refine wp_seq3 (long_crypted (sve := sve) true hp h hst hr m₂ x0₂ x1₂ x2₂ x3₂ k₂ v₂
       (by have := of_decide_eq_false hs; omega)) fun u ⟨T, hT, hc⟩ => ?_
