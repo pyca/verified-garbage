@@ -26,7 +26,8 @@ for mode in variants:
     for p,b in originals.items():(root/p).write_bytes(b)
     run(['python3','experiments/dsa_x86/install.py',f'experiments/dsa_x86/manifests/{mode}.json.gz','.'],mode+'-install.log')
     test=build(['cargo','test','--release','--lib','--no-run'],mode+'-test-build.log')
-    run([test,'dsa::','--nocapture','--test-threads=1'],mode+'-tests.log')
+    groups=['dsa::keygen::','dsa::tests::'] if env.get('PROTOTYPE_KEYGEN_ONLY')=='1' else ['dsa::']
+    run([test,*groups,'--nocapture','--test-threads=1'],mode+'-tests.log')
     exe=build(['cargo','bench','--manifest-path','bench/Cargo.toml','--bench','primitives','--no-run'],mode+'-bench-build.log')
     shutil.copy2(exe,out/mode)
     symbols=subprocess.check_output(['nm','-S','--size-sort',exe],text=True)

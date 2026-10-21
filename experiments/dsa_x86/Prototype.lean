@@ -240,15 +240,22 @@ def fastSquare (compact deferred : Bool) (crossChunk n o a : Nat) : Prog isa :=
 
 /-- Fixed-address masked table scan, accumulating each output word in a
 register. Masks are computed once per window, without secret indexing. -/
-def wordSelect (n tab dst : Nat) (entries : Nat := 16) : Prog isa :=
-  .frame (.alloc (4*entries)) (seq [
-    .block ((List.range entries).flatMap fun j => windowMask j ++ [.store (at_ .esp (4*j)) .ecx]),
+def wordSelectBody (n tab dst entries : Nat) (mask : Nat → MemOp) : Prog isa :=
+  seq [
+    .block ((List.range entries).flatMap fun j => windowMask j ++ [.store (mask j) .ecx]),
     .block [.mov .ebp (.reg .edi)],
     .loop (.block ([.mov .ebx (imm 0)] ++ (List.range entries).flatMap (fun j => [
-      .mov .eax (.mem (at_ .ebp (entry n tab j))), .alu .and .eax (.mem (at_ .esp (4*j))),
+      .mov .eax (.mem (at_ .ebp (entry n tab j))), .alu .and .eax (.mem (mask j)),
       .alu .or .ebx (.reg .eax)]) ++ [
       .store (at_ .ebp dst) .ebx, .alu .add .ebp (imm 4),
-      .mov .eax (.reg .edi), .alu .add .eax (imm (8*n)), .alu .cmp .ebp (.reg .eax)])) .ne]) (.free (4*entries))
+      .mov .eax (.reg .edi), .alu .add .eax (imm (8*n)), .alu .cmp .ebp (.reg .eax)])) .ne]
+
+def wordSelect (n tab dst : Nat) (entries : Nat := 16) : Prog isa :=
+  .frame (.alloc (4*entries))
+    (wordSelectBody n tab dst entries (fun j => at_ .esp (4*j))) (.free (4*entries))
+
+def workspaceSelect (n tab dst : Nat) : Prog isa :=
+  wordSelectBody n tab dst 32 (fun j => sc (slot n 1+4*j))
 
 /-- Public high-bit fast paths seed a reduced power of two immediately.
 The original setup remains the fallback for other modulus shapes. -/
@@ -438,6 +445,10 @@ def main (args : List String) : IO Unit := do
   let fs := if mode.contains 'k' then fs.filter (fun (name, _) =>
     name == "vg_dsa_generate_key" || name.startsWith "proto_dsa_comb_") else fs
   let json := fs.map fun (name, p) =>
+    let p := if mode.contains 'o' then Prototype.replace
+      ([16,32,48].map fun n =>
+        (Prototype.wordSelect n (Prototype.combTable n) (slot n 7) 32,
+          Prototype.workspaceSelect n (Prototype.combTable n) (slot n 7))) p else p
     let p := if mode.contains 'q' then Prototype.replace [(exponentiate 3 6, Prototype.window 3 6 true)] p else p
     let p := if mode.contains 'z' then Prototype.replace
       ([(16,32),(32,64),(48,96)].map fun (n,e) => (Prototype.window n e true, Prototype.wideWindow n e 6)) p else p

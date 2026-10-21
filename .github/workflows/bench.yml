@@ -2,6 +2,10 @@ name: Unproven x86 DSA experiments
 on:
   workflow_dispatch:
     inputs:
+      keygen_only:
+        description: Restrict correctness checks to keygen and core DSA
+        default: false
+        type: boolean
       openssl_scalar:
         description: Diagnose OpenSSL SSE2 on versus off
         default: false
@@ -54,6 +58,7 @@ jobs:
           VG_DSA_PARAM_BITS: ${{ inputs.parameter_bits }}
           VG_DSA_PARAM_SAMPLES: ${{ inputs.parameter_samples }}
           PROTOTYPE_OPENSSL_SCALAR: ${{ inputs.openssl_scalar && '1' || '0' }}
+          PROTOTYPE_KEYGEN_ONLY: ${{ inputs.keygen_only && '1' || '0' }}
           PROTOTYPE_VARIANTS: ${{ inputs.variants }}
           PROTOTYPE_PARAMETER_ALL: ${{ inputs.parameter_all && '1' || '0' }}
           PROTOTYPE_PARAMETERS: ${{ inputs.parameters && '1' || '0' }}

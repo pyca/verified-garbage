@@ -126,3 +126,9 @@ generation retain their checked baseline code. `mk` uses the existing arithmetic
 `mfkscvru4` also adds triangular squares; `mfkh` instead calls the existing
 shared RSA multiplication helper. This isolates the minimum changes needed for
 keygen and avoids promoting the unrelated oversized window stack arenas.
+
+`o` places the private comb's 32 masks in the existing Montgomery temporary
+slot instead of a 128-byte stack frame. That slot is unused during table
+selection and is at least 128 bytes at all keygen widths. The optional
+`keygen_only` workflow input runs keygen/core DSA correctness tests and omits
+unchanged parameter-generation tests; leave `parameters=false` with it.

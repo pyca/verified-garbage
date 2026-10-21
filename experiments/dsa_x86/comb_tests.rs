@@ -75,6 +75,7 @@ fn prototype_comb_reuse() {
                 // Shape checks may destroy the arithmetic context between the two calls.
                 ws[..slot(9)].fill(0);
                 ws[slot(0)..slot(0) + n].copy_from_slice(&modulus);
+                ws[slot(5)..slot(5) + n].copy_from_slice(&initial[slot(5)..slot(5) + n]);
             }
             // Exercise all exponent columns, including the high padded boundary.
             for pattern in [0xa5a5a5a5u64, 0xffffffff] {
