@@ -183,16 +183,18 @@ theorem seal_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («seal» v.callee v.p
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
   have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
-  simp only [«seal», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, Bool.cond_true, padCopy, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTag, finalizeWith,
-    Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hc ⊢
+  have ha := padRest_xdepth (dataCopy v.poly) v.poly 1
+  simp only [«seal», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, padCopy, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTag, finalizeWith,
+    Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hc ha ⊢
   omega
 
 theorem open_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («open» v.callee v.poly).x86_64Depth ≤ 24 := by
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
   have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
-  simp only [«open», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, Bool.cond_true, padCopy, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTo, finalizeWith,
-    Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hc ⊢
+  have ha := padRest_xdepth (dataCopy v.poly) v.poly 1
+  simp only [«open», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, padCopy, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTo, finalizeWith,
+    Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hc ha ⊢
   omega
 
 /-- A state satisfying `seal`'s precondition, without the working space. -/

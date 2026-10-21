@@ -2170,6 +2170,18 @@ theorem macA_ok {p n : Reg} (hr : MacRegs p n) (s : State) :
   refine ⟨by simp [e1], by simp [hp₁], by simp [hnd, hn₁], by simp [hnd, hn₁],
     fun q h₁ h₂ h₃ => by simp [h₂, h₃, g₁ q h₁], rd₁, wr₁, m₁⟩
 
+/-- `tailFill` writes `rax` alone. -/
+theorem tailFill_ok (c : Bool) (s : State) :
+    WP isa (.block (tailFill c)) s fun s' =>
+      (∀ q, q ≠ .rax → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem := by
+  cases c
+  · apply WP.of_runBlock
+    simp only [tailFill, runBlock_cons, runStep_some, runBlock_nil, exec, RegUpd.gpr_setReg,
+      RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, Option.some.injEq,
+      exists_eq_left']
+    exact ⟨fun q h => by simp [h], trivial, trivial, trivial⟩
+  · exact WP.block_nil ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
+
 set_option simprocs false in
 theorem macC_ok {p n : Reg} (hr : MacRegs p n) (s : State) :
     WP isa (.block [.mov .rdx (.reg n), .alu .and .rdx (.imm 15)]) s
@@ -3128,14 +3140,20 @@ theorem macPad_ok (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State} (hp : APre e 
     rwa [show pad16 (bytesAt s.mem P len) = [] by simp [pad16, hlen, h0], List.append_nil,
       ← show 16 * (len / 16) = len by omega_using [h0]]
   · have h0 : len % 16 ≠ 0 := by simpa using h
-    refine WP.mono (macRest_ok true b (k := 1) (.inl rfl) hp hr hs h0
-      (by rw [cs₃ _ (by simp [calleeSaved]), hr15])
-      (by rw [cs₃ _ (by simp [calleeSaved]), hrsp]) (by rw [rd₃, rd₂, hrd]) (by rw [wr₃, wr₂, hwr])
-      (by rw [cs₃ p hpc, hP]) (by rw [cs₃ n hnc, hn]) rdx₃) fun s₅ ⟨cs₅, rd₅, wr₅, f₅, mx₅, repr₅⟩ => ?_
-    refine ⟨fun r h => by rw [cs₅ r h, cs₃ r h], by rw [rd₅, rd₃, rd₂], by rw [wr₅, wr₃, wr₂],
-      f₂.trans (by rw [← m₃]; exact f₅), by rw [mx₅, mx₃, mx₂], fun key msg hr => ?_⟩
-    have := repr₅ key _ (by rw [m₃]; exact repr₂ key msg hr)
-    rw [m₃, bytesAt_frame f₂ (fun r hr => (hdisjP r hr).sub_left
+    refine WP.seq (WP.mono_mx (by cases b <;> decide +kernel) (tailFill_ok (dataCopy b) s₃)
+      fun s₄ ⟨g₄, rd₄, wr₄, m₄⟩ mx₄ => ?_)
+    have cs₄ : ∀ r ∈ calleeSaved, s₄.gpr r = s.gpr r := fun r h => by
+      rw [g₄ r (calleeSaved_ne h).1, cs₃ r h]
+    refine WP.mono (macRest_ok (dataCopy b) b (k := 1) (.inl rfl) hp hr hs h0
+      (by rw [cs₄ _ (by simp [calleeSaved]), hr15])
+      (by rw [cs₄ _ (by simp [calleeSaved]), hrsp]) (by rw [rd₄, rd₃, rd₂, hrd])
+      (by rw [wr₄, wr₃, wr₂, hwr]) (by rw [cs₄ p hpc, hP]) (by rw [cs₄ n hnc, hn])
+      (by rw [g₄ _ (by decide), rdx₃])) fun s₅ ⟨cs₅, rd₅, wr₅, f₅, mx₅, repr₅⟩ => ?_
+    refine ⟨fun r h => by rw [cs₅ r h, cs₄ r h], by rw [rd₅, rd₄, rd₃, rd₂],
+      by rw [wr₅, wr₄, wr₃, wr₂], f₂.trans (by rw [← m₃, ← m₄]; exact f₅),
+      by rw [mx₅, mx₄, mx₃, mx₂], fun key msg hr => ?_⟩
+    have := repr₅ key _ (by rw [m₄, m₃]; exact repr₂ key msg hr)
+    rw [m₄, m₃, bytesAt_frame f₂ (fun r hr => (hdisjP r hr).sub_left
       (sub_off P (a := 16 * (len / 16)) (by lit_omega))) (by lit_omega)] at this
     rw [show pad16 (bytesAt s.mem P len) = List.replicate (16 - len % 16) 0 by simp [pad16, hlen, h0],
       x_eq]

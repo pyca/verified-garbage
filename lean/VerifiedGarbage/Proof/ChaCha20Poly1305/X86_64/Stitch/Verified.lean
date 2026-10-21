@@ -1703,7 +1703,7 @@ theorem sealS_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
   generalize hP : (fun i => !X86_64.isa.writesSp i) = P at hc hb h₁ h₂ h₃ ⊢
   rw [hv] at hb ⊢
   simp only [dataCopy, sealStitched, prologue, cryptS, preS, Code.all, hc, hb, h₁, h₂, h₃, hf, hw,
-    macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, Bool.cond_true, Bool.cond_false, padCopy, padTail, absorbLengths, Bool.and_true, Bool.true_and]
+    macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, Bool.cond_false, padCopy, padTail, absorbLengths, Bool.and_true, Bool.true_and]
   subst hP; lit_decide
 
 theorem sealS_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) (s : State) (hs : sealX86_64.pre s) :
@@ -1738,9 +1738,10 @@ theorem sealS_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) :
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
   have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
+  have ha := padRest_xdepth (dataCopy v.poly) v.poly 1
   simp only [sealStitched, prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks,
-    padRest, Bool.cond_true, padCopy, padTail, cryptS, wipeL_xdepth, preS, cryptPre, absorbLengths, finalizeTag, finalizeWith, Code.x86_64Depth, xorBuf_xdepth,
-    foldM_xdepth, init_xdepth, finalize_xdepth, bigS_xdepth, bulkP_xdepth, tailP_xdepth, Nat.max_le] at hc ⊢
+    padRest, padCopy, padTail, cryptS, wipeL_xdepth, preS, cryptPre, absorbLengths, finalizeTag, finalizeWith, Code.x86_64Depth, xorBuf_xdepth,
+    foldM_xdepth, init_xdepth, finalize_xdepth, bigS_xdepth, bulkP_xdepth, tailP_xdepth, Nat.max_le] at hc ha ⊢
   omega
 
 theorem sealS_framed (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
@@ -4832,7 +4833,7 @@ theorem openS_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
   generalize hP : (fun i => !X86_64.isa.writesSp i) = P at hc hb ho hk hk4 hwo ⊢
   rw [hv] at hb ⊢
   simp only [dataCopy, openStitched, prologueX, cryptO, decRest, xorTail, Code.all, hc, hb, ho, hk, hk4, hwo, hf, hpass, hw,
-    macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, Bool.cond_true, Bool.cond_false, padCopy, padTail, absorbLengths, Bool.and_true, Bool.true_and]
+    macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, Bool.cond_false, padCopy, padTail, absorbLengths, Bool.and_true, Bool.true_and]
   subst hP; lit_decide
 
 theorem openS_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) (s : State) (hs : openX86_64.pre s) :
@@ -4901,10 +4902,11 @@ theorem openS_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) :
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
   have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
+  have ha := padRest_xdepth (dataCopy v.poly) v.poly 1
   simp only [openStitched, prologueX, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks,
-    padRest, Bool.cond_true, padCopy, padTail, cryptO, decRest, xorTail, absorbLengths, finalizeTo, finalizeWith, Code.x86_64Depth, xorBuf_xdepth,
+    padRest, padCopy, padTail, cryptO, decRest, xorTail, absorbLengths, finalizeTo, finalizeWith, Code.x86_64Depth, xorBuf_xdepth,
     xorTail_xdepth, foldM_xdepth, wipeL_xdepth, init_xdepth,
-    finalize_xdepth, bulkO_xdepth, wholeO_xdepth, twoKs_xdepth, fourKs_xdepth, Nat.max_le] at hc ⊢
+    finalize_xdepth, bulkO_xdepth, wholeO_xdepth, twoKs_xdepth, fourKs_xdepth, Nat.max_le] at hc ha ⊢
   omega
 
 theorem openS_framed (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
