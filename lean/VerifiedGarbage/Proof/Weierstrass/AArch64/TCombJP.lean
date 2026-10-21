@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 public import VerifiedGarbage.Proof.Framework.AArch64.InterleaveTable
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJ
+import VerifiedGarbage.Proof.Weierstrass.CombFrame
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJFirst
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJDigit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
@@ -275,5 +276,244 @@ theorem tentryJFin_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} 
       simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr ⊢
       grind))).trans hu.keep
   · rw [← hk.mem]; exact hu.unch
+
+/-- The invariant survives an entry's selection, which writes `E`, `-y` and
+the temporary area and keeps the registers but `tcombClob`'s. -/
+theorem TCombJInv.after_entry {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Addr}
+    {ws : List (BitVec 64)} {s₀ s t : State} {i j : Nat} (hL : TCombLay K size)
+    (hF : TCombFixed K C base size s₀ k T ws) (I : TCombJInv K C base size k T ws s₀ s j)
+    (E : TEntryPostJ K C base size k i s t) (hsy : t.syms = s.syms) :
+    TCombJInv K C base size k T ws s₀ t j := by
+  have hn := E.scr.nowrap
+  have hsz : size ≤ 2 ^ 64 := by omega_using [hn]
+  have hEW : ∀ w ∈ [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n), (K.neg, 8 * K.M.n),
+      (K.M.tmp, 8 * K.M.n)], w ∈ combW K.toComb := combEntryW_sub (K := K.toComb)
+  have U₁ : Unch base (combW K.toComb) s.mem t.mem := E.unch.mono hEW
+  have hmoW := tcombW_mo hL I.mod
+  have hAx : ∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal t.mem base x K.M.n = wordsVal s.mem base x K.M.n :=
+    hL.comb.wordsVal_entry hsz E.unch
+  have hbl := hL.bits
+  have hz' : K.w * K.J ≤ K.kbytes + 8 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega_using []
+  have e : ∀ x ∈ [K.A.x, K.A.y, K.A.z], tmv C K.M.n base t x = tmv C K.M.n base s x :=
+    fun x hx => by show toM _ _ _ = toM _ _ _; rw [hAx x hx]
+  refine ⟨E.scr, by rw [E.x19]; exact I.x19, I.keep.trans E.keep, (I.unch.trans U₁).mono fun w hw => ?_,
+    I.mod.unch U₁ (fun w hw => hmoW w (List.mem_append_left _ hw)) hn, fun x hx => by rw [hAx x hx]; exact I.lt x hx,
+    by rw [e _ (by simp), e _ (by simp), e _ (by simp)]; exact I.rep, fun t' ht => ?_,
+    TblMem.of_unch I.tbl (by rw [E.keep.rd, E.keep.wr]) U₁
+      (fun w hw => tcombW_size hL I.mod w (List.mem_append_left _ hw)) hF.out, by rw [hsy]; exact I.tsym⟩
+  · rcases List.mem_append.mp hw with hw | hw
+    · exact hw
+    · exact List.mem_append_left _ hw
+  · rw [U₁.byte (combW_bits hL ht) (by omega_using [hbl, hz', ht, hn])]
+    exact I.bits t' ht
+
+/-- Table `j`'s bytes are past the working space. -/
+theorem row_out {K : TCombCfg} {base T : Addr} {size : Nat} {ws : List (BitVec 64)}
+    (hout : ∀ i < ws.length, ∀ b < 8, size ≤ ofs base (T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b))
+    (hlen : K.J * K.tblBytes ≤ 8 * ws.length) {j : Nat} (hj : j < K.J) :
+    ∀ b < K.tblBytes, size ≤ ofs base (T + BitVec.ofNat 64 (j * K.tblBytes) + BitVec.ofNat 64 b) := by
+  intro b hb
+  have h1 := Nat.mul_le_mul_right K.tblBytes (show j + 1 ≤ K.J by omega_using [hj])
+  rw [Nat.succ_mul] at h1
+  have h := hout ((j * K.tblBytes + b) / 8) (by omega_using [h1, hlen, hb]) ((j * K.tblBytes + b) % 8)
+    (Nat.mod_lt _ (by decide))
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.div_add_mod] at h
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+  exact h
+
+/-- The tables' words fill `J` tables. -/
+theorem tbl_len {K : TCombCfg} {C : Curve} {tbl : List (List (Nat × Nat))} (hV : TCombVals K C tbl) :
+    K.J * K.tblBytes ≤ 8 * (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl).length := by
+  rw [tcombWords_length (n := K.M.n) (R := 2 ^ (64 * K.M.n)) (p := C.p) hV.len hV.lenH, TCombCfg.tblBytes]
+  have e : 16 * K.M.n * K.H = 8 * (K.H * (2 * K.M.n)) := by
+    rw [Nat.mul_comm K.H, ← Nat.mul_assoc, ← Nat.mul_assoc]
+  rw [e, Nat.mul_left_comm]
+
+/-- Bytes past the working space are those of the first state. -/
+theorem TCombJInv.far {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Addr}
+    {ws : List (BitVec 64)} {s₀ s : State} {j : Nat} (hL : TCombLay K size)
+    (I : TCombJInv K C base size k T ws s₀ s j) {x : Addr} (hx : size ≤ ofs base x) : s.mem x = s₀.mem x :=
+  I.unch.far fun w hw => by have := tcombW_size hL I.mod w hw; omega_using [this, hx]
+
+/-- The `T` bytes at `x21` are apart from the working space at `x0`, past it. -/
+theorem tabApart_of {s : State} {base X : Addr} {size Tb : Nat} (hs : Scr s base size) (hx : s.gpr .x21 = X)
+    (hout : ∀ b < Tb, size ≤ ofs base (X + BitVec.ofNat 64 b)) : TabApart .x0 .x21 size Tb s := by
+  intro o ho o' ho' he
+  have h := hout o' ho'
+  rw [← hx, ← he, hs.x0] at h
+  have hn := hs.nowrap
+  have : ofs base (base + BitVec.ofNat 64 o) = o := ofs_off0 base (by omega_using [hn, ho])
+  omega_using [h, this, ho]
+
+/-- `x4 = x19 - c`. -/
+theorem sub4_ok (s : State) {c : Nat} (hc : c < 4096) :
+    WP isa (.block [.subImm .x .x4 .x19 c]) s fun t =>
+      t.gpr .x4 = s.gpr .x19 - BitVec.ofNat 64 c ∧ Keeps [.x4] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, Size.bits, hc, ite_true,
+    RegUpd.gpr_write, BitVec.setWidth_eq, Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
+  simp only [List.mem_singleton] at hr
+  simp only [RegUpd.gpr_write, hr, ite_false]
+
+/-- Pipelined window `j` (`1 ≤ j`, `j + 2 ≤ J`), its entry in `E`: window
+`j + 1`'s selection woven into the addition `mc`, whose code runs as the
+selection's pass and then the addition; then `x19 = j + 1`, its entry in
+`E`, and `x4 = j + 1 - (J - 1)`. -/
+theorem stepJP_ok {arithmetic : Mod → List FOp → Prog isa} {mc : List Instr} {K : TCombCfg} {C : Curve}
+    {base : Addr} {size k : Nat} {T : Addr}
+    {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hA : CombA K.toComb)
+    (hcompiler : FieldCompilerCorrect arithmetic size) (hJenc : K.J<4096) (hC : Law C) (hM3 : AM3 C)
+    (hG : onCurve C (G C) = true) (hV : TCombVals K C tbl) (hpn : C.p < 2 ^ (64 * K.M.n))
+    (hb1 : 1 ≤ K.bits) {kmax : Nat} (hB : BoothOk C K.w K.J kmax) (hk : k < kmax) {s₀ : State}
+    (hF : TCombFixed K C base size s₀ k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
+    (hblk : arithmetic K.M (maddJ K.S K.A K.E K.D) = .block mc) (hck : JPChecks K size mc)
+    {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j + 2 ≤ K.J)
+    (hI : TCombJInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s₀ s j)
+    (E : TEntryPostJ K C base size k j s s) :
+    WP isa (K.stepJP mc) s fun s' =>
+      TCombJInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s₀ s' (j + 1) ∧
+      TEntryPostJ K C base size k (j + 1) s' s' ∧
+      s'.gpr .x4 = BitVec.ofNat 64 (j + 1) - BitVec.ofNat 64 (K.J - 1) := by
+  have hw := hL.w
+  have hle : ∀ x, x ∈ combSlots K.toComb → x + 8 * K.M.n ≤ size := fun x hx => hL.comb.lay.le x hx
+  have hmag : bmag K.w k (j + 1) ≤ K.H := bmag_le (by omega_using [hw]) k (j + 1)
+  have hHle : K.H ≤ 128 := by
+    unfold TCombCfg.H; exact Nat.le_trans (Nat.pow_le_pow_right (by decide) (show K.w - 1 ≤ 7 by omega_using [hw]))
+      (by decide)
+  have hHe : K.H % 2 = 0 := by
+    unfold TCombCfg.H; rw [show K.w - 1 = (K.w - 2) + 1 by omega_using [hw], Nat.pow_succ]; omega_using []
+  have hlen := tbl_len hV
+  have hout := row_out (K := K) hF.out hlen (j := j + 1) (by omega_using [hjn])
+  unfold TCombCfg.stepJP
+  refine WP.seq (WP.mono_syms (prepNext_ok hL hb1 hjn hI)
+    fun p ⟨Ip, hmp, syp, kp, x21p, v19p, v18p, v28p⟩ _ => ?_)
+  refine WP.seq (VG.AArch64.Interleave.WP.weave_tab hck.scal hck.vec (tabApart_of Ip.scr x21p hout) ?_)
+  -- The table of window `j + 1`, in the regions.
+  have hreg : InRegions (p.rd ++ p.wr) (T + BitVec.ofNat 64 ((j + 1) * K.tblBytes)) (16 * K.M.n * K.H) := by
+    obtain ⟨r, hr, hc⟩ := Ip.tbl.rd
+    refine ⟨r, hr, Region.contains_off hc ?_⟩
+    have h2 := Nat.mul_le_mul_right K.tblBytes (show j + 1 + 1 ≤ K.J by omega_using [hjn])
+    rw [Nat.succ_mul] at h2
+    exact Nat.le_trans (by unfold TCombCfg.tblBytes at h2 ⊢; omega_using [h2]) hlen
+  refine WP.mono_syms (passV_ok K (tb := .x21) (o := 0) (c := K.M.n) hck.n4 (by omega_using []) (by decide) hmag hHe
+    (by have := hL.tbl.1; omega_using [this]) (by omega_using [hHle]) v18p v19p v28p
+    fun e he i hi => by rw [x21p]; exact tbl_region hreg (by omega_using []) e he i hi)
+    fun q ⟨vq, _, q19, _, kq⟩ syq => ?_
+  have kq' : KeepRegs (tcombClob K.M.n) p q :=
+    (Keeps.regs kq.keeps).mono fun _ h => absurd h List.not_mem_nil
+  have hsq : Scr q base size := Ip.scr.of_keeps kq.keeps (by decide)
+  have Iq := Ip.of_keep kq' kq.mem (by rw [kq.gpr _ List.not_mem_nil]; exact Ip.x19) syq hsq
+  have Eq : TEntryPostJ K C base size k j q q := E.self (by rw [kq.mem, hmp]) hsq
+  have hT := tailJ_ok hL hA hcompiler hJenc hC hM3 hG hV hb1 hB hk hF hj (by omega_using [hjn]) Iq Eq rfl
+  rw [hblk] at hT
+  have hT' := WP.mono_syms (WP.novec hT (by
+    simp only [instrs, List.all_append, hck.mcv, hck.fixv, Bool.and_self])) fun u hu syu => And.intro hu syu
+  refine WP.mono (WP.seq_iff.mp hT') fun t ht => WP.seq (WP.mono ht fun u ⟨⟨⟨Iu, _⟩, vu⟩, syu⟩ => ?_)
+  -- Window `j + 1`'s entry, from the pass's accumulators.
+  have hz : wordsVal u.mem base K.zero K.M.n = 0 := by
+    rw [Iu.unch.wordsVal (tcombW_ro hL (x := K.zero) (by simp [combRo, TCombCfg.toComb]))
+      (by have := hle K.zero (by tcomb_mem); have := Iu.scr.nowrap; omega_arith), hF.zero]
+  have hrm : ∀ b < K.tblBytes, p.mem (T + BitVec.ofNat 64 ((j + 1) * K.tblBytes) + BitVec.ofNat 64 b) =
+      u.mem (T + BitVec.ofNat 64 ((j + 1) * K.tblBytes) + BitVec.ofNat 64 b) := fun b hb => by
+    rw [Ip.far hL (hout b hb), Iu.far hL (hout b hb)]
+  refine WP.seq (WP.mono (tentryJFin_ok hL hA hC hV hpn hck.n4 hck.n2 hck.bdv Iu.scr Iu.mod (i := j + 1)
+    (by omega_using [hjn]) (by omega_using []) Iu.x19 hb1 Iu.bits hz Iu.tbl (r := p) x21p hrm
+    (by rw [vu, q19, v19p]) (fun i' hi' => by rw [vu, vq i' hi']) (rest := .block [.subImm .x .x4 .x19 (K.J - 1)])
+    (Q := fun s' => TCombJInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s₀ s' (j + 1) ∧
+      TEntryPostJ K C base size k (j + 1) s' s' ∧
+      s'.gpr .x4 = BitVec.ofNat 64 (j + 1) - BitVec.ofNat 64 (K.J - 1)) fun e E' sy' => ?_)
+    fun s₂ h₂ => WP.block_append_iff.mpr (WP.seq_iff.mp h₂))
+  refine WP.mono_syms (sub4_ok e (c := K.J - 1) (by omega_using [hJenc])) fun f ⟨x4f, kf⟩ syf => ?_
+  have Ie := Iu.after_entry hL hF E' sy'
+  have hsf : Scr f base size := E'.scr.of_keeps kf (by decide)
+  have kf' : KeepRegs (tcombClob K.M.n) e f :=
+    (Keeps.regs kf).mono fun r hr => by
+      simp only [List.mem_singleton] at hr; rw [hr]; exact tcombClob_sub _ hL.n8 _ (by simp)
+  refine ⟨Ie.of_keep kf' kf.mem (by rw [kf.gpr _ (by decide)]; exact Ie.x19) syf hsf, E'.self kf.mem hsf, ?_⟩
+  rw [x4f, Ie.x19]
+
+/-- The pipelined loop: windows `1 … J - 2`, each selecting the next one's entry. -/
+theorem combJPLoop_ok {arithmetic : Mod → List FOp → Prog isa} {mc : List Instr} {K : TCombCfg} {C : Curve}
+    {base : Addr} {size k : Nat} {T : Addr}
+    {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hA : CombA K.toComb)
+    (hcompiler : FieldCompilerCorrect arithmetic size) (hJenc : K.J<4096) (hC : Law C) (hM3 : AM3 C)
+    (hG : onCurve C (G C) = true) (hV : TCombVals K C tbl) (hpn : C.p < 2 ^ (64 * K.M.n))
+    (hb1 : 1 ≤ K.bits) {kmax : Nat} (hB : BoothOk C K.w K.J kmax) (hk : k < kmax) {s₀ : State}
+    (hF : TCombFixed K C base size s₀ k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
+    (hblk : arithmetic K.M (maddJ K.S K.A K.E K.D) = .block mc) (hck : JPChecks K size mc) {s : State}
+    (hI : TCombJInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s₀ s 1)
+    (E : TEntryPostJ K C base size k 1 s s) :
+    WP isa (.loop (K.stepJP mc) (.nonzero .x .x4)) s fun s' =>
+      TCombJInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s₀ s' (K.J - 1) ∧
+      TEntryPostJ K C base size k (K.J - 1) s' s' := by
+  have hJ3 := hck.J3
+  refine WP.loop (M:=isa) (fun r s' => 1≤r ∧ r≤K.J-2 ∧
+    TCombJInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s₀ s' (K.J-1-r) ∧
+    TEntryPostJ K C base size k (K.J-1-r) s' s')
+    (fun r s' ⟨hr,hrJ,hi,he⟩ => ?_) (K.J-2) s
+    ⟨by omega_arith,by omega_arith,by simpa [show K.J-1-(K.J-2)=1 by omega_arith] using hI,
+      by simpa [show K.J-1-(K.J-2)=1 by omega_arith] using E⟩
+  refine WP.mono (stepJP_ok hL hA hcompiler hJenc hC hM3 hG hV hpn hb1 hB hk hF hblk hck
+    (j:=K.J-1-r) (by omega_arith) (by omega_arith) hi he) fun t ⟨ht,et,hx⟩ => ?_
+  have hz : (t.read .x .x4 != 0)=decide (r-1≠0) := by
+    rw [read_x,hx]
+    apply Bool.eq_iff_iff.mpr
+    simp only [bne_iff_ne,decide_eq_true_eq,ne_eq,BitVec.sub_eq_iff_eq_add]
+    have eqn : BitVec.ofNat 64 (K.J-1-r+1)=BitVec.ofNat 64 (K.J-1) ↔ K.J-1-r+1=K.J-1 := by
+      constructor
+      · intro h
+        have := congrArg BitVec.toNat h
+        simpa only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_arith : K.J-1-r+1<2^64),
+          Nat.mod_eq_of_lt (by omega_arith : K.J-1<2^64)] using this
+      · exact congrArg (BitVec.ofNat 64)
+    change (¬BitVec.ofNat 64 (K.J-1-r+1) = (0#64) + BitVec.ofNat 64 (K.J-1)) ↔ ¬r-1=0
+    rw [BitVec.zero_add, eqn]
+    omega_arith
+  by_cases hr1 : r-1=0
+  · refine Or.inl ⟨?_,?_,?_⟩
+    · show some (t.read .x .x4 != 0)=some false
+      rw [hz,hr1]; rfl
+    · simpa only [show K.J-1-r+1=K.J-1 by omega_arith] using ht
+    · simpa only [show K.J-1-r+1=K.J-1 by omega_arith] using et
+  · refine Or.inr ⟨?_,r-1,by omega_arith,by omega_arith,by omega_arith,?_,?_⟩
+    · show some (t.read .x .x4 != 0)=some true
+      rw [hz,decide_eq_true hr1]
+    · simpa only [show K.J-1-(r-1)=K.J-1-r+1 by omega_arith] using ht
+    · simpa only [show K.J-1-(r-1)=K.J-1-r+1 by omega_arith] using et
+
+/-- The pipelined comb computes `[k]G`, as `combJWith` does (`tcombJWith_ok`). -/
+theorem tcombJP_ok {arithmetic : Mod → List FOp → Prog isa} {mc : List Instr} {K : TCombCfg} {C : Curve}
+    {base : Addr} {size k : Nat} {T : Addr}
+    {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hA : CombA K.toComb)
+    (hcompiler : FieldCompilerCorrect arithmetic size) (hJenc : K.J<4096) (hC : Law C) (hM3 : AM3 C)
+    (hG : onCurve C (G C) = true) (hV : TCombVals K C tbl) (hpn : C.p < 2 ^ (64 * K.M.n))
+    (hb1 : 1 ≤ K.bits) {kmax : Nat} (hB : BoothOk C K.w K.J kmax) (hk : k < kmax)
+    (hblk : arithmetic K.M (maddJ K.S K.A K.E K.D) = .block mc) (hck : JPChecks K size mc) {s : State}
+    (hs : Scr s base size) (hM : ModOkA K.M size C.p s.mem base)
+    (hF : TCombFixed K C base size s k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl)) :
+    WP isa (K.combJP arithmetic mc) s fun s' => KeepRegs (tcombClob K.M.n) s s' ∧
+      Unch base (tcombW K) s.mem s'.mem ∧ ModOkA K.M size C.p s'.mem base ∧
+      (∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal s'.mem base x K.M.n < C.p) ∧
+      Rep C (tmv C K.M.n base s' K.A.x) (tmv C K.M.n base s' K.A.y) (tmv C K.M.n base s' K.A.z)
+        (mul k (G C)) := by
+  have hJ3 := hck.J3
+  have hle : ∀ x, x ∈ combSlots K.toComb → x + 8 * K.M.n ≤ size := fun x hx => hL.comb.lay.le x hx
+  unfold TCombCfg.combJP
+  refine WP.seq (WP.mono (firstJ_ok hL hA hC hG hV hpn hb1 hs hM hF) fun s₁ I₁ => ?_)
+  have hz : wordsVal s₁.mem base K.zero K.M.n = 0 := by
+    rw [I₁.unch.wordsVal (tcombW_ro hL (x := K.zero) (by simp [combRo, TCombCfg.toComb]))
+      (by have := hle K.zero (by tcomb_mem); have := I₁.scr.nowrap; omega_arith), hF.zero]
+  refine WP.seq (tentryJ_ok hL hA hC hV hpn I₁.scr I₁.mod (i := 1) (by omega_arith) I₁.x19 hb1 (c := true)
+    (Or.inl ⟨rfl, Nat.le_refl _⟩) I₁.bits hz I₁.tsym I₁.tbl hF.out fun s₂ E₂ sy₂ => ?_)
+  have I₂ := I₁.after_entry hL hF E₂ sy₂
+  refine WP.seq (WP.mono (combJPLoop_ok hL hA hcompiler hJenc hC hM3 hG hV hpn hb1 hB hk hF hblk hck I₂
+    (E₂.self rfl E₂.scr)) fun s₃ ⟨I₃, E₃⟩ => ?_)
+  have hT := tailJ_ok hL hA hcompiler hJenc hC hM3 hG hV hb1 hB hk hF (j := K.J - 1) (by omega_arith)
+    (by omega_arith) I₃ E₃ rfl
+  rw [hblk] at hT
+  refine WP.seq (WP.mono hT fun s₄ ⟨I₄, _⟩ => ?_)
+  rw [show K.J - 1 + 1 = K.J by omega_arith] at I₄
+  exact tcombJOut_ok hL hA hcompiler hJenc hC hV hpn hB hk hs hM hF I₄
 
 end VG.Proof.Weierstrass.AArch64
