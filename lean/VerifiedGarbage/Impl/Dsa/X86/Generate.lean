@@ -21,9 +21,11 @@ def domain (pLen qLen : Nat) : Prog isa := Core.sequence [
   Validate.zero qLen (.local u)]
 
 /-- The generator lies in the subgroup of order q. -/
+def subgroupWith (pLen : Nat) (power : Prog isa) : Prog isa :=
+  .seq power (Validate.isOne pLen (.local t))
+
 def subgroup (pLen qLen : Nat) : Prog isa :=
-  .seq (Core.power pLen qLen .p (.input .g) (.input .q) t)
-    (Validate.isOne pLen (.local t))
+  subgroupWith pLen (Core.power pLen qLen .p (.input .g) (.input .q) t)
 
 /-- Accumulate every algebraic domain check under the shape mask. -/
 def parameters (pLen qLen : Nat) : Prog isa :=
@@ -39,21 +41,28 @@ scratch, scratch_len)`. -/
 def checkEntry : List Instr :=
   Entry.openScratch 4 ++ Entry.saveArguments checkArguments ++ Entry.keyPointers
 
-def checkSized (pLen qLen : Nat) : Prog isa :=
+def checkSizedWith (compute : Nat → Nat → Prog isa) (pLen qLen : Nat) : Prog isa :=
   .seq (Shape.check pLen qLen)
     (.ite .e (.block [.mov .eax (.imm 0)])
-      (.seq (parameters pLen qLen) (.block SignVerify.result)))
+      (.seq (compute pLen qLen) (.block SignVerify.result)))
 
-def checkDispatch : List (Nat × Nat) → Prog isa
+def checkSized (pLen qLen : Nat) : Prog isa := checkSizedWith parameters pLen qLen
+
+/-- Shared public-width dispatch for checking and derivation. -/
+def dispatch (sized : Nat → Nat → Prog isa) : List (Nat × Nat) → Prog isa
   | [] => .block [.mov .eax (.imm 0)]
   | (pLen, qLen) :: rest =>
     .seq (Entry.widthMatch pLen qLen)
-      (.ite .e (checkSized pLen qLen) (checkDispatch rest))
+      (.ite .e (sized pLen qLen) (dispatch sized rest))
 
-def checkParameters : Prog isa := Core.sequence [
+def checkDispatch (widths : List (Nat × Nat)) : Prog isa := dispatch checkSized widths
+
+def checkParametersWith (sized : Nat → Nat → Prog isa) : Prog isa := Core.sequence [
   .block checkEntry,
-  checkDispatch [(128, 20), (256, 28), (256, 32), (384, 32), (256, 20)],
+  dispatch sized [(128, 20), (256, 28), (256, 32), (384, 32), (256, 20)],
   .block Entry.restore]
+
+def checkParameters : Prog isa := checkParametersWith checkSized
 
 def deriveArguments : List (Nat × Field) :=
   [(0, .out), (2, .p), (4, .pLen), (6, .qLen), (4, .digestLen), (5, .nonce)]
@@ -107,19 +116,19 @@ def deriveFailure (pLen qLen : Nat) : Prog isa := Core.sequence [
   .loop (.block [.store8 (at_ .esi 0) .al, .alu .add .esi (.imm 1),
     .alu .sub .ecx (.imm 1)]) .ne]
 
-def deriveSized (pLen qLen : Nat) : Prog isa :=
+def deriveSizedWith (compute : Nat → Nat → Prog isa) (pLen qLen : Nat) : Prog isa :=
   .seq (Shape.check pLen qLen)
-    (.ite .e (deriveFailure pLen qLen) (.seq (deriveCompute pLen qLen) (writeKey pLen qLen)))
+    (.ite .e (deriveFailure pLen qLen) (.seq (compute pLen qLen) (writeKey pLen qLen)))
 
-def deriveDispatch : List (Nat × Nat) → Prog isa
-  | [] => .block [.mov .eax (.imm 0)]
-  | (pLen, qLen) :: rest =>
-    .seq (Entry.widthMatch pLen qLen)
-      (.ite .e (deriveSized pLen qLen) (deriveDispatch rest))
+def deriveSized (pLen qLen : Nat) : Prog isa := deriveSizedWith deriveCompute pLen qLen
 
-def deriveKey : Prog isa := Core.sequence [
+def deriveDispatch (widths : List (Nat × Nat)) : Prog isa := dispatch deriveSized widths
+
+def deriveKeyWith (sized : Nat → Nat → Prog isa) : Prog isa := Core.sequence [
   .block deriveEntry,
-  deriveDispatch [(128, 20), (256, 28), (256, 32), (384, 32), (256, 20)],
+  dispatch sized [(128, 20), (256, 28), (256, 32), (384, 32), (256, 20)],
   .block Entry.restore]
+
+def deriveKey : Prog isa := deriveKeyWith deriveSized
 
 end VG.Impl.Dsa.X86.Generate

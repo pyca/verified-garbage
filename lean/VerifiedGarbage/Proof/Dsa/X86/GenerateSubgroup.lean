@@ -29,7 +29,7 @@ theorem generateSubgroup_ok {base : Addr} {size pLen qLen p q g : Nat} {s0 : Sta
   have A := M.aligned
   have np : (pLen + 7) / 8 ≤ 48 := by omega
   have pp : 0 < p := by have := M.pLarge; omega
-  unfold Generate.subgroup
+  unfold Generate.subgroup Generate.subgroupWith
   refine WP.seq (WP.mono (stagePowerP_ok M (G.ready (M.context np)) (M.qBuffer.ready (M.context np))
     (by decide) (M.wideFit (by decide))) fun s1 ⟨M1, R1⟩ => ?_)
   have E1 := R1.toStageFrame.execution (.inl ⟨by decide, M.wideFit (by decide)⟩)

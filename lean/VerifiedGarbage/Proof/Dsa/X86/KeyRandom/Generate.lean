@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Sample
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Prepare
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Invoke
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Finish
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Result
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Sampled
@@ -13,13 +14,14 @@ namespace VG.Proof.Dsa.X86.KeyRandom
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Mont.X86
 open VG.Impl.Dsa.X86 VG.Impl.Dsa.X86.KeyRandom VG.Impl.Dsa.X86.GenerateKey
 
-theorem generate_ok (F : DeriveFn) {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t)
-    (hc : checked s₀ = true) (saved : Saved s₀ t.mem) (used : slot t.mem (rBase s₀) oUsed = 0) :
-    WP isa (generate F.name F.code) t (Fin s₀) := by
+theorem generateWith_ok {I : State → Mem → Prop} (F : DeriveInvoke I) (stable : StableScratch I) {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t)
+    (hc : checked s₀ = true) (saved : Saved s₀ t.mem) (used : slot t.mem (rBase s₀) oUsed = 0)
+    (invariant : I s₀ t.mem) :
+    WP isa (generateWith F.code) t (Fin s₀) := by
   have hq := checked_q hc
   have hql := rQBytes_le A
   have hfit := VG.Proof.Dsa.significant_fits (rQBytes s₀)
-  unfold generate
+  unfold generateWith
   refine WP.seq (WP.mono (prepare_ok A h) fun u ⟨ax, P, hu, ou, _⟩ => ?_)
   have low : ∀ d, d + 4 ≤ oQ → slot u.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d hd =>
     outs_low ou (by decide) hd (by unfold oQ at hd; omega)
@@ -39,6 +41,13 @@ theorem generate_ok (F : DeriveFn) {s₀ t : State} (A : KeyABI s₀) (h : Ready
       fun i hi => by rw [fv.mem]; exact prepared.nonce i (by omega), Nat.zero_le _⟩
   refine WP.seq (WP.mono (sample_ok A initial hq) fun w ⟨O, eax, _, ow, _⟩ => ?_)
   rw [← draw_spl] at O eax
-  exact sampled_ok F A hc O (savedV.of_slots fun d _ hd => outs_low ow (by decide) hd (by omega)) eax
+  have Iv : I s₀ v.mem := by rw [fv.mem]; exact stable ou (by decide) invariant
+  exact sampledWith_ok F stable A hc O (savedV.of_slots fun d _ hd => outs_low ow (by decide) hd (by omega))
+    (stable ow (by decide) Iv) eax
+
+theorem generate_ok (F : DeriveFn) {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t)
+    (hc : checked s₀ = true) (saved : Saved s₀ t.mem) (used : slot t.mem (rBase s₀) oUsed = 0) :
+    WP isa (generate F.name F.code) t (Fin s₀) :=
+  generateWith_ok F.invoke (fun _ _ _ => trivial) A h hc saved used trivial
 
 end VG.Proof.Dsa.X86.KeyRandom

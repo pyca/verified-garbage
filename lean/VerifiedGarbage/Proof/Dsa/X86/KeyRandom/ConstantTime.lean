@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Dsa.X86.GenerateKey
-public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CallCT
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.InvokeTiming
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckCall
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.State
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.BodyCT
@@ -61,9 +61,10 @@ theorem alloc_push {s₀ : State} (A : KeyABI s₀) :
   rfl
 
 /-- `vg_dsa_generate_key` leaks only what its contract makes public. -/
-theorem generateKey_constantTime (C : CheckCall.CheckFn) (D : DeriveFn) :
+theorem generateKeyWith_constantTime {I : State → Mem → Prop} (C : CheckInvoke I) (D : DeriveInvoke I)
+    (stable : StableScratch I) (ctC : CheckInvokeCT C) (ctD : DeriveInvokeCT D) :
     ConstantTime isa (Spec.Dsa.generateKeyContract abi 156).pre (Spec.Dsa.generateKeyContract abi 156).pub
-      (code C.name D.name C.code D.code) := by
+      (codeWith C.code D.code) := by
   intro s t tsa tsb u w hs ht hpub ea eb
   have As := keyABI_of hs
   have At' := keyABI_of ht
@@ -75,7 +76,12 @@ theorem generateKey_constantTime (C : CheckCall.CheckFn) (D : DeriveFn) :
       rw [alloc_push As, Option.some.injEq] at hap
       rw [alloc_push At', Option.some.injEq] at hbp
       subst hap hbp
-      have hh := body_ct C D As At' e hk hst htr hab hbb
+      have hh := bodyWith_ct C D stable ctC ctD As At' e hk hst htr hab hbb
       simpa only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] using hh
+
+theorem generateKey_constantTime (C : CheckCall.CheckFn) (D : DeriveFn) :
+    ConstantTime isa (Spec.Dsa.generateKeyContract abi 156).pre (Spec.Dsa.generateKeyContract abi 156).pub
+      (code C.name D.name C.code D.code) :=
+  generateKeyWith_constantTime C.invoke D.invoke (fun _ _ _ => trivial) C.invoke_ct D.invoke_ct
 
 end VG.Proof.Dsa.X86.KeyRandom

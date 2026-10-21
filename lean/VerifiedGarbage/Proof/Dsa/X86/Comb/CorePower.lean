@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Mont.WordsCanonical
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Core
-public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep

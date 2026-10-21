@@ -1,7 +1,7 @@
 module
 public meta import VerifiedGarbage.Impl.Dsa.X86.GenerateKey
 public meta import VerifiedGarbage.Proof.Framework.X86.RelCT
-public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CallCT
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.InvokeTiming
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CallArgs
 import VerifiedGarbage.Proof.Dsa.X86.RandomAttempt
 public import VerifiedGarbage.Impl.Dsa.X86.GenerateKey
@@ -27,10 +27,10 @@ theorem deriveArgs_step {s t : State} (A : KeyABI s) (h : Ready s t) {k : Nat}
       Spec.Dsa.encodeBE (rQBytes s).length k) :
     WP isa (.block deriveArgs) t fun u => Ready s u ∧ CallSlots s u ∧
       callResult s u = Spec.Dsa.deriveKeyBytes (rInput s).pLen (rInput s).qLen (rInput s).key
-        (Spec.Dsa.encodeBE (rInput s).qLen k) := by
+        (Spec.Dsa.encodeBE (rInput s).qLen k) ∧ Outs (rBase s) [(0,36)] t.mem u.mem := by
   have hql := rQBytes_le A
   change WP isa (.block (deriveArgs ++ [])) t _
-  refine deriveArgs_ok A h fun u hu mu ku => WP.block_nil ⟨hu, ?_, ?_⟩
+  refine deriveArgs_ok A h fun u hu mu ku => WP.block_nil ⟨hu, ?_, ?_, ?_⟩
   · intro i hi
     rw [mu, ku.1 .esp (by decide)]
     exact argsMem_slots s _ _ i hi
@@ -39,6 +39,9 @@ theorem deriveArgs_step {s t : State} (A : KeyABI s) (h : Ready s t) {k : Nat}
     rw [← mu] at ou
     rw [outs_frame_bytes ou (by decide) (by unfold oNonce; omega)]
     exact hn
+  · have ou := argsMem_outs s t.mem (t.gpr .esp)
+    rw [←mu] at ou
+    exact ou
 
 theorem sampleCmp {s t : State} (A : KeyABI s) (O : SampleOut s 0 (draw s) t)
     (ax : t.gpr .eax = BitVec.ofNat 32 (VG.Proof.Dsa.Random.sampleStatus (draw s))) :
@@ -56,7 +59,8 @@ theorem scalar_of_status {S : Spec.Dsa.Random.Sample} (h : VG.Proof.Dsa.Random.s
   | some k => exact ⟨k, rfl⟩
   | none => simp only [VG.Proof.Dsa.Random.sampleStatus, hx] at h; split at h <;> contradiction
 
-theorem sampled_ct (F : DeriveFn) {s₁ s₂ t₁ t₂ : State}
+theorem sampledWith_ct {I : State → Mem → Prop} (F : DeriveInvoke I) (stable : StableScratch I)
+    (timing : DeriveInvokeCT F) {s₁ s₂ t₁ t₂ : State}
     (A₁ : KeyABI s₁) (A₂ : KeyABI s₂) (e : pubOf s₁ = pubOf s₂)
     (hk : keyLeak s₁ = keyLeak s₂) (hc₁ : checked s₁ = true) (hc₂ : checked s₂ = true)
     (hr : (rResult s₁).status = (rResult s₂).status)
@@ -64,10 +68,11 @@ theorem sampled_ct (F : DeriveFn) {s₁ s₂ t₁ t₂ : State}
     (O₁ : SampleOut s₁ 0 (draw s₁) t₁) (O₂ : SampleOut s₂ 0 (draw s₂) t₂)
     (ax₁ : t₁.gpr .eax = BitVec.ofNat 32 (VG.Proof.Dsa.Random.sampleStatus (draw s₁)))
     (ax₂ : t₂.gpr .eax = BitVec.ofNat 32 (VG.Proof.Dsa.Random.sampleStatus (draw s₂)))
+    (inv₁ : I s₁ t₁.mem) (inv₂ : I s₂ t₂.mem)
     {tr₁ tr₂ : List Leak} {u₁ u₂ : State}
-    (x₁ : Exec isa (sampled F.name F.code) t₁ tr₁ u₁)
-    (x₂ : Exec isa (sampled F.name F.code) t₂ tr₂ u₂) : tr₁ = tr₂ := by
-  unfold sampled at x₁ x₂
+    (x₁ : Exec isa (sampledWith F.code) t₁ tr₁ u₁)
+    (x₂ : Exec isa (sampledWith F.code) t₂ tr₂ u₂) : tr₁ = tr₂ := by
+  unfold sampledWith at x₁ x₂
   cases x₁ with | seq c₁ b₁ =>
   cases x₂ with | seq c₂ b₂ =>
   have ct : RelCT isa (fun _ _ => True) (.block [.alu .cmp .eax (.imm 1)]) (fun _ _ => True) :=
@@ -98,18 +103,33 @@ theorem sampled_ct (F : DeriveFn) {s₁ s₂ t₁ t₂ : State}
       have ca : RelCT isa (Two (At Ready)) (.block deriveArgs) (fun _ _ => True) :=
         two_taint [.esp] (pins_at id fun _ _ _ h => h) (by taint_decide)
       have ea := (ca _ _ _ _ _ _ ⟨pubOf s₁, ⟨s₁, A₁, rfl, ra⟩, s₂, A₂, e.symm, rb⟩ a₁ a₂).1
-      obtain ⟨rd₁, sl₁, res₁⟩ := post_of_exec (deriveArgs_step A₁ ra (P₁.nonce k₁ h₁)) a₁
-      obtain ⟨rd₂, sl₂, res₂⟩ := post_of_exec (deriveArgs_step A₂ rb (P₂.nonce k₂ h₂)) a₂
+      obtain ⟨rd₁, sl₁, res₁, args₁⟩ := post_of_exec (deriveArgs_step A₁ ra (P₁.nonce k₁ h₁)) a₁
+      obtain ⟨rd₂, sl₂, res₂, args₂⟩ := post_of_exec (deriveArgs_step A₂ rb (P₂.nonce k₂ h₂)) a₂
       have rst := hr
       rw [result_eq A₁, result_eq A₂, hc₁, hc₂] at rst
       simp only [ite_true, h₁, h₂] at rst
       have rst' := (congrArg Spec.Dsa.signStatus res₁).trans
         (rst.trans (congrArg Spec.Dsa.signStatus res₂).symm)
-      have ed := (call_ct F _ _ _ _ _ _ ⟨s₁, s₂, A₁, A₂, e, hk, rd₁, rd₂, sl₁, sl₂, rst'⟩ d₁ d₂).1
-      obtain ⟨rw₁, _⟩ := post_of_exec (call_ok F A₁ rd₁ sl₁) d₁
-      obtain ⟨rw₂, _⟩ := post_of_exec (call_ok F A₂ rd₂ sl₂) d₂
+      have i₁ := stable args₁ (by decide) ((post_of_exec (compare_mem 1 t₁) c₁).symm ▸ inv₁)
+      have i₂ := stable args₂ (by decide) ((post_of_exec (compare_mem 1 t₂) c₂).symm ▸ inv₂)
+      have ed := (timing _ _ _ _ _ _ ⟨s₁,s₂,A₁,A₂,e,hk,rd₁,rd₂,sl₁,sl₂,rst',hc₁,hc₂,i₁,i₂⟩ d₁ d₂).1
+      obtain ⟨rw₁, _⟩ := post_of_exec (F.correct A₁ rd₁ sl₁ hc₁ i₁) d₁
+      obtain ⟨rw₂, _⟩ := post_of_exec (F.correct A₂ rd₂ sl₂ hc₂ i₂) d₂
       have cw : RelCT isa (Two (At Ready)) (.block [.store (sp oStatus) .eax]) (fun _ _ => True) :=
         two_taint [.esp] (pins_at id fun _ _ _ h => h) (by taint_decide)
       have ew := (cw _ _ _ _ _ _ ⟨pubOf s₁, ⟨s₁, A₁, rfl, rw₁⟩, s₂, A₂, e.symm, rw₂⟩ w₁ w₂).1
       simp only [ec, ea, ed, ew]
+theorem sampled_ct (F : DeriveFn) {s₁ s₂ t₁ t₂ : State}
+    (A₁ : KeyABI s₁) (A₂ : KeyABI s₂) (e : pubOf s₁ = pubOf s₂)
+    (hk : keyLeak s₁ = keyLeak s₂) (hc₁ : checked s₁ = true) (hc₂ : checked s₂ = true)
+    (hr : (rResult s₁).status = (rResult s₂).status)
+    (hs : VG.Proof.Dsa.Random.sampleStatus (draw s₁) = VG.Proof.Dsa.Random.sampleStatus (draw s₂))
+    (O₁ : SampleOut s₁ 0 (draw s₁) t₁) (O₂ : SampleOut s₂ 0 (draw s₂) t₂)
+    (ax₁ : t₁.gpr .eax = BitVec.ofNat 32 (VG.Proof.Dsa.Random.sampleStatus (draw s₁)))
+    (ax₂ : t₂.gpr .eax = BitVec.ofNat 32 (VG.Proof.Dsa.Random.sampleStatus (draw s₂)))
+    {tr₁ tr₂ : List Leak} {u₁ u₂ : State}
+    (x₁ : Exec isa (sampled F.name F.code) t₁ tr₁ u₁)
+    (x₂ : Exec isa (sampled F.name F.code) t₂ tr₂ u₂) : tr₁ = tr₂ :=
+  sampledWith_ct F.invoke (fun _ _ _ => trivial) F.invoke_ct A₁ A₂ e hk hc₁ hc₂ hr hs O₁ O₂ ax₁ ax₂ trivial trivial x₁ x₂
+
 end VG.Proof.Dsa.X86.KeyRandom

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Invoke
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Finish
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CallArgs
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Sample
@@ -14,15 +15,16 @@ namespace VG.Proof.Dsa.X86.KeyRandom
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Mont.X86
 open VG.Impl.Dsa.X86 VG.Impl.Dsa.X86.KeyRandom VG.Impl.Dsa.X86.GenerateKey
 
-theorem sampled_ok (F : DeriveFn) {s₀ t : State} (A : KeyABI s₀) (hc : checked s₀ = true)
+theorem sampledWith_ok {I : State → Mem → Prop} (F : DeriveInvoke I) (stable : StableScratch I) {s₀ t : State} (A : KeyABI s₀) (hc : checked s₀ = true)
     (O : SampleOut s₀ 0 (draw s₀) t) (saved : Saved s₀ t.mem)
+    (invariant : I s₀ t.mem)
     (eax : t.gpr .eax = BitVec.ofNat 32 (VG.Proof.Dsa.Random.sampleStatus (draw s₀))) :
-    WP isa (sampled F.name F.code) t (Fin s₀) := by
+    WP isa (sampledWith F.code) t (Fin s₀) := by
   obtain ⟨d, S⟩ := O.smp
   have h := S.ready
   have hql := rQBytes_le A
   have hle := sampleStatus_le (draw s₀)
-  unfold sampled
+  unfold sampledWith
   refine WP.seq (wp_cmpi fun u fv _ z => WP.block_nil ?_)
   have hu := h.fupd fv
   rw [eax, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_beq (by omega) (by decide)] at z
@@ -54,7 +56,8 @@ theorem sampled_ok (F : DeriveFn) {s₀ t : State} (A : KeyABI s₀) (hc : check
       rw [outs_frame_bytes ov (by decide) (by unfold oNonce; omega), fv.mem]
       exact O.nonce k hsc
     have result := callResult_eq A hv scalar
-    refine WP.seq (WP.mono (call_ok F A hv C) fun w ⟨hw, fw, _, ew, bw⟩ => ?_)
+    have Iv : I s₀ v.mem := stable ov (by decide) (by rw [fv.mem]; exact invariant)
+    refine WP.seq (WP.mono (F.correct A hv C hc Iv) fun w ⟨hw, fw, _, ew, bw⟩ => ?_)
     have Sw := (Su.after_args A hv ov).after_call A hw fw
     have savedW : Saved s₀ w.mem := saved.of_slots fun e he he' => by
       rw [call_frame_slot A fw he (by omega), outs_high ov (e := 44) (by decide) he (by omega), fv.mem]
@@ -75,5 +78,11 @@ theorem sampled_ok (F : DeriveFn) {s₀ t : State} (A : KeyABI s₀) (hc : check
       exact bw
     · exact savedW.of_slots fun e he he' => by
         rw [mf, slot_write_ne _ _ _ (by unfold oStatus; omega) (by omega) (by unfold oStatus; omega)]
+
+theorem sampled_ok (F : DeriveFn) {s₀ t : State} (A : KeyABI s₀) (hc : checked s₀ = true)
+    (O : SampleOut s₀ 0 (draw s₀) t) (saved : Saved s₀ t.mem)
+    (eax : t.gpr .eax = BitVec.ofNat 32 (VG.Proof.Dsa.Random.sampleStatus (draw s₀))) :
+    WP isa (sampled F.name F.code) t (Fin s₀) :=
+  sampledWith_ok F.invoke (fun _ _ _ => trivial) A hc O saved trivial eax
 
 end VG.Proof.Dsa.X86.KeyRandom

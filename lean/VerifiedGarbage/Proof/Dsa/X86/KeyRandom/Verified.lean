@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Dsa.X86.GenerateKey
-public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Call
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.InvokeTiming
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckCall
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.ConstantTime
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Correct
@@ -36,6 +36,14 @@ theorem satisfiable : ∃ s, (Spec.Dsa.generateKeyContract abi 156).pre s := by
   have esp : satState.gpr .esp = 0x20000 := rfl
   sig_implies_sat [Spec.Dsa.generateKeyContract, Spec.Dsa.generateKeySig, abi, argSlots, argVal, argBytes,
     stackBelow] [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, e, esp, satState] using satState
+
+/-- An internal checker may establish an invariant for an inlined derivation. -/
+theorem verifiedWith {I : State → Mem → Prop} (C : CheckInvoke I) (D : DeriveInvoke I)
+    (stable : StableScratch I) (nc : NoSp C.code) (nd : NoSp D.code)
+    (ctC : CheckInvokeCT C) (ctD : DeriveInvokeCT D) :
+    Verified target (codeWith C.code D.code) (Spec.Dsa.generateKeyContract abi 156) :=
+  ⟨generateKeyWith_correct C D stable nc nd,
+    generateKeyWith_constantTime C D stable ctC ctD, satisfiable⟩
 
 theorem verified (C : CheckCall.CheckFn) (D : DeriveFn) :
     Verified target (code C.name D.name C.code D.code) (Spec.Dsa.generateKeyContract abi 156) :=

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Finish
 import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckCall
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckInvoke
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Body
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Result
 
@@ -22,22 +22,30 @@ namespace VG.Proof.Dsa.X86.KeyRandom
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Mont.X86
 open VG.Impl.Dsa.X86 VG.Impl.Dsa.X86.KeyRandom VG.Impl.Dsa.X86.GenerateKey
 
-theorem body_noSp (C : CheckCall.CheckFn) (D : DeriveFn) : NoSp (body C.name D.name C.code D.code) := by
-  unfold body generate sampled
-  exact .seq' (.of_all (by decide +kernel)) (.seq' (.call' C.noSp)
+theorem bodyWith_noSp (check derive : Prog isa) (C : NoSp check) (D : NoSp derive) : NoSp (bodyWith check derive) := by
+  unfold bodyWith generateWith sampledWith
+  exact .seq' (.of_all (by decide +kernel)) (.seq' C
     (.seq' (.of_all (by decide +kernel)) (.seq'
       (.ite' (.of_all (by decide +kernel))
         (.seq' (.of_all (by decide +kernel)) (.seq' (.of_all (by decide +kernel))
           (.ite' (.of_all (by decide +kernel))
             (.seq' (.of_all (by decide +kernel)) (.seq' (.of_all (by decide +kernel))
-              (.ite' (.seq' (.of_all (by decide +kernel)) (.seq' (.call' D.noSp) (.of_all (by decide +kernel))))
+              (.ite' (.seq' (.of_all (by decide +kernel)) (.seq' D (.of_all (by decide +kernel))))
                 (.of_all (by decide +kernel)))))))))
       (.of_all (by decide +kernel)))))
 
+theorem codeWith_ok {I : State → Mem → Prop} (C : CheckInvoke I) (D : DeriveInvoke I)
+    (stable : StableScratch I) (nc : NoSp C.code) (nd : NoSp D.code) {s₀ : State} (A : KeyABI s₀) :
+    WP isa (codeWith C.code D.code) s₀ fun s' => ∃ u, Finished s₀ u ∧ s' = freed KeyRandom.frameBytes u :=
+  WP.alloc ⟨by decide, by decide, by decide⟩ (by have := A.stackLow; unfold KeyRandom.frameBytes; omega)
+    (bodyWith_noSp C.code D.code nc nd) (WP.mono (bodyWith_ok C D stable A) fun u hu => ⟨u, hu, rfl⟩)
+
+theorem body_noSp (C : CheckCall.CheckFn) (D : DeriveFn) : NoSp (body C.name D.name C.code D.code) :=
+  bodyWith_noSp _ _ (.call' C.noSp) (.call' D.noSp)
+
 theorem code_ok (C : CheckCall.CheckFn) (D : DeriveFn) {s₀ : State} (A : KeyABI s₀) :
     WP isa (code C.name D.name C.code D.code) s₀ fun s' => ∃ u, Finished s₀ u ∧ s' = freed KeyRandom.frameBytes u :=
-  WP.alloc ⟨by decide, by decide, by decide⟩ (by have := A.stackLow; unfold KeyRandom.frameBytes; omega)
-    (body_noSp C D) (WP.mono (body_ok C D A) fun u hu => ⟨u, hu, rfl⟩)
+  codeWith_ok C.invoke D.invoke (fun _ _ _ => trivial) (.call' C.noSp) (.call' D.noSp) A
 
 theorem freed_esp_eq {s₀ u : State} (A : KeyABI s₀) (h : Ready s₀ u) :
     (freed KeyRandom.frameBytes u).gpr .esp = s₀.gpr .esp := by
@@ -54,11 +62,12 @@ theorem freed_esp_eq {s₀ u : State} (A : KeyABI s₀) (h : Ready s₀ u) :
   rw [e, BitVec.sub_add_cancel]
 
 /-- `vg_dsa_generate_key` meets its contract. -/
-theorem generateKey_correct (C : CheckCall.CheckFn) (D : DeriveFn) (s : State) (hpre : (Spec.Dsa.generateKeyContract abi 156).pre s) :
-    ∃ t s', Exec isa (code C.name D.name C.code D.code) s t s' ∧ abiPreserved s s' ∧
+theorem generateKeyWith_correct {I : State → Mem → Prop} (C : CheckInvoke I) (D : DeriveInvoke I)
+    (stable : StableScratch I) (nc : NoSp C.code) (nd : NoSp D.code) (s : State) (hpre : (Spec.Dsa.generateKeyContract abi 156).pre s) :
+    ∃ t s', Exec isa (codeWith C.code D.code) s t s' ∧ abiPreserved s s' ∧
       (Spec.Dsa.generateKeyContract abi 156).post s s' := by
   have A := keyABI_of hpre
-  obtain ⟨t, s', he, u, hF, rfl⟩ := code_ok C D A
+  obtain ⟨t, s', he, u, hF, rfl⟩ := codeWith_ok C D stable nc nd A
   refine ⟨t, _, he, ⟨fun r hr => ?_, ?_⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -100,5 +109,10 @@ theorem generateKey_correct (C : CheckCall.CheckFn) (D : DeriveFn) (s : State) (
       have hi : (u.mem.readW (argumentPointer s 2 + BitVec.ofNat 64 4) 32) = _ := hF.usedHi
       rw [lo, hi, toNat_ofNat_lt hul, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
       rfl
+
+theorem generateKey_correct (C : CheckCall.CheckFn) (D : DeriveFn) (s : State) (hpre : (Spec.Dsa.generateKeyContract abi 156).pre s) :
+    ∃ t s', Exec isa (code C.name D.name C.code D.code) s t s' ∧ abiPreserved s s' ∧
+      (Spec.Dsa.generateKeyContract abi 156).post s s' :=
+  generateKeyWith_correct C.invoke D.invoke (fun _ _ _ => trivial) (.call' C.noSp) (.call' D.noSp) s hpre
 
 end VG.Proof.Dsa.X86.KeyRandom

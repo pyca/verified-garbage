@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Dsa.X86.Generate
+import VerifiedGarbage.Proof.Dsa.X86.CheckingDispatchCT
 public import VerifiedGarbage.Proof.Dsa.X86.DispatchTiming
 
 /-! # Constant-time dispatch over the public generation widths -/
@@ -18,22 +19,7 @@ theorem deriveDispatch_relCT (widths : List (Nat × Nat)) (pLen qLen : Nat)
     (Qlen : ∀ s t, R s t → (pointerValue base s (.input .qLen)).toNat = qLen ∧
       (pointerValue base t (.input .qLen)).toNat = qLen)
     (body : RelCT isa R (Generate.deriveSized pLen qLen) Q) :
-    RelCT isa R (Generate.deriveDispatch widths) Q := by
-  induction widths with
-  | nil => simp only [List.not_mem_nil] at member
-  | cons w rest ih =>
-    obtain ⟨wp, wq⟩ := w
-    have B := bound (wp, wq) List.mem_cons_self
-    have Brest : ∀ w ∈ rest, w.1 < 2 ^ 32 ∧ w.2 < 2 ^ 32 :=
-      fun w hw => bound w (List.mem_cons_of_mem _ hw)
-    unfold Generate.deriveDispatch
-    refine RelCT.seq (widthMatch_relCT base size pLen qLen wp wq R I hz P Qlen B.1 B.2)
-      (fixedChoice_relCT (decide (pLen = wp ∧ qLen = wq)) ?_)
-    by_cases Both : pLen = wp ∧ qLen = wq
-    · simp only [Both, true_and, decide_true, ite_true]
-      rw [← Both.1, ← Both.2]
-      exact body
-    · simp only [Both, decide_false]
-      exact ih (by simpa only [List.mem_cons, Prod.mk.injEq, Both, false_or] using member) Brest
+    RelCT isa R (Generate.deriveDispatch widths) Q :=
+  generationDispatch_relCT Generate.deriveSized widths pLen qLen base size R Q I hz member bound P Qlen body
 
 end VG.Proof.Dsa.X86

@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Dsa.Encoding
 public import VerifiedGarbage.Impl.Dsa.X86.Generate
 public import VerifiedGarbage.Proof.Dsa.X86.Checks
 public import VerifiedGarbage.Proof.Dsa.X86.Moduli
+public import VerifiedGarbage.Proof.Dsa.X86.Execution
 public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 import VerifiedGarbage.Proof.Dsa.X86.DeriveCompute
 import VerifiedGarbage.Proof.Dsa.X86.WriteKey
@@ -30,13 +31,10 @@ theorem maskedBytes (bs : List Byte) (accepted : Prop) [Decidable accepted] :
   · simp only [mask32, H, ite_false, BitVec.ofNat_eq_ofNat, BitVec.and_zero, BitVec.setWidth_zero]
     exact List.map_const'
 
-theorem deriveBytes_ok {base : Addr} {size pLen qLen p q g x : Nat} {s : State} {out : BitVec 32}
+theorem deriveBytesWith_ok {base : Addr} {size pLen qLen p q g x : Nat} {s : State} {out : BitVec 32}
     (M : Moduli base size pLen qLen p q s)
     (Params : CallerBuffer s base size (.input .p) (2 * pLen + qLen))
-    (G : CallerBuffer s base size (.input .g) pLen)
     (X : CallerBuffer s base size (.input .nonce) qLen)
-    (hg : operandValue s base (.input .g) pLen = g)
-    (hx : operandValue s base (.input .nonce) qLen = x)
     (mask : flagW base (Layout.field .mask) s = BitVec.allOnes 32)
     (hp : pointerValue base s (.input .out) = out)
     (hf : out.toNat + (3 * pLen + 2 * qLen) ≤ 2 ^ 32)
@@ -45,10 +43,17 @@ theorem deriveBytes_ok {base : Addr} {size pLen qLen p q g x : Nat} {s : State} 
     (pa : Region.Disjoint ⟨(pointerValue base s (.input .p)).setWidth 64, 2 * pLen + qLen⟩
       ⟨out.setWidth 64, 3 * pLen + 2 * qLen⟩)
     (xa : Region.Disjoint ⟨(pointerValue base s (.input .nonce)).setWidth 64, qLen⟩
-      ⟨out.setWidth 64, 3 * pLen + 2 * qLen⟩) :
+      ⟨out.setWidth 64, 3 * pLen + 2 * qLen⟩)
+    (compute : Prog isa)
+    (compute_ok : WP isa compute s fun t =>
+      Moduli base size pLen qLen p q t ∧
+      flagW base (Layout.field .mask) t=flagW base (Layout.field .mask) s &&&
+        mask32 (((1<g ∧ g<p) ∧ (p-1)%q=0 ∧ g^q%p=1) ∧
+          (0<x ∧ x<q) ∧ (1<g^x%p ∧ g^x%p<p)) ∧
+      operandValue t base (.local t2) pLen=g^x%p ∧ Execution base s t) :
     let accepted := ((1 < g ∧ g < p) ∧ (p - 1) % q = 0 ∧ g ^ q % p = 1) ∧
       (0 < x ∧ x < q) ∧ (1 < g ^ x % p ∧ g ^ x % p < p)
-    WP isa (.seq (Generate.deriveCompute pLen qLen) (Generate.writeKey pLen qLen)) s fun sf =>
+    WP isa (.seq compute (Generate.writeKey pLen qLen)) s fun sf =>
       sf.gpr .eax = (if accepted then 1 else 0) ∧
       Spec.Rsa.bytesAt sf.mem (out.setWidth 64) (3 * pLen + 2 * qLen) =
         (if accepted then
@@ -62,7 +67,7 @@ theorem deriveBytes_ok {base : Addr} {size pLen qLen p q g x : Nat} {s : State} 
         VG.X86.Spill.Saved sf.mem (off base) regs Entry.savedRegisters := by
   intro accepted
   have L := M.lengths
-  refine WP.seq (WP.mono (deriveCompute_ok M G X hg hx) fun t ⟨Mt, F, Y, E⟩ => ?_)
+  refine WP.seq (WP.mono compute_ok fun t ⟨Mt, F, Y, E⟩ => ?_)
   have ptr (f : Field) (stable : StablePointer (.input f)) :
       pointerValue base t (.input f) = pointerValue base s (.input f) :=
     runFrame_pointer E.mem E.keeps (by decide) stable
@@ -103,5 +108,37 @@ theorem deriveBytes_ok {base : Addr} {size pLen qLen p q g x : Nat} {s : State} 
       fun a _ h => O a (.inr (by omega))
     exact O'.saved ha (by decide) (by have H : 15712 ≤ size := Mt.extent; omega)
       (by have := Mt.scr.nowrap; omega) (E.saved saved)
+
+theorem deriveBytes_ok {base : Addr} {size pLen qLen p q g x : Nat} {s : State} {out : BitVec 32}
+    (M : Moduli base size pLen qLen p q s)
+    (Params : CallerBuffer s base size (.input .p) (2 * pLen + qLen))
+    (G : CallerBuffer s base size (.input .g) pLen)
+    (X : CallerBuffer s base size (.input .nonce) qLen)
+    (hg : operandValue s base (.input .g) pLen = g)
+    (hx : operandValue s base (.input .nonce) qLen = x)
+    (mask : flagW base (Layout.field .mask) s = BitVec.allOnes 32)
+    (hp : pointerValue base s (.input .out) = out)
+    (hf : out.toNat + (3 * pLen + 2 * qLen) ≤ 2 ^ 32)
+    (hw : ∀ i < 3 * pLen + 2 * qLen, InRegions s.wr (off (out.setWidth 64) i) 1)
+    (ha : Region.Disjoint ⟨base, size⟩ ⟨out.setWidth 64, 3 * pLen + 2 * qLen⟩)
+    (pa : Region.Disjoint ⟨(pointerValue base s (.input .p)).setWidth 64, 2 * pLen + qLen⟩
+      ⟨out.setWidth 64, 3 * pLen + 2 * qLen⟩)
+    (xa : Region.Disjoint ⟨(pointerValue base s (.input .nonce)).setWidth 64, qLen⟩
+      ⟨out.setWidth 64, 3 * pLen + 2 * qLen⟩) :
+    let accepted := ((1 < g ∧ g < p) ∧ (p - 1) % q = 0 ∧ g ^ q % p = 1) ∧
+      (0 < x ∧ x < q) ∧ (1 < g ^ x % p ∧ g ^ x % p < p)
+    WP isa (.seq (Generate.deriveCompute pLen qLen) (Generate.writeKey pLen qLen)) s fun sf =>
+      sf.gpr .eax = (if accepted then 1 else 0) ∧
+      Spec.Rsa.bytesAt sf.mem (out.setWidth 64) (3 * pLen + 2 * qLen) =
+        (if accepted then
+          Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input .p)).setWidth 64) (2 * pLen + qLen) ++
+          Spec.Dsa.encodeBE pLen (g ^ x % p) ++
+          Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input .nonce)).setWidth 64) qLen
+        else List.replicate (3 * pLen + 2 * qLen) 0) ∧
+      Keeps powerClob s sf ∧ StackOutputFrame (s.gpr .esp) base (out.setWidth 64) usedBytes
+        (3 * pLen + 2 * qLen) s.mem sf.mem ∧
+      ∀ regs, VG.X86.Spill.Saved s.mem (off base) regs Entry.savedRegisters →
+        VG.X86.Spill.Saved sf.mem (off base) regs Entry.savedRegisters :=
+  deriveBytesWith_ok M Params X mask hp hf hw ha pa xa _ (deriveCompute_ok M G X hg hx)
 
 end VG.Proof.Dsa.X86
