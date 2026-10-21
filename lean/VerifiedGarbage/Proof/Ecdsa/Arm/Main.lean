@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
 import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Weierstrass.Pow
+import VerifiedGarbage.Proof.Framework.Arm.Syms
+import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
@@ -171,10 +173,19 @@ structure St₂ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : 
   acc : toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC) = tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2)
   rz_lt : sv c base s RZ < c.C.p
 
-/-- `[k]G`, then `Z^(p-2)`. -/
-theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s : State} (hS : St₁ c A s₀ base s)
-    {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c A s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq (VG.Impl.Weierstrass.Arm.Point.ladderP c.ladderCfg c.SP) (.seq (pow c.powP c.SP) rest)) s Q := by
+/-- The generator multiplication result needed by all later ECDSA stages. -/
+def GeneratorPost (c : Cfg) (base : Addr) (k : Nat) (s t : State) : Prop :=
+  Rest powClob s t ∧ Unch base (VG.Proof.Weierstrass.Arm.Point.ladWp c.ladderCfg c.wk) s.mem t.mem ∧
+  ModOkW c.MP' size c.C.p t.mem base ∧
+  (∀ x ∈ [c.sl RX,c.sl RY,c.sl RZ],wordsVal t.mem base x c.n<c.C.p) ∧
+  Rep c.C (tmv c.C c.n base t (c.sl RX)) (tmv c.C c.n base t (c.sl RY))
+    (tmv c.C c.n base t (c.sl RZ)) (mul k (G c.C))
+
+/-- The default generator implementation, shared by the unmodified callers. -/
+theorem generator_ladder_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s : State}
+    (hS : St₁ c A s₀ base s) :
+    WP isa (VG.Impl.Weierstrass.Arm.Point.ladderP c.ladderCfg c.SP) s
+      (GeneratorPost c base (kv c A s₀) s) := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hS.scr.nowrap
@@ -218,10 +229,27 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s :
   have henc : encodable (BitVec.ofNat 32 (64 * c.n)) = true := by
     have : ∀ n < 10, encodable (BitVec.ofNat 32 (64 * n)) = true := by decide
     exact this _ h7
-  refine WP.seq (WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (ladLay hc) (ladWk hc) hc.fp ladPt hpR
+  refine WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (ladLay hc) (ladWk hc) hc.fp ladPt hpR
     (bitsAt_lt hc (j := 0) (by decide)) hS.scr hS.far (modP_of hc F.mp) hlt hstep hR hS.t₀ henc)
-    fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
+    fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_
   rw [Nat.shiftRight_zero] at R₅
+  exact ⟨K₅,U₅,M₅,L₅,R₅⟩
+
+/-- The common inversion and state preservation after any verified generator routine. -/
+theorem stage₂With (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : St₁ c A s₀ base s)
+    {generator : Prog isa} (hMul : WP isa generator s (GeneratorPost c base (kv c A s₀) s))
+    {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c A s₀ base s' → WP isa rest s' Q) :
+    WP isa (.seq generator (.seq (pow c.powP c.SP) rest)) s Q := by
+  have h0 := hc.n0
+  have h7 := hc.n10
+  have hn := hS.scr.nowrap
+  have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
+  have hp3 := hc.p_ge
+  have F := hS.fixed
+  have henc : encodable (BitVec.ofNat 32 (64*c.n))=true := by
+    have en : ∀ n<10,encodable (BitVec.ofNat 32 (64*n))=true := by decide
+    exact en _ h7
+  refine WP.seq (WP.mono hMul fun s₅ ⟨K₅,U₅,M₅,L₅,R₅⟩ => ?_)
   rw [VG.Proof.Weierstrass.Arm.Point.ladWp, ladWx_eq] at U₅
   have hs₅ := hS.scr.of_rest K₅ (by decide)
   have hf₅ := hS.far.of_rest K₅
@@ -263,6 +291,12 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s :
     exact v₆
   · rw [r₆ (i := RZ) (by decide) (by decide)]
     exact L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
+
+/-- `[k]G` by the generic ladder, then `Z^(p-2)`. -/
+theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s : State} (hS : St₁ c A s₀ base s)
+    {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c A s₀ base s' → WP isa rest s' Q) :
+    WP isa (.seq (VG.Impl.Weierstrass.Arm.Point.ladderP c.ladderCfg c.SP) (.seq (pow c.powP c.SP) rest)) s Q :=
+  stage₂With hc hS (generator_ladder_ok hc hC hS) h
 
 /-- After `x`, `r`, the checks and `k^(n-2)`. -/
 structure St₃ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
@@ -366,7 +400,7 @@ structure SignKeep (c : Cfg) (s₀ s' : State) : Prop where
   frame : ∃ m : Mem, Unch (scPtr s₀) [(0, 8192)] s₀.mem m ∧ Outside (ptr s₀ .r0) 0 (2 * c.C.len) m s'.mem
 
 /-- `s`, its check, and the result. -/
-theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) {base : Addr} (hb : base = scPtr s₀)
+theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List Region} (hp : Pre c s₀ extra) {base : Addr} (hb : base = scPtr s₀)
     {s : State} (hS : St₃ c .sign s₀ base s) :
     WP isa c.scalar s fun s' => SignKeep c s₀ s' ∧ SignPost c s₀ s' := by
   have h0 := hc.n0
@@ -439,6 +473,18 @@ theorem sign_eq (c : Cfg) : c.sign = .seq (.block c.setup) (.seq (bits (c.sl K) 
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
     (.seq (VG.Impl.Weierstrass.Arm.Point.ladderP c.ladderCfg c.SP) (.seq (pow c.powP c.SP) (.seq c.middle
       (.seq (pow c.powN c.SN) c.scalar))))))) := rfl
+
+/-- The shared signing pipeline with an interchangeable generator multiplication. -/
+theorem signWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List Region}
+    (hp : Pre c s₀ extra) {generator : Prog isa}
+    (hMul : ∀ s, St₁ c .sign s₀ (scPtr s₀) s → s.syms=s₀.syms →
+      WP isa generator s (GeneratorPost c (scPtr s₀) (kv c .sign s₀) s)) :
+    WP isa (c.signWith generator) s₀ fun s' => SignKeep c s₀ s' ∧ SignPost c s₀ s' := by
+  have setupRun := stage₁ hc hp.setup (rest := .block [])
+    (Q := fun s => St₁ c .sign s₀ (scPtr s₀) s) (fun _ S => WP.block_nil S)
+  have run := WP.mono_syms setupRun fun s S sy =>
+    stage₂With hc S (hMul s S sy) fun _ S₂ => stage₃ hc S₂ fun _ S₃ => stage₄ hc hC hp rfl S₃
+  simpa only [Cfg.signWith,Cfg.setup,WP.seq_iff (M := isa),WP.block_nil_iff (M := isa)] using run
 
 /-- `vg_ecdsa_<curve>_sign` computes the specification's signature, restores
 the callee-saved registers and changes only the working space and `out`. -/

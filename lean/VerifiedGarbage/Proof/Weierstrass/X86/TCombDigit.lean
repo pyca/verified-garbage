@@ -125,13 +125,6 @@ theorem hornerBits_ok {v : Nat → Nat} (hv : ∀ i, v i ≤ 1) :
       simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr'.1, hr'.2, ite_false]
       exact k₁.1 r (by simpa using hr')
 
-private theorem magH_fact : ∀ w < 9, ∀ v < 2 ^ w,
-    (BitVec.ofNat 32 v - BitVec.ofNat 32 (2 ^ (w - 1)) ^^^
-        ((0 : BitVec 32) - (BitVec.ofNat 32 v - BitVec.ofNat 32 (2 ^ (w - 1))) >>> 31)) -
-      ((0 : BitVec 32) - (BitVec.ofNat 32 v - BitVec.ofNat 32 (2 ^ (w - 1))) >>> 31) =
-      BitVec.ofNat 32 (magH (2 ^ (w - 1)) v) := by
-  decide +kernel
-
 /-- `eax = ebx = |v - H|` from the window `v` in `eax`, for `H = 2^(w-1)`,
 `w ≤ 8`, through `edx`. -/
 theorem magnitudeH_ok (s : State) {w v : Nat} (hw : w < 9) (hv : v < 2 ^ w)

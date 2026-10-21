@@ -456,7 +456,10 @@ theorem core_ct {i : Nat} :
         Pbkdf2.Stream.Arm.ce0, Pbkdf2.Stream.Arm.ce1, Pbkdf2.Stream.Arm.ce2, Pbkdf2.Stream.Arm.ce3, pushed_gpr,
         pushed_sp, a₁.r0, a₁.r1, a₁.r2, a₁.r3, a₂.r0, a₂.r1, a₂.r2, a₂.r3,
         Proof.Pbkdf2.Whole.Arm.p2_arg0 (s := s₁) (by omega), Proof.Pbkdf2.Whole.Arm.p2_arg0 (s := s₂) (by omega),
-        a₁.r12, a₂.r12, sp_two c₁ c₂, and_self]
+        a₁.r12,a₂.r12,sp_two c₁ c₂,true_and]
+      intro c hc
+      have hmem : c∈e.1.cs := hk.2.1.2.2 ▸ hc
+      rw [core_syms c₁ hmem,core_syms c₂ hmem]
 
 /-- Whether to go on agrees: in both runs, iff the candidate is before the one it stops at. -/
 theorem dec_two {L : Lay P.I.hashLen} {m₁ m₂ : Mem} {i : Nat} (hx : exitAt P L m₁ = exitAt P L m₂) {u₁ u₂ : State}
@@ -581,8 +584,8 @@ theorem stageB_ct :
 /-- Two runs from states that satisfy the precondition and agree on public
 data, after the frame's allocation. -/
 def Entered (P : RfcHash) (a b : State) : Prop :=
-  ∃ s₁ s₂, ((rfcArm P.I (240 + 4 * P.e)).pre s₁ ∧ (rfcArm P.I (240 + 4 * P.e)).pre s₂ ∧
-    (rfcArm P.I (240 + 4 * P.e)).pub s₁ s₂) ∧
+  ∃ s₁ s₂, ((rfcArm P.I (240 + 4 * P.e) P.R.coreConsts).pre s₁ ∧ (rfcArm P.I (240 + 4 * P.e) P.R.coreConsts).pre s₂ ∧
+    (rfcArm P.I (240 + 4 * P.e) P.R.coreConsts).pub s₁ s₂) ∧
     a = allocated (frameBytes P.R.wide P.R.hHigh) s₁ ∧ b = allocated (frameBytes P.R.wide P.R.hHigh) s₂
 
 theorem prologue_tail : ∃ hc, (VG.Taint.check taint (τr [.r0, .r1, .r2, .r3, .r12])
@@ -611,24 +614,34 @@ arguments, which agree, and the same number of candidates. -/
 theorem start_ct : RelCT isa (Entered P) (.block Cfg.prologue) (Two P fun _ _ _ _ => True) := by
   intro a b t₁ t₂ a' b' hp e₁ e₂
   obtain ⟨ht, -⟩ := start_blk _ _ _ _ _ _ hp e₁ e₂
-  obtain ⟨s₁, s₂, ⟨p₁, p₂, hsp, h0, h1, h2, h3, hres⟩, rfl, rfl⟩ := hp
+  obtain ⟨s₁, s₂, ⟨p₁,p₂,hsp,h0,h1,h2,h3,hres,hsy⟩, rfl, rfl⟩ := hp
   obtain ⟨_, u₁, x₁, y₁⟩ := entry_ok (P := P) p₁
   obtain ⟨_, u₂, x₂, y₂⟩ := entry_ok (P := P) p₂
   obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
-  have hl : lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s₂ = lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s₁ := by simp only [lay, hsp, h0, h1, h2, h3]
-  have hr : (result P.I s₁.mem (State.addr (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s₁).d) (State.addr (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s₁).dg)).2 =
-      (result P.I s₂.mem (State.addr (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s₁).d) (State.addr (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s₁).dg)).2 := by
+  have eqSy : (fun n => if n∈P.R.coreConsts.map Prod.fst then s₂.syms n else 0)=
+      (fun n => if n∈P.R.coreConsts.map Prod.fst then s₁.syms n else 0) := by
+    funext n
+    by_cases hn : n∈P.R.coreConsts.map Prod.fst
+    · obtain ⟨c,hc,rfl⟩ := List.mem_map.mp hn
+      simp only [hn,↓reduceIte]
+      exact (hsy c hc).symm
+    · simp only [hn,↓reduceIte]
+  have hl : lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s₂ P.R.coreConsts=
+      lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s₁ P.R.coreConsts := by
+    simp only [lay,hsp,h0,h1,h2,h3,eqSy]
+  have hr : (result P.I s₁.mem (State.addr (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s₁ P.R.coreConsts).d) (State.addr (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s₁ P.R.coreConsts).dg)).2 =
+      (result P.I s₂.mem (State.addr (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s₁ P.R.coreConsts).d) (State.addr (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s₁ P.R.coreConsts).dg)).2 := by
     show (result P.I s₁.mem (State.addr (s₁.gpr .r1)) (State.addr (s₁.gpr .r2))).2 =
       (result P.I s₂.mem (State.addr (s₁.gpr .r1)) (State.addr (s₁.gpr .r2))).2
     rw [hres, h1, h2]
   rw [hl] at y₂
-  exact ⟨ht, ⟨lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s₁, s₁.gpr, s₂.gpr, s₁.mem, s₂.mem⟩, lay_ok p₁,
+  exact ⟨ht, ⟨lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide P.R.hHigh s₁ P.R.coreConsts, s₁.gpr, s₂.gpr, s₁.mem, s₂.mem⟩, lay_ok p₁,
     coreOk_lay P s₁,
     congrArg (fun x => if x = 0 then P.I.tries - 1 else x - 1) hr, y₁, y₂, trivial, trivial⟩
 
 /-- Runs whose public data agree have the same layout, and stop at the same candidate. -/
-theorem sign_ct : ConstantTime isa (rfcArm P.I (240 + 4 * P.e)).pre (rfcArm P.I (240 + 4 * P.e)).pub
+theorem sign_ct : ConstantTime isa (rfcArm P.I (240 + 4 * P.e) P.R.coreConsts).pre (rfcArm P.I (240 + 4 * P.e) P.R.coreConsts).pub
     (cfgOf P).sign := by
   refine VG.RelCT.constantTime (Q := fun _ _ => True) (alloc_ct (R := fun _ _ => True) ?_)
   rw [Cfg.body, show Cfg.prologue ++ (if (cfgOf P).wide then (cfgOf P).coreDigest else (cfgOf P).reduce) ++

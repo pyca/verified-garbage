@@ -1,6 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
 
+import VerifiedGarbage.Proof.Framework.Arm.Syms
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hmac
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
@@ -62,7 +63,7 @@ abbrev coreSig (P : RfcHash) {dn : Nat} (L : Lay dn) (m : Mem) : Option (Nat × 
 /-- `core` reads the private key, the digest and `k`, `Q` bytes each, and its
 argument on the stack, and writes `out` and `scratch`. -/
 abbrev coreRd (P : RfcHash) {dn : Nat} (L : Lay dn) : List Region :=
-  [⟨State.addr L.d, P.Q⟩, ⟨dgAddr L, P.Q⟩, ⟨kAddr L, P.Q⟩, ⟨L.B + BitVec.ofNat 64 16, 4⟩]
+  [⟨State.addr L.d, P.Q⟩, ⟨dgAddr L, P.Q⟩, ⟨kAddr L, P.Q⟩, ⟨L.B + BitVec.ofNat 64 16, 4⟩] ++ L.TBLs
 abbrev coreWr (P : RfcHash) {dn : Nat} (L : Lay dn) : List Region := [⟨State.addr L.out, 2 * P.Q⟩, L.SCR]
 
 /-- The arguments of `core`. -/
@@ -111,11 +112,11 @@ structure CoreRegs {dn : Nat} (L : Lay dn) (t : State) : Prop where
 candidate, the digest has `Q` bytes; if they do, the frame has its top
 words; and `h` is where the code keeps it. -/
 def CoreOk (P : RfcHash) {dn : Nat} (L : Lay dn) : Prop :=
-  L.q = P.Q ∧ ((L.wide = false → P.Q ≤ dn) ∧ L.hHigh = P.R.hHigh) ∧ L.wide = P.R.wide
+  L.q = P.Q ∧ ((L.wide = false → P.Q ≤ dn) ∧ (L.hHigh = P.R.hHigh ∧ L.cs = P.R.coreConsts)) ∧ L.wide = P.R.wide
 
 /-- The words at the frame's top are the code's. -/
 theorem CoreOk.e_eq {L : Lay dn} (hk : CoreOk P L) : L.e = P.e := by
-  rw [L.ew, hk.2.2, hk.2.1.2]
+  rw [L.ew, hk.2.2, hk.2.1.2.1]
 
 /-- `core`'s digest and `k`: in the digest or the frame, apart from `out`,
 `scratch` and the stack below the frame, and not wrapping. -/
@@ -152,8 +153,62 @@ theorem core_sp (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     State.addr (t.sp - BitVec.ofNat 32 8) = L.B + BitVec.ofNat 64 16 := by
   rw [addr_sub' (by have := hc.sp24 hL; omega), hc.spA hL, Offset.add_ofNat_sub _ (by decide)]
 
+/-- The nested call preserves the table-address environment. -/
+theorem core_syms {t : State} (hc : Ctx L g m₀ t) {rd wr : List Region}
+    {c : String × List (BitVec 64)} (h : c∈L.cs) :
+    ((pushed [.r12,.lr] t).callEntry.withRegions rd wr).syms c.1=L.sy c.1 := hc.sy c h
+
+theorem core_tbls (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) {rd wr : List Region} :
+    Abi.constRegions (fun n => State.addr (((pushed [.r12,.lr] t).callEntry.withRegions rd wr).syms n))
+      P.R.coreConsts=L.TBLs := by
+  rw [← hk.2.1.2.2]
+  apply List.map_congr_left
+  intro c hc'
+  simp only [core_syms hc hc']
+
+/-- The public ROM survives the RFC frame, its calls, and the core's argument push. -/
+theorem core_tables (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) :
+    TablesOk P.R.coreConsts
+      (((pushed [.r12,.lr] t).callEntry.withRegions (coreRd P L) (coreWr P L)).syms)
+      (((pushed [.r12,.lr] t).callEntry.withRegions (coreRd P L) (coreWr P L)).mem)
+      (coreWr P L) := by
+  intro c hcc
+  have hcs : c∈L.cs := hk.2.1.2.2 ▸ hcc
+  have table : (⟨State.addr (L.sy c.1),8*c.2.length⟩ : Region)∈L.TBLs := List.mem_map_of_mem
+    (f := fun c => (⟨State.addr (L.sy c.1),8*c.2.length⟩ : Region)) hcs
+  have ht := hL.tables _ table
+  have fit : 8*c.2.length≤2^64 := by dsimp only at ht; omega
+  have hpushed : Frame [L.STK] t.mem (pushed [.r12,.lr] t).mem := by
+    apply (pushed_frameA (rs := [.r12,.lr]) (s := t) (by change 8≤t.sp.toNat; have := hc.sp24 hL; omega)).sub
+    intro r hr
+    obtain rfl := List.mem_singleton.mp hr
+    refine ⟨L.STK,by simp,?_⟩
+    have ea : belowA t.sp 8=⟨L.B+BitVec.ofNat 64 16,8⟩ := by
+      change (⟨State.addr (t.sp-BitVec.ofNat 32 8),8⟩ : Region)=_
+      rw [core_sp hL hc]
+    change Region.Sub (belowA t.sp 8) L.STK
+    rw [ea]
+    exact Offset.sub_base _ (by have := L.he; omega)
+  have frame := hc.frame.trans (hpushed.sub fun r hr => by
+    obtain rfl := List.mem_singleton.mp hr
+    exact ⟨L.STK,by simp,(fun _ h => h)⟩)
+  simp only [core_syms hc hcs,State.withRegions_mem,State.callEntry_mem]
+  refine ⟨?_,?_,?_⟩
+  · intro i hi
+    rw [frame.readW (r := ⟨State.addr (L.sy c.1),8*c.2.length⟩)
+      (Offset.contains_base _ (by omega) (by omega)) ht.2 (by decide)]
+    exact hc.held c hcs i hi
+  · simpa only [toNat_addr] using ht.1
+  · intro r hr
+    simp only [coreWr,List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl
+    · have e : (⟨State.addr L.out,2*P.Q⟩ : Region)=L.OUT := by rw [Lay.OUT,hk.1]
+      rw [e]
+      exact ht.2 _ (by simp)
+    · exact ht.2 _ (by simp)
+
 theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) (hr : CoreRegs L t) :
-    (coreK P.R.E).pre ((pushed [.r12, .lr] t).callEntry.withRegions (coreRd P L) (coreWr P L)) := by
+    (coreK P.R.E P.R.coreConsts).pre ((pushed [.r12, .lr] t).callEntry.withRegions (coreRd P L) (coreWr P L)) := by
   have h24 := hc.sp24 hL
   have hsp := core_sp hL hc
   have := hL.nB; have := L.sp.isLt
@@ -162,33 +217,38 @@ theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
   have eO : (⟨State.addr L.out, 2 * P.R.E.C.len⟩ : Region) = L.OUT := by rw [Lay.OUT, hq]
   obtain ⟨-, gO, gS, -, gN⟩ := coreArg_ok hL hk (.inl ⟨rfl, rfl⟩)
   obtain ⟨-, kO, kS, -, kN⟩ := coreArg_ok hL hk (.inr ⟨rfl, rfl⟩)
-  simp only [coreK, State.withRegions_gpr, ce0, ce1, ce2, ce3, pushed_gpr, hr.r0, hr.r1,
+  rw [coreK]
+  simp only [State.withRegions_gpr, ce0, ce1, ce2, ce3, pushed_gpr, hr.r0, hr.r1,
     hr.r2, hr.r3, p2_arg0 (s := t) (by omega), hr.r12, State.withRegions_rd, State.withRegions_wr,
     State.withRegions_sp, State.callEntry_sp, pushed_sp, dgArg_w hL, kArg_w hL]
   simp only [eD, eO]
   refine ⟨?_, trivial, hL.oc, hL.dc, gS, kS, ?_, ?_,
-    by have := hL.no; rw [hq] at this; omega, by have := hL.nd; rw [hq] at this; omega, gN, kN, hL.nc, ?_⟩
-  · rw [← eD, show 4 * [Reg.r12, Reg.lr].length = 8 from rfl, hsp]
+    by have := hL.no; rw [hq] at this; omega, by have := hL.nd; rw [hq] at this; omega, gN, kN, hL.nc, ?_,?_⟩
+  · rw [core_tbls hk hc,← eD, show 4 * [Reg.r12, Reg.lr].length = 8 from rfl, hsp]
   · rw [show 4 * [Reg.r12, Reg.lr].length = 8 from rfl, hsp]; exact (hL.stk_OUT (by omega)).symm
   · rw [show 4 * [Reg.r12, Reg.lr].length = 8 from rfl, hsp]; exact (hL.stk_SCR (by omega)).symm
   · rw [show 4 * [Reg.r12, Reg.lr].length = 8 from rfl, VG.Arm.FrameStack.sub_toNat' (by omega)]; omega
+  · have tab := core_tables hL hk hc
+    have eqW : coreWr P L=[L.OUT,L.SCR] := by simp only [coreWr,Lay.OUT,hk.1]
+    rw [eqW] at tab
+    exact tab
 
 theorem core_cov (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) :
     Covers (coreRd P L ++ coreWr P L) ((pushed [.r12, .lr] t).rd ++ (pushed [.r12, .lr] t).wr) := by
   have hq : L.q = P.Q := hk.1
   have hw : ∀ {x : Addr}, (∃ R ∈ [L.D, L.DG, L.FR], Within ⟨x, P.Q⟩ R) →
-      ∃ R ∈ [L.D, L.DG] ++ [⟨L.B + BitVec.ofNat 64 16, 8⟩, L.FR, L.OUT, L.SCR], Within ⟨x, P.Q⟩ R :=
+      ∃ R ∈ ([L.D, L.DG] ++ L.TBLs) ++ [⟨L.B + BitVec.ofNat 64 16, 8⟩, L.FR, L.OUT, L.SCR], Within ⟨x, P.Q⟩ R :=
     fun ⟨R, hR, hW⟩ => ⟨R, by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hR; rcases hR with rfl | rfl | rfl <;> simp, hW⟩
   refine covers_of fun q hq' => ?_
   rw [pushed_rd, pushed_wr, hc.rd, hc.wr, show 4 * [Reg.r12, Reg.lr].length = 8 from rfl, core_sp hL hc]
-  simp only [coreRd, coreWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-    or_false] at hq'
-  rcases hq' with rfl | rfl | rfl | rfl | rfl | rfl
+  simp only [coreRd, coreWr, List.cons_append, List.nil_append, List.mem_cons,List.mem_append,List.not_mem_nil,or_false] at hq'
+  rcases hq' with rfl | rfl | rfl | rfl | htbl | rfl | rfl
   · exact ⟨L.D, by simp, within_base _ (by omega)⟩
   · exact hw (coreArg_ok hL hk (.inl ⟨rfl, rfl⟩)).1
   · exact hw (coreArg_ok hL hk (.inr ⟨rfl, rfl⟩)).1
   · exact ⟨⟨L.B + BitVec.ofNat 64 16, 8⟩, by simp, within_base _ (by omega)⟩
+  · exact ⟨q,by simp [htbl],within_base q.base (Nat.le_refl q.len)⟩
   · exact ⟨L.OUT, by simp, within_base _ (by omega)⟩
   · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
 
@@ -210,13 +270,14 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
           Spec.Sha256.bytesAt t'.mem (State.addr L.out) (2 * P.Q) = Spec.Ecdsa.encode P.R.E.C rs
       | none => BitVec.setWidth 32 (t'.gpr .r1 ++ t'.gpr .r0) = 0 ∧
           Spec.Sha256.bytesAt t'.mem (State.addr L.out) (2 * P.Q) = List.replicate (2 * P.Q) 0 := by
+  apply WP.of_syms
   have h24 := hc.sp24 hL
   have hst := hc.stk_eq hL
   have hq : L.q = P.Q := hk.1
   have eW : coreWr P L = [L.OUT, L.SCR] := by simp only [coreWr, Lay.OUT, hq]
   refine frame2_ok (ra := .r12) (rb := .lr) (t := .r12) rfl (by decide) P.R.coreX
     (by show armStack P.R.coreC ≤ 16; rw [P.R.coreStack]; omega) h24 (core_pre hL hk hc hr)
-    (core_cov hL hk hc) (core_covW hq hc) fun s₂ ha hpost => ?_
+    (core_cov hL hk hc) (core_covW hq hc) fun s₂ ha hpost syEnd => ?_
   rw [eW] at ha
   have hf : Frame [L.OUT, L.SCR, ⟨L.B, 24⟩] t.mem (popped .r12 8 s₂).mem := ha.frame.sub fun q hq' => by
     rw [hst] at hq'
@@ -225,7 +286,7 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
     · exact ⟨_, by simp, sub_refl _⟩
     · exact ⟨_, by simp, sub_refl _⟩
     · exact ⟨_, by simp, sub_refl _⟩
-  refine ⟨hc.after hL ha fun q hq' => ?_, ha.cs .r9 (by decide) (by decide), hf, ?_⟩
+  refine ⟨hc.after hL ha (fun q hq' => ?_) syEnd, ha.cs .r9 (by decide) (by decide), hf, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hq'
     rcases hq' with rfl | rfl
     · exact .inl (sub_refl _)

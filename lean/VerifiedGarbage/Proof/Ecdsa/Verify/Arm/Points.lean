@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Scalars
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Generator
+import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Ecdh.Arm.Peer
 import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
 import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
@@ -257,13 +259,14 @@ abbrev ptsW : List Nat :=
   [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ, TMP, UX, UY, UZ]
 
 /-- `[u]G + [v]Q`, into `R`. -/
-theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
-    (hM : Mid c s₀ base s) {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
+theorem pointsWith_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
+    (hM : Mid c s₀ base s) {generator : Prog isa} {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
+    (hMul : GeneratorWP c generator s₀ base (sv c base s U) Q₁ s.syms)
     (hstep₁ : Step c.ladderCfg c.C base s (sv c base s U) Q₁) (hO₁ : Q₁ (64 * c.n) 0 1 0)
     (hstep₂ : Step (Impl.Ecdh.Arm.Cfg.ladderQ c) c.C base s (sv c base s V) Q₂)
     (hO₂ : Q₂ (64 * c.n) 0 1 0) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Pts c s₀ base Q₁ Q₂ s' → WP isa rest s' Q) :
-    WP isa (.seq (Impl.Ecdsa.Verify.Arm.Cfg.points c) rest) s Q := by
+    WP isa (.seq (Impl.Ecdsa.Verify.Arm.Cfg.pointsWith c generator) rest) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hM.scr.nowrap
@@ -276,11 +279,11 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     exact this _ h7
   have tb : ∀ {i}, i < 45 → ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
     fun hi => apart_tbl h7 hi 0
-  rw [points_eq]
+  unfold Impl.Ecdsa.Verify.Arm.Cfg.pointsWith
   refine WP.seq ?_
   -- The table of `u`.
-  refine WP.seq (WP.mono (tbl_bits_ok hc hM.scr hM.far (i := U) (j := 0) (by decide) (by decide))
-    fun s₁ ⟨b₁, k₁, O₁⟩ => ?_)
+  refine WP.seq (WP.mono_syms (tbl_bits_ok hc hM.scr hM.far (i := U) (j := 0) (by decide) (by decide))
+    fun s₁ ⟨b₁, k₁, O₁⟩ syms₁ => ?_)
   have hs₁ := hM.scr.of_rest k₁ (by decide)
   have hf₁ := hM.far.of_rest k₁
   have U₁ : Unch base [(bitsAt c.n 0, 64 * c.n)] s.mem s₁.mem := O₁.unch
@@ -310,13 +313,14 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     show Q₁ (64 * c.n) (toM _ _ (sv c base s₁ RX)) (toM _ _ (sv c base s₁ RY)) (toM _ _ (sv c base s₁ RZ))
     rw [v₁ (by decide), v₁ (by decide), v₁ (by decide), hM.rx, hM.ry, hM.rz, toM_cmont hc, toM_zero]
     exact hO₁
-  refine WP.seq (WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (ladLay hc) (ladWk hc) hc.fp ladPt hpR
-    (bitsAt_lt hc (j := 0) (by decide)) hs₁ hf₁
-    (modP_of hc F₁.mp) hlt₁
+  refine WP.seq (WP.mono (hMul s₁ hs₁ hf₁ F₁ hlt₁
     (Step.congr hstep₁ (tv₁ (by decide)) (tv₁ (by decide)) (tv₁ (by decide)) (tv₁ (by decide))
       (tv₁ (by decide))) hR₁ (fun t ht => by
-        show s₁.mem (off base (bitsAt c.n 0 + t)) = _
-        rw [b₁ t ht]) henc)
+        show s₁.mem (off base (bitsAt c.n 0+t))=_
+        rw [b₁ t ht])
+    (hM.rest.trans (k₁.mono (by simp [work])))
+    (whole_of' hM.unch U₁ (by intro w hw; obtain rfl := List.mem_singleton.mp hw; exact tbl_le h7))
+    syms₁)
     fun s₂ ⟨K₂, U₂, M₂, L₂, q₂⟩ => ?_)
   rw [VG.Proof.Weierstrass.Arm.Point.ladWp, ladWx_eq] at U₂
   have hs₂ := hs₁.of_rest K₂ (by decide)
@@ -465,5 +469,15 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
   · refine whole_of' hM.unch UW fun w hw => (List.mem_append.mp hw).elim
       (fun hw => by rw [List.mem_singleton.mp hw]; exact tbl_le h7)
       fun hw => by have := slWkP_le h7 (by decide) w hw; dsimp only [size] at this; omega
+
+/-- The existing double-ladder implementation uses the same generic pipeline. -/
+theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
+    (hM : Mid c s₀ base s) {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
+    (hstep₁ : Step c.ladderCfg c.C base s (sv c base s U) Q₁) (hO₁ : Q₁ (64*c.n) 0 1 0)
+    (hstep₂ : Step (Impl.Ecdh.Arm.Cfg.ladderQ c) c.C base s (sv c base s V) Q₂)
+    (hO₂ : Q₂ (64*c.n) 0 1 0) {rest : Prog isa} {Q : State → Prop}
+    (h : ∀ s',Pts c s₀ base Q₁ Q₂ s' → WP isa rest s' Q) :
+    WP isa (.seq (Impl.Ecdsa.Verify.Arm.Cfg.points c) rest) s Q :=
+  pointsWith_ok hc hM (generatorWP_ladder hc) hstep₁ hO₁ hstep₂ hO₂ h
 
 end VG.Proof.Ecdsa.Verify.Arm

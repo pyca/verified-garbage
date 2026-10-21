@@ -45,7 +45,7 @@ theorem copyW_ok {u : State} {src dst : Reg} {S D : BitVec 32} (hs : u.gpr src =
       u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.sp = u.sp ∧ (∀ r, r ≠ .r0 → u'.gpr r = u.gpr r) ∧
       u'.mem = u.mem.writeW DA (u.mem.readW SA 32) :=
   wp_ldr (a := SA) hso (by rw [hs]; exact hSA) hr fun s₁ u₁ =>
-    wp_str (a := DA) hdo (by rw [u₁.other _ hdr, hd]; exact hDA) (by rw [u₁.wr]; exact hw) fun s₂ m₂ =>
+    wp_strS (a := DA) hdo (by rw [u₁.other _ hdr, hd]; exact hDA) (by rw [u₁.wr]; exact hw) fun s₂ m₂ =>
       WP.block_nil ⟨by rw [m₂.rd, u₁.rd], by rw [m₂.wr, u₁.wr], by rw [m₂.sp, u₁.sp],
         fun r hr => by rw [m₂.gpr, u₁.other _ hr], by rw [m₂.mem, u₁.mem, u₁.gpr]⟩
 

@@ -48,13 +48,16 @@ namespace Cfg
 variable (c : Impl.Ecdsa.Arm.Cfg)
 
 /-- The signature's code up to `Z^(p-2)`, with the public key's arguments. -/
-def upToPow : Prog isa :=
+def upToPowWith (generator : Prog isa) : Prog isa :=
   .seq (.block (c.setupWith Args.publicKey)) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq (Point.ladderP c.ladderCfg c.SP) <|
+  .seq generator <|
   .seq (pow c.powP c.SP) (.block [])
+
+/-- The common prefix with the variable-base ladder. -/
+def upToPow : Prog isa := upToPowWith c (Point.ladderP c.ladderCfg c.SP)
 
 /-- `04 ‖ x ‖ y` (or zeros) to `out` (in `lr`), the flag's low bit to `r0`,
 and the callee-saved registers restored. -/
@@ -73,7 +76,10 @@ def middle : Prog isa :=
     .block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ finish c)]
 
 /-- `vg_ec_<curve>_public_key`. -/
-def publicKey : Prog isa := .seq (upToPow c) (middle c)
+def publicKeyWith (generator : Prog isa) : Prog isa := .seq (upToPowWith c generator) (middle c)
+
+/-- Public-key generation with the generic ladder. -/
+def publicKey : Prog isa := publicKeyWith c (Point.ladderP c.ladderCfg c.SP)
 
 end Cfg
 

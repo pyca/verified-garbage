@@ -1,16 +1,18 @@
 module
+
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Stages
 public import VerifiedGarbage.Impl.EcKey.Arm
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Spec.EcKey
-
 import VerifiedGarbage.Proof.EcKey.Arm.Finish
 import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
-import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
 import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
 import VerifiedGarbage.Proof.X25519.Arm.Limbs
+import VerifiedGarbage.Proof.Framework.Arm.Syms
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Elliptic curve public keys on 32-bit ARM: the whole function
@@ -185,8 +187,8 @@ theorem middle_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hs : 
 /-- The arguments: `out` (`1 + 2 len` bytes), `d` (`len` bytes) and `scratch`,
 readable and writable as the contract says and apart from each other as it
 says. -/
-structure PkPre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨ptr s .r1, c.C.len⟩]
+structure PkPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
+  rd : s.rd = [⟨ptr s .r1, c.C.len⟩] ++ extra
   wr : s.wr = [⟨ptr s .r0, 1 + 2 * c.C.len⟩, ⟨ptr s .r2, 8192⟩]
   out_sc : Region.Disjoint ⟨ptr s .r0, 1 + 2 * c.C.len⟩ ⟨ptr s .r2, 8192⟩
   d_sc : Region.Disjoint ⟨ptr s .r1, c.C.len⟩ ⟨ptr s .r2, 8192⟩
@@ -194,7 +196,7 @@ structure PkPre (c : Cfg) (s : State) : Prop where
   d_fit : (s.gpr .r1).toNat + c.C.len ≤ 2 ^ 32
   sc_fit : (s.gpr .r2).toNat + 8192 ≤ 2 ^ 32
 
-theorem PkPre.setup {s : State} (hp : PkPre c s) : SetupPre c Args.publicKey s where
+theorem PkPre.setup {s : State} {extra : List Region} (hp : PkPre c s extra) : SetupPre c Args.publicKey s where
   shift := .inl rfl
   args := by unfold argsOk; decide
   sc_in := fun h => nomatch h
@@ -237,11 +239,21 @@ theorem publicKey_eq' (c : Cfg) : Impl.EcKey.Arm.Cfg.publicKey c =
 
 /-- `vg_ec_<curve>_public_key` computes the specification's public key and
 restores the callee-saved registers. -/
-theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c s₀) :
-    WP isa (Impl.EcKey.Arm.Cfg.publicKey c) s₀ fun s' => PkKeep c s₀ s' ∧ PkPost c s₀ s' := by
+theorem publicKeyWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List Region}
+    (hp : PkPre c s₀ extra) {generator : Prog isa}
+    (hMul : ∀ s, St₁ c Args.publicKey s₀ (scBase Args.publicKey s₀) s → s.syms=s₀.syms →
+      WP isa generator s (GeneratorPost c (scBase Args.publicKey s₀) (kv c Args.publicKey s₀) s)) :
+    WP isa (Impl.EcKey.Arm.Cfg.publicKeyWith c generator) s₀ fun s' => PkKeep c s₀ s' ∧ PkPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  rw [publicKey_eq']
-  refine WP.seq (stage₁ hc hp.setup fun _ S₁ => stage₂ hc hC S₁ fun s₂ S₂ => WP.block_nil ?_)
+  have setupRun := stage₁ hc hp.setup (rest := .block [])
+    (Q := fun s => St₁ c Args.publicKey s₀ (scBase Args.publicKey s₀) s) (fun _ S => WP.block_nil S)
+  have run := WP.mono_syms setupRun fun s S sy =>
+    stage₂With hc S (hMul s S sy) fun t S₂ => WP.block_nil S₂
+  have up : WP isa (Impl.EcKey.Arm.Cfg.upToPowWith c generator) s₀
+      (fun t => St₂ c Args.publicKey s₀ (scBase Args.publicKey s₀) t) := by
+    simpa only [Impl.EcKey.Arm.Cfg.upToPowWith,WP.seq_iff (M := isa),WP.block_nil_iff (M := isa)] using run
+  unfold Impl.EcKey.Arm.Cfg.publicKeyWith
+  refine WP.seq (WP.mono up fun s₂ S₂ => ?_)
   refine WP.mono (middle_ok hc S₂.scr S₂.far S₂.fixed S₂.acc_lt S₂.flag S₂.whole S₂.rest S₂.lr
     hp.out_fit (by rw [hp.wr]; simp) (hp.out_sc.sub_right (Region.sub_prefix (by decide))))
     fun s' ⟨xv, yv, hxl, hx, hyl, hy, bytes, rax, saved, sp, frame⟩ => ⟨⟨saved, sp, frame⟩, ?_⟩
@@ -271,5 +283,10 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c 
   · have hok : ok c (scBase Args.publicKey s₀) s₂ = false := decide_eq_false (by rw [hD]; omega)
     rw [ite_eq_right_of_eq_false _ _ (eq_false hd)]
     exact ⟨by rw [rax, hok]; rfl, by rw [bytes, hok]; rfl⟩
+
+/-- The generic-ladder public-key implementation is an instance of the shared pipeline. -/
+theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c s₀) :
+    WP isa (Impl.EcKey.Arm.Cfg.publicKey c) s₀ fun s' => PkKeep c s₀ s' ∧ PkPost c s₀ s' :=
+  publicKeyWith_ok hc hC hp (fun _ S _ => generator_ladder_ok hc hC S)
 
 end VG.Proof.EcKey.Arm

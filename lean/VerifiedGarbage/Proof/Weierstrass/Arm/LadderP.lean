@@ -230,6 +230,56 @@ theorem setupOuts_cover {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) :
       ∃ w' ∈ [(oAt k, 4096 - oAt k)], w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2 :=
   lay_cases k hk3 hk6 (by decide) (by decide) (by decide) (by decide)
 
+/-- Copy the input point and curve parameters to the point-call slots.
+Shared by the variable-base ladder and fixed-base comb. -/
+theorem ladderSetup_ok {L : LadderCfg} {base : Addr} {s : State}
+    (hs : Scr s base 4096) (hk3 : 3 ≤ L.M.n) (hk6 : L.M.n ≤ 6)
+    (hPt : LadPt L) :
+    WP isa (.block (ladderSetup L)) s fun t =>
+      Rest [.r4] s t ∧
+      Unch base [(Spec.Weierstrass.Point.oAt L.M.n,
+        4096 - Spec.Weierstrass.Point.oAt L.M.n)] s.mem t.mem ∧ CpOk L base t.mem s.mem := by
+  have hsz : 4096 = 4096 := rfl
+  have hl := lay_nums hk3 hk6
+  have hn := hs.nowrap
+  have gx : L.G.x + 8 * L.M.n ≤ Spec.Weierstrass.Point.oAt L.M.n := hPt.sl _ (ladR_slots L _ (by simp [ladR, ladRo]))
+  have gy : L.G.y + 8 * L.M.n ≤ Spec.Weierstrass.Point.oAt L.M.n := hPt.sl _ (ladR_slots L _ (by simp [ladR, ladRo]))
+  have gz : L.G.z + 8 * L.M.n ≤ Spec.Weierstrass.Point.oAt L.M.n := hPt.sl _ (ladR_slots L _ (by simp [ladR, ladRo]))
+  have ga : L.S.a + 8 * L.M.n ≤ Spec.Weierstrass.Point.oAt L.M.n := hPt.sl _ (ladR_slots L _ (by simp [ladR, ladRo]))
+  have gb : L.S.b3 + 8 * L.M.n ≤ Spec.Weierstrass.Point.oAt L.M.n := hPt.sl _ (ladR_slots L _ (by simp [ladR, ladRo]))
+  have cG := copyPt_conds (a := L.G) hk3 hk6 hsz (.inr rfl) (Nat.le_trans gx (oAt_le_qAt _))
+    (Nat.le_trans gy (oAt_le_qAt _)) (Nat.le_trans gz (oAt_le_qAt _))
+  rw [ladderSetup, List.append_assoc, WP.block_append_iff]
+  -- `Q = G`, `a`, `3b`.
+  refine WP.mono (copyPt_ok hs (n := L.M.n) (o := ptAt L.M.n (Spec.Weierstrass.Point.qAt L.M.n)) (a := L.G) cG.1 cG.2.1 cG.2.2)
+    fun s₁ ⟨gx₁, gy₁, gz₁, k₁, O₁⟩ => ?_
+  simp only [ptAt] at gx₁ gy₁ gz₁ O₁
+  have hs₁ := hs.of_rest k₁ (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (copy_ok (2 * L.M.n) hs₁ (o := Spec.Weierstrass.Point.aAt L.M.n) (a := L.S.a) (by omega_arith) (by omega_arith)
+    (by omega_arith)) fun s₂ ⟨a₂, k₂, O₂⟩ => ?_
+  rw [← wordsVal_eq_val32, ← wordsVal_eq_val32] at a₂
+  have hs₂ := hs₁.of_rest k₂ (by decide)
+  refine WP.mono (copy_ok (2 * L.M.n) hs₂ (o := Spec.Weierstrass.Point.b3At L.M.n) (a := L.S.b3) (by omega_arith) (by omega_arith)
+    (by omega_arith)) fun s₃ ⟨b₃, k₃, O₃⟩ => ?_
+  rw [← wordsVal_eq_val32, ← wordsVal_eq_val32] at b₃
+  have hs₃ := hs₂.of_rest k₃ (by decide)
+  have U₂ : Unch base [(Spec.Weierstrass.Point.aAt L.M.n, 4 * (2 * L.M.n))] s₁.mem s₂.mem := O₂.unch
+  have U₃ : Unch base [(Spec.Weierstrass.Point.b3At L.M.n, 4 * (2 * L.M.n))] s₂.mem s₃.mem := O₃.unch
+  refine ⟨k₁.trans (k₂.trans k₃),
+    ((Outs.unch O₁).trans (U₂.trans U₃)).cover (setupOuts_cover hk3 hk6), ?_⟩
+  have k₂₄ : Unch base [(Spec.Weierstrass.Point.aAt L.M.n, 4 * (2 * L.M.n)),
+      (Spec.Weierstrass.Point.b3At L.M.n, 4 * (2 * L.M.n))] s₁.mem s₃.mem := by
+    exact U₂.trans U₃
+  have k₃₄ : Unch base [(Spec.Weierstrass.Point.b3At L.M.n, 4 * (2 * L.M.n))] s₂.mem s₃.mem := by
+    exact U₃
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · rw [k₂₄.wordsVal (by exact lay_cases L.M.n hk3 hk6 (by decide) (by decide) (by decide) (by decide)) (by omega_arith), gx₁]
+  · rw [k₂₄.wordsVal (by exact lay_cases L.M.n hk3 hk6 (by decide) (by decide) (by decide) (by decide)) (by omega_arith), gy₁]
+  · rw [k₂₄.wordsVal (by exact lay_cases L.M.n hk3 hk6 (by decide) (by decide) (by decide) (by decide)) (by omega_arith), gz₁]
+  · rw [k₃₄.wordsVal (by exact lay_cases L.M.n hk3 hk6 (by decide) (by decide) (by decide) (by decide)) (by omega_arith), a₂, (Outs.unch O₁).wordsVal (by apart_ranges) (by omega_arith)]
+  · rw [b₃, U₂.wordsVal (by apart_ranges) (by omega_arith), (Outs.unch O₁).wordsVal (by apart_ranges) (by omega_arith)]
+
 section body
 variable {L : LadderCfg} {wk : Nat} {C : Spec.Weierstrass.Curve} {base : Addr} {size : Nat}
 
@@ -490,38 +540,15 @@ theorem ladderP_ok {k : Nat} {Q : Nat → Spec.Weierstrass.Fe C → Spec.Weierst
   have rx : L.R.x + 8 * L.M.n ≤ Spec.Weierstrass.Point.oAt L.M.n := hPt.sl _ (ladPts_slots L _ (by simp))
   have ry : L.R.y + 8 * L.M.n ≤ Spec.Weierstrass.Point.oAt L.M.n := hPt.sl _ (ladPts_slots L _ (by simp))
   have rz : L.R.z + 8 * L.M.n ≤ Spec.Weierstrass.Point.oAt L.M.n := hPt.sl _ (ladPts_slots L _ (by simp))
-  have gx : L.G.x + 8 * L.M.n ≤ Spec.Weierstrass.Point.oAt L.M.n := hPt.sl _ (ladR_slots L _ (by simp [ladR, ladRo]))
-  have gy : L.G.y + 8 * L.M.n ≤ Spec.Weierstrass.Point.oAt L.M.n := hPt.sl _ (ladR_slots L _ (by simp [ladR, ladRo]))
-  have gz : L.G.z + 8 * L.M.n ≤ Spec.Weierstrass.Point.oAt L.M.n := hPt.sl _ (ladR_slots L _ (by simp [ladR, ladRo]))
-  have ga : L.S.a + 8 * L.M.n ≤ Spec.Weierstrass.Point.oAt L.M.n := hPt.sl _ (ladR_slots L _ (by simp [ladR, ladRo]))
-  have gb : L.S.b3 + 8 * L.M.n ≤ Spec.Weierstrass.Point.oAt L.M.n := hPt.sl _ (ladR_slots L _ (by simp [ladR, ladRo]))
-  have cG := copyPt_conds (a := L.G) hk3 hk6 hsz (.inr rfl) (Nat.le_trans gx (oAt_le_qAt _))
-    (Nat.le_trans gy (oAt_le_qAt _)) (Nat.le_trans gz (oAt_le_qAt _))
   refine WP.seq ?_
-  rw [ladderSetup, List.append_assoc, List.append_assoc, WP.block_append_iff]
-  -- `Q = G`, `a`, `3b`.
-  refine WP.mono (copyPt_ok hs (n := L.M.n) (o := ptAt L.M.n (Spec.Weierstrass.Point.qAt L.M.n)) (a := L.G) cG.1 cG.2.1 cG.2.2)
-    fun s₁ ⟨gx₁, gy₁, gz₁, k₁, O₁⟩ => ?_
-  simp only [ptAt] at gx₁ gy₁ gz₁ O₁
-  have hs₁ := hs.of_rest k₁ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (copy_ok (2 * L.M.n) hs₁ (o := Spec.Weierstrass.Point.aAt L.M.n) (a := L.S.a) (by omega_arith) (by omega_arith)
-    (by omega_arith)) fun s₂ ⟨a₂, k₂, O₂⟩ => ?_
-  rw [← wordsVal_eq_val32, ← wordsVal_eq_val32] at a₂
-  have hs₂ := hs₁.of_rest k₂ (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (copy_ok (2 * L.M.n) hs₂ (o := Spec.Weierstrass.Point.b3At L.M.n) (a := L.S.b3) (by omega_arith) (by omega_arith)
-    (by omega_arith)) fun s₃ ⟨b₃, k₃, O₃⟩ => ?_
-  rw [← wordsVal_eq_val32, ← wordsVal_eq_val32] at b₃
-  have hs₃ := hs₂.of_rest k₃ (by decide)
+  refine WP.mono (ladderSetup_ok (base := base) (by simpa only [hsz] using hs) hk3 hk6 hPt)
+    fun s₃ ⟨k₃, U₃, cp₃⟩ => ?_
   refine wp_mov (op2_imm henc) fun s₄ u₄ => WP.block_nil ?_
   have hm₄ : s₄.mem = s₃.mem := u₄.mem
-  have U₂ : Unch base [(Spec.Weierstrass.Point.aAt L.M.n, 4 * (2 * L.M.n))] s₁.mem s₂.mem := O₂.unch
-  have U₃ : Unch base [(Spec.Weierstrass.Point.b3At L.M.n, 4 * (2 * L.M.n))] s₂.mem s₃.mem := O₃.unch
   have U₁₃ : Unch base [(Spec.Weierstrass.Point.oAt L.M.n, 4096 - Spec.Weierstrass.Point.oAt L.M.n)] s.mem s₄.mem := by
-    rw [hm₄]; exact ((Outs.unch O₁).trans (U₂.trans U₃)).cover (setupOuts_cover hk3 hk6)
-  have K₄ : Rest powClob s s₄ := (k₁.mono (by simp [powClob, clob])).trans <| (k₂.mono (by simp [powClob, clob])).trans <|
-    (k₃.mono (by simp [powClob, clob])).trans (u₄.rest (by simp [powClob]))
+    rw [hm₄]; exact U₃
+  have K₄ : Rest powClob s s₄ := (k₃.mono (by simp [powClob, clob])).trans (u₄.rest (by simp [powClob]))
   have low : ∀ {x}, x + 8 * L.M.n ≤ Spec.Weierstrass.Point.oAt L.M.n →
       wordsVal s₄.mem base x L.M.n = wordsVal s.mem base x L.M.n := fun hx =>
     U₁₃.wordsVal (by apart_ranges) (by omega_arith)
@@ -539,17 +566,8 @@ theorem ladderP_ok {k : Nat} {Q : Nat → Spec.Weierstrass.Fe C → Spec.Weierst
   · show Q L.nbits (toM _ _ _) (toM _ _ _) (toM _ _ _)
     rw [low rx, low ry, low rz]
     exact hR
-  · have k₂₄ : Unch base [(Spec.Weierstrass.Point.aAt L.M.n, 4 * (2 * L.M.n)),
-        (Spec.Weierstrass.Point.b3At L.M.n, 4 * (2 * L.M.n))] s₁.mem s₄.mem := by
-      rw [hm₄]; exact U₂.trans U₃
-    have k₃₄ : Unch base [(Spec.Weierstrass.Point.b3At L.M.n, 4 * (2 * L.M.n))] s₂.mem s₄.mem := by
-      rw [hm₄]; exact U₃
-    refine ⟨?_, ?_, ?_, ?_, ?_⟩
-    · rw [k₂₄.wordsVal (by exact lay_cases L.M.n hk3 hk6 (by decide) (by decide) (by decide) (by decide)) (by omega_arith), gx₁]
-    · rw [k₂₄.wordsVal (by exact lay_cases L.M.n hk3 hk6 (by decide) (by decide) (by decide) (by decide)) (by omega_arith), gy₁]
-    · rw [k₂₄.wordsVal (by exact lay_cases L.M.n hk3 hk6 (by decide) (by decide) (by decide) (by decide)) (by omega_arith), gz₁]
-    · rw [k₃₄.wordsVal (by exact lay_cases L.M.n hk3 hk6 (by decide) (by decide) (by decide) (by decide)) (by omega_arith), a₂, (Outs.unch O₁).wordsVal (by apart_ranges) (by omega_arith)]
-    · rw [hm₄, b₃, U₂.wordsVal (by apart_ranges) (by omega_arith), (Outs.unch O₁).wordsVal (by apart_ranges) (by omega_arith)]
+  · rw [hm₄]
+    exact cp₃
 
 end body
 

@@ -283,15 +283,18 @@ def scalar : Prog isa :=
     .block (c.checkNonzero (c.sl SS) ++ c.finish)]
 
 /-- `vg_ecdsa_<curve>_sign`. -/
-def sign : Prog isa :=
+def signWith (generator : Prog isa) : Prog isa :=
   .seq (.block c.setup) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq (Point.ladderP c.ladderCfg c.SP) <|
+  .seq generator <|
   .seq (pow c.powP c.SP) <|
   .seq c.middle <|
   .seq (pow c.powN c.SN) c.scalar
+
+/-- Signing with the generic variable-base ladder. -/
+def sign : Prog isa := c.signWith (Point.ladderP c.ladderCfg c.SP)
 
 end Cfg
 
