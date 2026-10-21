@@ -107,7 +107,7 @@ theorem inc19_ok (s : State) {j : Nat} (h19 : s.gpr .x19 = BitVec.ofNat 64 j) :
 /-- `x19 = j` from `j + 1`, `x21` = table `j + 1`'s address and `x5 = 1`. -/
 theorem setupNext_ok (K : TCombCfg) (s : State) {j : Nat} {T : Addr}
     (h19 : s.gpr .x19 = BitVec.ofNat 64 (j + 1)) (hT : s.syms K.tsym = T) (htb : K.tblBytes < 65536) :
-    WP isa (.block ([.subImm .x .x19 .x19 1] ++ K.selSetupNext ++ [.movz .x .x5 1 0])) s fun t =>
+    WP isa (.block (([.subImm .x .x19 .x19 1] : List Instr) ++ K.selSetupNext ++ ([.movz .x .x5 1 0] : List Instr))) s fun t =>
       t.gpr .x19 = BitVec.ofNat 64 j ∧ t.gpr .x21 = T + BitVec.ofNat 64 ((j + 1) * K.tblBytes) ∧
       t.gpr .x5 = 1 ∧ Keeps [.x5, .x17, .x19, .x21] s t := by
   subst hT
