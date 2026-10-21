@@ -3,8 +3,10 @@
 No proof or production-readiness claim. Verified branch: `dsa-x86-generation` at `784473529`.
 
 **Current result:** shared-comb keygen beats OpenSSL by 19–24% on EPYC 7763.
-The smaller four-word stack is the preferred proof candidate. Random 1024-bit
-parameter generation remains slower than OpenSSL; no production PR yet.
+The keygen-only four-word candidate keeps that speed with 26% less total DSA
+code than the combined experiment. The DSA comb contracts merged in #2963;
+implementation proofs are in progress. Random 1024-bit parameter generation
+remains slower than OpenSSL and is outside the keygen implementation scope.
 
 ## Sweep 1
 
@@ -219,3 +221,38 @@ the whole parameter gap: our chunk-4 parameter median in sweep 7 was 303.840
 ms (different random workload/run). Witness handling and trial division
 remain profiling targets. Do not reduce primality rounds or present the
 masked OpenSSL result as the acceptance comparison.
+
+## Keygen-only promotion sweep
+
+Run: https://github.com/pyca/verified-garbage/actions/runs/39526788245
+Commit: `6957d3ef4`. Native i686, AMD EPYC 7763, normal OpenSSL capabilities.
+Three alternating-order rounds, 25 samples per workload; medians of round medians.
+Every candidate passed 27 DSA tests, including comb arithmetic, dense exponents,
+context reuse and ABI checks (baseline: 26). No random parameter timing was requested.
+
+| Candidate | 1024/160 ms | 2048/160 ms | 2048/224 ms | 2048/256 ms | 3072/256 ms | Total DSA symbol bytes |
+|---|---:|---:|---:|---:|---:|---:|
+| Verified baseline | 2.2702 | 8.7008 | 11.4564 | 12.8319 | 28.7014 | 524288 |
+| OpenSSL | 0.6271 | 2.3969 | 3.2021 | 3.6392 | 8.1363 | — |
+| `mk`: comb | 0.7484 | 2.8273 | 3.5941 | 3.9945 | 8.9062 | 595776 |
+| `mfk`: comb + public setup | 0.6081 | 2.2404 | 2.9851 | 3.3866 | 7.4559 | 603264 |
+| `mfkr4`: add four-word rows | 0.5719 | 2.1818 | 2.9187 | 3.3069 | 7.3533 | 610176 |
+| `mfkscvru4`: add compact squares | 0.5103 | 1.8812 | 2.5030 | 2.8326 | 6.2168 | 617408 |
+| `mfkh`: existing shared RSA multiplier | 0.6331 | 2.3238 | 3.1110 | 3.5279 | 7.8190 | 580672 |
+| Previous combined experiment | 0.5094 | 1.8813 | 2.5036 | 2.8337 | 6.2172 | 832128 |
+
+The keygen-only compact-square candidate matches the previous winner within
+0.2%, beats OpenSSL by 18.6–23.6%, and removes 214720 DSA symbol bytes (25.8%).
+Its ordinary power, signing, verification, external derivation, and parameter
+bodies retain the checked baseline; fixed CAVP parameter timings confirm the
+parameter code is unchanged. This is the performance target for the optimized
+keygen implementation, not a claim that its proof is finished.
+
+The simpler `mfk` candidate already beats OpenSSL by 3.0–8.4% using the existing
+multiplication body. It provides a smaller proof scope for the initial comb
+integration. Four-word rows improve that to 8.8–9.6%; compact squares then give
+a further 11–15% reduction in keygen time for only 7232 more symbol bytes.
+The shared runtime RSA helper is the smallest candidate, but is 1.0% slower
+than OpenSSL at 1024 bits, so it does not meet the all-width acceptance target.
+The proofs should share the existing arithmetic lemmas and comb mathematics;
+there is no reason to promote unrelated parameter/window experiments.
