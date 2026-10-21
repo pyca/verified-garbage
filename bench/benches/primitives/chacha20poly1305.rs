@@ -31,9 +31,11 @@ pub fn bench(c: &mut Criterion) {
     // 768 bytes, 1 KiB, 4 KiB and 16 KiB (the most a record carries) of
     // payload, whose plaintext is one byte longer: the content type. 480
     // bytes (30 blocks of Poly1305) is near where the x86-64 IFMA Poly1305
-    // hands short inputs to other code.
-    const SIZES: [usize; 14] = [
-        16, 64, 256, 480, 512, 513, 768, 769, 1024, 1025, 4096, 4097, 16384, 16385,
+    // hands short inputs to other code. 320, 384 and 896 bytes leave 64 to
+    // 255 bytes after the whole 256-byte chunks (of 512 bytes, for 896) of
+    // the AArch64 NEON and SVE2 code.
+    const SIZES: [usize; 17] = [
+        16, 64, 256, 320, 384, 480, 512, 513, 768, 769, 896, 1024, 1025, 4096, 4097, 16384, 16385,
     ];
     let key = [0x42; 32];
     let nonce = [0x24; 12];
