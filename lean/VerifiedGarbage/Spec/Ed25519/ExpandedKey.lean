@@ -3,38 +3,41 @@ module
 public import VerifiedGarbage.Spec.Ed25519.Contract
 
 /-!
-# Ed25519 public-key derivation that also returns the seed's SHA-512 digest
+# Ed25519 public-key derivation from the seed's SHA-512 digest
 
 **Trusted** (as every file in `Spec/`). RFC 8032 §5.1.5 derives the public key
 from the SHA-512 digest of the seed (step 1); §5.1.6, step 1 hashes the seed
-again for every signature. This contract derives the public key as
-`publicKeyContract` does and also writes that digest, so that a caller can
-keep it for `signExpandedContract` (`ExpandedSign.lean`) without hashing the
-seed a second time. Its postcondition is `publicKeyContract`'s, plus the
-digest: nothing is required of the caller beyond the signature's buffers.
-No buffer contents may affect timing.
+again for every signature. A caller that computes the digest once, to keep it
+for `signExpandedContract` (`ExpandedSign.lean`), can derive the public key
+from it with this contract rather than hashing the seed a second time.
+
+As in `signExpandedContract`, some seed must have the digest at `expanded`,
+and the postcondition is `publicKeyContract`'s, `publicKey seed`, for every
+such seed. It does not specify a public key for 64 bytes that are not the
+digest of a seed. The seed itself is not a parameter: the public key depends
+on the seed only through its digest. No buffer contents may affect timing.
 -/
 
 @[expose] public section
 
 namespace VG.Spec.Ed25519
 
-/-- `(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32],
-scratch: *mut [u64; 1024])`. -/
+/-- `(out: *mut [u8; 32], expanded: *const [u8; 64], scratch: *mut [u64; 1024])`. -/
 def publicKeyExpandedSig : Sig where
-  params := [("out", .array true .u8 32), ("expanded", .array true .u8 64),
-    ("seed", .array false .u8 32), ("scratch", .array true .u64 scratchWords)]
+  params := [("out", .array true .u8 32), ("expanded", .array false .u8 64),
+    ("scratch", .array true .u64 scratchWords)]
 
-/-- Derive the public key from a seed, including SHA-512 and pruning, and
-write the seed's SHA-512 digest. -/
+/-- Derive the public key from the SHA-512 digest of a seed, including pruning. -/
 def publicKeyExpandedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   publicKeyExpandedSig.contract A
-    (post := fun out expanded seed _scratch m m' _ =>
-      bytesAt m' out 32 = publicKey (bytesAt m seed 32) ∧
-        bytesAt m' expanded 64 = Sha512.sha512 (bytesAt m seed 32))
+    (pre := fun _out expanded _scratch m =>
+      ∃ seed : List Byte, seed.length = 32 ∧ bytesAt m expanded 64 = Sha512.sha512 seed)
+    (post := fun out expanded _scratch m m' _ =>
+      ∀ seed : List Byte, seed.length = 32 → bytesAt m expanded 64 = Sha512.sha512 seed →
+        bytesAt m' out 32 = publicKey seed)
     (writeArgs := true) (stack := stack)
 
-/-- Public-key derivation that also returns the seed's digest, on every target. -/
+/-- Public-key derivation from the seed's digest, on every target. -/
 def publicKeyExpandedApi : Api where
   module := "ed25519"
   name := "vg_ed25519_public_key_expanded"
@@ -42,13 +45,13 @@ def publicKeyExpandedApi : Api where
   writeArgs := true
   contracts := some fun A stack => publicKeyExpandedContract A stack
   summary := "Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public \
-    key to `*out`, from the 32-byte private seed at `seed`, including SHA-512 and pruning, \
-    and the seed's 64-byte SHA-512 digest (§5.1.6, step 1) to `*expanded`, for \
-    `vg_ed25519_sign_expanded`. \
+    key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at \
+    `expanded`, including pruning. \
     Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may \
     affect timing."
-  safety := ["`seed` must originate from a cryptographically secure random generator.",
-    "The 64 bytes written to `expanded` are secret, as the seed is: the caller must \
-      destroy them after use.", scratchSafety]
+  safety := [
+    "The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) \
+      of a 32-byte seed.",
+    "The seed must originate from a cryptographically secure random generator.", scratchSafety]
 
 end VG.Spec.Ed25519
