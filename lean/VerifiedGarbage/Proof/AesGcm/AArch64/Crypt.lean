@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.Ctr
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Absorb
-import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -625,35 +626,22 @@ theorem ctrCall2_ok (v : GcmImpl) {k : Reg → BitVec 64} {R : Nat} {icb : Block
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), fun _ h => h⟩
 
 omit L in
-/-- The last bytes, with the new keystream block. -/
-theorem crTail_ok {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
-    {m₀ : Mem} {j : Nat} {s : State} (h : Cr3 Ctx St W SP k R icb P D n m₀ j s) :
-    WP isa crTail s (CrOut Ctx St W SP k R icb P D n m₀) := by
+/-- After the last bytes are XORed with the new keystream block (by `crTail`,
+or by any code leaving that memory and the registers `CrOut` reads). -/
+theorem crOut_of_xor {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
+    {m₀ : Mem} {j : Nat} {s s₂ : State} (h : Cr3 Ctx St W SP k R icb P D n m₀ j s)
+    (m₂ : s₂.mem = writeBytes s.mem (D + BitVec.ofNat 64 j)
+      (xorBytes s.mem (D + BitVec.ofNat 64 j) (St + BitVec.ofNat 64 64) (n - j)))
+    (gg : ∀ r ∈ [Reg.x19, .x20, .x21, .x22, .x25, .x26, .x27, .x28], s₂.gpr r = s.gpr r)
+    (sp₂ : s₂.sp = s.sp) (rd₂ : s₂.rd = s.rd) (wr₂ : s₂.wr = s.wr) :
+    CrOut Ctx St W SP k R icb P D n m₀ s₂ := by
   have hn' := h.data.ok.lt
   have hle := h.le
   have hj := h.lt16
   have he := h.env
   have hdj := h.data.drop h.le
-  obtain ⟨s₁, run₁, x11₁, x12₁, x13₁, r₁⟩ : ∃ s₁, runBlock isa [ptr .x11 .x20 64, mov .x12 .x23, mov .x13 .x24] s =
-      some s₁ ∧ s₁.gpr .x11 = St + BitVec.ofNat 64 64 ∧ s₁.gpr .x12 = D + BitVec.ofNat 64 j ∧
-      s₁.gpr .x13 = BitVec.ofNat 64 (n - j) ∧ Regs [.x11, .x12, .x13] s s₁ := by
-    refine ⟨_, by arun [], ?_⟩
-    refine ⟨?_, ?_, ?_, ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
-    · simp [gpr_write, he.x20]
-    · simp [gpr_write, h.x23]
-    · simp [gpr_write, h.x24]
-  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have lp : LoopPre s₁ (St + BitVec.ofNat 64 64) (D + BitVec.ofNat 64 j) (n - j) := by
-    refine ⟨by omega_arith, ?_, ?_, ?_⟩
-    · rw [r₁.rd, r₁.wr]; exact covers_left (he.perm.stC (by omega_arith))
-    · rw [r₁.wr]; exact hdj.wr
-    · exact (hdj.ok.st.sub_right (Lay.stSub (by omega_arith))).symm
-  refine WP.mono (xor_ok s₁ x11₁ x12₁ x13₁ lp) fun s₂ ⟨m₂, g₂, sp₂, rd₂, wr₂⟩ => ?_
-  rw [r₁.mem] at m₂
   have hxl := length_xorBytes s.mem (D + BitVec.ofNat 64 j) (St + BitVec.ofNat 64 64) (n - j)
   have fw : Frame [⟨D + BitVec.ofNat 64 j, n - j⟩] s.mem s₂.mem := by rw [m₂]; exact writeBytes_frame' _ hxl
-  have gg : ∀ r, r ∉ [Reg.x11, .x12, .x13] ++ loopRegs → s₂.gpr r = s.gpr r := fun r hr => by
-    rw [g₂ r (fun h' => hr (List.mem_append_right _ h')), r₁.others r (fun h' => hr (List.mem_append_left _ h'))]
   have dst : ∀ r ∈ [(⟨D + BitVec.ofNat 64 j, n - j⟩ : Region)], (⟨St + BitVec.ofNat 64 48, 16⟩ : Region).Disjoint r ∧
       (⟨St + BitVec.ofNat 64 64, 16⟩ : Region).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
@@ -680,7 +668,7 @@ theorem crTail_ok {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D :
       exact t₂.congr (blockAt_frame fw fun r hr => (dst r hr).1) (blockAt_frame fw fun r hr => (dst r hr).2)
   refine ⟨he.keep (fun r hr => gg r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> decide)) (by rw [sp₂, r₁.sp]) (by rw [rd₂, r₁.rd]) (by rw [wr₂, r₁.wr]),
+      rcases hr with rfl | rfl | rfl <;> decide)) sp₂ rd₂ wr₂,
     h.kept.of_eq fun r hr => gg r (by
       simp only [keptRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> decide),
@@ -700,6 +688,38 @@ theorem crTail_ok {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D :
   · exact h.frame.trans (fw.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_cons_self .., Offset.sub_base D (by omega_arith)⟩)
+
+omit L in
+/-- The last bytes, with the new keystream block. -/
+theorem crTail_ok {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
+    {m₀ : Mem} {j : Nat} {s : State} (h : Cr3 Ctx St W SP k R icb P D n m₀ j s) :
+    WP isa crTail s (CrOut Ctx St W SP k R icb P D n m₀) := by
+  have hn' := h.data.ok.lt
+  have hle := h.le
+  have hj := h.lt16
+  have he := h.env
+  have hdj := h.data.drop h.le
+  obtain ⟨s₁, run₁, x11₁, x12₁, x13₁, r₁⟩ : ∃ s₁, runBlock isa [ptr .x11 .x20 64, mov .x12 .x23, mov .x13 .x24] s =
+      some s₁ ∧ s₁.gpr .x11 = St + BitVec.ofNat 64 64 ∧ s₁.gpr .x12 = D + BitVec.ofNat 64 j ∧
+      s₁.gpr .x13 = BitVec.ofNat 64 (n - j) ∧ Regs [.x11, .x12, .x13] s s₁ := by
+    refine ⟨_, by arun [], ?_⟩
+    refine ⟨?_, ?_, ?_, ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
+    · simp [gpr_write, he.x20]
+    · simp [gpr_write, h.x23]
+    · simp [gpr_write, h.x24]
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  have lp : LoopPre s₁ (St + BitVec.ofNat 64 64) (D + BitVec.ofNat 64 j) (n - j) := by
+    refine ⟨by omega_arith, ?_, ?_, ?_⟩
+    · rw [r₁.rd, r₁.wr]; exact covers_left (he.perm.stC (by omega_arith))
+    · rw [r₁.wr]; exact hdj.wr
+    · exact (hdj.ok.st.sub_right (Lay.stSub (by omega_arith))).symm
+  refine WP.mono (xor_ok s₁ x11₁ x12₁ x13₁ lp) fun s₂ ⟨m₂, g₂, sp₂, rd₂, wr₂⟩ => ?_
+  rw [r₁.mem] at m₂
+  refine crOut_of_xor h m₂ (fun r hr => ?_) (by rw [sp₂, r₁.sp]) (by rw [rd₂, r₁.rd]) (by rw [wr₂, r₁.wr])
+  have hr' : r ∉ [Reg.x11, .x12, .x13] ++ loopRegs := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  rw [g₂ r (fun h' => hr' (List.mem_append_right _ h')), r₁.others r (fun h' => hr' (List.mem_append_left _ h'))]
 
 omit L in
 /-- From the start of a keystream block, nothing done yet. -/

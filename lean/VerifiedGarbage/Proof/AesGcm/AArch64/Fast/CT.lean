@@ -8,6 +8,12 @@ meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Seal
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Entry
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Entry
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Pad
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.PadT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.PadT
+import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.Crypt
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.Crypt
+import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.CT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.CT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Pad
 import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
@@ -244,7 +250,7 @@ theorem ctE_ok (hMK : MulKey) {o : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {R 
     (hm : AbsMid Ctx (W + BitVec.ofNat 64 16) W SP s₄.gpr 16 H x D n 0 s₄.mem j s₇ ex)
     (hlt : n - j < 16) :
     WP isa (.seq (.block (Impl.AesGcm.AArch64.Fast.hReload ++ Impl.Gcm.AArch64.Pmull.loadRev Y .x20 16 ++
-        [mov .x13 .x24, mov .x12 .x23])) (.seq Impl.AesGcm.AArch64.Fast.padMul (.block (Impl.AesGcm.AArch64.Fast.lensTagAt o)))) s₇
+        [mov .x13 .x24, mov .x12 .x23])) (.seq Impl.AesGcm.AArch64.Fast.padMulT (.block (Impl.AesGcm.AArch64.Fast.lensTagAt o)))) s₇
       fun s => ∃ k Yv J m, Tag1 Ctx (W + BitVec.ofNat 64 16) W SP k o R Yv J m s ∧ k .x28 = Tg := by
   have he₇ := h.env
   have hjn := hm.le
@@ -272,9 +278,14 @@ theorem ctE_ok (hMK : MulKey) {o : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {R 
     hk₈.of_v (by rw [v₁₀, o₉.v C (by decide)]) (by rw [v₁₀, o₉.v _ (by decide)]) (by rw [v₁₀, o₉.v _ (by decide)])
   have hdj : DataOk (W + BitVec.ofNat 64 16) W s₁₀ (D + BitVec.ofNat 64 j) (n - j) :=
     (h.data.ok.drop hjn).of_eq (by rw [r₁₀.rd, o₉.rd, rd₈]) (by rw [r₁₀.wr, o₉.wr, wr₈])
-  refine WP.seq (WP.mono (WP.with_rdwr (padMul_ok hMK (y := blockAt s₈.mem (s₈.gpr .x20 + BitVec.ofNat 64 16)) he₁₀ hk₁₀
+  have x26₁₀ : s₁₀.gpr .x26 = BitVec.ofNat 64 n := by
+    rw [r₁₀.others _ (by decide), o₉.gpr, g₈ _ (by decide), h.x26]
+  refine WP.seq (WP.mono (WP.with_rdwr (padMulT_ok hMK (y := blockAt s₈.mem (s₈.gpr .x20 + BitVec.ofNat 64 16)) he₁₀ hk₁₀
     (by rw [v₁₀, l₉, rev64b_read]) x12₁₀ x13₁₀ (by omega) hdj.rd
-    (hdj.w.sub_right (Lay.wSub (by decide))))) fun s₁₁ ⟨⟨y₁₁, hk₁₁, he₁₁, og₁₁, f₁₁, v₁₁⟩, rd₁₁, wr₁₁⟩ => ?_)
+    (hdj.w.sub_right (Lay.wSub (by decide))) x26₁₀ h.data.ok.lt
+    (pad_big (h.data.ok.of_eq (by rw [r₁₀.rd, o₉.rd, rd₈]) (by rw [r₁₀.wr, o₉.wr, wr₈])).rd h.data.ok.lt
+      (by congr 2; omega) (by omega))))
+    fun s₁₁ ⟨⟨y₁₁, hk₁₁, he₁₁, og₁₁, f₁₁, v₁₁⟩, rd₁₁, wr₁₁⟩ => ?_)
   unfold Impl.AesGcm.AArch64.Fast.lensTagAt
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
@@ -356,8 +367,12 @@ theorem runWithPX_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {k₁ k₂ : 
     (ctA_ok L hMK hJ₁ ha₁ hal x4₁ x5₁ x6₁ x7₁ hd₁ h22₁ hR h28₁ hf₁ hrd₁ hwr₁)
     (ctA_ok L hMK hJ₂ ha₂ hal x4₂ x5₂ x6₂ x7₂ hd₂ h22₂ hR h28₂ hf₂ hrd₂ hwr₂)
     fun s₃ t₃ ⟨m₁, c₁⟩ ⟨m₂, c₂⟩ => ?_)
-  refine rel_seq (cryptAl_rel L v c₁ c₂ (by decide)) (WP.with_rdwr (cryptAl_ok L v (icb := 0) c₁ (by decide)))
-    (WP.with_rdwr (cryptAl_ok L v (icb := 0) c₂ (by decide))) fun s₄ t₄ ⟨o₁, rd₁, wr₁⟩ ⟨o₂, rd₂, wr₂⟩ => ?_
+  refine rel_seq (cryptAlT_rel L v c₁ c₂ (by decide) (by rw [m₁.x26, m₂.x26]))
+    (WP.with_rdwr (cryptAlT_ok L v (icb := 0) c₁ (by decide) m₁.x26 m₁.data.ok.lt
+      (tail_big m₁.data.wr m₁.data.ok.lt (by simp) (Nat.zero_add n))))
+    (WP.with_rdwr (cryptAlT_ok L v (icb := 0) c₂ (by decide) m₂.x26 m₂.data.ok.lt
+      (tail_big m₂.data.wr m₂.data.ok.lt (by simp) (Nat.zero_add n))))
+    fun s₄ t₄ ⟨o₁, rd₁, wr₁⟩ ⟨o₂, rd₂, wr₂⟩ => ?_
   have M₁ := Mid.crypt L m₁ o₁ rd₁ wr₁
   have M₂ := Mid.crypt L m₂ o₂ rd₂ wr₂
   refine rel_seq (rel_taint [.x19, .x20, .x21, .x26, .x27] (by rw [M₁.env.sp, M₂.env.sp])

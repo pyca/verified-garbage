@@ -8,11 +8,14 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Pre
 import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Pad
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.PadT
+import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.Crypt
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-GCM on AArch64, interleaved: `runWithS`
@@ -181,7 +184,10 @@ theorem runWithSX_ok (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {
     hD' ▸ (hdat₂.drop hPn).of_eq (by rw [r₃.rd, hm₂.rd]) (by rw [r₃.wr, hm₂.wr])
   have hCr : CrIn Ctx (W + BitVec.ofNat 64 16) W s.sp s₃.gpr R P D' (n - P) s₃ :=
     ⟨he₃, hk₃, x22₃, hRb, x23₃, x24₃, x25₃, hdat₃⟩
-  refine WP.seq (WP.mono (WP.with_rdwr (cryptAl_ok L v (icb := inc32 J0) hCr hP16))
+  have hfull₃ : DataW Ctx (W + BitVec.ofNat 64 16) W s₃ D n :=
+    hdat₂.of_eq (by rw [r₃.rd, hm₂.rd]) (by rw [r₃.wr, hm₂.wr])
+  refine WP.seq (WP.mono (WP.with_rdwr (cryptAlT_ok L v (icb := inc32 J0) hCr hP16 x26₃ hnlt
+      (tail_big hfull₃.wr hnlt hD'.symm (by omega))))
     fun s₄ ⟨h₄, rd₄, wr₄⟩ => ?_)
   have hctr₃ : Ctr s₃.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 64)
       (ciphOf s₃.mem Ctx R) (inc32 J0) P := by rw [r₃.mem, ciph_frame hm₂.frame cS hRb]; exact ctr₂
@@ -333,8 +339,14 @@ theorem runWithSX_ok (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {
   have wr₁₀ : s₁₀.wr = s₅.wr := by rw [r₁₀.wr, o₉.wr, wr₈, wr₇, wr₆]
   have hdj : DataOk (W + BitVec.ofNat 64 16) W s₁₀ (D' + BitVec.ofNat 64 j) (n - P - j) :=
     (hdat₅.drop hjn).of_eq rd₁₀ wr₁₀
-  refine WP.seq (WP.mono (WP.with_rdwr (padMul_ok hMK he₁₀ hk₁₀ hy₁₀ x12₁₀ x13₁₀ (by omega) hdj.rd
-    (hdj.w.sub_right (Lay.wSub (by decide))))) fun s₁₁ ⟨⟨y₁₁, hk₁₁, he₁₁, og₁₁, f₁₁, v₁₁⟩, rd₁₁, wr₁₁⟩ => ?_)
+  have x26₁₀ : s₁₀.gpr .x26 = BitVec.ofNat 64 n := by
+    rw [r₁₀.others _ (by decide), o₉.gpr, g₈ _ (by decide), h₇.kept .x26 (by decide), x26₃]
+  have hfull₁₀ : DataOk (W + BitVec.ofNat 64 16) W s₁₀ D n :=
+    hfull₃.ok.of_eq (by rw [rd₁₀, r₅.rd, rd₄]) (by rw [wr₁₀, r₅.wr, wr₄])
+  refine WP.seq (WP.mono (WP.with_rdwr (padMulT_ok hMK he₁₀ hk₁₀ hy₁₀ x12₁₀ x13₁₀ (by omega) hdj.rd
+    (hdj.w.sub_right (Lay.wSub (by decide))) x26₁₀ hnlt
+    (pad_big hfull₁₀.rd hnlt (by rw [← hD', Offset.add_add]; congr 2; omega) (by omega))))
+    fun s₁₁ ⟨⟨y₁₁, hk₁₁, he₁₁, og₁₁, f₁₁, v₁₁⟩, rd₁₁, wr₁₁⟩ => ?_)
   -- The slots, so far.
   have m₁₀ : s₁₀.mem = s₇.mem := by rw [r₁₀.mem, o₉.mem, m₈]
   have slot₁₁ : ∀ d, 216 ≤ d → d + 8 ≤ 256 →

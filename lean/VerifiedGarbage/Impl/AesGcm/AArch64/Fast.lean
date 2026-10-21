@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.AesGcm.AArch64
 public import VerifiedGarbage.Impl.Gcm.AArch64.Pmull
+public import VerifiedGarbage.Impl.AesGcm.AArch64.Tail
 
 /-!
 # AES-GCM on AArch64: `seal`'s path for TLS records
@@ -64,6 +65,12 @@ def padMul : Prog isa :=
   .ite (.zero .x .x13) (.block [])
     (.seq (.block (zeroT ++ [ptr .x11 .x19 tO])) (.seq copy (.block mulT)))
 
+/-- `padMul` for the last bytes of the text (`x26` bytes): from the 16 bytes
+that end it (`Tail.padVec`) if it is at least a block long. -/
+def padMulT : Prog isa :=
+  .seq (.block [.lsr .x .x9 .x26 4])
+    (.ite (.zero .x .x9) padMul (.ite (.zero .x .x13) (.block []) (.block Tail.padVec)))
+
 /-- The accumulator stored at `x20 + 16`, as `vg_ghash` keeps it. -/
 def storeY : List Instr := [.vop (.rev .rev64b Y Y), .strq Y .x20 16]
 
@@ -93,11 +100,11 @@ set), its last bytes and the lengths absorbed, and the tag, to `x28`. -/
 def runWithP (cl : Prog isa) : Prog isa :=
   .seq (front)
   (.seq (.block [mov .x27 .x23, mov .x24 .x26, imm .x25 0])
-  (.seq (cryptAl c)
+  (.seq (Tail.cryptAlT c)
   (.seq (.block ([mov .x23 .x27, mov .x24 .x26] ++ absSeg2 16))
   (.seq cl
   (.seq (.block (hReload ++ loadRev Y .x20 16 ++ [mov .x13 .x24, mov .x12 .x23]))
-  (.seq padMul
+  (.seq padMulT
   (.seq (.block lensTag)
   (.seq (ctrCall c)
   (.seq (.block tagOut)
@@ -128,6 +135,10 @@ def sealWith (gh : Fn) : Prog isa := sealWithE c 8 (.call gh.name gh.code)
 
 /-! ## `open` -/
 
+/-- `oneCrypt` with `Tail.cryptAlT`. -/
+def oneCryptT : Prog isa :=
+  .seq (.block [.ldr .x .x23 .x19 dataO, .ldr .x .x24 .x19 lenO, imm .x25 0]) (Tail.cryptAlT c)
+
 /-- `open`'s path for TLS records, once the tag length is allowed and the
 received tag is at `W`: `front`; the whole blocks of the ciphertext (`x26`
 bytes at `x23`) hashed by `gh`; its last bytes and the lengths absorbed; the
@@ -139,12 +150,12 @@ def openRunWithP (cl : Prog isa) : Prog isa :=
   (.seq (.block ([mov .x24 .x26, imm .x25 0] ++ absSeg2 16))
   (.seq cl
   (.seq (.block (hReload ++ loadRev Y .x20 16 ++ [mov .x13 .x24, mov .x12 .x23]))
-  (.seq padMul
+  (.seq padMulT
   (.seq (.block (lensTagAt uO))
   (.seq (ctrCall c)
   (.seq cmp
   (.seq (.block [imm .x27 1, .sub .x .x27 .x27 .x10])
-  (.seq (.ite (.zero .x .x27) (.block []) (oneCrypt c))
+  (.seq (.ite (.zero .x .x27) (.block []) (oneCryptT c))
     (.block [mov .x0 .x27]))))))))))
 
 /-- `openRunWithP`, hashing the whole blocks by a call of `gh`. -/

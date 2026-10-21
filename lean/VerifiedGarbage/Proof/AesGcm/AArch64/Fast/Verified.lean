@@ -38,7 +38,8 @@ theorem fastSealWithE_keepsV (v : GcmImpl) {k : Nat} (hk : k = 8 ∨ k = 16) {cl
     (Impl.AesGcm.AArch64.Fast.sealWithE v.callees k cl).allInstrs keepsV = true := by
   rcases hk with rfl | rfl <;>
   simp only [Impl.AesGcm.AArch64.Fast.sealWithE, Impl.AesGcm.AArch64.Fast.runWithP, Impl.AesGcm.AArch64.Fast.front,
-    Impl.AesGcm.AArch64.Fast.cond, Impl.AesGcm.AArch64.Fast.padMul, cryptAl, crSeg2, crTail,
+    Impl.AesGcm.AArch64.Fast.cond, Impl.AesGcm.AArch64.Fast.padMul, Impl.AesGcm.AArch64.Fast.padMulT, Impl.AesGcm.AArch64.Tail.cryptAlT,
+    Impl.AesGcm.AArch64.Tail.crSeg2T, Impl.AesGcm.AArch64.Tail.crTailT, crSeg2, crTail,
     sealRest, j0, j0hash, oneAad, absorbAl, encBody, fo, textAbs, finBody, tag, crypt, crSeg1,
     ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees,
     Code.allInstrs, v.ctr.keepsV, v.gh.keepsV, hcl] <;> decide +kernel
@@ -86,7 +87,8 @@ theorem fastSealWithE_depth0 (v : GcmImpl) {k : Nat} (hk : k = 8 ∨ k = 16) {cl
     (hcl : cl.aarch64Depth = 0) : (Impl.AesGcm.AArch64.Fast.sealWithE v.callees k cl).aarch64Depth = 0 := by
   rcases hk with rfl | rfl <;>
   simp only [Impl.AesGcm.AArch64.Fast.sealWithE, Impl.AesGcm.AArch64.Fast.runWithP, Impl.AesGcm.AArch64.Fast.front,
-    Impl.AesGcm.AArch64.Fast.cond, Impl.AesGcm.AArch64.Fast.padMul, cryptAl, crSeg2, crTail, sealRest, j0, j0hash,
+    Impl.AesGcm.AArch64.Fast.cond, Impl.AesGcm.AArch64.Fast.padMul, Impl.AesGcm.AArch64.Fast.padMulT, Impl.AesGcm.AArch64.Tail.cryptAlT,
+    Impl.AesGcm.AArch64.Tail.crSeg2T, Impl.AesGcm.AArch64.Tail.crTailT, crSeg2, crTail, sealRest, j0, j0hash,
     oneAad, absorbAl, encBody, fo, textAbs, finBody, tag, crypt, crSeg1, ctrCall, ghCall, absorb, absSeg1, absTail,
     minK, copy, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.aarch64Depth,
     depth_of_noFrames v.ctr.noFrames, depth_of_noFrames v.gh.noFrames, hcl] <;> decide

@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.Crypt
+
 import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Pre
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Stitch
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Open
@@ -46,7 +48,7 @@ def openRunAS : Prog isa :=
   (.seq cl
   (.seq (.block (Impl.AesGcm.AArch64.Fast.hReload ++ Impl.Gcm.AArch64.Pmull.loadRev Y .x20 16 ++
       [mov .x13 .x24, mov .x12 .x23]))
-  (.seq Impl.AesGcm.AArch64.Fast.padMul
+  (.seq Impl.AesGcm.AArch64.Fast.padMulT
   (.seq (.block (Impl.AesGcm.AArch64.Fast.lensTagAt uO))
   (.seq (ctrCall c)
   (.seq cmp
@@ -56,12 +58,13 @@ def openRunAS : Prog isa :=
 counter block. -/
 def failB : Prog isa :=
   .seq (.block ([.ldrq .v0 .x19 Impl.AesGcm.AArch64.Stitch.cbO, .strq .v0 .x20 48, .ldr .x .x23 .x19 dataO,
-      .ldr .x .x26 .x19 lenO] ++ Impl.AesGcm.AArch64.Stitch.whole ++ [mov .x24 .x9, imm .x25 0])) (cryptAl c)
+      .ldr .x .x26 .x19 lenO] ++ Impl.AesGcm.AArch64.Stitch.whole ++ [mov .x24 .x9, imm .x25 0]))
+    (Impl.AesGcm.AArch64.Tail.cryptAlT c)
 
 /-- If the tag is right: the rest decrypted. -/
 def okB : Prog isa :=
   .seq (.block ([.ldr .x .x23 .x19 dataO, .ldr .x .x26 .x19 lenO] ++ Impl.AesGcm.AArch64.Stitch.whole ++
-      [.add .x .x23 .x23 .x9, .sub .x .x24 .x26 .x9, imm .x25 0])) (cryptAl c)
+      [.add .x .x23 .x23 .x9, .sub .x .x24 .x26 .x9, imm .x25 0])) (Impl.AesGcm.AArch64.Tail.cryptAlT c)
 
 /-- The branch on the tag. -/
 def omBS : Prog isa := .seq (.ite (.zero .x .x27) (failB c) (okB c)) (.block [mov .x0 .x27])
@@ -135,6 +138,7 @@ theorem failArgs_ok {fr : List Region} {s s₇ : State} (mo : MidS fr Ctx W SP D
       s₈.mem = s₇.mem.write (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) 16
         (s₇.mem.read (W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Stitch.cbO) 16) ∧
       s₈.gpr .x23 = D ∧ s₈.gpr .x24 = BitVec.ofNat 64 P ∧ s₈.gpr .x25 = BitVec.ofNat 64 (0 % 16) ∧
+      s₈.gpr .x26 = BitVec.ofNat 64 n ∧
       Others [.x9, .x23, .x24, .x25, .x26] s₇ s₈ ∧ s₈.sp = s₇.sp ∧ s₈.rd = s₇.rd ∧ s₈.wr = s₇.wr := by
   have he := mo.env
   have hn := mo.data.ok.lt
@@ -155,20 +159,23 @@ theorem failArgs_ok {fr : List Region} {s s₇ : State} (mo : MidS fr Ctx W SP D
     rw [Gcm.AArch64.Stitch.ushr7 hn, Stitch.shl7 (by have := Nat.mul_div_le n 128; omega), ← mo.hP]
   refine ⟨_, by arun [Impl.AesGcm.AArch64.Stitch.whole, Impl.AesGcm.AArch64.Stitch.cbO, he.x19, he.x20, q₀, q₁,
     q₂, w₀, gpr_setV, wr_setV, rd_setV, mem_setV, sp_setV, v_setV_self], ?_⟩
-  refine ⟨?_, ?_, ?_, ?_, by others_tac, rfl, rfl, rfl⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, by others_tac, rfl, rfl, rfl⟩
   · simp [mem_write, he.x20, Impl.AesGcm.AArch64.Stitch.cbO]
   · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq]
     rw [rs 232 (by decide) (by decide), e₁]
   · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq]
     rw [rs 240 (by decide) (by decide), e₂, e₉, BitVec.add_zero]
   · simp [gpr_write]
+  · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq]
+    rw [rs 240 (by decide) (by decide), e₂]
 
 omit L in
 theorem okArgs_ok {fr : List Region} {s s₇ : State} (mo : MidS fr Ctx W SP D Np A R nl al n tl P s s₇) :
     ∃ s₈, runBlock isa (([.ldr .x .x23 .x19 dataO, .ldr .x .x26 .x19 lenO] : List Instr) ++ Impl.AesGcm.AArch64.Stitch.whole ++
       ([.add .x .x23 .x23 .x9, .sub .x .x24 .x26 .x9, imm .x25 0] : List Instr)) s₇ = some s₈ ∧
       s₈.gpr .x23 = D + BitVec.ofNat 64 P ∧ s₈.gpr .x24 = BitVec.ofNat 64 (n - P) ∧
-      s₈.gpr .x25 = BitVec.ofNat 64 (P % 16) ∧ Regs [.x9, .x23, .x24, .x25, .x26] s₇ s₈ := by
+      s₈.gpr .x25 = BitVec.ofNat 64 (P % 16) ∧ s₈.gpr .x26 = BitVec.ofNat 64 n ∧
+      Regs [.x9, .x23, .x24, .x25, .x26] s₇ s₈ := by
   have he := mo.env
   have hn := mo.data.ok.lt
   have hPn : P ≤ n := mo.hP ▸ Nat.mul_div_le n 128
@@ -181,12 +188,13 @@ theorem okArgs_ok {fr : List Region} {s s₇ : State} (mo : MidS fr Ctx W SP D N
   have e₉ : (BitVec.ofNat 64 n >>> 7) <<< 7 = BitVec.ofNat 64 P := by
     rw [Gcm.AArch64.Stitch.ushr7 hn, Stitch.shl7 (by have := Nat.mul_div_le n 128; omega), ← mo.hP]
   refine ⟨_, by arun [Impl.AesGcm.AArch64.Stitch.whole, he.x19, q₁, q₂], ?_⟩
-  refine ⟨?_, ?_, ?_, ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
+  refine ⟨?_, ?_, ?_, ?_, ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
   · simp [gpr_write, e₁, e₂, e₉]
   · simp [gpr_write, e₂, e₉]
     rw [Offset.ofNat_sub_ofNat hPn]
   · simp [gpr_write]
     rw [mo.hP, show 128 * (n / 128) % 16 = 0 by omega]
+  · simp [gpr_write, e₂]
 
 /-- `omBS`: the rest decrypted if the tag is right, and the text as it was
 if not. -/
@@ -238,7 +246,7 @@ theorem omBS_ok (v : GcmImpl) {fr : List Region} {s s₇ : State} (hR : R = 10 �
     · have hB : B = false := by revert ht; cases B <;> simp
       subst hB
       unfold failB
-      obtain ⟨s₈, run₈, m₈, x23₈, x24₈, x25₈, og₈, sp₈, rd₈, wr₈⟩ := failArgs_ok mo
+      obtain ⟨s₈, run₈, m₈, x23₈, x24₈, x25₈, x26₈, og₈, sp₈, rd₈, wr₈⟩ := failArgs_ok mo
       refine WP.seq (WP.of_runBlock ⟨s₈, run₈, ?_⟩)
       have he₈ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₈ := mo.env.keep (fun r hr => og₈ r (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -259,7 +267,8 @@ theorem omBS_ok (v : GcmImpl) {fr : List Region} {s s₇ : State} (hR : R = 10 �
         rw [ciph_frame f₈ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
           exact L.cs.sub_right (Lay.stSub (by decide))) hR, mo.ciph]
-      refine WP.mono (cryptAl_ok L v (icb := J) hCr rfl) fun s₉ h₉ => ⟨h₉.env, ?_, ?_, ?_⟩
+      refine WP.mono (cryptAlT_ok L v (icb := J) hCr rfl x26₈ hn fun _ h => absurd (by omega) h)
+        fun s₉ h₉ => ⟨h₉.env, ?_, ?_, ?_⟩
       · rw [h₉.kept .x27 (by decide), og₈ _ (by decide)]
       · refine (f₈.sub fun r hr => ?_).trans (h₉.frame.sub (crSub subP))
         simp only [List.mem_singleton] at hr; subst hr
@@ -279,7 +288,7 @@ theorem omBS_ok (v : GcmImpl) {fr : List Region} {s s₇ : State} (hR : R = 10 �
     · have hB : B = true := by revert hf; cases B <;> simp
       subst hB
       unfold okB
-      obtain ⟨s₈, run₈, x23₈, x24₈, x25₈, r₈⟩ := okArgs_ok mo
+      obtain ⟨s₈, run₈, x23₈, x24₈, x25₈, x26₈, r₈⟩ := okArgs_ok mo
       refine WP.seq (WP.of_runBlock ⟨s₈, run₈, ?_⟩)
       have he₈ := mo.env.of_regs r₈
       have hCr : CrIn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R P (D + BitVec.ofNat 64 P) (n - P) s₈ :=
@@ -288,7 +297,9 @@ theorem omBS_ok (v : GcmImpl) {fr : List Region} {s s₇ : State} (hR : R = 10 �
       have hctr : Ctr s₈.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 64)
           (ciphOf s₈.mem Ctx R) J P :=
         ⟨by rw [r₈.mem, cb₇]; congr 1; omega, fun h => absurd hP16 h⟩
-      refine WP.mono (cryptAl_ok L v (icb := J) hCr hP16) fun s₉ h₉ => ⟨h₉.env, ?_, ?_, ?_⟩
+      refine WP.mono (cryptAlT_ok L v (icb := J) hCr hP16 x26₈ hn
+          (tail_big (by rw [r₈.wr]; exact mo.data.wr) hn rfl (by omega)))
+        fun s₉ h₉ => ⟨h₉.env, ?_, ?_, ?_⟩
       · rw [h₉.kept .x27 (by decide), r₈.others _ (by decide)]
       · rw [← r₈.mem]; exact h₉.frame.sub (crSub subR)
       · have e₁ : bytesAt s₉.mem D P = bytesAt s₇.mem D P := by
