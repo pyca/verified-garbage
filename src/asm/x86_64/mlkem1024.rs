@@ -17003,6 +17003,78 @@ ret
     )
 }
 
+/// The CPU features `vg_mlkem1024_check_ek_avx2` requires (`Artifact.features`).
+pub(crate) const VG_MLKEM1024_CHECK_EK_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+
+/// The ML-KEM-1024 encapsulation key check (FIPS 203 §7.2): returns 1 if every 12-bit integer that the first 1536 bytes of `*ek` encode is less than `q` = 3329 (the modulus check), and 0 otherwise. An encapsulation key must pass it before it is given to `vg_mlkem1024_encaps`.
+///
+/// Contract: `VG.Spec.MlKem1024.checkEkContract`. Constant time: only the pointer may affect timing.
+///
+/// The function checks eight fields at a time, from 12 bytes, in the doublewords of an AVX2 register.
+///
+/// # Safety
+///
+/// * `ek` must be valid for reads of 1568 bytes.
+/// * `ek` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_check_ek_avx2(ek: *const [u8; 1568]) -> u32 {
+    core::arch::naked_asm!(
+        r"movabs rax, -9187341034361716480
+vmovq xmm8, rax
+movabs rax, -9187337722941930493
+vmovq xmm0, rax
+vpunpcklqdq xmm8, xmm8, xmm0
+movabs rax, -9187334411522144506
+vmovq xmm0, rax
+movabs rax, -9187331100102358519
+vmovq xmm1, rax
+vpunpcklqdq xmm0, xmm0, xmm1
+vinserti128 ymm8, ymm8, xmm0, 1
+movabs rax, -9187336619135335164
+vmovq xmm12, rax
+movabs rax, -9187333307715549177
+vmovq xmm0, rax
+vpunpcklqdq xmm12, xmm12, xmm0
+movabs rax, -9187329996295763190
+vmovq xmm0, rax
+movabs rax, -9187326684875977203
+vmovq xmm1, rax
+vpunpcklqdq xmm0, xmm0, xmm1
+vinserti128 ymm12, ymm12, xmm0, 1
+movabs rax, 17179869184
+vmovq xmm9, rax
+vpbroadcastq ymm9, xmm9
+mov eax, 4095
+vmovq xmm10, rax
+vpbroadcastd ymm10, xmm10
+mov eax, 3329
+vmovq xmm11, rax
+vpbroadcastd ymm11, xmm11
+mov eax, -1
+vmovq xmm2, rax
+vpbroadcastd ymm2, xmm2
+mov ecx, 128
+20:
+vbroadcasti128 ymm0, XMMWORD PTR [rdi]
+vpshufb ymm0, ymm0, ymm8
+vpsrlvd ymm0, ymm0, ymm9
+vpand ymm0, ymm0, ymm10
+vpsubd ymm0, ymm0, ymm11
+vpand ymm2, ymm2, ymm0
+add rdi, 12
+sub rcx, 1
+jne 20b
+vpsrad ymm2, ymm2, 31
+vpmovmskb eax, ymm2
+add rax, 1
+shr rax, 32
+vzeroupper
+ret
+.p2align 6",
+    )
+}
+
 /// The CPU features `vg_mlkem1024_keygen_avx2` requires (`Artifact.features`).
 pub(crate) const VG_MLKEM1024_KEYGEN_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
 

@@ -1,10 +1,14 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.CheckEkAvx2
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.CheckEk
+import VerifiedGarbage.Proof.MlKem1024.X86_64.CheckEk
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Impl.MlKem1024.X86_64.CheckEkAvx2
 meta import VerifiedGarbage.Proof.MlKem.X86_64.CheckEkAvx2
 meta import VerifiedGarbage.Proof.MlKem1024.X86_64.CheckEk
+meta import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.Impl.MlKem1024.X86_64.CheckEkAvx2
 
 /-!
