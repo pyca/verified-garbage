@@ -1,9 +1,8 @@
 # Import planner: evidence, verification and iteration
 
 The commands and options are in [the Lean README](../lean/README.md#iterating-on-import-narrowing).
-This note describes what a reviewer can rely on and how to investigate a bad plan.
-The [validation record](IMPORT_NARROWING_VALIDATION.md) summarizes the compiled
-regressions, real-proof campaigns and measured planning performance.
+This note describes the planner’s evidence, invariants and verification process,
+and how to investigate a bad plan.
 
 ## Evidence is not verification
 

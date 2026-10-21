@@ -1,5 +1,4 @@
 {
-  "analyzer": "synthetic regression fixture",
   "independent": false,
   "library": [
     "VerifiedGarbage.A",

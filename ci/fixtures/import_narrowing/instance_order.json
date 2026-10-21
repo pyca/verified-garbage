@@ -1,5 +1,4 @@
 {
-  "analyzer": "6f6b466c29f5fa888f11f1bf3a6d0c6289b32c11bf68acb78ea8419ad4210626",
   "independent": true,
   "library": [
     "VerifiedGarbage.A",
@@ -22,8 +21,7 @@
     "baseline_value": 2,
     "description": "Captured from compiled Lean 4.35.0 fixture; old removal changed #eval chosenValue from 2 to 1 despite successful compilation",
     "fixed_value": 2,
-    "regression": "test_public_narrowing_keeps_a_private_initialization_anchor",
-    "additional_evidence": "E exported metadata recaptured from the identical saved source for private execution-effect queries."
+    "regression": "test_public_narrowing_keeps_a_private_initialization_anchor"
   },
   "schema": 1,
   "selected": [
