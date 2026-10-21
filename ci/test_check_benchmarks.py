@@ -524,6 +524,15 @@ class Selection(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'unknown architecture'):
             planner.manual('riscv64')
 
+    def test_thumb_is_explicit_and_uses_arm_benchmarks(self):
+        self.assertNotIn('thumb', {r['arch'] for r in planner.manual()})
+        arm = planner.manual('arm', modules='chacha20')
+        thumb = planner.manual('thumb', modules='chacha20')
+        self.assertTrue(thumb)
+        self.assertEqual(thumb, [{**r, 'arch': 'thumb',
+                                 'target': 'thumbv7neon-unknown-linux-gnueabihf'} for r in arm])
+        self.assertIn('thumb (runner:', planner.choices())
+
     def test_manual_runs_select_modules_and_their_configurations(self):
         with mock.patch.object(planner, 'bench_catalog', return_value=self.catalog), \
                 mock.patch.object(planner, 'read', self.read), \
@@ -800,6 +809,7 @@ class Executables(unittest.TestCase):
                                      + machine.to_bytes(2, 'little'))
         headers = {
             'x86_64': elf(64, 62), 'aarch64': elf(64, 183), 'x86': elf(32, 3), 'arm': elf(32, 40),
+            'thumb': elf(32, 40),
             'aarch64-apple': b'\xcf\xfa\xed\xfe' + (0x0100000C).to_bytes(4, 'little') + bytes(12),
         }
         with tempfile.TemporaryDirectory() as tmp:
@@ -808,7 +818,7 @@ class Executables(unittest.TestCase):
                 binary.write_bytes(header)
                 for arch in headers:
                     with self.subTest(built=built, arch=arch):
-                        if arch == built:
+                        if bench_compare.EXECUTABLES[arch] == bench_compare.EXECUTABLES[built]:
                             bench_compare.check_arch(binary, arch)
                         else:
                             with self.assertRaisesRegex(SystemExit, f"not {arch}'s"):

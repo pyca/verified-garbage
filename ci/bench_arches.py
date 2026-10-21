@@ -172,6 +172,9 @@ PLATFORMS = {
 # that did not change, so it runs `rounds` interleaved runs of each side
 # and compares the fastest (bench_compare.py's `--rounds`).
 MANUAL_PLATFORMS = {
+    # The same ARMv7 code assembled as T32, running natively like A32.
+    "thumb": {**PLATFORMS["arm"], "of": "arm",
+              "target": "thumbv7neon-unknown-linux-gnueabihf"},
     "aarch64-apple": {"os": "macos-latest", "of": "aarch64", "rounds": 5},
 }
 
