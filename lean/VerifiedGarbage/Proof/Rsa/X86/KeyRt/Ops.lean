@@ -67,10 +67,10 @@ theorem selectIn_ok {s : State} (h : RtWs L s B Z len N) {o a : Nat} (ho : o < N
   rw [show count L .edi extra = count L .edi extra ++ [] from (List.append_nil _).symm]
   simp only [List.append_assoc]
   refine WP.seq (arrPtr_ok hl hle h.edi (by decide) (by decide) (by omega) fun u₁ K₁ m₁ p₁ _ => ?_)
-  have hl₁ := (src_keep K₁ (by decide) m₁).trans hl
+  have hl₁ := hl.keep K₁ (by decide) m₁
   have edi₁ : (u₁.gpr .edi).toNat = B.toNat := by rw [K₁.1 _ (by decide)]; exact h.edi
   refine arrPtr_ok hl₁ hle edi₁ (by decide) (by decide) (by omega) fun u₂ K₂ m₂ p₂ _ => ?_
-  have hl₂ := (src_keep K₂ (by decide) m₂).trans hl₁
+  have hl₂ := hl₁.keep K₂ (by decide) m₂
   refine count_ok hl₂ hle fun u K₃ m₃ c₃ => WP.block_nil ?_
   have K : Keeps [.ebx, .edx, .ebp, .edi] s u :=
     (((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans (K₃.mono (by decide)))
@@ -168,13 +168,13 @@ theorem select3_ok {s : State} (h : RtWs L s B Z len N) {o a b : Nat} (ho : o < 
   rw [show count L .edx false = count L .edx false ++ [] from (List.append_nil _).symm]
   simp only [List.append_assoc]
   refine WP.seq (arrPtr_ok hl hle h.edi (by decide) (by decide) (by omega) fun u₁ K₁ m₁ p₁ _ => ?_)
-  have hl₁ := (src_keep K₁ (by decide) m₁).trans hl
+  have hl₁ := hl.keep K₁ (by decide) m₁
   have edi₁ : (u₁.gpr .edi).toNat = B.toNat := by rw [K₁.1 _ (by decide)]; exact h.edi
   refine arrPtr_ok hl₁ hle edi₁ (by decide) (by decide) (by omega) fun u₂ K₂ m₂ p₂ _ => ?_
-  have hl₂ := (src_keep K₂ (by decide) m₂).trans hl₁
+  have hl₂ := hl₁.keep K₂ (by decide) m₂
   have edi₂ : (u₂.gpr .edi).toNat = B.toNat := by rw [K₂.1 _ (by decide)]; exact edi₁
   refine arrPtr_ok hl₂ hle edi₂ (by decide) (by decide) (by omega) fun u₃ K₃ m₃ p₃ _ => ?_
-  have hl₃ := (src_keep K₃ (by decide) m₃).trans hl₂
+  have hl₃ := hl₂.keep K₃ (by decide) m₃
   refine count_ok hl₃ hle fun u K₄ m₄ c₄ => WP.block_nil ?_
   have K : Keeps [.ebx, .edx, .ebp, .edi] s u :=
     (((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans (K₃.mono (by decide))).trans (K₄.mono (by decide))

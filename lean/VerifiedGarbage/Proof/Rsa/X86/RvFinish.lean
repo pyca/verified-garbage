@@ -32,30 +32,32 @@ def Finished (g : CallGeometry) (s0 : State) (m y : Nat) (accept : Bool) (t : St
     Keeps opRegs s0 t
 
 theorem fin_ok {g : CallGeometry} {s0 s : State} {A AW V : Nat → Nat} {m k c : Nat}
-    {st : Nat × Bool × Bool} (inputs : Inputs g s0) (h : SI g.toGeo s0 A AW V m k c st s)
+    {st : Nat × Bool × Bool} (inputs : Inputs g s0) (len : Lengths g) (h : SI g.toGeo s0 A AW V m k c st s)
     (value : A mBase = m) (modulus : A aN = m) (bound : m < 2 ^ (64 * g.n))
     (inverse : (m * V sInv + 1) % 2 ^ 32 = 0) (odd : m % 2 = 1) (hm : 1 < m)
     (zero : A aZ = 0) (one : A aOne = 1) (yl : st.1 < m) :
-    WP isa (fin g.n) s (Finished g s0 m st.1 st.2.2) := by
-  unfold fin
+    WP isa VG.Impl.Rsa.X86.RecoverRt.fin s (Finished g s0 m st.1 st.2.2) := by
+  unfold VG.Impl.Rsa.X86.RecoverRt.fin
   simp only [seqs]
   refine WP.seq (WP.mono (finY_ok h value bound inverse odd hm one yl) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (factors_ok h1
     (by simpa only [upd_ne _ _ (by decide : aN ≠ mY)] using modulus)
     (by rw [upd_self]) (by simpa only [upd_ne _ _ (by decide : aZ ≠ mY)] using zero)
     (by simpa only [upd_ne _ _ (by decide : aOne ≠ mY)] using one) odd hm) fun s2 h2 => ?_)
-  have input2 := inputs.after h2.rest (by decide) (by decide) (inputs.scratchFrame h2.frame)
+  have input2 := inputs.of_KS h2
   have zero2 : num s2.mem g.B g.toGeo.w aZero = 0 := by
     rw [h2.arrs aZero (by simp)]
     rfl
   have mask2 : slot s2.mem g.B sMask = if st.2.2 then 1 else 0 := h2.sl sMask (by simp)
-  refine WP.mono (stores_ok input2 zero2 st.2.2 mask2) fun t ⟨inputT, p, q, status, frame, rest⟩ => ?_
+  refine WP.mono (stores_ok input2 len zero2 st.2.2 mask2) fun t ⟨inputT, p, q, status, frame, rest⟩ => ?_
   refine ⟨inputT, ?_, ?_, status, ?_, h2.rest.trans rest⟩
   · change Spec.Rsa.bytesAt t.mem (g.buffer 0).base (g.buffer 0).len = _
     simpa only [resultBytes, h2.arrs 5 (by simp), AF, upd_ne _ _ (by decide : 5 ≠ 6), upd_self, encoded] using p
   · change Spec.Rsa.bytesAt t.mem (g.buffer 2).base (g.buffer 2).len = _
     simpa only [resultBytes, h2.arrs 6 (by simp), AF, upd_self, encoded] using q
-  · have before := outside_frame h2.frame (by have := inputs.ws.workspace.nowrap; omega)
-    exact (before.mono (by simp [bodyWrites])).trans frame
+  · refine (h2.frame.sub fun r hr => ⟨r, ?_, fun _ h => h⟩).trans frame
+    simp only [stageR, VG.Proof.Bignum.X86.CrtRt.frameR, List.map_cons, List.map_nil, List.mem_cons,
+      List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> simp [bodyWrites]
 
 end VG.Proof.Rsa.X86.Recover

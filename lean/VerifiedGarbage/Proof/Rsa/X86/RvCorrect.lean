@@ -20,10 +20,10 @@ open VG.Proof.Bignum.X86 VG.Impl.Bignum.X86
 open VG.Impl.Rsa.X86.Recover
 
 theorem operation_ok {s : State} (a : ABI s) :
-    WP isa code s fun t => Written (caller s) s.mem t ∧ abiPreserved s t := by
+    WP isa VG.Impl.Rsa.X86.RecoverRt.code s fun t => Written (caller s) s.mem t ∧ abiPreserved s t := by
   have low : 16 ≤ (caller s).Z := by have := a.used; omega
   have high : (caller s).Z ≤ 2 ^ 64 := by have := a.scratchBound; omega
-  unfold code
+  unfold VG.Impl.Rsa.X86.RecoverRt.code
   refine WP.seq (WP.mono (installed_ok a) fun u ⟨inputs, saved, k, o⟩ => ?_)
   refine WP.seq (WP.mono (body_ok inputs a.lengths_ok) fun v ⟨iv, written, frame, kv⟩ => ?_)
   have saveV := bodyFrame_saved inputs frame saved
@@ -32,7 +32,7 @@ theorem operation_ok {s : State} (a : ABI s) :
     simp only [off, BitVec.add_zero] at start
     exact (start.mono (by simp [CallGeometry.writes])).trans (bodyFrame_full low frame)
   have ret : v.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 :=
-    whole.readW (Region.contains_self _ 4) a.retApart (by decide)
+    whole.readW (Region.contains_self _ 4) a.retApartW (by decide)
   refine WP.mono (entryRestore_ok iv.ws.workspace low saveV) fun t restored => ?_
   refine ⟨?_, publicRestored_abi restored ((kv.1 _ (by decide)).trans (k.1 _ (by decide))) ret⟩
   unfold Written at written ⊢
@@ -40,9 +40,9 @@ theorem operation_ok {s : State} (a : ABI s) :
   rw [restored.mem, restored.other .eax (by decide)]
   exact written
 
-theorem correct (s : State) (h : (Spec.Rsa.recoverPrimesContract abi 20).pre s) :
-    ∃ trace t, Exec isa code s trace t ∧ abiPreserved s t ∧
-      (Spec.Rsa.recoverPrimesContract abi 20).post s t := by
+theorem correct (s : State) (h : (Spec.Rsa.recoverPrimesContract abi 40).pre s) :
+    ∃ trace t, Exec isa VG.Impl.Rsa.X86.RecoverRt.code s trace t ∧ abiPreserved s t ∧
+      (Spec.Rsa.recoverPrimesContract abi 40).post s t := by
   have a := abi_of h
   obtain ⟨trace, t, run, written, preserved⟩ := operation_ok a
   refine ⟨trace, t, run, preserved, ?_⟩

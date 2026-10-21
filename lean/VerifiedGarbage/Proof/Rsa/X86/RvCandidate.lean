@@ -33,12 +33,12 @@ theorem candBody_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m eLen dLen
     (ht : V sTc ≤ 8 * (dLen + eLen)) (rb : AW wR < 2 ^ (8 * (dLen + eLen)))
     (count : 0 < 8 * (dLen + eLen)) (limit : 8 * (dLen + eLen) ≤ 16384)
     (hwide : 8 * (dLen + eLen) < 32 * g.W) :
-    WP isa (candBody g.n) s fun t =>
+    WP isa VG.Impl.Rsa.X86.RecoverRt.candBody s fun t =>
       let st := candidateState m (V sTc) (AW wR) (8 * (dLen + eLen)) (V sCand)
       SI g s0 A AW (upd V sCand (V sCand + 1)) m (8 * (dLen + eLen)) 0 st t ∧
       t.zf = some (!(decide (V sCand + 1 < 100) && !st.2.2)) := by
   have positive : 0 < m := by omega
-  unfold candBody
+  unfold VG.Impl.Rsa.X86.RecoverRt.candBody
   simp only [seqs]
   refine WP.seq (WP.mono (candExp_ok h zero value bound inverse odd one r2 candidate baseBound
     ae ad count limit hwide rb) fun s1 hs => ?_)

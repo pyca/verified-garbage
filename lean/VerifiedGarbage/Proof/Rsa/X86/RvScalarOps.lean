@@ -2,11 +2,10 @@ module
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 
-import VerifiedGarbage.Proof.Rsa.X86.KeyEq
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 import VerifiedGarbage.Proof.Rsa.X86.RvWrite
 import VerifiedGarbage.Proof.Rsa.X86.RvFrames
-import VerifiedGarbage.Proof.Rsa.X86.KeyWord
-import VerifiedGarbage.Proof.Rsa.X86.KeyBits
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
@@ -25,6 +24,8 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.Rsa.X86.Recover
 open VG.Proof.Rsa.X86.Keys
+open VG.Impl.Rsa.X86.RecoverRt (nar wid)
+open VG.Impl.Rsa.X86.KeyRt (bitOf clrLow setOne eqS)
 
 section
 variable {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
@@ -32,46 +33,51 @@ variable {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
 
 theorem KS.bitOf_w {j sl : Nat} (h : KS g s0 A live AW liveW V ls s)
     (hj : j ∈ live) (hsl : SlotOk sl) :
-    WP isa (.block (bitOf g.w sl j)) s fun t =>
-      KS g s0 A live AW liveW (upd V sl (A j % 2)) (sl :: ls) t ∧ Keeps opRegs s t :=
-  WP.mono (Keys.bitOf_ok h.ws (h.live_lt j hj) hsl.2.1) fun _ ⟨_, k, e, r⟩ =>
-    ⟨h.slot1 k hsl (r.mono (by decide)) (by rw [e, h.arrs j hj]), r.mono (by decide)⟩
+    WP isa (.block (bitOf nar sl j)) s fun t =>
+      KS g s0 A live AW liveW (upd V sl (A j % 2)) (sl :: ls) t ∧ Keeps opRegs s t := by
+  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.bitOf_ok h.rt (h.live_lt j hj) hsl.2.1) fun t ⟨_, k, e, r⟩ => ?_
+  rw [kw_nar] at k e
+  exact ⟨h.slot1 k hsl (r.mono (by decide)) (by rw [e, h.arrs j hj]), r.mono (by decide)⟩
 
 theorem KS.bitOf_W {j sl : Nat} (h : KS g s0 A live AW liveW V ls s)
     (hj : j ∈ liveW) (hsl : SlotOk sl) :
-    WP isa (.block (bitOf g.W sl j)) s fun t =>
-      KS g s0 A live AW liveW (upd V sl (AW j % 2)) (sl :: ls) t ∧ Keeps opRegs s t :=
-  WP.mono (Keys.bitOf_ok h.wsW (h.liveW_lt j hj) hsl.2.1) fun _ ⟨_, k, e, r⟩ =>
-    ⟨h.slot1 k hsl (r.mono (by decide)) (by rw [e, h.arrsW j hj]), r.mono (by decide)⟩
+    WP isa (.block (bitOf wid sl j)) s fun t =>
+      KS g s0 A live AW liveW (upd V sl (AW j % 2)) (sl :: ls) t ∧ Keeps opRegs s t := by
+  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.bitOf_ok h.rtW (h.liveW_lt j hj) hsl.2.1) fun t ⟨_, k, e, r⟩ => ?_
+  rw [kw_wid] at k e
+  exact ⟨h.slot1 k hsl (r.mono (by decide)) (by rw [e, h.arrsW j hj]), r.mono (by decide)⟩
 
 theorem KS.clrLow_W {j : Nat} (h : KS g s0 A live AW liveW V ls s)
     (hj : j ∈ liveW) (hl : ∀ i ∈ live, i / 2 ≠ j) :
-    WP isa (.block (clrLow g.W j)) s fun t =>
-      KS g s0 A live (upd AW j (2 * (AW j / 2))) (j :: liveW) V ls t ∧ Keeps opRegs s t :=
-  WP.mono (Keys.clrLow_ok h.wsW (h.liveW_lt j hj)) fun _ ⟨_, k, e, r, _⟩ =>
-    ⟨h.write_W k (h.liveW_lt j hj) (by simp) (r.mono (by decide))
-      (by rw [e, h.arrsW j hj]) hl (by simp), r.mono (by decide)⟩
+    WP isa (.block (clrLow wid j)) s fun t =>
+      KS g s0 A live (upd AW j (2 * (AW j / 2))) (j :: liveW) V ls t ∧ Keeps opRegs s t := by
+  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.clrLow_ok h.rtW (h.liveW_lt j hj)) fun t ⟨_, k, e, r, _⟩ => ?_
+  rw [kw_wid] at k e
+  exact ⟨h.write_W k (h.liveW_lt j hj) (by simp) (r.mono (by decide))
+    (by rw [e, h.arrsW j hj]) hl (by simp), r.mono (by decide)⟩
 
 theorem KS.setOne_w {j : Nat} (h : KS g s0 A live AW liveW V ls s)
     (hj : j ∈ live) (hlW : ∀ i ∈ liveW, j / 2 ≠ i) :
-    WP isa (.block (setOne g.w j)) s fun t =>
+    WP isa (.block (setOne nar j)) s fun t =>
       KS g s0 (upd A j (1 + 2 ^ 32 * (A j / 2 ^ 32))) (j :: live) AW liveW V ls t ∧
-      Keeps opRegs s t :=
-  WP.mono (Keys.setOne_ok h.ws (h.live_lt j hj)) fun _ ⟨_, k, e, r⟩ =>
-    ⟨h.write_w k (h.live_lt j hj) (by simp) (r.mono (by decide))
-      (by rw [e, h.arrs j hj]) hlW (by simp), r.mono (by decide)⟩
+      Keeps opRegs s t := by
+  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.setOne_ok h.rt (h.live_lt j hj)) fun t ⟨_, k, e, r⟩ => ?_
+  rw [kw_nar] at k e
+  exact ⟨h.write_w k (h.live_lt j hj) (by simp) (r.mono (by decide))
+    (by rw [e, h.arrs j hj]) hlW (by simp), r.mono (by decide)⟩
 
 theorem KS.eqS_w {d a b : Nat} (h : KS g s0 A live AW liveW V ls s)
     (ha : a ∈ live) (hb : b ∈ live) (hd : SlotOk d) (hW : aW ∉ live)
     (hlW : ∀ j ∈ liveW, aW / 2 ≠ j)
     (hls : ∀ e ∈ ls, e + 4 ≤ sT ∨ sT + 4 ≤ e) :
-    WP isa (eqS g.w d a b aW) s fun t =>
+    WP isa (eqS nar d a b aW) s fun t =>
       KS g s0 A live AW liveW (upd V d (if A a = A b then 1 else 0)) (d :: ls) t ∧
       Keeps opRegs s t := by
   have hWa : aW ≠ a := fun e => hW (e ▸ ha)
   have hWb : aW ≠ b := fun e => hW (e ▸ hb)
-  refine WP.mono (Keys.eqS_ok h.ws (t := aW) (by decide)
+  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.eqS_ok h.rt (t := aW) (by decide)
     (h.live_lt a ha) (h.live_lt b hb) hWa hWb hd.2.1) fun t ⟨_, k, e, r⟩ => ?_
+  rw [kw_nar] at k e
   have hdT : ∀ d' ∈ [sT, d], SlotOk d' := by
     intro d' hm
     rcases List.mem_cons.mp hm with rfl | hm

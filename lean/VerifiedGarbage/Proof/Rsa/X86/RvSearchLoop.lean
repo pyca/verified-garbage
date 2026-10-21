@@ -30,7 +30,7 @@ variable {g : Geo} {s0 : State} {A AW V : Nat → Nat} {m eLen dLen : Nat}
 include zero value bound inverse odd large one neg r2 ae ad ht rb count limit hwide
 
 theorem candBody_index {s : State} {j : Nat} (h : CI g s0 A AW V j s) (hj : j < 100) :
-    WP isa (candBody g.n) s fun t =>
+    WP isa VG.Impl.Rsa.X86.RecoverRt.candBody s fun t =>
       SI g s0 A AW (VJ V (j + 1)) m (8 * (dLen + eLen)) 0
         (candidateState m (V sTc) (AW wR) (8 * (dLen + eLen)) j) t ∧
       t.zf = some (!(decide (j + 1 < 100) &&
@@ -43,7 +43,7 @@ theorem candBody_index {s : State} {j : Nat} (h : CI g s0 A AW V j s) (hj : j < 
     upd_ne _ _ (by decide : sTc ≠ sCnt), upd_twice] using result
 
 theorem searchLoop_ok {s : State} (h : CI g s0 A AW V 0 s) (ht1 : 1 ≤ V sTc) :
-    WP isa (.loop (candBody g.n) .ne) s (SearchResult g s0 A AW V m (8 * (dLen + eLen))) := by
+    WP isa (.loop VG.Impl.Rsa.X86.RecoverRt.candBody .ne) s (SearchResult g s0 A AW V m (8 * (dLen + eLen))) := by
   refine WP.loop (M := isa)
     (fun left u => ∃ j, j + left = 100 ∧ 0 < left ∧ CI g s0 A AW V j u ∧
       recoverPrimes.go m (V sTc) (AW wR) 100 = recoverPrimes.go m (V sTc) (AW wR) (100 - j))
@@ -81,8 +81,8 @@ theorem searchLoop_ok {s : State} (h : CI g s0 A AW V 0 s) (ht1 : 1 ≤ V sTc) :
 theorem candLoop_ok {s : State}
     (h : KS g s0 A liveM AW [wR] V [sInv, sTc, sCnt] s)
     (vc : V sCnt = 0) (ht1 : 1 ≤ V sTc) :
-    WP isa (candLoop g.n) s (SearchResult g s0 A AW V m (8 * (dLen + eLen))) := by
-  unfold candLoop
+    WP isa VG.Impl.Rsa.X86.RecoverRt.candLoop s (SearchResult g s0 A AW V m (8 * (dLen + eLen))) := by
+  unfold VG.Impl.Rsa.X86.RecoverRt.candLoop
   refine WP.seq (wp_movS rfl fun u U _ => ?_)
   have hu := h.of_rest U.keeps (by decide) U.mem
   refine WP.mono (hu.storeSlot (d := sCand) (by decide) .eax) fun v ⟨hv, _, _⟩ => ?_

@@ -22,15 +22,12 @@ open VG.Impl.Rsa.X86.Recover
 open VG.Proof.Rsa.X86.Keys
 open VG.Proof.Rsa (b2n)
 
-theorem finY_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m k c : Nat}
-    {st : Nat × Bool × Bool} (h : SI g s0 A AW V m k c st s)
-    (value : A mBase = m) (bound : m < 2 ^ (64 * g.n))
-    (inverse : (m * V sInv + 1) % 2 ^ 32 = 0) (odd : m % 2 = 1) (hm : 1 < m)
-    (one : A aOne = 1) (yl : st.1 < m) :
-    WP isa (finY g.n) s fun t =>
-      KS g s0 (upd A mY st.1) [mY, aN, aZ, aOne] (fun _ => 0) []
-        (fun _ => b2n st.2.2) [sMask] t := by
-  unfold finY
+theorem finHead_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m k c : Nat}
+    {st : Nat × Bool × Bool} (h : SI g s0 A AW V m k c st s) (one : A aOne = 1) :
+    WP isa VG.Impl.Rsa.X86.RecoverRt.finHead s fun t =>
+      KS g s0 (upd (upd A mY (st.1 * 2 ^ (64 * g.n) % m)) mXm 1) (mXm :: liveSq) AW [wR]
+        (upd (VS V k c st) sMask (b2n st.2.2)) (sMask :: slotsSq) t := by
+  unfold VG.Impl.Rsa.X86.RecoverRt.finHead
   simp only [seqs]
   refine WP.seq (wp_movS (h.readSlot (by simp [slotsSq] : sOk ∈ slotsSq)) fun u U _ => ?_)
   have hu := h.of_rest U.keeps (by decide) U.mem
@@ -40,9 +37,21 @@ theorem finY_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m k c : Nat}
     simp only [VS, upd_self, BitVec.toNat_ofNat]
     exact Nat.mod_eq_of_lt (by have := VG.Proof.Rsa.b2n_le st.2.2; omega)
   rw [mask] at h1
-  refine WP.seq (WP.mono (h1.copy_w (o := mXm) (a := aOne) (by decide)
-    (by simp [liveSq, liveM]) (by decide)) fun s2 ⟨h2, _, _⟩ => ?_)
+  refine WP.mono (h1.copy_w (o := mXm) (a := aOne) (by decide)
+    (by simp [liveSq, liveM]) (by decide) (by decide)) fun s2 ⟨h2, _, _⟩ => ?_
   simp only [upd_ne _ _ (by decide : aOne ≠ mY), one] at h2
+  exact h2
+
+theorem finY_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m k c : Nat}
+    {st : Nat × Bool × Bool} (h : SI g s0 A AW V m k c st s)
+    (value : A mBase = m) (bound : m < 2 ^ (64 * g.n))
+    (inverse : (m * V sInv + 1) % 2 ^ 32 = 0) (odd : m % 2 = 1) (hm : 1 < m)
+    (one : A aOne = 1) (yl : st.1 < m) :
+    WP isa VG.Impl.Rsa.X86.RecoverRt.finY s fun t =>
+      KS g s0 (upd A mY st.1) [mY, aN, aZ, aOne] (fun _ => 0) []
+        (fun _ => b2n st.2.2) [sMask] t := by
+  unfold VG.Impl.Rsa.X86.RecoverRt.finY
+  refine WP.seq (WP.mono (finHead_ok h one) fun s2 h2 => ?_)
   have mr := h2.montReady (m := m) (by simp [liveSq, liveM]) (by simp [slotsSq])
     (by simpa only [upd_ne _ _ (by decide : mBase ≠ mXm),
       upd_ne _ _ (by decide : mBase ≠ mY)] using value) bound

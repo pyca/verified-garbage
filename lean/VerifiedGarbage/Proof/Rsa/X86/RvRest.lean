@@ -23,13 +23,13 @@ def RestResult (g : CallGeometry) (s0 : State) (t : State) : Prop :=
     ((if ok then some (pqOf (inputValue g s0.mem 0) y) else none), tries) =
       recoverPrimes (inputValue g s0.mem 0) (inputValue g s0.mem 1) (inputValue g s0.mem 2)
 
-theorem rest_ok {g : CallGeometry} {s0 s : State} (inputs : Inputs g s0)
+theorem rest_ok {g : CallGeometry} {s0 s : State} (inputs : Inputs g s0) (len : Lengths g)
     (h : KS g.toGeo s0 (fun _ => inputValue g s0.mem 0) [aN]
       (fun _ => 2 * (product g s0.mem / 2)) [wM] (fun _ => 0) [] s)
     (go : GoOn (product g s0.mem))
     (bound : inputValue g s0.mem 0 < 2 ^ (64 * g.n))
     (odd : inputValue g s0.mem 0 % 2 = 1) (large : 101 < inputValue g s0.mem 0) :
-    WP isa (rest g.n) s (RestResult g s0) := by
+    WP isa VG.Impl.Rsa.X86.RecoverRt.rest s (RestResult g s0) := by
   obtain ⟨ae, ad⟩ := inputArguments inputs
   obtain ⟨count, limit⟩ := inputs.countBounds
   obtain ⟨evenValue, positive, _, fit⟩ := exponent_facts go
@@ -37,7 +37,7 @@ theorem rest_ok {g : CallGeometry} {s0 s : State} (inputs : Inputs g s0)
   have halves : hvs (exponent g s0.mem) (countBits g) =
       ((splitTwos (exponent g s0.mem)).2, (splitTwos (exponent g s0.mem)).1) :=
     VG.Proof.Rsa.halve_done positive fit
-  unfold rest
+  unfold VG.Impl.Rsa.X86.RecoverRt.rest
   simp only [seqs]
   refine WP.seq (WP.mono (halving_ok h (by simp) evenValue ae ad count limit) fun s1 h1 => ?_)
   change KS g.toGeo s0 (fun _ => inputValue g s0.mem 0) [aN]
@@ -58,7 +58,7 @@ theorem rest_ok {g : CallGeometry} {s0 s : State} (inputs : Inputs g s0)
     (by simpa [countBits, upd, sTc, sInv, sCnt] using tbound) rbound count limit inputs.countWide tracked
     (by simp [upd, sCnt, sInv]) (by simpa [upd, sTc, sInv, sCnt] using tpos))
     fun s3 ⟨j, st, _, hs, small, pos, found⟩ => ?_)
-  refine WP.mono (fin_ok inputs hs
+  refine WP.mono (fin_ok inputs len hs
     (by simp [AM, upd, mBase, aNg, aO, mXm, mR2])
     (by simp [AM, upd, aN, aNg, aO, mXm, mR2, mBase, aOne, aZ]) bound
     (by simpa [VJ, upd, sInv, sCand, sCnt] using inverse) odd (by omega)

@@ -39,7 +39,7 @@ theorem half_ok {s : State} (h : RtWs L s B Z len N) {j : Nat} (hj : j < N) (bit
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   -- The top word, then the pointer back at the array.
   refine WP.seq (arrPtr_ok hl hle h.edi (by decide) (by decide) (by omega) fun u₁ K₁ m₁ p₁ _ => ?_)
-  have hl₁ := (src_keep K₁ (by decide) m₁).trans hl
+  have hl₁ := hl.keep K₁ (by decide) m₁
   refine bytesB_ok hl₁ hle fun u₂ K₂ m₂ e₂ => wp_addS rfl fun u₃ U₃ _ => ?_
   have K₃ : Keeps [.edx, .ebp] s u₃ := ((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans (U₃.keeps.mono (by decide))
   have p₃ : PtrAt u₃ B .ebp (arr (kw len) j + 4 * kw len) := by
@@ -49,12 +49,15 @@ theorem half_ok {s : State} (h : RtWs L s B Z len N) {j : Nat} (hj : j < N) (bit
     (by omega)) fun u₄ m₄ => ?_
   have ebx₄ : u₃.gpr .ebx = s.gpr .ebx := K₃.1 _ (by decide)
   have mu₃ : u₃.mem = s.mem := by rw [U₃.mem, m₂, m₁]
-  have hl₄ : readSrc u₄ (.mem (lenOp L)) = some (BitVec.ofNat 32 len) := by
-    rw [lenOp_eq h.layLen]; exact (h.lenArg.keep (K₃.widen (m₄.keeps [])) (by decide) (by
+  have hl₄ : LenSrc L u₄ len := by
+    obtain ⟨a, l, e, c⟩ := h.lenArg
+    refine ⟨a, l, e, ?_⟩
+    rw [lenOp_eq h.layLen]; exact (c.keep (K₃.widen (m₄.keeps [])) (by decide) (by
       rw [m₄.mem, mu₃]; exact (writeW32_outside _ _ _ (by omega)).mono (Nat.zero_le _) (by omega))).readSrc
   have edi₄ : (u₄.gpr .edi).toNat = B.toNat := by rw [m₄.gpr, K₃.1 _ (by decide)]; exact h.edi
   refine arrPtr_ok hl₄ hle edi₄ (by decide) (by decide) (by omega) fun u₅ K₅ m₅ p₅ _ => ?_
-  have hl₅ := (src_keep K₅ (by decide) m₅).trans hl₄
+  have hl₅ := hl₄.keep K₅ (by decide) m₅
+  rw [show bytesB L .edx = bytesB L .edx ++ [] from (List.append_nil _).symm]
   refine bytesB_ok hl₅ hle fun t₀ K₆ m₆ e₆ => WP.block_nil ?_
   have K₀ : Keeps [.edx, .ebp] s t₀ :=
     ((K₃.widen (m₄.keeps [])).trans (K₅.mono (by decide))).trans (K₆.mono (by decide))

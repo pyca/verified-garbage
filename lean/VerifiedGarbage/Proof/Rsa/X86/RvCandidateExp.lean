@@ -42,10 +42,10 @@ theorem alignStart_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {eLen dLen
     (ae : CallArgument s0 g.B g.Z 7 (BitVec.ofNat 32 eLen))
     (ad : CallArgument s0 g.B g.Z 9 (BitVec.ofNat 32 dLen))
     (hwide : 8 * (dLen + eLen) < 32 * g.W) (rb : AW wR < 2 ^ (8 * (dLen + eLen))) :
-    WP isa (alignStart g.n) s
+    WP isa VG.Impl.Rsa.X86.RecoverRt.alignStart s
       (AI g s0 (candA A V) (upd AW wRc (AW wR)) V (AW wR) (alignShifts g eLen dLen) 0) := by
   have Wle := geo_wide g h.upper
-  unfold alignStart
+  unfold VG.Impl.Rsa.X86.RecoverRt.alignStart
   refine WP.seq (WP.mono (candSet_ok h zero candidate) fun s1 h1 => ?_)
   refine WP.mono (alignCount_ok h1 ae ad hwide (by omega)) fun s2 h2 => ?_
   refine h2.mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨hj, ?_⟩) (fun d hd => ⟨by simp [hd], ?_⟩)
@@ -65,7 +65,7 @@ theorem candMont_ok {g : Geo} {s0 s3 : State} {A AW V : Nat → Nat} {m eLen dLe
     (inverse : (m * V sInv + 1) % 2 ^ 32 = 0) (odd : m % 2 = 1)
     (r2 : A mR2 = 2 ^ (128 * g.n) % m) (baseBound : V sCand + 2 < m)
     (hwide : 8 * (dLen + eLen) < 32 * g.W) (rb : AW wR < 2 ^ (8 * (dLen + eLen))) :
-    WP isa (mmul g.n mG mG mR2) s3 (KS g s0 (candMontA A V g.n m) liveExp
+    WP isa (VG.Impl.Rsa.X86.RecoverRt.mmul mG mG mR2) s3 (KS g s0 (candMontA A V g.n m) liveExp
       (upd AW wRc (alignedExp g (AW wR) eLen dLen)) [wRc, wR] (upd V sCnt 0) slotsExp) := by
   have positive : 0 < m := by omega
   have Wle := geo_wide g h3.upper
@@ -145,7 +145,7 @@ theorem candTable_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m eLen dLe
     (value : A mBase = m) (bound : m < 2 ^ (64 * g.n))
     (inverse : (m * V sInv + 1) % 2 ^ 32 = 0) (odd : m % 2 = 1)
     (one : A aO = 2 ^ (64 * g.n) % m) (positive : 0 < m) :
-    WP isa (table g.n) s (KS g s0 (tableA (candMontA A V g.n m) g.n m (V sCand + 2) 16)
+    WP isa VG.Impl.Rsa.X86.RecoverRt.table s (KS g s0 (tableA (candMontA A V g.n m) g.n m (V sCand + 2) 16)
       (List.range 16 ++ liveExp) (upd AW wRc (alignedExp g (AW wR) eLen dLen)) [wRc, wR]
       (upd V sCnt 0) slotsExp) :=
   table_ok h liveExp_table (by decide) (by decide) (by decide) (by decide)
@@ -193,12 +193,12 @@ theorem candExp_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m eLen dLen 
     (ad : CallArgument s0 g.B g.Z 9 (BitVec.ofNat 32 dLen))
     (count : 0 < 8 * (dLen + eLen)) (limit : 8 * (dLen + eLen) ≤ 16384)
     (hwide : 8 * (dLen + eLen) < 32 * g.W) (rb : AW wR < 2 ^ (8 * (dLen + eLen))) :
-    WP isa (candExp g.n) s fun t =>
+    WP isa VG.Impl.Rsa.X86.RecoverRt.candExp s fun t =>
       KS g s0 (upd A mY (Spec.Rsa.powMod (V sCand + 2) (AW wR) m * 2 ^ (64 * g.n) % m)) liveSq
         AW [wR] (upd V sCnt 0) slotsExp t := by
   have positive : 0 < m := by omega
   have Wle := geo_wide g h.upper
-  unfold candExp
+  unfold VG.Impl.Rsa.X86.RecoverRt.candExp
   simp only [seqs]
   refine WP.seq (WP.mono (alignStart_ok h zero candidate ae ad hwide rb) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (alignLoop_ok h1 (by unfold alignShifts; omega) (by unfold alignShifts; omega))

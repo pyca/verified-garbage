@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 public import VerifiedGarbage.Proof.Framework.Semantics
 
-import VerifiedGarbage.Proof.Rsa.X86.MulMod
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.MulMod
 import VerifiedGarbage.Proof.Rsa.RecoverProduct
 import VerifiedGarbage.Proof.Rsa.X86.RvFrames
 import Mathlib.Order.RelClasses
@@ -37,11 +37,12 @@ theorem product_core_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {e d eLen dLe
     (ePos : 0 < eLen) (eBound : eLen ≤ 8 * g.n) (dBound : dLen ≤ 8 * g.n)
     (eFits : e < 2 ^ (8 * eLen)) (dFits : d < 2 ^ (8 * dLen))
     (count : s.gpr .esi = BitVec.ofNat 32 (8 * eLen)) :
-    WP isa (mulMod g.W wZ wE wD wM wMod wT) s fun t =>
+    WP isa (VG.Impl.Rsa.X86.KeyRt.mulMod VG.Impl.Rsa.X86.RecoverRt.wid wZ wE wD wM wMod wT) s fun t =>
       KS g s0 A [aN] (AWp g e d) [wM, wMod, wZ] (fun _ => 0) [] t := by
   have upper := h.upper
-  refine WP.mono (Keys.mulMod_ok h.wsW (by decide) (by omega) (by omega) count)
+  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.mulMod_ok h.rtW (by decide) (by omega) (by omega) count)
     fun t ⟨_, k, r, value⟩ => ?_
+  rw [kw_wid] at k value
   have gZ : num s.mem g.B g.W wZ = 0 := by
     rw [h.arrsW wZ (by simp)]; simp [AW1, upd, wZ, wMod, wD, wE]
   have gE : num s.mem g.B g.W wE = e := by
@@ -66,7 +67,7 @@ theorem product_core_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {e d eLen dLe
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro d (rfl | rfl) <;> decide
   refine h.core k (fun j hj => h.wsW.arr_fit (by
-      simp only [mulArrs, List.mem_cons, List.not_mem_nil, or_false] at hj
+      simp only [VG.Proof.Rsa.X86.KeyRt.mulArrs, List.mem_cons, List.not_mem_nil, or_false] at hj
       rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) hd (r.mono (by decide))
     (h.arrs_W k (by simp only [List.mem_singleton]; rintro j rfl; decide) hd) h.live_lt ?_ ?_
     (by simp) (by simp)

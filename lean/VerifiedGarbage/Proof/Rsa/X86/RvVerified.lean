@@ -1,5 +1,5 @@
 module
-public import VerifiedGarbage.Impl.Rsa.X86.Recover
+public import VerifiedGarbage.Impl.Rsa.X86.RecoverRt
 public import Mathlib.Data.Int.ModEq
 public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Rsa.X86.RvCorrect
 namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.Impl.Rsa.X86.Recover
 
-theorem verified : Verified target code (Spec.Rsa.recoverPrimesContract abi 20) :=
+theorem verified : Verified target VG.Impl.Rsa.X86.RecoverRt.code (Spec.Rsa.recoverPrimesContract abi 40) :=
   ⟨correct, constantTime, satisfiable⟩
 
 end VG.Proof.Rsa.X86.Recover
