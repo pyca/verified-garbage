@@ -456,7 +456,11 @@ jobs:
           path: bench-target
           key: ${{ steps.bench-cache-key.outputs.key }}
       - run: rustc -vV
-      - run: cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }}
+      # libtest's per-test elapsed times are still unstable, including on
+      # the MSRV. Enable its reporting flag without changing toolchains.
+      - run: cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time
+        env:
+          RUSTC_BOOTSTRAP: "1"
       - name: Export coverage
         if: ${{ env.TESTS == 'true' }}
         shell: bash
@@ -469,8 +473,9 @@ jobs:
         if: ${{ env.TESTS == 'true' && matrix.os == 'ubuntu-26.04-arm' }}
         env:
           LLVM_PROFILE_FILE: .rust-cov-std/cov-%p-%m.profraw
+          RUSTC_BOOTSTRAP: "1"
         run: |
-          cargo test --locked --features std --lib cpu::
+          cargo test --locked --features std --lib cpu:: -- -Z unstable-options --report-time
           python3 ci/export_rust_coverage.py .rust-cov-std --features std --lib
       - if: ${{ env.TESTS == 'true' }}
         uses: ./.github/actions/upload-artifact
@@ -527,7 +532,11 @@ jobs:
       - name: Lint
         if: ${{ matrix.rust == 'stable' }}
         run: cargo clippy --all-targets --locked
-      - run: cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }}
+      # libtest's per-test elapsed times are still unstable, including on
+      # the MSRV. Enable its reporting flag without changing toolchains.
+      - run: cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time
+        env:
+          RUSTC_BOOTSTRAP: "1"
       # That the tests ran T32: the symbol of Thumb code has an odd address
       # (AAELF32 §5.5.3, "Symbol Values").
       - name: Check the verified functions are Thumb code
@@ -688,14 +697,14 @@ jobs:
           run_line() {
             local tests=$1 status=0 selected
             if [ "$tests" = all ]; then
-              cargo test --locked --features cpu-features-env
+              cargo test --locked --features cpu-features-env -- -Z unstable-options --report-time
               return
             fi
             for binary in lib tests; do
               selected=$(python3 ci/cpu_tests.py select "$binary" "$lists/lib" "$lists/tests" $tests) || return
               [ -n "$selected" ] || continue
               if [ "$binary" = lib ]; then target=(--lib); else target=(--test tests); fi
-              cargo test --locked --features cpu-features-env "${target[@]}" -- --exact $selected || status=$?
+              cargo test --locked --features cpu-features-env "${target[@]}" -- -Z unstable-options --report-time --exact $selected || status=$?
             done
             return "$status"
           }
@@ -735,6 +744,8 @@ jobs:
           for f in "${failed[@]}"; do echo "::error::Failed with $f"; done
           [ ${#failed[@]} -eq 0 ]
         env:
+          # Enable libtest timing output on the stable toolchain too.
+          RUSTC_BOOTSTRAP: "1"
           RUNS: ${{ matrix.runs }}
           CPU: ${{ matrix.chip }} ${{ matrix.arch }} ${{ matrix.os }}
           SHARD: ${{ matrix.shard }}

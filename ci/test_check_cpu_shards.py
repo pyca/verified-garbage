@@ -212,10 +212,10 @@ class StepTests(unittest.TestCase):
         # The slowest line alone: the others fill the other two shards first.
         # Its groups' tests by exact name, in each binary that has any.
         self.assertEqual(calls[1:], [
-            "VG_CPU_FEATURES= test --locked --features cpu-features-env --lib -- --exact "
+            "VG_CPU_FEATURES= test --locked --features cpu-features-env --lib -- -Z unstable-options --report-time --exact "
             "cpu::tests::of_names rsa_pkcs1_enc::tests::padding rsa_pss::tests::sign "
             "x25519::tests::agreement",
-            "VG_CPU_FEATURES= test --locked --features cpu-features-env --test tests -- --exact "
+            "VG_CPU_FEATURES= test --locked --features cpu-features-env --test tests -- -Z unstable-options --report-time --exact "
             "wycheproof::rsa::rsa_oaep_test wycheproof::x25519::x25519_test",
         ])
         # Every line's groups, not only this shard's, and the CPU's tests.
@@ -257,7 +257,7 @@ class StepTests(unittest.TestCase):
     def test_all_runs_every_test(self):
         result, calls, _ = self.run_step("", runs="none | all\n")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(calls[1:], ["VG_CPU_FEATURES=none test --locked --features cpu-features-env"])
+        self.assertEqual(calls[1:], ["VG_CPU_FEATURES=none test --locked --features cpu-features-env -- -Z unstable-options --report-time"])
 
     def test_a_group_that_selects_nothing_fails_its_line(self):
         # No test of `sha3` is listed on this CPU.
