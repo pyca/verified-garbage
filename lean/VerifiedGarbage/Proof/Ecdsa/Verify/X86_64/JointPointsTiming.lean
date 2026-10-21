@@ -10,10 +10,11 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitLayout
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitTiming
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMulTiming
 import VerifiedGarbage.Proof.Ecdh.X86_64.Main
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointGenerator
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointGenerator
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointInput
 
@@ -35,12 +36,11 @@ structure JointMulChecks (c : Cfg) (j : Joint.Cfg) : Prop where
   cache : ScratchCT (Joint.cacheCode j).inline
   seed : ScratchCT (.block (Jacobian.infinity j.K j.K.R))
   counter : ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (Joint.top j)))])
-  prepG : FastPrepChecks j.K.M.n (c.sl U) j.gBits 7
+  prepG : JointPrepGChecks j (c.sl U)
   prepQ : FastPrepChecks j.K.M.n (c.sl V) j.K.bits 5
 
 theorem jointPoints_relCT {c : Cfg} {j : Joint.Cfg} {d : CombData} {double : Prog isa}
-    (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
-    (hcd : c.comb=some d) (hw : d.w=7) (hsym : j.tsym=d.tsym)
+    (hc : CfgOk c) (hC : Law c.C) {J : Nat} (hG : JointGTable c j d J)
     (hK : j.K=c.winCfg PX PY BP) (hnp : c.C.n≤c.C.p)
     (hL : JointAddLayout j size) (hInit : JointInitLayout j size)
     (hPrep : JointPrepLayout j size (c.sl U) (c.sl V)) (hD : JointDoubler j c.C size double)
@@ -62,12 +62,12 @@ theorem jointPoints_relCT {c : Cfg} {j : Joint.Cfg} {d : CombData} {double : Pro
     exact peerPt_rep hC _ _ _ hs.px hs.py
   have point := jointMid_point hc hC hK hs rep
   have zero := jointMid_zero hK hs
-  have genS := jointMid_generator hc hC hT hcd hw hsym hK ps hs
+  have genS := jointMid_generator hc hC hG hK ps hs
   have hjn : j.K.M.n=c.n := by rw [hK]; rfl
   have genT : JointGenerator j c.C (s₀.gpr .rcx) (s₀.syms d.tsym) size
-      (jointCombRow hc hC hT hcd hw) t := by
+      (jointCombRow hc hC hG) t := by
     rw [base,pub.sym]
-    exact jointMid_generator hc hC hT hcd hw hsym hK pt ht
+    exact jointMid_generator hc hC hG hK pt ht
   have hm : UnitMod c.C.p (2^(64*j.K.M.n)) := unitMod_pow_two hc.p_odd _
   have hone : j.K.one<c.C.p := by
     rw [hK]
@@ -87,7 +87,7 @@ theorem jointPoints_relCT {c : Cfg} {j : Joint.Cfg} {d : CombData} {double : Pro
   have v : sv c (s₀.gpr .rcx) t V=sv c (s₀.gpr .rcx) s V :=
     (mid_publicV ht').trans (pub.v.symm.trans (mid_publicV hs).symm)
   have ct := jointMul_relCT (base:=s₀.gpr .rcx) (T:=s₀.syms d.tsym)
-    (row:=jointCombRow hc hC hT hcd hw) hL hInit hPrep hm hC hc.am3 hD hone honeval hc.onG hQ
+    (row:=jointCombRow hc hC hG) hL hInit hPrep hm hC hc.am3 hD hone honeval hc.onG hQ
     point (jointMid_affine hc hK hs) zero hZ (Nat.lt_trans hs.u_lt nlt) (Nat.lt_trans hs.v_lt nlt)
     checks.cached checks.fixed checks.table checks.cache checks.seed checks.counter
     checks.prepG checks.prepQ

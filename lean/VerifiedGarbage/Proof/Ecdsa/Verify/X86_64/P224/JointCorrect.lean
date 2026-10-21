@@ -25,7 +25,7 @@ theorem jointVerify_p224_ok (hL : Law Spec.P224.curve)
   have hc := p224v_ok hI
   refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_
   intro a g hM Q hQ hRep
-  exact jointPoints_ok hc hL (p224v_tbls hT) rfl rfl rfl rfl hc.am3 (by decide +kernel)
+  exact jointPoints_ok hc hL (.ofComb rfl hT (by decide) (by decide) rfl) rfl hc.am3 (by decide +kernel)
     joint_add_layout joint_init_layout joint_prep_layout joint_frame_layout (joint_doubler hc hL)
     (fun h => absurd h (by decide)) hp hM hQ hRep
 

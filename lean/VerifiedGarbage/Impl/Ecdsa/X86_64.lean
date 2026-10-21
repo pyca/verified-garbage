@@ -159,6 +159,11 @@ structure Cfg where
   public lookups (`u` is public) and compares `x mod n` with `r` in
   projective coordinates, without inverting `Z` (which needs `n < p ≤ 2n`). -/
   pubVerify : Bool := false
+  /-- The table of `[m]G`, `m = 1 … 2^(w-1)`, that verification's generator
+  digits of width `w = d.w` index, when they do not index the comb's first
+  row: a comb of one window (`d.tbl` its one row), in the tables of constants
+  (`combConsts`). -/
+  gtab : Option CombData := none
   /-- Whether the loops that run the most products modulo `p`, the comb's
   and the joint verifier's, write them out (`Mod.inl`, `MH`) where the
   others call the function computing them. -/
@@ -289,9 +294,11 @@ def combWords (d : CombData) : List (BitVec 64) := tcombWords c.n c.R c.C.p d.tb
 /-- The tables of constants of the functions that run the comb
 (`Artifact.consts`): none without one. -/
 def combConsts : List (String × List (BitVec 64)) :=
-  match c.comb with
-  | some d => [(d.tsym, c.combWords d)]
-  | none => []
+  match c.comb, c.gtab with
+  | some d, none => [(d.tsym, c.combWords d)]
+  | none, none => []
+  | some d, some g => [(d.tsym, c.combWords d), (g.tsym, c.combWords g)]
+  | none, some g => [(g.tsym, c.combWords g)]
 
 /-- `R = [k]G`, from the table of the bits of `k`: by the comb (with `b R mod p`
 in `EM` for its complete addition for `a = -3`), or the ladder.
