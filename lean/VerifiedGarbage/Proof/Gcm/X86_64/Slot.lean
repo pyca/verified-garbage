@@ -153,6 +153,15 @@ theorem putsMem_ok {p : Addr} {C : Block} {f : Nat → Nat} {m : Mem} {t : Nat} 
       simp only [show (i < n + 1) = (i < n) from propext ⟨fun h => by omega, fun h => by omega⟩]
       exact hb
 
+/-- The slot is kept by writes apart from it. -/
+theorem SlotOk.frame {p : Addr} {C : Block} {f : Nat → Nat} {m m' : Mem} (h : SlotOk p C f m)
+    {rs : List Region} (hf : Frame rs m m') (hd : ∀ r ∈ rs, (slotR p).Disjoint r) : SlotOk p C f m' := by
+  intro i hi
+  rw [VG.Proof.Aes.X86_64.AesNi.blockAt_frame hf fun r hr => (hd r hr).sub_left (by
+    rw [show slot + 16 * i = slot + 16 * i from rfl, ← Offset.add_add]
+    exact Offset.sub_base _ (by omega))]
+  exact h i hi
+
 /-- `puts n` writes only the slot. -/
 theorem putsMem_frame (m : Mem) (p : Addr) (v : BitVec 32) : ∀ n, n ≤ 16 → Frame [slotR p] m (putsMem m p v n)
   | 0, _ => Frame.refl _ _

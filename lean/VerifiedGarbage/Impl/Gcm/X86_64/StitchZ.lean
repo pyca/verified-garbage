@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
 public import VerifiedGarbage.Impl.Aes.X86_64.VaesZ
+public import VerifiedGarbage.Impl.Gcm.X86_64.Slot
 
 /-!
 # AES-GCM's counter mode and GHASH, interleaved, with AVX-512 VAES and VPCLMULQDQ
@@ -14,12 +15,14 @@ scratch = r11)`, as `Impl.Gcm.X86_64.Stitch` does with 256-bit registers.
 The setup is `Stitch.setup`: the powers `H'`–`H'¹⁶`, stored to `scratch` in
 pairs (`H'¹⁶⁻²ᵏ`, `H'¹⁵⁻²ᵏ` at `scratch + 32 k`), so that the 64 bytes at
 `scratch + 64 k` are the four powers `H'¹⁶⁻⁴ᵏ` … `H'¹³⁻⁴ᵏ` that the `k`-th
-512-bit load of a group multiplies; then (`setupZ`) the counter pair
-becomes four counters in the lanes of `zmm14`, the increment 4 in each lane
-of `zmm15`, and the byte-reversal mask and the reduction constant are copied
-to the four lanes of `zmm0` and `zmm1`.
+512-bit load of a group multiplies; then (`setupZ`) the byte-reversal mask
+and the reduction constant are copied to the four lanes of `zmm0` and `zmm1`,
+and the first group's sixteen counter blocks written to the working space
+(`Impl.Gcm.X86_64.Slot`).
 
-A group is one batch of sixteen blocks in the four lanes of `zmm3`–`zmm6`.
+A group is one batch of sixteen blocks in the four lanes of `zmm3`–`zmm6`,
+loaded from the counter blocks in the working space, which then take the next
+group's (`Slot.ctrsM`).
 The GHASH of the previous group (when encrypting) or of the group itself
 (when decrypting, before the blocks are overwritten) is placed between its
 rounds: four 512-bit loads, of blocks `4k`–`4k + 3` with their powers in
@@ -35,10 +38,10 @@ one `vpternlogd`). After round 5 each lane's product is reduced (`reduceZ`:
 Registers: `zmm0` the byte-reversal mask, `zmm1` the reduction constant,
 `xmm2` `Y`, `zmm3`–`zmm6` sixteen blocks being encrypted, `zmm7` four blocks
 being hashed, `zmm8`–`zmm11` the products and a temporary, `zmm12` four
-powers, `zmm13` a round key, `zmm14` the four counters and `zmm15` the
-increment. `rdx` points to the group being hashed, `rax` to the counter,
-`r10` to the last round key, `r11` to `scratch`. `vzeroupper` clears the
-upper lanes at the end.
+powers, `zmm13` a round key. `rdx` points to the group being hashed, `rax`
+to the counter, `rcx` to `Y` (kept in the working space while `ecx` writes
+the counter blocks), `r10` to the last round key, `r11` to `scratch`.
+`vzeroupper` clears the upper lanes at the end.
 -/
 
 @[expose] public section
@@ -47,13 +50,14 @@ namespace VG.Impl.Gcm.X86_64.StitchZ
 
 open VG.X86_64
 open VG.Impl.Gcm.X86_64.Pclmul (at_)
-open VG.Impl.Gcm.X86_64.Stitch (aregs storeCtr storeY)
-open VG.Impl.Aes.X86_64.VaesZ (aesZ ctrsZ xorDataZ)
+open VG.Impl.Gcm.X86_64.Stitch (aregs storeY)
+open VG.Impl.Gcm.X86_64.Slot (ctrsM storeCtr)
+open VG.Impl.Aes.X86_64.VaesZ (aesZ xorDataZ)
 
 /-- Sixteen blocks encrypted into the data blocks at `rdx + 64 j`, the GHASH
 work `g i` after round `i`. -/
 def batch (j : Nat) (g : Nat → List Instr) : Prog isa :=
-  .seq (.block (ctrsZ .xmm14 .xmm0 .xmm15 aregs)) (.seq (aesZ .xmm13 aregs g) (.block (xorDataZ .xmm13 .rdx aregs j)))
+  .seq (.block (ctrsM aregs)) (.seq (aesZ .xmm13 aregs g) (.block (xorDataZ .xmm13 .rdx aregs j)))
 
 /-- The carry-less products of the lanes of `a` and `b`, written to `lo`,
 `mid`, `hi`. -/
@@ -109,14 +113,12 @@ def fin : List Instr := reduceZ ++ foldLanes ++ combine10
 def gq (j : Nat) : List Instr :=
   if 1 ≤ j ∧ j ≤ 4 then ghLoad (ord (j - 1)) else if j = 5 then fin else []
 
-/-- Four counters, the increment, the mask and the reduction constant in the
-four lanes, from the two of `Stitch.setupC`, and the upper lanes of `Y`
-cleared. -/
+/-- The mask and the reduction constant in the four lanes, from the two of
+`Stitch.setupC`, the upper lanes of `Y` cleared, and the counter blocks of the
+first group in the slot (`Slot.init`). -/
 def setupZ : List Instr :=
-  [.vop (.vbin .vpaddd .l256 .xmm13 .xmm14 .xmm15), .zop (.vshufi32x4 .xmm14 .xmm14 .xmm13 0x44),
-   .vop (.vbin .vpaddd .l256 .xmm15 .xmm15 .xmm15), .zop (.vshufi32x4 .xmm15 .xmm15 .xmm15 0x44),
-   .zop (.vshufi32x4 .xmm0 .xmm0 .xmm0 0x44), .zop (.vshufi32x4 .xmm1 .xmm1 .xmm1 0x44),
-   .vop (.vmovdqa .l128 .xmm2 .xmm2)]
+  ([.zop (.vshufi32x4 .xmm0 .xmm0 .xmm0 0x44), .zop (.vshufi32x4 .xmm1 .xmm1 .xmm1 0x44),
+   .vop (.vmovdqa .l128 .xmm2 .xmm2)] : List Instr) ++ Slot.init
 
 def setup : List Instr := Stitch.setup ++ setupZ
 
