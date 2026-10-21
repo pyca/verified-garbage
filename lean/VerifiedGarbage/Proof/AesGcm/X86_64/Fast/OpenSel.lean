@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenTag
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenTail
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Main
 public import VerifiedGarbage.Impl.AesGcm.X86_64.FastOpen
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
@@ -11,8 +12,9 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 
 Untrusted: everything here is checked by Lean. With a prepared key context,
 `FastOpen.run` is `Short.openLong` with `Fast.aad`, which leaves what
-`oneAad` does (`Fast.aad_mid`), and `tagP`, which leaves what `oneTag 112`
-does (`tagP_ok`), so it leaves what `openOk_ok` does (`openOkW_ok`), and
+`oneAad` does (`Fast.aad_mid`), `tagP`, which leaves what `oneTag 112` does
+and `K[1]` (`tagP_okP`), and `tailK`, which decrypts the bytes left with it
+(`crOk_tailK`), so it leaves what `openOk_ok` does (`openOkW_ok`), and
 `FastOpen.sel` too, with `other` for the inputs `Fast.cond` turns away:
 `openSel_ok`.
 -/
@@ -57,7 +59,8 @@ theorem openSel_ok (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) 
     fun h => ?_
   obtain ⟨h12, h17, -⟩ : IsFast nl al n any := Decidable.not_not.mp (of_decide_eq_false h)
   subst h12
-  exact openOkW_ok v B (tagP_ok hF hks) C X hal hTa hTar hTr oT oA htl hok (aad_mid hF C X E₃ hNp hnl hal (by omega))
+  exact openOkW_ok v B (tagP_okP hF hks) pStable_kOk crOk_tailK C X hal hTa hTar hTr oT oA htl hok
+    (aad_mid hF C X E₃ hNp hnl hal (by omega))
 
 /-- `openFin lng`, for `lng` that leaves what `openOk_ok` does. -/
 theorem openFinW_wp {M : CtxMode} {lng : Prog isa} (hlng : LongOk M lng) {s : State}

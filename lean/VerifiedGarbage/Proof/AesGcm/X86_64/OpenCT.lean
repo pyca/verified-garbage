@@ -90,6 +90,17 @@ def TagRel (M : Gcm.X86_64.Stitch.CtxMode) (tg : Prog isa) : Prop :=
 theorem tagRel_oneTag (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} : TagRel M (oneTag v.callees uO) :=
   fun {_ _ _} L {_ _ _ _ _ _} hDW _ => oneTag_rel v L (.inr rfl) hDW
 
+/-- What `open` needs of the code `cr` decrypting the fewer than 16 bytes
+left in two runs: what `oneCrypt_rel` gives for `oneCrypt`. -/
+def CrRel (cr : Prog isa) : Prop :=
+  ∀ {M : Gcm.X86_64.Stitch.CtxMode} {Ctx W SP : Addr}, Lay Ctx (W + BitVec.ofNat 64 16) W SP →
+    ∀ {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n : Nat} {T : Option Nat}, (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩ →
+    n < 16 → RelCT isa (OneS₂ M Ctx W SP R A al D n T) cr fun s₁ s₂ =>
+      Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ ∧ Env Ctx (W + BitVec.ofNat 64 16) W SP s₂
+
+theorem crRel_oneCrypt (v : GcmImpl) : CrRel (oneCrypt v.callees) :=
+  fun {_ _ _ _} L {_ _ _ _ _ _} hDW _ => (oneCrypt_rel v L hDW).mono (fun _ _ h => h) fun _ _ h => ⟨h.1.env, h.2.env⟩
+
 section
 variable (v : GcmImpl) {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP)
   {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
@@ -391,14 +402,15 @@ theorem oneUndo_rel {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n : Nat} :
 
 /-- After the comparison: the rest decrypted if the tags match, the whole
 blocks encrypted again if not, and the result loaded. -/
-theorem openPost_rel {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n : Nat} {b₁ b₂ : Bool} (hb : b₁ = b₂)
+theorem openPost_rel {cr : Prog isa} (hcr : CrRel cr) {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n : Nat}
+    {b₁ b₂ : Bool} (hb : b₁ = b₂)
     (hDW' : (⟨D + BitVec.ofNat 64 (16 * (n / 16)), n - 16 * (n / 16)⟩ : Region).Disjoint ⟨W, 2560⟩) :
     RelCT isa (fun s₁ s₂ => True ∧
         ((OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s₁ ∧
           DataW Ctx (W + BitVec.ofNat 64 16) W SP s₁ D n) ∧ s₁.zf = some b₁) ∧
         ((OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s₂ ∧
           DataW Ctx (W + BitVec.ofNat 64 16) W SP s₂ D n) ∧ s₂.zf = some b₂))
-      (.seq (.ite .e (oneUndo v.callees) (oneCrypt v.callees)) (.block [.mov .rax (.mem (at_ .r15 auxO))]))
+      (.seq (.ite .e (oneUndo v.callees) cr) (.block [.mov .rax (.mem (at_ .r15 auxO))]))
       fun s₁ s₂ => Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ ∧ Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := by
   have t := (oneUndo_rel v L (R := R) (A := A) (al := al) (D := D) (n := n)).mono
     (P' := fun (s₁ s₂ : State) => (True ∧
@@ -407,14 +419,14 @@ theorem openPost_rel {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n : Nat} {b₁ 
         ((OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s₂ ∧
           DataW Ctx (W + BitVec.ofNat 64 16) W SP s₂ D n) ∧ s₂.zf = some b₂)) ∧ s₁.zf = some true)
     (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) fun _ _ h => h
-  have e := (oneCrypt_rel v L (R := R) (A := A) (al := al) (T := some n) hDW').mono
+  have e := (hcr L (M := M) (R := R) (A := A) (al := al) (T := some n) hDW' (by omega)).mono
     (P' := fun (s₁ s₂ : State) => (True ∧
         ((OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s₁ ∧
           DataW Ctx (W + BitVec.ofNat 64 16) W SP s₁ D n) ∧ s₁.zf = some b₁) ∧
         ((OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s₂ ∧
           DataW Ctx (W + BitVec.ofNat 64 16) W SP s₂ D n) ∧ s₂.zf = some b₂)) ∧ s₁.zf = some false)
     (Q' := fun s₁ s₂ => Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ ∧ Env Ctx (W + BitVec.ofNat 64 16) W SP s₂)
-    (fun _ _ h => ⟨h.1.2.1.1.1, h.1.2.2.1.1⟩) fun _ _ h => ⟨h.1.env, h.2.env⟩
+    (fun _ _ h => ⟨h.1.2.1.1.1, h.1.2.2.1.1⟩) fun _ _ h => h
   have f := rel_wp (rel_taint (P := fun s₁ s₂ => Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ ∧
       Env Ctx (W + BitVec.ofNat 64 16) W SP s₂) [.r13, .r14, .r15, .rsp]
       (fun _ _ h => env_agree h.1 h.2) ⟨_, by taint_decide⟩) (fun _ _ h => h)
@@ -459,7 +471,7 @@ theorem openBody_relOf {s₀ s₀' : State} {Ctx W SP A D : Addr} {n t : Nat} {m
 `oneAad` does), `oneBlocks`, the tag (`tg`), the tags compared, and the rest
 decrypted or the whole blocks encrypted again. -/
 theorem openOkW_rel (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {aadP tg : Prog isa}
-    (htr : TagRel M tg) (htg : TagOk M tg) {s₀ s₀' : State}
+    (htr : TagRel M tg) (htg : TagOk M tg) {cr : Prog isa} (hcr : CrRel cr) {s₀ s₀' : State}
     {Ctx W SP Np A D Tp : Addr} {nl al n R t : Nat}
     (C : OneCtx s₀ 5 Ctx W SP Np A D nl al n) (C' : OneCtx s₀' 5 Ctx W SP Np A D nl al n)
     (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀) (X' : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀')
@@ -488,12 +500,12 @@ theorem openOkW_rel (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) 
         (.seq recv
         (.seq (cmp uO)
         (.seq (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)])
-        (.seq (.ite .e (oneUndo v.callees) (oneCrypt v.callees))
+        (.seq (.ite .e (oneUndo v.callees) cr)
           (.block [.mov .rax (.mem (at_ .r15 auxO))])))))))))
       fun s₁ s₂ => Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ ∧ Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := by
   have L := C.lay
   have hlt := C.data.ok.lt
-  refine rel_reassoc7 (RelCT.seq ?_ (openPost_rel v L (M := M) (R := R) (A := A) (al := al) (congrArg (!·) hres)
+  refine rel_reassoc7 (RelCT.seq ?_ (openPost_rel v L hcr (M := M) (R := R) (A := A) (al := al) (congrArg (!·) hres)
     (C.dE.sub_left (Offset.sub_base D (d := 16 * (n / 16)) (n := n - 16 * (n / 16)) (by omega)))))
   exact rel_wp ((openPreW_rel L B htr htg C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' har ha ha').mono
       (fun _ _ h => h) fun _ _ h => h) (fun _ _ h => h)
@@ -529,7 +541,7 @@ theorem openOk_rel (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {
           (.block [.mov .rax (.mem (at_ .r15 auxO))])))))))))
       fun s₁ s₂ => Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ ∧ Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ :=
   have L := C.lay
-  openOkW_rel v B (tagRel_oneTag v) (tagOk_oneTag v) C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT
+  openOkW_rel v B (tagRel_oneTag v) (tagOk_oneTag v) (crRel_oneCrypt v) C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT
     hres hok ((oneAad_rel v L (R := R) (Np := Np) (nl := nl) (A := A) (al := al) (T := none) C.dE).mono
       (P' := fun (s₁ s₂ : State) => OpenIn s₀ Ctx W SP A D n t s₁ ∧ OpenIn s₀' Ctx W SP A D n t s₂)
       (fun _ _ h => ⟨h.1.1.aadPre C X hNp hnl hal hR, h.2.1.aadPre C' X' hNp' hnl' hal' hR'⟩) fun _ _ _ => trivial)

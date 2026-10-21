@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Open
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenTail
 public import VerifiedGarbage.Impl.AesGcm.X86_64.FastOpen
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Finish
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
@@ -21,6 +22,7 @@ the prepared key context (`Fast.finPowP_ok`), the keystream of `J₀` and of the
 counter block (`Short.finKs_ksOk`), the bytes left copied to `G[0]`
 (`openTail_ok`, by `copyLoop`) or none (`openNoTail_ok`), `GHASH` continued
 over `G`, the tag at `W + 112`, and `J₀` incremented (`incJ_ok`): `tagP_ok`.
+It leaves `K[1]` too, the keystream of the counter block (`KOk`): `tagP_okP`.
 -/
 
 @[expose] public section
@@ -240,8 +242,9 @@ theorem endTail_ok {Ctx W SP : Addr} {H : Block} {u : State} (he : Env Ctx (W + 
 
 /-! ## The tag -/
 
-/-- `tagP ks` with a prepared key context: what `oneTag 112` does. -/
-theorem tagP_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOk CtxMode.prepared (tagP ks) := by
+/-- `tagP ks` with a prepared key context: what `oneTag 112` does, and `K[1]`
+the keystream of the counter block. -/
+theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP CtxMode.prepared KOk (tagP ks) := by
   intro Ctx W SP L R D n N al H x s hx he hH hR hdat hlen hn16 htl hN hal hd hDW hCD X
   -- `H'` and `H'²`.
   have hX : Spec.Gcm.PreparedPowersRepr s.mem Ctx := X.ok
@@ -285,7 +288,7 @@ theorem tagP_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOk CtxMod
       (by decide)
   -- The keystream of `J₀` and of the counter block.
   refine WP.seq (WP.mono (hks u U.env (by rw [rU 176 (by decide)]; exact hR.1) hR.2)
-    fun s₃ ⟨k₀, _, fK, g₃, rd₃, wr₃, x₃⟩ => ?_)
+    fun s₃ ⟨k₀, k₁, fK, g₃, rd₃, wr₃, x₃⟩ => ?_)
   have he₃ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₃ := U.env.keep (fun g hg => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> exact g₃ _ (by decide) (by decide) (by decide)) rd₃ wr₃
@@ -368,7 +371,7 @@ theorem tagP_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOk CtxMod
           toBytes (ghashFrom H (ghash H (blocks (x ++ bytesAt s.mem D n ++
               zeros (padLen (x ++ bytesAt s.mem D n).length))))
             [ofBytes (lensBlock al N)] ^^^ ciphOf s.mem Ctx R (blockAt s.mem (W + BitVec.ofNat 64 16)))) →
-      Env Ctx (W + BitVec.ofNat 64 16) W SP t ∧
+      (Env Ctx (W + BitVec.ofNat 64 16) W SP t ∧
         Frame (⟨W + BitVec.ofNat 64 112, 16⟩ :: wFrame W SP) s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
         blockAt t.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) =
           blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) ∧
@@ -377,7 +380,8 @@ theorem tagP_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOk CtxMod
           bytesAt t.mem (W + BitVec.ofNat 64 112) 16 =
             toBytes (ghashFrom H (ghash H (blocks (x ++ bytesAt s.mem D n ++
                 zeros (padLen (x ++ bytesAt s.mem D n).length))))
-              [ofBytes (lensBlock al N)] ^^^ ciphOf s.mem Ctx R (blockAt s.mem (W + BitVec.ofNat 64 16)))) := by
+              [ofBytes (lensBlock al N)] ^^^ ciphOf s.mem Ctx R (blockAt s.mem (W + BitVec.ofNat 64 16))))) ∧
+        KOk Ctx W R t := by
     intro t et rdt wrt ft tt
     have rd' : t.rd = s.rd := by rw [rdt, rd₅, rdJ, rd₃, U.rd, rd₂, o₁.rd]
     have wr' : t.wr = s.wr := by rw [wrt, wr₅, wrJ, wr₃, U.wr, wr₂, o₁.wr]
@@ -385,7 +389,35 @@ theorem tagP_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOk CtxMod
         [⟨W + BitVec.ofNat 64 112, 16⟩, ⟨W + BitVec.ofNat 64 512, 32⟩]) s.mem t.mem :=
       F₅.trans (ft.sub fun q hq => by
         simp only [List.mem_singleton] at hq; subst hq; exact ⟨_, by simp, fun _ h => h⟩)
-    refine ⟨et, ?_, rd', wr', ?_, ?_, tt⟩
+    have cbT : blockAt t.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) =
+        blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) :=
+      blockAt_frame FT fun q hq => dS (by decide) (.inr (by decide)) q hq
+    have e40 : W + BitVec.ofNat 64 1024 + BitVec.ofNat 64 16 = W + BitVec.ofNat 64 1040 := add_ofNat_ofNat W 1024 16
+    have kT : KOk Ctx W R t := by
+      unfold KOk
+      have cU : blockAt u.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) =
+          blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) :=
+        blockAt_frame FU (fun q hq => by
+          simp only [List.mem_singleton] at hq; subst hq
+          exact L.st_w (a := 48) (n := 16) (d := 512) (k := 32) (by decide) (.inr ⟨by decide, by decide⟩))
+      have kt : blockAt t.mem (W + BitVec.ofNat 64 1024 + BitVec.ofNat 64 16) =
+          blockAt s₃.mem (W + BitVec.ofNat 64 1024 + BitVec.ofNat 64 16) := by
+        rw [e40, blockAt_frame ft (fun q hq => by
+            simp only [List.mem_singleton] at hq; subst hq
+            exact Offset.disjoint W (.inr (by decide)) (by decide) (by decide)), m₅,
+          blockAt_frame fJ (fun q hq => by
+            simp only [List.mem_singleton] at hq; subst hq; rw [e28]
+            exact Offset.disjoint W (.inr (by decide)) (by decide) (by decide))]
+      have cT : ciphOf t.mem Ctx R = ciphOf s.mem Ctx R :=
+        ciph_frame FT (fun q hq => by
+          simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
+          rcases hq with rfl | rfl | rfl | rfl
+          · exact L.cw'.sub_right (Lay.wSub (by decide))
+          · exact L.cs.sub_right (Lay.stSub (by decide))
+          · exact L.cw'.sub_right (Lay.wSub (by decide))
+          · exact L.cw'.sub_right (Lay.wSub (by decide))) hR.2
+      rw [kt, k₁, hCtx, cU, cT, cbT]
+    refine ⟨⟨et, ?_, rd', wr', ?_, ?_, tt⟩, kT⟩
     · refine FT.sub fun q hq => ?_
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl
@@ -393,7 +425,7 @@ theorem tagP_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOk CtxMod
       · exact ⟨⟨W + BitVec.ofNat 64 16, 112⟩, by simp, Offset.sub_base _ (by decide)⟩
       · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
       · exact ⟨⟨W + BitVec.ofNat 64 240, 2320⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
-    · exact blockAt_frame FT fun q hq => dS (by decide) (.inr (by decide)) q hq
+    · exact cbT
     · have e : ∀ q ∈ [(⟨W + BitVec.ofNat 64 112, 16⟩ : Region)],
           (⟨W + BitVec.ofNat 64 16, 16⟩ : Region).Disjoint q := fun q hq => by
         simp only [List.mem_singleton] at hq; subst hq
@@ -428,5 +460,9 @@ theorem tagP_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOk CtxMod
     rw [bytesAt_toBytes', tagt, hY hab, hK₀, bK (.inl rfl), bK (.inr rfl), U.tail h0', U.lens, M₂, hpl,
       List.append_assoc, Proof.Gcm.blocks_append hx, bs, ghash_snoc, ← Proof.Gcm.ghashFrom_append]
     rfl
+
+/-- `tagP ks` with a prepared key context: what `oneTag 112` does. -/
+theorem tagP_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOk CtxMode.prepared (tagP ks) :=
+  TagOkP.tagOk (tagP_okP hF hks)
 
 end VG.Proof.AesGcm.X86_64.FastOpen
