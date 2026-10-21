@@ -461,7 +461,9 @@ theorem Hd.mod {a : T} {w : BitVec 16} (h : Hd L O a w) (ha : a < 2 ^ tw) : Hd L
   rw [Nat.mod_eq_of_lt ha]; exact h
 
 theorem cond_lt {c : Bool} {x y n : Nat} (hx : x < n) (hy : y < n) : @LT.lt Nat instLTNat (bif c then x else y) n := by
-  cases c <;> assumption
+  cases c with
+  | false => exact hy
+  | true => exact hx
 
 theorem mk_lt_tw (k : K) (st p z t : Nat) : @LT.lt Nat instLTNat (mk k st p z t) (2 ^ tw) :=
   Nat.lt_trans (mk_lt ..) (by decide)

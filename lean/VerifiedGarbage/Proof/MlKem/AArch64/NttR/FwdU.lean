@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.RunU
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.Model
 import VerifiedGarbage.Proof.MlKem.AArch64.NttR.Ctx
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Offset
