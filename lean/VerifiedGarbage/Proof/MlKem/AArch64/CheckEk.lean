@@ -11,6 +11,11 @@ import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecLanes
+import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecInput
+import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecLoop
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 meta import VerifiedGarbage.Proof.MlKem.EkCheck
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Encode
@@ -22,14 +27,21 @@ meta import VerifiedGarbage.Proof.MlKem.Encode
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecLanes
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecInput
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecLoop
+meta import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem768_check_ek` and `vg_mlkem1024_check_ek`
 
-The modulus check holds exactly when no 12-bit field of `ek[0 : 384k]` is at
-least `q` (`ekCheck_iff`); the code counts those fields (`cnt`) without
-branching, in a loop over the `128k` groups (`checkEkWith`). The proof is
-stated once for `k ≤ 4`; the end of this file is the instances.
+For a parameter set `p` of rank `k ≤ 4` (the instances are at the end of this
+file). Word `e` of the low and high fields of group `g` of 12 bytes is field 0
+and 1 of the group of 3 bytes `4 g + e` (`low_lanes`, `high_lanes`); word `e`
+of `v19` is all ones exactly when one of them, in a group so far, is at least
+`q` (`Inv`), and their sum is 0 exactly when the key passes the check
+(`ekCheck_iff`).
 -/
 
 @[expose] public section
@@ -52,206 +64,227 @@ end VG.Proof.MlKem
 
 namespace VG.Proof.MlKem.AArch64.CheckEk
 
-open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Proof.MlKem.AArch64
+open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Proof.MlKem VG.Proof.MlKem.AArch64
+open VG.Proof.MlKem.AArch64.Codec16
 open VG.Spec.MlKem
 open VG.Spec.Sha3 (bytesAt)
+open VG.Impl.MlKem.AArch64.Codec16 (maskVec)
 
-/-- The number of fields at least `q` in the first `k` groups of `B`. -/
-def cnt (B : List Byte) : Nat → Nat
-  | 0 => 0
-  | k + 1 => cnt B k + (if field0 B k < q then 0 else 1) + (if field1 B k < q then 0 else 1)
 
-theorem cnt_le (B : List Byte) : ∀ k, cnt B k ≤ 2 * k
-  | 0 => Nat.le_refl _
-  | k + 1 => by
-    have := cnt_le B k
-    simp only [cnt]
-    split <;> split <;> omega
+/-- The words at least `q` of `y`, all ones, and the others 0 (`cmhs` with `q`). -/
+def geq (y : BitVec 128) : BitVec 128 :=
+  VArr.s4.map2 (fun w a b => if VCmpOp.hs.test a b then BitVec.allOnes w else 0) y qvec
 
-theorem cnt_zero (B : List Byte) : ∀ k, cnt B k = 0 ↔ ∀ g < k, field0 B g < q ∧ field1 B g < q
-  | 0 => by simp [cnt]
-  | k + 1 => by
-    have ih := cnt_zero B k
-    simp only [cnt]
-    constructor
-    · intro h g hg
-      rcases (by omega : g < k ∨ g = k) with hg | rfl
-      · exact ih.mp (by split at h <;> split at h <;> omega) g hg
-      · constructor
-        · by_contra hc; rw [ite_eq_right hc] at h; omega
-        · by_contra hc; rw [ite_eq_right hc] at h; omega
-    · intro h
-      have h0 := ih.mpr fun g hg => h g (by omega)
-      rw [h0, ite_eq_left (h k (by omega)).1, ite_eq_left (h k (by omega)).2]
+theorem ck_math_ok (s : State) (h16 : s.v .v16 = decMask) (h17 : s.v .v17 = mask12) (h18 : s.v .v18 = qvec) :
+    WP isa (.block ckMath) s fun t =>
+      t.v .v19 = s.v .v19 ||| geq (low (ofVDwords (s.gpr .x9) (s.gpr .x10))) |||
+        geq (high (ofVDwords (s.gpr .x9) (s.gpr .x10))) ∧
+      t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
+      (∀ r, r ≠ .v0 → r ≠ .v1 → r ≠ .v2 → r ≠ .v3 → r ≠ .v19 → t.v r = s.v r) := by
+  unfold ckMath
+  rrun [h16, h17, h18, VG.AArch64.setLane_pair_hi, VShiftOp.eval, low, high, tbl, geq, RegUpd.sp_setV]
+  refine ⟨by rfl, ?_⟩
+  intro r h0 h1 h2 h3 h19
+  simp only [h0, h1, h2, h3, h19, ite_false]
 
-variable {p : Params}
+
+theorem vword_geq (y : BitVec 128) {e : Nat} (he : e < 4) :
+    vword (geq y) e = if (vword y e).toNat < q then 0 else BitVec.allOnes 32 := by
+  rw [geq, vword_map2 _ _ _ he, qvec, vword_dup_s4 _ he]
+  simp only [VCmpOp.test, ge_iff_le, show (3329 : BitVec 32).toNat = q from rfl]
+  by_cases h : (vword y e).toNat < q
+  · rw [decide_eq_false (Nat.not_le.mpr h)]; simp [h]
+  · rw [decide_eq_true (Nat.le_of_not_lt h)]; simp [h]
+
+/-- The fields of group `g` of 3 bytes of the key `B` are less than `q`. -/
+abbrev good (B : List Byte) (t : Nat) : Prop := field0 B t < q ∧ field1 B t < q
+
+/-- Word `e` of `v19` after `k` groups of 12 bytes. -/
+abbrev accW (B : List Byte) (k e : Nat) : BitVec 32 :=
+  if ∀ g < k, good B (4 * g + e) then 0 else BitVec.allOnes 32
 
 section
 variable (p : Params) (s₀ : State)
-
 abbrev eP : Addr := s₀.gpr .x0
 abbrev B : List Byte := bytesAt s₀.mem (eP s₀) p.ekLen
-abbrev byte (j : Nat) : Nat := ((B p s₀).getD j 0).toNat
-
 end
 
-structure Pre (p : Params) (s₀ : State) : Prop where
-  rd : s₀.rd = [⟨eP s₀, p.ekLen⟩]
-  wr : s₀.wr = []
-  k4 : p.k ≤ 4
-
-/-- After `k` groups. -/
+/-- After `k` groups of 12 bytes. -/
 structure Inv (p : Params) (s₀ : State) (k : Nat) (s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   sp : s.sp = s₀.sp
   mem : s.mem = s₀.mem
-  x0 : s.gpr .x0 = eP s₀ + BitVec.ofNat 64 (3 * k)
-  x9 : (s.gpr .x9).toNat = 3328
-  x10 : (s.gpr .x10).toNat = cnt (B p s₀) k
-  x11 : (s.gpr .x11).toNat = 128 * p.k - k
-  x14 : (s.gpr .x14).toNat = 15
+  x0 : s.gpr .x0 = eP s₀ + BitVec.ofNat 64 (12 * k)
+  x11 : (s.gpr .x11).toNat = 32 * p.k - k
+  mask : s.v .v16 = decMask
+  bits : s.v .v17 = mask12
+  q : s.v .v18 = qvec
+  acc : ∀ e < 4, vword (s.v .v19) e = accW (B p s₀) k e
 
-/-- `q - 1 - f`, negative exactly when `f` is at least `q`. -/
-theorem bad_arith {f : Nat} (hf : f < 2 ^ 12) :
-    ((BitVec.ofNat 64 3328 - BitVec.ofNat 64 f) >>> 63).toNat = if f < q then 0 else 1 := by
-  rw [toNat_lsr, BitVec.toNat_sub]
-  simp only [BitVec.toNat_ofNat]
-  have hq : q = 3329 := rfl
+theorem acc_step (P Q R : Prop) [Decidable P] [Decidable Q] [Decidable R] :
+    ((if P then 0 else BitVec.allOnes 32) ||| (if Q then 0 else BitVec.allOnes 32) |||
+      (if R then 0 else BitVec.allOnes 32) : BitVec 32) = if P ∧ Q ∧ R then 0 else BitVec.allOnes 32 := by
+  by_cases hP : P <;> by_cases hQ : Q <;> by_cases hR : R <;> simp [hP, hQ, hR]
+
+variable {p : Params}
+
+theorem step {s₀ : State} (hp : (checkEkAArch64 p).pre s₀) (hk4 : p.k ≤ 4) {k : Nat} (hk : k < 32 * p.k)
+    {s : State} (h : Inv p s₀ k s) :
+    WP isa (.block checkEkBody) s fun t => Inv p s₀ (k + 1) t ∧ ((t.gpr .x11).toNat ≠ 0 ↔ k + 1 ≠ 32 * p.k) := by
+  have hE : p.ekLen = 384 * p.k + 32 := rfl
+  have load : WP isa (.block [.ldr .x .x9 .x0 0, .ldr .w .x10 .x0 8]) s fun t =>
+      Only [.x9, .x10] s t ∧ t.gpr .x9 = s.mem.readW (s.gpr .x0) 64 ∧
+      t.gpr .x10 = (s.mem.readW (s.gpr .x0 + 8) 32).setWidth 64 := by
+    refine wp_ldrx (a := s.gpr .x0) (by decide) (by simp) ?_ fun s1 h1 e1 => ?_
+    · rw [h.rd, h.wr, hp.1, hp.2, h.x0]
+      exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by simp only [Params.ekLen]; omega)))
+    refine wp_ldrw (a := s.gpr .x0 + 8) (by decide) (by rw [h1.get .x0]; rfl) ?_ fun s2 h2 e2 => wp_nil ?_
+    · rw [h1.rd, h1.wr, h.rd, h.wr, hp.1, hp.2, h.x0, show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, ptr_add]
+      exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by simp only [Params.ekLen]; omega)))
+    refine ⟨h1.trans h2, by rw [h2.get .x9, e1], ?_⟩
+    rw [e2, h1.mem]
+  unfold checkEkBody
+  rw [List.append_assoc]
+  refine wp_scalar (by decide) load ?_
+  intro s2 ⟨hl, x9, x10⟩ vl
+  rw [WP.block_append_iff]
+  refine WP.mono (ck_math_ok s2 (by rw [vl, h.mask]) (by rw [vl, h.bits]) (by rw [vl, h.q])) ?_
+  intro s3 ⟨v19, g3, m3, rd3, wr3, sp3, hv3⟩
+  let x := ofVDwords (s2.gpr .x9) (s2.gpr .x10)
+  have xb : ∀ j < 12, (vbyte x j).toNat = ((B p s₀).getD (12 * k + j) 0).toNat := by
+    intro j hj
+    rw [show x = ofVDwords (s.mem.readW (s.gpr .x0) 64) ((s.mem.readW (s.gpr .x0 + 8) 32).setWidth 64) by
+      dsimp only [x]; rw [x9, x10], input_byte _ _ hj, h.x0, ptr_add, h.mem,
+      bytesAt_getD _ _ (by simp only [Params.ekLen]; omega)]
+  have hacc : ∀ e < 4, vword (s3.v .v19) e = accW (B p s₀) (k + 1) e := by
+    intro e he
+    have hl := low_lanes x e he
+    have hh := high_lanes x e he
+    simp only at hl hh
+    rw [xb _ (by omega), xb _ (by omega), xb _ (by omega)] at hl hh
+    have f0 : (vword (low x) e).toNat = field0 (B p s₀) (4 * k + e) := by
+      rw [hl, field0, show 12 * k + 3 * e = 3 * (4 * k + e) by omega,
+        show 12 * k + (3 * e + 1) = 3 * (4 * k + e) + 1 by omega,
+        show 12 * k + (3 * e + 2) = 3 * (4 * k + e) + 2 by omega]
+      have := ((B p s₀).getD (3 * (4 * k + e)) 0).isLt
+      have := ((B p s₀).getD (3 * (4 * k + e) + 1) 0).isLt
+      have := ((B p s₀).getD (3 * (4 * k + e) + 2) 0).isLt
+      omega
+    have f1 : (vword (high x) e).toNat = field1 (B p s₀) (4 * k + e) := by
+      rw [hh, field1, show 12 * k + 3 * e = 3 * (4 * k + e) by omega,
+        show 12 * k + (3 * e + 1) = 3 * (4 * k + e) + 1 by omega,
+        show 12 * k + (3 * e + 2) = 3 * (4 * k + e) + 2 by omega]
+      have := ((B p s₀).getD (3 * (4 * k + e)) 0).isLt
+      have := ((B p s₀).getD (3 * (4 * k + e) + 1) 0).isLt
+      have := ((B p s₀).getD (3 * (4 * k + e) + 2) 0).isLt
+      omega
+    rw [v19, vword_or, vword_or, vl, h.acc e he, vword_geq _ he, vword_geq _ he, f0, f1, accW, acc_step]
+    simp only [accW]
+    congr 1
+    apply propext
+    constructor
+    · intro ⟨h₁, h₂, h₃⟩ g hg
+      by_cases hgk : g = k
+      · subst hgk; exact ⟨h₂, h₃⟩
+      · exact h₁ g (by omega)
+    · intro h'; exact ⟨fun g hg => h' g (by omega), (h' k (by omega)).1, (h' k (by omega)).2⟩
+  have gp (r : Reg) (hr : r ∉ [.x9, .x10]) : s3.gpr r = s.gpr r := by rw [g3, hl.gpr _ hr]
+  have scalar : WP isa (.block [.addImm .x .x0 .x0 12, .subImm .x .x11 .x11 1]) s3
+      fun t => Only [.x0, .x11] s3 t ∧ t.gpr .x0 = s3.gpr .x0 + 12 ∧ (t.gpr .x11).toNat = 32 * p.k - (k + 1) := by
+    refine wp_addImm (by decide) fun s6 h6 e6 => wp_subImm (by decide) fun s7 h7 e7 => wp_nil ?_
+    refine ⟨(h6.trans h7).mono (by decide), by rw [h7.get .x0, e6]; rfl, ?_⟩
+    have cnt : (s6.gpr .x11).toNat = 32 * p.k - k := by rw [h6.get .x11, gp .x11 (by decide), h.x11]
+    rw [e7, toNat_sub_n (by rw [cnt]; simp; omega), cnt]; simp; omega
+  refine WP.mono (WP.keepV (by decide) scalar) ?_
+  intro t ⟨⟨ht, p0, cnt⟩, vt⟩
+  have keepv (r : VReg) (r0 : r ≠ .v0) (r1 : r ≠ .v1) (r2 : r ≠ .v2) (r3 : r ≠ .v3) (r19 : r ≠ .v19) :
+      t.v r = s.v r := by rw [vt, hv3 r r0 r1 r2 r3 r19, vl]
+  refine ⟨⟨by rw [ht.rd, rd3, hl.rd, h.rd], by rw [ht.wr, wr3, hl.wr, h.wr], by rw [ht.sp, sp3, hl.sp, h.sp],
+    by rw [ht.mem, m3, hl.mem, h.mem], ?_, cnt,
+    by rw [keepv .v16 (by decide) (by decide) (by decide) (by decide) (by decide), h.mask],
+    by rw [keepv .v17 (by decide) (by decide) (by decide) (by decide) (by decide), h.bits],
+    by rw [keepv .v18 (by decide) (by decide) (by decide) (by decide) (by decide), h.q],
+    fun e he => by rw [vt]; exact hacc e he⟩, by rw [cnt]; omega⟩
+  rw [p0, gp .x0 (by decide), h.x0, show (12 : BitVec 64) = BitVec.ofNat 64 12 from rfl, ptr_add]
+  congr 2
+
+theorem init (s : State) (n : Nat) :
+    WP isa (.block (maskVec .v16 [0,1,2,255,3,4,5,255,6,7,8,255,9,10,11,255] ++
+      ([.movz .x .x9 4095 0, .vop (.dup .s4 .v17 .x9), .movz .x .x9 3329 0, .vop (.dup .s4 .v18 .x9),
+        .vop (.movi0 .v19), .movz .x .x11 (BitVec.ofNat 16 n) 0] : List Instr))) s fun t =>
+      t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.mem = s.mem ∧ t.gpr .x0 = s.gpr .x0 ∧
+      t.gpr .x11 = (BitVec.ofNat 16 n).setWidth 64 ∧ t.v .v16 = decMask ∧ t.v .v17 = mask12 ∧
+      t.v .v18 = qvec ∧ t.v .v19 = 0 := by
+  dsimp [maskVec, VG.Impl.MlKem.AArch64.movImm]
+  rrun [RegUpd.sp_write, RegUpd.sp_setV]
+
+theorem fin (s : State) :
+    WP isa (.block [.vop (.uaddlv .s4 .v20 .v19), .umov .x .x9 .v20 0, .subImm .x .x0 .x9 1, .lsr .x .x0 .x0 63]) s
+      fun t => t.gpr .x0 = ((BitVec.ofNat 128 (VArr.s4.laneSum (s.v .v19) % 2 ^ 64)).extractLsb' 0 64 -
+        BitVec.ofNat 64 1) >>> 63 ∧ t.sp = s.sp := by
+  rrun [RegUpd.sp_write, RegUpd.sp_setV]
+  rfl
+
+theorem laneSum_s4 (x : BitVec 128) :
+    VArr.s4.laneSum x = (vword x 0).toNat + (vword x 1).toNat + (vword x 2).toNat + (vword x 3).toNat := by
+  simp [VArr.laneSum, VArr.lanes, BitVec.toNat_setWidth]
+  omega
+
+theorem sgn (L : Nat) (hL : L < 2 ^ 63) :
+    (((BitVec.ofNat 128 (L % 2 ^ 64)).extractLsb' 0 64 - BitVec.ofNat 64 1) >>> 63).toNat =
+      if L = 0 then 1 else 0 := by
+  have hx : ((BitVec.ofNat 128 (L % 2 ^ 64)).extractLsb' 0 64).toNat = L := by
+    rw [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat]; omega
+  rw [toNat_lsr, BitVec.toNat_sub, hx, BitVec.toNat_ofNat]
   split <;> omega
 
-theorem step {s₀ : State} (hp : Pre p s₀) {k : Nat} (hk : k < 128 * p.k) {s : State} (h : Inv p s₀ k s) :
-    WP isa (.block checkEkBody) s fun s' =>
-      Inv p s₀ (k + 1) s' ∧ ((s'.gpr .x11).toNat ≠ 0 ↔ k + 1 ≠ 128 * p.k) := by
-  have k4 := hp.k4
-  have hE : p.ekLen = 384 * p.k + 32 := rfl
-  have hin : ∀ j < p.ekLen, InRegions (s.rd ++ s.wr) (eP s₀ + BitVec.ofNat 64 j) 1 := fun j hj => by
-    rw [h.rd, h.wr, hp.rd, hp.wr]
-    exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega)
-      (by simp only [Params.ekLen]; omega)))
-  have hb : ∀ j < p.ekLen, (s.mem (eP s₀ + BitVec.ofNat 64 j)).toNat = byte p s₀ j := fun j hj => by
-    rw [h.mem]
-    show _ = ((bytesAt s₀.mem (eP s₀) p.ekLen).getD j 0).toNat
-    rw [bytesAt_getD _ _ hj]
-  have a : ∀ r, s.gpr .x0 + BitVec.ofNat 64 r = eP s₀ + BitVec.ofNat 64 (3 * k + r) := fun r => by
-    rw [h.x0, ptr_add]
-  have l0 : byte p s₀ (3 * k) < 256 := byte_lt _
-  have l1 : byte p s₀ (3 * k + 1) < 256 := byte_lt _
-  have l2 : byte p s₀ (3 * k + 2) < 256 := byte_lt _
-  refine wp_ldrb (a := eP s₀ + BitVec.ofNat 64 (3 * k + 0)) (by decide) (a 0) (hin _ (by omega))
-    fun s₁ h₁ e₁ => ?_
-  refine wp_ldrb (a := eP s₀ + BitVec.ofNat 64 (3 * k + 1)) (by decide) (by rw [h₁.get .x0, a])
-    (by rw [h₁.rd, h₁.wr]; exact hin _ (by omega)) fun s₂ h₂ e₂ => ?_
-  refine wp_and fun s₃ h₃ e₃ => wp_lsl (by decide) fun s₄ h₄ e₄ => wp_add fun s₅ h₅ e₅ =>
-    wp_sub fun s₆ h₆ e₆ => wp_lsr (by decide) fun s₇ h₇ e₇ => wp_add fun s₈ h₈ e₈ => ?_
-  have v12 : (s₂.gpr .x12).toNat = byte p s₀ (3 * k) := by
-    rw [h₂.get .x12, e₁, toNat_byte, Nat.add_zero, hb _ (by omega)]
-  have v13 : (s₂.gpr .x13).toNat = byte p s₀ (3 * k + 1) := by
-    rw [e₂, toNat_byte, h₁.mem, hb _ (by omega)]
-  have f0 : (s₅.gpr .x15).toNat = field0 (B p s₀) k := by
-    have c3 : (s₃.gpr .x15).toNat = byte p s₀ (3 * k + 1) % 16 := by
-      rw [e₃, toNat_and_mask _ _ (k := 4) (by rw [h₂.get .x14, h₁.get .x14, h.x14]), v13]
-    have c4 : (s₄.gpr .x15).toNat = byte p s₀ (3 * k + 1) % 16 * 256 := by
-      rw [e₄, toNat_lsl_n (by rw [c3]; omega), c3]
-    rw [e₅, toNat_add_n (by rw [c4, h₄.get .x12, h₃.get .x12, v12]; omega), c4, h₄.get .x12,
-      h₃.get .x12, v12]
-    simp only [field0, byte]
-    omega
-  have ff0 : field0 (B p s₀) k < 2 ^ 12 := by unfold field0; omega
-  have k₈ := (((((((h₁.keep.trans h₂.keep).trans h₃.keep).trans h₄.keep).trans h₅.keep).trans
-    h₆.keep).trans h₇.keep).trans h₈.keep)
-  have v10 : (s₈.gpr .x10).toNat = cnt (B p s₀) k + (if field0 (B p s₀) k < q then 0 else 1) := by
-    have e9 : s₅.gpr .x9 = BitVec.ofNat 64 3328 := by
-      rw [h₅.get .x9, h₄.get .x9, h₃.get .x9, h₂.get .x9, h₁.get .x9]
-      exact BitVec.eq_of_toNat_eq (by rw [h.x9]; rfl)
-    have e15 : s₅.gpr .x15 = BitVec.ofNat 64 (field0 (B p s₀) k) := by
-      exact BitVec.eq_of_toNat_eq (by rw [f0, toNat_ofNat_lt (by omega)])
-    have hbad := bad_arith ff0
-    rw [← e9, ← e15, ← e₆] at hbad
-    have c7 : (s₇.gpr .x15).toNat = if field0 (B p s₀) k < q then 0 else 1 := by rw [e₇]; exact hbad
-    have c10 : (s₇.gpr .x10).toNat = cnt (B p s₀) k := by
-      rw [h₇.get .x10, h₆.get .x10, h₅.get .x10, h₄.get .x10, h₃.get .x10, h₂.get .x10,
-        h₁.get .x10, h.x10]
-    have := cnt_le (B p s₀) k
-    rw [e₈, toNat_add_n (by rw [c10, c7]; split <;> omega), c10, c7]
-  refine wp_ldrb (a := eP s₀ + BitVec.ofNat 64 (3 * k + 2)) (by decide)
-    (by rw [k₈.get .x0, a]) (by rw [k₈.rd, k₈.wr]; exact hin _ (by omega)) fun s₉ h₉ e₉ => ?_
-  refine wp_lsr (by decide) fun s₁₀ h₁₀ e₁₀ => wp_lsl (by decide) fun s₁₁ h₁₁ e₁₁ =>
-    wp_add fun s₁₂ h₁₂ e₁₂ => wp_sub fun s₁₃ h₁₃ e₁₃ => wp_lsr (by decide) fun s₁₄ h₁₄ e₁₄ =>
-    wp_add fun s₁₅ h₁₅ e₁₅ => ?_
-  have m₈ : s₈.mem = s.mem := by
-    rw [h₈.mem, h₇.mem, h₆.mem, h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem]
-  have m₉ : s₉.mem = s.mem := by rw [h₉.mem, m₈]
-  have f1 : (s₁₂.gpr .x13).toNat = field1 (B p s₀) k := by
-    have c10 : (s₁₀.gpr .x13).toNat = byte p s₀ (3 * k + 1) / 16 := by
-      rw [e₁₀, toNat_lsr, h₉.get .x13, h₈.get .x13, h₇.get .x13, h₆.get .x13, h₅.get .x13,
-        h₄.get .x13, h₃.get .x13, v13]
-    have c11 : (s₁₁.gpr .x12).toNat = byte p s₀ (3 * k + 2) * 16 := by
-      rw [e₁₁, h₁₀.get .x12, e₉, toNat_lsl_n (by rw [toNat_byte, m₈, hb _ (by omega)]; omega),
-        toNat_byte, m₈, hb _ (by omega)]
-    rw [e₁₂, toNat_add_n (by rw [h₁₁.get .x13, c10, c11]; omega), h₁₁.get .x13, c10, c11]
-    simp only [field1, byte]
-    omega
-  have ff1 : field1 (B p s₀) k < 2 ^ 12 := by unfold field1; omega
-  have k₁₂ := ((((k₈.trans h₉.keep).trans h₁₀.keep).trans h₁₁.keep).trans h₁₂.keep)
-  have v10' : (s₁₅.gpr .x10).toNat = cnt (B p s₀) (k + 1) := by
-    have e9 : s₁₂.gpr .x9 = BitVec.ofNat 64 3328 := by
-      rw [k₁₂.get .x9]
-      exact BitVec.eq_of_toNat_eq (by rw [h.x9]; rfl)
-    have e13 : s₁₂.gpr .x13 = BitVec.ofNat 64 (field1 (B p s₀) k) := by
-      exact BitVec.eq_of_toNat_eq (by rw [f1, toNat_ofNat_lt (by omega)])
-    have hbad := bad_arith ff1
-    rw [← e9, ← e13, ← e₁₃] at hbad
-    have c14 : (s₁₄.gpr .x13).toNat = if field1 (B p s₀) k < q then 0 else 1 := by rw [e₁₄]; exact hbad
-    have c10 : (s₁₄.gpr .x10).toNat = cnt (B p s₀) k + (if field0 (B p s₀) k < q then 0 else 1) := by
-      rw [h₁₄.get .x10, h₁₃.get .x10, h₁₂.get .x10, h₁₁.get .x10, h₁₀.get .x10, h₉.get .x10, v10]
-    have := cnt_le (B p s₀) k
-    rw [e₁₅, toNat_add_n (by rw [c10, c14]; split <;> split <;> omega), c10, c14]
-    rfl
-  refine wp_addImm (by decide) fun s₁₆ h₁₆ e₁₆ => wp_subImm (by decide) fun s₁₇ h₁₇ e₁₇ => wp_nil ?_
-  have k₁₆ := ((((k₁₂.trans h₁₃.keep).trans h₁₄.keep).trans h₁₅.keep).trans h₁₆.keep)
-  have c11 : (s₁₆.gpr .x11).toNat = 128 * p.k - k := by rw [k₁₆.get .x11, h.x11]
-  have v11 : (s₁₇.gpr .x11).toNat = 128 * p.k - (k + 1) := by
-    rw [e₁₇, toNat_sub_n (by rw [c11]; simp; omega), c11]
-    simp
-    omega
-  have k₁₇ := k₁₆.trans h₁₇.keep
-  refine ⟨⟨by rw [k₁₇.rd, h.rd], by rw [k₁₇.wr, h.wr], by rw [k₁₇.sp, h.sp], ?_, ?_,
-    by rw [k₁₇.get .x9, h.x9], by rw [h₁₇.get .x10, h₁₆.get .x10, v10'], v11,
-    by rw [k₁₇.get .x14, h.x14]⟩, by rw [v11]; omega⟩
-  · rw [h₁₇.mem, h₁₆.mem, h₁₅.mem, h₁₄.mem, h₁₃.mem, h₁₂.mem, h₁₁.mem, h₁₀.mem, m₉, h.mem]
-  · rw [h₁₇.get .x0, e₁₆, h₁₅.get .x0, h₁₄.get .x0, h₁₃.get .x0, h₁₂.get .x0, h₁₁.get .x0,
-      h₁₀.get .x0, h₉.get .x0, k₈.get .x0, h.x0, ptr_next]
-
 theorem correct (hk : 1 ≤ p.k ∧ p.k ≤ 4) (s₀ : State) (hs : (checkEkAArch64 p).pre s₀) :
-    ∃ t s', Exec isa (checkEkWith (128 * p.k)) s₀ t s' ∧ abiPreserved s₀ s' ∧ (checkEkAArch64 p).post s₀ s' := by
-  have hp : Pre p s₀ := ⟨hs.1, hs.2, hk.2⟩
-  suffices h : WP isa (checkEkWith (128 * p.k)) s₀ fun s' => s'.sp = s₀.sp ∧ (checkEkAArch64 p).post s₀ s' by
-    obtain ⟨t, s', he, hsp, hpost⟩ := h
-    exact ⟨t, s', he, abi_of rfl rfl he (hv := rfl), hpost⟩
-  refine WP.seq (wp_movz fun s₁ h₁ e₁ => wp_movz fun s₂ h₂ e₂ => wp_movz fun s₃ h₃ e₃ =>
-    wp_movz fun s₄ h₄ e₄ => wp_nil ?_)
-  have k₄ := ((h₁.keep.trans h₂.keep).trans h₃.keep).trans h₄.keep
-  have i₀ : Inv p s₀ 0 s₄ := ⟨k₄.rd, k₄.wr, k₄.sp, by rw [h₄.mem, h₃.mem, h₂.mem, h₁.mem],
-    by rw [k₄.get .x0, Nat.mul_zero, ptr_zero], by rw [h₄.get .x9, h₃.get .x9, h₂.get .x9, e₁]; rfl,
-    by rw [h₄.get .x10, h₃.get .x10, e₂]; rfl, by rw [h₄.get .x11, e₃]; simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega,
-    by rw [e₄]; rfl⟩
-  refine WP.seq (WP.mono (count_loop (by omega) (Inv p s₀) (fun k hk s h => step hp hk h) i₀)
+    ∃ t s', Exec isa (checkEkWith (32 * p.k)) s₀ t s' ∧ abiPreserved s₀ s' ∧ (checkEkAArch64 p).post s₀ s' := by
+  suffices h : WP isa (checkEkWith (32 * p.k)) s₀ fun s' => (checkEkAArch64 p).post s₀ s' by
+    obtain ⟨t, s', he, hpost⟩ := h
+    exact ⟨t, s', he, abi_of rfl (by rfl) he (hv := by rfl), hpost⟩
+  unfold checkEkWith
+  refine WP.seq (WP.mono (init s₀ (32 * p.k)) fun s₁ ⟨r₁, w₁, sp₁, m₁, x0₁, x11₁, v16₁, v17₁, v18₁, v19₁⟩ => ?_)
+  have i₀ : Inv p s₀ 0 s₁ := ⟨r₁, w₁, sp₁, m₁, by rw [x0₁, Nat.mul_zero, ptr_zero],
+    by rw [x11₁]; simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega, v16₁, v17₁, v18₁,
+    fun e he => by rw [v19₁]; simp [accW, vword]⟩
+  refine WP.seq (WP.mono (count_loop (by omega) (Inv p s₀) (fun j hj s h => step hs hk.2 hj h) i₀)
     fun s h => ?_)
-  refine wp_subImm (by decide) fun s₅ h₅ e₅ => wp_lsr (by decide) fun s₆ h₆ e₆ => wp_nil ?_
-  refine ⟨by rw [h₆.sp, h₅.sp, h.sp], ?_⟩
-  have hc := cnt_le (B p s₀) (128 * p.k)
-  have v : (s₆.gpr .x0).toNat = if cnt (B p s₀) (128 * p.k) = 0 then 1 else 0 := by
-    rw [e₆, toNat_lsr, e₅, BitVec.toNat_sub, h.x10]
-    simp only [BitVec.toNat_ofNat]
-    split <;> omega
-  have hck := ekCheck_iff p (B p s₀) (bytesAt_length _ _ _)
-  show (s₆.gpr .x0).setWidth 32 = if ekCheck p (B p s₀) then 1 else 0
+  refine WP.mono (fin s) fun t ⟨ht, _⟩ => ?_
+  have hsum := laneSum_s4 (s.v .v19)
+  rw [h.acc 0 (by decide), h.acc 1 (by decide), h.acc 2 (by decide), h.acc 3 (by decide)] at hsum
+  have hall : (∀ e < 4, ∀ g < 32 * p.k, good (B p s₀) (4 * g + e)) ↔
+      ekCheck p (bytesAt s₀.mem (s₀.gpr .x0) p.ekLen) = true := by
+    rw [ekCheck_iff p _ (bytesAt_length _ _ _)]
+    constructor
+    · intro h t ht
+      have := h (t % 4) (by omega) (t / 4) (by omega)
+      rwa [show 4 * (t / 4) + t % 4 = t by omega] at this
+    · intro h e he g hg; exact h _ (by omega)
+  have hv : ∀ e < 4, (accW (B p s₀) (32 * p.k) e).toNat =
+      if ∀ g < 32 * p.k, good (B p s₀) (4 * g + e) then 0 else 2 ^ 32 - 1 := fun e _ => by
+    unfold accW; split <;> simp
+  rw [hv 0 (by decide), hv 1 (by decide), hv 2 (by decide), hv 3 (by decide)] at hsum
+  show (t.gpr .x0).setWidth 32 = if ekCheck p (bytesAt s₀.mem (s₀.gpr .x0) p.ekLen) then 1 else 0
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_setWidth, v]
-  by_cases e : cnt (B p s₀) (128 * p.k) = 0
-  · rw [ite_eq_left e, ite_eq_left (hck.mpr ((cnt_zero _ _).mp e))]; rfl
-  · rw [ite_eq_right e, ite_eq_right (fun h' => e ((cnt_zero _ _).mpr (hck.mp h')))]; rfl
+  have hlt : VArr.s4.laneSum (s.v .v19) < 2 ^ 34 := by rw [hsum]; split <;> split <;> split <;> split <;> omega
+  rw [BitVec.toNat_setWidth, ht, sgn _ (by omega)]
+  by_cases hc : ekCheck p (bytesAt s₀.mem (s₀.gpr .x0) p.ekLen) = true
+  · have h4 := hall.mpr hc
+    rw [ite_eq_left (h4 0 (by decide)), ite_eq_left (h4 1 (by decide)), ite_eq_left (h4 2 (by decide)),
+      ite_eq_left (h4 3 (by decide))] at hsum
+    rw [hsum, ite_eq_left hc]; rfl
+  · rw [ite_eq_right hc]
+    have hne : VArr.s4.laneSum (s.v .v19) ≠ 0 := by
+      intro h0
+      apply hc; apply hall.mp
+      intro e he
+      rw [h0] at hsum
+      by_contra hn
+      rcases (by omega : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3) with rfl | rfl | rfl | rfl <;>
+        (rw [ite_eq_right hn] at hsum; omega)
+    rw [ite_eq_right hne]; rfl
 
 /-! ## ML-KEM-768 -/
 
