@@ -140,7 +140,7 @@ theorem cons_lt {m a r k : Nat} (ha : a < m) (hr : r < m ^ k) : a + m * r < m ^ 
     _ ≤ m * m ^ k := Nat.mul_le_mul_left _ hr
     _ = m ^ (k + 1) := by rw [Nat.pow_succ, Nat.mul_comm]
 
-theorem ofFn_lt (f : Nat → T) : Y.ofFn f < 2 ^ yw := by
+theorem ofFn_lt (f : Nat → T) : @LT.lt Nat instLTNat (Y.ofFn f) (2 ^ yw) := by
   have hm : ∀ a, a % 2 ^ tw < 2 ^ tw := fun a => Nat.mod_lt _ (Nat.two_pow_pos _)
   rw [ofFn_eq, show yw = tw * 8 from rfl, Nat.pow_mul]
   exact cons_lt (hm _) (cons_lt (hm _) (cons_lt (hm _) (cons_lt (hm _) (cons_lt (hm _) (cons_lt (hm _)

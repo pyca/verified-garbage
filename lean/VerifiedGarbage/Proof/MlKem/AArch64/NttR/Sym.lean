@@ -349,9 +349,9 @@ def St.vop (R : Rules) (σ : St) : VOp → Option St
     let x := σ.vreg n
     let y := σ.vreg m
     some (σ.setV d (Y.ofFn fun e => subT R (x.get e) (y.get e)))
-  | .shift .sshr .h8 d n 15 =>
+  | .shift .sshr .h8 d n sh =>
     let x := σ.vreg n
-    some (σ.setV d (Y.ofFn fun e => sraT (x.get e)))
+    if sh = 15 then some (σ.setV d (Y.ofFn fun e => sraT (x.get e))) else none
   | .logic .and d n m =>
     let x := σ.vreg n
     let y := σ.vreg m

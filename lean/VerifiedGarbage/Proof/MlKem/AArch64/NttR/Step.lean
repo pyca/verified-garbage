@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.Sound
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 
 /-!
 # ML-KEM on AArch64: the NTT halfword by halfword, the machine agrees with the code
@@ -93,6 +94,60 @@ theorem vreg_lt (σ : St) (r : VReg) : @LT.lt Nat instLTNat (σ.vreg r) (2 ^ yw)
 theorem chunk_lt (σ : St) (k j : Nat) : @LT.lt Nat instLTNat (σ.chunk k j) (2 ^ yw) := by
   unfold St.chunk; exact slot_bound yw (σ.mem.getD k 0) j
 
+/-! ## Lanes -/
+
+open VG.Proof.MlKem.AArch64.Ntt16 (vhalf_ofVHalves vhalf_map2 getLsbD_vhalf vhalf_perm_h8 vhalf_perm_s4
+  vhalf_trn_d2 eval_mulH)
+
+theorem vhalf_zero' (e : Nat) : vhalf 0 e = 0 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi; simp [getLsbD_vhalf _ _ hi]
+
+theorem vhalf_and' (a b : BitVec 128) {e : Nat} : vhalf (a &&& b) e = vhalf a e &&& vhalf b e := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [getLsbD_vhalf _ _ hi, BitVec.getLsbD_and]
+
+theorem vhalf_setLane' (x : BitVec 128) {k e : Nat} (hk : k < 8) (he : e < 8) (h : BitVec 16) :
+    vhalf (setLane x 16 k h) e = if e = k then h else vhalf x e := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  rw [getLsbD_vhalf _ _ hi]
+  simp only [setLane, BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not,
+    BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth, BitVec.getLsbD_allOnes,
+    show 16 * e + i < 128 by omega, decide_true, Bool.true_and]
+  by_cases h' : e = k
+  · subst h'
+    simp [hi, show ¬ 16 * e + i < 16 * e by omega, show 16 * e + i - 16 * e = i by omega,
+      show i < 128 by omega]
+  · rw [ite_eq_right h', getLsbD_vhalf _ _ hi]
+    rcases (by omega : e < k ∨ k < e) with c | c
+    · simp [show 16 * e + i < 16 * k by omega]
+    · have : h.getLsbD (16 * e + i - 16 * k) = false := BitVec.getLsbD_of_ge _ _ (by omega)
+      simp [show ¬ 16 * e + i < 16 * k by omega, show ¬ 16 * e + i - 16 * k < 16 by omega, this]
+
+/-- The halfword `e` of a permutation the machine follows. -/
+theorem vhalf_perm (op : VPermOp) (a : VArr) (x y : BitVec 128) {e : Nat} (he : e < 8) {b : Bool} {i : Nat}
+    (h : permSrc op a e = some (b, i)) : vhalf (op.eval a x y) e = vhalf (if b then y else x) i := by
+  cases a with
+  | d2 =>
+    cases op <;> simp [permSrc] at h
+    · rw [(vhalf_trn_d2 x y he).1]; split at h <;> simp_all <;> intro <;> omega
+    · rw [(vhalf_trn_d2 x y he).2]; split at h <;> simp_all <;> intro <;> omega
+  | s4 =>
+    rw [vhalf_perm_s4 _ _ _ he]
+    cases op <;> simp only [permSrc] at h <;> (try split at h) <;>
+      simp only [Option.some.injEq, Prod.mk.injEq] at h <;> obtain ⟨rfl, rfl⟩ := h <;> simp_all <;>
+      first | (intro; omega) | (split <;> split <;> first | rfl | omega)
+  | b16 => cases op <;> simp [permSrc] at h
+  | h8 =>
+    rw [vhalf_perm_h8 _ _ _ he]
+    cases op <;> simp only [permSrc] at h <;> (try split at h) <;>
+      simp only [Option.some.injEq, Prod.mk.injEq] at h <;> obtain ⟨rfl, rfl⟩ := h <;> simp_all <;>
+      first | (intro; omega) | (split <;> split <;> first | rfl | omega)
+
+theorem permSrc_lt {op : VPermOp} {a : VArr} {e : Nat} {b : Bool} {i : Nat} (h : permSrc op a e = some (b, i))
+    (he : e < 8) : i < 8 := by
+  cases a <;> cases op <;> simp only [permSrc, reduceCtorEq] at h <;> (try split at h) <;>
+    simp only [Option.some.injEq, Prod.mk.injEq] at h <;> omega
+
 /-! ## Registers and regions -/
 
 section
@@ -175,5 +230,186 @@ theorem locate_some {rs : List Rg} {b : Base} {a k o : Nat} (h : locate rs b a =
     simp only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hk, Option.getD_some]
     simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hp
     exact ⟨hk, hp.1.1, by omega, by omega⟩
+
+end VG.Proof.MlKem.AArch64.NttR
+
+namespace VG.Proof.MlKem.AArch64.NttR
+
+open VG VG.AArch64
+open VG.Proof.MlKem.AArch64.Ntt16 (vhalf_ofVHalves vhalf_map2 eval_mulH)
+
+section
+variable {rs : List Rg} {s₀ : State} {L : Nat → Nat → BitVec 16} {O : Nat → BitVec 16}
+
+theorem ofNat_mod16 (v : Nat) : BitVec.ofNat 16 (v % 65536) = BitVec.ofNat 16 v := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_ofNat]
+  omega
+
+theorem Hd.cT (v : Nat) : Hd L O (cT v) (BitVec.ofNat 16 v) := by
+  refine (Hd.mk (by decide)).2 ?_
+  rw [eval_mk]
+  exact (ofNat_mod16 v).symm
+
+theorem cT_lt (v : Nat) : @LT.lt Nat instLTNat (cT v) (2 ^ tw) := mk_lt_tw ..
+
+theorem setWidth16 (v : Nat) : (BitVec.ofNat 64 v).setWidth 16 = BitVec.ofNat 16 v := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  omega
+
+theorem Hd.ofFn {f : Nat → T} {g : Nat → BitVec 16} (hlt : ∀ e < 8, @LT.lt Nat instLTNat (f e) (2 ^ tw))
+    (h : ∀ e < 8, Hd L O (f e) (g e)) : ∀ e < 8, Hd L O ((Y.ofFn f).get e) (g e) := by
+  intro e he
+  rw [get_ofFn _ he, Nat.mod_eq_of_lt (hlt e he)]
+  exact h e he
+
+theorem get_lt (y : Y) (e : Nat) : @LT.lt Nat instLTNat (y.get e) (2 ^ tw) := slot_bound tw y e
+
+theorem Rel.setV {σ : St} {s : State} (h : Rel rs s₀ L O σ s) {d : VReg} {y : Nat} {x : BitVec 128}
+    (hy : y < 2 ^ yw) (hx : ∀ e < 8, Hd L O (Y.get y e) (vhalf x e)) :
+    Rel rs s₀ L O (σ.setV d y) (s.setV d x) := by
+  refine ⟨fun r e he => ?_, fun r => ?_, fun k hk j hj e he => ?_, h.rd, h.wr, h.sp, h.syms⟩
+  · rw [vreg_setV _ _ _ hy]
+    by_cases hr : r = d
+    · subst hr; rw [ite_eq_left rfl]; simp only [State.setV, ite_true]; exact hx e he
+    · rw [ite_eq_right hr]; simp only [State.setV, hr, ite_false]; exact h.v r e he
+  · rw [greg_setV]; exact h.g r
+  · rw [chunk_setV]; exact h.mem k hk j hj e he
+
+theorem Y.get_dup (a : T) {e : Nat} (he : e < 8) : (Y.dup a).get e = a % 2 ^ tw := get_ofFn _ he
+
+theorem eval_dupE' {s : State} {d n : VReg} {k : Nat} (hk : k < 8) :
+    VOp.eval s (.dupE .h8 d n k) = some (d, ofVHalves fun _ => vhalf (s.v n) k) := by
+  simp only [VOp.eval, VArr.esize, show k < 128 / 16 from hk, ite_true, VArr.map2]
+  rfl
+
+theorem exec_vop {s : State} {o : VOp} {d : VReg} {x : BitVec 128} (h : o.eval s = some (d, x)) :
+    exec (.vop o) s = some (s.setV d x) := by
+  simp only [exec, h, Option.map_some]
+
+/-- The lanes of `ofVHalves f`, from those of terms. -/
+theorem Hd.ofVHalves {y : Nat} {f : Nat → BitVec 16} (h : ∀ e < 8, Hd L O (Y.get y e) (f e)) :
+    ∀ e < 8, Hd L O (Y.get y e) (vhalf (ofVHalves f) e) := fun e he => by
+  rw [vhalf_ofVHalves _ he]; exact h e he
+
+theorem vop_ok {R : Rules} (hM : Model L O R) {σ σ' : St} {s : State} (h : Rel rs s₀ L O σ s) {o : VOp}
+    (hs : σ.vop R o = some σ') : ∃ s', exec (.vop o) s = some s' ∧ Rel rs s₀ L O σ' s' := by
+  cases o with
+  | movi0 d =>
+    simp only [St.vop, Option.some.injEq] at hs; subst hs
+    refine ⟨_, exec_vop rfl, h.setV (ofFn_lt _) fun e he => ?_⟩
+    rw [Y.get_dup _ he, Nat.mod_eq_of_lt (cT_lt 0), vhalf_zero']
+    exact Hd.cT 0
+  | dup a d n =>
+    cases a <;> simp only [St.vop, reduceCtorEq] at hs
+    split at hs
+    · rename_i v hv
+      simp only [Option.some.injEq] at hs; subst hs
+      have hg := h.g n; rw [hv] at hg; obtain ⟨-, hg⟩ := hg
+      refine ⟨_, exec_vop rfl, h.setV (ofFn_lt _) (Hd.ofVHalves fun e he => ?_)⟩
+      rw [Y.get_dup _ he, Nat.mod_eq_of_lt (cT_lt _), hg, setWidth16, ← ofNat_mod16 v]
+      exact Hd.cT _
+    · cases hs
+  | ins a d i n =>
+    cases a <;> simp only [St.vop, reduceCtorEq] at hs
+    split at hs
+    · rename_i v hv
+      split at hs
+      · rename_i hi
+        simp only [Option.some.injEq] at hs; subst hs
+        have hg := h.g n; rw [hv] at hg; obtain ⟨-, hg⟩ := hg
+        have hy : @LT.lt Nat instLTNat (upd tw (σ.vreg d) i (cT (v % 65536))) (2 ^ yw) := by
+          have := vreg_lt σ d
+          rw [show yw = tw * 8 from rfl] at this ⊢
+          exact upd_lt this (cT_lt _) hi
+        refine ⟨_, exec_vop (x := setLane (s.v d) 16 i ((s.gpr n).setWidth 16))
+          (by simp only [VOp.eval, hi, ite_true]), h.setV hy fun e he => ?_⟩
+        rw [vhalf_setLane' _ hi he]
+        unfold Y.get
+        rw [slot_upd tw _ _ _ (cT_lt _)]
+        by_cases hei : e = i
+        · rw [ite_eq_left hei, ite_eq_left hei, hg, setWidth16, ← ofNat_mod16 v]; exact Hd.cT _
+        · rw [ite_eq_right hei, ite_eq_right hei]; exact h.v d e he
+      · cases hs
+    · cases hs
+  | dupE a d n i =>
+    cases a <;> simp only [St.vop, reduceCtorEq] at hs
+    split at hs
+    · rename_i hi
+      simp only [Option.some.injEq] at hs; subst hs
+      refine ⟨_, exec_vop (eval_dupE' hi), h.setV (ofFn_lt _) (Hd.ofVHalves fun e he => ?_)⟩
+      rw [Y.get_dup _ he, Nat.mod_eq_of_lt (get_lt _ _)]
+      exact h.v n i hi
+    · cases hs
+  | mulH op d n m =>
+    cases op <;> simp only [St.vop, reduceCtorEq] at hs
+    · -- mul
+      simp only [Option.some.injEq] at hs; subst hs
+      refine ⟨_, exec_vop (eval_mulH fun _ _ => rfl), h.setV (ofFn_lt _)
+        (Hd.ofVHalves (Hd.ofFn (fun e _ => mulT_lt _ _) fun e he => ?_))⟩
+      exact mulT_ok (h.v n e he) (h.v m e he)
+    · -- mls
+      simp only [Option.some.injEq] at hs; subst hs
+      refine ⟨_, exec_vop (eval_mulH fun _ _ => rfl), h.setV (ofFn_lt _)
+        (Hd.ofVHalves (Hd.ofFn (fun e _ => subT_lt _ _ _) fun e he => ?_))⟩
+      exact subT_ok hM (h.v d e he) (mulT_ok (h.v n e he) (h.v m e he))
+    · -- sqrdmulh
+      split at hs
+      · rename_i hq
+        simp only [Option.some.injEq] at hs; subst hs
+        have hok : ∀ e < 8, qdOk ((σ.vreg m).get e) = true := fun e he =>
+          List.all_eq_true.1 hq e (List.mem_range.2 he)
+        refine ⟨_, exec_vop (eval_mulH fun e he => qdOk_some (h.v m e he) (hok e he) _), h.setV (ofFn_lt _)
+          (Hd.ofVHalves (Hd.ofFn (fun e _ => qdT_lt _ _) fun e he => ?_))⟩
+        exact qdT_ok (h.v n e he) (h.v m e he)
+      · cases hs
+  | add a d n m =>
+    cases a <;> simp only [St.vop, reduceCtorEq] at hs
+    simp only [Option.some.injEq] at hs; subst hs
+    refine ⟨_, exec_vop rfl, h.setV (ofFn_lt _) fun e he => ?_⟩
+    rw [vhalf_map2 _ _ _ he]
+    exact Hd.ofFn (fun e _ => addT_lt _ _ _) (fun e he => addT_ok hM (h.v n e he) (h.v m e he)) e he
+  | sub a d n m =>
+    cases a <;> simp only [St.vop, reduceCtorEq] at hs
+    simp only [Option.some.injEq] at hs; subst hs
+    refine ⟨_, exec_vop rfl, h.setV (ofFn_lt _) fun e he => ?_⟩
+    rw [vhalf_map2 _ _ _ he]
+    exact Hd.ofFn (fun e _ => subT_lt _ _ _) (fun e he => subT_ok hM (h.v n e he) (h.v m e he)) e he
+  | shift op a d n sh =>
+    cases op <;> cases a <;> simp only [St.vop, reduceCtorEq] at hs
+    split at hs
+    · rename_i h15
+      subst h15
+      simp only [Option.some.injEq] at hs; subst hs
+      refine ⟨_, exec_vop (by simp only [VOp.eval]; rfl), h.setV (ofFn_lt _) fun e he => ?_⟩
+      rw [vhalf_map2 _ _ _ he]
+      exact Hd.ofFn (fun e _ => sraT_lt _) (fun e he => sraT_ok (h.v n e he)) e he
+    · cases hs
+  | logic op d n m =>
+    cases op <;> simp only [St.vop, reduceCtorEq] at hs
+    simp only [Option.some.injEq] at hs; subst hs
+    refine ⟨_, exec_vop rfl, h.setV (ofFn_lt _) fun e he => ?_⟩
+    rw [vhalf_and']
+    exact Hd.ofFn (g := fun e => vhalf (s.v n) e &&& vhalf (s.v m) e) (fun e _ => andT_lt _ _) (fun e he => andT_ok (h.v n e he) (h.v m e he)) e he
+  | perm op a d n m =>
+    simp only [St.vop] at hs
+    split at hs
+    · rename_i hp
+      simp only [Option.some.injEq] at hs; subst hs
+      refine ⟨_, exec_vop rfl, h.setV (ofFn_lt _) (Hd.ofFn (fun e _ => ?_) fun e he => ?_)⟩
+      · split
+        · exact get_lt _ _
+        · exact junk_lt
+      · obtain ⟨⟨b, i⟩, hsrc⟩ := Option.isSome_iff_exists.1 (List.all_eq_true.1 hp e (List.mem_range.2 he))
+        rw [hsrc, vhalf_perm op a _ _ he hsrc]
+        have hi : i < 8 := permSrc_lt hsrc he
+        cases b
+        · exact h.v n i hi
+        · exact h.v m i hi
+    · cases hs
+  | _ => simp [St.vop, reduceCtorEq] at hs
+
+end
 
 end VG.Proof.MlKem.AArch64.NttR
