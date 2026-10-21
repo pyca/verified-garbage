@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPower
+import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPublicPower
 import VerifiedGarbage.Proof.Ffdh.Arm.ValueChecks
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Framework.Block
@@ -36,7 +36,7 @@ theorem sharedCheckPublicSubgroup_ok (backend : MontBackend) (s : State) {p : In
       numAt t.mem (State.addr p.base) p.w 4 = 2 ^ (128 * p.w) % p.P ∧
       Frame [⟨State.addr p.base, 8 * p.len⟩, FrameStack.belowA s.sp 48] s.mem t.mem ∧ Rest roundClobbers s t := by
   rw [VG.Impl.Ffdh.Arm.SharedCheckPublic.subgroup, WP.seq_iff]
-  refine WP.mono (sharedCheckPublicPower_ok backend s slot 60 32 h calls stable hb h60 h32 h32 ready modulus odd r2 baseBytes baseLength
+  refine WP.mono (sharedCheckPublicPublicPower_ok backend s slot 60 32 h calls stable hb h60 h32 h32 ready modulus odd r2 baseBytes baseLength
     (h.qBytes hasQ) (by rw [p.qLength hasQ]; have := p.minLength; omega)
     (by rw [p.qLength hasQ]; have := p.maxLength; omega) (by change BitVec.ofNat 32 p.k = _; rw [p.qLength hasQ])
     (by

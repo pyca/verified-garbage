@@ -7,6 +7,7 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
 public import VerifiedGarbage.Impl.Bignum.Arm.ReduceOperand
 public import VerifiedGarbage.Impl.Bignum.Arm.ExportBE
 public import VerifiedGarbage.Impl.Ffdh.Arm.Arithmetic
+public import VerifiedGarbage.Impl.Ffdh.Arm.PublicScan
 
 /-! FFDH domain operations over the runtime-sized ARMv7 RSA workspace.
 The 72-byte local frame contains pointers, public lengths and saved flags.
@@ -49,8 +50,13 @@ def powerArgs (baseSlot exponentSlot exponentLength : Nat) : List Instr := [
 def powerAt (baseSlot exponentSlot exponentLength : Nat) : Prog isa :=
   .seq (.block (powerArgs baseSlot exponentSlot exponentLength)) VG.Impl.Ffdh.Arm.power
 
+/-- Only public q exponents may discard leading zero bytes. -/
+def publicPowerAt (baseSlot exponentSlot exponentLength : Nat) : Prog isa :=
+  .seq (.block (powerArgs baseSlot exponentSlot exponentLength))
+    (.seq VG.Impl.Ffdh.Arm.PublicScan.code VG.Impl.Ffdh.Arm.power)
+
 def subgroup (baseSlot : Nat) : Prog isa :=
-  .seq (powerAt baseSlot 60 32) (VG.Impl.Ffdh.Arm.isOne 6)
+  .seq (publicPowerAt baseSlot 60 32) (VG.Impl.Ffdh.Arm.isOne 6)
 
 def domainPointers : List Instr := [
   .dp .add .r3 .r4 (.reg .r6), st .r3 56,

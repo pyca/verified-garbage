@@ -31,7 +31,7 @@ theorem scanStep_ok (s : State) {base src : BitVec 32} {len : Nat} {bs : List By
       all_goals exact False.elim (hr (by decide))
     have f := List.all_eq_true.mp checked i hi
     cases hc : clobbers i r <;> simp_all) (by rfl)
-  rw [VG.Impl.Ffdh.Arm.Domain.GenerateKey.scanStep, WP.seq_iff]
+  rw [VG.Impl.Ffdh.Arm.Domain.GenerateKey.scanStep, VG.Impl.Ffdh.Arm.PublicScan.step, WP.seq_iff]
   refine WP.mono (scanRead_ok s source positive ptr) ?_
   rintro u ⟨⟨byte, zeroU, memU⟩, restU⟩
   have ptrU := (restU.gpr .r4 (by simp)).trans ptr

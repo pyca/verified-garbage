@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import VerifiedGarbage.Impl.Ffdh.Arm.SharedPrepare
+public import VerifiedGarbage.Impl.Ffdh.Arm.PublicScan
 public import VerifiedGarbage.Impl.Bignum.Arm.SharedWindow
 
 /-! Public-key validation through the shared RSA Montgomery helper. -/
@@ -14,8 +15,14 @@ def powerAt (op : Nat → Nat → Nat → Prog isa) (bs es ec : Nat) : Prog isa 
   .seq (.block (powerArgs bs es ec))
     (.seq VG.Impl.Ffdh.Arm.powerImport (SharedWindow.phase op))
 
+/-- Skip public leading zero bytes while retaining at least one byte. -/
+def publicPowerAt (op : Nat → Nat → Nat → Prog isa) (bs es ec : Nat) : Prog isa :=
+  .seq (.block (powerArgs bs es ec))
+    (.seq VG.Impl.Ffdh.Arm.PublicScan.code
+      (.seq VG.Impl.Ffdh.Arm.powerImport (SharedWindow.phase op)))
+
 def subgroup (op : Nat → Nat → Nat → Prog isa) (bs : Nat) : Prog isa :=
-  .seq (powerAt op bs 60 32) (VG.Impl.Ffdh.Arm.isOne 6)
+  .seq (publicPowerAt op bs 60 32) (VG.Impl.Ffdh.Arm.isOne 6)
 
 def tail (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
   withQ (.seq (subgroup op 36) finishFlag) (ret 1)
