@@ -7,11 +7,16 @@
 use super::Error;
 use super::Parameters;
 use super::arithmetic::Backend;
+#[cfg(not(target_arch = "arm"))]
+use crate::arch::ffdh::vg_ffdh_generate_parameters;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ffdh::vg_ffdh_generate_parameters_adx;
+use crate::arch::ffdh::vg_ffdh_parameter_generation_init;
 #[cfg(target_arch = "arm")]
-use crate::arch::ffdh::vg_ffdh_generate_parameters_umaal;
-use crate::arch::ffdh::{vg_ffdh_generate_parameters, vg_ffdh_parameter_generation_init};
+use crate::arch::ffdh::{
+    vg_ffdh_generate_parameters_screened as vg_ffdh_generate_parameters,
+    vg_ffdh_generate_parameters_screened_umaal as vg_ffdh_generate_parameters_umaal,
+};
 use crate::cpu::detected;
 use crate::rsa::Scratch;
 use crate::zeroize::zeroize;
@@ -228,11 +233,19 @@ mod tests {
                 half
             })
             .collect();
-        for modulus in [&q, &prime.to_vec()] {
+        #[cfg(target_arch = "arm")]
+        let phases = [
+            (prime.to_vec(), 1),
+            (q, rounds),
+            (prime.to_vec(), rounds - 1),
+        ];
+        #[cfg(not(target_arch = "arm"))]
+        let phases = [(q, rounds), (prime.to_vec(), rounds)];
+        for (modulus, rounds) in phases {
             let mut upper = modulus.clone();
             *upper.last_mut().unwrap() -= 1;
             tape.extend_from_slice(&upper);
-            tape.extend_from_slice(modulus);
+            tape.extend_from_slice(&modulus);
             for value in [0, 1].into_iter().chain(core::iter::repeat_n(2, rounds)) {
                 tape.resize(tape.len() + len, 0);
                 *tape.last_mut().unwrap() = value;
@@ -245,7 +258,7 @@ mod tests {
     #[test]
     fn published_candidates_and_tape_consumption() {
         // Published safe primes exercise both 64- and 128-witness policies.
-        // Zero, one, n − 1 and n are skipped independently for q and p.
+        // Zero, one, n − 1 and n are skipped independently in every phase.
         for (bits, generator, rounds) in [(1024, 2, 64), (3072, 5, 128)] {
             let prime = published_prime(bits);
             let len = prime.len();

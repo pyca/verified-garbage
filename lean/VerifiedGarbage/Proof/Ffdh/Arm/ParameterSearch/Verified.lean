@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Sat
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Spec.Ffdh.ScreenedContract
 
 /-! Complete correctness, public timing and satisfiability for native ARMv7 parameter generation. -/
 
@@ -19,11 +20,11 @@ namespace VG.Proof.Ffdh.Arm.ParameterSearch
 open VG VG.Arm
 
 theorem constantTime (backend : VG.Proof.Ffdh.Arm.ParameterBackend) :
-    ConstantTime isa (Spec.Ffdh.parameterSearchContract abi 232).pre (Spec.Ffdh.parameterSearchContract abi 232).pub
+    ConstantTime isa (Spec.Ffdh.screenedParameterSearchContract abi 232).pre (Spec.Ffdh.screenedParameterSearchContract abi 232).pub
       (VG.Impl.Ffdh.Arm.ParameterSearch.code (.call backend.candidateName backend.candidate)) := by
   intro s t traceS traceT u v hs ht pub runS runT
   obtain ⟨p, args⟩ := searchPublic s hs
-  sig_pub [Spec.Ffdh.parameterSearchContract, Spec.Ffdh.parameterSearchSig,
+  sig_pub [Spec.Ffdh.screenedParameterSearchContract, Spec.Ffdh.parameterSearchSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr] at pub
   obtain ⟨sp, leak, p0, p1, p2, p3, p4, p5, p6, p7, p8, p9⟩ := pub
   obtain ⟨bytes, policy⟩ := List.append_inj leak (by
@@ -61,7 +62,7 @@ theorem constantTime (backend : VG.Proof.Ffdh.Arm.ParameterBackend) :
 
 theorem verified (backend : VG.Proof.Ffdh.Arm.ParameterBackend) :
     Verified target (VG.Impl.Ffdh.Arm.ParameterSearch.code (.call backend.candidateName backend.candidate))
-      (Spec.Ffdh.parameterSearchContract abi 232) :=
+      (Spec.Ffdh.screenedParameterSearchContract abi 232) :=
   ⟨correct backend, constantTime backend, search_sat⟩
 
 end VG.Proof.Ffdh.Arm.ParameterSearch

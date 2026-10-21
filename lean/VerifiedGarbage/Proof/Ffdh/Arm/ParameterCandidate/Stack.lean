@@ -34,13 +34,36 @@ private theorem candidate_code_stack (name : String) (body : Prog isa) :
     change max 0 (max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.phasePrepared)
       (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.witnessStep name body))) = _
     rw [phasePrepared_stack, stepStack, Nat.zero_max, Nat.zero_max]
-  have testsStack : FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.tests name body) = FrameStack.armStack body := by
+  have limitedStack (first : Bool) : FrameStack.armStack
+      (VG.Impl.Ffdh.Arm.ParameterCandidate.testLimited first name body) = FrameStack.armStack body := by
+    change max 0 (max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.phasePrepared)
+      (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.witnessStep name body))) = _
+    rw [phasePrepared_stack, stepStack, Nat.zero_max, Nat.zero_max]
+  have finalStack : FrameStack.armStack
+      (VG.Impl.Ffdh.Arm.ParameterCandidate.limitedFinal name body) = FrameStack.armStack body := by
+    change max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.shapeP)
+      (max (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.testLimited false name body))
+        (max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.result) 0)) = _
+    rw [shapeP_stack, limitedStack false, result_stack]
+    simp only [Nat.zero_max, Nat.max_zero]
+  have afterQStack : FrameStack.armStack
+      (VG.Impl.Ffdh.Arm.ParameterCandidate.afterScreenedQ name body) = FrameStack.armStack body := by
     change max (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.test true name body))
-      (max 0 (max (max (max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.shapeP)
-        (max (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.test false name body))
-          (max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.result) 0)))
+      (max 0 (max (max (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.limitedFinal name body))
         (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.result)) 0)) = _
-    rw [testStack true, testStack false, shapeP_stack, result_stack]
+    rw [testStack true, finalStack, result_stack]
+    simp only [Nat.zero_max, Nat.max_zero, Nat.max_self]
+  have qStack : FrameStack.armStack
+      (VG.Impl.Ffdh.Arm.ParameterCandidate.screenedQ name body) = FrameStack.armStack body := by
+    change max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.halveQ)
+      (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.afterScreenedQ name body)) = _
+    rw [halveQ_stack, afterQStack, Nat.zero_max]
+  have testsStack : FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.tests name body) = FrameStack.armStack body := by
+    change max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.shapeP)
+      (max (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.testLimited true name body))
+        (max 0 (max (max (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.screenedQ name body))
+          (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.result)) 0))) = _
+    rw [shapeP_stack, limitedStack true, qStack, result_stack]
     simp only [Nat.zero_max, Nat.max_zero, Nat.max_self]
   have screenQStack : FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.screenQ name body) = FrameStack.armStack body := by
     change max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.halveQ)

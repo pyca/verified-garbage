@@ -35,11 +35,11 @@ private theorem table_after_output {s t : State} {p : CandidateParams}
       exact p.outputScratch.symm) (by decide)
   exact (congrArg BitVec.toNat equal).trans (table i hi)
 
-theorem candidateHalve_ok {s : State} {p : CandidateParams} {consumed : Nat}
-    (h : CandidateContext p consumed s) (table : TableData p.base p.length s.mem)
+theorem candidateHalveValue_ok {s : State} {p : CandidateParams} {consumed : Nat}
+    (h : CandidateContext p consumed s)
     (number : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length) = p.candidate) :
     WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.halveQ s fun t =>
-      CandidateContext p consumed t ∧ TableData p.base p.length t.mem ∧
+      CandidateContext p consumed t ∧
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (State.addr p.out) p.length) = (p.candidate - 1) / 2 ∧
       t.z = decide (((p.candidate - 1) / 2) % 2 = 0) ∧
       Frame [⟨State.addr p.out, p.length⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
@@ -59,7 +59,20 @@ theorem candidateHalve_ok {s : State} {p : CandidateParams} {consumed : Nat}
   have source : Spec.Rsa.os2ip bs = p.candidate := number
   have half : p.candidate / 2 = (p.candidate - 1) / 2 := by have := p.candidate_odd; omega
   rw [source, half] at value zero
-  exact ⟨h.after_output changed rest, table_after_output table changed, value, zero, changed,
+  exact ⟨h.after_output changed rest, value, zero, changed,
     rest.mono (by simp [roundClobbers])⟩
+
+
+theorem candidateHalve_ok {s : State} {p : CandidateParams} {consumed : Nat}
+    (h : CandidateContext p consumed s) (table : TableData p.base p.length s.mem)
+    (number : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length) = p.candidate) :
+    WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.halveQ s fun t =>
+      CandidateContext p consumed t ∧ TableData p.base p.length t.mem ∧
+      Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (State.addr p.out) p.length) = (p.candidate - 1) / 2 ∧
+      t.z = decide (((p.candidate - 1) / 2) % 2 = 0) ∧
+      Frame [⟨State.addr p.out, p.length⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+  refine WP.mono (candidateHalveValue_ok h number) ?_
+  rintro t ⟨context, value, zero, changed, rest⟩
+  exact ⟨context, table_after_output table changed, value, zero, changed, rest⟩
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

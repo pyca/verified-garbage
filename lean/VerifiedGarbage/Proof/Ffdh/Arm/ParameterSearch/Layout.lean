@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Bounds
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Spec.Ffdh.ScreenedContract
 
 /-! Normalize the existing public signature's memory layout without changing its separation requirements. -/
 
@@ -29,8 +30,8 @@ structure SearchLayout (p : SearchParams) (s : State) : Prop where
   stackSeparate : ∀ r ∈ writeRegions p ++ readRegions p s.sp, (FrameStack.belowA s.sp 232).Disjoint r
 
 theorem searchLayout {p : SearchParams} {s : State}
-    (pre : (Spec.Ffdh.parameterSearchContract abi 232).pre s) (args : SearchAbi p s) : SearchLayout p s := by
-  sig_pre [Spec.Ffdh.parameterSearchContract, Spec.Ffdh.parameterSearchSig,
+    (pre : (Spec.Ffdh.screenedParameterSearchContract abi 232).pre s) (args : SearchAbi p s) : SearchLayout p s := by
+  sig_pre [Spec.Ffdh.screenedParameterSearchContract, Spec.Ffdh.parameterSearchSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
   obtain ⟨stackFit, argFit, rd, wr, _, _, _, _, _, _, _, _, _, _, _, _, _, controlArgs,
     stackOut, stackUsed, stackTape, stackScratch, stackControl, stackArgs, _⟩ := pre

@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Spec.Ffdh.ScreenedContract
 
 /-! Instantiate all candidate bounds from the public parameter-candidate contract. -/
 
@@ -26,9 +27,9 @@ structure CandidateAbi (p : CandidateParams) (s : State) : Prop where
   capacity : stackArg s 4 = BitVec.ofNat 32 p.capacity
   bytes : Spec.Rsa.bytesAt s.mem (State.addr p.tape) p.bytes.length = p.bytes
 
-theorem candidatePublic (s : State) (pre : (Spec.Ffdh.parameterCandidateContract abi 184).pre s) :
+theorem candidatePublic (s : State) (pre : (Spec.Ffdh.screenedParameterCandidateContract abi 184).pre s) :
     ∃ p, CandidateAbi p s := by
-  sig_pre [Spec.Ffdh.parameterCandidateContract, Spec.Ffdh.parameterCandidateSig,
+  sig_pre [Spec.Ffdh.screenedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
   obtain ⟨_, _, _, _, outUsed, outTape, outScratch, _, usedTape, usedScratch, _, tapeScratch, _,
     _, _, _, _, _, outFit, usedFit, tapeFit, scratchFit, lower, upper, width, generator, space⟩ := pre

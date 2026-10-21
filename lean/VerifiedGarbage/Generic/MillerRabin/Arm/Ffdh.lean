@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 public import VerifiedGarbage.Spec.Ffdh.GenerationContract
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Verified
+public import VerifiedGarbage.Spec.Ffdh.ScreenedContract
 
 /-! Emit complete native FFDH parameter generation for every shared ARMv7 Miller–Rabin backend. -/
 
@@ -14,7 +15,7 @@ open VG
 
 def artifacts (v : Proof.MillerRabin.Arm.RoundImpl) : List Artifact :=
   let b := Proof.Ffdh.Arm.parameterBackend v
-  [Spec.Ffdh.parameterCandidateApi.artifact VG.Arm.target {
+  [Spec.Ffdh.screenedParameterCandidateApi.artifact VG.Arm.target {
     suffix := b.suffix
     features := b.features
     stack := 184
@@ -24,7 +25,7 @@ def artifacts (v : Proof.MillerRabin.Arm.RoundImpl) : List Artifact :=
       sieve, q/p preparation, witness rejection sampling and entropy accounting run in \
       verified code. Both primality tests call the selected shared RSA four-bit-window \
       Miller–Rabin round. Caller arithmetic uses the same baseline or UMAAL variant."] },
-   Spec.Ffdh.parameterSearchApi.artifact VG.Arm.target {
+   Spec.Ffdh.screenedParameterSearchApi.artifact VG.Arm.target {
     suffix := b.suffix
     features := b.features
     stack := 232

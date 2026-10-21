@@ -314,13 +314,32 @@ def phaseRun (name : String) (body : Prog isa) : Prog isa := .seq phasePrepared 
 
 def test (q : Bool) (name : String) (body : Prog isa) : Prog isa := .seq (.block (phaseHead q)) (phaseRun name body)
 
+/-- Limit p's first phase to one witness, or finish its remaining witnesses. -/
+def phaseLimit (first : Bool) : List Instr :=
+  (if first then [.mov .r1 (.imm 1)] else [.ldrSp .r1 52, .dp .sub .r1 .r1 (.imm 1)]) ++ save .r1 52
+
+def testLimited (first : Bool) (name : String) (body : Prog isa) : Prog isa :=
+  .seq (.block (phaseHead false ++ phaseLimit first)) (phaseRun name body)
+
 def result : Prog isa := seqs [
   .block [.cmp .r3 (.imm 0)], .ite .eq finNone
     (seqs [.block [.cmp .r3 (.imm 1)], .ite .eq finAccepted finRejected])]
 
-def tests (name : String) (body : Prog isa) : Prog isa := seqs [
+def limitedFinal (name : String) (body : Prog isa) : Prog isa :=
+  seqs [shapeP, testLimited false name body, result]
+
+def afterScreenedQ (name : String) (body : Prog isa) : Prog isa := seqs [
   test true name body, .block [.cmp .r3 (.imm 1)],
-  .ite .eq (seqs [shapeP, test false name body, result]) result]
+  .ite .eq (limitedFinal name body) result]
+
+def screenedQ (name : String) (body : Prog isa) : Prog isa :=
+  .seq halveQ (afterScreenedQ name body)
+
+def screenedTests (name : String) (body : Prog isa) : Prog isa := seqs [
+  shapeP, testLimited true name body, .block [.cmp .r3 (.imm 1)],
+  .ite .eq (screenedQ name body) result]
+
+def tests (name : String) (body : Prog isa) : Prog isa := screenedTests name body
 
 def screenQ (name : String) (body : Prog isa) : Prog isa := seqs [halveQ,
   .ite .eq finRejected (seqs [sieve, .ite .eq (tests name body) finRejected])]

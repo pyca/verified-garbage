@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Spec.Ffdh.ScreenedContract
 
 /-! Read all search parameters and persistent policy from the existing public ARMv7 signature. -/
 
@@ -22,9 +23,9 @@ structure SearchAbi (p : SearchParams) (s : State) : Prop extends
   widthPolicy : s.mem.readW (off (State.addr p.control) 8) 64 = BitVec.ofNat 64 p.c.length
   entropyPolicy : s.mem.readW (off (State.addr p.control) 16) 64 = BitVec.ofNat 64 (Spec.Ffdh.parameterEntropy p.c.bits)
 
-theorem searchPublic (s : State) (pre : (Spec.Ffdh.parameterSearchContract abi 232).pre s) :
+theorem searchPublic (s : State) (pre : (Spec.Ffdh.screenedParameterSearchContract abi 232).pre s) :
     ∃ p, SearchAbi p s := by
-  sig_pre [Spec.Ffdh.parameterSearchContract, Spec.Ffdh.parameterSearchSig,
+  sig_pre [Spec.Ffdh.screenedParameterSearchContract, Spec.Ffdh.parameterSearchSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
   obtain ⟨_, _, _, _, outUsed, outTape, outScratch, outControl, _, usedTape, usedScratch, usedControl, _,
     tapeScratch, tapeControl, scratchControl, _, _, _, _, _, _, _, _,

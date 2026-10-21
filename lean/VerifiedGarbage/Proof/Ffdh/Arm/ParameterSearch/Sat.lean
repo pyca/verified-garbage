@@ -10,6 +10,7 @@ import Mathlib.Util.CompileInductive
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ffdh.GenerationContract
 meta import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Spec.Ffdh.ScreenedContract
 
 /-! The unchanged public search contract admits a concrete ARMv7 call. -/
 
@@ -30,8 +31,8 @@ private def searchSat : State where
   rd := [⟨0x2000, 0⟩, ⟨0x8000, 24⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x1100, 8⟩, ⟨0x3000, 8448⟩, ⟨0x6000, 128⟩]
 
-theorem search_sat : ∃ s, (Spec.Ffdh.parameterSearchContract abi 232).pre s := by
-  sig_implies_sat [Spec.Ffdh.parameterSearchContract, Spec.Ffdh.parameterSearchSig,
+theorem search_sat : ∃ s, (Spec.Ffdh.screenedParameterSearchContract abi 232).pre s := by
+  sig_implies_sat [Spec.Ffdh.screenedParameterSearchContract, Spec.Ffdh.parameterSearchSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr]
     [searchSat, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.scratchWords,
       Spec.Ffdh.parameterAttempts, Spec.Ffdh.parameterEntropy] using searchSat

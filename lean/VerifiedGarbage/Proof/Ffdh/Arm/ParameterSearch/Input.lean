@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Public
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.PushedArguments
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.PushMemory
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Spec.Ffdh.ScreenedContract
 
 /-! The unchanged public signature provides all inputs for the verified native search function. -/
 
@@ -13,7 +14,7 @@ namespace VG.Proof.Ffdh.Arm.ParameterSearch
 open VG VG.Arm VG.Proof.Bignum.Arm
 
 theorem searchInput {p : SearchParams} {s : State}
-    (pre : (Spec.Ffdh.parameterSearchContract abi 232).pre s) (args : SearchAbi p s) : FunctionInput p s := by
+    (pre : (Spec.Ffdh.screenedParameterSearchContract abi 232).pre s) (args : SearchAbi p s) : FunctionInput p s := by
   have layout := searchLayout pre args
   have fit := layout.stackFits
   have savedSub : (⟨State.addr (bodyState s).sp, 24⟩ : Region).Sub (FrameStack.belowA s.sp 232) :=

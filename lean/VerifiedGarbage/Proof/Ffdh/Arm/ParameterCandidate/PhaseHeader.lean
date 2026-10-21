@@ -15,7 +15,7 @@ public import VerifiedGarbage.TCB.Arm.Isa
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont
 
-private theorem local_store_word (m : Mem) (sp : BitVec 32) {d offset : Nat}
+theorem phaseStore_word (m : Mem) (sp : BitVec 32) {d offset : Nat}
     (nowrap : sp.toNat + 72 ≤ 2 ^ 32) (fit : d + 4 ≤ 72) (offsetFit : offset + 4 ≤ 72)
     (separate : d = offset ∨ d + 4 ≤ offset ∨ offset + 4 ≤ d) (value : BitVec 32) :
     (m.writeW (State.addr (sp + BitVec.ofNat 32 offset)) value).readW
@@ -39,10 +39,10 @@ theorem phaseMemory_word {s : State} {q : Bool} {bits d : Nat}
       else if d = 44 then BitVec.ofNat 32 (phaseBits q bits)
       else s.mem.readW (State.addr (s.sp + BitVec.ofNat 32 d)) 32 := by
   unfold phaseMemory
-  rw [local_store_word _ _ nowrap fit (by decide : 56 + 4 ≤ 72) (by omega)]
-  rw [local_store_word _ _ nowrap fit (by decide : 52 + 4 ≤ 72) (by omega)]
-  rw [local_store_word _ _ nowrap fit (by decide : 48 + 4 ≤ 72) (by omega)]
-  rw [local_store_word _ _ nowrap fit (by decide : 44 + 4 ≤ 72) (by omega)]
+  rw [phaseStore_word _ _ nowrap fit (by decide : 56 + 4 ≤ 72) (by omega)]
+  rw [phaseStore_word _ _ nowrap fit (by decide : 52 + 4 ≤ 72) (by omega)]
+  rw [phaseStore_word _ _ nowrap fit (by decide : 48 + 4 ≤ 72) (by omega)]
+  rw [phaseStore_word _ _ nowrap fit (by decide : 44 + 4 ≤ 72) (by omega)]
 
 theorem phaseMemory_frame {s : State} (q : Bool) (bits : Nat) (nowrap : s.sp.toNat + 72 ≤ 2 ^ 32) :
     Frame [⟨State.addr (s.sp + 44#32), 16⟩] s.mem (phaseMemory s q bits) := by

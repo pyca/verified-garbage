@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Spec.Ffdh.ScreenedContract
 
 /-! The nested native candidate satisfies the existing public FFDH signature's precondition. -/
 
@@ -20,7 +21,7 @@ open VG VG.Arm
 theorem call_pre {p : SearchParams} {used : Nat} {s : State} {m : Mem}
     (facts : CallFacts p used s.sp) (context : ArgumentContext p used s)
     (memory : s.mem = callMem p used m s.sp) (room : used + p.c.length ≤ p.c.bytes.length) :
-    (Spec.Ffdh.parameterCandidateContract abi 184).pre (callState p used s) := by
+    (Spec.Ffdh.screenedParameterCandidateContract abi 184).pre (callState p used s) := by
   let q := p.candidateParams used room
   have a0 := call_stackArg (j := 0) facts.argsFits memory (by decide)
   have a1 := call_stackArg (j := 1) facts.argsFits memory (by decide)
@@ -38,7 +39,7 @@ theorem call_pre {p : SearchParams} {used : Nat} {s : State} {m : Mem}
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := p.c.tapeCount; omega)]
   have capNat : (BitVec.ofNat 32 p.c.capacity).toNat = p.c.capacity := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt p.capacity_fits]
-  sig_pre [Spec.Ffdh.parameterCandidateContract, Spec.Ffdh.parameterCandidateSig,
+  sig_pre [Spec.Ffdh.screenedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr]
   simp only [context.out, context.width, context.usedPtr, context.bits,
     a0, a1, a2, a3, a4, widthNat, bitsNat, genNat, tapeNat, capNat]
