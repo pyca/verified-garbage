@@ -47,11 +47,12 @@ def products : List Instr :=
 /-- Combine the two wide products and the small product into three words. -/
 def combine : List Instr := [.adds .x .x11 .x11 .x10, .adc .x .x12 .x12 .x13]
 
-/-- Fold the high word t into t mod 4 and 5*(t/4). -/
+/-- Fold the high word t into t mod 4 and 5*(t/4) = (t & ~3) + (t >> 2), whose
+two terms are computed side by side (one step shorter than `t - (t & 3)`). -/
 def fold : List Instr :=
   [.addImm .x .x4 .x9 0, .addImm .x .x5 .x11 0,
-   .movz .x .x14 3 0, .logic .and .x .x6 .x12 .x14,
-   .sub .x .x13 .x12 .x6, .lsr .x .x12 .x12 2, .add .x .x13 .x13 .x12]
+   .movz .x .x14 3 0, .bicRor .x .x13 .x12 .x14 0, .logic .and .x .x6 .x12 .x14,
+   .lsr .x .x12 .x12 2, .add .x .x13 .x13 .x12]
 
 def addLow : List Instr :=
   [.movz .x .x14 0 0, .adds .x .x4 .x4 .x13, .adcs .x .x5 .x5 .x14,
