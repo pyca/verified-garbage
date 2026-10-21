@@ -26,10 +26,11 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_neon(key: *const [u8; 
     core::arch::naked_asm!(
         r"sub sp, sp, #768
 add x7, sp, #0
-sub x9, x5, #64
-lsr x9, x9, #9
-lsr x10, x5, #9
+sub x9, x5, #1
+sub x10, x5, #64
 orr x9, x9, x10
+orr x9, x9, x5
+lsr x9, x9, #9
 cbz x9, 20f
 str x22, [x7, #584]
 str x23, [x7, #592]
@@ -6286,10 +6287,11 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_neon(key: *const [u8; 
     core::arch::naked_asm!(
         r"sub sp, sp, #768
 add x7, sp, #0
-sub x9, x5, #64
-lsr x9, x9, #9
-lsr x10, x5, #9
+sub x9, x5, #1
+sub x10, x5, #64
 orr x9, x9, x10
+orr x9, x9, x5
+lsr x9, x9, #9
 cbz x9, 20f
 str x22, [x7, #584]
 str x23, [x7, #592]
@@ -10897,10 +10899,11 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], 
     core::arch::naked_asm!(
         r"sub sp, sp, #768
 add x7, sp, #0
-sub x9, x5, #64
-lsr x9, x9, #9
-lsr x10, x5, #9
+sub x9, x5, #1
+sub x10, x5, #64
 orr x9, x9, x10
+orr x9, x9, x5
+lsr x9, x9, #9
 cbz x9, 20f
 str x22, [x7, #584]
 str x23, [x7, #592]
@@ -13834,10 +13837,11 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], 
     core::arch::naked_asm!(
         r"sub sp, sp, #768
 add x7, sp, #0
-sub x9, x5, #64
-lsr x9, x9, #9
-lsr x10, x5, #9
+sub x9, x5, #1
+sub x10, x5, #64
 orr x9, x9, x10
+orr x9, x9, x5
+lsr x9, x9, #9
 cbz x9, 20f
 str x22, [x7, #584]
 str x23, [x7, #592]
@@ -16909,9 +16913,10 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_sve2(key: *const [u8; 
 sub sp, sp, #768
 add x7, sp, #0
 sub x9, x5, #1
-lsr x9, x9, #9
-lsr x10, x5, #9
+sub x10, x5, #1
 orr x9, x9, x10
+orr x9, x9, x5
+lsr x9, x9, #9
 cbz x9, 20f
 str x22, [x7, #584]
 str x23, [x7, #592]
@@ -22359,9 +22364,10 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_sve2(key: *const [u8; 
 sub sp, sp, #768
 add x7, sp, #0
 sub x9, x5, #1
-lsr x9, x9, #9
-lsr x10, x5, #9
+sub x10, x5, #1
 orr x9, x9, x10
+orr x9, x9, x5
+lsr x9, x9, #9
 cbz x9, 20f
 str x22, [x7, #584]
 str x23, [x7, #592]

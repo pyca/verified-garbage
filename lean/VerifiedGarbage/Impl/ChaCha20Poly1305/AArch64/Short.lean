@@ -45,12 +45,16 @@ keystream, and 64 without, where it is not. -/
 def lo (sve : Bool) : Nat := if sve then 1 else 64
 
 /-- `x9 = 0` iff `lo sve ≤ len ≤ 511`, the lengths that start with this code's
-prologue (`ShortRest.lean` takes those above 256): `(len - lo) >> 9` is zero iff
-`lo ≤ len < lo + 512` (it wraps around below), and `len >> 9` iff `len ≤ 511`.
-Both instances run the same four instructions, so the code after them is at
-the same addresses. -/
+prologue (`ShortRest.lean` takes those above 256): `(len - 1) | (len - lo) | len`
+is below 512 iff each of them is, and each subtraction wraps around below.
+`len - 1` adds nothing to `len - lo` but keeps the check five instructions
+long, as it was when it took up to 256 bytes, so the stitched code after it is
+at the same addresses: four instructions put the seal's loops four bytes
+earlier, 1.0-2.8% slower at 4 to 16 KiB, as five of different lengths in the two
+instances put the SVE2 instance's loop 1.2-1.6% slower. -/
 def check (sve : Bool) : List Instr :=
-  [.subImm .x .x9 .x5 (lo sve), .lsr .x .x9 .x9 9, .lsr .x .x10 .x5 9, .logic .orr .x .x9 .x9 .x10]
+  [.subImm .x .x9 .x5 1, .subImm .x .x10 .x5 (lo sve), .logic .orr .x .x9 .x9 .x10,
+    .logic .orr .x .x9 .x9 .x5, .lsr .x .x9 .x9 9]
 
 /-- The ChaCha20 state for counter 0, at `x21`. -/
 def initState0 : List Instr := (List.range 16).flatMap (stWAt 0)

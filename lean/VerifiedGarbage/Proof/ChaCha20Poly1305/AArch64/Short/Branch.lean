@@ -143,7 +143,7 @@ theorem MainO.agree {s₀ s₁ s : State} (h : Agree s₀ s₁) (hm : MainO s₁
 
 /-- The value `check sve` leaves in `x9`. -/
 abbrev checkVal (sve : Bool) (x : BitVec 64) : BitVec 64 :=
-  ((x - BitVec.ofNat 64 (lo sve)) >>> 9) ||| (x >>> 9)
+  (((x - BitVec.ofNat 64 1) ||| (x - BitVec.ofNat 64 (lo sve))) ||| x) >>> 9
 
 /-- `x9`, zero iff `lo sve ≤ len ≤ 511`. -/
 theorem check_ok (sve : Bool) (s₀ : State) :
@@ -151,13 +151,13 @@ theorem check_ok (sve : Bool) (s₀ : State) :
   have hlo : lo sve < 4096 := by cases sve <;> decide
   have h : WP isa (.block (check sve)) s₀ fun s₁ => (∀ r, r ≠ .x9 → r ≠ .x10 → s₁.gpr r = s₀.gpr r) ∧
       s₁.gpr .x9 = checkVal sve (s₀.gpr .x5) ∧ s₁.mem = s₀.mem ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr :=
-    wp_subImm hlo fun s₁ u₁ => wp_lsr (by decide) fun s₂ u₂ => wp_lsr (by decide) fun s₃ u₃ =>
-      wp_orr fun s₄ u₄ => WP.block_nil
-      ⟨fun r h9 h10 => by rw [u₄.other r h9, u₃.other r h10, u₂.other r h9, u₁.other r h9],
-        by rw [u₄.gpr, u₃.gpr, u₃.other _ (by decide), u₂.gpr, u₁.gpr, u₂.other _ (by decide),
-          u₁.other _ (by decide)],
-        by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem], by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd],
-        by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]⟩
+    wp_subImm (by decide) fun s₁ u₁ => wp_subImm hlo fun s₂ u₂ => wp_orr fun s₃ u₃ =>
+      wp_orr fun s₄ u₄ => wp_lsr (by decide) fun s₅ u₅ => WP.block_nil
+      ⟨fun r h9 h10 => by rw [u₅.other r h9, u₄.other r h9, u₃.other r h9, u₂.other r h10, u₁.other r h9],
+        by rw [u₅.gpr, u₄.gpr, u₃.gpr, u₃.other .x5 (by decide), u₂.gpr, u₂.other .x9 (by decide),
+          u₂.other .x5 (by decide), u₁.gpr, u₁.other .x5 (by decide)],
+        by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem], by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd],
+        by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]⟩
   exact WP.mono (WP.preservedV (WP.withSp h) (by cases sve <;> lit_decide))
     fun s₁ ⟨⟨⟨g, x9, m, rd, wr⟩, sp⟩, v⟩ => ⟨⟨g, m, v, sp, rd, wr⟩, x9⟩
 
@@ -173,8 +173,9 @@ theorem checkVal_eq (sve : Bool) {L : Nat} (h : L < 2 ^ 64) :
   congr 1
   apply propext
   cases sve <;>
-  simp only [checkVal, lo, BitVec.toNat_or, Nat.or_eq_zero_iff, BitVec.toNat_ushiftRight, BitVec.toNat_sub,
-    BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Bool.false_eq_true, ite_true, ite_false] <;>
+  simp only [checkVal, lo, BitVec.ushiftRight_or_distrib, BitVec.toNat_or, Nat.or_eq_zero_iff,
+    BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
+    Bool.false_eq_true, ite_true, ite_false] <;>
   omega
 
 /-- The branch: to the code with `Short.lean`'s prologue iff `lo sve ≤ len ≤ 511`. -/
