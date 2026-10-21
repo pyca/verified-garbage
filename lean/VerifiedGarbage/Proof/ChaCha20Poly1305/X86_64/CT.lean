@@ -3119,28 +3119,62 @@ theorem macPad_ok (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State} (hp : APre e 
       bytesAt s.mem (P + BitVec.ofNat 64 (16 * (len / 16))) (len % 16) := by
     rw [← VG.Proof.Poly1305.bytesAt_add, Nat.div_add_mod]
   have hlen : (bytesAt s.mem P len).length = len := VG.Proof.Poly1305.length_bytesAt _ _ _
-  refine WP.ite (decide (len % 16 = 0)) (by simp only [eval, zf₃]) (fun h => ?_) (fun h => ?_)
-  · have h0 : len % 16 = 0 := by simpa using h
-    refine WP.block_nil ⟨cs₃, by rw [rd₃, rd₂], by rw [wr₃, wr₂], by rw [m₃]; exact f₂,
-      by rw [mx₃, mx₂], fun key msg hr => ?_⟩
-    rw [m₃]
+  have none_ok : len % 16 = 0 → ∀ t : State, (∀ q, q ≠ .rax → t.gpr q = s₃.gpr q) → t.rd = s₃.rd →
+      t.wr = s₃.wr → t.mem = s₃.mem → t.mxcsr.extractLsb' 6 10 = s₃.mxcsr.extractLsb' 6 10 →
+      (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Frame (macR s₀) s.mem t.mem ∧ t.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 ∧
+      ∀ key msg, Repr s.mem (off (cx s₀) 448) key msg →
+        Repr t.mem (off (cx s₀) 448) key (msg ++ (bytesAt s.mem P len ++ pad16 (bytesAt s.mem P len))) := by
+    intro h0 t g₄ rd₄ wr₄ m₄ mx₄
+    refine ⟨fun r h => by rw [g₄ r (calleeSaved_ne h).1, cs₃ r h], by rw [rd₄, rd₃, rd₂],
+      by rw [wr₄, wr₃, wr₂], by rw [m₄, m₃]; exact f₂, by rw [mx₄, mx₃, mx₂], fun key msg hr => ?_⟩
+    rw [m₄, m₃]
     have := repr₂ key msg hr
     rwa [show pad16 (bytesAt s.mem P len) = [] by simp [pad16, hlen, h0], List.append_nil,
       ← show 16 * (len / 16) = len by omega_using [h0]]
-  · have h0 : len % 16 ≠ 0 := by simpa using h
-    refine WP.mono (macRest_ok true b (k := 1) (.inl rfl) hp hr hs h0
-      (by rw [cs₃ _ (by simp [calleeSaved]), hr15])
-      (by rw [cs₃ _ (by simp [calleeSaved]), hrsp]) (by rw [rd₃, rd₂, hrd]) (by rw [wr₃, wr₂, hwr])
-      (by rw [cs₃ p hpc, hP]) (by rw [cs₃ n hnc, hn]) rdx₃) fun s₅ ⟨cs₅, rd₅, wr₅, f₅, mx₅, repr₅⟩ => ?_
-    refine ⟨fun r h => by rw [cs₅ r h, cs₃ r h], by rw [rd₅, rd₃, rd₂], by rw [wr₅, wr₃, wr₂],
-      f₂.trans (by rw [← m₃]; exact f₅), by rw [mx₅, mx₃, mx₂], fun key msg hr => ?_⟩
-    have := repr₅ key _ (by rw [m₃]; exact repr₂ key msg hr)
-    rw [m₃, bytesAt_frame f₂ (fun r hr => (hdisjP r hr).sub_left
+  have tail_ok : len % 16 ≠ 0 → ∀ (c : Bool) (t : State), (∀ q, q ≠ .rax → t.gpr q = s₃.gpr q) →
+      t.rd = s₃.rd → t.wr = s₃.wr → t.mem = s₃.mem →
+      t.mxcsr.extractLsb' 6 10 = s₃.mxcsr.extractLsb' 6 10 →
+      WP isa (.seq (.block (tailPtr p n)) (padRest c b 1)) t fun s' =>
+        (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+        Frame (macR s₀) s.mem s'.mem ∧ s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 ∧
+        ∀ key msg, Repr s.mem (off (cx s₀) 448) key msg →
+          Repr s'.mem (off (cx s₀) 448) key (msg ++ (bytesAt s.mem P len ++ pad16 (bytesAt s.mem P len))) := by
+    intro h0 c t g₄ rd₄ wr₄ m₄ mx₄
+    have cs₄ : ∀ r ∈ calleeSaved, t.gpr r = s.gpr r := fun r h => by
+      rw [g₄ r (calleeSaved_ne h).1, cs₃ r h]
+    refine WP.mono (macRest_ok c b (k := 1) (.inl rfl) hp hr hs h0
+      (by rw [cs₄ _ (by simp [calleeSaved]), hr15])
+      (by rw [cs₄ _ (by simp [calleeSaved]), hrsp]) (by rw [rd₄, rd₃, rd₂, hrd])
+      (by rw [wr₄, wr₃, wr₂, hwr]) (by rw [cs₄ p hpc, hP]) (by rw [cs₄ n hnc, hn])
+      (by rw [g₄ _ (by decide), rdx₃])) fun s₅ ⟨cs₅, rd₅, wr₅, f₅, mx₅, repr₅⟩ => ?_
+    refine ⟨fun r h => by rw [cs₅ r h, cs₄ r h], by rw [rd₅, rd₄, rd₃, rd₂],
+      by rw [wr₅, wr₄, wr₃, wr₂], f₂.trans (by rw [← m₃, ← m₄]; exact f₅),
+      by rw [mx₅, mx₄, mx₃, mx₂], fun key msg hr => ?_⟩
+    have := repr₅ key _ (by rw [m₄, m₃]; exact repr₂ key msg hr)
+    rw [m₄, m₃, bytesAt_frame f₂ (fun r hr => (hdisjP r hr).sub_left
       (sub_off P (a := 16 * (len / 16)) (by lit_omega))) (by lit_omega)] at this
     rw [show pad16 (bytesAt s.mem P len) = List.replicate (16 - len % 16) 0 by simp [pad16, hlen, h0],
       x_eq]
     simpa only [List.append_assoc, show 16 * 1 - 16 = 0 from rfl, bytesAt, List.range_zero, List.map_nil,
       List.append_nil] using this
+  cases dataCopy b
+  · dsimp only [padSite, cond]
+    rw [WP.iteCold_iff]
+    refine WP.ite (decide (len % 16 ≠ 0)) (by simp only [eval, zf₃]; cases len % 16 <;> rfl)
+      (fun hz => ?_) (fun hz => ?_)
+    · have h0 : len % 16 ≠ 0 := by simpa using hz
+      refine WP.seq (WP.ite (decide (len % 16 ≠ 0)) (by simp only [eval, zf₃]; cases len % 16 <;> rfl)
+        (fun _ => WP.block_nil ?_) (fun h => absurd h (by simp [h0])))
+      exact tail_ok h0 false s₃ (fun _ _ => rfl) rfl rfl rfl rfl
+    · have h0 : len % 16 = 0 := by simpa using hz
+      refine WP.ite (decide (len % 16 = 0)) (by simp only [eval, zf₃]) (fun _ => ?_) (fun h => ?_)
+      · exact WP.block_nil (none_ok h0 s₃ (fun _ _ => rfl) rfl rfl rfl rfl)
+      · exact absurd h (by simp [h0])
+  · dsimp only [padSite, cond]
+    refine WP.ite (decide (len % 16 = 0)) (by simp only [eval, zf₃]) (fun hz => ?_) (fun hz => ?_)
+    · exact WP.block_nil (none_ok (by simpa using hz) s₃ (fun _ _ => rfl) rfl rfl rfl rfl)
+    · exact tail_ok (by simpa using hz) true s₃ (fun _ _ => rfl) rfl rfl rfl rfl
 
 end VG.Proof.ChaCha20Poly1305.X86_64
 
