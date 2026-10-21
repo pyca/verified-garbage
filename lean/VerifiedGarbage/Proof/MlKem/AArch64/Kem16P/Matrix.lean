@@ -396,4 +396,134 @@ theorem singleton_stepP {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L s�
       · exact last_scratch hp he r hr
       · rw [List.mem_singleton.mp hr, bR]; exact scratch_sub hp (by lom)
 
+/-! ## The matrix -/
+
+theorem filter_lt_range (h : Nat) : ∀ n, (List.range n).filter (· < h) = List.range (min h n)
+  | 0 => by simp
+  | n + 1 => by
+    rw [List.range_succ, List.filter_append, filter_lt_range h n]
+    by_cases hn : n < h
+    · rw [show min h (n + 1) = min h n + 1 by omega, List.range_succ, show min h n = n by omega]
+      simp [hn]
+    · rw [show min h (n + 1) = min h n by omega]
+      simp [hn]
+
+theorem filter_ge_range (h : Nat) : ∀ n, (List.range n).filter (h ≤ ·) = (List.range (n - h)).map (· + h)
+  | 0 => by simp
+  | n + 1 => by
+    rw [List.range_succ, List.filter_append, filter_ge_range h n]
+    by_cases hn : h ≤ n
+    · rw [show n + 1 - h = n - h + 1 by omega, List.range_succ, List.map_append]
+      simp [hn, show n - h + h = n by omega]
+    · rw [show n + 1 - h = n - h by omega]
+      simp [hn]
+
+/-- The PRF outputs the matrix leaves: `placed` if the singleton computes its three. -/
+def finalCount (P : KemLay) (hp : Nat) : Nat :=
+  if Impl.MlKem.AArch64.Kem16P.single P = true ∧
+      Impl.MlKem.AArch64.Kem16P.placed P hp ≥ 3 * (Impl.MlKem.AArch64.Kem16P.pairs P - hp) + 3 then
+    3 * (Impl.MlKem.AArch64.Kem16P.pairs P - hp) + 3
+  else min (Impl.MlKem.AArch64.Kem16P.placed P hp) (3 * (Impl.MlKem.AArch64.Kem16P.pairs P - hp))
+
+theorem placed_le {hp : Nat} (hw : P.Wf) : Impl.MlKem.AArch64.Kem16P.placed P hp ≤ 9 := by
+  have := hw.facts
+  simp only [Impl.MlKem.AArch64.Kem16P.placed, Impl.MlKem.AArch64.Kem16P.prfs]
+  omega
+
+/-- **The matrix**: the pairs hashing the message, `between` (`G`), whose
+outcome `Gp` the rest keeps, then the pairs and the singleton computing PRF
+outputs. -/
+theorem matrixP_ok {M : Hybrid.Msg} {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀)
+    (hM : Hybrid.MsgOk P L M s₀) (ho : Hybrid.HashOk P M.S) {between : Prog isa} {Gp : Mem → Prop}
+    {mA : Mem} {ρ E : List Byte}
+    (h : Hybrid.HInvW true P L M s₀ mA ρ E 0 0 s) (tb : MT3 P L s₀ s)
+    (hb : ∀ u, Hybrid.HInvW true P L M s₀ mA ρ E (2 * Impl.MlKem.AArch64.Hybrid.hashPairs M.S)
+        (Impl.MlKem.AArch64.Hybrid.hashPairs M.S) u → MT3 P L s₀ u →
+      WP isa between u fun v => Gp v.mem ∧
+        PInvW true P L s₀ v.mem ρ (2 * Impl.MlKem.AArch64.Hybrid.hashPairs M.S) 0 v ∧ MT3 P L s₀ v) :
+    WP isa (Impl.MlKem.AArch64.Kem16P.matrixP P M.S between) s fun t => ∃ mG, Gp mG ∧
+      PInvW true P L s₀ mG ρ (P.k * P.k) (finalCount P (Impl.MlKem.AArch64.Hybrid.hashPairs M.S)) t ∧
+      MT3 P L s₀ t := by
+  have hw := hp.wf
+  have hk' : 0 < P.k := hw.facts.1
+  have hn : 0 < P.k * P.k := Nat.mul_pos hk' hk'
+  have hP := ho.pairs
+  have h9 := placed_le (P := P) (hp := Impl.MlKem.AArch64.Hybrid.hashPairs M.S) hw
+  generalize hH : Impl.MlKem.AArch64.Hybrid.hashPairs M.S = H at hP h9 hb ⊢
+  have hpairs : Impl.MlKem.AArch64.Kem16P.pairs P = P.k * P.k / 2 := rfl
+  unfold Impl.MlKem.AArch64.Kem16P.matrixP
+  simp only [hH, filter_lt_range, filter_ge_range, List.map_map]
+  rw [show min H (Impl.MlKem.AArch64.Kem16P.pairs P) = H by omega]
+  apply WPs.seqs (by simp)
+  refine WPs.append (WPs.append (WPs.append ?_))
+  -- The pairs hashing the message.
+  refine WPs.mono (WPs.range (I := fun i t => Hybrid.HInvW true P L M s₀ mA ρ E (2 * i) i t ∧ MT3 P L s₀ t)
+    (fun i hi t ht => ?_) ⟨h, tb⟩) fun t ht => ?_
+  · have hb' : 136 * (3 * i + 2) < M.S.len := by
+      have := ho.part; have := ho.three
+      rw [← hH] at hi
+      simp only [Impl.MlKem.AArch64.Hybrid.hashPairs, Impl.MlKem.AArch64.Hybrid.blocks] at hi
+      omega
+    refine WP.mono (Hybrid.paired_step3 hp hk hM (by omega) hb' ht.1 ht.2) fun u hu => ?_
+    rw [show 2 * (i + 1) = 2 * i + 2 by omega]
+    exact hu
+  -- `G`.
+  refine WPs.single (WP.mono (hb t ht.1 ht.2) fun u ⟨gu, pu, mu⟩ => ?_)
+  -- The pairs computing PRF outputs.
+  refine WPs.mono (WPs.range (I := fun j t => PInvW true P L s₀ u.mem ρ (2 * (j + H))
+      (min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * j)) t ∧ MT3 P L s₀ t)
+    (fun j hj t ht => ?_) ⟨by simpa using pu, mu⟩) fun t ht => ?_
+  · have he : 2 * (j + H) + 1 < P.k * P.k := by omega
+    simp only [Function.comp]
+    by_cases hc : Impl.MlKem.AArch64.Kem16P.pairCount P H (j + H) = 0
+    · rw [ite_eq_left hc]
+      have hc' : Impl.MlKem.AArch64.Kem16P.placed P H ≤ 3 * j := by
+        simp only [Impl.MlKem.AArch64.Kem16P.pairCount] at hc; omega
+      refine WP.mono (paired_stepQ hp he (by omega) ht.1 ht.2) fun v hv => ?_
+      rw [show 2 * (j + 1 + H) = 2 * (j + H) + 2 by omega,
+        show min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * (j + 1)) =
+          min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * j) by omega]
+      exact hv
+    · rw [ite_eq_right hc]
+      have hc' : 3 * j < Impl.MlKem.AArch64.Kem16P.placed P H := by
+        simp only [Impl.MlKem.AArch64.Kem16P.pairCount] at hc; omega
+      have h0 := ht.1
+      rw [show min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * j) = 3 * (j + H - H) by omega] at h0
+      refine WP.mono (paired_stepP hp hk he (by omega) (by simp only [Impl.MlKem.AArch64.Kem16P.pairCount]; omega)
+        h0 ht.2) fun v hv => ?_
+      rw [show 2 * (j + 1 + H) = 2 * (j + H) + 2 by omega,
+        show min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * (j + 1)) =
+          3 * (j + H - H) + Impl.MlKem.AArch64.Kem16P.pairCount P H (j + H) by
+          simp only [Impl.MlKem.AArch64.Kem16P.pairCount]; omega]
+      exact hv
+  -- The singleton.
+  rw [show Impl.MlKem.AArch64.Kem16P.pairs P - H + H = P.k * P.k / 2 by omega] at ht
+  by_cases hodd : Impl.MlKem.AArch64.Kem16P.single P = true
+  · rw [ite_eq_left hodd]
+    have hodd' : P.k * P.k % 2 = 1 := by
+      simpa [Impl.MlKem.AArch64.Kem16P.single] using hodd
+    have idx : 2 * (P.k * P.k / 2) = P.k * P.k - 1 := by omega
+    rw [idx] at ht
+    apply WPs.single
+    by_cases hl : Impl.MlKem.AArch64.Kem16P.placed P H ≥ 3 * (Impl.MlKem.AArch64.Kem16P.pairs P - H) + 3
+    · rw [ite_eq_left hl]
+      have h0 := ht.1
+      rw [show min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * (Impl.MlKem.AArch64.Kem16P.pairs P - H)) =
+        3 * (Impl.MlKem.AArch64.Kem16P.pairs P - H) by omega] at h0
+      refine WP.mono (singleton_stepP hp hk (by omega) h0 ht.2) fun v hv => ⟨u.mem, gu, ?_, hv.2⟩
+      rw [Nat.sub_add_cancel hn] at hv
+      simpa only [finalCount, hodd, hl, and_self, ite_true] using hv.1
+    · rw [ite_eq_right hl, Paired.lastSample_eq]
+      refine WP.mono (singleton_stepQ hp (by omega : P.k * P.k - 1 < P.k * P.k) (by omega) ht.1 ht.2)
+        fun v hv => ⟨u.mem, gu, ?_, hv.2⟩
+      rw [Nat.sub_add_cancel hn] at hv
+      simpa only [finalCount, hodd, hl, and_false, ite_false, Bool.false_eq_true] using hv.1
+  · rw [ite_eq_right hodd]
+    have hev : P.k * P.k % 2 = 0 := by
+      simp only [Impl.MlKem.AArch64.Kem16P.single, decide_eq_true_eq] at hodd; omega
+    have idx : 2 * (P.k * P.k / 2) = P.k * P.k := by omega
+    rw [idx] at ht
+    refine ⟨u.mem, gu, ?_, ht.2⟩
+    simpa only [finalCount, hodd, Bool.false_eq_true, false_and, ite_false] using ht.1
+
 end VG.Proof.MlKem.AArch64.Kem16P
