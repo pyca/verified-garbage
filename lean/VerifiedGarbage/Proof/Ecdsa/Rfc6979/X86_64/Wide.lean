@@ -225,7 +225,8 @@ theorem kvw_cww : ∀ r ∈ KVW L, ∃ r' ∈ CWW L, Region.Sub r r' := fun r hr
 /-- Two `V`s to a candidate: `V = HMAC_K(V)`, kept above the pointers, then
 `V = HMAC_K(V)` again, its first word after it, and the candidate's `Q`
 bytes shifted right by `sh` bits. -/
-theorem candW_ok (hL : L.Ok) (hLe : L.e = P.e) (hW : P.R.wide = true) {t : State} (hc : Ctx L g m₀ t) :
+theorem candW_ok (hL : L.Ok) (hLe : L.e = P.e) (hW : P.R.wide = true) {t : State} (hc : Ctx L g m₀ t)
+    (hS : SavedK P L t.mem (kOf P L t.mem)) :
     WP isa (cfgOf P).cand t fun u => Ctx L g m₀ u ∧ Frame (CWW L) t.mem u.mem ∧ kOf P L u.mem = kOf P L t.mem ∧
       vOf P L u.mem = P.mac (kOf P L t.mem) (P.mac (kOf P L t.mem) (vOf P L t.mem)) ∧
       Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 312) P.Q =
@@ -237,7 +238,7 @@ theorem candW_ok (hL : L.Ok) (hLe : L.e = P.e) (hW : P.R.wide = true) {t : State
   have hwd : (cfgOf P).wide = true := hW
   have hD' : (cfgOf P).H.D = 64 := hD64
   simp only [Cfg.cand, Cfg.keepV, Cfg.candTop, hwd, ite_true, fV, fKb, hD', Nat.reduceDiv, Nat.reduceAdd]
-  refine WP.seq (WP.mono (hmacV_ok hL hc) fun u₁ ⟨hc₁, hf₁, hk₁, hv₁⟩ => ?_)
+  refine WP.seq (WP.mono (hmacVR_ok hL hc hS) fun u₁ ⟨hc₁, hf₁, hk₁, hv₁, hS₁⟩ => ?_)
   -- `V` above the pointers.
   refine WP.seq (WP.mono (copyF_ok hL hc₁ (src := .rsp) (S := L.B + BitVec.ofNat 64 24) hc₁.rsp (by decide)
     (so := 64) (d := 288) (K := 8) (by omega_arith) (by omega_arith)
@@ -248,7 +249,9 @@ theorem candW_ok (hL : L.Ok) (hLe : L.e = P.e) (hW : P.R.wide = true) {t : State
     simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint _ (by nums) (by nums) (by nums)) (by nums)
   have hv₂ : vOf P L u₂.mem = vOf P L u₁.mem := bytesAt_frame hf₂ (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint _ (by nums) (by nums) (by nums)) (by nums)
-  refine WP.seq (WP.mono (hmacV_ok hL hc₂) fun u₃ ⟨hc₃, hf₃, hk₃, hv₃⟩ => ?_)
+  have hS₂ : SavedK P L u₂.mem (kOf P L u₂.mem) := hk₂ ▸ hS₁.frame hf₂ fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact (hL.stk_scr (by omega_arith) (by omega_arith)).symm
+  refine WP.seq (WP.mono (hmacVR_ok hL hc₂ hS₂) fun u₃ ⟨hc₃, hf₃, hk₃, hv₃, _⟩ => ?_)
   have hb₃ : Spec.Sha256.bytesAt u₃.mem (L.B + BitVec.ofNat 64 312) 64 = vOf P L u₁.mem := by
     rw [bytesAt_frame hf₃ (fun r hr => by
       simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr

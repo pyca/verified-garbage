@@ -71,6 +71,7 @@ structure LoopInv (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (t 
   cnt : cnt L t.mem = BitVec.ofNat 64 (P.I.tries - i)
   fails : ∀ j < i, sigI P L m₀ j = none
   dg : DgOk P L m₀ t.mem
+  saved : SavedK P L t.mem (kOf P L t.mem)
 
 /-- After the loop, at candidate `i`: suitable or the last. -/
 structure Exit (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (t : State) : Prop where
@@ -224,7 +225,8 @@ theorem genT_two (H : Spec.Hmac.HashFunction) (K V : List Byte) :
 
 /-- The candidate: `V = HMAC_K(V)` (twice if `wide`), and `k`, whose number
 is `bits2int` of the candidate, where `core` reads it. -/
-theorem cand_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) :
+theorem cand_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
+    (hS : SavedK P L t.mem (kOf P L t.mem)) :
     WP isa (cfgOf P).cand t fun u => Ctx L g m₀ u ∧ Frame (CW P L) t.mem u.mem ∧ kOf P L u.mem = kOf P L t.mem ∧
       vOf P L u.mem = (Spec.Ecdsa.Rfc6979.genT P.ok.SH.H (kOf P L t.mem) P.nb (vOf P L t.mem)).2 ∧
       Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt u.mem (kArg P L) P.Q) =
@@ -235,9 +237,9 @@ theorem cand_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
     have hB : Spec.Ecdsa.nBits P.R.E.C = 8 * P.Q := by
       have h₁ := (P.R.sizesA hw).2.1; have h₂ := (P.R.sizesA hw).2.2.1; show _ = 8 * P.R.E.C.len; omega
     simp only [RfcHash.nb, CW, hw, Bool.false_eq_true, ite_false, kArg]
-    have hc' : (cfgOf P).cand = (cfgOf P).hmacV := by simp only [Cfg.cand, cfgOf, hw]; rfl
+    have hc' : (cfgOf P).cand = (cfgOf P).hmacVR := by simp only [Cfg.cand, cfgOf, hw]; rfl
     rw [hc', genT_one]
-    refine WP.mono (hmacV_ok hL hc) fun u ⟨hcu, hf, hk', hv⟩ => ⟨hcu, hf, hk', hv, ?_⟩
+    refine WP.mono (hmacVR_ok hL hc hS) fun u ⟨hcu, hf, hk', hv, _⟩ => ⟨hcu, hf, hk', hv, ?_⟩
     rw [Spec.Ecdsa.Rfc6979.bits2int, List.append_nil, hashToInt_takeQ hB (by rw [mac_length]; exact hQD)]
     refine congrArg Spec.Weierstrass.ofBytes ?_
     rw [bytesAt_take _ _ hQD]
@@ -246,7 +248,7 @@ theorem cand_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
     have hl := P.R.nBits_len
     simp only [RfcHash.nb, CW, hw, ite_true, kArg]
     rw [genT_two]
-    refine WP.mono (candW_ok hL hLe hw hc) fun u ⟨hcu, hf, hk', hv, hb⟩ => ⟨hcu, hf, hk', hv, ?_⟩
+    refine WP.mono (candW_ok hL hLe hw hc hS) fun u ⟨hcu, hf, hk', hv, hb⟩ => ⟨hcu, hf, hk', hv, ?_⟩
     obtain ⟨hw9, hQ66, hD64, -⟩ := P.sizesW hw
     rw [hb, Spec.Ecdsa.Rfc6979.bits2int, hashToInt_takeR (R := P.Q) (by show _ ≤ 8 * P.R.E.C.len; omega)
       (by simp only [List.length_append, mac_length, List.length_nil]; omega), List.append_nil,
@@ -312,7 +314,7 @@ theorem corew_apart : ∀ r ∈ CoreW L, DgApart P L r := by
 
 theorem try₁_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : LoopInv P L m₀ i t) :
     WP isa (cfgOf P).cand t fun u => Ctx L g m₀ u ∧ P₁ P L m₀ i u :=
-  WP.mono (cand_ok hL hk hc) fun u₁ ⟨hc₁, hf₁, hk₁, hv₁, hb₁⟩ => ⟨hc₁, hi.lt, hk₁.trans hi.k,
+  WP.mono (cand_ok hL hk hc hi.saved) fun u₁ ⟨hc₁, hf₁, hk₁, hv₁, hb₁⟩ => ⟨hc₁, hi.lt, hk₁.trans hi.k,
     by rw [hv₁, hi.k, hi.v], (cnt_frame hf₁ (cw_cnt hL)).trans hi.cnt, hi.fails,
     hi.dg.frameOf hL hk hf₁ cw_apart, by rw [hb₁, hi.k, hi.v]; rfl⟩
 
@@ -356,10 +358,10 @@ theorem branch_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t
         (isa.eval .ne t' = some true ∧ LoopInv P L m₀ (i + 1) t')) := by
   by_cases hgo : sigI P L m₀ i = none ∧ i + 1 < P.I.tries
   · refine WP.ite true (by rw [hi.dec, decide_eq_true hgo]) (fun _ => ?_) (fun h => absurd h (by decide))
-    refine WP.seq (WP.mono (rekey_ok hL (hok_of hk) hc) fun u₅ ⟨hc₅, hf₅, hk₅, hv₅⟩ => ?_)
+    refine WP.seq (WP.mono (rekey_ok hL (hok_of hk) hc) fun u₅ ⟨hc₅, hf₅, hk₅, hv₅, hS₅⟩ => ?_)
     refine WP.mono (again_ok hL hc₅) fun u₆ ⟨hc₆, hm₆, hz₆⟩ => ⟨hc₆, .inr ⟨by show u₆.zf.map _ = _; rw [hz₆]; rfl, ?_⟩⟩
     have hkv : kvI P L m₀ (i + 1) = stepB P.ok.SH.H P.nb (kvI P L m₀ i).1 (kvI P L m₀ i).2 := rfl
-    refine ⟨hgo.2, ?_, ?_, ?_, fun j hj => ?_, ?_⟩
+    refine ⟨hgo.2, ?_, ?_, ?_, fun j hj => ?_, ?_, by rw [hm₆]; exact hS₅⟩
     · rw [hm₆, hk₅, hi.k, hi.v, hkv]; rfl
     · rw [hm₆, hv₅, hk₅, hi.k, hi.v, hkv]; rfl
     · rw [hm₆, cnt_frame hf₅ (kvw_cnt hL), hi.cnt]
