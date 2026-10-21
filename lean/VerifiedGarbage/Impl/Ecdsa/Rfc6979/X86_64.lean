@@ -105,6 +105,8 @@ def sWork : Nat := 384
 def sMsg : Nat := 2256
 /-- The words of a conversion, if `wide`. -/
 def sSlot : Nat := 2560
+/-- A copy of HMAC's two states just after `init`, for the key `K`. -/
+def sSave : Nat := 3072
 
 /-- What the code needs of a curve and a hash function. -/
 structure Cfg where
@@ -212,16 +214,6 @@ def msg (Q D b : Nat) (full wide : Bool) (ho : Nat := fH) : List Instr :=
       else copyBytes Q .rsi 0 .rdi (sMsg + D + 1) ++ copyBytes Q .rsp ho .rdi (sMsg + D + 1 + Q))
     else [])
 
-/-- `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then `V = HMAC_K(V)` (steps d–e, f–g). -/
-def rekeyFull (b : Nat) : Prog isa :=
-  .seq (.block (msgPtrs c.wide)) (.seq (.block (msg c.len c.H.D b true c.wide c.fHo))
-    (.seq (c.hmac (scr .rdx sMsg) (c.H.D + 2 * c.len + 1) fK) c.hmacV))
-
-/-- `K = HMAC_K(V ‖ 0x00)`, then `V = HMAC_K(V)` (step h.3). -/
-def rekey : Prog isa :=
-  .seq (.block (msgPtrs false)) (.seq (.block (msg c.len c.H.D 0 false false))
-    (.seq (c.hmac (scr .rdx sMsg) (c.H.D + 1) fK) c.hmacV))
-
 /-- The 64-bit words of `n`, least significant first. -/
 def nWord (j : Nat) : BitVec 64 := BitVec.ofNat 64 (c.n >>> (64 * j))
 
@@ -231,6 +223,47 @@ def digestPtr : List Instr :=
 
 /-- `scratch` in `rdi`. -/
 def scrPtr : List Instr := [.mov .rdi (.mem (stk fScratch))]
+
+/-- HMAC's two states (384 bytes) copied from `scratch + sInner` to `scratch + sSave`
+(`toSave`) or back, with `scratch` in `rdi`, through `rax`. -/
+def copyStates (toSave : Bool) : List Instr :=
+  if toSave then copyN 48 .rdi sInner .rdi sSave else copyN 48 .rdi sSave .rdi sInner
+
+/-- `hmac`, its states for `K` saved after `init`. -/
+def hmacS (dataA : List Instr) (len dst : Nat) : Prog isa :=
+  .seq (.block (hmacArgs₁ c.H.D))
+  (.seq (.call c.H.hmacInitN c.H.hmacInit)
+  (.seq (.block scrPtr) (.seq (.block (copyStates true))
+  (.seq (.block (hmacArgs₂ c.H.P.B dataA len))
+  (.seq (.call c.H.updN c.H.updC)
+  (.seq (.block (hmacArgs₃ c.H.P.B len dst))
+    (.call c.H.hmacFinN c.H.hmacFin)))))))
+
+/-- `hmac`, with the states for `K` restored from the copy rather than made by `init`. -/
+def hmacR (dataA : List Instr) (len dst : Nat) : Prog isa :=
+  .seq (.block scrPtr) (.seq (.block (copyStates false))
+  (.seq (.block (hmacArgs₂ c.H.P.B dataA len))
+  (.seq (.call c.H.updN c.H.updC)
+  (.seq (.block (hmacArgs₃ c.H.P.B len dst))
+    (.call c.H.hmacFinN c.H.hmacFin)))))
+
+/-- `V = HMAC_K(V)`, saving the states for `K`. -/
+def hmacVS : Prog isa := c.hmacS (fr .rdx fV) c.H.D fV
+
+/-- `V = HMAC_K(V)`, from the saved states for `K`. -/
+def hmacVR : Prog isa := c.hmacR (fr .rdx fV) c.H.D fV
+
+/-- `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then `V = HMAC_K(V)` (steps d–e, f–g), the
+states for the new `K` saved; for `b = 1` (step f), the states for `K` are
+the copy step e saved. -/
+def rekeyFull (b : Nat) : Prog isa :=
+  .seq (.block (msgPtrs c.wide)) (.seq (.block (msg c.len c.H.D b true c.wide c.fHo))
+    (.seq ((if b = 0 then c.hmac else c.hmacR) (scr .rdx sMsg) (c.H.D + 2 * c.len + 1) fK) c.hmacVS))
+
+/-- `K = HMAC_K(V ‖ 0x00)`, then `V = HMAC_K(V)` (step h.3). -/
+def rekey : Prog isa :=
+  .seq (.block (msgPtrs false)) (.seq (.block (msg c.len c.H.D 0 false false))
+    (.seq (c.hmac (scr .rdx sMsg) (c.H.D + 1) fK) c.hmacVS))
 
 /-- The `Q` bytes at `rsp + o`, as a big-endian number, shifted right by `s`
 bits in place, through the words at `scratch + sSlot` (with `scratch` in
@@ -310,8 +343,8 @@ leftmost `Q` bytes of `V = HMAC_K(V)` then `V = HMAC_K(V)` again, shifted
 right by `sh` bits. -/
 def cand : Prog isa :=
   if c.wide then
-    .seq c.hmacV (.seq (.block c.keepV) (.seq c.hmacV (.seq (.block scrPtr) (.block c.candTop))))
-  else c.hmacV
+    .seq c.hmacVR (.seq (.block c.keepV) (.seq c.hmacVR (.seq (.block scrPtr) (.block c.candTop))))
+  else c.hmacVR
 
 /-- One candidate fewer, and `rdx ≠ 0` (and `ZF` clear) iff the signature
 failed (`eax = 0`) and candidates are left: `rdx = -(eax < 1) & (count - 1)`. -/
