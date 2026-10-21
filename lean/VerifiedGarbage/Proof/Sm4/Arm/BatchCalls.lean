@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Sm4.Arm.PreparedVerified
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCtr
 import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
-import VerifiedGarbage.Proof.Sm4.Arm.Core
 import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec

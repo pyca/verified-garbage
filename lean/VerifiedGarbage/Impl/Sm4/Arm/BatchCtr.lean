@@ -25,8 +25,9 @@ def counterSlot : Nat := slots + 9
 /-- Rounded to whole 64-bit words. -/
 def totalSlots : Nat := slots + 14
 
-def save : List Instr := savedRegs.map fun (r, k) => .str r .r12 (4 * (savedSlot + k - Arm.savedSlot))
-def restore : List Instr := savedRegs.map fun (r, k) => .ldr r .r12 (4 * (savedSlot + k - Arm.savedSlot))
+def modeSaved : List (Reg × Nat) := savedRegs.map fun (r, k) => (r, 4 * (savedSlot + k - Arm.savedSlot))
+def save : List Instr := modeSaved.map fun p => .str p.1 .r12 p.2
+def restore : List Instr := modeSaved.map fun p => .ldr p.1 .r12 p.2
 
 /-- Keep the arguments in callee-saved registers across the helper calls. -/
 def entry : List Instr :=
@@ -70,10 +71,13 @@ def group : Prog isa :=
 def copyCounterIn : List Instr := (List.range 4).flatMap (copyWord sb .r5 (4 * counterSlot) 0)
 def copyCounterOut : List Instr := (List.range 4).flatMap (copyWord .r5 sb 0 (4 * counterSlot))
 
-def ctr : Prog isa :=
-  .seq (.block entry) (.seq prepare
-    (.seq (.block (copyCounterIn ++ [.cmp .r7 (.imm 0)]))
-      (.seq (.ite .eq (.block []) (.loop group .ne))
-        (.block (copyCounterOut ++ [movR .r12 sb] ++ restore)))))
+def prologue : Prog isa :=
+  .seq (.block entry) (.seq prepare (.block (copyCounterIn ++ [.cmp .r7 (.imm 0)])))
+
+def dataLoop : Prog isa := .ite .eq (.block []) (.loop group .ne)
+
+def finish : Prog isa := .block (copyCounterOut ++ [movR .r12 sb] ++ restore)
+
+def ctr : Prog isa := .seq prologue (.seq dataLoop finish)
 
 end VG.Impl.Sm4.Arm.BatchCtr

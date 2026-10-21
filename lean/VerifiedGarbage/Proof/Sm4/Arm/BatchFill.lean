@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCtr
-public import VerifiedGarbage.Proof.Modes.Arm.Words
+public import VerifiedGarbage.Impl.Modes.Arm.Seq
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Aes
 public import VerifiedGarbage.Spec.Ctr
 public import VerifiedGarbage.Proof.Framework.Block
@@ -14,7 +17,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Covers
 
 /-! # Filling SM4's counter batches on ARMv7 -/
 
@@ -128,7 +130,7 @@ structure FillStepPost (s : State) (B : BitVec 32) (j n : Nat) (s' : State) : Pr
   counter : bytesAt s'.mem (counterAddr B) 16 = Spec.Ctr.inc (bytesAt s.mem (counterAddr B) 16)
 
 theorem fillBody_eq : BatchCtr.fillBody = copyIncCode ++
-    [.dp .add .r0 .r0 (.imm 16), .subs .r1 .r1 (.imm 1)] := by
+    ([.dp .add .r0 .r0 (.imm 16), .subs .r1 .r1 (.imm 1)] : List Instr) := by
   simp only [BatchCtr.fillBody, copyIncCode, List.append_assoc]
 
 theorem fillStep_wp {s : State} {B : BitVec 32} {j n : Nat} (hj : j < 8) (hn : 1 ≤ n) (hn8 : n ≤ 8)

@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.Arm.BatchCalls
+import VerifiedGarbage.Proof.Sm4.Arm.BatchCalls
+public import VerifiedGarbage.Impl.Sm4.Arm.BatchCtr
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Sm4.Common
+public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchFill
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchXor
 public import VerifiedGarbage.Spec.Sm4.Ctr
 import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
-import VerifiedGarbage.Proof.Sm4.Arm.Group
 import VerifiedGarbage.Proof.Sm4.CtrCipher
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
