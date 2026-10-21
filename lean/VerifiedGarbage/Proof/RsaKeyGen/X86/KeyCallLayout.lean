@@ -47,11 +47,11 @@ theorem CallSizes.outputRegion {s : State} (h : CallSizes s) {i : Nat} (hi : i <
     (callEnvironment s).outputRegion i = callOutput s i := by
   unfold Environment.outputRegion callOutput
   rw [h.outputLength hi]
-  rfl
+  simp only [callEnvironment, hi, ite_true]
 
 theorem CallLayout.outFit {s : State} (h : CallLayout s) (sizes : CallSizes s) {i : Nat} (hi : i < 7) :
     ((callEnvironment s).out i).toNat + (callEnvironment s).outputLength i ≤ 2 ^ 32 := by
   rw [sizes.outputLength hi]
-  exact h.outputFit i hi
+  simpa only [callEnvironment, hi, ite_true] using h.outputFit i hi
 
 end VG.Proof.RsaKeyGen.X86.Key

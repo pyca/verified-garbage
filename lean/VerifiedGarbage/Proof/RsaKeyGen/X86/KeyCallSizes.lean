@@ -14,7 +14,7 @@ open VG VG.X86
 def callEnvironment (s : State) : Environment where
   workspace := arg s 16
   capacity := (arg s 17).toNat
-  out := fun i => arg s (2 * i)
+  out := fun i => if i < 7 then arg s (2 * i) else 0
   primeLength := (arg s 5).toNat
   exponent := arg s 14
   exponentLength := (arg s 15).toNat
@@ -58,7 +58,7 @@ theorem CallSizes.argument {s : State} (h : CallSizes s) {i : Nat} (hi : i < 18)
   have same (j : Nat) (H : (arg s j).toNat = (arg s 5).toNat) :
       arg s 5 = arg s j := BitVec.eq_of_toNat_eq H.symm
   interval_cases i <;>
-    simp only [Environment.argument, callEnvironment, Nat.reduceMul, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+    simp only [Environment.argument, callEnvironment, Nat.reduceMul, Nat.reduceLT, ite_true, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · exact modulus
   · exact privateExponent
   · exact same _ h.q
