@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
+public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64.Cfg
 
 /-!
 # P-384's field operations inline on AArch64

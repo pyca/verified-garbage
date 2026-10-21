@@ -122,9 +122,9 @@ open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 open Spec.Weierstrass
 
 /-- The registers the comb from tables changes: the comb's, the rest of the
-entry's, and `x21`, the address of the table of the next window's entry the
-pipelined comb selects (`TCombCfg.combJP`). -/
-def tcombClob (n : Nat) : List Reg := entryRegs n ++ combClob n ++ [.x21]
+entry's, and `x21` and `x30`, the address of the table of the next window's
+entry the pipelined comb selects (`TCombCfg.combJP`, `TCombCfg.combJP2`). -/
+def tcombClob (n : Nat) : List Reg := entryRegs n ++ combClob n ++ [.x21, .x30]
 
 theorem combClob_tcombClob {n : Nat} : ∀ r ∈ combClob n, r ∈ tcombClob n := fun _ hr =>
   List.mem_append_left _ (List.mem_append_right _ hr)

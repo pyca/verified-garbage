@@ -33,7 +33,8 @@ theorem booth_comb_correct (hL : Law Spec.P256.curve) (hI : InvSounds)
   intro base k T s hs hm hf
   have hc := p256_ok hI
   exact WP.mono (tcombJP_ok (tcombLay hc.toBaseCfgOk) (combA hc.toBaseCfgOk)
-    (Forward.CombArithmetic.compiler_correct (by decide)) (by decide) hL hc.am3 hc.onG
+    ((Forward.CombArithmetic.compiler_correct (by decide)).on _ _)
+    (fun _ h => absurd h List.not_mem_nil) (by decide) hL hc.am3 hc.onG
     (tcombVals hc.toBaseCfgOk hL hT) hc.p_lt (by decide) (Proof.P256.booth hL) hf.k_lt
     Impl.P256.Booth.program_mixed booth_checks hs hm hf)
     fun _ ⟨K, U, M, L, R⟩ => ⟨K, U.mono fun w hw => List.mem_append_left _ hw, M, L, R⟩

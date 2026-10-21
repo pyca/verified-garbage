@@ -111,10 +111,13 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) : Lis
       multiplication, CIOS, with a final conditional subtraction). `[k]G` is a fixed-base comb of \
       55 width-7 Booth digits in `[-64, 64]`, from 55 tables of `[m 2^(7j)]G` (`m = 1 … 64`, \
       affine, in Montgomery form) in the static `VG_P384_COMB` (330 KB), with no doublings: each \
-      entry is selected in constant time by loading every entry of its table and keeping, with \
-      `csel`, the one of the digit's magnitude, its `x` in one pass over the table and its `y` in \
-      another, negated by a mask of its sign; from the lowest window upward, a Jacobian \
-      accumulator adds it by a mixed addition (8 products and 3 squares). The Booth partial-sum \
+      entry is selected in constant time with AdvSIMD, by loading every entry of its table and \
+      keeping, under a mask of its index's equality with the digit's magnitude, the one of that \
+      magnitude, its `x` in one pass over the table and its `y` in another, and negated by a mask \
+      of its sign; from the lowest window upward, a Jacobian accumulator adds it by a mixed \
+      addition (8 products and 3 squares) in a straight line, the cores of `vg_p384_mul_mod_p` \
+      and `vg_p384_sqr_mod_p` inline, into which both passes of the next window's selection are \
+      interleaved (its table's address in `x30`). The Booth partial-sum \
       and generator-order proofs exclude equal nonzero inputs to the mixed formula; infinity and \
       zero-digit cases use masks, and the result is converted once to homogeneous coordinates \
       `(XZ, Y, Z³)`. The \

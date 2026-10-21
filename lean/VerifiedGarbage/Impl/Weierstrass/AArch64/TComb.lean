@@ -108,6 +108,10 @@ def selA (c : Nat) : SelGroup :=
 def selB (c : Nat) : SelGroup :=
   ⟨[.v4, .v5, .v6, .v7].take c, [.v24, .v25, .v26, .v27].take c, .v30, .v31⟩
 
+/-- Vector registers of neither `selA c` nor `selB c` for `c ≤ 3`, which keep
+the first of two passes' pairs (`TCombCfg.selPass2`). -/
+def selKeep : List VReg := [.v3, .v7, .v23]
+
 /-- The magnitude in `x2` in both lanes of `v19`, `x5 = 1` in both of `v28`
 and `2` in both of `v18`. -/
 def selBcast : List Instr :=
