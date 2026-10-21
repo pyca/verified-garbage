@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.NafPrep
 
-/-! Sparse public width-five and width-seven NAF recoding. -/
+/-! Sparse public NAF recoding: width five and seven into bytes, width nine into sixteen-bit
+words stored a byte at a time. -/
 
 @[expose] public section
 
@@ -40,4 +41,24 @@ def step (w : Nat) : Prog isa :=
 
 def prep (K : WinCfg) (src w : Nat) : Prog isa :=
   .seq (.block (init K src w ++ clear K)) (.loop (step w) (.nonzero .x .x19))
+
+/-- The sixteen-bit digit in `x2`, little-endian, a byte at a time. -/
+def store16 : List Instr := [.strb .x2 .x20 0,.lsr .x .x3 .x2 8,.strb .x3 .x20 1]
+
+def odd9 : List Instr :=
+  choose ++ store16 ++ Naf.subtractShift.take 7 ++ shift 9 ++ ([.addImm .x .x20 .x20 18] : List Instr)
+
+def even9 : List Instr := shift 1 ++ ([.addImm .x .x20 .x20 2] : List Instr)
+
+def step9 : Prog isa :=
+  .seq (.block [.logic .and .x .x1 .x5 .x13]) <|
+  .seq (.ite (.nonzero .x .x1) (.block odd9) (.block even9)) (.block remain)
+
+/-- The 257 sixteen-bit digits' bytes, zeroed. -/
+def clear9 (K : WinCfg) : List Instr :=
+  (List.range 65).map fun i => st .x12 (K.bits+8*i)
+
+/-- The width-nine digits of the scalar at `src`, as sixteen-bit words at `K.bits`. -/
+def prep9 (K : WinCfg) (src : Nat) : Prog isa :=
+  .seq (.block (init K src 9 ++ clear9 K)) (.loop step9 (.nonzero .x .x19))
 end VG.Impl.Weierstrass.AArch64.FastNaf
