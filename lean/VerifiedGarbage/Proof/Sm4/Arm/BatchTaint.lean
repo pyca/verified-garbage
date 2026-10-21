@@ -48,4 +48,10 @@ open VG.Impl.Aes.Arm (sb movR)
  theorem finish_check : ∃ h, (taint.check (Taint.ofRegs [.r5, .r8]) BatchCtr.finish h).isSome = true :=
   ⟨_, by taint_decide⟩
 
+theorem prepare_check : ∃ h, (taint.check (Taint.ofRegs [.r4, .r8]) BatchCtr.prepare h).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem crypt_check : ∃ h, (taint.check (Taint.ofRegs [.r8]) BatchCtr.crypt h).isSome = true :=
+  ⟨_, by taint_decide⟩
+
 end VG.Proof.Sm4.Arm.BatchTaint
