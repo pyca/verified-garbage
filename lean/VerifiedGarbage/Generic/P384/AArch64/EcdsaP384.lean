@@ -112,14 +112,15 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) : Lis
       reductions by the three nonzero words of `2^384 - p`, and a final conditional subtraction), \
       and scalars multiplied by calls of `vg_p384_mul_mod_n` (word-by-word Montgomery \
       multiplication, CIOS, with a final conditional subtraction). `[k]G` is a fixed-base comb of \
-      7-bit signed digits: the 55 windows `k_j` of \
-      `k`'s bits as digits `k_j - 64` from `-64` to `63`, `[k]G = [64 Σ 2^(7j)]G + Σ [(k_j - 64) \
-      2^(7j)]G`, from 55 tables of `[m 2^(7j)]G` (`m = 1 … 64`, affine, in Montgomery form) in the \
-      static `VG_P384_COMB` (330 KB), with no doublings: each entry is selected in constant time by \
-      loading every entry of its table and keeping, with `csel`, the one of the digit's magnitude \
-      (or the point at infinity for a zero digit), its `x` in one pass over the table and its `y` \
-      in another, negated by a mask of its sign, and added by the complete addition formulas of \
-      Renes, Costello and Batina for `a = -3` (Algorithm 4: 12 products and 2 by `b`); the \
+      55 width-7 Booth digits in `[-64, 64]`, from 55 tables of `[m 2^(7j)]G` (`m = 1 … 64`, \
+      affine, in Montgomery form) in the static `VG_P384_COMB` (330 KB), with no doublings: each \
+      entry is selected in constant time by loading every entry of its table and keeping, with \
+      `csel`, the one of the digit's magnitude, its `x` in one pass over the table and its `y` in \
+      another, negated by a mask of its sign; from the lowest window upward, a Jacobian \
+      accumulator adds it by a mixed addition (8 products and 3 squares). The Booth partial-sum \
+      and generator-order proofs exclude equal nonzero inputs to the mixed formula; infinity and \
+      zero-digit cases use masks, and the result is converted once to homogeneous coordinates \
+      `(XZ, Y, Z³)`. The \
       inversions modulo `p` and `n` are calls of `vg_p384_inv_mod_p` and `vg_p384_inv_mod_n`, \
       by divsteps (Bernstein and Yang's safegcd, half-delta form): 15 batches of 59 \
       divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`, or `n` and `k`), each giving a matrix of \

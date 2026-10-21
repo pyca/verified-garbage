@@ -62,9 +62,10 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) : Lis
       64-bit words in Montgomery form, multiplied by calls of `vg_p384_mul_mod_p` (the schedule of \
       s2n-bignum's `bignum_montmul_p384_alt`: the full twelve-word product, six short Montgomery \
       reductions by the three nonzero words of `2^384 - p`, and a final conditional subtraction); \
-      `[d]G` is `vg_ecdsa_p384_sign`'s fixed-base comb of 7-bit signed digits from the 55 tables \
-      of `[m 2^(7j)]G` (`m = 1 … 64`) in the static `VG_P384_COMB`, each entry selected in \
-      constant time by loading the whole table, with no doublings; and \
+      `[d]G` is `vg_ecdsa_p384_sign`'s fixed-base comb of 55 width-7 Booth digits from the 55 \
+      tables of `[m 2^(7j)]G` (`m = 1 … 64`) in the static `VG_P384_COMB`, each entry selected in \
+      constant time by loading the whole table and added to a Jacobian accumulator by a mixed \
+      addition, with no doublings; and \
       `Z⁻¹` is a call of `vg_p384_inv_mod_p`, by divsteps (Bernstein and Yang's safegcd, half-delta form): 15 batches of 59 \
       divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`), each giving a matrix of \
       64-bit entries that updates `f`, `g` (divided by 2⁵⁹) and the coefficients `a`, `b` \
