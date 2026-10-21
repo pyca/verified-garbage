@@ -35,7 +35,7 @@ theorem keyGen768_sat : ∃s,keyGen768Contract.pre s := by
    · rfl
    · intro r hr
      rw [constants_regions] at hr
-     rcases hr with _|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩
+     rcases hr with _|⟨_,_|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩⟩
      all_goals first
       | contradiction
       | (refine ⟨by decide,?_,?_⟩
@@ -66,7 +66,7 @@ theorem decaps768_sat : ∃s,decaps768Contract.pre s := by
    · rfl
    · intro r hr
      rw [constants_regions] at hr
-     rcases hr with _|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩
+     rcases hr with _|⟨_,_|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩⟩
      all_goals first
       | contradiction
       | (refine ⟨by decide,?_,?_⟩
@@ -97,7 +97,7 @@ theorem keyGen1024_sat : ∃s,keyGen1024Contract.pre s := by
    · rfl
    · intro r hr
      rw [constants_regions] at hr
-     rcases hr with _|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩
+     rcases hr with _|⟨_,_|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩⟩
      all_goals first
       | contradiction
       | (refine ⟨by decide,?_,?_⟩
@@ -128,7 +128,7 @@ theorem decaps1024_sat : ∃s,decaps1024Contract.pre s := by
    · rfl
    · intro r hr
      rw [constants_regions] at hr
-     rcases hr with _|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩
+     rcases hr with _|⟨_,_|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩⟩
      all_goals first
       | contradiction
       | (refine ⟨by decide,?_,?_⟩

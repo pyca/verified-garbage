@@ -38,10 +38,11 @@ structure TStk (s : State) : Prop where
   gamma : (Region.mk (s.syms "VG_MLKEM_GAMMA") 512).Disjoint (frame s.sp)
   forward : (Region.mk (s.syms "VG_MLKEM_NTT16_ZETAS") 512).Disjoint (frame s.sp)
   inverse : (Region.mk (s.syms "VG_MLKEM_INTT16_ZETAS") 512).Disjoint (frame s.sp)
+  fast : (NttR.fastRegion s).Disjoint (frame s.sp)
 
 theorem TStk.of {s t : State} (h : TStk s) (hs : t.syms = s.syms) (hp : t.sp = s.sp) : TStk t := by
-  refine ⟨?_, ?_, ?_, ?_⟩ <;> rw [hs, hp]
-  exacts [h.shuffle, h.gamma, h.forward, h.inverse]
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> simp only [NttR.fastRegion, hs, hp]
+  exacts [h.shuffle, h.gamma, h.forward, h.inverse, h.fast]
 
 theorem tables_frame128 {s t : State} (h : Tables s) (hk : TStk s)
     (hs : t.syms=s.syms) (hr : t.rd=s.rd) (hw : t.wr=s.wr) (hp : t.sp=s.sp)
@@ -55,6 +56,7 @@ theorem tables_frame128 {s t : State} (h : Tables s) (hk : TStk s)
   have ga := ext h.gammaApart hk.gamma
   have fw := ext h.transforms.forward.2.2 hk.forward
   have iv := ext h.transforms.inverse.2.2 hk.inverse
+  have fa := ext h.transforms.fast.2.2 hk.fast
   refine ⟨?_,by simpa only [hs,hr,hw] using h.shuffleRead,
     by simpa only [hs,hw] using h.shuffleApart,
     by simpa only [hs,hp] using h.shuffleStack,?_,
@@ -66,7 +68,9 @@ theorem tables_frame128 {s t : State} (h : Tables s) (hk : TStk s)
      ⟨?_,by simpa only [hs,hr,hw] using h.transforms.inverse.2.1,
       by simpa only [hs,hw] using h.transforms.inverse.2.2⟩,
      by simpa only [hs,hp] using h.transforms.forwardStack,
-     by simpa only [hs,hp] using h.transforms.inverseStack⟩⟩
+     by simpa only [hs,hp] using h.transforms.inverseStack,
+     h.transforms.fast.frameFar hs hr hw hf fa,
+     by simpa only [NttR.fastRegion,hs,hp] using h.transforms.fastStack⟩⟩
   · rw [hs]; exact h.shuffle.frame hf sh
   · rw [hs]; intro i hi
     rw [hf.readW (r:=⟨s.syms "VG_MLKEM_GAMMA",512⟩)

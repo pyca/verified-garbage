@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.FastTable
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutAll
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Call
@@ -17,9 +18,9 @@ open VG.Proof.MlKem (cw)
 
 theorem readonly_noiseAll_layout {s : State} {L : KemLay} (wf : L.Wf) (room : Room L) (kg : Bool)
     {B : Addr} (hB : s.gpr .x28=B) (hc : Covers [⟨B,L.scl⟩] s.wr)
-    (ht : ∀j<2*L.k,Ntt16.Readonly.TableReady s "VG_MLKEM_NTT16_ZETAS" Ntt16.tableHalves
+    (ht : ∀j<2*L.k,NttR.FastReady s
       (B+BitVec.ofNat 64 (outOff L kg j)) (B+BitVec.ofNat 64 (nttOff kg)))
-    (hfar : ∀r∈allWrites L kg B,(Region.mk (s.syms "VG_MLKEM_NTT16_ZETAS") 512).Disjoint r) :
+    (hfar : ∀r∈allWrites L kg B,(NttR.fastRegion s).Disjoint r) :
     WP isa (Impl.MlKem.AArch64.Noise.noiseAllWith Ntt16.Readonly.nttAtWithW L kg) s fun t =>
       Kept (allWrites L kg B) s t ∧
       ∀j<2*L.k, PolyIsW (cw true) t.mem (B+BitVec.ofNat 64 (outOff L kg j))
@@ -34,8 +35,8 @@ theorem readonly_noiseAll_layout {s : State} {L : KemLay} (wf : L.Wf) (room : Ro
     exact writes_old_far wf room kg B (by omega) hj
   · intro i hi t kt ts
     have table (j : Nat) (hj : j<2*L.k) := (ht j hj).frame ts kt.rd kt.wr kt.frame hfar
-    have far : ∀r∈writes L kg B (2*i),(Region.mk (t.syms "VG_MLKEM_NTT16_ZETAS") 512).Disjoint r := by
-      intro r hr; rw [ts]; exact hfar r (List.mem_flatMap.mpr ⟨i,List.mem_range.mpr hi,hr⟩)
+    have far : ∀r∈writes L kg B (2*i),(NttR.fastRegion t).Disjoint r := by
+      intro r hr; rw [NttR.fastRegion, ts]; exact hfar r (List.mem_flatMap.mpr ⟨i,List.mem_range.mpr hi,hr⟩)
     refine WP.mono (readonly_noisePair_layout (B := B) wf room kg (by omega : 2*i+1<2*L.k)
       (by rw [kt.cs .x28 (by decide) (by decide)]; exact hB)
       (by rw [kt.wr]; exact hc) (table _ (by omega)) (table _ (by omega)) far) fun u ⟨ku,pu,qu⟩ => ?_

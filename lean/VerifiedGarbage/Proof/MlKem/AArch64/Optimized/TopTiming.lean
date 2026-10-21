@@ -15,7 +15,7 @@ namespace VG.Proof.MlKem.AArch64.Optimized
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
 
 abbrev restSymbols : List String :=
- ["VG_MLKEM_GAMMA","VG_MLKEM_NTT16_ZETAS","VG_MLKEM_INTT16_ZETAS"]
+ ["VG_MLKEM_GAMMA","VG_MLKEM_NTT16_ZETAS","VG_MLKEM_INTT16_ZETAS","VG_MLKEM16_NTT_ZETAS"]
 
 theorem symbol_taint {c : Prog isa} {s u : State} (rs : List Reg)
     (sp : s.sp=u.sp) (regs : ∀r∈rs,s.gpr r=u.gpr r)

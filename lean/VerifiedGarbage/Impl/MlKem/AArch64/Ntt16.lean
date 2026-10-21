@@ -103,13 +103,6 @@ def pass1Body : List Instr :=
   ((List.range 8).map fun r => .strq (row r) .x3 (64 * r)) ++
   [.addImm .x .x2 .x2 32, .addImm .x .x3 .x3 16, .subImm .x .x5 .x5 1]
 
-/-- Chunk `c` of `f` with 16-bit coefficients: `x2 = f + 16c`, `x3 = scratch + 16c`. -/
-def pass1BodyW : List Instr :=
-  ((List.range 8).map fun r => .ldrq (row r) .x2 (64 * r)) ++
-  pass1Arith ++
-  ((List.range 8).map fun r => .strq (row r) .x3 (64 * r)) ++
-  [.addImm .x .x2 .x2 16, .addImm .x .x3 .x3 16, .subImm .x .x5 .x5 1]
-
 /-- Layers 6 and 7 on the vectors `p`, `q'` (coefficients `8i … 8i + 15` of
 the block), with the zetas of layer 6 in `z6`, `t6` and of layer 7 in `z7`,
 `t7`, through `v4`, `v5`. -/
@@ -151,12 +144,6 @@ def pass2Body : List Instr :=
     [.vop (.perm .zip1 .h8 .v24 (row i) .v29), .vop (.perm .zip2 .h8 .v25 (row i) .v29),
      .strq .v24 .x4 (32 * i), .strq .v25 .x4 (32 * i + 16)]) ++
   [.addImm .x .x2 .x2 64, .addImm .x .x6 .x6 64, .addImm .x .x4 .x4 128, .subImm .x .x5 .x5 1]
-
-/-- Block `b` of `f` with 16-bit coefficients: `x4 = f + 64b`. -/
-def pass2BodyW : List Instr :=
-  pass2Loads ++ pass2Arith ++
-  ((List.range 4).map fun i => .strq (row i) .x4 (16 * i)) ++
-  [.addImm .x .x2 .x2 64, .addImm .x .x6 .x6 64, .addImm .x .x4 .x4 64, .subImm .x .x5 .x5 1]
 
 def ntt : Prog isa :=
   .seq (.block (halves tableHalves .x1 512 ++ consts ++

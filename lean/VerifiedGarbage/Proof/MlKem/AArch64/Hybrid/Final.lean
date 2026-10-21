@@ -71,7 +71,7 @@ theorem encapsH768_sat : ∃s,encapsH768Contract.pre s := by
     · rfl
     · intro r hr
       rw [constants_regions] at hr
-      rcases hr with _|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩
+      rcases hr with _|⟨_,_|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩⟩
       all_goals first
        | contradiction
        | (refine ⟨by decide,?_,?_⟩
@@ -135,7 +135,7 @@ theorem encapsH1024_sat : ∃s,encapsH1024Contract.pre s := by
     · rfl
     · intro r hr
       rw [constants_regions] at hr
-      rcases hr with _|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩
+      rcases hr with _|⟨_,_|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩⟩
       all_goals first
        | contradiction
        | (refine ⟨by decide,?_,?_⟩

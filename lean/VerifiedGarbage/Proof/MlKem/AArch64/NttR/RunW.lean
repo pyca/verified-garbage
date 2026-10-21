@@ -11,13 +11,13 @@ meta import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.Readonly
 meta import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
-# ML-KEM on AArch64: the run of the 16-bit NTT of a polynomial stored with 16 bits
+# ML-KEM on AArch64: the runs of the 16-bit NTTs of a polynomial stored with 16 bits
 
-The regions of `fwdW` (`rsW`: the polynomial at `x0`, the working space at
-`x1`, the table of zetas), the terms it starts from (`initW`: coefficient `p`
-of the input in halfword `p`, the table's halfwords as constants), and the
-check, by the kernel, that the run leaves the reduced coefficients of `NTT`
-in the polynomial (`checkW`).
+The regions of a transform of a polynomial stored with 16 bits (`rsWs`: the
+polynomial at `x0`, the working space at `x1`, the table at a symbol), the
+terms it starts from (`initWs`: coefficient `p` of the input in halfword `p`,
+the table's halfwords as constants), and what its run leaves in the polynomial
+(`outW`: the reduced coefficients). `RunI` checks `invW`'s run.
 -/
 
 @[expose] public section
@@ -33,8 +33,6 @@ def packY (f : Nat → Nat → T) (n : Nat) : Nat :=
 /-- The polynomial at `x0`, the working space at `x1`, the table at `sym`. -/
 def rsWs (sym : String) : List Rg := [⟨.reg .x0, 0, 32, true⟩, ⟨.reg .x1, 0, 32, true⟩, ⟨.sym sym, 0, 32, false⟩]
 
-def rsW : List Rg := rsWs "VG_MLKEM_NTT16_ZETAS"
-
 /-- The input, coefficient `p` in halfword `p`. -/
 def fInW : Nat := packY (fun j e => lvT 0 (8 * j + e)) 32
 
@@ -44,15 +42,9 @@ materialize_value fInW
 working space. -/
 def initWs (tab : Nat) : St := ((⟨0, 0, [fInW, 0, tab]⟩ : St).setG .x0 (.ptr 0 0)).setG .x1 (.ptr 1 0)
 
-def initW : St := initWs tabT
-
 /-- The polynomial's halfwords are the reduced coefficients of `NTT`. -/
 def outW (σ : St) : Bool :=
   (List.range 32).all fun j => (List.range 8).all fun e => Nat.beq ((σ.chunk 0 j).get e) (outT (8 * j + e))
-
-theorem checkW_ok :
-    (initW.runP fwdRules rsW 16 Impl.MlKem.AArch64.Ntt16.Readonly.fwdW).elim false outW = true := by
-  lit_decide
 
 theorem fInW_get : ∀ j < 32, ∀ e < 8, Y.get (slot yw fInW j) e = lvT 0 (8 * j + e) := by decide +kernel
 

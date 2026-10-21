@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.FastTable
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
 public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
@@ -22,13 +23,13 @@ open VG.Proof.Sha3.AArch64.Neon
 theorem readonly_noisePair_layout {s : State} {L : KemLay} (wf : L.Wf) (room : Room L) (kg : Bool)
     {B : Addr} {n : Nat} (hn : n+1<2*L.k) (hB : s.gpr .x28=B)
     (hc : Covers [⟨B,L.scl⟩] s.wr)
-    (ht0 : Ntt16.Readonly.TableReady s "VG_MLKEM_NTT16_ZETAS" Ntt16.tableHalves
+    (ht0 : NttR.FastReady s
       (B+BitVec.ofNat 64 (outOff L kg n)) (B+BitVec.ofNat 64 (nttOff kg)))
-    (ht1 : Ntt16.Readonly.TableReady s "VG_MLKEM_NTT16_ZETAS" Ntt16.tableHalves
+    (ht1 : NttR.FastReady s
       (B+BitVec.ofNat 64 (outOff L kg (n+1))) (B+BitVec.ofNat 64 (nttOff kg)))
     (hfar : ∀r∈pairWrites (B+BitVec.ofNat 64 (scratchOff kg))
       (B+BitVec.ofNat 64 (outOff L kg n)) (B+BitVec.ofNat 64 (outOff L kg (n+1)))
-      (B+BitVec.ofNat 64 (nttOff kg)), (Region.mk (s.syms "VG_MLKEM_NTT16_ZETAS") 512).Disjoint r) :
+      (B+BitVec.ofNat 64 (nttOff kg)), (NttR.fastRegion s).Disjoint r) :
     WP isa (Impl.MlKem.AArch64.Noise.noisePairWith Ntt16.Readonly.nttAtWithW L kg n) s fun t =>
       Kept (pairWrites (B+BitVec.ofNat 64 (scratchOff kg))
         (B+BitVec.ofNat 64 (outOff L kg n)) (B+BitVec.ofNat 64 (outOff L kg (n+1)))

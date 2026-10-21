@@ -47,6 +47,7 @@ theorem Tables.frameStack {s t : State} (h : Tables s)
  have ga := ext h.gammaApart h.gammaStack
  have fw := ext h.transforms.forward.2.2 h.transforms.forwardStack
  have iv := ext h.transforms.inverse.2.2 h.transforms.inverseStack
+ have fa := ext h.transforms.fast.2.2 h.transforms.fastStack
  refine ⟨?_,by simpa only [hs,hr,hw] using h.shuffleRead,
   by simpa only [hs,hw] using h.shuffleApart,
   by simpa only [hs,hp] using h.shuffleStack,?_,
@@ -58,7 +59,9 @@ theorem Tables.frameStack {s t : State} (h : Tables s)
    ⟨?_,by simpa only [hs,hr,hw] using h.transforms.inverse.2.1,
     by simpa only [hs,hw] using h.transforms.inverse.2.2⟩,
    by simpa only [hs,hp] using h.transforms.forwardStack,
-   by simpa only [hs,hp] using h.transforms.inverseStack⟩⟩
+   by simpa only [hs,hp] using h.transforms.inverseStack,
+   h.transforms.fast.frameFar hs hr hw hf fa,
+   by simpa only [NttR.fastRegion,hs,hp] using h.transforms.fastStack⟩⟩
  · rw [hs]; exact h.shuffle.frame hf sh
  · rw [hs]; intro i hi
    rw [hf.readW (r:=⟨s.syms "VG_MLKEM_GAMMA",512⟩)
