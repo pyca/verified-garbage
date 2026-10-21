@@ -9,9 +9,10 @@
 //! blocks with `Pⱼ ⊕ CIPH_K(Cⱼ₋₁)` or `Cⱼ ⊕ CIPH_K(Cⱼ₋₁)` from the block at
 //! `iv`, which they replace with the last ciphertext block, in constant time:
 //! their timing depends on none of the key, the chaining value and the data.
-//! Both are the modes' generic CFB over SM4's bitsliced ECB code, one block
-//! at a time (in a batch of sixteen on x86-64 and AArch64 and of eight on
-//! ARMv7 and x86). This module holds the key schedule and handles a partial last
+//! The modes use bitsliced SM4. ARMv7 decryption prepares round keys once
+//! and processes eight independent ciphertext inputs per batch; encryption
+//! follows the serial feedback chain. This module holds the key schedule
+//! and handles a partial last
 //! segment: CFB encryption of a zero block is
 //! `CIPH_K` of the block to continue from, whose first bytes it XORs into the
 //! rest of the input.
