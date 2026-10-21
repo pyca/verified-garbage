@@ -21,7 +21,7 @@ def VOp.dst : VOp → VReg
   | .dupE _ d .. | .insE _ d .. | .cmeq _ d .. | .bsel _ d .. | .tblN _ _ d .. => d
   | .umull _ d .. | .umlal _ d .. | .mul d .. | .mla d .. | .mls d .. => d
   | .umullH _ d .. | .umlalH _ d .. => d
-  | .sqdmulh d .. | .umin d .. | .mulH _ d .. | .pmull _ d .. => d
+  | .sqdmulh d .. | .umin d .. | .mulH _ d .. | .mulHE _ d .. | .pmull _ d .. => d
   | .aese d .. | .aesd d .. | .aesmc d .. | .aesimc d .. => d
   | .sha1 _ d .. | .sha1h d .. | .sha1su0 d .. | .sha1su1 d .. => d
   | .sha256h d .. | .sha256h2 d .. | .sha256su0 d .. | .sha256su1 d .. => d
@@ -46,7 +46,7 @@ theorem VOp.eval_dst {op : VOp} {s : State} {d : VReg} {v : BitVec 128}
     simp only [VOp.eval] at h
     split at h <;> simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq] at h
     exact h.1.symm
-  case dupS | dupE | insE | shift | ext | tblN | xar | xarS | mulH | addv | uaddlv =>
+  case dupS | dupE | insE | shift | ext | tblN | xar | xarS | mulH | mulHE | addv | uaddlv =>
     exact (Prod.mk.inj (Option.some.inj (Option.ite_none_right_eq_some.mp h).2)).1.symm
   all_goals exact (Prod.mk.inj (Option.some.inj h)).1.symm
 
