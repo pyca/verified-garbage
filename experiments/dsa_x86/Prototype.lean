@@ -140,9 +140,36 @@ partial def rows (chunk : Nat) (p : Prog isa) : Prog isa :=
     | .frame a b c => .frame a (rows chunk b) c
     | x => x
 
+/-- Small inner-loop chunks for the triangular product, with a public
+prefix handling the row length modulo the chunk size. -/
+def tiledCross (n acc a chunk : Nat) : Prog isa :=
+  let N := 2*n
+  let tile := fun k => .block ((List.range k).flatMap (fun j => [
+    .mov .eax (.mem (at_ .ecx (a+4*j))), .mul .esi,
+    .alu .add .eax (.mem (at_ .ebp (acc+4*j))), .alu .adc .edx (imm 0),
+    .alu .add .eax (.reg .ebx), .alu .adc .edx (imm 0),
+    .store (at_ .ebp (acc+4*j)) .eax, .mov .ebx (.reg .edx)]) ++
+    [.alu .add .ecx (imm (4*k)), .alu .add .ebp (imm (4*k))])
+  let headWords :=  .seq (.block [.alu .cmp .eax (imm 0)]) (.ite .ne (seq [
+    .block [.alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax),
+      .alu .add .eax (.reg .ecx), .store (at_ .esp 4) .eax],
+    .loop (.seq (tile 1) (.block [.alu .cmp .ecx (.mem (at_ .esp 4))])) .ne]) (.block []))
+  let check := .block [.mov .eax (.reg .edi), .alu .add .eax (imm (4*N)), .alu .cmp .ecx (.reg .eax)]
+  .frame (.alloc 8) (seq [
+    .block [.mov .eax (imm 0), .store (at_ .esp 0) .eax],
+    .loop (seq [
+      .block [.mov .eax (.mem (at_ .esp 0)), .mov .ecx (.reg .edi), .alu .add .ecx (.reg .eax),
+        .mov .esi (.mem (at_ .ecx a)), .alu .add .ecx (imm 4), .mov .ebp (.reg .ecx),
+        .alu .add .ebp (.reg .eax), .mov .ebx (imm 0),
+        .mov .edx (.reg .eax), .shift .shr .edx 2, .mov .eax (imm (N-1)),
+        .alu .sub .eax (.reg .edx), .alu .and .eax (imm (chunk-1))],
+      headWords, check, .ite .ne (.loop (.seq (tile chunk) check) .ne) (.block []),
+      .block [.store (at_ .ebp acc) .ebx, .mov .eax (.mem (at_ .esp 0)), .alu .add .eax (imm 4),
+        .store (at_ .esp 0) .eax, .alu .cmp .eax (imm (4*(N-1)))]]) .ne]) (.free 8)
+
 /-- A triangular raw product, doubled, plus the diagonal, followed by the
 existing Montgomery reduction rows. This is an unproven square experiment. -/
-def fastSquare (compact deferred : Bool) (n o a : Nat) : Prog isa :=
+def fastSquare (compact deferred : Bool) (crossChunk n o a : Nat) : Prog isa :=
   let N := 2*n
   let acc := slot n 2
   let cross := (List.range (N-1)).map fun i => seq [
@@ -207,7 +234,7 @@ def fastSquare (compact deferred : Bool) (n o a : Nat) : Prog isa :=
         .alu .add .edx (imm (4*N)), .alu .cmp .ebp (.reg .edx)]]) .ne,
     (if deferred then .block [.mov .eax (.mem (sc 24)), .store (sc (acc+8*N)) .eax] else .block []),
     csubW (contextMod n) (acc+4*N) o]
-  .frame (.push [.esi]) (seq ([zerosW acc (2*N+1)] ++ (if compact then [compactCross] else cross) ++
+  .frame (.push [.esi]) (seq ([zerosW acc (2*N+1)] ++ (if compact then [if crossChunk > 1 then tiledCross n acc a crossChunk else compactCross] else cross) ++
     [chainW .adc (2*N) acc acc acc, diagonal, red])) (.pop .esi 1)
 
 /-- Fixed-address masked table scan, accumulating each output word in a
@@ -242,10 +269,10 @@ def fastSeed (n : Nat) : Prog isa := Id.run do
       p := .seq test (.ite .e seed p)
   return p
 
-def squareRules (compact deferred : Bool) : List (Prog isa × Prog isa) :=
+def squareRules (compact deferred : Bool) (crossChunk : Nat) : List (Prog isa × Prog isa) :=
   [3,4,16,32,48].flatMap fun n => [4,5,6].map fun i =>
     (mul (contextMod n) 0 (slot n 2) (slot n i) (slot n i) (slot n i),
-      fastSquare compact deferred n (slot n i) (slot n i))
+      fastSquare compact deferred crossChunk n (slot n i) (slot n i))
 
 def functions (dedup win pub : Bool) : List (String × Prog isa) := Id.run do
   let mut fs := []
@@ -317,7 +344,7 @@ def main (args : List String) : IO Unit := do
     let p := if mode.contains 'z' then Prototype.replace
       ([(16,32),(32,64),(48,96)].map fun (n,e) => (Prototype.window n e true, Prototype.wideWindow n e 6)) p else p
     let p := if mode.contains 'f' then Prototype.replace ([3,4,16,32,48].map fun n => (contextSeed n, Prototype.fastSeed n)) p else p
-    let p := if mode != "baseline" && mode.contains 's' then Prototype.replace (Prototype.squareRules (mode.contains 'c') (mode.contains 'v')) p else p
+    let p := if mode != "baseline" && mode.contains 's' then Prototype.replace (Prototype.squareRules (mode.contains 'c') (mode.contains 'v') (if mode.contains 'j' then 8 else if mode.contains 'u' then 4 else 1)) p else p
     let p := if mode.contains 't' then Prototype.replace
       ([3,4,16,32,48].map fun n =>
         (selectWindow n (contextBytes n) (slot n 7), Prototype.wordSelect n (contextBytes n) (slot n 7))) p else p

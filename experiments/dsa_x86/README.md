@@ -77,3 +77,17 @@ Focused follow-up: `q` also windows the padded 192-bit (3-word) exponent in the
 160-bit subgroup-prime test. Workflow inputs can restrict the random API timing
 to one parameter width and raise its sample count. The installer instruments
 only the disposable benchmark copy; ordinary library behavior is unchanged.
+
+Proof promotion constraint: the existing generic `Spec.Dsa.ModPow.powContract`
+classifies the modulus as secret. The `f` fast path branches only on DSA's public
+modulus, but therefore cannot certify that generic contract unchanged. A promoted
+DSA helper must explicitly expose the already-public modulus in its timing
+contract (or move setup into the public DSA layer); the existing secret-modulus
+contract must not be weakened. The experiment does not construct either proof.
+The shared-RSA scratch-padding save/restore is also required to establish
+ModPow.Keeps, in addition to arithmetic and ABI preservation.
+
+Square-loop follow-up: `u` processes four triangular products per inner-loop
+iteration; `j` processes eight. A scalar prefix handles the public remainder
+of each row length. The outer loop and prefix remain compact. The numeric
+suffix still controls the Montgomery row chunk, so `...j8` stacks both choices.
