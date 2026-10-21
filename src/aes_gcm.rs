@@ -688,6 +688,13 @@ const POWERS_AFTER: u32 = 32;
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
 const POWERS_AFTER: u32 = 2;
 
+/// `Powers::calls` once the powers are published.
+#[cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
+const SHORT_READY: u32 = u32::MAX;
+
 /// What `Powers::get` gives a call on AArch64 with the `_with_powers`
 /// instances: the powers, or that the call computes them.
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
@@ -714,8 +721,11 @@ struct Powers {
     fns: Option<&'static Prepared>,
     /// The calls that could have read the powers, before they were ready
     /// (counted without a read-modify-write: one lost to a race only
-    /// delays the powers). Once they are published, every call takes them
-    /// (`Powers::ready`), and none counts.
+    /// delays the powers); once they are published, `SHORT_READY`, so that
+    /// `open` takes the `_prepared` instances for messages shorter than
+    /// `POWERS_MIN_LEN` too. That test comes after the length's, so longer
+    /// messages pay nothing for it, and such messages never count
+    /// (`Powers::get` finds the powers ready).
     calls: AtomicU32,
     /// Null, or the key context, from `Box::into_raw`: written before it is
     /// published here (with release ordering), never written again while it
@@ -803,6 +813,13 @@ impl Powers {
         (!p.is_null()).then(|| (unsafe { &*p }, fns))
     }
 
+    /// Whether `open` takes the `_prepared` instances for messages shorter
+    /// than `POWERS_MIN_LEN`: once the powers are published (`SHORT_READY`).
+    #[inline(always)]
+    fn short_ready(&self) -> bool {
+        self.calls.load(Ordering::Relaxed) == SHORT_READY
+    }
+
     /// Publishes `ctx`, unless another thread has published a key context
     /// first: the one published. Kept out of `get`, whose ready path it
     /// would otherwise cost a register move.
@@ -823,6 +840,7 @@ impl Powers {
                 q
             }
         };
+        self.calls.store(SHORT_READY, Ordering::Relaxed);
         // SAFETY: as in `get`.
         unsafe { &*q }
     }
@@ -1031,9 +1049,10 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        // Every message once the powers are ready, on x86-64: each `_prepared`
-        // instance chooses its path for every length itself; a message long
-        // enough to gain from them counts towards computing them.
+        // Every message once the powers are ready: each `_prepared` (or
+        // `_with_powers`) instance chooses its path for every length itself;
+        // before, a message long enough to gain from them counts towards
+        // computing them.
         #[cfg(all(
             any(target_arch = "x86_64", target_arch = "aarch64"),
             feature = "alloc"
@@ -1129,20 +1148,15 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        // As in `encrypt_in_place`. On AVX-512 the prepared instances make
-        // 16- to 255-byte opens 6–33% faster (Emerald Rapids, #2775).
+        // Every message once the powers are ready, as in `encrypt_in_place`,
+        // but tested after the length (`short_ready`), which costs longer
+        // messages less here than `Powers::ready` first: measured on Emerald
+        // Rapids, the latter made every open about 5 ns slower.
         #[cfg(all(
             any(target_arch = "x86_64", target_arch = "aarch64"),
             feature = "alloc"
         ))]
-        if let Some((ctx, fns)) = self.powers.ready() {
-            return self.open_with(ctx, fns, nonce, aad, data, tag);
-        }
-        #[cfg(all(
-            any(target_arch = "x86_64", target_arch = "aarch64"),
-            feature = "alloc"
-        ))]
-        if data.len() >= POWERS_MIN_LEN
+        if (data.len() >= POWERS_MIN_LEN || self.powers.short_ready())
             && let Some(r) = self.open_prepared(nonce, aad, data, tag)
         {
             return r;
@@ -1435,58 +1449,12 @@ impl AesGcm {
         tag: &[u8],
     ) -> Option<Result<(), Error>> {
         #[cfg(target_arch = "x86_64")]
-        {
-            let (ctx, fns) = self.powers.get(&self.ctx)?;
-            Some(self.open_with(ctx, fns, nonce, aad, data, tag))
-        }
+        let (ctx, fns) = self.powers.get(&self.ctx)?;
         #[cfg(target_arch = "aarch64")]
-        {
-            let (ctx, fns) = self.powers.get(store_ok(nonce, aad))?;
-            let open = fns.open;
-            // SAFETY: as in `seal_prepared`, with the received tag `tag`
-            // valid for reads of its length.
-            let ok = match ctx {
-                Got::Ready(ctx) => unsafe {
-                    open(
-                        &self.ctx,
-                        self.rounds,
-                        nonce.as_ptr(),
-                        nonce.len(),
-                        aad.as_ptr(),
-                        aad.len(),
-                        data.as_mut_ptr(),
-                        data.len(),
-                        tag.as_ptr(),
-                        tag.len(),
-                        ctx,
-                    )
-                },
-                Got::Store => self.open_store(fns, nonce, aad, data, tag),
-            };
-            // As in `open`.
-            Some(if ok == 1 {
-                Ok(())
-            } else {
-                Err(Error::TagMismatch)
-            })
-        }
-    }
-
-    /// `open` with the key context with the powers `ctx` and the `_prepared`
-    /// instances `fns` that `Powers::get` or `Powers::ready` gave.
-    #[inline(always)]
-    fn open_with(
-        &self,
-        ctx: &Ctx,
-        fns: &Prepared,
-        nonce: &[u8],
-        aad: &[u8],
-        data: &mut [u8],
-        tag: &[u8],
-    ) -> Result<(), Error> {
+        let (ctx, fns) = self.powers.get(store_ok(nonce, aad))?;
         let open = fns.open;
-        // SAFETY: as in `seal_with`, with the received tag `tag` valid for
-        // reads of its length.
+        // SAFETY: as in `seal_prepared`, with the received tag `tag`
+        // valid for reads of its length.
         #[cfg(target_arch = "x86_64")]
         let ok = unsafe {
             open(
@@ -1502,30 +1470,31 @@ impl AesGcm {
                 tag.len(),
             )
         };
-        // SAFETY: the same, with `ctx` the powers' buffer `store_powers`
-        // wrote from `self.ctx`.
         #[cfg(target_arch = "aarch64")]
-        let ok = unsafe {
-            open(
-                &self.ctx,
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                data.as_mut_ptr(),
-                data.len(),
-                tag.as_ptr(),
-                tag.len(),
-                ctx,
-            )
+        let ok = match ctx {
+            Got::Ready(ctx) => unsafe {
+                open(
+                    &self.ctx,
+                    self.rounds,
+                    nonce.as_ptr(),
+                    nonce.len(),
+                    aad.as_ptr(),
+                    aad.len(),
+                    data.as_mut_ptr(),
+                    data.len(),
+                    tag.as_ptr(),
+                    tag.len(),
+                    ctx,
+                )
+            },
+            Got::Store => self.open_store(fns, nonce, aad, data, tag),
         };
         // As in `open`.
-        if ok == 1 {
+        Some(if ok == 1 {
             Ok(())
         } else {
             Err(Error::TagMismatch)
-        }
+        })
     }
 
     /// `open_prepared`'s call that computes the powers, as `seal_store`
@@ -2801,7 +2770,7 @@ mod tests {
                 // Shorter messages take the powers too, in place and out of
                 // place, sealing and opening, and do not count; either way
                 // they match.
-                assert!(k.powers.ready().is_some());
+                assert!(k.powers.short_ready());
                 for len in [0, 1, 15, 16, 17, 63, 64, POWERS_MIN_LEN - 1] {
                     let mut want = msg;
                     let want_tag = base
@@ -2822,7 +2791,7 @@ mod tests {
                         .unwrap();
                     assert_eq!(&ct[..len], &msg[..len]);
                 }
-                assert!(k.powers.ready().is_some());
+                assert!(k.powers.short_ready());
                 // On x86-64, the prepared context begins with the plain
                 // one, so the plain streaming functions read either alike.
                 #[cfg(target_arch = "x86_64")]
