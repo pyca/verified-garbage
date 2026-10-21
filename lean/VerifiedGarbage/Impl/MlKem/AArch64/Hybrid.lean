@@ -13,14 +13,14 @@ the matrix:
 
 1. the prologue, `m` and `ρ`, and the all-zero third state at `ST` of
    `scratch` (`startH`);
-2. the matrix (`matrixH`), whose first `hashPairs` pairs each make their
+2. the matrix (`Kem16P.matrixP`), whose first `hashPairs` pairs each make their
    three main squeezes with `x3` calls (`pair3`), each after XORing the next
    136-byte block of `ek` into the third state (`absorbBlock`; the last block
-   is partial, and carries SHA3-256's padding `0x06 … 0x80`); the other pairs,
-   the singleton and every additional squeeze keep `vg_keccak_f1600_x2_sha3`;
+   is partial, and carries SHA3-256's padding `0x06 … 0x80`);
 3. `H(ek)`, the first 32 bytes of the third state, into `HB`, and
-   `G(m ‖ H(ek))` (`tailH`);
-4. noise, `u`, `v` and the epilogue, as before.
+   `G(m ‖ H(ek))` (`tailH`), right after those pairs, so that the rest of the
+   matrix computes PRF outputs in its idle Keccak states (`Kem16P`);
+4. noise, `u`, `v` and the epilogue.
 
 Only the public lengths decide which blocks are absorbed when; the third
 state's pointer is `scratch`'s. Key generation (`Kem16.keyGenH`) uses the same
@@ -110,12 +110,6 @@ def pairM (sb ss off : Nat) (L : KemLay) (S : HSrc) (a j m : Nat) (w16 : Bool :=
 and `3i + 2`. -/
 def pair3 (L : KemLay) (S : HSrc) (a i : Nat) (w16 : Bool := false) : Prog isa :=
   pairM SB SS AH L S a (3 * i) 3 w16
-
-/-- The matrix whose first `hashPairs S` pairs absorb the message `S`. -/
-def matrixH (L : KemLay) (S : HSrc) (w16 : Bool := false) : Prog isa :=
-  seqs (((List.range (L.k*L.k/2)).map fun i =>
-      if i < hashPairs S then pair3 L S (2*i) i w16 else Paired.pair L false (2*i) w16) ++
-    (if L.k*L.k%2=1 then [Paired.lastSample L false w16] else []))
 
 /-- The prologue, `m`, the all-zero third state and `ρ`. -/
 def startH (L : KemLay) : Prog isa :=

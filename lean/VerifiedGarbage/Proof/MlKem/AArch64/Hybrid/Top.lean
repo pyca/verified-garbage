@@ -16,9 +16,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 `encapsAArch64S`: `encapsAArch64` with the 128 bytes below the stack pointer
 the x3 calls use (rather than 16) apart from the buffers, and
-`entryContractS`: with the constant tables apart from them too. `kemH_relCT`:
-two runs of the first phase, the matrix (by `matrixH_relCT`) and the rest
-(by its taint analysis) leak the same, for `Hybrid/DecapsTop.lean`.
+`entryContractS`: with the constant tables apart from them too.
 -/
 
 @[expose] public section
@@ -85,45 +83,6 @@ theorem entryS_tables {base : Contract isa} {s : State} (h : (entryContractS bas
     Tables s ∧ TStk s :=
   let c := consts16 h.2
   ⟨tables_of_consts c.1, c.2⟩
-
-theorem kemH_relCT {w16 : Bool} {L : Layout} {M : Msg} {σ τ : State} {ρ Eσ Eτ : List Byte}
-    {start rest : Prog isa}
-    (hp : Pre P L σ) (hq : Pre P L τ) (hk : Stk128 P L σ) (hk' : Stk128 P L τ)
-    (hM : MsgOk P L M σ) (hM' : MsgOk P L M τ)
-    (sm : Same L M σ τ) (ptr : ∀i<4,kA σ (L.slot i)=kA τ (L.slot i)) (ho : HashOk P M.S)
-    (habs : ∀ blk, 136 * blk < M.S.len → ∃ h, (taint.check (Taint.ofRegs [M.S.r, .x28])
-      (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock M.S blk)) h).isSome = true)
-    (shuffle : σ.syms "VG_MLKEM_REJ_SHUFFLE"=τ.syms "VG_MLKEM_REJ_SHUFFLE")
-    (symbols : ∀name∈restSymbols,σ.syms name=τ.syms name)
-    (as : WP isa start σ (fun s=>HInvW w16 P L M σ s.mem ρ Eσ 0 0 s ∧ MT3 P L σ s))
-    (au : WP isa start τ (fun s=>HInvW w16 P L M τ s.mem ρ Eτ 0 0 s ∧ MT3 P L τ s))
-    (ac : RelCT isa (fun s u=>s=σ ∧ u=τ) start (fun _ _=>True))
-    (hc : ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28]) rest h).isSome=true) :
-    RelCT isa (fun s u=>s=σ ∧ u=τ) (.seq start (.seq (Impl.MlKem.AArch64.Hybrid.matrixH P M.S w16) rest))
-      (fun _ _=>True) := by
-  intro s u tr ur t v h et eu
-  rcases h with ⟨hs,hu⟩; subst s; subst u
-  obtain ⟨sA,ta,tb,rfl,ea,eb⟩ := Paired.seq_parts et
-  obtain ⟨uA,ua,ub,rfl,fa,fb⟩ := Paired.seq_parts eu
-  have aeq := (ac _ _ _ _ _ _ ⟨rfl,rfl⟩ ea fa).1
-  have hs := Paired.exec_post as ea
-  have hu := Paired.exec_post au fa
-  obtain ⟨sB,tc,td,rfl,ec,ed⟩ := Paired.seq_parts eb
-  obtain ⟨uB,uc,ud,rfl,fc,fd⟩ := Paired.seq_parts fb
-  have bm := matrixH_relCT hp hq hk hk' hM hM' sm ho habs _ _ _ _ _ _
-    ⟨hs.1,hu.1,hs.2,hu.2,by rw [Exec.syms ea,Exec.syms fa]; exact shuffle⟩ ec fc
-  have beq := bm.1
-  have bs := bm.2.1.b
-  have bu := bm.2.2.1.b
-  have ceq := symbol_taint [.x25,.x26,.x27,.x28]
-    (by rw [bs.kb.sp,bu.kb.sp,sm.sp]) (fun r hr=>by
-      rcases mem4 hr with rfl|rfl|rfl|rfl
-      · rw [bs.kb.x25,bu.kb.x25,ptr 0 (by decide)]
-      · rw [bs.kb.x26,bu.kb.x26,ptr 1 (by decide)]
-      · rw [bs.kb.x27,bu.kb.x27,ptr 2 (by decide)]
-      · rw [bs.kb.x28,bu.kb.x28,ptr 3 (by decide)])
-    (fun name hn=>by rw [Exec.syms ec,Exec.syms fc,Exec.syms ea,Exec.syms fa]; exact symbols name hn) hc ed fd
-  exact ⟨by rw [aeq,beq,ceq],trivial⟩
 
 theorem entryS_symbols {base : Contract isa} {s u : State} (h : (entryContractS base).pub s u) :
     (s.syms "VG_MLKEM_REJ_SHUFFLE"=u.syms "VG_MLKEM_REJ_SHUFFLE") ∧

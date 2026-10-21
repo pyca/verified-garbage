@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 /-!
 # The hashing decapsulation's message
 
-`J(z ‖ c)` is absorbed by the matrix's first pairs (`Hybrid.matrixH`) from a
+`J(z ‖ c)` is absorbed by the matrix's first pairs (`Hybrid.pair3`) from a
 copy of `z ‖ c` in `scratch`, just below `c'`'s buffer (`jM`, `Kem16.jSrc`):
 `jM_ok`, where it lies. `startJ_ok`: the all-zero third state and the copy
 (`Kem16.startJ`), after `m'`, `G(m' ‖ h)` and `ρ` (`AfterA`).
