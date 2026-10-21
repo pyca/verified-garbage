@@ -75,6 +75,19 @@ fn ecdh_brainpoolp384r1_test() {
             assert_ne!(test.result, Expectation::Valid, "tcId {}", test.tc_id);
             return;
         };
+        #[cfg(target_arch = "x86_64")]
+        {
+            let mut one = [0; 48];
+            let last = one.len() - 1;
+            one[last] = 1;
+            let reference = PrivateKey::<BrainpoolP384r1>::from_bytes(&one);
+            assert_eq!(
+                BrainpoolP384r1::validate_public_key(&public),
+                reference.diffie_hellman(&public).is_ok(),
+                "point check, tcId {}",
+                test.tc_id,
+            );
+        }
         let result = key.diffie_hellman(&public).map(|z| z.to_vec());
         let shared = Ok(test.case.shared.0.clone());
         match test.result {
