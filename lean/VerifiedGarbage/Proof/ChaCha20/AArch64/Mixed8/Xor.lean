@@ -59,7 +59,7 @@ theorem correct_aux (s : State) (hs : xorAArch64.pre s) :
       refine (bulk_ok (XPre.of s hs) hb hge).mono fun c ⟨t,_,hc⟩ => ?_
       exact (leave_ok (XPre.of s hs) hc).mono fun _ ⟨hd,hcs,h8,h9⟩ => ⟨t,hd,hcs,h8,h9⟩
   refine hb.mono fun u ⟨t,hu,hcs,h8,h9⟩ => ?_
-  refine (WP.preservedV (tail_ok (XPre.of s hs) hu hcs) (hc := by lit_decide)).mono ?_
+  refine (WP.preservedV (tail_ok (XPre.of s hs) hu hcs) (hc := by cases sve <;> lit_decide)).mono ?_
   intro v ⟨⟨ha,hp,h0,h1⟩,hvec⟩
   exact ⟨ha,hp,h0,h1,by rw [hvec .v8 (by decide),h8],by rw [hvec .v9 (by decide),h9]⟩
 

@@ -49,11 +49,11 @@ theorem finish_ok {n : Nat} (hn : n ≤ 4) {s : State} {vs : Nat → CState} (h 
     have := (selected_mem n hn ((x-s.gpr .x1).toNat/16) (by omega)).mp hmem
     omega
 
-theorem chunk_ok (n : Nat) (hn : n ≤ 4) (s : State)
+theorem chunk_ok {sve : Bool} (n : Nat) (hn : n ≤ 4) (s : State)
     (hin : ∀ k : Fin 16, InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 (4 * k)) 4)
     (hout : ∀ r : Fin 4, ∀ j ∈ lanes n, InRegions s.wr
       (s.gpr .x1 + BitVec.ofNat 64 (64 * j + 16 * r)) 16) :
-    WP isa (chunk n) s fun s' =>
+    WP isa (chunk n sve) s fun s' =>
       (∀ k < 64*n, s'.mem (s.gpr .x1 + BitVec.ofNat 64 k) =
         s.mem (s.gpr .x1 + BitVec.ofNat 64 k) ^^^
         (serialize (block (ctr (stateAt s.mem (s.gpr .x0)) (k / 64)))).getD (k % 64) 0) ∧

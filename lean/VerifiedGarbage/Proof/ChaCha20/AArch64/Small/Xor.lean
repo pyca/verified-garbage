@@ -179,14 +179,14 @@ theorem check3_nonzero {s : State} {n : Nat}
   rw [show isa.eval (.nonzero .x .x5) s = some (!(s.gpr .x5 == 0)) from Xor.eval_nonzero s .x5,h]
   by_cases hn : n < 192 <;> simp [hn]
 
-theorem stepped (s : State) (hp : xorAArch64.pre s) (n : Nat) (hn : n ≤ 4) (hl : 64*n ≤ L s) :
-    WP isa (.seq (Impl.ChaCha20.AArch64.Small.step n) Impl.ChaCha20.AArch64.Xor.xor) s fun u =>
+theorem stepped {sve : Bool} (s : State) (hp : xorAArch64.pre s) (n : Nat) (hn : n ≤ 4) (hl : 64*n ≤ L s) :
+    WP isa (.seq (Impl.ChaCha20.AArch64.Small.step n sve) Impl.ChaCha20.AArch64.Xor.xor) s fun u =>
       GprAbi s u ∧ xorAArch64.post s u ∧ u.gpr .x0=s.gpr .x0 ∧ u.gpr .x1=s.gpr .x3 := by
   apply WP.seq
-  exact (step_ok s (XPre.of s hp) n hn hl).mono fun _ h => tail_ok (XPre.of s hp) h hl
+  exact (step_ok (sve := sve) s (XPre.of s hp) n hn hl).mono fun _ h => tail_ok (XPre.of s hp) h hl
 
-theorem short_ok (s : State) (hp : xorAArch64.pre s) (hl : L s < 256) :
-    WP isa Impl.ChaCha20.AArch64.Small.short s fun u =>
+theorem short_ok {sve : Bool} (s : State) (hp : xorAArch64.pre s) (hl : L s < 256) :
+    WP isa (Impl.ChaCha20.AArch64.Small.short sve) s fun u =>
       GprAbi s u ∧ xorAArch64.post s u ∧ u.gpr .x0=s.gpr .x0 ∧ u.gpr .x1=s.gpr .x3 := by
   apply WP.seq
   refine (check_ok s 7 (by decide)).mono fun a ⟨ha,h5⟩ => ?_
@@ -206,20 +206,21 @@ theorem short_ok (s : State) (hp : xorAArch64.pre s) (hl : L s < 256) :
     apply WP.ite (decide (L s < 192)) (check3_nonzero hb5)
     · intro h192
       have hlen : 128 ≤ L b := by simp only [L,hb.gpr .x2 (by decide),ha.gpr .x2 (by decide)];exact hge
-      exact ((step_ok b (XPre.of b (hb.pre (ha.pre hp))) 2 (by decide) hlen).mono fun c hc =>
+      exact ((step_ok (sve := sve) b (XPre.of b (hb.pre (ha.pre hp))) 2 (by decide) hlen).mono fun c hc =>
         (tail_ok (XPre.of b (hb.pre (ha.pre hp))) hc hlen).mono fun _ hu => ha.finish (hb.finish hu))
     · intro h192
       have hge192 : 192 ≤ L s := by have := of_decide_eq_false h192;omega
       have hlen : 192 ≤ L b := by simp only [L,hb.gpr .x2 (by decide),ha.gpr .x2 (by decide)];exact hge192
-      exact ((step_ok b (XPre.of b (hb.pre (ha.pre hp))) 3 (by decide) hlen).mono fun c hc =>
+      exact ((step_ok (sve := sve) b (XPre.of b (hb.pre (ha.pre hp))) 3 (by decide) hlen).mono fun c hc =>
         (tail_ok (XPre.of b (hb.pre (ha.pre hp))) hc hlen).mono fun _ hu => ha.finish (hb.finish hu))
 
-theorem short_noFrames : Impl.ChaCha20.AArch64.Small.short.noFrames = true := by lit_decide
+theorem short_noFrames (sve : Bool) : (Impl.ChaCha20.AArch64.Small.short sve).noFrames = true := by
+  cases sve <;> lit_decide
 
 /-- `short` after the four-block chunks: run on the data the chunks left. -/
-theorem tail_short {s₀ : State} (hp : XPre s₀) {t : Nat} {s : State} (h : Neon4.LInv s₀ t s)
+theorem tail_short {sve : Bool} {s₀ : State} (hp : XPre s₀) {t : Nat} {s : State} (h : Neon4.LInv s₀ t s)
     (hlt : L s₀ - 256 * t < 256) :
-    WP isa Impl.ChaCha20.AArch64.Small.short s fun s' =>
+    WP isa (Impl.ChaCha20.AArch64.Small.short sve) s fun s' =>
       GprAbi s₀ s' ∧ xorAArch64.post s₀ s' ∧
       s'.gpr .x0 = s₀.gpr .x0 ∧ s'.gpr .x1 = s₀.gpr .x3 := by
   have hL := Xor.L_lt s₀
@@ -243,8 +244,8 @@ theorem tail_short {s₀ : State} (hp : XPre s₀) {t : Nat} {s : State} (h : Ne
     · exact ⟨stR s₀, by simp, 0, by simp, by simp⟩
     · exact ⟨dR s₀, by simp, 256 * t, rfl, by dsimp; omega⟩
     · exact ⟨bR s₀, by simp, 0, by simp, by simp⟩
-  have hw := short_ok _ hs (by simp only [L, State.withRegions_gpr, h.x2, hn]; exact hlt)
-  refine WP.narrow hw ?_ hc ?_ short_noFrames
+  have hw := short_ok (sve := sve) _ hs (by simp only [L, State.withRegions_gpr, h.x2, hn]; exact hlt)
+  refine WP.narrow hw ?_ hc ?_ (short_noFrames sve)
   · rw [h.rd, hp.rd]; exact hc
   · intro u _ _ hsp hf ⟨ha, hpost, h0, h1⟩
     simp only [State.withRegions_gpr, State.withRegions_sp, GprAbi] at ha
@@ -275,16 +276,17 @@ theorem tail_short {s₀ : State} (hp : XPre s₀) {t : Nat} {s : State} (h : Ne
         rw [ea, h.data k hk, ite_eq_right hk', keystream_getD _ (by omega)] at x
         rw [x, Neon4.ks_shift _ hk (t := t) (by omega)]
 
-theorem correct (s : State) (hp : xorAArch64.pre s) :
-    WP isa Impl.ChaCha20.AArch64.Small.xor s fun u =>
+theorem correct {sve : Bool} (s : State) (hp : xorAArch64.pre s) :
+    WP isa (Impl.ChaCha20.AArch64.Small.xor sve) s fun u =>
       abiPreserved s u ∧ xorAArch64.post s u ∧ u.gpr .x0=s.gpr .x0 ∧ u.gpr .x1=s.gpr .x3 := by
-  apply WP.withPreservedV (hc := by lit_decide)
+  apply WP.withPreservedV (hc := by cases sve <;> lit_decide)
   apply WP.seq
   refine (Neon4.init_ok s).mono fun u ⟨hi, h5⟩ => ?_
   apply WP.seq
   refine (Neon4.bulk_ok (XPre.of s hp) hi h5).mono fun v ⟨t, hlt, hv⟩ => ?_
-  exact tail_short (XPre.of s hp) hv hlt
+  exact tail_short (sve := sve) (XPre.of s hp) hv hlt
 
-theorem xor_noFrames : Impl.ChaCha20.AArch64.Small.xor.noFrames=true := by lit_decide
+theorem xor_noFrames (sve : Bool) : (Impl.ChaCha20.AArch64.Small.xor sve).noFrames = true := by
+  cases sve <;> lit_decide
 
 end VG.Proof.ChaCha20.AArch64.Small

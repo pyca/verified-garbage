@@ -56,8 +56,8 @@ theorem next_ok (s : State) (n : Nat) (hn : n ≤ 4)
   · exact (Frame.refl _ _).write (List.mem_cons_self ..) _
       (Offset.contains_base _ (by decide : 48+4 ≤ 64) (by decide))
 
-theorem step_ok (s₀ : State) (hp : XPre s₀) (n : Nat) (hn : n ≤ 4) (hle : 64*n ≤ L s₀) :
-    WP isa (step n) s₀ (Prefix s₀ n) := by
+theorem step_ok {sve : Bool} (s₀ : State) (hp : XPre s₀) (n : Nat) (hn : n ≤ 4) (hle : 64*n ≤ L s₀) :
+    WP isa (step n sve) s₀ (Prefix s₀ n) := by
   have hl : L s₀ < 2^64 := (s₀.gpr .x2).isLt
   have hi : ∀ k : Fin 16, InRegions (s₀.rd ++ s₀.wr) (st s₀+BitVec.ofNat 64 (4*k)) 4 := by
     intro k; rw [hp.rd,hp.wr]
@@ -69,7 +69,7 @@ theorem step_ok (s₀ : State) (hp : XPre s₀) (n : Nat) (hn : n ≤ 4) (hle : 
     rw [hp.wr]
     exact ⟨dR s₀,by simp,Offset.contains_base _ (by omega) (by omega)⟩
   apply WP.seq
-  refine (chunk_ok n hn s₀ hi ho).mono fun a ⟨ha,hf,hk⟩ => ?_
+  refine (chunk_ok (sve := sve) n hn s₀ hi ho).mono fun a ⟨ha,hf,hk⟩ => ?_
   have ia : InRegions (a.rd ++ a.wr) (a.gpr .x0+BitVec.ofNat 64 48) 4 := by
     rw [hk.rd,hk.wr,hk.gpr .x0 (by decide),hp.rd,hp.wr]
     exact ⟨stR s₀,by simp,Offset.contains_base _ (by decide) (by decide)⟩
