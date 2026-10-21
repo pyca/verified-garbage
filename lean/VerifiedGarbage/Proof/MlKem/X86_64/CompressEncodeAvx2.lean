@@ -814,7 +814,7 @@ theorem dword_red4 (X : BitVec 128)
 
 theorem setWidth_ext64 (x : BitVec 128) : ((x.extractLsb' 0 64).setWidth 32 : BitVec 32) = dword x 0 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp [dword, BitVec.getLsbD_setWidth, hi, show i < 64 by omega]
+  simp [dword, hi, show i < 64 by omega]
 
 theorem written4 (m : Mem) (o : Addr) (X : BitVec 32) :
     Written m (m.writeW o X) o 4 fun j => X.extractLsb' (8 * j) 8 := by
