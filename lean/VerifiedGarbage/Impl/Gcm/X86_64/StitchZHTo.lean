@@ -9,15 +9,15 @@ public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
 namespace VG.Impl.Gcm.X86_64.StitchZHTo
 open VG.X86_64
 open VG.Impl.Gcm.X86_64.Pclmul (at_)
-open VG.Impl.Gcm.X86_64.Stitch (aregs storeCtr storeY)
-open VG.Impl.Aes.X86_64.VaesZ (ctrsZ)
+open VG.Impl.Gcm.X86_64.Stitch (aregs storeY)
+open VG.Impl.Gcm.X86_64.Slot (ctrsM storeCtr)
 open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv bigMinPE)
 open VG.Impl.Gcm.X86_64.StitchZTo (xorDataZTo)
 open VG.Impl.Gcm.X86_64.StitchZR (powP48)
 open VG.Impl.Gcm.X86_64.StitchZRTo (setupP)
 
 def batchTo (j : Nat) (g : Nat → List Instr) : Prog isa :=
-  .seq (.block (ctrsZ .xmm14 .xmm0 .xmm15 aregs)) (.seq (Aes.X86_64.VaesZH.aes aregs g) (.block (xorDataZTo .xmm13 .rdx .r8 aregs j)))
+  .seq (.block (ctrsM aregs)) (.seq (Aes.X86_64.VaesZH.aes aregs g) (.block (xorDataZTo .xmm13 .rdx .r8 aregs j)))
 
 def firstTo : Prog isa := batchTo 0 fun _ => []
 

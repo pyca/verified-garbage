@@ -25,8 +25,9 @@ namespace VG.Impl.Gcm.X86_64.StitchZTo
 
 open VG.X86_64
 open VG.Impl.Gcm.X86_64.Pclmul (at_)
-open VG.Impl.Gcm.X86_64.Stitch (aregs storeCtr storeY setupG storesK pregs)
-open VG.Impl.Aes.X86_64.VaesZ (aesZ ctrsZ)
+open VG.Impl.Gcm.X86_64.Stitch (aregs storeY setupG storesK pregs)
+open VG.Impl.Gcm.X86_64.Slot (ctrsM storeCtr)
+open VG.Impl.Aes.X86_64.VaesZ (aesZ)
 open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 pow48 lastG adv setupZ)
 open VG.Impl.Gcm.X86_64.StitchZP (setupGP powP48)
 
@@ -62,7 +63,7 @@ def setupP : List Instr := setupGP ++ storesK .r11 pregs 0 ++ setupCTo ++ setupZ
 /-- Sixteen plaintext blocks at `rdx + r8 + 64 j` encrypted to `rdx + 64 j`,
 the GHASH work `g i` after round `i`. -/
 def batchTo (j : Nat) (g : Nat → List Instr) : Prog isa :=
-  .seq (.block (ctrsZ .xmm14 .xmm0 .xmm15 aregs)) (.seq (aesZ .xmm13 aregs g) (.block (xorDataZTo .xmm13 .rdx .r8 aregs j)))
+  .seq (.block (ctrsM aregs)) (.seq (aesZ .xmm13 aregs g) (.block (xorDataZTo .xmm13 .rdx .r8 aregs j)))
 
 /-- The first group, encrypted only. -/
 def firstTo : Prog isa := batchTo 0 fun _ => []

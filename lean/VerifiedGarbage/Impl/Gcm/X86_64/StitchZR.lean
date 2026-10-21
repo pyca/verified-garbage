@@ -16,7 +16,8 @@ namespace VG.Impl.Gcm.X86_64.StitchZR
 
 open VG.X86_64
 open VG.Impl.Gcm.X86_64.Pclmul (at_ revMask poly)
-open VG.Impl.Gcm.X86_64.Stitch (storesK pregs setupC storeCtr storeY)
+open VG.Impl.Gcm.X86_64.Stitch (storesK pregs setupC storeY)
+open VG.Impl.Gcm.X86_64.Slot (storeCtr)
 open VG.Impl.Gcm.X86_64.Vpclmul (preg16)
 open VG.Impl.Gcm.X86_64.StitchZ (first body dbody lastG adv batch body48 dbody48 setupZ tab)
 

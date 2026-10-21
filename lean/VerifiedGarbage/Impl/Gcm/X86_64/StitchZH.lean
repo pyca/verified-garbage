@@ -30,14 +30,15 @@ blocks between the rounds as they are in memory.
 namespace VG.Impl.Gcm.X86_64.StitchZH
 open VG.X86_64
 open VG.Impl.Gcm.X86_64.Pclmul (at_)
-open VG.Impl.Gcm.X86_64.Stitch (aregs storeCtr storeY)
-open VG.Impl.Aes.X86_64.VaesZ (ctrsZ xorDataZ)
+open VG.Impl.Gcm.X86_64.Stitch (aregs storeY)
+open VG.Impl.Gcm.X86_64.Slot (ctrsM storeCtr)
+open VG.Impl.Aes.X86_64.VaesZ (xorDataZ)
 open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv fin bigMinP bigMinPE)
 open VG.Impl.Gcm.X86_64.StitchZR (setupP powP48)
 open VG.Impl.Gcm.X86_64.StitchZTo (atIx)
 
 def batch (j : Nat) (g : Nat → List Instr) : Prog isa :=
-  .seq (.block (ctrsZ .xmm14 .xmm0 .xmm15 aregs))
+  .seq (.block (ctrsM aregs))
     (.seq (Aes.X86_64.VaesZH.aes aregs g) (.block (xorDataZ .xmm13 .rdx aregs j)))
 
 def first : Prog isa := batch 0 fun _ => []
@@ -74,14 +75,13 @@ def enc : Prog isa :=
 
 /-! ## The blocks after the last group -/
 
-/-- The counter after the last of the `r = r9 - 16` blocks, stored; `r10 =
-16 r`, and `rax` pointed at the powers `H'ʳ` … `H'`. -/
+/-- The counter after the last of the `r = r9 - 16` blocks, stored
+(`Slot.storeCtrAt`); `r10 = 16 r`, and `rax` pointed at the powers `H'ʳ` …
+`H'`. -/
 def remSetup : List Instr :=
-  [.mov .r10 (.reg .r9), .alu .sub .r10 (.imm 16), .vop (.vmovq .xmm13 .r10),
-   .vop (.vbin .vpaddd .l128 .xmm13 .xmm14 .xmm13), .vop (.vbin .vpshufb .l128 .xmm13 .xmm13 .xmm0),
-   .vmovdquStore .l128 (at_ .rax 0) .xmm13,
-   .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10),
-   .mov .rax (.reg .r11), .alu .add .rax (.imm 256), .alu .sub .rax (.reg .r10)]
+  ([.mov .r10 (.reg .r9), .alu .sub .r10 (.imm 16)] : List Instr) ++ Slot.storeCtrAt ++
+  ([.alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10),
+   .mov .rax (.reg .r11), .alu .add .rax (.imm 256), .alu .sub .rax (.reg .r10)] : List Instr)
 
 /-- Block `r10 / 16` of the last `r`, read at `src + r10`: its keystream from
 `scratch + 768`, the ciphertext written to `rdx + r10`, and its product with
@@ -158,7 +158,7 @@ their rounds: their keystream, the data at `src` (`pre` points it at the
 blocks once `rdx` does) added and stored, hashed, and the four lanes'
 products reduced into `Y`. -/
 def ksBatchG (k : Nat) (g : Nat → List Instr) (pre : List Instr) (src : Reg) : Prog isa :=
-  .seq (.block (ctrsZ .xmm14 .xmm0 .xmm15 (aregs.take k)))
+  .seq (.block (Slot.loads (aregs.take k) 0))
     (.seq (Aes.X86_64.VaesZH.aes (aregs.take k) g)
       (.seq (.block (.alu .add .rdx (.imm 256) :: pre))
         (.seq remMaskG (.block (xorG src (aregs.take k) 0 ++ hashG (aregs.take k) 0 ++ fin)))))
@@ -224,7 +224,7 @@ def gD (k j : Nat) : List Instr :=
 their rounds, and decrypted in place. -/
 def ksBatchGD (k : Nat) : Prog isa :=
   .seq remMaskG
-    (.seq (.block (ctrsZ .xmm14 .xmm0 .xmm15 (aregs.take k)))
+    (.seq (.block (Slot.loads (aregs.take k) 0))
       (.seq (Aes.X86_64.VaesZH.aes (aregs.take k) (gD k)) (.block (xorG .rdx (aregs.take k) 0))))
 
 /-- `ksBatchGD` of `⌈r / 4⌉` registers, from `r10 = 16 r`. -/

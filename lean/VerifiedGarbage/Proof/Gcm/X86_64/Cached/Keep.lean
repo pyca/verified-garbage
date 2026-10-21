@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.HighKeep
 namespace VG.Proof.Gcm.X86_64.StitchZH
 open VG VG.X86_64
 open VG.Impl.Aes.X86_64.VaesZH (aes keyOp round)
-open VG.Impl.Aes.X86_64.VaesZ (ctrsZ xorDataZ)
+open VG.Impl.Aes.X86_64.VaesZ (xorDataZ)
 open VG.Impl.Gcm.X86_64.Stitch (aregs)
 open VG.Impl.Gcm.X86_64.StitchZH
 
@@ -19,9 +19,12 @@ theorem aes_keeps (rs : List XReg) (g : Nat → List Instr)
     (hg : ∀ j, (g j).all Instr.keepsH = true) : (aes rs g).all Instr.keepsH = true := by
   simp [aes, keyOp, round, Code.all, List.all_flatMap, List.all_map, Instr.keepsH, hg]
 
+theorem ctrsM_keeps : (Impl.Gcm.X86_64.Slot.ctrsM aregs).all Instr.keepsH = true := by decide
+
 theorem batch_keeps (j : Nat) (g : Nat → List Instr)
     (hg : ∀ j, (g j).all Instr.keepsH = true) : (batch j g).all Instr.keepsH = true := by
-  simp [batch, Code.all, aes_keeps _ g hg, ctrsZ, xorDataZ, aregs, Instr.keepsH]
+  simp only [batch, Code.all, aes_keeps _ g hg, ctrsM_keeps, Bool.true_and]
+  simp [xorDataZ, aregs, Instr.keepsH]
 
 theorem gq_keeps (j : Nat) : (Impl.Gcm.X86_64.StitchZ.gq j).all Instr.keepsH = true := by
   unfold Impl.Gcm.X86_64.StitchZ.gq
