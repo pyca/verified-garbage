@@ -1,3 +1,5 @@
+import VerifiedGarbage.Impl.Weierstrass.X86.Inv
+import VerifiedGarbage.Impl.Weierstrass.X86.InvMemory
 import VerifiedGarbage.Impl.Rsa.X86.RecoverRt
 import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
@@ -269,6 +271,60 @@ def code : Prog isa := VG.Impl.Rsa.X86.Keys.seqs [
  .block VG.Impl.Bignum.X86.PublicFn.restore]
 end BatchCrtProto
 
+namespace IsaBatchGcdProto
+open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86
+open VG.Impl.Weierstrass.X86.Inv
+open VG.Impl.Rsa.X86.KeyRt
+
+def off (n j : Nat) := 160+j*(4*n+8)
+def seqs := VG.Impl.Rsa.X86.Keys.seqs
+
+def init (n : Nat) : List Instr :=
+ let F:=off n 4; let G:=off n 5; let M:=off n 8; let X:=off n 0; let T:=off n 13; let W:=off n 3
+ VG.Impl.Weierstrass.X86.copy n F M ++ zeros (F+4*n) 1 ++
+ [.mov .eax (.mem (sc X)), .alu .and .eax (.imm 1), .alu .xor .eax (.imm 1),
+  .mov .ecx (.imm 0), .alu .sub .ecx (.reg .eax)] ++ maskCopy n T M ++
+ (List.range n).flatMap (fun j => [.mov .eax (.mem (sc (X+4*j))),
+   .alu (if j=0 then .add else .adc) .eax (.mem (sc (T+4*j))), .store (sc (G+4*j)) .eax]) ++
+ [.mov .eax (.imm 0),.alu .adc .eax (.imm 0),.store (sc (G+4*n)) .eax,
+ .mov .eax (.imm 1),.store (sc W) .eax]
+
+def start (n : Nat) : List Instr :=
+ let W:=off n 3
+ VG.Impl.Weierstrass.X86.copy 1 (W+4) (off n 4) ++ VG.Impl.Weierstrass.X86.copy 1 (W+8) (off n 5) ++
+ zeros (W+12) 4 ++ [.mov .eax (.imm 1),.store (sc (W+12)) .eax,.store (sc (W+24)) .eax]
+
+def update (n : Nat) : List Instr :=
+ let F:=off n 4; let G:=off n 5; let T:=off n 11; let U:=off n 13; let W:=off n 3
+ linear (W+12) (W+16) T F G U (n+1) (n-1) ++ shr30 (off n 6) T (n+1) ++
+ linear (W+20) (W+24) T F G U (n+1) (n-1) ++ shr30 (off n 7) T (n+1) ++
+ VG.Impl.Weierstrass.X86.copy (n+1) F (off n 6) ++ VG.Impl.Weierstrass.X86.copy (n+1) G (off n 7)
+
+def finish (n : Nat) : List Instr :=
+ let F:=off n 4; let O:=off n 1; let T:=off n 13
+ maskOf (F+4*n) ++ maskCopy n T F ++
+ -- Negating through two's complement, including a carry from the low word.
+ [.mov .ebx (.reg .ecx),.alu .and .ebx (.imm 1)] ++
+ (List.range n).flatMap (fun j =>
+  [.mov .eax (.mem (sc (F+4*j))),.alu .xor .eax (.reg .ecx),.store (sc (T+4*j)) .eax]) ++
+ [.mov .eax (.imm 0),.alu .sub .eax (.reg .ebx)] ++
+ (List.range n).flatMap (fun j =>
+  [.mov .eax (.mem (sc (T+4*j))),.alu .adc .eax (.imm 0),.store (sc (O+4*j)) .eax])
+
+def body (n : Nat) : Prog isa := seqs [
+ .block (init n ++ [.mov .esi (.imm (BitVec.ofNat 32 (3*(n+1))))]),
+ .loop (.seq (.frame (.push [.esi])
+   (seqs [.block (start n),wordSteps (off n 3) 30,.block (update n)]) (.pop .esi 1))
+   (.block [.alu .sub .esi (.imm 1),.alu .cmp .esi (.imm 0)])) .ne,
+ .block (finish n)]
+
+def choose (len : Nat) (k : Nat) (fallback : Prog isa) : Prog isa :=
+ .seq (.block [.mov .eax (.mem (argOp 5)), .alu .cmp .eax (.imm (BitVec.ofNat 32 len))])
+ (.ite .e (body k) fallback)
+def code : Prog isa := choose 256 66 (choose 384 98 (choose 512 130
+  (VG.Impl.Rsa.X86.KeyRt.gcd VG.Impl.Rsa.X86.RecoverRt.nar)))
+end IsaBatchGcdProto
+
 namespace BatchGcdProto
 open VG VG.X86 VG.Impl.Rsa.X86.KeyRt VG.Impl.Rsa.X86.RecoverRt
 open VG.Impl.Rsa.X86.Keys (seqs)
@@ -287,6 +343,14 @@ def newBody : Prog isa := .seq (.block (VG.Impl.Rsa.X86.CrtValues.inputArgs 4)) 
 def code : Prog isa := .seq (.block VG.Impl.Rsa.X86.Recover.entry) (.seq newBody (.block VG.Impl.Bignum.X86.PublicFn.restore))
 end BatchGcdProto
 
+def replaceGcd : Prog isa → Prog isa
+ | .call n b => if n="proto_gcd_C" then IsaBatchGcdProto.code else .call n b
+ | .seq a b => .seq (replaceGcd a) (replaceGcd b)
+ | .ite c a b => .ite c (replaceGcd a) (replaceGcd b)
+ | .loop a c => .loop (replaceGcd a) c
+ | .frame a b c => if a = .alloc 8 then IsaBatchGcdProto.code else .frame a (replaceGcd b) c
+ | a => a
+
 def main : IO Unit := do
  let modes := [VG.Impl.Mont.X86.Rt.body, NextMont.tune 2 VG.Impl.Mont.X86.Rt.body,
    NextMont.tune 4 VG.Impl.Mont.X86.Rt.body, NextMont.tune 8 VG.Impl.Mont.X86.Rt.body,
@@ -299,6 +363,8 @@ def main : IO Unit := do
    ".intel_syntax noprefix\n.text\n"++String.join codes++
    NextMont.printFn "proto_recover10" BatchGcdProto.code "proto_mont7" ++
    NextMont.printFn "proto_recover11" BatchGcdProto.code "proto_mont8" ++
+   NextMont.printFn "proto_recover12" (replaceGcd BatchGcdProto.code) "proto_mont7" ++
+   NextMont.printFn "proto_recover13" (replaceGcd BatchGcdProto.code) "proto_mont8" ++
    NextMont.printFn "proto_check0" (VG.Impl.Rsa.X86.KeyCheckRt.code false) ++
    NextMont.printFn "proto_check1" (KeyCheckMontProto.code false) ++
    NextMont.printFn "proto_crt0" VG.Impl.Rsa.X86.CrtValuesRt.code ++
