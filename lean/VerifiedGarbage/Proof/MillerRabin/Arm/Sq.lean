@@ -63,8 +63,8 @@ theorem sqst_lt (hE : ∀ σ, E σ → In P σ) (h0 : ∀ σ, E σ → (st0 σ).
 theorem sq_step (hE : ∀ σ, E σ → In P σ) (hYL : aY ∉ L) (hM : aM1 ∈ L) (hX : aX ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L)
     (hF : sF ∈ LS) (hQ : sQ ∈ LS) (hR : sR ∈ LS) (hE2 : sE2 ∉ LS) (hT : sT ∉ LS)
     (vM : ∀ σ, E σ → A σ aM1 = mOf P σ) (vR : ∀ σ, E σ → V σ sR = r σ) (rl : ∀ σ, E σ → r σ < 2 ^ 31)
-    (hq0 : q0 < 2 ^ 31) (h0 : ∀ σ, E σ → (st0 σ).1 < cOf P σ.mem) (k : Nat) :
-    VP (SqS P E A L V LS q0 r st0 (k + 1)) sqStep fun σ s =>
+    (hq0 : q0 < 2 ^ 31) (h0 : ∀ σ, E σ → (st0 σ).1 < cOf P σ.mem) (k : Nat) (fios : Bool := false) :
+    VP (SqS P E A L V LS q0 r st0 (k + 1)) (sqStep (fios := fios)) fun σ s =>
       isa.eval .ne s = some (decide (0 < k)) ∧ (k = 0 → SqS P E A L V LS q0 r st0 0 σ s) ∧
         (0 < k → SqS P E A L V LS q0 r st0 k σ s) := by
   by_cases hk : k + 1 ≤ q0
@@ -88,7 +88,7 @@ theorem sq_step (hE : ∀ σ, E σ → In P σ) (hYL : aY ∉ L) (hM : aM1 ∈ L
   refine VP.seq (G := St P E A2 (aY :: L) V1 LS) ?_
     (VP.seq (G := St P E A2 (aY :: L) V3 (sE2 :: LS)) ?_ ?_)
   -- `y²`.
-  · exact St.psqY hYL h2 h3 (fun σ e => by rw [a1Y]; exact lt σ e _)
+  · exact St.psqY (fios := fios) hYL h2 h3 (fun σ e => by rw [a1Y]; exact lt σ e _)
   -- `y = −1`.
   · exact St.peqS eq2_taint List.mem_cons_self (List.mem_cons_of_mem _ hM) (by decide) (by decide)
       (fun h => (List.mem_cons.mp h).elim (fun e => absurd e (by decide)) hX) hT (by decide)
@@ -141,9 +141,9 @@ theorem sq_step (hE : ∀ σ, E σ → In P σ) (hYL : aY ∉ L) (hM : aM1 ∈ L
 theorem sq_loop (hE : ∀ σ, E σ → In P σ) (hYL : aY ∉ L) (hM : aM1 ∈ L) (hX : aX ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L)
     (hF : sF ∈ LS) (hQ : sQ ∈ LS) (hR : sR ∈ LS) (hE2 : sE2 ∉ LS) (hT : sT ∉ LS)
     (vM : ∀ σ, E σ → A σ aM1 = mOf P σ) (vR : ∀ σ, E σ → V σ sR = r σ) (rl : ∀ σ, E σ → r σ < 2 ^ 31)
-    (hq0 : q0 < 2 ^ 31) (h0 : ∀ σ, E σ → (st0 σ).1 < cOf P σ.mem) (n : Nat) :
-    VP (SqS P E A L V LS q0 r st0 (n + 1)) sqLoop (SqS P E A L V LS q0 r st0 0) :=
-  VP.loop (fun k => sq_step hE hYL hM hX h2 h3 hF hQ hR hE2 hT vM vR rl hq0 h0 k) n
+    (hq0 : q0 < 2 ^ 31) (h0 : ∀ σ, E σ → (st0 σ).1 < cOf P σ.mem) (n : Nat) (fios : Bool := false) :
+    VP (SqS P E A L V LS q0 r st0 (n + 1)) (sqLoop (fios := fios)) (SqS P E A L V LS q0 r st0 0) :=
+  VP.loop (fun k => sq_step (fios := fios) hE hYL hM hX h2 h3 hF hQ hR hE2 hT vM vR rl hq0 h0 k) n
 
 end
 

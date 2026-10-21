@@ -56,4 +56,11 @@ theorem ABI.stackApart {full : Bool} {s : State} (a : ABI full s) {i : Nat} (hi 
   rw [p, z]
   exact Offset.sub _ (by omega) (by omega)
 
+theorem ABI.lengths_ok {full : Bool} {s : State} (a : ABI full s) : Lengths (caller full s) :=
+  ⟨a.lengths.1, a.lengths.2, rfl, by
+    apply BitVec.eq_of_toNat_eq
+    simp only [caller, argumentPointer, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (Nat.lt_trans (arg s (scratchArg full)).isLt (by decide)),
+      Nat.mod_eq_of_lt (arg s (scratchArg full)).isLt]⟩
+
 end VG.Proof.Rsa.X86.KeyCheck

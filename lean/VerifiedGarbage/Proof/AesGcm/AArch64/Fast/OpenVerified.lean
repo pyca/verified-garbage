@@ -37,7 +37,8 @@ theorem fastOpenWithE_keepsV (v : GcmImpl) {k : Nat} (hk : k = 16 ∨ k = 24) {c
   rcases hk with rfl | rfl <;>
   simp only [Impl.AesGcm.AArch64.Fast.openWithE, Impl.AesGcm.AArch64.Fast.openFastP,
     Impl.AesGcm.AArch64.Fast.openRunWithP, Impl.AesGcm.AArch64.Fast.front, Impl.AesGcm.AArch64.Fast.cond,
-    Impl.AesGcm.AArch64.Fast.padMul, openRest, openMain, oneCrypt, cryptAl, crArgs, tagLenOk,
+    Impl.AesGcm.AArch64.Fast.padMul, Impl.AesGcm.AArch64.Fast.padMulT, Impl.AesGcm.AArch64.Fast.oneCryptT, Impl.AesGcm.AArch64.Tail.cryptAlT,
+    Impl.AesGcm.AArch64.Tail.crSeg2T, Impl.AesGcm.AArch64.Tail.crTailT, openRest, openMain, oneCrypt, cryptAl, crArgs, tagLenOk,
     tagIn, cmpSeg, cmp, cmp16, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs, finBody, tag,
     crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, Impl.AesGcm.AArch64.xor,
     padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, v.gh.keepsV, hcl] <;>

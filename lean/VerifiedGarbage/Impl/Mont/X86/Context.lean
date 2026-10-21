@@ -23,9 +23,16 @@ def contextMod (n : Nat) : Mod := { n, mo := slot n 0, tmp := slot n 1, minv := 
 /-- Slots: modulus, subtraction temporary, accumulator, one, R², base,
 result, conditional product, mutable exponent. The header stores the inverse
 and selection mask. All offsets depend only on public widths. -/
-def contextSetup (n : Nat) : Prog isa :=
-  .seq (.block (setupInverse (slot n 0) 0)) (.seq (one n (slot n 3))
-    (powerTwo (contextMod n) (slot n 2) (slot n 4) (128 * n)))
+def contextStart (n : Nat) : Prog isa :=
+  .seq (.block (setupInverse (slot n 0) 0)) (one n (slot n 3))
+
+/-- Initialize the shared prefix and a publicly chosen power of two. -/
+def contextSeed (n bits : Nat) : Prog isa :=
+  .seq (contextStart n) (powerTwo (contextMod n) (slot n 2) (slot n 4) bits)
+
+/-- Ordinary power setup retains its original fixed schedule. Public-modulus
+callers may reuse the seed construction with a shorter exponent. -/
+def contextSetup (n : Nat) : Prog isa := contextSeed n (128 * n)
 
 def exponentProduct (n : Nat) : Prog isa :=
   .seq (.block (exponentMask (slot n 8) 4))
@@ -41,13 +48,17 @@ def exponentStep (n expWords : Nat) : Prog isa :=
   .seq (exponentBody n expWords)
     (.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)])
 
+/-- Encode ordinary one and the input base using the shared R-squared. -/
+def encodeBase (n : Nat) : Prog isa :=
+  .seq (mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 4) (slot n 3))
+    (mul (contextMod n) 0 (slot n 2) (slot n 5) (slot n 5) (slot n 4))
+
 /-- Input base and exponent occupy slots five and eight. The result replaces
 slot six. The exponent is consumed using a fixed public number of iterations. -/
 def exponentiate (n expWords : Nat) : Prog isa :=
-  .seq (mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 4) (slot n 3))
-  (.seq (mul (contextMod n) 0 (slot n 2) (slot n 5) (slot n 5) (slot n 4))
+  .seq (encodeBase n)
   (.seq (.block [.mov .esi (.imm (BitVec.ofNat 32 (32 * expWords)))])
   (.seq (.loop (exponentStep n expWords) .ne)
-    (mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 6) (slot n 3)))))
+    (mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 6) (slot n 3))))
 
 end VG.Impl.Mont.X86.Dynamic

@@ -17,6 +17,18 @@ variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
 open VG VG.Arm VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
 
+def entryWords (sampling : VG.Proof.Ffdh.GenerationPolicy) : Nat :=
+  if sampling.cachedContext then 11 else 9
+
+theorem entryWords_min (sampling : VG.Proof.Ffdh.GenerationPolicy) : 9 ≤ entryWords sampling := by
+  cases sampling <;> decide
+
+theorem entryWords_max (sampling : VG.Proof.Ffdh.GenerationPolicy) : entryWords sampling ≤ 11 := by
+  cases sampling <;> decide
+
+theorem entryWords_bytes (sampling : VG.Proof.Ffdh.GenerationPolicy) : 4*entryWords sampling=argsBytes sampling := by
+  cases sampling <;> decide
+
 def incomingValue (p : KeyPublic sampling) (i : Nat) : BitVec 32 :=
   match i with
   | 0 => p.up
@@ -27,11 +39,13 @@ def incomingValue (p : KeyPublic sampling) (i : Nat) : BitVec 32 :=
   | 5 => BitVec.ofNat 32 p.randLen
   | 6 => p.scratch
   | 7 => BitVec.ofNat 32 p.capacity
+  | 9 => p.context
+  | 10 => BitVec.ofNat 32 p.contextWords
   | _ => p.control
 
 structure EntryArguments (p : KeyPublic sampling) (s : State) : Prop where
-  incoming : ∀ i < 9, IncomingWord (incomingValue p i) (24 + 4 * i) s
-  separate : ∀ i < 9, (⟨off (State.addr s.sp) (24 + 4 * i), 4⟩ : Region).Disjoint
+  incoming : ∀ i < entryWords sampling, IncomingWord (incomingValue p i) (24 + 4 * i) s
+  separate : ∀ i < entryWords sampling, (⟨off (State.addr s.sp) (24 + 4 * i), 4⟩ : Region).Disjoint
     ⟨State.addr p.control, 128⟩
 
 structure EntryContext (p : KeyPublic sampling) (s : State) : Prop extends EntryArguments p s where
@@ -59,7 +73,7 @@ theorem EntryContext.after {p : KeyPublic sampling} {s t : State} {rs : List Reg
     ⟨h.controller.space.congr rest.wr, (rest.gpr .r4 kept).trans h.controller.ptr⟩⟩
 
 theorem entryCopy_ok (s : State) {p : KeyPublic sampling} {i j : Nat}
-    (h : EntryContext p s) (incoming : i < 9) (slot : j < 16) :
+    (h : EntryContext p s) (incoming : i < entryWords sampling) (slot : j < 16) :
     WP isa (.block [.ldrSp .r3 (24 + 4 * i), VG.Impl.Ffdh.Arm.KeySearch.stf .r3 j]) s fun t =>
       t.mem = s.mem.writeW (off (State.addr p.control) (8 * j)) (incomingValue p i) ∧ Rest [.r3] s t := by
   refine withRest [.r3] ?_ (by
@@ -67,6 +81,7 @@ theorem entryCopy_ok (s : State) {p : KeyPublic sampling} {i j : Nat}
     simp only [instrs, List.mem_cons, List.not_mem_nil, or_false] at hi
     have ne : r ≠ .r3 := by simpa only [List.mem_singleton] using hr
     rcases hi with rfl | rfl <;> simp [VG.Impl.Ffdh.Arm.KeySearch.stf, clobbers, dstOf, Ne.symm ne]) (by rfl)
+  have bound := entryWords_max sampling
   have arg := h.incoming i incoming
   have address : State.addr (s.sp + BitVec.ofNat 32 (24 + 4 * i)) =
       off (State.addr s.sp) (24 + 4 * i) := VG.Arm.addr_add (by have := arg.fits; omega)
@@ -75,7 +90,7 @@ theorem entryCopy_ok (s : State) {p : KeyPublic sampling} {i j : Nat}
     address, arg.readable, arg.word, h.controller.addr slot, h.controller.write slot]
 
 theorem wp_entryCopy {p : KeyPublic sampling} {s : State} {i j : Nat} {is : List Instr} {Q : State → Prop}
-    (h : EntryContext p s) (incoming : i < 9) (slot : j < 16)
+    (h : EntryContext p s) (incoming : i < entryWords sampling) (slot : j < 16)
     (next : ∀ t, EntryContext p t →
       t.mem = s.mem.writeW (off (State.addr p.control) (8 * j)) (incomingValue p i) →
       Rest [.r3] s t → WP isa (.block is) t Q) :

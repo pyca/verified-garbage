@@ -189,30 +189,63 @@ fn rsa_pss_sign_test() {
         let name = format!("rsa_pkcs1_{bits}_test.json");
         let file = harness::load::<CrtGroup, MsgCase>(&name);
         harness::par_each(&file.test_groups, |group| {
-            let (private, public) = keys(&name, &group.params.private_key);
-            let n = trim(&group.params.private_key.modulus.0);
-            for (test, (_, h)) in group.tests.iter().take(8).zip(HASHES.iter()) {
-                let id = test.tc_id;
-                let d = digest(*h, &test.case.msg.0);
-                for s_len in [0, h.digest_len()] {
-                    let sig = sign(&private, &d, *h, *h, s_len)
-                        .unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
-                    assert_eq!(sig.len(), n.len(), "{name} tcId {id}");
-                    assert!(verify(&public, &sig, &d, *h, *h, SaltLength::Len(s_len)));
-                    assert!(verify(&public, &sig, &d, *h, *h, SaltLength::Any));
-                    assert!(!verify(
-                        &public,
-                        &sig,
-                        &d,
-                        *h,
-                        *h,
-                        SaltLength::Len(s_len + 1)
-                    ));
-                }
-                let a = sign(&private, &d, *h, *h, 16).unwrap();
-                let b = sign(&private, &d, *h, *h, 16).unwrap();
-                assert_ne!(a, b, "{name} tcId {id}");
-            }
+            check_signatures(&name, group, &HASHES);
         });
+    }
+}
+
+/// The signing checks shared by the complete suite and CI's focused checks.
+fn check_signatures(
+    name: &str,
+    group: &harness::TestGroup<CrtGroup, MsgCase>,
+    hashes: &[(&str, Hash)],
+) {
+    let (private, public) = keys(name, &group.params.private_key);
+    let n = trim(&group.params.private_key.modulus.0);
+    for (test, (_, h)) in group.tests.iter().zip(hashes.iter()) {
+        let id = test.tc_id;
+        let d = digest(*h, &test.case.msg.0);
+        for s_len in [0, h.digest_len()] {
+            let sig = sign(&private, &d, *h, *h, s_len)
+                .unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
+            assert_eq!(sig.len(), n.len(), "{name} tcId {id}");
+            assert!(verify(&public, &sig, &d, *h, *h, SaltLength::Len(s_len)));
+            assert!(verify(&public, &sig, &d, *h, *h, SaltLength::Any));
+            assert!(!verify(
+                &public,
+                &sig,
+                &d,
+                *h,
+                *h,
+                SaltLength::Len(s_len + 1)
+            ));
+        }
+        let a = sign(&private, &d, *h, *h, 16).unwrap();
+        let b = sign(&private, &d, *h, *h, 16).unwrap();
+        assert_ne!(a, b, "{name} tcId {id}");
+    }
+}
+
+/// Each hash with one 2048-bit vector key: exercise the hash implementation
+/// selected by this CI configuration without repeating all keys and sizes.
+#[test]
+fn rsa_pss_every_hash() {
+    require_vectors!();
+    let name = "rsa_pkcs1_2048_test.json";
+    let file = harness::load::<CrtGroup, MsgCase>(name);
+    let group = &file.test_groups[0];
+    assert!(group.tests.len() >= HASHES.len());
+    check_signatures(name, group, &HASHES);
+}
+
+/// IFMA's larger operand sizes once, rather than every hash with every key.
+/// Native and SKX jobs retain the complete signing suite above.
+#[test]
+fn rsa_pss_large_keys() {
+    require_vectors!();
+    for bits in [3072, 4096] {
+        let name = format!("rsa_pkcs1_{bits}_test.json");
+        let file = harness::load::<CrtGroup, MsgCase>(&name);
+        check_signatures(&name, &file.test_groups[0], &[("SHA-256", Hash::Sha256)]);
     }
 }

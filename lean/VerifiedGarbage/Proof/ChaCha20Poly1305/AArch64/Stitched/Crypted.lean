@@ -231,7 +231,7 @@ abbrev inR (s₀ : State) : List Region := [sub s₀ 288 16, sub s₀ 32 16]
 
 theorem memIn_frame {s₀ : State} (m : Mem) (a b : BitVec 64) :
     Frame (inR s₀) m (memIn m (cx s₀) a b) := by
-  have c (k d : Nat) (h₁ : k ≤ d) (h₂ : d + 8 ≤ k + 16) (h₃ : k + 16 ≤ 760) :
+  have c (k d : Nat) (h₁ : k ≤ d) (h₂ : d + 8 ≤ k + 16) (h₃ : k + 16 ≤ 1280) :
       (sub s₀ k 16).Contains (off (cx s₀) d) (64 / 8) :=
     contains_sub s₀ h₁ h₂ h₃
   exact ((((Frame.refl _ m).writeW (by simp) _ (c 32 32 (by decide) (by decide) (by decide))).writeW
@@ -292,7 +292,7 @@ theorem acc_in {s₀ s₂ s₃ : State} {key msg : List Byte}
 
 /-! ## The chunks -/
 
-theorem data_ctx {s₀ : State} (hp : APre e s₀) {k n : Nat} (h : k + n ≤ 760) :
+theorem data_ctx {s₀ : State} (hp : APre e s₀) {k n : Nat} (h : k + n ≤ 1280) :
     (dR s₀).Disjoint (sub s₀ k n) :=
   hp.c_d.symm.sub_right (sub_ctx s₀ h)
 
@@ -307,7 +307,7 @@ theorem prefix_frame {s₀ : State} {rs : List Region} {m m' : Mem} (hf : Frame 
 theorem saved_bulk {s₀ : State} (hp : APre e s₀) {m m' : Mem} (hf : Frame (streamR s₀) m m') {d : Nat}
     (hd : d = 32 ∨ d = 40) : m'.readW (off (cx s₀) d) 64 = m.readW (off (cx s₀) d) 64 := by
   refine hf.readW (r := sub s₀ d 8) (Region.contains_self _ _) ?_ (by decide)
-  have h₁ : d + 8 ≤ 760 := by omega
+  have h₁ : d + 8 ≤ 1280 := by omega
   intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact sub_disj s₀ (by omega) h₁ (by lit_omega)

@@ -62,7 +62,7 @@ theorem inputsRt {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths 
     RtWs lay s g.base g.size (g.args 7).toNat nArr := by
   have ws := h.ws
   rw [len.width] at ws
-  refine ⟨ws, ?_, ?_, len.upper, by decide⟩
+  refine ⟨ws, ⟨_, len.upper, rfl, ?_⟩, ?_, Nat.le_trans len.upper (by decide), by decide⟩
   · have a := h.arguments 7 (by decide)
     rwa [BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · rw [← len.scratch]; exact h.arguments 14 (by decide)

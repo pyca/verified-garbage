@@ -21,7 +21,7 @@ open VG VG.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X
 open VG.Proof.Weierstrass.X86_64
 
 /-- P-521's comb. -/
-abbrev p521d : CombData := ⟨7, Impl.P521.p521Comb7, Impl.P521.p521Comb7Start, "VG_P521_COMB", false⟩
+abbrev p521d : CombData := ⟨7, Impl.P521.p521Comb7, Impl.P521.p521Comb7Start, "VG_P521_COMB", false, false⟩
 
 /-- What is public at the comb's loop. -/
 def τL : VG.X86_64.Taint.T := Taint.ofRegs [.rdi, .rbx, .rsi, .rsp]

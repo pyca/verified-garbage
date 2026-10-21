@@ -44,13 +44,15 @@ structure Lay where
   scr : Addr
   B : Addr
   T : Addr
+  /-- The bytes read at `seed`: the seed (32), or its SHA-512 digest (64). -/
+  seedLen : Nat
 
 namespace Lay
 
 variable (L : Lay)
 
 abbrev OUT : Region := ⟨L.out, 32⟩
-abbrev SEED : Region := ⟨L.seed, 32⟩
+abbrev SEED : Region := ⟨L.seed, L.seedLen⟩
 abbrev SCR : Region := ⟨L.scr, 8192⟩
 /-- The stack used. -/
 abbrev STK : Region := ⟨L.B, 72⟩
@@ -73,13 +75,14 @@ structure Ok : Prop where
   rs : L.RET.Disjoint L.SEED
   rc : L.RET.Disjoint L.SCR
   no : L.out.toNat + 32 ≤ 2 ^ 64
-  ns : L.seed.toNat + 32 ≤ 2 ^ 64
+  ns : L.seed.toNat + L.seedLen ≤ 2 ^ 64
   nc : L.scr.toNat + 8192 ≤ 2 ^ 64
   tbo : L.TBL.Disjoint L.OUT
   tbc : L.TBL.Disjoint L.SCR
   tbk : L.TBL.Disjoint L.STK
   tbr : L.TBL.Disjoint L.RET
   nt : L.T.toNat + 8 * combWordCount ≤ 2 ^ 64
+  sl : 32 ≤ L.seedLen
 
 end Lay
 
@@ -119,11 +122,11 @@ theorem stk_out (h : L.Ok) {d n e k : Nat} (h₁ : d + n ≤ 72) (h₂ : e + k �
 
 theorem stk_seed (h : L.Ok) {d n e k : Nat} (h₁ : d + n ≤ 72) (h₂ : e + k ≤ 32) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ ⟨L.seed + BitVec.ofNat 64 e, k⟩ :=
-  (h.ks.sub_left (Offset.sub_base _ h₁)).sub_right (Offset.sub_base _ h₂)
+  (h.ks.sub_left (Offset.sub_base _ h₁)).sub_right (Offset.sub_base _ (Nat.le_trans h₂ h.sl))
 
 theorem seed_scr (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 8192) :
     Region.Disjoint ⟨L.seed, 32⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
-  h.sc.sub_right (Offset.sub_base _ h₂)
+  (h.sc.sub_left (Region.sub_prefix h.sl)).sub_right (Offset.sub_base _ h₂)
 
 theorem out_scr (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 8192) :
     Region.Disjoint ⟨L.out, 32⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
@@ -240,44 +243,52 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
 
 /-! ## The contract -/
 
-/-- The x86-64 contract of `vg_ed25519_public_key`: `Spec.Ed25519.publicKeyContract`
-for 72 bytes of stack, spelled out (`out = rdi`, `seed = rsi`, `scratch = rdx`). -/
-def pkLocal : Contract isa where
-  pre s := 72 ≤ (s.gpr .rsp).toNat ∧ s.rd = [⟨s.gpr .rsi, 32⟩, combRegion (s.syms combSym)] ∧
+/-- The x86-64 contract of public-key derivation for 72 bytes of stack, spelled out
+(`out = rdi`, the `n` bytes of the seed or its digest at `rsi`, `scratch = rdx`), with
+the condition `key` on them and the postcondition `post`. -/
+def pkLocalWith (n : Nat) (key : State → Prop) (post : State → State → Prop) : Contract isa where
+  pre s := 72 ≤ (s.gpr .rsp).toNat ∧ s.rd = [⟨s.gpr .rsi, n⟩, combRegion (s.syms combSym)] ∧
     s.wr = [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rdx, 8192⟩] ∧
-    Region.Disjoint ⟨s.gpr .rdi, 32⟩ ⟨s.gpr .rsi, 32⟩ ∧
+    Region.Disjoint ⟨s.gpr .rdi, 32⟩ ⟨s.gpr .rsi, n⟩ ∧
     Region.Disjoint ⟨s.gpr .rdi, 32⟩ ⟨s.gpr .rdx, 8192⟩ ∧
-    Region.Disjoint ⟨s.gpr .rsi, 32⟩ ⟨s.gpr .rdx, 8192⟩ ∧
+    Region.Disjoint ⟨s.gpr .rsi, n⟩ ⟨s.gpr .rdx, 8192⟩ ∧
     Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rdi, 32⟩ ∧
-    Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rsi, 32⟩ ∧
+    Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rsi, n⟩ ∧
     Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rdx, 8192⟩ ∧
     Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 72, 72⟩ ⟨s.gpr .rdi, 32⟩ ∧
-    Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 72, 72⟩ ⟨s.gpr .rsi, 32⟩ ∧
+    Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 72, 72⟩ ⟨s.gpr .rsi, n⟩ ∧
     Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 72, 72⟩ ⟨s.gpr .rdx, 8192⟩ ∧
-    (s.gpr .rdi).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .rsi).toNat + 32 ≤ 2 ^ 64 ∧
-    (s.gpr .rdx).toNat + 8192 ≤ 2 ^ 64 ∧
+    (s.gpr .rdi).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .rsi).toNat + n ≤ 2 ^ 64 ∧
+    (s.gpr .rdx).toNat + 8192 ≤ 2 ^ 64 ∧ key s ∧
     CombHeld s [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rdx, 8192⟩, ⟨s.gpr .rsp, 8⟩,
       ⟨s.gpr .rsp - BitVec.ofNat 64 72, 72⟩]
-  post s s' := Spec.Ed25519.bytesAt s'.mem (s.gpr .rdi) 32 =
-    Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (s.gpr .rsi) 32)
+  post := post
   pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧
     s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.syms combSym = s₂.syms combSym
 
+/-- The x86-64 contract of `vg_ed25519_public_key`: `Spec.Ed25519.publicKeyContract`
+for 72 bytes of stack, spelled out (`out = rdi`, `seed = rsi`, `scratch = rdx`). -/
+def pkLocal : Contract isa := pkLocalWith 32 (fun _ => True)
+  (fun s s' => Spec.Ed25519.bytesAt s'.mem (s.gpr .rdi) 32 =
+    Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (s.gpr .rsi) 32))
+
 /-- The layout of a call from `s`. -/
-def lay (s : State) : Lay :=
-  ⟨s.gpr .rdi, s.gpr .rsi, s.gpr .rdx, s.gpr .rsp - BitVec.ofNat 64 72, s.syms combSym⟩
+def lay (n : Nat) (s : State) : Lay :=
+  ⟨s.gpr .rdi, s.gpr .rsi, s.gpr .rdx, s.gpr .rsp - BitVec.ofNat 64 72, s.syms combSym, n⟩
 
-theorem lay_ret (s : State) : (lay s).B + BitVec.ofNat 64 72 = s.gpr .rsp := BitVec.sub_add_cancel _ _
+theorem lay_ret (n : Nat) (s : State) : (lay n s).B + BitVec.ofNat 64 72 = s.gpr .rsp :=
+  BitVec.sub_add_cancel _ _
 
-theorem lay_ok {s : State} (h : pkLocal.pre s) : (lay s).Ok := by
-  obtain ⟨-, -, -, os, oc, sc, ro, rs, rc, ko, ks, kc, no, ns, nc, hh⟩ := h
+theorem lay_ok {n : Nat} {key : State → Prop} {post : State → State → Prop} {s : State}
+    (h : (pkLocalWith n key post).pre s) (hn : 32 ≤ n) : (lay n s).Ok := by
+  obtain ⟨-, -, -, os, oc, sc, ro, rs, rc, ko, ks, kc, no, ns, nc, -, hh⟩ := h
   obtain ⟨-, nt, hd⟩ := hh
-  have e : (lay s).RET = ⟨s.gpr .rsp, 8⟩ := by simp only [Lay.RET, lay_ret]
+  have e : (lay n s).RET = ⟨s.gpr .rsp, 8⟩ := by simp only [Lay.RET, lay_ret]
   have h1 := hd ⟨s.gpr .rdi, 32⟩ (by simp)
   have h2 := hd ⟨s.gpr .rdx, 8192⟩ (by simp)
   have h3 := hd ⟨s.gpr .rsp, 8⟩ (by simp)
   have h4 := hd ⟨s.gpr .rsp - BitVec.ofNat 64 72, 72⟩ (by simp)
-  exact ⟨os, oc, sc, ko, ks, kc, e ▸ ro, e ▸ rs, e ▸ rc, no, ns, nc, h1, h2, h4, e ▸ h3, nt⟩
+  exact ⟨os, oc, sc, ko, ks, kc, e ▸ ro, e ▸ rs, e ▸ rc, no, ns, nc, h1, h2, h4, e ▸ h3, nt, hn⟩
 
 end VG.Proof.Ed25519.X86_64.PublicKey
 end
@@ -365,7 +376,7 @@ theorem seed (hL : L.Ok) (hc : Ctx L g mx m₀ t) {i : Nat} (hi : i < 32) :
     rcases hr with rfl | rfl | rfl
     · exact hL.os.symm
     · exact hL.sc
-    · exact hL.ks.symm) (by show (32 : Nat) ≤ 2 ^ 64; decide) hi
+    · exact hL.ks.symm) (by have := hL.ns; show L.seedLen ≤ 2 ^ 64; omega) (Nat.lt_of_lt_of_le hi hL.sl)
 
 /-- The seed on entry to a call from the frame. -/
 theorem ce_seed (hL : L.Ok) (hc : Ctx L g mx m₀ t) :
@@ -373,7 +384,8 @@ theorem ce_seed (hL : L.Ok) (hc : Ctx L g mx m₀ t) :
   simp only [Spec.Ed25519.bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  rw [ce_byte t (R := L.SEED) (by rw [hc.ret]; exact hL.stk_SEED (by omega)) (by show (32 : Nat) ≤ 2 ^ 64; decide) hi]
+  rw [ce_byte t (R := L.SEED) (by rw [hc.ret]; exact hL.stk_SEED (by omega))
+    (by have := hL.ns; show L.seedLen ≤ 2 ^ 64; omega) (Nat.lt_of_lt_of_le hi hL.sl)]
   exact hc.seed hL hi
 
 theorem inFr (hc : Ctx L g mx m₀ t) {d : Nat} (h₁ : 16 ≤ d) (h₂ : d + 8 ≤ 72) :
@@ -408,21 +420,22 @@ theorem push_slot (sp : Addr) (j : Nat) (hj : j < 3) :
 
 theorem pushed_syms_eq (s : State) (rs : List Reg) : (pushed rs s).syms = s.syms := pushRegs_syms s rs
 
-theorem push_ctx {s : State} (h : pkLocal.pre s) :
-    Ctx (lay s) s.gpr s.mxcsr s.mem (pushed pushRs s) := by
+theorem push_ctx {n : Nat} {key : State → Prop} {post : State → State → Prop} {s : State}
+    (h : (pkLocalWith n key post).pre s) :
+    Ctx (lay n s) s.gpr s.mxcsr s.mem (pushed pushRs s) := by
   have hn : 8 * pushRs.length ≤ (s.gpr .rsp).toNat := by show 8 * 7 ≤ _; have := h.1; omega
   obtain ⟨hf, hw⟩ := pushRegs_mem s pushRs (by decide) hn
   have hw' : ∀ j (hj : j < 3), (pushed pushRs s).mem.readW
-      ((lay s).B + BitVec.ofNat 64 (64 - 8 * j)) 64 = s.gpr (pushRs[j]'(by show j < 7; omega)) := fun j hj => by
+      ((lay n s).B + BitVec.ofNat 64 (64 - 8 * j)) 64 = s.gpr (pushRs[j]'(by show j < 7; omega)) := fun j hj => by
     rw [← hw j (by show j < 7; omega)]; simp only [lay]; rw [push_slot _ j hj]; rfl
   refine ⟨by rw [pushed_rd, h.2.1]; rfl, ?_, ?_, fun r _ hr => pushed_gpr _ _ hr, by rw [pushed_mxcsr],
     hw' 2 (by omega), hw' 1 (by omega), hw' 0 (by omega), ?_, congrFun (pushed_syms_eq s pushRs) combSym,
-    h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1⟩
+    h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1⟩
   · rw [pushed_wr, h.2.2.1]; simp only [List.length_cons, List.length_nil, lay]; rw [push_base]
   · rw [pushed_rsp]; simp only [List.length_cons, List.length_nil, lay]; rw [push_base]
   · refine Frame.sub hf fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
-    refine ⟨(lay s).STK, by simp, ?_⟩
+    refine ⟨(lay n s).STK, by simp, ?_⟩
     simp only [List.length_cons, List.length_nil]
     rw [push_base]
     exact Offset.sub_base _ (by omega)
@@ -575,7 +588,7 @@ theorem Ctx.ce_repr (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) {iv : Spec.
     (by rw [hc.ret]; simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 192) (by omega) (by omega))
     (by show (192 : Nat) ≤ 2 ^ 64; decide) hi) hr
 
-abbrev updRd (L : Lay) : List Region := [L.SEED]
+abbrev updRd (L : Lay) : List Region := [⟨L.seed, 32⟩]
 abbrev updWr (L : Lay) : List Region := [⟨L.scr, 192⟩, ⟨L.scr + BitVec.ofNat 64 192, 1376⟩]
 
 theorem upd_regs {t : State} (ha : UpdArgs L t) (rd wr : List Region) :
@@ -597,13 +610,14 @@ theorem upd_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : UpdArgs L
     by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 192) (by omega) (by omega),
     hL.stk_scr (d := 8) (n := 8) (by omega) (by omega),
     by simpa using hL.stk_scr (d := 0) (n := 8) (e := 0) (k := 192) (by omega) (by omega),
-    by simpa using hL.stk_SEED (d := 0) (n := 8) (by omega),
+    by simpa using hL.stk_seed (d := 0) (n := 8) (e := 0) (k := 32) (by omega) (by omega),
     by simpa using hL.stk_scr (d := 0) (n := 8) (e := 192) (k := 1376) (by omega) (by omega)⟩
 
-theorem upd_sub : ∀ r ∈ updRd L ++ updWr L, ∃ R ∈ [L.SEED, L.TBL, L.FR, L.OUT, L.SCR], Within r R := by
+theorem upd_sub (hL : L.Ok) :
+    ∀ r ∈ updRd L ++ updWr L, ∃ R ∈ [L.SEED, L.TBL, L.FR, L.OUT, L.SCR], Within r R := by
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
-  · exact ⟨L.SEED, by simp, within_base _ (by omega)⟩
+  · exact ⟨L.SEED, by simp, within_base _ hL.sl⟩
   · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
   · exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
 
@@ -618,7 +632,7 @@ theorem upd_call (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
     WP isa (.call (Spec.Sha512.updateScratchApi.name ++ v.suffix) (Impl.Sha512.X86_64.Stream.update v.callee)) t
       fun t' => Ctx L g mx m₀ t' ∧
         Spec.Sha512.Repr Spec.Sha512.H0_512 t'.mem L.scr (Spec.Ed25519.bytesAt m₀ L.seed 32) := by
-  refine call_ok hL (upd_verified v).1 (upd_nosp v) (upd_depth v) hc (upd_pre hL hc ha) upd_sub upd_wsub
+  refine call_ok hL (upd_verified v).1 (upd_nosp v) (upd_depth v) hc (upd_pre hL hc ha) (upd_sub hL) upd_wsub
     fun s' hc' _ _ ⟨s₂, hm, _, hpost⟩ => ⟨hc', ?_⟩
   obtain ⟨hdi, hsi, hdx, hcx, -⟩ := upd_regs ha (updRd L) (updWr L)
   have h := hpost Spec.Sha512.H0_512 []

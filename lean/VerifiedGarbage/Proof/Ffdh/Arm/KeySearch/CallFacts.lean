@@ -13,11 +13,11 @@ variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
 
 open VG VG.Arm VG.Proof.Mont VG.Spec.Ffdh
 
-abbrev rCallArgs (p : KeyPublic sampling) : Region := ⟨State.addr (callSp p), 28⟩
+abbrev rCallArgs (p : KeyPublic sampling) : Region := ⟨State.addr (callSp p), sampling.argumentBytes - 4⟩
 
 structure CallFacts (p : KeyPublic sampling) (used : Nat) : Prop where
   stackFits : 176 ≤ (callSp p).toNat
-  argsFit : (callSp p).toNat + 28 ≤ 2 ^ 32
+  argsFit : (callSp p).toNat + (sampling.argumentBytes - 4) ≤ 2 ^ 32
   xy : (rX p).Disjoint (rY p)
   xd : (rX p).Disjoint (rDomain p)
   xr : (rX p).Disjoint (rTape p used)
@@ -46,9 +46,11 @@ structure CallFacts (p : KeyPublic sampling) (used : Nat) : Prop where
 
 theorem KeyInput.callFacts {p : KeyPublic sampling} {original : State} {used : Nat}
     (h : KeyInput p original) (room : used + p.len ≤ p.randLen) : CallFacts p used := by
-  have fit : 232 ≤ p.sp.toNat := h.bounds.stackFits
-  have callNat : (callSp p).toNat = p.sp.toNat - 56 :=
-    FrameStack.sub_toNat' (by omega : 56 ≤ p.sp.toNat)
+  have fit : stackUse sampling ≤ p.sp.toNat := h.bounds.stackFits
+  have sizeMin := argumentBytes_min sampling
+  have sizeMax := argumentBytes_max sampling
+  have callNat : (callSp p).toNat = p.sp.toNat - (24 + sampling.argumentBytes) :=
+    FrameStack.sub_toNat' (by change 24 + sampling.argumentBytes + 176 ≤ p.sp.toNat at fit; omega)
   have rootWrite (r : Region) (hr : r ∈ [rX p, rY p, rScratch p]) : r ∈ original.wr := by
     rw [h.write_regions]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
@@ -62,16 +64,17 @@ theorem KeyInput.callFacts {p : KeyPublic sampling} {original : State} {used : N
     h.layout.separate w (by rw [← h.layout.wr]; exact rootWrite w hw)
       r (by rw [← h.layout.rd]; exact rootRead r hr)
   have tape := h.tape_sub room
-  have argsSub : (rCallArgs p).Sub (FrameStack.belowA p.sp stackUse) :=
-    fun a ha => (arguments_sub h.bounds.stackFits) a (Region.sub_prefix (by decide : 28 ≤ 32) a ha)
+  have argsSub : (rCallArgs p).Sub (FrameStack.belowA p.sp (stackUse sampling)) :=
+    fun a ha => (arguments_sub h.bounds.stackFits) a (Region.sub_prefix (by omega : sampling.argumentBytes - 4 ≤ sampling.argumentBytes) a ha)
   have stackSub := callStack_sub h.bounds.stackFits
   have stackWrite (r : Region) (hr : r ∈ [rX p, rY p, rScratch p]) :
-      (FrameStack.belowA p.sp stackUse).Disjoint r :=
+      (FrameStack.belowA p.sp (stackUse sampling)).Disjoint r :=
     h.stack_separate (List.mem_append_left _ (rootWrite r hr))
   have stackRead (r : Region) (hr : r ∈ [rDomain p, rRandom p]) :
-      (FrameStack.belowA p.sp stackUse).Disjoint r :=
+      (FrameStack.belowA p.sp (stackUse sampling)).Disjoint r :=
     h.stack_separate (List.mem_append_right _ (rootRead r hr))
   have geometry := h.output_regions_disjoint
+  change 24 + sampling.argumentBytes + 176 ≤ p.sp.toNat at fit
   refine ⟨by rw [callNat]; omega, by rw [callNat]; have := p.sp.isLt; omega,
     geometry.1, cross _ (by simp) _ (by simp), (cross _ (by simp) _ (by simp)).sub_right tape,
     geometry.2.1, (stackWrite _ (by simp)).symm.sub_right argsSub,
@@ -92,7 +95,7 @@ theorem KeyInput.callFacts {p : KeyPublic sampling} {original : State} {used : N
     · exact (stackWrite _ (by simp)).sub_left stackSub
     · have enough : 176 ≤ (callSp p).toNat := by rw [callNat]; omega
       rw [rCallStack, FrameStack.belowA, FrameStack.addr_sub' enough]
-      exact (Offset.base_disjoint_below _ (by decide : 176 + 28 ≤ 2 ^ 64)).symm
+      exact (Offset.base_disjoint_below _ (by omega : 176 + (sampling.argumentBytes - 4) ≤ 2 ^ 64)).symm
   · have lengths := h.bounds.domainLength
     have maxLength := h.bounds.maxLength
     unfold domainLenValid at lengths

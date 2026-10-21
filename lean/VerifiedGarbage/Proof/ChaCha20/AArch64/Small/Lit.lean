@@ -13,5 +13,6 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 @[expose] public section
 
 namespace VG
+materialize_code Impl.ChaCha20.AArch64.Small.short
 materialize_code Impl.ChaCha20.AArch64.Small.xor
 end VG

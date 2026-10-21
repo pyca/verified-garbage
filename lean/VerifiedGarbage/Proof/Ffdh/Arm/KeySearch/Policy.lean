@@ -60,11 +60,12 @@ theorem KeyLive.terminal {p : KeyPublic sampling} {original s : State} {used key
   rintro t ⟨mem, rest⟩ syms
   have frame : Frame [⟨State.addr p.control, 128⟩] s.mem t.mem := by
     rw [mem]; exact terminalMem_frame _ _ _
-  refine ⟨h.after_control rest syms (by decide) frame h.used_le (by decide) (by decide) ?_ ?_, ?_, ?_, ?_, frame⟩
+  refine ⟨h.after_control rest syms (by decide) frame h.used_le (by decide) (by decide) ?_ ?_ ?_, ?_, ?_, ?_, frame⟩
   · rw [mem]; exact h.terminal_fields _
   · intro j hj
     rw [mem, terminalMem_high _ _ _ j (by omega), ite_eq_right (by omega : j ≠ 3)]
     exact h.high j hj
+  · rw [mem]; exact h.cachedSlots.terminal _
   · rw [mem, terminalMem_low _ _ _ 14 (by decide)]
     rfl
   · rw [mem, terminalMem_low _ _ _ 3 (by decide)]
@@ -95,11 +96,12 @@ theorem KeyLive.request_block {p : KeyPublic sampling} {original s : State} {use
   rintro t ⟨mem, rest⟩ syms
   have frame : Frame [⟨State.addr p.control, 128⟩] s.mem t.mem := by
     rw [mem]; exact requestMem_frame _ _
-  refine ⟨h.after_control rest syms (by decide) frame h.used_le h.keys_le h.scalars_le ?_ ?_, ?_, ?_, ?_⟩
+  refine ⟨h.after_control rest syms (by decide) frame h.used_le h.keys_le h.scalars_le ?_ ?_ ?_, ?_, ?_, ?_⟩
   · rw [mem]; exact h.request_fields
   · intro j hj
     rw [mem, requestMem_high _ _ j (by omega), ite_eq_right (by omega : j ≠ 3)]
     exact h.high j hj
+  · rw [mem]; exact h.cachedSlots.request
   · rw [mem, requestMem_low _ _ 14 (by decide)]
     rfl
   · rw [mem, requestMem_low _ _ 3 (by decide)]

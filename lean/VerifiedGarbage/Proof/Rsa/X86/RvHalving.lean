@@ -23,10 +23,10 @@ theorem halfInit_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {liveW ls : 
     (ae : CallArgument s0 g.B g.Z 7 (BitVec.ofNat 32 eLen))
     (ad : CallArgument s0 g.B g.Z 9 (BitVec.ofNat 32 dLen))
     (bound : 8 * (dLen + eLen) < 2 ^ 32) :
-    WP isa (halfInit g.n) s (HI g s0 A m (8 * (dLen + eLen)) 0) := by
-  unfold halfInit
+    WP isa VG.Impl.Rsa.X86.RecoverRt.halfInit s (HI g s0 A m (8 * (dLen + eLen)) 0) := by
+  unfold VG.Impl.Rsa.X86.RecoverRt.halfInit
   simp only [seqs]
-  refine WP.seq (WP.mono (h.copy_W (o := wR) (a := wM) (by decide) hm
+  refine WP.seq (WP.mono (h.copy_W (o := wR) (a := wM) (by decide) hm (by decide)
     (by simp only [List.mem_singleton]; rintro j rfl; decide)) fun u ⟨hu, _⟩ => ?_)
   rw [value] at hu
   refine WP.block_append (wp_movS rfl fun v U _ => ?_)
@@ -48,7 +48,7 @@ theorem halving_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {liveW ls : L
     (ae : CallArgument s0 g.B g.Z 7 (BitVec.ofNat 32 eLen))
     (ad : CallArgument s0 g.B g.Z 9 (BitVec.ofNat 32 dLen))
     (positive : 0 < 8 * (dLen + eLen)) (bound : 8 * (dLen + eLen) ≤ 16384) :
-    WP isa (halving g.n) s (HI g s0 A m (8 * (dLen + eLen)) (8 * (dLen + eLen))) :=
+    WP isa VG.Impl.Rsa.X86.RecoverRt.halving s (HI g s0 A m (8 * (dLen + eLen)) (8 * (dLen + eLen))) :=
   WP.seq (WP.mono (halfInit_ok h hm value ae ad (by omega)) fun _ ht => halfLoop_ok ht positive bound)
 
 end VG.Proof.Rsa.X86.Recover

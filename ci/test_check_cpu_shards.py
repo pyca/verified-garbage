@@ -11,6 +11,7 @@ import tomllib
 import unittest
 
 import cpu_shards
+import cpu_tests
 
 CI = Path(__file__).resolve().parent
 WORKFLOW = CI.parent / ".github/workflows/ci.yml"
@@ -139,14 +140,14 @@ class SplitTests(unittest.TestCase):
         self.assertEqual(self.split_with({"no-avx512f": slow, "avx512f": fast}),
                          self.split_with({"no-avx512f": slow}))
 
-    def test_icx_shards_each_get_an_rsa_line_before_any_time(self):
+    def test_mixed_hosts_compute_the_same_icx_shard_membership(self):
         runs = matrix_runs("icx")
-        shards = self.shards(3, runs=runs)
-        # The lines running Wycheproof's RSA tests, which take minutes under
-        # SDE (not `rsa_oaep_pairs`'s round trips).
-        heavy = {"rsa", "rsa_pkcs1", "rsa_pss", "rsa_oaep"}
-        rsa = [[f for f, t in s if heavy & set(t.split())] for s in shards]
-        self.assertEqual([len(r) for r in rsa], [1, 1, 1])
+        reduced = cpu_tests.emulated_rsa_runs("icx", runs)
+        for times in ({}, {"-": 300, "aes,avx,avx2,ssse3,vaes": 50}):
+            full_shards = self.shards(2, times=times, runs=runs)
+            reduced_shards = self.shards(2, times=times, runs=reduced)
+            self.assertEqual([[f for f, _ in s] for s in full_shards],
+                             [[f for f, _ in s] for s in reduced_shards])
 
 
 # What the stand-in `cargo` lists, for the library and the test binary.
@@ -166,15 +167,24 @@ class StepTests(unittest.TestCase):
         script = step.split("        run: |\n", 1)[1].split("\n        env:\n", 1)[0]
         cls.script = textwrap.dedent(script)
 
-    def run_step(self, shard, times="{}", runs=RUNS):
+    def run_step(self, shard, times="{}", runs=RUNS, host_ifma=True, chip="icx",
+                 lib_tests=LIB_TESTS, tests_tests=TESTS_TESTS):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "ci").symlink_to(CI)
             bin_ = root / "bin"
             bin_.mkdir()
+            grep = bin_ / "grep"
+            grep.write_text('#!/bin/sh\ncase "$*" in\n'
+                            '  *avx512ifma*) [ "$HOST_IFMA" = 1 ]; exit $?;;\n'
+                            'esac\nexec /usr/bin/grep "$@"\n')
+            grep.chmod(0o755)
+            rustc = bin_ / "rustc"
+            rustc.write_text("#!/bin/sh\necho host: x86_64-unknown-linux-gnu\n")
+            rustc.chmod(0o755)
             cargo = bin_ / "cargo"
-            lib = "".join(f"{t}: test\\n" for t in LIB_TESTS)
-            tests = "".join(f"{t}: test\\n" for t in TESTS_TESTS)
+            lib = "".join(f"{t}: test\\n" for t in lib_tests)
+            tests = "".join(f"{t}: test\\n" for t in tests_tests)
             cargo.write_text(
                 "#!/bin/sh\n"
                 "case \"$*\" in\n"
@@ -186,7 +196,7 @@ class StepTests(unittest.TestCase):
             cargo.chmod(0o755)
             (root / "temp").mkdir()
             env = dict(os.environ, PATH=f"{bin_}:{os.environ['PATH']}", RUNNER_TEMP=str(root / "temp"),
-                       CALLS=str(root / "calls"), RUNS=runs, CPU="icx  ", SHARD=shard, TIMES=times,
+                       CALLS=str(root / "calls"), RUNS=runs, CPU=chip, SHARD=shard, TIMES=times, HOST_IFMA=str(int(host_ifma)),
                        JOB="4")
             result = subprocess.run(["bash", "-eo", "pipefail", "-c", self.script], cwd=root, env=env,
                                     capture_output=True, text=True)
@@ -205,10 +215,10 @@ class StepTests(unittest.TestCase):
         # The slowest line alone: the others fill the other two shards first.
         # Its groups' tests by exact name, in each binary that has any.
         self.assertEqual(calls[1:], [
-            "VG_CPU_FEATURES= test --locked --features cpu-features-env --lib -- --exact "
+            "VG_CPU_FEATURES= test --locked --features cpu-features-env --lib -- -Z unstable-options --report-time --exact "
             "cpu::tests::of_names rsa_pkcs1_enc::tests::padding rsa_pss::tests::sign "
             "x25519::tests::agreement",
-            "VG_CPU_FEATURES= test --locked --features cpu-features-env --test tests -- --exact "
+            "VG_CPU_FEATURES= test --locked --features cpu-features-env --test tests -- -Z unstable-options --report-time --exact "
             "wycheproof::rsa::rsa_oaep_test wycheproof::x25519::x25519_test",
         ])
         # Every line's groups, not only this shard's, and the CPU's tests.
@@ -220,6 +230,12 @@ class StepTests(unittest.TestCase):
         self.assertIn(host, cpu_shards.HOSTS)
         self.assertEqual(sorted(recorded["icx"][host]), ["-"])
         self.assertIn("s of CPU (user, system)", result.stdout)
+        # Exercise the workflow's actual Bash timestamp producer, not a copy.
+        record = next(l for l in result.stdout.splitlines() if l.startswith("CI_FEATURE_TIME_V1 "))
+        index, start, end, origin, status = map(int, record.split()[1:])
+        self.assertEqual((index, status), (0, 0))
+        self.assertGreaterEqual(start, origin)
+        self.assertGreaterEqual(end, start)
 
     def test_a_failing_line_fails_the_step_after_the_others(self):
         result, calls, recorded = self.run_step("")
@@ -230,10 +246,27 @@ class StepTests(unittest.TestCase):
         (lines,) = recorded["icx"].values()
         self.assertEqual(len(lines), 6)
 
+    def test_reduces_only_sde_jobs_on_hosts_without_ifma(self):
+        lib = LIB_TESTS + ["rsa_keygen::tests::primes", "rsa_pss::sha256::tests::backend_features"]
+        tests = TESTS_TESTS + ["wycheproof::rsa_pss::rsa_pss_every_hash"]
+        for chip, full_group, reduced_group in [("icx", "rsa", "rsa_ifma"),
+                                                 ("dmr", "rsa_pss", "rsa_pss_hashes"),
+                                                 ("native", "rsa", "rsa")]:
+            for host_ifma in (True, False):
+                with self.subTest(chip=chip, host_ifma=host_ifma):
+                    result, calls, _ = self.run_step(
+                        "", runs=f"- | {full_group} cpu\n", host_ifma=host_ifma, chip=chip,
+                        lib_tests=lib, tests_tests=tests)
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                    expected = full_group if host_ifma else reduced_group
+                    self.assertEqual(self.tests_record["groups"], sorted(["cpu", expected]))
+                    selector_ran = any("rsa_pss::sha256::tests::backend_features" in c for c in calls)
+                    self.assertEqual(selector_ran, host_ifma or chip == "native")
+
     def test_all_runs_every_test(self):
         result, calls, _ = self.run_step("", runs="none | all\n")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(calls[1:], ["VG_CPU_FEATURES=none test --locked --features cpu-features-env"])
+        self.assertEqual(calls[1:], ["VG_CPU_FEATURES=none test --locked --features cpu-features-env -- -Z unstable-options --report-time"])
 
     def test_a_group_that_selects_nothing_fails_its_line(self):
         # No test of `sha3` is listed on this CPU.

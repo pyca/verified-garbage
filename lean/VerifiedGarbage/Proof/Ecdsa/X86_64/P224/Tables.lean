@@ -22,7 +22,7 @@ open VG VG.X86_64
 open VG.Impl.Ecdsa.X86_64 (p224 CombData)
 
 /-- P-224's comb. -/
-abbrev p224d : CombData := ⟨7, Impl.P224.p224Comb7, Impl.P224.p224Comb7Start, "VG_P224_COMB", false⟩
+abbrev p224d : CombData := ⟨7, Impl.P224.p224Comb7, Impl.P224.p224Comb7Start, "VG_P224_COMB", false, false⟩
 
 theorem p224_comb : p224.comb = some p224d := rfl
 

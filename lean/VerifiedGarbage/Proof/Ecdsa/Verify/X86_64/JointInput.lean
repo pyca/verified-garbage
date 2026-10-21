@@ -40,6 +40,15 @@ theorem jointMid_zero {c : Cfg} {j : Joint.Cfg}
   rw [h.fixed.zero]
   exact toM_zero _ _
 
+/-- The peer's point is affine: its `z` is one. -/
+theorem jointMid_affine {c : Cfg} {j : Joint.Cfg} (hc : CfgOk c)
+    (hK : j.K=c.winCfg PX PY BP) {s₀ s : State} {base : Addr} {g : Reg → BitVec 64}
+    (h : Mid c s₀ base g s) : tmv c.C j.K.M.n base s j.K.P.z=1 := by
+  rw [hK]
+  change toM c.C.p (2^(64*c.n)) (wordsVal s.mem base (c.sl ONEP) c.n)=1
+  rw [h.fixed.onep]
+  exact toM_one (unitMod_pow_two hc.p_odd _)
+
 theorem jointMid_point {c : Cfg} {j : Joint.Cfg} (hc : CfgOk c) (hC : Law c.C)
     (hK : j.K=c.winCfg PX PY BP) {Q : Point c.C}
     {s₀ s : State} {base : Addr} {g : Reg → BitVec 64} (h : Mid c s₀ base g s)

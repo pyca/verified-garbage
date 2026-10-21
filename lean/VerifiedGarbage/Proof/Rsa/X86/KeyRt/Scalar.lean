@@ -56,7 +56,7 @@ theorem RtWs.lift {s : State} (h : RtWs L s B Z len N) {p : Prog isa} {rs : List
     (k : WP isa p s fun t => Ws t B Z (kw len) N ∧ Keep B (kw len) js ds s.mem t.mem ∧ P t ∧ Keeps rs s t) :
     WP isa p s fun t => RtWs L t B Z len N ∧ Keep B (kw len) js ds s.mem t.mem ∧ P t ∧ Keeps rs s t :=
   WP.mono k fun _ ⟨W, F, p, K⟩ =>
-    ⟨⟨W, h.lenArg.keep K esp (keep_outside W F hj hd), h.wsArg.keep K esp (keep_outside W F hj hd), h.lenLe,
+    ⟨⟨W, h.lenArg.imp fun _ ⟨l, e, c⟩ => ⟨l, e, c.keep K esp (keep_outside W F hj hd)⟩, h.wsArg.keep K esp (keep_outside W F hj hd), h.lenLe,
       h.layLen⟩, F, p, K⟩
 
 theorem storeSlot_ok {s : State} (h : RtWs L s B Z len N) {d : Nat} (hd : d + 4 ≤ VG.Impl.Rsa.X86.Keys.hdr)

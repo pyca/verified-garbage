@@ -43,7 +43,7 @@ theorem body_depth (v : Whole.Backend) : (body v.code v.suffix).aarch64Depth ≤
   have hr := Whole.depth_zero_of_noFrames reduce_noFrames
   have hb := Whole.depth_zero_of_noFrames base_noFrames
   have hm := Whole.depth_zero_of_noFrames mul_noFrames
-  simp only [body, secretCode, nonceCode, challengeCode, hashSeed, hashNonce, hashChallenge,
+  simp only [body, bodyFrom, nonceCode, challengeCode, hashSeed, hashNonce, hashChallenge,
     init, update, finalize, reduce, Impl.Ed25519.AArch64.Whole.callWith, Code.aarch64Depth, Nat.max_le,
     Impl.Sha512.AArch64.Stream.init, hr, hb, hm]
   omega
@@ -54,8 +54,8 @@ theorem signCached_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backen
     (P := fun m m' _ => Spec.Ed25519.bytesAt m' (s.gpr .x0) 64 = Spec.Ed25519.sign
       (Spec.Ed25519.bytesAt m (s.gpr .x1) 32)
       (Spec.Ed25519.bytesAt m (s.gpr .x3) (s.gpr .x4).toNat))
-    (fun p hp => WP.mono (body_ok v (entry_ctx h hp) (lay_ok h) (entry_args h hp) (entry_key h hp)
-      (entry_syms hp))
+    (fun p hp => WP.mono (body_ok v (entry_ctx h hp) (lay_ok h (Nat.le_refl _)) (entry_args h hp) (entry_key h hp)
+      (entry_syms hp) rfl)
       fun u ⟨hu, ho⟩ => ⟨by
         simpa only [Whole.bodyRd, h.1, Ctx, Lay.inputs, Lay.outputs, Lay.SEED, Lay.PK, Lay.MSG,
           Lay.OUT, Lay.SCR, Lay.ARGS, Lay.TB, Whole.ARGS, show BitVec.ofNat 64 256 = (256 : Addr) from rfl, lay, h.2.1, List.cons_append, List.nil_append] using hu, ho⟩)
@@ -367,14 +367,24 @@ theorem mul_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     (by decide) (by decide) (by decide) (by taint_decide)).seq
     (mul_call_ct hL ha hb)
 
-theorem body_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
-    RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) (body backend.code backend.suffix)
+/-- Signing after a first step related to itself, as `hashSeed` and the copy of a cached
+digest are. -/
+theorem bodyFrom_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (backend : Backend) {first : Prog isa}
+    (hfirst : RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) first
+      (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True))
+    (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+    RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) (bodyFrom first backend.code backend.suffix)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) :=
-  ((hashSeed_ct backend hL ha hb).seq saveSecret_ct).seq
+  (hfirst.seq saveSecret_ct).seq
     (((hashNonce_ct backend hL ha hb).seq ((reduce_ct hL ha hb 96 (by decide) (by taint_decide)).seq
       (base_ct hL ha hb))).seq
       (((hashChallenge_ct backend hL ha hb).seq ((reduce_ct hL ha hb 128 (by decide) (by taint_decide)).seq
         (mul_ct hL ha hb))).seq (wipe_ct hL)))
+
+theorem body_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+    RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) (body backend.code backend.suffix)
+      (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) :=
+  bodyFrom_ct backend (hashSeed_ct backend hL ha hb) hL ha hb
 
 end VG.Proof.Ed25519.AArch64.SignCached
 end
@@ -384,7 +394,7 @@ section
 namespace VG.Proof.Ed25519.AArch64.SignCached
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64.SignCached
 
-theorem lay_eq {s t : State} (hp : signCachedLocal.pub s t) : lay s = lay t := by
+theorem lay_eq {n : Nat} {s t : State} (hp : signCachedLocal.pub s t) : lay n s = lay n t := by
   obtain ⟨sp, h0, h1, h2, h3, h4, h5, hsy⟩ := hp
   simp only [lay, Whole.base, sp, h0, h1, h2, h3, h4, h5, hsy]
 
@@ -392,17 +402,17 @@ theorem signCached_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backen
     ConstantTime isa signCachedLocal.pre signCachedLocal.pub (code v.code v.suffix) := by
   refine Whole.wrap_ct (fun _ _ hp => hp.1) ?_ ?_
   · intro s hs p hp
-    exact WP.mono (body_ok v (entry_ctx hs hp) (lay_ok hs) (entry_args hs hp) (entry_key hs hp)
-      (entry_syms hp)) fun _ _ => trivial
+    exact WP.mono (body_ok v (entry_ctx hs hp) (lay_ok hs (Nat.le_refl _)) (entry_args hs hp) (entry_key hs hp)
+      (entry_syms hp) rfl) fun _ _ => trivial
   · intro s t hs ht hp
     rintro a b ta tb a' b' ⟨p, q, hpa, hqb, rfl, rfl⟩ ea eb
-    have he := lay_eq hp
-    have hq : Ctx (lay s) t.gpr t.v q.mem (q.withRegions (Whole.bodyRd t) (Whole.bodyWr t)) :=
+    have he := lay_eq (n := 32) hp
+    have hq : Ctx (lay 32 s) t.gpr t.v q.mem (q.withRegions (Whole.bodyRd t) (Whole.bodyWr t)) :=
       he ▸ entry_ctx ht hqb
-    have hqa : Arguments (lay s) q.mem := he ▸ entry_args ht hqb
+    have hqa : Arguments (lay 32 s) q.mem := he ▸ entry_args ht hqb
     have hqs : (q.withRegions (Whole.bodyRd t) (Whole.bodyWr t)).syms Impl.Ed25519.AArch64.combSym =
-        (lay s).T := he ▸ entry_syms hqb
-    exact ⟨(body_ct v (lay_ok hs) (entry_args hs hpa) hqa _ _ _ _ _ _
+        (lay 32 s).T := he ▸ entry_syms hqb
+    exact ⟨(body_ct v (lay_ok hs (Nat.le_refl _)) (entry_args hs hpa) hqa _ _ _ _ _ _
       ⟨entry_ctx hs hpa, hq, trivial, trivial, entry_syms hpa, hqs⟩ ea eb).1, trivial⟩
 
 end VG.Proof.Ed25519.AArch64.SignCached

@@ -24,7 +24,7 @@ open VG VG.X86_64 VG.Impl.ChaCha20.X86_64.Avx512Tail
 open VG.Spec.ChaCha20 (Word)
 open VG.Proof.ChaCha20.X86_64.Avx512 (T Sym Sym.init Sym.setReg zbinT dwordwise zw zw_split zw_lk
   sel2 sel2_eq sel2_lt pick4_same pick4_ext dword_read512 add_ofNat' ofInt_ofNat xidx xidx_lt xidx_inj
-  div4_lt mod4_lt zreg_xidx)
+  div4_lt mod4_lt zreg_xidx dword_rep4 pick4_fn)
 
 /-- The base register of region `b`: the state, `buf` and the data. -/
 def baseR : Nat → Reg
@@ -81,6 +81,9 @@ def step (D : Nat) (σ : Sym) : Instr → Option Sym
     { σ with
       mem := fun b' i' => if b' = b ∧ i ≤ i' ∧ i' < i + 16 then σ.reg (xidx r) (i' - i) else σ.mem b' i'
       dirty := true }
+  | .vpbroadcastdZ d m => (slot m 1 (bsize D)).map fun (b, i) => σ.setReg (xidx d) fun _ => σ.mem b i
+  | .zbcstd .vpaddd d a m =>
+    (slot m 1 (bsize D)).map fun (b, i) => σ.setReg (xidx d) fun p => .add (σ.reg (xidx a) p) (σ.mem b i)
   | _ => none
 
 def run (D : Nat) (σ : Sym) : List Instr → Option Sym
@@ -315,6 +318,38 @@ theorem sstep_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) {σ σ' : Sym} {s : 
         simp only [wsize] at hi; rw [Mem.sub_ofNat_toNat _ (by omega)]; omega
       · simp only [regn, baseR, Region.Contains, show (2 : Nat) ≠ 1 by decide, ite_false]
         simp only [wsize] at hi; rw [Mem.sub_ofNat_toNat _ (by omega)]; omega
+  · rename_i d m
+    obtain ⟨⟨b, i⟩, hs, rfl⟩ := Option.map_eq_some_iff.1 e
+    obtain ⟨hb, hi, hea⟩ := slot_ok hs
+    have ea : s.ea m = (regn D s₀ b).base + BitVec.ofNat 64 (4 * i) := by rw [hea, h.gpr]; rfl
+    have hin := in_regn' hc hb h.wr hi (by decide)
+    have hv := h.mem b i hb (by omega)
+    generalize hvd : s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 32 = v at hv
+    refine ⟨s.setZ d (v ++ v ++ v ++ v) (v ++ v ++ v ++ v) (v ++ v ++ v ++ v) (v ++ v ++ v ++ v), ?_,
+      h.setReg (fun r p hp => ?_) (by simp) (by simp) (by simp) (by simp)⟩
+    · simp only [exec, ea, State.load32, hin, ite_true, Option.map_some, hvd]
+    · rw [zw_split, State.zlane_setZ _ _ _ _ _ _ _ (div4_lt hp)]
+      split
+      · rw [pick4_same _ (div4_lt hp), dword_rep4 _ (mod4_lt p)]; exact hv
+      · rfl
+  · rename_i d a m
+    obtain ⟨⟨b, i⟩, hs, rfl⟩ := Option.map_eq_some_iff.1 e
+    obtain ⟨hb, hi, hea⟩ := slot_ok hs
+    have ea : s.ea m = (regn D s₀ b).base + BitVec.ofNat 64 (4 * i) := by rw [hea, h.gpr]; rfl
+    have hin := in_regn' hc hb h.wr hi (by decide)
+    have hv := h.mem b i hb (by omega)
+    generalize hvd : s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 32 = v at hv
+    refine ⟨s.setZ d (XBinOp.eval .paddd (s.zlane a 0) (v ++ v ++ v ++ v))
+      (XBinOp.eval .paddd (s.zlane a 1) (v ++ v ++ v ++ v)) (XBinOp.eval .paddd (s.zlane a 2) (v ++ v ++ v ++ v))
+      (XBinOp.eval .paddd (s.zlane a 3) (v ++ v ++ v ++ v)), ?_,
+      h.setReg (fun r p hp => ?_) (by simp) (by simp) (by simp) (by simp)⟩
+    · simp only [exec, ea, State.load32, hin, ite_true, Option.map_some, ZBcstDOp.sse, hvd]
+    · rw [zw_split, State.zlane_setZ _ _ _ _ _ _ _ (div4_lt hp)]
+      split
+      · rw [pick4_fn (fun l => XBinOp.eval .paddd (s.zlane a l) (v ++ v ++ v ++ v)) (div4_lt hp),
+          dword_paddd _ _ (mod4_lt p), dword_rep4 _ (mod4_lt p), T.eval, ← hv, ← zw_split]
+        exact congrArg (· + v) (h.reg a p hp)
+      · rfl
   · cases e
 
 /-- A block of instructions. -/

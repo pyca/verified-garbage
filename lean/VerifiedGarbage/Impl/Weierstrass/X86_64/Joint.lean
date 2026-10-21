@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.JointFixed
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCache
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCacheBuild
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCoZ
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.FastNaf
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.PointOps
 
@@ -32,9 +33,18 @@ structure Cfg where
   products are calls; with them, written out (`Naf.cacheUnrolled`), which
   was faster on Zen 3. -/
   cacheUnroll : Bool := false
+  /-- Whether the table of `Q`'s odd multiples is built by co-Z arithmetic
+  (`Naf.tableCoZ`, from an affine `Q`) rather than by Jacobian additions
+  (`Naf.table`). -/
+  coZ : Bool := false
+  /-- The width of the generator's digits: seven, stored as bytes, or nine,
+  as sixteen-bit words (`FastNaf.prepN16`), for a table of `[m]G` for
+  `m ≤ 256` at `tsym`. -/
+  gw : Nat := 7
 
 def prep (c : Cfg) (u v : Nat) : Prog isa :=
-  .seq (FastNaf.prepN c.K.M.n u c.gBits 7) (FastNaf.prepN c.K.M.n v c.K.bits 5)
+  .seq (if c.gw=9 then FastNaf.prepN16 c.K.M.n u c.gBits else FastNaf.prepN c.K.M.n u c.gBits 7)
+    (FastNaf.prepN c.K.M.n v c.K.bits 5)
 
 /-- `R = R + E`, `E`'s `Z²` and `Z³` at `selected`. -/
 def cachedAdd (c : Cfg) : Prog isa :=
@@ -52,9 +62,15 @@ def cachedDigit (c : Cfg) : Prog isa :=
   .seq (.block (Naf.digitRead c.K)) <|
     .ite .e (.block []) (.seq (Naf.signedCachedEntry c.K c.cache c.selected) (cachedAdd c))
 
+/-- The generator's digit `rbx`, zero-extended into `r8`, and its test. -/
+def fixedRead (c : Cfg) : List Instr :=
+  if c.gw=9 then [.movzx16 .r8 (FastNaf.tbl16 c.gBits),.alu .test .r8 (.reg .r8)]
+  else Naf.digitRead {c.K with bits := c.gBits}
+
 def fixedDigit (c : Cfg) : Prog isa :=
-  .seq (.block (Naf.digitRead {c.K with bits := c.gBits})) <|
-    .ite .e (.block []) (.seq (fixedEntry c.K c.tsym) (fixedAdd c))
+  .seq (.block (fixedRead c)) <|
+    .ite .e (.block []) (.seq (if c.gw=9 then fixedEntryW c.K c.tsym else fixedEntry c.K c.tsym)
+      (fixedAdd c))
 
 def digits (c : Cfg) : Prog isa := .seq (cachedDigit c) (fixedDigit c)
 
@@ -81,8 +97,11 @@ def cacheCode (c : Cfg) : Prog isa :=
     if c.K.M.adx then Naf.cacheUnrolled c.K.M c.K.tbl c.cache 8 else Naf.cacheStaged c.K.M c.K.tbl c.cache c.K.E.x
   else Naf.cacheTable c.K.M c.K.tbl c.cache c.K.E.x
 
+/-- The table of `Q`'s odd multiples. -/
+def tableCode (c : Cfg) : Prog isa := if c.coZ then Naf.tableCoZ c.K else Naf.table c.K
+
 def window (c : Cfg) (double : Prog isa) : Prog isa :=
-  .seq (Naf.table c.K) <| .seq (cacheCode c) <|
+  .seq (tableCode c) <| .seq (cacheCode c) <|
     .seq (.block (Jacobian.infinity c.K c.K.R ++ [.mov32 .rbx (.imm (BitVec.ofNat 32 (top c)))])) (run c double)
 
 end VG.Impl.Weierstrass.X86_64.Joint

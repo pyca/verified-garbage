@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Reflect
 public import VerifiedGarbage.Proof.Sha3.Spec
-public import Mathlib.Tactic.IntervalCases
 
 @[expose] public section
 

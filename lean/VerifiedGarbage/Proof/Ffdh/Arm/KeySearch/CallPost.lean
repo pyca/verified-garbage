@@ -39,20 +39,26 @@ theorem call_post {p : KeyPublic sampling} {original s u t : State} {used keys s
     (post : (GenerationPolicy.attemptContract sampling abi 176).post (callState p used u)
       (t.withRegions (callRd p used) (callWr p))) : AttemptPost p original used t := by
   have facts := h.input.callFacts room
-  have a0 := call_stackArg (j := 0) facts sp mem (by decide)
-  have a1 := call_stackArg (j := 1) facts sp mem (by decide)
-  have a2 := call_stackArg (j := 2) facts sp mem (by decide)
-  have a3 := call_stackArg (j := 3) facts sp mem (by decide)
-  have a4 := call_stackArg (j := 4) facts sp mem (by decide)
+  have a0 := call_stackArg (j := 0) facts sp mem (by cases sampling <;> decide)
+  have a1 := call_stackArg (j := 1) facts sp mem (by cases sampling <;> decide)
+  have a2 := call_stackArg (j := 2) facts sp mem (by cases sampling <;> decide)
+  have a3 := call_stackArg (j := 3) facts sp mem (by cases sampling <;> decide)
+  have a4 := call_stackArg (j := 4) facts sp mem (by cases sampling <;> decide)
   simp only [callValue] at a0 a1 a2 a3 a4
   have nativeLen : (BitVec.ofNat 32 p.len).toNat = p.len := Nat.mod_eq_of_lt facts.lenFits
   have domainLen : (BitVec.ofNat 32 p.dlen).toNat = p.dlen := Nat.mod_eq_of_lt facts.domainLenFits
   have bytes := h.call_inputs room mem
-  sig_post [GenerationPolicy.attemptContract, generateKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr] at post
-  rw [BitVec.setWidth_append_eq_right] at post
-  simp only [args.x, args.y, a0, a1, a2, a3, a4, nativeLen, domainLen] at post
-  simp only [State.addr] at bytes
-  rw [bytes.1, bytes.2] at post
-  exact ⟨(post h.input.bounds.domainValid).1, (post h.input.bounds.domainValid).2⟩
+  cases sampling <;>
+    sig_post [GenerationPolicy.attemptContract, GenerationPolicy.legacyAttemptContract,
+      cachedGenerateKeyContract, cachedGenerateKeySig, generateKeySig, abi, argRegs,
+      reduceClassify, Loc.val, State.addr] at post
+  all_goals
+    rw [BitVec.setWidth_append_eq_right] at post
+    simp only [args.x, args.y, a0, a1, a2, a3, a4, nativeLen, domainLen] at post
+    simp only [State.addr] at bytes
+    rw [bytes.1, bytes.2] at post
+    first
+    | exact ⟨(post h.input.bounds.domainValid).1, (post h.input.bounds.domainValid).2⟩
+    | exact ⟨post.1, post.2⟩
 
 end VG.Proof.Ffdh.Arm.KeySearch

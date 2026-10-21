@@ -9,10 +9,10 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SpecPost
 /-!
 # A hashing pair, complete
 
-`pair3Code_ok`: `begin3_ok`, then `Paired.finishCode` from
-`Paired.finish_ok`, run from the state `begin3` left with the registers
+`pairMCode_ok`: `beginM_ok`, then `Paired.finishCode` from
+`Paired.finish_ok`, run from the state `beginM` left with the registers
 of the pair's start (which is all `finish_ok` asks of its `initial` state
-but its memory). `Pair3PostW.outcome`: its outcome in terms of the
+but its memory). `PairMPostW.outcome`: its outcome in terms of the
 specification (as `Paired.PairPostW.outcome`).
 -/
 
@@ -28,16 +28,16 @@ open VG.Spec.Sha3 (stateAt bytesAt)
 open VG.Spec.MlKem
 open VG.Proof.MlKem
 
-theorem pair3_iff (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (a i : Nat) (w16 : Bool) (s : State)
-    (Q : State → Prop) :
-    WP isa (Impl.MlKem.AArch64.Hybrid.pair3 L S a i w16) s Q ↔
-    WP isa (.seq (begin3Code L S KEM.SB KEM.SS a (a+1) i (KEM.AH+1024*a) (KEM.AH+1024*(a+1)) w16) (finishCode w16)) s Q := by
-  simp only [Impl.MlKem.AArch64.Hybrid.pair3, begin3Code, Paired.initialCode, finishCode, seqs,
+theorem pairM_iff (sb ss off : Nat) (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (a j m : Nat) (w16 : Bool)
+    (s : State) (Q : State → Prop) :
+    WP isa (Impl.MlKem.AArch64.Hybrid.pairM sb ss off L S a j m w16) s Q ↔
+    WP isa (.seq (beginMCode L S sb ss a (a+1) j m (off+1024*a) (off+1024*(a+1)) w16) (finishCode w16)) s Q := by
+  simp only [Impl.MlKem.AArch64.Hybrid.pairM, beginMCode, Paired.initialCode, finishCode, seqs,
     show [Instr.str .x .x3 .x19 1696,.str .x .x4 .x19 1704,.logic .and .x .x6 .x22 .x23]=
       [.str .x .x3 .x19 1696,.str .x .x4 .x19 1704]++[.logic .and .x .x6 .x22 .x23] from rfl]
   simp only [WP.seq_iff (M := isa),WP.block_append_iff (M := isa)]
 
-structure Pair3PostW (w16 : Bool) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (A B : Spec.Sha3.State) (p a b e st : Addr) (E : List Byte) (i : Nat)
+structure PairMPostW (w16 : Bool) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (A B : Spec.Sha3.State) (p a b e st : Addr) (E : List Byte) (j m : Nat)
     (s t : State) : Prop where
   keep : Keep pairRegs s t
   frame : Frame (pairWrites3 p a b st s.sp) s.mem t.mem
@@ -47,19 +47,20 @@ structure Pair3PostW (w16 : Bool) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (A B : Sp
   reducedRight : ReducedW (cw w16) t.mem b
   status : t.gpr .x24=s.gpr .x24 &&& BitVec.ofNat 64
     (if (accepted A 5).length=256 ∧ (accepted B 5).length=256 then 1 else 0)
-  hash : stateAt t.mem st = hstate E (3 * i + 3) (dB S)
+  hash : stateAt t.mem st = hstate E (j + min 3 m) (dB S)
   ek : bytesAt t.mem e S.len = E
 
-theorem pair3Code_ok {w16 : Bool} (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State}
-    {p seed outA outB table e st : Addr} {E : List Byte} {a i : Nat} (hS : SrcOk S) (hoa : KEM.AH+1024*a < 65536) (hob : KEM.AH+1024*(a+1) < 65536)
-    (h : Paired.BeginInput KEM.SB KEM.SS (KEM.AH+1024*a) (KEM.AH+1024*(a+1)) p seed outA outB table s)
+theorem pairMCode_ok {w16 : Bool} (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State}
+    {p seed outA outB table e st : Addr} {E : List Byte} {sb ss a j m oa ob : Nat} (hS : SrcOk S)
+    (hss : ss < 65536) (hsb : sb + 32 ≤ 32768) (h8b : sb % 8 = 0) (hoa : oa < 65536) (hob : ob < 65536)
+    (h : Paired.BeginInput sb ss oa ob p seed outA outB table s)
     (hh : HashInput S p outA outB table e st s)
-    (hb : 136 * (3 * i + 2) < S.len)
-    (hash : stateAt s.mem st = hstate E (3 * i) (dB S)) (hE : bytesAt s.mem e S.len = E)
+    (hb : ∀ k < m, k < 3 → 136 * (j + k) < S.len)
+    (hash : stateAt s.mem st = hstate E j (dB S)) (hE : bytesAt s.mem e S.len = E)
     (h24 : s.gpr .x24 = 0 ∨ s.gpr .x24 = 1) :
-    WP isa (.seq (begin3Code L S KEM.SB KEM.SS a (a+1) i (KEM.AH+1024*a) (KEM.AH+1024*(a+1)) w16) (finishCode w16)) s
-      (Pair3PostW w16 S (seedState s.mem seed a L.k) (seedState s.mem seed (a+1) L.k) p outA outB e st E i s) := by
-  refine WP.seq (WP.mono_syms (begin3_ok L S hS (by decide) (by decide) (by decide) hoa hob h hh hb hash hE)
+    WP isa (.seq (beginMCode L S sb ss a (a+1) j m oa ob w16) (finishCode w16)) s
+      (PairMPostW w16 S (seedState s.mem seed a L.k) (seedState s.mem seed (a+1) L.k) p outA outB e st E j m s) := by
+  refine WP.seq (WP.mono_syms (beginM_ok L S hS hss hsb h8b hoa hob h hh hb hash hE)
     fun u hu sy => ?_)
   let initial : State := { s with mem := u.mem }
   have hk : Keep pairWorkingRegs initial u :=
@@ -85,7 +86,7 @@ theorem pair3Code_ok {w16 : Bool} (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HS
   · rw [VG.Proof.Sha3.AArch64.Hybrid.X3.stateAt_frame fut hSt, hu.hash]
   · rw [VG.Proof.MlKem.bytesAt_frame fut hE' (by have := hS.lim; omega), hu.ek]
 
-structure Pair3OutcomeW (w16 : Bool) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (A B : List Byte) (p a b e st : Addr) (E : List Byte) (i : Nat)
+structure PairMOutcomeW (w16 : Bool) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (A B : List Byte) (p a b e st : Addr) (E : List Byte) (j m : Nat)
     (s t : State) : Prop where
   keep : Keep pairRegs s t
   frame : Frame (pairWrites3 p a b st s.sp) s.mem t.mem
@@ -95,13 +96,13 @@ structure Pair3OutcomeW (w16 : Bool) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (A B :
   right : sampleNTT 280 B=none ∨ sampleNTT 280 B=some (polyAtW (cw w16) t.mem b)
   status : t.gpr .x24=s.gpr .x24 &&& BitVec.ofNat 64
     (if (sampleNTT 280 A).isSome ∧ (sampleNTT 280 B).isSome then 1 else 0)
-  hash : stateAt t.mem st = hstate E (3 * i + 3) (dB S)
+  hash : stateAt t.mem st = hstate E (j + min 3 m) (dB S)
   ek : bytesAt t.mem e S.len = E
 
-theorem Pair3PostW.outcome {w16 : Bool} {S : Impl.MlKem.AArch64.Hybrid.HSrc} {s t : State} {p seed a b e st : Addr} {E : List Byte} {i j k n : Nat}
+theorem PairMPostW.outcome {w16 : Bool} {S : Impl.MlKem.AArch64.Hybrid.HSrc} {s t : State} {p seed a b e st : Addr} {E : List Byte} {i i' k n m : Nat}
     (hk : 0<k) (hk256 : k≤256)
-    (h : Pair3PostW w16 S (seedState s.mem seed i k) (seedState s.mem seed j k) p a b e st E n s t) :
-    Pair3OutcomeW w16 S (seedBytes s.mem seed i k) (seedBytes s.mem seed j k) p a b e st E n s t := by
+    (h : PairMPostW w16 S (seedState s.mem seed i k) (seedState s.mem seed i' k) p a b e st E n m s t) :
+    PairMOutcomeW w16 S (seedBytes s.mem seed i k) (seedBytes s.mem seed i' k) p a b e st E n m s t := by
   have ra := Paired.accepted_result hk hk256 h.left
   have rb := Paired.accepted_result hk hk256 h.right
   refine ⟨h.keep,h.frame,h.reducedLeft,h.reducedRight,?_,?_,?_,h.hash,h.ek⟩

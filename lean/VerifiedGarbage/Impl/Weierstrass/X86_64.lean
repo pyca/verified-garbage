@@ -69,6 +69,12 @@ def progs : List (Prog isa) → Prog isa
 (`opProg`); without calls, a block per operation. -/
 def fprogB (M : Mod) (ops : List FOp) : Prog isa := progs (ops.map (opProg M))
 
+/-- `fprogB` with the block `side i` after operation `i` (from `i`): code that
+the operations' wait on each other's results leaves time for. -/
+def fprogBI (M : Mod) : List FOp → (Nat → List Instr) → Nat → Prog isa
+  | [], _, _ => .block []
+  | op :: ops, side, i => .seq (opProg M op) (.seq (.block (side i)) (fprogBI M ops side (i + 1)))
+
 /-- `[o] = [a]` if the mask `rcx` is zero, `[b]` if it is all ones, `n`
 words, through `rax` and `rdx`. -/
 def sel : Nat → Nat → Nat → Nat → List Instr

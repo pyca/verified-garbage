@@ -28,7 +28,7 @@ open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64.P224 VG.Proof.Weierstrass VG.Pr
 open VG.Proof.Weierstrass.X86_64 (InvSounds)
 
 /-- The comb's data, as `p224.comb` has it. -/
-def p224Table : CombData := ⟨7,Impl.P224.p224Comb7,Impl.P224.p224Comb7Start,"VG_P224_COMB",false⟩
+def p224Table : CombData := ⟨7,Impl.P224.p224Comb7,Impl.P224.p224Comb7Start,"VG_P224_COMB",false,false⟩
 
 theorem p224v_combConsts : p224v.combConsts = [("VG_P224_COMB", p224W)] := p224_combConsts
 

@@ -17,12 +17,12 @@ open VG VG.X86 VG.X86.Spill VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Dsa.X86
 
 private theorem saved_fits : Fits 8272 Entry.savedRegisters := by decide
 
-theorem entrySave_ok {s : State} {base : Addr} {size : Nat}
+theorem entrySave_precise {s : State} {base : Addr} {size : Nat}
     (hb : (s.gpr .eax).setWidth 64 = base) (hf : (s.gpr .eax).toNat + size ≤ 2 ^ 32)
     (hs : 8272 ≤ size) (hw : (⟨base, size⟩ : Region) ∈ s.wr) :
     WP isa (.block Entry.save) s fun t =>
       t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
-      Saved t.mem (off base) s.gpr Entry.savedRegisters ∧ Frame [⟨base, size⟩] s.mem t.mem := by
+      Saved t.mem (off base) s.gpr Entry.savedRegisters ∧ Frame [⟨base, 8272⟩] s.mem t.mem := by
   change WP isa (.block (saveCode .eax Entry.savedRegisters ++ [])) s _
   apply save_ofNat_ok Entry.savedRegisters saved_fits (by omega)
   · intro p hp
@@ -34,10 +34,23 @@ theorem entrySave_ok {s : State} {base : Addr} {size : Nat}
     · rw [U.mem, hb]
       exact saveMem_saved_ofNat _ base _ saved_fits (by decide)
     · rw [U.mem, hb]
-      apply saveMem_frame (by simp : (⟨base, size⟩ : Region) ∈ [⟨base, size⟩])
+      apply saveMem_frame (by simp : (⟨base, 8272⟩ : Region) ∈ [⟨base, 8272⟩])
       intro p hp
       exact Offset.contains_base base (by have := saved_fits.1 p hp; omega)
         (by have := saved_fits.1 p hp; omega)
+
+theorem entrySave_ok {s : State} {base : Addr} {size : Nat}
+    (hb : (s.gpr .eax).setWidth 64 = base) (hf : (s.gpr .eax).toNat + size ≤ 2 ^ 32)
+    (hs : 8272 ≤ size) (hw : (⟨base, size⟩ : Region) ∈ s.wr) :
+    WP isa (.block Entry.save) s fun t =>
+      t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Saved t.mem (off base) s.gpr Entry.savedRegisters ∧ Frame [⟨base, size⟩] s.mem t.mem := by
+  refine WP.mono (entrySave_precise hb hf hs hw) fun _ ⟨G,R,W,S,F⟩ => ⟨G,R,W,S,F.sub ?_⟩
+  intro r hr
+  obtain rfl := List.mem_singleton.mp hr
+  refine ⟨_,List.mem_singleton_self _,?_⟩
+  have H := Offset.sub_base base (d := 0) (n := 8272) (k := size) hs
+  simpa only [off,BitVec.add_zero] using H
 
 theorem entryRestore_ok {s : State} {base : Addr} {size : Nat} {g : Reg → BitVec 32}
     (hs : Scr s base size) (hz : 8272 ≤ size)

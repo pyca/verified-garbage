@@ -46,15 +46,31 @@ structure AfterTW (w16 : Bool) (P : KemLay) (s₀ : State) (ρ : List Byte) (s :
   r : bytesAt s.mem (sA (enL P) s₀ RB) 32 = (gE P s₀).2
   m : bytesAt s.mem (sA (enL P) s₀ MB) 32 = mE s₀
 
-theorem tailH_ok {w16 : Bool} (hash : FixedHash.HashFn)
+/-- `AfterTW`, after the first `n` entries of `Â`. -/
+structure AfterTN (w16 : Bool) (P : KemLay) (s₀ : State) (ρ : List Byte) (n : Nat) (s : State) : Prop where
+  b : BInvW w16 P (enL P) s₀ s.mem ρ n s
+  key : bytesAt s.mem (kA s₀ 2) 32 = (gE P s₀).1
+  r : bytesAt s.mem (sA (enL P) s₀ RB) 32 = (gE P s₀).2
+  m : bytesAt s.mem (sA (enL P) s₀ MB) 32 = mE s₀
+
+/-- What the tail writes: `H(ek)` into `HB`, then `G`'s state, working space and stack, the key and `r`. -/
+abbrev tailW (P : KemLay) (s₀ : State) : List Region :=
+  [Region.mk (kA s₀ 4 + BitVec.ofNat 64 HB) 32] ++
+    [Region.mk (kA s₀ (enL P).sc + BitVec.ofNat 64 KEM.ST) 200,
+      ⟨kA s₀ (enL P).sc + BitVec.ofNat 64 WK, 640⟩, below s₀.sp 16,
+      ⟨kA s₀ ((enL P).slot 1) + BitVec.ofNat 64 0, 32⟩, ⟨kA s₀ (enL P).sc + BitVec.ofNat 64 RB, 32⟩]
+
+/-- `tailH_ok`, after the first `n` entries of `Â`, with what the tail writes. -/
+theorem tailHN_ok {w16 : Bool} (hash : FixedHash.HashFn)
     (hG : FixedHash.HashCorrect hash .x28 ST WK 72 6 [⟨.x28,MB,32⟩,⟨.x28,HB,32⟩]
       [⟨.x26,0,32⟩,⟨.x28,RB,32⟩])
-    {s₀ sB : State} (hp : Pre P (enL P) s₀) {ρ : List Byte}
-    (hB : BInvW w16 P (enL P) s₀ sB.mem ρ (P.k*P.k) sB)
+    {s₀ sB : State} (hp : Pre P (enL P) s₀) {ρ : List Byte} {n : Nat} (hn : n ≤ P.k*P.k)
+    (hB : BInvW w16 P (enL P) s₀ sB.mem ρ n sB)
     (hm : bytesAt sB.mem (sA (enL P) s₀ MB) 32 = mE s₀)
     (hst : stateAt sB.mem (kA s₀ (enL P).sc) =
       Spec.Sha3.absorb 136 (Spec.Sha3.pad 136 (BitVec.ofNat 8 6) (ekE P s₀))) :
-    WP isa (Impl.MlKem.AArch64.Hybrid.tailH hash) sB (AfterTW w16 P s₀ ρ) := by
+    WP isa (Impl.MlKem.AArch64.Hybrid.tailH hash) sB fun s =>
+      AfterTN w16 P s₀ ρ n s ∧ Frame (tailW P s₀) sB.mem s.mem := by
   have hw := hp.wf
   -- `H(ek)`
   refine WP.seq (WP.mono (KeyGen.copy_ok (S := kA s₀ 4) (D := kA s₀ 4) (so := KEM.ST) (dO := HB)
@@ -133,11 +149,22 @@ theorem tailH_ok {w16 : Bool} (hash : FixedHash.HashFn)
     · exact far₄ (o := AH + 1024 * e) (l := 1024) (by lom) (by lom) (.inr (by lom)) r hr
   have f14 := (f₁.mono (fun r hr => List.mem_append_left _ hr)).trans
     (k₄'.frame.mono (fun r hr => List.mem_append_right [Region.mk (kA s₀ 4 + BitVec.ofNat 64 HB) 32] hr))
-  refine ⟨⟨kb₄, Frame.refl _ _, ?_, ?_, ?_, ?_⟩, key₄, r₄, ?_⟩
+  refine ⟨⟨⟨kb₄, Frame.refl _ _, ?_, ?_, ?_, ?_⟩, key₄, r₄, ?_⟩, f14⟩
   · rw [far34 (o := SB) (l := 32) (by lom) (by lom) (by decide) (by decide)]; exact hB.rho
   · rw [k₄.cs _ (by decide) (by decide), x24₃]; exact hB.acc
-  · intro e he; exact reducedW_frame f14 (farA e he) (hB.red e he)
-  · intro e he; rw [polyAtW_frame f14 (farA e he)]; exact hB.res e he
+  · intro e he; exact reducedW_frame f14 (farA e (by omega)) (hB.red e he)
+  · intro e he; rw [polyAtW_frame f14 (farA e (by omega))]; exact hB.res e he
   · rw [far34 (o := MB) (l := 32) (by lom) (by lom) (by decide) (by decide)]; exact hm
+
+theorem tailH_ok {w16 : Bool} (hash : FixedHash.HashFn)
+    (hG : FixedHash.HashCorrect hash .x28 ST WK 72 6 [⟨.x28,MB,32⟩,⟨.x28,HB,32⟩]
+      [⟨.x26,0,32⟩,⟨.x28,RB,32⟩])
+    {s₀ sB : State} (hp : Pre P (enL P) s₀) {ρ : List Byte}
+    (hB : BInvW w16 P (enL P) s₀ sB.mem ρ (P.k*P.k) sB)
+    (hm : bytesAt sB.mem (sA (enL P) s₀ MB) 32 = mE s₀)
+    (hst : stateAt sB.mem (kA s₀ (enL P).sc) =
+      Spec.Sha3.absorb 136 (Spec.Sha3.pad 136 (BitVec.ofNat 8 6) (ekE P s₀))) :
+    WP isa (Impl.MlKem.AArch64.Hybrid.tailH hash) sB (AfterTW w16 P s₀ ρ) :=
+  WP.mono (tailHN_ok hash hG hp (Nat.le_refl _) hB hm hst) fun _ ⟨h, _⟩ => ⟨h.b, h.key, h.r, h.m⟩
 
 end VG.Proof.MlKem.AArch64.Hybrid

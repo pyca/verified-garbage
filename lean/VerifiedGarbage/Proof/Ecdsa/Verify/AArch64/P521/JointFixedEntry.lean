@@ -150,5 +150,5 @@ theorem fixedEntry_ok {s : State} {base T : Addr} {u j : Nat} {C : Curve} {G : P
    simpa only [fixedCfg] using hm) id vv
    (by decide) (by decide) vz (by decide) (by change 3304+j<8192; omega) dj db jd zd) fun t ⟨Et,kt,it,jt,zt⟩ => ?_
  refine ⟨Et,(kp.mono (by simp)).trans (kd.trans (kt.mono (by simp [fixedCfg]))),it,?_,zt⟩
- simpa only [fixedCfg,he,nafNegative,FastNaf.byte_negative,FastNaf.point] using jt
+ simpa only [fixedCfg,he,nafNegative,FastNaf.byte_negative 7 u j,FastNaf.point] using jt
 end VG.Proof.Ecdsa.Verify.AArch64.P521.Joint

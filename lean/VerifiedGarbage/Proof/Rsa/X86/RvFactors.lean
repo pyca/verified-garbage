@@ -16,10 +16,10 @@ theorem factors_ok {g : Geo} {s0 s : State} {A V : Nat → Nat} {m y : Nat}
     (h : KS g s0 A [mY, aN, aZ, aOne] (fun _ => 0) [] V [sMask] s)
     (modulus : A aN = m) (value : A mY = y) (zero : A aZ = 0) (one : A aOne = 1)
     (odd : m % 2 = 1) (hm : 1 < m) :
-    WP isa (factors g.n) s fun t =>
+    WP isa VG.Impl.Rsa.X86.RecoverRt.factors s fun t =>
       KS g s0 (AF (Nat.gcd (sub32 g.w y 1) m) (m / Nat.gcd (sub32 g.w y 1) m))
         [5, 6, aZero] (fun _ => 0) [] V [sMask] t := by
-  unfold factors
+  unfold VG.Impl.Rsa.X86.RecoverRt.factors
   simp only [seqs]
   refine WP.seq (WP.mono (gcdSet_ok h modulus value zero one) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (gcd_ok h1 odd hm) fun s2 h2 => ?_)

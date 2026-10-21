@@ -9,12 +9,14 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 /-!
 # The paired matrix, hashing a message
 
-`matrixH_ok`: the matrix (`Hybrid.matrixH`) of a function with the layout
-`L` satisfies the paired matrix's invariant (`Kem.BInv`, here from the
-memory each step starts in, with the writes since the matrix began framed by
-`bW3`), and leaves in `scratch`'s first 200 bytes the state the hash of the
-message `M` is squeezed from (`HInv.hash`): `ek` for encapsulation's
-`H(ek)`, `z ‖ c` (copied to `scratch`) for decapsulation's `J(z ‖ c)`.
+`paired_step3`: a pair of the matrix of a function with the layout `L` that
+absorbs the next three blocks of a message into the third state
+(`Hybrid.pair3`) keeps the paired matrix's invariant (`Kem.BInv`, here from
+the memory each step starts in, with the writes since the matrix began framed
+by `bW3`), and the state the hash of the message `M` is squeezed from in
+`scratch`'s first 200 bytes (`HInv.hash`): `ek` for encapsulation's `H(ek)`,
+`z ‖ c` (copied to `scratch`) for decapsulation's `J(z ‖ c)`, as the first
+pairs of `Kem16P.matrixP` do.
 `MsgOk` is where the message lies. Its x3 calls use the 128 bytes below the
 stack pointer (`Stk128`).
 -/
@@ -108,10 +110,11 @@ theorem safe_frame {s₀ : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀) :
     have := hp.scw; have := hp.scb; omega)).symm⟩
 
 theorem BInvW.paired3 {w16 : Bool} {s₀ s t : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀) {mA : Mem}
-    {ρ E : List Byte} {S : Impl.MlKem.AArch64.Hybrid.HSrc} {ea : Addr} {e i : Nat}
+    {ρ E : List Byte} {S : Impl.MlKem.AArch64.Hybrid.HSrc} {ea : Addr} {e : Nat}
     (he : e+1<P.k*P.k) (h : BInvW w16 P L s₀ mA ρ e s)
-    (ht : Pair3OutcomeW w16 S (matSeed ρ (e/P.k) (e%P.k)) (matSeed ρ ((e+1)/P.k) ((e+1)%P.k))
-      (sA L s₀ SS) (aP L s₀ e) (aP L s₀ (e+1)) ea (kA s₀ L.sc) E i s t) :
+    {j m : Nat}
+    (ht : PairMOutcomeW w16 S (matSeed ρ (e/P.k) (e%P.k)) (matSeed ρ ((e+1)/P.k) ((e+1)%P.k))
+      (sA L s₀ SS) (aP L s₀ e) (aP L s₀ (e+1)) ea (kA s₀ L.sc) E j m s t) :
     BInvW w16 P L s₀ t.mem ρ (e+2) t := by
   have hw := hp.wf
   have fr : Frame (pairWrites3 (sA L s₀ SS) (aP L s₀ e) (aP L s₀ (e+1))
@@ -198,7 +201,7 @@ theorem paired_step3 {w16 : Bool} {M : Msg} {s₀ s : State} (hp : Pre P L s₀)
     WP isa (Impl.MlKem.AArch64.Hybrid.pair3 P M.S (2*i) i w16) s fun t =>
       HInvW w16 P L M s₀ mA ρ E (2*i+2) (i+1) t ∧ MT3 P L s₀ t := by
   have hw := hp.wf
-  rw [pair3_iff]
+  rw [Impl.MlKem.AArch64.Hybrid.pair3, pairM_iff]
   have hf := hw.facts
   have hkk : P.k * P.k ≤ 16 := hf.2.2.1
   have hoa : AH+1024*(2*i)<65536 := by simp only [KEM.AH]; omega_using [he, hkk]
@@ -207,7 +210,8 @@ theorem paired_step3 {w16 : Bool} {M : Msg} {s₀ s : State} (hp : Pre P L s₀)
   have hk2 : P.k ≤ 256 := by omega_using [hf.2.1]
   have pin := pair_input (L := L) hp he h.b.kb tb.t
   have hin := hash_input hp hk hM he h.b.kb tb
-  refine WP.mono_syms (pair3Code_ok P M.S (a := 2*i) (i := i) hM.src hoa hob pin hin hb h.hash h.ek
+  refine WP.mono_syms (pairMCode_ok P M.S (a := 2*i) (j := 3*i) (m := 3) hM.src (by decide) (by decide)
+    (by decide) hoa hob pin hin (fun k hk _ => by omega) h.hash h.ek
     (x24_bit h.b)) fun t ht sy => ?_
   have post := ht.outcome (p := sA L s₀ SS) hk1 hk2
   have seed {j : Nat} : Paired.seedBytes s.mem (sA L s₀ SB) j P.k=matSeed ρ (j/P.k) (j%P.k) := by
@@ -227,7 +231,7 @@ theorem paired_step3 {w16 : Bool} {M : Msg} {s₀ s : State} (hp : Pre P L s₀)
       · exact ⟨R (kA s₀) L.sc 0 200, by simp, by rw [stR_sc]; exact fun _ h => h⟩
       · exact ⟨frame s₀.sp, by simp, fun _ h => h⟩
   refine ⟨⟨BInvW.paired3 hp hk he h.b post, h.fr.trans (fr.sub sub3), ?_, ht.ek⟩, ?_⟩
-  · rw [ht.hash, show 3 * (i + 1) = 3 * i + 3 by omega]
+  · rw [ht.hash, show 3 * (i + 1) = 3 * i + min 3 3 by omega]
   · refine tb.frame post.keep.rd post.keep.wr sy fr fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
     · exact .inl (pair_scratch hp he r hr)
@@ -250,28 +254,6 @@ theorem bW_st {s₀ : State} (hp : Pre P L s₀) :
 theorem bW_sub {s₀ : State} : ∀ r ∈ bW P L s₀, r ∈ bW3 P L s₀ :=
   fun _ hr => List.mem_append_left _ hr
 
-/-- **A pair that does not hash.** -/
-theorem paired_stepH {w16 : Bool} {M : Msg} {s₀ s : State} (hp : Pre P L s₀) (hM : MsgOk P L M s₀) {mA : Mem}
-    {ρ E : List Byte} {e j : Nat}
-    (he : e+1<P.k*P.k) (h : HInvW w16 P L M s₀ mA ρ E e j s) (tb : MT3 P L s₀ s) :
-    WP isa (Impl.MlKem.AArch64.Paired.pair P false e w16) s fun t =>
-      HInvW w16 P L M s₀ mA ρ E (e+2) j t ∧ MT3 P L s₀ t := by
-  refine WP.mono_syms (paired_step hp he h.b tb.t) fun t ⟨hb, mt⟩ sy => ?_
-  refine ⟨⟨binv_rebase hb, h.fr.trans (hb.fr.mono bW_sub), ?_, ?_⟩, mt, by rw [sy]; exact tb.stk⟩
-  · rw [VG.Proof.Sha3.AArch64.Hybrid.X3.stateAt_frame hb.fr (bW_st hp), h.hash]
-  · rw [VG.Proof.MlKem.bytesAt_frame hb.fr hM.dW (by have := hM.src.lim; omega), h.ek]
-
-/-- **The singleton.** -/
-theorem singleton_stepH {w16 : Bool} {M : Msg} {s₀ s : State} (hp : Pre P L s₀) (hM : MsgOk P L M s₀)
-    {mA : Mem} {ρ E : List Byte} {e j : Nat}
-    (he : e<P.k*P.k) (h : HInvW w16 P L M s₀ mA ρ E e j s) (tb : MT3 P L s₀ s) :
-    WP isa (Paired.lastCode SB SS e P.k (AH+1024*e) w16) s fun t =>
-      HInvW w16 P L M s₀ mA ρ E (e+1) j t ∧ MT3 P L s₀ t := by
-  refine WP.mono_syms (singleton_step hp he h.b tb.t) fun t ⟨hb, mt⟩ sy => ?_
-  refine ⟨⟨binv_rebase hb, h.fr.trans (hb.fr.mono bW_sub), ?_, ?_⟩, mt, by rw [sy]; exact tb.stk⟩
-  · rw [VG.Proof.Sha3.AArch64.Hybrid.X3.stateAt_frame hb.fr (bW_st hp), h.hash]
-  · rw [VG.Proof.MlKem.bytesAt_frame hb.fr hM.dW (by have := hM.src.lim; omega), h.ek]
-
 /-- The arithmetic of the hashing pairs. -/
 structure HashOk (P : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) : Prop where
   part : S.len % 136 ≠ 0
@@ -282,55 +264,5 @@ theorem hashOk768 : HashOk lay768 (Impl.MlKem.AArch64.Hybrid.ekSrc lay768) :=
   ⟨by decide, by decide, by decide⟩
 theorem hashOk1024 : HashOk Impl.MlKem1024.AArch64.lay1024 (Impl.MlKem.AArch64.Hybrid.ekSrc Impl.MlKem1024.AArch64.lay1024) :=
   ⟨by decide, by decide, by decide⟩
-
-/-- **The matrix.** -/
-theorem matrixH_ok {w16 : Bool} {M : Msg} {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀)
-    (hM : MsgOk P L M s₀) (ho : HashOk P M.S) {mA : Mem} {ρ E : List Byte}
-    (h : HInvW w16 P L M s₀ mA ρ E 0 0 s) (tb : MT3 P L s₀ s) :
-    WP isa (Impl.MlKem.AArch64.Hybrid.matrixH P M.S w16) s fun t =>
-      HInvW w16 P L M s₀ mA ρ E (P.k*P.k) (Impl.MlKem.AArch64.Hybrid.hashPairs M.S) t ∧ MT3 P L s₀ t := by
-  have hk' : 0<P.k := hp.wf.facts.1
-  have hn : 0<P.k*P.k := Nat.mul_pos hk' hk'
-  have hP := ho.pairs
-  apply WPs.seqs
-  · intro hh
-    have parts := List.append_eq_nil_iff.mp hh
-    by_cases hodd : P.k*P.k%2=1
-    · simpa only [ite_eq_left hodd,List.cons_ne_nil] using parts.2
-    · have np : 0<P.k*P.k/2 := by omega
-      exact map_range_ne_nil np _ parts.1
-  · apply WPs.append
-    refine WPs.mono (WPs.range (I := fun i t => HInvW w16 P L M s₀ mA ρ E (2*i)
-      (min i (Impl.MlKem.AArch64.Hybrid.hashPairs M.S)) t ∧ MT3 P L s₀ t)
-      (fun i hi t ht => ?_) ⟨by simpa using h, tb⟩) fun t ht => ?_
-    · by_cases hh : i < Impl.MlKem.AArch64.Hybrid.hashPairs M.S
-      · rw [ite_eq_left hh]
-        have hb : 136 * (3 * i + 2) < M.S.len := by
-          have := ho.part; have := ho.three
-          simp only [Impl.MlKem.AArch64.Hybrid.hashPairs, Impl.MlKem.AArch64.Hybrid.blocks] at hh
-          omega
-        rw [show min i (Impl.MlKem.AArch64.Hybrid.hashPairs M.S) = i by omega] at ht
-        refine WP.mono (paired_step3 hp hk hM (by omega) hb ht.1 ht.2) fun u hu => ?_
-        rw [show min (i+1) (Impl.MlKem.AArch64.Hybrid.hashPairs M.S) = i+1 by omega,
-          show 2*(i+1) = 2*i+2 by omega]
-        exact hu
-      · rw [ite_eq_right hh]
-        rw [show min i (Impl.MlKem.AArch64.Hybrid.hashPairs M.S) = Impl.MlKem.AArch64.Hybrid.hashPairs M.S by omega] at ht
-        refine WP.mono (paired_stepH hp hM (by omega : 2*i+1<P.k*P.k) ht.1 ht.2) fun u hu => ?_
-        rw [show min (i+1) (Impl.MlKem.AArch64.Hybrid.hashPairs M.S) = Impl.MlKem.AArch64.Hybrid.hashPairs M.S by omega,
-          show 2*(i+1) = 2*i+2 by omega]
-        exact hu
-    · rw [show min (P.k*P.k/2) (Impl.MlKem.AArch64.Hybrid.hashPairs M.S) = Impl.MlKem.AArch64.Hybrid.hashPairs M.S by omega] at ht
-      by_cases hodd : P.k*P.k%2=1
-      · rw [ite_eq_left hodd]
-        apply WPs.single
-        rw [Paired.lastSample_eq]
-        have idx : 2*(P.k*P.k/2)=P.k*P.k-1 := by omega
-        rw [idx] at ht
-        refine WP.mono (singleton_stepH hp hM (by omega : P.k*P.k-1<P.k*P.k) ht.1 ht.2) fun u hu => ?_
-        simpa only [Nat.sub_add_cancel hn] using hu
-      · rw [ite_eq_right hodd]
-        have idx : 2*(P.k*P.k/2)=P.k*P.k := by omega
-        simpa only [WPs,idx] using ht
 
 end VG.Proof.MlKem.AArch64.Hybrid

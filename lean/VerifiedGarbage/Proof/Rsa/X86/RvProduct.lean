@@ -21,11 +21,12 @@ theorem prod_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {e d eLen dLen : Nat}
     (arg : CallArgument s g.B g.Z 7 (BitVec.ofNat 32 eLen))
     (ePos : 0 < eLen) (eBound : eLen ≤ 8 * g.n) (dBound : dLen ≤ 8 * g.n)
     (eFits : e < 2 ^ (8 * eLen)) (dFits : d < 2 ^ (8 * dLen)) :
-    WP isa (prod g.n) s fun t =>
+    WP isa VG.Impl.Rsa.X86.RecoverRt.prod s fun t =>
       KS g s0 A [aN] (AWp g e d) [wM, wMod, wZ] (fun _ => 0) [] t := by
-  unfold prod prodSet
-  refine WP.seq (WP.block_append (WP.mono (setTop_ok h.wsW (j := wMod) (by decide))
+  unfold VG.Impl.Rsa.X86.RecoverRt.prod
+  refine WP.seq (WP.block_append (WP.mono (setTop_ok h.rtW (by decide))
     fun u ⟨_, k, value, r⟩ => ?_))
+  rw [kw_wid] at k value
   have zero : num s.mem g.B g.W wMod = 0 := by
     rw [h.arrsW wMod (by simp)]; simp [AW1, upd, wMod, wD, wE]
   have low : val32 s.mem g.B (arr g.W wMod) (g.W - 1) = 0 := by

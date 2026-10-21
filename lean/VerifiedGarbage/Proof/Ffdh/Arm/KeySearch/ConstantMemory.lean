@@ -14,7 +14,7 @@ open VG VG.Arm VG.Impl.Ffdh.Arm.VettedGroups
 theorem tablePtr_of_syms {sampling : GenerationPolicy} {s t : State}
     (syms : t.syms = s.syms) : tablePtr sampling t = tablePtr sampling s := by
   cases sampling with
-  | full => rfl
+  | full | cached => rfl
   | vetted => exact congrFun syms tableSym
 
  theorem held_of_consts {sampling : GenerationPolicy} {stack : Nat} {s : State}
@@ -22,7 +22,7 @@ theorem tablePtr_of_syms {sampling : GenerationPolicy} {s t : State}
   intro c member i hi
   have original := hc.2.1 c member i hi
   cases sampling with
-  | full => exact False.elim (List.not_mem_nil member)
+  | full | cached => exact False.elim (List.not_mem_nil member)
   | vetted =>
     simp only [consts, tableConsts, List.mem_singleton] at member
     subst c
@@ -50,7 +50,7 @@ private theorem singleton_held_after_frame {name : String} {words : List (BitVec
     (safe : ∀ table ∈ regions sampling ptr, ∀ r ∈ changes, table.Disjoint r) :
     held sampling ptr m' := by
   cases sampling with
-  | full =>
+  | full | cached =>
     intro c member
     exact False.elim (List.not_mem_nil member)
   | vetted =>

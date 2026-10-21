@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.CheckEk
+public import VerifiedGarbage.Proof.MlKem1024.X86_64.CheckEkAvx2
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeKgV
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeEncV
@@ -60,6 +61,12 @@ def artifacts : List Artifact := [
     verified := Proof.MlKem1024.X86_64.decodeDecompress1024_verified },
   Spec.MlKem1024.checkEkApi.artifact X86_64.target {
     code := Impl.MlKem1024.X86_64.checkEk1024
-    verified := Proof.MlKem1024.X86_64.checkEk1024_verified }]
+    verified := Proof.MlKem1024.X86_64.checkEk1024_verified },
+  Spec.MlKem1024.checkEkApi.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["The function checks eight fields at a time, from 12 bytes, in the doublewords of an AVX2 register."]
+    code := Impl.MlKem1024.X86_64.checkEk1024Avx2
+    verified := Proof.MlKem1024.X86_64.checkEk1024Avx2_verified
+    features := ["avx", "avx2"] }]
 
 end VG.Artifacts.MlKem1024.X86_64

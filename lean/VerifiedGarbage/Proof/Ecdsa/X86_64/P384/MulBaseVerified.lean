@@ -122,11 +122,11 @@ theorem cfg_mulBase (adx : Bool) : MulBaseOk (cfg adx) := by
   · exact p384_mulBase
   · exact p384x_mulBase
 
-theorem cfg_tbls (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
+theorem cfg_tbls (hL : Law Spec.P384.curve) (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
     (adx : Bool) : CombTbls (cfg adx) := by
   cases adx
-  · exact p384_tbls hT
-  · exact p384x_tbls hT
+  · exact p384_tbls hL hT
+  · exact p384x_tbls hL hT
 
 theorem cfg_combConsts (adx : Bool) : (cfg adx).combConsts = [("VG_P384_COMB", p384W)] := by
   cases adx
@@ -160,11 +160,11 @@ theorem keeps_of_unch {ws : Addr} {m m' : Mem} (adx : Bool) (hu : Unch ws (gWA (
 theorem tbls_of {s : State} (adx : Bool) (hrd : s.rd = [⟨s.syms "VG_P384_COMB", 8 * p384W.length⟩])
     (hwr : s.wr = [⟨s.gpr .rdi, 8192⟩]) (ht : TblHeld s [⟨s.gpr .rdi, 8192⟩, ⟨s.gpr .rsp, 8⟩]) :
     TblMem s (s.syms "VG_P384_COMB") ((cfg adx).combWords ⟨7, Impl.P384.p384Comb7, Impl.P384.p384Comb7Start,
-      "VG_P384_COMB", false⟩) ∧ ∀ i < ((cfg adx).combWords ⟨7, Impl.P384.p384Comb7,
-      Impl.P384.p384Comb7Start, "VG_P384_COMB", false⟩).length, ∀ b < 8,
+      "VG_P384_COMB", true, true⟩) ∧ ∀ i < ((cfg adx).combWords ⟨7, Impl.P384.p384Comb7,
+      Impl.P384.p384Comb7Start, "VG_P384_COMB", true, true⟩).length, ∀ b < 8,
       size ≤ ofs (s.gpr .rdi) (s.syms "VG_P384_COMB" + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) := by
   obtain ⟨held, fit, hdw⟩ := ht
-  have hcd : (cfg adx).comb = some ⟨7, Impl.P384.p384Comb7, Impl.P384.p384Comb7Start, "VG_P384_COMB", false⟩ := by
+  have hcd : (cfg adx).comb = some ⟨7, Impl.P384.p384Comb7, Impl.P384.p384Comb7Start, "VG_P384_COMB", true, true⟩ := by
     cases adx <;> rfl
   refine tbl_of_held hcd (s₀ := s) ?_ (by rw [hwr]; simp) (fun r hr => ?_) (Unch.refl _ _ _)
   · rw [TblsHeld, cfg_combConsts, Abi.constRegions_cons, Abi.constRegions_nil, Sig.forall_mem_const_single]
@@ -175,7 +175,7 @@ theorem tbls_of {s : State} (adx : Bool) (hrd : s.rd = [⟨s.syms "VG_P384_COMB"
     rw [hrd, hr]; simp
 
 /-- The comb of P-384's configurations. -/
-abbrev comb7 : CombData := ⟨7, Impl.P384.p384Comb7, Impl.P384.p384Comb7Start, "VG_P384_COMB", false⟩
+abbrev comb7 : CombData := ⟨7, Impl.P384.p384Comb7, Impl.P384.p384Comb7Start, "VG_P384_COMB", true, true⟩
 
 theorem cfg_comb (adx : Bool) : (cfg adx).comb = some comb7 := by cases adx <;> rfl
 
@@ -206,7 +206,7 @@ theorem mb_correct (hL : Law Spec.P384.curve)
   have hz' : wordsVal s.mem (s.gpr .rdi) ((cfg adx).sl ZERO) (cfg adx).n = 0 := by
     rw [hn, cfg_sl]; rw [coordAt_eq _ _ _ (by decide)] at hz; exact hz
   obtain ⟨hTM, hout⟩ := tbls_of adx hrd hwr ht
-  have W := mulBaseFn_ok hc.toBaseCfgOk h6 (cfg_C adx ▸ hL) (cfg_tbls hT adx) hcd hS hmp' hz' hTM hout
+  have W := mulBaseFn_ok hc.toBaseCfgOk h6 (cfg_C adx ▸ hL) (cfg_tbls hL hT adx) hcd hS hmp' hz' hTM hout
   rw [Code.inline_of_noCalls hnc] at W
   obtain ⟨t, s', he, g', sv', rd', wr', sy', U', M', L', R'⟩ := W
   refine ⟨t, s', he, abiPreserved_of_exec (mxcsr_ok adx) he ⟨fun r hr => ?_, ?_⟩, ?_⟩

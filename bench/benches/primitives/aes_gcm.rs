@@ -528,10 +528,10 @@ fn tls_records(c: &mut Criterion) {
     target_arch = "arm",
     target_arch = "x86"
 ))]
-struct Offsets {
-    input: usize,
-    output: usize,
-    aad: usize,
+pub(crate) struct Offsets {
+    pub(crate) input: usize,
+    pub(crate) output: usize,
+    pub(crate) aad: usize,
 }
 
 #[cfg(any(
@@ -547,7 +547,7 @@ impl Offsets {
     /// `DeframerIter`, opened in place), and the output half a page from the
     /// input, so that sealing out of place never loads and stores at the same
     /// address modulo 4 KiB.
-    const DEFAULT: Offsets = Offsets {
+    pub(crate) const DEFAULT: Offsets = Offsets {
         input: 5,
         output: 2048 + 5,
         aad: 0,
@@ -561,7 +561,7 @@ impl Offsets {
     target_arch = "arm",
     target_arch = "x86"
 ))]
-struct Aligned {
+pub(crate) struct Aligned {
     raw: Vec<u8>,
     start: usize,
     len: usize,
@@ -574,7 +574,7 @@ struct Aligned {
     target_arch = "x86"
 ))]
 impl Aligned {
-    fn new(bytes: &[u8], offset: usize) -> Self {
+    pub(crate) fn new(bytes: &[u8], offset: usize) -> Self {
         let raw = vec![0u8; bytes.len() + offset + 4096];
         let start = raw.as_ptr().align_offset(4096) + offset;
         let mut a = Aligned {

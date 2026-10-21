@@ -165,8 +165,8 @@ theorem wst_next (h : In P σ) (hm1 : 1 ≤ m) (hm : m ≤ 2 * P.w) (hn : n + 1 
 end
 
 /-- One window. -/
-theorem win_step {P : MP} {m : Nat} (n : Nat) :
-    VP (WI P m (n + 1)) win fun σ s =>
+theorem win_step {P : MP} {m : Nat} (n : Nat) (fios : Bool := false) :
+    VP (WI P m (n + 1)) (win (fios := fios)) fun σ s =>
       isa.eval .ne s = some (decide (0 < n)) ∧ (n = 0 → WO P (m - 1) σ s) ∧ (0 < n → WI P m n σ s) := by
   by_cases hc : 1 ≤ m ∧ m ≤ 2 * P.w ∧ n + 1 ≤ 8
   swap
@@ -189,7 +189,7 @@ theorem win_step {P : MP} {m : Nat} (n : Nat) :
       rcases hd with rfl | rfl | rfl | rfl | rfl <;> rfl
   -- The squarings.
   refine VP.seq (G := St P (In P) (A2w P m n) (aY :: LW.tail) (V2w P m n) LS4)
-    ((sq_loop (fun σ e => e) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    ((sq_loop (fios := fios) (fun σ e => e) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (fun σ _ => rfl) (fun σ _ => upd_self _ _ _)
       (fun _ _ => by decide) (by decide) (fun σ e => wst_lt e _) 3).mono (fun _ _ h => h)
       (fun σ s h => h.2)) ?_
@@ -217,7 +217,7 @@ theorem win_step {P : MP} {m : Nat} (n : Nat) :
   refine VP.seq (G := St P (In P) (A5w P m n) (aY :: aM1 :: aX :: Lt) (V2w P m n) LS4) ?_ ?_
   · refine VP.mono (F := St P (In P) (A4w P m n) (aY :: aM1 :: aX :: Lt) (V2w P m n) LS4) ?_ (fun σ s h => ?_)
       (fun _ _ h => h)
-    · refine (St.pmulY (.inr rfl) (by decide) (by decide) (by decide) (by decide)
+    · refine (St.pmulY (fios := fios) (.inr rfl) (by decide) (by decide) (by decide) (by decide)
         (fun σ e => by rw [A4w_Y]; exact sqst_lt (q0 := 4) (fun σ e => e) (fun σ e => wst_lt e _) σ e 4)
         (fun σ e => by rw [A4w_X]; exact tv_lt e _)).mono (fun _ _ h => h) fun σ s h => ?_
       refine h.mono (fun i hi => ⟨hi, ?_⟩) (fun d hd => ⟨hd, rfl⟩)
@@ -292,8 +292,8 @@ open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Rsa.Arm.Recover (VP)
 
 /-- A word's windows. -/
-theorem word_step {P : MP} (n : Nat) :
-    VP (WO P (n + 1)) word fun σ s =>
+theorem word_step {P : MP} (n : Nat) (fios : Bool := false) :
+    VP (WO P (n + 1)) (word (fios := fios)) fun σ s =>
       isa.eval .ne s = some (decide (0 < n)) ∧ (n = 0 → WO P 0 σ s) ∧ (0 < n → WO P n σ s) := by
   by_cases hc : n + 1 ≤ 2 * P.w
   swap
@@ -305,7 +305,7 @@ theorem word_step {P : MP} (n : Nat) :
   simp only [Impl.MillerRabin.Arm.word, seqs]
   refine VP.seq (St.pwordK (K := 8 * (n + 1)) (by decide) (fun σ _ => by
     rw [upd_self])) (VP.seq (St.pwordLd (m := n + 1) (fun σ e => e) (by omega) hc) ?_)
-  refine VP.seq ((VP.loop (I := fun k => WI P (n + 1) k) (fun k => win_step k) 7).mono (fun σ s h => ?_)
+  refine VP.seq ((VP.loop (I := fun k => WI P (n + 1) k) (fun k => win_step (fios := fios) k) 7).mono (fun σ s h => ?_)
     (fun _ _ h => h)) ?_
   · refine ⟨by omega, hc, by decide, ?_⟩
     refine h.mono (fun i hi => ⟨hi, ?_⟩) (fun d hd => ⟨?_, ?_⟩)
@@ -327,9 +327,9 @@ theorem word_step {P : MP} (n : Nat) :
     by_cases h0 : n = 0 <;> simp [h0] <;> omega
 
 /-- The words. -/
-theorem words_loop {P : MP} : VP (WO P (2 * P.w)) (.loop word .ne) (WO P 0) := by
+theorem words_loop {P : MP} (fios : Bool := false) : VP (WO P (2 * P.w)) (.loop (word (fios := fios)) .ne) (WO P 0) := by
   refine VP.of_imp (p := 1 ≤ P.w) (fun σ s h => by have := (h.2.1 : In P σ).w4; omega) fun w1 => ?_
-  have := VP.loop (I := fun k => WO P k) (fun k => word_step k) (2 * P.w - 1)
+  have := VP.loop (I := fun k => WO P k) (fun k => word_step (fios := fios) k) (2 * P.w - 1)
   rwa [show 2 * P.w - 1 + 1 = 2 * P.w by omega] at this
 
 end VG.Proof.MillerRabin.Arm

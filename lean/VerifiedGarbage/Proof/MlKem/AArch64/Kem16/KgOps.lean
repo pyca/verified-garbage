@@ -27,13 +27,13 @@ theorem binvW_zero {w16 : Bool} {s₀ s : State} (h : AfterA P s₀ s) : BInvW w
   ⟨h.kb, h.rho, h.sig, by rw [h.x24, ite_eq_left (show allOk P s₀ 0 from fun e he => absurd he (Nat.not_lt_zero e))],
     fun e he => absurd he (Nat.not_lt_zero e), fun e he => absurd he (Nat.not_lt_zero e)⟩
 
-theorem fusedW_tl {s₀ s : State} (hp : Pre P s₀) {mB : Mem} {v : BitVec 64} {i : Nat}
-    (hi : i < P.k) (h : TLW P s₀ mB v i s) (terms : List (Nat × Nat))
+theorem fusedW_tl {s₀ s : State} (hp : Pre P s₀) {mB : Mem} {v : BitVec 64} {n i : Nat}
+    (hi : i < P.k) (h : TLW P s₀ mB v n i s) (terms : List (Nat × Nat))
     {F G : (Nat × Nat) → Poly}
     (hd : DotW.LoopDataW s .x28 .x28 (s.gpr .x28 + BitVec.ofNat 64 (TP P)) (s.syms "VG_MLKEM_GAMMA") terms
       (Dot.polyValues F) (Dot.polyValues G) Dot.gammaValues) :
     WP isa (Kem16.dotAt (TP P) terms) s fun s' =>
-      TLW P s₀ mB v i s' ∧
+      TLW P s₀ mB v n i s' ∧
       Frame [R (kA s₀) 3 (TP P) 1024] s.mem s'.mem ∧
       PolyIsW 16 s'.mem (kA s₀ 3 + BitVec.ofNat 64 (TP P)) (Dot.polySum terms F G) := by
   have hw := hp.wf

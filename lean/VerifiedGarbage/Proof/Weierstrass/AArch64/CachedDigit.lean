@@ -14,11 +14,11 @@ open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl
 open VG.Proof.Mont VG.Proof.Mont.AArch64 Spec.Weierstrass
 open VG.Proof.Ed25519.AArch64 (Keeps read_x)
 
-theorem magnitude_byte (w v j : Nat) : nafMagnitude (FastNaf.byte w v j)=FastNaf.magnitude w v j :=
-  FastNaf.byte_magnitude w v j
+theorem magnitude_byte (v j : Nat) : nafMagnitude (FastNaf.byte 5 v j)=FastNaf.magnitude 5 v j :=
+  FastNaf.byte_magnitude 5 v j
 
-theorem negative_byte (w v j : Nat) : nafNegative (FastNaf.byte w v j)=FastNaf.negative w v j :=
-  FastNaf.byte_negative w v j
+theorem negative_byte (v j : Nat) : nafNegative (FastNaf.byte 5 v j)=FastNaf.negative 5 v j :=
+  FastNaf.byte_negative 5 v j
 
 /-- Stable external generator data is framed by work writes and unchanged symbols. -/
 def ExternalFrame (base : Addr) (External : State → Prop) : Prop :=
@@ -39,7 +39,7 @@ theorem entry_core_ok {C : Curve} {base : Addr} {size u v j : Nat}
     fun t hp sy => ?_
   have pointEq : (if nafNegative (FastNaf.byte 5 v j) then negPt (mul (nafMagnitude (FastNaf.byte 5 v j)) Q)
       else mul (nafMagnitude (FastNaf.byte 5 v j)) Q)=FastNaf.point C Q 5 v j := by
-    rw [negative_byte,magnitude_byte]; rfl
+    rw [negative_byte v j,magnitude_byte v j]; rfl
   rw [pointEq] at hp
   refine ⟨hp,h.of_write (E:=tmv C K.M.n base t) hL hp.1 entry_work entry_slots (by decide +kernel) ?_
     (hExt (hp.1.mono entry_work) sy h.external)⟩
@@ -95,13 +95,13 @@ theorem digit_ok {C : Curve} {base : Addr} {size u v j : Nat}
   have b19 : b.gpr .x19=BitVec.ofNat 64 j := (kb.gpr _ (by decide)).trans h19
   refine WP.ite (decide (FastNaf.magnitude 5 v j≠0)) (by
     change some (b.read .x .x2 != 0)=_
-    rw [read_x,b2,byteTest,magnitude_byte]) (fun hn => ?_) (fun hz => ?_)
+    rw [read_x,b2,byteTest,magnitude_byte v j]) (fun hn => ?_) (fun hz => ?_)
   · have hm0 : FastNaf.magnitude 5 v j≠0 := of_decide_eq_true hn
     apply WP.seq
     refine WP.mono (entry_core_ok hL (by omega) hm hj
-      (by rw [magnitude_byte]; omega)
-      (by rw [magnitude_byte]; exact FastNaf.magnitude_le (Or.inl rfl) v j)
-      (by rw [magnitude_byte]; exact (FastNaf.magnitude_odd_or_zero 5 v j).resolve_left hm0)
+      (by rw [magnitude_byte v j]; omega)
+      (by rw [magnitude_byte v j]; exact FastNaf.magnitude_le (Or.inl rfl) v j)
+      (by rw [magnitude_byte v j]; exact (FastNaf.magnitude_odd_or_zero 5 v j).resolve_left hm0)
       hExt cb b19 b2) fun d ⟨⟨kd,id,jd,d2,d3⟩,cd⟩ => ?_
     exact WP.mono (sum_ok hL hsize hm hC ha hOne hA (FastNaf.onCurve_point hC hQ 5 v j)
       hExt cd id jd d2 d3) fun t ⟨kt,ct⟩ => ⟨kp.trans ((kd.mono entry_work).trans kt),ct⟩

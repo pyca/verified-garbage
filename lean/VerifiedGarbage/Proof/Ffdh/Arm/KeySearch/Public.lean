@@ -20,20 +20,26 @@ private theorem recover {w : Nat} {a b : List (BitVec w)}
   have values := congrArg (List.map (BitVec.ofNat w)) h
   simpa only [List.map_map, Function.comp_def, BitVec.ofNat_toNat, BitVec.setWidth_eq, List.map_id'] using values
 
-theorem public_inputs {s t : State} (hs : (GenerationPolicy.searchContract sampling (KeyConstants.abi sampling) stackUse).pre s)
-    (ht : (GenerationPolicy.searchContract sampling (KeyConstants.abi sampling) stackUse).pre t) (pub : (GenerationPolicy.searchContract sampling (KeyConstants.abi sampling) stackUse).pub s t) :
-    ∃ p : KeyPublic sampling, KeyInput p s ∧ KeyInput p t ∧ (searchResult p s).statuses = (searchResult p t).statuses ∧ s.sp = t.sp := by
-  have preS := selected_pre.mp hs
-  have preT := selected_pre.mp ht
-  obtain ⟨pub, table⟩ := selected_pub.mp pub
-  sig_pub [GenerationPolicy.searchContract, keySearchSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at pub
-  obtain ⟨sp, leak, p0, _, p2, _, p4, p5, p6, p7, p8, p9, p10, p11, p12⟩ := pub
-  change (keyOfState sampling s).dom.map BitVec.toNat ++
+private theorem public_inputs_of_args {s t : State}
+    (preS : KeyInput (keyOfState sampling s) s)
+    (preT : KeyInput (keyOfState sampling t) t)
+    (sp : s.sp = t.sp)
+    (leak : (keyOfState sampling s).dom.map BitVec.toNat ++
       (Spec.Rsa.wordsAt s.mem (State.addr (stackArg s 8)) 4).map BitVec.toNat ++
       (searchResult (keyOfState sampling s) s).statuses =
-    (keyOfState sampling t).dom.map BitVec.toNat ++
+      (keyOfState sampling t).dom.map BitVec.toNat ++
       (Spec.Rsa.wordsAt t.mem (State.addr (stackArg t 8)) 4).map BitVec.toNat ++
-      (searchResult (keyOfState sampling t) t).statuses at leak
+      (searchResult (keyOfState sampling t) t).statuses)
+    (p0 : s.gpr .r0 = t.gpr .r0) (p2 : s.gpr .r2 = t.gpr .r2)
+    (p4 : stackArg s 0 = stackArg t 0) (p5 : stackArg s 1 = stackArg t 1)
+    (p6 : stackArg s 2 = stackArg t 2) (p7 : stackArg s 3 = stackArg t 3)
+    (p8 : stackArg s 4 = stackArg t 4) (p9 : stackArg s 5 = stackArg t 5)
+    (p10 : stackArg s 6 = stackArg t 6) (p11 : stackArg s 7 = stackArg t 7)
+    (p12 : stackArg s 8 = stackArg t 8)
+    (table : KeyConstants.tablePtr sampling s = KeyConstants.tablePtr sampling t)
+    (ctx : sampling.cachedContext = true → stackArg s 9 = stackArg t 9 ∧ stackArg s 10 = stackArg t 10) :
+    ∃ p : KeyPublic sampling, KeyInput p s ∧ KeyInput p t ∧
+      (searchResult p s).statuses = (searchResult p t).statuses ∧ s.sp = t.sp := by
   simp only [List.append_assoc] at leak
   have domainSize : ((keyOfState sampling s).dom.map BitVec.toNat).length = ((keyOfState sampling t).dom.map BitVec.toNat).length := by
     simp only [List.length_map, keyOfState, VG.Proof.Bignum.bytesAt_length]
@@ -55,9 +61,35 @@ theorem public_inputs {s t : State} (hs : (GenerationPolicy.searchContract sampl
   have point : keyOfState sampling s = keyOfState sampling t := by
     unfold keyOfState
     rw [KeyPublic.mk.injEq]
-    exact ⟨p0, p2, p4, p5, p8, p10, p12, sp, congrArg BitVec.toNat p7,
-      congrArg BitVec.toNat p6, congrArg BitVec.toNat p9, congrArg BitVec.toNat p11, ks, cs, domain, table⟩
-  refine ⟨keyOfState sampling s, ⟨preS.1, rfl, preS.2⟩, ⟨preT.1, point.symm, preT.2⟩, ?_, sp⟩
+    refine ⟨p0, p2, p4, p5, p8, p10, p12, sp, congrArg BitVec.toNat p7,
+      congrArg BitVec.toNat p6, congrArg BitVec.toNat p9, congrArg BitVec.toNat p11, ks, cs, domain, table, ?_, ?_⟩
+    · by_cases active : sampling.cachedContext = true
+      · simp only [active, ite_true]; exact (ctx active).1
+      · simp only [active, Bool.false_eq_true, ite_false]
+    · by_cases active : sampling.cachedContext = true
+      · simp only [active, ite_true]; exact congrArg BitVec.toNat (ctx active).2
+      · simp only [active, Bool.false_eq_true, ite_false]
+  refine ⟨keyOfState sampling s, preS, ⟨preT.1, point.symm, preT.2.2⟩, ?_, sp⟩
   simpa only [← point] using statuses
+
+
+theorem public_inputs {s t : State} (hs : (GenerationPolicy.searchContract sampling (KeyConstants.abi sampling) (stackUse sampling)).pre s)
+    (ht : (GenerationPolicy.searchContract sampling (KeyConstants.abi sampling) (stackUse sampling)).pre t) (pub : (GenerationPolicy.searchContract sampling (KeyConstants.abi sampling) (stackUse sampling)).pub s t) :
+    ∃ p : KeyPublic sampling, KeyInput p s ∧ KeyInput p t ∧ (searchResult p s).statuses = (searchResult p t).statuses ∧ s.sp = t.sp := by
+  have partsS := selected_pre.mp hs
+  have partsT := selected_pre.mp ht
+  have preS : KeyInput (keyOfState sampling s) s := ⟨partsS.1, rfl, partsS.2⟩
+  have preT : KeyInput (keyOfState sampling t) t := ⟨partsT.1, rfl, partsT.2⟩
+  obtain ⟨pub, table⟩ := selected_pub.mp pub
+  cases sampling <;>
+    sig_pub [GenerationPolicy.searchContract, GenerationPolicy.legacySearchContract,
+      cachedKeySearchContract, cachedKeySearchSig, keySearchSig, abi, argRegs,
+      reduceClassify, Loc.val, State.addr] at pub
+  · obtain ⟨sp, leak, p0, _, p2, _, p4, p5, p6, p7, p8, p9, p10, p11, p12⟩ := pub
+    exact public_inputs_of_args preS preT sp leak p0 p2 p4 p5 p6 p7 p8 p9 p10 p11 p12 table (by intro h; cases h)
+  · obtain ⟨sp, leak, p0, _, p2, _, p4, p5, p6, p7, p8, p9, p10, p11, p12⟩ := pub
+    exact public_inputs_of_args preS preT sp leak p0 p2 p4 p5 p6 p7 p8 p9 p10 p11 p12 table (by intro h; cases h)
+  · obtain ⟨sp, leak, p0, _, p2, _, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14⟩ := pub
+    exact public_inputs_of_args preS preT sp leak p0 p2 p4 p5 p6 p7 p8 p9 p10 p11 p12 table (fun _ => ⟨p13, p14⟩)
 
 end VG.Proof.Ffdh.Arm.KeySearch

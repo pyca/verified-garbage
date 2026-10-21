@@ -14,16 +14,27 @@ namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Weierstrass.AArch64 VG.Proof.Mont.AArch64
 open VG.Proof.Ed25519 VG.Proof.Ed25519.AArch64
 
-theorem fastMagnitude_bound (w k j : Nat) : FastNaf.magnitude w k j≤63 := by
+theorem fastMagnitude_bound (w k j : Nat) : FastNaf.magnitude w k j≤255 := by
   by_cases h7 : w=7
-  · simpa only [FastNaf.magnitude,h7,ite_true] using FastNaf7.magnitude_le k j
+  · have h := FastNaf7.magnitude_le k j
+    simp only [FastNaf.magnitude,h7,ite_true]
+    omega
+  by_cases h9 : w=9
+  · subst h9
+    simpa only [FastNaf.magnitude,FastNaf.ne_9_7,ite_true,ite_false] using FastNaf9.magnitude_le k j
   · have h := Naf5.magnitude_le k j
-    simp only [FastNaf.magnitude,h7,ite_false]
+    simp only [FastNaf.magnitude,h7,h9,ite_false]
     omega
 
 theorem fastDigit_eq (w k j : Nat) : FastNaf.digit w k j=
     if FastNaf.negative w k j then -(FastNaf.magnitude w k j:Int) else (FastNaf.magnitude w k j:Int) := by
-  by_cases h7 : w=7 <;> simp only [FastNaf.digit,FastNaf.negative,FastNaf.magnitude,h7,ite_true,ite_false,Naf5.digit,FastNaf7.digit]
+  by_cases h7 : w=7
+  · simp only [FastNaf.digit,FastNaf.negative,FastNaf.magnitude,h7,ite_true,FastNaf7.digit]
+  by_cases h9 : w=9
+  · subst h9
+    simp only [FastNaf.digit,FastNaf.negative,FastNaf.magnitude,FastNaf.ne_9_7,ite_true,ite_false,
+      FastNaf9.digit]
+  · simp only [FastNaf.digit,FastNaf.negative,FastNaf.magnitude,h7,h9,ite_false,Naf5.digit]
 
 theorem fastWord_toNat (w k j : Nat) :
     (BitVec.ofInt 64 (FastNaf.digit w k j)).toNat =

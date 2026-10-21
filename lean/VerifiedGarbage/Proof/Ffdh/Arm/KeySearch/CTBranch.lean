@@ -107,12 +107,12 @@ theorem attempt_of_room {q : KeyPoint sampling} {s : State}
   exact ⟨⟨original, live, statuses⟩, keys, scalars, by have := live.used_le; omega⟩
 
 theorem branch_ready (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (q : KeyPoint sampling) (s : State) (h : KeysGuard q s) :
-    WP isa (VG.Impl.Ffdh.Arm.KeySearch.branch (.call backend.keyName backend.generateKey)) s (KeyBranchResult q) := by
+    WP isa ((VG.Impl.Ffdh.Arm.KeySearch.branchFor sampling.cachedContext) (.call backend.keyName backend.generateKey)) s (KeyBranchResult q) := by
   obtain ⟨⟨original, live, statuses⟩, flag⟩ := h
   have done : ∀ (t : State) (result : Spec.Ffdh.KeySearchResult), ¬keyContinues q →
       KeyDone q.inputs original result t → KeyBranchResult q t := fun _ _ stops finished => by
     simp only [KeyBranchResult, stops, ite_false]; exact ⟨original, _, finished⟩
-  unfold VG.Impl.Ffdh.Arm.KeySearch.branch
+  unfold VG.Impl.Ffdh.Arm.KeySearch.branchFor
   refine WP.ite (decide (q.keys = 0)) flag ?_ ?_
   · intro zero
     exact WP.mono live.exhausted fun t finished => done t _ (fun c => c.1 (of_decide_eq_true zero)) finished
@@ -124,7 +124,7 @@ theorem branch_ready (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (q : KeyP
     exact WP.mono live2.exhausted fun t finished => done t _ (fun c => c.2.1 (of_decide_eq_true zero)) finished
   intro nonzero2
   have scalars : q.scalars ≠ 0 := of_decide_eq_false nonzero2
-  unfold VG.Impl.Ffdh.Arm.KeySearch.attemptOrRequest
+  unfold VG.Impl.Ffdh.Arm.KeySearch.attemptOrRequestFor
   refine WP.seq (WP.mono live2.room_guard fun u ⟨live3, flag3⟩ => ?_)
   refine WP.ite _ (by change some u.z = _; rw [flag3]) ?_ ?_
   · intro short
@@ -165,15 +165,15 @@ private theorem leaf {Φ : KeyPoint sampling → State → Prop} {code : Prog is
   ct.mono (fun _ _ ⟨q, h₁, h₂, sp⟩ => ⟨q.inputs, get q _ h₁, get q _ h₂, sp⟩) (fun _ _ h => h)
 
 theorem branch_ct (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) :
-    RelCT isa (Two (KeysGuard (sampling := sampling))) (VG.Impl.Ffdh.Arm.KeySearch.branch (.call backend.keyName backend.generateKey)) (fun _ _ => True) := by
-  unfold VG.Impl.Ffdh.Arm.KeySearch.branch
+    RelCT isa (Two (KeysGuard (sampling := sampling))) ((VG.Impl.Ffdh.Arm.KeySearch.branchFor sampling.cachedContext) (.call backend.keyName backend.generateKey)) (fun _ _ => True) := by
+  unfold VG.Impl.Ffdh.Arm.KeySearch.branchFor
   refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.trans h₂.2.symm)
     (leaf (fun _ _ h => h.1.1.any) exhausted_ct) ?_
   refine RelCT.seq (two_piece [.r4] (fun q _ _ h₁ h₂ => key_ctl_pins q _ _ h₁.1.1 h₂.1.1)
     (by taint_decide) scalars_ready) ?_
   refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.2.trans h₂.2.2.symm)
     (leaf (fun _ _ h => h.1.1.any) exhausted_ct) ?_
-  unfold VG.Impl.Ffdh.Arm.KeySearch.attemptOrRequest
+  unfold VG.Impl.Ffdh.Arm.KeySearch.attemptOrRequestFor
   refine RelCT.seq (two_piece [.r4] (fun q _ _ h₁ h₂ => key_ctl_pins q _ _ h₁.1.1 h₂.1.1)
     (by taint_decide) room_ready) ?_
   refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.2.2.trans h₂.2.2.2.symm)

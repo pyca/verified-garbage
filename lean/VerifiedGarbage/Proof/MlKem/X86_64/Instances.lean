@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16
 
 import VerifiedGarbage.Proof.MlKem.X86_64.Top768
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgH16Sel
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KgH16Sel
 import VerifiedGarbage.Proof.MlKem1024.X86_64.Top
 import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
@@ -12,6 +14,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
 import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
 import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
+import VerifiedGarbage.Impl.MlKem.X86_64.KeyGenH16
 
 /-!
 # ML-KEM on x86-64: the stack pointer, for each implementation of `Sample4`
@@ -27,7 +30,8 @@ namespace VG.Proof.MlKem.X86_64
 
 theorem keyGen_spSafe (v : Sample4Impl) :
     (Impl.MlKem.X86_64.keyGen v.callee).all (fun i => !X86_64.isa.writesSp i) = true :=
-  keyGenSel_sp v (fun _ c S => by s16_sp v c S kpke768) (by s4_sp v)
+  keyGenHSel_sp v (fun b p B P => by kgh_sp v b p B P kgRows768)
+    (keyGenSel_sp v (fun _ c S => by s16_sp v c S kpke768) (by s4_sp v))
 
 theorem encapsH_spSafe (v : Sample4Impl) :
     (Impl.MlKem.X86_64.encapsH v.callee).all (fun i => !X86_64.isa.writesSp i) = true :=

@@ -159,37 +159,60 @@ theorem tcombVals {d : CombData} (hc : BaseCfgOk c) (hC : Law c.C)
       show (c.combCfg d).w = d.w from rfl, show (c.combCfg d).J = c.combJ d.w from rfl, hd.start]
     exact rep_affine' hC _ _
 
-/-- The tables, from the facts the calling convention gives at `s₀`
-(`TblsHeld`), at a state that may read their region and whose memory changed
+theorem comb_mem_consts {d : CombData} (hcd : c.comb = some d) :
+    (d.tsym, c.combWords d) ∈ c.combConsts := by
+  unfold Cfg.combConsts
+  rw [hcd]
+  cases c.gtab <;> simp
+
+theorem gtab_mem_consts {d : CombData} (hcd : c.gtab = some d) :
+    (d.tsym, c.combWords d) ∈ c.combConsts := by
+  unfold Cfg.combConsts
+  rw [hcd]
+  cases c.comb <;> simp
+
+/-- A table of constants, from the facts the calling convention gives at `s₀`
+(`TblsHeld`), at a state that may read their regions and whose memory changed
 only in the working space at `base`, a writable region at `s₀`. -/
+theorem tbl_of_held_mem {sym : String} {ws : List (BitVec 64)} (hm : (sym, ws) ∈ c.combConsts)
+    {s₀ s : State} {base : Addr}
+    (ht : TblsHeld c s₀ s₀.wr) (hsc : (⟨base, size⟩ : Region) ∈ s₀.wr)
+    (hrd : ∀ r ∈ Abi.constRegions (fun n => s₀.syms n) c.combConsts, r ∈ s.rd)
+    (hu : Unch base [(0, size)] s₀.mem s.mem) :
+    TblMem s (s₀.syms sym) ws ∧ ∀ i < ws.length, ∀ b < 8,
+      size ≤ ofs base (s₀.syms sym + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) := by
+  obtain ⟨held, fit⟩ := ht
+  have hr : (⟨s₀.syms sym, 8 * ws.length⟩ : Region) ∈ Abi.constRegions (fun n => s₀.syms n) c.combConsts := by
+    unfold Abi.constRegions
+    exact List.mem_map.mpr ⟨_, hm, rfl⟩
+  obtain ⟨hf, hdj⟩ := fit _ hr
+  have hsc' : Region.Disjoint ⟨s₀.syms sym, 8 * ws.length⟩ ⟨base, size⟩ := hdj _ hsc
+  dsimp only at hf
+  have hout : ∀ i < ws.length, ∀ b < 8,
+      size ≤ ofs base (s₀.syms sym + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) :=
+    fun i hi b hb => by
+      have hc : (⟨s₀.syms sym, 8 * ws.length⟩ : Region).Contains
+          (s₀.syms sym + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) 1 := by
+        rw [Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)
+      have := hsc' _ hc
+      simp only [Region.Contains] at this
+      unfold ofs; omega
+  refine ⟨⟨⟨⟨s₀.syms sym, 8 * ws.length⟩,
+    List.mem_append_left _ (hrd _ hr),
+    by simp [Region.Contains]⟩, fun i hi => ?_⟩, hout⟩
+  rw [← held _ hm i hi]
+  refine Mem.readW_congr fun b hb => (hu _ fun w hw => ?_)
+  rw [List.mem_singleton.mp hw]
+  exact Or.inr (by have := hout i hi b (by omega); dsimp only; omega)
+
+/-- The comb's tables, by `tbl_of_held_mem`. -/
 theorem tbl_of_held {d : CombData} (hcd : c.comb = some d) {s₀ s : State} {base : Addr}
     (ht : TblsHeld c s₀ s₀.wr) (hsc : (⟨base, size⟩ : Region) ∈ s₀.wr)
     (hrd : ∀ r ∈ Abi.constRegions (fun n => s₀.syms n) c.combConsts, r ∈ s.rd)
     (hu : Unch base [(0, size)] s₀.mem s.mem) :
     TblMem s (s₀.syms d.tsym) (c.combWords d) ∧ ∀ i < (c.combWords d).length, ∀ b < 8,
-      size ≤ ofs base (s₀.syms d.tsym + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) := by
-  have hcc : c.combConsts = [(d.tsym, c.combWords d)] := by simp [Cfg.combConsts, hcd]
-  obtain ⟨held, fit⟩ := ht
-  rw [hcc] at held fit hrd
-  obtain ⟨hf, hdj⟩ := fit _ (List.mem_singleton_self _)
-  have hsc' : Region.Disjoint ⟨s₀.syms d.tsym, 8 * (c.combWords d).length⟩ ⟨base, size⟩ := hdj _ hsc
-  dsimp only at hf
-  have hout : ∀ i < (c.combWords d).length, ∀ b < 8,
       size ≤ ofs base (s₀.syms d.tsym + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) :=
-    fun i hi b hb => by
-      have hc : (⟨s₀.syms d.tsym, 8 * (c.combWords d).length⟩ : Region).Contains
-          (s₀.syms d.tsym + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) 1 := by
-        rw [Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)
-      have := hsc' _ hc
-      simp only [Region.Contains] at this
-      unfold ofs; omega
-  refine ⟨⟨⟨⟨s₀.syms d.tsym, 8 * (c.combWords d).length⟩,
-    List.mem_append_left _ (hrd _ (by simp [Abi.constRegions])),
-    by simp [Region.Contains]⟩, fun i hi => ?_⟩, hout⟩
-  rw [← held _ (List.mem_singleton_self _) i hi]
-  refine Mem.readW_congr fun b hb => (hu _ fun w hw => ?_)
-  rw [List.mem_singleton.mp hw]
-  exact Or.inr (by have := hout i hi b (by omega); dsimp only; omega)
+  tbl_of_held_mem (comb_mem_consts hcd) ht hsc hrd hu
 
 /-- The tables, from the arguments' facts, at a state whose regions are the
 arguments' and whose memory changed only in the working space. -/

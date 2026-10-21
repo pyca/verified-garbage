@@ -25,9 +25,9 @@ theorem KS.cntBits_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Na
     WP isa (.block cntBits) s fun t =>
       KS g s0 A live AW liveW (upd V sCnt (8 * (dLen + eLen))) (sCnt :: ls) t := by
   unfold cntBits
-  refine wp_movS (h.argument ae).readSrc fun u U _ => ?_
+  refine wp_movS (h.arg ae (by decide)).readSrc fun u U _ => ?_
   have hu := h.of_rest U.keeps (by decide) U.mem
-  refine wp_addS (hu.argument ad).readSrc fun v D _ => ?_
+  refine wp_addS (hu.arg ad (by decide)).readSrc fun v D _ => ?_
   refine wp_addS rfl fun w W _ => ?_
   refine wp_addS rfl fun x X _ => ?_
   refine wp_addS rfl fun y Y _ => ?_

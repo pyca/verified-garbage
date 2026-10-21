@@ -20,25 +20,26 @@ open VG.Proof.X25519.Arm (Rest)
 
 structure ArgumentContext (p : KeyPublic sampling) (used keys scalars : Nat) (s : State) : Prop where
   controller : Controller p.control s
-  stack : Workspace s s.sp 32
-  separate : (⟨State.addr p.control, 128⟩ : Region).Disjoint ⟨State.addr s.sp, 32⟩
+  stack : Workspace s s.sp sampling.argumentBytes
+  separate : (⟨State.addr p.control, 128⟩ : Region).Disjoint ⟨State.addr s.sp, sampling.argumentBytes⟩
   headers : Slots s.mem p.control (p.headers used keys scalars)
   stackBase : s.gpr .r12 = s.sp
   x : s.gpr .r0 = p.xp
   xlen : s.gpr .r1 = BitVec.ofNat 32 p.len
   y : s.gpr .r2 = p.yp
   ylen : s.gpr .r3 = BitVec.ofNat 32 p.len
+  cachedSlots : CachedSlots p s.mem
 
 theorem ArgumentContext.after {p : KeyPublic sampling} {used keys scalars : Nat} {s t : State}
     (h : ArgumentContext p used keys scalars s) {rs : List Reg} (rest : Rest rs s t)
-    (frame : Frame [⟨State.addr s.sp, 32⟩] s.mem t.mem)
+    (frame : Frame [⟨State.addr s.sp, sampling.argumentBytes⟩] s.mem t.mem)
     (kept : ∀ r ∈ [.r0, .r1, .r2, .r3, .r4, .r12], r ∉ rs := by decide) :
     ArgumentContext p used keys scalars t := by
   refine ⟨⟨h.controller.space.congr rest.wr, (rest.gpr .r4 (kept .r4 (by decide))).trans h.controller.ptr⟩,
     ?_, ?_, ?_, ?_, (rest.gpr .r0 (kept .r0 (by decide))).trans h.x,
     (rest.gpr .r1 (kept .r1 (by decide))).trans h.xlen,
     (rest.gpr .r2 (kept .r2 (by decide))).trans h.y,
-    (rest.gpr .r3 (kept .r3 (by decide))).trans h.ylen⟩
+    (rest.gpr .r3 (kept .r3 (by decide))).trans h.ylen, ?_⟩
   · rw [rest.sp]; exact h.stack.congr rest.wr
   · rw [rest.sp]; exact h.separate
   · apply (slots_fields _ _ _ _ _ _).mpr
@@ -50,33 +51,55 @@ theorem ArgumentContext.after {p : KeyPublic sampling} {used keys scalars : Nat}
   · rw [rest.sp]
     exact (rest.gpr .r12 (kept .r12 (by decide))).trans h.stackBase
 
-theorem wp_argumentCopy {p : KeyPublic sampling} {used keys scalars : Nat} {s : State} {is : List Instr}
-    {Q : State → Prop} {value : BitVec 32} {j d : Nat}
-    (h : ArgumentContext p used keys scalars s) (slot : j < 16) (fit : d + 4 ≤ 32)
-    (source : lowWord s.mem p.control j = value)
+  · intro cached
+    obtain ⟨ptr, words⟩ := h.cachedSlots cached
+    constructor
+    · exact (frame.readW (r := ⟨State.addr p.control, 128⟩)
+        (Offset.contains_base _ (by decide : 32 + 4 ≤ 128) (by decide))
+        (by simpa using h.separate) (by decide)).trans ptr
+    · exact (frame.readW (r := ⟨State.addr p.control, 128⟩)
+        (Offset.contains_base _ (by decide : 36 + 4 ≤ 128) (by decide))
+        (by simpa using h.separate) (by decide)).trans words
+
+theorem wp_argumentCopyAt {p : KeyPublic sampling} {used keys scalars : Nat} {s : State} {is : List Instr}
+    {Q : State → Prop} {value : BitVec 32} {offset d : Nat}
+    (h : ArgumentContext p used keys scalars s) (sourceFit : offset + 4 ≤ 128)
+    (fit : d + 4 ≤ sampling.argumentBytes)
+    (source : s.mem.readW (off (State.addr p.control) offset) 32 = value)
     (next : ∀ t, ArgumentContext p used keys scalars t →
       t.mem = s.mem.writeW (off (State.addr s.sp) d) value → Rest [.r9] s t → WP isa (.block is) t Q) :
-    WP isa (.block (VG.Impl.Ffdh.Arm.KeySearch.ldf .r9 j :: .str .r9 .r12 d :: is)) s Q := by
-  change WP isa (.block ([VG.Impl.Ffdh.Arm.KeySearch.ldf .r9 j, .str .r9 .r12 d] ++ is)) s Q
+    WP isa (.block (.ldr .r9 .r4 offset :: .str .r9 .r12 d :: is)) s Q := by
+  change WP isa (.block ([.ldr .r9 .r4 offset, .str .r9 .r12 d] ++ is)) s Q
   rw [WP.block_append_iff]
-  refine WP.mono (argumentCopy_ok s h.controller slot h.stack fit h.stackBase source) ?_
+  have small := argumentBytes_max sampling
+  refine WP.mono (argumentCopyAt_ok s h.controller sourceFit h.stack fit h.stackBase source) ?_
   rintro t ⟨mem, rest⟩
-  have frame : Frame [⟨State.addr s.sp, 32⟩] s.mem t.mem := by
+  have frame : Frame [⟨State.addr s.sp, sampling.argumentBytes⟩] s.mem t.mem := by
     rw [mem]
     exact (Frame.refl _ _).writeW (by simp) _ (Offset.contains_base _ fit (by have := h.stack.nowrap; omega))
   exact next t (h.after rest frame) mem rest
 
+theorem wp_argumentCopy {p : KeyPublic sampling} {used keys scalars : Nat} {s : State} {is : List Instr}
+    {Q : State → Prop} {value : BitVec 32} {j d : Nat}
+    (h : ArgumentContext p used keys scalars s) (slot : j < 16) (fit : d + 4 ≤ sampling.argumentBytes)
+    (source : lowWord s.mem p.control j = value)
+    (next : ∀ t, ArgumentContext p used keys scalars t →
+      t.mem = s.mem.writeW (off (State.addr s.sp) d) value → Rest [.r9] s t → WP isa (.block is) t Q) :
+    WP isa (.block (VG.Impl.Ffdh.Arm.KeySearch.ldf .r9 j :: .str .r9 .r12 d :: is)) s Q :=
+  wp_argumentCopyAt h (by omega) fit source next
+
 theorem wp_argumentStore {p : KeyPublic sampling} {used keys scalars : Nat} {s : State} {is : List Instr}
-    {Q : State → Prop} {d : Nat} (h : ArgumentContext p used keys scalars s) (fit : d + 4 ≤ 32)
+    {Q : State → Prop} {d : Nat} (h : ArgumentContext p used keys scalars s) (fit : d + 4 ≤ sampling.argumentBytes)
     (next : ∀ t, ArgumentContext p used keys scalars t →
       t.mem = s.mem.writeW (off (State.addr s.sp) d) (BitVec.ofNat 32 p.len) →
       Rest [] s t → WP isa (.block is) t Q) :
     WP isa (.block (.str .r1 .r12 d :: is)) s Q := by
   change WP isa (.block ([.str .r1 .r12 d] ++ is)) s Q
   rw [WP.block_append_iff]
+  have small := argumentBytes_max sampling
   refine WP.mono (argumentStore_ok s .r1 h.stack fit h.stackBase h.xlen) ?_
   rintro t ⟨mem, rest⟩
-  have frame : Frame [⟨State.addr s.sp, 32⟩] s.mem t.mem := by
+  have frame : Frame [⟨State.addr s.sp, sampling.argumentBytes⟩] s.mem t.mem := by
     rw [mem]
     exact (Frame.refl _ _).writeW (by simp) _ (Offset.contains_base _ fit (by have := h.stack.nowrap; omega))
   exact next t (h.after rest frame) mem rest

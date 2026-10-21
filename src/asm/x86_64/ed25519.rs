@@ -280,6 +280,254 @@ ret
     )
 }
 
+/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
+///
+/// Copies the seed's SHA-512 digest to `scratch + 1568` and encodes `[s]B` with `vg_ed25519_scalar_base`, as `vg_ed25519_public_key` does after hashing the seed. The pruned scalar `s` is kept in a 56-byte stack frame with the pointers and cleared before the frame is popped; the calls use the 16 bytes below it.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed.
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `expanded` (distinct Rust objects never do).
+/// * None of `out`, `expanded` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_expanded(out: *mut [u8; 32], expanded: *const [u8; 64], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r"push rdi
+push rsi
+push rdx
+push rax
+push rax
+push rax
+push rax
+mov rax, QWORD PTR [rsp+40]
+mov rcx, QWORD PTR [rsp+32]
+mov rdx, QWORD PTR [rax]
+mov QWORD PTR [rcx+1568], rdx
+mov rdx, QWORD PTR [rax+8]
+mov QWORD PTR [rcx+1576], rdx
+mov rdx, QWORD PTR [rax+16]
+mov QWORD PTR [rcx+1584], rdx
+mov rdx, QWORD PTR [rax+24]
+mov QWORD PTR [rcx+1592], rdx
+mov rdx, QWORD PTR [rax+32]
+mov QWORD PTR [rcx+1600], rdx
+mov rdx, QWORD PTR [rax+40]
+mov QWORD PTR [rcx+1608], rdx
+mov rdx, QWORD PTR [rax+48]
+mov QWORD PTR [rcx+1616], rdx
+mov rdx, QWORD PTR [rax+56]
+mov QWORD PTR [rcx+1624], rdx
+mov rdi, QWORD PTR [rsp+48]
+mov rsi, rsp
+mov rdx, QWORD PTR [rsp+32]
+mov r8, QWORD PTR [rdx+1568]
+mov r9, QWORD PTR [rdx+1576]
+mov r10, QWORD PTR [rdx+1584]
+mov r11, QWORD PTR [rdx+1592]
+and r8, -8
+movabs rcx, 4611686018427387903
+and r11, rcx
+movabs rcx, 4611686018427387904
+or r11, rcx
+mov QWORD PTR [rsp], r8
+mov QWORD PTR [rsp+8], r9
+mov QWORD PTR [rsp+16], r10
+mov QWORD PTR [rsp+24], r11
+call {vg_ed25519_scalar_base}
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+mov QWORD PTR [rsp], r8
+mov QWORD PTR [rsp+8], r9
+mov QWORD PTR [rsp+16], r10
+mov QWORD PTR [rsp+24], r11
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+ret
+.p2align 6",
+        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base,
+    )
+}
+
+/// The CPU features `vg_ed25519_public_key_expanded_adx` requires (`Artifact.features`).
+pub(crate) const VG_ED25519_PUBLIC_KEY_EXPANDED_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi2", "adx"]);
+
+/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
+///
+/// Copies the seed's SHA-512 digest to `scratch + 1568` and encodes `[s]B` with `vg_ed25519_scalar_base_adx`, as `vg_ed25519_public_key_adx` does after hashing the seed. The pruned scalar `s` is kept in a 56-byte stack frame with the pointers and cleared before the frame is popped; the calls use the 16 bytes below it.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed.
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `expanded` (distinct Rust objects never do).
+/// * None of `out`, `expanded` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_expanded_adx(out: *mut [u8; 32], expanded: *const [u8; 64], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r"push rdi
+push rsi
+push rdx
+push rax
+push rax
+push rax
+push rax
+mov rax, QWORD PTR [rsp+40]
+mov rcx, QWORD PTR [rsp+32]
+mov rdx, QWORD PTR [rax]
+mov QWORD PTR [rcx+1568], rdx
+mov rdx, QWORD PTR [rax+8]
+mov QWORD PTR [rcx+1576], rdx
+mov rdx, QWORD PTR [rax+16]
+mov QWORD PTR [rcx+1584], rdx
+mov rdx, QWORD PTR [rax+24]
+mov QWORD PTR [rcx+1592], rdx
+mov rdx, QWORD PTR [rax+32]
+mov QWORD PTR [rcx+1600], rdx
+mov rdx, QWORD PTR [rax+40]
+mov QWORD PTR [rcx+1608], rdx
+mov rdx, QWORD PTR [rax+48]
+mov QWORD PTR [rcx+1616], rdx
+mov rdx, QWORD PTR [rax+56]
+mov QWORD PTR [rcx+1624], rdx
+mov rdi, QWORD PTR [rsp+48]
+mov rsi, rsp
+mov rdx, QWORD PTR [rsp+32]
+mov r8, QWORD PTR [rdx+1568]
+mov r9, QWORD PTR [rdx+1576]
+mov r10, QWORD PTR [rdx+1584]
+mov r11, QWORD PTR [rdx+1592]
+and r8, -8
+movabs rcx, 4611686018427387903
+and r11, rcx
+movabs rcx, 4611686018427387904
+or r11, rcx
+mov QWORD PTR [rsp], r8
+mov QWORD PTR [rsp+8], r9
+mov QWORD PTR [rsp+16], r10
+mov QWORD PTR [rsp+24], r11
+call {vg_ed25519_scalar_base_adx}
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+mov QWORD PTR [rsp], r8
+mov QWORD PTR [rsp+8], r9
+mov QWORD PTR [rsp+16], r10
+mov QWORD PTR [rsp+24], r11
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+ret
+.p2align 6",
+        vg_ed25519_scalar_base_adx = sym super::ed25519::vg_ed25519_scalar_base_adx,
+    )
+}
+
+/// The CPU features `vg_ed25519_public_key_expanded_ifma` requires (`Artifact.features`).
+pub(crate) const VG_ED25519_PUBLIC_KEY_EXPANDED_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]);
+
+/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
+///
+/// Copies the seed's SHA-512 digest to `scratch + 1568` and encodes `[s]B` with `vg_ed25519_scalar_base_ifma`, as `vg_ed25519_public_key_ifma` does after hashing the seed. The pruned scalar `s` is kept in a 56-byte stack frame with the pointers and cleared before the frame is popped; the calls use the 16 bytes below it.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed.
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `expanded` (distinct Rust objects never do).
+/// * None of `out`, `expanded` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_expanded_ifma(out: *mut [u8; 32], expanded: *const [u8; 64], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r"push rdi
+push rsi
+push rdx
+push rax
+push rax
+push rax
+push rax
+mov rax, QWORD PTR [rsp+40]
+mov rcx, QWORD PTR [rsp+32]
+mov rdx, QWORD PTR [rax]
+mov QWORD PTR [rcx+1568], rdx
+mov rdx, QWORD PTR [rax+8]
+mov QWORD PTR [rcx+1576], rdx
+mov rdx, QWORD PTR [rax+16]
+mov QWORD PTR [rcx+1584], rdx
+mov rdx, QWORD PTR [rax+24]
+mov QWORD PTR [rcx+1592], rdx
+mov rdx, QWORD PTR [rax+32]
+mov QWORD PTR [rcx+1600], rdx
+mov rdx, QWORD PTR [rax+40]
+mov QWORD PTR [rcx+1608], rdx
+mov rdx, QWORD PTR [rax+48]
+mov QWORD PTR [rcx+1616], rdx
+mov rdx, QWORD PTR [rax+56]
+mov QWORD PTR [rcx+1624], rdx
+mov rdi, QWORD PTR [rsp+48]
+mov rsi, rsp
+mov rdx, QWORD PTR [rsp+32]
+mov r8, QWORD PTR [rdx+1568]
+mov r9, QWORD PTR [rdx+1576]
+mov r10, QWORD PTR [rdx+1584]
+mov r11, QWORD PTR [rdx+1592]
+and r8, -8
+movabs rcx, 4611686018427387903
+and r11, rcx
+movabs rcx, 4611686018427387904
+or r11, rcx
+mov QWORD PTR [rsp], r8
+mov QWORD PTR [rsp+8], r9
+mov QWORD PTR [rsp+16], r10
+mov QWORD PTR [rsp+24], r11
+call {vg_ed25519_scalar_base_ifma}
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+mov QWORD PTR [rsp], r8
+mov QWORD PTR [rsp+8], r9
+mov QWORD PTR [rsp+16], r10
+mov QWORD PTR [rsp+24], r11
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+ret
+.p2align 6",
+        vg_ed25519_scalar_base_ifma = sym super::ed25519::vg_ed25519_scalar_base_ifma,
+    )
+}
+
 /// Ed25519 scalar reduction (RFC 8032 §5.1.6): writes the canonical 32-byte little-endian encoding of `wide mod L` to `*out`, using all 64 input bytes. Contract: `VG.Spec.Ed25519.scalarReduceContract`. Constant time: only pointers may affect timing.
 ///
 /// Processes the eight input words from the top into a four-word remainder: each step folds the bits above 2^252 back with one 64x128-bit product, then subtracts the subgroup order and selects with a borrow mask. Callee-saved registers are saved in the first 48 bytes of `scratch`, and the output's address in the next 8.
@@ -55029,86 +55277,6 @@ ret
     )
 }
 
-/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, from the 32-byte private seed at `seed`, including SHA-512 and pruning. Contract: `VG.Spec.Ed25519.publicKeyContract`. Constant time: only pointers may affect timing.
-///
-/// Hashes the seed with `vg_sha512_init`, `vg_sha512_update_scratch` and `vg_sha512_finalize_scratch`, keeping the state and the digest in `scratch`, and encodes `[s]B` with `vg_ed25519_scalar_base`. The pruned scalar `s` is kept in a 56-byte stack frame with the pointers and cleared before the frame is popped; the calls use the 16 bytes below it.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `seed` must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `out`, `seed` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r"push rdi
-push rsi
-push rdx
-push rax
-push rax
-push rax
-push rax
-mov rdi, QWORD PTR [rsp+32]
-call {vg_sha512_init}
-mov rdi, QWORD PTR [rsp+32]
-mov esi, 0
-mov rdx, QWORD PTR [rsp+40]
-mov ecx, 32
-mov r8, QWORD PTR [rsp+32]
-add r8, 192
-call {vg_sha512_update_scratch}
-mov rdi, QWORD PTR [rsp+32]
-mov esi, 32
-mov rdx, QWORD PTR [rsp+32]
-add rdx, 1568
-mov rcx, QWORD PTR [rsp+32]
-add rcx, 192
-call {vg_sha512_finalize_scratch}
-mov rdi, QWORD PTR [rsp+48]
-mov rsi, rsp
-mov rdx, QWORD PTR [rsp+32]
-mov r8, QWORD PTR [rdx+1568]
-mov r9, QWORD PTR [rdx+1576]
-mov r10, QWORD PTR [rdx+1584]
-mov r11, QWORD PTR [rdx+1592]
-and r8, -8
-movabs rcx, 4611686018427387903
-and r11, rcx
-movabs rcx, 4611686018427387904
-or r11, rcx
-mov QWORD PTR [rsp], r8
-mov QWORD PTR [rsp+8], r9
-mov QWORD PTR [rsp+16], r10
-mov QWORD PTR [rsp+24], r11
-call {vg_ed25519_scalar_base}
-xor r8d, r8d
-xor r9d, r9d
-xor r10d, r10d
-xor r11d, r11d
-mov QWORD PTR [rsp], r8
-mov QWORD PTR [rsp+8], r9
-mov QWORD PTR [rsp+16], r10
-mov QWORD PTR [rsp+24], r11
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-ret
-.p2align 6",
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base,
-    )
-}
-
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
 /// Hashes R, the public key and the message with the selected SHA-512 backend, reduces the challenge modulo L, and calls `vg_ed25519_verify_equation`. The digest and zero-extended reduced challenge occupy separate buffers in a 168-byte stack frame; calls, and the point functions' calls from `vg_ed25519_verify_equation`, use another 16 bytes below it.
@@ -55223,24 +55391,24 @@ ret
     )
 }
 
-/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signCachedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
-/// Computes all three SHA-512 hashes with the selected backend, reduces the nonce and challenge, encodes the nonce point with `vg_ed25519_scalar_base`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
+/// Copies the seed's cached SHA-512 digest, computes the nonce and challenge hashes with the selected backend, reduces them, encodes the nonce point with `vg_ed25519_scalar_base`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
 ///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 64 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
 /// * `pk` must be valid for reads of 32 bytes.
 /// * `message` must be valid for reads of `len` bytes.
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 32 bytes at `pk` must equal the public key derived from the 32 bytes at `seed` by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
-/// * `seed` must originate from a cryptographically secure random generator.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `seed`, `pk` or `message` (distinct Rust objects never do).
-/// * None of `out`, `seed`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_cached(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -55273,22 +55441,23 @@ push rax
 push rax
 push rax
 push rax
-mov rdi, QWORD PTR [rsp+200]
-call {vg_sha512_init}
-mov rdi, QWORD PTR [rsp+200]
-mov esi, 0
-mov rdx, QWORD PTR [rsp+232]
-mov ecx, 32
-mov r8, QWORD PTR [rsp+200]
-add r8, 192
-call {vg_sha512_update_scratch}
-mov rdi, QWORD PTR [rsp+200]
-mov esi, 32
-mov rdx, rsp
-add rdx, 128
-mov rcx, QWORD PTR [rsp+200]
-add rcx, 192
-call {vg_sha512_finalize_scratch}
+mov rax, QWORD PTR [rsp+232]
+mov rcx, QWORD PTR [rax]
+mov QWORD PTR [rsp+128], rcx
+mov rcx, QWORD PTR [rax+8]
+mov QWORD PTR [rsp+136], rcx
+mov rcx, QWORD PTR [rax+16]
+mov QWORD PTR [rsp+144], rcx
+mov rcx, QWORD PTR [rax+24]
+mov QWORD PTR [rsp+152], rcx
+mov rcx, QWORD PTR [rax+32]
+mov QWORD PTR [rsp+160], rcx
+mov rcx, QWORD PTR [rax+40]
+mov QWORD PTR [rsp+168], rcx
+mov rcx, QWORD PTR [rax+48]
+mov QWORD PTR [rsp+176], rcx
+mov rcx, QWORD PTR [rax+56]
+mov QWORD PTR [rsp+184], rcx
 mov r8, QWORD PTR [rsp+128]
 mov r9, QWORD PTR [rsp+136]
 mov r10, QWORD PTR [rsp+144]
@@ -55460,90 +55629,6 @@ ret
     )
 }
 
-/// The CPU features `vg_ed25519_public_key_adx` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_PUBLIC_KEY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi2", "adx"]);
-
-/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, from the 32-byte private seed at `seed`, including SHA-512 and pruning. Contract: `VG.Spec.Ed25519.publicKeyContract`. Constant time: only pointers may affect timing.
-///
-/// Hashes the seed with `vg_sha512_init`, `vg_sha512_update_scratch` and `vg_sha512_finalize_scratch`, keeping the state and the digest in `scratch`, and encodes `[s]B` with `vg_ed25519_scalar_base_adx`. The pruned scalar `s` is kept in a 56-byte stack frame with the pointers and cleared before the frame is popped; the calls use the 16 bytes below it.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `seed` must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `out`, `seed` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_adx(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r"push rdi
-push rsi
-push rdx
-push rax
-push rax
-push rax
-push rax
-mov rdi, QWORD PTR [rsp+32]
-call {vg_sha512_init}
-mov rdi, QWORD PTR [rsp+32]
-mov esi, 0
-mov rdx, QWORD PTR [rsp+40]
-mov ecx, 32
-mov r8, QWORD PTR [rsp+32]
-add r8, 192
-call {vg_sha512_update_scratch}
-mov rdi, QWORD PTR [rsp+32]
-mov esi, 32
-mov rdx, QWORD PTR [rsp+32]
-add rdx, 1568
-mov rcx, QWORD PTR [rsp+32]
-add rcx, 192
-call {vg_sha512_finalize_scratch}
-mov rdi, QWORD PTR [rsp+48]
-mov rsi, rsp
-mov rdx, QWORD PTR [rsp+32]
-mov r8, QWORD PTR [rdx+1568]
-mov r9, QWORD PTR [rdx+1576]
-mov r10, QWORD PTR [rdx+1584]
-mov r11, QWORD PTR [rdx+1592]
-and r8, -8
-movabs rcx, 4611686018427387903
-and r11, rcx
-movabs rcx, 4611686018427387904
-or r11, rcx
-mov QWORD PTR [rsp], r8
-mov QWORD PTR [rsp+8], r9
-mov QWORD PTR [rsp+16], r10
-mov QWORD PTR [rsp+24], r11
-call {vg_ed25519_scalar_base_adx}
-xor r8d, r8d
-xor r9d, r9d
-xor r10d, r10d
-xor r11d, r11d
-mov QWORD PTR [rsp], r8
-mov QWORD PTR [rsp+8], r9
-mov QWORD PTR [rsp+16], r10
-mov QWORD PTR [rsp+24], r11
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-ret
-.p2align 6",
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_ed25519_scalar_base_adx = sym super::ed25519::vg_ed25519_scalar_base_adx,
-    )
-}
-
 /// The CPU features `vg_ed25519_verify_adx` requires (`Artifact.features`).
 pub(crate) const VG_ED25519_VERIFY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx"]);
 
@@ -55662,28 +55747,28 @@ ret
     )
 }
 
-/// The CPU features `vg_ed25519_sign_cached_adx` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_SIGN_CACHED_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi2", "adx"]);
+/// The CPU features `vg_ed25519_sign_expanded_adx` requires (`Artifact.features`).
+pub(crate) const VG_ED25519_SIGN_EXPANDED_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi2", "adx"]);
 
-/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signCachedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
-/// Computes all three SHA-512 hashes with the selected backend, reduces the nonce and challenge, encodes the nonce point with `vg_ed25519_scalar_base_adx`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
+/// Copies the seed's cached SHA-512 digest, computes the nonce and challenge hashes with the selected backend, reduces them, encodes the nonce point with `vg_ed25519_scalar_base_adx`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
 ///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 64 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
 /// * `pk` must be valid for reads of 32 bytes.
 /// * `message` must be valid for reads of `len` bytes.
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 32 bytes at `pk` must equal the public key derived from the 32 bytes at `seed` by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
-/// * `seed` must originate from a cryptographically secure random generator.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `seed`, `pk` or `message` (distinct Rust objects never do).
-/// * None of `out`, `seed`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_cached_adx(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -55716,22 +55801,23 @@ push rax
 push rax
 push rax
 push rax
-mov rdi, QWORD PTR [rsp+200]
-call {vg_sha512_init}
-mov rdi, QWORD PTR [rsp+200]
-mov esi, 0
-mov rdx, QWORD PTR [rsp+232]
-mov ecx, 32
-mov r8, QWORD PTR [rsp+200]
-add r8, 192
-call {vg_sha512_update_scratch}
-mov rdi, QWORD PTR [rsp+200]
-mov esi, 32
-mov rdx, rsp
-add rdx, 128
-mov rcx, QWORD PTR [rsp+200]
-add rcx, 192
-call {vg_sha512_finalize_scratch}
+mov rax, QWORD PTR [rsp+232]
+mov rcx, QWORD PTR [rax]
+mov QWORD PTR [rsp+128], rcx
+mov rcx, QWORD PTR [rax+8]
+mov QWORD PTR [rsp+136], rcx
+mov rcx, QWORD PTR [rax+16]
+mov QWORD PTR [rsp+144], rcx
+mov rcx, QWORD PTR [rax+24]
+mov QWORD PTR [rsp+152], rcx
+mov rcx, QWORD PTR [rax+32]
+mov QWORD PTR [rsp+160], rcx
+mov rcx, QWORD PTR [rax+40]
+mov QWORD PTR [rsp+168], rcx
+mov rcx, QWORD PTR [rax+48]
+mov QWORD PTR [rsp+176], rcx
+mov rcx, QWORD PTR [rax+56]
+mov QWORD PTR [rsp+184], rcx
 mov r8, QWORD PTR [rsp+128]
 mov r9, QWORD PTR [rsp+136]
 mov r10, QWORD PTR [rsp+144]
@@ -56021,112 +56107,28 @@ ret
     )
 }
 
-/// The CPU features `vg_ed25519_public_key_ifma` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_PUBLIC_KEY_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]);
+/// The CPU features `vg_ed25519_sign_expanded_ifma` requires (`Artifact.features`).
+pub(crate) const VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]);
 
-/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, from the 32-byte private seed at `seed`, including SHA-512 and pruning. Contract: `VG.Spec.Ed25519.publicKeyContract`. Constant time: only pointers may affect timing.
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
-/// Hashes the seed with `vg_sha512_init`, `vg_sha512_update_scratch` and `vg_sha512_finalize_scratch`, keeping the state and the digest in `scratch`, and encodes `[s]B` with `vg_ed25519_scalar_base_ifma`. The pruned scalar `s` is kept in a 56-byte stack frame with the pointers and cleared before the frame is popped; the calls use the 16 bytes below it.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `seed` must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `out`, `seed` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_ifma(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r"push rdi
-push rsi
-push rdx
-push rax
-push rax
-push rax
-push rax
-mov rdi, QWORD PTR [rsp+32]
-call {vg_sha512_init}
-mov rdi, QWORD PTR [rsp+32]
-mov esi, 0
-mov rdx, QWORD PTR [rsp+40]
-mov ecx, 32
-mov r8, QWORD PTR [rsp+32]
-add r8, 192
-call {vg_sha512_update_scratch}
-mov rdi, QWORD PTR [rsp+32]
-mov esi, 32
-mov rdx, QWORD PTR [rsp+32]
-add rdx, 1568
-mov rcx, QWORD PTR [rsp+32]
-add rcx, 192
-call {vg_sha512_finalize_scratch}
-mov rdi, QWORD PTR [rsp+48]
-mov rsi, rsp
-mov rdx, QWORD PTR [rsp+32]
-mov r8, QWORD PTR [rdx+1568]
-mov r9, QWORD PTR [rdx+1576]
-mov r10, QWORD PTR [rdx+1584]
-mov r11, QWORD PTR [rdx+1592]
-and r8, -8
-movabs rcx, 4611686018427387903
-and r11, rcx
-movabs rcx, 4611686018427387904
-or r11, rcx
-mov QWORD PTR [rsp], r8
-mov QWORD PTR [rsp+8], r9
-mov QWORD PTR [rsp+16], r10
-mov QWORD PTR [rsp+24], r11
-call {vg_ed25519_scalar_base_ifma}
-xor r8d, r8d
-xor r9d, r9d
-xor r10d, r10d
-xor r11d, r11d
-mov QWORD PTR [rsp], r8
-mov QWORD PTR [rsp+8], r9
-mov QWORD PTR [rsp+16], r10
-mov QWORD PTR [rsp+24], r11
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-ret
-.p2align 6",
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_ed25519_scalar_base_ifma = sym super::ed25519::vg_ed25519_scalar_base_ifma,
-    )
-}
-
-/// The CPU features `vg_ed25519_sign_cached_ifma` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_SIGN_CACHED_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]);
-
-/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signCachedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
-///
-/// Computes all three SHA-512 hashes with the selected backend, reduces the nonce and challenge, encodes the nonce point with `vg_ed25519_scalar_base_ifma`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
+/// Copies the seed's cached SHA-512 digest, computes the nonce and challenge hashes with the selected backend, reduces them, encodes the nonce point with `vg_ed25519_scalar_base_ifma`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
 ///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 64 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
 /// * `pk` must be valid for reads of 32 bytes.
 /// * `message` must be valid for reads of `len` bytes.
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 32 bytes at `pk` must equal the public key derived from the 32 bytes at `seed` by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
-/// * `seed` must originate from a cryptographically secure random generator.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `seed`, `pk` or `message` (distinct Rust objects never do).
-/// * None of `out`, `seed`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_cached_ifma(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -56159,22 +56161,23 @@ push rax
 push rax
 push rax
 push rax
-mov rdi, QWORD PTR [rsp+200]
-call {vg_sha512_init}
-mov rdi, QWORD PTR [rsp+200]
-mov esi, 0
-mov rdx, QWORD PTR [rsp+232]
-mov ecx, 32
-mov r8, QWORD PTR [rsp+200]
-add r8, 192
-call {vg_sha512_update_scratch}
-mov rdi, QWORD PTR [rsp+200]
-mov esi, 32
-mov rdx, rsp
-add rdx, 128
-mov rcx, QWORD PTR [rsp+200]
-add rcx, 192
-call {vg_sha512_finalize_scratch}
+mov rax, QWORD PTR [rsp+232]
+mov rcx, QWORD PTR [rax]
+mov QWORD PTR [rsp+128], rcx
+mov rcx, QWORD PTR [rax+8]
+mov QWORD PTR [rsp+136], rcx
+mov rcx, QWORD PTR [rax+16]
+mov QWORD PTR [rsp+144], rcx
+mov rcx, QWORD PTR [rax+24]
+mov QWORD PTR [rsp+152], rcx
+mov rcx, QWORD PTR [rax+32]
+mov QWORD PTR [rsp+160], rcx
+mov rcx, QWORD PTR [rax+40]
+mov QWORD PTR [rsp+168], rcx
+mov rcx, QWORD PTR [rax+48]
+mov QWORD PTR [rsp+176], rcx
+mov rcx, QWORD PTR [rax+56]
+mov QWORD PTR [rsp+184], rcx
 mov r8, QWORD PTR [rsp+128]
 mov r9, QWORD PTR [rsp+136]
 mov r10, QWORD PTR [rsp+144]
@@ -56343,90 +56346,6 @@ ret
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce,
         vg_ed25519_scalar_base_ifma = sym super::ed25519::vg_ed25519_scalar_base_ifma,
         vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add,
-    )
-}
-
-/// The CPU features `vg_ed25519_public_key_avx2` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_PUBLIC_KEY_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
-
-/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, from the 32-byte private seed at `seed`, including SHA-512 and pruning. Contract: `VG.Spec.Ed25519.publicKeyContract`. Constant time: only pointers may affect timing.
-///
-/// Hashes the seed with `vg_sha512_init`, `vg_sha512_update_scratch_avx2` and `vg_sha512_finalize_scratch_avx2`, keeping the state and the digest in `scratch`, and encodes `[s]B` with `vg_ed25519_scalar_base`. The pruned scalar `s` is kept in a 56-byte stack frame with the pointers and cleared before the frame is popped; the calls use the 16 bytes below it.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `seed` must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `out`, `seed` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_avx2(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r"push rdi
-push rsi
-push rdx
-push rax
-push rax
-push rax
-push rax
-mov rdi, QWORD PTR [rsp+32]
-call {vg_sha512_init}
-mov rdi, QWORD PTR [rsp+32]
-mov esi, 0
-mov rdx, QWORD PTR [rsp+40]
-mov ecx, 32
-mov r8, QWORD PTR [rsp+32]
-add r8, 192
-call {vg_sha512_update_scratch_avx2}
-mov rdi, QWORD PTR [rsp+32]
-mov esi, 32
-mov rdx, QWORD PTR [rsp+32]
-add rdx, 1568
-mov rcx, QWORD PTR [rsp+32]
-add rcx, 192
-call {vg_sha512_finalize_scratch_avx2}
-mov rdi, QWORD PTR [rsp+48]
-mov rsi, rsp
-mov rdx, QWORD PTR [rsp+32]
-mov r8, QWORD PTR [rdx+1568]
-mov r9, QWORD PTR [rdx+1576]
-mov r10, QWORD PTR [rdx+1584]
-mov r11, QWORD PTR [rdx+1592]
-and r8, -8
-movabs rcx, 4611686018427387903
-and r11, rcx
-movabs rcx, 4611686018427387904
-or r11, rcx
-mov QWORD PTR [rsp], r8
-mov QWORD PTR [rsp+8], r9
-mov QWORD PTR [rsp+16], r10
-mov QWORD PTR [rsp+24], r11
-call {vg_ed25519_scalar_base}
-xor r8d, r8d
-xor r9d, r9d
-xor r10d, r10d
-xor r11d, r11d
-mov QWORD PTR [rsp], r8
-mov QWORD PTR [rsp+8], r9
-mov QWORD PTR [rsp+16], r10
-mov QWORD PTR [rsp+24], r11
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-ret
-.p2align 6",
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2,
-        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2,
-        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base,
     )
 }
 
@@ -56548,28 +56467,28 @@ ret
     )
 }
 
-/// The CPU features `vg_ed25519_sign_cached_avx2` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_SIGN_CACHED_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
+/// The CPU features `vg_ed25519_sign_expanded_avx2` requires (`Artifact.features`).
+pub(crate) const VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
 
-/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signCachedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
-/// Computes all three SHA-512 hashes with the selected backend, reduces the nonce and challenge, encodes the nonce point with `vg_ed25519_scalar_base`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
+/// Copies the seed's cached SHA-512 digest, computes the nonce and challenge hashes with the selected backend, reduces them, encodes the nonce point with `vg_ed25519_scalar_base`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
 ///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 64 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
 /// * `pk` must be valid for reads of 32 bytes.
 /// * `message` must be valid for reads of `len` bytes.
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 32 bytes at `pk` must equal the public key derived from the 32 bytes at `seed` by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
-/// * `seed` must originate from a cryptographically secure random generator.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `seed`, `pk` or `message` (distinct Rust objects never do).
-/// * None of `out`, `seed`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_cached_avx2(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -56602,22 +56521,23 @@ push rax
 push rax
 push rax
 push rax
-mov rdi, QWORD PTR [rsp+200]
-call {vg_sha512_init}
-mov rdi, QWORD PTR [rsp+200]
-mov esi, 0
-mov rdx, QWORD PTR [rsp+232]
-mov ecx, 32
-mov r8, QWORD PTR [rsp+200]
-add r8, 192
-call {vg_sha512_update_scratch_avx2}
-mov rdi, QWORD PTR [rsp+200]
-mov esi, 32
-mov rdx, rsp
-add rdx, 128
-mov rcx, QWORD PTR [rsp+200]
-add rcx, 192
-call {vg_sha512_finalize_scratch_avx2}
+mov rax, QWORD PTR [rsp+232]
+mov rcx, QWORD PTR [rax]
+mov QWORD PTR [rsp+128], rcx
+mov rcx, QWORD PTR [rax+8]
+mov QWORD PTR [rsp+136], rcx
+mov rcx, QWORD PTR [rax+16]
+mov QWORD PTR [rsp+144], rcx
+mov rcx, QWORD PTR [rax+24]
+mov QWORD PTR [rsp+152], rcx
+mov rcx, QWORD PTR [rax+32]
+mov QWORD PTR [rsp+160], rcx
+mov rcx, QWORD PTR [rax+40]
+mov QWORD PTR [rsp+168], rcx
+mov rcx, QWORD PTR [rax+48]
+mov QWORD PTR [rsp+176], rcx
+mov rcx, QWORD PTR [rax+56]
+mov QWORD PTR [rsp+184], rcx
 mov r8, QWORD PTR [rsp+128]
 mov r9, QWORD PTR [rsp+136]
 mov r10, QWORD PTR [rsp+144]
@@ -56789,90 +56709,6 @@ ret
     )
 }
 
-/// The CPU features `vg_ed25519_public_key_avx2_adx` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_PUBLIC_KEY_AVX2_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "adx"]);
-
-/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, from the 32-byte private seed at `seed`, including SHA-512 and pruning. Contract: `VG.Spec.Ed25519.publicKeyContract`. Constant time: only pointers may affect timing.
-///
-/// Hashes the seed with `vg_sha512_init`, `vg_sha512_update_scratch_avx2` and `vg_sha512_finalize_scratch_avx2`, keeping the state and the digest in `scratch`, and encodes `[s]B` with `vg_ed25519_scalar_base_adx`. The pruned scalar `s` is kept in a 56-byte stack frame with the pointers and cleared before the frame is popped; the calls use the 16 bytes below it.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `seed` must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `out`, `seed` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_avx2_adx(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r"push rdi
-push rsi
-push rdx
-push rax
-push rax
-push rax
-push rax
-mov rdi, QWORD PTR [rsp+32]
-call {vg_sha512_init}
-mov rdi, QWORD PTR [rsp+32]
-mov esi, 0
-mov rdx, QWORD PTR [rsp+40]
-mov ecx, 32
-mov r8, QWORD PTR [rsp+32]
-add r8, 192
-call {vg_sha512_update_scratch_avx2}
-mov rdi, QWORD PTR [rsp+32]
-mov esi, 32
-mov rdx, QWORD PTR [rsp+32]
-add rdx, 1568
-mov rcx, QWORD PTR [rsp+32]
-add rcx, 192
-call {vg_sha512_finalize_scratch_avx2}
-mov rdi, QWORD PTR [rsp+48]
-mov rsi, rsp
-mov rdx, QWORD PTR [rsp+32]
-mov r8, QWORD PTR [rdx+1568]
-mov r9, QWORD PTR [rdx+1576]
-mov r10, QWORD PTR [rdx+1584]
-mov r11, QWORD PTR [rdx+1592]
-and r8, -8
-movabs rcx, 4611686018427387903
-and r11, rcx
-movabs rcx, 4611686018427387904
-or r11, rcx
-mov QWORD PTR [rsp], r8
-mov QWORD PTR [rsp+8], r9
-mov QWORD PTR [rsp+16], r10
-mov QWORD PTR [rsp+24], r11
-call {vg_ed25519_scalar_base_adx}
-xor r8d, r8d
-xor r9d, r9d
-xor r10d, r10d
-xor r11d, r11d
-mov QWORD PTR [rsp], r8
-mov QWORD PTR [rsp+8], r9
-mov QWORD PTR [rsp+16], r10
-mov QWORD PTR [rsp+24], r11
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-ret
-.p2align 6",
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2,
-        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2,
-        vg_ed25519_scalar_base_adx = sym super::ed25519::vg_ed25519_scalar_base_adx,
-    )
-}
-
 /// The CPU features `vg_ed25519_verify_avx2_adx` requires (`Artifact.features`).
 pub(crate) const VG_ED25519_VERIFY_AVX2_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "adx"]);
 
@@ -56991,28 +56827,28 @@ ret
     )
 }
 
-/// The CPU features `vg_ed25519_sign_cached_avx2_adx` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_SIGN_CACHED_AVX2_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "adx"]);
+/// The CPU features `vg_ed25519_sign_expanded_avx2_adx` requires (`Artifact.features`).
+pub(crate) const VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "adx"]);
 
-/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signCachedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
-/// Computes all three SHA-512 hashes with the selected backend, reduces the nonce and challenge, encodes the nonce point with `vg_ed25519_scalar_base_adx`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
+/// Copies the seed's cached SHA-512 digest, computes the nonce and challenge hashes with the selected backend, reduces them, encodes the nonce point with `vg_ed25519_scalar_base_adx`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
 ///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 64 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
 /// * `pk` must be valid for reads of 32 bytes.
 /// * `message` must be valid for reads of `len` bytes.
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 32 bytes at `pk` must equal the public key derived from the 32 bytes at `seed` by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
-/// * `seed` must originate from a cryptographically secure random generator.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `seed`, `pk` or `message` (distinct Rust objects never do).
-/// * None of `out`, `seed`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_cached_avx2_adx(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -57045,22 +56881,23 @@ push rax
 push rax
 push rax
 push rax
-mov rdi, QWORD PTR [rsp+200]
-call {vg_sha512_init}
-mov rdi, QWORD PTR [rsp+200]
-mov esi, 0
-mov rdx, QWORD PTR [rsp+232]
-mov ecx, 32
-mov r8, QWORD PTR [rsp+200]
-add r8, 192
-call {vg_sha512_update_scratch_avx2}
-mov rdi, QWORD PTR [rsp+200]
-mov esi, 32
-mov rdx, rsp
-add rdx, 128
-mov rcx, QWORD PTR [rsp+200]
-add rcx, 192
-call {vg_sha512_finalize_scratch_avx2}
+mov rax, QWORD PTR [rsp+232]
+mov rcx, QWORD PTR [rax]
+mov QWORD PTR [rsp+128], rcx
+mov rcx, QWORD PTR [rax+8]
+mov QWORD PTR [rsp+136], rcx
+mov rcx, QWORD PTR [rax+16]
+mov QWORD PTR [rsp+144], rcx
+mov rcx, QWORD PTR [rax+24]
+mov QWORD PTR [rsp+152], rcx
+mov rcx, QWORD PTR [rax+32]
+mov QWORD PTR [rsp+160], rcx
+mov rcx, QWORD PTR [rax+40]
+mov QWORD PTR [rsp+168], rcx
+mov rcx, QWORD PTR [rax+48]
+mov QWORD PTR [rsp+176], rcx
+mov rcx, QWORD PTR [rax+56]
+mov QWORD PTR [rsp+184], rcx
 mov r8, QWORD PTR [rsp+128]
 mov r9, QWORD PTR [rsp+136]
 mov r10, QWORD PTR [rsp+144]
@@ -57350,112 +57187,28 @@ ret
     )
 }
 
-/// The CPU features `vg_ed25519_public_key_avx2_ifma` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_PUBLIC_KEY_AVX2_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]);
+/// The CPU features `vg_ed25519_sign_expanded_avx2_ifma` requires (`Artifact.features`).
+pub(crate) const VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]);
 
-/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, from the 32-byte private seed at `seed`, including SHA-512 and pruning. Contract: `VG.Spec.Ed25519.publicKeyContract`. Constant time: only pointers may affect timing.
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
-/// Hashes the seed with `vg_sha512_init`, `vg_sha512_update_scratch_avx2` and `vg_sha512_finalize_scratch_avx2`, keeping the state and the digest in `scratch`, and encodes `[s]B` with `vg_ed25519_scalar_base_ifma`. The pruned scalar `s` is kept in a 56-byte stack frame with the pointers and cleared before the frame is popped; the calls use the 16 bytes below it.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `seed` must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `out`, `seed` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_avx2_ifma(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r"push rdi
-push rsi
-push rdx
-push rax
-push rax
-push rax
-push rax
-mov rdi, QWORD PTR [rsp+32]
-call {vg_sha512_init}
-mov rdi, QWORD PTR [rsp+32]
-mov esi, 0
-mov rdx, QWORD PTR [rsp+40]
-mov ecx, 32
-mov r8, QWORD PTR [rsp+32]
-add r8, 192
-call {vg_sha512_update_scratch_avx2}
-mov rdi, QWORD PTR [rsp+32]
-mov esi, 32
-mov rdx, QWORD PTR [rsp+32]
-add rdx, 1568
-mov rcx, QWORD PTR [rsp+32]
-add rcx, 192
-call {vg_sha512_finalize_scratch_avx2}
-mov rdi, QWORD PTR [rsp+48]
-mov rsi, rsp
-mov rdx, QWORD PTR [rsp+32]
-mov r8, QWORD PTR [rdx+1568]
-mov r9, QWORD PTR [rdx+1576]
-mov r10, QWORD PTR [rdx+1584]
-mov r11, QWORD PTR [rdx+1592]
-and r8, -8
-movabs rcx, 4611686018427387903
-and r11, rcx
-movabs rcx, 4611686018427387904
-or r11, rcx
-mov QWORD PTR [rsp], r8
-mov QWORD PTR [rsp+8], r9
-mov QWORD PTR [rsp+16], r10
-mov QWORD PTR [rsp+24], r11
-call {vg_ed25519_scalar_base_ifma}
-xor r8d, r8d
-xor r9d, r9d
-xor r10d, r10d
-xor r11d, r11d
-mov QWORD PTR [rsp], r8
-mov QWORD PTR [rsp+8], r9
-mov QWORD PTR [rsp+16], r10
-mov QWORD PTR [rsp+24], r11
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-ret
-.p2align 6",
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2,
-        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2,
-        vg_ed25519_scalar_base_ifma = sym super::ed25519::vg_ed25519_scalar_base_ifma,
-    )
-}
-
-/// The CPU features `vg_ed25519_sign_cached_avx2_ifma` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_SIGN_CACHED_AVX2_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]);
-
-/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signCachedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
-///
-/// Computes all three SHA-512 hashes with the selected backend, reduces the nonce and challenge, encodes the nonce point with `vg_ed25519_scalar_base_ifma`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
+/// Copies the seed's cached SHA-512 digest, computes the nonce and challenge hashes with the selected backend, reduces them, encodes the nonce point with `vg_ed25519_scalar_base_ifma`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
 ///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 64 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
 /// * `pk` must be valid for reads of 32 bytes.
 /// * `message` must be valid for reads of `len` bytes.
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 32 bytes at `pk` must equal the public key derived from the 32 bytes at `seed` by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
-/// * `seed` must originate from a cryptographically secure random generator.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `seed`, `pk` or `message` (distinct Rust objects never do).
-/// * None of `out`, `seed`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_cached_avx2_ifma(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -57488,22 +57241,23 @@ push rax
 push rax
 push rax
 push rax
-mov rdi, QWORD PTR [rsp+200]
-call {vg_sha512_init}
-mov rdi, QWORD PTR [rsp+200]
-mov esi, 0
-mov rdx, QWORD PTR [rsp+232]
-mov ecx, 32
-mov r8, QWORD PTR [rsp+200]
-add r8, 192
-call {vg_sha512_update_scratch_avx2}
-mov rdi, QWORD PTR [rsp+200]
-mov esi, 32
-mov rdx, rsp
-add rdx, 128
-mov rcx, QWORD PTR [rsp+200]
-add rcx, 192
-call {vg_sha512_finalize_scratch_avx2}
+mov rax, QWORD PTR [rsp+232]
+mov rcx, QWORD PTR [rax]
+mov QWORD PTR [rsp+128], rcx
+mov rcx, QWORD PTR [rax+8]
+mov QWORD PTR [rsp+136], rcx
+mov rcx, QWORD PTR [rax+16]
+mov QWORD PTR [rsp+144], rcx
+mov rcx, QWORD PTR [rax+24]
+mov QWORD PTR [rsp+152], rcx
+mov rcx, QWORD PTR [rax+32]
+mov QWORD PTR [rsp+160], rcx
+mov rcx, QWORD PTR [rax+40]
+mov QWORD PTR [rsp+168], rcx
+mov rcx, QWORD PTR [rax+48]
+mov QWORD PTR [rsp+176], rcx
+mov rcx, QWORD PTR [rax+56]
+mov QWORD PTR [rsp+184], rcx
 mov r8, QWORD PTR [rsp+128]
 mov r9, QWORD PTR [rsp+136]
 mov r10, QWORD PTR [rsp+144]
@@ -57672,90 +57426,6 @@ ret
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce,
         vg_ed25519_scalar_base_ifma = sym super::ed25519::vg_ed25519_scalar_base_ifma,
         vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add,
-    )
-}
-
-/// The CPU features `vg_ed25519_public_key_shani` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_PUBLIC_KEY_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512"]);
-
-/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, from the 32-byte private seed at `seed`, including SHA-512 and pruning. Contract: `VG.Spec.Ed25519.publicKeyContract`. Constant time: only pointers may affect timing.
-///
-/// Hashes the seed with `vg_sha512_init`, `vg_sha512_update_scratch_shani` and `vg_sha512_finalize_scratch_shani`, keeping the state and the digest in `scratch`, and encodes `[s]B` with `vg_ed25519_scalar_base`. The pruned scalar `s` is kept in a 56-byte stack frame with the pointers and cleared before the frame is popped; the calls use the 16 bytes below it.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `seed` must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `out`, `seed` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2` and `sha512` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_shani(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r"push rdi
-push rsi
-push rdx
-push rax
-push rax
-push rax
-push rax
-mov rdi, QWORD PTR [rsp+32]
-call {vg_sha512_init}
-mov rdi, QWORD PTR [rsp+32]
-mov esi, 0
-mov rdx, QWORD PTR [rsp+40]
-mov ecx, 32
-mov r8, QWORD PTR [rsp+32]
-add r8, 192
-call {vg_sha512_update_scratch_shani}
-mov rdi, QWORD PTR [rsp+32]
-mov esi, 32
-mov rdx, QWORD PTR [rsp+32]
-add rdx, 1568
-mov rcx, QWORD PTR [rsp+32]
-add rcx, 192
-call {vg_sha512_finalize_scratch_shani}
-mov rdi, QWORD PTR [rsp+48]
-mov rsi, rsp
-mov rdx, QWORD PTR [rsp+32]
-mov r8, QWORD PTR [rdx+1568]
-mov r9, QWORD PTR [rdx+1576]
-mov r10, QWORD PTR [rdx+1584]
-mov r11, QWORD PTR [rdx+1592]
-and r8, -8
-movabs rcx, 4611686018427387903
-and r11, rcx
-movabs rcx, 4611686018427387904
-or r11, rcx
-mov QWORD PTR [rsp], r8
-mov QWORD PTR [rsp+8], r9
-mov QWORD PTR [rsp+16], r10
-mov QWORD PTR [rsp+24], r11
-call {vg_ed25519_scalar_base}
-xor r8d, r8d
-xor r9d, r9d
-xor r10d, r10d
-xor r11d, r11d
-mov QWORD PTR [rsp], r8
-mov QWORD PTR [rsp+8], r9
-mov QWORD PTR [rsp+16], r10
-mov QWORD PTR [rsp+24], r11
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-ret
-.p2align 6",
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani,
-        vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani,
-        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base,
     )
 }
 
@@ -57877,28 +57547,28 @@ ret
     )
 }
 
-/// The CPU features `vg_ed25519_sign_cached_shani` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_SIGN_CACHED_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512"]);
+/// The CPU features `vg_ed25519_sign_expanded_shani` requires (`Artifact.features`).
+pub(crate) const VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512"]);
 
-/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signCachedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
-/// Computes all three SHA-512 hashes with the selected backend, reduces the nonce and challenge, encodes the nonce point with `vg_ed25519_scalar_base`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
+/// Copies the seed's cached SHA-512 digest, computes the nonce and challenge hashes with the selected backend, reduces them, encodes the nonce point with `vg_ed25519_scalar_base`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
 ///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 64 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
 /// * `pk` must be valid for reads of 32 bytes.
 /// * `message` must be valid for reads of `len` bytes.
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 32 bytes at `pk` must equal the public key derived from the 32 bytes at `seed` by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
-/// * `seed` must originate from a cryptographically secure random generator.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `seed`, `pk` or `message` (distinct Rust objects never do).
-/// * None of `out`, `seed`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_cached_shani(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -57931,22 +57601,23 @@ push rax
 push rax
 push rax
 push rax
-mov rdi, QWORD PTR [rsp+200]
-call {vg_sha512_init}
-mov rdi, QWORD PTR [rsp+200]
-mov esi, 0
-mov rdx, QWORD PTR [rsp+232]
-mov ecx, 32
-mov r8, QWORD PTR [rsp+200]
-add r8, 192
-call {vg_sha512_update_scratch_shani}
-mov rdi, QWORD PTR [rsp+200]
-mov esi, 32
-mov rdx, rsp
-add rdx, 128
-mov rcx, QWORD PTR [rsp+200]
-add rcx, 192
-call {vg_sha512_finalize_scratch_shani}
+mov rax, QWORD PTR [rsp+232]
+mov rcx, QWORD PTR [rax]
+mov QWORD PTR [rsp+128], rcx
+mov rcx, QWORD PTR [rax+8]
+mov QWORD PTR [rsp+136], rcx
+mov rcx, QWORD PTR [rax+16]
+mov QWORD PTR [rsp+144], rcx
+mov rcx, QWORD PTR [rax+24]
+mov QWORD PTR [rsp+152], rcx
+mov rcx, QWORD PTR [rax+32]
+mov QWORD PTR [rsp+160], rcx
+mov rcx, QWORD PTR [rax+40]
+mov QWORD PTR [rsp+168], rcx
+mov rcx, QWORD PTR [rax+48]
+mov QWORD PTR [rsp+176], rcx
+mov rcx, QWORD PTR [rax+56]
+mov QWORD PTR [rsp+184], rcx
 mov r8, QWORD PTR [rsp+128]
 mov r9, QWORD PTR [rsp+136]
 mov r10, QWORD PTR [rsp+144]
@@ -58118,90 +57789,6 @@ ret
     )
 }
 
-/// The CPU features `vg_ed25519_public_key_shani_adx` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_PUBLIC_KEY_SHANI_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512", "bmi2", "adx"]);
-
-/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, from the 32-byte private seed at `seed`, including SHA-512 and pruning. Contract: `VG.Spec.Ed25519.publicKeyContract`. Constant time: only pointers may affect timing.
-///
-/// Hashes the seed with `vg_sha512_init`, `vg_sha512_update_scratch_shani` and `vg_sha512_finalize_scratch_shani`, keeping the state and the digest in `scratch`, and encodes `[s]B` with `vg_ed25519_scalar_base_adx`. The pruned scalar `s` is kept in a 56-byte stack frame with the pointers and cleared before the frame is popped; the calls use the 16 bytes below it.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `seed` must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `out`, `seed` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2` and `adx` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_shani_adx(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r"push rdi
-push rsi
-push rdx
-push rax
-push rax
-push rax
-push rax
-mov rdi, QWORD PTR [rsp+32]
-call {vg_sha512_init}
-mov rdi, QWORD PTR [rsp+32]
-mov esi, 0
-mov rdx, QWORD PTR [rsp+40]
-mov ecx, 32
-mov r8, QWORD PTR [rsp+32]
-add r8, 192
-call {vg_sha512_update_scratch_shani}
-mov rdi, QWORD PTR [rsp+32]
-mov esi, 32
-mov rdx, QWORD PTR [rsp+32]
-add rdx, 1568
-mov rcx, QWORD PTR [rsp+32]
-add rcx, 192
-call {vg_sha512_finalize_scratch_shani}
-mov rdi, QWORD PTR [rsp+48]
-mov rsi, rsp
-mov rdx, QWORD PTR [rsp+32]
-mov r8, QWORD PTR [rdx+1568]
-mov r9, QWORD PTR [rdx+1576]
-mov r10, QWORD PTR [rdx+1584]
-mov r11, QWORD PTR [rdx+1592]
-and r8, -8
-movabs rcx, 4611686018427387903
-and r11, rcx
-movabs rcx, 4611686018427387904
-or r11, rcx
-mov QWORD PTR [rsp], r8
-mov QWORD PTR [rsp+8], r9
-mov QWORD PTR [rsp+16], r10
-mov QWORD PTR [rsp+24], r11
-call {vg_ed25519_scalar_base_adx}
-xor r8d, r8d
-xor r9d, r9d
-xor r10d, r10d
-xor r11d, r11d
-mov QWORD PTR [rsp], r8
-mov QWORD PTR [rsp+8], r9
-mov QWORD PTR [rsp+16], r10
-mov QWORD PTR [rsp+24], r11
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-ret
-.p2align 6",
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani,
-        vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani,
-        vg_ed25519_scalar_base_adx = sym super::ed25519::vg_ed25519_scalar_base_adx,
-    )
-}
-
 /// The CPU features `vg_ed25519_verify_shani_adx` requires (`Artifact.features`).
 pub(crate) const VG_ED25519_VERIFY_SHANI_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512", "bmi2", "adx"]);
 
@@ -58320,28 +57907,28 @@ ret
     )
 }
 
-/// The CPU features `vg_ed25519_sign_cached_shani_adx` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_SIGN_CACHED_SHANI_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512", "bmi2", "adx"]);
+/// The CPU features `vg_ed25519_sign_expanded_shani_adx` requires (`Artifact.features`).
+pub(crate) const VG_ED25519_SIGN_EXPANDED_SHANI_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512", "bmi2", "adx"]);
 
-/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signCachedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
-/// Computes all three SHA-512 hashes with the selected backend, reduces the nonce and challenge, encodes the nonce point with `vg_ed25519_scalar_base_adx`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
+/// Copies the seed's cached SHA-512 digest, computes the nonce and challenge hashes with the selected backend, reduces them, encodes the nonce point with `vg_ed25519_scalar_base_adx`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
 ///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 64 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
 /// * `pk` must be valid for reads of 32 bytes.
 /// * `message` must be valid for reads of `len` bytes.
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 32 bytes at `pk` must equal the public key derived from the 32 bytes at `seed` by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
-/// * `seed` must originate from a cryptographically secure random generator.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `seed`, `pk` or `message` (distinct Rust objects never do).
-/// * None of `out`, `seed`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_cached_shani_adx(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -58374,22 +57961,23 @@ push rax
 push rax
 push rax
 push rax
-mov rdi, QWORD PTR [rsp+200]
-call {vg_sha512_init}
-mov rdi, QWORD PTR [rsp+200]
-mov esi, 0
-mov rdx, QWORD PTR [rsp+232]
-mov ecx, 32
-mov r8, QWORD PTR [rsp+200]
-add r8, 192
-call {vg_sha512_update_scratch_shani}
-mov rdi, QWORD PTR [rsp+200]
-mov esi, 32
-mov rdx, rsp
-add rdx, 128
-mov rcx, QWORD PTR [rsp+200]
-add rcx, 192
-call {vg_sha512_finalize_scratch_shani}
+mov rax, QWORD PTR [rsp+232]
+mov rcx, QWORD PTR [rax]
+mov QWORD PTR [rsp+128], rcx
+mov rcx, QWORD PTR [rax+8]
+mov QWORD PTR [rsp+136], rcx
+mov rcx, QWORD PTR [rax+16]
+mov QWORD PTR [rsp+144], rcx
+mov rcx, QWORD PTR [rax+24]
+mov QWORD PTR [rsp+152], rcx
+mov rcx, QWORD PTR [rax+32]
+mov QWORD PTR [rsp+160], rcx
+mov rcx, QWORD PTR [rax+40]
+mov QWORD PTR [rsp+168], rcx
+mov rcx, QWORD PTR [rax+48]
+mov QWORD PTR [rsp+176], rcx
+mov rcx, QWORD PTR [rax+56]
+mov QWORD PTR [rsp+184], rcx
 mov r8, QWORD PTR [rsp+128]
 mov r9, QWORD PTR [rsp+136]
 mov r10, QWORD PTR [rsp+144]
@@ -58679,112 +58267,28 @@ ret
     )
 }
 
-/// The CPU features `vg_ed25519_public_key_shani_ifma` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_PUBLIC_KEY_SHANI_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]);
+/// The CPU features `vg_ed25519_sign_expanded_shani_ifma` requires (`Artifact.features`).
+pub(crate) const VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]);
 
-/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, from the 32-byte private seed at `seed`, including SHA-512 and pruning. Contract: `VG.Spec.Ed25519.publicKeyContract`. Constant time: only pointers may affect timing.
+/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
-/// Hashes the seed with `vg_sha512_init`, `vg_sha512_update_scratch_shani` and `vg_sha512_finalize_scratch_shani`, keeping the state and the digest in `scratch`, and encodes `[s]B` with `vg_ed25519_scalar_base_ifma`. The pruned scalar `s` is kept in a 56-byte stack frame with the pointers and cleared before the frame is popped; the calls use the 16 bytes below it.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `seed` must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `out`, `seed` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_shani_ifma(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r"push rdi
-push rsi
-push rdx
-push rax
-push rax
-push rax
-push rax
-mov rdi, QWORD PTR [rsp+32]
-call {vg_sha512_init}
-mov rdi, QWORD PTR [rsp+32]
-mov esi, 0
-mov rdx, QWORD PTR [rsp+40]
-mov ecx, 32
-mov r8, QWORD PTR [rsp+32]
-add r8, 192
-call {vg_sha512_update_scratch_shani}
-mov rdi, QWORD PTR [rsp+32]
-mov esi, 32
-mov rdx, QWORD PTR [rsp+32]
-add rdx, 1568
-mov rcx, QWORD PTR [rsp+32]
-add rcx, 192
-call {vg_sha512_finalize_scratch_shani}
-mov rdi, QWORD PTR [rsp+48]
-mov rsi, rsp
-mov rdx, QWORD PTR [rsp+32]
-mov r8, QWORD PTR [rdx+1568]
-mov r9, QWORD PTR [rdx+1576]
-mov r10, QWORD PTR [rdx+1584]
-mov r11, QWORD PTR [rdx+1592]
-and r8, -8
-movabs rcx, 4611686018427387903
-and r11, rcx
-movabs rcx, 4611686018427387904
-or r11, rcx
-mov QWORD PTR [rsp], r8
-mov QWORD PTR [rsp+8], r9
-mov QWORD PTR [rsp+16], r10
-mov QWORD PTR [rsp+24], r11
-call {vg_ed25519_scalar_base_ifma}
-xor r8d, r8d
-xor r9d, r9d
-xor r10d, r10d
-xor r11d, r11d
-mov QWORD PTR [rsp], r8
-mov QWORD PTR [rsp+8], r9
-mov QWORD PTR [rsp+16], r10
-mov QWORD PTR [rsp+24], r11
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-pop rax
-ret
-.p2align 6",
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani,
-        vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani,
-        vg_ed25519_scalar_base_ifma = sym super::ed25519::vg_ed25519_scalar_base_ifma,
-    )
-}
-
-/// The CPU features `vg_ed25519_sign_cached_shani_ifma` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_SIGN_CACHED_SHANI_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]);
-
-/// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signCachedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
-///
-/// Computes all three SHA-512 hashes with the selected backend, reduces the nonce and challenge, encodes the nonce point with `vg_ed25519_scalar_base_ifma`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
+/// Copies the seed's cached SHA-512 digest, computes the nonce and challenge hashes with the selected backend, reduces them, encodes the nonce point with `vg_ed25519_scalar_base_ifma`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
 ///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 64 bytes.
-/// * `seed` must be valid for reads of 32 bytes.
+/// * `expanded` must be valid for reads of 64 bytes.
 /// * `pk` must be valid for reads of 32 bytes.
 /// * `message` must be valid for reads of `len` bytes.
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 32 bytes at `pk` must equal the public key derived from the 32 bytes at `seed` by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
-/// * `seed` must originate from a cryptographically secure random generator.
+/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed, and the 32 bytes at `pk` the public key derived from that seed by RFC 8032 §5.1.5 (`VG.Spec.Ed25519.publicKey`).
+/// * The seed must originate from a cryptographically secure random generator.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `seed`, `pk` or `message` (distinct Rust objects never do).
-/// * None of `out`, `seed`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_cached_shani_ifma(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -58817,22 +58321,23 @@ push rax
 push rax
 push rax
 push rax
-mov rdi, QWORD PTR [rsp+200]
-call {vg_sha512_init}
-mov rdi, QWORD PTR [rsp+200]
-mov esi, 0
-mov rdx, QWORD PTR [rsp+232]
-mov ecx, 32
-mov r8, QWORD PTR [rsp+200]
-add r8, 192
-call {vg_sha512_update_scratch_shani}
-mov rdi, QWORD PTR [rsp+200]
-mov esi, 32
-mov rdx, rsp
-add rdx, 128
-mov rcx, QWORD PTR [rsp+200]
-add rcx, 192
-call {vg_sha512_finalize_scratch_shani}
+mov rax, QWORD PTR [rsp+232]
+mov rcx, QWORD PTR [rax]
+mov QWORD PTR [rsp+128], rcx
+mov rcx, QWORD PTR [rax+8]
+mov QWORD PTR [rsp+136], rcx
+mov rcx, QWORD PTR [rax+16]
+mov QWORD PTR [rsp+144], rcx
+mov rcx, QWORD PTR [rax+24]
+mov QWORD PTR [rsp+152], rcx
+mov rcx, QWORD PTR [rax+32]
+mov QWORD PTR [rsp+160], rcx
+mov rcx, QWORD PTR [rax+40]
+mov QWORD PTR [rsp+168], rcx
+mov rcx, QWORD PTR [rax+48]
+mov QWORD PTR [rsp+176], rcx
+mov rcx, QWORD PTR [rax+56]
+mov QWORD PTR [rsp+184], rcx
 mov r8, QWORD PTR [rsp+128]
 mov r9, QWORD PTR [rsp+136]
 mov r10, QWORD PTR [rsp+144]

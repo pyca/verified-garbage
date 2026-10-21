@@ -24,9 +24,11 @@ theorem installed_ok {s : State} (a : ABI s) :
   refine ⟨?_, saved, k, o⟩
   have w := a.width
   refine ⟨⟨sc, a.space, by change 0 < 2 * (caller s).n + 2; omega,
-    by change 2 * (caller s).n + 2 ≤ 1024; omega⟩, w.1, w.2.1, ?_, ?_,
+    by change 2 * (caller s).n + 2 ≤ 1024; omega⟩, w.1, w.2.1, k.1 _ (by decide), a.room,
+    a.stackBound, ?_, ?_,
     (fun i => (a.inputLength i).1), (fun i => (a.inputLength i).2), a.inputFit, ?_, ?_,
-    (fun i => (a.outputLength i).1), (fun i => (a.outputLength i).2), a.outputFit, ?_, ?_, a.outputSeparate⟩
+    (fun i => (a.outputLength i).1), (fun i => (a.outputLength i).2), a.outputFit, ?_, ?_, a.outputSeparate,
+    k.2.2⟩
   · intro i hi
     exact (CallArgument.mk (a.stackArgument hi) rfl).keep k (by decide) o
   · intro i hi r hr
@@ -35,7 +37,7 @@ theorem installed_ok {s : State} (a : ABI s) :
   · intro i
     rw [k.2.1, k.2.2]
     exact ⟨_, List.mem_append_left _ (a.inputMember i), Region.contains_self _ _⟩
-  · exact fun i r hr => a.inApart _ (a.inputMember i) r hr
+  · exact fun i r hr => a.inApartW _ (a.inputMember i) r hr
   · intro i
     rw [k.2.2, a.wr]
     refine ⟨_, ?_, Region.contains_self _ _⟩

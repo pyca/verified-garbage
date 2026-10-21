@@ -40,9 +40,11 @@ def zero (len : Nat) (input : Pointer) (wantNonzero : Bool := false) : Prog isa 
   let n := (len + 7) / 8
   .seq (Core.load n len (slot n 5) input) (checkZero n (slot n 5) (Layout.field .mask) wantNonzero)
 
+/-- Subtraction only needs the loaded modulus, not Montgomery constants. -/
 def minus (len : Nat) (modulus : Field) (amount output : Nat) : Prog isa :=
   let n := (len + 7) / 8
-  .seq (Core.setup len modulus) (.seq (modulusMinus n amount) (Core.store len output))
+  .seq (Core.load n len (slot n 0) (.input modulus))
+    (.seq (modulusMinus n amount) (Core.store len output))
 
 def domain (pLen qLen : Nat) : Prog isa := Core.sequence [
   .seq (range pLen .p (.input .g) true) (range pLen .p (.input .y) true),

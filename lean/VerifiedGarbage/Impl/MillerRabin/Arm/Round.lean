@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.Arm.Recover
+public import VerifiedGarbage.Impl.MillerRabin.Arm.Arithmetic
 
 /-!
 # A prepared Miller–Rabin round on ARMv7
@@ -90,13 +91,13 @@ def aE : Nat := 27
 def copyClr (o a : Nat) : List (Prog isa) := [copy o a, .block (Rsa.Arm.Recover.clrTop o)]
 
 /-- `[aY] := [aY] [b] R⁻¹ mod c`, then the context and `[aY]`'s top words cleared. -/
-def mulY (b : Nat) : List (Prog isa) :=
-  [.block [.ldrSp .r0 0], montOp aY aY b, .block (ctx ++ Rsa.Arm.Recover.clrTop aY)]
+def mulY (b : Nat) (fios : Bool := false) : List (Prog isa) :=
+  [.block [.ldrSp .r0 0], Arithmetic.product fios aY aY b, .block (ctx ++ Rsa.Arm.Recover.clrTop aY)]
 
 /-- `[aY] := [aY]² R⁻¹ mod c` by the dedicated square, then the context and `[aY]`'s top
 words cleared. -/
-def sqY : List (Prog isa) :=
-  [.block [.ldrSp .r0 0], squareOp aY aY, .block (ctx ++ Rsa.Arm.Recover.clrTop aY)]
+def sqY (fios : Bool := false) : List (Prog isa) :=
+  [.block [.ldrSp .r0 0], Arithmetic.square fios aY aY, .block (ctx ++ Rsa.Arm.Recover.clrTop aY)]
 
 /-- The count decremented: Z when it reaches 0. -/
 def cntNext : List Instr := [.ldr .r1 .r8 sK, .subs .r1 .r1 (.imm 1), .str .r1 .r8 sK]
@@ -121,7 +122,7 @@ def shiftFrom : Nat → Nat → Prog isa
 def tabShift : Prog isa := shiftFrom 2 13
 
 /-- One entry: `y := y x`, the shift and the count. -/
-def tabStep : Prog isa := seqs [seqs (mulY aX), tabShift, .block cntNext]
+def tabStep (fios : Bool := false) : Prog isa := seqs [seqs (mulY (fios := fios) aX), tabShift, .block cntNext]
 
 /-! ## Squarings -/
 
@@ -133,10 +134,10 @@ def sqFlag : List Instr :=
     .str .r4 .r8 sF, .subs .r1 .r1 (.imm 1), .str .r1 .r8 sQ]
 
 /-- A squaring. -/
-def sqStep : Prog isa := seqs [seqs sqY, eqS sE2 aY aM1 aX, .block sqFlag]
+def sqStep (fios : Bool := false) : Prog isa := seqs [seqs (sqY (fios := fios)), eqS sE2 aY aM1 aX, .block sqFlag]
 
 /-- `sQ` squarings. -/
-def sqLoop : Prog isa := .loop sqStep .ne
+def sqLoop (fios : Bool := false) : Prog isa := .loop (sqStep (fios := fios)) .ne
 
 /-! ## The scan -/
 
@@ -172,7 +173,7 @@ def winEnd : List Instr :=
 def sqFour : List Instr := [.mov .r1 (.imm 0), .str .r1 .r8 sR, .mov .r1 (.imm 4), .str .r1 .r8 sQ]
 
 /-- One window. -/
-def win : Prog isa := seqs [.block sqFour, sqLoop, scan, seqs (copyClr aM1 10), seqs (mulY aX),
+def win (fios : Bool := false) : Prog isa := seqs [.block sqFour, (sqLoop (fios := fios)), scan, seqs (copyClr aM1 10), seqs (mulY (fios := fios) aX),
   eqS sE1 aY aT0 aX, eqS sE2 aY aM1 aX, .block winEnd]
 
 /-- The count of windows left. -/
@@ -187,7 +188,7 @@ def wordLd : List Instr :=
 def wordEnd : List Instr := [.ldr .r1 .r8 sK, .cmp .r1 (.imm 0)]
 
 /-- A word's eight windows; Z when none is left. -/
-def word : Prog isa := seqs [.block wordK, .block wordLd, .loop win .ne, .block wordEnd]
+def word (fios : Bool := false) : Prog isa := seqs [.block wordK, .block wordLd, .loop (win (fios := fios)) .ne, .block wordEnd]
 
 /-- The flag 0 and the count of windows `16 w = 8 W − 16`. -/
 def winCnt : List Instr :=
@@ -213,13 +214,13 @@ def lowBits : List Instr :=
 /-! ## The round -/
 
 /-- The round's body: the flag returned in `r0`. -/
-def body : Prog isa :=
-  seqs [seqs tabInit, .loop tabStep .ne, seqs winInit, .loop word .ne, .block lowBits, sqLoop,
+def body (fios : Bool := false) : Prog isa :=
+  seqs [seqs tabInit, .loop (tabStep (fios := fios)) .ne, seqs winInit, .loop (word (fios := fios)) .ne, .block lowBits, (sqLoop (fios := fios)),
     .block [.ldr .r0 .r8 sF]]
 
 /-- `vg_miller_rabin_round`. -/
-def code : Prog isa :=
+def code (fios : Bool := false) : Prog isa :=
   .frame (.push [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
-    (.seq body (.block PcFn.restore)) (.pop .r12 56)
+    (.seq (body (fios := fios)) (.block PcFn.restore)) (.pop .r12 56)
 
 end VG.Impl.MillerRabin.Arm

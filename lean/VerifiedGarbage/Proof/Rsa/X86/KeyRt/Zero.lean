@@ -44,7 +44,7 @@ theorem zeroWide_ok {s : State} (h : RtWs L s B Z len N) {j : Nat} (hj : j < N) 
   unfold zeroWide
   simp only [List.append_assoc]
   refine WP.seq (arrPtr_ok hl hle h.edi (by decide) (by decide) (by omega) fun u₁ K₁ m₁ p₁ _ => ?_)
-  have hl₁ := (src_keep K₁ (by decide) m₁).trans hl
+  have hl₁ := hl.keep K₁ (by decide) m₁
   refine count_ok hl₁ hle fun u₂ K₂ m₂ c₂ => wp_movS rfl fun u₃ U₃ _ => WP.block_nil ?_
   have K : Keeps [.eax, .ecx, .edx, .ebp] s u₃ :=
     ((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans (U₃.keeps.mono (by decide))
@@ -112,8 +112,7 @@ theorem bits_ok {s : State} {is : List Instr} {Q : State → Prop} (h : RtWs L s
     (k : ∀ t, Keeps [.esi] s t → t.mem = s.mem → t.gpr .esi = BitVec.ofNat 32 (32 * kw len) →
       WP isa (.block is) t Q) :
     WP isa (.block (bits L ++ is)) s Q := by
-  have hw := VG.Proof.Bignum.X86.PublicRt.wb_le h.lenLe
-  rw [wb_kw] at hw
+  have hw := kw_bound h.lenLe
   unfold bits
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   refine bytesB_ok (lenSrc h) h.lenLe fun u₁ K₁ m₁ e₁ => wp_addS rfl fun u₂ U₂ _ => wp_addS rfl fun u₃ U₃ _ =>

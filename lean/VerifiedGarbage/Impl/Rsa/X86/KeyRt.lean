@@ -21,11 +21,17 @@ as in `KeyWs`, or, across a loop, in a header word.
 namespace VG.Impl.Rsa.X86.KeyRt
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Rsa.X86.Keys
 
+/-- The width of the arrays, from the modulus's `B` bytes: `B` (`base`), `B + 8`, two words more
+(`narrow`), or `2 B + 24`, room for a product of two numbers and six words (`wide`). -/
+inductive Shape | base | narrow | wide
+  deriving DecidableEq, Repr
+
 /-- Where an operation finds the modulus's length and the working space: arguments, with no
-words pushed. -/
+words pushed; and the arrays' width from it. -/
 structure Lay where
   len : Nat
   ws : Nat
+  shape : Shape := .base
 
 /-- Argument `i`. -/
 def argOp (i : Nat) : MemOp := at_ .esp (4 + 4 * i)
@@ -38,9 +44,15 @@ def sQb : Nat := 140
 
 variable (L : Lay)
 
-/-- `r = B = 8 ⌈len / 8⌉`, the bytes of a number: `PublicRt.widthB`, its argument at `L.len`
-(`argAt (L.len - 1) 1`, for `1 ≤ L.len`). -/
-def bytesB (r : Reg) : List Instr := PublicRt.widthB (L.len - 1) r
+/-- What `bytesB` adds to the modulus's bytes for the shape. -/
+def Shape.extra : Shape → Reg → List Instr
+  | .base, _ => []
+  | .narrow, r => [.alu .add r (.imm 8)]
+  | .wide, r => [.alu .add r (.reg r), .alu .add r (.imm 24)]
+
+/-- `r`, the bytes of an array's number: `B = 8 ⌈len / 8⌉` from the modulus's length (`PublicRt.widthB`,
+its argument at `L.len`, `argAt (L.len - 1) 1`, for `1 ≤ L.len`), for the shape. -/
+def bytesB (r : Reg) : List Instr := PublicRt.widthB (L.len - 1) r ++ L.shape.extra r
 
 /-- `r = edi + hdr + j (B + 8)`, array `j`, and `t = B + 8`. -/
 def arrPtr (r : Reg) (j : Nat) (t : Reg) : List Instr :=
@@ -134,6 +146,22 @@ def eqS (d a b t : Nat) : Prog isa :=
   .seq (sub3 L t a b) (.seq (.block [.store (sc sT) .ebx]) (.seq (sub3 L t b a)
     (.block [.alu .or .ebx (.mem (sc sT)), .alu .xor .ebx (.imm 1), .store (sc d) .ebx])))
 
+/-- OR the words' XORs into `ecx`, with public pointers and a byte count in `edx`. -/
+def eqLoop : Prog isa :=
+  .loop (.block [.mov .eax (.mem (at_ .ebp 0)), .alu .xor .eax (.mem (at_ .ebx 0)),
+    .alu .or .ecx (.reg .eax), .alu .add .ebp (.imm 4), .alu .add .ebx (.imm 4),
+    .alu .sub .edx (.imm 4)]) .ne
+
+/-- Compare `[a]` and `[b]`, leaving zero in `ecx` exactly when they agree. -/
+def eqArrays (a b : Nat) : Prog isa :=
+  .seq (.block (arrPtr L .ebp a .edx ++ arrPtr L .ebx b .edx ++ bytesB L .edx ++
+    [.mov .ecx (.imm 0)])) eqLoop
+
+/-- The header word `d` one if `[a] = [b]`, else zero, without a scratch array. -/
+def eqSFast (d a b : Nat) : Prog isa :=
+  .seq (eqArrays L a b) (.block [.mov .eax (.imm 0), .alu .sub .eax (.reg .ecx),
+    .alu .or .eax (.reg .ecx), .shift .shr .eax 31, .alu .xor .eax (.imm 1), .store (sc d) .eax])
+
 /-- The first `n` arrays zeroed. -/
 def zeroArrays (n : Nat) : Prog isa :=
   .seq (.block (arrPtr L .ebp 0 .edx ++ [.mov .ecx (.imm 0)] ++ List.replicate n (.alu .add .ecx (.reg .edx)) ++
@@ -209,5 +237,59 @@ def invStep (A B : Nat) : Prog isa := seqs ([
 def inverse : Prog isa :=
   .seq (.block (bits L))
     (.loop (.seq (invStep L 0 4) (.seq (invStep L 4 0) (.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)]))) .ne)
+
+/-- The binary GCD step, omitting the inverse's unused coefficient updates. -/
+def gcdStep (A D : Nat) : Prog isa := seqs [
+  .block (bitOf L sOdd A),
+  sub3 L aT1 A (A + 1),
+  .block ([.store (sc sB) .ebx] ++ andS sC sOdd sB),
+  sub3 L aT2 (A + 1) A,
+  sel L (D + 1) (A + 1) A sC,
+  sel L aT3 aT1 aT2 sC,
+  sel L D A aT3 sOdd,
+  .block [.mov .ebx (.imm 0)],
+  half L D]
+
+/-- The same fixed schedule as `inverse`, retaining only `u` and `v`. -/
+def gcd : Prog isa :=
+  .seq (.block (bits L))
+    (.loop (.seq (gcdStep L 0 4) (.seq (gcdStep L 4 0)
+      (.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)]))) .ne)
+
+/-! ## Modular multiplication
+
+`Keys.mulMod`'s schedule: per bit of the multiplier `[y]`, from the bottom,
+the multiplicand `[x]` (or zero) added into `[a]` and `[x]` doubled, both
+modulo `[m]`, then `[y]` halved; `esi` counts the steps. -/
+
+/-- `[o] = [a] + [b] mod [m]` for `[a], [b] < m`, through `t`, `t + 1`, `t + 2`, with `[z]` zero. -/
+def addMod (o a b m z t : Nat) : List (Prog isa) :=
+  [sub3 L t z b, sub3 L (t + 1) a t, sub3 L (t + 2) (t + 1) m,
+   .block [.store (sc sC) .ebx], sel L o (t + 2) (t + 1) sC]
+
+/-- `[t]` the multiplicand where `[y]`'s low bit is set, else zero. -/
+def mulHead (z y x t : Nat) : Prog isa :=
+  .seq (.block (bitOf L sB y)) (sel L t z x sB)
+
+/-- `[y]` halved, and the count. -/
+def mulTail (y : Nat) : Prog isa :=
+  seqs [.block [.mov .ebx (.imm 0)], half L y,
+    .block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)]]
+
+def mulModStep (z y x a m t : Nat) : Prog isa :=
+  seqs [mulHead L z y x t, seqs (addMod L a a t m z (t + 1)),
+    seqs (addMod L x x x m z (t + 1)), mulTail L y]
+
+/-- `esi` steps of `mulModStep`. -/
+def mulMod (z y x a m t : Nat) : Prog isa := .loop (mulModStep L z y x a m t) .ne
+
+/-! ## Inputs -/
+
+/-- Array `j` from the big-endian bytes at argument `arg`, as many as argument `arg + 1`, into its zeroed words. -/
+def load (arg j : Nat) : Prog isa :=
+  .seq (.block ([.mov .esi (.mem (VG.Impl.Bignum.X86.PublicFn.argument arg)),
+      .mov .ecx (.mem (VG.Impl.Bignum.X86.PublicFn.argument (arg + 1)))] ++ arrPtr L .ebx j .edx ++
+      [.alu .add .esi (.reg .ecx), .alu .sub .esi (.imm 1)]))
+    VG.Impl.Bignum.X86.reverseBytes
 
 end VG.Impl.Rsa.X86.KeyRt

@@ -31,12 +31,14 @@ theorem powerTwo_check (M : VG.Impl.Mont.Mod) (acc out bits : Nat) :
   rfl
 
 def contextSetupHint : VG.Taint.Hint VG.X86.Taint.T :=
-  .seq (workspaceTaint false) (.block []) (.seq (workspaceTaint false) (oneHint false) powerHint)
+  .seq (workspaceTaint false)
+    (.seq (workspaceTaint false) (.block []) (oneHint false)) powerHint
 
 theorem contextSetup_check (n : Nat) :
     VG.Taint.check taint (workspaceTaint false) (contextSetup n) contextSetupHint = some counterEndTaint :=
-  exponent_check_seq taint (setupInverse_taint false (slot n 0) 0) (by rfl)
-    (exponent_check_seq taint (one_check false n (slot n 3)) (by rfl)
-      (powerTwo_check (contextMod n) (slot n 2) (slot n 4) (128 * n)))
+  exponent_check_seq taint
+    (exponent_check_seq taint (setupInverse_taint false (slot n 0) 0) (by rfl)
+      (one_check false n (slot n 3))) (by rfl)
+    (powerTwo_check (contextMod n) (slot n 2) (slot n 4) (128 * n))
 
 end VG.Proof.Mont.X86.Dynamic

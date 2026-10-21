@@ -22,10 +22,12 @@ bytes are XORed by `Avx512Tail.tail`, eight or four blocks at a time.
 * Word `k` of the sixteen states is kept in `zmmk`, doubleword `j` holding it
   for block `j` (doubleword `j % 4` of 128-bit lane `j / 4`). With `vprold`
   every rotation is one instruction, and the rounds need no other register.
-* Each word of the input state is broadcast to all sixteen doublewords with
-  `vbroadcasti32x4` (a row of the state in each 128-bit lane) and `vpshufd`;
-  word 12 then gets `0, 1, …, 15` added.
-* At the end, the input state is added to each row of four registers, and
+* Each word of the input state is broadcast to all sixteen doublewords from
+  memory (`vpbroadcastd zmm, m32`); word 12 then gets `0, 1, …, 15` added.
+  These loads, and the additions at the end, take no shuffle: the rounds
+  keep the vector units that run shuffles busy.
+* At the end, each word of the input state is added to its register from
+  memory (`vpaddd zmm, zmm, m32bcst`), and
   the doublewords of the row are transposed within each 128-bit lane
   (`vpunpck{l,h}{dq,qdq}`), so that register `i` of row `r` holds row `r` of
   blocks `i, i + 4, i + 8, i + 12` in its four lanes. For each `i`, eight
@@ -97,12 +99,10 @@ def incQ : List (BitVec 64) :=
 
 def consts : List Instr := Avx2.storeQ incOff incQ
 
-/-- Row `row` of the input state, each word spread into all of `xs`,
-broadcast through the last of them. -/
+/-- Row `row` of the input state, word `i` of it broadcast to every
+doubleword of `xs[i]`. -/
 def spread (row : Nat) (xs : List XReg) : List Instr :=
-  ([.vbroadcasti32x4 (xs.getD 3 .xmm0) (at_ .rdi (16 * row))] : List Instr) ++
-  (List.range 4).map fun i =>
-    .zop (.vpshufd (xs.getD i .xmm0) (xs.getD 3 .xmm0) (BitVec.ofNat 8 (0x55 * i)))
+  (List.range 4).map fun i => .vpbroadcastdZ (xs.getD i .xmm0) (at_ .rdi (16 * row + 4 * i))
 
 /-- The sixteen states, word `k` in `zreg k`, with the counter increments
 (in the `buf` at `b`) added to word 12. -/
@@ -115,12 +115,11 @@ def setupB (b : Reg) : List Instr :=
 /-- `setupB` with `buf` at `rcx`, as the loop has it. -/
 def setup : List Instr := setupB .rcx
 
-/-- Add row `row` of the input state (broadcast into `t`, each word spread
-into `u`) to the registers `xs`. -/
-def addRow (row : Nat) (xs : List XReg) (t u : XReg) : List Instr :=
-  ([.vbroadcasti32x4 t (at_ .rdi (16 * row))] : List Instr) ++
-  (List.range 4).flatMap fun i =>
-    [.zop (.vpshufd u t (BitVec.ofNat 8 (0x55 * i))), z .vpaddd (xs.getD i .xmm0) (xs.getD i .xmm0) u]
+/-- Add row `row` of the input state to the registers `xs`, word `i` of it
+broadcast from memory to every doubleword added to `xs[i]`. -/
+def addRow (row : Nat) (xs : List XReg) : List Instr :=
+  (List.range 4).map fun i =>
+    .zbcstd .vpaddd (xs.getD i .xmm0) (xs.getD i .xmm0) (at_ .rdi (16 * row + 4 * i))
 
 /-- Transpose the doublewords of `x0 … x3` within each 128-bit lane, through
 `t0, t1`: afterwards `x0, t0, x2, x3` hold, in each lane, doublewords 0, 1,
@@ -153,15 +152,15 @@ of data. The registers holding row `r` after its transpose are, for
 row 3 `zmm12, zmm2, zmm9, zmm15`. -/
 def finish : List Instr :=
   ([.vmovdqu32Store (at_ .rcx save0Off) .xmm14, .vmovdqu32Store (at_ .rcx save1Off) .xmm15] : List Instr) ++
-  addRow 0 [.xmm0, .xmm1, .xmm2, .xmm3] .xmm14 .xmm15 ++
+  addRow 0 [.xmm0, .xmm1, .xmm2, .xmm3] ++
     transpose .xmm0 .xmm1 .xmm2 .xmm3 .xmm14 .xmm15 ++
-  addRow 1 [.xmm4, .xmm5, .xmm6, .xmm7] .xmm1 .xmm15 ++
+  addRow 1 [.xmm4, .xmm5, .xmm6, .xmm7] ++
     transpose .xmm4 .xmm5 .xmm6 .xmm7 .xmm1 .xmm15 ++
-  addRow 2 [.xmm8, .xmm9, .xmm10, .xmm11] .xmm5 .xmm15 ++
+  addRow 2 [.xmm8, .xmm9, .xmm10, .xmm11] ++
     transpose .xmm8 .xmm9 .xmm10 .xmm11 .xmm5 .xmm15 ++
   ([.vmovdqu32Load .xmm9 (at_ .rcx save0Off), .vmovdqu32Load .xmm15 (at_ .rcx save1Off),
    .vmovdqu32Store (at_ .rcx save0Off) .xmm2, .vmovdqu32Store (at_ .rcx save1Off) .xmm3] : List Instr) ++
-  addRow 3 [.xmm12, .xmm13, .xmm9, .xmm15] .xmm2 .xmm3 ++
+  addRow 3 [.xmm12, .xmm13, .xmm9, .xmm15] ++
     ([.vmovdqu32Load .xmm3 (at_ .rcx incOff), z .vpaddd .xmm12 .xmm12 .xmm3] : List Instr) ++
     transpose .xmm12 .xmm13 .xmm9 .xmm15 .xmm2 .xmm3 ++
   gather 0 .xmm0 .xmm4 .xmm8 .xmm12 .xmm13 .xmm3 ++
@@ -195,15 +194,15 @@ left in `blkReg j`. Each `gatherH` takes as `t0, t1` two registers freed by
 the ones before. -/
 def finishP : List Instr :=
   ([.vmovdqu32Store (at_ .r9 save0Off) .xmm14, .vmovdqu32Store (at_ .r9 save1Off) .xmm15] : List Instr) ++
-  addRow 0 [.xmm0, .xmm1, .xmm2, .xmm3] .xmm14 .xmm15 ++
+  addRow 0 [.xmm0, .xmm1, .xmm2, .xmm3] ++
     transpose .xmm0 .xmm1 .xmm2 .xmm3 .xmm14 .xmm15 ++
-  addRow 1 [.xmm4, .xmm5, .xmm6, .xmm7] .xmm1 .xmm15 ++
+  addRow 1 [.xmm4, .xmm5, .xmm6, .xmm7] ++
     transpose .xmm4 .xmm5 .xmm6 .xmm7 .xmm1 .xmm15 ++
-  addRow 2 [.xmm8, .xmm9, .xmm10, .xmm11] .xmm5 .xmm15 ++
+  addRow 2 [.xmm8, .xmm9, .xmm10, .xmm11] ++
     transpose .xmm8 .xmm9 .xmm10 .xmm11 .xmm5 .xmm15 ++
   ([.vmovdqu32Load .xmm9 (at_ .r9 save0Off), .vmovdqu32Load .xmm15 (at_ .r9 save1Off),
    .vmovdqu32Store (at_ .r9 save0Off) .xmm2, .vmovdqu32Store (at_ .r9 save1Off) .xmm3] : List Instr) ++
-  addRow 3 [.xmm12, .xmm13, .xmm9, .xmm15] .xmm2 .xmm3 ++
+  addRow 3 [.xmm12, .xmm13, .xmm9, .xmm15] ++
     ([.vmovdqu32Load .xmm3 (at_ .r9 incOff), z .vpaddd .xmm12 .xmm12 .xmm3] : List Instr) ++
     transpose .xmm12 .xmm13 .xmm9 .xmm15 .xmm2 .xmm3 ++
   gatherH 0 .xmm0 .xmm4 .xmm8 .xmm12 .xmm13 .xmm3 ++

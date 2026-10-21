@@ -6,6 +6,114 @@ use alloc::{format, string::ToString};
 pub(super) mod vectors;
 use vectors::{hex, vectors};
 
+#[cfg(target_arch = "x86")]
+#[test]
+fn generation_domain_checks() {
+    let cases = vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true);
+    for (p_len, q_len) in [(128, 20), (256, 20), (256, 28), (256, 32), (384, 32)] {
+        let v = cases
+            .iter()
+            .find(|v| {
+                hex(&v["P"], 0).len() == if q_len == 20 { 128 } else { p_len }
+                    && hex(&v["Q"], 0).len() == q_len
+            })
+            .unwrap();
+        let p = hex(&v["P"], p_len);
+        let q = hex(&v["Q"], q_len);
+        let g = hex(&v["G"], p_len);
+        let valid = [&p[..], &q, &g].concat();
+        let mut scratch = Secret(vec![0xa5a5a5a5a5a5a5a5; 16 * p_len]);
+        let mut check = |params: &[u8]| {
+            // SAFETY: every case has the supported widths and exact packed
+            // length. Scratch is a separate allocation of 16*p_len words.
+            unsafe {
+                crate::arch::dsa::vg_dsa_check_parameters(
+                    params.as_ptr(),
+                    params.len(),
+                    p_len,
+                    q_len,
+                    scratch.0.as_mut_ptr(),
+                    scratch.0.len(),
+                )
+            }
+        };
+        assert_eq!(check(&valid), 1, "{p_len}/{q_len}");
+        let mut bad = valid.clone();
+        bad[p_len + q_len..].fill(0);
+        assert_eq!(check(&bad), 0, "g = 0");
+        *bad.last_mut().unwrap() = 1;
+        assert_eq!(check(&bad), 0, "g = 1");
+        bad[p_len + q_len..].copy_from_slice(&p);
+        assert_eq!(check(&bad), 0, "g = p");
+        bad.copy_from_slice(&valid);
+        bad[p_len - 1] &= !1;
+        assert_eq!(check(&bad), 0, "even p");
+        bad.copy_from_slice(&valid);
+        bad[p_len + q_len - 1] &= !1;
+        assert_eq!(check(&bad), 0, "even q");
+        bad.copy_from_slice(&valid);
+        bad[p_len..p_len + q_len].fill(0);
+        assert_eq!(check(&bad), 0, "zero q");
+    }
+}
+
+#[cfg(target_arch = "x86")]
+#[test]
+fn generation_derive_keys() {
+    let cases = vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true);
+    for (p_len, q_len) in [(128, 20), (256, 20), (256, 28), (256, 32), (384, 32)] {
+        let v = cases
+            .iter()
+            .find(|v| {
+                hex(&v["P"], 0).len() == if q_len == 20 { 128 } else { p_len }
+                    && hex(&v["Q"], 0).len() == q_len
+            })
+            .unwrap();
+        let p = hex(&v["P"], p_len);
+        let q = hex(&v["Q"], q_len);
+        let g = hex(&v["G"], p_len);
+        let x = hex(&v["X"], q_len);
+        let y = hex(&v["Y"], p_len);
+        let params = [&p[..], &q, &g].concat();
+        let expected = [&params[..], &y, &x].concat();
+        let mut scratch = Secret(vec![0xa5a5a5a5a5a5a5a5; 16 * p_len]);
+        let mut output = Secret(vec![0xa5; 3 * p_len + 2 * q_len]);
+        let mut derive = |domain: &[u8], scalar: &[u8], expected: Option<&[u8]>| {
+            output.0.fill(0xa5);
+            // SAFETY: supported widths and exact input/output lengths; each
+            // buffer has its own allocation and scratch has 16*p_len words.
+            let status = unsafe {
+                crate::arch::dsa::vg_dsa_derive_key(
+                    output.0.as_mut_ptr(),
+                    output.0.len(),
+                    domain.as_ptr(),
+                    domain.len(),
+                    p_len,
+                    scalar.as_ptr(),
+                    q_len,
+                    scratch.0.as_mut_ptr(),
+                    scratch.0.len(),
+                )
+            };
+            assert_eq!(status, u32::from(expected.is_some()), "{p_len}/{q_len}");
+            match expected {
+                Some(expected) => assert_eq!(output.0, expected),
+                None => assert!(output.0.iter().all(|&b| b == 0)),
+            }
+        };
+        derive(&params, &x, Some(&expected));
+        derive(&params, &vec![0; q_len], None);
+        derive(&params, &q, None);
+        derive(&params, &vec![0xff; q_len], None);
+        let mut bad = params.clone();
+        bad[p_len - 1] &= !1;
+        derive(&bad, &x, None);
+        bad.copy_from_slice(&params);
+        bad[p_len + q_len..].fill(0);
+        derive(&bad, &x, None);
+    }
+}
+
 fn digest(hash: &str, msg: &[u8]) -> Vec<u8> {
     let hashes: [(&str, Vec<u8>); 5] = [
         ("SHA-1", Sha1::digest(msg).to_vec()),
@@ -41,11 +149,13 @@ fn sample() -> (PrivateKey, Vec<u8>, Vec<u8>) {
     )
 }
 
-#[test]
-fn cavp_signatures() {
+// Interleave four batches so libtest can distribute independent vectors across cores.
+fn cavp_signatures_batch(batch: usize) {
     for (i, v) in vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true)
         .iter()
         .enumerate()
+        .skip(batch)
+        .step_by(4)
     {
         let p = hex(&v["P"], 0);
         let q = hex(&v["Q"], 0);
@@ -79,6 +189,26 @@ fn cavp_signatures() {
             .unwrap();
         assert_eq!(randomized, expected, "random tape vector {i}");
     }
+}
+
+#[test]
+fn cavp_signatures_0() {
+    cavp_signatures_batch(0);
+}
+
+#[test]
+fn cavp_signatures_1() {
+    cavp_signatures_batch(1);
+}
+
+#[test]
+fn cavp_signatures_2() {
+    cavp_signatures_batch(2);
+}
+
+#[test]
+fn cavp_signatures_3() {
+    cavp_signatures_batch(3);
 }
 
 #[test]

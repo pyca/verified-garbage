@@ -35,11 +35,13 @@ theorem push_saved (s : State) (fits : 24 ≤ s.sp.toNat) :
   rw [memEq]
   exact Spill.saveMem_saved (lo := 0) (hi := 24) (State.addr sp) s.gpr s.mem savedSlots (by decide)
 
-theorem KeyInput.incoming_value {p : KeyPublic sampling} {s : State} {i : Nat} (h : KeyInput p s) (bound : i < 9) :
+theorem KeyInput.incoming_value {p : KeyPublic sampling} {s : State} {i : Nat} (h : KeyInput p s) (bound : i < entryWords sampling) :
     stackArg s i = incomingValue p i := by
   rw [← h.2.1]
-  have casesI : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 := by omega
-  rcases casesI with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  all_goals simp only [incomingValue, keyOfState, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  cases sampling <;>
+    simp only [entryWords,GenerationPolicy.cachedContext,Bool.false_eq_true,ite_false,ite_true] at bound
+  all_goals have casesI : i=0 ∨ i=1 ∨ i=2 ∨ i=3 ∨ i=4 ∨ i=5 ∨ i=6 ∨ i=7 ∨ i=8 ∨ i=9 ∨ i=10 := by omega
+  all_goals rcases casesI with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl
+  all_goals first | omega | simp only [incomingValue,keyOfState,BitVec.ofNat_toNat,BitVec.setWidth_eq,GenerationPolicy.cachedContext,ite_true]
 
 end VG.Proof.Ffdh.Arm.KeySearch

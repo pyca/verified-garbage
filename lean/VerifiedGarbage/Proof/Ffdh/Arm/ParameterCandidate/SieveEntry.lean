@@ -1,0 +1,52 @@
+module
+
+public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveContext
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TableWrites
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Omega
+
+/-! Read one bounded RSA prime entry and advance the sieve cursor. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
+open VG.Spec.Rsa.Mont (arrAt)
+
+private theorem advance (base : BitVec 32) (offset i : Nat) :
+    (base + BitVec.ofNat 32 (offset + 4 * i)) + 4 = base + BitVec.ofNat 32 (offset + 4 * (i + 1)) := by
+  change (base + BitVec.ofNat 32 (offset + 4 * i)) + BitVec.ofNat 32 4 = _
+  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+  have equal : offset + 4 * i + 4 = offset + 4 * (i + 1) := by omega
+  rw [equal]
+
+theorem sieveEntry_ok {s : State} {dst base : BitVec 32} {n i : Nat}
+    (h : SieveContext dst base n s) (bound : i < 53)
+    (cursor : s.gpr .r10 = base + BitVec.ofNat 32 (arrAt ((n + 7) / 8) 34 + 4 * i)) :
+    WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveEntry) s fun t =>
+      (t.gpr .r7 = BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry i) ∧
+        t.gpr .r10 = base + BitVec.ofNat 32 (arrAt ((n + 7) / 8) 34 + 4 * (i + 1)) ∧ t.mem = s.mem) ∧
+        Rest [.r7, .r10] s t := by
+  have read := h.tableReadable i bound
+  have word : s.mem.readW (off (State.addr base) (arrAt ((n + 7) / 8) 34 + 4 * i)) 32 =
+      BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry i) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := tableEntry_small bound; omega :
+      VG.Impl.RsaKeyGen.tabEntry i < 2 ^ 32)]
+    exact h.table i bound
+  have address : State.addr (base + BitVec.ofNat 32 (arrAt ((n + 7) / 8) 34 + 4 * i)) =
+      off (State.addr base) (arrAt ((n + 7) / 8) 34 + 4 * i) :=
+    VG.Arm.addr_add (by have := h.tableFits; omega)
+  refine withRest [.r7, .r10] ?_ (by
+    intro r hr op hop
+    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveEntry : Prog isa)).all
+        (fun op => !(clobbers op r)) = true := by
+      cases r <;> try rfl
+      all_goals exact False.elim (hr (by decide))
+    have h := List.all_eq_true.mp checked op hop
+    cases hc : clobbers op r <;> simp_all) (by rfl)
+  unfold VG.Impl.Ffdh.Arm.ParameterCandidate.sieveEntry
+  ffrun [BitVec.add_zero, cursor, address, read, word, advance base (arrAt ((n + 7) / 8) 34) i]
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate

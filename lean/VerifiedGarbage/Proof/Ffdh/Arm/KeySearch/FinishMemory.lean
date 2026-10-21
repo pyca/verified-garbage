@@ -38,7 +38,7 @@ theorem KeyInput.used_separate {p : KeyPublic sampling} {s : State} (h : KeyInpu
 theorem KeyInput.saved_used {p : KeyPublic sampling} {s : State} (h : KeyInput p s) :
     (rSaved p).Disjoint (rUsed p) :=
   (h.stack_separate (r := rUsed p) (by rw [h.write_regions]; simp)).sub_left
-    (FrameStack.belowA_sub (by decide : 24 ≤ stackUse) h.bounds.stackFits)
+    (FrameStack.belowA_sub (by cases sampling <;> decide : 24 ≤ (stackUse sampling)) h.bounds.stackFits)
 
 theorem KeyDone.used_buffer {p : KeyPublic sampling} {original s : State} {result : Spec.Ffdh.KeySearchResult}
     (h : KeyDone p original result s) : OutputBuffer p.up 8 s := by

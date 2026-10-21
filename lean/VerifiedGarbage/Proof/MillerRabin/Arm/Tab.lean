@@ -94,8 +94,8 @@ theorem AT_step {P : MP} {σ : State} {i : Nat} (hi : i < 14) :
     omega
 
 /-- An iteration of the table's loop. -/
-theorem tab_step {P : MP} (n : Nat) :
-    VP (TS P (n + 1)) tabStep fun σ s =>
+theorem tab_step {P : MP} (n : Nat) (fios : Bool := false) :
+    VP (TS P (n + 1)) (tabStep (fios := fios)) fun σ s =>
       isa.eval .ne s = some (decide (0 < n)) ∧ (n = 0 → TS P 0 σ s) ∧ (0 < n → TS P n σ s) := by
   by_cases hn : n + 1 ≤ 14
   swap
@@ -104,7 +104,7 @@ theorem tab_step {P : MP} (n : Nat) :
   refine VP.mono (F := St P (In P) (AT P i) LT (fun _ => upd (fun _ => 0) sK (n + 1)) [sK]) ?_
     (fun σ s h => hi ▸ h.2) (fun _ _ h => h)
   simp only [tabStep, seqs]
-  refine VP.seq (St.pmulY (L := LT.tail) (.inr rfl) (by decide) (by decide) (by decide) (by decide)
+  refine VP.seq (St.pmulY (fios := fios) (P := P) (A := AT P i) (L := LT.tail) (.inr rfl) (by decide) (by decide) (by decide) (by decide)
     (fun σ e => tv_lt e _) (fun σ e => e.x5)) (VP.seq (St.pshift LT_tab (by decide)) ?_)
   refine (St.pcnt (n := n) List.mem_cons_self (fun σ _ => upd_self _ _ _) (by omega)).mono (fun _ _ h => h)
     fun σ s ⟨h, z⟩ => ?_
@@ -119,6 +119,6 @@ theorem tab_step {P : MP} (n : Nat) :
   by_cases h0 : n = 0 <;> simp [h0] <;> omega
 
 /-- The table's loop. -/
-theorem tab_loop {P : MP} : VP (TS P 14) (.loop tabStep .ne) (TS P 0) := VP.loop (fun n => tab_step n) 13
+theorem tab_loop {P : MP} (fios : Bool := false) : VP (TS P 14) (.loop (tabStep (fios := fios)) .ne) (TS P 0) := VP.loop (fun n => tab_step (fios := fios) n) 13
 
 end VG.Proof.MillerRabin.Arm

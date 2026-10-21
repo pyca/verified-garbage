@@ -33,10 +33,10 @@ theorem KeyInput.saved_control {p : KeyPublic sampling} {s : State} (h : KeyInpu
     (⟨State.addr (p.sp - BitVec.ofNat 32 24), 24⟩ : Region).Disjoint ⟨State.addr p.control, 128⟩ := by
   have fit := h.bounds.stackFits
   rw [← h.2.1] at fit ⊢
-  change stackUse ≤ s.sp.toNat at fit
+  change (stackUse sampling) ≤ s.sp.toNat at fit
   have sep := h.layout.stack (inControl s) (List.mem_append_left _ (by simp [writes]))
   rw [← FrameStack.addr_sub' fit] at sep
-  exact sep.sub_left (FrameStack.belowA_sub (by decide : 24 ≤ stackUse) fit)
+  exact sep.sub_left (FrameStack.belowA_sub (by cases sampling <;> decide : 24 ≤ (stackUse sampling)) fit)
 
 theorem bytesAt_frame {r : Region} {m m' : Mem} {changes : List Region}
     (frame : Frame changes m m') (sep : ∀ w ∈ changes, r.Disjoint w)
@@ -53,12 +53,13 @@ theorem KeyLive.after_control {p : KeyPublic sampling} {original s t : State} {u
     (frame : Frame [⟨State.addr p.control, 128⟩] s.mem t.mem)
     (usedBound : newUsed ≤ p.randLen) (keysBound : newKeys ≤ 128) (scalarsBound : newScalars ≤ 128)
     (headers : Slots t.mem p.control (p.headers newUsed newKeys newScalars))
-    (high : ∀ j < 3, t.mem.readW (off (State.addr p.control) (8 * j + 4)) 32 = 0) :
+    (high : ∀ j < 3, t.mem.readW (off (State.addr p.control) (8 * j + 4)) 32 = 0)
+    (cacheSlots : CachedSlots p t.mem) :
     KeyLive p original newUsed newKeys newScalars t := by
   refine ⟨h.input, usedBound, keysBound, scalarsBound, rest.rd.trans h.rd, rest.wr.trans h.wr,
     rest.sp.trans h.sp, (rest.gpr .r4 (kept .r4 (by decide))).trans h.pointer,
     fun r hr => (rest.gpr r (kept r (List.mem_cons_of_mem _ hr))).trans (h.kept r hr),
-    ?_, ?_, ?_, headers, high, ?_, ?_⟩
+    ?_, ?_, ?_, headers, high, ?_, ?_, ?_, cacheSlots⟩
   · apply h.saved.frame (lo := 0) (hi := 24) (by decide) frame
     simpa using h.input.saved_control
   · exact (bytesAt_frame frame (by simpa using h.input.random_control)
@@ -72,19 +73,38 @@ theorem KeyLive.after_control {p : KeyPublic sampling} {original s t : State} {u
       subst r
       exact h.input.constants_control table ht)
 
+  · apply h.cachedHeld.after_frame frame
+    · intro cached
+      have fit := h.input.context_fit cached
+      omega
+    · intro cached r member
+      have same := List.mem_singleton.mp member
+      subst r
+      exact h.input.context_control cached
+
 theorem KeyLive.update {p : KeyPublic sampling} {original s t : State} {used keys scalars : Nat}
     {newUsed newKeys newScalars : Nat} {rs : List Reg}
     (h : KeyLive p original used keys scalars s) (rest : Rest rs s t) (syms : t.syms = s.syms)
     (kept : ∀ r ∈ keptRegisters, r ∉ rs)
     (values : List (Nat × BitVec 32)) (bounds : ∀ e ∈ values, e.1 < 16)
+    (absent4 : ∀ e ∈ values, 4 ≠ e.1)
     (mem : t.mem = writeLow s.mem p.control values)
     (usedBound : newUsed ≤ p.randLen) (keysBound : newKeys ≤ 128) (scalarsBound : newScalars ≤ 128)
     (headers : Slots t.mem p.control (p.headers newUsed newKeys newScalars)) :
     KeyLive p original newUsed newKeys newScalars t := by
   apply h.after_control rest syms kept (by rw [mem]; exact writeLow_frame _ _ _ bounds)
     usedBound keysBound scalarsBound headers
-  intro j hj
-  rw [mem, highWord_writeLow _ _ _ bounds j (by omega)]
-  exact h.high j hj
+  · intro j hj
+    rw [mem, highWord_writeLow _ _ _ bounds j (by omega)]
+    exact h.high j hj
+  · intro cached
+    obtain ⟨ptr, words⟩ := h.cachedSlots cached
+    constructor
+    · change lowWord t.mem p.control 4 = p.context
+      rw [mem, lowWord_writeLow _ _ _ bounds 4 (by decide), lowValue_unchanged _ _ _ absent4]
+      exact ptr
+    · change t.mem.readW (off (State.addr p.control) (8 * 4 + 4)) 32 = _
+      rw [mem, highWord_writeLow _ _ _ bounds 4 (by decide)]
+      exact words
 
 end VG.Proof.Ffdh.Arm.KeySearch

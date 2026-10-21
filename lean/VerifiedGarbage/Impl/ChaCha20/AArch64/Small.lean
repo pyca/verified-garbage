@@ -30,8 +30,11 @@ def short : Prog isa :=
     (.seq (.seq (.block [.lsr .x .x5 .x2 6, .subImm .x .x5 .x5 3, .lsr .x .x5 .x5 63])
       (.ite (.nonzero .x .x5) (step 2) (step 3))) Xor.xor))
 
+/-- The whole 256-byte chunks with the four-block kernel (`Neon4.body`), then
+the fewer than 256 bytes left with `short`, whose two- and three-block
+steps leave at most 63 bytes to the scalar stream. -/
 def xor : Prog isa :=
   .seq (.block [.lsr .x .x5 .x2 8])
-    (.ite (.zero .x .x5) short Neon4.xor)
+    (.seq (.ite (.zero .x .x5) (.block []) (.loop Neon4.body (.nonzero .x .x5))) short)
 
 end VG.Impl.ChaCha20.AArch64.Small

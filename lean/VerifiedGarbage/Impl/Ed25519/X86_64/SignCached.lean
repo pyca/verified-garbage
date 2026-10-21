@@ -113,17 +113,37 @@ def mulAddArgs : List Instr :=
 def wipe : List Instr :=
   ([.alu32 .xor .rax (.reg .rax)] : List Instr) ++ (List.range 24).map (fun i => .store (stk (8 * i)) .rax)
 
-def body (bs : Prog isa) (fs : String) (f : Callee) (suffix : String) : Prog isa :=
-  .seq (hashSeed f suffix) (.seq (.block saveSecret)
+/-- Signing after `secret`, which leaves the seed's SHA-512 digest at `stk 128`. -/
+def bodyFrom (secret : Prog isa) (bs : Prog isa) (fs : String) (f : Callee) (suffix : String) :
+    Prog isa :=
+  .seq secret (.seq (.block saveSecret)
     (.seq (hashNonce f suffix) (.seq (reduce 64)
     (.seq (callWith baseArgs (scalarBaseName fs) bs)
     (.seq (hashChallenge f suffix) (.seq (reduce 96)
     (.seq (callWith mulAddArgs "vg_ed25519_scalar_mul_add" scalarMulAdd) (.block wipe))))))))
+
+def body (bs : Prog isa) (fs : String) (f : Callee) (suffix : String) : Prog isa :=
+  bodyFrom (hashSeed f suffix) bs fs f suffix
 
 /-- Signing, calling the base-point multiplication `bs`, `vg_ed25519_scalar_base` with the
 suffix `fs`. -/
 def code (bs : Prog isa) (fs : String) (f : Callee) (suffix : String) : Prog isa :=
   .frame (.push ([.rdi, .rsi, .rdx, .rcx, .r8, .r9] ++ List.replicate 25 .rax))
     (body bs fs f suffix) (.pop .rax 31)
+
+/-- The eight words at `rax` copied to `stk 128`. -/
+def copyWords : List Instr :=
+  (List.range 8).flatMap fun i =>
+    [.mov .rcx (.mem { base := .rax, disp := ((8 * i : Nat) : Int) }), .store (stk (128 + 8 * i)) .rcx]
+
+/-- `vg_ed25519_sign_expanded`'s first step: the seed's cached SHA-512 digest (its second
+argument, saved at `fSeed`) copied to `stk 128`, where `hashSeed` leaves it. -/
+def copyExpanded : Prog isa := .seq (.block [.mov .rax (.mem (stk fSeed))]) (.block copyWords)
+
+/-- Signing with the seed's cached SHA-512 digest (`signExpandedContract`): `code`, with the
+digest copied rather than computed. -/
+def codeExpanded (bs : Prog isa) (fs : String) (f : Callee) (suffix : String) : Prog isa :=
+  .frame (.push ([.rdi, .rsi, .rdx, .rcx, .r8, .r9] ++ List.replicate 25 .rax))
+    (bodyFrom copyExpanded bs fs f suffix) (.pop .rax 31)
 
 end VG.Impl.Ed25519.X86_64.SignCached

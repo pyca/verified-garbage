@@ -14,23 +14,25 @@ open VG VG.Arm
 namespace KeyConstants
 
 def consts : GenerationPolicy → List (String × List (BitVec 64))
-  | .full => []
+  | .full | .cached => []
   | .vetted => VG.Impl.Ffdh.Arm.VettedGroups.tableConsts
 
 def abi (sampling : GenerationPolicy) : Abi isa := VG.Arm.abi.withConsts (consts sampling)
 
 theorem abi_full : abi .full = VG.Arm.abi := rfl
 
+theorem abi_cached : abi .cached = VG.Arm.abi := rfl
+
 theorem abi_vetted : abi .vetted = VG.Arm.abi.withConsts VG.Impl.Ffdh.Arm.VettedGroups.tableConsts := rfl
 
 def tablePtr (sampling : GenerationPolicy) (s : State) : BitVec 32 :=
   match sampling with
-  | .full => 0
+  | .full | .cached => 0
   | .vetted => s.syms VG.Impl.Ffdh.Arm.VettedGroups.tableSym
 
 def regions (sampling : GenerationPolicy) (ptr : BitVec 32) : List Region :=
   match sampling with
-  | .full => []
+  | .full | .cached => []
   | .vetted => [⟨State.addr ptr, 8 * VG.Impl.Ffdh.Arm.VettedGroups.tableWords.length⟩]
 
 private theorem singleton_regions (name : String) (words : List (BitVec 64)) (s : State) :
@@ -40,6 +42,7 @@ theorem regions_eq (sampling : GenerationPolicy) (s : State) :
     constRegs (consts sampling) s = regions sampling (tablePtr sampling s) := by
   cases sampling with
   | full => rfl
+  | cached => rfl
   | vetted =>
     simpa only [consts, VG.Impl.Ffdh.Arm.VettedGroups.tableConsts, regions, tablePtr] using
       singleton_regions VG.Impl.Ffdh.Arm.VettedGroups.tableSym VG.Impl.Ffdh.Arm.VettedGroups.tableWords s

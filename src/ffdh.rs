@@ -22,6 +22,8 @@
 mod arithmetic;
 mod domain;
 mod generation;
+#[cfg(target_arch = "arm")]
+mod precomputed;
 #[cfg(test)]
 mod vetted_tests;
 
@@ -96,6 +98,9 @@ impl Parameters {
     /// accepted and normalized. Checks 512..=8192 bits, odd p, 1<g<p-1;
     /// with q, also odd 2<q<p-1, q|(p-1) and g^q mod p=1. Does not
     /// primality-test imported parameters.
+    ///
+    /// On ARM, this also initializes reusable public key-generation data
+    /// (about 34 times p's byte length). Clones share that allocation.
     pub fn from_components(p: &[u8], g: &[u8], q: Option<&[u8]>) -> Result<Self, Error> {
         let (p, g, q) = (canonical(p), canonical(g), q.map(canonical));
         let domain = Domain::new(p, g, q).ok_or(Error::InvalidParameters)?;
@@ -111,7 +116,6 @@ impl Parameters {
     /// generator 2 or 5. The result omits q, as PKCS #3/OpenSSL does.
     /// Miller–Rabin uses 64 independent uniform witnesses through 2048 bits
     /// and 128 above. There is no primality certificate.
-    #[cfg(not(target_arch = "arm"))]
     pub fn generate(bits: usize, generator: u32) -> Result<Self, Error> {
         generation::parameters(bits, generator, getrandom::fill)
     }
@@ -143,6 +147,9 @@ impl Parameters {
         fill: impl FnMut(&mut [u8]) -> Result<(), E>,
     ) -> Result<PrivateKey, Error> {
         let len = self.p.len();
+        #[cfg(target_arch = "arm")]
+        let exponent_len = self.domain.exponent_len();
+        #[cfg(not(target_arch = "arm"))]
         let exponent_len = self.q.as_ref().map_or(len, Vec::len);
         let mut x = alloc::vec![0; len];
         let mut y = alloc::vec![0; len];

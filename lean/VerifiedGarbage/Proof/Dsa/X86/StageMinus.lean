@@ -25,7 +25,7 @@ theorem stageMinusP_ok {base : Addr} {size pLen qLen p q amount output : Nat} {s
   have C := VG.Proof.Dsa.X86.Layout.context_bound N
   have low : 14720 ≤ output := ho
   refine WP.mono (validateMinus_ok M.scr M.saved rfl (by omega) (by omega) (by omega) M.pReady M.pValue
-    M.pLarge M.pOdd ha (Nat.le_trans hb M.extent) (by omega)) fun t ⟨V, O, K⟩ => ?_
+    ha (Nat.le_trans hb M.extent) (by omega)) fun t ⟨V, O, K⟩ => ?_
   have F : StageResult base s t output pLen (p - amount) :=
     ⟨StageFrame.of_frame K (by intro reg hr; exact hr) O N, V⟩
   exact ⟨M.keep (F.toStageFrame.run (.inl ⟨ho, hb⟩)) F.keeps (by decide) (by decide), F⟩
@@ -41,7 +41,7 @@ theorem stageMinusQ_ok {base : Addr} {size pLen qLen p q amount output : Nat} {s
   have C := VG.Proof.Dsa.X86.Layout.context_bound N
   have low : 14720 ≤ output := ho
   refine WP.mono (validateMinus_ok M.scr M.saved rfl (by omega) (by omega) (by omega) M.qReady M.qValue
-    (by have := M.qLarge; omega) M.qOdd ha (Nat.le_trans hb M.extent) (by omega)) fun t ⟨V, O, K⟩ => ?_
+    ha (Nat.le_trans hb M.extent) (by omega)) fun t ⟨V, O, K⟩ => ?_
   have F : StageResult base s t output qLen (q - amount) :=
     ⟨StageFrame.of_frame K (by intro reg hr; exact hr) O N, V⟩
   exact ⟨M.keep (F.toStageFrame.run (.inl ⟨ho, hb⟩)) F.keeps (by decide) (by decide), F⟩

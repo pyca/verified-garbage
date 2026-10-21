@@ -34,7 +34,7 @@ theorem prepare_ok {g : CallGeometry} {s0 s : State} (inputs : Inputs g s0)
     (go : GoOn (product g s0.mem))
     (bound : inputValue g s0.mem 0 < 2 ^ (64 * g.n))
     (odd : inputValue g s0.mem 0 % 2 = 1) (large : 101 < inputValue g s0.mem 0) :
-    WP isa (.seq (halving g.n) (mont g.n)) s (fun t => Nonempty (Prepared g s0 t)) := by
+    WP isa (.seq VG.Impl.Rsa.X86.RecoverRt.halving VG.Impl.Rsa.X86.RecoverRt.mont) s (fun t => Nonempty (Prepared g s0 t)) := by
   obtain ⟨ae, ad⟩ := inputArguments inputs
   obtain ⟨count, limit⟩ := inputs.countBounds
   obtain ⟨evenValue, positive, _, fit⟩ := exponent_facts go

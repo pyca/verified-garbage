@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.P384.X86_64.JacTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNaf16Timing
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 public import VerifiedGarbage.Impl.P384.X86_64.Joint
 import VerifiedGarbage.Proof.P384.X86_64.JointPartsLit
@@ -13,6 +14,7 @@ meta import VerifiedGarbage.Proof.P384.X86_64.JacTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNaf16Timing
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 meta import VerifiedGarbage.Impl.P384.X86_64.Joint
 meta import VerifiedGarbage.Proof.P384.X86_64.JointPartsLit
@@ -51,14 +53,14 @@ theorem joint_fixed_checks : JointFixedChecks publicJoint := by
   refine ⟨?_,?_,nafMixedJac_checks,joint_cached_checks.copy⟩
   · exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi,.rbx])
       (fun _ _ _ _ h => h) (by taint_decide)
-  · exact VG.Taint.constantTime (A:=taintSym ["VG_P384_COMB"]) (Taint.ofRegs [.rdi,.r8])
+  · exact VG.Taint.constantTime (A:=taintSym ["VG_P384_GTAB"]) (Taint.ofRegs [.rdi,.r8])
       (fun _ _ _ _ h => h) (by taint_decide)
 
 theorem joint_adx_fixed_checks : JointFixedChecks publicJointAdx := by
   refine ⟨?_,?_,nafMixedJac_adx_checks,joint_adx_cached_checks.copy⟩
   · exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi,.rbx])
       (fun _ _ _ _ h => h) (by taint_decide)
-  · exact VG.Taint.constantTime (A:=taintSym ["VG_P384_COMB"]) (Taint.ofRegs [.rdi,.r8])
+  · exact VG.Taint.constantTime (A:=taintSym ["VG_P384_GTAB"]) (Taint.ofRegs [.rdi,.r8])
       (fun _ _ _ _ h => h) (by taint_decide)
 
 theorem nafCacheTable_ct : ScratchCT (Joint.cacheCode publicJoint).inline :=
@@ -89,7 +91,7 @@ theorem fastPeer_checks : FastPrepChecks 6 (p384v.sl V) p384v.winBits 5 := by
   · exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs (nafPrepPublicN 6))
       (fun _ _ _ _ h => h) (by taint_decide)
 
-theorem fastGenerator_checks : FastPrepChecks 6 (p384v.sl U) 6400 7 := by
+theorem fastGenerator16_checks : FastPrepChecks16 6 (p384v.sl U) 6400 := by
   constructor
   · exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi])
       (fun _ _ _ _ h => h) (by taint_decide)
@@ -98,7 +100,7 @@ theorem fastGenerator_checks : FastPrepChecks 6 (p384v.sl U) 6400 7 := by
 
 theorem fastPeer_adx_checks : FastPrepChecks 6 (p384vx.sl V) p384vx.winBits 5 := fastPeer_checks
 
-theorem fastGenerator_adx_checks : FastPrepChecks 6 (p384vx.sl U) 6400 7 := fastGenerator_checks
+theorem fastGenerator16_adx_checks : FastPrepChecks16 6 (p384vx.sl U) 6400 := fastGenerator16_checks
 
 theorem jointDouble_ct : ScratchCT (jointDouble publicJoint.K).inline :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)

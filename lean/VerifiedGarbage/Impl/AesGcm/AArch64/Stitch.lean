@@ -79,11 +79,11 @@ def runWithS (tb : List Instr) (cl : Prog isa) : Prog isa :=
   .seq front
   (.seq (stitched [] tb Gcm.AArch64.Stitch.enc)
   (.seq (.block (whole ++ [.add .x .x23 .x23 .x9, mov .x27 .x23, .sub .x .x24 .x26 .x9, imm .x25 0]))
-  (.seq (cryptAl c)
+  (.seq (Tail.cryptAlT c)
   (.seq (.block ([mov .x23 .x27] ++ whole ++ [.sub .x .x24 .x26 .x9] ++ absSeg2 16))
   (.seq cl
   (.seq (.block (hReload ++ loadRev Y .x20 16 ++ [mov .x13 .x24, mov .x12 .x23]))
-  (.seq padMul
+  (.seq padMulT
   (.seq (.block lensTag)
   (.seq (ctrCall c)
   (.seq (.block tagOut)
@@ -99,16 +99,16 @@ def openRunWithS (tb : List Instr) (cl : Prog isa) : Prog isa :=
   (.seq (.block (whole ++ [.add .x .x23 .x23 .x9, .sub .x .x24 .x26 .x9, imm .x25 0] ++ absSeg2 16))
   (.seq cl
   (.seq (.block (hReload ++ loadRev Y .x20 16 ++ [mov .x13 .x24, mov .x12 .x23]))
-  (.seq padMul
+  (.seq padMulT
   (.seq (.block (lensTagAt uO))
   (.seq (ctrCall c)
   (.seq cmp
   (.seq (.block [imm .x27 1, .sub .x .x27 .x27 .x10])
   (.seq (.ite (.zero .x .x27)
       (.seq (.block ([.ldrq .v0 .x19 cbO, .strq .v0 .x20 48, .ldr .x .x23 .x19 dataO,
-          .ldr .x .x26 .x19 lenO] ++ whole ++ [mov .x24 .x9, imm .x25 0])) (cryptAl c))
+          .ldr .x .x26 .x19 lenO] ++ whole ++ [mov .x24 .x9, imm .x25 0])) (Tail.cryptAlT c))
       (.seq (.block ([.ldr .x .x23 .x19 dataO, .ldr .x .x26 .x19 lenO] ++ whole ++
-          [.add .x .x23 .x23 .x9, .sub .x .x24 .x26 .x9, imm .x25 0])) (cryptAl c)))
+          [.add .x .x23 .x23 .x9, .sub .x .x24 .x26 .x9, imm .x25 0])) (Tail.cryptAlT c)))
     (.block [mov .x0 .x27]))))))))))))
 
 /-- `openFastP` with `openRunWithS`. -/

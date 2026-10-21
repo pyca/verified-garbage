@@ -316,6 +316,8 @@ theorem exec_patch (hc : Clear H s) (i : Instr) :
     simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load128_patch hc]; rfl
   | zbcst op d a m =>
     simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load64_patch hc]; rfl
+  | vpbroadcastdZ d m | zbcstd _ d _ m =>
+    simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load32_patch hc]; rfl
   | vpmadd52Load hi d a m =>
     simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load256_patch hc]; rfl
   | evLoad d m =>

@@ -11,7 +11,7 @@ open VG.Impl.Rsa.X86.Recover
 
 theorem halfLoop_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {m c : Nat}
     (h : HI g s0 A m c 0 s) (positive : 0 < c) (bound : c ≤ 16384) :
-    WP isa (.loop (halfBody g.n) .ne) s (HI g s0 A m c c) := by
+    WP isa (.loop VG.Impl.Rsa.X86.RecoverRt.halfBody .ne) s (HI g s0 A m c c) := by
   refine WP.loop (M := isa)
     (fun j u => ∃ k, k + j = c ∧ 0 < j ∧ HI g s0 A m c k u) ?_ c s ⟨0, by omega, positive, h⟩
   intro j u ⟨k, sum, pos, hu⟩

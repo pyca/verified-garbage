@@ -29,9 +29,15 @@ pub fn bench(c: &mut Criterion) {
     // The shared sizes, and more below 1 KiB and at 4 KiB, where the TLS
     // records of interactive traffic fall; and TLS 1.3's records of 512 and
     // 768 bytes, 1 KiB, 4 KiB and 16 KiB (the most a record carries) of
-    // payload, whose plaintext is one byte longer: the content type.
-    const SIZES: [usize; 13] = [
-        16, 64, 256, 512, 513, 768, 769, 1024, 1025, 4096, 4097, 16384, 16385,
+    // payload, whose plaintext is one byte longer: the content type. 480
+    // bytes (30 blocks of Poly1305) is near where the x86-64 IFMA Poly1305
+    // hands short inputs to other code. 320, 384 and 896 bytes leave 64 to
+    // 255 bytes after the whole 256-byte chunks (of 512 bytes, for 896) of
+    // the AArch64 NEON and SVE2 code. 1350 bytes, a record that fills an
+    // Ethernet frame, leaves 326 after the whole 512-byte chunks.
+    const SIZES: [usize; 18] = [
+        16, 64, 256, 320, 384, 480, 512, 513, 768, 769, 896, 1024, 1025, 1350, 4096, 4097, 16384,
+        16385,
     ];
     let key = [0x42; 32];
     let nonce = [0x24; 12];
@@ -211,6 +217,162 @@ pub fn bench(c: &mut Criterion) {
         });
     }
     g.finish();
+
+    tls_records(c);
+}
+
+/// TLS 1.3 records, as a TLS library seals and opens them with a key reused
+/// for the connection: a 12-byte nonce and a record's 5 bytes of additional
+/// data (the groups above have 16, which no TLS 1.3 record does); sealed out
+/// of place from two pieces (the payload and its content type byte), and
+/// opened in place, with the buffers where rustls puts them
+/// (`aes_gcm::Offsets::DEFAULT`), as `aes-*-gcm-tls-seal` and `-open` are.
+/// aws-lc-rs seals in place (the payload and the content type already in the
+/// record buffer), and OpenSSL streams the pieces through one context. The
+/// sizes are the records' plaintexts, the content type included: short
+/// records (alerts, handshake messages, small requests) up to 192 bytes, and
+/// the lengths around 193, 448 to 449 and 639 to 640 bytes, where the x86-64
+/// code changes how it computes the keystream.
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
+fn tls_records(c: &mut Criterion) {
+    use std::hint::black_box;
+
+    use aws_lc_rs::aead::{Aad, CHACHA20_POLY1305, LessSafeKey, Nonce, UnboundKey};
+    use criterion::{BenchmarkId, Throughput};
+    use openssl::cipher::Cipher as OsslCipher;
+    use openssl::cipher_ctx::CipherCtx;
+    use verified_garbage::chacha20poly1305::ChaCha20Poly1305;
+
+    use crate::aes_gcm::{Aligned, Offsets};
+    use crate::{AWS_LC, OPENSSL, VG};
+
+    const TLS_SIZES: [usize; 10] = [16, 64, 128, 192, 193, 256, 448, 449, 639, 640];
+    let offsets = Offsets::DEFAULT;
+    let key = [0x42u8; 32];
+    let nonce = [0x24; 12];
+    let aad = Aligned::new(&[0x17, 0x03, 0x03, 0x40, 0x11], offsets.aad);
+    let ty = [0x17u8];
+    let vg_key = ChaCha20Poly1305::new(&key);
+    let aws_lc_key = LessSafeKey::new(UnboundKey::new(&CHACHA20_POLY1305, &key).unwrap());
+    let mut ossl = CipherCtx::new().unwrap();
+    ossl.encrypt_init(Some(OsslCipher::chacha20_poly1305()), Some(&key), None)
+        .unwrap();
+    let mut ossl_dec = CipherCtx::new().unwrap();
+    ossl_dec
+        .decrypt_init(Some(OsslCipher::chacha20_poly1305()), Some(&key), None)
+        .unwrap();
+    for size in TLS_SIZES {
+        let data = Aligned::new(&vec![0u8; size - 1], offsets.input);
+        let mut out = Aligned::new(&vec![0u8; size], offsets.output);
+        let mut t = [0u8; 16];
+        let mut ossl_out = Aligned::new(&vec![0u8; size + 16], offsets.output);
+        let tag = vg_key
+            .encrypt(&nonce, &aad, &[&data, &ty], &mut out)
+            .unwrap();
+        let ct = Aligned::new(&out, offsets.input);
+        let mut record = Aligned::new(&[&data[..], &ty].concat(), offsets.input);
+        let aws_lc_tag = aws_lc_key
+            .seal_in_place_separate_tag(
+                Nonce::assume_unique_for_key(nonce),
+                Aad::from(&aad[..]),
+                &mut record,
+            )
+            .unwrap();
+        assert_eq!((&record[..], aws_lc_tag.as_ref()), (&ct[..], &tag[..]));
+
+        let mut g = c.benchmark_group("chacha20poly1305-tls-seal");
+        g.throughput(Throughput::Bytes(size as u64));
+        g.bench_function(BenchmarkId::new(VG, size), |b| {
+            b.iter(|| {
+                vg_key
+                    .encrypt(
+                        black_box(&nonce),
+                        black_box(&aad),
+                        &[black_box(&data[..]), black_box(&ty[..])],
+                        black_box(&mut out),
+                    )
+                    .unwrap()
+            })
+        });
+        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            b.iter(|| {
+                ossl.encrypt_init(None, None, Some(black_box(&nonce)))
+                    .unwrap();
+                ossl.cipher_update(black_box(&aad), None).unwrap();
+                let n = ossl
+                    .cipher_update(black_box(&data), Some(&mut ossl_out))
+                    .unwrap();
+                let n = n + ossl
+                    .cipher_update(black_box(&ty), Some(&mut ossl_out[n..]))
+                    .unwrap();
+                ossl.cipher_final(&mut ossl_out[n..]).unwrap();
+                ossl.tag(&mut t).unwrap();
+                t
+            })
+        });
+        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            b.iter(|| {
+                aws_lc_key
+                    .seal_in_place_separate_tag(
+                        Nonce::assume_unique_for_key(*black_box(&nonce)),
+                        Aad::from(black_box(&aad)),
+                        black_box(&mut record),
+                    )
+                    .unwrap()
+            })
+        });
+        g.finish();
+
+        // Each iteration opens the record again from its ciphertext.
+        let mut buf = Aligned::new(&ct, offsets.input);
+        let mut g = c.benchmark_group("chacha20poly1305-tls-open");
+        g.throughput(Throughput::Bytes(size as u64));
+        g.bench_function(BenchmarkId::new(VG, size), |b| {
+            b.iter(|| {
+                buf.copy_from_slice(&ct);
+                vg_key
+                    .decrypt_in_place(
+                        black_box(&nonce),
+                        black_box(&aad),
+                        black_box(&mut buf),
+                        &tag,
+                    )
+                    .unwrap()
+            })
+        });
+        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            b.iter(|| {
+                ossl_dec
+                    .decrypt_init(None, None, Some(black_box(&nonce)))
+                    .unwrap();
+                ossl_dec.cipher_update(black_box(&aad), None).unwrap();
+                let n = ossl_dec
+                    .cipher_update(black_box(&ct), Some(&mut ossl_out))
+                    .unwrap();
+                ossl_dec.set_tag(&tag).unwrap();
+                ossl_dec.cipher_final(&mut ossl_out[n..]).unwrap();
+            })
+        });
+        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            b.iter(|| {
+                buf.copy_from_slice(&ct);
+                aws_lc_key
+                    .open_in_place_separate_tag(
+                        Nonce::assume_unique_for_key(*black_box(&nonce)),
+                        Aad::from(black_box(&aad)),
+                        &tag,
+                        black_box(&mut buf),
+                    )
+                    .unwrap();
+            })
+        });
+        g.finish();
+    }
 }
 
 #[cfg(not(any(

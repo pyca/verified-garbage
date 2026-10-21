@@ -22,6 +22,10 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Entry
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Pad
+import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.Crypt
+import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.CT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.Crypt
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.CT
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
 import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCryptCT
@@ -78,6 +82,38 @@ open VG.Proof.Gcm.AArch64.Pmull
 open VG.Impl.Gcm.AArch64.Pmull (LO MID HI A T C Y tReg sReg poly)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt zeros padLen ctxH ctxCiph)
+
+/-- `omB_relD`, decrypting with `Tail.cryptAlT`, for a text of `x26` bytes. -/
+theorem omB_relDT (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
+    (L : Lay Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s' m₁ m₂ : State}
+    (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    (mo₁ : MidO fr Ctx W SP D Np A R nl al n tl s m₁) (mo₂ : MidO fr Ctx W SP D Np A R nl al n tl s' m₂)
+    (x26₁ : m₁.gpr .x26 = BitVec.ofNat 64 n) (x26₂ : m₂.gpr .x26 = BitVec.ofNat 64 n)
+    (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r) (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r)
+    (hx : m₁.gpr .x27 = m₂.gpr .x27) :
+    RelCT isa (Eq2 m₁ m₂) (omBWith (Impl.AesGcm.AArch64.Tail.cryptAlT v.callees)) TT := by
+  unfold omBWith
+  have tm : ∃ h, (taint.check (Taint.ofRegs [.x27]) (.block [mov .x0 .x27]) h).isSome = true :=
+    ⟨_, by taint_decide⟩
+  have hcr : ∀ {m : State} {σ : State} (mo : MidO fr Ctx W SP D Np A R nl al n tl σ m),
+      m.gpr .x26 = BitVec.ofNat 64 n → ∀ {s₈ : State}, CrIn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 D n s₈ →
+      s₈.gpr .x26 = m.gpr .x26 → s₈.wr = m.wr → ∀ icb, WP isa (Impl.AesGcm.AArch64.Tail.cryptAlT v.callees) s₈
+        (CrOut Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R icb 0 D n s₈.mem) :=
+    fun mo h26 _ h e26 hwr icb => cryptAlT_ok L v (icb := icb) h rfl (by rw [e26, h26])
+      mo.data.ok.lt (tail_big (by rw [hwr]; exact mo.data.wr) mo.data.ok.lt (by simp) (Nat.zero_add n))
+  refine rel_seq ?_ (omIteWith_ok _ hR mo₁ dD dC (hcr mo₁ x26₁)) (omIteWith_ok _ hR mo₂ dD dC (hcr mo₂ x26₂))
+    fun a b ⟨ea, xa, _, _⟩ ⟨eb, xb, _, _⟩ =>
+      rel_taint [.x27] (by rw [ea.sp, eb.sp]) (by agree_tac [xa, xb, hx]) tm
+  have x27₁ := mo₁.x27
+  have x27₂ : m₂.gpr .x27 = _ := hx ▸ x27₁
+  have hlt : ∀ B : Bool, (if B then 1 else 0 : Nat) < 2 ^ 64 := fun B => by cases B <;> decide
+  refine rel_ite (eval_zero x27₁ (hlt _)) (eval_zero x27₂ (hlt _)) (fun _ => ?_) (fun _ => ?_)
+  · exact rel_taint [] (by rw [mo₁.env.sp, mo₂.env.sp]) (by agree_tac []) ⟨_, by taint_decide⟩
+  · refine rel_seq (rel_taint [.x19] (by rw [mo₁.env.sp, mo₂.env.sp]) (by agree_tac [mo₁.env.x19, mo₂.env.x19])
+      ⟨_, by taint_decide⟩) (ocLdr_ok mo₁.env mo₁.sD mo₁.sN) (ocLdr_ok mo₂.env mo₂.sD mo₂.sN)
+      fun c₁ c₂ h₁ h₂ => ?_
+    exact cryptAlT_rel L v (oc_in hR mo₁ h₁) (oc_in hR mo₂ h₂) rfl
+      (by rw [h₁.2.2.2.others _ (by decide), h₂.2.2.2.others _ (by decide), x26₁, x26₂])
 
 section
 variable {Ctx W SP Np A D Tg : Addr} {R al n tl : Nat}
@@ -254,8 +290,9 @@ theorem openRunWith_relX (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {nl : Nat}
         WP.mono (g₁ s' c y z r w sp f hd) fun _ g => ⟨g, trivial⟩) fun _ q => q.1)
     (WP.mono (openRunAX_ok cl v hMK (I := fun _ => True) o₂ hx₂.1 hx₂.2.1 hx₂.2.2.1 hx₂.2.2.2 hal hok
       hexW hexD hexC (fun _ _ => trivial) fun s' _ _ _ _ c y z r w sp f hd =>
-        WP.mono (g₂ s' c y z r w sp f hd) fun _ g => ⟨g, trivial⟩) fun _ q => q.1) fun m₁ m₂ mo₁ mo₂ => ?_)
-  refine omB_relD v L o₁.rounds mo₁ mo₂ (disj_ex (keep_of_sub (fastFrame_work W) o₁.ddW) hexD)
+        WP.mono (g₂ s' c y z r w sp f hd) fun _ g => ⟨g, trivial⟩) fun _ q => q.1)
+    fun m₁ m₂ ⟨mo₁, x26₁⟩ ⟨mo₂, x26₂⟩ => ?_)
+  refine omB_relDT v L o₁.rounds mo₁ mo₂ x26₁ x26₂ (disj_ex (keep_of_sub (fastFrame_work W) o₁.ddW) hexD)
     (disj_ex (keep_of_sub (fastFrame_work W) o₁.dcW) hexC) ?_
   rw [mo₁.x27, mo₂.x27, tagBit o₁ rt₁ hok, tagBit o₂ rt₂ hok, hb]
 

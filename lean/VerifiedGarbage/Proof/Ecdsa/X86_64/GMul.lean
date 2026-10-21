@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 
 import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJP
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 

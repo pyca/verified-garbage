@@ -35,8 +35,9 @@ local macro "jslots" : tactic => `(tactic| plain_simp_names (simp only [jointSlo
                    List.not_mem_nil,or_false] at * <;> grind))
 
 structure JointFixedChecks (c : Joint.Cfg) : Prop where
-  read : RegCT [.rdi,.rbx] (.block (Naf.digitRead {c.K with bits:=c.gBits}))
-  entry : FixedEntryCT c.K c.tsym
+  read : RegCT [.rdi,.rbx] (.block (Joint.fixedRead c))
+  entry : FixedLookupCT c.tsym
+    (if c.gw=9 then Joint.fixedEntryW c.K c.tsym else Joint.fixedEntry c.K c.tsym)
   add : JacMixedChecks c.K c.K.R c.K.E c.K.D
   copy : ScratchCT (.block (copyPt c.K.M.n c.K.R c.K.D))
 
@@ -61,7 +62,7 @@ theorem jointFixedSum_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Na
     List.mem_append_right _ (List.mem_append_right _ (List.mem_append_right _ hx)))⟩)
 
 theorem jointFixedDigit_relCT {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v j : Nat}
-    {G Q A : Point C} {row : JointGeneratorRow c.K.M.n C G} {E : Nat → Fe C}
+    {G Q A : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {E : Nat → Fe C}
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
     (hOne : c.K.one<C.p) (hj : j<64*c.K.M.n+1) (hc : JointFixedChecks c) :
     RelCT isa (fun s t => FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E s t ∧
@@ -70,31 +71,65 @@ theorem jointFixedDigit_relCT {c : Joint.Cfg} {C : Curve} {base T : Addr} {size 
       s.gpr .rbx=BitVec.ofNat 64 j ∧ t.gpr .rbx=BitVec.ofNat 64 j)
       (Joint.fixedDigit c).inline
       (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t) := by
-  have hbytes : c.gBits+j<size := by
-    have hh := hL.lookup.layout.stableBounds (c.gBits,64*c.K.M.n+1) (by simp [jointStableRanges])
-    dsimp only at hh
-    omega
-  apply nafDigitBranch_relCT (K:={c.K with bits:=c.gBits}) hbytes hc.read
-    (fun _ hs => hs.stable.generator j hj)
+  rw [Joint.fixedDigit]
+  simp only [Code.inline]
+  apply digitBranchRead_relCT hc.read (fun s _ cs hb => jointFixedRead_ok hL.lookup.layout cs hj hb)
     (fun _ _ hk st hs => hs.of_keeps hk (by decide)
       (fun a ha hb ho => (hs.external a ha hb ho).of_keeps hk st))
-  intro hb s t ts tt s' t' ⟨hp,cs,ct,s8,t8⟩ es et
-  have hmag : FastNaf.magnitude 7 u j≠0 := fun he => hb ((FastNaf.byte_zero_iff 7 u j).mpr he)
-  have ha : 1≤FastNaf.magnitude 7 u j := by omega
-  have hbound := FastNaf.magnitude_le (Or.inr rfl) u j
-  have ho := (FastNaf.magnitude_odd_or_zero 7 u j).resolve_left hmag
-  have hmagn : nafMagnitude (FastNaf.byte 7 u j)=FastNaf.magnitude 7 u j := FastNaf.byte_magnitude 7 u j
-  have zero : E c.K.zero=0 := by
-    rw [←hp.1.val _ (by simp [jointLive,winRo])]
-    exact cs.stable.zero
+  intro hz
+  have hmag : FastNaf.magnitude c.gw u j≠0 := of_decide_eq_false hz
+  have ha : 1≤FastNaf.magnitude c.gw u j := by omega
+  have hbound : FastNaf.magnitude c.gw u j≤jointGTop c := by
+    unfold jointGTop
+    rcases hL.lookup.layout.gw with h|h
+    · simp only [h,show ¬(7:Nat)=9 from by decide,ite_false]
+      exact FastNaf.magnitude_le (Or.inr rfl) u j
+    · simp only [h,ite_true]
+      have := FastNaf9.magnitude_le u j
+      simpa only [FastNaf.magnitude,FastNaf.ne_9_7,ite_true,ite_false] using this
+  have ho := (FastNaf.magnitude_odd_or_zero c.gw u j).resolve_left hmag
   have ds : ∀ x∈jacCoords c.K.E,x∈jointSlots c := by intro x hx; jslots
-  have entry := jointFixedEntry_relCT (base:=base) (T:=T) (E:=E) (V:=jointLive c)
-    (b:=FastNaf.byte 7 u j) hL.lookup.layout.lay hL.lookup.layout.n hm
-    (hmagn.symm ▸ ha) hL.lookup.exy hL.lookup.exz ds
-    (row.canonical _ ha hbound ho).1 (row.canonical _ ha hbound ho).2 hOne
-    (by simp [jointLive,winRo]) zero
-    (fun hx => hL.lookup.zeroApart (List.mem_append_left _ hx)) hc.entry
-  exact (RelCT.seq entry (jointFixedSum_relCT hL hm hOne hc)) _ _ _ _ _ _
-    ⟨hp,hmagn.symm ▸ cs.external _ ha hbound ho,hmagn.symm ▸ ct.external _ ha hbound ho,s8,t8⟩ es et
+  have hzero : c.K.zero∉jacCoords c.K.E := fun hx => hL.lookup.zeroApart (List.mem_append_left _ hx)
+  have entry : RelCT isa (fun s t => FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E s t ∧
+      JointCore c C base size Q u v (JointGenerator c C base T size row) A s ∧
+      JointCore c C base size Q u v (JointGenerator c C base T size row) A t ∧
+      s.gpr .r8=jointGCell c u j ∧ t.gpr .r8=jointGCell c u j)
+      (if c.gw=9 then Joint.fixedEntryW c.K c.tsym else Joint.fixedEntry c.K c.tsym).inline
+      (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c)
+        (jacCoords c.K.E++jointLive c) E' s t) := by
+    intro s t ts tt s' t' ⟨hp,cs,ct,s8,t8⟩ es et
+    have zero : E c.K.zero=0 := by
+      rw [←hp.1.val _ (by simp [jointLive,winRo])]
+      exact cs.stable.zero
+    have hce := hc.entry
+    by_cases h9 : c.gw=9
+    · rw [ite_eq_left h9] at es et hce
+      rw [jointGCell,ite_eq_left h9] at s8 t8
+      have hmw := word_magnitudeW u j
+      rw [h9] at ha hbound ho
+      rw [← hmw] at ha hbound ho
+      have e := jointFixedEntryW_relCT (base:=base) (T:=T) (E:=E) (V:=jointLive c)
+        (d:=FastNaf.word u j) hL.lookup.layout.lay hL.lookup.layout.n hm
+        ha hL.lookup.exy hL.lookup.exz ds
+        (row.canonical _ ha hbound ho).1 (row.canonical _ ha hbound ho).2 hOne
+        (by simp [jointLive,winRo]) zero hzero hce
+      exact (e.mono (Q':=fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c)
+        (jacCoords c.K.E++jointLive c) E' s t) (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)) _ _ _ _ _ _
+        ⟨hp,cs.external _ ha hbound ho,ct.external _ ha hbound ho,s8,t8⟩ es et
+    · have h7 : c.gw=7 := hL.lookup.layout.gw.resolve_right h9
+      rw [ite_eq_right h9] at es et hce
+      rw [jointGCell,ite_eq_right h9] at s8 t8
+      have hmb : nafMagnitude (FastNaf.byte 7 u j)=FastNaf.magnitude 7 u j := FastNaf.byte_magnitude 7 u j
+      rw [h7] at ha hbound ho
+      rw [← hmb] at ha hbound ho
+      have e := jointFixedEntry_relCT (base:=base) (T:=T) (E:=E) (V:=jointLive c)
+        (b:=FastNaf.byte 7 u j) hL.lookup.layout.lay hL.lookup.layout.n hm
+        ha hL.lookup.exy hL.lookup.exz ds
+        (row.canonical _ ha hbound ho).1 (row.canonical _ ha hbound ho).2 hOne
+        (by simp [jointLive,winRo]) zero hzero hce
+      exact (e.mono (Q':=fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c)
+        (jacCoords c.K.E++jointLive c) E' s t) (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)) _ _ _ _ _ _
+        ⟨hp,cs.external _ ha hbound ho,ct.external _ ha hbound ho,s8,t8⟩ es et
+  exact RelCT.seq entry (RelCT.exists_ fun E' => jointFixedSum_relCT (E:=E') hL hm hOne hc)
 
 end VG.Proof.Weierstrass.X86_64

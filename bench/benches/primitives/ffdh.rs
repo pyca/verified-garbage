@@ -12,7 +12,7 @@ pub fn bench(c: &mut Criterion) {
     use crate::AWS_LC;
     use crate::{OPENSSL, VG};
     use criterion::BenchmarkId;
-    use openssl::{bn::BigNum, derive::Deriver, dh::Dh, pkey::PKey};
+    use openssl::{bn::BigNum, derive::Deriver, dh::Dh, pkey::PKey, pkey_ctx::PkeyCtx};
     use std::hint::black_box;
     use verified_garbage::ffdh::{Parameters, PrivateKey, PublicKey};
     for size in [2048, 3072, 4096] {
@@ -93,6 +93,8 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         group.finish();
+        // Cold checked construction, including ARM's eager public comb setup.
+        // VG validates imported parameters; OpenSSL only constructs its object.
         let mut group = c.benchmark_group("ffdh_parameters_from");
         group.bench_function(BenchmarkId::new(VG, size / 8), |b| {
             b.iter(|| {
@@ -129,6 +131,43 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         group.finish();
+        // Cold cases include the checked constructor (and ARM's eager
+        // public comb setup). Keep these separate from reused-Parameters
+        // generation below: one-key total cost can dominate warm gains.
+        let mut group = c.benchmark_group("ffdh_cold_first_key");
+        group.bench_function(BenchmarkId::new(VG, size / 8), |b| {
+            b.iter(|| {
+                Parameters::from_components(black_box(&p), black_box(&g), q.as_deref())
+                    .unwrap()
+                    .generate_private_key()
+                    .unwrap()
+            })
+        });
+        group.bench_function(BenchmarkId::new(OPENSSL, size / 8), |b| {
+            b.iter(|| {
+                Dh::from_pqg(
+                    BigNum::from_slice(black_box(&p)).unwrap(),
+                    q.as_ref().map(|q| BigNum::from_slice(q).unwrap()),
+                    BigNum::from_slice(black_box(&g)).unwrap(),
+                )
+                .unwrap()
+                .generate_key()
+                .unwrap()
+            })
+        });
+        group.finish();
+        // Reuse the public parameter object and initialized keygen context
+        // for OpenSSL as well; neither warm case reconstructs p/q/g.
+        let openssl_params = PKey::from_dh(
+            Dh::from_pqg(
+                BigNum::from_slice(&p).unwrap(),
+                q.as_ref().map(|q| BigNum::from_slice(q).unwrap()),
+                BigNum::from_slice(&g).unwrap(),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        // Warm: params, including ARM's shared immutable context, already exists.
         let mut group = c.benchmark_group("ffdh_generate");
         #[cfg(not(target_arch = "arm"))]
         group.bench_function(BenchmarkId::new(AWS_LC, size / 8), |b| {
@@ -138,16 +177,9 @@ pub fn bench(c: &mut Criterion) {
             b.iter(|| black_box(&params).generate_private_key().unwrap())
         });
         group.bench_function(BenchmarkId::new(OPENSSL, size / 8), |b| {
-            b.iter(|| {
-                Dh::from_pqg(
-                    BigNum::from_slice(&p).unwrap(),
-                    q.as_ref().map(|q| BigNum::from_slice(q).unwrap()),
-                    BigNum::from_slice(&g).unwrap(),
-                )
-                .unwrap()
-                .generate_key()
-                .unwrap()
-            })
+            let mut keygen = PkeyCtx::new(&openssl_params).unwrap();
+            keygen.keygen_init().unwrap();
+            b.iter(|| keygen.keygen().unwrap())
         });
         group.finish();
         let mut group = c.benchmark_group("ffdh_private_from");
@@ -213,18 +245,27 @@ pub fn bench(c: &mut Criterion) {
         });
         group.finish();
     }
-    #[cfg(not(target_arch = "arm"))]
     for generator in [2, 5] {
         let mut group = c.benchmark_group(format!("ffdh_parameters_g{generator}"));
-        // Safe-prime search has high variance: ten random draws can
-        // look like a regression even with identical baseline code.
-        group.sample_size(100);
-        group.bench_function(BenchmarkId::new(VG, 64), |b| {
-            b.iter(|| Parameters::generate(512, generator).unwrap())
-        });
-        group.bench_function(BenchmarkId::new(OPENSSL, 64), |b| {
-            b.iter(|| Dh::generate_params(512, generator).unwrap())
-        });
+        for bits in [
+            512,
+            #[cfg(target_arch = "arm")]
+            1024,
+        ] {
+            if bits == 1024 && generator != 2 {
+                continue;
+            }
+            // Safe-prime search has high variance. Both libraries use 100
+            // random 512-bit draws. The larger ARM case uses 20 to keep
+            // the native benchmark within the job's time limit.
+            group.sample_size(if bits == 512 { 100 } else { 20 });
+            group.bench_function(BenchmarkId::new(VG, bits / 8), |b| {
+                b.iter(|| Parameters::generate(bits, generator).unwrap())
+            });
+            group.bench_function(BenchmarkId::new(OPENSSL, bits / 8), |b| {
+                b.iter(|| Dh::generate_params(bits as u32, generator).unwrap())
+            });
+        }
         group.finish();
     }
 }

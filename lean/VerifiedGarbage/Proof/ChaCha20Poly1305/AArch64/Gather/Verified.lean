@@ -22,13 +22,13 @@ public import VerifiedGarbage.Proof.Framework.Sig
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, AArch64: `Verified`
 
 Untrusted: everything here is checked by Lean. The shared contract of
-`vg_chacha20_poly1305_seal_gather`, with the 784 bytes of stack below the
+`vg_chacha20_poly1305_seal_gather`, with the 1296 bytes of stack below the
 stack pointer that its frame and its call use
 (`Spec.ChaCha20Poly1305.sealGatherContract`), implies the one the proof is
 written against (`gatherAArch64`, `gather_implies`), and so the code,
 calling an implementation of `vg_chacha20_poly1305_seal` by its shared
 contract, is `Verified` against it (`sealGather_verified`). The frames of
-`vg_chacha20_poly1305_seal` fit in its 768 bytes (`seal_depth`).
+`vg_chacha20_poly1305_seal` fit in its 1280 bytes (`seal_depth`).
 -/
 
 @[expose] public section
@@ -65,7 +65,7 @@ theorem pairFacts_ro (l : List (Region × Bool)) (h : ∀ a ∈ l, a.2 = false) 
     rw [h a List.mem_cons_self, h b (List.mem_cons_of_mem _ hb)]
     rfl
 
-theorem gatherPre_of_spec {s : State} (h : (Spec.ChaCha20Poly1305.sealGatherContract AArch64.abi 784).pre s) :
+theorem gatherPre_of_spec {s : State} (h : (Spec.ChaCha20Poly1305.sealGatherContract AArch64.abi 1296).pre s) :
     gatherPre s := by
   sig_pre [Spec.ChaCha20Poly1305.sealGatherContract, Spec.ChaCha20Poly1305.sealGatherSig,
     Spec.ChaCha20Poly1305.sealGatherPre, AArch64.abi, AArch64.argRegs, stackArgs_one, List.append_eq] at h
@@ -83,12 +83,12 @@ theorem gatherPre_of_spec {s : State} (h : (Spec.ChaCha20Poly1305.sealGatherCont
     dt, da, ta, bk, bn, ba, bds, bl, barg, bd, bt, ok, on, oa, ods, ol, od, ot, w₁, w₂, hg, hpm⟩
 
 theorem gatherPost_of {s s' : State} (h : gatherPost s s') :
-    (Spec.ChaCha20Poly1305.sealGatherContract AArch64.abi 784).post s s' := by
+    (Spec.ChaCha20Poly1305.sealGatherContract AArch64.abi 1296).post s s' := by
   sig_post [Spec.ChaCha20Poly1305.sealGatherContract, Spec.ChaCha20Poly1305.sealGatherSig,
     Spec.ChaCha20Poly1305.sealGatherPost, AArch64.abi, AArch64.argRegs, stackArgs_one, List.append_eq]
   exact fun _ _ => h
 
-theorem gatherPub_of {s₁ s₂ : State} (hp : (Spec.ChaCha20Poly1305.sealGatherContract AArch64.abi 784).pub s₁ s₂) :
+theorem gatherPub_of {s₁ s₂ : State} (hp : (Spec.ChaCha20Poly1305.sealGatherContract AArch64.abi 1296).pub s₁ s₂) :
     gatherPub s₁ s₂ := by
   sig_pub [Spec.ChaCha20Poly1305.sealGatherContract, Spec.ChaCha20Poly1305.sealGatherSig,
     Spec.ChaCha20Poly1305.sealGatherPre, AArch64.abi, AArch64.argRegs, stackArgs_one, List.append_eq] at hp
@@ -106,16 +106,16 @@ def gatherSat : State where
   rd := [⟨0x1000, 32⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x9000, 8⟩]
   wr := [⟨0, 0⟩, ⟨0x5000, 16⟩]
 
-theorem gatherSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealGatherContract AArch64.abi 784).pre s := by
+theorem gatherSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealGatherContract AArch64.abi 1296).pre s := by
   sig_implies_sat [Spec.ChaCha20Poly1305.sealGatherContract, Spec.ChaCha20Poly1305.sealGatherSig,
     Spec.ChaCha20Poly1305.sealGatherPre, AArch64.abi, AArch64.argRegs, stackArgs_one, List.append_eq]
     [gatherSat, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.ChaCha20Poly1305.pMax] using gatherSat
 
-theorem gather_implies : gatherAArch64.Implies (Spec.ChaCha20Poly1305.sealGatherContract AArch64.abi 784) :=
+theorem gather_implies : gatherAArch64.Implies (Spec.ChaCha20Poly1305.sealGatherContract AArch64.abi 1296) :=
   ⟨fun _ h => gatherPre_of_spec h, fun _ _ _ h => gatherPost_of h, fun _ _ _ _ h => gatherPub_of h, gatherSat_pre⟩
 
 theorem sealGather_verified (F : SealFn) :
-    Verified AArch64.target (sealGather F.name F.code) (Spec.ChaCha20Poly1305.sealGatherContract AArch64.abi 784) :=
+    Verified AArch64.target (sealGather F.name F.code) (Spec.ChaCha20Poly1305.sealGatherContract AArch64.abi 1296) :=
   Verified.of_correct (k := gatherAArch64) (sealGather_correct F) (sealGather_ct F) gather_implies
 
 theorem depth_of_noFrames {c : Prog isa} (h : c.noFrames = true) : c.aarch64Depth = 0 := by
@@ -127,18 +127,29 @@ theorem sealCode_noFrames (v : Proof.ChaCha20.AArch64.XorImpl) : (sealCode v.cal
   generalize v.stitched = st
   generalize v.callee = c at hv
   have hs : (cryptStitched c.sve true).noFrames = true := by cases c.sve <;> decide +kernel
-  have hshort : (Short.sealMain c.sve).noFrames = true := by cases c.sve <;> decide +kernel
+  have hpro : (Short.prologue c.sve).noFrames = true := by cases c.sve <;> decide +kernel
+  have hshort : Short.sealAfter.noFrames = true := by decide +kernel
+  have hxks : Short.xorKs.noFrames = true := by decide +kernel
+  have hrest : (ShortRest.sealMain c).noFrames = true := by
+    simp only [ShortRest.sealMain, ShortRest.sealAfter, ShortRest.first, ShortRest.rest, macPad, absorbLengths,
+      padTail, Code.noFrames, hv, hpro, hshort, hxks, Bool.and_true, Bool.true_and]
+    decide +kernel
+  have hpad : (Pad.sealRoute c).noFrames = true := by
+    simp only [Pad.sealRoute, Pad.sealMain, Pad.cryptPad, sealMainWith, prologue, macPad, absorbLengths,
+      padTail, Code.noFrames, hv, hrest, Bool.and_true, Bool.true_and]
+    decide +kernel
   cases st <;>
-  simp only [sealCode, sealMainCode, sealStitched, sealWith, sealMain, sealStitchedMain, sealTail, prologue, macPad,
-    cryptWith, absorbLengths, finalizeTag, padTail, Code.noFrames, hv, hs, hshort, Bool.and_true, Bool.true_and,
-    Bool.false_eq_true, ite_false, ite_true] <;>
+  simp only [sealCode, sealMainCode, sealStitched, sealWith, sealMain, sealMainWith, sealStitchedMain, sealTail,
+    prologue, macPad,
+    cryptWith, absorbLengths, finalizeTag, padTail, Code.noFrames, hv, hs, hshort, hrest, Bool.and_true, Bool.true_and,
+    Bool.false_eq_true, ite_false, ite_true, hpad] <;>
   decide +kernel
 
 open VG.Impl.ChaCha20Poly1305.AArch64 in
-/-- The frames of `vg_chacha20_poly1305_seal`, in its frame of 768 bytes, use at most those. -/
+/-- The frames of `vg_chacha20_poly1305_seal`, in its frame of 1280 bytes, use at most those. -/
 theorem seal_depth (v : Proof.ChaCha20.AArch64.XorImpl) :
-    16 * (Impl.StackScratch.AArch64.withStackScratchWiped 768 .x7 95 (sealCode v.callee v.stitched)).aarch64Depth
-      ≤ 768 := by
+    16 * (Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 95 (sealCode v.callee v.stitched)).aarch64Depth
+      ≤ 1280 := by
   simp only [Impl.StackScratch.AArch64.withStackScratchWiped, Impl.StackScratch.AArch64.withStackScratch,
     Code.aarch64Depth, Instr.frameUnits, depth_of_noFrames (sealCode_noFrames v)]
   decide

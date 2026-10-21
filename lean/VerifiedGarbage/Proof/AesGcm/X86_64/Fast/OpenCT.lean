@@ -26,6 +26,12 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 
 /-!
 # AES-GCM `open`'s path for TLS records, in two runs
@@ -36,7 +42,9 @@ address and number of the bytes left, which are public, and branches on that
 number (`tagP_rel`), so it meets `TagRel` (`tagRel_tagP`). Two runs test the
 same public lengths, so `FastOpen.sel` takes `other` in both, or
 `FastOpen.run` in both, whose additional data (`Fast.aad_rel`) and tag do
-what `openOkW_rel` needs: `openSel_rel`.
+what `openOkW_rel` needs, and so does `tailK`, which loads the number and the
+address of the bytes left from `W` and loops over them (`crRel_tailK`):
+`openSel_rel`.
 -/
 
 @[expose] public section
@@ -210,6 +218,69 @@ theorem tagRel_tagP {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) : TagRel Ct
         ⟨⟨h.2.env, h.2.rounds.1, h.2.dat, h.2.len⟩, h.2.ext.cov, h.2.dD.ok.rd⟩⟩)
       fun _ _ h => h
 
+/-- `tailK` in two runs: the length and the data's address loaded from `W`
+(public), then a loop over that many bytes. -/
+theorem crRel_tailK : CrRel Impl.AesGcm.X86_64.FastOpen.tailK := by
+  intro M Ctx W SP L R A al D n T hDW hn
+  have hL : ∀ s, OneS M Ctx W SP R A al D n T s → WP isa (.block [.mov .rcx (.mem (at_ .r15 lenO)),
+      .alu .test .rcx (.reg .rcx)]) s fun s₁ => OneS M Ctx W SP R A al D n T s₁ ∧
+        s₁.zf = some (decide (n = 0)) ∧ s₁.gpr .rcx = BitVec.ofNat 64 n := fun s h => by
+    have q₂ := h.env.perm.wR (show 208 + 8 ≤ 2560 by decide)
+    obtain ⟨s₁, run₁, hz₁, hcx₁, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa [.mov .rcx (.mem (at_ .r15 lenO)),
+        .alu .test .rcx (.reg .rcx)] s = some s₁ ∧ s₁.zf = some (decide (n = 0)) ∧
+        s₁.gpr .rcx = BitVec.ofNat 64 n ∧ (∀ r, r ≠ .rcx → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧
+        s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+      refine ⟨_, by xrun [h.env.r15, q₂], ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · simp only [zf_arithFlags, h.len]; exact congrArg some (and_self_beq (by omega))
+      · simp [gpr_setReg, h.len]
+      · intro r a; simp [gpr_setReg, a]
+      all_goals simp [mem_arithFlags, mem_setReg, rd_arithFlags, rd_setReg, wr_arithFlags, wr_setReg]
+    exact WP.of_runBlock ⟨s₁, run₁, h.keep (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide)) hm₁ hrd₁ hwr₁, hz₁, hcx₁⟩
+  let F : State → Prop := fun s => OneS M Ctx W SP R A al D n T s ∧ s.gpr .rcx = BitVec.ofNat 64 n
+  let K : State → Prop := fun s => OneS M Ctx W SP R A al D n T s ∧ s.gpr .rdi = D ∧
+    s.gpr .rsi = W + BitVec.ofNat 64 1040 ∧ s.gpr .rcx = BitVec.ofNat 64 n
+  have hB : ∀ s, F s → WP isa (.block (([.mov .rdi (.mem (at_ .r15 dataO))] : List Instr) ++
+      ptr .rsi .r15 (Impl.AesGcm.X86_64.Short.kO + 16))) s K := fun s ⟨h, hcx⟩ => by
+    have q₁ := h.env.perm.wR (show 200 + 8 ≤ 2560 by decide)
+    obtain ⟨s₁, run₁, hdi₁, hsi₁, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa
+        (([.mov .rdi (.mem (at_ .r15 dataO))] : List Instr) ++ ptr .rsi .r15 (Impl.AesGcm.X86_64.Short.kO + 16)) s =
+          some s₁ ∧ s₁.gpr .rdi = D ∧ s₁.gpr .rsi = W + BitVec.ofNat 64 1040 ∧
+        (∀ r, r ≠ .rdi → r ≠ .rsi → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+      refine ⟨_, by xrun [h.env.r15, q₁], ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · simp [gpr_setReg, h.dat]
+      · simp [gpr_setReg]; rfl
+      · intro r a b; simp [gpr_setReg, a, b]
+      all_goals simp [mem_arithFlags, mem_setReg, rd_arithFlags, rd_setReg, wr_arithFlags, wr_setReg]
+    exact WP.of_runBlock ⟨s₁, run₁, h.keep (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide)) hm₁ hrd₁ hwr₁, hdi₁, hsi₁,
+      by rw [hg₁ _ (by decide) (by decide), hcx]⟩
+  have a := rel_wp (rel_taint (P := OneS₂ M Ctx W SP R A al D n T) [.r13, .r14, .r15, .rsp]
+      (fun _ _ h => OneS₂.env h) ⟨_, by taint_decide⟩) (fun _ _ h => h) hL hL
+  have b := rel_wp (rel_taint (P := fun s₁ s₂ => (True ∧ (OneS M Ctx W SP R A al D n T s₁ ∧
+        s₁.zf = some (decide (n = 0)) ∧ s₁.gpr .rcx = BitVec.ofNat 64 n) ∧ (OneS M Ctx W SP R A al D n T s₂ ∧
+        s₂.zf = some (decide (n = 0)) ∧ s₂.gpr .rcx = BitVec.ofNat 64 n)) ∧ s₁.zf = some false)
+      [.r13, .r14, .r15, .rsp] (fun _ _ h => OneS₂.env ⟨h.1.2.1.1, h.1.2.2.1⟩) ⟨_, by taint_decide⟩)
+    (F₁ := F) (F₂ := F) (fun _ _ h => ⟨⟨h.1.2.1.1, h.1.2.1.2.2⟩, ⟨h.1.2.2.1, h.1.2.2.2.2⟩⟩) hB hB
+  have c := rel_taint (P := fun s₁ s₂ => True ∧ K s₁ ∧ K s₂) (c := xorLoop)
+    [.rdi, .rsi, .rcx, .r13, .r14, .r15, .rsp]
+    (fun _ _ h r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · rw [h.2.1.2.1, h.2.2.2.1]
+      · rw [h.2.1.2.2.1, h.2.2.2.2.1]
+      · rw [h.2.1.2.2.2, h.2.2.2.2.2]
+      · rw [h.2.1.1.env.r13, h.2.2.1.env.r13]
+      · rw [h.2.1.1.env.r14, h.2.2.1.env.r14]
+      · rw [h.2.1.1.env.r15, h.2.2.1.env.r15]
+      · rw [h.2.1.1.env.rsp, h.2.2.1.env.rsp]) ⟨_, by taint_decide⟩
+  unfold Impl.AesGcm.X86_64.FastOpen.tailK
+  exact ((rel_env (by decide) (fun _ _ h => ⟨h.1.env, h.2.env⟩)
+    (RelCT.seq a (rel_ite_e (fun _ _ h => by rw [h.2.1.2.1, h.2.2.2.1]) (RelCT.block_nil fun _ _ _ => trivial)
+      (RelCT.seq b c)))).mono (fun _ _ h => h) fun _ _ h => h.2)
+
 /-- `sel` in two runs: the same path, and on it the same addresses and
 branches. -/
 theorem openSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) {ks : Prog isa} (hks : KsOk ks)
@@ -235,7 +306,7 @@ theorem openSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared)
   · obtain ⟨h12, h17, -⟩ := hs
     subst h12
     have L := C.lay
-    exact (openOkW_rel v B (tagRel_tagP hks hkr) (tagP_ok hF hks) C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT
+    exact (openOkW_rel v B (tagRel_tagP hks hkr) (tagP_ok hF hks) crRel_tailK C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT
       hres hok ((Fast.aad_rel L C.dE (M := CtxMode.prepared) (R := R) (Np := Np) (A := A) (al := al) (by omega)).mono
         (P' := fun (s₁ s₂ : State) => OpenIn s₀ Ctx W SP A D n t s₁ ∧ OpenIn s₀' Ctx W SP A D n t s₂)
         (fun _ _ g => ⟨g.1.1.aadPre C X hNp hnl hal hR, g.2.1.aadPre C' X' hNp' hnl' hal' hR'⟩) fun _ _ _ => trivial)

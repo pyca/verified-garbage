@@ -20,7 +20,7 @@ theorem Inputs.argsEq {g : CallGeometry} {s : State} {args : Nat → BitVec 32} 
   have writes : ({g with args := args} : CallGeometry).writes = g.writes := by
     unfold CallGeometry.writes
     rw [buffers 0 (by decide), buffers 2 (by decide)]
-  refine ⟨h.ws, h.lower, h.upper, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨h.ws, h.lower, h.upper, h.esp, h.room, h.top, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, h.wrEq⟩
   · intro i hi
     change CallArgument s g.B g.Z i (args i)
     rw [eq i hi]
@@ -47,5 +47,14 @@ theorem Inputs.argsEq {g : CallGeometry} {s : State} {args : Nat → BitVec 32} 
   · intro i; rw [buffers _ (by omega)]; exact h.outputWrite i
   · intro i; rw [buffers _ (by omega)]; exact h.outputScratch i
   · intro i j ne; rw [buffers _ (by omega), buffers _ (by omega)]; exact h.outputSeparate i j ne
+
+/-- The inputs over a geometry that agrees on the arguments' values and the rest. -/
+theorem Inputs.geoEq {g g' : CallGeometry} {s : State} (h : Inputs g s) (hB : g'.B = g.B) (hZ : g'.Z = g.Z)
+    (hn : g'.n = g.n) (hsp : g'.sp = g.sp) (hwr : g'.wr = g.wr) (eq : ∀ i < 12, g'.args i = g.args i) :
+    Inputs g' s := by
+  obtain ⟨⟨B, Z, n, sp, a, wr⟩⟩ := g'
+  dsimp only at hB hZ hn hsp hwr eq
+  subst hB hZ hn hsp hwr
+  exact h.argsEq eq
 
 end VG.Proof.Rsa.X86.Recover

@@ -32,6 +32,24 @@ theorem KS.write_w {o x : Nat} {ds : List Nat} (h : KS g s0 A live AW liveW V ls
     (h.arrsW_w k (fun j hj i hi => by simp at hi; subst hi; exact hlW j hj) hd) h.liveW_lt
     (h.sl_keep k hls) h.ls_ok
 
+/-- A step that writes `[o] := x` and the arrays `js`, which no other live array is. -/
+theorem KS.writeK {o x : Nat} {js ds : List Nat} (h : KS g s0 A live AW liveW V ls s)
+    (k : Keep g.B g.w js ds s.mem t.mem) (ho : o < nArr) (hjs : ∀ j ∈ js, j < nArr)
+    (hd : ∀ d ∈ ds, SlotOk d) (r : Keeps opRegs s t) (e : num t.mem g.B g.w o = x)
+    (hl : ∀ j ∈ live, j = o ∨ j ∉ js) (hlW : ∀ j ∈ liveW, ∀ i ∈ js, i / 2 ≠ j)
+    (hls : ∀ d ∈ ls, ∀ e ∈ ds, d + 4 ≤ e ∨ e + 4 ≤ d) :
+    KS g s0 (upd A o x) (o :: live) AW liveW V ls t := by
+  refine h.core k (fun j hj => h.ws.arr_fit (hjs j hj)) hd r (fun j hj => ?_)
+    (fun j hj => (List.mem_cons.mp hj).elim (fun e => e ▸ ho) (h.live_lt j))
+    (h.arrsW_w k hlW hd) h.liveW_lt (h.sl_keep k hls) h.ls_ok
+  by_cases jo : j = o
+  · subst jo; rw [upd_self]; exact e
+  · rw [upd_ne _ _ jo]
+    have jl := (List.mem_cons.mp hj).resolve_left jo
+    rw [k.num (fun i hi ie => ((hl j jl).resolve_left jo) (by rw [← ie]; exact hi)) (fun d hm => (hd d hm).2.1)
+      (h.ws.fit64 (h.live_lt j jl))]
+    exact h.arrs j jl
+
 theorem KS.write_W {o x : Nat} {ds : List Nat} (h : KS g s0 A live AW liveW V ls s)
     (k : Keep g.B g.W [o] ds s.mem t.mem) (ho : o < 22) (hd : ∀ d ∈ ds, SlotOk d)
     (r : Keeps opRegs s t) (e : num t.mem g.B g.W o = x)

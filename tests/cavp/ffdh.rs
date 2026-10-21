@@ -201,7 +201,6 @@ fn malformed_components_and_domains() {
     let other = Parameters::from_components(&p, &g, None).unwrap();
     let peer = PublicKey::from_components(&other, key.public_key().component()).unwrap();
     assert_eq!(key.exchange(&peer), Err(Error::ParametersMismatch));
-    #[cfg(not(target_arch = "arm"))]
     for (size, generator) in [(511, 2), (8193, 2), (512, 3)] {
         assert_eq!(
             Parameters::generate(size, generator).unwrap_err(),
@@ -236,7 +235,6 @@ fn rfc3526_sizes() {
 }
 
 #[test]
-#[cfg(not(target_arch = "arm"))]
 fn safe_prime_parameter_generation() {
     for generator in [2, 5] {
         let params = Parameters::generate(512, generator).unwrap();

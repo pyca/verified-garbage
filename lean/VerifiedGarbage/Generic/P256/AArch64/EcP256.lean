@@ -91,7 +91,8 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) : 
   Spec.EcKey.P256.publicKeyApi.artifact AArch64.target {
     notes := ["Public-key derivation shares signing's \
       width-7 Booth/Jacobian fixed-base comb and its existing 37 rows of 64 affine entries \
-      in `VG_P256_COMB`. Every row is scanned in full; all secret-dependent selections use \
+      in `VG_P256_COMB`. Every row is scanned in full, interleaved with the previous window's \
+      mixed addition; all secret-dependent selections use \
       masks. Mixed additions use specialized P-256 squaring and register forwarding. The \
       Booth/order proof excludes equal nonzero operands; masks handle zero digits and an \
       infinite accumulator. After conversion to homogeneous coordinates, fixed divsteps \

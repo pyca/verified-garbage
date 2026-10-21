@@ -72,7 +72,7 @@ theorem selectEntry_ok (h : In base bytes len args s) (hw : w32 s.mem base winOf
   rw [show ∀ a b c d : List Instr, a ++ b ++ c ++ d = a ++ (b ++ c ++ d) from by intros; simp]
   change WP isa (.seq (.block (VG.Impl.Mont.X86.Dynamic.windowMask j ++ _)) _) s _
   refine WP.seq (WP.block_append
-    (WP.mono (VG.Proof.Mont.X86.Dynamic.windowMask_ok h.crt.scratch (by omega) hw hj) fun w ⟨M, C, K⟩ => ?_))
+    (WP.mono (VG.Proof.Mont.X86.Dynamic.windowMask_ok h.crt.scratch (by omega) (Nat.lt_trans hw (by decide)) (by omega)) fun w ⟨M, C, K⟩ => ?_))
   have h₁ := h.regs K M
   refine selPtrs_ok h₁ (j := j) (by omega) fun w₂ K₂ m₂ pe pb ce => ?_
   have K₀ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s w₂ := (K.mono (by decide)).trans (K₂.mono (by decide))

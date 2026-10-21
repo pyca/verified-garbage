@@ -90,7 +90,7 @@ theorem firstJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
     TblMem.of_unch hF.tbl (by rw [k₃.rd, k₃.wr, k₂.rd, k₂.wr, k₁.rd, k₁.wr]) U₃'
       (tcombW_size hL hM) hF.out
   refine tentryJ_ok hL hA hC hV hpn hs₃ hM₃ (i := 0) (by omega) b₃ hb1 (c := false)
-    (Or.inr ⟨rfl, rfl⟩) hbits₃ hz₃ hT₃ hTM₃ hF.out fun s₅ E₅ => ?_
+    (Or.inr ⟨rfl, rfl⟩) hbits₃ hz₃ hT₃ hTM₃ hF.out fun s₅ E₅ _ => ?_
   rw [WP.block_append_iff]
   have hAE : ∀ x ∈ [K.A.x, K.A.y, K.A.z, K.E.x, K.E.y, K.E.z], x ∈ combWs K.toComb := by
     intro x hx

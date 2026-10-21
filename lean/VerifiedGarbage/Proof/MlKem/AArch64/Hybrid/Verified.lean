@@ -49,8 +49,7 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbols
 
 For ML-KEM-768 and ML-KEM-1024: the taint analyses of the blocks of `ek`
 (`habs768`, `habs1024`) and of the first phase (`startH768_taint`,
-`startH1024_taint`), and the stack depth of the tail (`tailH_depth`), for
-`Kem16/EncapsFinal.lean`.
+`startH1024_taint`), for `Kem16P/EncapsFinal.lean`.
 -/
 
 @[expose] public section
@@ -112,10 +111,5 @@ theorem startH768_taint : ∃h,(VectorTaint.taint.check (VectorTaint.ofRegs [.x0
 
 theorem startH1024_taint : ∃h,(VectorTaint.taint.check (VectorTaint.ofRegs [.x0,.x1,.x2,.x3,.x4])
     (Impl.MlKem.AArch64.Hybrid.startH Impl.MlKem1024.AArch64.lay1024) h).isSome=true := ⟨_,by taint_decide⟩
-
-theorem tailH_depth (v : Proof.Sha3.AArch64.Permutation) :
-    (Impl.MlKem.AArch64.Hybrid.tailH (fixedHash v.callee)).aarch64Depth ≤ 1 :=
-  Code.aarch64Depth_le_of_fillHoles (n := v.callee.name) (e := Impl.MlKem.AArch64.Hybrid.tailH (fixedHash hole))
-    (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel)
 
 end VG.Proof.MlKem.AArch64.Hybrid

@@ -456,7 +456,13 @@ jobs:
           path: bench-target
           key: ${{ steps.bench-cache-key.outputs.key }}
       - run: rustc -vV
-      - run: cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }}
+      # libtest's per-test elapsed times are still unstable, including on
+      # the MSRV. Enable its reporting flag without changing toolchains.
+      # Hide durations that round to zero at libtest's millisecond precision.
+      - shell: bash
+        run: |
+          source ci/rust_test_timing.sh
+          cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
       - name: Export coverage
         if: ${{ env.TESTS == 'true' }}
         shell: bash
@@ -466,11 +472,13 @@ jobs:
       # its features (src/cpu.rs), which the build above, without `std`,
       # does not, and `rust-cpu-features` does only with `VG_CPU_FEATURES`.
       - name: Test CPU feature detection with std
+        shell: bash
         if: ${{ env.TESTS == 'true' && matrix.os == 'ubuntu-26.04-arm' }}
         env:
           LLVM_PROFILE_FILE: .rust-cov-std/cov-%p-%m.profraw
         run: |
-          cargo test --locked --features std --lib cpu::
+          source ci/rust_test_timing.sh
+          cargo test --locked --features std --lib cpu:: -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
           python3 ci/export_rust_coverage.py .rust-cov-std --features std --lib
       - if: ${{ env.TESTS == 'true' }}
         uses: ./.github/actions/upload-artifact
@@ -527,7 +535,13 @@ jobs:
       - name: Lint
         if: ${{ matrix.rust == 'stable' }}
         run: cargo clippy --all-targets --locked
-      - run: cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }}
+      # libtest's per-test elapsed times are still unstable, including on
+      # the MSRV. Enable its reporting flag without changing toolchains.
+      # Hide durations that round to zero at libtest's millisecond precision.
+      - shell: bash
+        run: |
+          source ci/rust_test_timing.sh
+          cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
       # That the tests ran T32: the symbol of Thumb code has an odd address
       # (AAELF32 §5.5.3, "Symbol Values").
       - name: Check the verified functions are Thumb code
@@ -664,16 +678,20 @@ jobs:
         if: ${{ env.TESTS == 'true' }}
         shell: bash
         run: |
-          lines=$(python3 ci/cpu_shards.py pick "$CPU" "$SHARD" "$TIMES" <<< "$RUNS")
+          source ci/rust_test_timing.sh
           # On a host without AVX512_IFMA (some runners' CPUs have none, or
           # do not expose it), SDE emulates it for -icx and -dmr some thirty
           # times slower than the ADX code runs: the RSA tests then leave
-          # out the 3072- and 4096-bit keys that its private-key code runs
-          # with but in one test, in the line without VG_CPU_FEATURES
-          # (tests/wycheproof/harness.rs).
+          # out repeated 3072- and 4096-bit private-key operations. ICX's
+          # unrestricted line keeps a focused PSS signing check of both
+          # sizes (tests/wycheproof/harness.rs and rsa_pss_large_keys).
           if [ "${CPU%% *}" != native ] && ! grep -qw avx512ifma /proc/cpuinfo; then
             export VG_TEST_HOST_WITHOUT_IFMA=1
+            RUNS=$(python3 ci/cpu_tests.py emulated-rsa "$CPU" <<< "$RUNS")
           fi
+          # Substitution keeps feature lines and their order: mixed hosts
+          # compute identical shard membership. Record the effective groups.
+          lines=$(python3 ci/cpu_shards.py pick "$CPU" "$SHARD" "$TIMES" <<< "$RUNS")
           cargo test --locked --features cpu-features-env --no-run
           lists=$RUNNER_TEMP/lists
           mkdir -p "$lists"
@@ -685,14 +703,14 @@ jobs:
           run_line() {
             local tests=$1 status=0 selected
             if [ "$tests" = all ]; then
-              cargo test --locked --features cpu-features-env
+              cargo test --locked --features cpu-features-env -- -Z unstable-options --report-time
               return
             fi
             for binary in lib tests; do
               selected=$(python3 ci/cpu_tests.py select "$binary" "$lists/lib" "$lists/tests" $tests) || return
               [ -n "$selected" ] || continue
               if [ "$binary" = lib ]; then target=(--lib); else target=(--test tests); fi
-              cargo test --locked --features cpu-features-env "${target[@]}" -- --exact $selected || status=$?
+              cargo test --locked --features cpu-features-env "${target[@]}" -- -Z unstable-options --report-time --exact $selected || status=$?
             done
             return "$status"
           }
@@ -700,6 +718,9 @@ jobs:
           mkdir -p "$logs"
           names=()
           keys=()
+          # Bash's clock avoids spawning a process for each timestamp. Local
+          # records are printed with the logs; no upload or extra job is needed.
+          timing_origin=${EPOCHREALTIME/./}
           while IFS='|' read -r -u 3 features tests; do
             keys+=("$features")
             [ "$features" = - ] && features=
@@ -707,10 +728,13 @@ jobs:
             log=$logs/${#names[@]}
             (
               status=0
+              started=${EPOCHREALTIME/./}
               TIMEFORMAT='%U %S'
               export VG_CPU_FEATURES=$features
               { time run_line "$tests" > "$log" 2>&1 || status=$?; } 2> "$log.time"
+              ended=${EPOCHREALTIME/./}
               echo "$status" > "$log.status"
+              echo "$started $ended" > "$log.wall"
             ) &
             names+=("VG_CPU_FEATURES=$features: $tests")
           done 3<<< "$lines"
@@ -718,9 +742,10 @@ jobs:
           failed=()
           for i in "${!names[@]}"; do
             echo "::group::${names[$i]}"
-            cat "$logs/$i"
+            sed 's/ <0\.000s>//g' "$logs/$i"
             echo "::endgroup::"
             echo "${names[$i]}: $(cat "$logs/$i.time") s of CPU (user, system)"
+            echo "CI_FEATURE_TIME_V1 $i $(cat "$logs/$i.wall") $timing_origin $(cat "$logs/$i.status")"
             printf '%s\t%s\n' "${keys[$i]}" "$(cat "$logs/$i.time")" >> "$logs/times"
             [ "$(cat "$logs/$i.status")" = 0 ] || failed+=("${names[$i]}")
           done
@@ -973,6 +998,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           BASE_REF: ${{ github.base_ref }}
+          CI_METRICS_ASSEMBLY_LOG: ${{ runner.temp }}/assembly.log
         run: |
           timeout 10 gh api -H "Accept: application/vnd.github.raw" \
             "repos/$GH_REPO/contents/ci/ci_metrics.py?ref=$GITHUB_SHA" > "$RUNNER_TEMP/ci_metrics.py"
@@ -985,3 +1011,6 @@ jobs:
         with:
           name: ci-metrics
           path: ${{ runner.temp }}/ci-metrics.json
+          # The metrics embed the complete lean-plan, whose working
+          # artifact lasts one day.
+          retention-days: 30

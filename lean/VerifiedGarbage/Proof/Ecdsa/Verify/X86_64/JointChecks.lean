@@ -57,68 +57,68 @@ namespace VG.Proof.Ecdsa.Verify.X86_64
 open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.P256.X86_64
 open VG.Proof.P256.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Ecdsa.X86_64 VG.Proof.Mont
 
-theorem joint_mul_checks : JointMulChecks p256 publicJoint :=
-  ⟨joint_cached_checks,joint_fixed_checks,nafTable_checks,nafCacheTable_ct,
-    joint_infinity_ct,joint_counter_ct,fastGenerator_checks,fastPeer_checks⟩
+theorem joint_mul_checks : JointMulChecks p256v publicJoint :=
+  ⟨joint_cached_checks,joint_fixed_checks,nafTableCoZ_checks,nafCacheTable_ct,
+    joint_infinity_ct,joint_counter_ct,fastGenerator16_checks,fastPeer_checks⟩
 
-theorem joint_adx_mul_checks : JointMulChecks p256x publicJointAdx :=
-  ⟨joint_adx_cached_checks,joint_adx_fixed_checks,nafTable_adx_checks,
-    nafCacheTable_adx_ct,joint_adx_infinity_ct,joint_adx_counter_ct,fastGenerator_adx_checks,
+theorem joint_adx_mul_checks : JointMulChecks p256vx publicJointAdx :=
+  ⟨joint_adx_cached_checks,joint_adx_fixed_checks,nafTableCoZ_adx_checks,
+    nafCacheTable_adx_ct,joint_adx_infinity_ct,joint_adx_counter_ct,fastGenerator16_adx_checks,
     fastPeer_adx_checks⟩
 
-theorem joint_doubler (hc : CfgOk p256) (hC : Weierstrass.Law p256.C) :
+theorem joint_doubler (hc : CfgOk p256v) (hC : Weierstrass.Law p256.C) :
     JointDoubler publicJoint p256.C size (jointDouble publicJoint.K) :=
   p256_doubler joint_layout rfl (Weierstrass.unitMod_pow_two hc.p_odd _) hC hc.am3 joint_double_nodup
     doubleHalfPublic_ct
 
-theorem joint_adx_doubler (hc : CfgOk p256x) (hC : Weierstrass.Law p256x.C) :
-    JointDoubler publicJointAdx p256x.C size (jointDouble publicJointAdx.K) :=
+theorem joint_adx_doubler (hc : CfgOk p256vx) (hC : Weierstrass.Law p256vx.C) :
+    JointDoubler publicJointAdx p256vx.C size (jointDouble publicJointAdx.K) :=
   p256_doubler joint_adx_layout rfl (Weierstrass.unitMod_pow_two hc.p_odd _) hC hc.am3 joint_adx_double_nodup
     doubleHalfPublic_adx_ct
 
-/-- `jointPrefix p256` without its displacements, as a literal of shared blocks
+/-- `jointPrefix p256v` without its displacements, as a literal of shared blocks
 (`materialize_shared`): what its constant-time check analyses
 (`Proof/Framework/X86_64/TaintErase.lean`). -/
-def jointPrefixErased : Prog isa := Code.erase (jointPrefix p256)
+def jointPrefixErased : Prog isa := Code.erase (jointPrefix p256v)
 
 materialize_shared jointPrefixErased
 
 theorem joint_before_ct : ConstantTime isa (fun _ => True)
-    (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])) (jointPrefix p256) :=
+    (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])) (jointPrefix p256v) :=
   VG.Taint.constantTime_mapBlocks (c' := jointPrefixErased) taint_eraseInv (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])
     rfl (fun _ _ _ _ h => h) rfl (by taint_decide)
 
-/-- `jointPrefix p256x` without its displacements, as a literal of shared blocks
+/-- `jointPrefix p256vx` without its displacements, as a literal of shared blocks
 (`materialize_shared`): what its constant-time check analyses
 (`Proof/Framework/X86_64/TaintErase.lean`). -/
-def jointPrefixAdxErased : Prog isa := Code.erase (jointPrefix p256x)
+def jointPrefixAdxErased : Prog isa := Code.erase (jointPrefix p256vx)
 
 materialize_shared jointPrefixAdxErased
 
 theorem joint_adx_before_ct : ConstantTime isa (fun _ => True)
-    (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])) (jointPrefix p256x) :=
+    (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])) (jointPrefix p256vx) :=
   VG.Taint.constantTime_mapBlocks (c' := jointPrefixAdxErased) taint_eraseInv (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])
     rfl (fun _ _ _ _ h => h) rfl (by taint_decide)
 
-/-- `(Cfg.jointTail p256).inline` without its displacements, as a literal of shared blocks
+/-- `(Cfg.jointTail p256v).inline` without its displacements, as a literal of shared blocks
 (`materialize_shared`): what its constant-time check analyses
 (`Proof/Framework/X86_64/TaintErase.lean`). -/
-def jointTailErased : Prog isa := Code.erase (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p256).inline
+def jointTailErased : Prog isa := Code.erase (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p256v).inline
 
 materialize_shared jointTailErased
 
-theorem joint_after_ct : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p256).inline :=
+theorem joint_after_ct : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p256v).inline :=
   VG.Taint.constantTime_mapBlocks (c' := jointTailErased) taint_eraseInv (Taint.ofRegs [.rdi])
     rfl (fun _ _ _ _ h => h) rfl (by taint_decide)
 
-/-- `(Cfg.jointTail p256x).inline` without its displacements, as a literal of shared blocks
+/-- `(Cfg.jointTail p256vx).inline` without its displacements, as a literal of shared blocks
 (`materialize_shared`): what its constant-time check analyses
 (`Proof/Framework/X86_64/TaintErase.lean`). -/
-def jointTailAdxErased : Prog isa := Code.erase (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p256x).inline
+def jointTailAdxErased : Prog isa := Code.erase (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p256vx).inline
 
 materialize_shared jointTailAdxErased
 
-theorem joint_adx_after_ct : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p256x).inline :=
+theorem joint_adx_after_ct : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p256vx).inline :=
   VG.Taint.constantTime_mapBlocks (c' := jointTailAdxErased) taint_eraseInv (Taint.ofRegs [.rdi])
     rfl (fun _ _ _ _ h => h) rfl (by taint_decide)
 

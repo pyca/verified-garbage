@@ -20,8 +20,8 @@ def AF (p q : Nat) : Nat → Nat := upd (upd (fun _ => 0) 5 (max p q)) 6 (min p 
 
 theorem order_ok {g : Geo} {s0 s : State} {V : Nat → Nat} {p q : Nat}
     (h : KS g s0 (AQ p q) [1, aQ, aZero] (fun _ => 0) [] V [sMask] s) :
-    WP isa (order g.n) s fun t => KS g s0 (AF p q) [5, 6, aZero] (fun _ => 0) [] V [sMask] t := by
-  unfold order
+    WP isa VG.Impl.Rsa.X86.RecoverRt.order s fun t => KS g s0 (AF p q) [5, 6, aZero] (fun _ => 0) [] V [sMask] t := by
+  unfold VG.Impl.Rsa.X86.RecoverRt.order
   simp only [seqs]
   refine WP.seq (WP.mono (h.subWrap (o := aW) (a := 1) (b := aQ)
     (by decide) (by simp) (by simp) (by decide) (by decide) (by simp)) fun s1 ⟨h1, borrow⟩ => ?_)
@@ -30,10 +30,10 @@ theorem order_ok {g : Geo} {s0 s : State} {V : Nat → Nat} {p q : Nat}
   rw [flag] at h2
   refine WP.seq (WP.mono (h2.sel_w (o := 5) (a := 1) (b := aQ) (sl := sLt)
     (by decide) (by simp) (by simp) (by simp)
-    (by rw [upd_self]; exact VG.Proof.Rsa.b2n_le _) (by simp)) fun s3 ⟨h3, _⟩ => ?_)
+    (by rw [upd_self]; exact VG.Proof.Rsa.b2n_le _) (.inl (by decide)) (by simp)) fun s3 ⟨h3, _⟩ => ?_)
   refine WP.mono (h3.sel_w (o := 6) (a := aQ) (b := 1) (sl := sLt)
     (by decide) (by simp) (by simp) (by simp)
-    (by rw [upd_self]; exact VG.Proof.Rsa.b2n_le _) (by simp)) fun t ⟨hout, _⟩ => ?_
+    (by rw [upd_self]; exact VG.Proof.Rsa.b2n_le _) (.inl (by decide)) (by simp)) fun t ⟨hout, _⟩ => ?_
   refine hout.mono ?_ (by simp) ?_
   · intro j hj
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj

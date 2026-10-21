@@ -27,11 +27,16 @@ theorem operation_trace {s t : State} (a : ABI s) (b : ABI t)
     (args : ∀ i < 12, arg s i = arg t i) (sp : s.gpr .esp = t.gpr .esp)
     (modulus : inputBytes (caller s) s.mem 0 = inputBytes (caller t) t.mem 0)
     (attempts : (calculated (caller s) s.mem).2 = (calculated (caller t) t.mem).2)
-    {tr ur : List Leak} {sf tf : State} (es : Exec isa code s tr sf) (et : Exec isa code t ur tf) : tr = ur := by
+    {tr ur : List Leak} {sf tf : State} (es : Exec isa VG.Impl.Rsa.X86.RecoverRt.code s tr sf) (et : Exec isa VG.Impl.Rsa.X86.RecoverRt.code t ur tf) :
+    tr = ur := by
   have a4 := args 4 (by decide)
   have a5 := args 5 (by decide)
   have a10 := args 10 (by decide)
   have a11 := args 11 (by decide)
+  have a0 := args 0 (by decide)
+  have a1 := args 1 (by decide)
+  have a2 := args 2 (by decide)
+  have a3 := args 3 (by decide)
   cases es with
   | @seq _ _ _ u _ _ _ e1 er =>
     cases et with
@@ -42,15 +47,18 @@ theorem operation_trace {s t : State} (a : ABI s) (b : ABI t)
       obtain ⟨hs, _, ks, os⟩ := wp_result (installed_ok a) e1
       obtain ⟨ht, _, kt, ot⟩ := wp_result (installed_ok b) f1
       have hv : Inputs (caller s) v := by
-        have j := ht.argsEq args
-        simpa only [caller, argumentPointer, ← a5, ← a10, ← a11] using j
+        refine ht.geoEq (by simp only [caller, argumentPointer, a10]) (by simp only [caller, a11])
+          (by simp only [caller, a5]) sp ?_ fun i hi => args i hi
+        change s.wr = t.wr
+        rw [a.wr, b.wr]
+        simp only [caller, CallGeometry.buffer, argumentPointer, argAddr, a0, a1, a2, a3, a10, a11, sp]
       have pair : Pair (caller s) u v :=
         ⟨hs, hv, (ks.1 _ (by decide)).trans (sp.trans (kt.1 _ (by decide)).symm)⟩
       have same : inputBytes (caller s) u.mem 0 = inputBytes (caller s) v.mem 0 := by
         have ns := VG.Proof.Bignum.scratch_bytes os (by have := a.lengths.2; change (arg s 5).toNat ≤ _; omega)
-          (a.inApart _ (a.inputMember 0) _ (by simp [CallGeometry.writes]))
+          (a.inApart _ (a.inputMember 0) _ (by simp))
         have nt := VG.Proof.Bignum.scratch_bytes ot (by have := b.lengths.2; change (arg t 5).toNat ≤ _; omega)
-          (b.inApart _ (b.inputMember 0) _ (by simp [CallGeometry.writes]))
+          (b.inApart _ (b.inputMember 0) _ (by simp))
         change inputBytes (caller s) u.mem 0 = inputBytes (caller s) s.mem 0 at ns
         change inputBytes (caller t) v.mem 0 = inputBytes (caller t) t.mem 0 at nt
         have align : inputBytes (caller s) v.mem 0 = inputBytes (caller t) v.mem 0 := by
@@ -77,15 +85,20 @@ theorem operation_trace {s t : State} (a : ABI s) (b : ABI t)
       | @seq _ _ _ x _ _ _ e2 e3 =>
         cases fr with
         | @seq _ _ _ y _ _ _ f2 f3 =>
-          have eq2 := (body_relCT (caller s) a.lengths_ok _ _ _ _ _ _ ⟨pair, same, sameTries⟩ e2 f2).1
+          have apart : ∀ r ∈ narrowW (caller s),
+              Region.Disjoint ⟨(caller s).sp.setWidth 64, 52⟩ r := fun r hr =>
+            VG.X86.Taint.frame_disjoint (n := 48)
+              (by change (s.gpr .esp).toNat + 4 + 48 ≤ _; have := a.stackBound; omega) (a.retApart r hr)
+              (a.argsApart r hr)
+          have eq2 := (body_relCT (caller s) a.lengths_ok _ _ _ _ _ _ ⟨pair, apart, same, sameTries⟩ e2 f2).1
           obtain ⟨hx, _, _, kx⟩ := wp_result (body_ok hs a.lengths_ok) e2
           obtain ⟨hy, _, _, ky⟩ := wp_result (body_ok hv a.lengths_ok) f2
           have next := pair.after hx hy kx ky (by decide)
           have eq3 := (publicRestore_relCT _ _ _ _ _ _ next.workspace e3 f3).1
           rw [eq1, eq2, eq3]
 
-theorem constantTime : ConstantTime isa (Spec.Rsa.recoverPrimesContract abi 20).pre
-    (Spec.Rsa.recoverPrimesContract abi 20).pub code := by
+theorem constantTime : ConstantTime isa (Spec.Rsa.recoverPrimesContract abi 40).pre
+    (Spec.Rsa.recoverPrimesContract abi 40).pub VG.Impl.Rsa.X86.RecoverRt.code := by
   intro s t tr ur sf tf hs ht h es et
   have args := arguments_eq h
   obtain ⟨modulus, attempts⟩ := observations_eq h

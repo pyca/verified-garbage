@@ -1,10 +1,13 @@
 module
 
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPreserves
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Allocated
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentWords
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
 
 /-! The selected attempt can narrow permissions to its buffers and arguments;
 its stack writes remain below the controller's saved registers. -/
@@ -18,13 +21,8 @@ open VG VG.Arm VG.Proof.Mont
 namespace KeyLive
 variable {p : KeyPublic sampling} {original s : State} {used keys scalars : Nat}
 
-theorem call_sp (h : KeyLive p original used keys scalars s) : (allocated 32 s).sp = callSp p := by
-  change s.sp - 32#32 = callSp p
-  rw [h.sp, BitVec.sub_sub]
-  rfl
-
 theorem covers_writes (h : KeyLive p original used keys scalars s) {u : State}
-    (wr : u.wr = (allocated 32 s).wr) : Covers (callWr p) u.wr := by
+    (wr : u.wr = (allocated sampling.argumentBytes s).wr) : Covers (callWr p) u.wr := by
   apply Covers.of_mem
   intro r hr
   rw [wr]
@@ -34,13 +32,13 @@ theorem covers_writes (h : KeyLive p original used keys scalars s) {u : State}
   rcases hr with rfl | rfl | rfl <;> simp
 
 theorem covers_reads (h : KeyLive p original used keys scalars s) (room : used + p.len ≤ p.randLen)
-    {u : State} (rd : u.rd = (allocated 32 s).rd) (wr : u.wr = (allocated 32 s).wr) :
+    {u : State} (rd : u.rd = (allocated sampling.argumentBytes s).rd) (wr : u.wr = (allocated sampling.argumentBytes s).wr) :
     Covers (callRd p used ++ callWr p) (u.rd ++ u.wr) := by
   refine Covers.append_left ?_ (h.covers_writes wr).right
   apply Covers.of_sub
   intro r hr
   simp only [callRd, callRdPlain, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with (rfl | rfl | rfl) | constant
+  rcases hr with (((rfl | rfl) | context) | args) | constant
   · refine ⟨rDomain p, ?_, 0, by rw [BitVec.add_zero], by omega⟩
     rw [rd]
     apply List.mem_append_left
@@ -53,10 +51,18 @@ theorem covers_reads (h : KeyLive p original used keys scalars s) (room : used +
     change rRandom p ∈ s.rd
     rw [h.rd, h.input.read_regions]
     simp
-  · refine ⟨rArguments p, ?_, 0, by rw [BitVec.add_zero], by change 0 + 28 ≤ 32; decide⟩
+  · refine ⟨r, ?_, 0, by rw [BitVec.add_zero], by omega⟩
+    rw [rd]
+    apply List.mem_append_left
+    change r ∈ s.rd
+    rw [h.rd, h.input.read_regions]
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false]
+    exact Or.inl (Or.inl (Or.inr context))
+  · obtain rfl := args
+    refine ⟨rArguments p, ?_, 0, by rw [BitVec.add_zero], by change 0 + (sampling.argumentBytes - 4) ≤ sampling.argumentBytes; omega⟩
     rw [wr]
     apply List.mem_append_right
-    change rArguments p ∈ ⟨State.addr (allocated 32 s).sp, 32⟩ :: s.wr
+    change rArguments p ∈ ⟨State.addr (allocated sampling.argumentBytes s).sp, sampling.argumentBytes⟩ :: s.wr
     rw [h.call_sp]
     exact List.mem_cons_self
   · refine ⟨r, ?_, 0, by rw [BitVec.add_zero], by omega⟩
@@ -85,9 +91,10 @@ theorem attempt_frame (h : KeyLive p original used keys scalars s) {u t : State}
     refine ⟨rCallStack p, by simp [callChanges], ?_⟩
     rw [sp]
     apply FrameStack.belowA_sub limit
-    have fit : 232 ≤ p.sp.toNat := h.input.bounds.stackFits
-    change 176 ≤ (p.sp - 56#32).toNat
-    rw [FrameStack.sub_toNat' (by omega : 56 ≤ p.sp.toNat)]
+    have fit := h.input.bounds.stackFits
+    change 24 + sampling.argumentBytes + 176 ≤ p.sp.toNat at fit
+    change 176 ≤ (p.sp - BitVec.ofNat 32 (24 + sampling.argumentBytes)).toNat
+    rw [FrameStack.sub_toNat' (by omega : 24 + sampling.argumentBytes ≤ p.sp.toNat)]
     omega
 
 

@@ -16,7 +16,9 @@ ciphertext: `H'` and `H'²` loaded from the context, the keystream of `J₀`
 and of the counter block in two lanes of `zmm5`, `J₀` incremented (where
 `oneUndo` takes the first counter block, as `oneTag`'s call of
 `vg_aes_ctr32` leaves it), the bytes left copied (not encrypted) to `G[0]`,
-and the tag at `W + uO`.
+and the tag at `W + uO`. If the tags match, the bytes left are decrypted with
+the keystream of the counter block computed with `J₀`'s (`tailK`), without
+`oneCrypt`'s call.
 -/
 
 @[expose] public section
@@ -24,8 +26,8 @@ and the tag at `W + uO`.
 namespace VG.Impl.AesGcm.X86_64.FastOpen
 
 open VG.X86_64
-open VG.Impl.AesGcm.X86_64 (at_ imm Callees copyLoop recv cmp oneBlocks oneUndo oneCrypt lenO tlO auxO uO oneEntry
-  tagLenOk restore)
+open VG.Impl.AesGcm.X86_64 (at_ imm ptr Callees copyLoop xorLoop recv cmp oneBlocks oneUndo lenO dataO tlO auxO uO
+  oneEntry tagLenOk restore)
 
 /-- `J₀`, at the state's start, incremented: its last word, big-endian. -/
 def incJ : List Instr :=
@@ -52,10 +54,19 @@ def tagP (ks : Prog isa := Short.finKs) : Prog isa :=
   (.seq (.block lenTest)
   (.ite .e (.block (Short.finGh1 ++ Short.tagK uO)) (.block (Short.finGh2 ++ Short.tagK uO))))))))
 
+/-- The bytes left (`rcx`, fewer than 16, at the data kept) decrypted with
+`K[1]`, the keystream of the counter block, which `tagP` computed: where
+`oneCrypt` encrypts the counter block again with a call of `vg_aes_ctr32`. -/
+def tailK : Prog isa :=
+  .seq (.block [.mov .rcx (.mem (at_ .r15 lenO)), .alu .test .rcx (.reg .rcx)])
+    (.ite .e (.block [])
+      (.seq (.block (([.mov .rdi (.mem (at_ .r15 dataO))] : List Instr) ++ ptr .rsi .r15 (Short.kO + 16)))
+        xorLoop))
+
 variable (c : Callees)
 
-/-- After the entry and `tagLenOk`: `Short.openLong` with `Fast.aad` and
-`tagP ks`. -/
+/-- After the entry and `tagLenOk`: `Short.openLong` with `Fast.aad`,
+`tagP ks` and `tailK`. -/
 def run (ks : Prog isa := Short.finKs) : Prog isa :=
   .seq Fast.aad
   (.seq (oneBlocks c.dec)
@@ -64,7 +75,7 @@ def run (ks : Prog isa := Short.finKs) : Prog isa :=
   (.seq recv
   (.seq (cmp uO)
   (.seq (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)])
-  (.seq (.ite .e (oneUndo c) (oneCrypt c))
+  (.seq (.ite .e (oneUndo c) tailK)
     (.block [.mov .rax (.mem (at_ .r15 auxO))]))))))))
 
 /-- `Fast.cond any`, then this path, or `other`. -/

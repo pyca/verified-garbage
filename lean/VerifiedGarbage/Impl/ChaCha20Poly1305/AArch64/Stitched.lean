@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitch
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Short
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.ShortRest
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Pad
 import VerifiedGarbage.Impl.ChaCha20.AArch64.Neon4
 
 /-!
@@ -193,15 +195,18 @@ def openStitchedMain (c : XorCallee) : Prog isa :=
 def openStitched (c : XorCallee) : Prog isa := .seq (openStitchedMain c) openTail
 
 /-- The code up to the tag (`sealTail`, `openTail`), which the taint analysis
-checks on its own: for `Short.lo c.sve` to 256 bytes `Short.lean`'s, and otherwise stitched
-with the eight-block kernel or not. -/
+checks on its own: for `Short.lo c.sve` to 511 bytes `Pad.lean`'s route (to
+`ShortRest.lean`'s code, which runs `Short.lean`'s up to 256, or `Pad.lean`'s),
+and otherwise stitched with the eight-block kernel or not. -/
 def sealMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
   .seq (.block (Short.check c.sve))
-    (.ite (.zero .x .x9) (Short.sealMain c.sve) (if stitched then sealStitchedMain c else sealMain c))
+    (.ite (.zero .x .x9) (Pad.sealRoute c)
+      (if stitched then sealStitchedMain c else sealMain c))
 
 def openMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
   .seq (.block (Short.check c.sve))
-    (.ite (.zero .x .x9) (Short.openMain c.sve) (if stitched then openStitchedMain c else openMain c))
+    (.ite (.zero .x .x9) (Pad.openRoute c)
+      (if stitched then openStitchedMain c else openMain c))
 
 /-- The code for a stream backend. -/
 def sealCode (c : XorCallee) (stitched : Bool) : Prog isa := .seq (sealMainCode c stitched) sealTail

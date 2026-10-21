@@ -12,10 +12,11 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Noise.InitCall
 /-!
 # The three main squeezes of a hashing pair
 
-`squeeze3_ok`: the three `step3`s of pair `i` squeeze three SHAKE128 blocks
-of each matrix stream, as `Paired.squeeze` does, and absorb blocks `3i`,
-`3i + 1` and `3i + 2` of `pad(ek)` into the third state. `start3_ok`: with
-the pair's initialization before them (as `Paired.start_ok`).
+`squeezeM_ok`: the three main squeezes of a pair (`squeezeM`) squeeze three
+SHAKE128 blocks of each matrix stream, as `Paired.squeeze` does, and the first
+`m` absorb blocks `j`, …, `j + m - 1` of the message's padding into the third
+state. `startM_ok`: with the pair's initialization before them (as
+`Paired.start_ok`).
 -/
 
 @[expose] public section
@@ -37,9 +38,9 @@ def squeezeWrites (p st sp : Addr) : List Region :=
 /-- What a hashing pair's start may write. -/
 def startWrites (p st sp : Addr) : List Region := [⟨p, 2048⟩, stR st, frame sp]
 
-/-- After `k` of the three main squeezes. -/
-structure SInv3 (S : Impl.MlKem.AArch64.Hybrid.HSrc) (initial : State) (p e st : Addr) (E : List Byte)
-    (A B : Spec.Sha3.State) (i k : Nat) (s : State) : Prop where
+/-- After `k` of the three main squeezes, the first `m` absorbing from block `j`. -/
+structure SInvM (S : Impl.MlKem.AArch64.Hybrid.HSrc) (initial : State) (p e st : Addr) (E : List Byte)
+    (A B : Spec.Sha3.State) (j m k : Nat) (s : State) : Prop where
   keep : Keep stepRegs initial s
   pair : PairAt s.mem p (iterF k A) (iterF k B)
   ptr : s.gpr .x19 = p
@@ -48,7 +49,7 @@ structure SInv3 (S : Impl.MlKem.AArch64.Hybrid.HSrc) (initial : State) (p e st :
   frame : Frame (squeezeWrites p st initial.sp) initial.mem s.mem
   oa : Blocks s.mem (p + 400) k A
   ob : Blocks s.mem (p + 904) k B
-  hash : stateAt s.mem st = hstate E (3 * i + k) (dB S)
+  hash : stateAt s.mem st = hstate E (j + min k m) (dB S)
   ek : bytesAt s.mem e S.len = E
 
 /-- What the pair's memory is. -/
@@ -136,104 +137,124 @@ theorem extend_blocks3 {m m' : Mem} {p a b st sp : Addr} {A : Spec.Sha3.State} {
 
 /-- One of the three main squeezes. -/
 theorem sstep_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {initial s : State} {p e st : Addr} {E : List Byte}
-    {A B : Spec.Sha3.State} {i k : Nat} (hk : k < 3) (hS : SrcOk S)
-    (hb : 136 * (3 * i + k) < S.len)
+    {A B : Spec.Sha3.State} {j m k : Nat} (hk : k < 3) (hS : SrcOk S)
+    (hb : k < m → 136 * (j + k) < S.len)
     (hl : SqLay S p e st initial) (h28 : initial.gpr .x28 = st)
     (h25 : initial.gpr S.r + BitVec.ofNat 64 S.base = e)
-    (h : SInv3 S initial p e st E A B i k s) :
-    WP isa (Impl.MlKem.AArch64.Hybrid.step3 S (3 * i + k)) s (SInv3 S initial p e st E A B i (k + 1)) := by
+    (h : SInvM S initial p e st E A B j m k s) :
+    WP isa (Impl.MlKem.AArch64.Hybrid.stepM S j m k) s (SInvM S initial p e st E A B j m (k + 1)) := by
   have hls : SqLay S p e st s := hl.frame h.keep.rd h.keep.wr h.keep.sp
   have sub : ∀ {o n : Nat}, o + n ≤ 2048 → Region.Sub ⟨p + BitVec.ofNat 64 o, n⟩ ⟨p, 2048⟩ :=
     fun h => Offset.sub_base p h
-  refine WP.mono (step3_ok S hS h.ptr h.pa h.pb
-    (by rw [hS.keep h.keep (by decide) (by decide)]; exact h25)
-    (by rw [h.keep.get .x28]; exact h28) hb h.ek h.hash h.pair (hls.stepLay hk))
-    fun t ⟨kt, ft, pt, at', bt, st', t20, t21⟩ => ?_
-  have fsub : Frame (squeezeWrites p st initial.sp) s.mem t.mem := by
+  have next : ∀ {t : State}, Keep stepRegs s t → Frame (step3Writes p (blockAt (p + 400) k)
+      (blockAt (p + 904) k) st s.sp) s.mem t.mem →
+      PairAt t.mem p (keccakF (iterF k A)) (keccakF (iterF k B)) →
+      Rate21 t.mem (blockAt (p + 400) k) (keccakF (iterF k A)) →
+      Rate21 t.mem (blockAt (p + 904) k) (keccakF (iterF k B)) →
+      stateAt t.mem st = hstate E (j + min (k + 1) m) (dB S) →
+      t.gpr .x20 = blockAt (p + 400) k + 168 → t.gpr .x21 = blockAt (p + 904) k + 168 →
+      SInvM S initial p e st E A B j m (k + 1) t := by
+    intro t kt ft pt at' bt st' t20 t21
+    have fsub : Frame (squeezeWrites p st initial.sp) s.mem t.mem := by
+      rw [h.keep.sp] at ft
+      refine ft.sub fun r hr => ?_
+      simp only [step3Writes, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+      · exact ⟨pairR p, by simp [squeezeWrites], fun _ h => h⟩
+      · exact ⟨streamR (p + 400), by simp [squeezeWrites], block_sub _ hk⟩
+      · exact ⟨streamR (p + 904), by simp [squeezeWrites], block_sub _ hk⟩
+      · exact ⟨callR (p + 1536), by simp [squeezeWrites], fun _ h => h⟩
+      · exact ⟨stR st, by simp [squeezeWrites], fun _ h => h⟩
+      · exact ⟨frame initial.sp, by simp [squeezeWrites], fun _ h => h⟩
+    have dP : ∀ {o : Nat}, o + 504 ≤ 2048 → (frame initial.sp).Disjoint (streamR (p + BitVec.ofNat 64 o)) :=
+      fun h => hl.fP.sub_right (sub h)
     rw [h.keep.sp] at ft
-    refine ft.sub fun r hr => ?_
-    simp only [step3Writes, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-    · exact ⟨pairR p, by simp [squeezeWrites], fun _ h => h⟩
-    · exact ⟨streamR (p + 400), by simp [squeezeWrites], block_sub _ hk⟩
-    · exact ⟨streamR (p + 904), by simp [squeezeWrites], block_sub _ hk⟩
-    · exact ⟨callR (p + 1536), by simp [squeezeWrites], fun _ h => h⟩
-    · exact ⟨stR st, by simp [squeezeWrites], fun _ h => h⟩
-    · exact ⟨frame initial.sp, by simp [squeezeWrites], fun _ h => h⟩
-  have dP : ∀ {o : Nat}, o + 504 ≤ 2048 → (frame initial.sp).Disjoint (streamR (p + BitVec.ofNat 64 o)) :=
-    fun h => hl.fP.sub_right (sub h)
-  rw [h.keep.sp] at ft
-  refine ⟨(h.keep.trans kt).mono (fun r hr => by rcases List.mem_append.mp hr with h | h <;> exact h), ?_, (kt.get .x19).trans h.ptr, ?_, ?_,
-    h.frame.trans fsub, ?_, ?_, ?_, ?_⟩
-  · simpa only [iterF_succ] using pt
-  · rw [t20]; show (p + 400 + BitVec.ofNat 64 (168 * k)) + BitVec.ofNat 64 168 = p + 400 + BitVec.ofNat 64 (168 * (k + 1))
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 168 * k + 168 = 168 * (k + 1) by omega]
-  · rw [t21]; show (p + 904 + BitVec.ofNat 64 (168 * k)) + BitVec.ofNat 64 168 = p + 904 + BitVec.ofNat 64 (168 * (k + 1))
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 168 * k + 168 = 168 * (k + 1) by omega]
-  · exact extend_blocks3 hk h.oa (by simpa only [iterF_succ] using at') ft
-      (Offset.base_disjoint p (by decide) (by decide)) (Offset.disjoint p (by decide) (by decide) (by decide))
-      (Offset.disjoint p (by decide) (by decide) (by decide)) (hl.dSP.sub_right (sub (by decide)))
-      (dP (by decide))
-  · refine extend_blocks3 hk h.ob (by simpa only [iterF_succ] using bt) (ft.mono ?_)
-      (Offset.base_disjoint p (by decide) (by decide))
-      (Offset.disjoint p (d := 400) (n := 504) (e := 904) (k := 504) (by decide) (by decide) (by decide)).symm
-      (Offset.disjoint p (by decide) (by decide) (by decide)) (hl.dSP.sub_right (sub (by decide)))
-      (dP (by decide))
-    intro r hr; simp only [step3Writes, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-    rcases hr with h | h | h | h | h | h <;> simp [h]
-  · rw [st']; rfl
-  · rw [VG.Proof.MlKem.bytesAt_frame ft (fun r hr => ?_) (by have := hS.lim; omega)]
-    · exact h.ek
-    simp only [step3Writes, List.mem_cons, List.not_mem_nil, or_false] at hr
-    have dEP := hl.dEP
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-    · exact dEP.sub_right (Region.sub_prefix (by decide : 400 ≤ 2048))
-    · show Region.Disjoint _ ⟨blockAt (p + BitVec.ofNat 64 400) k, 168⟩
-      rw [blockAt_eq]; exact dEP.sub_right (sub (by omega))
-    · show Region.Disjoint _ ⟨blockAt (p + BitVec.ofNat 64 904) k, 168⟩
-      rw [blockAt_eq]; exact dEP.sub_right (sub (by omega))
-    · exact dEP.sub_right (sub (by decide))
-    · exact hl.dSE.symm
-    · exact hl.fE.symm
+    refine ⟨(h.keep.trans kt).mono (fun r hr => by rcases List.mem_append.mp hr with h | h <;> exact h), ?_, (kt.get .x19).trans h.ptr, ?_, ?_,
+      h.frame.trans fsub, ?_, ?_, st', ?_⟩
+    · simpa only [iterF_succ] using pt
+    · rw [t20]; show (p + 400 + BitVec.ofNat 64 (168 * k)) + BitVec.ofNat 64 168 = p + 400 + BitVec.ofNat 64 (168 * (k + 1))
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 168 * k + 168 = 168 * (k + 1) by omega]
+    · rw [t21]; show (p + 904 + BitVec.ofNat 64 (168 * k)) + BitVec.ofNat 64 168 = p + 904 + BitVec.ofNat 64 (168 * (k + 1))
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 168 * k + 168 = 168 * (k + 1) by omega]
+    · exact extend_blocks3 hk h.oa (by simpa only [iterF_succ] using at') ft
+        (Offset.base_disjoint p (by decide) (by decide)) (Offset.disjoint p (by decide) (by decide) (by decide))
+        (Offset.disjoint p (by decide) (by decide) (by decide)) (hl.dSP.sub_right (sub (by decide)))
+        (dP (by decide))
+    · refine extend_blocks3 hk h.ob (by simpa only [iterF_succ] using bt) (ft.mono ?_)
+        (Offset.base_disjoint p (by decide) (by decide))
+        (Offset.disjoint p (d := 400) (n := 504) (e := 904) (k := 504) (by decide) (by decide) (by decide)).symm
+        (Offset.disjoint p (by decide) (by decide) (by decide)) (hl.dSP.sub_right (sub (by decide)))
+        (dP (by decide))
+      intro r hr; simp only [step3Writes, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+      rcases hr with h | h | h | h | h | h <;> simp [h]
+    · rw [VG.Proof.MlKem.bytesAt_frame ft (fun r hr => ?_) (by have := hS.lim; omega)]
+      · exact h.ek
+      simp only [step3Writes, List.mem_cons, List.not_mem_nil, or_false] at hr
+      have dEP := hl.dEP
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+      · exact dEP.sub_right (Region.sub_prefix (by decide : 400 ≤ 2048))
+      · show Region.Disjoint _ ⟨blockAt (p + BitVec.ofNat 64 400) k, 168⟩
+        rw [blockAt_eq]; exact dEP.sub_right (sub (by omega))
+      · show Region.Disjoint _ ⟨blockAt (p + BitVec.ofNat 64 904) k, 168⟩
+        rw [blockAt_eq]; exact dEP.sub_right (sub (by omega))
+      · exact dEP.sub_right (sub (by decide))
+      · exact hl.dSE.symm
+      · exact hl.fE.symm
+  unfold Impl.MlKem.AArch64.Hybrid.stepM
+  split
+  · rename_i hkm
+    refine WP.mono (step3_ok S hS h.ptr h.pa h.pb
+      (by rw [hS.keep h.keep (by decide) (by decide)]; exact h25)
+      (by rw [h.keep.get .x28]; exact h28) (hb hkm) h.ek
+      (by rw [h.hash, Nat.min_eq_left (Nat.le_of_lt hkm)]) h.pair (hls.stepLay hk))
+      fun t ⟨kt, ft, pt, at', bt, st', t20, t21⟩ => next kt ft pt at' bt ?_ t20 t21
+    rw [st', Nat.min_eq_left (show k + 1 ≤ m by omega), Nat.add_assoc]
+  · rename_i hkm
+    refine WP.mono (plainStep_ok S h.ptr h.pa h.pb h.pair (hls.stepLay hk))
+      fun t ⟨kt, ft, pt, at', bt, st', t20, t21⟩ => next kt ft pt at' bt ?_ t20 t21
+    rw [st', h.hash, Nat.min_eq_right (show m ≤ k by omega), Nat.min_eq_right (show m ≤ k + 1 by omega)]
 
-/-- **The three main squeezes** of pair `i`. -/
-theorem squeeze3_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {p e st : Addr} {E : List Byte}
-    {A B : Spec.Sha3.State} {i : Nat} (hS : SrcOk S)
-    (hb : 136 * (3 * i + 2) < S.len)
+/-- **The three main squeezes** of a pair, the first `m` absorbing from block `j`. -/
+theorem squeezeM_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {p e st : Addr} {E : List Byte}
+    {A B : Spec.Sha3.State} {j m : Nat} (hS : SrcOk S)
+    (hb : ∀ k < m, k < 3 → 136 * (j + k) < S.len)
     (hl : SqLay S p e st s) (h19 : s.gpr .x19 = p) (h20 : s.gpr .x20 = p + 400)
     (h21 : s.gpr .x21 = p + 904) (h25 : s.gpr S.r + BitVec.ofNat 64 S.base = e) (h28 : s.gpr .x28 = st)
-    (pair : PairAt s.mem p A B) (hash : stateAt s.mem st = hstate E (3 * i) (dB S))
+    (pair : PairAt s.mem p A B) (hash : stateAt s.mem st = hstate E j (dB S))
     (hE : bytesAt s.mem e S.len = E) :
-    WP isa (Impl.MlKem.AArch64.Hybrid.squeeze3 S i) s (SInv3 S s p e st E A B i 3) := by
-  have h0 : SInv3 S s p e st E A B i 0 s :=
+    WP isa (Impl.MlKem.AArch64.Hybrid.squeezeM S j m) s (SInvM S s p e st E A B j m 3) := by
+  have h0 : SInvM S s p e st E A B j m 0 s :=
     ⟨Keep.refl _ _, pair, h19, by rw [h20]; exact (BitVec.add_zero _).symm,
       by rw [h21]; exact (BitVec.add_zero _).symm, Frame.refl _ _,
-      fun j hj => absurd hj (Nat.not_lt_zero _), fun j hj => absurd hj (Nat.not_lt_zero _), hash, hE⟩
-  unfold Impl.MlKem.AArch64.Hybrid.squeeze3
-  refine WP.seq (WP.mono (sstep_ok S (k := 0) (by decide) hS (by omega) hl h28 h25 h0) fun t ht => ?_)
-  refine WP.seq (WP.mono (sstep_ok S (k := 1) (by decide) hS (by omega) hl h28 h25 ht) fun u hu => ?_)
-  exact sstep_ok S (k := 2) (by decide) hS hb hl h28 h25 hu
+      fun j hj => absurd hj (Nat.not_lt_zero _), fun j hj => absurd hj (Nat.not_lt_zero _),
+      by rw [hash, Nat.zero_min, Nat.add_zero], hE⟩
+  unfold Impl.MlKem.AArch64.Hybrid.squeezeM
+  refine WP.seq (WP.mono (sstep_ok S (k := 0) (by decide) hS (fun h => hb 0 h (by decide)) hl h28 h25 h0)
+    fun t ht => ?_)
+  refine WP.seq (WP.mono (sstep_ok S (k := 1) (by decide) hS (fun h => hb 1 h (by decide)) hl h28 h25 ht)
+    fun u hu => ?_)
+  exact sstep_ok S (k := 2) (by decide) hS (fun h => hb 2 h (by decide)) hl h28 h25 hu
 
 def startRegs3 : List Reg := Paired.initRegs ++ stepRegs
 
 /-- **A hashing pair's initialization and main squeezes** (as `Paired.start_ok`). -/
-theorem start3_ok (L : Impl.MlKem.AArch64.KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State}
-    {p seed e st : Addr} {E : List Byte} {sb ss a b i : Nat} (hS : SrcOk S)
+theorem startM_ok (L : Impl.MlKem.AArch64.KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State}
+    {p seed e st : Addr} {E : List Byte} {sb ss a b j m : Nat} (hS : SrcOk S)
     (hss : ss < 65536) (hsb : sb + 32 ≤ 32768) (h8b : sb % 8 = 0)
     (hp : s.gpr .x28 + BitVec.ofNat 64 ss = p) (ha : s.gpr .x28 + BitVec.ofNat 64 sb = seed)
     (hin : ∀ j < 4, InRegions (s.rd ++ s.wr) (seed + BitVec.ofNat 64 (8 * j)) 8)
     (hsep : (Region.mk seed 32).Disjoint ⟨p, 2048⟩)
     (hl : SqLay S p e st s) (h25 : s.gpr S.r + BitVec.ofNat 64 S.base = e) (h28 : s.gpr .x28 = st)
-    (hb : 136 * (3 * i + 2) < S.len)
-    (hash : stateAt s.mem st = hstate E (3 * i) (dB S)) (hE : bytesAt s.mem e S.len = E) :
-    WP isa (.seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a b L.k)) (Impl.MlKem.AArch64.Hybrid.squeeze3 S i)) s
+    (hb : ∀ k < m, k < 3 → 136 * (j + k) < S.len)
+    (hash : stateAt s.mem st = hstate E j (dB S)) (hE : bytesAt s.mem e S.len = E) :
+    WP isa (.seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a b L.k)) (Impl.MlKem.AArch64.Hybrid.squeezeM S j m)) s
       fun t =>
       Keep startRegs3 s t ∧ Frame (startWrites p st s.sp) s.mem t.mem ∧ Noise.Saved p s t.mem ∧
       t.gpr .x19 = p ∧
       PairAt t.mem p (iterF 3 (Paired.seedState s.mem seed a L.k)) (iterF 3 (Paired.seedState s.mem seed b L.k)) ∧
       Blocks t.mem (p + 400) 3 (Paired.seedState s.mem seed a L.k) ∧
       Blocks t.mem (p + 904) 3 (Paired.seedState s.mem seed b L.k) ∧
-      stateAt t.mem st = hstate E (3 * i + 3) (dB S) ∧ bytesAt t.mem e S.len = E := by
+      stateAt t.mem st = hstate E (j + min 3 m) (dB S) ∧ bytesAt t.mem e S.len = E := by
   have hc := hl.scratch
   have iw {o l : Nat} (h : o + l ≤ 2048) := Noise.inScratch hc h (by decide)
   have sub : ∀ {o n : Nat}, o + n ≤ 2048 → Region.Sub ⟨p + BitVec.ofNat 64 o, n⟩ ⟨p, 2048⟩ :=
@@ -248,13 +269,13 @@ theorem start3_ok (L : Impl.MlKem.AArch64.KemLay) (S : Impl.MlKem.AArch64.Hybrid
     rcases hr with rfl | rfl
     · exact ⟨⟨p, 2048⟩, by simp, Offset.sub_base p (by decide)⟩
     · exact ⟨⟨p, 2048⟩, by simp, Region.sub_prefix (by decide : 400 ≤ 2048)⟩)
-  have hsu : stateAt u.mem st = hstate E (3 * i) (dB S) := by
+  have hsu : stateAt u.mem st = hstate E j (dB S) := by
     rw [VG.Proof.Sha3.AArch64.Hybrid.X3.stateAt_frame fi (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact hl.dSP), hash]
   have heu : bytesAt u.mem e S.len = E := by
     rw [VG.Proof.MlKem.bytesAt_frame fi (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact hl.dEP) (by have := hS.lim; omega), hE]
-  refine WP.mono (squeeze3_ok S hS hb (hl.frame ku.rd ku.wr ku.sp) h19 h20 h21
+  refine WP.mono (squeezeM_ok S hS hb (hl.frame ku.rd ku.wr ku.sp) h19 h20 h21
     (by rw [hS.keep ku (by decide) (by decide)]; exact h25) (by rw [ku.get .x28]; exact h28) pair hsu heu) fun t ht => ?_
   refine ⟨ku.trans ht.keep, ?_, ?_, ht.ptr, ht.pair, ht.oa, ht.ob, ht.hash, ht.ek⟩
   · have ft := ht.frame

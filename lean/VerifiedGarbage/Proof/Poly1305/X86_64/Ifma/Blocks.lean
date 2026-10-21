@@ -541,13 +541,13 @@ theorem body_ok {s₀ : State} (hp : APre s₀) (hbig : 28 ≤ nb s₀) {s : Sta
 theorem correct {s₀ : State} (hp : APre s₀) : WP isa blocksIfma s₀ (Post s₀) := by
   have hb := hp.avx2.bpre.nb_lt
   refine WP.seq (WP.mono (cmp_ok s₀) fun s₁ ⟨g₁, m₁, k₁, cf₁⟩ => ?_)
-  refine WP.ite (decide (nb s₀ < 28)) (by simp [eval, cf₁]) (fun hlt => ?_) (fun hge => ?_)
+  refine WP.ite (decide (nb s₀ < 32)) (by simp [eval, cf₁]) (fun hlt => ?_) (fun hge => ?_)
   · refine Avx512.avx2_ok hp ⟨by omega, by rw [g₁], by rw [g₁]; simp [blkAddr], ?_,
       fun r _ => by rw [g₁], k₁.rd, k₁.wr, by rw [m₁]; exact Frame.refl _ _, by rw [k₁.mxcsr],
       fun key msg hr => by rw [m₁, blks_zero, List.append_nil]; exact hr⟩
     rw [g₁, Nat.sub_zero, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · simp only [decide_eq_false_iff_not, Nat.not_lt] at hge
-    refine WP.seq (WP.mono (body_ok hp hge g₁ m₁ k₁) fun s₂ h₂ => ?_)
+    refine WP.seq (WP.mono (body_ok hp (by omega) g₁ m₁ k₁) fun s₂ h₂ => ?_)
     refine WP.seq (WP.mono (Avx2.test_ok s₂) fun s₃ ⟨z₃, g₃, m₃, mx₃, rd₃, wr₃⟩ => ?_)
     have h₃ := h₂.congr g₃ m₃ mx₃ rd₃ wr₃
     refine WP.ite (s₃.gpr .rdx &&& s₃.gpr .rdx == 0) (by simp [eval, z₃, g₃]) (fun h => ?_)

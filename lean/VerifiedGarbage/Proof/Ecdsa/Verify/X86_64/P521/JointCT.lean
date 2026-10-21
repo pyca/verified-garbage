@@ -30,8 +30,9 @@ theorem jointVerify_p521_public_ct :
   have hc := p521_ok hI
   refine jointVerify_ct_of_points hc joint_before_ct ?_ joint_after_ct
   intro s₀ t₀ ps pt pub
-  exact jointPoints_relCT hc hL (p521_tbls hT) rfl rfl rfl rfl (by decide +kernel)
-    joint_add_layout joint_init_layout joint_prep_layout (joint_doubler hc hL) joint_mul_checks ps pt pub
+  exact jointPoints_relCT hc hL (.ofComb rfl hT (by decide) (by decide) rfl) rfl (by decide +kernel)
+    joint_add_layout joint_init_layout joint_prep_layout (joint_doubler hc hL) joint_mul_checks
+    (fun h => absurd h (by decide)) ps pt pub
 
 theorem jointVerify_p521_adx_public_ct :
     ConstantTime isa (VPre p521x) (JointPublic p521x p521Table)
@@ -40,9 +41,9 @@ theorem jointVerify_p521_adx_public_ct :
   have hc := p521x_ok hI
   refine jointVerify_ct_of_points hc joint_adx_before_ct ?_ joint_adx_after_ct
   intro s₀ t₀ ps pt pub
-  exact jointPoints_relCT hc hL (p521x_tbls hT) rfl rfl rfl rfl (by decide +kernel)
+  exact jointPoints_relCT hc hL (.ofComb rfl hT (by decide) (by decide) rfl) rfl (by decide +kernel)
     joint_adx_add_layout joint_adx_init_layout joint_adx_prep_layout (joint_adx_doubler hc hL)
-    joint_adx_mul_checks ps pt pub
+    joint_adx_mul_checks (fun h => absurd h (by decide)) ps pt pub
 
 theorem jointVerify_ct :
     ConstantTime isa

@@ -66,9 +66,17 @@ def nonceCode (compress : Prog isa) (suffix : String) : Prog isa :=
 def challengeCode (compress : Prog isa) (suffix : String) : Prog isa :=
   .seq (hashChallenge compress suffix) (.seq (reduce 128)
     (callWith mulAddArgs "vg_ed25519_scalar_mul_add" scalarMulAdd))
-def body (compress : Prog isa) (suffix : String) : Prog isa :=
-  .seq (secretCode compress suffix) (.seq (nonceCode compress suffix)
+/-- Signing after `secret`, which leaves the seed's SHA-512 digest at `frame 192`. -/
+def bodyFrom (secret : Prog isa) (compress : Prog isa) (suffix : String) : Prog isa :=
+  .seq (.seq secret (.block saveSecret)) (.seq (nonceCode compress suffix)
     (.seq (challengeCode compress suffix) (.block wipe)))
+def body (compress : Prog isa) (suffix : String) : Prog isa :=
+  bodyFrom (hashSeed compress suffix) compress suffix
 def code (compress : Prog isa) (suffix : String) : Prog isa := wrap (body compress suffix)
+
+/-- Signing with the seed's cached SHA-512 digest (`signExpandedContract`): `code`, with the
+digest copied (`PublicKey.copyExpanded`) rather than computed. -/
+def codeExpanded (compress : Prog isa) (suffix : String) : Prog isa :=
+  wrap (bodyFrom PublicKey.copyExpanded compress suffix)
 
 end VG.Impl.Ed25519.AArch64.SignCached

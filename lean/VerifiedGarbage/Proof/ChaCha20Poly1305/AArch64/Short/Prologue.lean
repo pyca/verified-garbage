@@ -70,7 +70,7 @@ theorem enter_ok {s₀ s : State} (hp : APre e s₀) (hx21 : s.gpr .x21 = cx s�
       s'.gpr .x0 = off (cx s₀) 0 ∧ s'.gpr .x1 = off (cx s₀) 64 ∧ s'.gpr .x3 = off (cx s₀) 384 ∧
       s'.gpr .x20 = off (cx s₀) 384 ∧
       (∀ r, r ≠ .x0 → r ≠ .x1 → r ≠ .x3 → r ≠ .x20 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have o : ∀ a, a + 8 ≤ 760 → InRegions s.wr (off (cx s₀) a) 8 := fun a h => by
+  have o : ∀ a, a + 8 ≤ 1280 → InRegions s.wr (off (cx s₀) a) 8 := fun a h => by
     rw [hwr]; exact hp.in_ctx h
   unfold enter
   refine wp_str (a := off (cx s₀) 632) (by decide) (by rw [hx21]) (o _ (by decide)) fun s₁ m₁ => ?_
@@ -129,11 +129,11 @@ theorem block1_ok {s₀ : State} (hp : APre e s₀) :
   have f₂' : Frame [sub s₀ 0 64] s₁.mem s₂.mem := f₂
   have f₃ : Frame [sub s₀ 64 320] s₂.mem s₃.mem := z₃.frame
   have f₄ : Frame [sub s₀ 632 24] s₃.mem s₄.mem := by rw [m₄]; exact enter_frame _ _ _ _
-  have sub' : ∀ k n, k + n ≤ 760 → ∀ r ∈ [sub s₀ k n], ∃ r' ∈ [workR s₀], Region.Sub r r' :=
+  have sub' : ∀ k n, k + n ≤ 1280 → ∀ r ∈ [sub s₀ k n], ∃ r' ∈ [workR s₀], Region.Sub r r' :=
     fun k n h r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨workR s₀, List.mem_singleton_self _, sub1 s₀ (by lit_omega) h⟩
-  have dj : ∀ k n a w, k + n ≤ a ∨ a + w ≤ k → k + n ≤ 760 → a + w ≤ 760 →
+  have dj : ∀ k n a w, k + n ≤ a ∨ a + w ≤ k → k + n ≤ 1280 → a + w ≤ 1280 →
       ∀ r ∈ [sub s₀ k n], (sub s₀ a w).Disjoint r := fun k n a w h h₁ h₂ r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact sub_disj s₀ (by omega) h₂ h₁
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -173,7 +173,7 @@ theorem block1_ok {s₀ : State} (hp : APre e s₀) :
 open VG.Proof.ChaCha20.AArch64.Mixed5 in
 /-- The kernel's precondition. -/
 theorem Post1.cp {s₀ s : State} (hp : APre e s₀) (h : Post1 s₀ s) : CP s := by
-  have w : ∀ a n, a + n ≤ 760 → InRegions s.wr (off (cx s₀) a) n := fun a n hn => by
+  have w : ∀ a n, a + n ≤ 1280 → InRegions s.wr (off (cx s₀) a) n := fun a n hn => by
     rw [h.wr]; exact hp.in_ctx hn
   refine ⟨h.x20r, fun k => ?_, ?_, fun d n hd => ?_, fun d n hd => ?_, ?_, ?_, ?_⟩
   · rw [h.x0, off_add, h.rd, h.wr]; exact hp.in_ctx' (by have := k.isLt; omega)
@@ -196,7 +196,7 @@ theorem leave_ok {s₀ s : State} (hp : APre e s₀) (hx21 : s.gpr .x21 = cx s�
       s'.gpr .x1 = off (cx s₀) 64 ∧
       (∀ r, r ≠ .x19 → r ≠ .x20 → r ≠ .x26 → r ≠ .x0 → r ≠ .x1 → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have i : ∀ a, a + 8 ≤ 760 → InRegions (s.rd ++ s.wr) (off (cx s₀) a) 8 := fun a ha => by
+  have i : ∀ a, a + 8 ≤ 1280 → InRegions (s.rd ++ s.wr) (off (cx s₀) a) 8 := fun a ha => by
     rw [hrd, hwr]; exact hp.in_ctx' ha
   unfold leave
   refine wp_ldr (a := off (cx s₀) 632) (by decide) (by rw [hx21]) (i _ (by decide)) fun s₃ u₃ => ?_
@@ -225,6 +225,7 @@ structure Post2 (s₀ : State) (s : State) : Prop where
   ks : ∀ k < 320, s.mem (off (cx s₀) 64 + BitVec.ofNat 64 k) = ks5 s₀ k
   x0 : s.gpr .x0 = off (cx s₀) 448
   x1 : s.gpr .x1 = off (cx s₀) 64
+  st0 : stateAt s.mem (off (cx s₀) 0) = initState (K s₀) 0 (N s₀)
 
 open VG.Proof.ChaCha20.AArch64.Mixed5 in
 theorem chunkLeave_ok {sve : Bool} {s₀ s : State} (hp : APre e s₀) (h : Post1 s₀ s) :
@@ -233,12 +234,12 @@ theorem chunkLeave_ok {sve : Bool} {s₀ s : State} (hp : APre e s₀) (h : Post
   have x21₂ : s₂.gpr .x21 = cx s₀ := by rw [c₂.cs _ (by decide) (by decide) (by decide), h.x21]
   have hf₂ : Frame [sub s₀ 0 64, sub s₀ 384 64, sub s₀ 64 320] s.mem s₂.mem := by
     have := c₂.frame; simp only [sr, lowBuf, dr, h.x0, h.x3, h.x1] at this; exact this
-  have dj : ∀ a w, 448 ≤ a → a + w ≤ 760 →
+  have dj : ∀ a w, 448 ≤ a → a + w ≤ 1280 →
       ∀ r ∈ [sub s₀ 0 64, sub s₀ 384 64, sub s₀ 64 320], (sub s₀ a w).Disjoint r := by
     intro a w ha haw r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact sub_disj s₀ (by omega) haw (by decide)
-  have rd : ∀ a, 632 ≤ a → a + 8 ≤ 760 → s₂.mem.readW (off (cx s₀) a) 64 = s.mem.readW (off (cx s₀) a) 64 :=
+  have rd : ∀ a, 632 ≤ a → a + 8 ≤ 1280 → s₂.mem.readW (off (cx s₀) a) 64 = s.mem.readW (off (cx s₀) a) 64 :=
     fun a h₁ h₂ => hf₂.readW (r := sub s₀ a 8) (Region.contains_self _ _) (dj a 8 (by omega) h₂) (by decide)
   refine WP.mono (WP.withSp (leave_ok hp x21₂ (by rw [c₂.rd, h.rd]) (by rw [c₂.wr, h.wr])))
     fun s₇ ⟨⟨x19₇, x20₇, x26₇, x0₇, x1₇, g, hm, rd₇, wr₇⟩, sp₇⟩ => ?_
@@ -253,7 +254,7 @@ theorem chunkLeave_ok {sve : Bool} {s₀ s : State} (hp : APre e s₀) (h : Post
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;>
       exact ⟨workR s₀, List.mem_singleton_self _, sub1 s₀ (by decide) (by decide)⟩
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, fun k hk => ?_, x0₇, x1₇⟩
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, fun k hk => ?_, x0₇, x1₇, ?_⟩
   · rw [cs _ (by decide), h.x21]
   · rw [cs _ (by decide), h.x22]
   · rw [cs _ (by decide), h.x23]
@@ -277,6 +278,9 @@ theorem chunkLeave_ok {sve : Bool} {s₀ s : State} (hp : APre e s₀) (h : Post
     rw [h.x1] at hd
     rw [hd, h.zero k hk]
     exact BitVec.zero_xor.trans (by simp only [source, h.x0, h.st])
+  · have hc := c₂.cnt
+    simp only [source, c₂.x0, h.x0] at hc
+    rw [hm, hc, h.st]
 
 /-- After the prologue. -/
 structure PostP (s₀ : State) (s : State) : Prop where
@@ -284,6 +288,7 @@ structure PostP (s₀ : State) (s : State) : Prop where
   fine : Frame [workR s₀] s₀.mem s.mem
   poly : Repr s.mem (off (cx s₀) 448) (otk s₀) []
   ks : ∀ k < 320, s.mem (off (cx s₀) 64 + BitVec.ofNat 64 k) = ks5 s₀ k
+  st0 : stateAt s.mem (off (cx s₀) 0) = initState (K s₀) 0 (N s₀)
 
 theorem otk_eq {s₀ : State} {m : Mem} (h : ∀ k < 320, m (off (cx s₀) 64 + BitVec.ofNat 64 k) = ks5 s₀ k) :
     bytesAt m (off (cx s₀) 64) 32 = otk s₀ := by
@@ -308,11 +313,15 @@ theorem prologue_ok {sve : Bool} {s₀ : State} (hp : APre e s₀) :
     (covers2 hp h₂.inv.wr (a := 448) (n := 128) (b := 64) (m := 32) (by lit_omega) (by lit_omega))
     (covers1 hp h₂.inv.wr (a := 448) (n := 128) (by lit_omega)) fun s₃ k₃ repr₃ => ?_
   refine ⟨h₂.inv.step1 (k := 448) (n := 128) k₃ (by lit_omega) (by lit_omega) (by lit_omega),
-    h₂.fine.trans (frame_work1 (k := 448) (n := 128) k₃ (by lit_omega) (by lit_omega)), ?_, fun k hk => ?_⟩
+    h₂.fine.trans (frame_work1 (k := 448) (n := 128) k₃ (by lit_omega) (by lit_omega)), ?_, fun k hk => ?_, ?_⟩
   · rw [← otk_eq h₂.ks]; exact repr₃
   · rw [k₃.frame.bytes (R := sub s₀ 64 320) (by
         intro r hr; simp only [List.mem_singleton] at hr; subst hr
         exact sub_disj s₀ (by decide) (by decide) (by decide)) (show 320 ≤ 2 ^ 64 by decide) hk]
     exact h₂.ks k hk
+  · rw [VG.Proof.ChaCha20.AArch64.Xor.stateAt_frame k₃.frame (by
+        intro r hr; simp only [List.mem_singleton] at hr; subst hr
+        exact sub_disj s₀ (by decide) (by decide) (by decide))]
+    exact h₂.st0
 
 end VG.Proof.ChaCha20Poly1305.AArch64.Short

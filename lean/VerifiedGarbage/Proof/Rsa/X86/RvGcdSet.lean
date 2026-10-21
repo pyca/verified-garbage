@@ -32,22 +32,22 @@ abbrev liveG : List Nat := [aNM, aZero, 3, 2, aM, 1, 0, aN]
 theorem gcdSet_ok {g : Geo} {s0 s : State} {A V : Nat → Nat} {m y : Nat}
     (h : KS g s0 A [mY, aN, aZ, aOne] (fun _ => 0) [] V [sMask] s)
     (modulus : A aN = m) (value : A mY = y) (zero : A aZ = 0) (one : A aOne = 1) :
-    WP isa (gcdSet g.n) s fun t => KS g s0 (AG g.w m y) liveG (fun _ => 0) [] V [sMask] t := by
-  unfold gcdSet
+    WP isa VG.Impl.Rsa.X86.RecoverRt.gcdSet s fun t => KS g s0 (AG g.w m y) liveG (fun _ => 0) [] V [sMask] t := by
+  unfold VG.Impl.Rsa.X86.RecoverRt.gcdSet
   simp only [seqs]
   refine WP.seq (WP.mono (h.subWrap (o := 0) (a := mY) (b := aOne)
     (by decide) (by simp) (by simp) (by decide) (by decide) (by simp)) fun s1 ⟨h1, _⟩ => ?_)
   rw [value, one] at h1
-  refine WP.seq (WP.mono (h1.copy_w (o := 1) (a := aN) (by decide) (by simp) (by simp))
+  refine WP.seq (WP.mono (h1.copy_w (o := 1) (a := aN) (by decide) (by simp) (by decide) (by simp))
     fun s2 ⟨h2, _, _⟩ => ?_)
-  refine WP.seq (WP.mono (h2.copy_w (o := aM) (a := aN) (by decide) (by simp) (by simp))
+  refine WP.seq (WP.mono (h2.copy_w (o := aM) (a := aN) (by decide) (by simp) (by decide) (by simp))
     fun s3 ⟨h3, _, _⟩ => ?_)
-  refine WP.seq (WP.mono (h3.copy_w (o := 2) (a := aZ) (by decide) (by simp) (by simp))
+  refine WP.seq (WP.mono (h3.copy_w (o := 2) (a := aZ) (by decide) (by simp) (by decide) (by simp))
     fun s4 ⟨h4, _, _⟩ => ?_)
   refine WP.seq (WP.mono (h4.setOne_w (j := 2) (by simp) (by simp)) fun s5 ⟨h5, _⟩ => ?_)
-  refine WP.seq (WP.mono (h5.copy_w (o := 3) (a := aZ) (by decide) (by simp) (by simp))
+  refine WP.seq (WP.mono (h5.copy_w (o := 3) (a := aZ) (by decide) (by simp) (by decide) (by simp))
     fun s6 ⟨h6, _, _⟩ => ?_)
-  refine WP.seq (WP.mono (h6.copy_w (o := aZero) (a := aZ) (by decide) (by simp) (by simp))
+  refine WP.seq (WP.mono (h6.copy_w (o := aZero) (a := aZ) (by decide) (by simp) (by decide) (by simp))
     fun s7 ⟨h7, _, _⟩ => ?_)
   refine WP.mono (h7.subWrap (o := aNM) (a := aZero) (b := aM)
     (by decide) (by simp) (by simp) (by decide) (by decide) (by simp)) fun t ⟨hout, _⟩ => ?_

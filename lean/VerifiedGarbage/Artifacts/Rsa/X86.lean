@@ -6,9 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Verified
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
 public import VerifiedGarbage.Proof.Rsa.X86.CvVerified
 public import VerifiedGarbage.Proof.Rsa.X86.KcVerified
-public import VerifiedGarbage.Proof.Rsa.X86.KcStackSafety
 public import VerifiedGarbage.Proof.Rsa.X86.RvVerified
-public import VerifiedGarbage.Proof.Rsa.X86.RvStackSafety
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! Public and private CRT RSA on baseline i686. -/
@@ -18,19 +16,28 @@ namespace VG.Artifacts.Rsa.X86
 
 def artifacts : List Artifact := [
   Spec.Rsa.recoverPrimesApi.artifact X86.target {
-    code := Impl.Rsa.X86.Recover.code
+    notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
+      multiplication calls `vg_rsa_mont_mul_at`. At 2048 bits and above a fixed-width binary pass \
+      fuses exponentiation and root search; smaller moduli use the windowed schedule. The public \
+      candidate index selects repeated addition or a bounded seven-bit multiplication. The search \
+      ends after the attempt that recovers the factors, so the attempt count is public. Private \
+      values select no branch. Callee-saved registers reside in scratch."]
+    code := Impl.Rsa.X86.RecoverRt.code
     verified := Proof.Rsa.X86.Recover.verified
-    spSafe := Proof.Rsa.X86.Recover.code_sp
-    stack := 20 },
+    stack := 40 },
   Spec.Rsa.checkKeyApi.artifact X86.target {
-    code := Impl.Rsa.X86.KeyCheck.code true
+    notes := ["The modulus's length gives the numbers' width at run time: every operation computes \
+      its arrays' addresses from it. The length is public; only the checks of the modulus and the public \
+      exponent select a branch. Callee-saved registers reside in scratch."]
+    code := Impl.Rsa.X86.KeyCheckRt.code true
     verified := Proof.Rsa.X86.KeyCheck.verified true
-    spSafe := Proof.Rsa.X86.KeyCheck.code_sp true
     stack := 20 },
   Spec.Rsa.checkCrtKeyApi.artifact X86.target {
-    code := Impl.Rsa.X86.KeyCheck.code false
+    notes := ["The modulus's length gives the numbers' width at run time: every operation computes \
+      its arrays' addresses from it. The length is public; only the checks of the modulus and the public \
+      exponent select a branch. Callee-saved registers reside in scratch."]
+    code := Impl.Rsa.X86.KeyCheckRt.code false
     verified := Proof.Rsa.X86.KeyCheck.verified false
-    spSafe := Proof.Rsa.X86.KeyCheck.code_sp false
     stack := 20 },
   Spec.Rsa.crtValuesApi.artifact X86.target {
     notes := ["The modulus's length gives the numbers' width at run time: every operation computes \

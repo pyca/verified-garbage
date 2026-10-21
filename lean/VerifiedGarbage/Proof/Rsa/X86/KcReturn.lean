@@ -41,14 +41,14 @@ theorem body_saved {g : CallGeometry} {s : State} {m m' : Mem} {regs : Reg → B
   exact Offset.base_disjoint g.base (Nat.le_refl 16) (by omega)
 
 theorem operation_ok {full : Bool} {s : State} (a : ABI full s) :
-    WP isa (code full) s fun t =>
+    WP isa (VG.Impl.Rsa.X86.KeyCheckRt.code full) s fun t =>
       t.gpr .eax = BitVec.ofNat 32 (validity full (arg s 1).toNat (numbers (caller full s) s.mem)).toNat ∧
       abiPreserved s t := by
   have low : 16 ≤ (caller full s).size := by have := a.used; omega
   have high : (caller full s).size ≤ 2 ^ 64 := by have := a.scratchBound; omega
-  unfold code
+  unfold VG.Impl.Rsa.X86.KeyCheckRt.code
   refine WP.seq (WP.mono (installed_ok a) fun u ⟨inputs, saved, ku, ou⟩ => ?_)
-  refine WP.seq (WP.mono (body_ok inputs a.lengths.1 a.lengths.2 rfl (a.numberBounds u.mem))
+  refine WP.seq (WP.mono (body_ok inputs a.lengths_ok (a.numberBounds u.mem))
     fun v ⟨⟨iv, value, frame⟩, kv⟩ => ?_)
   have saveV := body_saved inputs frame saved
   have whole : Frame [⟨(caller full s).base, (caller full s).size⟩] s.mem v.mem := by

@@ -22,7 +22,7 @@ theorem bodyFrame_full {g : CallGeometry} {m m' : Mem} (low : 16 ≤ g.Z)
   apply f.sub
   intro r hr
   simp only [bodyWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · exact ⟨⟨g.B, g.Z⟩, by simp [CallGeometry.writes], Offset.sub_base _ (by omega)⟩
   all_goals exact ⟨_, by simp [CallGeometry.writes], fun _ h => h⟩
 
@@ -39,17 +39,18 @@ theorem bodyFrame_saved {g : CallGeometry} {s : State} {m m' : Mem} {regs : Reg 
   refine (f.readW (r := ⟨g.B, 16⟩) (Offset.contains_base _ bound (by omega)) ?_ (by decide)).trans (saved p hp)
   intro r hr
   simp only [bodyWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · exact Offset.base_disjoint g.B (Nat.le_refl 16) (by omega)
   · exact (h.outputScratch 0).symm.sub_left (Region.sub_prefix low)
   · exact (h.outputScratch 1).symm.sub_left (Region.sub_prefix low)
+  · exact h.room.apart.symm.sub_left (Region.sub_prefix low)
 
 theorem calculated_entry {s t : State} (a : ABI s)
     (o : Outside (caller s).B 0 (caller s).Z s.mem t.mem) :
     calculated (caller s) t.mem = calculated (caller s) s.mem := by
   have same (i : Fin 3) : inputBytes (caller s) t.mem i = inputBytes (caller s) s.mem i := by
     exact scratch_bytes o (by have := (a.inputLength i).2; have := a.width.2.1; omega)
-      (a.inApart _ (a.inputMember i) _ (by simp [CallGeometry.writes]))
+      (a.inApart _ (a.inputMember i) _ (by simp))
   unfold calculated
   rw [same 0, same 1, same 2]
 

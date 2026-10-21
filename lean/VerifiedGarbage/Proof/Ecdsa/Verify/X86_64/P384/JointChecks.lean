@@ -42,12 +42,12 @@ open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.P384.X86_64 VG.Impl.Weierstrass.X
 open VG.Proof.P384.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Ecdsa.X86_64 VG.Proof.Mont
 
 theorem joint_mul_checks : JointMulChecks p384v publicJoint :=
-  ⟨joint_cached_checks,joint_fixed_checks,nafTable_checks,nafCacheTable_ct,
-    joint_infinity_ct,joint_counter_ct,fastGenerator_checks,fastPeer_checks⟩
+  ⟨joint_cached_checks,joint_fixed_checks,nafTableCoZ_checks,nafCacheTable_ct,
+    joint_infinity_ct,joint_counter_ct,fastGenerator16_checks,fastPeer_checks⟩
 
 theorem joint_adx_mul_checks : JointMulChecks p384vx publicJointAdx :=
-  ⟨joint_adx_cached_checks,joint_adx_fixed_checks,nafTable_adx_checks,nafCacheTable_adx_ct,
-    joint_adx_infinity_ct,joint_adx_counter_ct,fastGenerator_adx_checks,fastPeer_adx_checks⟩
+  ⟨joint_adx_cached_checks,joint_adx_fixed_checks,nafTableCoZ_adx_checks,nafCacheTable_adx_ct,
+    joint_adx_infinity_ct,joint_adx_counter_ct,fastGenerator16_adx_checks,fastPeer_adx_checks⟩
 
 theorem joint_doubler (hc : CfgOk p384v) (hC : Weierstrass.Law p384v.C) :
     JointDoubler publicJoint p384v.C size (jointDouble publicJoint.K) :=

@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.St
 
+import VerifiedGarbage.Proof.Bignum.OddDivision
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint5
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Ops
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Words
@@ -39,10 +40,7 @@ theorem shift_div (c t : Nat) :
 
 /-- For an odd `c`, `(c − 1) / 2^σ = c / 2^σ` (`σ ≥ 1`). -/
 theorem odd_div {c s : Nat} (hc : c % 2 = 1) (hs : 1 ≤ s) : (c - 1) / 2 ^ s = c / 2 ^ s := by
-  obtain ⟨q, rfl⟩ : ∃ q, c = 2 * q + 1 := ⟨c / 2, by omega⟩
-  obtain ⟨r, rfl⟩ : ∃ r, s = r + 1 := ⟨s - 1, by omega⟩
-  rw [Nat.pow_succ, Nat.mul_comm (2 ^ r), ← Nat.div_div_eq_div_mul, ← Nat.div_div_eq_div_mul]
-  congr 1; omega
+  exact VG.Proof.Bignum.odd_div hc hs
 
 section
 variable {P : CP} {E : State → Prop} {A : State → Nat → Nat} {L : List Nat} {V : State → Nat → Nat}

@@ -22,6 +22,11 @@ and the sums `AddSubW.addW`, and keys are encoded and decoded by
 `Codec12W`. Compression still reads 32-bit coefficients: each row of `u` and
 `v` is widened (`Widen16.widen`) into `PP` first, and `v` adds the decoded
 message there with `vg_mlkem_add`. Decapsulation's decryption stays 32-bit.
+The pieces of key generation (`Kem16P.keyGen`): each row of `t̂` (`kgRow`)
+as soon as the matrix has sampled it, the pairs absorbing `ek` into the third
+state of the matrix's `vg_keccak_f1600_x3_sha3` calls as the rows encode it
+(`kgPair`), and the single-state permutations for the blocks of the last
+rows (`kgTail`).
 -/
 
 @[expose] public section
@@ -70,14 +75,6 @@ def encryptRest (prf : Nat → Nat → Prog isa) (L : KemLay) (ek : Reg) (eo : N
   .seq (noiseAllWith nttAtWithW L false) (seqs (((List.range L.k).map (uRow L ct co)) ++
     [vRest prf L ek eo m mo ct co]))
 
-/-- Encapsulation after the matrix. -/
-def enRest (prf : Nat → Nat → Prog isa) (L : KemLay) : Prog isa :=
-  .seq (encryptRest prf L .x25 0 .x28 MB .x27 0) (.block L.kemEpilogue)
-
-/-- The encapsulation, hashing `ek` during the matrix (`Hybrid.matrixH`). -/
-def encaps (hash : FixedHashCallers.HashFn) (prf : Nat → Nat → Prog isa) (L : KemLay) : Prog isa :=
-  .seq (Hybrid.startH L) (.seq (Hybrid.matrixH L (Hybrid.ekSrc L) true) (.seq (Hybrid.tailH hash) (enRest prf L)))
-
 /-- Copy the `n` words at `sb + so` to `db + do`. -/
 def copyN (n : Nat) (sb : Reg) (so : Nat) (db : Reg) (dO : Nat) : List Instr :=
   (List.range n).flatMap fun k => [.ldr .x .x9 sb (so + 8 * k), .str .x .x9 db (dO + 8 * k)]
@@ -94,29 +91,45 @@ def startJ (L : KemLay) : List Instr :=
 /-- `K̄ = J(z ‖ c)`, the first 32 bytes of the third state, into `JB`. -/
 def tailJ : List Instr := copy32 .x28 ST .x28 JB
 
-/-- Decapsulation after the matrix and `J`: re-encryption and the selection. -/
-def deRest (prf : Nat → Nat → Prog isa) (L : KemLay) : Prog isa :=
-  seqs [encryptRest prf L .x25 (384 * L.k) .x28 MB .x28 (CB L), L.deCmp, .block (deSel ++ L.kemEpilogue)]
-
-/-- The decapsulation, hashing `z ‖ c` during the matrix (`Hybrid.matrixH`). -/
-def decaps (hash : FixedHashCallers.HashFn) (prf : Nat → Nat → Prog isa) (L : KemLay) : Prog isa :=
-  .seq (FixedHashDecaps.deStartUsing hash L) (.seq (.block (startJ L))
-    (.seq (Hybrid.matrixH L (jSrc L) true) (.seq (.block tailJ) (deRest prf L))))
-
 /-- Row `i` of `t̂ = Â ∘ ŝ + ê`, encoded into the public and private keys. -/
 def kgRow (L : KemLay) (i : Nat) : Prog isa :=
   seqs [dotAt (KG.TP L) ((List.range L.k).map fun j => (KG.aOff L i j, KG.sOff L j)),
     addWAt (KG.TP L) (noiseOff L i), enc12WAt (KG.TP L) .x26 (384 * i),
     enc12WAt (KG.TP L) .x27 (384 * L.k + 384 * i)]
 
-/-- Key generation after the matrix. -/
-def kgRest (hash : FixedHashCallers.HashFn) (L : KemLay) : Prog isa :=
-  .seq (noiseAllWith nttAtWithW L true) (seqs (
-    ((List.range L.k).map fun j => enc12WAt (KG.sOff L j) .x27 (384 * j)) ++
-    ((List.range L.k).map (kgRow L)) ++ [FixedHashCallers.kgEndUsing hash L]))
+/-- `ek`, absorbed into the third state for `H(ek)` (SHA3-256) in key generation. -/
+def kgSrc (L : KemLay) : Hybrid.HSrc := ⟨.x26, 0, L.ekLen, 6⟩
 
-/-- The key generation. -/
-def keyGen (hash : FixedHashCallers.HashFn) (L : KemLay) : Prog isa :=
-  .seq (FixedHashCallers.kgAUsing hash L) (.seq (Paired.matrix L true true) (kgRest hash L))
+/-- The rows of `Â` the first `p` pairs complete. -/
+def rowsBy (L : KemLay) (p : Nat) : Nat := min L.k (2 * p / L.k)
+
+/-- The blocks of `pad(ek)` absorbed before pair `p`: each pair absorbs the next
+blocks the rows before it have encoded, up to one per main squeeze. -/
+def hashedBy (L : KemLay) : Nat → Nat
+  | 0 => 0
+  | p + 1 => hashedBy L p + min 3 (384 * rowsBy L p / 136 - hashedBy L p)
+
+/-- Pair `p` of the matrix, absorbing the blocks of `ek` it can. -/
+def kgPair (L : KemLay) (p : Nat) : Prog isa :=
+  Hybrid.pairM KG.SB KG.SS KG.AH L (kgSrc L) (2 * p) (hashedBy L p)
+    (hashedBy L (p + 1) - hashedBy L p) true
+
+/-- Rows `a` to `b - 1` of `t̂`. -/
+def kgRows (L : KemLay) (a b : Nat) : List (Prog isa) := (List.range' a (b - a)).map (kgRow L)
+
+/-- The single-state permutation of the third state, at `ST`, with its working space at `WK`. -/
+def kgPerm (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
+  .seq (.block (ptrTo .x0 .x28 KG.ST ++ ptrTo .x1 .x28 KG.WK)) (.call c.name c.code)
+
+/-- `ρ` into both keys, the blocks of `pad(ek)` the matrix did not absorb, each
+followed by the permutation `c`, `H(ek)` and `z` into `dk`, and the epilogue. -/
+def kgTail (c : Impl.Sha3.AArch64.Callee) (L : KemLay) : Prog isa :=
+  seqs ([.block (copy32 .x28 KG.SB .x26 (384 * L.k) ++ copy32 .x28 KG.SB .x27 (768 * L.k))] ++
+    ((List.range' (hashedBy L (L.k * L.k / 2)) (Hybrid.blocks (kgSrc L) - hashedBy L (L.k * L.k / 2))).map
+      fun b => .seq (.block (Hybrid.absorbBlock (kgSrc L) b)) (kgPerm c)) ++
+    [.block (copy32 .x28 KG.ST .x27 (768 * L.k + 32) ++ copy32 .x25 32 .x27 (768 * L.k + 64) ++
+      [mov .x0 .x24, .ldr .x .x30 .x28 (KG.SV L + 40), .ldr .x .x24 .x28 (KG.SV L),
+        .ldr .x .x25 .x28 (KG.SV L + 8), .ldr .x .x26 .x28 (KG.SV L + 16),
+        .ldr .x .x27 .x28 (KG.SV L + 24), .ldr .x .x28 .x28 (KG.SV L + 32)])])
 
 end VG.Impl.MlKem.AArch64.Kem16
