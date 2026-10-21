@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Verified
 public import VerifiedGarbage.Spec.Ed25519.ExpandedKey
 import VerifiedGarbage.Proof.Ed25519.Expanded
 import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
-import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec

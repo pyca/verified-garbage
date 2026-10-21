@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Expanded
-public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.ScalarBase
-public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseAdx
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.ScalarBase
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseAdx
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Data.Nat.Totient
 import Mathlib.Data.Sym.Sym2.Init
@@ -15,6 +14,10 @@ import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Init.Data.String.Defs
+public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-! Ed25519 public-key derivation from the seed's SHA-512 digest, for each base-point
 multiplication: the baseline's, BMI2's and ADX's (`_adx`), and AVX512_IFMA's (`_ifma`). -/

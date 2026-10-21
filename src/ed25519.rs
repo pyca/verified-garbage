@@ -22,6 +22,7 @@
     target_arch = "arm"
 ))]
 
+use crate::arch::ed25519::vg_ed25519_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ed25519::{
     VG_ED25519_PUBLIC_KEY_EXPANDED_ADX_FEATURES, VG_ED25519_PUBLIC_KEY_EXPANDED_IFMA_FEATURES,
@@ -36,7 +37,6 @@ use crate::arch::ed25519::{
     vg_ed25519_verify_avx2_adx, vg_ed25519_verify_avx2_ifma, vg_ed25519_verify_ifma,
     vg_ed25519_verify_shani, vg_ed25519_verify_shani_adx, vg_ed25519_verify_shani_ifma,
 };
-use crate::arch::ed25519::vg_ed25519_verify;
 #[cfg(not(target_arch = "x86_64"))]
 use crate::arch::ed25519::{vg_ed25519_public_key, vg_ed25519_sign_cached};
 #[cfg(target_arch = "aarch64")]
