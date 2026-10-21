@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.Arithmetic
+public import VerifiedGarbage.Impl.Ffdh.Arm.CandidatePrepare
 public import VerifiedGarbage.Impl.Ffdh.Arm.CallerRows
 public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
@@ -207,7 +208,7 @@ def montKeyArrays : Prog isa := seqs [
 def montKeySetup : Prog isa := .seq (.block (keyContext ++ keyStride)) montKeyArrays
 
 def montPrep : Prog isa := seqs [
-  .block [.ldrSp .r0 0, .ldrSp .r6 12], VG.Impl.Ffdh.Arm.prepare,
+  .block [.ldrSp .r0 0, .ldrSp .r6 12], VG.Impl.Ffdh.Arm.CandidatePrepare.code,
   .seq (smallConst 1 1) (montOp 1 1 4), montKeySetup]
 
 def phaseBitHead (q : Bool) : List Instr :=

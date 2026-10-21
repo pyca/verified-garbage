@@ -35,6 +35,28 @@ theorem CandidateParams.phase_large (p : CandidateParams) (q : Bool) : 1 < (cand
   change 4 ≤ 2 ^ (p.bits - 2) at lowQ
   cases q <;> simp only [Bool.false_eq_true, ite_false, ite_true] <;> omega
 
+theorem CandidateParams.phase_normalized (p : CandidateParams) (q : Bool) :
+    p.length % 8 = 1 ∨ 2 ^ (64 * (Spec.Rsa.modulusWords p.length - 1)) ≤
+      (candidatePhase p q).modulus := by
+  by_cases boundary : p.length % 8 = 1
+  · exact Or.inl boundary
+  right
+  obtain ⟨odd,lower,upper⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape
+    (by have := p.minBits; omega : 2 ≤ p.bits) (Spec.Rsa.os2ip (p.bytes.take p.length))
+  obtain ⟨halfLower,_⟩ := VG.Proof.Ffdh.ParameterCandidate.half_shape
+    (by have := p.minBits; omega) odd lower upper
+  have exponent : 64 * (Spec.Rsa.modulusWords p.length - 1) ≤ p.bits - 2 := by
+    have := p.minBits
+    dsimp only [CandidateParams.length,Spec.Rsa.modulusWords] at *
+    omega
+  have power := Nat.pow_le_pow_right (n := 2) (by decide) exponent
+  have powerP := Nat.pow_le_pow_right (n := 2) (by decide) (show p.bits - 2 ≤ p.bits - 1 by omega)
+  change 2 ^ (p.bits - 1) ≤ p.candidate at lower
+  change 2 ^ (p.bits - 2) ≤ (p.candidate - 1) / 2 at halfLower
+  cases q
+  · exact Nat.le_trans power (Nat.le_trans powerP lower)
+  · exact Nat.le_trans power halfLower
+
 theorem CandidateParams.phase_bits_exact (p : CandidateParams) (q : Bool)
     (odd : (candidatePhase p q).modulus % 2 = 1) :
     (candidatePhase p q).bits = Spec.RsaKeyGen.bitLength ((candidatePhase p q).modulus - 1) := by

@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ffdh.Arm.Prepare
+import VerifiedGarbage.Proof.Ffdh.Arm.CandidatePrepare
 public import VerifiedGarbage.Impl.Ffdh.Arm.Arithmetic
 public import VerifiedGarbage.Proof.Bignum.Arm.PcStack
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
@@ -35,6 +35,8 @@ structure MontPrepInput (base src : BitVec 32) (capacity k : Nat) (s : State) : 
   separate : (⟨State.addr src, k⟩ : Region).Disjoint ⟨State.addr base, 8 * capacity⟩
   large : 1 < Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k)
   odd : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) % 2 = 1
+  normalized : k % 8 = 1 ∨ 2 ^ (64 * (Spec.Rsa.modulusWords k - 1)) ≤
+    Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k)
 
 
 private theorem prepareHead_ok {s : State} {base src : BitVec 32} {capacity k : Nat}
@@ -85,7 +87,7 @@ theorem montPrep_ok {s : State} {base src : BitVec 32} {capacity k : Nat}
     · rw [restU.rd, restU.wr]; exact h.readable
     · rw [memU]; exact h.large
     · rw [memU]; exact h.odd
-  refine WP.seq (WP.mono (prepare_ok u inputU) ?_)
+  refine WP.seq (WP.mono (candidatePrepare_ok u inputU (by rw [memU]; exact h.normalized)) ?_)
   rintro v ⟨readyV, nV, r2V, frameV, restV⟩
   rw [memU] at nV r2V frameV
   refine WP.seq (WP.mono (montOne_ok readyV nV h.odd r2V) ?_)

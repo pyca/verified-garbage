@@ -3,10 +3,10 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTMontInput
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTMontOne
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTMontKey
-import VerifiedGarbage.Proof.Ffdh.Arm.PrepareCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackOnlyCT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Ffdh.Arm.CandidatePrepare
 
 /-! Complete native Montgomery preparation reuses RSA's constant-time math and array view. -/
 
@@ -31,22 +31,18 @@ theorem montPrep_ct : RelCT isa (Two MontFullStart) VG.Impl.Ffdh.Arm.ParameterCa
   have head : RelCT isa (Two MontFullStart) (.block [.ldrSp .r0 0, .ldrSp .r6 12]) (Two MontHeaderStart) :=
     two_post ((stackOnly_ct _ rfl).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) (fun p s h =>
       WP.mono (prepareHeader_ok p s h.1) (fun _ result => ⟨result, h.2⟩))
-  have prepareTrace : RelCT isa (Two MontHeaderStart) VG.Impl.Ffdh.Arm.prepare (fun _ _ => True) := by
+  have prepareTrace : RelCT isa (Two MontHeaderStart) VG.Impl.Ffdh.Arm.CandidatePrepare.code (fun _ _ => True) := by
     intro s t trS trT u v h runS runT
     obtain ⟨p, left, right, sp⟩ := h
-    have countFits : 128 * Spec.Rsa.modulusWords p.k < 2 ^ 32 := by
-      have bound := left.1.maxLength
-      dsimp only [Spec.Rsa.modulusWords]
-      omega
-    exact prepare_ct countFits _ _ _ _ _ _ ⟨left.1, right.1, sp⟩ runS runT
-  have prepare : RelCT isa (Two MontHeaderStart) VG.Impl.Ffdh.Arm.prepare (Two MontLayoutState) :=
+    exact candidatePrepare_ct _ _ _ _ _ _ ⟨left.1,right.1,sp⟩ runS runT
+  have prepare : RelCT isa (Two MontHeaderStart) VG.Impl.Ffdh.Arm.CandidatePrepare.code (Two MontLayoutState) :=
     two_post prepareTrace (fun p s h => by
-      refine WP.mono (prepare_ok s h.1) ?_
+      refine WP.mono (candidatePrepare_ok s h.1.1 h.1.2) ?_
       rintro t ⟨ready, number, r2, _, _⟩
-      refine ⟨⟨ready, ?_⟩, h.1.minLength, h.1.maxLength, h.2⟩
+      refine ⟨⟨ready, ?_⟩, h.1.1.minLength, h.1.1.maxLength, h.2⟩
       change numAt t.mem (State.addr p.base) (Spec.Rsa.modulusWords p.k) 4 < numAt t.mem (State.addr p.base) (Spec.Rsa.modulusWords p.k) 0
       rw [r2, number]
-      exact Nat.mod_lt _ (by have := h.1.large; omega))
+      exact Nat.mod_lt _ (by have := h.1.1.large; omega))
   have oneTrace : RelCT isa (Two MontLayoutState)
       (.seq (VG.Impl.Bignum.Arm.smallConst 1 1) (VG.Impl.Bignum.Arm.montOp 1 1 4)) (fun _ _ => True) :=
     two_map montMath (fun _ _ h => h.1) montOne_ct
