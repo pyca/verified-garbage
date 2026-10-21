@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.StageCT
-import VerifiedGarbage.Proof.Bignum.Arm.ReductionStage
+import VerifiedGarbage.Proof.Bignum.Arm.FusedReductionStageCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Impl.Bignum.Arm.Round
 import VerifiedGarbage.Proof.Bignum.Arm.ProductStage
 import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
 import VerifiedGarbage.Proof.Framework.PlainSimp
@@ -57,21 +60,21 @@ theorem productStage_ready {base : BitVec 32} {size tmp a b mod acc n i : Nat} (
       h.operand (inv * t.mem.readW (off (State.addr base) acc) 32).isLt
       (val32_lt s.mem (State.addr base) mod n)
 
-theorem reductionStage_ready {base : BitVec 32} {size tmp a b mod acc n i : Nat}
-    (s : State) (h : ReductionReady base size tmp a b mod acc n i s) :
-    WP isa reductionStage s (StageReady base size tmp a b mod acc n i (acc + 4 * n)) := by
-  obtain ⟨inv, hdr, inverse, fits⟩ := h.secret
-  refine WP.mono (reductionStage_ok s h.ctx hdr h.ptr inverse fits) ?_
-  rintro t ⟨_, _, header, ptr, _, keep⟩
-  exact ⟨h.ctx.congr keep.wr, ⟨inv, header⟩, ptr⟩
-
 theorem montRound_ct {base : BitVec 32} {size tmp a b mod acc n i : Nat} (hi : i < n) :
     RelCT isa (fun s t => RoundReady base size tmp a b mod acc n i s ∧
       RoundReady base size tmp a b mod acc n i t) montRound (fun _ _ => True) := by
   have product := pair_posts (P := RoundReady base size tmp a b mod acc n i) ((productStage_ct hi).mono
     (fun _ _ h => ⟨h.1.stage, h.2.stage⟩) (fun _ _ h => h)) (productStage_ready hi)
-  have reduction := pair_posts (P := ReductionReady base size tmp a b mod acc n i) (reductionStage_ct.mono
-    (fun _ _ h => ⟨h.1.stage, h.2.stage⟩) (fun _ _ h => h)) reductionStage_ready
-  exact product.seq (reduction.seq quotientStage_ct)
+  have reduction : RelCT isa
+      (fun s t => ReductionReady base size tmp a b mod acc n i s ∧
+        ReductionReady base size tmp a b mod acc n i t)
+      fusedReductionStage (fun s t => s.gpr .r0=t.gpr .r0) :=
+    fusedReductionStage_relCT.mono (fun _ _ h => ⟨h.1.stage,h.2.stage⟩) (fun _ _ h => h)
+  have finish : RelCT isa (fun s t => s.gpr .r0=t.gpr .r0)
+      (.block roundFinish) (fun _ _ => True) := by
+    apply RelCT.taint (A:=taint) (Taint.ofRegs [.r0]) ?_ (by taint_decide)
+    intro s t h
+    exact Taint.agree_ofRegs (by simpa using h)
+  exact product.seq (reduction.seq finish)
 
 end VG.Proof.Bignum.Arm

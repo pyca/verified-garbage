@@ -46,8 +46,7 @@ theorem montRounds_ct {base : BitVec 32} {size tmp a b mod acc n : Nat} :
       (isa.eval .ne s = some true → ∃ j < k, I j s t) := by
     intro k
     apply RelCT.exists_
-    intro i
-    intro s t tr1 tr2 u v h e1 e2
+    intro i s t tr1 tr2 u v h e1 e2
     obtain ⟨hik, hk, hs, ht⟩ := h
     have hi : i < n := by omega
     obtain ⟨trace, posts⟩ := pair_posts (montRound_ct hi) (montRound_ready hi)

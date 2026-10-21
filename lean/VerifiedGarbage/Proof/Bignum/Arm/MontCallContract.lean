@@ -4,8 +4,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.MontCallFn
 import VerifiedGarbage.Proof.Bignum.Arm.MontCallCT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCallEntry
-public import VerifiedGarbage.Impl.Bignum.Arm.RowUmaal
-import VerifiedGarbage.Proof.Bignum.Arm.RowUmaal
+public import VerifiedGarbage.Impl.Bignum.Arm.UmaalArithmetic
+import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Bignum.Arm.MontVerified
 meta import VerifiedGarbage.Proof.Bignum.Arm.MontVerified
@@ -84,7 +84,7 @@ theorem montCall_verified : Verified target MontCall.code (Spec.Rsa.Mont.mulCont
   ⟨montCall_contract_correct, montCall_contract_ct, montCall_contract_sat⟩
 
 theorem montCallUmaal_verified :
-    Verified target (umaalRows MontCall.code) (Spec.Rsa.Mont.mulContract abi 40) :=
-  umaalRows_verified montCall_verified
+    Verified target (umaalArithmetic MontCall.code) (Spec.Rsa.Mont.mulContract abi 40) :=
+  umaalArithmetic_verified montCall_verified
 
 end VG.Proof.Bignum.Arm

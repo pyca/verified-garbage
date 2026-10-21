@@ -1,10 +1,9 @@
 module
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
-public import VerifiedGarbage.Impl.Bignum.Arm.RowUmaal
+public import VerifiedGarbage.Impl.Bignum.Arm.UmaalArithmetic
 
 public import VerifiedGarbage.Proof.Variants.MillerRabin.Arm.Base
-import VerifiedGarbage.Proof.Bignum.Arm.RowUmaal
-public import VerifiedGarbage.Proof.Bignum.Arm.RowUmaal
+public import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic -- shake: keep (exposed backend proof fields reference these lemmas)
 public import VerifiedGarbage.Proof.Bignum.Arm.AddCarry
 public import VerifiedGarbage.Proof.Bignum.Arm.ArgsCT
 public import VerifiedGarbage.Proof.Bignum.Arm.BasesTail
@@ -288,9 +287,9 @@ import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 # The shared round on ARMv7 with `umaal`: the variant's code and proofs
 
 The variant `VG.Variants.MillerRabin.Arm.Umaal.variant`
-(`Variants/MillerRabin/Arm/Umaal.lean`): the baseline's code with each row
-by `rowU` (`umaalRows`), whose proofs are the baseline's
-(`umaalRows_verified`).
+(`Variants/MillerRabin/Arm/Umaal.lean`): `umaalArithmetic` replaces product
+and fused reduction rows with UMAAL implementations. The exact execution
+simulation transfers the baseline proof through `umaalArithmetic_verified`.
 -/
 
 @[expose] public section
@@ -299,13 +298,13 @@ namespace VG.Proof.Variants.MillerRabin.Arm.Umaal
 
 open VG.Arm VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm VG.Proof.MillerRabin.Arm
 
-theorem round_verified : Verified target (umaalRows Impl.MillerRabin.Arm.code) roundContract :=
-  umaalRows_verified round_verified_lite
+theorem round_verified : Verified target (umaalArithmetic Impl.MillerRabin.Arm.code) roundContract :=
+  umaalArithmetic_verified round_verified_lite
 
 def variant : RoundImpl where
-  code := umaalRows Impl.MillerRabin.Arm.code
+  code := umaalArithmetic Impl.MillerRabin.Arm.code
   verified := round_verified
-  stack := (armStack_umaalRows _).trans Base.variant.stack
+  stack := (armStack_umaalArithmetic _).trans Base.variant.stack
   suffix := "_umaal"
   features := ["umaal"]
 
