@@ -15,4 +15,10 @@ open VG.Impl.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64
 theorem cfgOk_pubVerify {c : Cfg} (h : CfgOk c) (b : Bool) : CfgOk { c with pubVerify := b } :=
   { h with comb := fun d hd => ⟨(h.comb d hd).w,(h.comb d hd).cover,(h.comb d hd).w9⟩ }
 
+/-- A curve's facts hold without its comb, with a table for verification's
+generator digits (`Cfg.gtab`) in its place: no fact reads the latter. -/
+theorem cfgOk_gtab {c : Cfg} (h : CfgOk c) (g : Option CombData) :
+    CfgOk { c with comb := none, gtab := g } :=
+  { h with comb := fun _ hd => (by cases hd), comb_am3 := fun _ hd => (by cases hd) }
+
 end VG.Proof.Ecdsa.Verify.X86_64
