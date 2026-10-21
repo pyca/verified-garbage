@@ -14,10 +14,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # ML-KEM on AArch64: the 16-bit NTT and its inverse of polynomials stored with 16 bits, at offsets
 
-`invW` (`Impl.MlKem.AArch64.Ntt16.Readonly`) is used as `Readonly.inv` is: a
-contract (`contractW`), the code inlined where its caller's pointers are
-(`transformW_call`), and from offsets of `x28` (`nttInvAtWithW_ok`), as
-`vg_mlkem16_ntt` is called (`nttAtWithW_ok`). The polynomial and the working
+`invW` (`Impl.MlKem.AArch64.Ntt16.Readonly`) has a contract (`contractW`), its code is inlined
+where its caller's pointers are (`transformW_call`), and from offsets of `x28`
+(`nttInvAtWithW_ok`), as `vg_mlkem16_ntt` is called (`nttAtWithW_ok`). The polynomial and the working
 space are 512 bytes each.
 -/
 

@@ -17,12 +17,11 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.LitI
 /-!
 # ML-KEM on AArch64: the 16-bit inverse NTTs, by the machine
 
-`inv` (`inv_run`) and `invW` (`invW_run`), with the table at its symbol, and
-`nttInv` (`nttInv_run`), which first stores the table in the working space
-(`halves_ok`), transform the polynomial at `x0` in place: the machine's state
-at the start holds of the caller's (`initU_rel`, `initW_rel`), with the
-inverse's model (`modelI`), and its runs (`checkIU_ok`, `checkIW_ok`,
-`checkIN_ok`) leave the reduced coefficients of `NTT⁻¹` in the polynomial.
+`invW` (`invW_run`), with the table at its symbol, and `nttInv` (`nttInv_run`), which first
+stores the table in the working space (`halves_ok`), transform the polynomial at `x0` in place:
+the machine's state at the start holds of the caller's (`initU_rel`, `initW_rel`), with the
+inverse's model (`modelI`), and its runs (`checkIW_ok`, `checkIN_ok`) leave the reduced
+coefficients of `NTT⁻¹` in the polynomial.
 -/
 
 @[expose] public section
@@ -31,21 +30,6 @@ namespace VG.Proof.MlKem.AArch64.NttR
 
 open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Ntt16 (halves_ok)
-
-theorem inv_run (s₀ : State) (hi : InU "VG_MLKEM_INTT16_ZETAS" Impl.MlKem.AArch64.Ntt16.invTableHalves s₀) :
-    WP isa Impl.MlKem.AArch64.Ntt16.Readonly.inv s₀ fun s' =>
-      s'.sp = s₀.sp ∧ PolyIs s'.mem (s₀.gpr .x0) (nttInv (polyAt s₀.mem (s₀.gpr .x0))) := by
-  have hc := checkIU_ok
-  generalize hx : initIU.runP invRules rsIU 16 Impl.MlKem.AArch64.Ntt16.Readonly.inv = x at hc
-  cases x with
-  | none => cases hc
-  | some σ =>
-    have hrel := initU_rel (rs := rsIU) (s₀ := s₀) (tb := s₀.syms "VG_MLKEM_INTT16_ZETAS")
-      (L := Li (Wu s₀)) (O := Oi (Wu s₀)) (fun _ => rfl) rfl rfl rfl rfl rfl
-      (by show s₀.syms _ + BitVec.ofNat 64 0 = _; rw [ptr_zero]) itabT_get
-      (fun j hj => by rw [Nat.zero_add]; exact hi.table j hj)
-    refine WP.mono (runP_ok (modelI (Wu s₀)) (ctxU hi) 16 _ hrel hx) fun s' h' => ⟨h'.sp, ?_⟩
-    exact polyIs_of_outU rfl rfl rfl h' hc fun p hp => Oi_nttInv (Wu s₀) _ (fun p hp => lrep_redU hi.red hp) hp
 
 theorem invW_run (s₀ : State) (hi : InW "VG_MLKEM_INTT16_ZETAS" Impl.MlKem.AArch64.Ntt16.invTableHalves s₀) :
     WP isa Impl.MlKem.AArch64.Ntt16.Readonly.invW s₀ fun s' =>

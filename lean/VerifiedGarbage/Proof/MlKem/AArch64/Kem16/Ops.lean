@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.W.Call
 import VerifiedGarbage.Proof.MlKem.AArch64.AddSubW
 import VerifiedGarbage.Proof.MlKem.AArch64.Codec12W.Dec
 import VerifiedGarbage.Proof.MlKem.AArch64.Widen16
+import VerifiedGarbage.Proof.MlKem.AArch64.Narrow16
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TransformTables
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
@@ -17,8 +18,8 @@ import VerifiedGarbage.Proof.MlKem.AArch64.DotW
 
 As `KemOps.lean`, for the blocks of `Impl.MlKem.AArch64.Kem16` on polynomials
 stored with 16 bits in the first half of a buffer of `scratch`: the fused dot
-product (`fusedW_ok`), the inverse transform (`invW_ok`), the sum (`addW_read_ok`),
-the widening (`widenW_ok`) and `ByteDecode₁₂` (`dec12W_ok`). Each keeps `KB` and
+product (`fusedW_ok`), the transforms (`nttW_ok`, `invW_ok`), the sum (`addW_read_ok`),
+the widening (`widenW_ok`), the narrowing (`narrowW_ok`) and `ByteDecode₁₂` (`dec12W_ok`). Each keeps `KB` and
 `x24` and changes only its whole 1024-byte buffers. -/
 
 @[expose] public section
@@ -47,6 +48,28 @@ theorem fusedW_ok {s₀ s : State} (hp : Pre P L s₀) {off : Nat} (ho : PO P of
     ft.sub fun r hr => ⟨_, List.mem_singleton_self _, by rw [List.mem_singleton.mp hr]; exact half_sub _⟩
   exact ⟨hk.frame kt ft' (by decide) (fun r hr => by
     rw [List.mem_singleton.mp hr]; exact ho.safe hp),ft',pt,kt.get .x24 (by decide)⟩
+
+theorem nttW_ok {s₀ s : State} (hp : Pre P L s₀) {off : Nat} (ho : PO P off)
+    (hk : KB P L s₀ s) {F : Poly} (pf : PolyIsW 16 s.mem (sA L s₀ off) F) (ht : Optimized.TransformTables s) :
+    WP isa (Ntt16.Readonly.nttAtWithW off NS) s fun t =>
+      KB P L s₀ t ∧ Frame [R (kA s₀) L.sc off 1024,R (kA s₀) L.sc NS 1024] s.mem t.mem ∧
+      PolyIsW 16 t.mem (sA L s₀ off) (ntt F) ∧ t.gpr .x24 = s.gpr .x24 := by
+  have hw := hp.wf
+  have hc := covers_cons (cov_s hp hk ho.le) (cov_s hp hk (o:=NS) (l:=1024) (by kom))
+  have hc' := covers_cons (cov_s hp hk (o:=off) (l:=512) (by have := ho.le; omega))
+    (cov_s hp hk (o:=NS) (l:=512) (by kom))
+  refine WP.mono (Ntt16.W.nttAtWithW_ok (by obtain ⟨_,hh⟩:=ho; kom) (by decide)
+    (by rw [e28 hk]) (by rw [e28 hk]) (((ho.ns hp).sub_left (half_sub _)).sub_right (half_sub _))
+    pf hc' (ht.fast.ready hc)) fun t ⟨kt,pt⟩ => ?_
+  have kt' : Kept [R (kA s₀) L.sc off 1024,R (kA s₀) L.sc NS 1024] s t := kt.sub fun r hh => by
+    rcases mem2' hh with rfl|rfl
+    · exact ⟨_, List.mem_cons_self .., half_sub _⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), half_sub _⟩
+  refine ⟨hk.call kt' ?_,kt'.frame,pt,kt.cs _ (by decide) (by decide)⟩
+  intro r hh
+  rcases mem2' hh with rfl|rfl
+  · exact ho.safe hp
+  · exact safe_scr hp (by kom)
 
 theorem invW_ok {s₀ s : State} (hp : Pre P L s₀) {off : Nat} (ho : PO P off)
     (hk : KB P L s₀ s) (hr : ReducedW 16 s.mem (sA L s₀ off)) (ht : Optimized.TransformTables s) :
@@ -125,6 +148,32 @@ theorem widenW_ok {s₀ : State} (hp : Pre P L s₀) {f g : Nat} (hf : PO P f) (
   rw [x1] at f₃ p₃
   refine ⟨kb₂.frame k₃ f₃ (by decide) fun r hr => by rw [List.mem_singleton.mp hr]; exact hg.safe hp,
     by rw [← m₂]; exact f₃, p₃, by rw [k₃.get .x24 (by decide), h₂.get .x24, h₁.get .x24]⟩
+
+theorem narrowW_ok {s₀ : State} (hp : Pre P L s₀) {f g : Nat} (hf : PO P f) (hg : PO P g)
+    (d : f + 1024 ≤ g ∨ g + 1024 ≤ f) {s : State} (hk : KB P L s₀ s) {F : Poly}
+    (pf : PolyIs s.mem (sA L s₀ f) F) :
+    WP isa (Kem16.narrowAt f g) s fun s' => KB P L s₀ s' ∧ Frame [R (kA s₀) L.sc g 1024] s.mem s'.mem ∧
+      PolyIsW 16 s'.mem (sA L s₀ g) F ∧ s'.gpr .x24 = s.gpr .x24 := by
+  have ff := hf.le
+  have fg := hg.le
+  refine WP.seq (wp_ptrTo (by decide) (by kom) fun s₁ h₁ e₁ => wp_ptrTo' (by decide) (by kom)
+    fun s₂ h₂ e₂ => ?_)
+  have kb₂ := hk.block (h₁.trans h₂).keep (by rw [h₂.mem, h₁.mem]) (by decide)
+  have m₂ : s₂.mem = s.mem := by rw [h₂.mem, h₁.mem]
+  have x0 : s₂.gpr .x0 = sA L s₀ f := by rw [h₂.get .x0, e₁, e28 hk]
+  have x1 : s₂.gpr .x1 = sA L s₀ g := by rw [e₂, h₁.get .x28, e28 hk]
+  have cw := cov_s hp kb₂ fg
+  have cr := cov_sr hp kb₂ ff
+  refine WP.mono (Narrow16.narrow_ok (F := F) ⟨?_, fun j hj => ?_, fun j hj => ?_, ?_⟩) fun s₃ ⟨k₃,f₃,p₃⟩ => ?_
+  · rw [x0, m₂]; exact pf
+  · rw [x0]; exact cr _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
+  · rw [x1]; exact cw _ _ (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
+  · rw [x0, x1]; exact (papart hp hf hg d).sub_right (half_sub _)
+  rw [x1] at f₃ p₃
+  have f₃' : Frame [R (kA s₀) L.sc g 1024] s₂.mem s₃.mem :=
+    f₃.sub fun r hr => ⟨_, List.mem_singleton_self _, by rw [List.mem_singleton.mp hr]; exact half_sub _⟩
+  refine ⟨kb₂.frame k₃ f₃' (by decide) fun r hr => by rw [List.mem_singleton.mp hr]; exact hg.safe hp,
+    by rw [← m₂]; exact f₃', p₃, by rw [k₃.get .x24 (by decide), h₂.get .x24, h₁.get .x24]⟩
 
 theorem dec12W_ok {s₀ : State} (hp : Pre P L s₀) {k o off : Nat} (hk4 : k < 4)
     (f : o + 384 ≤ L.len (L.slot k)) (ho : PO P off) (hs : L.slot k ≠ L.sc ∨ o + 384 ≤ off ∨ off + 1024 ≤ o)

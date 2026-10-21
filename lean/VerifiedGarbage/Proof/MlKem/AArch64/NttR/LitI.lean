@@ -11,13 +11,12 @@ meta import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
-/-! # Literals of the 16-bit inverse NTTs, for the runs the kernel evaluates -/
+/-! # Literals of the 16-bit inverse NTT of a polynomial stored with 16 bits, for the runs the kernel evaluates -/
 
 @[expose] public section
 
 namespace VG.Impl.MlKem.AArch64.Ntt16.Readonly
 
-materialize_code inv
 materialize_code invW
 
 end VG.Impl.MlKem.AArch64.Ntt16.Readonly
