@@ -509,7 +509,7 @@ class Check(unittest.TestCase):
                                      {str(check.graph_path("VerifiedGarbage.C")): (["meta import VerifiedGarbage.B"], [])},
                                      check.Graph([self.lean]), uses=uses)
                 self.assertFalse(plan.edits)
-                self.assertEqual(plan.decisions[0]["reason"], "opaque_transitive_meta_effects")
+                self.assertEqual(plan.decisions[0]["reason"], "opaque_private_execution_effects")
 
     def test_private_meta_only_namespace_provider_is_retained(self):
         plan = self.meta_plan("meta import VerifiedGarbage.B\n",
@@ -521,7 +521,7 @@ class Check(unittest.TestCase):
         plan = self.meta_plan("meta import VerifiedGarbage.B\n", {
             "effects": {"VerifiedGarbage.A": [check.INSTANCE_EXTENSION]}})
         self.assertFalse(plan.edits)
-        self.assertEqual(plan.decisions[0]["reason"], "opaque_transitive_meta_effects")
+        self.assertEqual(plan.decisions[0]["reason"], "opaque_private_execution_effects")
 
     def test_unfamiliar_registry_metadata_preserves_its_provider(self):
         for registry in ("default", "User.CustomSearchRules"):

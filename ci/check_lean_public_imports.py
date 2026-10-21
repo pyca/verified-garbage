@@ -207,11 +207,12 @@ class Graph(VisibilityGraph):
         self.effect_checked: set[str] = set()
         self.opaque_extensions: dict[str, list[str]] = {}
         self.namespace_exports: dict[str, set[str]] = {}
-        self.load_order_cache: dict[str, tuple[str, ...]] = {}
+        self.load_order_cache: dict[tuple[str, bool], tuple[str, ...]] = {}
 
-    def load_order(self, mod: str) -> tuple[str, ...]:
+    def load_order(self, mod: str, ordinary_only: bool = False) -> tuple[str, ...]:
         """Dependency-first import order, including private and meta paths."""
-        if mod not in self.load_order_cache:
+        key = (mod, ordinary_only)
+        if key not in self.load_order_cache:
             stack, active, finished, ordered = [(mod, False)], set(), set(), []
             while stack:
                 current, ready = stack.pop()
@@ -226,10 +227,10 @@ class Graph(VisibilityGraph):
                         raise ValueError(f"cyclic import graph at {current}")
                     active.add(current)
                     stack.append((current, True))
-                    stack.extend((dep, False) for dep, _, _, _ in reversed(self.imports(current))
-                                 if dep not in finished)
-            self.load_order_cache[mod] = tuple(ordered)
-        return self.load_order_cache[mod]
+                    stack.extend((dep, False) for dep, _, meta, _ in reversed(self.imports(current))
+                                 if dep not in finished and not (ordinary_only and meta))
+            self.load_order_cache[key] = tuple(ordered)
+        return self.load_order_cache[key]
 
     def importers(self, mod: str, library: list[str]) -> set[str]:
         if self.users is None:
@@ -932,7 +933,8 @@ def analyze(mods: list[str], shaken: dict[str, tuple[list[str], list[str]]], gra
                                 protected | blocked, meta_plain, keep_private | anchors)
             for pair, details in order_guards.items():
                 remaining.deferred.append({"module": pair[0], "dependency": pair[1],
-                                           "reason": "would reorder opaque initialization",
+                                           "reason": ("would remove opaque initialization" if details.get("lost_opaque_providers")
+                                                      else "would reorder opaque initialization"),
                                            "private_anchor_retained": pair in anchors, **details})
                 for decision in remaining.decisions:
                     if (decision["module"], decision["dependency"]) == pair:
@@ -996,16 +998,30 @@ def initialization_order_guards(plan: Plan, graph: Graph, library: list[str], us
     targets = sorted(set().union(*scopes.values()))
     after = Planned(graph, plan.edits)
     changed = []
-    for mod in targets:
-        old, new = graph.load_order(mod), after.load_order(mod)
+    removed = []
+    for mod, ordinary_only in ((mod, phase) for mod in targets for phase in (False, True)):
+        old, new = graph.load_order(mod, ordinary_only), after.load_order(mod, ordinary_only)
+        lost = {m for m in set(old) - set(new) if graph.project(m)}
+        if lost:
+            removed.append((mod, lost))
         common = set(old) & set(new)
         old, new = [m for m in old if m in common], [m for m in new if m in common]
         different = [i for i, (a, b) in enumerate(zip(old, new)) if a != b]
         if different:
             start, end = different[0], different[-1] + 1
             changed.append((mod, old[start:end], new[start:end]))
-    prepare_effects(graph, {m for _, old, new in changed for m in old + new}, uses)
+    prepare_effects(graph, {m for _, old, new in changed for m in old + new}
+                    | {m for _, lost in removed for m in lost}, uses)
     guarded = {}
+    for mod, lost in removed:
+        opaque = {m for m in lost if graph.kept(m)}
+        if not opaque:
+            continue
+        for e in primary:
+            if mod in scopes[e.module] and opaque & set(graph.load_order(e.dependency)):
+                guarded[e.module, e.dependency] = {
+                    "consumer": mod, "opaque_modules": sorted(opaque)[:20], "opaque_module_count": len(opaque),
+                    "lost_opaque_providers": sorted(opaque)[:20], "original_order": [], "proposed_order": []}
     for mod, old, new in changed:
         opaque = {m for m in old + new if graph.kept(m)}
         old_opaque = [m for m in old if m in opaque]
@@ -1056,7 +1072,12 @@ def narrow_private_meta(plan: Plan, mods: list[str], shaken: dict, graph: Graph,
     recorded = uses(targets, "meta_private")
     indexed = uses(targets, "references")
     worst = Planned(graph, plan.edits + [Edit(m, "remove_meta", x) for m, deps in candidates.items() for x in deps])
-    prepare_effects(graph, {y for m in targets for y in graph.reads(m, True) - worst.reads(m, True)}, uses)
+    # A meta import executes initializers behind PRIVATE dependencies too.
+    # Keeping an ordinary occurrence does not preserve this execution access.
+    hidden = {x: {y for y in graph.load_order(x) if graph.project(y)}
+              for deps in candidates.values() for x in deps}
+    prepare_effects(graph, {y for m in targets for y in graph.reads(m, True) - worst.reads(m, True)}
+                    | {y for modules in hidden.values() for y in modules}, uses)
     for mod, deps in candidates.items():
         opened = opened_namespaces(graph.text(mod))
         before = Planned(graph, plan.edits)
@@ -1070,6 +1091,10 @@ def narrow_private_meta(plan: Plan, mods: list[str], shaken: dict, graph: Graph,
                 decide(mod, x, "remove_meta", status, reason, meta=True, **evidence)
             if x in recorded.get(mod, set()) or x in indexed.get(mod, set()):
                 decision("retained", "direct_meta_or_source_dependency", modules=[x])
+                continue
+            hidden_opaque = {y for y in hidden[x] if graph.kept(y)}
+            if hidden_opaque:
+                decision("retained", "opaque_private_execution_effects", modules=sorted(hidden_opaque))
                 continue
             before = Planned(graph, plan.edits)
             edit = Edit(mod, "remove_meta", x)

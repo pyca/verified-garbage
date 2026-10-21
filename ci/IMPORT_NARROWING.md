@@ -75,6 +75,11 @@ deferred. Structural bookkeeping can move without imposing such an anchor.
 The editor preserves the earliest occurrence when demoting a public import
 that also has a later private duplicate. This guard is conservative and does
 not establish general semantic equivalence of arbitrary elaboration effects.
+The guard also preserves opaque providers lost from a shim's private load
+closure. Removing a meta import can stop a private dependency's initializer
+even when an ordinary occurrence remains. Ordinary instance-registration order
+is checked separately from mixed ordinary/meta runtime load order: traversing
+the same modules is insufficient when their import phases change.
 
 When repairs make a public provider locally unnecessary, `remove_public` can
 replace a demotion followed by a separate deletion round. A private provider may

@@ -22,7 +22,8 @@
     "baseline_value": 2,
     "description": "Captured from compiled Lean 4.35.0 fixture; old removal changed #eval chosenValue from 2 to 1 despite successful compilation",
     "fixed_value": 2,
-    "regression": "test_public_narrowing_keeps_a_private_initialization_anchor"
+    "regression": "test_public_narrowing_keeps_a_private_initialization_anchor",
+    "additional_evidence": "E exported metadata recaptured from the identical saved source for private execution-effect queries."
   },
   "schema": 1,
   "selected": [
@@ -80,6 +81,31 @@
       "VerifiedGarbage.B": [
         "Lean.deprecatedModuleExt",
         "_private.Lean.Compiler.ModPkgExt.0.Lean.modPkgExt"
+      ],
+      "VerifiedGarbage.E": [
+        "Lean.Compiler.LCNF.baseExt",
+        "Lean.Compiler.LCNF.impureSigExt",
+        "Lean.Compiler.LCNF.monoExt",
+        "Lean.Compiler.LCNF.monoTypeExt",
+        "Lean.Compiler.LCNF.specExtension",
+        "Lean.Compiler.inlineAttrs",
+        "Lean.IR.declMapExt",
+        "Lean.Meta.completionBlackListExt",
+        "Lean.auxRecExt",
+        "Lean.classExtension",
+        "Lean.deprecatedModuleExt",
+        "Lean.noConfusionExt",
+        "Lean.projectionFnInfoExt",
+        "Lean.protectedExt",
+        "_private.Lean.Compiler.LCNF.MonoTypes.0.Lean.Compiler.LCNF.trivialStructureInfoExt",
+        "_private.Lean.Compiler.LCNF.ToImpureType.0.Lean.Compiler.LCNF.ctorLayoutExt",
+        "_private.Lean.Compiler.LCNF.ToImpureType.0.Lean.Compiler.LCNF.impureTrivialStructureInfoExt",
+        "_private.Lean.Compiler.LCNF.ToImpureType.0.Lean.Compiler.LCNF.impureTypeExt",
+        "_private.Lean.Compiler.ModPkgExt.0.Lean.modPkgExt",
+        "_private.Lean.Namespace.0.Lean.namespacesExt",
+        "_private.Lean.Structure.0.Lean.structureExt",
+        "_private.Lean.Util.CollectAxioms.0.Lean.exportedAxiomsExt",
+        "reducibilityCore"
       ]
     },
     "meta_private": {

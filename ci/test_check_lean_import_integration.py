@@ -232,11 +232,11 @@ class LeanImports(unittest.TestCase):
                 self.assertEqual(self.run_lean(self.root / "VerifiedGarbage/A.lean").strip(), "12")
                 plan = self.meta_plan()
                 removal = check.Edit("VerifiedGarbage.A", "remove_meta", "VerifiedGarbage.B")
-                if ordinary_anchors:
-                    self.assertIn(removal, plan.edits)
-                else:
-                    self.assertNotIn(removal, plan.edits)
-                    self.assertTrue(any(d["reason"] == "would reorder opaque initialization" for d in plan.deferred))
+                # A private execution boundary remains conservative even
+                # when ordinary anchors happen to make this example safe.
+                self.assertNotIn(removal, plan.edits)
+                self.assertTrue(any(d["reason"] == "opaque_private_execution_effects"
+                                    and d["dependency"] == "VerifiedGarbage.B" for d in plan.decisions))
                 with mock.patch.object(check, "LEAN", self.root), mock.patch.object(check, "ROOT", self.root.parent):
                     check.fix(plan)
                 self.compile("A")
@@ -371,6 +371,41 @@ class LeanImports(unittest.TestCase):
             check.prepare_effects(graph, ["VerifiedGarbage.B"], self.uses)
             self.assertTrue(graph.kept("VerifiedGarbage.B"))
         self.assertFalse(self.meta_plan().edits)
+
+    def test_ordinary_instance_order_is_distinct_from_meta_load_order(self):
+        data = json.loads((HELPER.parent / "fixtures/import_narrowing/instance_phase_order.json").read_text())
+        for mod, source in data["sources"].items():
+            path = self.root.joinpath(*mod.split(".")).with_suffix(".lean")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(source)
+        for mod in ["E", *(f"C{i}" for i in range(5)), *(f"S{i}" for i in range(3)), "U", "A"]:
+            self.compile(mod)
+        self.assertEqual(self.run_lean(self.root / "VerifiedGarbage/A.lean").strip(), data["expected"])
+        plan = self.meta_plan()
+        with mock.patch.object(check, "LEAN", self.root), mock.patch.object(check, "ROOT", self.root.parent):
+            check.fix(plan)
+        self.compile("A")
+        self.assertEqual(self.run_lean(self.root / "VerifiedGarbage/A.lean").strip(), data["expected"])
+
+    def test_meta_import_preserves_initializers_hidden_behind_private_imports(self):
+        self.write("E", "public initialize hiddenCounter : IO.Ref Nat ← IO.mkRef 0\n")
+        self.compile("E")
+        self.write("C", "public import VerifiedGarbage.E\ninitialize hiddenCounter.modify (· + 1)\n")
+        self.compile("C")
+        for inner in ("import", "meta import"):
+            self.write("B", "meta import VerifiedGarbage.E\n" + inner + " VerifiedGarbage.C\n")
+            self.compile("B")
+            for ordinary in ("", "import VerifiedGarbage.B\n"):
+                self.write("A", "public import VerifiedGarbage.E\nmeta import VerifiedGarbage.E\n"
+                                 + ordinary + "meta import VerifiedGarbage.B\n#eval hiddenCounter.get\n")
+                self.compile("A")
+                self.assertEqual(self.run_lean(self.root / "VerifiedGarbage/A.lean").strip(), "1")
+                plan = self.meta_plan()
+                self.assertNotIn(check.Edit("VerifiedGarbage.A", "remove_meta", "VerifiedGarbage.B"), plan.edits)
+                with mock.patch.object(check, "LEAN", self.root), mock.patch.object(check, "ROOT", self.root.parent):
+                    check.fix(plan)
+                self.compile("A")
+                self.assertEqual(self.run_lean(self.root / "VerifiedGarbage/A.lean").strip(), "1")
 
     def test_empty_exported_namespace_is_a_real_import_dependency(self):
         for extra in ("", "namespace Other\npublic def value : Nat := 7\nend Other\n"):

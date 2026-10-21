@@ -10,19 +10,31 @@ tooling, tests and documentation; it includes no library or assembly edits.
 
 | Check | Result |
 | --- | --- |
-| Final Python/Lean regression suite | 417 passed, zero skips; includes 42 compiled Lean tests |
-| Final isolated proof sweep | 226 trials, 779 distinct selected modules; 67 verified trials, 259 operations kept, zero rollback |
+| Final Python/Lean regression suite | 419 passed, zero skips; includes 44 compiled Lean tests |
+| Earlier broad isolated proof sweep | 226 trials, 779 distinct selected modules; 67 verified trials, 259 operations kept, zero rollback |
 | Larger sources within that sweep | 32 sources, approximately 35–145 KB; 132 operations kept, zero rollback |
-| Final cumulative interaction trial | 34 roots, 643 operations kept, zero rollback; originals restored across 671 targets |
-| Fresh representative proof sample | 331 operations kept; all 14 verification targets restored and rebuilt |
-| Distinct final-runtime live coverage | 189 modules with verified edits, 833 library verification targets, 716 successfully rebuilt tasks |
-| Generated projects | 192 projects, 2,335 verified operations; evaluated values preserved in instance/initializer cases |
-| Portable replay | All 192 generated plans identical with process launches and original-source access disabled |
+| Earlier cumulative interaction trial | 34 roots, 643 operations kept, zero rollback; originals restored across 671 targets |
+| Final representative proof sample | 168 operations kept, zero rollback; all 14 verification targets restored and rebuilt |
+| Final generated projects | Eight fresh projects / 70 operations across phases, instances and literal/macro initializers; evaluated values preserved |
+| Earlier broad live coverage | 189 modules with verified edits, 833 library verification targets, 716 successfully rebuilt tasks |
+| Earlier generated projects | 192 projects, 2,335 verified operations; evaluated values preserved in instance/initializer cases |
+| Earlier portable replay | All 192 generated plans identical with process launches and original-source access disabled |
+| Final portable replay | All eight fresh generated plans identical with processes, source reads and directory access disabled |
 
-The generated total includes 160 projects compiled with the preceding runtime
-and replayed unchanged with the final runtime, plus 32 freshly compiled final
-projects. Counts above overlap: operations are executable edits, not net removed
-imports, and verification targets can be up to date. They are not a full rebuild.
+The broad campaigns and 192-project corpus preceded the last two guards. A final
+review found a private shim initializer changing an evaluated value from 1 to 0,
+and a fresh generated case changed instance selection from 3 to 2 when ordinary
+and meta import order diverged. Both are now compiled regressions. The final
+sample retains 168 operations instead of the preceding 331; additional meta
+removals are conservatively deferred. The broader campaign counts do not claim
+that the final planner still accepts all earlier edits.
+The fresh generated instance seed is `7312962`; its failing first project is
+saved in `fixtures/import_narrowing/instance_phase_order.json` and exercised by
+a compiled regression. The other final seeds are `7312961`, `7312963` and
+`7312964` for phases, literal initializers and macro initializers respectively.
+
+Counts overlap: operations are executable edits, not net removed imports, and
+verification targets can be up to date. These are scoped checks, not a full rebuild.
 
 Scoped emitter comparisons passed before and after the cumulative Md5.X86 and
 Sha512.X86 plans and complete Argon2/BLAKE2b caller/callee bundles on AArch64 and
@@ -42,15 +54,17 @@ edits. Proof and assembly sources remained unchanged in the main checkout.
 | Private removal broke an `import all` consumer | Couple downstream ordinary/meta repairs to private removals too |
 | Both versions compiled but instance-selected output changed from 2 to 1 | Preserve relative opaque-provider order and private initialization anchors |
 | Compiling meta-import removal changed initialized output from 1 to 0 | Read raw IR initializer metadata, including macro-generated initializers |
+| Private shim hid an executed initializer; ordinary and meta traversal orders disagreed | Preserve full private load effects and check ordinary order separately |
 | Compiling direct repair crossed an ARM/x86 boundary | Reuse repository target/layer policy; defer the responsible narrowing |
 
-The last four rows use minimized/generated projects. Other compiled regressions
+The import-all, initializer, order and target-policy rows use minimized/generated projects. Other compiled regressions
 cover temporary simp/grind/Aesop use, empty namespaces, nested import comments,
 phase visibility, pinned imports and coupled repairs at reviewed boundaries.
 
 ## Planning performance
 
-On the same 331-operation capture, toggling only graph-closure reuse:
+Before the last two guards, on the same 331-operation capture, toggling only
+graph-closure reuse:
 
 | Two repeats | Without reuse | With reuse |
 | --- | --- | --- |
@@ -60,6 +74,8 @@ On the same 331-operation capture, toggling only graph-closure reuse:
 
 All four report hashes matched; mean planning CPU improved 13.37×. Lean and Lake
 were absent from replay's `PATH`. This measures planning, not proof-build speed.
+The final 168-operation capture replayed identically in 9.90 s wall / 7.44 s CPU
+(about 0.38 GiB peak Python RSS); that single run is not a new controlled speedup comparison.
 
 ## Reproduction and limits
 
