@@ -731,6 +731,27 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
             });
             g.finish();
 
+            // Records shorter than the messages the library computes its
+            // keys' powers for, sealed in place too (`encrypt_in_place`, as
+            // QUIC and aws-lc-rs's callers seal): its `_prepared` instances
+            // choose their paths for these lengths themselves.
+            if size < 256 {
+                let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-seal-in-place") + label);
+                g.throughput(Throughput::Bytes(size as u64 + 1));
+                g.bench_function(BenchmarkId::new(VG, size), |b| {
+                    b.iter(|| {
+                        vg_key
+                            .encrypt_in_place(
+                                black_box(&nonce),
+                                black_box(&aad),
+                                black_box(&mut record[..]),
+                            )
+                            .unwrap()
+                    })
+                });
+                g.finish();
+            }
+
             // Each iteration opens the record again from its ciphertext.
             let mut buf = Aligned::new(&ct, offsets.input);
             let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-open") + label);
