@@ -80,8 +80,9 @@ structure EPostTo (s₀ s : State) : Prop where
 
 /-- An out-of-place interleaved encryption loop `enc`, for a key context of
 kind `M`, meets these contracts for a number of blocks that is a multiple of
-`w` (16, or 1 for loops that also take the blocks after the last 16). -/
-def StitchToOkM (M : CtxMode) (enc : Prog isa) (w : Nat := 16) : Prop :=
-  ∀ s₀, SPreTo M s₀ → nb s₀ % w = 0 → WP isa enc s₀ (EPostTo s₀)
+`w` (16, or 1 for loops that also take the blocks after the last 16), from
+`lo` blocks on (16, or 1 for loops that also take fewer than a group). -/
+def StitchToOkM (M : CtxMode) (enc : Prog isa) (w : Nat := 16) (lo : Nat := 16) : Prop :=
+  ∀ s₀, SPreTo M s₀ lo → nb s₀ % w = 0 → WP isa enc s₀ (EPostTo s₀)
 
 end VG.Proof.Gcm.X86_64.Stitch

@@ -96,10 +96,11 @@ structure SPreM (M : CtxMode) (s₀ : State) (lo : Nat := 16) : Prop where
 /-- `StitchOk`, for a key context of kind `M`, and for a number of blocks
 that is a multiple of `we` when encrypting and of `wd` when decrypting
 (`StitchOk`'s 16, or 1 for loops that also take the blocks after the last
-16). -/
-def StitchOkM (M : CtxMode) (enc dec : Prog isa) (we wd : Nat := 16) : Prop :=
-  (∀ s₀, SPreM M s₀ → nb s₀ % we = 0 → WP isa enc s₀ (EPost s₀)) ∧
-    (∀ s₀, SPreM M s₀ → nb s₀ % wd = 0 → WP isa dec s₀ (DPost s₀))
+16), from `le` (`ld`) blocks on (16, or 1 for loops that also take fewer
+than a group). -/
+def StitchOkM (M : CtxMode) (enc dec : Prog isa) (we wd : Nat := 16) (le ld : Nat := 16) : Prop :=
+  (∀ s₀, SPreM M s₀ le → nb s₀ % we = 0 → WP isa enc s₀ (EPost s₀)) ∧
+    (∀ s₀, SPreM M s₀ ld → nb s₀ % wd = 0 → WP isa dec s₀ (DPost s₀))
 
 theorem StitchOk.toM {enc dec : Prog isa} (h : StitchOk enc dec) (M : CtxMode) : StitchOkM M enc dec :=
   ⟨fun s₀ hp => h.1 s₀ hp.base, fun s₀ hp => h.2 s₀ hp.base⟩
