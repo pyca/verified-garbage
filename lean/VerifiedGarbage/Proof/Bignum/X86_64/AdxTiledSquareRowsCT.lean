@@ -214,8 +214,8 @@ theorem rows_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha 
     RelCT isa (Two (StartGood ps)) (AdxTiledSquare.rows ca) (Two (GoodV ps)) := by
   unfold AdxTiledSquare.rows
   refine RelCT.seq (two_piece [.rdi] ?_ (by taint_decide) rows_init_fw)
-    (two_loop (fun L : Layout => L.n-1) (Φ := LoopStateQ ps) (row_loop_ct pa ha ha1 ha2 hS)
-      (row_loop_fw pa ha ha1 ha2))
+    (RelCT.seq (two_loop (fun L : Layout => L.n-1) (Φ := LoopStateQ ps) (row_loop_ct pa ha ha1 ha2 hS)
+      (row_loop_fw pa ha ha1 ha2)) (AdxTiledProduct.fill_ct 1 2 (by taint_decide)))
   rintro L s t ⟨_,⟨mi,hs⟩,_⟩ ⟨_,⟨mj,ht⟩,_⟩ r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
   subst r; exact hs.rdi.trans ht.rdi.symm
@@ -355,8 +355,8 @@ theorem rows1_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha
     RelCT isa (Two (StartGood ps)) (AdxTiledSquare.rows1 ca) (Two (GoodV ps)) := by
   unfold AdxTiledSquare.rows1
   refine RelCT.seq (two_piece [.rdi] ?_ (by taint_decide) rows1_init_fw)
-    (two_loop (fun L : Layout => L.n-1) (row1_loop_ct pa ha ha1 ha2 hS)
-      (row1_loop_fw pa ha ha1 ha2))
+    (RelCT.seq (two_loop (fun L : Layout => L.n-1) (row1_loop_ct pa ha ha1 ha2 hS)
+      (row1_loop_fw pa ha ha1 ha2)) (AdxTiledProduct.fill_ct 1 2 (by taint_decide)))
   rintro L s t ⟨_,⟨mi,hs⟩,_⟩ ⟨_,⟨mj,ht⟩,_⟩ r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
   subst r; exact hs.rdi.trans ht.rdi.symm

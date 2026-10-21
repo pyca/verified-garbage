@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Bignum.X86_64.Fill
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRotate8
 
 /-! Register-resident triangular products within one eight-word block. -/
@@ -103,8 +104,10 @@ def nextBlock : List Instr :=
   [.mov .rax (.mem (hdr (sFn 12))),.alu .add .rax (.imm 8),
    .store (hdr (sFn 12)) .rax,.alu .cmp .rax (.mem (hdr sW))]
 
+/-- The blocks, then `fill 0 3` for the 12 bytes their index's register
+saved. -/
 def blocks (a : Nat) : Prog isa :=
   .seq (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax])
-    (.loop (.seq (block a) (.block nextBlock)) .ne)
+    (.seq (.loop (.seq (block a) (.block nextBlock)) .ne) (.block (fill 0 3)))
 
 end VG.Impl.Bignum.X86_64.AdxTri8

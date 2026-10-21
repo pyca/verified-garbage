@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledInit
 
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRow
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.Fill
 
 /-! The outer loop accumulates the exact product, one eight-word row at a time. -/
 
@@ -96,8 +97,10 @@ theorem rows_ok {s : State} {B : Addr} {Z w a b n : Nat} {mi : BitVec 64}
       ku.mono (by decide),fu,by
         rw [ou.wv (by unfold rawBase slot hdrBytes sFn; omega) (by unfold rawBase slot aAcc at *; omega)]
         simpa only [Nat.mul_zero,wv,Nat.zero_mul] using hz⟩
-  exact wp_upto (a := 0) (N := n) hn (Inv s B Z w a b · mi)
+  refine WP.seq (wp_upto (a := 0) (N := n) hn (Inv s B Z w a b · mi)
     (fun _ _ hk _ h => row_inv hv pa pb hZ hw hwN hk ha hb ha1 ha2 hb1 hb2 h)
-    (fun _ h => ⟨by simpa only [← hwN] using h.val,h.hdr,h.frame,h.keep⟩) h0
+    (fun u (h : Inv s B Z w a b n mi u) => WP.mono (fill_ok u 1 1) fun t ⟨mt,kt⟩ =>
+      ⟨by rw [mt]; simpa only [← hwN] using h.val,by rw [mt]; exact h.hdr,by rw [mt]; exact h.frame,
+        (h.keep.trans kt).mono (by decide)⟩) h0)
 
 end VG.Proof.Bignum.X86_64.AdxTiledProduct

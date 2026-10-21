@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Bignum.X86_64.Fill
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxHeader
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxCarry8
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
@@ -36,8 +37,11 @@ def nextRow : List Instr :=
 def row (a b : Nat) : Prog isa := .seq (.block rowInit)
   (.seq (AdxRect8.row a b) (.seq tail (.block nextRow)))
 
+/-- The rows, then `fill 1 1` for the 14 bytes their counters' registers
+saved. -/
 def rows (a b : Nat) : Prog isa :=
-  .seq (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax]) (.loop (row a b) .ne)
+  .seq (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax])
+    (.seq (.loop (row a b) .ne) (.block (fill 1 1)))
 
 /-- The borrowed header is saved only after the scratch window is cleared. -/
 def rawProduct (a b : Nat) : Prog isa :=

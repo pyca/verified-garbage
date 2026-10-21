@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 import VerifiedGarbage.Proof.Bignum.Triangular
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.Fill
 
 /-! ## AdxTri8FullBlock -/
 
@@ -170,12 +171,21 @@ open VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep)
 open VG.Proof.Bignum.X86_64.AdxRect8 (rawBase)
 
+/-- After the blocks and `fill`: `BlocksInv` at the end but for `rax`. -/
+structure BlocksOut (s₀ : State) (B : Addr) (Z w a k : Nat) (mi : BitVec 64) (s : State) : Prop where
+  scr : Scr s B Z
+  hdr : Hdr s.mem B w mi
+  rdi : s.gpr .rdi=B
+  keep : Keep mmRegs s₀ s
+  frame : Frm B (diagonalRanges w k) s₀.mem s.mem
+  val : wv s.mem B (rawBase w) (16*k)=blockCross s₀.mem B (slot w a) k
+
 theorem blocks_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
     {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
     (hw : w<2^31) (hwN : w=8*n) (hn : 0<n)
     (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp) :
-    WP isa (AdxTri8.blocks ca) s (BlocksInv s B Z w a n mi) := by
+    WP isa (AdxTri8.blocks ca) s (BlocksOut s B Z w a n mi) := by
   have nowrap := hs.nowrap
   have iZ : 8*sFn 12+8≤Z := by
     have := hdr_lt_slot w 8 (show sFn 12<32 by decide); omega_arith
@@ -190,8 +200,11 @@ theorem blocks_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
   have h0 : BlocksInv s B Z w a 0 mi u :=
     ⟨hs.congr ku.2.2,diagonal_hdr hh fu,(ku.gpr (by decide)).trans hd,by rw [mu,word_writeW_self]; rfl,
       by rw [ru]; rfl,ku.mono (by decide),fu,rfl⟩
-  exact wp_upto (a := 0) (N := n) hn (BlocksInv s B Z w a · mi)
-    (fun _ _ hk _ h => blockStep_ok hv pa hZ hw hwN hk ha ha1 ha2 h) (fun _ h => h) h0
+  exact WP.seq (wp_upto (a := 0) (N := n) hn (BlocksInv s B Z w a · mi)
+    (fun _ _ hk _ h => blockStep_ok hv pa hZ hw hwN hk ha ha1 ha2 h)
+    (fun u (h : BlocksInv s B Z w a n mi u) => WP.mono (fill_ok u 0 3) fun t ⟨mt,kt⟩ =>
+      ⟨h.scr.congr kt.2.2,by rw [mt]; exact h.hdr,(kt.gpr (by decide)).trans h.rdi,
+        (h.keep.trans kt).mono (by decide),by rw [mt]; exact h.frame,by rw [mt]; exact h.val⟩) h0)
 
 end VG.Proof.Bignum.X86_64.AdxTri8
 
@@ -388,14 +401,15 @@ theorem rows_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
         rw [h00,o2.wv (by unfold rawBase slot hdrBytes sFn; omega_arith) (by unfold rawBase slot aAcc at *; omega_arith),
           o1.wv (by unfold rawBase slot hdrBytes sFn; omega_arith) (by unfold rawBase slot aAcc at *; omega_arith)]
         simp⟩
-  apply wp_upto (a := 0) (N := n-1) (by omega_arith) (Inv s B Z w a n · mi)
-    (fun _ _ hk _ h => step_inv hv pa hZ hw hwN hk ha ha1 ha2 h) ?_ h0
-  intro t h
+  refine WP.seq (wp_upto (a := 0) (N := n-1) (by omega_arith) (Inv s B Z w a n · mi)
+    (fun _ _ hk _ h => step_inv hv pa hZ hw hwN hk ha ha1 ha2 h) (fun u h => ?_) h0)
+  refine WP.mono (fill_ok u 1 2) fun t ⟨mt,kt⟩ => ?_
   obtain ⟨c,eq⟩ := h.val
   simp only [show (8*(n-1)+8=w) = True from eq_true (by omega_arith),ite_true,Nat.mul_zero,Nat.add_zero] at eq
   rw [remaining_end s.mem B (slot w a) n (by omega_arith),Nat.add_zero] at eq
   simp only [remaining,Nat.mul_zero,Nat.pow_zero,Nat.one_mul,Nat.zero_add,Nat.sub_zero] at eq
-  exact ⟨⟨c,eq⟩,h.hdr,h.frame,h.keep⟩
+  rw [← mt] at eq
+  exact ⟨⟨c,eq⟩,by rw [mt]; exact h.hdr,by rw [mt]; exact h.frame,(h.keep.trans kt).mono (by decide)⟩
 
 /-- `Inv` for `rows1`, whose rows hand no carry on. -/
 structure Inv1 (s₀ : State) (B : Addr) (Z w a n k : Nat) (mi : BitVec 64) (s : State) : Prop where
@@ -460,13 +474,14 @@ theorem rows1_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
     ⟨hs.congr ku.2.2,frame_hdr hh fu,(ku.gpr (by decide)).trans hd,by rw [mu,word_writeW_self]; rfl,ru,
       ku.mono (by decide),fu,0,by
         rw [ou.wv (by unfold rawBase slot hdrBytes sFn; omega_arith) (by unfold rawBase slot aAcc at *; omega_arith),Nat.mul_zero,Nat.add_zero]⟩
-  apply wp_upto (a := 0) (N := n-1) (by omega_arith) (Inv1 s B Z w a n · mi)
-    (fun _ _ hk _ h => step1_inv hv pa hZ hw hwN hk ha ha1 ha2 h) ?_ h0
-  intro t h
+  refine WP.seq (wp_upto (a := 0) (N := n-1) (by omega_arith) (Inv1 s B Z w a n · mi)
+    (fun _ _ hk _ h => step1_inv hv pa hZ hw hwN hk ha ha1 ha2 h) (fun u h => ?_) h0)
+  refine WP.mono (fill_ok u 1 2) fun t ⟨mt,kt⟩ => ?_
   obtain ⟨c,eq⟩ := h.val
   rw [remaining_end s.mem B (slot w a) n (by omega_arith),Nat.add_zero] at eq
   simp only [remaining,Nat.mul_zero,Nat.pow_zero,Nat.one_mul,Nat.zero_add,Nat.sub_zero] at eq
-  exact ⟨⟨c,eq⟩,h.hdr,h.frame,h.keep⟩
+  rw [← mt] at eq
+  exact ⟨⟨c,eq⟩,by rw [mt]; exact h.hdr,by rw [mt]; exact h.frame,(h.keep.trans kt).mono (by decide)⟩
 
 end VG.Proof.Bignum.X86_64.AdxTiledSquare
 
