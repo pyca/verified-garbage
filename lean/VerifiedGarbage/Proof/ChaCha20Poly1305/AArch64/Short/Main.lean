@@ -60,7 +60,7 @@ import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 /-!
 # ChaCha20-Poly1305 on AArch64, 64 to 256 bytes: `seal` and `open` up to the tag
 
-The parts of `Short.sealMain` and `Short.openMain`, which leave what
+The parts of `Short.sealAfter` and `Short.openAfter`, which leave what
 `MainS` and `MainO` say, as the other forms of the code do.
 -/
 
@@ -127,11 +127,12 @@ theorem dR_inv {s₀ : State} (hp : APre e s₀) :
 theorem prologue_keepsV (sve : Bool) : (Short.prologue sve).allInstrs keepsV = true := by
   cases sve <;> lit_decide
 
-theorem sealMain_ok {sve : Bool} {s₀ : State} (hp : APre true s₀) (hL256 : L s₀ ≤ 256) :
-    WP isa (Short.sealMain sve) s₀ (MainS s₀) := by
+/-- After the prologue. -/
+theorem sealAfter_ok {s₀ s₁ : State} (hp : APre true s₀) (hL256 : L s₀ ≤ 256) (h₁ : PostP s₀ s₁)
+    (v₁ : ∀ r ∈ preservedV, (s₁.v r).extractLsb' 0 64 = (s₀.v r).extractLsb' 0 64) :
+    WP isa Short.sealAfter s₁ (MainS s₀) := by
   have hL' := (Nat.le_of_lt (s₀.gpr .x5).isLt)
-  unfold Short.sealMain
-  refine WP.seq (WP.mono (WP.preservedV (prologue_ok hp) (prologue_keepsV sve)) fun s₁ ⟨h₁, v₁⟩ => ?_)
+  unfold Short.sealAfter
   have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ :=
     bytesAt_frame h₁.inv.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x3).isLt)
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x24) (n := .x25) ⟨.inl rfl, .inl rfl⟩ (srcA hp) h₁.inv.x21
@@ -166,11 +167,12 @@ theorem sealMain_ok {sve : Bool} {s₀ : State} (hp : APre true s₀) (hL256 : L
     simp only [macData, List.nil_append, List.append_assoc, VG.Proof.Poly1305.length_bytesAt, length_encrypt]
   · rw [bytesAt_frame k₆.frame (by rdisj_all) hL', bytesAt_frame k₅.frame (by rdisj_all) hL', ct₄]
 
-theorem openMain_ok {sve : Bool} {s₀ : State} (hp : APre false s₀) (hL256 : L s₀ ≤ 256) :
-    WP isa (Short.openMain sve) s₀ (MainO s₀) := by
+/-- After the prologue. -/
+theorem openAfter_ok {s₀ s₁ : State} (hp : APre false s₀) (hL256 : L s₀ ≤ 256) (h₁ : PostP s₀ s₁)
+    (v₁ : ∀ r ∈ preservedV, (s₁.v r).extractLsb' 0 64 = (s₀.v r).extractLsb' 0 64) :
+    WP isa Short.openAfter s₁ (MainO s₀) := by
   have hL' := (Nat.le_of_lt (s₀.gpr .x5).isLt)
-  unfold Short.openMain
-  refine WP.seq (WP.mono (WP.preservedV (prologue_ok hp) (prologue_keepsV sve)) fun s₁ ⟨h₁, v₁⟩ => ?_)
+  unfold Short.openAfter
   have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ :=
     bytesAt_frame h₁.inv.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x3).isLt)
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x24) (n := .x25) ⟨.inl rfl, .inl rfl⟩ (srcA hp) h₁.inv.x21

@@ -44,14 +44,13 @@ faster than the two scalar blocks of the existing path even for one block of
 keystream, and 64 without, where it is not. -/
 def lo (sve : Bool) : Nat := if sve then 1 else 64
 
-/-- `x9 = 0` iff `lo sve ≤ len ≤ 256`: `(len - 1) >> 8` is zero iff `1 ≤ len ≤ 256`
-and `(len - lo) >> 8` iff `lo ≤ len < lo + 256` (each wraps around below). Both
-instances run the same five instructions, so the code after them is at the
-same addresses: the SVE2 instance's stitched loop measured 1.2-1.6% slower
-at 4 to 16 KiB with a check two instructions long. -/
+/-- `x9 = 0` iff `lo sve ≤ len ≤ 511`, the lengths that start with this code's
+prologue (`ShortRest.lean` takes those above 256): `(len - lo) >> 9` is zero iff
+`lo ≤ len < lo + 512` (it wraps around below), and `len >> 9` iff `len ≤ 511`.
+Both instances run the same four instructions, so the code after them is at
+the same addresses. -/
 def check (sve : Bool) : List Instr :=
-  [.subImm .x .x9 .x5 1, .lsr .x .x9 .x9 8, .subImm .x .x10 .x5 (lo sve), .lsr .x .x10 .x10 8,
-    .logic .orr .x .x9 .x9 .x10]
+  [.subImm .x .x9 .x5 (lo sve), .lsr .x .x9 .x9 9, .lsr .x .x10 .x5 9, .logic .orr .x .x9 .x9 .x10]
 
 /-- The ChaCha20 state for counter 0, at `x21`. -/
 def initState0 : List Instr := (List.range 16).flatMap (stWAt 0)
@@ -96,23 +95,21 @@ def xorKs : Prog isa :=
   (.seq (.block [.lsl .x .x11 .x23 60, .lsr .x .x11 .x11 60])
     (.ite (.zero .x .x11) (.block []) xor1)))
 
-/-- `seal` but for the tag. -/
-def sealMain (sve : Bool) : Prog isa :=
-  .seq (prologue sve)
-  (.seq (macPad .x24 .x25)
+/-- `seal` but for the tag, after the prologue. -/
+def sealAfter : Prog isa :=
+  .seq (macPad .x24 .x25)
   (.seq (.block lengths)
   (.seq xorKs
   (.seq (macPad .x22 .x23)
-    absorbLengths))))
+    absorbLengths)))
 
-/-- `open` up to the tag computed. -/
-def openMain (sve : Bool) : Prog isa :=
-  .seq (prologue sve)
-  (.seq (macPad .x24 .x25)
+/-- `open` up to the tag computed, after the prologue. -/
+def openAfter : Prog isa :=
+  .seq (macPad .x24 .x25)
   (.seq (macPad .x22 .x23)
   (.seq (.block lengths)
   (.seq absorbLengths
   (.seq xorKs
-    (finalizeTo 48))))))
+    (finalizeTo 48)))))
 
 end VG.Impl.ChaCha20Poly1305.AArch64.Short

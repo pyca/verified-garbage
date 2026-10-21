@@ -54,8 +54,8 @@ import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 /-!
 # ChaCha20-Poly1305 on AArch64: the branch on the length
 
-`Short.check` sets `x9`, and the code branches on it to `Short.lean`'s code
-for `lo sve` to 256 bytes. Every part's proof starts from the state on entry; the
+`Short.check` sets `x9`, and the code branches on it to the code with
+`Short.lean`'s prologue for `lo sve` to 511 bytes. Every part's proof starts from the state on entry; the
 state after `check` differs from it only in `x9`, which no precondition or
 postcondition mentions (`Agree`).
 -/
@@ -143,26 +143,26 @@ theorem MainO.agree {s₀ s₁ s : State} (h : Agree s₀ s₁) (hm : MainO s₁
 
 /-- The value `check sve` leaves in `x9`. -/
 abbrev checkVal (sve : Bool) (x : BitVec 64) : BitVec 64 :=
-  ((x - BitVec.ofNat 64 1) >>> 8) ||| ((x - BitVec.ofNat 64 (lo sve)) >>> 8)
+  ((x - BitVec.ofNat 64 (lo sve)) >>> 9) ||| (x >>> 9)
 
-/-- `x9`, zero iff `lo sve ≤ len ≤ 256`. -/
+/-- `x9`, zero iff `lo sve ≤ len ≤ 511`. -/
 theorem check_ok (sve : Bool) (s₀ : State) :
     WP isa (.block (check sve)) s₀ fun s₁ => Agree s₀ s₁ ∧ s₁.gpr .x9 = checkVal sve (s₀.gpr .x5) := by
   have hlo : lo sve < 4096 := by cases sve <;> decide
   have h : WP isa (.block (check sve)) s₀ fun s₁ => (∀ r, r ≠ .x9 → r ≠ .x10 → s₁.gpr r = s₀.gpr r) ∧
       s₁.gpr .x9 = checkVal sve (s₀.gpr .x5) ∧ s₁.mem = s₀.mem ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr :=
-    wp_subImm (by decide) fun s₁ u₁ => wp_lsr (by decide) fun s₂ u₂ => wp_subImm hlo fun s₃ u₃ =>
-      wp_lsr (by decide) fun s₄ u₄ => wp_orr fun s₅ u₅ => WP.block_nil
-      ⟨fun r h9 h10 => by rw [u₅.other r h9, u₄.other r h10, u₃.other r h10, u₂.other r h9, u₁.other r h9],
-        by rw [u₅.gpr, u₄.gpr, u₃.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.gpr,
-          u₂.other _ (by decide), u₁.other _ (by decide)],
-        by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem], by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd],
-        by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]⟩
+    wp_subImm hlo fun s₁ u₁ => wp_lsr (by decide) fun s₂ u₂ => wp_lsr (by decide) fun s₃ u₃ =>
+      wp_orr fun s₄ u₄ => WP.block_nil
+      ⟨fun r h9 h10 => by rw [u₄.other r h9, u₃.other r h10, u₂.other r h9, u₁.other r h9],
+        by rw [u₄.gpr, u₃.gpr, u₃.other _ (by decide), u₂.gpr, u₁.gpr, u₂.other _ (by decide),
+          u₁.other _ (by decide)],
+        by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem], by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd],
+        by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]⟩
   exact WP.mono (WP.preservedV (WP.withSp h) (by cases sve <;> lit_decide))
     fun s₁ ⟨⟨⟨g, x9, m, rd, wr⟩, sp⟩, v⟩ => ⟨⟨g, m, v, sp, rd, wr⟩, x9⟩
 
 theorem checkVal_eq (sve : Bool) {L : Nat} (h : L < 2 ^ 64) :
-    (checkVal sve (BitVec.ofNat 64 L) == 0) = decide (lo sve ≤ L ∧ L ≤ 256) := by
+    (checkVal sve (BitVec.ofNat 64 L) == 0) = decide (lo sve ≤ L ∧ L ≤ 511) := by
   have hz : ∀ x : BitVec 64, (x == 0) = decide (x.toNat = 0) := fun x => by
     by_cases hx : x = 0
     · subst hx; simp
@@ -177,9 +177,9 @@ theorem checkVal_eq (sve : Bool) {L : Nat} (h : L < 2 ^ 64) :
     BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Bool.false_eq_true, ite_true, ite_false] <;>
   omega
 
-/-- The branch: to `Short.lean`'s code iff `lo sve ≤ len ≤ 256`. -/
+/-- The branch: to the code with `Short.lean`'s prologue iff `lo sve ≤ len ≤ 511`. -/
 theorem check_eval {sve : Bool} {s₀ s₁ : State} (h : s₁.gpr .x9 = checkVal sve (s₀.gpr .x5)) :
-    isa.eval (.zero .x .x9) s₁ = some (decide (lo sve ≤ L s₀ ∧ L s₀ ≤ 256)) := by
+    isa.eval (.zero .x .x9) s₁ = some (decide (lo sve ≤ L s₀ ∧ L s₀ ≤ 511)) := by
   have e : isa.eval (.zero .x .x9) s₁ = some (s₁.gpr .x9 == 0) := eval_zero s₁ .x9
   rw [e, h, VG.Proof.ChaCha20Poly1305.AArch64.hL s₀, checkVal_eq sve (s₀.gpr .x5).isLt]
 

@@ -13,7 +13,8 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 
 `ShortRest.first` XORs the first 256 bytes with the keystream of
 `Short.prologue`, and `ShortRest.rest` the rest with the stream from the
-state `stash` copied; together they encrypt the data from counter 1.
+state `stash` copied; together they encrypt the data from counter 1. After
+the prologue, the code branches to `Short.lean`'s for up to 256 bytes.
 -/
 
 @[expose] public section
@@ -259,11 +260,13 @@ theorem ct_rest {s₀ : State} (hp : APre e s₀) (hL : 256 ≤ L s₀) {m₃ m�
 
 /-! ## `seal` and `open` up to the tag -/
 
-theorem sealMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre true s₀)
-    (hL₁ : 256 ≤ L s₀) : WP isa (ShortRest.sealMain v.callee) s₀ (MainS s₀) := by
+/-- After the prologue. -/
+theorem sealAfter_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ s₁ : State} (hp : APre true s₀)
+    (hL₁ : 256 ≤ L s₀) (h₁ : Short.PostP s₀ s₁)
+    (v₁ : ∀ r ∈ preservedV, (s₁.v r).extractLsb' 0 64 = (s₀.v r).extractLsb' 0 64) :
+    WP isa (ShortRest.sealAfter v.callee) s₁ (MainS s₀) := by
   have hL' := (Nat.le_of_lt (s₀.gpr .x5).isLt)
-  unfold ShortRest.sealMain
-  refine WP.seq (WP.mono (WP.preservedV (Short.prologue_ok hp) (Short.prologue_keepsV v.callee.sve)) fun s₁ ⟨h₁, v₁⟩ => ?_)
+  unfold ShortRest.sealAfter
   have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ :=
     bytesAt_frame h₁.inv.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x3).isLt)
   refine WP.seq (WP.mono (WP.preservedV (stash_ok hp h₁.inv h₁.st0) (by lit_decide))
@@ -319,11 +322,13 @@ theorem sealMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
     simp only [macData, List.nil_append, List.append_assoc, VG.Proof.Poly1305.length_bytesAt, length_encrypt]
   · rw [bytesAt_frame k₈.frame (by rdisj_all) hL', bytesAt_frame k₇.frame (by rdisj_all) hL', ct₆]
 
-theorem openMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre false s₀)
-    (hL₁ : 256 ≤ L s₀) : WP isa (ShortRest.openMain v.callee) s₀ (MainO s₀) := by
+/-- After the prologue. -/
+theorem openAfter_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ s₁ : State} (hp : APre false s₀)
+    (hL₁ : 256 ≤ L s₀) (h₁ : Short.PostP s₀ s₁)
+    (v₁ : ∀ r ∈ preservedV, (s₁.v r).extractLsb' 0 64 = (s₀.v r).extractLsb' 0 64) :
+    WP isa (ShortRest.openAfter v.callee) s₁ (MainO s₀) := by
   have hL' := (Nat.le_of_lt (s₀.gpr .x5).isLt)
-  unfold ShortRest.openMain
-  refine WP.seq (WP.mono (WP.preservedV (Short.prologue_ok hp) (Short.prologue_keepsV v.callee.sve)) fun s₁ ⟨h₁, v₁⟩ => ?_)
+  unfold ShortRest.openAfter
   refine WP.seq (WP.mono (WP.preservedV (stash_ok hp h₁.inv h₁.st0) (by lit_decide))
     fun s₂ ⟨⟨i₂, k₂, st₂⟩, v₂⟩ => ?_)
   have A₂ : bytesAt s₂.mem (ad s₀) (AL s₀) = A s₀ := by
@@ -386,29 +391,38 @@ theorem openMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
     simp only [macData, List.nil_append, List.append_assoc, VG.Proof.Poly1305.length_bytesAt]
   · rw [bytesAt_frame k₉.frame (by rdisj_all) hL', pt₈]
 
-/-! ## The branch on the length -/
+/-! ## The branch on the length, after the prologue -/
 
-/-- The value `ShortRest.check` leaves in `x9`. -/
-abbrev checkVal (x : BitVec 64) : BitVec 64 := ((x - BitVec.ofNat 64 257) >>> 8) ||| (x >>> 9)
+/-- `s₁` but for `x9` and `x10` is still after the prologue. -/
+theorem postP_agree {s₀ s₁ s₂ : State} (h : Short.Agree s₁ s₂) (hp : Short.PostP s₀ s₁) :
+    Short.PostP s₀ s₂ := by
+  obtain ⟨⟨x21, x22, x23, x24, x25, un, sp, rd, wr, sv, fr⟩, fine, poly, ks, st0⟩ := hp
+  have hu : ∀ r ∈ untouched, r ≠ .x9 ∧ r ≠ .x10 := by decide
+  refine ⟨⟨by rw [h.gpr _ (by decide) (by decide), x21], by rw [h.gpr _ (by decide) (by decide), x22],
+    by rw [h.gpr _ (by decide) (by decide), x23], by rw [h.gpr _ (by decide) (by decide), x24],
+    by rw [h.gpr _ (by decide) (by decide), x25],
+    fun r hr => by rw [h.gpr r (hu r hr).1 (hu r hr).2, un r hr], by rw [h.sp, sp], by rw [h.rd, rd],
+    by rw [h.wr, wr], by rw [h.mem]; exact sv, by rw [h.mem]; exact fr⟩,
+    by rw [h.mem]; exact fine, by rw [h.mem]; exact poly, by rw [h.mem]; exact ks, by rw [h.mem]; exact st0⟩
 
-/-- `x9`, zero iff `257 ≤ len ≤ 511`. -/
-theorem check_ok (s₀ : State) :
-    WP isa (.block check) s₀ fun s₁ => Short.Agree s₀ s₁ ∧ s₁.gpr .x9 = checkVal (s₀.gpr .x5) := by
-  have h : WP isa (.block check) s₀ fun s₁ => (∀ r, r ≠ .x9 → r ≠ .x10 → s₁.gpr r = s₀.gpr r) ∧
-      s₁.gpr .x9 = checkVal (s₀.gpr .x5) ∧ s₁.mem = s₀.mem ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr :=
+/-- The value `split` leaves in `x9`. -/
+abbrev splitVal (x : BitVec 64) : BitVec 64 := (x - BitVec.ofNat 64 1) >>> 8
+
+/-- `x9`, zero iff `1 ≤ len ≤ 256`. -/
+theorem split_ok (s₀ : State) :
+    WP isa (.block split) s₀ fun s₁ => Short.Agree s₀ s₁ ∧ s₁.gpr .x9 = splitVal (s₀.gpr .x23) := by
+  have h : WP isa (.block split) s₀ fun s₁ => (∀ r, r ≠ .x9 → r ≠ .x10 → s₁.gpr r = s₀.gpr r) ∧
+      s₁.gpr .x9 = splitVal (s₀.gpr .x23) ∧ s₁.mem = s₀.mem ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr :=
     wp_subImm (by decide) fun s₁ u₁ => VG.Proof.ChaCha20.AArch64.Xor.wp_lsr (by decide) fun s₂ u₂ =>
-      VG.Proof.ChaCha20.AArch64.Xor.wp_lsr (by decide) fun s₃ u₃ =>
-      VG.Proof.ChaCha20Poly1305.AArch64.wp_orr fun s₄ u₄ => WP.block_nil
-      ⟨fun r h9 h10 => by rw [u₄.other r h9, u₃.other r h10, u₂.other r h9, u₁.other r h9],
-        by rw [u₄.gpr, u₃.gpr, u₃.other _ (by decide), u₂.gpr, u₁.gpr, u₂.other _ (by decide),
-          u₁.other _ (by decide)],
-        by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem], by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd],
-        by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]⟩
+      WP.block_nil
+      ⟨fun r h9 _ => by rw [u₂.other r h9, u₁.other r h9],
+        by rw [u₂.gpr, u₁.gpr],
+        by rw [u₂.mem, u₁.mem], by rw [u₂.rd, u₁.rd], by rw [u₂.wr, u₁.wr]⟩
   exact WP.mono (WP.preservedV (WP.withSp h) (by lit_decide))
     fun s₁ ⟨⟨⟨g, x9, m, rd, wr⟩, sp⟩, v⟩ => ⟨⟨g, m, v, sp, rd, wr⟩, x9⟩
 
-theorem checkVal_eq {L : Nat} (h : L < 2 ^ 64) :
-    (checkVal (BitVec.ofNat 64 L) == 0) = decide (257 ≤ L ∧ L ≤ 511) := by
+theorem splitVal_eq {L : Nat} (h : L < 2 ^ 64) :
+    (splitVal (BitVec.ofNat 64 L) == 0) = decide (1 ≤ L ∧ L ≤ 256) := by
   have hz : ∀ x : BitVec 64, (x == 0) = decide (x.toNat = 0) := fun x => by
     by_cases hx : x = 0
     · subst hx; simp
@@ -418,15 +432,43 @@ theorem checkVal_eq {L : Nat} (h : L < 2 ^ 64) :
   rw [hz]
   congr 1
   apply propext
-  simp only [checkVal, BitVec.toNat_or, Nat.or_eq_zero_iff, BitVec.toNat_ushiftRight, BitVec.toNat_sub,
-    BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+  simp only [splitVal, BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat,
+    Nat.shiftRight_eq_div_pow]
   omega
 
-/-- The branch: to `ShortRest.lean`'s code iff `257 ≤ len ≤ 511`. -/
-theorem check_eval {s₀ s₁ : State} (h : s₁.gpr .x9 = checkVal (s₀.gpr .x5)) :
-    isa.eval (.zero .x .x9) s₁ = some (decide (257 ≤ L s₀ ∧ L s₀ ≤ 511)) := by
-  have e : isa.eval (.zero .x .x9) s₁ = some (s₁.gpr .x9 == 0) :=
-    VG.Proof.ChaCha20.AArch64.Xor.eval_zero s₁ .x9
-  rw [e, h, VG.Proof.ChaCha20Poly1305.AArch64.hL s₀, checkVal_eq (s₀.gpr .x5).isLt]
+/-- The branch: to `Short.lean`'s code iff `1 ≤ len ≤ 256`. -/
+theorem split_eval {s₀ s₁ s₂ : State} (h₁ : Short.PostP s₀ s₁) (h : s₂.gpr .x9 = splitVal (s₁.gpr .x23)) :
+    isa.eval (.zero .x .x9) s₂ = some (decide (1 ≤ L s₀ ∧ L s₀ ≤ 256)) := by
+  have e : isa.eval (.zero .x .x9) s₂ = some (s₂.gpr .x9 == 0) :=
+    VG.Proof.ChaCha20.AArch64.Xor.eval_zero s₂ .x9
+  rw [e, h, h₁.inv.x23, VG.Proof.ChaCha20Poly1305.AArch64.hL s₀, splitVal_eq (s₀.gpr .x5).isLt]
+
+/-! ## `seal` and `open` up to the tag, for `lo ≤ len ≤ 511` -/
+
+theorem sealMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre true s₀)
+    (hlo : 1 ≤ L s₀) : WP isa (ShortRest.sealMain v.callee) s₀ (MainS s₀) := by
+  unfold ShortRest.sealMain
+  refine WP.seq (WP.mono (WP.preservedV (Short.prologue_ok hp) (Short.prologue_keepsV v.callee.sve))
+    fun s₁ ⟨h₁, v₁⟩ => ?_)
+  refine WP.seq (WP.mono (split_ok s₁) fun s₂ ⟨ag, x9⟩ => ?_)
+  have h₂ := postP_agree ag h₁
+  have v₂ : ∀ r ∈ preservedV, (s₂.v r).extractLsb' 0 64 = (s₀.v r).extractLsb' 0 64 :=
+    fun r hr => (ag.v r hr).trans (v₁ r hr)
+  refine WP.ite (decide (1 ≤ L s₀ ∧ L s₀ ≤ 256)) (split_eval h₁ x9) (fun h => ?_) (fun h => ?_)
+  · exact Short.sealAfter_ok hp (of_decide_eq_true h).2 h₂ v₂
+  · exact sealAfter_ok v hp (by have := of_decide_eq_false h; omega) h₂ v₂
+
+theorem openMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre false s₀)
+    (hlo : 1 ≤ L s₀) : WP isa (ShortRest.openMain v.callee) s₀ (MainO s₀) := by
+  unfold ShortRest.openMain
+  refine WP.seq (WP.mono (WP.preservedV (Short.prologue_ok hp) (Short.prologue_keepsV v.callee.sve))
+    fun s₁ ⟨h₁, v₁⟩ => ?_)
+  refine WP.seq (WP.mono (split_ok s₁) fun s₂ ⟨ag, x9⟩ => ?_)
+  have h₂ := postP_agree ag h₁
+  have v₂ : ∀ r ∈ preservedV, (s₂.v r).extractLsb' 0 64 = (s₀.v r).extractLsb' 0 64 :=
+    fun r hr => (ag.v r hr).trans (v₁ r hr)
+  refine WP.ite (decide (1 ≤ L s₀ ∧ L s₀ ≤ 256)) (split_eval h₁ x9) (fun h => ?_) (fun h => ?_)
+  · exact Short.openAfter_ok hp (of_decide_eq_true h).2 h₂ v₂
+  · exact openAfter_ok v hp (by have := of_decide_eq_false h; omega) h₂ v₂
 
 end VG.Proof.ChaCha20Poly1305.AArch64.ShortRest
