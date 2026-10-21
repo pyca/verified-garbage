@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Dsa.X86.Validate
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 
-import VerifiedGarbage.Proof.Dsa.X86.CoreSetupTiming
+import VerifiedGarbage.Proof.Dsa.X86.PointerTiming
 import VerifiedGarbage.Proof.Dsa.X86.CoreStoreTiming
 import VerifiedGarbage.Proof.Dsa.X86.ValidationBlocksTiming
 import VerifiedGarbage.Proof.Framework.PlainSimp
@@ -22,7 +22,10 @@ theorem validateMinus_relCT (len amount output : Nat) (modulus : Field) (base : 
       (Validate.minus len modulus amount output) (VG.X86.Taint.Agree (workspaceTaint true)) := by
   unfold Validate.minus
   dsimp only
-  apply RelCT.seq (coreSetup_relCT len modulus base size hz)
-  exact RelCT.seq (modulusMinus_relCT _ amount) (coreStore_workspace_relCT len output)
+  refine RelCT.seq (coreLoad_relCT _ _ _ _ base size hz) ?_
+  exact (RelCT.seq (modulusMinus_relCT _ amount) (coreStore_workspace_relCT len output)).mono
+    (fun _ _ h => taint.le_sound
+      (show taint.le (workspaceTaint false) (workspaceTaint true) = true from rfl) h)
+    (fun _ _ h => h)
 
 end VG.Proof.Dsa.X86
