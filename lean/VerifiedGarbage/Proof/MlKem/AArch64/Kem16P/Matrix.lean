@@ -236,4 +236,164 @@ theorem paired_stepP {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀)
         · exact .inr rfl
     · rw [List.mem_singleton.mp hr, bufR_eq]; exact .inl (scratch_sub hp (by lom))
 
+/-- The paired matrix's writes miss buffer `N`. -/
+theorem buf_bW {s₀ : State} (hp : Pre P L s₀) {N : Nat} (hN : N < 12) :
+    ∀ r ∈ bW P L s₀, (rateR (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff P N))).Disjoint r := by
+  have hw := hp.wf
+  intro r hr
+  show (R (kA s₀) L.sc (TP P + 168 * N) 128).Disjoint r
+  rcases mem4 hr with rfl | rfl | rfl | rfl
+  · exact sdisj hp (by lom) (by lom) (by lom)
+  · exact sdisj hp (by lom) (by lom) (by lom)
+  · exact sdisj hp (by lom) (by lom) (by lom)
+  · exact below_R hp hp.scb (hp.fs (by lom))
+
+/-- **A pair computing no PRF output** after `G`. -/
+theorem paired_stepQ {s₀ s : State} (hp : Pre P L s₀) {mA : Mem} {ρ : List Byte} {e c : Nat}
+    (he : e + 1 < P.k * P.k) (hc : c ≤ 12)
+    (h : PInvW true P L s₀ mA ρ e c s) (tb : MT3 P L s₀ s) :
+    WP isa (Impl.MlKem.AArch64.Paired.pair P false e true) s fun t =>
+      PInvW true P L s₀ mA ρ (e + 2) c t ∧ MT3 P L s₀ t := by
+  refine WP.mono_syms (paired_step hp he h.b tb.t) fun t ⟨hb, mt⟩ sy => ?_
+  exact ⟨⟨Hybrid.binv_rebase hb, h.fr.trans (hb.fr.mono fun r hr => List.mem_append_left _ (Hybrid.bW_sub r hr)),
+    fun N hN => (h.prf N hN).frame hb.fr (buf_bW hp (by omega))⟩, mt, by rw [sy]; exact tb.stk⟩
+
+/-- **The singleton computing no PRF output** after `G`. -/
+theorem singleton_stepQ {s₀ s : State} (hp : Pre P L s₀) {mA : Mem} {ρ : List Byte} {e c : Nat}
+    (he : e < P.k * P.k) (hc : c ≤ 12)
+    (h : PInvW true P L s₀ mA ρ e c s) (tb : MT3 P L s₀ s) :
+    WP isa (Paired.lastCode SB SS e P.k (AH + 1024 * e) true) s fun t =>
+      PInvW true P L s₀ mA ρ (e + 1) c t ∧ MT3 P L s₀ t := by
+  refine WP.mono_syms (singleton_step hp he h.b tb.t) fun t ⟨hb, mt⟩ sy => ?_
+  exact ⟨⟨Hybrid.binv_rebase hb, h.fr.trans (hb.fr.mono fun r hr => List.mem_append_left _ (Hybrid.bW_sub r hr)),
+    fun N hN => (h.prf N hN).frame hb.fr (buf_bW hp (by omega))⟩, mt, by rw [sy]; exact tb.stk⟩
+
+/-- `Paired.LastOutcomeW`, with the singleton's PRF outputs. -/
+structure LastOutcomeP (w16 : Bool) (B : List Byte) (p out R B₀ : Addr) (N₀ : Nat) (s t : State) : Prop where
+  keep : Keep Paired.pairRegs s t
+  frame : Frame (fullWritesP p out B₀) s.mem t.mem
+  reduced : ReducedW (cw w16) t.mem out
+  result : sampleNTT 280 B = none ∨ sampleNTT 280 B = some (polyAtW (cw w16) t.mem out)
+  status : t.gpr .x24 = s.gpr .x24 &&& BitVec.ofNat 64 (if (sampleNTT 280 B).isSome then 1 else 0)
+  prf : PrfBufs t.mem B₀ s.mem R N₀ 3
+
+theorem LastPostP.outcome {w16 : Bool} {B : List Byte} {p out R B₀ : Addr} {N₀ : Nat} {s t : State}
+    (h : LastPostP w16 B p out R B₀ N₀ s t) : LastOutcomeP w16 B p out R B₀ N₀ s t := by
+  refine ⟨h.keep, h.frame, h.reduced, ?_, ?_, h.prf⟩
+  · rcases h.result with ⟨_, hr⟩ | ⟨_, hr⟩; exact Or.inr hr; exact Or.inl hr
+  · rw [h.status]
+    rcases h.result with ⟨hl, hr⟩ | ⟨hl, hr⟩ <;> simp [hl, hr]
+
+/-- The singleton's writes, with its buffers. -/
+abbrev lastWritesM (P : KemLay) (L : Layout) (s₀ : State) (e N₀ : Nat) : List Region :=
+  fullWritesP (sA L s₀ SS) (aP L s₀ e) (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff P N₀))
+
+theorem lastP_far {s₀ : State} (hp : Pre P L s₀) {e N₀ : Nat} (he : e < P.k * P.k)
+    {o l : Nat} (hf : o + l ≤ SV P + 48)
+    (hs : (o + l ≤ SS ∨ SS + 2048 ≤ o) ∧ (o + l ≤ AH + 1024 * e ∨ AH + 1024 * (e + 1) ≤ o))
+    (hb : o + l ≤ TP P + 168 * N₀ ∨ TP P + 168 * N₀ + 504 ≤ o) (hN : N₀ + 3 ≤ 12) :
+    ∀ r ∈ lastWritesM P L s₀ e N₀, (R (kA s₀) L.sc o l).Disjoint r := by
+  intro r hr
+  rcases List.mem_append.mp hr with hr | hr
+  · exact last_far hp he hf hs r hr
+  · rw [List.mem_singleton.mp hr, bufR_eq]
+    have hw := hp.wf
+    exact sdisj hp hf (by lom) hb
+
+/-- The paired matrix's invariant after the singleton computing PRF outputs. -/
+theorem BInvW.singletonP {w16 : Bool} {s₀ s t : State} (hp : Pre P L s₀) {mA : Mem} {ρ : List Byte}
+    {Rr : Addr} {e N₀ : Nat} (he : e < P.k * P.k) (hN : N₀ + 3 ≤ 12) (h : BInvW w16 P L s₀ mA ρ e s)
+    (ht : LastOutcomeP w16 (matSeed ρ (e / P.k) (e % P.k)) (sA L s₀ SS) (aP L s₀ e) Rr
+      (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff P N₀)) N₀ s t) :
+    BInvW w16 P L s₀ t.mem ρ (e + 1) t := by
+  have hw := hp.wf
+  have fr : Frame (lastWritesM P L s₀ e N₀) s.mem t.mem := ht.frame
+  have old {i : Nat} (hi : i < e) := lastP_far hp he (o := AH + 1024 * i) (l := 1024) (N₀ := N₀)
+    (by lom) (by constructor <;> lom) (.inl (by lom)) hN
+  refine ⟨h.kb.frame ht.keep fr (by decide) ?_, Frame.refl _ _, ?_, ?_, ?_, ?_⟩
+  · intro r hr
+    rcases List.mem_append.mp hr with hr | hr
+    · simp only [Paired.fullWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> exact safe_scr hp (by lom)
+    · rw [List.mem_singleton.mp hr, bufR_eq]; exact safe_scr hp (by lom)
+  · rw [bytesAt_frame fr (lastP_far hp he (o := SB) (l := 32) (by lom) (by constructor <;> lom)
+      (.inl (by lom)) hN) (by decide)]
+    exact h.rho
+  · rw [ht.status, h.acc]
+    by_cases ha : okR P ρ e <;>
+      by_cases hb : (sampleNTT 280 (matSeed ρ (e / P.k) (e % P.k))).isSome <;>
+      simp [okR_succ, ha, hb]
+  · intro i hi
+    rcases (by omega : i < e ∨ i = e) with hi | rfl
+    · exact reducedW_frame fr (old hi) (h.red i hi)
+    · exact ht.reduced
+  · intro i hi
+    rcases (by omega : i < e ∨ i = e) with hi | rfl
+    · rw [polyAtW_frame fr (old hi)]; exact h.res i hi
+    · exact ht.result
+
+/-- **The singleton computing PRF outputs** `N₀`, `N₀ + 1`, `N₀ + 2` after `G`. -/
+theorem singleton_stepP {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀) {mA : Mem} {ρ : List Byte}
+    {N₀ : Nat} (hN : N₀ + 3 ≤ 12)
+    (h : PInvW true P L s₀ mA ρ (P.k * P.k - 1) N₀ s) (tb : MT3 P L s₀ s) :
+    WP isa (Impl.MlKem.AArch64.Kem16P.lastP P N₀) s fun t =>
+      PInvW true P L s₀ mA ρ (P.k * P.k - 1 + 1) (N₀ + 3) t ∧ MT3 P L s₀ t := by
+  have hw := hp.wf
+  have hbo : Impl.MlKem.AArch64.Kem16P.bufOff P N₀ < 65536 := by
+    simp only [Impl.MlKem.AArch64.Kem16P.bufOff]; lom
+  have hf := hw.facts
+  have hkk : P.k * P.k ≤ 16 := hf.2.2.1
+  have hk1 : 0 < P.k := hf.1
+  have hn : 0 < P.k * P.k := Nat.mul_pos hk1 hk1
+  have he : P.k * P.k - 1 < P.k * P.k := by omega
+  have hoff : AH + 1024 * (P.k * P.k - 1) < 65536 := by simp only [KEM.AH]; omega_using [hkk]
+  have bR := bufR_eq (L := L) (P := P) s₀ N₀
+  have lay : LayB (sA L s₀ SS) (sA L s₀ RB) (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff P N₀)) s :=
+    ⟨cov_s hp h.b.kb (o := SS) (l := 2048) (by lom), cov_sr hp h.b.kb (o := RB) (l := 32) (by lom),
+      sdisj hp (by lom) (by lom) (by lom), by rw [bR]; exact cov_s hp h.b.kb (by lom),
+      by rw [bR]; exact sdisj hp (by lom) (by lom) (by lom),
+      by rw [bR]; exact sdisj hp (by lom) (by lom) (by lom)⟩
+  have ap : BufApart (sA L s₀ SS) (sA L s₀ SB) (aP L s₀ (P.k * P.k - 1)) (s.syms "VG_MLKEM_REJ_SHUFFLE")
+      (sA L s₀ RB) (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff P N₀)) :=
+    ⟨by rw [bR]; exact sdisj hp (by lom) (by lom) (by lom), by rw [bR]; exact sdisj hp (by lom) (by lom) (by lom),
+      by rw [bR]; exact sdisj hp (o₂ := AH + 1024 * (P.k * P.k - 1)) (l₂ := 1024) (by lom) (by lom) (by lom),
+      by rw [bR]; exact tb.t.apart.sub_right (scratch_sub hp (by lom))⟩
+  rw [lastP_eq]
+  refine WP.mono_syms (lastCodeP_ok P (a := P.k * P.k - 1) (by omega) hbo (by decide) (by decide) (by decide) hoff
+    hk1 (by omega) (e28 h.b.kb SS) (e28 h.b.kb SB) (e28 h.b.kb _) (fun j hj => ?_)
+    (sdisj hp (by lom) (by lom) (by decide)) (sdisj hp (o₂ := AH + 1024 * (P.k * P.k - 1)) (l₂ := 1024)
+      (by lom) (by lom) (by lom))
+    (singleton_context hp he h.b.kb tb.t) rfl (Hybrid.x24_bit h.b) lay ap (e28 h.b.kb RB) (e28 h.b.kb _))
+    fun t ht sy => ?_
+  · rw [ptr_add]
+    exact in_R (cov_sr hp h.b.kb (o := SB) (l := 32) (by lom)) (k := 8 * j) (by omega) (by omega)
+  · have post := ht.outcome
+    have seed : Paired.seedBytes s.mem (sA L s₀ SB) (P.k * P.k - 1) P.k =
+        matSeed ρ ((P.k * P.k - 1) / P.k) ((P.k * P.k - 1) % P.k) := by
+      simp only [Paired.seedBytes, h.b.rho, matSeed]
+    rw [seed] at post
+    have fr : Frame (lastWritesM P L s₀ (P.k * P.k - 1) N₀) s.mem t.mem := post.frame
+    refine ⟨⟨BInvW.singletonP hp he hN h.b post, h.fr.trans (fr.sub fun r hr => ?_), fun N hN' => ?_⟩,
+      ?_, by rw [sy]; exact tb.stk⟩
+    · rcases List.mem_append.mp hr with hr | hr
+      · obtain ⟨r', hr', hs⟩ := last_sub (L := L) (s₀ := s₀) he r hr
+        exact ⟨r', List.mem_append_left _ (List.mem_append_left _ hr'), hs⟩
+      · rw [List.mem_singleton.mp hr, bR]
+        exact ⟨bufsR P L s₀, by simp, R.sub2 (by omega) (by omega)⟩
+    · by_cases hlt : N < N₀
+      · exact (h.prf N hlt).frame fr (lastP_far hp he (o := TP P + 168 * N) (l := 128) (by lom)
+          (by constructor <;> lom) (.inl (by omega)) hN)
+      · have pr := post.prf (N - N₀) (by omega)
+        rw [show N₀ + (N - N₀) = N by omega, seed_mA hp hk h.fr] at pr
+        show Rate128 t.mem (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff P N)) _
+        have e : sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff P N) =
+            bufAt (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff P N₀)) (N - N₀) := by
+          simp only [bufAt, Impl.MlKem.AArch64.Kem16P.bufOff, sA, ptr_add]
+          congr 2; omega
+        rw [e]; exact pr
+    · refine tb.t.frame post.keep.rd post.keep.wr sy fr fun r hr => ?_
+      rcases List.mem_append.mp hr with hr | hr
+      · exact last_scratch hp he r hr
+      · rw [List.mem_singleton.mp hr, bR]; exact scratch_sub hp (by lom)
+
 end VG.Proof.MlKem.AArch64.Kem16P
