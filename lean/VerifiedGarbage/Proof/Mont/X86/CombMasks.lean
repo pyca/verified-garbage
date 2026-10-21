@@ -4,7 +4,6 @@ import VerifiedGarbage.Impl.Mont.X86.CombTable
 import VerifiedGarbage.Proof.Mont.X86.WindowSelect
 import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Impl.Mont.X86.Window
-public import VerifiedGarbage.Impl.Mont.X86.Window
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Words

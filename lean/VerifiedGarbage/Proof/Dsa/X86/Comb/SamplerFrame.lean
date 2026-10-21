@@ -2,9 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Core
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Context
-public import VerifiedGarbage.Proof.Mont.OutsFrame
+import VerifiedGarbage.Proof.Mont.OutsFrame
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Mont.Words32
 
 /-! The rejection sampler writes only its stack frame, preserving the retained comb. -/
 

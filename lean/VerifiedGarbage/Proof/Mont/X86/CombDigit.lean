@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Rsa.FixedBaseComb
 import VerifiedGarbage.Proof.Mont.X86.CombTooth
+import VerifiedGarbage.Proof.Rsa.FixedBaseCombShift
 
 /-! The five fixed-position comb bits form a bounded table index. -/
 

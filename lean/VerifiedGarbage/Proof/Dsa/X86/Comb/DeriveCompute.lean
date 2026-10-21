@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Dsa.X86.StageValues
 import VerifiedGarbage.Proof.Dsa.X86.Persistent
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 public import VerifiedGarbage.Impl.Dsa.X86.CombGenerate
-public import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
+import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
 import VerifiedGarbage.Proof.Dsa.X86.Comb.CanonicalFrame
 import VerifiedGarbage.Proof.Dsa.X86.ValidateRange
 import VerifiedGarbage.Proof.Dsa.X86.DeriveCompute
@@ -14,6 +14,9 @@ public import VerifiedGarbage.Proof.Dsa.X86.Checks
 public import VerifiedGarbage.Proof.Dsa.X86.Execution
 public import VerifiedGarbage.Proof.Dsa.X86.Moduli
 import VerifiedGarbage.Proof.Dsa.X86.GenerateParameters
+public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
+public import VerifiedGarbage.Proof.Dsa.X86.Comb.Core
+public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
 
 /-! # Derivation computes y and accumulates the private and public ranges -/
 

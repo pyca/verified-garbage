@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicColumnTiming
 public import VerifiedGarbage.Proof.Mont.X86.CombSubsets
 import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectTable
 import VerifiedGarbage.Proof.Mont.X86.CombSubsets
-import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 
 /-! The subset construction loop has exactly 31 public iterations. -/
 

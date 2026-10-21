@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
-import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Spec.Rsa.FixedBaseComb
 
 /-! The low-bit subset recurrence used by a compact comb-table builder.
@@ -37,6 +36,7 @@ theorem exponent_lowTooth (bits a : Nat) (ha : a < 32) :
   rw [lowTooth_coeff a ha 0 (by decide), lowTooth_coeff a ha 1 (by decide),
     lowTooth_coeff a ha 2 (by decide), lowTooth_coeff a ha 3 (by decide),
     lowTooth_coeff a ha 4 (by decide)]
-  ring
+  simp only [Nat.add_mul]
+  ac_rfl
 
 end VG.Proof.Rsa.FixedBaseComb

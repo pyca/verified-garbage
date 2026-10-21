@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.ShapeCall
-public import VerifiedGarbage.Proof.Dsa.X86.Comb.ParametersTiming
+import VerifiedGarbage.Proof.Dsa.X86.Comb.ParametersTiming
 import VerifiedGarbage.Proof.Dsa.X86.VerifySizedTiming
 import VerifiedGarbage.Proof.Dsa.X86.BodyTiming
 import VerifiedGarbage.Proof.Dsa.X86.OutputTiming
 import VerifiedGarbage.Proof.Dsa.X86.FailureTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+public import VerifiedGarbage.Impl.Dsa.X86.CombGenerate
+public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 
 /-! The comb checker branches on public shape and public parameter values. -/
 

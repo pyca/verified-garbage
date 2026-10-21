@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckCall
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Finish
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Result
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CallResult
-import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckCallCT
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.DrawCT
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.FinishCT
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Generate

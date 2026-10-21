@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckInvoke
+import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckInvoke
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Call
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckCall
+import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Call
 
 /-! Returning from either internal invocation restores the sampler's ready state. -/
 

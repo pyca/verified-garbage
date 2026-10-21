@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
-public import VerifiedGarbage.Impl.Mont.X86.CombTable
+import VerifiedGarbage.Impl.Mont.X86.CombTable
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
 public import VerifiedGarbage.Proof.Mont.X86.EncodeBase
 import VerifiedGarbage.Proof.Mont.X86.WindowSelect
+public import VerifiedGarbage.Impl.Mont.X86.Window
 
 /-! Shared memory geometry for the retained comb and arithmetic scratch. -/
 

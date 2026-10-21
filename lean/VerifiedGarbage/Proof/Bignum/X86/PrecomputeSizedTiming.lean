@@ -55,7 +55,7 @@ theorem precomputeSized_relCT (base : Addr) (bytes len : Nat) (args : Nat → Bi
     apply RelCT.taint (A := taint) (workspaceTaint false)
       (fun _ _ H => agree_regs (by
         intro r hr; obtain rfl := List.mem_singleton.mp hr; exact H.rf.1 _ (by decide)))
-      (hc := contextSetupHint)
+      (hc := PublicContext.setupHint)
     rw [PublicContext.setup_check]
     rfl
   have Prepare : RelCT isa (PrecomputeValidPair base bytes len args)

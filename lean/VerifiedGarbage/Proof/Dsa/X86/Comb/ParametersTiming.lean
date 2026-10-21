@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86.CombGenerate
-public import VerifiedGarbage.Proof.Dsa.X86.Comb.StageTiming
+import VerifiedGarbage.Proof.Dsa.X86.Comb.StageTiming
 import VerifiedGarbage.Proof.Dsa.X86.GenerateTiming
 import VerifiedGarbage.Proof.Dsa.X86.GenerateDomain
 import VerifiedGarbage.Proof.Dsa.X86.CallValidationTiming
 import VerifiedGarbage.Proof.Dsa.X86.KeyTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+public import VerifiedGarbage.Impl.Dsa.X86.Comb
+public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
 
 /-! Public parameter preparation may branch only on the public domain values. -/
 

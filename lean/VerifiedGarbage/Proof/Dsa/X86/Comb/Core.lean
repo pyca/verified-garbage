@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PrepareCore
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PrivateCore
-import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
 
 /-! Common functional boundary for the public and private comb helpers. -/
 

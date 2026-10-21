@@ -1,13 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86.CombGenerate
-public import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
+import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
 import VerifiedGarbage.Proof.Dsa.X86.Comb.CanonicalFrame
 import VerifiedGarbage.Proof.Dsa.X86.ValidateOne
 import VerifiedGarbage.Proof.Dsa.X86.Persistent
 import VerifiedGarbage.Proof.Dsa.X86.GenerateDomain
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.X86.LocalOperand
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Proof.Dsa.X86.Comb.Core
+public import VerifiedGarbage.Proof.Dsa.X86.ScheduleFrame
 
 /-! The public check constructs a canonical table while checking g^q = 1. -/
 

@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Comb.CheckInvokeTiming
-public import VerifiedGarbage.Proof.Dsa.X86.Comb.DeriveInvokeTiming
+import VerifiedGarbage.Proof.Dsa.X86.Comb.CheckInvokeTiming
+import VerifiedGarbage.Proof.Dsa.X86.Comb.DeriveInvokeTiming
 import VerifiedGarbage.Proof.Dsa.X86.Comb.GenerationStack
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Verified
+public import Init.Prelude
+public import VerifiedGarbage.Impl.Dsa.X86.CombKey
+public import VerifiedGarbage.Spec.Dsa.Generate
+public import VerifiedGarbage.TCB.X86.Target
 
 /-! Full correctness, constant time, and satisfiability for retained-table key generation. -/
 

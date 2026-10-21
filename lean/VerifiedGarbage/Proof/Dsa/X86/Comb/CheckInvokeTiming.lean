@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Dsa.X86.Comb.CheckingOperationTiming
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.InlineInvokeTiming
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Data.List.Basic
+import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.AllocatedArgs
 
 /-! The internal checker receives only public domain values. -/
 

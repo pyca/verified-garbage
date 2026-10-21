@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Dsa.X86.DerivingLayout
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
-public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Dsa.X86.DerivingDispatchCT
 import VerifiedGarbage.Proof.Dsa.X86.CheckingDispatchCT
 import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperation
@@ -12,6 +11,7 @@ import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.X86.DerivingEntry
+public import VerifiedGarbage.Proof.Mont.Words
 
 /-! # Whole domain-deriving traces from common public arguments and domain values -/
 

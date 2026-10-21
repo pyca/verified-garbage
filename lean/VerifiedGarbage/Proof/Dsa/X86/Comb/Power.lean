@@ -9,8 +9,6 @@ import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerFrame
-import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
-import VerifiedGarbage.Proof.Mont.X86.CombTableState
 
 /-! Shared-table exponentiation, including padding and Montgomery decoding. -/
 

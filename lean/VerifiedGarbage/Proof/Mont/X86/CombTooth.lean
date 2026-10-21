@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.X86.CombPower
-public import VerifiedGarbage.Proof.Mont.X86.CombDigitMath
+import VerifiedGarbage.Proof.Mont.X86.CombDigitMath
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Mont.X86.ExponentWord
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Rsa.FixedBaseComb
 
 /-! Extract one fixed comb bit; its memory address is independent of its value. -/
 

@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectContext
+import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectContext
 public import VerifiedGarbage.Proof.Mont.X86.CombTableState
 import VerifiedGarbage.Proof.Mont.X86.CombAccess
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+public import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
+public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
 
 /-! Public and private lookups return the same canonical table value. -/
 

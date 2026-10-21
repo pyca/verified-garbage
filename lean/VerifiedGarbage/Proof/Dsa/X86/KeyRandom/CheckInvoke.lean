@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckCall
-public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Invoke
+import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Invoke
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Context
 
 /-! Domain checking establishes the scratch invariant consumed after sampling. -/
 

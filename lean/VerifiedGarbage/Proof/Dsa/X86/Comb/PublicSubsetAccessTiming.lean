@@ -1,11 +1,19 @@
 module
 
+import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectTable
+
+import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicSelectTiming
+
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicColumnTiming
-public import VerifiedGarbage.Proof.Mont.X86.CombSubsetControl
+import VerifiedGarbage.Proof.Mont.X86.CombSubsetControl
 import VerifiedGarbage.Proof.Mont.X86.CombAccess
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import Init.Prelude
+public import VerifiedGarbage.Impl.Mont.X86.CombTable
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! The subset builder preserves its public indices across each table lookup. -/
 

@@ -16,7 +16,6 @@ public import VerifiedGarbage.Proof.Mont.X86.CombTableState
 meta import VerifiedGarbage.Proof.Mont.X86.CombTableState
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
-import VerifiedGarbage.Proof.Mont.X86.CombTableState
 
 /-! Timing of public exponentiation through initialization, the comb loop and decoding. -/
 

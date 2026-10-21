@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Impl.Dsa.X86.Pow
 public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Mont.OutsFrame
 

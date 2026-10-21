@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
 import VerifiedGarbage.Proof.Dsa.X86.DeriveFailure
 public import VerifiedGarbage.Impl.Dsa.X86.Generate
 public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
-public import VerifiedGarbage.Proof.Dsa.X86.ShapeModuli
+import VerifiedGarbage.Proof.Dsa.X86.ShapeModuli
 public import VerifiedGarbage.Proof.Dsa.X86.Execution
 import VerifiedGarbage.Proof.Dsa.X86.DeriveCompute
 public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
@@ -13,6 +13,9 @@ public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Spec.Dsa.Derive
 import VerifiedGarbage.Proof.Dsa.X86.DeriveBytes
 import VerifiedGarbage.Proof.Dsa.X86.DeriveSpec
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Proof.Dsa.X86.Moduli
+public import VerifiedGarbage.Proof.Dsa.X86.ShapeOperands
 
 /-! # Shape checking followed by derivation or full output clearing -/
 

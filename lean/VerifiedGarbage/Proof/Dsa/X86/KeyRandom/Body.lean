@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Invoke
+
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckInvoke
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckFrame
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckArgs

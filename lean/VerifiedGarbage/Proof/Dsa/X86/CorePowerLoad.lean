@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Dsa.X86.Layout
 public import VerifiedGarbage.Impl.Dsa.Layout
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Complete modular exponentiation call, including byte I/O -/

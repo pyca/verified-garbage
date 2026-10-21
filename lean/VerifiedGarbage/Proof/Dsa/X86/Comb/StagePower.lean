@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.Checks
 import VerifiedGarbage.Proof.Dsa.X86.Persistent
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
-import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
 
 /-! Integrate comb powers into the byte-oriented DSA schedule with their full footprint. -/
 

@@ -1,8 +1,14 @@
 module
 
+import VerifiedGarbage.Proof.Mont.X86.CombSquares
+
+import VerifiedGarbage.Proof.Mont.X86.CombColumnControl
+
+import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectTable
+
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerFrame
 meta import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerFrame
-public import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicSelectTiming
+import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicSelectTiming
 public import VerifiedGarbage.Proof.Mont.X86.CombColumns
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
@@ -11,6 +17,14 @@ meta import VerifiedGarbage.Impl.Dsa.X86.Comb
 meta import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
+meta import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Mont.Words32
+meta import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+public import VerifiedGarbage.Proof.Mont.X86.Words
+meta import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! Column construction indexes only the public single-tooth entries. -/
 

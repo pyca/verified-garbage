@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicVerified
 import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicBodyTiming
 import VerifiedGarbage.Proof.Dsa.X86.Comb.PrivateBodyTiming
-import VerifiedGarbage.Proof.Dsa.X86.Comb.BodyWide
 import VerifiedGarbage.Proof.Dsa.X86.PowCallFrame
 
 /-! The public and secret exponent calls share a proved relational calling boundary. -/

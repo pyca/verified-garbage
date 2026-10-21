@@ -6,9 +6,6 @@ public import VerifiedGarbage.Impl.Mont.X86.CombTable
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Words
-public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.Mont.Words32
-public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! Public comb table access shares its pointer setup and copying proof. -/
 

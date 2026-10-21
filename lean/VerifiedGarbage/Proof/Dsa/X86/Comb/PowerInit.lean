@@ -6,8 +6,6 @@ import VerifiedGarbage.Proof.Mont.X86.WindowSelect
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
-import VerifiedGarbage.Proof.Mont.X86.CombTableState
 
 /-! Initialize the comb accumulator and zero-pad its exponent. -/
 

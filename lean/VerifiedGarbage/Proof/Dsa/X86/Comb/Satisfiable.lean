@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.Comb.ABI
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
 
 /-! Concrete small-modulus witnesses satisfy both helper contracts. -/
 

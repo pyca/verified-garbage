@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.Words32
-public import VerifiedGarbage.Proof.Rsa.FixedBaseCombShift
+import VerifiedGarbage.Proof.Rsa.FixedBaseCombShift
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Rsa.FixedBaseComb
 
 /-! Read a fixed-position comb bit through its containing 32-bit word. -/
 

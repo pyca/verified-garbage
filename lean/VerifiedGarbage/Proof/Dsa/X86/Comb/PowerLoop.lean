@@ -5,8 +5,6 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerFrame
 public import VerifiedGarbage.Proof.Rsa.FixedBaseComb
-import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
-import VerifiedGarbage.Proof.Mont.X86.CombTableState
 
 /-! The fixed-count comb scan reconstructs the full secret exponent. -/
 

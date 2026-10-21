@@ -1,5 +1,10 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.X86.Comb.Body
+
+
+import VerifiedGarbage.Proof.Dsa.X86.Comb.BodyWide
+
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.ABI
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig

@@ -1,12 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.CombFrame
-public import VerifiedGarbage.Proof.Mont.X86.CombSquares
-public import VerifiedGarbage.Proof.Mont.X86.CombColumnControl
+import VerifiedGarbage.Proof.Mont.X86.CombSquares
+import VerifiedGarbage.Proof.Mont.X86.CombColumnControl
 import VerifiedGarbage.Proof.Mont.X86.CombAccess
-import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
+public import VerifiedGarbage.Impl.Mont.X86.CombTable
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
+public import VerifiedGarbage.Spec.Rsa
 
 /-! Construct the five single-tooth entries by repeatedly squaring one residue. -/
 

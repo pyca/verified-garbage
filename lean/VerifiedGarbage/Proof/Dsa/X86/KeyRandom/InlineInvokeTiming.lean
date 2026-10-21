@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Context
 public import VerifiedGarbage.Impl.Dsa.X86.CombKey
 import VerifiedGarbage.Proof.Framework.X86.AllocFrame
-import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Proof.Framework.Covers
 
 /-! Inlining a cdecl body adds no observable trace beyond the body's execution. -/
 

@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectTable
+
+import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectTable
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+public import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
+public import VerifiedGarbage.Proof.Mont.X86.CombTableState
 
 /-! The comb loop writes only its digit, masks, accumulator and exponent. -/
 

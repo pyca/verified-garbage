@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Dsa.X86.PowCorrect
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.ABI
-import VerifiedGarbage.Proof.Dsa.X86.Comb.BodyWide
+public import VerifiedGarbage.Proof.Dsa.X86.Comb.BodyWide
 import VerifiedGarbage.Proof.Dsa.X86.Comb.Correct
 import VerifiedGarbage.Proof.Dsa.X86.Comb.PrivateBodyTiming
 

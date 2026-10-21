@@ -1,17 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.CombTableState
-public import VerifiedGarbage.Proof.Mont.X86.CombSubsetControl
+import VerifiedGarbage.Proof.Mont.X86.CombSubsetControl
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 import VerifiedGarbage.Proof.Mont.X86.CombAccess
 import VerifiedGarbage.Proof.Mont.X86.ContextMul
 import VerifiedGarbage.Proof.Mont.X86.ContextMath
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
-import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombMont
-import VerifiedGarbage.Proof.Rsa.FixedBaseCombSubset
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
+public import VerifiedGarbage.Impl.Mont.X86.CombTable
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! Complete the comb table by adding one low tooth to each preceding subset. -/
 

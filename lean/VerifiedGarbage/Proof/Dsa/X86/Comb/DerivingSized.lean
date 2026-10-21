@@ -1,12 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Checking
-public import VerifiedGarbage.Proof.Dsa.X86.DeriveSized
+import VerifiedGarbage.Proof.Dsa.X86.DeriveSized
 import VerifiedGarbage.Proof.Dsa.X86.Comb.DeriveCompute
 import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
 import VerifiedGarbage.Proof.Dsa.X86.Comb.CanonicalFrame
 import VerifiedGarbage.Proof.Dsa.X86.GenerateParameters
 import VerifiedGarbage.Proof.Dsa.X86.ShapeSavedFrame
+public import VerifiedGarbage.Impl.Dsa.X86.Entry
+public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
+public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Spec.Dsa.Derive
 
 /-! The internal derivation consumes the retained table under validated parameters. -/
 

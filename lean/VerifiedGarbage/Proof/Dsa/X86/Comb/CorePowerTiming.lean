@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.CorePowerTiming
-public import VerifiedGarbage.Proof.Dsa.X86.Comb.CorePower
+import VerifiedGarbage.Proof.Dsa.X86.Comb.CorePower
 public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 import VerifiedGarbage.Proof.Dsa.X86.Comb.CallTiming
 import VerifiedGarbage.Proof.Dsa.X86.Comb.Call
@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Dsa.X86.CoreStoreTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Dsa.X86.Layout
+public import VerifiedGarbage.Impl.Dsa.X86.CombCore
+public import VerifiedGarbage.Proof.Dsa.X86.Comb.Core
 
 /-! Constant-time composition of byte staging, comb calls, and byte output. -/
 

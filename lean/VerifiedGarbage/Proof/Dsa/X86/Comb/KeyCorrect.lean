@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Comb.CheckInvoke
-public import VerifiedGarbage.Proof.Dsa.X86.Comb.DeriveInvoke
+import VerifiedGarbage.Proof.Dsa.X86.Comb.CheckInvoke
+import VerifiedGarbage.Proof.Dsa.X86.Comb.DeriveInvoke
 import VerifiedGarbage.Proof.Dsa.X86.Comb.GenerationStack
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Correct
+public import Init.Core
+public import VerifiedGarbage.Impl.Dsa.X86.CombKey
+public import VerifiedGarbage.Spec.Dsa.Generate
+public import VerifiedGarbage.TCB.X86.Target
 
 /-! Full functional and ABI correctness of retained-table DSA key generation. -/
 

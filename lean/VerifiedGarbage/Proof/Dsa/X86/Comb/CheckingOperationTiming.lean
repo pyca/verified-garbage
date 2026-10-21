@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.CheckingLayout
-public import VerifiedGarbage.Proof.Dsa.X86.Comb.Checking
+import VerifiedGarbage.Proof.Dsa.X86.Comb.Checking
 import VerifiedGarbage.Proof.Dsa.X86.CheckingOperationCT
 import VerifiedGarbage.Proof.Dsa.X86.Comb.CheckingSizedTiming
 import VerifiedGarbage.Proof.Dsa.X86.ParameterBuffers
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
 import VerifiedGarbage.Proof.Dsa.X86.ABIResources
+public import VerifiedGarbage.Impl.Dsa.X86.CombGenerate
+public import VerifiedGarbage.Proof.Dsa.X86.CheckingABI
+public import VerifiedGarbage.Proof.Dsa.X86.Installed
 
 /-! Whole checker timing reuses the common entry and dispatch proof. -/
 

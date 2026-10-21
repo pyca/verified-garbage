@@ -12,7 +12,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.Comb.Core
 public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
-import VerifiedGarbage.Proof.Dsa.X86.Comb.Body
 import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectTable
 
 /-! Byte-oriented comb calls preserve the retained table across input and output staging. -/

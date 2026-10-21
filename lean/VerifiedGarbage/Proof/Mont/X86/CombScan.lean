@@ -9,9 +9,7 @@ public import VerifiedGarbage.Impl.Mont.X86.CombTable
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Impl.Mont.X86.Window
-public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.Words32
-public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! Fixed-address comb selection: each iteration writes one selected table word. -/
 

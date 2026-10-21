@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.CombShiftMath
+import VerifiedGarbage.Proof.Mont.X86.Instr
+
+import VerifiedGarbage.Proof.Mont.X86.CombShiftMath
 public import VerifiedGarbage.Impl.Mont.X86.CombPower
-public import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Mont.X86.WordOps
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Shifting a number's words up by one bit, in a loop over its words
 

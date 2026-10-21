@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86.CombKey
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Context
 public import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Proof.Framework.Covers
 
 /-! A shared inlined cdecl boundary for the checker and prevalidated derivation. -/
 

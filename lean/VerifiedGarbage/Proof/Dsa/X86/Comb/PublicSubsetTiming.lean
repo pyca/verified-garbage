@@ -1,10 +1,17 @@
 module
 
+import VerifiedGarbage.Proof.Mont.X86.CombSubsetControl
+
+
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicSubsetAccessTiming
-public import VerifiedGarbage.Proof.Mont.X86.CombSubsets
+import VerifiedGarbage.Proof.Mont.X86.CombSubsets
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import Init.Prelude
+public import VerifiedGarbage.Impl.Mont.X86.CombTable
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Rsa.FixedBaseCombSubset
 
 /-! Subset completion uses a public counter for both direct table accesses. -/
 

@@ -13,7 +13,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.Comb.ABI
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Dsa.X86.Comb.Core
 
 /-! The callable private comb helper leaks no exponent-dependent trace. -/
 

@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Impl.Mont.X86.Context
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
-public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Spec.Dsa.ModPow
 import VerifiedGarbage.Proof.Dsa.X86.Comb.BodyWide

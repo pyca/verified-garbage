@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Spec.Rsa.FixedBaseComb
 import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Spec.Rsa
-public import VerifiedGarbage.Spec.Rsa
 
 /-! Canonical Montgomery products add arbitrary fixed-base exponents. -/
 

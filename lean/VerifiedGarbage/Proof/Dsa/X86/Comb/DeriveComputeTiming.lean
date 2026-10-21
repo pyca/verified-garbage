@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86.CombGenerate
-public import VerifiedGarbage.Proof.Dsa.X86.Comb.StageTiming
+import VerifiedGarbage.Proof.Dsa.X86.Comb.StageTiming
 import VerifiedGarbage.Proof.Dsa.X86.Comb.CanonicalFrame
 import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
 import VerifiedGarbage.Proof.Dsa.X86.ValidateRange
@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Dsa.X86.CallValidationTiming
 import VerifiedGarbage.Proof.Dsa.X86.KeyTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
+public import VerifiedGarbage.Proof.Dsa.X86.Comb.Core
 
 /-! The private schedule uses the retained context and never branches on x. -/
 

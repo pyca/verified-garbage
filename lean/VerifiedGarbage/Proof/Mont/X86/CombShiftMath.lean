@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.WindowWords
-public import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Mont.X86.WindowWords
 public import VerifiedGarbage.Proof.Mont.Words32
+public import Init.Data.BitVec.Basic
+public import VerifiedGarbage.TCB.Mem
 
 /-! # The window's exponent words: their top four bits, and the arithmetic of their shift -/
 

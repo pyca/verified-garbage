@@ -4,8 +4,10 @@ public import VerifiedGarbage.Proof.Dsa.X86.Comb.KeyInvariant
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Deriving
 public import VerifiedGarbage.Proof.Dsa.X86.CheckingLayout
 public import VerifiedGarbage.Proof.Dsa.X86.DerivingLayout
-public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.AllocatedArgs
+import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.AllocatedArgs
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CallResult
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CallPre
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckPre
 
 /-! Shared facts about the inlined bodies' allocated cdecl arguments. -/
 

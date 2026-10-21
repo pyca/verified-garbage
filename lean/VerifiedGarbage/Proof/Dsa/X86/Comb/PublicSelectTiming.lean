@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
+import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 meta import VerifiedGarbage.Impl.Mont.X86.CombTable
@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Impl.Mont.X86.CombTable
 
 /-! A direct lookup's trace depends only on its public index and workspace address. -/
 

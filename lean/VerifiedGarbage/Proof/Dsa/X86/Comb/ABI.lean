@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Comb.BodyWide
+
+import VerifiedGarbage.Proof.Dsa.X86.Comb.BodyWide
 public import VerifiedGarbage.Proof.Dsa.X86.PowABI
 public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Dsa.X86.Comb.Core
 
 /-! The merged comb contracts provide the ordinary DSA calling resources. -/
 

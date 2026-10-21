@@ -17,7 +17,6 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.Words32
 meta import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
-import VerifiedGarbage.Proof.Mont.X86.CombTableState
 meta import VerifiedGarbage.Proof.Mont.X86.CombTableState
 
 /-! A public comb step uses the same public digit in both executions. -/

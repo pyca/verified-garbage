@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Dsa.X86.PowCallFrame
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset

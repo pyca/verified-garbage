@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckInvoke
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Body
-import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Result
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Invoke
 
 /-!
 # The key generator meets its contract (x86)

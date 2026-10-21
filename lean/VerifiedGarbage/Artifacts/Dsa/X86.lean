@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Instance
+public import VerifiedGarbage.Proof.Dsa.X86.CheckingVerified
+public import VerifiedGarbage.Proof.Dsa.X86.DerivingVerified
+public import VerifiedGarbage.Spec.Dsa.RandomSign
+public import VerifiedGarbage.Proof.Dsa.X86.ShapeCall
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.KeyVerified
-import VerifiedGarbage.Proof.Dsa.X86.Comb.Registration
+public import VerifiedGarbage.Proof.Dsa.X86.Comb.Registration
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicVerified
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PrivateVerified
 public import VerifiedGarbage.Proof.Dsa.X86.RandomSignInstance
@@ -77,15 +80,15 @@ def artifacts : List Artifact := [
     code := Impl.Dsa.X86.Entry.operation false
     verified := Proof.Dsa.X86.verifying_verified
     stack := 32 },
-  combPrepare 16 5 (Proof.Dsa.X86.Comb.supported 16 5),
-  combPower 16 5 (Proof.Dsa.X86.Comb.supported 16 5),
-  combPrepare 32 5 (Proof.Dsa.X86.Comb.supported 32 5),
-  combPower 32 5 (Proof.Dsa.X86.Comb.supported 32 5),
-  combPrepare 32 7 (Proof.Dsa.X86.Comb.supported 32 7),
-  combPower 32 7 (Proof.Dsa.X86.Comb.supported 32 7),
-  combPrepare 32 8 (Proof.Dsa.X86.Comb.supported 32 8),
-  combPower 32 8 (Proof.Dsa.X86.Comb.supported 32 8),
-  combPrepare 48 8 (Proof.Dsa.X86.Comb.supported 48 8),
-  combPower 48 8 (Proof.Dsa.X86.Comb.supported 48 8)]
+  combPrepare 16 5 Proof.Dsa.X86.Comb.supported_16_5,
+  combPower 16 5 Proof.Dsa.X86.Comb.supported_16_5,
+  combPrepare 32 5 Proof.Dsa.X86.Comb.supported_32_5,
+  combPower 32 5 Proof.Dsa.X86.Comb.supported_32_5,
+  combPrepare 32 7 Proof.Dsa.X86.Comb.supported_32_7,
+  combPower 32 7 Proof.Dsa.X86.Comb.supported_32_7,
+  combPrepare 32 8 Proof.Dsa.X86.Comb.supported_32_8,
+  combPower 32 8 Proof.Dsa.X86.Comb.supported_32_8,
+  combPrepare 48 8 Proof.Dsa.X86.Comb.supported_48_8,
+  combPower 48 8 Proof.Dsa.X86.Comb.supported_48_8]
 
 end VG.Artifacts.Dsa.X86

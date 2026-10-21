@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.PowCallFrame
-public import VerifiedGarbage.Proof.Dsa.X86.WorkspaceCall
+import VerifiedGarbage.Proof.Dsa.X86.PowCallFrame
+import VerifiedGarbage.Proof.Dsa.X86.WorkspaceCall
 import VerifiedGarbage.Proof.Dsa.X86.PowBody
 import VerifiedGarbage.Proof.Dsa.X86.PowCorrect
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+public import VerifiedGarbage.Impl.Dsa.X86.Pow
+public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! The ordinary power helper uses the shared workspace-call boundary. -/
 

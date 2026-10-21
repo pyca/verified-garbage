@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Body
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Proof.Framework.Covers
-import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
 
 /-! Lift the fixed workspace proof to any allocation large enough for the helper. -/
 

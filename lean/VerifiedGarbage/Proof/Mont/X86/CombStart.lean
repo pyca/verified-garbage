@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.Mont.X86.CombTable
+
 public import VerifiedGarbage.Proof.Mont.X86.CombFrame
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
