@@ -48,17 +48,18 @@ open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64
 open VG.Impl.Ecdh.AArch64 (PX PY)
 open VG.Impl.Ecdsa.Verify.AArch64 (U V)
 
-def jointPrepRanges : List (Nat×Nat) := [(P256Joint.cfg.gBits,264),(P256Joint.cfg.K.bits,264)]
+def jointPrepRanges : List (Nat×Nat) := [(P256Joint.cfg.gBits,520),(P256Joint.cfg.K.bits,264)]
 
 def jointPrepProgram : Prog isa :=
-  .seq (Impl.Weierstrass.AArch64.FastNaf.prep P256Joint.cfg.G (p256.sl U) 7)
+  .seq (Joint.gPrep P256Joint.cfg (p256.sl U))
     (Impl.Weierstrass.AArch64.FastNaf.prep P256Joint.cfg.K (p256.sl V) 5)
 
 structure JointPrepPost (base : Addr) (g : Reg → BitVec 64) (P : Point p256.C) (s t : State) : Prop where
   field : Inv P256Joint.cfg.K.M base size p256.C.p (·∈jacWinSlots P256Joint.cfg.K)
     (winRo P256Joint.cfg.K) (tmv p256.C 4 base t) t
   peer : NafWindowInput P256Joint.cfg.K p256.C base P (sv p256 base s V) t
-  generator : ∀ i<257,t.mem (off base (P256Joint.cfg.gBits+i))=FastNaf.byte 7 (sv p256 base s U) i
+  generator : ∀ i<jointGLen P256Joint.cfg,t.mem (off base (P256Joint.cfg.gBits+i))=
+    jointGByte P256Joint.cfg (sv p256 base s U) i
   fixed : Fixed p256 base g t.mem
   one : tmv p256.C 4 base t P256Joint.cfg.onep=1
   same : ∀ i<45,sv p256 base t i=sv p256 base s i
@@ -71,7 +72,7 @@ theorem apart_jointPrep {i : Nat} (hi : i<45) :
   intro w hw
   simp only [jointPrepRanges,List.mem_cons,List.not_mem_nil,or_false] at hw
   rcases hw with rfl | rfl
-  · apply Or.inl; rw [sl_eq4 p256 (by decide)]; change 64+32*i+32≤1504; omega
+  · apply Or.inl; rw [sl_eq4 p256 (by decide)]; change 64+32*i+32≤2112; omega
   · apply Or.inl; rw [sl_eq4 p256 (by decide)]; change 64+32*i+32≤1824; omega
 
 theorem jointPrepStage_ok (hc : CfgOk p256) (hC : Law p256.C) {base : Addr} {s : State}
@@ -87,7 +88,7 @@ theorem jointPrepStage_ok (hc : CfgOk p256) (hC : Law p256.C) {base : Addr} {s :
   refine WP.mono_syms (Weierstrass.AArch64.jointPrep_ok P256Joint.cfg hs
     (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (Or.inl JointLayout.bits_disjoint) (by decide)) fun s₂ ⟨hs₂,bG,bQ,k₂,U₂⟩ sy₂ => ?_
+    (Or.inr JointLayout.bits_disjoint) (by decide)) fun s₂ ⟨hs₂,bG,bQ,k₂,U₂⟩ sy₂ => ?_
   have F₂ := F.unch h7 hn (W:=jointPrepRanges) (by unfold FixedOk jointPrepRanges; decide) U₂
   have e₂ : ∀ {i},i<45 → sv p256 base s₂ i=sv p256 base s i := fun hi =>
     sv_unch U₂ h7 hn hi (apart_jointPrep hi)
@@ -138,7 +139,7 @@ open VG.Proof.Ecdsa.AArch64 Spec.Weierstrass
 
 /-- The points stage writes only arithmetic work, public digits, and precomputation. -/
 def jointPointRanges : List (Nat×Nat) :=
-  [(128,32),(512,544),(1504,584),(2848,1536),(5400,64),(6000,512)]
+  [(128,32),(512,544),(1824,808),(2848,1536),(5400,64),(6000,512)]
 
 theorem jointPoint_fixed : FixedOk p256 jointPointRanges := by unfold FixedOk; decide +kernel
 
@@ -211,7 +212,7 @@ structure JointTablePost (base : Addr) (g : Reg → BitVec 64) (P : Point p256.C
   field : Inv P256Joint.cfg.K.M base size p256.C.p (·∈jointSlots P256Joint.cfg)
     (nafLive P256Joint.cfg.K) (tmv p256.C 4 base t) t
   stable : NafStable P256Joint.cfg.K p256.C base P (FastNaf.byte 5 v) t
-  generator : ∀ j<257,t.mem (off base (P256Joint.cfg.gBits+j))=FastNaf.byte 7 u j
+  generator : ∀ j<jointGLen P256Joint.cfg,t.mem (off base (P256Joint.cfg.gBits+j))=jointGByte P256Joint.cfg u j
   one : tmv p256.C 4 base t P256Joint.cfg.onep=1
   fixed : Fixed p256 base g t.mem
   syms : t.syms=s.syms
@@ -238,11 +239,12 @@ theorem jointTableStage_ok (certs : Forward.Arithmetic.Cases) (hc : CfgOk p256) 
   · intro x hx
     exact List.mem_append_left _ (List.mem_append_left _ (hi.sl x hx))
   · intro j hj
-    rw [ht.unch.byte (fun w hw => ?_) (by change 1504+j<2^64; omega),h.generator j hj]
+    change j<514 at hj
+    rw [ht.unch.byte (fun w hw => ?_) (by change 2112+j<2^64; omega),h.generator j hj]
     have ha : ∀ w∈jacTreeWrites P256Joint.cfg.K,
-        1768≤w.1 ∨ w.1+w.2≤1504 := by decide +kernel
+        2632≤w.1 ∨ w.1+w.2≤2112 := by decide +kernel
     have hw' := ha w hw
-    change 1504+j<w.1 ∨ w.1+w.2≤1504+j
+    change 2112+j<w.1 ∨ w.1+w.2≤2112+j
     omega
 
 end VG.Proof.Ecdsa.Verify.AArch64
@@ -275,13 +277,13 @@ structure JointSetupPost (base T : Addr) (P : Point p256.C) (u v : Nat) (s t : S
   syms : t.syms=s.syms
 
 theorem jointSetup_ok (hc : CfgOk p256) (hC : Law p256.C)
-    (hT : CombOkW p256.C 7 37 p256.tbl p256.start)
+    (hT : CombOkW p256.C 9 1 P256Joint.p256v.tbl P256Joint.p256v.start)
     {s₀ s : State} {base : Addr} {g : Reg → BitVec 64} (hM : Mid p256 s₀ base g s)
-    (hTP : TblPre p256 s₀ (s₀.syms p256.tsym) base)
+    (hTP : TblPre P256Joint.p256v s₀ (s₀.syms P256Joint.p256v.tsym) base)
     {P : Point p256.C} (hP : onCurve p256.C P=true)
     (hrep : Rep p256.C (tmv p256.C 4 base s (p256.sl PX)) (tmv p256.C 4 base s (p256.sl PY))
       (tmv p256.C 4 base s (p256.sl ONEP)) P) :
-    WP isa jointSetup s (JointSetupPost base (s₀.syms p256.tsym) P (sv p256 base s U) (sv p256 base s V) s) := by
+    WP isa jointSetup s (JointSetupPost base (s₀.syms P256Joint.p256v.tsym) P (sv p256 base s U) (sv p256 base s V) s) := by
   unfold jointSetup
   refine WP.seq (WP.mono (jointPrepStage_ok hc hC hM.scr hM.fixed hM.px_lt hM.py_lt hrep)
     fun a ia => ?_)
@@ -321,9 +323,9 @@ open VG.Impl.Ecdh.AArch64 (PX PY)
 
 /-- The interleaved multiplication returns the sum required by ECDSA verification. -/
 theorem jointPoints_ok (hc : CfgOk p256) (hC : Law p256.C)
-    (hT : CombOkW p256.C 7 37 p256.tbl p256.start)
+    (hT : CombOkW p256.C 9 1 P256Joint.p256v.tbl P256Joint.p256v.start)
     {s₀ s : State} {base : Addr} {g : Reg → BitVec 64} (hM : Mid p256 s₀ base g s)
-    (hTP : TblPre p256 s₀ (s₀.syms p256.tsym) base)
+    (hTP : TblPre P256Joint.p256v s₀ (s₀.syms P256Joint.p256v.tsym) base)
     {P : Point p256.C} (hP : onCurve p256.C P=true)
     (hrep : Rep p256.C (tmv p256.C 4 base s (p256.sl PX)) (tmv p256.C 4 base s (p256.sl PY))
       (tmv p256.C 4 base s (p256.sl ONEP)) P) :

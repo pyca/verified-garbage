@@ -150,14 +150,14 @@ structure AllocatedSetupPost (base T : Addr) (P : Point p256.C) (u v : Nat) (s t
 theorem allocatedSetup_bounds : ∀ w∈allocatedSetupRanges,w.1+w.2≤size := by decide +kernel
 
 theorem allocatedSetup_ok (hc : CfgOk p256) (hC : Law p256.C) (hO : PrimeOrder p256.C)
-    (hT : CombOkW p256.C 7 37 p256.tbl p256.start)
+    (hT : CombOkW p256.C 9 1 P256Joint.p256v.tbl P256Joint.p256v.start)
     {s₀ s : State} {base : Addr} {g : Reg → BitVec 64} (hM : Mid p256 s₀ base g s)
-    (hTP : TblPre p256 s₀ (s₀.syms p256.tsym) base)
+    (hTP : TblPre P256Joint.p256v s₀ (s₀.syms P256Joint.p256v.tsym) base)
     {P : Point p256.C} (hP : onCurve p256.C P=true)
     (hrep : Rep p256.C (tmv p256.C 4 base s (p256.sl PX)) (tmv p256.C 4 base s (p256.sl PY))
       (tmv p256.C 4 base s (p256.sl ONEP)) P) :
     WP isa allocatedSetup s
-      (AllocatedSetupPost base (s₀.syms p256.tsym) P (sv p256 base s U) (sv p256 base s V) s) := by
+      (AllocatedSetupPost base (s₀.syms P256Joint.p256v.tsym) P (sv p256 base s U) (sv p256 base s V) s) := by
   unfold allocatedSetup
   refine WP.seq (WP.mono (jointPrepStage_ok hc hC hM.scr hM.fixed hM.px_lt hM.py_lt hrep)
     fun a ia => ?_)
@@ -293,9 +293,9 @@ structure BodyPost (base : Addr) (P : Point C) (s t : State) : Prop where
     (tmv C 4 base t (p256.sl RZ)) P
 
 theorem body_ok (raw : RawCorrect) (hc : CfgOk p256) (hC : Law p256.C) (hO : PrimeOrder p256.C)
-    (hT : CombOkW p256.C 7 37 p256.tbl p256.start)
+    (hT : CombOkW p256.C 9 1 P256Joint.p256v.tbl P256Joint.p256v.start)
     {s₀ s : State} {base : Addr} {g : Reg → BitVec 64} (hM : Mid p256 s₀ base g s)
-    (hTP : TblPre p256 s₀ (s₀.syms p256.tsym) base)
+    (hTP : TblPre P256Joint.p256v s₀ (s₀.syms P256Joint.p256v.tsym) base)
     {P : Point p256.C} (hP : onCurve p256.C P=true)
     (hrep : Rep p256.C (tmv p256.C 4 base s (p256.sl PX)) (tmv p256.C 4 base s (p256.sl PY))
       (tmv p256.C 4 base s (p256.sl ONEP)) P) :
@@ -336,9 +336,9 @@ theorem body_ok (raw : RawCorrect) (hc : CfgOk p256) (hC : Law p256.C) (hO : Pri
 /-- Allocated point arithmetic restores its additional callee-saved registers and
 returns the same numerical and geometric verification postcondition. -/
 theorem points_ok (hc : CfgOk p256) (hC : Law p256.C) (hO : PrimeOrder p256.C)
-    (hT : CombOkW p256.C 7 37 p256.tbl p256.start)
+    (hT : CombOkW p256.C 9 1 P256Joint.p256v.tbl P256Joint.p256v.start)
     {s₀ s : State} {base : Addr} {g : Reg → BitVec 64} (hM : Mid p256 s₀ base g s)
-    (hTP : TblPre p256 s₀ (s₀.syms p256.tsym) base)
+    (hTP : TblPre P256Joint.p256v s₀ (s₀.syms P256Joint.p256v.tsym) base)
     {P : Point p256.C} (hP : onCurve p256.C P=true)
     (hrep : Rep p256.C (tmv p256.C 4 base s (p256.sl PX)) (tmv p256.C 4 base s (p256.sl PY))
       (tmv p256.C 4 base s (p256.sl ONEP)) P) :
@@ -377,7 +377,7 @@ theorem points_ok (hc : CfgOk p256) (hC : Law p256.C) (hO : PrimeOrder p256.C)
 
 /-- The extra-register wrapper preserves precisely the verifier's untouched registers. -/
 theorem points_untouched (hc : CfgOk p256) (hC : Law p256.C) (hO : PrimeOrder p256.C)
-    (hT : CombOkW p256.C 7 37 p256.tbl p256.start)
+    (hT : CombOkW p256.C 9 1 P256Joint.p256v.tbl P256Joint.p256v.start)
     {s₀ s : State} {g : Reg → BitVec 64} (hp : VPre p256 s₀)
     (hm : Mid p256 s₀ (s₀.gpr .x3) g s) :
     WP isa P256Allocated.points s fun t => ∀ r∈untouched,t.gpr r=s.gpr r := by

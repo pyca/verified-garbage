@@ -250,11 +250,11 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 Spec.Weierstrass
 
 /-- Both original table preconditions refer to the same public static table. -/
 theorem jointBoundary_generators (hc : CfgOk p256) (hC : Law p256.C)
-    (hT : CombOkW p256.C 7 37 p256.tbl p256.start)
+    (hT : CombOkW p256.C 9 1 P256Joint.p256v.tbl P256Joint.p256v.start)
     {s₀ t₀ s t : State} (ps : VPre p256 s₀) (pt : VPre p256 t₀)
     (hb : JointBoundary p256 s₀ t₀ s t) :
-    JointGenerator P256Joint.cfg p256.C (s₀.gpr .x3) 8192 (G p256.C) (s₀.syms p256.tsym) s ∧
-    JointGenerator P256Joint.cfg p256.C (s₀.gpr .x3) 8192 (G p256.C) (s₀.syms p256.tsym) t := by
+    JointGenerator P256Joint.cfg p256.C (s₀.gpr .x3) 8192 (G p256.C) (s₀.syms P256Joint.p256v.tsym) s ∧
+    JointGenerator P256Joint.cfg p256.C (s₀.gpr .x3) 8192 (G p256.C) (s₀.syms P256Joint.p256v.tsym) t := by
   obtain ⟨pub,⟨gs,ms⟩,⟨gt,mt⟩,_⟩ := hb
   have bs : s₀.gpr .x3=t₀.gpr .x3 := pub.ptrs.2 .x3 (by decide)
   have ls := JointGenerator.of_pre hc hC hT ps.tbl rfl
@@ -348,7 +348,7 @@ theorem jointPoints_inputCT (hc : CfgOk p256) (hC : Law p256.C)
 
 /-- The complete joint points stage depends only on the original public inputs. -/
 theorem jointPoints_relCT (hc : CfgOk p256) (hC : Law p256.C)
-    (hT : CombOkW p256.C 7 37 p256.tbl p256.start)
+    (hT : CombOkW p256.C 9 1 P256Joint.p256v.tbl P256Joint.p256v.start)
     {s₀ t₀ : State} (ps : VPre p256 s₀) (pt : VPre p256 t₀) :
     RelCT isa (JointBoundary p256 s₀ t₀) P256Joint.points
       (AArch64.Taint.Agree (Taint.ofRegs [.x0])) := by
@@ -481,7 +481,7 @@ theorem allocatedPoints_inputCT (raw : RawCorrect) (hc : CfgOk p256) (hC : Law p
 
 theorem allocatedPointsBody_relCT (raw : RawCorrect) (hc : CfgOk p256) (hC : Law p256.C)
     (hO : PrimeOrder p256.C)
-    (hT : CombOkW p256.C 7 37 p256.tbl p256.start)
+    (hT : CombOkW p256.C 9 1 P256Joint.p256v.tbl P256Joint.p256v.start)
     {s₀ t₀ : State} (ps : VPre p256 s₀) (pt : VPre p256 t₀) :
     RelCT isa (JointBoundary p256 s₀ t₀) (Joint.points cfg P256Allocated.ops (p256.sl U) (p256.sl V))
       (AArch64.Taint.Agree (Taint.ofRegs [.x0])) := by
@@ -530,7 +530,7 @@ private theorem restorePublic_relCT :
 /-- The allocated points stage preserves the original public-input timing contract,
 including the save and restore of its extra working registers. -/
 theorem allocatedPoints_relCT (raw : RawCorrect) (hc : CfgOk p256) (hC : Law p256.C)
-    (hO : PrimeOrder p256.C) (hT : CombOkW p256.C 7 37 p256.tbl p256.start)
+    (hO : PrimeOrder p256.C) (hT : CombOkW p256.C 9 1 P256Joint.p256v.tbl P256Joint.p256v.start)
     {s₀ t₀ : State} (ps : VPre p256 s₀) (pt : VPre p256 t₀) :
     RelCT isa (JointBoundary p256 s₀ t₀) P256Allocated.points
       (AArch64.Taint.Agree (Taint.ofRegs [.x0])) := by
