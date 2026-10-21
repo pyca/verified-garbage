@@ -19,13 +19,12 @@ of the build's inputs, and how long each module took to build (from the shards' 
 from earlier builds for the modules this one did not rebuild). A plan
 compares the sources with the manifest's to find the modules to rebuild,
 estimates each from its time, and packs them into shards: a shard builds the
-modules that nothing imports ("sinks") it is given, and so everything they
-import. A shard's build takes at least its modules' time divided by the
-number a runner builds at once, and at least its longest chain of imports
-(the "critical path": a module waits for those it imports), so its time is
-estimated as the larger of the two. The sinks are packed by the time to
-rebuild their imports, largest first, each into the shard where the estimate
-it leaves, plus the work it adds there (as time on a runner), is the least:
+stale modules that no other stale module imports, directly or transitively,
+and everything they import. Unchanged downstream modules need not bind
+otherwise independent rebuilds to the same shard. The targets are packed
+by the time to rebuild their imports, largest first, each into the shard
+where the estimate it leaves, plus the work it adds there (as time on a
+runner), is the least:
 a shard with a long chain takes other work only until it would finish after
 the chain, and a sink goes where much of what it imports is built already,
 rather than building it again elsewhere, unless that shard is the slower by
@@ -33,10 +32,18 @@ more than the work it saves. A change to the inputs (the toolchain, the
 dependencies or the lakefile's settings) rebuilds every module, but not one
 that only adds a module to a library or removes one (the lakefile's `globs`
 and `roots`): that rebuilds just the modules it moves (and, through their
-imports, what imports them). Every module is in exactly one shard (the first
-that builds it), so the shards' outputs together are the whole build. A plan
+imports, what imports them). Each module's outputs belong to one shard (the
+first that builds it), so the shards' outputs together are the whole build. A plan
 is only an estimate: whatever the shards leave unbuilt, the job that
 assembles their outputs (the last shard to finish, normally) builds.
+
+For each useful count up to MAX_SHARDS, a dependency-constrained simulation
+estimates the packing's build time, including serial phases that cannot
+overlap the parallel work. Compare those times plus SHARD_OVERHEAD with a
+single runner's time; among plans within SLACK of the fastest, choose the
+least total module work (counting duplicated imports), then fewer runners.
+Finally, a bounded search moves targets to reuse shared imports without
+exceeding the same finish-time budget.
 
   lean_shards.py plan MANIFEST PLAN     write the plan for the sources (with
                                         the manifest's build, which may be
@@ -69,6 +76,7 @@ assembles their outputs (the last shard to finish, normally) builds.
 """
 
 import hashlib
+import heapq
 import json
 import math
 import pathlib
@@ -85,11 +93,6 @@ LIBRARIES = {"VerifiedGarbage": True, "VerifiedGarbageTest": False}
 INPUTS = ["lakefile.toml", "lean-toolchain", "lake-manifest.json"]
 # The keys of a library in the lakefile that list its modules.
 MODULE_LISTS = ("globs", "roots")
-# A shard per this much estimated build time (in seconds of `lake build`'s
-# times, which a runner's build runs `PARALLELISM` of at once), up to
-# `MAX_SHARDS`. Never just one: a single shard builds nothing in parallel,
-# so the `lean` job builds that much itself.
-WORK_PER_SHARD = 800.0
 # More shards wait for runners, and build what they share again: in CI's
 # metrics, full rebuilds (about 43000 s of work) took 1360-1700 s on 16
 # shards, building 40% of the work twice, and about 1320 s on 12.
@@ -100,21 +103,21 @@ MAX_SHARDS = 12
 # beyond the slowest build, against 172 s beyond the build in the `lean`
 # job). Shards are taken only when they save more than this.
 SHARD_OVERHEAD = 90.0
-# How much slower than the fastest plan's slowest shard a plan with fewer
-# shards may be.
+# How much slower than the fastest finish (including overhead) a cheaper
+# plan may be. The single-runner build participates in the same comparison.
 SLACK = 0.05
 # How many modules a runner's build runs at once (as measured: the shards'
-# module times add up to 5.4 times their builds' wall times): a shard's
-# time is at least its work divided by this.
+# module times add up to 5.4 times their builds' wall times). The simulation
+# has ceil(PARALLELISM) slots sharing this throughput when all are occupied.
 PARALLELISM = 5.4
 # The time to check that a module is up to date, and to build one the
 # manifest has no time for when it has none at all.
 UP_TO_DATE = 0.02
 DEFAULT_TIME = 3.0
 # `import`, and in a module `public`, `meta` and `all` imports.
-IMPORT = re.compile(r"^\s*(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?(\S+)", re.M)
-# The same, with whether it is `public` and whether `all`.
-IMPORT_KIND = re.compile(r"^\s*(public\s+)?(?:meta\s+)?import\s+(all\s+)?(\S+)", re.M)
+# Leading whitespace stays on one line; inter-keyword whitespace still
+# permits multiline imports, without rescanning runs of blank lines.
+IMPORT_KIND = re.compile(r"^[^\S\r\n]*(public\s+)?(?:meta\s+)?import\s+(all\s+)?(\S+)", re.M)
 BUILT = re.compile(r"\bBuilt (\S+) \((\d+(?:\.\d+)?)(ms|s)\)")
 # The steps of a module of a precompiled library after its `.olean`.
 NATIVE_FACETS = ("c.o", "dynlib")
@@ -122,11 +125,14 @@ NATIVE_FACETS = ("c.o", "dynlib")
 
 def modules() -> dict[str, pathlib.Path]:
     mods = {}
+    depth = len(LEAN.parts)
     for lib, root in LIBRARIES.items():
         if root and (LEAN / f"{lib}.lean").is_file():
             mods[lib] = LEAN / f"{lib}.lean"
         for f in (LEAN / lib).rglob("*.lean"):
-            mods[".".join(f.relative_to(LEAN).with_suffix("").parts)] = f
+            # rglob supplies paths below LEAN; slicing their components
+            # avoids pathlib's repeated ancestor checks for every file.
+            mods[".".join(f.parts[depth:])[:-5]] = f
     return dict(sorted(mods.items()))
 
 
@@ -191,7 +197,38 @@ def matches(entry: str, module: str, closure: dict[str, frozenset[str]]) -> bool
 
 def imported_by(text: str, mods) -> list[str]:
     """The modules of the project (of `mods`) the source `text` imports."""
-    return [i for i in IMPORT.findall(text) if i in mods]
+    return [i for _, _, i in import_kinds(text, mods)]
+
+
+def import_kinds(text: str, mods) -> list[tuple[bool, bool, str]]:
+    """Project imports, with their public/all visibility, in source order."""
+    # Every match starts on a line containing one of these keywords.
+    # Literal searches skip proof bodies much faster than trying an
+    # anchored regex at every line. Keep regex validation and nonoverlap
+    # semantics, including public/meta imports split across multiple lines.
+    starts = set()
+    for word in ("import", "public", "meta"):
+        pos = text.find(word)
+        while pos >= 0:
+            starts.add(text.rfind("\n", 0, pos) + 1)
+            # One candidate per line suffices, even in long generated
+            # strings containing the keyword many times.
+            newline = text.find("\n", pos)
+            if newline < 0:
+                break
+            pos = text.find(word, newline + 1)
+    kinds = []
+    end = 0
+    for start in sorted(starts):
+        if start < end:
+            continue
+        match = IMPORT_KIND.match(text, start)
+        if match:
+            end = match.end()
+            p, a, i = match.groups()
+            if i in mods:
+                kinds.append((bool(p), bool(a), i))
+    return kinds
 
 
 def imports(mods: dict[str, pathlib.Path]) -> dict[str, list[str]]:
@@ -202,8 +239,13 @@ def imports(mods: dict[str, pathlib.Path]) -> dict[str, list[str]]:
 def is_module(text: str) -> bool:
     """Whether the source `text` starts with `module`, after any comments."""
     comment = False
-    for line in text.split("\n"):
-        s = line.strip()
+    pos = 0
+    while pos < len(text):
+        end = text.find("\n", pos)
+        if end < 0:
+            end = len(text)
+        s = text[pos:end].strip()
+        pos = end + 1
         if comment:
             comment = not s.endswith("-/")
         elif s.startswith("/-") and not s.startswith("/-!"):
@@ -223,13 +265,33 @@ def visibility(text: str, mods) -> tuple[list[str], list[str]] | None:
     closure of its imports, every module's outputs, private parts included."""
     if not is_module(text):
         return None
-    kinds = [(bool(p), bool(a), i) for p, a, i in IMPORT_KIND.findall(text) if i in mods]
+    kinds = import_kinds(text, mods)
     return [i for p, _, i in kinds if p], [i for _, a, i in kinds if a]
 
 
 def visibilities(mods: dict[str, pathlib.Path]) -> dict[str, tuple[list[str], list[str]] | None]:
     """`visibility` of each module of the project."""
     return {m: visibility(f.read_text(), mods) for m, f in mods.items()}
+
+
+def source_info(mods):
+    """Read/hash each source once and share one import scan between graphs.
+
+    Hash the original bytes, but normalize newlines for parsing just as
+    Path.read_text does. Sources, imports, and visibility describe the same
+    read of each file, including for the final `edited` list.
+    """
+    imps, vis, hashes = {}, {}, {}
+    for m, path in mods.items():
+        data = path.read_bytes()
+        hashes[m] = hashlib.sha256(data).hexdigest()
+        text = data.decode("utf-8")
+        if "\r" in text:
+            text = text.replace("\r\n", "\n").replace("\r", "\n")
+        kinds = import_kinds(text, mods)
+        imps[m] = [i for _, _, i in kinds]
+        vis[m] = ([i for p, _, i in kinds if p], [i for _, a, i in kinds if a]) if is_module(text) else None
+    return imps, vis, hashes
 
 
 def reads(
@@ -324,7 +386,114 @@ def estimate(work: float, path: float) -> float:
 def wall_time(imps: dict[str, list[str]], cost: dict[str, float]) -> float:
     """The estimated time of a build of the modules of `cost`, each taking
     its time there."""
-    return estimate(sum(cost.values()), max(paths(imps, cost).values(), default=0.0))
+    return build_time(imps, cost)
+
+
+def build_time(imps: dict[str, list[str]], cost: dict[str, float]) -> float:
+    """List-schedule a build, imports first, prioritizing the longest
+    remaining chain. At most ceil(PARALLELISM) modules run concurrently;
+    when all slots are busy they share PARALLELISM modules' throughput.
+
+    Unlike max(work / parallelism, critical path), this accounts for a
+    narrow dependency chain before or after the parallel part of a build.
+    Module durations and effective throughput are empirical estimates,
+    not a model of Lake's exact scheduling or the runner's CPU threads.
+    """
+    return _BuildGraph(imps, cost).time()
+
+
+class _BuildGraph:
+    """Reuse integer-indexed dependencies across candidate simulations.
+
+    `time` accepts import-closed subsets of this graph. A standalone
+    `build_time` constructs its graph from exactly the supplied costs,
+    so dependencies without supplied costs are excluded as before.
+    """
+
+    def __init__(self, imps, cost):
+        names = sorted(cost)
+        self.index = {m: i for i, m in enumerate(names)}
+        self.cost = [cost[m] for m in names]
+        self.users = [[] for _ in names]
+        self.pending = [0] * len(names)
+        for m, n in self.index.items():
+            for dep in imps[m]:
+                i = self.index.get(dep)
+                if i is not None:
+                    self.users[i].append(n)
+                    self.pending[n] += 1
+        self.order = [i for i, n in enumerate(self.pending) if not n]
+        left = self.pending.copy()
+        for i in self.order:
+            for u in self.users[i]:
+                left[u] -= 1
+                if not left[u]:
+                    self.order.append(u)
+        if len(self.order) != len(names):
+            raise ValueError("cycle in Lean imports")
+        self.cache = {}
+
+    def time(self, modules=None):
+        key = None if modules is None else (PARALLELISM, frozenset(modules))
+        if key is not None:
+            cached = self.cache.get(key)
+            if cached is not None:
+                return cached
+        size = len(self.cost)
+        selected = bytearray(size)
+        if modules is None:
+            selected[:] = b"\x01" * size
+            order = self.order
+        else:
+            if not modules:
+                return 0.0
+            for m in modules:
+                selected[self.index[m]] = 1
+            order = [i for i in self.order if selected[i]]
+        users, cost = self.users, self.cost
+        tail = [0.0] * size
+        for i in reversed(order):
+            longest = 0.0
+            for u in users[i]:
+                if selected[u] and tail[u] > longest:
+                    longest = tail[u]
+            tail[i] = cost[i] + longest
+        pending = self.pending.copy()
+        ready = [(-tail[i], i) for i in order if not pending[i]]
+        heapq.heapify(ready)
+        running = []
+        service = elapsed = 0.0
+        slots = math.ceil(PARALLELISM)
+        while ready or running:
+            while ready and len(running) < slots:
+                _, i = heapq.heappop(ready)
+                heapq.heappush(running, (service + cost[i], i))
+            finish = running[0][0]
+            elapsed += (finish - service) * max(1.0, len(running) / PARALLELISM)
+            service = finish
+            while running and running[0][0] <= service:
+                _, i = heapq.heappop(running)
+                for u in users[i]:
+                    if selected[u]:
+                        pending[u] -= 1
+                        if not pending[u]:
+                            heapq.heappush(ready, (-tail[u], u))
+        if key is not None:
+            self.cache[key] = elapsed
+        return elapsed
+
+
+def rebuild_targets(stale: set[str], closure: dict[str, frozenset[str]]) -> list[str]:
+    """The maximal stale modules under the *full* import relation.
+
+    Private imports limit invalidation, not what a build needs. Targeting
+    these modules covers every stale module without bundling independent
+    rebuilds together through an unchanged downstream importer.
+    """
+    covered = set()
+    for m in sorted(stale):
+        covered.update((closure[m] & stale) - {m})
+    return sorted(stale - covered)
 
 
 def read_json(path: str) -> dict:
@@ -345,8 +514,16 @@ def pack(
     loads = [0.0] * count
     longest = [0.0] * count
     targets: list[list[str]] = [[] for _ in range(count)]
+    # A cold manifest assigns the same default duration to every module.
+    # Count those modules instead of looking up and summing every weight
+    # again for every target, shard, and candidate count.
+    unit = next(iter(cost.values()), 0.0)
+    uniform = all(t == unit for t in cost.values())
     for s in sinks:
-        added = [sum(cost[x] for x in closure[s] - shard) for shard in shards]
+        if uniform:
+            added = [unit * len(closure[s] - shard) for shard in shards]
+        else:
+            added = [math.fsum(map(cost.__getitem__, closure[s] - shard)) for shard in shards]
         # The work a sink adds counts on its own too, not only through the
         # estimate: a shard whose chain hides it would otherwise take sinks
         # whose imports another shard builds already, and build them again.
@@ -359,6 +536,60 @@ def pack(
         longest[best] = max(longest[best], path[s])
         targets[best].append(s)
     return [estimate(w, p) for w, p in zip(loads, longest)], targets, shards
+
+
+def refine(imps, closure, cost, path, packed, limit, simulator=None):
+    """Move targets to reuse imports, within the chosen latency budget.
+
+    Greedy packing cannot reconsider an early assignment. Rank moves by
+    module work saved, reject those whose lower bound exceeds the budget,
+    then simulate the two affected shards. Bound the search to 16 attempted
+    moves and three accepted moves, independently of project size.
+    """
+    loads, targets, built = packed
+    if simulator is None:
+        simulator = _BuildGraph(imps, cost)
+    attempts = 0
+    for _ in range(3):
+        moves = []
+        work = [math.fsum(map(cost.__getitem__, part)) for part in built]
+        longest = [max((path[t] for t in ts), default=0.0) for ts in targets]
+        for src, ts in enumerate(targets):
+            if len(ts) < 2:
+                continue
+            uses = {}
+            for t in ts:
+                for m in closure[t]:
+                    uses[m] = uses.get(m, 0) + 1
+            for t in ts:
+                removed = {m for m in closure[t] if uses[m] == 1}
+                saved = math.fsum(map(cost.__getitem__, removed))
+                for dst, part in enumerate(built):
+                    if src == dst:
+                        continue
+                    added = math.fsum(map(cost.__getitem__, closure[t] - part))
+                    if saved <= added + 1e-9:
+                        continue
+                    if estimate(work[dst] + added, max(longest[dst], path[t])) <= limit:
+                        moves.append((added - saved, src, dst, t, removed))
+        accepted = False
+        for _, src, dst, t, removed in sorted(moves, key=lambda m: m[:4]):
+            if attempts == 16:
+                return loads, targets, built
+            attempts += 1
+            parts = {src: built[src] - removed, dst: built[dst] | closure[t]}
+            times = {i: simulator.time(part) for i, part in parts.items()}
+            if max(times.values()) > limit + 1e-9:
+                continue
+            for i in parts:
+                built[i], loads[i] = parts[i], times[i]
+            targets[src].remove(t)
+            targets[dst].append(t)
+            accepted = True
+            break
+        if not accepted:
+            break
+    return loads, targets, built
 
 
 def schedule(
@@ -374,48 +605,71 @@ def schedule(
     (none when the `lean` job builds them alone)."""
     default = sorted(times.values())[len(times) // 2] if times else DEFAULT_TIME
     cost = {m: (times.get(m, default) if m in stale else UP_TO_DATE) for m in imps}
-    work = sum(cost[m] for m in stale)
-    # At most a shard per `WORK_PER_SHARD`; but a sink's closure is built on
-    # one runner, so the largest (or the longest chain) may set the time
-    # whatever the count. Then more shards only build what they share again:
-    # take the fewest whose slowest is within `SLACK` of the fastest plan's.
-    most = min(MAX_SHARDS, math.ceil(work / WORK_PER_SHARD))
-    # A shard is closed under imports (it builds its sinks' closures), so its
-    # critical path is the longest of its sinks'.
+    work = math.fsum(cost[m] for m in stale)
     path = paths(imps, cost)
-    imported = {i for m in imps for i in imps[m]}
-    # Only the sinks with something stale to build: the job that assembles
-    # the build checks every module, so a shard need not find the others
-    # up to date too, nor restore what they import (`closure`).
-    total = {m: sum(cost[x] for x in closure[m]) for m in imps if m not in imported and closure[m] & stale}
-    # Largest first by work, not by estimate: taking long chains first spreads
-    # what they import over more shards, which then build it more than once.
+    total = {m: math.fsum(cost[x] for x in closure[m]) for m in rebuild_targets(stale, closure)}
     sinks = sorted(total, key=lambda m: (-total[m], m))
-    packs = {n: pack(n, sinks, closure, cost, path) for n in range(2, most + 1)}
-    best = min((max(p[0]) for p in packs.values()), default=0.0)
-    count = min((n for n, p in packs.items() if max(p[0]) <= best * (1 + SLACK)), default=0)
-    # Unless the `lean` job would build it all about as fast itself.
-    if count and max(packs[count][0]) + SHARD_OVERHEAD > estimate(work, max(path.values(), default=0.0)):
-        count = 0
-    return work, path, packs[count] if count else ([], [], [])
+    needed = set().union(*(closure[m] for m in sinks))
+    # Include the same cached imports in the solo estimate as in the shards.
+    simulator = _BuildGraph(imps, {m: cost[m] for m in needed})
+    solo = simulator.time()
+    if solo <= SHARD_OVERHEAD or len(sinks) < 2:
+        return work, path, ([], [], [])
+    # Score all useful counts, rather than imposing a work-per-shard cutoff.
+    # Include solo in the same latency tolerance: a marginal saving should
+    # not buy many runners or repeat most of the build.
+    candidates = [(solo, math.fsum(cost[m] for m in needed), 0, ([], [], []))]
+    fastest = solo
+    # Start with more shards to establish a tight finish-time bound early.
+    # A lower bound already outside the tolerance cannot become competitive
+    # as the fastest time decreases, so it need not be simulated.
+    for n in range(min(MAX_SHARDS, len(sinks)), 1, -1):
+        bounds, targets, built = pack(n, sinks, closure, cost, path)
+        if any(not ts for ts in targets):
+            # An empty target list would invoke an unscoped `lake build`.
+            continue
+        if max(bounds) + SHARD_OVERHEAD > fastest * (1 + SLACK):
+            continue
+        loads = []
+        for part in built:
+            loads.append(simulator.time(part))
+            if loads[-1] + SHARD_OVERHEAD > fastest * (1 + SLACK):
+                break
+        if len(loads) != len(built) or max(loads) + SHARD_OVERHEAD > fastest * (1 + SLACK):
+            continue
+        repeated = math.fsum(cost[m] for part in built for m in part)
+        candidates.append((max(loads) + SHARD_OVERHEAD, repeated, n, (loads, targets, built)))
+        fastest = min(fastest, max(loads) + SHARD_OVERHEAD)
+    # Work counts shared dependencies again on each runner. Within the
+    # latency tolerance, prefer less work, then fewer runners, then latency.
+    chosen = min((c for c in candidates if c[0] <= fastest * (1 + SLACK)),
+                 key=lambda c: (c[1], c[2], c[0]))
+    packed = chosen[3]
+    if chosen[2]:
+        packed = refine(imps, closure, cost, path, packed, fastest * (1 + SLACK) - SHARD_OVERHEAD, simulator)
+    return work, path, packed
 
 
 def plan(manifest: dict) -> dict:
     mods = modules()
-    imps = imports(mods)
-    closure = closures(imps)
+    imps, vis, hashes = source_info(mods)
     now = inputs()
     then = manifest.get("inputs", {})
     sources = manifest.get("sources", {})
+    if sources and sources == hashes and now == then:
+        # No module, library membership, or other build input changed.
+        # Neither invalidation closures nor candidate schedules are needed.
+        return {"stale": 0, "work": 0, "loads": [], "targets": [], "owner": {}, "edited": []}
+    closure = closures(imps)
     if {k: v for k, v in then.items() if k != "libraries"} == {k: v for k, v in now.items() if k != "libraries"}:
-        changed = {m for m, f in mods.items() if sources.get(m) != digest(f)}
+        changed = {m for m in mods if sources.get(m) != hashes[m]}
         # Modules a library gained or lost.
         old, new = then.get("libraries", {}), now["libraries"]
         moved = {(lib, e) for lib in old.keys() | new.keys() for e in set(old.get(lib, [])) ^ set(new.get(lib, []))}
         changed |= {m for m in mods for _, e in moved if matches(e, m, closure)}
     else:
         changed = set(mods)
-    stale = stale_of(changed, reads(imps, closure, visibilities(mods)))
+    stale = stale_of(changed, reads(imps, closure, vis))
     work, _, (estimates, targets, shards) = schedule(imps, closure, stale, manifest.get("times", {}))
     owner = {}
     for i, shard in enumerate(shards):
@@ -431,7 +685,7 @@ def plan(manifest: dict) -> dict:
     # The modules whose sources differ from the last build's, whatever its
     # inputs: what `check_lean_public_imports.py` checks.
     if sources:
-        out["edited"] = sorted(m for m, f in mods.items() if sources.get(m) != digest(f))
+        out["edited"] = sorted(m for m in mods if sources.get(m) != hashes[m])
     return out
 
 

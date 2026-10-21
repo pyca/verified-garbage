@@ -52,10 +52,16 @@ class Score(unittest.TestCase):
     times = dict.fromkeys(base, 300.0)
     new = {**base, "X": ["A"]}
 
+    def test_a_full_build_on_one_runner_has_time_and_no_duplicate_work(self):
+        imps = {"A": [], "B": ["A"]}
+        plan = closure.full_plan(imps, {"A": 10.0, "B": 20.0}, count=0)
+        self.assertEqual(plan, {"shards": 0, "slowest": 30.0, "twice": 0.0, "slowest_at": 30.0})
+
     def test_dropping_a_shared_import(self):
         [(name, b, n)] = closure.score(self.base, self.new, self.times, [])
         self.assertEqual(name, "full")
-        self.assertEqual((b["shards"], b["twice"]), (2, 6300.0))
+        # Refinement puts Y beside X, reusing their shared B subtree.
+        self.assertEqual((b["shards"], b["twice"]), (2, 0.0))
         self.assertEqual((n["shards"], n["twice"]), (3, 0.0))
         self.assertLess(n["slowest"], b["slowest"])
         self.assertLessEqual(n["slowest_at"], b["slowest"])

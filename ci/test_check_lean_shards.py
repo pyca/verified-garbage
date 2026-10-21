@@ -1,6 +1,7 @@
 """What the Lean build's plan counts as changed; no builds."""
 
 import contextlib
+import hashlib
 import io
 import json
 import pathlib
@@ -99,6 +100,40 @@ class Project(unittest.TestCase):
         }
 
 
+class SourceInfo(Project):
+    def test_literal_search_matches_full_regex_scanning(self):
+        import random
+        rng = random.Random(51)
+        fragments = ["public", "meta", "import", "all", "A", "B", "Unknown",
+                     "-- import A", "important", "metadata", "def x := 1", "/-", "-/"]
+        spaces = [" ", "\t", "\n", "\n\n", "\u2003"]
+        mods = {"A", "B", "public", "meta", "import"}
+        for _ in range(300):
+            text = "".join(rng.choice(fragments) + rng.choice(spaces) for _ in range(40))
+            expected = [(bool(p), bool(a), i) for p, a, i in shards.IMPORT_KIND.findall(text) if i in mods]
+            self.assertEqual(shards.import_kinds(text, mods), expected)
+        text = 'def x := "' + "import public meta " * 1000 + '"\nimport A\n'
+        self.assertEqual(shards.import_kinds(text, mods), [(False, False, "A")])
+
+    def test_parse_normalized_newlines_but_hash_original_bytes(self):
+        raw = ("module\r\n\r\n\tpublic meta import all VerifiedGarbage.Spec.B\r\n"
+               "import VerifiedGarbage.Other\r\n-- π\r\n").encode("utf-8")
+        path = self.lean / "VerifiedGarbage/Spec/A.lean"
+        path.write_bytes(raw)
+        imps, vis, hashes = shards.source_info(shards.modules())
+        name = "VerifiedGarbage.Spec.A"
+        self.assertEqual(imps[name], ["VerifiedGarbage.Spec.B", "VerifiedGarbage.Other"])
+        self.assertEqual(vis[name], (["VerifiedGarbage.Spec.B"], ["VerifiedGarbage.Spec.B"]))
+        self.assertEqual(hashes[name], hashlib.sha256(raw).hexdigest())
+
+    def test_legacy_sources_and_multiline_imports(self):
+        path = self.lean / "VerifiedGarbage/Spec/A.lean"
+        path.write_bytes(b"\r\tpublic\rmeta import all\rVerifiedGarbage.Spec.B\r")
+        imps, vis, _ = shards.source_info(shards.modules())
+        self.assertEqual(imps["VerifiedGarbage.Spec.A"], ["VerifiedGarbage.Spec.B"])
+        self.assertIsNone(vis["VerifiedGarbage.Spec.A"])
+
+
 class Plan(Project):
     """`plan` on the small project, against the manifest of its build."""
 
@@ -111,6 +146,11 @@ class Plan(Project):
 
     def test_unchanged(self):
         self.assertEqual(self.stale(), 0)
+
+    def test_unchanged_does_not_construct_closures(self):
+        with mock.patch.object(shards, "closures", side_effect=AssertionError("unnecessary graph")):
+            self.assertEqual(shards.plan(self.manifest),
+                             {"stale": 0, "work": 0, "loads": [], "targets": [], "owner": {}, "edited": []})
 
     def test_adding_a_module_to_a_library(self):
         # Spec.B moves to NativeSpec: it, and what imports it, rebuild.
@@ -223,14 +263,15 @@ class Plan(Project):
         self.assertEqual(self.stale(), 5)
 
     @mock.patch.object(shards, "SHARD_OVERHEAD", 0.0)
-    def test_shard_count(self):
-        # Every module is stale; the work is 5 times each module's time. The
-        # project has two sinks: a third shard would have nothing to build.
+    def test_no_shard_count_can_shorten_the_dependency_chain(self):
+        # Every module is stale, but a dependency chain sets the time and
+        # the independent module fits alongside it. Splitting cannot help,
+        # even with no shard overhead and arbitrarily large module times.
         self.manifest["inputs"] = {}
-        for each, count in [(50, 0), (160, 0), (161, 2), (300, 2), (330, 2), (4000, 2)]:
+        for each in [50, 160, 161, 300, 330, 4000]:
             with self.subTest(work=5 * each):
                 self.manifest["times"] = {m: each for m in self.manifest["sources"]}
-                self.assertEqual(len(shards.plan(self.manifest)["targets"]), count)
+                self.assertEqual(shards.plan(self.manifest)["targets"], [])
 
     def test_no_shards_when_a_chain_sets_the_time(self):
         # The root module's chain of three imports takes 12000 s however the
@@ -257,8 +298,122 @@ class WallTime(unittest.TestCase):
     def test_throughput(self):
         imps = {str(i): [] for i in range(10)}
         cost = {m: 10.0 for m in imps}
-        self.assertEqual(shards.wall_time(imps, cost), 100.0 / shards.PARALLELISM)
+        # Six modules share the effective 5.4 slots, then four run at full
+        # speed: the last wave cannot fill the runner.
+        self.assertAlmostEqual(shards.wall_time(imps, cost), 60.0 / shards.PARALLELISM + 10)
         self.assertEqual(shards.wall_time({}, {}), 0.0)
+
+    def test_parallel_work_between_serial_barriers(self):
+        imps = {"root": [], **{f"p{i}": ["root"] for i in range(12)},
+                "end": [f"p{i}" for i in range(12)]}
+        cost = dict.fromkeys(imps, 100.0)
+        # The lower bound is only 300 s. The serial prefix and suffix
+        # cannot overlap either wave of the parallel work.
+        self.assertAlmostEqual(shards.build_time(imps, cost), 200 + 1200 / shards.PARALLELISM)
+
+    def test_input_order_does_not_change_scheduling(self):
+        imps = {"root": [], **{f"p{i}": ["root"] for i in range(20)},
+                "end": [f"p{i}" for i in range(20)]}
+        cost = {m: float(i + 1) for i, m in enumerate(imps)}
+        reversed_imps = {m: list(reversed(imps[m])) for m in reversed(imps)}
+        self.assertEqual(shards.build_time(imps, cost),
+                         shards.build_time(reversed_imps, dict(reversed(list(cost.items())))))
+
+    def test_reused_graph_matches_standalone_simulation_of_closed_subsets(self):
+        import random
+        rng = random.Random(12)
+        imps = {str(i): [str(j) for j in range(i) if rng.random() < .15] for i in range(50)}
+        closure = shards.closures(imps)
+        cost = {m: rng.choice([0.0, .02, 1.0, 3.5, 20.0]) for m in imps}
+        graph = shards._BuildGraph(imps, cost)
+        for _ in range(30):
+            targets = rng.sample(sorted(imps), rng.randrange(1, 6))
+            modules = set().union(*(closure[t] for t in targets))
+            self.assertEqual(graph.time(modules), shards.build_time(imps, {m: cost[m] for m in modules}))
+
+    def test_cached_simulations_respect_parallelism(self):
+        imps = {str(i): [] for i in range(4)}
+        graph = shards._BuildGraph(imps, dict.fromkeys(imps, 10.0))
+        modules = set(imps)
+        self.assertEqual(graph.time(modules), 10.0)
+        self.assertEqual(graph.time(modules), 10.0)
+        with mock.patch.object(shards, "PARALLELISM", 1.0):
+            self.assertEqual(graph.time(modules), 40.0)
+        self.assertEqual(graph.time(modules), 10.0)
+
+
+class RebuildFrontier(unittest.TestCase):
+    @mock.patch.object(shards, "PARALLELISM", 2.0)
+    @mock.patch.object(shards, "SHARD_OVERHEAD", 95.0)
+    def test_solo_participates_in_the_latency_tolerance(self):
+        imps = {str(i): [] for i in range(4)}
+        # Solo: 200 s; two shards: 100 + 95 s. The five-second
+        # improvement is within 5%, so avoid extra runners altogether.
+        self.assertEqual(shards.schedule(imps, shards.closures(imps), set(imps),
+                                         dict.fromkeys(imps, 100.0))[2], ([], [], []))
+
+    def test_a_cached_module_between_two_stale_modules(self):
+        imps = {"A": [], "B": ["A"], "C": ["B"], "D": ["A"]}
+        closure = shards.closures(imps)
+        self.assertEqual(shards.rebuild_targets({"A", "C", "D"}, closure), ["C", "D"])
+        self.assertEqual(shards.rebuild_targets(set(), closure), [])
+
+    def test_private_rebuilds_are_not_bundled_by_an_unchanged_importer(self):
+        imps = {"unchanged": ["L", "R"]}
+        for side in ["L", "R"]:
+            imps[side] = [f"{side}{i}" for i in range(12)]
+            imps.update({m: [] for m in imps[side]})
+        # L and R import their leaves privately: changes to those leaves
+        # rebuild L and R, while their importer stays cached.
+        vis = dict.fromkeys(imps, ([], []))
+        closure = shards.closures(imps)
+        changed = {m for m in imps if not imps[m]}
+        stale = shards.stale_of(changed, shards.reads(imps, closure, vis))
+        self.assertNotIn("unchanged", stale)
+        _, _, (loads, targets, built) = shards.schedule(imps, closure, stale, dict.fromkeys(imps, 100.0))
+        self.assertEqual(len(loads), 2)
+        self.assertEqual(sorted(t for ts in targets for t in ts), ["L", "R"])
+        self.assertEqual(set.union(*built), stale)
+        self.assertFalse(built[0] & built[1])
+
+    def test_sharded_plans_cover_stale_modules_and_never_have_empty_targets(self):
+        import random
+        rng = random.Random(7)
+        for _ in range(20):
+            imps = {str(i): [str(j) for j in range(i) if rng.random() < .08] for i in range(40)}
+            closure = shards.closures(imps)
+            stale = {m for m in imps if rng.random() < .6}
+            times = {m: rng.uniform(10, 400) for m in imps}
+            _, _, (loads, targets, built) = shards.schedule(imps, closure, stale, times)
+            if loads:
+                self.assertTrue(all(targets))
+                self.assertLessEqual(stale, set.union(*built))
+                for ts, part in zip(targets, built):
+                    self.assertLessEqual(set(ts), stale)
+                    self.assertEqual(part, set().union(*(closure[t] for t in ts)))
+
+
+class Refinement(unittest.TestCase):
+    def example(self, imps, cost, targets, limit):
+        closure = shards.closures(imps)
+        built = [set().union(*(closure[t] for t in ts)) for ts in targets]
+        loads = [shards.build_time(imps, {m: cost[m] for m in part}) for part in built]
+        return shards.refine(imps, closure, cost, shards.paths(imps, cost), (loads, targets, built), limit)
+
+    def test_reuses_shared_imports_without_exceeding_the_latency_budget(self):
+        imps = {"shared": [], "A": ["shared"], "B": ["shared"], "C": []}
+        cost = {"shared": 100.0, "A": 1.0, "B": 1.0, "C": 100.0}
+        loads, targets, built = self.example(imps, cost, [["A"], ["B", "C"]], 101.0)
+        self.assertEqual(targets, [["A", "B"], ["C"]])
+        self.assertEqual(built, [{"shared", "A", "B"}, {"C"}])
+        self.assertLessEqual(max(loads), 101.0)
+
+    @mock.patch.object(shards, "PARALLELISM", 1.0)
+    def test_does_not_save_work_by_exceeding_the_latency_budget(self):
+        imps = {"shared": [], "A": ["shared"], "B": ["shared"], "C": []}
+        cost = {"shared": 100.0, "A": 300.0, "B": 100.0, "C": 100.0}
+        _, targets, _ = self.example(imps, cost, [["A"], ["B", "C"]], 400.0)
+        self.assertEqual(targets, [["A"], ["B", "C"]])
 
 
 @mock.patch.object(shards, "SHARD_OVERHEAD", 0.0)
@@ -281,23 +436,16 @@ class Chain(Project):
         self.manifest["times"].update({m: 100.0 for m in self.CHAIN})
         self.manifest["times"].update({m: 30.0 for m in self.SHORT})
 
-    def test_the_chain_takes_no_other_work(self):
+    def test_solo_hides_independent_work_behind_the_chain(self):
         # Balancing the work alone would give the chain's shard a quarter of
         # the short modules (each shard about 450 s of work); but the chain
         # takes 300 s however many modules the runner builds at once, and
         # the other shard builds all the short ones in less.
         p = shards.plan(self.manifest)
-        self.assertEqual(len(p["targets"]), 2)
-        chain = p["owner"][self.CHAIN[-1]]
-        self.assertEqual(p["targets"][chain], [self.CHAIN[-1]])
-        self.assertLessEqual(set(self.SHORT), set(p["targets"][1 - chain]))
-        self.assertEqual(p["loads"][chain], 300)
-        # The plan's estimates are the shards' wall times.
-        imps = shards.imports(shards.modules())
-        closure = shards.closures(imps)
-        for targets, load in zip(p["targets"], p["loads"]):
-            built = set().union(*(closure[t] for t in targets))
-            self.assertEqual(load, round(shards.wall_time(imps, {m: self.manifest["times"][m] for m in built})))
+        # The old planner chose two shards even though a single runner
+        # could hide every short module behind the chain. Solo now takes
+        # part in the same latency tolerance as the sharded candidates.
+        self.assertEqual(p["targets"], [])
 
 
 class Many(Project):
@@ -355,9 +503,29 @@ class Many(Project):
         i = next(i for i, ts in enumerate(p["targets"]) if "VerifiedGarbage.Sink0" in ts)
         self.assertIn("VerifiedGarbage.NewDep", shards.needed(p["targets"][i], closure))
 
-    def test_a_shard_per_work(self):
-        # 2000 s of work: three shards (two would be slower).
-        self.assertEqual(self.count(50), 3)
+    def test_counts_are_not_capped_by_work(self):
+        # 2000 s of independent work: the old work/800 cutoff allowed only
+        # three shards. Seven finish close to eight, using fewer runners.
+        self.assertEqual(self.count(50), 7)
+
+    def test_uncompetitive_counts_are_not_simulated(self):
+        imps = {str(i): [] for i in range(40)}
+        simulate = shards._BuildGraph.time
+        parts = []
+
+        def record(graph, modules=None):
+            if modules is not None:
+                parts.append(len(modules))
+            return simulate(graph, modules)
+
+        with mock.patch.object(shards._BuildGraph, "time", record):
+            _, _, (_, targets, _) = shards.schedule(imps, shards.closures(imps), set(imps),
+                                                    dict.fromkeys(imps, 100.0))
+        self.assertEqual(len(targets), 8)
+        # Low counts put too much work on each runner to qualify even at
+        # their lower bound. They are packed, but never simulated.
+        self.assertTrue(parts)
+        self.assertLessEqual(max(parts), 6)
 
     def test_no_shard_that_is_no_faster(self):
         # 16000 s of work would take `MAX_SHARDS`; but each sink takes 400 s
@@ -366,11 +534,10 @@ class Many(Project):
         self.assertEqual(self.count(400), 8)
 
     def test_no_shards_that_save_less_than_their_overhead(self):
-        # 880 s of work: two shards would take 81 s each, the `lean` job
-        # 163 s, less than their 81 s and `SHARD_OVERHEAD`.
-        self.assertEqual(self.count(22), 0)
-        # 1000 s: 93 s each, against 185 s.
-        self.assertEqual(self.count(25), 2)
+        # Small work stays local. Larger independent work can benefit from
+        # more than the two shards the old work cutoff would allow.
+        self.assertEqual(self.count(10), 0)
+        self.assertEqual(self.count(22), 7)
 
 
 class Prune(Project):
