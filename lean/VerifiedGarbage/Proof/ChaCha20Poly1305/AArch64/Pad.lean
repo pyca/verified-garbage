@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Rest
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Rest
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Zero
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Pad
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.ChaCha20.Stream
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Branch
 
 /-!
 # ChaCha20-Poly1305 on AArch64: the data's keystream from eight blocks
