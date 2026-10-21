@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.MontPrepare
 public import VerifiedGarbage.Proof.Ffdh.Arm.Prepare
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.MontInputMemory
-import VerifiedGarbage.Proof.Ffdh.Arm.PrepareCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.CandidatePrepareCT
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Bignum.Arm.StackOnlyCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
@@ -25,7 +25,7 @@ structure MontInputData where
   k : Nat
 
 def MontStart (p : MontInputData) (s : State) : Prop := MontPrepInput p.base p.src p.capacity p.k s
-def PreparedInput (p : MontInputData) (s : State) : Prop := PrepareInput p.base p.src p.capacity p.k s
+def PreparedInput (p : MontInputData) (s : State) : Prop := CandidatePrepareInput p.base p.src p.capacity p.k s
 
 theorem prepareHeader_ok (p : MontInputData) (s : State) (h : MontStart p s) :
     WP isa (.block [.ldrSp .r0 0, .ldrSp .r6 12]) s (PreparedInput p) := by
@@ -37,22 +37,19 @@ theorem prepareHeader_ok (p : MontInputData) (s : State) (h : MontStart p s) :
     (by rw [first.sp]; exact addr12) (by rw [first.rd, first.wr]; exact h.stack.read (by decide)) fun t second => WP.block_nil ?_
   have memory : t.mem = s.mem := second.mem.trans first.mem
   have rest : Rest [.r0, .r6] s t := (first.rest (by simp)).trans (second.rest (by simp))
-  exact (h.after_memory memory rest).prepare_input
+  refine ⟨(h.after_memory memory rest).prepare_input
     ((second.other .r0 (by decide)).trans (first.gpr.trans h.stack.savedBase))
-    (by rw [second.gpr, first.mem]; exact h.stack.savedCount)
+    (by rw [second.gpr, first.mem]; exact h.stack.savedCount), ?_⟩
+  rw [memory];exact h.normalized
 
 theorem montInput_ct : RelCT isa (Two MontStart)
-    (.seq (.block [.ldrSp .r0 0, .ldrSp .r6 12]) VG.Impl.Ffdh.Arm.prepare) (fun _ _ => True) := by
+    (.seq (.block [.ldrSp .r0 0, .ldrSp .r6 12]) VG.Impl.Ffdh.Arm.CandidatePrepare.code) (fun _ _ => True) := by
   have head : RelCT isa (Two MontStart) (.block [.ldrSp .r0 0, .ldrSp .r6 12]) (Two PreparedInput) :=
     two_post ((stackOnly_ct _ rfl).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) prepareHeader_ok
-  have prepare : RelCT isa (Two PreparedInput) VG.Impl.Ffdh.Arm.prepare (fun _ _ => True) := by
+  have prepare : RelCT isa (Two PreparedInput) VG.Impl.Ffdh.Arm.CandidatePrepare.code (fun _ _ => True) := by
     intro s t trS trT u v h runS runT
     obtain ⟨p, left, right, sp⟩ := h
-    have countFits : 128 * Spec.Rsa.modulusWords p.k < 2 ^ 32 := by
-      have bound := left.maxLength
-      dsimp only [Spec.Rsa.modulusWords]
-      omega
-    exact prepare_ct countFits _ _ _ _ _ _ ⟨left, right, sp⟩ runS runT
+    exact candidatePrepare_ct _ _ _ _ _ _ ⟨left,right,sp⟩ runS runT
   exact head.seq prepare
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

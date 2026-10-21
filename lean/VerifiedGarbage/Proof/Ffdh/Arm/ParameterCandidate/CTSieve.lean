@@ -22,7 +22,7 @@ private theorem sieveInit_ct : RelCT isa (fun s t => s.sp = t.sp)
     VG.Impl.Ffdh.Arm.ParameterCandidate.sieveInit (fun s t => s.sp = t.sp) := by
   have tail : RelCT isa (fun s t => s.sp = t.sp) (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveInitTail)
       (fun s t => s.sp = t.sp) :=
-    RelCT.block_append ((stackOnly_ct [.mov .r10 (.reg .r11), .mov .r11 (.imm 53), .mov .r1 (.imm 0)] rfl).seq (save_ct .r1 64))
+    RelCT.block_append ((stackOnly_ct VG.Impl.Ffdh.Arm.ParameterCandidate.sieveInitRegisters (by decide)).seq (save_ct .r1 64))
   exact (stackOnly_ct VG.Impl.Ffdh.Arm.ParameterCandidate.tablePointer (by decide)).seq tail
 
 theorem sieve_ct : RelCT isa (Two SievePublic) VG.Impl.Ffdh.Arm.ParameterCandidate.sieve (fun _ _ => True) := by

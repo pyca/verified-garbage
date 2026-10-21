@@ -392,11 +392,7 @@ mov r4, #0
 sub r4, r4, r11
 214:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -420,11 +416,7 @@ mov r4, #0
 sub r4, r4, r11
 215:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -448,11 +440,7 @@ mov r4, #0
 sub r4, r4, r11
 216:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -783,11 +771,7 @@ mov r4, #0
 sub r4, r4, r11
 228:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -811,11 +795,7 @@ mov r4, #0
 sub r4, r4, r11
 229:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -839,11 +819,7 @@ mov r4, #0
 sub r4, r4, r11
 230:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -890,11 +866,7 @@ mov r4, #0
 sub r4, r4, r11
 232:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -918,11 +890,7 @@ mov r4, #0
 sub r4, r4, r11
 233:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -991,11 +959,7 @@ mov r4, #0
 sub r4, r4, r11
 236:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -1019,11 +983,7 @@ mov r4, #0
 sub r4, r4, r11
 237:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -1092,11 +1052,7 @@ mov r4, #0
 sub r4, r4, r11
 240:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -1120,11 +1076,7 @@ mov r4, #0
 sub r4, r4, r11
 241:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -1324,11 +1276,7 @@ mov r4, #0
 sub r4, r4, r11
 248:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -1352,11 +1300,7 @@ mov r4, #0
 sub r4, r4, r11
 249:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -1380,11 +1324,7 @@ mov r4, #0
 sub r4, r4, r11
 250:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -1408,11 +1348,7 @@ mov r4, #0
 sub r4, r4, r11
 251:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -1436,11 +1372,7 @@ mov r4, #0
 sub r4, r4, r11
 252:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -2592,11 +2524,7 @@ mov r4, #0
 sub r4, r4, r11
 292:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -2620,11 +2548,7 @@ mov r4, #0
 sub r4, r4, r11
 293:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -2908,11 +2832,7 @@ mov r4, #0
 sub r4, r4, r11
 2110:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -2936,11 +2856,7 @@ mov r4, #0
 sub r4, r4, r11
 2111:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -2964,11 +2880,7 @@ mov r4, #0
 sub r4, r4, r11
 2112:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -2992,11 +2904,7 @@ mov r4, #0
 sub r4, r4, r11
 2113:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -3020,11 +2928,7 @@ mov r4, #0
 sub r4, r4, r11
 2114:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -4177,11 +4081,7 @@ mov r4, #0
 sub r4, r4, r11
 2154:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -4207,11 +4107,7 @@ mov r4, #0
 sub r4, r4, r11
 2155:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -4235,11 +4131,7 @@ mov r4, #0
 sub r4, r4, r11
 2156:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -4263,11 +4155,7 @@ mov r4, #0
 sub r4, r4, r11
 2157:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -4291,11 +4179,7 @@ mov r4, #0
 sub r4, r4, r11
 2158:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -4319,11 +4203,7 @@ mov r4, #0
 sub r4, r4, r11
 2159:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -5542,11 +5422,7 @@ mov r4, #0
 sub r4, r4, r11
 2201:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -5570,11 +5446,7 @@ mov r4, #0
 sub r4, r4, r11
 2202:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -5598,11 +5470,7 @@ mov r4, #0
 sub r4, r4, r11
 2203:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -5932,11 +5800,7 @@ mov r4, #0
 sub r4, r4, r11
 2215:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -5960,11 +5824,7 @@ mov r4, #0
 sub r4, r4, r11
 2216:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -6109,11 +5969,7 @@ mov r4, #0
 sub r4, r4, r11
 2223:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -6168,11 +6024,7 @@ mov r4, #0
 sub r4, r4, r11
 2225:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -6202,11 +6054,7 @@ mov r4, #0
 sub r4, r4, r11
 2226:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -6351,11 +6199,7 @@ mov r4, #0
 sub r4, r4, r11
 2232:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -6379,11 +6223,7 @@ mov r4, #0
 sub r4, r4, r11
 2233:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -6407,11 +6247,7 @@ mov r4, #0
 sub r4, r4, r11
 2234:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -6435,11 +6271,7 @@ mov r4, #0
 sub r4, r4, r11
 2235:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -6463,11 +6295,7 @@ mov r4, #0
 sub r4, r4, r11
 2236:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -7616,11 +7444,7 @@ mov r4, #0
 sub r4, r4, r11
 2276:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -7697,11 +7521,7 @@ mov r4, #0
 sub r4, r4, r11
 2279:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -7725,11 +7545,7 @@ mov r4, #0
 sub r4, r4, r11
 2280:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -7874,11 +7690,7 @@ mov r4, #0
 sub r4, r4, r11
 2287:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -7955,11 +7767,7 @@ mov r4, #0
 sub r4, r4, r11
 2290:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -7983,11 +7791,7 @@ mov r4, #0
 sub r4, r4, r11
 2291:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -8132,11 +7936,7 @@ mov r4, #0
 sub r4, r4, r11
 2298:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -8160,11 +7960,7 @@ mov r4, #0
 sub r4, r4, r11
 2299:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -8188,11 +7984,7 @@ mov r4, #0
 sub r4, r4, r11
 2300:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -8216,11 +8008,7 @@ mov r4, #0
 sub r4, r4, r11
 2301:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -8551,11 +8339,7 @@ mov r4, #0
 sub r4, r4, r11
 2313:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -11082,11 +10866,7 @@ mov r4, #0
 sub r4, r4, r11
 231:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -11110,11 +10890,7 @@ mov r4, #0
 sub r4, r4, r11
 232:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -11138,11 +10914,7 @@ mov r4, #0
 sub r4, r4, r11
 233:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -11166,11 +10938,7 @@ mov r4, #0
 sub r4, r4, r11
 234:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -11194,11 +10962,7 @@ mov r4, #0
 sub r4, r4, r11
 235:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -12374,11 +12138,7 @@ mov r4, #0
 sub r4, r4, r11
 278:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -12408,11 +12168,7 @@ mov r4, #0
 sub r4, r4, r11
 280:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -12436,11 +12192,7 @@ mov r4, #0
 sub r4, r4, r11
 281:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -12591,11 +12343,7 @@ mov r4, #0
 sub r4, r4, r11
 284:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -12636,11 +12384,7 @@ mov r4, #0
 sub r4, r4, r11
 286:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -12664,11 +12408,7 @@ mov r4, #0
 sub r4, r4, r11
 287:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -12737,11 +12477,7 @@ mov r4, #0
 sub r4, r4, r11
 290:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -12765,11 +12501,7 @@ mov r4, #0
 sub r4, r4, r11
 291:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -12838,11 +12570,7 @@ mov r4, #0
 sub r4, r4, r11
 294:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -12866,11 +12594,7 @@ mov r4, #0
 sub r4, r4, r11
 295:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -12939,11 +12663,7 @@ mov r4, #0
 sub r4, r4, r11
 298:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -15608,11 +15328,7 @@ mov r4, #0
 sub r4, r4, r11
 2213:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -15896,11 +15612,7 @@ mov r4, #0
 sub r4, r4, r11
 2224:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -16092,11 +15804,7 @@ mov r4, #0
 sub r4, r4, r11
 2233:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -16165,11 +15873,7 @@ mov r4, #0
 sub r4, r4, r11
 2235:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -18705,11 +18409,7 @@ mov r4, #0
 sub r4, r4, r11
 231:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -18733,11 +18433,7 @@ mov r4, #0
 sub r4, r4, r11
 232:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -18761,11 +18457,7 @@ mov r4, #0
 sub r4, r4, r11
 233:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -18789,11 +18481,7 @@ mov r4, #0
 sub r4, r4, r11
 234:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -18817,11 +18505,7 @@ mov r4, #0
 sub r4, r4, r11
 235:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -19997,11 +19681,7 @@ mov r4, #0
 sub r4, r4, r11
 278:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -20031,11 +19711,7 @@ mov r4, #0
 sub r4, r4, r11
 280:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -20059,11 +19735,7 @@ mov r4, #0
 sub r4, r4, r11
 281:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -20214,11 +19886,7 @@ mov r4, #0
 sub r4, r4, r11
 284:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -20259,11 +19927,7 @@ mov r4, #0
 sub r4, r4, r11
 286:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -20287,11 +19951,7 @@ mov r4, #0
 sub r4, r4, r11
 287:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -20360,11 +20020,7 @@ mov r4, #0
 sub r4, r4, r11
 290:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -20388,11 +20044,7 @@ mov r4, #0
 sub r4, r4, r11
 291:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -20461,11 +20113,7 @@ mov r4, #0
 sub r4, r4, r11
 294:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -20489,11 +20137,7 @@ mov r4, #0
 sub r4, r4, r11
 295:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -20562,11 +20206,7 @@ mov r4, #0
 sub r4, r4, r11
 298:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -23231,11 +22871,7 @@ mov r4, #0
 sub r4, r4, r11
 2213:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -23519,11 +23155,7 @@ mov r4, #0
 sub r4, r4, r11
 2224:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -23715,11 +23347,7 @@ mov r4, #0
 sub r4, r4, r11
 2233:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
@@ -23788,11 +23416,7 @@ mov r4, #0
 sub r4, r4, r11
 2235:
 ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
+str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4

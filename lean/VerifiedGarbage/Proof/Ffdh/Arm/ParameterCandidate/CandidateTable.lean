@@ -44,12 +44,10 @@ theorem candidateTable_ok {s : State} {p : CandidateParams} {consumed : Nat}
 theorem CandidateContext.sieve_context {s : State} {p : CandidateParams} {consumed : Nat}
     (h : CandidateContext p consumed s) (table : TableData p.base p.length s.mem) :
     SieveContext p.out p.base p.length s := by
-  have fit : arrAt ((p.length + 7) / 8) 34 + 212 ≤ 8 * p.capacity := p.table_fits
+  have fit : arrAt ((p.length + 7) / 8) 34 + 4096 ≤ 8 * p.capacity := p.table_fits
   refine ⟨h.read_context, p.length_bounds.2, ?_, ?_, table, ?_, ?_, h.stackOutput.symm⟩
   · simpa only [candidateValues, BitVec.add_zero] using h.saved.saved 0 (by simp [candidateSlots])
-  · have := fit
-    have := p.scratchFits
-    omega
+  · exact Nat.le_trans (Nat.add_le_add_left fit p.base.toNat) p.scratchFits
   · intro i hi
     exact h.workspace.read (by have := fit; omega)
   · intro i hi
@@ -61,10 +59,11 @@ theorem candidateSieve_ok {s : State} {p : CandidateParams} {consumed : Nat}
     (odd : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length) % 2 = 1) :
     WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.sieve s fun t =>
       CandidateContext p consumed t ∧ TableData p.base p.length t.mem ∧
-      t.z = Spec.Ffdh.primeShape (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length)) ∧
+      t.z = (Spec.Ffdh.primeShape (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length)) &&
+        !Spec.RsaKeyGen.obviouslyComposite p.bits (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length))) ∧
       Spec.Rsa.bytesAt t.mem (State.addr p.out) p.length = Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length ∧
       Frame [⟨State.addr (s.sp + 64#32), 4⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  refine WP.mono (sieve_shape_ok (h.sieve_context table) large odd) ?_
+  refine WP.mono (sieve_shape_ok (h.sieve_context table) (bits:=p.bits) rfl large odd) ?_
   rintro t ⟨ctx, flag, changed, rest⟩
   have frame : Frame [⟨State.addr (s.sp + 64#32), 4⟩] s.mem t.mem := changed
   refine ⟨h.after_aux (by decide : 44 ≤ 64) (by decide : 64 + 4 ≤ 68) frame rest,

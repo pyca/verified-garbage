@@ -1,16 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallPost
-import VerifiedGarbage.Proof.Ffdh.ScreenedBounds
+import VerifiedGarbage.Proof.Ffdh.SievedBounds
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Bounds
-public import VerifiedGarbage.Spec.Ffdh.ScreenedGeneration
+public import VerifiedGarbage.Spec.Ffdh.SievedGeneration
 
 /-! Each native transition preserves the shared complete-search result. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterSearch
-open VG VG.Spec.Ffdh VG.Proof.Ffdh.ScreenedGeneration VG.Proof.Ffdh.ParameterCandidate
+open VG VG.Spec.Ffdh VG.Proof.Ffdh.SievedGeneration VG.Proof.Ffdh.ParameterCandidate
 
 theorem SearchParams.tail_zero (p : SearchParams) (used : Nat) :
     p.tail used 0 = .exhausted used := rfl
@@ -23,7 +23,7 @@ theorem candidateUsed_bound (p : SearchParams) (used : Nat) :
 theorem candidate_short (p : SearchParams) (used : Nat)
     (short : p.c.bytes.length - used < p.c.length) : candidateResult p used = none := by
   unfold candidateResult
-  unfold Spec.Ffdh.screenedParameterCandidate
+  unfold Spec.Ffdh.sievedParameterCandidate
   have draw := draw_of_short (r := p.c.bytes.drop used) (len := p.c.length)
     (by simpa only [List.length_drop] using short)
   change VG.Spec.RsaKeyGen.draw ((p.c.bits + 7) / 8) (p.c.bytes.drop used) = none at draw
@@ -38,8 +38,8 @@ theorem SearchParams.tail_short {p : SearchParams} {used remaining : Nat} (posit
   | zero => omega
   | succ n =>
     unfold SearchParams.tail
-    rw [screenedParameterSearch]
-    change screenedParameterCandidate p.c.bits p.c.generator (p.c.bytes.drop used) = _ at candidate
+    rw [sievedParameterSearch]
+    change sievedParameterCandidate p.c.bits p.c.generator (p.c.bytes.drop used) = _ at candidate
     rw [candidate]
     simp only [List.length_drop]
     split <;> rfl
@@ -52,8 +52,8 @@ theorem SearchParams.tail_accept {p : SearchParams} {used remaining prime : Nat}
   | zero => omega
   | succ n =>
     unfold SearchParams.tail
-    rw [screenedParameterSearch]
-    change screenedParameterCandidate p.c.bits p.c.generator (p.c.bytes.drop used) = _ at candidate
+    rw [sievedParameterSearch]
+    change sievedParameterCandidate p.c.bits p.c.generator (p.c.bytes.drop used) = _ at candidate
     rw [candidate]
     simp only [List.length_drop, ParameterSearchResult.consume, candidateUsed, candidateResult, candidate]
 

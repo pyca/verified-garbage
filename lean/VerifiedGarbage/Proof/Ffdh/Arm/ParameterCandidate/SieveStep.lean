@@ -4,20 +4,24 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveState
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveEntry
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveControl
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveMath
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialSmall
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SievePolicy
 
 /-! One compact-table sieve iteration uses RSA's verified native reducer. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG.Impl.Ffdh.Arm.ParameterCandidate (trialCount)
 open VG VG.Arm VG.Proof.Mont VG.Proof.X25519.Arm
 
 theorem sieveActiveStep_ok {s0 s : State} {dst base : BitVec 32} {n value i : Nat}
-    (inv : SieveInv s0 dst base n value i s) (more : i < 53) :
+    (inv : SieveInv s0 dst base n value i s) (more : i < (trialCount n)) :
     WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.sieveActiveStep s fun t =>
-      SieveInv s0 dst base n value (i + 1) t ∧ t.z = decide (i + 1 = 53) := by
+      SieveInv s0 dst base n value (i + 1) t ∧ t.z = decide (i + 1 = (trialCount n)) := by
+  have limitBound := trialCount_bound n
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.sieveActiveStep VG.Impl.Ffdh.Arm.ParameterCandidate.seqs
   refine WP.seq (WP.mono (sieveEntry_ok inv.context more inv.cursor) ?_)
   rintro u ⟨⟨prime, cursor, memU⟩, restU⟩
@@ -38,16 +42,16 @@ theorem sieveActiveStep_ok {s0 s : State} {dst base : BitVec 32} {n value i : Na
   have ctxA := ctxV.after_frame changedA restA
   have through : Rest sieveRegs s a :=
     ((restU.mono (by simp [sieveRegs])).trans (restV.mono (by simp [sieveRegs]))).trans (restA.mono (by simp [sieveRegs]))
-  have countA : a.gpr .r11 = BitVec.ofNat 32 (53 - i) := by
+  have countA : a.gpr .r11 = BitVec.ofNat 32 ((trialCount n) - i) := by
     rw [restA.gpr .r11 (by simp), restV.gpr .r11 (by simp), restU.gpr .r11 (by simp)]
     exact inv.count
-  refine WP.seq (WP.mono (sieveCount_ok (by omega : 0 < 53 - i) (by omega) countA) ?_)
+  refine WP.seq (WP.mono (sieveCount_ok (by omega : 0 < (trialCount n) - i) (by omega) countA) ?_)
   rintro t ⟨⟨countT, zeroT, memT⟩, restT⟩
   refine WP.block_nil ⟨⟨ctxA.after_memory memT restT, by omega, ?_, ?_, ?_, ?_, ?_,
     (inv.rest.trans through).trans (restT.mono (by simp [sieveRegs]))⟩, ?_⟩
   · rw [restT.gpr .r10 (by simp), restA.gpr .r10 (by simp), restV.gpr .r10 (by simp)]
     exact cursor
-  · simpa only [show 53 - i - 1 = 53 - (i + 1) by omega] using countT
+  · simpa only [show (trialCount n) - i - 1 = (trialCount n) - (i + 1) by omega] using countT
   · rw [divides, ← sieveAny_succ] at badA
     rw [memT, restT.sp]
     exact badA
@@ -61,9 +65,10 @@ theorem sieveActiveStep_ok {s0 s : State} {dst base : BitVec 32} {n value i : Na
     exact decide_eq_decide.mpr (by omega)
 
 theorem sieveStep_ok {s0 s : State} {dst base : BitVec 32} {n value i : Nat}
-    (inv : SieveInv s0 dst base n value i s) (more : i < 53) :
+    (inv : SieveInv s0 dst base n value i s) (more : i < (trialCount n)) :
     WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.sieveStep s fun t =>
-      SieveInv s0 dst base n value (i + 1) t ∧ t.z = decide (i + 1 = 53) := by
+      SieveInv s0 dst base n value (sieveNext n value i) t ∧ t.z = decide (sieveNext n value i = trialCount n) := by
+  have limitBound := trialCount_bound n
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.sieveStep
   refine WP.seq (WP.mono (sieveFinish_ok inv.context.read.frame.space inv.bad) ?_)
   rintro u ⟨⟨flag, memory⟩, rest⟩
@@ -80,27 +85,30 @@ theorem sieveStep_ok {s0 s : State} {dst base : BitVec 32} {n value i : Nat}
     have zero : u.z = true := by simpa only [bad, Bool.not_false] using flag
     refine WP.ite true (by change some u.z = some true; rw [zero]) ?_ (by intro h; cases h)
     intro _
-    exact sieveActiveStep_ok invU more
+    simpa only [sieveNext, bad, Bool.false_eq_true, ite_false] using sieveActiveStep_ok invU more
   | true =>
     have zero : u.z = false := by simpa only [bad, Bool.not_true] using flag
     refine WP.ite false (by change some u.z = some false; rw [zero]) (by intro h; cases h) ?_
     intro _
-    refine WP.mono (sieveSkip_ok (by omega : 0 < 53 - i) (by omega) invU.count) ?_
+    refine WP.mono (sieveSkip_ok u) ?_
     rintro t ⟨⟨cursor, count, last, mem⟩, restT⟩
-    refine ⟨⟨invU.context.after_memory mem restT, by omega, ?_, ?_, ?_, ?_, ?_,
-      invU.rest.trans (restT.mono (by simp [sieveRegs]))⟩, ?_⟩
-    · rw [cursor, invU.cursor]
-      change (base + BitVec.ofNat 32 (Spec.Rsa.Mont.arrAt ((n + 7) / 8) 34 + 4 * i)) + BitVec.ofNat 32 4 = _
-      rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-      have offset : Spec.Rsa.Mont.arrAt ((n + 7) / 8) 34 + 4 * i + 4 =
-          Spec.Rsa.Mont.arrAt ((n + 7) / 8) 34 + 4 * (i + 1) := by omega
+    simp only [sieveNext, bad, ite_true, decide_true]
+    have totalBad := sieveAny_mono inv.index bad
+    refine ⟨⟨invU.context.after_memory mem restT, Nat.le_refl _, ?_, ?_, ?_, ?_, ?_,
+      invU.rest.trans (restT.mono (by simp [sieveRegs]))⟩, last⟩
+    · rw [cursor, invU.cursor, invU.count, BitVec.shiftLeft_eq_mul_twoPow]
+      change (base + BitVec.ofNat 32 (Spec.Rsa.Mont.arrAt ((n+7)/8) 34+4*i)) +
+        BitVec.ofNat 32 (trialCount n-i)*BitVec.ofNat 32 4 = _
+      rw [BitVec.ofNat_mul_ofNat,BitVec.add_assoc,BitVec.ofNat_add_ofNat]
+      have offset : Spec.Rsa.Mont.arrAt ((n+7)/8) 34+4*i+(trialCount n-i)*4 =
+          Spec.Rsa.Mont.arrAt ((n+7)/8) 34+4*trialCount n := by
+        have := inv.index
+        omega
       rw [offset]
-    · simpa only [show 53 - i - 1 = 53 - (i + 1) by omega] using count
-    · rw [mem, restT.sp, invU.bad, sieveAny_succ, bad]
-      rfl
+    · rw [Nat.sub_self]
+      exact count.trans (by decide)
+    · rw [mem, restT.sp, invU.bad, bad, totalBad]
     · rw [mem]; exact invU.candidate
     · rw [mem]; exact invU.changed
-    · rw [last]
-      exact decide_eq_decide.mpr (by omega)
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

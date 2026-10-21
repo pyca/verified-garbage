@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateEntered
 public import VerifiedGarbage.Spec.Ffdh.Contract
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Spec.Ffdh.ScreenedCandidate
+public import VerifiedGarbage.Spec.Ffdh.SievedCandidate
 
 /-! Translate native status, output and entropy count to the public FFDH contract. -/
 
@@ -12,7 +12,7 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm
 
 theorem candidatePost_spec {p : CandidateParams} {m : Mem} {r : BitVec 32} (post : candidatePost p m r) :
-    let res := Spec.Ffdh.screenedParameterCandidate p.bits p.generator p.bytes
+    let res := Spec.Ffdh.sievedParameterCandidate p.bits p.generator p.bytes
     r.toNat = Spec.Ffdh.candidateStatus res ∧
     Spec.Rsa.bytesAt m (State.addr p.out) p.length =
       (match res with | some (some n, _) => Spec.Rsa.i2osp n p.length | _ => List.replicate p.length 0) ∧

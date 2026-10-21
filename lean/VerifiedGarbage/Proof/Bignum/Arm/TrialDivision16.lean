@@ -40,7 +40,7 @@ theorem redc_ok {u : State} {h acc s sv : Nat} (r5 : (u.gpr .r5).toNat = h) (hh 
       (∀ a', a' < 2 * s → a' * 2 ^ 16 % s = (h + acc) % s → u'.gpr .r2 = BitVec.ofNat 32 a' →
         WP isa (.block rest) u' Q)) :
     WP isa (.block (redc ++ rest)) u Q := by
-  simp only [redc, List.cons_append, List.nil_append]
+  simp only [redc, redcAt, List.cons_append, List.nil_append]
   refine wp_dp (op2_reg _ _) fun u1 v1 => wp_mul fun u2 v2 => wp_mov (op2_lsl (by decide)) fun u3 v3 =>
     wp_mov (op2_lsr (by decide)) fun u4 v4 => wp_mul fun u5 v5 => wp_dp (op2_reg _ _) fun u6 v6 =>
       wp_mov (op2_lsr (by decide)) fun u7 v7 => ?_

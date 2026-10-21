@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.Arithmetic
+public import VerifiedGarbage.Impl.Ffdh.Arm.CandidatePrepare
 public import VerifiedGarbage.Impl.Ffdh.Arm.CallerRows
 public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
@@ -100,10 +101,13 @@ def tablePointer : List Instr :=
     .mov .r11 (.imm 34), .mul .r11 .r11 .r7, .dp .add .r11 .r11 (.reg .r0),
     .dp .add .r11 .r11 (.imm 256)]
 
-def tableWrites (count : Nat) : List Instr := (List.range count).flatMap fun j =>
-  [.mov .r1 (.imm (BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry j))), .str .r1 .r11 (4 * j)]
+/-- RSA's requested-width trial bound, shared by p and q. -/
+def trialCount (octets : Nat) : Nat := if octets ≤ 128 then 512 else 1024
 
-def tableWrite : List Instr := tablePointer ++ tableWrites 53
+def tableWrites (count : Nat) : List Instr := (List.range count).flatMap fun j =>
+  [.movw .r1 (BitVec.ofNat 16 (VG.Impl.RsaKeyGen.tabEntry j)), .str .r1 .r11 (4 * j)]
+
+def tableWrite : List Instr := tablePointer ++ tableWrites 1024
 
 /-- Consume the next least-significant radix-2^16 digit of the big-endian
 buffer ending at r0, with r1 octets left. The final odd octet is zero-padded. -/
@@ -136,12 +140,22 @@ The final accumulator is below twice the prime, so zero or the prime
 means divisibility. Z reports that result; r10/r11 remain the sieve cursor. -/
 def trialSmall : Prog isa := seqs [.block trialStart, .loop trialStep .ne, trialFlag]
 
+/-- Test p-1 with the same reducer, seeding its carry with the divisor minus one. -/
+def trialOffsetInit : List Instr := [.dp .sub .r2 .r3 (.imm 1)]
+
+def trialOffset : Prog isa := seqs [.block trialStart, .block trialOffsetInit,
+  .loop trialStep .ne, trialFlag]
+
 /-- Short public residue comparisons, unrolled by the emitter. -/
 def residueEquals : List Nat → Prog isa
   | [] => .block []
   | [v] => .block [.cmp .r2 (.imm (BitVec.ofNat 32 v))]
   | v :: rest => .seq (.block [.cmp .r2 (.imm (BitVec.ofNat 32 v))])
       (.ite .eq (.block []) (residueEquals rest))
+
+/-- For odd p, Z iff q=(p-1)/2 is odd. Reject even q before any trial division. -/
+def qOdd : List Instr := [.ldrSp .r4 4, .ldrSp .r5 12, .dp .add .r4 .r4 (.reg .r5),
+  .dp .sub .r4 .r4 (.imm 1), .ldrb .r2 .r4 0, .dp .and .r2 .r2 (.imm 3), .cmp .r2 (.imm 3)]
 
 def residueLow : List Instr := [.ldrSp .r4 4, .ldrSp .r5 12, .dp .add .r4 .r4 (.reg .r5),
   .dp .sub .r4 .r4 (.imm 1), .ldrb .r2 .r4 0, .dp .and .r2 .r2 (.imm 7), .cmp .r2 (.imm 3)]
@@ -160,8 +174,12 @@ def residue5 : Prog isa := residuePrime 5 [2, 3, 7, 8]
 
 def residue : Prog isa := .seq (.block [.ldrSp .r1 28, .cmp .r1 (.imm 2)]) (.ite .eq residue2 residue5)
 
-def sieveInitTail : List Instr :=
-  [.mov .r10 (.reg .r11), .mov .r11 (.imm 53), .mov .r1 (.imm 0)] ++ save .r1 64
+def sieveInitRegisters : List Instr :=
+  [.mov .r10 (.reg .r11), .ldrSp .r11 12, .subs .r11 .r11 (.imm 129),
+    .mov .r11 (.imm 0), .adc .r11 .r11 (.imm 0), .mov .r11 (.shifted .r11 .lsl 9),
+    .dp .add .r11 .r11 (.imm 512), .mov .r1 (.imm 0)]
+
+def sieveInitTail : List Instr := sieveInitRegisters ++ save .r1 64
 
 def sieveInit : Prog isa := .seq (.block tablePointer) (.block sieveInitTail)
 
@@ -176,12 +194,38 @@ def sieveActiveStep : Prog isa := seqs [.block sieveEntry, trialSmall, sieveFlag
 
 def sieveFinish : List Instr := [.ldrSp .r1 64, .cmp .r1 (.imm 0)]
 
-/-- Once a divisor has been found, only advance the bounded loop controls. -/
-def sieveSkip : List Instr := [.dp .add .r10 .r10 (.imm 4)] ++ sieveCount
+/-- Once a divisor has been found, jump directly to the table end. -/
+def sieveSkip : List Instr :=
+  [.dp .add .r10 .r10 (.shifted .r11 .lsl 2), .subs .r11 .r11 (.reg .r11)]
 
 def sieveStep : Prog isa := .seq (.block sieveFinish) (.ite .eq sieveActiveStep (.block sieveSkip))
 
 def sieve : Prog isa := seqs [sieveInit, .loop sieveStep .ne, .block sieveFinish]
+
+def pairEntry : List Instr := [.ldr .r7 .r10 0]
+def pairAdvance : List Instr := [.dp .add .r10 .r10 (.imm 4)]
+
+/-- The offset accumulator uses the shared reducer with a separate digit register. -/
+def trialPairRedc : List Instr := TrialDivision16.redcAt .r8 .r7
+
+def trialPairStep : Prog isa := .seq trialDigit (.block
+  ([.mov .r7 (.reg .r5)] ++ TrialDivision16.redc ++ trialPairRedc ++ [.cmp .r1 (.imm 0)]))
+
+def trialPairInit : List Instr := [.dp .sub .r8 .r3 (.imm 1)]
+
+def trialPairFlag : Prog isa := .seq trialFlag
+  (.ite .eq (.block []) (.seq (.block [.mov .r2 (.reg .r8)]) trialFlag))
+
+/-- Reduce p and p-1 in one traversal, sharing each digit load and the inverse. -/
+def trialPair : Prog isa := .seq (.block trialStart)
+  (.seq (.block trialPairInit) (.seq (.loop trialPairStep .ne) trialPairFlag))
+
+/-- Test both divisibility conditions before advancing the public prime-table cursor. -/
+def pairTrials : Prog isa := .seq (.block pairEntry) trialPair
+
+def pairActiveStep : Prog isa := seqs [pairTrials, sieveFlag, .block (pairAdvance ++ sieveCount)]
+def pairStep : Prog isa := .seq (.block sieveFinish) (.ite .eq pairActiveStep (.block sieveSkip))
+def pairSieve : Prog isa := seqs [sieveInit, .loop pairStep .ne, .block sieveFinish]
 
 def halfByte : List Instr :=
   [.ldrb .r3 .r0 0, .mov .r1 (.shifted .r3 .lsr 1), .dp .orr .r1 .r1 (.reg .r2),
@@ -207,7 +251,7 @@ def montKeyArrays : Prog isa := seqs [
 def montKeySetup : Prog isa := .seq (.block (keyContext ++ keyStride)) montKeyArrays
 
 def montPrep : Prog isa := seqs [
-  .block [.ldrSp .r0 0, .ldrSp .r6 12], VG.Impl.Ffdh.Arm.prepare,
+  .block [.ldrSp .r0 0, .ldrSp .r6 12], VG.Impl.Ffdh.Arm.CandidatePrepare.code,
   .seq (smallConst 1 1) (montOp 1 1 4), montKeySetup]
 
 def phaseBitHead (q : Bool) : List Instr :=
@@ -344,8 +388,11 @@ def tests (name : String) (body : Prog isa) : Prog isa := screenedTests name bod
 def screenQ (name : String) (body : Prog isa) : Prog isa := seqs [halveQ,
   .ite .eq finRejected (seqs [sieve, .ite .eq (tests name body) finRejected])]
 
-def screenP (name : String) (body : Prog isa) : Prog isa := seqs [.block tableWrite, sieve,
-  .ite .eq (screenQ name body) finRejected]
+def screenPair (name : String) (body : Prog isa) : Prog isa := seqs [.block tableWrite, pairSieve,
+  .ite .eq (tests name body) finRejected]
+
+def screenP (name : String) (body : Prog isa) : Prog isa := seqs [.block qOdd,
+  .ite .eq (screenPair name body) finRejected]
 
 def main (name : String) (body : Prog isa) : Prog isa := seqs [
   .block ([.ldrSp .r1 12] ++ save .r1 40), shapeP, residue,

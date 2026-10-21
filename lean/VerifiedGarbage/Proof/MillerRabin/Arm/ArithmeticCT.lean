@@ -3,8 +3,8 @@ public import VerifiedGarbage.Impl.MillerRabin.Arm.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
 import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTFnBody
-import VerifiedGarbage.Proof.Bignum.Arm.FiosRound
-import VerifiedGarbage.Proof.Bignum.Arm.FiosCT
+import VerifiedGarbage.Proof.Bignum.Arm.FiosFastRound
+import VerifiedGarbage.Proof.Bignum.Arm.FiosFastCT
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 public import VerifiedGarbage.Proof.Framework.RelCT
 
@@ -37,7 +37,7 @@ private theorem product_fios_ct {base : BitVec 32} {len w o a b : Nat}
     exact Taint.agree_ofRegs (by simp)
   have ready := (relCT_keep_sp args (fun _ _ h => h.2.2)).wp
     (fun s t h => ⟨montOpArgs_ready s h.1.1 ho ha hb h.1.2, montOpArgs_ready t h.2.1.1 ho ha hb h.2.1.2⟩)
-  have body := relCT_keep_sp ((MontPipeline.fnBody_ct Fios.round Fios.round_law (by intro _ _ _ _ _ _ _ _ _ _ hi; exact Fios.round_ct hi) ho ha hb fit).mono
+  have body := relCT_keep_sp ((MontPipeline.fnBody_ct FiosFast.round FiosFast.round_law (by intro _ _ _ _ _ _ _ _ _ _ hi; exact FiosFast.round_ct hi) ho ha hb fit).mono
     (P' := fun (s t : State) => s.sp = t.sp ∧ FnBodyReady base len w o a b s ∧ FnBodyReady base len w o a b t)
     (fun _ _ h => h.2) (fun _ _ h => h)) (fun _ _ h => h.1)
   simp only [product, ↓reduceIte]

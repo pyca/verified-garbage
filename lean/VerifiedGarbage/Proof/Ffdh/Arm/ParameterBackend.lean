@@ -5,7 +5,7 @@ public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Verified
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Stack
-public import VerifiedGarbage.Spec.Ffdh.ScreenedContract
+public import VerifiedGarbage.Spec.Ffdh.SievedContract
 
 /-! A verified parameter candidate supplied to the native retry/refill controller. -/
 
@@ -15,13 +15,13 @@ open VG VG.Arm
 
 structure ParameterBackend where
   candidate : Prog isa
-  candidate_verified : Verified target candidate (Spec.Ffdh.screenedParameterCandidateContract abi 184)
+  candidate_verified : Verified target candidate (Spec.Ffdh.sievedParameterCandidateContract abi 184)
   candidateStack : FrameStack.armStack candidate ≤ 184
   suffix : String
   features : List String
 
 def ParameterBackend.candidateName (b : ParameterBackend) : String :=
-  Spec.Ffdh.screenedParameterCandidateApi.name ++ b.suffix
+  Spec.Ffdh.sievedParameterCandidateApi.name ++ b.suffix
 
 def parameterBackend (v : VG.Proof.MillerRabin.Arm.RoundImpl) : ParameterBackend := by
   exact {

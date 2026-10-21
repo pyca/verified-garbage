@@ -5,11 +5,14 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveState
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TablePointer
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveControl
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SievePolicy
 
-/-! Bind the compact table cursor and initialize the sieve's public flag. -/
+/-! Bind the RSA table cursor and initialize the sieve's public flag. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG.Impl.Ffdh.Arm.ParameterCandidate (trialCount)
 open VG VG.Arm VG.Proof.Mont VG.Proof.X25519.Arm
 
 theorem sieveInit_ok {s : State} {dst base : BitVec 32} {n : Nat} (h : SieveContext dst base n s) :
@@ -21,7 +24,7 @@ theorem sieveInit_ok {s : State} {dst base : BitVec 32} {n : Nat} (h : SieveCont
     (h.read.frame.read (by decide)) h.savedBase h.read.width) ?_)
   rintro u ⟨⟨ptr, memory⟩, rest⟩
   have ctx := h.after_memory memory rest
-  refine WP.mono (sieveInitTail_ok u ctx.read.frame.space) ?_
+  refine WP.mono (sieveInitTail_ok u ctx.read.frame.space ctx.widthBound ctx.read.width) ?_
   rintro t ⟨⟨cursor, count, memT⟩, restT⟩
   have changed : Frame [sieveLocal u.sp] u.mem t.mem := by
     rw [memT]
@@ -30,7 +33,8 @@ theorem sieveInit_ok {s : State} {dst base : BitVec 32} {n : Nat} (h : SieveCont
   have bytes := ctx.bytes_after changed
   rw [memory] at bytes
   have total : Rest sieveRegs s t := (rest.mono (by simp [sieveRegs])).trans (restT.mono (by simp [sieveRegs]))
-  refine ⟨finalCtx, by decide, ?_, count, ?_, ?_, ?_, total⟩
+  have positive := trialCount_positive n
+  refine ⟨finalCtx, by omega, ?_, count, ?_, ?_, ?_, total⟩
   · simpa only [Nat.mul_zero, Nat.add_zero] using cursor.trans ptr
   · rw [restT.sp, memT, Mem.readW_writeW_self32]
     rfl

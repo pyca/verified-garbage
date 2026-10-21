@@ -4,7 +4,9 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateReturn
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateScreenMath
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateScreenQ
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateScreenPair
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateQOdd
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePairMath
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateTable
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateLocalFrame
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateSieveMath
@@ -12,8 +14,9 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateResidue
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateDimensions
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Omega
 
-/-! Initialize the RSA sieve table once and screen p before testing q. -/
+/-! Reject even q before the paired RSA sieve and witness controller. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
@@ -21,45 +24,29 @@ open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
 theorem candidateScreenP_ok (v : RoundImpl) {s : State} {p : CandidateParams}
-    (h : CandidateContext p p.length s) (enough : p.length ≤ p.bytes.length)
-    (number : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length) = p.candidate) :
+    (h : CandidateContext p p.length s) (enough : p.length≤p.bytes.length)
+    (number : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length)=p.candidate) :
     WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.screenP v.name v.code) s
       (CandidateReturn p (candidateScreenP p) s) := by
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.screenP VG.Impl.Ffdh.Arm.ParameterCandidate.seqs
-  refine WP.seq (WP.mono (candidateTable_ok h) ?_)
-  rintro u ⟨ctx, table, changed, rest⟩
-  have bytes := rsa_bytes_frame (src := State.addr p.out) (k := p.length) changed (by have := p.length_bounds; omega) (by
-    intro r hr
-    rw [List.mem_singleton] at hr
-    subst r
-    exact p.outputScratch)
-  have numberU : Spec.Rsa.os2ip (Spec.Rsa.bytesAt u.mem (State.addr p.out) p.length) = p.candidate := by
-    rw [bytes]
+  refine WP.seq (WP.mono (candidateQOdd_ok h number) ?_)
+  rintro u ⟨ctx,flag,memory,rest⟩
+  have numberU : Spec.Rsa.os2ip (Spec.Rsa.bytesAt u.mem (State.addr p.out) p.length)=p.candidate := by
+    rw [memory]
     exact number
-  refine WP.seq (WP.mono (candidateSieve_ok ctx table (by rw [numberU]; exact p.sieve_large.1)
-    (by rw [numberU]; exact p.candidate_odd)) ?_)
-  rintro w ⟨ctxW, tableW, flag, bytesW, changedW, restW⟩
-  rw [numberU] at flag
-  have numberW : Spec.Rsa.os2ip (Spec.Rsa.bytesAt w.mem (State.addr p.out) p.length) = p.candidate := by
-    rw [bytesW]
-    exact numberU
-  by_cases prime : Spec.Ffdh.primeShape p.candidate = true
-  · refine WP.seq (WP.ite true (by change some w.z = some true; rw [flag, prime]) ?_ (by intro h; cases h))
+  by_cases oddQ : ((p.candidate-1)/2)%2=1
+  · refine WP.seq (WP.ite true (by change some u.z=some true; rw [flag,decide_eq_true oddQ]) ?_ (by intro h; cases h))
     intro _
-    refine WP.mono (candidateScreenQ_ok v ctxW enough tableW numberW) ?_
+    refine WP.mono (candidateScreenPair_ok v ctx enough numberU oddQ) ?_
     intro t returned
     refine WP.block_nil ?_
-    rw [candidateScreenP, prime]
-    exact (returned.trans_pre (candidate_local_frame ctx (by decide) (by decide) changedW) restW (fun _ h => h)).trans_pre
-      (changed.mono (by simp [candidateRegions])) rest (fun _ h => h)
-  · have composite : Spec.Ffdh.primeShape p.candidate = false := Bool.eq_false_iff.mpr prime
-    refine WP.seq (WP.ite false (by change some w.z = some false; rw [flag, composite]) (by intro h; cases h) ?_)
+    exact returned.trans_pre (by rw [memory]; exact Frame.refl _ _) rest (fun _ h => h)
+  · refine WP.seq (WP.ite false (by change some u.z=some false; rw [flag,decide_eq_false oddQ]) (by intro h; cases h) ?_)
     intro _
-    refine WP.mono (candidateRejected_ok ctxW) ?_
+    refine WP.mono (candidateRejected_ok ctx) ?_
     intro t returned
     refine WP.block_nil ?_
-    rw [candidateScreenP, composite]
-    exact (returned.trans_pre (candidate_local_frame ctx (by decide) (by decide) changedW) restW (fun _ h => h)).trans_pre
-      (changed.mono (by simp [candidateRegions])) rest (fun _ h => h)
+    rw [candidateScreenP_even p (by omega)]
+    exact returned.trans_pre (by rw [memory]; exact Frame.refl _ _) rest (fun _ h => h)
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

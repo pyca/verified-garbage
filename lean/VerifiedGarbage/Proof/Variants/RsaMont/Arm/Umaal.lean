@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCallFios
-public import VerifiedGarbage.Proof.Bignum.Arm.FiosRound
-public import VerifiedGarbage.Proof.Bignum.Arm.FiosCT
+public import VerifiedGarbage.Proof.Bignum.Arm.FiosFastRound
+public import VerifiedGarbage.Proof.Bignum.Arm.FiosFastCT
 
 /-! One pipelined UMAAL kernel supplies every caller of the shared Montgomery backend. -/
 
@@ -10,8 +10,8 @@ public import VerifiedGarbage.Proof.Bignum.Arm.FiosCT
 namespace VG.Proof.Variants.RsaMont.Arm.Umaal
 open VG VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm
 
-def variant : MontBackend := montCallFios_backend Fios.round_law (by
+def variant : MontBackend := montCallFios_backend FiosFast.round_law (by
   intro base size tmp a b mod acc n i _ hi
-  exact Fios.round_ct hi)
+  exact FiosFast.round_ct hi)
 
 end VG.Proof.Variants.RsaMont.Arm.Umaal

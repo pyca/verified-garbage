@@ -15,7 +15,7 @@ theorem MontPrepInput.after_memory {s t : State} {base src : BitVec 32} {capacit
     MontPrepInput base src capacity k t := by
   refine ⟨h.workspace.congr rest.wr, ?_, h.minLength, h.maxLength, h.space, h.sourceFits,
     by rw [rest.rd, rest.wr]; exact h.readable, h.separate,
-    by rw [memory]; exact h.large, by rw [memory]; exact h.odd⟩
+    by rw [memory]; exact h.large, by rw [memory]; exact h.odd, by rw [memory]; exact h.normalized⟩
   have frame : Frame [⟨State.addr base, 8 * capacity⟩] s.mem t.mem := by rw [memory]; exact Frame.refl _ _
   simpa only [memory, rest.sp] using h.stack.after_workspace frame rest
 

@@ -43,11 +43,13 @@ theorem candidatePhaseInputWithChecks {s : State} {p : CandidateParams} {consume
     p.phase_bits_exact q odd, positive, bound, fit, positiveChecks, boundChecks, h.consumedBound,
     p.tapeCount, p.tapeFits, h.tapeRead, p.tapeScratch, h.stackTape.symm, h.belowTape.symm, h.tapeBytes⟩
   refine ⟨h.workspace, h.pc_stack, p.length_bounds.1, p.length_bounds.2, p.public_space,
-    p.outputFits, h.output_read, p.outputScratch, ?_, ?_⟩
+    p.outputFits, h.output_read, p.outputScratch, ?_, ?_, ?_⟩
   · rw [number]
     exact p.phase_large q
   · rw [number]
     exact odd
+  · rw [number]
+    exact p.phase_normalized q
 
 
 theorem candidatePhaseInput {s : State} {p : CandidateParams} {consumed : Nat} {q : Bool}

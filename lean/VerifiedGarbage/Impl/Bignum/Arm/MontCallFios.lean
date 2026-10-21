@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCallWith
 public import VerifiedGarbage.Impl.Bignum.Arm.MontPipeline
-public import VerifiedGarbage.Impl.Bignum.Arm.Fios
+public import VerifiedGarbage.Impl.Bignum.Arm.FiosFast
 
 /-! One fused Montgomery kernel handles products and squares through the existing callable ABI. -/
 
@@ -10,7 +10,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.Fios
 namespace VG.Impl.Bignum.Arm.MontCallFios
 open VG VG.Arm VG.Impl.Bignum.Arm
 
-def arithmetic : Prog isa := MontPipeline.fnBody Fios.round
+def arithmetic : Prog isa := MontPipeline.fnBody FiosFast.round
 
 def code : Prog isa := MontCallWith.code arithmetic
 

@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Ffdh.GenerationBounds
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Spec.Ffdh.ScreenedContract
+public import VerifiedGarbage.Spec.Ffdh.SievedContract
 
 /-! Complete native ARMv7 safe-prime parameter generation satisfies the existing public correctness contract. -/
 
@@ -18,9 +18,9 @@ namespace VG.Proof.Ffdh.Arm.ParameterSearch
 open VG VG.Arm
 
 theorem correct (backend : VG.Proof.Ffdh.Arm.ParameterBackend) (s : State)
-    (pre : (Spec.Ffdh.screenedParameterSearchContract abi 232).pre s) :
+    (pre : (Spec.Ffdh.sievedParameterSearchContract abi 232).pre s) :
     ∃ tr t, Exec isa (VG.Impl.Ffdh.Arm.ParameterSearch.code (.call backend.candidateName backend.candidate)) s tr t ∧
-      abiPreserved s t ∧ (Spec.Ffdh.screenedParameterSearchContract abi 232).post s t := by
+      abiPreserved s t ∧ (Spec.Ffdh.sievedParameterSearchContract abi 232).post s t := by
   obtain ⟨p, args⟩ := searchPublic s pre
   obtain ⟨tr, t, run, abiOk, result⟩ := function_ok backend (searchInput pre args)
   have widthNat : (s.gpr .r1).toNat = p.c.length := by
@@ -33,14 +33,14 @@ theorem correct (backend : VG.Proof.Ffdh.Arm.ParameterBackend) (s : State)
     rw [args.tapeLength, BitVec.toNat_ofNat, Nat.mod_eq_of_lt p.c.tapeCount]
   have attemptsNat : (s.mem.readW (State.addr p.control) 64).toNat = p.attempts := by
     rw [args.counter, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := p.attempts_bound; omega)]
-  have same : p.tail 0 p.attempts = Spec.Ffdh.screenedParameterSearch p.c.bits p.c.generator p.attempts p.c.bytes := by
+  have same : p.tail 0 p.attempts = Spec.Ffdh.sievedParameterSearch p.c.bits p.c.generator p.attempts p.c.bytes := by
     rw [SearchParams.tail, List.drop_zero, VG.Proof.Ffdh.Generation.consume_zero]
   have statusFits : (p.tail 0 p.attempts).status < 2 ^ 32 := by
     cases p.tail 0 p.attempts <;> simp only [Spec.Ffdh.ParameterSearchResult.status] <;> decide
   have bytes := args.bytes
   simp only [State.addr] at bytes attemptsNat
   refine ⟨tr, t, run, abiOk, ?_⟩
-  sig_post [Spec.Ffdh.screenedParameterSearchContract, Spec.Ffdh.parameterSearchSig,
+  sig_post [Spec.Ffdh.sievedParameterSearchContract, Spec.Ffdh.parameterSearchSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr]
   rw [BitVec.setWidth_append_eq_right]
   simp only [args.out, args.used, args.tape, args.control, widthNat, bitsNat, genNat, tapeNat, bytes, attemptsNat]

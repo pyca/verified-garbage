@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
-public import VerifiedGarbage.Spec.Ffdh.ScreenedContract
+public import VerifiedGarbage.Spec.Ffdh.SievedContract
 
 /-! The public signature supplies all permissions, incoming words and 184 bytes of stack. -/
 
@@ -20,9 +20,9 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Ffdh.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
 
 theorem candidateInput {s : State} {p : CandidateParams}
-    (pre : (Spec.Ffdh.screenedParameterCandidateContract abi 184).pre s) (args : CandidateAbi p s) :
+    (pre : (Spec.Ffdh.sievedParameterCandidateContract abi 184).pre s) (args : CandidateAbi p s) :
     CandidateFnInput p s := by
-  sig_pre [Spec.Ffdh.screenedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig,
+  sig_pre [Spec.Ffdh.sievedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
   obtain ⟨stackFit, argFit, rd, wr, _, _, _, _, _, _, _, _, _, stackOut, stackUsed, stackTape, stackScratch, stackArgs,
     _, _, _, _, _, _, _, _, _⟩ := pre

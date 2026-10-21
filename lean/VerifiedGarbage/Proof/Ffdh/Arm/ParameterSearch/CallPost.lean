@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Bounds
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Spec.Ffdh.ScreenedContract
+public import VerifiedGarbage.Spec.Ffdh.SievedContract
 
 /-! Interpret the native candidate result using exactly the remaining public tape. -/
 
@@ -17,7 +17,7 @@ namespace VG.Proof.Ffdh.Arm.ParameterSearch
 open VG VG.Arm
 
 def candidateResult (p : SearchParams) (used : Nat) :=
-  Spec.Ffdh.screenedParameterCandidate p.c.bits p.c.generator (p.c.bytes.drop used)
+  Spec.Ffdh.sievedParameterCandidate p.c.bits p.c.generator (p.c.bytes.drop used)
 
 def candidateUsed (p : SearchParams) (used : Nat) : Nat :=
   match candidateResult p used with
@@ -38,7 +38,7 @@ theorem call_post {p : SearchParams} {used : Nat} {s t : State} {m : Mem}
     (memory : s.mem = callMem p used m s.sp)
     (bytes : Spec.Rsa.bytesAt s.mem (State.addr (p.c.tape + BitVec.ofNat 32 used))
       (p.c.bytes.length - used) = p.c.bytes.drop used)
-    (post : (Spec.Ffdh.screenedParameterCandidateContract abi 184).post (callState p used s)
+    (post : (Spec.Ffdh.sievedParameterCandidateContract abi 184).post (callState p used s)
       (t.withRegions (callRd p used s.sp) (callWr p))) : CandidatePost p used t := by
   have a0 := call_stackArg (j := 0) facts.argsFits memory (by decide)
   have a1 := call_stackArg (j := 1) facts.argsFits memory (by decide)
@@ -52,7 +52,7 @@ theorem call_post {p : SearchParams} {used : Nat} {s t : State} {m : Mem}
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by rcases p.c.generatorAllowed with eq | eq <;> omega)]
   have tapeNat : (BitVec.ofNat 32 (p.c.bytes.length - used)).toNat = p.c.bytes.length - used := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := p.c.tapeCount; omega)]
-  sig_post [Spec.Ffdh.screenedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig,
+  sig_post [Spec.Ffdh.sievedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr] at post
   rw [BitVec.setWidth_append_eq_right] at post
   simp only [args.out, args.width, args.usedPtr, args.bits, a0, a1, a2,

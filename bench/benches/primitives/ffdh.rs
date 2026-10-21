@@ -256,9 +256,9 @@ pub fn bench(c: &mut Criterion) {
                 continue;
             }
             // Safe-prime search has high variance. Both libraries use 100
-            // random 512-bit draws. The larger ARM case uses 20 to keep
-            // the native benchmark within the job's time limit.
-            group.sample_size(if bits == 512 { 100 } else { 20 });
+            // random 512-bit draws. The larger ARM case uses 64 to reduce
+            // search variance within the native job's time limit.
+            group.sample_size(if bits == 512 { 100 } else { 64 });
             group.bench_function(BenchmarkId::new(VG, bits / 8), |b| {
                 b.iter(|| Parameters::generate(bits, generator).unwrap())
             });

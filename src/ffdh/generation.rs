@@ -14,8 +14,8 @@ use crate::arch::ffdh::vg_ffdh_generate_parameters_adx;
 use crate::arch::ffdh::vg_ffdh_parameter_generation_init;
 #[cfg(target_arch = "arm")]
 use crate::arch::ffdh::{
-    vg_ffdh_generate_parameters_screened as vg_ffdh_generate_parameters,
-    vg_ffdh_generate_parameters_screened_umaal as vg_ffdh_generate_parameters_umaal,
+    vg_ffdh_generate_parameters_sieved as vg_ffdh_generate_parameters,
+    vg_ffdh_generate_parameters_sieved_umaal as vg_ffdh_generate_parameters_umaal,
 };
 use crate::cpu::detected;
 use crate::rsa::Scratch;
