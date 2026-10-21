@@ -12,6 +12,7 @@ pub const USES: &[&str] = &["rsa_keygen", "miller_rabin"];
     target_arch = "arm"
 ))]
 pub fn bench(c: &mut Criterion) {
+    use std::cell::OnceCell;
     use std::hint::black_box;
 
     use aws_lc_rs::rsa::{KeyPair, KeySize};
@@ -49,16 +50,19 @@ pub fn bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("rsa_keygen_prime");
     g.sample_size(10);
     for bits in [1024, 1536, 2048] {
-        let rand = fixed_octets(bits, |r| {
-            generate_prime_from(bits, &[1, 0, 1], None, r).is_ok()
-        });
+        let rand = OnceCell::new();
         g.bench_function(BenchmarkId::new(VG, bits / 8), |b| {
+            let rand = rand.get_or_init(|| {
+                fixed_octets(bits, |r| {
+                    generate_prime_from(bits, &[1, 0, 1], None, r).is_ok()
+                })
+            });
             b.iter(|| {
                 generate_prime_from(
                     black_box(bits),
                     black_box(&[1, 0, 1]),
                     None,
-                    black_box(&rand),
+                    black_box(rand),
                 )
                 .unwrap()
             })
@@ -90,17 +94,21 @@ pub fn bench(c: &mut Criterion) {
         (3072, KeySize::Rsa3072),
         (4096, KeySize::Rsa4096),
     ] {
-        let mut draws: Vec<(usize, Vec<u8>)> = (0..9)
-            .map(|i| {
-                let rand = fixed_octets(bits + i, |r| generate_from(bits, &[1, 0, 1], r).is_ok());
-                (generate_from(bits, &[1, 0, 1], &rand).unwrap().1, rand)
-            })
-            .collect();
-        draws.sort_by_key(|d| d.0);
-        let rand = draws.swap_remove(4).1;
+        let rand = OnceCell::new();
         g.bench_function(BenchmarkId::new(VG, bits / 8), |b| {
+            let rand = rand.get_or_init(|| {
+                let mut draws: Vec<(usize, Vec<u8>)> = (0..9)
+                    .map(|i| {
+                        let rand =
+                            fixed_octets(bits + i, |r| generate_from(bits, &[1, 0, 1], r).is_ok());
+                        (generate_from(bits, &[1, 0, 1], &rand).unwrap().1, rand)
+                    })
+                    .collect();
+                draws.sort_by_key(|d| d.0);
+                draws.swap_remove(4).1
+            });
             b.iter(|| {
-                generate_from(black_box(bits), black_box(&[1, 0, 1]), black_box(&rand)).unwrap()
+                generate_from(black_box(bits), black_box(&[1, 0, 1]), black_box(rand)).unwrap()
             })
         });
         g.bench_function(BenchmarkId::new(OPENSSL, bits / 8), |b| {

@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.MillerRabin.X86.TimingEntry
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingCore
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingPointers
 import VerifiedGarbage.Proof.MillerRabin.X86.MontInstance
-import VerifiedGarbage.Proof.Mont.X86.Compact.Verified
+import VerifiedGarbage.Proof.Mont.X86.PreparedSquare.Verified
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 
@@ -84,7 +84,7 @@ theorem constantTime : ConstantTime isa
           have pair := pair_of_context startS.1.data.context startT'.1.data.context (by
             rw [keepS.1 .esp (by decide), keepT.1 .esp (by decide)]
             exact enteredSp)
-          obtain ⟨coreTrace, after⟩ := core_trace Compact.verified compact_noSp compact_stack S.valid
+          obtain ⟨coreTrace, after⟩ := core_trace PreparedSquare.verified compact_noSp compact_stack S.valid
             (by change (arg s 1).toNat * 8 = 8 * (arg s 1).toNat; omega) _ _ _ _ _ _
             ⟨pair, ⟨entrySecret s, startS⟩, ⟨entrySecret t, startT'⟩⟩ coreS coreT
           have restoreTrace := (restore_trace _ _ _ _ _ _ after restoreS restoreT).1
