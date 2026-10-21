@@ -617,6 +617,307 @@ theorem main4 (hdd : dArg s₀ .rdx = 4) {s : State} (hdi : s.gpr .rdi = DD.bP s
 
 end
 
+/-! ## `d = 1` -/
+
+/-- The masks of `d = 1`: every doubleword takes doubleword `k` of the lane. -/
+def m1 (k : Nat) : BitVec 128 := match k with
+  | 0 => 0x03020100030201000302010003020100#128
+  | 1 => 0x07060504070605040706050407060504#128
+  | 2 => 0x0b0a09080b0a09080b0a09080b0a0908#128
+  | _ => 0x0f0e0d0c0f0e0d0c0f0e0d0c0f0e0d0c#128
+
+/-- What the mask `M` selects: bytes `o` to `o + 3` in every doubleword. -/
+def Sel4 (M : BitVec 128) (o : Nat) : Prop :=
+  ∀ a : BitVec 128, XBinOp.eval .pshufb a M = ofBytes fun i => byte a (o + i % 4)
+
+theorem sel_m1 {k : Nat} (hk : k < 4) : Sel4 (m1 k) (4 * k) := by
+  rcases cases4 hk with rfl | rfl | rfl | rfl <;> exact fun a => by simp only [m1, XBinOp.eval, ofBytes]; rfl
+
+/-- The shifts of value `i` of lane `l` of byte `j` of a doubleword: `8 j + 4 l + i`. -/
+def sh1 (j l : Nat) : BitVec 128 :=
+  ofDwords (BitVec.ofNat 32 (8 * j + 4 * l)) (BitVec.ofNat 32 (8 * j + 4 * l + 1)) (BitVec.ofNat 32 (8 * j + 4 * l + 2))
+    (BitVec.ofNat 32 (8 * j + 4 * l + 3))
+
+theorem dword_sh1 (j l : Nat) {i : Nat} (hi : i < 4) : dword (sh1 j l) i = BitVec.ofNat 32 (8 * j + 4 * l + i) := by
+  rcases cases4 hi with rfl | rfl | rfl | rfl <;> simp [sh1]
+
+theorem dword_srlv (a b : BitVec 128) {i : Nat} (hi : i < 4) :
+    dword (VVarOp.eval .vpsrlvd a b) i =
+      if (dword b i).toNat < 32 then dword a i >>> (dword b i).toNat else 0 := by
+  rcases cases4 hi with rfl | rfl | rfl | rfl <;>
+    simp only [VVarOp.eval, dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3]
+
+theorem dword_vals1 (a : BitVec 128) {M : BitVec 128} {o : Nat} (hM : Sel4 M o) {j l i : Nat} (hj : j < 4)
+    (hl : l < 2) (hi : i < 4) :
+    (dword (vals a M (sh1 j l) 1) i).toNat =
+      ((byte a o).toNat + 256 * (byte a (o + 1)).toNat + 65536 * (byte a (o + 2)).toNat +
+        16777216 * (byte a (o + 3)).toNat) / 2 ^ (8 * j + 4 * l + i) % 2 ^ 1 := by
+  rw [dword_pand, dword_mk hi, toNat_and_mk (by decide), hM, dword_srlv _ _ hi, dword_sh1 _ _ hi,
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 8 * j + 4 * l + i < 2 ^ 32 by omega), itT (by omega),
+    BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, toNat_dword_ofBytes _ hi,
+    show 4 * i % 4 = 0 by omega, show (4 * i + 1) % 4 = 1 by omega, show (4 * i + 2) % 4 = 2 by omega,
+    show (4 * i + 3) % 4 = 3 by omega, Nat.add_zero]
+
+theorem dig4 (f : Nat → Nat) :
+    digits 8 ((List.range 4).map f) = f 0 + 256 * f 1 + 65536 * f 2 + 16777216 * f 3 := by
+  simp [List.range_succ, digits_cons, digits_nil]; omega
+
+/-- Value `i` of lane `l` of byte `j` of doubleword `k` of iteration `t` (`d = 1`), of the 16 bytes `L` of the
+iteration. -/
+theorem val1 {B : List Byte} (hB : B.length = 32) {t : Nat} (ht : t < 2) {L : BitVec 128}
+    (hL : ∀ u < 16, byte L u = B.getD (16 * t + u) 0) {k : Nat} (hk : k < 4) {j l i : Nat} (hj : j < 4)
+    (hl : l < 2) (hi : i < 4) :
+    (dword (ddM (vals L (m1 k) (sh1 j l) 1) (rc 1) 1) i).toNat =
+      ((decodeDecompress 1 B)[128 * t + (8 * (4 * k + j) + (4 * l + i))]!).val := by
+  have hv := dword_vals1 L (sel_m1 hk) hj hl hi
+  rw [dword_ddM _ _ (by decide) hi (by rw [hv]; exact Nat.lt_of_lt_of_le (Nat.mod_lt _ (by decide)) (by decide))
+      (by rw [dword_rc hi]; decide), hv, dword_rc hi, hL _ (by omega), hL _ (by omega), hL _ (by omega),
+    hL _ (by omega), show 8 * j + 4 * l + i = 8 * j + (4 * l + i) by omega, Nat.pow_add, ← Nat.div_div_eq_div_mul,
+    show 128 * t + (8 * (4 * k + j) + (4 * l + i)) = 8 * (16 * t + 4 * k) + (8 * j + 4 * l + i) by omega,
+    ← DD.seg (d := 1) (c := 8) (b := 1) (o := 0) (l := 4) (s := 8 * j) (p := 4 * l + i)
+      (by decide) (by decide) (by decide) B (by omega) (by omega) (by omega) (by omega), dig4]
+  simp only [Nat.one_mul, Nat.zero_add, Nat.add_zero, Nat.pow_zero, Nat.reduceSub, Nat.reducePow, BitVec.toNat_ofNat,
+    Nat.reduceMod, show 16 * t + 4 * k + 1 = 16 * t + (4 * k + 1) by omega,
+    show 16 * t + 4 * k + 2 = 16 * t + (4 * k + 2) by omega, show 16 * t + 4 * k + 3 = 16 * t + (4 * k + 3) by omega,
+    Nat.add_assoc]
+
+/-- The constants of `d = 1`. -/
+structure C1 (s : State) : Prop where
+  c8 : ∀ l < 2, s.lane .xmm8 l = m1 0
+  c9 : ∀ l < 2, s.lane .xmm9 l = m1 1
+  c10 : ∀ l < 2, s.lane .xmm10 l = m1 2
+  c11 : ∀ l < 2, s.lane .xmm11 l = m1 3
+  c12 : ∀ l < 2, s.lane .xmm12 l = sh1 0 l
+  c13 : ∀ l < 2, s.lane .xmm13 l = sh1 1 l
+  c14 : ∀ l < 2, s.lane .xmm14 l = sh1 2 l
+  c15 : ∀ l < 2, s.lane .xmm15 l = sh1 3 l
+  c6 : ∀ l < 2, s.lane .xmm6 l = rc 1
+
+theorem C1.pres {s s' : State} (h : C1 s) (hk : Hi s s') : C1 s' :=
+  ⟨fun l hl => by rw [hk _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl, h.c8 l hl],
+    fun l hl => by rw [hk _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl, h.c9 l hl],
+    fun l hl => by rw [hk _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl, h.c10 l hl],
+    fun l hl => by rw [hk _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl, h.c11 l hl],
+    fun l hl => by rw [hk _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl, h.c12 l hl],
+    fun l hl => by rw [hk _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl, h.c13 l hl],
+    fun l hl => by rw [hk _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl, h.c14 l hl],
+    fun l hl => by rw [hk _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl, h.c15 l hl],
+    fun l hl => by rw [hk _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl, h.c6 l hl]⟩
+
+section
+variable {is : List Instr} {s : State} {Q : State → Prop}
+
+theorem consts1_ok
+    (k : ∀ s', C1 s' → (∀ g, g ≠ .rax → s'.gpr g = s.gpr g) → s'.mem = s.mem → s'.rd = s.rd →
+      s'.wr = s.wr → WP isa (.block is) s' Q) :
+    WP isa (.block (dd1Consts ++ is)) s Q := by
+  simp only [dd1Consts, List.append_assoc]
+  refine yconst4_ok (by decide) (by decide) _ _ _ _ fun s1 a1 b1 o1 g1 m1 r1 w1 =>
+    yconst4_ok (by decide) (by decide) _ _ _ _ fun s2 a2 b2 o2 g2 m2 r2 w2 =>
+    yconst4_ok (by decide) (by decide) _ _ _ _ fun s3 a3 b3 o3 g3 m3 r3 w3 =>
+    yconst4_ok (by decide) (by decide) _ _ _ _ fun s4 a4 b4 o4 g4 m4 r4 w4 =>
+    yconst4_ok (by decide) (by decide) _ _ _ _ fun s5 a5 b5 o5 g5 m5 r5 w5 =>
+    yconst4_ok (by decide) (by decide) _ _ _ _ fun s6 a6 b6 o6 g6 m6 r6 w6 =>
+    yconst4_ok (by decide) (by decide) _ _ _ _ fun s7 a7 b7 o7 g7 m7 r7 w7 =>
+    yconst4_ok (by decide) (by decide) _ _ _ _ fun s8 a8 b8 o8 g8 m8 r8 w8 =>
+    yconst_ok' _ _ fun s9 a9 o9 g9 m9 r9 w9 =>
+    k s9 ⟨fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_,
+      fun l hl => ?_, fun l hl => ?_, fun l hl => ?_⟩ (fun g hg => ?_) ?_ ?_ ?_
+  · rw [o9 _ (by decide) l hl, o8 _ (by decide) (by decide) (by decide) l hl,
+      o7 _ (by decide) (by decide) (by decide) l hl, o6 _ (by decide) (by decide) (by decide) l hl,
+      o5 _ (by decide) (by decide) (by decide) l hl, o4 _ (by decide) (by decide) (by decide) l hl,
+      o3 _ (by decide) (by decide) (by decide) l hl, o2 _ (by decide) (by decide) (by decide) l hl]
+    exact (lane4 a1 b1 rfl rfl l hl).trans (by split <;> rfl)
+  · rw [o9 _ (by decide) l hl, o8 _ (by decide) (by decide) (by decide) l hl,
+      o7 _ (by decide) (by decide) (by decide) l hl, o6 _ (by decide) (by decide) (by decide) l hl,
+      o5 _ (by decide) (by decide) (by decide) l hl, o4 _ (by decide) (by decide) (by decide) l hl,
+      o3 _ (by decide) (by decide) (by decide) l hl]
+    exact (lane4 a2 b2 rfl rfl l hl).trans (by split <;> rfl)
+  · rw [o9 _ (by decide) l hl, o8 _ (by decide) (by decide) (by decide) l hl,
+      o7 _ (by decide) (by decide) (by decide) l hl, o6 _ (by decide) (by decide) (by decide) l hl,
+      o5 _ (by decide) (by decide) (by decide) l hl, o4 _ (by decide) (by decide) (by decide) l hl]
+    exact (lane4 a3 b3 rfl rfl l hl).trans (by split <;> rfl)
+  · rw [o9 _ (by decide) l hl, o8 _ (by decide) (by decide) (by decide) l hl,
+      o7 _ (by decide) (by decide) (by decide) l hl, o6 _ (by decide) (by decide) (by decide) l hl,
+      o5 _ (by decide) (by decide) (by decide) l hl]
+    exact (lane4 a4 b4 rfl rfl l hl).trans (by split <;> rfl)
+  · rw [o9 _ (by decide) l hl, o8 _ (by decide) (by decide) (by decide) l hl,
+      o7 _ (by decide) (by decide) (by decide) l hl, o6 _ (by decide) (by decide) (by decide) l hl]
+    exact (lane4 a5 b5 rfl rfl l hl).trans (by rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> decide)
+  · rw [o9 _ (by decide) l hl, o8 _ (by decide) (by decide) (by decide) l hl,
+      o7 _ (by decide) (by decide) (by decide) l hl]
+    exact (lane4 a6 b6 rfl rfl l hl).trans (by rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> decide)
+  · rw [o9 _ (by decide) l hl, o8 _ (by decide) (by decide) (by decide) l hl]
+    exact (lane4 a7 b7 rfl rfl l hl).trans (by rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> decide)
+  · rw [o9 _ (by decide) l hl]
+    exact (lane4 a8 b8 rfl rfl l hl).trans (by rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> decide)
+  · rw [a9 l hl]; rfl
+  · rw [g9 g hg, g8 g hg, g7 g hg, g6 g hg, g5 g hg, g4 g hg, g3 g hg, g2 g hg, g1 g hg]
+  · rw [m9, m8, m7, m6, m5, m4, m3, m2, m1]
+  · rw [r9, r8, r7, r6, r5, r4, r3, r2, r1]
+  · rw [w9, w8, w7, w6, w5, w4, w3, w2, w1]
+
+/-- A group of `d = 1`: the eight values of the bytes of `ymm0` that the mask `M` and the shifts `SH` select,
+decompressed, stored to `rsi + 32 g`. -/
+theorem body1_ok {m sh : XReg} {g : Nat} {M : BitVec 128} {SH : Nat → BitVec 128} {L : BitVec 128}
+    (hm : ∀ l < 2, s.lane m l = M) (hsh : ∀ l < 2, s.lane sh l = SH l) (hsh0 : sh ≠ .xmm1)
+    (h0 : ∀ l < 2, s.lane .xmm0 l = L) (h6 : ∀ l < 2, s.lane .xmm6 l = rc 1)
+    (hout : InRegions s.wr (s.gpr .rsi + BitVec.ofNat 64 (32 * g)) 32)
+    (k' : ∀ s', Kp s s' → s'.gpr = s.gpr → s'.rd = s.rd → s'.wr = s.wr →
+      (∃ V : BitVec 256, s'.mem = s.mem.writeW (s.gpr .rsi + BitVec.ofNat 64 (32 * g)) V ∧ ∀ i < 8,
+        V.extractLsb' (32 * i) 32 = dword (ddM (vals L M (SH (i / 4)) 1) (rc 1) 1) (i % 4)) →
+      WP isa (.block is) s' Q) :
+    WP isa (.block (dd1Grp m sh g ++ is)) s Q := by
+  simp only [dd1Grp, yb, List.append_assoc, List.cons_append, List.nil_append]
+  refine wp_vbin fun s1 u1 => wp_vvar fun s2 u2 => wp_vbin fun s3 u3 => ddMul_ok (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) fun s4 v4 o4 g4 m4 r4 w4 => ?_
+  have hg : s4.gpr = s.gpr := by rw [g4, u3.gpr, u2.gpr, u1.gpr]
+  refine wp_vst256 (a := s.gpr .rsi + BitVec.ofNat 64 (32 * g)) (by rw [ea_at, hg])
+    (by rw [w4, u3.wr, u2.wr, u1.wr]; exact hout) fun s5 g5 l5 m5 r5 w5 => ?_
+  have h3 : ∀ l < 2, s3.lane .xmm1 l = vals L M (SH l) 1 := fun l hl => by
+    rw [u3.val l hl, u2.other .xmm6 (by decide) l hl, u2.val l hl, u1.other sh hsh0 l hl,
+      u1.other .xmm6 (by decide) l hl, u1.val l hl, h0 l hl, hm l hl, hsh l hl, h6 l hl]; rfl
+  have r3 : ∀ l < 2, s3.lane .xmm6 l = rc 1 := fun l hl => by
+    rw [u3.other _ (by decide) l hl, u2.other _ (by decide) l hl, u1.other _ (by decide) l hl, h6 l hl]
+  refine k' s5 (fun r a b c d l hl => ?_) (by rw [g5, hg]) (by rw [r5, r4, u3.rd, u2.rd, u1.rd])
+    (by rw [w5, w4, u3.wr, u2.wr, u1.wr]) ⟨s4.ymm .xmm2, by rw [m5, m4, u3.mem, u2.mem, u1.mem], fun i hi => ?_⟩
+  · rw [l5, o4 r b c d l hl, u3.other r a l hl, u2.other r a l hl, u1.other r a l hl]
+  · rw [State.ymm_eq, ext_app2 _ _ hi]
+    by_cases h : i < 4
+    · rw [itT h, v4 0 (by decide), h3 0 (by decide), r3 0 (by decide), show i / 4 = 0 by omega]
+    · rw [itF h, v4 1 (by decide), h3 1 (by decide), r3 1 (by decide), show i / 4 = 1 by omega]
+
+end
+
+/-- After `t` iterations of `d = 1`. -/
+structure Inv1 (s₀ : State) (t : Nat) (s : State) : Prop where
+  rdi : s.gpr .rdi = DD.bP s₀ + BitVec.ofNat 64 (16 * t)
+  rsi : s.gpr .rsi = coeffAddr (DD.fP s₀) (128 * t)
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  c : C1 s
+  frame : Frame [pR (DD.fP s₀)] s₀.mem s.mem
+  done : ∀ k < 128 * t, (coeffAt s.mem (DD.fP s₀) k).toNat = ((decodeDecompress 1 (DD.B s₀ 1))[k]!).val
+
+section
+variable {s₀ : State} (hp : decodeDecompressK.pre s₀)
+include hp
+
+/-- Byte `j` of doubleword `k` of iteration `t` of `d = 1`, of the 16 bytes `L` in `ymm0`. -/
+theorem group1 {t k j : Nat} (ht : t < 2) (hk : k < 4) (hj : j < 4) {m sh : XReg}
+    {L : BitVec 128} {is : List Instr} {s : State} {Q : State → Prop}
+    (hm : ∀ l < 2, s.lane m l = m1 k) (hsh : ∀ l < 2, s.lane sh l = sh1 j l) (hsh0 : sh ≠ .xmm1)
+    (h0 : ∀ l < 2, s.lane .xmm0 l = L)
+    (hL : ∀ u < 16, byte L u = (DD.B s₀ 1).getD (16 * t + u) 0)
+    (hsi : s.gpr .rsi = coeffAddr (DD.fP s₀) (128 * t)) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) (hc : C1 s)
+    (hf : Frame [pR (DD.fP s₀)] s₀.mem s.mem)
+    (hd : ∀ c < 128 * t + 8 * (4 * k + j),
+      (coeffAt s.mem (DD.fP s₀) c).toNat = ((decodeDecompress 1 (DD.B s₀ 1))[c]!).val)
+    (k' : ∀ s', C1 s' → (∀ l < 2, s'.lane .xmm0 l = L) → s'.gpr = s.gpr → s'.rd = s₀.rd → s'.wr = s₀.wr →
+      Frame [pR (DD.fP s₀)] s₀.mem s'.mem →
+      (∀ c < 128 * t + 8 * (4 * k + j + 1), (coeffAt s'.mem (DD.fP s₀) c).toNat =
+        ((decodeDecompress 1 (DD.B s₀ 1))[c]!).val) →
+      WP isa (.block is) s' Q) :
+    WP isa (.block (dd1Grp m sh (4 * k + j) ++ is)) s Q := by
+  have ha : s.gpr .rsi + BitVec.ofNat 64 (32 * (4 * k + j)) = coeffAddr (DD.fP s₀) (8 * (16 * t + (4 * k + j))) := by
+    rw [hsi, coeffAddr, coeffAddr, BitVec.add_assoc, ← BitVec.ofNat_add,
+      show 4 * (128 * t) + 32 * (4 * k + j) = 4 * (8 * (16 * t + (4 * k + j))) by omega]
+  refine body1_ok hm hsh hsh0 h0 hc.c6 (by rw [hwr, hp.2.1, ha]; exact ⟨_, List.mem_singleton_self _,
+      Offset.contains_base _ (show 4 * (8 * (16 * t + (4 * k + j))) + 32 ≤ 1024 by omega) (by omega)⟩)
+    fun s' hk' hg' hrd' hwr' ⟨V, hmem, hV⟩ => k' s' (hc.pres fun r _ a b c d l hl => hk' r a b c d l hl)
+      (fun l hl => by rw [hk' _ (by decide) (by decide) (by decide) (by decide) l hl, h0 l hl]) hg'
+      (by rw [hrd', hrd]) (by rw [hwr', hwr]) ?_ ?_
+  · rw [hmem, ha]
+    exact hf.writeW (List.mem_singleton_self _) _
+      (Offset.contains_base _ (show 4 * (8 * (16 * t + (4 * k + j))) + 256 / 8 ≤ 1024 by omega) (by omega))
+  · intro c hcl
+    rw [hmem, ha, D12Y.coeffAt_write8 _ _ _ (show 16 * t + (4 * k + j) < 32 by omega) (by omega)]
+    split
+    · rename_i hin
+      rw [hV _ (by omega), val1 (bytesAt_length _ _ _) ht hL hk hj (show (c - 8 * (16 * t + (4 * k + j))) / 4 < 2 by omega)
+        (by omega), show 128 * t + (8 * (4 * k + j) + (4 * ((c - 8 * (16 * t + (4 * k + j))) / 4) +
+          (c - 8 * (16 * t + (4 * k + j))) % 4)) = c by omega]
+    · exact hd c (by omega)
+
+/-- The four bytes of doubleword `k` of iteration `t` of `d = 1`. -/
+theorem dw1 {t k : Nat} (ht : t < 2) (hk : k < 4) {m : XReg} {L : BitVec 128} {is : List Instr} {s : State}
+    {Q : State → Prop} (hm : ∀ l < 2, s.lane m l = m1 k) (hm1 : ∀ s', C1 s' → ∀ l < 2, s'.lane m l = m1 k)
+    (h0 : ∀ l < 2, s.lane .xmm0 l = L)
+    (hL : ∀ u < 16, byte L u = (DD.B s₀ 1).getD (16 * t + u) 0)
+    (hsi : s.gpr .rsi = coeffAddr (DD.fP s₀) (128 * t)) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) (hc : C1 s)
+    (hf : Frame [pR (DD.fP s₀)] s₀.mem s.mem)
+    (hd : ∀ c < 128 * t + 32 * k,
+      (coeffAt s.mem (DD.fP s₀) c).toNat = ((decodeDecompress 1 (DD.B s₀ 1))[c]!).val)
+    (k' : ∀ s', C1 s' → (∀ l < 2, s'.lane .xmm0 l = L) → s'.gpr = s.gpr → s'.rd = s₀.rd → s'.wr = s₀.wr →
+      Frame [pR (DD.fP s₀)] s₀.mem s'.mem →
+      (∀ c < 128 * t + 32 * (k + 1), (coeffAt s'.mem (DD.fP s₀) c).toNat =
+        ((decodeDecompress 1 (DD.B s₀ 1))[c]!).val) →
+      WP isa (.block is) s' Q) :
+    WP isa (.block (dd1Dw m k ++ is)) s Q := by
+  simp only [dd1Dw, List.append_assoc]
+  refine group1 hp ht hk (show 0 < 4 by decide) hm hc.c12 (by decide) h0 hL hsi hrd hwr hc hf
+    (fun c hc' => hd c (by omega)) fun s1 c1 x1 g1 r1 w1 f1 d1 => ?_
+  refine group1 hp ht hk (show 1 < 4 by decide) (hm1 s1 c1) c1.c13 (by decide) x1 hL (by rw [g1, hsi]) r1 w1 c1 f1
+    (fun c hc' => d1 c (by omega)) fun s2 c2 x2 g2 r2 w2 f2 d2 => ?_
+  refine group1 hp ht hk (show 2 < 4 by decide) (hm1 s2 c2) c2.c14 (by decide) x2 hL (by rw [g2, g1, hsi]) r2 w2
+    c2 f2 (fun c hc' => d2 c (by omega)) fun s3 c3 x3 g3 r3 w3 f3 d3 => ?_
+  refine group1 hp ht hk (show 3 < 4 by decide) (hm1 s3 c3) c3.c15 (by decide) x3 hL (by rw [g3, g2, g1, hsi])
+    r3 w3 c3 f3 (fun c hc' => d3 c (by omega)) fun s4 c4 x4 g4 r4 w4 f4 d4 => ?_
+  exact k' s4 c4 x4 (by rw [g4, g3, g2, g1]) r4 w4 f4 fun c hc' => d4 c (by omega)
+
+theorem step1 (hdd : dArg s₀ .rdx = 1) {t : Nat} (ht : t < 2) {s : State} (hI : Inv1 s₀ t s) :
+    WP isa (.block (.vbroadcasti128 .xmm0 (at_ .rdi 0) :: dd1Dw .xmm8 0 ++ dd1Dw .xmm9 1 ++
+        dd1Dw .xmm10 2 ++ dd1Dw .xmm11 3 ++
+        ([.alu .add .rdi (.imm 16), .alu .add .rsi (.imm 512), .alu .sub .rcx (.imm 1)] : List Instr))) s
+      fun s' => Inv1 s₀ (t + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) := by
+  simp only [List.cons_append, List.append_assoc]
+  have hrw : s.rd ++ s.wr = [⟨DD.bP s₀, 32 * 1⟩, pR (DD.fP s₀)] := by rw [hI.rd, hI.wr, regs hp hdd]
+  refine wp_vbcast128 (a := s.gpr .rdi) (by rw [ea_at, add_ofNat_zero]) (by
+    rw [hrw, hI.rdi]; exact ⟨_, by simp, Offset.contains_base _ (show 16 * t + 16 ≤ 32 * 1 by omega) (by omega)⟩)
+    fun s1 u1 => ?_
+  have hL : ∀ u < 16, byte (s.mem.readW (s.gpr .rdi) 128) u = (DD.B s₀ 1).getD (16 * t + u) 0 := fun u hu => by
+    rw [byte, byte_readW _ _ (by omega), hI.rdi, Offset.add_add, DD.byte hp (by decide) hdd hI.frame (by omega)]
+  have c1 := hI.c.pres fun r a _ _ _ _ l hl => u1.other r a l hl
+  refine dw1 hp ht (show 0 < 4 by decide) c1.c8 (fun _ c => c.c8) u1.val hL (by rw [u1.gpr, hI.rsi])
+    (by rw [u1.rd, hI.rd]) (by rw [u1.wr, hI.wr]) c1 (by rw [u1.mem]; exact hI.frame)
+    (fun c hc => by rw [u1.mem]; exact hI.done c (by omega)) fun s2 c2 x2 g2 r2 w2 f2 d2 => ?_
+  refine dw1 hp ht (show 1 < 4 by decide) c2.c9 (fun _ c => c.c9) x2 hL (by rw [g2, u1.gpr, hI.rsi]) r2 w2
+    c2 f2 d2 fun s3 c3 x3 g3 r3 w3 f3 d3 => ?_
+  refine dw1 hp ht (show 2 < 4 by decide) c3.c10 (fun _ c => c.c10) x3 hL (by rw [g3, g2, u1.gpr, hI.rsi])
+    r3 w3 c3 f3 d3 fun s4 c4 x4 g4 r4 w4 f4 d4 => ?_
+  refine dw1 hp ht (show 3 < 4 by decide) c4.c11 (fun _ c => c.c11) x4 hL
+    (by rw [g4, g3, g2, u1.gpr, hI.rsi]) r4 w4 c4 f4 d4 fun s5 c5 _ g5 r5 w5 f5 d5 => ?_
+  have hg5 : s5.gpr = s.gpr := by rw [g5, g4, g3, g2, u1.gpr]
+  refine wp_addi' fun s6 u6 => wp_addi' fun s7 u7 => wp_subi' fun s8 u8 hz => WP.block_nil ?_
+  have c8 := ((c5.pres (Hi.of_lane u6.lane)).pres (Hi.of_lane u7.lane)).pres (Hi.of_lane u8.lane)
+  refine ⟨⟨?_, ?_, by rw [u8.rd, u7.rd, u6.rd, r5], by rw [u8.wr, u7.wr, u6.wr, w5], c8,
+    by rw [u8.mem, u7.mem, u6.mem]; exact f5, fun c hc => by rw [u8.mem, u7.mem, u6.mem]; exact d5 c (by omega)⟩,
+    ?_, ?_⟩
+  · rw [u8.other _ (by decide), u7.other _ (by decide), u6.gpr, hg5, hI.rdi,
+      show BitVec.signExtend 64 (16 : BitVec 32) = BitVec.ofNat 64 16 by decide, BitVec.add_assoc,
+      ← BitVec.ofNat_add, show 16 * t + 16 = 16 * (t + 1) by omega]
+  · rw [u8.other _ (by decide), u7.gpr, u6.other _ (by decide), hg5, hI.rsi, coeffAddr, coeffAddr,
+      show BitVec.signExtend 64 (512 : BitVec 32) = BitVec.ofNat 64 512 by decide, BitVec.add_assoc,
+      ← BitVec.ofNat_add, show 4 * (128 * t) + 512 = 4 * (128 * (t + 1)) by omega]
+  · rw [u8.gpr, u7.other _ (by decide), u6.other _ (by decide), hg5]; rfl
+  · rw [hz, u7.other _ (by decide), u6.other _ (by decide), hg5]; rfl
+
+theorem main1 (hdd : dArg s₀ .rdx = 1) {s : State} (hdi : s.gpr .rdi = DD.bP s₀)
+    (hsi : s.gpr .rsi = DD.fP s₀) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) (hm : s.mem = s₀.mem) :
+    WP isa dd1V s (Done (s₀ := s₀) 1) := by
+  unfold dd1V
+  refine WP.seq (consts1_ok fun s1 hc1 hg1 hm1 hr1 hw1 => wp_mov32i fun s2 u2 => WP.block_nil ?_)
+  refine WP.seq (wp_countdown (cnt := .rcx) (N := 2) (by decide) (by decide) (Inv1 s₀)
+    (fun i hi s hI _ => step1 hp hdd hi hI) (fun s hI => ?_) (s := s2) ⟨?_, ?_, by rw [u2.rd, hr1, hrd],
+      by rw [u2.wr, hw1, hwr], hc1.pres (Hi.of_lane u2.lane), by rw [u2.mem, hm1, hm]; exact Frame.refl _ _,
+      fun k hk => absurd hk (by omega)⟩ (by rw [u2.gpr]; rfl))
+  · exact wp_vzu fun s5 _ hm5 _ _ => WP.block_nil ⟨by rw [hm5]; exact hI.frame,
+      fun k hk => by rw [hm5]; exact hI.done k (by omega)⟩
+  · rw [u2.other _ (by decide), hg1 _ (by decide), hdi]; simp
+  · rw [u2.other _ (by decide), hg1 _ (by decide), hsi]; simp
+
+end
+
 theorem wp {s₀ : State} (hp : decodeDecompressK.pre s₀) :
     WP isa decodeDecompressAvx2 s₀ fun s' =>
       PolyIs s'.mem (s₀.gpr .rcx) (decodeDecompress (dArg s₀ .rdx) (bytesAt s₀.mem (s₀.gpr .rdi) (s₀.gpr .rsi).toNat)) ∧
@@ -635,10 +936,7 @@ theorem wp {s₀ : State} (hp : decodeDecompressK.pre s₀) :
   refine WP.ite (M := isa) _ (show isa.eval .e s₁ = _ from z₁) (fun h => ?_) (fun h => ?_)
   · rw [sub_beq_zero32, decide_eq_true_eq] at h
     have h1 : dArg s₀ .rdx = 1 := by simp only [dArg, h]; rfl
-    rw [h1]
-    exact DD.loop_ok (d := 1) (c := 8) (b := 1) hp (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide) h1 (fun i hi s hs => DD.grp_ok (by decide) (by decide) (by decide) (by decide) (by decide) _
-        (by rw [bytesAt_length]; omega) (by omega) hs) di₁ si₁ k₁.2.1 k₁.2.2 m₁
+    exact WP.mono (main1 hp h1 di₁ si₁ k₁.2.1 k₁.2.2 m₁) (fin h1)
   · rw [sub_beq_zero32, decide_eq_false_iff_not] at h
     refine WP.seq (WP.mono (cmp32_ok .rdx 4 s₁) fun s₂ ⟨⟨z₂, m₂⟩, k₂⟩ => ?_)
     rw [dx₁, BitVec.setWidth_32_64_32] at z₂
