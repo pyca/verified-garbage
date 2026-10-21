@@ -33,9 +33,11 @@ pub fn bench(c: &mut Criterion) {
     // bytes (30 blocks of Poly1305) is near where the x86-64 IFMA Poly1305
     // hands short inputs to other code. 320, 384 and 896 bytes leave 64 to
     // 255 bytes after the whole 256-byte chunks (of 512 bytes, for 896) of
-    // the AArch64 NEON and SVE2 code.
-    const SIZES: [usize; 17] = [
-        16, 64, 256, 320, 384, 480, 512, 513, 768, 769, 896, 1024, 1025, 4096, 4097, 16384, 16385,
+    // the AArch64 NEON and SVE2 code. 1350 bytes, a record that fills an
+    // Ethernet frame, leaves 326 after the whole 512-byte chunks.
+    const SIZES: [usize; 18] = [
+        16, 64, 256, 320, 384, 480, 512, 513, 768, 769, 896, 1024, 1025, 1350, 4096, 4097, 16384,
+        16385,
     ];
     let key = [0x42; 32];
     let nonce = [0x24; 12];
