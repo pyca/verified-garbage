@@ -64,8 +64,52 @@ def printFn (name : String) (p : Prog isa) : String :=
  | .text s => s | .call _ => "ERROR" | .sym .. => "ERROR")++"\n"
 end CompactMont
 
+namespace CompactRev
+-- Reuse the existing final-subtraction temporary for a reversed modulus.
+def reverseCopy (N : Nat) : List Instr :=
+ ptr .ebp argM .eax ++ (List.range N).flatMap fun j =>
+ [.mov .eax (.mem (at_ .ebp (4*j))),.store (at_ .edi (56+8*N+4*(N-1-j))) .eax]
+
+def inputTune : Prog isa → Prog isa
+ | .seq a b => .seq (inputTune a) (inputTune b)
+ | .loop (.block xs) _ => .loop (.block (xs.take (xs.length-4) ++ [.alu .cmp .edi (.reg .ebp)])) .b
+ | p => p
+
+def reduction (u N k : Nat) : Prog isa :=
+ let lo:=k+1-N
+ let count:=min k N-lo
+ if 2*u≤count then
+  seqs [.block (((List.range (count%u)).flatMap fun j => qprod (k-(lo+j)) (lo+j)) ++
+    [.alu .add .edi (.imm (BitVec.ofNat 32 (52+4*(lo+count%u)))),
+     .mov .ebp (.imm (BitVec.ofNat 32 (count/u)))]),
+   .loop (.block (((List.range u).flatMap fun j => product .edi .edi (4*j) (4*(3*N-k+j))) ++
+      [.alu .add .edi (.imm (BitVec.ofNat 32 (4*u))),.alu .sub .ebp (.imm 1)])) .ne,
+   .block ([.alu .sub .edi (.imm (BitVec.ofNat 32 (52+4*(lo+count))))] ++ ptr .ebp argM .eax)]
+ else .block (reductionProducts N k N)
+
+def column (u N k : Nat) : Prog isa := seqs [
+ .block clear,inputTune (CompactMont.compactInput u N k),.block (ptr .edi argS .eax ++ ptr .ebp argM .eax),
+ .block carryIn,reduction u N k,.block (digit N k),.block carryOut]
+
+def columns (u N : Nat) : Nat → Nat → Prog isa
+ | _,0 => .block []
+ | k,j+1 => .seq (column u N k) (columns u N (k+1) j)
+
+def square (u N : Nat) : Prog isa := seqs [
+ .block (init ++ reverseCopy N),columns u N 0 (2*N),.block (finish N),subM,.block mask,select,.block restoreRegs]
+
+def selectSize (u N : Nat) (fallback : Prog isa) : Prog isa :=
+ .seq (.block [.mov .eax (.mem argN),.alu .cmp .eax (.imm (BitVec.ofNat 32 (N/2)))])
+ (.ite .e (square u N) fallback)
+
+def dispatch (u : Nat) : Prog isa := .seq
+ (.block [.mov .eax (.mem argA),.mov .edx (.mem argB),.alu .cmp .eax (.reg .edx)])
+ (.ite .e (selectSize u 64 (selectSize u 96 (selectSize u 128 VG.Impl.Mont.X86.Rt.Square.square)))
+ VG.Impl.Mont.X86.Rt.scalarBody)
+end CompactRev
+
 def main : IO Unit := do
- let codes := [VG.Impl.Mont.X86.Rt.StaticSquare.dispatch] ++ [8,16,32,64].map CompactMont.dispatch
+ let codes := [VG.Impl.Mont.X86.Rt.StaticSquare.dispatch] ++ [8,16,32,64].map CompactMont.dispatch ++ [8,16,32,64].map CompactRev.dispatch
  IO.FS.writeFile "/workspace/scratch/compact-mont.S" (".intel_syntax noprefix\n.text\n"++
    String.join ((codes.zipIdx).map fun (p,i) => CompactMont.printFn ("compact_mont"++toString i) p) ++
    ".section .note.GNU-stack,\"\",@progbits\n")
