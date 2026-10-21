@@ -301,18 +301,32 @@ def dataCopy : Poly1305.X86_64.Blocks → Bool
 def padRest (copy : Bool) (b : Poly1305.X86_64.Blocks) (k : Nat) : Prog isa :=
   cond copy (padCopy b k) (padTail b k)
 
-/-- Before `padTail` in `macPad`, only padding: `rax`, which `padTail` sets
-before it reads it, written (30 bytes). With it, `padTail` (30 bytes longer
-than `padCopy`) moves the code after it by 64 bytes (the branch around it
-then takes a 32-bit displacement, 4 more), which keeps the offsets modulo
-64 of every loop of `seal` and `open` but the data's tail loops in their
-cold code. With `padTail` alone, the bulk loops of the AVX2 `seal` and
-`open`, moved by 30 bytes, made decrypting 16 KiB 13% slower on a CI
-runner, in code that runs no `padTail`. None before `padCopy`, which
-`macPad` used before. -/
-def tailFill : Bool → List Instr
-  | true => []
-  | false => [.movImm64 .rax 0, .movImm64 .rax 0, .movImm64 .rax 0]
+/-- Padding before `padTail` in `macPad`'s cold branch (`padSite`): `rax`,
+which `padTail` sets before it reads it, written, so that the cold branch's
+code is a multiple of 64 bytes long and the function's other cold code
+(the short path, the data's tail) keeps its offsets modulo 64. -/
+def tailFill : List Instr := []
+
+/-- `macPad`'s code on its hot path when the bytes are a multiple of 16
+long (`padSite`), only padding: `rax` written (92 bytes), so that with the
+branch to the cold code (6 bytes) it is exactly as long as `padCopy` in
+line was, and every instruction after it keeps its address. -/
+def hotFill : List Instr :=
+  [.movImm64 .rax 0, .movImm64 .rax 0, .movImm64 .rax 0, .movImm64 .rax 0, .movImm64 .rax 0,
+   .movImm64 .rax 0, .movImm64 .rax 0, .movImm64 .rax 0, .movImm64 .rax 0, .mov32 .rax (.reg .rax)]
+
+/-- The last `rdx` bytes of the `n` bytes at `p` padded and absorbed, if
+there are any (`ZF` clear): with `padCopy` in line (`copy`), or with
+`padTail` out of line (`Code.iteCold`), after the function's return, with
+`hotFill` in its place. With the AVX2 `seal` and `open`, `padTail` in line
+(30 bytes longer) moved all the code after it, which made decrypting
+16 KiB 13% slower on a CI runner (Zen 3), in code that runs no `padTail`,
+and padding it to move that code by 64 bytes still left sealing 449 to 513
+bytes 3.5–5% slower there. -/
+def padSite (copy : Bool) (b : Poly1305.X86_64.Blocks) (p n : Reg) : Prog isa :=
+  cond copy (.ite .e (.block []) (.seq (.block (tailPtr p n)) (padCopy b 1)))
+    (Code.iteCold .ne (.seq (.block tailFill) (.seq (.block (tailPtr p n)) (padTail b 1)))
+      (.block hotFill))
 
 /-- The `n` bytes at `p`, padded with zeros to a multiple of 16, absorbed;
 the last bytes padded as the data's are (`dataCopy`): with the vector
@@ -322,9 +336,7 @@ TLS 1.3 record's 5 bytes of additional data take 3–8% less time to seal at
 stores, whose padded block the call's loads cannot forward from. -/
 def macPad (b : Poly1305.X86_64.Blocks) (p n : Reg) : Prog isa :=
   .seq (wholeBlocks b p n)
-  (.seq (.block [.mov .rdx (.reg n), .alu .and .rdx (.imm 15)])
-    (.ite .e (.block [])
-      (.seq (.block (tailFill (dataCopy b))) (.seq (.block (tailPtr p n)) (padRest (dataCopy b) b 1)))))
+  (.seq (.block [.mov .rdx (.reg n), .alu .and .rdx (.imm 15)]) (padSite (dataCopy b) b p n))
 
 /-- The lengths block absorbed. -/
 def absorbLengths (b : Poly1305.X86_64.Blocks) : Prog isa :=

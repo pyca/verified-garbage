@@ -2171,16 +2171,20 @@ theorem macA_ok {p n : Reg} (hr : MacRegs p n) (s : State) :
     fun q h₁ h₂ h₃ => by simp [h₂, h₃, g₁ q h₁], rd₁, wr₁, m₁⟩
 
 /-- `tailFill` writes `rax` alone. -/
-theorem tailFill_ok (c : Bool) (s : State) :
-    WP isa (.block (tailFill c)) s fun s' =>
+theorem tailFill_ok (s : State) :
+    WP isa (.block tailFill) s fun s' =>
+      (∀ q, q ≠ .rax → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem :=
+  WP.block_nil ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
+
+/-- `hotFill` writes `rax` alone. -/
+theorem hotFill_ok (s : State) :
+    WP isa (.block hotFill) s fun s' =>
       (∀ q, q ≠ .rax → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem := by
-  cases c
-  · apply WP.of_runBlock
-    simp only [tailFill, runBlock_cons, runStep_some, runBlock_nil, exec, RegUpd.gpr_setReg,
-      RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, Option.some.injEq,
-      exists_eq_left']
-    exact ⟨fun q h => by simp [h], trivial, trivial, trivial⟩
-  · exact WP.block_nil ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
+  apply WP.of_runBlock
+  simp only [hotFill, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32,
+    RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, Option.map_some,
+    Option.some.injEq, exists_eq_left']
+  exact ⟨fun q h => by simp [h], trivial, trivial, trivial⟩
 
 set_option simprocs false in
 theorem macC_ok {p n : Reg} (hr : MacRegs p n) (s : State) :
@@ -3131,20 +3135,31 @@ theorem macPad_ok (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State} (hp : APre e 
       bytesAt s.mem (P + BitVec.ofNat 64 (16 * (len / 16))) (len % 16) := by
     rw [← VG.Proof.Poly1305.bytesAt_add, Nat.div_add_mod]
   have hlen : (bytesAt s.mem P len).length = len := VG.Proof.Poly1305.length_bytesAt _ _ _
-  refine WP.ite (decide (len % 16 = 0)) (by simp only [eval, zf₃]) (fun h => ?_) (fun h => ?_)
-  · have h0 : len % 16 = 0 := by simpa using h
-    refine WP.block_nil ⟨cs₃, by rw [rd₃, rd₂], by rw [wr₃, wr₂], by rw [m₃]; exact f₂,
-      by rw [mx₃, mx₂], fun key msg hr => ?_⟩
-    rw [m₃]
+  have none_ok : len % 16 = 0 → ∀ t : State, (∀ q, q ≠ .rax → t.gpr q = s₃.gpr q) → t.rd = s₃.rd →
+      t.wr = s₃.wr → t.mem = s₃.mem → t.mxcsr.extractLsb' 6 10 = s₃.mxcsr.extractLsb' 6 10 →
+      (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Frame (macR s₀) s.mem t.mem ∧ t.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 ∧
+      ∀ key msg, Repr s.mem (off (cx s₀) 448) key msg →
+        Repr t.mem (off (cx s₀) 448) key (msg ++ (bytesAt s.mem P len ++ pad16 (bytesAt s.mem P len))) := by
+    intro h0 t g₄ rd₄ wr₄ m₄ mx₄
+    refine ⟨fun r h => by rw [g₄ r (calleeSaved_ne h).1, cs₃ r h], by rw [rd₄, rd₃, rd₂],
+      by rw [wr₄, wr₃, wr₂], by rw [m₄, m₃]; exact f₂, by rw [mx₄, mx₃, mx₂], fun key msg hr => ?_⟩
+    rw [m₄, m₃]
     have := repr₂ key msg hr
     rwa [show pad16 (bytesAt s.mem P len) = [] by simp [pad16, hlen, h0], List.append_nil,
       ← show 16 * (len / 16) = len by omega_using [h0]]
-  · have h0 : len % 16 ≠ 0 := by simpa using h
-    refine WP.seq (WP.mono_mx (by cases b <;> decide +kernel) (tailFill_ok (dataCopy b) s₃)
-      fun s₄ ⟨g₄, rd₄, wr₄, m₄⟩ mx₄ => ?_)
-    have cs₄ : ∀ r ∈ calleeSaved, s₄.gpr r = s.gpr r := fun r h => by
+  have tail_ok : len % 16 ≠ 0 → ∀ (c : Bool) (t : State), (∀ q, q ≠ .rax → t.gpr q = s₃.gpr q) →
+      t.rd = s₃.rd → t.wr = s₃.wr → t.mem = s₃.mem →
+      t.mxcsr.extractLsb' 6 10 = s₃.mxcsr.extractLsb' 6 10 →
+      WP isa (.seq (.block (tailPtr p n)) (padRest c b 1)) t fun s' =>
+        (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+        Frame (macR s₀) s.mem s'.mem ∧ s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 ∧
+        ∀ key msg, Repr s.mem (off (cx s₀) 448) key msg →
+          Repr s'.mem (off (cx s₀) 448) key (msg ++ (bytesAt s.mem P len ++ pad16 (bytesAt s.mem P len))) := by
+    intro h0 c t g₄ rd₄ wr₄ m₄ mx₄
+    have cs₄ : ∀ r ∈ calleeSaved, t.gpr r = s.gpr r := fun r h => by
       rw [g₄ r (calleeSaved_ne h).1, cs₃ r h]
-    refine WP.mono (macRest_ok (dataCopy b) b (k := 1) (.inl rfl) hp hr hs h0
+    refine WP.mono (macRest_ok c b (k := 1) (.inl rfl) hp hr hs h0
       (by rw [cs₄ _ (by simp [calleeSaved]), hr15])
       (by rw [cs₄ _ (by simp [calleeSaved]), hrsp]) (by rw [rd₄, rd₃, rd₂, hrd])
       (by rw [wr₄, wr₃, wr₂, hwr]) (by rw [cs₄ p hpc, hP]) (by rw [cs₄ n hnc, hn])
@@ -3159,6 +3174,20 @@ theorem macPad_ok (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State} (hp : APre e 
       x_eq]
     simpa only [List.append_assoc, show 16 * 1 - 16 = 0 from rfl, bytesAt, List.range_zero, List.map_nil,
       List.append_nil] using this
+  cases dataCopy b
+  · dsimp only [padSite, cond]
+    rw [WP.iteCold_iff]
+    refine WP.ite (decide (len % 16 ≠ 0)) (by simp only [eval, zf₃]; cases len % 16 <;> rfl)
+      (fun hz => ?_) (fun hz => ?_)
+    · refine WP.seq (WP.mono_mx (by decide +kernel) (tailFill_ok s₃)
+        fun s₄ ⟨g₄, rd₄, wr₄, m₄⟩ mx₄ => ?_)
+      exact tail_ok (by simpa using hz) false s₄ g₄ rd₄ wr₄ m₄ (by rw [mx₄])
+    · exact WP.mono_mx (by decide +kernel) (hotFill_ok s₃) fun s₄ ⟨g₄, rd₄, wr₄, m₄⟩ mx₄ =>
+        none_ok (by simpa using hz) s₄ g₄ rd₄ wr₄ m₄ (by rw [mx₄])
+  · dsimp only [padSite, cond]
+    refine WP.ite (decide (len % 16 = 0)) (by simp only [eval, zf₃]) (fun hz => ?_) (fun hz => ?_)
+    · exact WP.block_nil (none_ok (by simpa using hz) s₃ (fun _ _ => rfl) rfl rfl rfl rfl)
+    · exact tail_ok (by simpa using hz) true s₃ (fun _ _ => rfl) rfl rfl rfl rfl
 
 end VG.Proof.ChaCha20Poly1305.X86_64
 
