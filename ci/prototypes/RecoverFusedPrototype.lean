@@ -47,11 +47,34 @@ def body : Prog isa := .seq (.block (VG.Impl.Rsa.X86.CrtValues.inputArgs 4))
     (.ite .e (.seq numbers (.ite .e rest failure)) failure))
 def code : Prog isa := seqs [.block entry, body, .block VG.Impl.Bignum.X86.PublicFn.restore]
 
-def printFn (name : String) (p : Prog isa) : String :=
+def fastMac (d : Nat) : List Instr := [
+  .mov .eax (.mem (at_ .ecx d)), .mul .edi,
+  .alu .add .eax (.mem (at_ .ebp d)), .alu .adc .edx (.imm 0),
+  .alu .add .eax (.reg .ebx), .alu .adc .edx (.imm 0),
+  .store (at_ .ebp d) .eax, .mov .ebx (.reg .edx)]
+
+def fastRow (x : MemOp) : Prog isa :=
+  let R := VG.Impl.Mont.X86.Rt.ptr
+  seqs [.block ([.mov .ebx (.imm 0)] ++ R .ecx x .edx ++ VG.Impl.Mont.X86.Rt.lenTimes .esi 0 ++
+      [.mov .edi (.mem (sc VG.Impl.Mont.X86.Rt.multOff))]),
+    .loop (.block (fastMac 0 ++ fastMac 4 ++
+      [.alu .add .ecx (.imm 8), .alu .add .ebp (.imm 8), .alu .sub .esi (.imm 8)])) .ne,
+    .block (VG.Impl.Mont.X86.Rt.carryUp ++ R .edi VG.Impl.Mont.X86.Rt.argS .edx)]
+
+def fastMont : Prog isa :=
+  let R := VG.Impl.Mont.X86.Rt.rowEnd
+  let row := seqs [.block VG.Impl.Mont.X86.Rt.loadA, fastRow VG.Impl.Mont.X86.Rt.argB,
+    .block VG.Impl.Mont.X86.Rt.redDigit, fastRow VG.Impl.Mont.X86.Rt.argM, .block R]
+  seqs [.block VG.Impl.Mont.X86.Rt.save, VG.Impl.Mont.X86.Rt.zeroAcc,
+    .block VG.Impl.Mont.X86.Rt.accPtr, .loop row .ne, VG.Impl.Mont.X86.Rt.subM,
+    .block VG.Impl.Mont.X86.Rt.mask, VG.Impl.Mont.X86.Rt.select,
+    .block VG.Impl.Mont.X86.Rt.restoreRegs]
+
+def printFn (name : String) (p : Prog isa) (callee : String := "proto_mont") : String :=
   ".globl " ++ name ++ "\n.p2align 6\n" ++ name ++ ":\n" ++
   "\n".intercalate ((printer.function p).map fun l => match l with
     | .text s => s
-    | .call _ => "call proto_mont"
+    | .call _ => "call " ++ callee
     | .sym .. => "ERROR") ++ "\n"
 end Prototype
 
@@ -59,6 +82,8 @@ def main : IO Unit := do
   IO.FS.writeFile "/workspace/scratch/openssl/prototype-generated.S" (
     ".intel_syntax noprefix\n.text\n" ++
     Prototype.printFn "proto_recover" Prototype.code ++
+    Prototype.printFn "proto_fast" Prototype.code "proto_fast_mont" ++
+    Prototype.printFn "proto_fast_mont" Prototype.fastMont ++
     Prototype.printFn "proto_baseline" VG.Impl.Rsa.X86.RecoverRt.code ++
     Prototype.printFn "proto_mont" VG.Impl.Mont.X86.Rt.body ++
     ".section .note.GNU-stack,\"\",@progbits\n")
