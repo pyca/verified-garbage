@@ -351,6 +351,27 @@ def replaceGcd : Prog isa → Prog isa
  | .frame a b c => if a = .alloc 8 then IsaBatchGcdProto.code else .frame a (replaceGcd b) c
  | a => a
 
+namespace FastDoubleProto
+open VG VG.X86 VG.Impl.Rsa.X86.KeyRt VG.Impl.Rsa.X86.RecoverRt
+open VG.Impl.Rsa.X86.Recover (mXm mX aN aZ mAcc sCand)
+open VG.Impl.Rsa.X86.Keys (sC)
+def twice : Prog isa := VG.Impl.Rsa.X86.Keys.seqs [
+ VG.Impl.Rsa.X86.KeyRt.chain nar .adc mXm mX mX false,sub3 nar mAcc mXm aN,
+ .block [.store (sc sC) .ebx],sel nar mXm mAcc mXm sC]
+def multiply : Prog isa := .seq
+ (.block [.mov .eax (.mem (sc sCand)),.alu .cmp .eax (.imm 0)])
+ (.ite .e twice fusedMultiply)
+def tune : Prog isa → Prog isa
+ | .seq (.block xs) b =>
+   if xs = [.mov .eax (.mem (sc sCand)), .alu .sub .eax (.imm 14)] then multiply
+   else .seq (.block xs) (tune b)
+ | .seq a b => .seq (tune a) (tune b)
+ | .ite c a b => .ite c (tune a) (tune b)
+ | .loop a c => .loop (tune a) c
+ | .frame a b c => .frame a (tune b) c
+ | a => a
+end FastDoubleProto
+
 def main : IO Unit := do
  let modes := [VG.Impl.Mont.X86.Rt.body, NextMont.tune 2 VG.Impl.Mont.X86.Rt.body,
    NextMont.tune 4 VG.Impl.Mont.X86.Rt.body, NextMont.tune 8 VG.Impl.Mont.X86.Rt.body,
@@ -365,6 +386,8 @@ def main : IO Unit := do
    NextMont.printFn "proto_recover11" BatchGcdProto.code "proto_mont8" ++
    NextMont.printFn "proto_recover12" (replaceGcd BatchGcdProto.code) "proto_mont7" ++
    NextMont.printFn "proto_recover13" (replaceGcd BatchGcdProto.code) "proto_mont8" ++
+   NextMont.printFn "proto_recover14" (FastDoubleProto.tune (replaceGcd BatchGcdProto.code)) "proto_mont7" ++
+   NextMont.printFn "proto_recover15" (FastDoubleProto.tune (replaceGcd BatchGcdProto.code)) "proto_mont8" ++
    NextMont.printFn "proto_check0" (VG.Impl.Rsa.X86.KeyCheckRt.code false) ++
    NextMont.printFn "proto_check1" (KeyCheckMontProto.code false) ++
    NextMont.printFn "proto_crt0" VG.Impl.Rsa.X86.CrtValuesRt.code ++
