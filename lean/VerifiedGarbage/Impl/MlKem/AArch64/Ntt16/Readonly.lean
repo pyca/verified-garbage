@@ -14,12 +14,6 @@ def fwd : Prog isa :=
  (.seq (.loop (.block pass1Body) (.nonzero .x .x5))
  (.seq (.block [mov .x2 .x1,.adrSym .x6 "VG_MLKEM_NTT16_ZETAS",mov .x4 .x0,.movz .x .x5 8 0])
  (.loop (.block pass2Body) (.nonzero .x .x5))))
-/-- `fwd` of a polynomial stored with 16-bit coefficients (`pass1BodyW`, `pass2BodyW`). -/
-def fwdW : Prog isa :=
- .seq (.block (consts ++ [mov .x2 .x0,mov .x3 .x1,.movz .x .x5 4 0]))
- (.seq (.loop (.block pass1BodyW) (.nonzero .x .x5))
- (.seq (.block [mov .x2 .x1,.adrSym .x6 "VG_MLKEM_NTT16_ZETAS",mov .x4 .x0,.movz .x .x5 8 0])
- (.loop (.block pass2BodyW) (.nonzero .x .x5))))
 def inv : Prog isa :=
  .seq (.block (qConsts ++ [mov .x2 .x0,mov .x3 .x1,.adrSym .x6 "VG_MLKEM_INTT16_ZETAS",.movz .x .x5 8 0]))
  (.seq (.loop (.block invPass1Body) (.nonzero .x .x5))

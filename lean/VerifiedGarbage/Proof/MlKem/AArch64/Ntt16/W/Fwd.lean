@@ -3,14 +3,13 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.Readonly
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.W.Pass1
 public import VerifiedGarbage.Proof.Framework.Covers
 
-import VerifiedGarbage.Proof.MlKem.AArch64.NttR.FwdW
 
 /-!
-# ML-KEM's 16-bit NTT on AArch64, of a polynomial stored with 16 bits
+# ML-KEM's 16-bit transforms on AArch64, of a polynomial stored with 16 bits: their input
 
-`Impl.MlKem.AArch64.Ntt16.Readonly.fwdW` transforms the polynomial at `x0`,
-stored with 16-bit coefficients, in place, with 512 bytes of working space
-at `x1` and the table `VG_MLKEM_NTT16_ZETAS` (`fwdW_ok`).
+What `Impl.MlKem.AArch64.Ntt16.Readonly.invW` needs (`Input`): the polynomial
+at `x0`, stored with 16-bit coefficients, 512 bytes of working space at `x1`,
+and its table at a symbol.
 -/
 
 @[expose] public section
@@ -40,10 +39,5 @@ theorem Input.table_frame {s : State} {symbol : String} {H : List Nat} (h : Inpu
   rw [hf.readW (r := ⟨s.syms symbol, 512⟩) (contains_off (by omega) (by decide))
     (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.apartScratch.symm) (by decide)]
   exact h.table j hj
-
-theorem fwdW_ok (s₀ : State) (hi : Input s₀ "VG_MLKEM_NTT16_ZETAS" tableHalves) :
-    WP isa Impl.MlKem.AArch64.Ntt16.Readonly.fwdW s₀ fun s' =>
-      s'.sp = s₀.sp ∧ PolyIsW 16 s'.mem (fP s₀) (Spec.MlKem.ntt (P₀ s₀)) := by
-  exact NttR.fwdW_run s₀ ⟨hi.wr, hi.disj, hi.red, hi.table, hi.readable, hi.apartOutput, hi.apartScratch⟩
 
 end VG.Proof.MlKem.AArch64.Ntt16.W

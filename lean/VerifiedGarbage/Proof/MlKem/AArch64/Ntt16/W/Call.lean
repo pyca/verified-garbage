@@ -12,13 +12,13 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Common
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
-# ML-KEM on AArch64: the 16-bit NTT and its inverse of polynomials stored with 16 bits, inlined
+# ML-KEM on AArch64: the 16-bit NTT and its inverse of polynomials stored with 16 bits, at offsets
 
-`fwdW` and `invW` (`Impl.MlKem.AArch64.Ntt16.Readonly`) as `Readonly.fwd` and
-`Readonly.inv` are used: a contract (`contractW`), the code inlined where its
-caller's pointers are (`transformW_call`), and from offsets of `x28`
-(`nttAtWithW_ok`, `nttInvAtWithW_ok`). The polynomial and the working space
-are 512 bytes each.
+`invW` (`Impl.MlKem.AArch64.Ntt16.Readonly`) is used as `Readonly.inv` is: a
+contract (`contractW`), the code inlined where its caller's pointers are
+(`transformW_call`), and from offsets of `x28` (`nttInvAtWithW_ok`), as
+`vg_mlkem16_ntt` is called (`nttAtWithW_ok`). The polynomial and the working
+space are 512 bytes each.
 -/
 
 @[expose] public section
@@ -33,14 +33,7 @@ def contractW (op : Poly → Poly) (symbol : String) (H : List Nat) : Contract i
   post s t := PolyIsW 16 t.mem (s.gpr .x0) (op (polyAtW 16 s.mem (s.gpr .x0)))
   pub s t := s.sp=t.sp ∧ s.gpr .x0=t.gpr .x0 ∧ s.gpr .x1=t.gpr .x1 ∧ s.syms symbol=t.syms symbol
 
-def fwdContractW : Contract isa := contractW ntt "VG_MLKEM_NTT16_ZETAS" tableHalves
 def invContractW : Contract isa := contractW nttInv "VG_MLKEM_INTT16_ZETAS" invTableHalves
-
-theorem fwdW_correct (s : State) (h : fwdContractW.pre s) :
-    ∃ tr t, Exec isa Impl.MlKem.AArch64.Ntt16.Readonly.fwdW s tr t ∧
-      abiPreserved s t ∧ fwdContractW.post s t := by
-  obtain ⟨tr,t,he,_,hf⟩ := fwdW_ok s h
-  exact ⟨tr,t,he,abi_of rfl (by lit_decide) he (by lit_decide),hf⟩
 
 theorem invW_correct (s : State) (h : invContractW.pre s) :
     ∃ tr t, Exec isa Impl.MlKem.AArch64.Ntt16.Readonly.invW s tr t ∧

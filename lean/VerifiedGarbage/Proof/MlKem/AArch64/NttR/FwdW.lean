@@ -12,12 +12,13 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
 import VerifiedGarbage.Proof.MlKem.Mem16
 
 /-!
-# ML-KEM on AArch64: the 16-bit NTT of a polynomial stored with 16 bits, by the machine
+# ML-KEM on AArch64: the 16-bit NTTs of a polynomial stored with 16 bits, by the machine
 
-`Impl.MlKem.AArch64.Ntt16.Readonly.fwdW` transforms the polynomial at `x0`
-(`fwdW_run`): the machine's state at the start (`initW`) holds of the
-caller's (`initW_rel`), in regions that are apart (`ctxW`), and its run
-(`checkW_ok`) leaves the reduced coefficients of `NTT` in the polynomial.
+What a transform of the polynomial at `x0`, stored with 16 bits, needs
+(`InW`): the machine's state at the start holds of the caller's
+(`initW_rel`), in regions that are apart (`ctxW`), and a run that `outW`
+accepts leaves `O`'s coefficients in the polynomial (`polyIsW_of_outW`).
+`Inv.invW_run` uses them.
 -/
 
 @[expose] public section
@@ -27,7 +28,7 @@ namespace VG.Proof.MlKem.AArch64.NttR
 open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Ntt16 (hw4 vhalf_table LRep)
 
-/-- What `fwdW` and `invW` need of the state they start from: the polynomial
+/-- What `invW` needs of the state it starts from: the polynomial
 at `x0` and the working space at `x1`, writable and apart, the polynomial
 reduced, and the table `H` at `sym`, readable and apart from both. -/
 structure InW (sym : String) (H : List Nat) (s : State) : Prop where
@@ -148,17 +149,5 @@ theorem polyIsW_of_outW {sym : String} {s₀ s : State} {L : Nat → Nat → Bit
   rw [ptr_zero] at hv
   rw [hv]
   exact hO i hi256
-
-theorem fwdW_run (s₀ : State) (hi : InW "VG_MLKEM_NTT16_ZETAS" Impl.MlKem.AArch64.Ntt16.tableHalves s₀) :
-    WP isa Impl.MlKem.AArch64.Ntt16.Readonly.fwdW s₀ fun s' =>
-      s'.sp = s₀.sp ∧ PolyIsW 16 s'.mem (s₀.gpr .x0) (ntt (polyAtW 16 s₀.mem (s₀.gpr .x0))) := by
-  have hc := checkW_ok
-  generalize hx : initW.runP fwdRules rsW 16 Impl.MlKem.AArch64.Ntt16.Readonly.fwdW = x at hc
-  cases x with
-  | none => cases hc
-  | some σ =>
-    refine WP.mono (runP_ok (model (Wi s₀)) (ctxW hi) 16 _ (initW_rel hi (fun _ => rfl) tabT_get) hx)
-      fun s' h' => ⟨h'.sp, ?_⟩
-    exact polyIsW_of_outW h' hc fun p hp => Of_ntt (Wi s₀) _ (fun p hp => lrep_red hi.red hp) hp
 
 end VG.Proof.MlKem.AArch64.NttR
