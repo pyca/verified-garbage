@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Select
 public import VerifiedGarbage.Impl.Rsa.Arm.ShiftRight
+public import VerifiedGarbage.Impl.Bignum.Arm.CompareWords
 
 /-! # The working space of the RSA key operations on ARMv7
 
@@ -91,10 +92,15 @@ def orOne (j : Nat) : List Instr :=
 def clrLow (j : Nat) : List Instr :=
   ptr .r0 j ++ [.ldr .r1 .r0 0, .dp .orr .r1 .r1 (.imm 1), .dp .eor .r1 .r1 (.imm 1), .str .r1 .r0 0]
 
-/-- The slot `d` := 1 if `[a] = [b]`, else 0, as neither `[a] - [b]` nor
-`[b] - [a]` borrowing (`[t]` scratch). -/
-def eqS (d a b t : Nat) : Prog isa :=
-  .seq (sub3 t a b) (.seq (.block [.str .r11 .r8 sT]) (.seq (sub3 t b a)
-    (.block [.ldr .r1 .r8 sT, .dp .orr .r1 .r1 (.reg .r11), .dp .eor .r1 .r1 (.imm 1), .str .r1 .r8 d])))
+/-- Convert the full-word comparison accumulator to the equality bit. -/
+def eqNormalize : List Instr :=
+  [.mov .r1 (.imm 0), .dp .sub .r1 .r1 (.reg .r2), .dp .orr .r1 .r1 (.reg .r2),
+    .mov .r1 (.shifted .r1 .lsr 31), .dp .eor .r1 .r1 (.imm 1)]
+
+/-- The slot `d` := 1 if `[a] = [b]`, else 0. Compare each word once;
+`t` remains an allowed scratch array for callers of the existing contract. -/
+def eqS (d a b _t : Nat) : Prog isa :=
+  .seq (.block (ptr .r0 a ++ ptr .r1 b ++ [.mov .lr (.reg .r9), .mov .r2 (.imm 0)]))
+    (.seq compareWords (.block (eqNormalize ++ [.str .r1 .r8 d])))
 
 end VG.Impl.Rsa.Arm.Keys
