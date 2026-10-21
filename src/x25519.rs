@@ -69,7 +69,7 @@ impl Backend {
         if f.contains(
             const { Features::all(&[VG_X25519_IFMA_FEATURES, VG_X25519_BASE_IFMA_FEATURES]) },
         ) {
-            Backend::Ifma
+            Backend::Adx
         } else if f.contains(
             const { Features::all(&[VG_X25519_ADX_FEATURES, VG_X25519_BASE_ADX_FEATURES]) },
         ) {
