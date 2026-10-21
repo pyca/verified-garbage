@@ -43,18 +43,19 @@ theorem layout : Weierstrass.AArch64.JointLayout P256Joint.cfg 8192 where
   n := rfl
   stableBounds := by decide +kernel
   stableSep := by decide +kernel
+  gw := Or.inr rfl
 
 theorem live_slots : ∀ x∈jointLive P256Joint.cfg,x∈jointSlots P256Joint.cfg := by decide +kernel
 
 theorem work_slots : ∀ x∈jointWork P256Joint.cfg,x∈jointSlots P256Joint.cfg := by decide +kernel
 
-theorem generator_bits : P256Joint.cfg.gBits=1504 := rfl
+theorem generator_bits : P256Joint.cfg.gBits=2112 := rfl
 
 theorem peer_bits : P256Joint.cfg.K.bits=1824 := rfl
 
-theorem bits_disjoint : P256Joint.cfg.gBits+264≤P256Joint.cfg.K.bits := by decide
+theorem bits_disjoint : P256Joint.cfg.K.bits+264≤P256Joint.cfg.gBits := by decide
 
-theorem gprep_bounds : P256Joint.cfg.gBits<4096 ∧ P256Joint.cfg.gBits%8=0 ∧ P256Joint.cfg.gBits+264≤8192 := by decide
+theorem gprep_bounds : P256Joint.cfg.gBits<4096 ∧ P256Joint.cfg.gBits%8=0 ∧ P256Joint.cfg.gBits+520≤8192 := by decide
 
 theorem qprep_bounds : P256Joint.cfg.K.bits<4096 ∧ P256Joint.cfg.K.bits%8=0 ∧ P256Joint.cfg.K.bits+264≤8192 := by decide
 

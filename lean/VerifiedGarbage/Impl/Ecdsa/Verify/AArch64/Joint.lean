@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Weierstrass.AArch64.Joint
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.JointMixed
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.CachedJac
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.ArithmeticTable
+public import VerifiedGarbage.Impl.P256.GTable9
 
 @[expose] public section
 
@@ -12,7 +13,15 @@ namespace VG.Impl.Ecdsa.Verify.AArch64.P256Joint
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 open VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdh.AArch64
 
-def cfg : Joint.Cfg := ⟨Cfg.jacWinCfg p256,bitsAt 4 0,p256.sl ONEP,p256.combCfg.tsym,7⟩
+/-- P-256 as verification has it: its table is `[m]G`, `m = 1 … 256`, a comb of one window of nine
+bits, in the static `VG_P256_GTAB` (`combConsts`), which the generator's digits of width nine
+index. -/
+def p256v : Cfg :=
+  { p256 with tbl := Impl.P256.p256G9, start := Impl.P256.p256G9Start, tsym := "VG_P256_GTAB" }
+
+/-- The generator's width-nine digits at 2112, past `Q`'s (at 1824) and below the table of `Q`'s
+odd multiples (at 2848). -/
+def cfg : Joint.Cfg := ⟨Cfg.jacWinCfg p256,2112,p256.sl ONEP,p256v.tsym,9⟩
 
 def cachedOps : CachedJac.Ops where
   head := VG.Impl.P256.VerifyArithmetic.program cfg.K.M
