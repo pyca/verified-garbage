@@ -74,7 +74,7 @@ def rowR : Prog isa :=
 
 /-- `vg_mlkem*_kpke_keygen_row` of the parameter set `L`, with the arithmetic of `A`. -/
 def kgRow : Prog isa :=
-  .seq (.block proR) (.seq (rowR L) (.seq (.seq (.block [.mov .rdi (.reg .r13), .mov .rsi (.reg .r12)]) A.enc12)
+  .seq (.block proR) (.seq (rowR L) (.seq (.seq (.block (lea .rdi (.r13, 0) ++ lea .rsi (.r12, 0))) A.enc12)
     (.block restore)))
 
 end KpkeKgRows
