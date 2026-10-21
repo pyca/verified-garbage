@@ -19,8 +19,8 @@ import VerifiedGarbage.Proof.Framework.Lit
 namespace VG.Proof.Gcm.X86_64.Stitch
 open VG VG.X86_64
 /-- The in-place view used by the shared table-loader proofs. -/
-theorem SPreTo.toPrepared {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) :
-    SPrePrepared (StitchZTo.dst s₀) :=
+theorem SPreTo.toPrepared {s₀ : State} {lo : Nat} (hp : SPreTo CtxMode.prepared s₀ lo) :
+    SPrePrepared (StitchZTo.dst s₀) lo :=
   ⟨hp.toD, hp.k_in, hp.wrap_k, hp.k_o.symm, hp.k_p.symm, hp.ok⟩
 end VG.Proof.Gcm.X86_64.Stitch
 
@@ -40,7 +40,7 @@ open VG.Proof.Gcm.X86_64.StitchZTo (EInvTo ReadyTo setupTTo_ok setupZTo_ok bigRe
 open VG.Spec.Gcm (Block)
 
 /-- `setupGP`: what `Stitch.setupG_ok` says of `setupG`. -/
-theorem setupGPTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) :
+theorem setupGPTo_ok {s₀ : State} {lo : Nat} (hp : SPreTo CtxMode.prepared s₀ lo) :
     WP isa (.block setupGP) s₀ fun s =>
       (∀ l < 2, s.lane .xmm0 l = revMask) ∧ (∀ l < 2, s.lane .xmm1 l = poly) ∧
       (∀ k < 8, ∀ l < 2, s.lane (preg16 k) l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 2 * k - l))) ∧

@@ -169,7 +169,7 @@ theorem lastGRTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
         exact congrArg (fun y => ghashFrom (hk s₀) y ((List.range 16).map X)) hI.y
       y1 := by rw [l₅]; exact y41 }
 
-theorem remETo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} (hr : RemLaw (hk s₀) P)
+theorem remETo_ok {M : CtxMode} {s₀ : State} {lo : Nat} (hp : SPreTo M s₀ lo) {P : Nat → Nat → Block} (hr : RemLaw (hk s₀) P)
     {e : Nat} {s : State} (hI : EInvRTo s₀ P e s) (hlt : nb s₀ - 16 * e < 16) (hne : nb s₀ ≠ 16 * e) :
     WP isa (remE .r8) s (EPostTo s₀) := by
   have hd := hp.toD

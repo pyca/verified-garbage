@@ -31,7 +31,7 @@ open VG.Proof.Aes.X86_64.AesNi (Keys aesWith_eq st)
 open VG.Proof.Gcm.X86_64 (revMask blockAt_eq)
 open VG.Spec.Gcm (Block blockAt inc32)
 
-theorem ks_ok {s₀ : State} (hp : SPre s₀) (j : Nat) (hj : 32 * j + 128 ≤ 1024) {c : Nat} {s : State}
+theorem ks_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) (j : Nat) (hj : 32 * j + 128 ≤ 1024) {c : Nat} {s : State}
     (hctr : ∀ l < 2, s.lane .xmm14 l = Nat.repeat inc32 (c + l) (cb s₀))
     (hmsk : ∀ l < 2, s.lane .xmm0 l = revMask) (hinc : ∀ l < 2, s.lane .xmm15 l = two)
     (hK : Keys (nr s₀) (sch s₀) s) (hrsi : s.gpr .rsi = s₀.gpr .rsi)

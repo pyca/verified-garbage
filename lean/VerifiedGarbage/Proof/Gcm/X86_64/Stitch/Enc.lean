@@ -52,7 +52,7 @@ theorem blockAt_outP {s₀ : State} {m m' : Mem} {p : Addr} (hf : Frame [pR s₀
 
 /-- The setup after the powers (`setupG`): they are stored in the working
 space, then `Y`, the counter, the increment and the pointers. -/
-theorem setupT_ok {s₀ : State} (hp : SPre s₀) {s₁ : State} (l0 : ∀ l < 2, s₁.lane .xmm0 l = revMask)
+theorem setupT_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {s₁ : State} (l0 : ∀ l < 2, s₁.lane .xmm0 l = revMask)
     (l1 : ∀ l < 2, s₁.lane .xmm1 l = poly) (g₁ : ∀ r, r ≠ .rax → s₁.gpr r = s₀.gpr r) (m₁ : s₁.mem = s₀.mem)
     (rd₁ : s₁.rd = s₀.rd) (wr₁ : s₁.wr = s₀.wr) :
     WP isa (.block (storesK .r11 pregs 0 ++ setupC)) s₁ (Ready s₀ fun k l => s₁.lane (preg16 k) l) := by

@@ -44,7 +44,7 @@ theorem x_φ_hInvF (H : Block) (n : Nat) : x * φ (hInvF (hpow H n)) = φ H ^ n 
   rw [hInvF, Pclmul.x_φ_hInv, φ_hpow]
 
 /-- The setup: the state the loops start from, as `Stitch.setup_ok`. -/
-theorem setup_ok {s₀ : State} (hp : SPrePrepared s₀) :
+theorem setup_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) :
     WP isa (.block Impl.Gcm.X86_64.StitchR.setup) s₀ fun s => ∃ P, Ready s₀ P s ∧
       ∀ k < 8, ∀ l < 2, x * φ (P k l) = φ (hk s₀) ^ (16 - 2 * k - l) := by
   simp only [Impl.Gcm.X86_64.StitchR.setup, List.append_assoc]
@@ -102,7 +102,7 @@ theorem stitchR_ok :
   ⟨fun _ hp _ => encR_ok hp.toPrepared, fun _ hp _ => decR_ok hp.toPrepared⟩
 
 /-- The out-of-place setup, as `StitchTo.setupTo_ok`. -/
-theorem setupTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) :
+theorem setupTo_ok {s₀ : State} {lo : Nat} (hp : SPreTo CtxMode.prepared s₀ lo) :
     WP isa (.block Impl.Gcm.X86_64.StitchR.setupTo) s₀ fun s => ∃ P, ReadyTo s₀ P s ∧
       ∀ k < 8, ∀ l < 2, x * φ (P k l) = φ (hk s₀) ^ (16 - 2 * k - l) := by
   rw [Impl.Gcm.X86_64.StitchR.setupTo, List.append_assoc, WP.block_append_iff]
