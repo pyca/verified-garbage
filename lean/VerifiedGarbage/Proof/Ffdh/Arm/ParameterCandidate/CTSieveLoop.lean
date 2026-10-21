@@ -21,7 +21,7 @@ def SieveCTState (p : SieveData × Nat) (s : State) : Prop :=
 private theorem SieveCTState.step_start {p : SieveData × Nat} {s : State}
     (h : SieveCTState p s) (more : p.2 < 53) : SieveStepStart p s := by
   obtain ⟨original, inv⟩ := h
-  exact ⟨inv.context, more, inv.cursor, bytesAt_eq_of_value rfl inv.candidate⟩
+  exact ⟨inv.context, more, inv.cursor, bytesAt_eq_of_value rfl inv.candidate, inv.bad⟩
 
 private theorem sieveStep_fixed (p : SieveData × Nat) (more : p.2 < 53) :
     RelCT isa (fun s t => SieveCTState p s ∧ SieveCTState p t ∧ s.sp = t.sp)

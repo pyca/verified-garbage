@@ -14,11 +14,11 @@ import VerifiedGarbage.Proof.Framework.Omega
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.X25519.Arm
 
-theorem sieveStep_ok {s0 s : State} {dst base : BitVec 32} {n value i : Nat}
+theorem sieveActiveStep_ok {s0 s : State} {dst base : BitVec 32} {n value i : Nat}
     (inv : SieveInv s0 dst base n value i s) (more : i < 53) :
-    WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.sieveStep s fun t =>
+    WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.sieveActiveStep s fun t =>
       SieveInv s0 dst base n value (i + 1) t ∧ t.z = decide (i + 1 = 53) := by
-  unfold VG.Impl.Ffdh.Arm.ParameterCandidate.sieveStep VG.Impl.Ffdh.Arm.ParameterCandidate.seqs
+  unfold VG.Impl.Ffdh.Arm.ParameterCandidate.sieveActiveStep VG.Impl.Ffdh.Arm.ParameterCandidate.seqs
   refine WP.seq (WP.mono (sieveEntry_ok inv.context more inv.cursor) ?_)
   rintro u ⟨⟨prime, cursor, memU⟩, restU⟩
   have ctxU := inv.context.after_memory memU restU
@@ -59,5 +59,48 @@ theorem sieveStep_ok {s0 s : State} {dst base : BitVec 32} {n value i : Nat}
     exact inv.changed.trans changed
   · rw [zeroT]
     exact decide_eq_decide.mpr (by omega)
+
+theorem sieveStep_ok {s0 s : State} {dst base : BitVec 32} {n value i : Nat}
+    (inv : SieveInv s0 dst base n value i s) (more : i < 53) :
+    WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.sieveStep s fun t =>
+      SieveInv s0 dst base n value (i + 1) t ∧ t.z = decide (i + 1 = 53) := by
+  unfold VG.Impl.Ffdh.Arm.ParameterCandidate.sieveStep
+  refine WP.seq (WP.mono (sieveFinish_ok inv.context.read.frame.space inv.bad) ?_)
+  rintro u ⟨⟨flag, memory⟩, rest⟩
+  have invU : SieveInv s0 dst base n value i u := by
+    refine ⟨inv.context.after_memory memory rest, inv.index, ?_, ?_, ?_, ?_, ?_,
+      inv.rest.trans (rest.mono (by simp [sieveRegs]))⟩
+    · rw [rest.gpr .r10 (by simp)]; exact inv.cursor
+    · rw [rest.gpr .r11 (by simp)]; exact inv.count
+    · rw [memory, rest.sp]; exact inv.bad
+    · rw [memory]; exact inv.candidate
+    · rw [memory]; exact inv.changed
+  cases bad : sieveAny value i with
+  | false =>
+    have zero : u.z = true := by simpa only [bad, Bool.not_false] using flag
+    refine WP.ite true (by change some u.z = some true; rw [zero]) ?_ (by intro h; cases h)
+    intro _
+    exact sieveActiveStep_ok invU more
+  | true =>
+    have zero : u.z = false := by simpa only [bad, Bool.not_true] using flag
+    refine WP.ite false (by change some u.z = some false; rw [zero]) (by intro h; cases h) ?_
+    intro _
+    refine WP.mono (sieveSkip_ok (by omega : 0 < 53 - i) (by omega) invU.count) ?_
+    rintro t ⟨⟨cursor, count, last, mem⟩, restT⟩
+    refine ⟨⟨invU.context.after_memory mem restT, by omega, ?_, ?_, ?_, ?_, ?_,
+      invU.rest.trans (restT.mono (by simp [sieveRegs]))⟩, ?_⟩
+    · rw [cursor, invU.cursor]
+      change (base + BitVec.ofNat 32 (Spec.Rsa.Mont.arrAt ((n + 7) / 8) 34 + 4 * i)) + BitVec.ofNat 32 4 = _
+      rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+      have offset : Spec.Rsa.Mont.arrAt ((n + 7) / 8) 34 + 4 * i + 4 =
+          Spec.Rsa.Mont.arrAt ((n + 7) / 8) 34 + 4 * (i + 1) := by omega
+      rw [offset]
+    · simpa only [show 53 - i - 1 = 53 - (i + 1) by omega] using count
+    · rw [mem, restT.sp, invU.bad, sieveAny_succ, bad]
+      rfl
+    · rw [mem]; exact invU.candidate
+    · rw [mem]; exact invU.changed
+    · rw [last]
+      exact decide_eq_decide.mpr (by omega)
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

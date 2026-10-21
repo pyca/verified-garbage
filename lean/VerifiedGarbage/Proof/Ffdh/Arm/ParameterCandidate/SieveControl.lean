@@ -52,6 +52,27 @@ theorem sieveCount_ok {s : State} {count : Nat} (positive : 0 < count) (bound : 
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.sieveCount
   ffrun [saved, subtract, zero]
 
+theorem sieveSkip_ok {s : State} {count : Nat} (positive : 0 < count) (bound : count ≤ 53)
+    (saved : s.gpr .r11 = BitVec.ofNat 32 count) :
+    WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveSkip) s fun t =>
+      (t.gpr .r10 = s.gpr .r10 + 4 ∧ t.gpr .r11 = BitVec.ofNat 32 (count - 1) ∧
+        t.z = decide (count = 1) ∧ t.mem = s.mem) ∧ Rest [.r10, .r11] s t := by
+  have subtract : BitVec.ofNat 32 count - (1 : BitVec 32) = BitVec.ofNat 32 (count - 1) :=
+    BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) positive
+  have zero : (BitVec.ofNat 32 (count - 1) == (0 : BitVec 32)) = decide (count = 1) := by
+    rw [ofNat_beq_zero (by omega : count - 1 < 2 ^ 32)]
+    exact decide_eq_decide.mpr (by omega)
+  refine withRest [.r10, .r11] ?_ (by
+    intro r hr op hop
+    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveSkip : Prog isa)).all
+        (fun op => !(clobbers op r)) = true := by
+      cases r <;> try rfl
+      all_goals exact False.elim (hr (by decide))
+    have h := List.all_eq_true.mp checked op hop
+    cases hc : clobbers op r <;> simp_all) (by rfl)
+  unfold VG.Impl.Ffdh.Arm.ParameterCandidate.sieveSkip VG.Impl.Ffdh.Arm.ParameterCandidate.sieveCount
+  ffrun [List.cons_append, List.nil_append, saved, subtract, zero]
+
 theorem sieveFlag_ok {s : State} {bad : Bool} (stack : Workspace s s.sp 72)
     (saved : s.mem.readW (State.addr (s.sp + 64#32)) 32 = if bad then 1 else 0) :
     WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.sieveFlag s fun t =>

@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveContext
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveState
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTTrialBuffers
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTPolicy
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveControl
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveEntry
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialSmall
 import VerifiedGarbage.Proof.Bignum.Arm.StackOnlyCT
@@ -17,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Bignum.Arm
-open VG.Proof.Ffdh.Arm.KeySearch (Two two_post two_taint two_map)
+open VG.Proof.Ffdh.Arm.KeySearch (Two two_post two_taint two_map two_ite)
 
 structure SieveData where
   dst : BitVec 32
@@ -29,6 +30,7 @@ structure SieveStepStart (p : SieveData × Nat) (s : State) : Prop where
   index : p.2 < 53
   cursor : s.gpr .r10 = p.1.base + BitVec.ofNat 32 (Spec.Rsa.Mont.arrAt ((p.1.bytes.length + 7) / 8) 34 + 4 * p.2)
   bytes : Spec.Rsa.bytesAt s.mem (State.addr p.1.dst) p.1.bytes.length = p.1.bytes
+  bad : s.mem.readW (State.addr (s.sp + 64#32)) 32 = if sieveAny (Spec.Rsa.os2ip p.1.bytes) p.2 then 1 else 0
 
 private structure SieveEntryReady (p : SieveData × Nat) (s : State) : Prop where
   context : SieveContext p.1.dst p.1.base p.1.bytes.length s
@@ -42,8 +44,8 @@ private def SieveDivided (p : SieveData × Nat) (s : State) : Prop :=
 private def sieveTrial (p : SieveData × Nat) : TrialData :=
   ⟨p.1.dst, p.1.bytes.length, BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry p.2), p.1.bytes.reverse⟩
 
-theorem sieveStep_ct : RelCT isa (Two SieveStepStart)
-    VG.Impl.Ffdh.Arm.ParameterCandidate.sieveStep (fun _ _ => True) := by
+theorem sieveActiveStep_ct : RelCT isa (Two SieveStepStart)
+    VG.Impl.Ffdh.Arm.ParameterCandidate.sieveActiveStep (fun _ _ => True) := by
   obtain ⟨hint, checked⟩ := sieveEntry_taint
   have entryTrace : RelCT isa (Two SieveStepStart) (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveEntry)
       (fun _ _ => True) := by
@@ -72,5 +74,32 @@ theorem sieveStep_ct : RelCT isa (Two SieveStepStart)
   have count : RelCT isa (fun s t => s.sp = t.sp) (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveCount)
       (fun s t => s.sp = t.sp) := stackOnly_ct _ rfl
   exact entry.seq (trial.seq (flag.seq (count.seq (RelCT.block_nil (fun _ _ _ => trivial)))))
+
+private def SieveGuarded (p : SieveData × Nat) (s : State) : Prop :=
+  SieveStepStart p s ∧ s.z = !sieveAny (Spec.Rsa.os2ip p.1.bytes) p.2
+
+theorem sieveStep_ct : RelCT isa (Two SieveStepStart)
+    VG.Impl.Ffdh.Arm.ParameterCandidate.sieveStep (fun _ _ => True) := by
+  have guardTrace : RelCT isa (Two SieveStepStart)
+      (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveFinish) (fun _ _ => True) :=
+    (stackOnly_ct _ rfl).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)
+  have guard : RelCT isa (Two SieveStepStart)
+      (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveFinish) (Two SieveGuarded) := by
+    refine two_post guardTrace ?_
+    intro p s h
+    refine WP.mono (sieveFinish_ok h.context.read.frame.space h.bad) ?_
+    rintro t ⟨⟨flag, memory⟩, rest⟩
+    refine ⟨⟨h.context.after_memory memory rest, h.index, ?_, ?_, ?_⟩, flag⟩
+    · rw [rest.gpr .r10 (by simp)]; exact h.cursor
+    · rw [memory]; exact h.bytes
+    · rw [memory, rest.sp]; exact h.bad
+  refine guard.seq (two_ite ?_ ?_ ?_)
+  · intro p s t h k
+    change some s.z = some t.z
+    rw [h.2, k.2]
+  · exact sieveActiveStep_ct.mono
+      (fun _ _ ⟨p, a, b, sp⟩ => ⟨p, a.1.1, b.1.1, sp⟩) (fun _ _ h => h)
+  · exact (stackOnly_ct VG.Impl.Ffdh.Arm.ParameterCandidate.sieveSkip rfl).mono
+      (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

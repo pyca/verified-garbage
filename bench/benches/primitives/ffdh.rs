@@ -247,12 +247,8 @@ pub fn bench(c: &mut Criterion) {
     }
     for generator in [2, 5] {
         let mut group = c.benchmark_group(format!("ffdh_parameters_g{generator}"));
-        // Safe-prime search has high variance. Use 100 random draws on
-        // 64-bit targets; ARM emulation takes seconds per draw, so use
-        // 20 there to keep the scoped run within the workflow's budget.
-        #[cfg(target_arch = "arm")]
-        group.sample_size(20);
-        #[cfg(not(target_arch = "arm"))]
+        // Safe-prime search has high variance. Use 100 random draws for
+        // both implementations on every target before comparing their speed.
         group.sample_size(100);
         group.bench_function(BenchmarkId::new(VG, 64), |b| {
             b.iter(|| Parameters::generate(512, generator).unwrap())

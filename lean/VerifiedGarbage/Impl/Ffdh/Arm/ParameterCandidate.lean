@@ -172,9 +172,14 @@ def sieveFlag : Prog isa :=
 
 def sieveCount : List Instr := [.subs .r11 .r11 (.imm 1)]
 
-def sieveStep : Prog isa := seqs [.block sieveEntry, trialSmall, sieveFlag, .block sieveCount]
+def sieveActiveStep : Prog isa := seqs [.block sieveEntry, trialSmall, sieveFlag, .block sieveCount]
 
 def sieveFinish : List Instr := [.ldrSp .r1 64, .cmp .r1 (.imm 0)]
+
+/-- Once a divisor has been found, only advance the bounded loop controls. -/
+def sieveSkip : List Instr := [.dp .add .r10 .r10 (.imm 4)] ++ sieveCount
+
+def sieveStep : Prog isa := .seq (.block sieveFinish) (.ite .eq sieveActiveStep (.block sieveSkip))
 
 def sieve : Prog isa := seqs [sieveInit, .loop sieveStep .ne, .block sieveFinish]
 
