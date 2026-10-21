@@ -301,11 +301,13 @@ def dataCopy : Poly1305.X86_64.Blocks → Bool
 def padRest (copy : Bool) (b : Poly1305.X86_64.Blocks) (k : Nat) : Prog isa :=
   cond copy (padCopy b k) (padTail b k)
 
-/-- Padding before `padTail` in `macPad`'s cold branch (`padSite`): `rax`,
-which `padTail` sets before it reads it, written, so that the cold branch's
-code is a multiple of 64 bytes long and the function's other cold code
-(the short path, the data's tail) keeps its offsets modulo 64. -/
-def tailFill : List Instr := []
+/-- Only padding (59 bytes), which `padSite`'s cold branch jumps over:
+with the branches around it (4 bytes), the cold branch is 192 bytes long,
+a multiple of 64, so that the function's other cold code (the short path,
+the data's tail) keeps its offsets modulo 64. -/
+def tailFill : List Instr :=
+  [.movImm64 .rax 0, .movImm64 .rax 0, .movImm64 .rax 0, .movImm64 .rax 0, .movImm64 .rax 0,
+   .mov32 .rax (.imm 0), .alu .add .rax (.imm 1)]
 
 /-- Only padding (88 bytes), which `padSite` jumps over: with the branch
 to the cold code (6 bytes) and the branches around it (4), as long as
@@ -318,14 +320,16 @@ def hotFill : List Instr :=
 /-- The last `rdx` bytes of the `n` bytes at `p` padded and absorbed, if
 there are any (`ZF` clear): with `padCopy` in line (`copy`), or with
 `padTail` out of line (`Code.iteCold`), after the function's return, and in
-its place a branch (taken: `ZF` is set) over `hotFill`. With the AVX2
+its place a branch (taken: `ZF` is set) over `hotFill`; the cold branch
+starts with a branch (taken: `ZF` is clear) over `tailFill`. With the AVX2
 `seal` and `open`, `padTail` in line (30 bytes longer) moved all the code
 after it, which made decrypting 16 KiB 13% slower on a CI runner (Zen 3),
 in code that runs no `padTail`; padding it to move that code by 64 bytes
 still left sealing 449 to 513 bytes 3.5–5% slower there. -/
 def padSite (copy : Bool) (b : Poly1305.X86_64.Blocks) (p n : Reg) : Prog isa :=
   cond copy (.ite .e (.block []) (.seq (.block (tailPtr p n)) (padCopy b 1)))
-    (Code.iteCold .ne (.seq (.block tailFill) (.seq (.block (tailPtr p n)) (padTail b 1)))
+    (Code.iteCold .ne
+      (.seq (.ite .ne (.block []) (.block tailFill)) (.seq (.block (tailPtr p n)) (padTail b 1)))
       (.ite .e (.block []) (.block hotFill)))
 
 /-- The `n` bytes at `p`, padded with zeros to a multiple of 16, absorbed;

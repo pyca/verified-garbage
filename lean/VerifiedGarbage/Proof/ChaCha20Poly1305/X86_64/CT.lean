@@ -2170,12 +2170,6 @@ theorem macA_ok {p n : Reg} (hr : MacRegs p n) (s : State) :
   refine ⟨by simp [e1], by simp [hp₁], by simp [hnd, hn₁], by simp [hnd, hn₁],
     fun q h₁ h₂ h₃ => by simp [h₂, h₃, g₁ q h₁], rd₁, wr₁, m₁⟩
 
-/-- `tailFill` writes `rax` alone. -/
-theorem tailFill_ok (s : State) :
-    WP isa (.block tailFill) s fun s' =>
-      (∀ q, q ≠ .rax → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem :=
-  WP.block_nil ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
-
 set_option simprocs false in
 theorem macC_ok {p n : Reg} (hr : MacRegs p n) (s : State) :
     WP isa (.block [.mov .rdx (.reg n), .alu .and .rdx (.imm 15)]) s
@@ -3169,9 +3163,10 @@ theorem macPad_ok (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State} (hp : APre e 
     rw [WP.iteCold_iff]
     refine WP.ite (decide (len % 16 ≠ 0)) (by simp only [eval, zf₃]; cases len % 16 <;> rfl)
       (fun hz => ?_) (fun hz => ?_)
-    · refine WP.seq (WP.mono_mx (by decide +kernel) (tailFill_ok s₃)
-        fun s₄ ⟨g₄, rd₄, wr₄, m₄⟩ mx₄ => ?_)
-      exact tail_ok (by simpa using hz) false s₄ g₄ rd₄ wr₄ m₄ (by rw [mx₄])
+    · have h0 : len % 16 ≠ 0 := by simpa using hz
+      refine WP.seq (WP.ite (decide (len % 16 ≠ 0)) (by simp only [eval, zf₃]; cases len % 16 <;> rfl)
+        (fun _ => WP.block_nil ?_) (fun h => absurd h (by simp [h0])))
+      exact tail_ok h0 false s₃ (fun _ _ => rfl) rfl rfl rfl rfl
     · have h0 : len % 16 = 0 := by simpa using hz
       refine WP.ite (decide (len % 16 = 0)) (by simp only [eval, zf₃]) (fun _ => ?_) (fun h => ?_)
       · exact WP.block_nil (none_ok h0 s₃ (fun _ _ => rfl) rfl rfl rfl rfl)
