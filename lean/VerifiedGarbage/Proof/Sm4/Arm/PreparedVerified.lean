@@ -118,7 +118,7 @@ theorem prepared_prep_ct : ConstantTime isa prepArm.pre prepArm.pub prepareKeys 
     (fun _ _ _ _ hp => Taint.agree_ofRegs fun r hr => by
       rcases hp with ⟨-, h0, h1, h2, h3⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> assumption) (by taint_decide)
+      rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption) (by taint_decide)
 
 def preparedPrepSat : State where
   gpr r := match r with | .r0 => 0x1000 | .r2 => 0x2000 | .r3 => 182 | _ => 0
@@ -202,7 +202,7 @@ theorem prepared_crypt_ct : ConstantTime isa cryptArm.pre cryptArm.pub cryptPrep
     (fun _ _ _ _ hp => Taint.agree_ofRegs fun r hr => by
       rcases hp with ⟨-, h0, h1⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> assumption) (by taint_decide)
+      rcases hr with rfl | rfl <;> with_reducible assumption) (by taint_decide)
 
 def preparedZeroSchedule : Spec.Sm4.Schedule := Vector.replicate 32 0
 
