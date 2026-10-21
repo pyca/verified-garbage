@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCoZField
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableInit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableStoreTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.Weierstrass.CoZTable
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
