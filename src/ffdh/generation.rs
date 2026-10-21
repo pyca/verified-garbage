@@ -268,7 +268,11 @@ mod tests {
             // A tape that ends inside the candidate requests more entropy
             // and consumes nothing: twice the larger of the bytes left and
             // 256 per byte of p.
-            for cut in [0, len - 1, len, used - 1] {
+            // Exercise a late witness shortage at 1024 bits. The 3072-bit
+            // success above covers the full 128-witness policy without
+            // repeating almost all those rounds under ARM emulation.
+            let late_cut = (bits == 1024).then_some(used - 1);
+            for cut in [0, len - 1, len].into_iter().chain(late_cut) {
                 let mut state = Controller::new(bits, generator).unwrap();
                 assert_eq!(
                     state.search(bits, generator, &tape[..cut], &mut p, &mut ws),
