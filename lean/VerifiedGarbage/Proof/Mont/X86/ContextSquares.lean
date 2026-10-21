@@ -46,7 +46,7 @@ theorem setupSquareStep_ok {n size m a i : Nat} {base : Addr} {s t : State}
     (I : SetupInv n m size a i base s t) (hi : i < 6) :
     WP isa (setupSquareStep n) t fun u =>
       SetupInv n m size a (i + 1) base s u ∧ u.zf = some (decide (i + 1 = 6)) := by
-  unfold setupSquareStep
+  unfold setupSquareStep squareStep
   refine WP.seq (WP.mono (context_mul_ok I.context (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) ?_) fun u ⟨Cu, K, lt, Mu⟩ => ?_)
   · rw [I.value]

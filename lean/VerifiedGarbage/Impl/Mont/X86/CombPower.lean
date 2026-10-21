@@ -25,7 +25,7 @@ def combPower (n e context : Nat) (pub : Bool) : Prog isa :=
     (if e < ew then zerosW (slot n 8+4*e) (ew-e) else .block []),
     .block [.mov .esi (imm d)],
     .loop (seq [square n, digit, shiftOne,
-      (if pub then publicSelect n (context+16*n) (slot n 7) else wordSelect n (context+16*n) (slot n 7) 32),
+      (if pub then publicSelect n (context+16*n) (slot n 7) else wordSelect n (context+16*n) (slot n 7)),
       Dynamic.mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 6) (slot n 7),
       .block [.alu .sub .esi (imm 1), .alu .cmp .esi (imm 0)]]) .ne,
     Dynamic.mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 6) (slot n 3)]

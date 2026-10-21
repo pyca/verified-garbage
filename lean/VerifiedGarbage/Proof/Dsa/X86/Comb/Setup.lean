@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86.CombSetup
-public import VerifiedGarbage.Proof.Mont.X86.ContextSquares
+import VerifiedGarbage.Proof.Mont.X86.ContextSquares
 import VerifiedGarbage.Proof.Mont.X86.PowerHigh
 import VerifiedGarbage.Proof.Mont.X86.PowerHighBounds
 import VerifiedGarbage.Proof.Mont.X86.PowerTwo
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Mont.X86.ContextInit
 
 /-! Public full-width and padded setup paths establish the same Montgomery seed. -/
 

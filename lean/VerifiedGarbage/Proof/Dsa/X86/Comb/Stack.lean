@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.Framework.X86.Call
 
-/-! The private masked scan uses 128 bytes; preparation needs no stack arena.
+/-! Both helpers use workspace scratch instead of a stack arena.
 These are structural bounds, separate from arithmetic and ABI preservation. -/
 
 @[expose] public section
@@ -18,7 +18,7 @@ theorem body_noSp {n e : Nat} (h : Supported n e) (prepare : Bool) :
     cases prepare <;> decide +kernel
 
 theorem body_stack {n e : Nat} (h : Supported n e) (prepare : Bool) :
-    stackUse (body prepare n e) = if prepare then 0 else 128 := by
+    stackUse (body prepare n e) = 0 := by
   rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
     cases prepare <;> decide +kernel
 
