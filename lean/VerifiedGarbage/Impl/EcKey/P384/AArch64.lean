@@ -11,7 +11,8 @@ namespace VG.Impl.EcKey.AArch64
 
 open VG.AArch64
 
-/-- `vg_ec_p384_public_key`. -/
-def publicKeyP384 : Prog isa := Cfg.publicKey Impl.Ecdsa.AArch64.p384
+/-- `vg_ec_p384_public_key`: the comb by Jacobian mixed additions (`TCombCfg.combJ`). -/
+def publicKeyP384 : Prog isa :=
+  Cfg.publicKeyWith Impl.Ecdsa.AArch64.p384 Impl.Ecdsa.AArch64.p384.combCfg.combJ
 
 end VG.Impl.EcKey.AArch64

@@ -65,7 +65,8 @@ theorem pk_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.
   have hn : CallsKeep publicKeyP384 := by lit_decide
   have hu : KeepsUntouched publicKeyP384 := by lit_decide
   have hv : publicKeyP384.allInstrs keepsV = true := by lit_decide
-  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p384_ok hI) hL hT (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ :=
+    publicKeyWith_ok (p384_ok hI).toBaseCfgOk hL _ (Ecdsa.AArch64.P384.combJ_ok hL hI hT) (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, post_of hpost⟩
 
 theorem pk_ct : ConstantTime isa pkAArch64.pre pkAArch64.pub publicKeyP384 :=
