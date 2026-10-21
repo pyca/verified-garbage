@@ -115,9 +115,9 @@ PARALLELISM = 5.4
 UP_TO_DATE = 0.02
 DEFAULT_TIME = 3.0
 # `import`, and in a module `public`, `meta` and `all` imports.
-IMPORT = re.compile(r"^\s*(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?(\S+)", re.M)
-# The same, with whether it is `public` and whether `all`.
-IMPORT_KIND = re.compile(r"^\s*(public\s+)?(?:meta\s+)?import\s+(all\s+)?(\S+)", re.M)
+# Leading whitespace stays on one line; inter-keyword whitespace still
+# permits multiline imports, without rescanning runs of blank lines.
+IMPORT_KIND = re.compile(r"^[^\S\r\n]*(public\s+)?(?:meta\s+)?import\s+(all\s+)?(\S+)", re.M)
 BUILT = re.compile(r"\bBuilt (\S+) \((\d+(?:\.\d+)?)(ms|s)\)")
 # The steps of a module of a precompiled library after its `.olean`.
 NATIVE_FACETS = ("c.o", "dynlib")
@@ -125,11 +125,14 @@ NATIVE_FACETS = ("c.o", "dynlib")
 
 def modules() -> dict[str, pathlib.Path]:
     mods = {}
+    depth = len(LEAN.parts)
     for lib, root in LIBRARIES.items():
         if root and (LEAN / f"{lib}.lean").is_file():
             mods[lib] = LEAN / f"{lib}.lean"
         for f in (LEAN / lib).rglob("*.lean"):
-            mods[".".join(f.relative_to(LEAN).with_suffix("").parts)] = f
+            # rglob supplies paths below LEAN; slicing their components
+            # avoids pathlib's repeated ancestor checks for every file.
+            mods[".".join(f.parts[depth:])[:-5]] = f
     return dict(sorted(mods.items()))
 
 
@@ -194,7 +197,12 @@ def matches(entry: str, module: str, closure: dict[str, frozenset[str]]) -> bool
 
 def imported_by(text: str, mods) -> list[str]:
     """The modules of the project (of `mods`) the source `text` imports."""
-    return [i for i in IMPORT.findall(text) if i in mods]
+    return [i for _, _, i in import_kinds(text, mods)]
+
+
+def import_kinds(text: str, mods) -> list[tuple[bool, bool, str]]:
+    """Project imports, with their public/all visibility, in source order."""
+    return [(bool(p), bool(a), i) for p, a, i in IMPORT_KIND.findall(text) if i in mods]
 
 
 def imports(mods: dict[str, pathlib.Path]) -> dict[str, list[str]]:
@@ -226,13 +234,31 @@ def visibility(text: str, mods) -> tuple[list[str], list[str]] | None:
     closure of its imports, every module's outputs, private parts included."""
     if not is_module(text):
         return None
-    kinds = [(bool(p), bool(a), i) for p, a, i in IMPORT_KIND.findall(text) if i in mods]
+    kinds = import_kinds(text, mods)
     return [i for p, _, i in kinds if p], [i for _, a, i in kinds if a]
 
 
 def visibilities(mods: dict[str, pathlib.Path]) -> dict[str, tuple[list[str], list[str]] | None]:
     """`visibility` of each module of the project."""
     return {m: visibility(f.read_text(), mods) for m, f in mods.items()}
+
+
+def source_info(mods):
+    """Read/hash each source once and share one import scan between graphs.
+
+    Hash the original bytes, but normalize newlines for parsing just as
+    Path.read_text does. Sources, imports, and visibility describe the same
+    read of each file, including for the final `edited` list.
+    """
+    imps, vis, hashes = {}, {}, {}
+    for m, path in mods.items():
+        data = path.read_bytes()
+        hashes[m] = hashlib.sha256(data).hexdigest()
+        text = data.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
+        kinds = import_kinds(text, mods)
+        imps[m] = [i for _, _, i in kinds]
+        vis[m] = ([i for p, _, i in kinds if p], [i for _, a, i in kinds if a]) if is_module(text) else None
+    return imps, vis, hashes
 
 
 def reads(
@@ -593,20 +619,20 @@ def schedule(
 
 def plan(manifest: dict) -> dict:
     mods = modules()
-    imps = imports(mods)
+    imps, vis, hashes = source_info(mods)
     closure = closures(imps)
     now = inputs()
     then = manifest.get("inputs", {})
     sources = manifest.get("sources", {})
     if {k: v for k, v in then.items() if k != "libraries"} == {k: v for k, v in now.items() if k != "libraries"}:
-        changed = {m for m, f in mods.items() if sources.get(m) != digest(f)}
+        changed = {m for m in mods if sources.get(m) != hashes[m]}
         # Modules a library gained or lost.
         old, new = then.get("libraries", {}), now["libraries"]
         moved = {(lib, e) for lib in old.keys() | new.keys() for e in set(old.get(lib, [])) ^ set(new.get(lib, []))}
         changed |= {m for m in mods for _, e in moved if matches(e, m, closure)}
     else:
         changed = set(mods)
-    stale = stale_of(changed, reads(imps, closure, visibilities(mods)))
+    stale = stale_of(changed, reads(imps, closure, vis))
     work, _, (estimates, targets, shards) = schedule(imps, closure, stale, manifest.get("times", {}))
     owner = {}
     for i, shard in enumerate(shards):
@@ -622,7 +648,7 @@ def plan(manifest: dict) -> dict:
     # The modules whose sources differ from the last build's, whatever its
     # inputs: what `check_lean_public_imports.py` checks.
     if sources:
-        out["edited"] = sorted(m for m, f in mods.items() if sources.get(m) != digest(f))
+        out["edited"] = sorted(m for m in mods if sources.get(m) != hashes[m])
     return out
 
 

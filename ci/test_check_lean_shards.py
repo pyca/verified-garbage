@@ -1,6 +1,7 @@
 """What the Lean build's plan counts as changed; no builds."""
 
 import contextlib
+import hashlib
 import io
 import json
 import pathlib
@@ -97,6 +98,26 @@ class Project(unittest.TestCase):
             "inputs": shards.inputs(),
             "sources": {m: shards.digest(f) for m, f in shards.modules().items()},
         }
+
+
+class SourceInfo(Project):
+    def test_parse_normalized_newlines_but_hash_original_bytes(self):
+        raw = ("module\r\n\r\n\tpublic meta import all VerifiedGarbage.Spec.B\r\n"
+               "import VerifiedGarbage.Other\r\n-- π\r\n").encode("utf-8")
+        path = self.lean / "VerifiedGarbage/Spec/A.lean"
+        path.write_bytes(raw)
+        imps, vis, hashes = shards.source_info(shards.modules())
+        name = "VerifiedGarbage.Spec.A"
+        self.assertEqual(imps[name], ["VerifiedGarbage.Spec.B", "VerifiedGarbage.Other"])
+        self.assertEqual(vis[name], (["VerifiedGarbage.Spec.B"], ["VerifiedGarbage.Spec.B"]))
+        self.assertEqual(hashes[name], hashlib.sha256(raw).hexdigest())
+
+    def test_legacy_sources_and_multiline_imports(self):
+        path = self.lean / "VerifiedGarbage/Spec/A.lean"
+        path.write_bytes(b"\r\tpublic\rmeta import all\rVerifiedGarbage.Spec.B\r")
+        imps, vis, _ = shards.source_info(shards.modules())
+        self.assertEqual(imps["VerifiedGarbage.Spec.A"], ["VerifiedGarbage.Spec.B"])
+        self.assertIsNone(vis["VerifiedGarbage.Spec.A"])
 
 
 class Plan(Project):
