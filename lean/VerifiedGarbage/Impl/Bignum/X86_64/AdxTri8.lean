@@ -38,10 +38,12 @@ def rowCore (i : Nat) (col : Reg) (rest : List Reg) : List Instr :=
   ([.mov .rdx (.mem (at_ .rbp (8*i))),.alu32 .xor (last col rest) (.reg (last col rest))] : List Instr) ++
     (wordF (i+1) .rbx col ++ chain (i+2) .rax .rbx .rbx rest)
 
-/-- `rcx :=` the block's output base, which it keeps through the rows. -/
+/-- `rcx :=` the block's output base, which it keeps through the rows: from
+`rax`, which `setup` leaves at eight times the block's index (no reload of the
+index `nextBlock` has just stored). -/
 def headBases : List Instr :=
-  [.mov .rsi (.mem (hdr (sArr Public.aAcc))),.mov .rcx (.mem (hdr (sFn 12))),
-   .shift .shl .rcx 4,.alu .add .rcx (.reg .rsi)]
+  [.mov .rsi (.mem (hdr (sArr Public.aAcc))),.mov .rcx (.reg .rax),
+   .shift .shl .rcx 1,.alu .add .rcx (.reg .rsi)]
 
 def storeHead (i : Nat) (lo hi : Reg) : Prog isa :=
   .seq (.block [.store (at_ .rcx (16+8*(2*i+1))) lo])
@@ -82,9 +84,10 @@ def rows : Nat → Nat → List Reg → Prog isa
 
 def columns : List Reg := [.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15]
 
+/-- The block's input base, from its index in `rax` (stored in `sFn 12` too,
+but not reloaded: `blocks` and `nextBlock` leave it in `rax`). -/
 def setup (a : Nat) : List Instr :=
-  [.mov .rax (.mem (hdr (sFn 12))),.shift .shl .rax 3,
-   .mov .rbp (.mem (hdr (sArr a))),.alu .add .rbp (.reg .rax)]
+  [.shift .shl .rax 3,.mov .rbp (.mem (hdr (sArr a))),.alu .add .rbp (.reg .rax)]
 
 /-- Zero the two words of the block's sixteen output words that no row writes,
 its first and last: the rows then write the other fourteen, and nothing has to

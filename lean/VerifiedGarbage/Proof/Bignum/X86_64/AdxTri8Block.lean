@@ -126,17 +126,19 @@ open VG.Proof.MlKem.X86_64 (Keep WP.keep)
 theorem setup_ok {s : State} {B : Addr} {Z w a I : Nat}
     (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hZ : slot w 8≤Z)
     {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
-    (hI : word s.mem B (8*sFn 12)=BitVec.ofNat 64 I) :
+    (hR : s.gpr .rax=BitVec.ofNat 64 I) :
     WP isa (.block (AdxTri8.setup ca)) s fun t =>
-      t.gpr .rbp=off B (slot w a+8*I) ∧ t.mem=s.mem ∧ Keep [.rax,.rbp] s t := by
+      t.gpr .rbp=off B (slot w a+8*I) ∧ t.gpr .rax=BitVec.ofNat 64 (8*I) ∧ t.mem=s.mem ∧
+        Keep [.rax,.rbp] s t := by
   have ld : ∀ k<32, InRegions (s.rd++s.wr) (off B (8*k)) 8 := fun k hk =>
     hs.ld (by have := hdr_lt_slot w 8 hk; omega_using [hZ, this])
   have add : off B (slot w a)+BitVec.ofNat 64 (8*I)=off B (slot w a+8*I) := off_off ..
-  refine WP.mono (WP.keep [.rax,.rbp] (Q := fun t => t.gpr .rbp=off B (slot w a+8*I) ∧ t.mem=s.mem) ?_ rfl)
-    fun t ⟨⟨p,m⟩,k⟩ => ⟨p,m,k⟩
+  refine WP.mono (WP.keep [.rax,.rbp] (Q := fun t => t.gpr .rbp=off B (slot w a+8*I) ∧
+      t.gpr .rax=BitVec.ofNat 64 (8*I) ∧ t.mem=s.mem) ?_ rfl)
+    fun t ⟨⟨p,r,m⟩,k⟩ => ⟨p,r,m,k⟩
   unfold AdxTri8.setup
-  xrun [State.ea,hdr,hd,hdrOff,ld (sArr ca) (by have := hv.lt pa; unfold sArr; omega_using [this]),ld (sFn 12) (by decide),
-    show word s.mem B (8*sArr ca) = _ from hv.at pa,hI,AdxRect8.shift3,add]
+  xrun [State.ea,hdr,hd,hdrOff,ld (sArr ca) (by have := hv.lt pa; unfold sArr; omega_using [this]),
+    show word s.mem B (8*sArr ca) = _ from hv.at pa,hR,AdxRect8.shift3,add]
 
 theorem zero_ends {m : Mem} {B : Addr} {e n : Nat}
     (lo : word m B e=0) (hi : word m B (e+8*(n+1))=0) :
@@ -150,7 +152,7 @@ theorem zero_ends {m : Mem} {B : Addr} {e n : Nat}
 zeroed. -/
 theorem clearEnds_ok {s : State} {B : Addr} {Z w I : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
-    (hI : word s.mem B (8*sFn 12)=BitVec.ofNat 64 I) (he : slot w aAcc+16*I+144≤Z) :
+    (hR : s.gpr .rax=BitVec.ofNat 64 (8*I)) (he : slot w aAcc+16*I+144≤Z) :
     let e := slot w aAcc+16+16*I
     WP isa AdxTri8.clearEnds s fun t =>
       word t.mem B e=0 ∧ word t.mem B (e+120)=0 ∧
@@ -159,7 +161,7 @@ theorem clearEnds_ok {s : State} {B : Addr} {Z w I : Nat} {mi : BitVec 64}
   dsimp only
   have nowrap := hs.nowrap
   unfold AdxTri8.clearEnds
-  refine WP.seq (WP.mono (headBases_ok hs hd hh hZ hI) fun a₀ ⟨pa₀,ma₀,ka₀⟩ => ?_)
+  refine WP.seq (WP.mono (headBases_ok hs hd hh hZ hR) fun a₀ ⟨pa₀,ma₀,ka₀⟩ => ?_)
   rw [show ([Instr.mov32 .rax (.imm 0),.store (AdxRotate8.at_ .rcx 16) .rax] : List Instr)=
     [.mov32 .rax (.imm 0)]++[.store (AdxRotate8.at_ .rcx 16) .rax] from rfl]
   refine WP.seq (WP.block_append (WP.mono (movZero_ok a₀ .rax) fun a ⟨za,_,_,kz⟩ => ?_))
@@ -184,7 +186,7 @@ theorem block_ok {s : State} {B : Addr} {Z w a I : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
     {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
     (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hIndex : I+8≤w)
-    (hI : word s.mem B (8*sFn 12)=BitVec.ofNat 64 I) :
+    (hR : s.gpr .rax=BitVec.ofNat 64 I) :
     WP isa (AdxTri8.block ca) s fun t =>
       wv t.mem B (slot w aAcc+16+16*I) 16=AdxSquare.crossValue s.mem B (slot w a+8*I) 8 ∧
       Outside B (slot w aAcc+16+16*I) 128 s.mem t.mem ∧ Keep mmRegs s t := by
@@ -193,9 +195,9 @@ theorem block_ok {s : State} {B : Addr} {Z w a I : Nat} {mi : BitVec 64}
   have outZ : output w I 0+112≤Z := by unfold output at *; omega_using [hZ, ar]
   have endZ : slot w aAcc+16*I+144≤Z := by omega_using [hZ, ar]
   unfold AdxTri8.block
-  refine WP.seq (WP.mono (setup_ok hs hd hZ hv pa hI) fun u ⟨pu,mu,ku⟩ => ?_)
+  refine WP.seq (WP.mono (setup_ok hs hd hZ hv pa hR) fun u ⟨pu,ru,mu,ku⟩ => ?_)
   refine WP.seq (WP.mono (clearEnds_ok (hs.congr ku.2.2) ((ku.gpr (by decide)).trans hd) (mu ▸ hh) hZ
-    (mu ▸ hI) endZ) fun x ⟨lx,hx,_,ox,cx,kx⟩ => ?_)
+    ru endZ) fun x ⟨lx,hx,_,ox,cx,kx⟩ => ?_)
   rw [mu] at ox
   have kux := ku.trans kx
   have px : x.gpr .rbp=off B (slot w a+8*I) := (kx.gpr (by decide)).trans pu

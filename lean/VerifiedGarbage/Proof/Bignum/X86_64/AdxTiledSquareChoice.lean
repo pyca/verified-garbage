@@ -26,11 +26,11 @@ theorem fullBlock_ok {s : State} {B : Addr} {Z w a I : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
     {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
     (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hIndex : I+8≤w)
-    (hI : word s.mem B (8*sFn 12)=BitVec.ofNat 64 I) :
+    (hR : s.gpr .rax=BitVec.ofNat 64 I) :
     WP isa (AdxTri8.block ca) s fun t =>
       wv t.mem B (slot w aAcc+16+16*I) 16=AdxSquare.crossValue s.mem B (slot w a+8*I) 8 ∧
       Outside B (slot w aAcc+16+16*I) 128 s.mem t.mem ∧ Keep mmRegs s t :=
-  block_ok hs hd hh hZ hv pa ha ha1 ha2 hIndex hI
+  block_ok hs hd hh hZ hv pa ha ha1 ha2 hIndex hR
 
 end VG.Proof.Bignum.X86_64.AdxTri8
 
@@ -56,6 +56,8 @@ structure BlocksInv (s₀ : State) (B : Addr) (Z w a k : Nat) (mi : BitVec 64) (
   hdr : Hdr s.mem B w mi
   rdi : s.gpr .rdi=B
   indexI : word s.mem B (8*sFn 12)=BitVec.ofNat 64 (8*k)
+  /-- `rax` holds the index too: `block` reads it from there. -/
+  raxI : s.gpr .rax=BitVec.ofNat 64 (8*k)
   keep : Keep mmRegs s₀ s
   frame : Frm B (diagonalRanges w k) s₀.mem s.mem
   val : wv s.mem B (rawBase w) (16*k)=blockCross s₀.mem B (slot w a) k
@@ -116,13 +118,13 @@ theorem blockStep_ok {s₀ s : State} {B : Addr} {Z w a k n : Nat} {mi : BitVec 
   have nowrap := h.scr.nowrap
   have Z64 : slot w 8≤(2 : Nat)^64 := by omega_arith
   have ar := AdxRect8.tile_ranges (by omega_arith : 8*k+8≤w) (by omega_arith : 8*k+8≤w) ha ha1 ha2
-  refine WP.seq (WP.mono (fullBlock_ok h.scr h.rdi h.hdr hZ (diagonal_ops hv h.frame) pa ha ha1 ha2 (by omega_arith) h.indexI)
+  refine WP.seq (WP.mono (fullBlock_ok h.scr h.rdi h.hdr hZ (diagonal_ops hv h.frame) pa ha ha1 ha2 (by omega_arith) h.raxI)
     fun u ⟨vu,ou,ku⟩ => ?_)
   have indexU : word u.mem B (8*sFn 12)=BitVec.ofNat 64 (8*k) := by
     rw [ou.word (by unfold slot hdrBytes sFn; omega_arith) (by decide)]; exact h.indexI
   have headerU := h.hdr.of_outside ou (by unfold slot; omega_arith)
-  refine WP.mono (AdxTiledProduct.nextRow_ok (h.scr.congr ku.2.2) ((ku.gpr (by decide)).trans h.rdi)
-    headerU hZ (by omega_arith) (by omega_arith) indexU) fun t ⟨mt,zt,kt⟩ => ?_
+  refine WP.mono (AdxTiledProduct.nextRow_rax_ok (h.scr.congr ku.2.2) ((ku.gpr (by decide)).trans h.rdi)
+    headerU hZ (by omega_arith) (by omega_arith) indexU) fun t ⟨mt,zt,rt,kt⟩ => ?_
   have ot : Outside B (8*sFn 12) 8 u.mem t.mem := by rw [mt]; exact writeW_outside _ _ _ (by decide)
   have fu : Frm B (diagonalRanges w (k+1)) s.mem u.mem := by
     intro x hx
@@ -147,9 +149,10 @@ theorem blockStep_ok {s₀ s : State} {B : Addr} {Z w a k n : Nat} {mi : BitVec 
       diagonal_input ha ha1 ha2 (by omega_arith) (by omega_arith) Z64 h.frame,
       show slot w a+8*(8*k)=slot w a+64*k by omega_arith]
   refine ⟨?_,⟨h.scr.congr (ku.trans kt).2.2,diagonal_hdr h.hdr (fu.trans ft),
-    ((ku.trans kt).gpr (by decide)).trans h.rdi,?_,(h.keep.trans (ku.trans kt)).mono (by decide),finalFrame,?_⟩⟩
+    ((ku.trans kt).gpr (by decide)).trans h.rdi,?_,?_,(h.keep.trans (ku.trans kt)).mono (by decide),finalFrame,?_⟩⟩
   · rw [zt]; exact congrArg some (decide_eq_decide.mpr (by omega_arith))
   · rw [mt,word_writeW_self,show 8*(k+1)=8*k+8 by omega_arith]
+  · rw [rt,show 8*(k+1)=8*k+8 by omega_arith]
   · rw [ot.wv (by unfold rawBase slot hdrBytes sFn; omega_arith) (by unfold rawBase at *; omega_arith),
       show 16*(k+1)=16*k+16 by omega_arith,wv_add,low,h.val,resultU,blockCross]
     rw [show 64*(16*k)=1024*k by omega_arith]
@@ -177,16 +180,16 @@ theorem blocks_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
   have iZ : 8*sFn 12+8≤Z := by
     have := hdr_lt_slot w 8 (show sFn 12<32 by decide); omega_arith
   have init : WP isa (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax]) s fun t =>
-      t.mem=s.mem.writeW (off B (8*sFn 12)) (0 : BitVec 64) ∧ Keep [.rax] s t := by
-    apply WP.keep [.rax] (Q := fun t => t.mem=s.mem.writeW (off B (8*sFn 12)) (0 : BitVec 64)) _ rfl
+      (t.mem=s.mem.writeW (off B (8*sFn 12)) (0 : BitVec 64) ∧ t.gpr .rax=0) ∧ Keep [.rax] s t := by
+    apply WP.keep [.rax] (Q := fun t => t.mem=s.mem.writeW (off B (8*sFn 12)) (0 : BitVec 64) ∧ t.gpr .rax=0) _ rfl
     xrun [State.ea,hdr,hd,hdrOff,hs.st iZ]; rfl
   unfold AdxTri8.blocks
-  refine WP.seq (WP.mono init fun u ⟨mu,ku⟩ => ?_)
+  refine WP.seq (WP.mono init fun u ⟨⟨mu,ru⟩,ku⟩ => ?_)
   have ou : Outside B (8*sFn 12) 8 s.mem u.mem := by rw [mu]; exact writeW_outside _ _ _ (by decide)
   have fu : Frm B (diagonalRanges w 0) s.mem u.mem := Frm.of_outside ou (by simp [diagonalRanges])
   have h0 : BlocksInv s B Z w a 0 mi u :=
     ⟨hs.congr ku.2.2,diagonal_hdr hh fu,(ku.gpr (by decide)).trans hd,by rw [mu,word_writeW_self]; rfl,
-      ku.mono (by decide),fu,rfl⟩
+      by rw [ru]; rfl,ku.mono (by decide),fu,rfl⟩
   exact wp_upto (a := 0) (N := n) hn (BlocksInv s B Z w a · mi)
     (fun _ _ hk _ h => blockStep_ok hv pa hZ hw hwN hk ha ha1 ha2 h) (fun _ h => h) h0
 

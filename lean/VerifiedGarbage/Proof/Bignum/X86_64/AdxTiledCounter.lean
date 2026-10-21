@@ -14,13 +14,13 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep)
 
-theorem nextRow_ok {s : State} {B : Addr} {Z w j : Nat} {mi : BitVec 64}
+theorem nextRow_rax_ok {s : State} {B : Addr} {Z w j : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
     (hZ : slot w 8 ≤ Z) (hj : j+8 < 2^64) (hw : w < 2^64)
     (hidx : word s.mem B (8*sFn 12) = BitVec.ofNat 64 j) :
     WP isa (.block AdxTiledProduct.nextRow) s fun t =>
       t.mem = s.mem.writeW (off B (8*sFn 12)) (BitVec.ofNat 64 (j+8)) ∧
-      t.zf = some (decide (j+8=w)) ∧ Keep [.rax] s t := by
+      t.zf = some (decide (j+8=w)) ∧ t.gpr .rax = BitVec.ofNat 64 (j+8) ∧ Keep [.rax] s t := by
   have hn := hs.nowrap
   have hiZ : 8*sFn 12+8 ≤ Z := by
     have := hdr_lt_slot w 8 (show sFn 12 < 32 by decide); omega
@@ -46,8 +46,18 @@ theorem nextRow_ok {s : State} {B : Addr} {Z w j : Nat} {mi : BitVec 64}
   have wa : word a.mem B (8*sW) = BitVec.ofNat 64 w := by
     rw [ma,(writeW_outside s.mem B (BitVec.ofNat 64 (j+8)) (by omega : 8*sFn 12+8 ≤ 2^64)).word
       (by decide : 8*sW+8 ≤ 8*sFn 12 ∨ 8*sFn 12+8 ≤ 8*sW) (by omega),hh.hw]
-  refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = a.mem ∧ t.zf = some (decide (j+8=w))) ?_ rfl)
-    fun t ⟨⟨mt,zt⟩,kt⟩ => ⟨mt.trans ma,zt,(ka.trans kt).mono (by simp)⟩
+  refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = a.mem ∧ t.zf = some (decide (j+8=w)) ∧
+      t.gpr .rax = BitVec.ofNat 64 (j+8)) ?_ rfl)
+    fun t ⟨⟨mt,zt,rt⟩,kt⟩ => ⟨mt.trans ma,zt,rt,(ka.trans kt).mono (by simp)⟩
   xrun [State.ea,hdr,(ka.gpr (by decide)).trans hd,hdrOff,sa.ld hwZ,wa,ra,ofNat_sub_beq hj hw]
+
+theorem nextRow_ok {s : State} {B : Addr} {Z w j : Nat} {mi : BitVec 64}
+    (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
+    (hZ : slot w 8 ≤ Z) (hj : j+8 < 2^64) (hw : w < 2^64)
+    (hidx : word s.mem B (8*sFn 12) = BitVec.ofNat 64 j) :
+    WP isa (.block AdxTiledProduct.nextRow) s fun t =>
+      t.mem = s.mem.writeW (off B (8*sFn 12)) (BitVec.ofNat 64 (j+8)) ∧
+      t.zf = some (decide (j+8=w)) ∧ Keep [.rax] s t :=
+  WP.mono (nextRow_rax_ok hs hd hh hZ hj hw hidx) fun _ ⟨m,z,_,k⟩ => ⟨m,z,k⟩
 
 end VG.Proof.Bignum.X86_64.AdxTiledProduct

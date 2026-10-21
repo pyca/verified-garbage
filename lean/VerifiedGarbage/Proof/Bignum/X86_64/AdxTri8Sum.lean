@@ -22,22 +22,22 @@ open VG.Impl.Bignum.X86_64.AdxRotate8 (at_)
 
 theorem headBases_ok {s : State} {B : Addr} {Z w I : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
-    (hI : word s.mem B (8*sFn 12)=BitVec.ofNat 64 I) :
+    (hR : s.gpr .rax=BitVec.ofNat 64 (8*I)) :
     WP isa (.block AdxTri8.headBases) s fun t =>
       t.gpr .rcx=off B (slot w aAcc+16*I) ∧ t.mem=s.mem ∧ Keep [.rsi,.rcx] s t := by
   have ld : ∀ k<32, InRegions (s.rd++s.wr) (off B (8*k)) 8 := fun k hk =>
     hs.ld (by have := hdr_lt_slot w 8 hk; omega)
-  have sh : BitVec.ofNat 64 I <<< (4 : Nat)=BitVec.ofNat 64 (16*I) := by
+  have sh : BitVec.ofNat 64 (8*I) <<< (1 : Nat)=BitVec.ofNat 64 (16*I) := by
     rw [BitVec.shiftLeft_eq_mul_twoPow]
-    change BitVec.ofNat 64 I*BitVec.ofNat 64 16=BitVec.ofNat 64 (16*I)
-    rw [← BitVec.ofNat_mul,Nat.mul_comm]
+    change BitVec.ofNat 64 (8*I)*BitVec.ofNat 64 2=BitVec.ofNat 64 (16*I)
+    rw [← BitVec.ofNat_mul,show 8*I*2=16*I by omega]
   have add : BitVec.ofNat 64 (16*I)+off B (slot w aAcc)=off B (slot w aAcc+16*I) := by
     rw [BitVec.add_comm]; exact off_off ..
   refine WP.mono (WP.keep [.rsi,.rcx] (Q := fun t => t.gpr .rcx=off B (slot w aAcc+16*I) ∧ t.mem=s.mem) ?_ rfl)
     fun t ⟨⟨p,m⟩,k⟩ => ⟨p,m,k⟩
   unfold AdxTri8.headBases
-  xrun [State.ea,hdr,hd,hdrOff,ld (sArr aAcc) (by decide),ld (sFn 12) (by decide),
-    hh.harr aAcc (by decide),hI,sh,add]
+  xrun [State.ea,hdr,hd,hdrOff,ld (sArr aAcc) (by decide),
+    hh.harr aAcc (by decide),hR,sh,add]
 
 theorem storeHead_ok {s : State} {B : Addr} {Z w I i : Nat} {lo hi : Reg}
     (hs : Scr s B Z) (hc : s.gpr .rcx=off B (slot w aAcc+16*I))
