@@ -80,7 +80,7 @@ def combined (u : Nat) : Prog isa := .seq
 def printFn (name : String) (p : Prog isa) (callee : String := "proto_mont0") : String :=
  ".globl "++name++"\n.p2align 6\n"++name++":\n"++
  "\n".intercalate ((printer.function p).map fun l => match l with
- | .text s => s | .call _ => "call "++callee | .sym .. => "ERROR")++"\n"
+ | .text s => s | .call n => "call "++(if n = "proto_gcd_C" then n else callee) | .sym .. => "ERROR")++"\n"
 end NextMont
 
 namespace ScalarCombaProto
@@ -269,6 +269,24 @@ def code : Prog isa := VG.Impl.Rsa.X86.Keys.seqs [
  .block VG.Impl.Bignum.X86.PublicFn.restore]
 end BatchCrtProto
 
+namespace BatchGcdProto
+open VG VG.X86 VG.Impl.Rsa.X86.KeyRt VG.Impl.Rsa.X86.RecoverRt
+open VG.Impl.Rsa.X86.Keys (seqs)
+def gcdCall : Prog isa :=
+ let F : Lay := { nar with len := nar.len+2, ws := nar.ws+2 }
+ .frame (.alloc 8) (.seq (.block (
+   [.store (at_ .esp 0) .edi] ++ bytesB F .eax ++ [.shift .shr .eax 2, .store (at_ .esp 4) .eax]))
+   (.call "proto_gcd_C" (.block []))) (.free 8)
+def newFactors : Prog isa := VG.Impl.Rsa.X86.Keys.seqs [gcdSet,gcdCall,divSet,div nar VG.Impl.Rsa.X86.Recover.aQ VG.Impl.Rsa.X86.Recover.aRm VG.Impl.Rsa.X86.Recover.aDv VG.Impl.Rsa.X86.Recover.aDt,order]
+def newFin : Prog isa := VG.Impl.Rsa.X86.Keys.seqs [finY,newFactors,stores]
+def newRest : Prog isa := VG.Impl.Rsa.X86.Keys.seqs [halving,mont,candLoop,newFin]
+def newFused : Prog isa := VG.Impl.Rsa.X86.Keys.seqs [fusedPrepare,mont,fusedLoop,newFin]
+def newSelected : Prog isa := .seq (.block recoveryChoice) (.iteCold .b newRest newFused)
+def newSized : Prog isa := .seq numbers (.ite .e newSelected VG.Impl.Rsa.X86.Recover.failure)
+def newBody : Prog isa := .seq (.block (VG.Impl.Rsa.X86.CrtValues.inputArgs 4)) (.seq (.block VG.Impl.Bignum.X86.modulusCheck) (.ite .e newSized VG.Impl.Rsa.X86.Recover.failure))
+def code : Prog isa := .seq (.block VG.Impl.Rsa.X86.Recover.entry) (.seq newBody (.block VG.Impl.Bignum.X86.PublicFn.restore))
+end BatchGcdProto
+
 def main : IO Unit := do
  let modes := [VG.Impl.Mont.X86.Rt.body, NextMont.tune 2 VG.Impl.Mont.X86.Rt.body,
    NextMont.tune 4 VG.Impl.Mont.X86.Rt.body, NextMont.tune 8 VG.Impl.Mont.X86.Rt.body,
@@ -279,6 +297,8 @@ def main : IO Unit := do
    NextMont.printFn ("proto_recover"++toString i) VG.Impl.Rsa.X86.RecoverRt.code ("proto_mont"++toString i)
  IO.FS.writeFile "/workspace/scratch/openssl/next-generated.S" (
    ".intel_syntax noprefix\n.text\n"++String.join codes++
+   NextMont.printFn "proto_recover10" BatchGcdProto.code "proto_mont7" ++
+   NextMont.printFn "proto_recover11" BatchGcdProto.code "proto_mont8" ++
    NextMont.printFn "proto_check0" (VG.Impl.Rsa.X86.KeyCheckRt.code false) ++
    NextMont.printFn "proto_check1" (KeyCheckMontProto.code false) ++
    NextMont.printFn "proto_crt0" VG.Impl.Rsa.X86.CrtValuesRt.code ++

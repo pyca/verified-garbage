@@ -10,11 +10,11 @@
 #define MODES 10
 #define DECL(i) extern void proto_mont##i(uint64_t*,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned); \
 extern unsigned proto_recover##i(unsigned char*,unsigned,unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,uint64_t*,unsigned)
-DECL(0);DECL(1);DECL(2);DECL(3);DECL(4);DECL(5);DECL(6);DECL(7);DECL(8);DECL(9);
+DECL(0);DECL(1);DECL(2);DECL(3);DECL(4);DECL(5);DECL(6);DECL(7);DECL(8);DECL(9);DECL(10);DECL(11);
 typedef void (*montfn)(uint64_t*,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned);
 static montfn ms[]={proto_mont0,proto_mont1,proto_mont2,proto_mont3,proto_mont4,proto_mont5,proto_mont6,proto_mont7,proto_mont8,proto_mont9};
 typedef unsigned (*recfn)(unsigned char*,unsigned,unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,uint64_t*,unsigned);
-static recfn rs[]={proto_recover0,proto_recover1,proto_recover2,proto_recover3,proto_recover4,proto_recover5,proto_recover6,proto_recover7,proto_recover8,proto_recover9};
+static recfn rs[]={proto_recover0,proto_recover1,proto_recover2,proto_recover3,proto_recover4,proto_recover5,proto_recover6,proto_recover7,proto_recover8,proto_recover9,proto_recover10,proto_recover11};
 static double now(void){struct timespec t;clock_gettime(CLOCK_MONOTONIC,&t);return t.tv_sec+t.tv_nsec*1e-9;}
 static uint32_t rng=1;
 static uint32_t rnd(void){rng^=rng<<13;rng^=rng>>17;rng^=rng<<5;return rng;}
@@ -125,10 +125,11 @@ static void batch_inverse_ws(uint64_t*ws,unsigned fulln,unsigned n){
  unsigned stride=4*(fulln+2);unsigned char*base=(unsigned char*)ws+160;
  uint32_t *input=(uint32_t*)base,*mod=(uint32_t*)(base+8*stride);
  uint32_t m[BW],f[BW],g[BW],a[BW],b[BW],nf[BW],ng[BW],na[BW],nb[BW],t[BW];
- memcpy(m,mod,n*4);memset(f,0,4*(n+1));memset(g,0,4*(n+1));memcpy(f,m,n*4);mod_input(g,input,m,n);memset(a,0,n*4);memset(b,0,n*4);
+ memcpy(m,mod,n*4);memset(f,0,4*(n+1));memset(g,0,4*(n+1));memcpy(f,m,n*4);
+ uint64_t oddcarry=0;uint32_t oddmask=0-((input[0]&1)^1);for(unsigned j=0;j<n;j++){uint64_t z=(uint64_t)input[j]+(m[j]&oddmask)+oddcarry;g[j]=(uint32_t)z;oddcarry=z>>32;}g[n]=(uint32_t)oddcarry;memset(a,0,n*4);memset(b,0,n*4);
  uint32_t nz=m[0]^1;for(unsigned j=1;j<n;j++)nz|=m[j];b[0]=(nz|(0-nz))>>31;
  uint32_t minv=1;for(unsigned i=0;i<5;i++)minv*=2-m[0]*minv;minv=0-minv;
- unsigned batches=(8*n+2)/3;uint32_t delta=1;
+ unsigned batches=3*(n+1);uint32_t delta=1;
  for(unsigned batch=0;batch<batches;batch++){
   uint32_t F=f[0],G=g[0],U=1,V=0,Q=0,R=1,D=delta;
   for(unsigned step=0;step<30;step++){
@@ -151,6 +152,30 @@ static void batch_inverse_ws(uint64_t*ws,unsigned fulln,unsigned n){
 __attribute__((force_align_arg_pointer)) void proto_inv_C(uint64_t*ws,unsigned n,unsigned pl,unsigned ql){(void)pl;(void)ql;batch_inverse_ws(ws,n,n);}
 __attribute__((force_align_arg_pointer)) void proto_inv_active_C(uint64_t*ws,unsigned n,unsigned pl,unsigned ql){unsigned active=((pl>ql?pl:ql)+3)/4;batch_inverse_ws(ws,n,active);}
 
+/* Odd adjustment preserves gcd and avoids preliminary division. */
+__attribute__((force_align_arg_pointer)) void proto_gcd_C(uint64_t*ws,unsigned n){
+ unsigned stride=4*(n+2);unsigned char*base=(unsigned char*)ws+160;
+ uint32_t *input=(uint32_t*)base,*m=(uint32_t*)(base+8*stride);
+ uint32_t f[BW],g[BW],nf[BW],ng[BW],t[BW];
+ memset(f,0,4*(n+1));memset(g,0,4*(n+1));memcpy(f,m,n*4);
+ uint32_t mask=0-((input[0]&1)^1);uint64_t carry=0;
+ for(unsigned j=0;j<n;j++){uint64_t z=(uint64_t)input[j]+(m[j]&mask)+carry;g[j]=(uint32_t)z;carry=z>>32;}g[n]=(uint32_t)carry;
+ uint32_t D=1;
+ for(unsigned batch=0;batch<3*(n+1);batch++){
+  uint32_t F=f[0],G=g[0],U=1,V=0,Q=0,R=1;
+  for(unsigned step=0;step<30;step++){
+   uint32_t B=0-(G&1),S=((D>>31)-1)&B;
+   uint32_t G1=G+(((F^S)-S)&B),Q1=Q+(((U^S)-S)&B),R1=R+(((V^S)-S)&B);
+   D=((D^S)-S)+2;F=F+(G1&S);G=G1>>1;U=(U+(Q1&S))<<1;V=(V+(R1&S))<<1;Q=Q1;R=R1;
+  }
+  lin(t,n+1,f,g,n+1,U,V);shift30(nf,t,n+1);lin(t,n+1,f,g,n+1,Q,R);shift30(ng,t,n+1);
+  memcpy(f,nf,4*(n+1));memcpy(g,ng,4*(n+1));
+ }
+ uint32_t sign=0-(f[n]>>31);carry=sign&1;uint32_t*out=(uint32_t*)(base+stride);
+ for(unsigned j=0;j<n;j++){uint64_t z=(uint64_t)(f[j]^sign)+carry;out[j]=(uint32_t)z;carry=z>>32;}
+ for(unsigned j=0;j<=n;j++)if(g[j]){fprintf(stderr,"GCD DID NOT CONVERGE\n");exit(25);}
+}
+
 static uint64_t euclid64(uint64_t a,uint64_t b){while(b){uint64_t r=a%b;a=b;b=r;}return a;}
 static uint64_t oracle_add(uint64_t a,uint64_t b,uint64_t m){return a>=m-b?a-(m-b):a+b;}
 static uint64_t oracle_mul(uint64_t a,uint64_t b,uint64_t m){uint64_t r=0;a%=m;while(b){if(b&1)r=oracle_add(r,a,m);a=oracle_add(a,a,m);b>>=1;}return r;}
@@ -161,6 +186,8 @@ static int batch_selftest(void){
   memcpy((char*)w+160,&q,8);memcpy((char*)w+160+8*16,&m,8);
   proto_inv_C(w,2,8,8);uint64_t g,inv;memcpy(&g,(char*)w+160+16,8);memcpy(&inv,(char*)w+160+3*16,8);
   if(g!=euclid64(m,q)||inv>=m||oracle_mul(q,inv,m)!=g%m){printf("BATCH SELFTEST FAIL case=%u\n",t);return 1;}
+ memcpy((char*)w+160,&q,8);proto_gcd_C(w,2);memcpy(&g,(char*)w+176,8);
+  if(g!=euclid64(m,q)){printf("GCD SELFTEST FAIL case=%u\n",t);return 1;}
  }puts("batch_selftest_passed=1000");return 0;
 }
 
@@ -203,11 +230,11 @@ static __attribute__((always_inline)) inline int full_apis(const char*dir,int ju
    if(a!=b){printf("CHECK DIFFERENTIAL FAIL bits=%u case=%u base=%u new=%u\n",bits,t,a,b);return 5;}
   }
   printf("check_differential_passed,bits=%u,cases=12\n",bits);fflush(stdout);if(justdiff){free(w);continue;}
-  for(unsigned rr=0;rr<3;rr++)for(unsigned seq=0;seq<9;seq++){
-   unsigned mode=(seq+rr)%9;double start=now();unsigned ok=0;
+  for(unsigned rr=0;rr<3;rr++)for(unsigned seq=0;seq<11;seq++){
+   unsigned mode=(seq+rr)%11;double start=now();unsigned ok=0;
    for(unsigned rep=0;rep<3;rep++){
-    if(mode==8)ok=openssl_import(nb,k,eb,el,db,dl);
-    else{unsigned recmode=mode==6?7:mode==7?8:(mode==1||mode>=3)?3:0;ok=rs[recmode](pp,k,qq,k,nb,k,eb,el,db,dl,w,wl);if(ok!=1)return 6;p=pp;q=qq;pl=trimlen(&p,k);ql=trimlen(&q,k);
+    if(mode==10)ok=openssl_import(nb,k,eb,el,db,dl);
+    else{unsigned recmode=mode==8?10:mode==9?11:mode==6?7:mode==7?8:(mode==1||mode>=3)?3:0;ok=rs[recmode](pp,k,qq,k,nb,k,eb,el,db,dl,w,wl);if(ok!=1)return 6;p=pp;q=qq;pl=trimlen(&p,k);ql=trimlen(&q,k);
      ok=mode==4?proto_crt2(dp,pl,dq,ql,qi,pl,nb,k,p,pl,q,ql,db,dl,w,wl):mode>=5?proto_crt3(dp,pl,dq,ql,qi,pl,nb,k,p,pl,q,ql,db,dl,w,wl):proto_crt0(dp,pl,dq,ql,qi,pl,nb,k,p,pl,q,ql,db,dl,w,wl);if(ok!=1)return 7;
      checkfn check=mode<2?proto_check0:proto_check1;ok=check(nb,k,eb,el,p,pl,q,ql,dp,pl,dq,ql,qi,pl,w,wl);
     }if(ok!=1)return 8;
