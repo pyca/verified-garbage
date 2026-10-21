@@ -1,5 +1,7 @@
 import VerifiedGarbage.Impl.Rsa.X86.RecoverRt
 import VerifiedGarbage.TCB.X86.Print
+import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
+import VerifiedGarbage.Impl.Rsa.X86.KeyCheckRt
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont.X86.Rt
 open VG.Impl.Mont.X86.Rt.Square
 namespace NextMont
@@ -81,6 +83,69 @@ def printFn (name : String) (p : Prog isa) (callee : String := "proto_mont0") : 
  | .text s => s | .call _ => "call "++callee | .sym .. => "ERROR")++"\n"
 end NextMont
 
+namespace KeyCheckMontProto
+open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86
+open VG.Impl.Rsa.X86.Keys VG.Impl.Rsa.X86.KeyRt
+open VG.Impl.Rsa.X86.KeyCheck
+
+def mulArgs (full : Bool) (o a b : Nat) : List Instr :=
+ let L := VG.Impl.Rsa.X86.KeyCheckRt.lay full
+ let F : Lay := { L with len := L.len+9, ws := L.ws+9 }
+ let off (i j : Nat) := arrPtr F .eax j .edx ++
+   [.alu .sub .eax (.reg .edi), .store (at_ .esp (4*i)) .eax]
+ [.mov .eax (.mem (argOp (L.ws+1+9))), .store (at_ .esp 4) .eax, .store (at_ .esp 0) .edi] ++
+ bytesB F .eax ++ [.shift .shr .eax 3, .store (at_ .esp 8) .eax] ++
+ off 3 aY ++ [.mov .eax (.imm 124), .store (at_ .esp 16) .eax] ++ off 5 aT ++
+ off 6 o ++ off 7 a ++ off 8 b
+
+def mmul (full : Bool) (o a b : Nat) : Prog isa :=
+ .frame (.alloc 36) (.seq (.block (mulArgs full o a b))
+   (.call Spec.Rsa.MontMul.mulApi.name VG.Impl.Mont.X86.Rt.body)) (.free 36)
+
+def qiCheck (full : Bool) : Prog isa :=
+ let L := VG.Impl.Rsa.X86.KeyCheckRt.lay full
+ VG.Impl.Rsa.X86.Keys.seqs [
+   sel L aX aZ aQI sF,
+   copy L aY aP, .block (orOne L aY),
+   .block (arrPtr L .eax aY .edx ++ [.mov .ebx (.mem (at_ .eax 0))] ++
+     VG.Impl.Mont.X86.Dynamic.inverse ++ [.store (sc 124) .eax]),
+   mmul full aA aQ aX,
+   copy L aVD aY, .block (clrLow L aVD),
+   mmul full aVR aVD aVD,
+   eqS L sF aA aVR aW, .block acc]
+
+def crtChecks (full : Bool) : Prog isa :=
+ let L := VG.Impl.Rsa.X86.KeyCheckRt.lay full
+ VG.Impl.Rsa.X86.Keys.seqs (VG.Impl.Rsa.X86.KeyCheckRt.eqA full aVQ aQ ++
+   VG.Impl.Rsa.X86.KeyCheckRt.eqA full aVR aZ ++
+   [copy L aM1 aP, .block (clrLow L aM1), copy L aM2 aQ, .block (clrLow L aM2)] ++
+   VG.Impl.Rsa.X86.KeyCheckRt.ltA full aDP aM1 ++
+   VG.Impl.Rsa.X86.KeyCheckRt.mulA full aE aDP aM1 cnt33 ++
+   VG.Impl.Rsa.X86.KeyCheckRt.eqA full aA aOne ++
+   VG.Impl.Rsa.X86.KeyCheckRt.ltA full aDQ aM2 ++
+   VG.Impl.Rsa.X86.KeyCheckRt.mulA full aE aDQ aM2 cnt33 ++
+   VG.Impl.Rsa.X86.KeyCheckRt.eqA full aA aOne ++
+   VG.Impl.Rsa.X86.KeyCheckRt.ltA full aQI aP ++ [qiCheck full])
+
+def crtBody (full : Bool) : Prog isa := VG.Impl.Rsa.X86.Keys.seqs [
+ VG.Impl.Rsa.X86.KeyCheckRt.start full, VG.Impl.Rsa.X86.KeyCheckRt.division full, crtChecks full]
+
+def sized (full : Bool) : Prog isa := VG.Impl.Rsa.X86.Keys.seqs [VG.Impl.Rsa.X86.KeyCheckRt.loads full,
+ (if full then VG.Impl.Rsa.X86.Keys.seqs [crtBody full,
+   VG.Impl.Rsa.X86.KeyCheckRt.dChecks1 full, VG.Impl.Rsa.X86.KeyCheckRt.division full,
+   VG.Impl.Rsa.X86.KeyCheckRt.dChecks2 full, VG.Impl.Rsa.X86.KeyCheckRt.division full,
+   VG.Impl.Rsa.X86.KeyCheckRt.dChecks3 full] else crtBody full),
+ .block [.mov .eax (.mem (sc sMask))]]
+
+def code (full : Bool) : Prog isa := VG.Impl.Rsa.X86.Keys.seqs [
+ .block (entry full),
+ .seq (.seq (.block (VG.Impl.Rsa.X86.CrtValues.inputArgs 0)) (.block modulusCheck))
+   (.ite .e
+     (.seq (.seq (.block (VG.Impl.Rsa.X86.CrtValues.inputArgs 2)) exponentCheck)
+       (.seq (.block [.alu .cmp .eax (.imm 0)]) (.ite .e failure (sized full)))) failure),
+ .block VG.Impl.Bignum.X86.PublicFn.restore]
+end KeyCheckMontProto
+
 def main : IO Unit := do
  let modes := [VG.Impl.Mont.X86.Rt.body, NextMont.tune 2 VG.Impl.Mont.X86.Rt.body,
    NextMont.tune 4 VG.Impl.Mont.X86.Rt.body, NextMont.tune 8 VG.Impl.Mont.X86.Rt.body,
@@ -90,4 +155,7 @@ def main : IO Unit := do
    NextMont.printFn ("proto_recover"++toString i) VG.Impl.Rsa.X86.RecoverRt.code ("proto_mont"++toString i)
  IO.FS.writeFile "/workspace/scratch/openssl/next-generated.S" (
    ".intel_syntax noprefix\n.text\n"++String.join codes++
+   NextMont.printFn "proto_check0" (VG.Impl.Rsa.X86.KeyCheckRt.code false) ++
+   NextMont.printFn "proto_check1" (KeyCheckMontProto.code false) ++
+   NextMont.printFn "proto_crt0" VG.Impl.Rsa.X86.CrtValuesRt.code ++
    ".section .note.GNU-stack,\"\",@progbits\n")

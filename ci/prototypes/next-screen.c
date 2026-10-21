@@ -82,8 +82,70 @@ static int recoveries(const char*dir){
   }free(w);
  }return 0;
 }
-int main(int argc,char**argv){if(differential())return 1;if(argc>1&&!strcmp(argv[1],"--diff"))return 0;
 #ifdef OPENSSL_REF
- if(kernels())return 2;
+extern unsigned proto_crt0(unsigned char*,unsigned,unsigned char*,unsigned,unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,uint64_t*,unsigned);
+typedef unsigned (*checkfn)(const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,uint64_t*,unsigned);
+extern unsigned proto_check0(const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,uint64_t*,unsigned);
+extern unsigned proto_check1(const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,uint64_t*,unsigned);
+static unsigned trimlen(const unsigned char**p,unsigned n){while(n&&**p==0){(*p)++;n--;}return n;}
+static int openssl_import(const unsigned char*nb,unsigned k,const unsigned char*eb,unsigned el,const unsigned char*db,unsigned dl){
+ BN_CTX*c=BN_CTX_new();BIGNUM*n=BN_bin2bn(nb,k,0),*e=BN_bin2bn(eb,el,0),*d=BN_bin2bn(db,dl,0),*r=BN_new(),*g=BN_new(),*y=BN_new(),*x=BN_new(),*n1=BN_dup(n),*p=BN_new(),*q=BN_new(),*p1=BN_new(),*q1=BN_new(),*dp=BN_new(),*dq=BN_new(),*qi=BN_new();
+ BN_mul(r,d,e,c);BN_sub_word(r,1);unsigned t=0;while(!BN_is_odd(r)){BN_rshift1(r,r);t++;}BN_sub_word(n1,1);int found=0;
+ for(unsigned cand=2;cand<102&&!found;cand++){
+  BN_set_word(g,cand);BN_mod_exp(y,g,r,n,c);if(BN_is_one(y)||BN_cmp(y,n1)==0)continue;
+  for(unsigned j=0;j<t;j++){
+   BN_mod_sqr(x,y,n,c);if(BN_is_one(x)){found=1;break;}if(BN_cmp(x,n1)==0||j+1==t)break;BN_copy(y,x);
+  }
+ }
+ if(found){BN_sub_word(y,1);BN_gcd(p,y,n,c);BN_div(q,0,n,p,c);BN_copy(p1,p);BN_sub_word(p1,1);BN_copy(q1,q);BN_sub_word(q1,1);BN_nnmod(dp,d,p1,c);BN_nnmod(dq,d,q1,c);if(!BN_mod_inverse(qi,q,p,c))found=0;}
+ BN_free(n);BN_free(e);BN_free(d);BN_free(r);BN_free(g);BN_free(y);BN_free(x);BN_free(n1);BN_free(p);BN_free(q);BN_free(p1);BN_free(q1);BN_free(dp);BN_free(dq);BN_free(qi);BN_CTX_free(c);return found;
+}
+static __attribute__((always_inline)) inline int full_apis(const char*dir,int justdiff){
+ for(unsigned bits=2048;bits<=4096;bits+=1024){
+  char path[512];snprintf(path,sizeof(path),"%s/key%u.txt",dir,bits);FILE*f=fopen(path,"r");if(!f)return 2;
+  unsigned char nb[1024],eb[1024],db[1024],pp[1024],qq[1024],dp[1024],dq[1024],qi[1024];unsigned k=readhex(f,nb),el=readhex(f,eb),dl=readhex(f,db);fclose(f);
+  unsigned wl=16*k+32;uint64_t*w=calloc(wl,8);if(rs[0](pp,k,qq,k,nb,k,eb,el,db,dl,w,wl)!=1)return 3;
+  const unsigned char*p=pp,*q=qq;unsigned pl=trimlen(&p,k),ql=trimlen(&q,k);
+  if(proto_crt0(dp,pl,dq,ql,qi,pl,nb,k,p,pl,q,ql,db,dl,w,wl)!=1)return 4;
+  for(unsigned t=0;t<12;t++){
+   unsigned char pm[1024],qm[1024],im[1024],dm[1024],em[1024];memcpy(pm,p,pl);memcpy(qm,q,ql);memcpy(im,qi,pl);memcpy(dm,dp,pl);memcpy(em,dq,ql);
+   if(t==1)im[pl-1]^=1;if(t==2)memset(im,255,pl);if(t==3)pm[pl-1]&=254;if(t==4){memset(pm,0,pl);pm[pl-1]=1;memset(im,0,pl);}if(t==5)memset(pm,0,pl);if(t==6)dm[pl-1]^=1;if(t==7)qm[ql-1]^=2;if(t>7)im[(t-8)%pl]^=(unsigned char)(1u<<(t-8));
+   unsigned a=proto_check0(nb,k,eb,el,pm,pl,qm,ql,dm,pl,em,ql,im,pl,w,wl),b=proto_check1(nb,k,eb,el,pm,pl,qm,ql,dm,pl,em,ql,im,pl,w,wl);
+   if(a!=b){printf("CHECK DIFFERENTIAL FAIL bits=%u case=%u base=%u new=%u\n",bits,t,a,b);return 5;}
+  }
+  printf("check_differential_passed,bits=%u,cases=12\n",bits);fflush(stdout);if(justdiff){free(w);continue;}
+  for(unsigned rr=0;rr<3;rr++)for(unsigned seq=0;seq<5;seq++){
+   unsigned mode=(seq+rr)%5;double start=now();unsigned ok=0;
+   for(unsigned rep=0;rep<3;rep++){
+    if(mode==4)ok=openssl_import(nb,k,eb,el,db,dl);
+    else{unsigned recmode=(mode==1||mode==3)?3:0;ok=rs[recmode](pp,k,qq,k,nb,k,eb,el,db,dl,w,wl);if(ok!=1)return 6;p=pp;q=qq;pl=trimlen(&p,k);ql=trimlen(&q,k);
+     ok=proto_crt0(dp,pl,dq,ql,qi,pl,nb,k,p,pl,q,ql,db,dl,w,wl);if(ok!=1)return 7;
+     checkfn check=mode<2?proto_check0:proto_check1;ok=check(nb,k,eb,el,p,pl,q,ql,dp,pl,dq,ql,qi,pl,w,wl);
+    }if(ok!=1)return 8;
+   }
+   printf("full_import,bits=%u,round=%u,mode=%u,ms=%.4f,ok=%u\n",bits,rr,mode,(now()-start)*1000/3,ok);fflush(stdout);
+  }
+  for(unsigned rr=0;rr<3;rr++)for(unsigned mode=0;mode<3;mode++){
+   double start=now();unsigned ok=0;for(unsigned rep=0;rep<5;rep++){
+    if(mode==0)ok=proto_crt0(dp,pl,dq,ql,qi,pl,nb,k,p,pl,q,ql,db,dl,w,wl);
+    else{checkfn check=mode==1?proto_check0:proto_check1;ok=check(nb,k,eb,el,p,pl,q,ql,dp,pl,dq,ql,qi,pl,w,wl);}
+    if(ok!=1)return 9;
+   }printf("validation,bits=%u,round=%u,mode=%u,ms=%.4f\n",bits,rr,mode,(now()-start)*1000/5);fflush(stdout);
+  }
+  free(w);
+ }return 0;
+}
 #endif
- return recoveries(argc>1?argv[1]:"keys");}
+int main(int argc,char**argv){if(differential())return 1;
+#ifdef LOCAL_DIFF
+ return full_apis(argc>1?argv[1]:"keys",1);
+#else
+ if(argc>1&&!strcmp(argv[1],"--diff"))return 0;
+#ifdef OPENSSL_REF
+ if(argc>1&&!strcmp(argv[1],"--check-diff"))return full_apis(argc>2?argv[2]:"keys",1);
+ if(kernels())return 2;
+ if(full_apis(argc>1?argv[1]:"keys",0))return 3;
+#endif
+ return recoveries(argc>1?argv[1]:"keys");
+#endif
+}
