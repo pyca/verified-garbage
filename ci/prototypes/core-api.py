@@ -1,4 +1,5 @@
-import importlib.util,json,pathlib,statistics,types
+import importlib.util,json,pathlib,statistics,types,sys
+sys.path.insert(0,str(pathlib.Path("head/ci").resolve()))
 spec=importlib.util.spec_from_file_location('bench_compare', 'head/ci/bench_compare.py')
 bc=importlib.util.module_from_spec(spec);spec.loader.exec_module(bc)
 args=types.SimpleNamespace(warm_up_time=.3,measurement_time=1.)

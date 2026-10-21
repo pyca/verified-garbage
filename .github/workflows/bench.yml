@@ -21,6 +21,7 @@ jobs:
           path: base
           persist-credentials: false
       - name: Measure real Rust API, paired with merged 2987 and OpenSSL
+        shell: bash
         run: |
           rustc -vV
           openssl version -a
