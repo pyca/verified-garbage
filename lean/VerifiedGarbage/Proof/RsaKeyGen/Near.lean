@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.PowLit
+
 import Mathlib.Tactic.ByContra
 
 /-! # A low-part nonzero bit reduces comparison with a power of two -/

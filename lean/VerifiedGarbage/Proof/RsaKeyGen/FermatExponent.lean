@@ -1,7 +1,6 @@
 module
 
 public import Mathlib.Data.Nat.Prime.Basic
-import Mathlib.Tactic.NormNum.Prime
 
 /-! # Coprimality for RSA's usual public exponent
 
@@ -13,7 +12,8 @@ to reuse the native trial kernel; other exponents need the general check.
 @[expose] public section
 namespace VG.Proof.RsaKeyGen
 
-theorem prime65537 : Nat.Prime 65537 := by norm_num
+theorem prime65537 : Nat.Prime 65537 := by
+  exact Nat.prime_def_minFac.mpr ⟨by decide, by decide +kernel⟩
 
 theorem coprime65537 (c : Nat) : Nat.gcd c 65537 = 1 ↔ c % 65537 ≠ 0 := by
   change Nat.Coprime c 65537 ↔ _

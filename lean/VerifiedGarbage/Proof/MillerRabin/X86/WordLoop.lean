@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.MillerRabin.X86.ExponentState
 public import VerifiedGarbage.Proof.MillerRabin.X86.RoundFrame
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Proof.MillerRabin.X86.WordStep
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 
 /-! # The complete exponent loop terminates after the prepared native width -/

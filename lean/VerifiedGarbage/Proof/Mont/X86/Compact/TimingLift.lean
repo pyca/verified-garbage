@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Sub
+
 public import VerifiedGarbage.Proof.Mont.X86.Compact.TimingContext
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 

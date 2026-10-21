@@ -1,11 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Compact.EntryArgs
-public import VerifiedGarbage.Proof.Mont.X86.Compact.Core
+import VerifiedGarbage.Proof.Mont.X86.Compact.EntryMemory
+
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Sub
+
+public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
+
+import VerifiedGarbage.Proof.Mont.X86.Compact.EntryArgs
+import VerifiedGarbage.Proof.Mont.X86.Compact.Core
 import VerifiedGarbage.Proof.Mont.X86.Compact.EntryValues
 import VerifiedGarbage.Proof.Mont.X86.Compact.Arithmetic
 import VerifiedGarbage.Proof.Mont.X86.Compact.Prepared
 import VerifiedGarbage.Proof.Mont.X86.Compact.Layout
+public import VerifiedGarbage.Impl.Mont.X86.Compact
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Mont.X86.Compact.Entry
 
 /-! # The public prepared contract supplies every compact arithmetic precondition -/
 

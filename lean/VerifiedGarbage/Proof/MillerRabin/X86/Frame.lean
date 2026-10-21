@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Mont.X86.Compact.Restore
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MillerRabin.X86.EntryCore
 import VerifiedGarbage.Proof.MillerRabin.X86.EntryArgs
+import VerifiedGarbage.Proof.Framework.X86.CallWith
 
 /-! # The prepared round restores the i686 ABI after its nested calls -/
 

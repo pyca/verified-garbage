@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.PowLit
+
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
 

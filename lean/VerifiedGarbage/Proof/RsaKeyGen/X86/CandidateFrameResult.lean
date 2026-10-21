@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Mont.X86.ArgFar
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateBody
+import VerifiedGarbage.Proof.Framework.X86.CallWith
 
 /-! # The complete candidate restores the native calling convention after every result -/
 

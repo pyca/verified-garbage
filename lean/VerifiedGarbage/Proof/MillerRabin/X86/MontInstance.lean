@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.X86.Compact
-public import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Mont.X86.Compact.Verified
+public import VerifiedGarbage.Proof.Framework.X86.Call
 
 /-! # The emitted prepared multiplier fits the round's nested call budget -/
 

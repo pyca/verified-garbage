@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Impl.MillerRabin.X86.Round
+import VerifiedGarbage.Impl.MillerRabin.X86.Round
 public import VerifiedGarbage.Proof.MillerRabin.X86.Context
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.MillerRabin.X86.Counter
 import VerifiedGarbage.Proof.MillerRabin.X86.ShiftWindow
+public import VerifiedGarbage.Impl.MillerRabin.X86.Layout
 
 /-! # Advance the exponent word and count down its eight public windows -/
 

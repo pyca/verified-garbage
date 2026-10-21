@@ -32,13 +32,13 @@ theorem decTo_ok {s : State} {B : Addr} {Z n out a : Nat}
     (by unfold aT1; omega) (by decide) hFlag) fun u ⟨hu, Ou, flag, Ku⟩ => ?_)
   have A : num u.mem B n a = num s.mem B n a :=
     Ou.num (by simp only [List.mem_singleton]; intro k e; subst k; unfold aT1; omega)
-      (by simp only [List.mem_cons, List.not_mem_nil, or_false]; intro d hd; rcases hd with rfl | rfl <;> assumption)
+      (by simp only [List.mem_cons, List.not_mem_nil, or_false]; intro d hd; rcases hd with rfl | rfl <;> with_reducible assumption)
       fa
   have Zero : num u.mem B n aZero = 0 := by
-    rw [Ou.num (by decide) (by simp only [List.mem_cons, List.not_mem_nil, or_false]; intro d hd; rcases hd with rfl | rfl <;> assumption)
+    rw [Ou.num (by decide) (by simp only [List.mem_cons, List.not_mem_nil, or_false]; intro d hd; rcases hd with rfl | rfl <;> with_reducible assumption)
       (h.fit64 (by decide)), zero]
   have One : num u.mem B n aOne = 1 := by
-    rw [Ou.num (by decide) (by simp only [List.mem_cons, List.not_mem_nil, or_false]; intro d hd; rcases hd with rfl | rfl <;> assumption)
+    rw [Ou.num (by decide) (by simp only [List.mem_cons, List.not_mem_nil, or_false]; intro d hd; rcases hd with rfl | rfl <;> with_reducible assumption)
       (h.fit64 (by decide)), one]
   rw [zero] at flag
   have bit : slot u.mem B kFlag ≤ 1 := by rw [flag]; split <;> omega

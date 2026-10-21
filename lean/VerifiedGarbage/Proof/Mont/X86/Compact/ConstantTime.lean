@@ -2,16 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.Mont.X86.Compact
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Entry
-import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Mont.X86.Compact.TimingCore
 import VerifiedGarbage.Proof.Mont.X86.Compact.TimingGeometry
 import VerifiedGarbage.Proof.Mont.X86.Compact.TimingEntry
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import Init.Prelude
 public import VerifiedGarbage.TCB.Artifact
-import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
-import VerifiedGarbage.Proof.Mont.X86.Compact.TimingLift
-import VerifiedGarbage.Spec.Rsa.Mont
 
 /-! # Prepared multiplication is constant time under the public RSA contract -/
 

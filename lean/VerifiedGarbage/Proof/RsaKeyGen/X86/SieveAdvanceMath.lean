@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.PowLit
+
 import VerifiedGarbage.TCB.X86.Isa
 import VerifiedGarbage.Proof.Framework.Omega
 

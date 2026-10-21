@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Mont.X86.Compact.TimingSetup
 import VerifiedGarbage.Proof.Mont.X86.Compact.TimingCarry
 import VerifiedGarbage.Proof.Mont.X86.Compact.RowPointer
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-import VerifiedGarbage.Proof.Mont.X86.Rt.Row
 
 /-! # Either complete paired-word multiplication row is constant time -/
 

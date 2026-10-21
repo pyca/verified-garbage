@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Compact.TimingValue
+import VerifiedGarbage.Proof.Mont.X86.Compact.TimingValue
 import VerifiedGarbage.Proof.Mont.X86.Compact.CarryFrame
 import VerifiedGarbage.Proof.Mont.X86.Compact.TimingKernels
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Mont.X86.Compact.TimingLift
 
 /-! # Carry propagation and restoring the product pointer are constant time -/
 

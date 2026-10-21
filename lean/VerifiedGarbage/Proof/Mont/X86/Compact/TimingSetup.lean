@@ -57,11 +57,11 @@ theorem zeroCarry_relCT {g : Geometry} (v : g.Valid) :
 theorem setup_relCT {g : Geometry} (v : g.Valid) (modulus : Bool) (w : Nat) :
     RelCT isa (fun s t => Pair g [.ebp, .edi] s t ∧ PtrAt s g.W .edi g.S ∧ PtrAt t g.W .edi g.S ∧
         PtrAt s g.W .ebp w ∧ PtrAt t g.W .ebp w)
-      (.block ([.mov .ebx (.imm 0)] ++ rowSource modulus ++ Compact.lenTimes .esi .eax 0))
+      (.block (([.mov .ebx (.imm 0)] : List Instr) ++ rowSource modulus ++ Compact.lenTimes .esi .eax 0))
       (fun s t => Pair g [.edi, .ebp, .ecx, .esi] s t ∧
         RowPointers g (sourceNumber g modulus) w s ∧ RowPointers g (sourceNumber g modulus) w t) := by
   have raw : RelCT isa (Pair g [.ebp, .edi])
-      (.block ([.mov .ebx (.imm 0)] ++ rowSource modulus ++ Compact.lenTimes .esi .eax 0))
+      (.block (([.mov .ebx (.imm 0)] : List Instr) ++ rowSource modulus ++ Compact.lenTimes .esi .eax 0))
       (Pair g [.esi, .ecx, .ebp, .edi]) := by
     rw [List.append_assoc]
     exact RelCT.block_append (RelCT.seq (zeroCarry_relCT v)

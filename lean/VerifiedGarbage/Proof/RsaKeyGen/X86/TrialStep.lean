@@ -1,7 +1,16 @@
 module
 
+
+public import VerifiedGarbage.Proof.Mont.X86.Words
+
+import VerifiedGarbage.Proof.RsaKeyGen.Trial32
+
+import VerifiedGarbage.Proof.Mont.X86.Instr
+
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Trial
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.TrialWord
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # Execute the carried 32-bit trial-division reduction -/
 

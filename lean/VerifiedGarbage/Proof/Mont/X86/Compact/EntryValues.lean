@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Compact.EntryMemory
+public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
+
+import VerifiedGarbage.Proof.Mont.X86.Compact.EntryMemory
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Metadata
 import VerifiedGarbage.Proof.Mont.X86.Compact.Prepared
+public import VerifiedGarbage.Proof.Mont.X86.Compact.Entry
 
 /-! # Prepared metadata and numbers survive the callee's register save -/
 

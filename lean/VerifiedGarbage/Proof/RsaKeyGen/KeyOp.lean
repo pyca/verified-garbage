@@ -5,7 +5,6 @@ public import VerifiedGarbage.Spec.RsaKeyGen
 import VerifiedGarbage.Proof.RsaKeyGen.KeyCheck
 import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
 import VerifiedGarbage.Proof.Rsa.KeyMath
-public import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Order.RelClasses
 import Mathlib.Data.Nat.Basic
 import Mathlib.Tactic.Finiteness.Attr

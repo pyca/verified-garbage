@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.Context
-public import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Framework.X86.Call
 
 /-! # A nested prepared round retains the caller's length argument -/
 

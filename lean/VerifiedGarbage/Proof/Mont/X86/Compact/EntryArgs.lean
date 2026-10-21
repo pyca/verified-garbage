@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Compact.EntryMemory
+public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
+
+import VerifiedGarbage.Proof.Mont.X86.Compact.EntryMemory
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Args
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Mont.X86.ArgWs
+public import VerifiedGarbage.Proof.Mont.X86.Compact.Entry
 
 /-! # The register-saving frame retains cdecl arguments and workspace access -/
 

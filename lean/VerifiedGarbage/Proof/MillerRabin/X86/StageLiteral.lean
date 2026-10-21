@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.Stage
-public import VerifiedGarbage.Impl.MillerRabin.X86.Round
+import VerifiedGarbage.Impl.MillerRabin.X86.Round
 public import VerifiedGarbage.Proof.MillerRabin.X86.RoundFrame
 import VerifiedGarbage.Proof.MillerRabin.X86.DataScalar
 import VerifiedGarbage.Proof.MillerRabin.X86.StageSlots
 import VerifiedGarbage.Proof.MillerRabin.X86.RoundScalarFrame
+public import VerifiedGarbage.Impl.MillerRabin.X86.Layout
 
 /-! # Initialize a public counter without disturbing prepared round data -/
 

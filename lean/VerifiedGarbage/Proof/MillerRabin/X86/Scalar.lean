@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.Context
-public import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
-import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
+public import VerifiedGarbage.Impl.MillerRabin.X86.Layout
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Reads and stores of the round's permitted scratch header words -/
 

@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.X86.Modulus
-public import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.MillerRabin.X86.Modulus
+import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
 
 /-! # Montgomery's arguments and the disjoint stack of an i686 round -/
 

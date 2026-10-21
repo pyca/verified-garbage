@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Mont.X86.Loop
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.InverseLift
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Complete the prepared workspace's 64-bit negative inverse -/
 

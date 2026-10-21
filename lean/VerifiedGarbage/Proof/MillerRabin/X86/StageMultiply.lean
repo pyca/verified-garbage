@@ -2,8 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.Stage
 public import VerifiedGarbage.Impl.MillerRabin.X86.Round
-public import VerifiedGarbage.Proof.MillerRabin.X86.Multiply
+import VerifiedGarbage.Proof.MillerRabin.X86.Multiply
 import VerifiedGarbage.Proof.MillerRabin.X86.DataMultiply
+public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.MillerRabin.Word32
+public import VerifiedGarbage.Proof.MillerRabin.X86.MontFrame
 
 /-! # A prepared Montgomery product composes with the next round stage -/
 

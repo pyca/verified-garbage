@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.RoundEntry
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
 public import VerifiedGarbage.Proof.Framework.X86.Taint

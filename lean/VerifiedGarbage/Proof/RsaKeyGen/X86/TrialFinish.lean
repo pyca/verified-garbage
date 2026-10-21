@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.TrialFinishMath
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Execute the branch-free small-prime divisibility test -/
 

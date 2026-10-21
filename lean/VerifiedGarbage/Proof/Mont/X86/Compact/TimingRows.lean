@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Compact.TimingRow
+import VerifiedGarbage.Proof.Mont.X86.Compact.TimingRow
 import VerifiedGarbage.Proof.Mont.X86.Compact.TimingLoad
 import VerifiedGarbage.Proof.Mont.X86.Compact.TimingDigit
 import VerifiedGarbage.Proof.Mont.X86.Compact.TimingControl
+public import VerifiedGarbage.Proof.Mont.X86.Compact.TimingLift
 
 /-! # Prepared CIOS rows have the same trace for all secret operands -/
 

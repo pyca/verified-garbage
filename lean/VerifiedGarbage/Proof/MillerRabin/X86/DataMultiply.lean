@@ -3,7 +3,10 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.X86.Data
 public import VerifiedGarbage.Proof.MillerRabin.X86.Caller
 public import VerifiedGarbage.Impl.MillerRabin.X86.Round
-public import VerifiedGarbage.Proof.MillerRabin.X86.Multiply
+import VerifiedGarbage.Proof.MillerRabin.X86.Multiply
+public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.MillerRabin.Word32
+public import VerifiedGarbage.Proof.MillerRabin.X86.MontFrame
 
 /-! # A prepared product updates only the accumulator's known value -/
 

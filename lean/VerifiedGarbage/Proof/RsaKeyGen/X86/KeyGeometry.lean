@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEnvironment
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
-import Mathlib.Tactic.IntervalCases
 
 /-! # Every supported native width fits its shared RSA scratch allocation -/
 
@@ -25,7 +24,8 @@ theorem Environment.Valid.bankFit {E : Environment} (v : E.Valid) : arr E.n 32 �
   omega
 
 theorem Environment.outputPointer (E : Environment) {i : Nat} (hi : i < 7) : E.outputs.pointer i = E.out i := by
-  interval_cases i <;> rfl
+  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 := by omega
+  rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 theorem Environment.Valid.outputLength {E : Environment} (v : E.Valid) {i : Nat} (hi : i < 7) :
     E.outputs.length i = E.outputLength i := by
@@ -34,7 +34,8 @@ theorem Environment.Valid.outputLength {E : Environment} (v : E.Valid) {i : Nat}
     unfold Environment.outputLength
     split <;> omega
   have arg : E.argument (2 * i + 1) = BitVec.ofNat 32 (E.outputLength i) := by
-    interval_cases i <;> rfl
+    have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 := by omega
+    rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
   change (E.argument (2 * i + 1)).toNat = _
   rw [arg, BitVec.toNat_ofNat, Nat.mod_eq_of_lt small]
 

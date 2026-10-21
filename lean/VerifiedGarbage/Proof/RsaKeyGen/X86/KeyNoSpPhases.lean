@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyNoSpBase
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
 public import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
 
 /-! # Native key arithmetic preserves ESP through every phase and exponent branch -/
 

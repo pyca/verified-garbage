@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.MillerRabin.X86.Data
 public import VerifiedGarbage.Proof.MillerRabin.X86.TableMath
 import VerifiedGarbage.Proof.Mont.X86.Compact.EntryValues
 import VerifiedGarbage.Proof.Mont.X86.Compact.Arithmetic
+import VerifiedGarbage.Proof.Mont.X86.Compact.Prepared
 
 /-! # The prepared contract supplies the round's native-word initial values -/
 

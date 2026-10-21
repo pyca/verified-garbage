@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Mont.X86.Compact.TimingSetup
 import VerifiedGarbage.Proof.Mont.X86.Compact.Setup
 import VerifiedGarbage.Proof.Mont.X86.Compact.PairFrame
 import VerifiedGarbage.Proof.Mont.X86.Compact.CarryPointer
-import VerifiedGarbage.Proof.Mont.X86.OutsZ
 
 /-! # Each complete product row preserves its public window position -/
 

@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Mont.Words32
+
+public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
+
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Entry
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Mont.X86.ArgFar

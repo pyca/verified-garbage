@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Compact.TimingRows
+import VerifiedGarbage.Proof.Mont.X86.Compact.TimingRows
 import VerifiedGarbage.Proof.Mont.X86.Compact.TimingZero
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+public import VerifiedGarbage.Proof.Mont.X86.Compact.TimingLift
+import VerifiedGarbage.Proof.Mont.X86.Compact.TimingValue
 
 /-! # The prepared product has a trace fixed by its public width and pointers -/
 

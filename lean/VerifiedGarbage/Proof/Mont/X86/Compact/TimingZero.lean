@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Compact.TimingValue
+import VerifiedGarbage.Proof.Mont.X86.Compact.TimingValue
 import VerifiedGarbage.Proof.Mont.X86.Compact.TimingKernels
 import VerifiedGarbage.Proof.Mont.X86.Compact.Zero
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Zero
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Mont.X86.Compact.TimingLift
 
 /-! # Zeroing a compact product leaks only public pointers and width -/
 

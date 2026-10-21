@@ -1,8 +1,15 @@
 module
 
+
+public import VerifiedGarbage.Proof.Mont.X86.Words
+
+import VerifiedGarbage.Proof.Mont.X86.Instr
+
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.InverseLift
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.TrialWord
 import VerifiedGarbage.Proof.RsaKeyGen.InverseLift
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # Execute the three-product inverse lift without memory accesses -/
 

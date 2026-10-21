@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.MillerRabin.Word32
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MillerRabin.X86.CallPre
 import VerifiedGarbage.Proof.MillerRabin.X86.CallResult
-import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 
 /-! # Actual Montgomery calls preserve the prepared round context -/

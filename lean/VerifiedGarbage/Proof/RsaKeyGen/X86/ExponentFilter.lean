@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentFastCandidate
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentGeneral
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentClass
 import VerifiedGarbage.Proof.RsaKeyGen.EvenExponent
-import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # The complete native exponent filter returns the exact coprimality bit -/
 

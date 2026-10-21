@@ -14,10 +14,6 @@ import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Proof.Mont.Words32
 public import Init.Data.BitVec.Basic
-public import VerifiedGarbage.Proof.Mont.Words32
-public import VerifiedGarbage.Proof.Mont.X86.Words
-public import Init.Data.BitVec.Basic
-public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Complete native exponent and alignment-marker preparation -/

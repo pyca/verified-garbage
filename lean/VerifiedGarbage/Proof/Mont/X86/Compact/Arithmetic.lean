@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Impl.Mont.X86.Compact
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Mont.X86.Compact.Prepared
+public import VerifiedGarbage.Spec.Rsa.Mont
 
 /-! # The prepared 64-bit contract implies native-word arithmetic conditions -/
 

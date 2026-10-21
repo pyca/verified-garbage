@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Compact.EntryArgs
+public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
+
+import VerifiedGarbage.Proof.Mont.X86.Compact.EntryArgs
 public import VerifiedGarbage.Proof.Mont.X86.Compact.TimingBase
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Mont.X86.Compact.Entry
 
 /-! # Only cdecl arguments above the saved-register frame are public -/
 

@@ -1,9 +1,10 @@
 module
 
+import VerifiedGarbage.Proof.Mont.X86.Compact.TimingValue
+
 public import VerifiedGarbage.Proof.Mont.X86.Compact.TimingSub
 import VerifiedGarbage.Proof.Mont.X86.Compact.TimingCarry
 import VerifiedGarbage.Proof.Mont.X86.Compact.TimingKernels
-import VerifiedGarbage.Proof.Mont.X86.Rt.Csub
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 

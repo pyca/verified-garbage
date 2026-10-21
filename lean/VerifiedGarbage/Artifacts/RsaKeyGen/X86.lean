@@ -4,8 +4,8 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Registration
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyVerified
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeySafety
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyVerified
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeySafety
 
 /-! # Native RSA key generation on baseline i686 -/
 
@@ -22,7 +22,7 @@ def artifacts : List Artifact := [
       The CRT inverse is prime-width. Final checks mask all seven outputs; control flow depends \
       only on public widths, the public exponent and the released retry status."]
     code := Impl.RsaKeyGen.X86.Key.code
-    verified := by exact Proof.RsaKeyGen.X86.Key.verified
-    spSafe := by exact Proof.RsaKeyGen.X86.Key.code_sp }]
+    verified := Proof.RsaKeyGen.X86.Key.verified
+    spSafe := Proof.RsaKeyGen.X86.Key.code_sp }]
 
 end VG.Artifacts.RsaKeyGen.X86

@@ -19,4 +19,8 @@ theorem code_sp {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round) (mont
   rw [equal]
   exact CandidateNoSp.checked (CandidateNoSp.code Hm Hr montName roundName)
 
+theorem code_all {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round) (montName roundName : String) :
+    (VG.Impl.RsaKeyGen.X86.Candidate.code montName mont roundName round).all (fun i => !isa.writesSp i) = true :=
+  Code.all_of_allInstrs (code_sp Hm Hr montName roundName)
+
 end VG.Proof.RsaKeyGen.X86.Candidate

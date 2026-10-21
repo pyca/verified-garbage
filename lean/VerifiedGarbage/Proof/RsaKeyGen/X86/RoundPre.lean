@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.RoundEntry
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareData
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedSpec

@@ -16,7 +16,7 @@ theorem setup_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
     (edi : PtrAt s g.W .edi g.S) (ebp : PtrAt s g.W .ebp w)
     (pointer : ∀ t, t.mem = s.mem → Ws t g.W g.L → Args t g.W g.L g.A →
       WP isa (.block ptr) t fun u => PtrAt u g.W .ecx bx ∧ u.mem = t.mem ∧ Keeps [.ecx, .edx] t u) :
-    WP isa (.block ([.mov .ebx (.imm 0)] ++ ptr ++ Compact.lenTimes .esi .eax 0)) s fun t =>
+    WP isa (.block (([.mov .ebx (.imm 0)] : List Instr) ++ ptr ++ Compact.lenTimes .esi .eax 0)) s fun t =>
       RowPointers g bx w t ∧ t.mem = s.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .esi] s t := by
   simp only [List.cons_append, List.nil_append]
   refine wp_movS rfl fun a A _ => ?_

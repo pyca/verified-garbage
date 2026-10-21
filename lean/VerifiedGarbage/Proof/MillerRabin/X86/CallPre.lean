@@ -1,10 +1,13 @@
 module
 
+public import VerifiedGarbage.Proof.MillerRabin.X86.Modulus
+
 public import VerifiedGarbage.Proof.MillerRabin.X86.CallEntry
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Mont.X86.Compact.Arithmetic
+import VerifiedGarbage.Proof.Framework.X86.CallWith
 
 /-! # The prepared round meets Montgomery's reviewed cdecl contract -/
 

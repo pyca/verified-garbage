@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Spec.Rsa.Mont
+
 public import VerifiedGarbage.Impl.Mont.X86.Compact
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega

@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.MillerRabin.X86.Context
 public import VerifiedGarbage.Spec.Rsa.Mont
 import VerifiedGarbage.Proof.MillerRabin.X86.CallPre
 import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.MillerRabin.X86.Modulus
 
 /-! # Prepared Montgomery calls have public arguments and public limb count -/
 

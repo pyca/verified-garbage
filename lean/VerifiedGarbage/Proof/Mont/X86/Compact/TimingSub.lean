@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Compact.TimingValue
+import VerifiedGarbage.Proof.Mont.X86.Compact.TimingValue
 import VerifiedGarbage.Proof.Mont.X86.Compact.SubAll
 import VerifiedGarbage.Proof.Mont.X86.Compact.TimingKernels
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Mont.X86.Compact.TimingLift
 
 /-! # Direct subtraction leaks neither the Montgomery product nor its borrow -/
 

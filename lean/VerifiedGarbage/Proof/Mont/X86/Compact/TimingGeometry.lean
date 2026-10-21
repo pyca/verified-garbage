@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
+
+import VerifiedGarbage.Proof.Mont.X86.Compact.EntryMemory
+
 public import VerifiedGarbage.Proof.Mont.X86.Compact.TimingContext
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Entry
 import VerifiedGarbage.Proof.Mont.X86.Compact.EntryArgs

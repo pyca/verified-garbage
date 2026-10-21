@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
-public import VerifiedGarbage.Proof.Mont.X86.Compact.Prepared
+import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
+import VerifiedGarbage.Proof.Mont.X86.Compact.Prepared
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
+public import Init.Data.BitVec.Basic
+public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # The reviewed Montgomery contract on entry to an i686 call -/
 

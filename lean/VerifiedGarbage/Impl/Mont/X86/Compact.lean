@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.X86.MulRt
-public import VerifiedGarbage.Spec.Rsa.Mont
+import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.TCB.Code
 
 /-! # Compact prepared Montgomery multiplication for x86 key generation
 

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Compact.Metadata
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Bounds
 import VerifiedGarbage.Proof.Rc2.PairMem
 import VerifiedGarbage.Proof.Mont.X86.Compact.Layout
-import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Spec.Rsa.Mont
 
 /-! # The reviewed prepared workspace supplies native-word metadata -/
 

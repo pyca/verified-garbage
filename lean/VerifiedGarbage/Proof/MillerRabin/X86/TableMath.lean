@@ -58,7 +58,7 @@ theorem tableArrays_next (k j : Nat) : j ∈ tableArrays (k + 1) ↔
   rw [show k + 1 + 2 = (k + 2) + 1 by omega, List.range_succ, List.map_append]
   simp only [List.map_cons, List.map_nil, List.mem_cons, List.mem_append, List.not_mem_nil, or_false]
   rw [show aTable + (k + 2) = aTable + k + 2 by omega]
-  tauto
+  simp only [or_left_comm, or_comm]
 
 theorem tableValues_initial (A : Nat → Nat) (c w j : Nat) (known : j ∈ tableArrays 0) :
     setAt (setAt (setAt A aTable (A aOne)) (aTable + 1) (A aX)) aY (A aX) j =

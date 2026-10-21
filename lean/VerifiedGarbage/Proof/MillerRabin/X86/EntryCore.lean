@@ -9,8 +9,6 @@ import VerifiedGarbage.Proof.Mont.X86.Compact.Verified
 import VerifiedGarbage.Proof.Mont.X86.Compact.Arithmetic
 public import VerifiedGarbage.Impl.MillerRabin.X86.Round
 public import VerifiedGarbage.Proof.MillerRabin.X86.RoundFrame
-public import VerifiedGarbage.Impl.MillerRabin.X86.Round
-public import VerifiedGarbage.Proof.MillerRabin.X86.RoundFrame
 
 /-! # The complete round body satisfies the reviewed mathematical result -/
 

@@ -1,6 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Four native-word doublings advance one fixed-width secret window -/
 

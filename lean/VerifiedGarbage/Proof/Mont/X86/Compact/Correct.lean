@@ -6,9 +6,7 @@ import VerifiedGarbage.Proof.Mont.X86.Compact.EntryCore
 import VerifiedGarbage.Proof.Mont.X86.Compact.MemoryContract
 import VerifiedGarbage.Proof.Mont.X86.Compact.Arithmetic
 import VerifiedGarbage.Proof.Mont.X86.Compact.Prepared
-import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
-import VerifiedGarbage.Proof.Mont.X86.Rt.Sub
-import VerifiedGarbage.Spec.Rsa.Mont
+import VerifiedGarbage.Proof.Mont.X86.Compact.EntryMemory
 
 /-! # Callable prepared Montgomery multiplication meets the reviewed contract -/
 

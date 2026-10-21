@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.Stage
-public import VerifiedGarbage.Impl.MillerRabin.X86.Round
+import VerifiedGarbage.Impl.MillerRabin.X86.Round
 public import VerifiedGarbage.Proof.MillerRabin.X86.TableMath
 public import VerifiedGarbage.Proof.MillerRabin.X86.RoundFrame
 import VerifiedGarbage.Proof.MillerRabin.X86.StageCopy
 import VerifiedGarbage.Proof.MillerRabin.X86.RoundArrayFrame
+public import VerifiedGarbage.Impl.MillerRabin.X86.Ops
 
 /-! # Initialize table powers zero and one and the product accumulator -/
 

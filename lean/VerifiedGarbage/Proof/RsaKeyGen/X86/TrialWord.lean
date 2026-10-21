@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Trial32
-public import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.RsaKeyGen.Trial32
+import VerifiedGarbage.Proof.Mont.X86.Instr
+public import Init.Data.BitVec.Basic
 
 /-! # The carried whole-word trial reduction computes the mathematical quotient -/
 

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.Trial
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.RsaKeyGen.X86.TrialStep
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Trial-reduction pointer control is independent of candidate arithmetic -/
 
