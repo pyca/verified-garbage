@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Impl.MillerRabin.Arm.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineFnBody
-import VerifiedGarbage.Proof.Bignum.Arm.FiosRound
+import VerifiedGarbage.Proof.Bignum.Arm.FiosFastRound
 import VerifiedGarbage.Proof.Bignum.Arm.MontOp
 import VerifiedGarbage.Proof.Bignum.Arm.SquareOp
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
@@ -37,7 +37,7 @@ private theorem product_fios_ok (s : State) {base : BitVec 32} {len w o a b : Na
   refine WP.mono (montOpArgs_ok s ho.1 ha.1 hb.1) ?_
   rintro u ⟨po, pa, pb, memU, restU⟩
   have ready := h.of_mem memU restU ((restU.gpr .r0 (by simp)).trans h.ptr)
-  have body := MontPipeline.fnBody_ok Fios.round Fios.round_law u ready.workspace ready.layout ho ha hb ready.ptr po pa pb
+  have body := MontPipeline.fnBody_ok FiosFast.round FiosFast.round_law u ready.workspace ready.layout ho ha hb ready.ptr po pa pb
     (by rw [ready.width]; exact ready.inverse) (by rw [ready.width, memU]; exact operand)
   simp only [ready.width] at body
   rw [WP.seq_iff]
