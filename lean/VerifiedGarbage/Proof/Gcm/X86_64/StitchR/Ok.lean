@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
 import VerifiedGarbage.Proof.Gcm.Powers
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.RemETo
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Zero
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.SetupFin
 public import VerifiedGarbage.Proof.Gcm.Poly
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
@@ -44,7 +45,7 @@ theorem x_φ_hInvF (H : Block) (n : Nat) : x * φ (hInvF (hpow H n)) = φ H ^ n 
   rw [hInvF, Pclmul.x_φ_hInv, φ_hpow]
 
 /-- The setup: the state the loops start from, as `Stitch.setup_ok`. -/
-theorem setup_ok {s₀ : State} (hp : SPrePrepared s₀) :
+theorem setup_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) :
     WP isa (.block Impl.Gcm.X86_64.StitchR.setup) s₀ fun s => ∃ P, Ready s₀ P s ∧
       ∀ k < 8, ∀ l < 2, x * φ (P k l) = φ (hk s₀) ^ (16 - 2 * k - l) := by
   simp only [Impl.Gcm.X86_64.StitchR.setup, List.append_assoc]
@@ -85,20 +86,28 @@ theorem remLaw {H : Block} {P : Nat → Nat → Block}
   apply φ_inj
   rw [φ_reduceB, key r hr1 (Nat.le_refl _), Nat.sub_self, pow_zero, one_mul]
 
-/-- `decR`: the decryption of any number of blocks from 16 on. -/
-theorem decR_ok {s₀ : State} (hp : SPrePrepared s₀) :
+/-- `decR`: the decryption of any number of blocks from 1 on. -/
+theorem decR_ok {s₀ : State} (hp : SPrePrepared s₀ 1) :
     WP isa Impl.Gcm.X86_64.StitchR.decR s₀ (DPost s₀) :=
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => decTailR_ok hp.base (finD hpw) (remLaw hpw) hR)
+  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ =>
+    zeroTail_ok (Rdy := Ready s₀ _) (fun _ _ h g l m rd wr => Ready.keep h g l m rd wr)
+      (fun _ h => h.gpr _ (by decide) (by decide) (by decide))
+      (fun hlt _ h => decSmall_ok hp.base (remLaw hpw) hp.base.nb16 hlt h)
+      (fun h16 _ h => decTailR_ok (hp.base.ofLe h16) (finD hpw) (remLaw hpw) h) hR)
 
-/-- `encR`: the encryption of any number of blocks from 16 on. -/
-theorem encR_ok {s₀ : State} (hp : SPrePrepared s₀) :
+/-- `encR`: the encryption of any number of blocks from 1 on. -/
+theorem encR_ok {s₀ : State} (hp : SPrePrepared s₀ 1) :
     WP isa Impl.Gcm.X86_64.StitchR.encR s₀ (EPost s₀) :=
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => encTailR_ok hp.base (finE hpw) (remLaw hpw) hR)
+  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ =>
+    zeroTail_ok (Rdy := Ready s₀ _) (fun _ _ h g l m rd wr => Ready.keep h g l m rd wr)
+      (fun _ h => h.gpr _ (by decide) (by decide) (by decide))
+      (fun hlt _ h => encSmall_ok hp.base (remLaw hpw) hp.base.nb16 hlt h)
+      (fun h16 _ h => encTailR_ok (hp.base.ofLe h16) (finE hpw) (remLaw hpw) h) hR)
 
 /-- Both in-place loops, for a prepared key context, for any number of
-blocks from 16 on. -/
+blocks from 1 on. -/
 theorem stitchR_ok :
-    StitchOkM CtxMode.prepared Impl.Gcm.X86_64.StitchR.encR Impl.Gcm.X86_64.StitchR.decR 1 1 :=
+    StitchOkM CtxMode.prepared Impl.Gcm.X86_64.StitchR.encR Impl.Gcm.X86_64.StitchR.decR 1 1 1 1 :=
   ⟨fun _ hp _ => encR_ok hp.toPrepared, fun _ hp _ => decR_ok hp.toPrepared⟩
 
 /-- The out-of-place setup, as `StitchTo.setupTo_ok`. -/

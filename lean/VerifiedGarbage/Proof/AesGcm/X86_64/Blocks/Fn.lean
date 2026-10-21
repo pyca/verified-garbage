@@ -50,7 +50,7 @@ end
 
 theorem encrypt_wp (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) {s : State}
     (hpre : Proof.AesGcm.blocksPreM M s) :
-    WP isa (encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned (encFull st)) s (EncDone s) := by
+    WP isa (encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned (encFull st) (encSmall st)) s (EncDone s) := by
   have hp := BP.ofM hpre
   refine WP.seq (WP.mono (entry_ok hp) fun s₁ ⟨h11, hg, hk, hf, hrd, hwr⟩ => ?_)
   have tl : ∀ q st, Mid s q q (ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q)) st →
@@ -59,12 +59,12 @@ theorem encrypt_wp (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (St
   cases st with
   | none => exact WP.seq (WP.block_nil (tl 0 s₁ (mid_entry hp hg hk hf hrd hwr)))
   | some p =>
-    rcases p with ⟨enc, dec, full, fullD, ok, encP, decP⟩
+    rcases p with ⟨enc, dec, full, fullD, small, smallD, ok, encP, decP⟩
     cases full with
-    | false => exact WP.seq (WP.seq (WP.mono (stitchE_ok hp ok h11 hg hk hf hrd hwr) fun st M =>
+    | false => exact WP.seq (WP.seq (WP.mono (stitchE_ok hp (ok.weaken (by split <;> omega) (by split <;> omega)) h11 hg hk hf hrd hwr) fun st M =>
         WP.mono (rest_ok hp rfl M) fun st' M' => tl _ st' M'))
     | true =>
-      exact fullBody_ok hp (aligned := aligned) (fun _ h => ok.1 _ h (Nat.mod_one _))
+      exact fullBody_ok hp (aligned := aligned) (small := small) (fun _ h => ok.1 _ h (Nat.mod_one _))
         (fun _ _ h9 ga gc g11 rd₃ wr₃ hk₃ hf₃ hP =>
           encDone_of hp (stitchEFull_ok hp h9 ga gc g11 rd₃ wr₃ hk₃ hf₃ hP) (Nat.sub_self _))
         (fun h16 _ M => WP.seq (WP.mono (rest_ok hp (by omega) M) fun st' M' => tl _ st' M'))
@@ -72,7 +72,7 @@ theorem encrypt_wp (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (St
 
 theorem decrypt_wp (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) {s : State}
     (hpre : Proof.AesGcm.blocksPreM M s) :
-    WP isa (decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned (decFull st)) s (DecDone s) := by
+    WP isa (decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned (decFull st) (decSmall st)) s (DecDone s) := by
   have hp := BP.ofM hpre
   refine WP.seq (WP.mono (entry_ok hp) fun s₁ ⟨h11, hg, hk, hf, hrd, hwr⟩ => ?_)
   have tl : ∀ q st, Mid s q q (blocksAt s.mem (D s) q) st →
@@ -81,12 +81,12 @@ theorem decrypt_wp (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (St
   cases st with
   | none => exact WP.seq (WP.block_nil (tl 0 s₁ (mid_entry hp hg hk hf hrd hwr)))
   | some p =>
-    rcases p with ⟨enc, dec, full, fullD, ok, encP, decP⟩
+    rcases p with ⟨enc, dec, full, fullD, small, smallD, ok, encP, decP⟩
     cases fullD with
-    | false => exact WP.seq (WP.seq (WP.mono (stitchD_ok hp ok h11 hg hk hf hrd hwr) fun st M =>
+    | false => exact WP.seq (WP.seq (WP.mono (stitchD_ok hp (ok.weaken (by split <;> omega) (by split <;> omega)) h11 hg hk hf hrd hwr) fun st M =>
         WP.mono (rest_ok hp rfl M) fun st' M' => tl _ st' M'))
     | true =>
-      exact fullBody_ok hp (aligned := aligned) (fun _ h => ok.2 _ h (Nat.mod_one _))
+      exact fullBody_ok hp (aligned := aligned) (small := smallD) (fun _ h => ok.2 _ h (Nat.mod_one _))
         (fun _ _ h9 ga gc g11 rd₃ wr₃ hk₃ hf₃ hP =>
           decDone_of hp (stitchDFull_ok hp h9 ga gc g11 rd₃ wr₃ hk₃ hf₃ hP) (Nat.sub_self _))
         (fun h16 _ M => WP.seq (WP.mono (rest_ok hp (by omega) M) fun st' M' => tl _ st' M'))

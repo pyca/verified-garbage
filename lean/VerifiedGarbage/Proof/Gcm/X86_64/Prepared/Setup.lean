@@ -23,7 +23,7 @@ open VG.Impl.Gcm.X86_64.StitchZR (cvtPair setupGP setupP)
 open VG.Proof.Gcm.X86_64.StitchZP (hInvF vinsSelf_ok cvtRegs preg16_mem preg16_inj)
 
 /-- Load the first `n` register pairs from the prepared context. -/
-theorem cvtRun_ok {s₀ : State} (hp : SPrePrepared s₀) :
+theorem cvtRun_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) :
     ∀ n, n ≤ 8 → ∀ s, s.gpr .rdi = kp s₀ → s.mem = s₀.mem → s.rd = s₀.rd → s.wr = s₀.wr →
       WP isa (.block ((List.range n).flatMap fun k => cvtPair (15 - 2*k) (preg16 k))) s fun s' =>
         (∀ k < n, ∀ l < 2, s'.lane (preg16 k) l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 2*k - l))) ∧
@@ -54,7 +54,7 @@ theorem cvtRun_ok {s₀ : State} (hp : SPrePrepared s₀) :
       exact preg16_mem n
 
 /-- `setupGP`: what `Stitch.setupG_ok` says of `setupG`. -/
-theorem setupGP_ok {s₀ : State} (hp : SPrePrepared s₀) :
+theorem setupGP_ok {s₀ : State} {lo : Nat} (hp : SPrePrepared s₀ lo) :
     WP isa (.block setupGP) s₀ fun s =>
       (∀ l < 2, s.lane .xmm0 l = revMask) ∧ (∀ l < 2, s.lane .xmm1 l = poly) ∧
       (∀ k < 8, ∀ l < 2, s.lane (preg16 k) l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 2 * k - l))) ∧

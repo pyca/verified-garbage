@@ -38,7 +38,7 @@ open VG.Spec.Gcm (Block blockAt inc32)
 abbrev ksR (s₀ : State) : Region := ⟨pp s₀ + BitVec.ofNat 64 768, 256⟩
 
 /-- The key schedule is not in the data, the working space or the counter. -/
-theorem sch_frame3 {s₀ : State} (hp : SPre s₀) {m : Mem} (hf : Frame [dR s₀, pR s₀, cR s₀] s₀.mem m) :
+theorem sch_frame3 {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {m : Mem} (hf : Frame [dR s₀, pR s₀, cR s₀] s₀.mem m) :
     Spec.Aes.bytesAt m (kp s₀) (16 * (nr s₀ + 1)) = sch s₀ := by
   have hn : 16 * (nr s₀ + 1) ≤ 256 := by rcases hp.rounds with h | h | h <;> omega
   simp only [sch, Spec.Aes.bytesAt]
@@ -54,7 +54,7 @@ theorem sch_frame3 {s₀ : State} (hp : SPre s₀) {m : Mem} (hf : Frame [dR s�
 
 /-- The key schedule, as the rounds need it, from a state that has not
 written it. -/
-theorem keys_of {s₀ : State} (hp : SPre s₀) {t : State} (h1 : t.gpr .rdi = kp s₀) (h2 : t.rd = s₀.rd)
+theorem keys_of {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {t : State} (h1 : t.gpr .rdi = kp s₀) (h2 : t.rd = s₀.rd)
     (h3 : t.wr = s₀.wr) (h4 : Frame [dR s₀, pR s₀, cR s₀] s₀.mem t.mem) : Keys (nr s₀) (sch s₀) t :=
   ⟨by rw [h1, sch_frame3 hp h4], by rcases hp.rounds with h | h | h <;> omega,
     fun j hj => by

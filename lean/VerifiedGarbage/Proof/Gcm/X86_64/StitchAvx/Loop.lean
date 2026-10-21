@@ -249,7 +249,7 @@ theorem body_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Block} (hf : FinOk 
 theorem first_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Block} {s : State} (hR : Ready s₀ P s) :
     WP isa first s (EInv s₀ P 1) := by
   have hwd := hp.wrap_d
-  have h16 := hp.nb16
+  have h16 : 16 ≤ nb s₀ := hp.nb16
   have none : ∀ j, 1 ≤ j → j ≤ 9 → ∀ t, Keys (nr s₀) (sch s₀) t → (fun _ _ => True) j t →
       WP isa (.block ((fun _ => []) j)) t fun t' => (fun (_ : Nat) (_ : State) => True) (j + 1) t' ∧ YFrame [] t t' :=
     fun _ _ _ _ _ _ => WP.block_nil ⟨trivial, YFrame.refl _ _⟩

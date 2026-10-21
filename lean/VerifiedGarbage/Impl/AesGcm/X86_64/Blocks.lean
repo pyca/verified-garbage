@@ -98,31 +98,38 @@ def head (piece : Option (Prog isa)) (aligned : Bool := false) : Prog isa :=
   | none => .block []
 
 /-- With a `piece` that takes all the blocks: all of them by it if at least
-16, else all of them with `first` and `second`. -/
-def fullBody (piece first second : Prog isa) (aligned : Bool := false) : Prog isa :=
+16 (or, if `small`, at least 2), else all of them with `first` and `second`. -/
+def fullBody (piece first second : Prog isa) (aligned : Bool := false) (small : Bool := false) : Prog isa :=
   .seq (.block [.alu .cmp .r9 (imm 16)])
-    (.ite .b (.seq (.block rest) (tail first second)) (stitchPart piece aligned true))
+    (.ite .b
+      (if small then
+        .seq (.block [.alu .cmp .r9 (imm 2)])
+          (.ite .b (.seq (.block rest) (tail first second)) (stitchPart piece aligned true))
+      else .seq (.block rest) (tail first second))
+      (stitchPart piece aligned true))
 
-/-- After the entry: the blocks by `piece` (all of them if `full`), and the
-rest with `first` and `second`. -/
-def body (piece : Option (Prog isa)) (first second : Prog isa) (aligned : Bool := false) (full : Bool := false) :
-    Prog isa :=
+/-- After the entry: the blocks by `piece` (all of them if `full`, from 2 on
+if also `small`), and the rest with `first` and `second`. -/
+def body (piece : Option (Prog isa)) (first second : Prog isa) (aligned : Bool := false) (full : Bool := false)
+    (small : Bool := false) : Prog isa :=
   match piece, full with
-  | some piece, true => fullBody piece first second aligned
+  | some piece, true => fullBody piece first second aligned small
   | piece, _ => .seq (head piece aligned) (tail first second)
 
-def blocks (piece : Option (Prog isa)) (first second : Prog isa) (aligned : Bool := false) (full : Bool := false) :
-    Prog isa :=
-  .seq (.block entry) (body piece first second aligned full)
+def blocks (piece : Option (Prog isa)) (first second : Prog isa) (aligned : Bool := false) (full : Bool := false)
+    (small : Bool := false) : Prog isa :=
+  .seq (.block entry) (body piece first second aligned full small)
 
 /-- `vg_aes_gcm_encrypt_blocks`, with the encrypting `piece`, if any (taking
-all the blocks if `full`). -/
-def encrypt (piece : Option (Prog isa)) (aligned : Bool := false) (full : Bool := false) : Prog isa :=
-  blocks piece (ctrCall ctr) (ghCall gh) aligned full
+all the blocks if `full`, from 1 on if also `small`). -/
+def encrypt (piece : Option (Prog isa)) (aligned : Bool := false) (full : Bool := false) (small : Bool := false) :
+    Prog isa :=
+  blocks piece (ctrCall ctr) (ghCall gh) aligned full small
 
 /-- `vg_aes_gcm_decrypt_blocks`, with the decrypting `piece`, if any (taking
-all the blocks if `full`). -/
-def decrypt (piece : Option (Prog isa)) (aligned : Bool := false) (full : Bool := false) : Prog isa :=
-  blocks piece (ghCall gh) (ctrCall ctr) aligned full
+all the blocks if `full`, from 1 on if also `small`). -/
+def decrypt (piece : Option (Prog isa)) (aligned : Bool := false) (full : Bool := false) (small : Bool := false) :
+    Prog isa :=
+  blocks piece (ghCall gh) (ctrCall ctr) aligned full small
 
 end VG.Impl.AesGcm.X86_64.Blocks

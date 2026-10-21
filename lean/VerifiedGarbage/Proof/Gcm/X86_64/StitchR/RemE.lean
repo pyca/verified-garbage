@@ -155,7 +155,7 @@ theorem lastGR_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (h
     rw [show 16 * e = 16 * ((e - 1) + 1) by congr 1; omega, ghash_append16]
     exact congrArg (fun y => ghashFrom (hk s₀) y ((List.range 16).map X)) hI.y
 
-theorem remE_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hr : RemLaw (hk s₀) P) {e : Nat}
+theorem remE_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {P : Nat → Nat → Block} (hr : RemLaw (hk s₀) P) {e : Nat}
     {s : State} (hI : EInvR s₀ P e s) (hlt : nb s₀ - 16 * e < 16) (hne : nb s₀ ≠ 16 * e) :
     WP isa (remE .rdx) s (EPost s₀) := by
   have hw := hp.wrap_d

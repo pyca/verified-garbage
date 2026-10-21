@@ -85,8 +85,8 @@ def CtxMode.powers : CtxMode where
 abbrev kMR (M : CtxMode) (s₀ : State) : Region := ⟨kp s₀, M.len⟩
 
 /-- `SPre`, for a key context of kind `M`. -/
-structure SPreM (M : CtxMode) (s₀ : State) : Prop where
-  base : SPre s₀
+structure SPreM (M : CtxMode) (s₀ : State) (lo : Nat := 16) : Prop where
+  base : SPre s₀ lo
   k_in : InRegions (s₀.rd ++ s₀.wr) (kp s₀) M.len
   wrap_k : (kp s₀).toNat + M.len ≤ 2 ^ 64
   d_k : (dR s₀).Disjoint (kMR M s₀)
@@ -96,10 +96,21 @@ structure SPreM (M : CtxMode) (s₀ : State) : Prop where
 /-- `StitchOk`, for a key context of kind `M`, and for a number of blocks
 that is a multiple of `we` when encrypting and of `wd` when decrypting
 (`StitchOk`'s 16, or 1 for loops that also take the blocks after the last
-16). -/
-def StitchOkM (M : CtxMode) (enc dec : Prog isa) (we wd : Nat := 16) : Prop :=
-  (∀ s₀, SPreM M s₀ → nb s₀ % we = 0 → WP isa enc s₀ (EPost s₀)) ∧
-    (∀ s₀, SPreM M s₀ → nb s₀ % wd = 0 → WP isa dec s₀ (DPost s₀))
+16), from `le` (`ld`) blocks on (16, or 1 for loops that also take fewer
+than a group). -/
+def StitchOkM (M : CtxMode) (enc dec : Prog isa) (we wd : Nat := 16) (le ld : Nat := 16) : Prop :=
+  (∀ s₀, SPreM M s₀ le → nb s₀ % we = 0 → WP isa enc s₀ (EPost s₀)) ∧
+    (∀ s₀, SPreM M s₀ ld → nb s₀ % wd = 0 → WP isa dec s₀ (DPost s₀))
+
+theorem SPreM.ofLe {M : CtxMode} {s₀ : State} {lo lo' : Nat} (hp : SPreM M s₀ lo) (h : lo' ≤ nb s₀) :
+    SPreM M s₀ lo' :=
+  { hp with base := hp.base.ofLe h }
+
+/-- Loops that take fewer blocks than a group take a group's too. -/
+theorem StitchOkM.weaken {M : CtxMode} {enc dec : Prog isa} {we wd le ld : Nat} (h : StitchOkM M enc dec we wd le ld)
+    (hle : le ≤ 16) (hld : ld ≤ 16) : StitchOkM M enc dec we wd :=
+  ⟨fun s₀ hp hm => h.1 s₀ (hp.ofLe (Nat.le_trans hle hp.base.nb16)) hm,
+    fun s₀ hp hm => h.2 s₀ (hp.ofLe (Nat.le_trans hld hp.base.nb16)) hm⟩
 
 theorem StitchOk.toM {enc dec : Prog isa} (h : StitchOk enc dec) (M : CtxMode) : StitchOkM M enc dec :=
   ⟨fun s₀ hp => h.1 s₀ hp.base, fun s₀ hp => h.2 s₀ hp.base⟩

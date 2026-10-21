@@ -414,13 +414,16 @@ structure StitchImpl where
 open Gcm.X86_64.Stitch (CtxMode StitchOkM) in
 /-- Loops for a key context of kind `M`, with their proof; with `full`
 (`fullD`), the encryption (decryption) loop takes any number of blocks from
-16 on. -/
+16 on, and with `small` (`smallD`) too, from 1 on. -/
 structure StitchCode (M : CtxMode) (aligned : Bool := false) where
   enc : Prog isa
   dec : Prog isa
   full : Bool
   fullD : Bool
-  ok : StitchOkM M enc dec (if full then 1 else 16) (if fullD then 1 else 16)
+  small : Bool := false
+  smallD : Bool := false
+  ok : StitchOkM M enc dec (if full then 1 else 16) (if fullD then 1 else 16) (if small then 1 else 16)
+    (if smallD then 1 else 16)
   encP : Piece enc aligned full
   decP : Piece dec aligned fullD
 
@@ -431,6 +434,16 @@ def encFull {M : Gcm.X86_64.Stitch.CtxMode} {aligned : Bool} (st : Option (Stitc
 /-- Whether the decryption loop of `st`, if any, takes all the blocks. -/
 def decFull {M : Gcm.X86_64.Stitch.CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) : Bool :=
   st.any (·.fullD)
+
+/-- Whether the encryption loop of `st`, if any, takes fewer blocks than a
+group too. -/
+def encSmall {M : Gcm.X86_64.Stitch.CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) : Bool :=
+  st.any (·.small)
+
+/-- Whether the decryption loop of `st`, if any, takes fewer blocks than a
+group too. -/
+def decSmall {M : Gcm.X86_64.Stitch.CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) : Bool :=
+  st.any (·.smallD)
 
 open Gcm.X86_64.Stitch (CtxMode StitchOkM) in
 /-- The loops `st` meet their contracts for a key context of kind `M`. -/
@@ -446,7 +459,7 @@ open Gcm.X86_64.Stitch (CtxMode) in
 /-- The loops `st`, for a key context of kind `M` (they read only its first
 256 bytes). -/
 def StitchImpl.code (st : StitchImpl) (M : CtxMode) : StitchCode M :=
-  ⟨st.enc, st.dec, st.full, false, st.okM M, st.encP, st.decP⟩
+  ⟨st.enc, st.dec, st.full, false, false, false, st.okM M, st.encP, st.decP⟩
 
 namespace StitchImpl
 
@@ -458,20 +471,26 @@ theorem encFull_code (st : Option StitchImpl) (M : Gcm.X86_64.Stitch.CtxMode) :
 theorem decFull_code (st : Option StitchImpl) (M : Gcm.X86_64.Stitch.CtxMode) :
     decFull (st.map (·.code M)) = false := by cases st <;> rfl
 
+theorem encSmall_code (st : Option StitchImpl) (M : Gcm.X86_64.Stitch.CtxMode) :
+    encSmall (st.map (·.code M)) = false := by cases st <;> rfl
+
+theorem decSmall_code (st : Option StitchImpl) (M : Gcm.X86_64.Stitch.CtxMode) :
+    decSmall (st.map (·.code M)) = false := by cases st <;> rfl
+
 /-- A property of `Blocks.blocks` for the loops of `st`, from its three
 shapes: no loops, loops taking the first `16 ⌊n / 16⌋` blocks, and loops
-taking all of them. -/
-theorem blocks_cases {α : Type} (st : Option α) (f : α → Prog isa) (g : α → Bool) (aligned : Bool)
+taking all of them (from 2 on, if `h`). -/
+theorem blocks_cases {α : Type} (st : Option α) (f : α → Prog isa) (g h : α → Bool) (aligned : Bool)
     (first second : Prog isa) (P : Prog isa → Prop)
     (hnone : P (Blocks.blocks none first second aligned))
-    (hpart : ∀ i, g i = false → P (Blocks.blocks (some (f i)) first second aligned))
-    (hfull : ∀ i, g i = true → P (Blocks.blocks (some (f i)) first second aligned true)) :
-    P (Blocks.blocks (st.map f) first second aligned (st.any g)) := by
+    (hpart : ∀ i b, g i = false → P (Blocks.blocks (some (f i)) first second aligned false b))
+    (hfull : ∀ i b, g i = true → P (Blocks.blocks (some (f i)) first second aligned true b)) :
+    P (Blocks.blocks (st.map f) first second aligned (st.any g) (st.any h)) := by
   rcases st with _ | i
   · exact hnone
-  · cases h : g i
-    · simpa [Option.map, Option.any, h] using hpart i h
-    · simpa [Option.map, Option.any, h] using hfull i h
+  · cases e : g i
+    · simpa [Option.map, Option.any, e] using hpart i (h i) e
+    · simpa [Option.map, Option.any, e] using hfull i (h i) e
 
 end StitchImpl
 

@@ -52,7 +52,7 @@ theorem blockAt_outP {s₀ : State} {m m' : Mem} {p : Addr} (hf : Frame [pR s₀
 
 /-- The setup after the powers (`setupG`): they are stored in the working
 space, then `Y`, the counter, the increment and the pointers. -/
-theorem setupT_ok {s₀ : State} (hp : SPre s₀) {s₁ : State} (l0 : ∀ l < 2, s₁.lane .xmm0 l = revMask)
+theorem setupT_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {s₁ : State} (l0 : ∀ l < 2, s₁.lane .xmm0 l = revMask)
     (l1 : ∀ l < 2, s₁.lane .xmm1 l = poly) (g₁ : ∀ r, r ≠ .rax → s₁.gpr r = s₀.gpr r) (m₁ : s₁.mem = s₀.mem)
     (rd₁ : s₁.rd = s₀.rd) (wr₁ : s₁.wr = s₀.wr) :
     WP isa (.block (storesK .r11 pregs 0 ++ setupC)) s₁ (Ready s₀ fun k l => s₁.lane (preg16 k) l) := by
@@ -96,7 +96,7 @@ theorem first_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} {s 
     WP isa first s (EInv s₀ P 1) := by
   have hwp := hp.wrap_p
   have hwd := hp.wrap_d
-  have h16 := hp.nb16
+  have h16 : 16 ≤ nb s₀ := hp.nb16
   have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   have none : ∀ j, 1 ≤ j → j ≤ 9 → ∀ t, Keys (nr s₀) (sch s₀) t → (fun _ _ => True) j t →
       WP isa (.block ((fun _ => []) j)) t fun t' => (fun (_ : Nat) (_ : State) => True) (j + 1) t' ∧ YFrame [] t t' :=

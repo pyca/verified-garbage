@@ -95,6 +95,12 @@ def decR : StitchName → Prog isa
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.decR
   | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.decR
 
+/-- Whether the loops named `n` for a prepared context also take fewer
+blocks than a group, from 1 on (`Blocks.fullBody`'s `small`). -/
+def smallR : StitchName → Bool
+  | .vaes => true
+  | _ => false
+
 /-- Whether the decryption loop named `n` for a prepared context takes all
 the blocks, from 16 on (`Blocks.stitchPart`'s `full`). -/
 def fullDR : StitchName → Bool

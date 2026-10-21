@@ -38,15 +38,15 @@ def CtxMode.prepared : CtxMode where
     exact h k hk
 
 /-- The interleaved-loop precondition, with prepared powers. -/
-structure SPrePrepared (s₀ : State) : Prop where
-  base : SPre s₀
+structure SPrePrepared (s₀ : State) (lo : Nat := 16) : Prop where
+  base : SPre s₀ lo
   k_in : InRegions (s₀.rd ++ s₀.wr) (kp s₀) 1024
   wrap_k : (kp s₀).toNat + 1024 ≤ 2 ^ 64
   d_k : (dR s₀).Disjoint (kPR s₀)
   p_k : (pR s₀).Disjoint (kPR s₀)
   pow : Spec.Gcm.PreparedPowersRepr s₀.mem (kp s₀)
 
-theorem SPreM.toPrepared {s₀ : State} (h : SPreM CtxMode.prepared s₀) : SPrePrepared s₀ :=
+theorem SPreM.toPrepared {s₀ : State} {lo : Nat} (h : SPreM CtxMode.prepared s₀ lo) : SPrePrepared s₀ lo :=
   ⟨h.base, h.k_in, h.wrap_k, h.d_k, h.p_k, h.ok⟩
 
 end VG.Proof.Gcm.X86_64.Stitch

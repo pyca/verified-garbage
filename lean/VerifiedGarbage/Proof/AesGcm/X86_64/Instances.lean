@@ -73,7 +73,7 @@ theorem StitchName.okP : (n : StitchName) →
 /-- The loops `p` names for a key context of `vg_aes_gcm_init_precomputed`,
 with their proof, if they read the powers of the hash subkey from it. -/
 def StitchPart.implP (p : StitchPart) : Option (StitchCode Proof.Gcm.X86_64.Stitch.CtxMode.powers) :=
-  p.pieceP.map fun q => ⟨p.name.encP, p.name.decP, false, false, p.name.okP, q.enc, q.dec⟩
+  p.pieceP.map fun q => ⟨p.name.encP, p.name.decP, false, false, false, false, p.name.okP, q.enc, q.dec⟩
 
 /-- The out-of-place loops named `n` interleave counter mode and GHASH
 correctly. -/
@@ -109,13 +109,15 @@ def GcmVariant.impl (v : GcmVariant) : GcmImpl :=
 number of blocks from 16 on if `fullR`). -/
 theorem StitchName.okR : (n : StitchName) →
     Proof.Gcm.X86_64.Stitch.StitchOkM Proof.Gcm.X86_64.Stitch.CtxMode.prepared n.encR n.decR
-      (if n.fullR then 1 else 16) (if n.fullDR then 1 else 16)
+      (if n.fullR then 1 else 16) (if n.fullDR then 1 else 16) (if n.smallR then 1 else 16)
+      (if n.smallR then 1 else 16)
   | .vaes => Proof.Gcm.X86_64.StitchR.stitchR_ok
   | .vaesAvx512 => Proof.Gcm.X86_64.StitchZH.stitchR_ok
   | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitchR_ok
 
 def GcmVariant.stitchR (v : GcmVariant) : Option (StitchCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true) :=
-  v.stitch.bind fun p => p.pieceR.map fun q => ⟨p.name.encR, p.name.decR, p.name.fullR, p.name.fullDR, p.name.okR, q.enc, q.dec⟩
+  v.stitch.bind fun p => p.pieceR.map fun q =>
+    ⟨p.name.encR, p.name.decR, p.name.fullR, p.name.fullDR, p.name.smallR, p.name.smallR, p.name.okR, q.enc, q.dec⟩
 
 theorem StitchToName.okR : (n : StitchToName) →
     Proof.Gcm.X86_64.Stitch.StitchToOkM Proof.Gcm.X86_64.Stitch.CtxMode.prepared n.encR

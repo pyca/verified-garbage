@@ -73,7 +73,7 @@ theorem keyEnd_ok (s : State) :
   refine ⟨by bv_omega, fun q h => by simp only [h, ↓reduceIte], fun _ _ => rfl, trivial, trivial, trivial⟩
 
 /-- The keystream of the `r` blocks after the last group, to `scratch + 256`. -/
-theorem ksSel_ok {s₀ : State} (hp : SPre s₀) {r : Nat} (hr1 : 1 ≤ r) (hr15 : r ≤ 15) {c : Nat} {s : State}
+theorem ksSel_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {r : Nat} (hr1 : 1 ≤ r) (hr15 : r ≤ 15) {c : Nat} {s : State}
     (h10 : s.gpr .r10 = BitVec.ofNat 64 (16 * r))
     (hctr : ∀ l < 2, s.lane .xmm14 l = Nat.repeat inc32 (c + l) (cb s₀))
     (hmsk : ∀ l < 2, s.lane .xmm0 l = revMask) (hinc : ∀ l < 2, s.lane .xmm15 l = VG.Proof.Aes.X86_64.Vaes.two)
@@ -198,7 +198,7 @@ theorem add11_ok (s : State) :
     State.setReg, e512, ↓reduceIte, Option.bind_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, fun q h => by simp only [h, ↓reduceIte], fun _ _ => rfl, trivial, trivial, trivial⟩
 
-theorem remD_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hr : RemLaw (hk s₀) P) {e : Nat}
+theorem remD_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {P : Nat → Nat → Block} (hr : RemLaw (hk s₀) P) {e : Nat}
     {s : State} (hI : DInv s₀ P e s) (hlt : nb s₀ - 16 * e < 16) (hne : nb s₀ ≠ 16 * e) :
     WP isa (.seq (.block [.alu .add .r9 (.imm 16)]) remD) s (DPost s₀) := by
   have hw := hp.wrap_d
@@ -493,7 +493,7 @@ fewer than 16 left. -/
 theorem loopDR_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk ordD (hk s₀) P) {s : State}
     (hI : DInv s₀ P 0 s) :
     WP isa (.loop dbody .ae) s fun s' => ∃ e, nb s₀ - 16 * e < 16 ∧ DInv s₀ P e s' := by
-  have h16 := hp.nb16
+  have h16 : 16 ≤ nb s₀ := hp.nb16
   let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 1) ≤ nb s₀ ∧ DInv s₀ P e s
   have hstep : ∀ m s, I m s → WP isa dbody s (fun s' =>
       (eval .ae s' = some false ∧ ∃ e, nb s₀ - 16 * e < 16 ∧ DInv s₀ P e s') ∨

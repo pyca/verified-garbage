@@ -60,9 +60,9 @@ abbrev ctb (k : Nat) : Block := blk s₀ k ^^^ ciph s₀ (Nat.repeat inc32 k (cb
 
 end
 
-structure SPre (s₀ : State) : Prop where
+structure SPre (s₀ : State) (lo : Nat := 16) : Prop where
   rounds : nr s₀ = 10 ∨ nr s₀ = 12 ∨ nr s₀ = 14
-  nb16 : 16 ≤ nb s₀
+  nb16 : lo ≤ nb s₀
   k_in : InRegions (s₀.rd ++ s₀.wr) (kp s₀) 256
   c_in : InRegions s₀.wr (cp s₀) 16
   y_in : InRegions s₀.wr (yp s₀) 16
@@ -81,6 +81,10 @@ structure SPre (s₀ : State) : Prop where
   wrap_d : (dp s₀).toNat + 16 * nb s₀ ≤ 2 ^ 64
   wrap_k : (kp s₀).toNat + 256 ≤ 2 ^ 64
   wrap_p : (pp s₀).toNat + 1024 ≤ 2 ^ 64
+
+/-- A lower bound on the blocks that the data meets. -/
+theorem SPre.ofLe {s₀ : State} {lo lo' : Nat} (hp : SPre s₀ lo) (h : lo' ≤ nb s₀) : SPre s₀ lo' :=
+  { hp with nb16 := h }
 
 /-- What the encryption leaves: the data encrypted, the counter advanced, `Y`
 continued over the ciphertext, nothing else written but the working space. -/
