@@ -446,7 +446,7 @@ theorem body_depth (v : Whole.Backend) : (body v.code v.suffix).aarch64Depth ≤
   change (Impl.Sha512.AArch64.Stream.updateWith v.suffix v.code).aarch64Depth ≤ 1 at hu
   change (Impl.Sha512.AArch64.Stream.finalizeWith v.suffix v.code).aarch64Depth ≤ 1 at hf
   have hb := Whole.depth_zero_of_noFrames base_noFrames
-  simp only [body, Impl.Ed25519.AArch64.PublicKey.hash, Impl.Ed25519.AArch64.Whole.callWith,
+  simp only [body, bodyFrom, Impl.Ed25519.AArch64.PublicKey.hash, Impl.Ed25519.AArch64.Whole.callWith,
     Code.aarch64Depth, Nat.max_le, Impl.Sha512.AArch64.Stream.init, hb]
   omega
 

@@ -66,9 +66,29 @@ def nonceCode (compress : Prog isa) (suffix : String) : Prog isa :=
 def challengeCode (compress : Prog isa) (suffix : String) : Prog isa :=
   .seq (hashChallenge compress suffix) (.seq (reduce 128)
     (callWith mulAddArgs "vg_ed25519_scalar_mul_add" scalarMulAdd))
-def body (compress : Prog isa) (suffix : String) : Prog isa :=
-  .seq (secretCode compress suffix) (.seq (nonceCode compress suffix)
+/-- Signing after `secret`, which leaves the seed's SHA-512 digest at `frame 192`. -/
+def bodyFrom (secret : Prog isa) (compress : Prog isa) (suffix : String) : Prog isa :=
+  .seq (.seq secret (.block saveSecret)) (.seq (nonceCode compress suffix)
     (.seq (challengeCode compress suffix) (.block wipe)))
+def body (compress : Prog isa) (suffix : String) : Prog isa :=
+  bodyFrom (hashSeed compress suffix) compress suffix
 def code (compress : Prog isa) (suffix : String) : Prog isa := wrap (body compress suffix)
+
+/-- The pointers of the copy: the cached digest (the second argument) in `x1`, `frame 192`
+in `x15`. -/
+def copyPtrs : List Instr := [.ldrSp .x1 (256 + 8 * 1), .addSp .x15 192]
+
+/-- The eight words at `x1` copied to `x15`. -/
+def copyWords : List Instr :=
+  (List.range 8).flatMap fun k => [.ldr .x .x9 .x1 (8 * k), .str .x .x9 .x15 (8 * k)]
+
+/-- `vg_ed25519_sign_expanded`'s first step: the seed's cached SHA-512 digest copied to
+`frame 192`, where `hashSeed` leaves it. -/
+def copyExpanded : Prog isa := .block (copyPtrs ++ copyWords)
+
+/-- Signing with the seed's cached SHA-512 digest (`signExpandedContract`): `code`, with the
+digest copied rather than computed. -/
+def codeExpanded (compress : Prog isa) (suffix : String) : Prog isa :=
+  wrap (bodyFrom copyExpanded compress suffix)
 
 end VG.Impl.Ed25519.AArch64.SignCached

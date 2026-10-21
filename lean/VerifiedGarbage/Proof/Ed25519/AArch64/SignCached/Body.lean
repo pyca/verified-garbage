@@ -167,19 +167,28 @@ theorem saveSecret_ok (hc : Ctx L g vec m₀ s) {expanded : List Byte}
     rw [keep, ← he, Proof.Ed25519.signatureBytes_drop]
     rw [BitVec.add_assoc, show (192 : BitVec 64) + BitVec.ofNat 64 32 = (224 : BitVec 64) from rfl]
 
+/-- The SHA-512 digest of the seed: hashed (`hashSeed`) or cached. -/
 def expanded (L : Lay) (m : Mem) : List Byte := Spec.Sha512.sha512 (Spec.Ed25519.bytesAt m L.seed 32)
-def scalar (L : Lay) (m : Mem) : List Byte := Spec.Ed25519.encodeLE 32 (Spec.Ed25519.prune (expanded L m))
-def nonce (L : Lay) (m : Mem) : List Byte := Spec.Ed25519.scalarReduce (Spec.Sha512.sha512
-  ((expanded L m).drop 32 ++ Spec.Ed25519.bytesAt m L.msg L.len.toNat))
+def scalar (E : List Byte) : List Byte := Spec.Ed25519.encodeLE 32 (Spec.Ed25519.prune E)
+def nonce (L : Lay) (E : List Byte) (m : Mem) : List Byte := Spec.Ed25519.scalarReduce (Spec.Sha512.sha512
+  (E.drop 32 ++ Spec.Ed25519.bytesAt m L.msg L.len.toNat))
 
-structure SecretReady (L : Lay) (m : Mem) (t : State) : Prop where
-  scalar : Spec.Ed25519.bytesAt t.mem (L.E + 32) 32 = scalar L m
-  prefixBytes : Spec.Ed25519.bytesAt t.mem (L.E + 64) 32 = (expanded L m).drop 32
+/-- The digest `E` left at `frame 192` by the first step of signing. -/
+def DigestReady (L : Lay) (E : List Byte) (t : State) : Prop :=
+  Spec.Ed25519.bytesAt t.mem (L.E + 192) 64 = E
 
-theorem secret_ok (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
-    WP isa (secretCode b.code b.suffix) s fun t => Ctx L g vec m₀ t ∧ SecretReady L m₀ t := by
-  refine WP.seq (WP.mono (hashSeed_ok b hc hL ha) fun u ⟨hu, _, hd⟩ => ?_)
-  exact WP.mono (saveSecret_ok hu hd) fun t ⟨ht, hs, hp⟩ => ⟨ht, hs, hp⟩
+structure SecretReady (L : Lay) (E : List Byte) (t : State) : Prop where
+  scalar : Spec.Ed25519.bytesAt t.mem (L.E + 32) 32 = scalar E
+  prefixBytes : Spec.Ed25519.bytesAt t.mem (L.E + 64) 32 = E.drop 32
+
+theorem seed_ok (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
+    (h32 : L.seedLen = 32) :
+    WP isa (hashSeed b.code b.suffix) s fun t => Ctx L g vec m₀ t ∧ DigestReady L (expanded L m₀) t :=
+  WP.mono (hashSeed_ok b hc hL ha h32) fun _ ⟨hu, _, hd⟩ => ⟨hu, hd⟩
+
+theorem secret_ok (hc : Ctx L g vec m₀ s) {E : List Byte} (hd : DigestReady L E s) :
+    WP isa (.block saveSecret) s fun t => Ctx L g vec m₀ t ∧ SecretReady L E t :=
+  WP.mono (saveSecret_ok hc hd) fun _ ⟨ht, hs, hp⟩ => ⟨ht, hs, hp⟩
 
 end VG.Proof.Ed25519.AArch64.SignCached
 end
@@ -188,14 +197,14 @@ namespace VG.Proof.Ed25519.AArch64.SignCached
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64.SignCached
 variable {L : Lay} {g : Reg → BitVec 64} {vec : VReg → BitVec 128} {m₀ : Mem} {s : State}
 
-structure NonceReady (L : Lay) (m : Mem) (t : State) : Prop where
-  scalar : Spec.Ed25519.bytesAt t.mem (L.E + 32) 32 = scalar L m
-  nonce : Spec.Ed25519.bytesAt t.mem (L.E + 96) 32 = nonce L m
-  point : Spec.Ed25519.bytesAt t.mem (L.out) 32 = Spec.Ed25519.scalarBase (SignCached.nonce L m)
+structure NonceReady (L : Lay) (E : List Byte) (m : Mem) (t : State) : Prop where
+  scalar : Spec.Ed25519.bytesAt t.mem (L.E + 32) 32 = scalar E
+  nonce : Spec.Ed25519.bytesAt t.mem (L.E + 96) 32 = nonce L E m
+  point : Spec.Ed25519.bytesAt t.mem (L.out) 32 = Spec.Ed25519.scalarBase (SignCached.nonce L E m)
 
-theorem nonce_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hs : SecretReady L m₀ s)
+theorem nonce_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Arguments L m₀) {E : List Byte} (hs : SecretReady L E s)
     (hsy : s.syms Impl.Ed25519.AArch64.combSym = L.T) :
-    WP isa (nonceCode b.code b.suffix) s fun t => Ctx L g vec m₀ t ∧ NonceReady L m₀ t := by
+    WP isa (nonceCode b.code b.suffix) s fun t => Ctx L g vec m₀ t ∧ NonceReady L E m₀ t := by
   refine WP.seq (WP.mono_syms (hashNonce_ok b hc hL ha) fun u ⟨hu, fu, du⟩ syu => ?_)
   rw [hs.prefixBytes] at du
   have su := (hash_field_bytes hL fu (d := 32) (by decide)).trans hs.scalar
@@ -209,12 +218,11 @@ theorem nonce_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (b : Backend) (hc : Ct
     rw [nv] at pt
     exact pt
 
-theorem challenge_ok (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hs : NonceReady L m₀ s)
-    (hk : Spec.Ed25519.bytesAt m₀ (L.pk) 32 =
-      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ (L.seed) 32)) :
+theorem challenge_ok (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
+    {E : List Byte} (hs : NonceReady L E m₀ s) {seed : List Byte} (hE : E = Spec.Sha512.sha512 seed)
+    (hk : Spec.Ed25519.bytesAt m₀ (L.pk) 32 = Spec.Ed25519.publicKey seed) :
     WP isa (challengeCode b.code b.suffix) s fun t => Ctx L g vec m₀ t ∧
-      Spec.Ed25519.bytesAt t.mem (L.out) 64 = Spec.Ed25519.sign
-        (Spec.Ed25519.bytesAt m₀ (L.seed) 32)
+      Spec.Ed25519.bytesAt t.mem (L.out) 64 = Spec.Ed25519.sign seed
         (Spec.Ed25519.bytesAt m₀ (L.msg) L.len.toNat) := by
   refine WP.seq (WP.mono (hashChallenge_ok b hc hL ha) fun u ⟨hu, fu, du⟩ => ?_)
   rw [hs.point] at du
@@ -233,8 +241,9 @@ theorem challenge_ok (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : A
   rw [nv, cv, sv] at st
   have pt := (mul_out_bytes hL ft).trans pv
   rw [Proof.Ed25519.signatureBytes_split, pt]
-  change Spec.Ed25519.scalarBase (nonce L m₀) ++ Spec.Ed25519.bytesAt t.mem (L.out + (32 : BitVec 64)) 32 = _
+  change Spec.Ed25519.scalarBase (nonce L E m₀) ++ Spec.Ed25519.bytesAt t.mem (L.out + (32 : BitVec 64)) 32 = _
   rw [st]
+  subst hE
   exact Proof.Ed25519.sign_pipeline _ _ _ hk
 
 theorem wipe_ok (hc : Ctx L g vec m₀ s) (hL : L.Ok) :
@@ -246,17 +255,30 @@ theorem wipe_ok (hc : Ctx L g vec m₀ s) (hL : L.Ok) :
   rintro r hr; rw [List.mem_singleton.mp hr]
   exact (hL.ko.sub_left (Offset.sub_base _ (by decide : 8 * 4 + 8 * 28 ≤ 256))).symm
 
+/-- Signing after a first step `first` that leaves the digest `E` of `seed` at `frame 192`. -/
+theorem bodyFrom_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (b : Backend) {first : Prog isa}
+    {E : List Byte} (hfirst : WP isa first s fun t => Ctx L g vec m₀ t ∧ DigestReady L E t)
+    (hL : L.Ok) (ha : Arguments L m₀) {seed : List Byte} (hE : E = Spec.Sha512.sha512 seed)
+    (hk : Spec.Ed25519.bytesAt m₀ (L.pk) 32 = Spec.Ed25519.publicKey seed)
+    (hsy : s.syms Impl.Ed25519.AArch64.combSym = L.T) :
+    WP isa (bodyFrom first b.code b.suffix) s fun t => Ctx L g vec m₀ t ∧
+      Spec.Ed25519.bytesAt t.mem (L.out) 64 = Spec.Ed25519.sign seed
+        (Spec.Ed25519.bytesAt m₀ (L.msg) L.len.toNat) := by
+  have hsec : WP isa (.seq first (.block saveSecret)) s fun t => Ctx L g vec m₀ t ∧ SecretReady L E t :=
+    WP.seq (WP.mono hfirst fun _ ⟨hd, ed⟩ => secret_ok hd ed)
+  refine WP.seq (WP.mono_syms hsec fun u ⟨hu, su⟩ syu => ?_)
+  refine WP.seq (WP.mono (nonce_ok b hu hL ha su (by rw [syu]; exact hsy)) fun v ⟨hv, nv⟩ => ?_)
+  refine WP.seq (WP.mono (challenge_ok b hv hL ha nv hE hk) fun w ⟨hw, sw⟩ => ?_)
+  exact WP.mono (wipe_ok hw hL) fun t ⟨ht, same⟩ => ⟨ht, same.trans sw⟩
+
 theorem body_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     (hk : Spec.Ed25519.bytesAt m₀ (L.pk) 32 =
       Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ (L.seed) 32))
-    (hsy : s.syms Impl.Ed25519.AArch64.combSym = L.T) :
+    (hsy : s.syms Impl.Ed25519.AArch64.combSym = L.T) (h32 : L.seedLen = 32) :
     WP isa (body b.code b.suffix) s fun t => Ctx L g vec m₀ t ∧
       Spec.Ed25519.bytesAt t.mem (L.out) 64 = Spec.Ed25519.sign
         (Spec.Ed25519.bytesAt m₀ (L.seed) 32)
-        (Spec.Ed25519.bytesAt m₀ (L.msg) L.len.toNat) := by
-  refine WP.seq (WP.mono_syms (secret_ok b hc hL ha) fun u ⟨hu, su⟩ syu => ?_)
-  refine WP.seq (WP.mono (nonce_ok b hu hL ha su (by rw [syu]; exact hsy)) fun v ⟨hv, nv⟩ => ?_)
-  refine WP.seq (WP.mono (challenge_ok b hv hL ha nv hk) fun w ⟨hw, sw⟩ => ?_)
-  exact WP.mono (wipe_ok hw hL) fun t ⟨ht, same⟩ => ⟨ht, same.trans sw⟩
+        (Spec.Ed25519.bytesAt m₀ (L.msg) L.len.toNat) :=
+  bodyFrom_ok b (seed_ok b hc hL ha h32) hL ha rfl hk hsy
 
 end VG.Proof.Ed25519.AArch64.SignCached
