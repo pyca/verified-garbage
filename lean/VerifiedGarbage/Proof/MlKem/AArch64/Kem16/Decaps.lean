@@ -135,15 +135,16 @@ theorem fused_c_W_ok (valid : PrfValidW P (deL P) prf)
     by_cases h : cD P s₀ = cprW P s₀ sB.mem <;> simp [h]
 
 /-- `J(z ‖ c)`, the first 32 bytes of the third state, to `JB` (`Kem16.tailJ`). -/
-theorem tailJ_ok {s₀ sB : State} (hp : Pre P (deL P) s₀)
-    (hB : BInvW true P (deL P) s₀ sB.mem (rhoD P s₀) (P.k * P.k) sB)
+theorem tailJ_ok {s₀ sB : State} (hp : Pre P (deL P) s₀) {ρ : List Byte} {n : Nat} (hn : n ≤ P.k * P.k)
+    (hB : BInvW true P (deL P) s₀ sB.mem ρ n sB)
     (hst : Spec.Sha3.stateAt sB.mem (kA s₀ (deL P).sc) =
       Spec.Sha3.absorb 136 (Spec.Sha3.pad 136 (BitVec.ofNat 8 0x1f) (Hybrid.jE P s₀))) :
     WP isa (.block Impl.MlKem.AArch64.Kem16.tailJ) sB fun t =>
-      BInvW true P (deL P) s₀ t.mem (rhoD P s₀) (P.k * P.k) t ∧ t.gpr .x24 = sB.gpr .x24 ∧
+      BInvW true P (deL P) s₀ t.mem ρ n t ∧ t.gpr .x24 = sB.gpr .x24 ∧
       bytesAt t.mem (sA (deL P) s₀ JB) 32 = jD P s₀ ∧
-      ∀ {o l : Nat}, o + l ≤ SV P + 48 → (o + l ≤ JB ∨ JB + 32 ≤ o) →
-        bytesAt t.mem (sA (deL P) s₀ o) l = bytesAt sB.mem (sA (deL P) s₀ o) l := by
+      (∀ {o l : Nat}, o + l ≤ SV P + 48 → (o + l ≤ JB ∨ JB + 32 ≤ o) →
+        bytesAt t.mem (sA (deL P) s₀ o) l = bytesAt sB.mem (sA (deL P) s₀ o) l) ∧
+      Frame [R (kA s₀) (deL P).sc JB 32] sB.mem t.mem := by
   have hw := hp.wf
   refine WP.mono (KeyGen.copy_ok (S := kA s₀ 3) (D := kA s₀ 3) (so := KEM.ST) (dO := JB)
     (by decide) (by decide) (by decide) (by decide) (sdisj hp (by lom) (by lom) (by lom))
@@ -159,7 +160,7 @@ theorem tailJ_ok {s₀ sB : State} (hp : Pre P (deL P) s₀)
     (fun e he r hr => by
       rw [List.mem_singleton.mp hr]
       exact sdisj hp (o₁ := AH + 1024 * e) (l₁ := 1024) (by lom) (by lom) (.inr (by lom))),
-    k.get .x24, ?_, far⟩
+    k.get .x24, ?_, far, f⟩
   rw [show sA (deL P) s₀ JB = kA s₀ 3 + BitVec.ofNat 64 JB from rfl, b,
     show KEM.ST = 0 from rfl, ptr_zero]
   show _ = J (Hybrid.jE P s₀)
@@ -246,8 +247,8 @@ theorem using_correctW (hash : FixedHash.HashFn) (valid : PrfValidW P (deL P) pr
     simp only [List.length_append, hz, cD, bytesAt_length, Impl.MlKem.AArch64.Hybrid.hashPairs,
       Impl.MlKem.AArch64.Hybrid.blocks, Hybrid.jM, Impl.MlKem.AArch64.Kem16.jSrc]
     omega)] at hst
-  refine WP.seq (WP.mono (Optimized.WP.tablesDepth (tailJ_ok hp hB.b hst) tb (Nat.zero_le _))
-    fun s₁ ⟨⟨hB₁, x₁, jb₁, far₁⟩, t₁⟩ => ?_)
+  refine WP.seq (WP.mono (Optimized.WP.tablesDepth (tailJ_ok hp (Nat.le_refl _) hB.b hst) tb (Nat.zero_le _))
+    fun s₁ ⟨⟨hB₁, x₁, jb₁, far₁, _⟩, t₁⟩ => ?_)
   have kp₁ : bytesAt s₁.mem (sA (deL P) s₀ KP) 32 = (gD P s₀).1 := by
     rw [far₁ (by lom) (by decide), keepB (by lom) (by decide) (by decide) (by decide) (by decide)]
     exact hJ.a.kp

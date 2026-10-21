@@ -175,4 +175,16 @@ def encaps (hash : FixedHashCallers.HashFn) (prf : Nat → Nat → Prog isa) (L 
     (.seq (encryptRestP prf L (placed L (Hybrid.hashPairs (Hybrid.ekSrc L))) .x25 0 .x28 MB .x27 0)
       (.block L.kemEpilogue)))
 
+/-- Decapsulation after the matrix: re-encryption from the first `n` PRF
+outputs in their buffers, and the selection (`Kem16.deRest`). -/
+def deRestP (prf : Nat → Nat → Prog isa) (L : KemLay) (n : Nat) : Prog isa :=
+  seqs [encryptRestP prf L n .x25 (384 * L.k) .x28 MB .x28 (CB L), L.deCmp, .block (deSel ++ L.kemEpilogue)]
+
+/-- The decapsulation: `m'`, `G` and `z ‖ c` to `scratch`, the pairs hashing
+`z ‖ c`, `J(z ‖ c)` to `JB` (`Kem16.tailJ`), the pairs and singleton computing
+PRF outputs, then the re-encryption and the selection. -/
+def decaps (hash : FixedHashCallers.HashFn) (prf : Nat → Nat → Prog isa) (L : KemLay) : Prog isa :=
+  .seq (FixedHashDecaps.deStartUsing hash L) (.seq (.block (startJ L))
+    (.seq (matrixP L (jSrc L) (.block tailJ)) (deRestP prf L (placed L (Hybrid.hashPairs (jSrc L))))))
+
 end VG.Impl.MlKem.AArch64.Kem16P
