@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedVerified
 public import VerifiedGarbage.Proof.Sm4.Arm.KeyVerified
 public import VerifiedGarbage.Proof.Sm4.Arm.EcbCall
 public import VerifiedGarbage.Proof.Sm4.Arm.EcbAny
@@ -31,6 +32,16 @@ def artifacts : List Artifact := [
     notes := ["Baseline ARMv7: calls `vg_sm4_ecb` with `decrypt = 1`."]
     code := Impl.Sm4.Arm.ecbCall .decrypt
     stack := 1480
-    verified := Proof.Sm4.Arm.ecbCall_verified .decrypt }]
+    verified := Proof.Sm4.Arm.ecbCall_verified .decrypt },
+  (Spec.Sm4.Prepared.prepareApi Impl.Sm4.Arm.layout).artifact Arm.target {
+    notes := ["Baseline ARMv7: bitslices the round keys once into ECB's working space, in the selected direction, with no table lookups."]
+    code := Impl.Sm4.Arm.prepareKeys
+    stack := 0
+    verified := Proof.Sm4.Arm.prepare_verified },
+  (Spec.Sm4.Prepared.cryptApi Impl.Sm4.Arm.layout).artifact Arm.target {
+    notes := ["Baseline ARMv7: ECB's eight-block bitsliced core under the prepared round keys, which it preserves for further batches, with no table lookups."]
+    code := Impl.Sm4.Arm.cryptPrepared
+    stack := 0
+    verified := Proof.Sm4.Arm.crypt_verified }]
 
 end VG.Artifacts.Sm4.Arm
