@@ -123,14 +123,19 @@ timing. -/
 
 /-- `σ` (32 bytes) and the two outputs of `PRF₂` (256 bytes), in the
 scratch space, past what the sampling and the sponge of `H` use. -/
-def oPS : Nat := 7680
+def oPS : Nat := 6920
 def oPO : Nat := 7424
 
-/-- The fourth state: the padded block of `σ ‖ N`, with lane 4 in `r9`. -/
-def pload : List Instr :=
-  .mov32 .rax (.imm 0) :: ((List.range 20).flatMap fun i => [.store (at_ .rbx (32 * (i + 5) + 24)) .rax]) ++
-    ((List.range 4).flatMap fun i => [.mov .rax (.mem (at_ .rbx (oPS + 8 * i))), .store (at_ .rbx (32 * i + 24)) .rax]) ++
-    [.store (at_ .rbx (32 * 4 + 24)) .r9, .mov32 .rax (.imm 0x80), .store8 (at_ .rbx (32 * 16 + 24 + 7)) .rax]
+/-- Lane `j` of the fourth state: of the padded block of `σ ‖ N`, with lane
+4 (`N` and SHAKE's suffix) in `r9`. -/
+def plane (j : Nat) : List Instr :=
+  if j < 4 then [.mov .rax (.mem (at_ .rbx (oPS + 8 * j))), .store (at_ .rbx (32 * j + 24)) .rax]
+  else if j = 4 then [.store (at_ .rbx (32 * 4 + 24)) .r9]
+  else if j = 16 then [.movImm64 .rax 0x8000000000000000#64, .store (at_ .rbx (32 * 16 + 24)) .rax]
+  else [.mov32 .rax (.imm 0), .store (at_ .rbx (32 * j + 24)) .rax]
+
+/-- The fourth state: the padded block of `σ ‖ N`. -/
+def pload : List Instr := (List.range 25).flatMap plane
 
 /-- The first 128 bytes of the fourth state to `r8`, `r8` to the next
 output and `r9` to the next `N`. -/
