@@ -64,23 +64,23 @@ theorem parityExponent_trace (B : Addr) (Z n e : Nat) :
     by rw [Mv]; exact P.exponentRight⟩, flagU, flagV⟩
 
 theorem exponent_branch_trace {B : Addr} {Z n e : Nat} {bit : Bool} {th el : Prog isa}
-    (first : RelCT isa (ExponentPair B Z n e) th (fun _ _ => True))
-    (second : RelCT isa (ExponentPair B Z n e) el (fun _ _ => True)) :
-    RelCT isa (ExponentTest B Z n e bit) (.ite .e th el) (fun _ _ => True) := by
+    (first : RelCT isa (ExponentPair B Z n e) th (VG.X86.Taint.Agree (workspaceTaint true)))
+    (second : RelCT isa (ExponentPair B Z n e) el (VG.X86.Taint.Agree (workspaceTaint true))) :
+    RelCT isa (ExponentTest B Z n e bit) (.ite .e th el) (VG.X86.Taint.Agree (workspaceTaint true)) := by
   apply RelCT.ite (fun _ _ P => P.2.1.trans P.2.2.symm)
   · exact first.mono (fun _ _ P => P.1.1) (fun _ _ P => P)
   · exact second.mono (fun _ _ P => P.1.1) (fun _ _ P => P)
 
 theorem dSelect_trace (B : Addr) (Z n e : Nat) :
-    RelCT isa (ExponentPair B Z n e) (dSelect n) (fun _ _ => True) := by
+    RelCT isa (ExponentPair B Z n e) (dSelect n) (VG.X86.Taint.Agree (workspaceTaint true)) := by
   have odd := (key_public_trace (dOdd_public n)).mono
-    (fun _ _ (P : ExponentPair B Z n e _ _) => P.agree) (fun _ _ _ => trivial)
+    (fun _ _ (P : ExponentPair B Z n e _ _) => P.agree) (fun _ _ P => P)
   have even := (key_public_trace (dEven_public n)).mono
-    (fun _ _ (P : ExponentPair B Z n e _ _) => P.agree) (fun _ _ _ => trivial)
+    (fun _ _ (P : ExponentPair B Z n e _ _) => P.agree) (fun _ _ P => P)
   have one := (key_public_trace (dOne_public n)).mono
-    (fun _ _ (P : ExponentPair B Z n e _ _) => P.agree) (fun _ _ _ => trivial)
+    (fun _ _ (P : ExponentPair B Z n e _ _) => P.agree) (fun _ _ P => P)
   have zero := (key_public_trace dZero_public).mono
-    (fun _ _ (P : ExponentPair B Z n e _ _) => P.agree) (fun _ _ _ => trivial)
+    (fun _ _ (P : ExponentPair B Z n e _ _) => P.agree) (fun _ _ P => P)
   unfold dSelect
   exact RelCT.seq (equalExponent_trace B Z n e 0) (exponent_branch_trace zero
     (RelCT.seq (equalExponent_trace B Z n e 1) (exponent_branch_trace one
