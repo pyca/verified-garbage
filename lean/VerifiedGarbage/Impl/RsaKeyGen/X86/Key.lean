@@ -19,10 +19,14 @@ open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Rsa.X86.Keys
 def enter : Prog isa :=
   .seq (.block [.mov .edi (.mem (CandidateArgs.arg 16))]) (CandidateArgs.copies 18)
 
+def prepareLoaded (n : Nat) : Prog isa := seqs [primes n, lcmPart n, dSelect n]
+
+def deriveLoaded (n : Nat) : Prog isa :=
+  .seq (prepareLoaded n) (.seq (smallMask n) (.ite .ne retry (keyPart n)))
+
 def sized (n : Nat) : Prog isa := seqs [
   clearArrays n, loadPrime n 16 aPa, loadPrime n 24 aQa,
-  primes n, lcmPart n, dPart n, smallMask n,
-  .ite .ne retry (keyPart n), writeOutputs n]
+  loadExponent n, deriveLoaded n, writeOutputs n]
 
 def widths : List Nat := (List.range 61).map (· + 4)
 

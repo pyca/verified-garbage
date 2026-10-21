@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyCrt
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyStageFrame
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisor
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEvenFrame
 
 /-! # Compute both CRT exponents with safe fixed-schedule division -/
 
@@ -21,6 +22,7 @@ theorem crtPart_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
       Ws t B Z n 32 ∧ Outs B (stageRanges n crtArrays) s.mem t.mem ∧
       num t.mem B n aDp = num s.mem B n aD % crtDivisor (num s.mem B n aPm) ∧
       num t.mem B n aDq = num s.mem B n aD % crtDivisor (num s.mem B n aQm) ∧
+      slot t.mem B kOk = slot s.mem B kOk ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
   have fd := h.fit64 (j := aD) (by decide)
   have fq := h.fit64 (j := aQm) (by decide)
@@ -62,6 +64,8 @@ theorem crtPart_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
   have frameT : Outs B (stageRanges n crtArrays) w.mem t.mem := stage_division (by decide) (by decide) Ot
   exact ⟨ht, (prefixFrame.trans frameW).trans frameT,
     ((arrayDivision_preserves_num (by decide) (by decide) (by decide) fp Ot).trans Pw).trans P,
-    Q, (Ku.mono (by decide)).trans (Kv.trans ((Kw.mono (by decide)).trans Kt))⟩
+    Q, (arrayDivision_preserves_slot (by decide) Ot).trans ((Ow.slot (by decide) (by decide)).trans
+      ((arrayDivision_preserves_slot (by decide) Ov).trans (Ou.slot (by decide) (by decide)))),
+    (Ku.mono (by decide)).trans (Kv.trans ((Kw.mono (by decide)).trans Kt))⟩
 
 end VG.Proof.RsaKeyGen.X86.Key

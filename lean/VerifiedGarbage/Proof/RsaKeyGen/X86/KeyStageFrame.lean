@@ -16,6 +16,35 @@ open VG.Impl.RsaKeyGen.X86.Key
 def stageRanges (n : Nat) (js : List Nat) : List (Nat × Nat) :=
   exponentTemps n ++ ranges n js []
 
+theorem stage_mono {m m' : Mem} {B : Addr} {n : Nat} {js ks : List Nat}
+    (included : ∀ j ∈ js, j ∈ ks) (O : Outs B (stageRanges n js) m m') :
+    Outs B (stageRanges n ks) m m' := by
+  refine O.mono ?_
+  intro r hr
+  rcases List.mem_append.mp hr with temp | output
+  · exact List.mem_append_left _ temp
+  · simp only [ranges, List.map_nil, List.append_nil, List.mem_map] at output
+    obtain ⟨j, hj, rfl⟩ := output
+    exact List.mem_append_right _ (List.mem_append_left _ (List.mem_map.mpr ⟨j, included j hj, rfl⟩))
+
+theorem stage_preserves_header {m m' : Mem} {B : Addr} {n d count : Nat} {js : List Nat}
+    (bound : d + 4 * count ≤ kOk) (O : Outs B (stageRanges n js) m m') :
+    val32 m' B d count = val32 m B d count := by
+  apply O.val32 _ (by unfold kOk at bound; omega)
+  intro r hr
+  rcases List.mem_append.mp hr with temp | output
+  · simp only [exponentTemps, List.mem_cons, List.not_mem_nil, or_false] at temp
+    rcases temp with rfl | rfl
+    · exact Or.inl bound
+    · exact Or.inl (Nat.le_trans bound (by decide : kOk ≤ hdr))
+  · simp only [ranges, List.map_nil, List.append_nil, List.mem_map] at output
+    obtain ⟨a, _, rfl⟩ := output
+    exact Or.inl (Nat.le_trans bound (Nat.le_trans (by decide : kOk ≤ hdr) (Nat.le_add_right ..)))
+
+theorem stage_preserves_e {m m' : Mem} {B : Addr} {n : Nat} {js : List Nat}
+    (O : Outs B (stageRanges n js) m m') : val32 m' B kEv 2 = val32 m B kEv 2 :=
+  stage_preserves_header (by decide) O
+
 theorem stage_temps {m m' : Mem} {B : Addr} {n : Nat} {js : List Nat}
     (O : Outs B (exponentTemps n) m m') : Outs B (stageRanges n js) m m' :=
   O.mono (fun _ hr => List.mem_append_left _ hr)
