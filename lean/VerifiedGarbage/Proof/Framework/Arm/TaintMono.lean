@@ -440,6 +440,9 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
   | mov d o =>
     simp only [step, Option.some.injEq] at hs ⊢; cases hs
     exact ⟨_, rfl, h.upd (set_mono hw d hw.op2PubM) h.flags (h.movBasesM d o)⟩
+  | mvn d o =>
+    simp only [step, Option.some.injEq] at hs ⊢; cases hs
+    exact ⟨_, rfl, h.upd (set_mono hw d hw.op2PubM) h.flags (h.killM d)⟩
   | dp _ d n o =>
     simp only [step, Option.some.injEq] at hs ⊢; cases hs
     exact ⟨_, rfl, h.upd (set_mono hw d and2) h.flags (h.killM d)⟩

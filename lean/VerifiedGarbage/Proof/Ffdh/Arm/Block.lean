@@ -106,7 +106,7 @@ theorem logic_exec (s : State) (op : DpOp) (d n : Reg) (o : Op2) :
     exec (.dp op d n o) s = (o.eval s).map (fun v => s.setReg d
       (match op with
       | .add => s.gpr n + v | .sub => s.gpr n - v | .and => s.gpr n &&& v
-      | .orr => s.gpr n ||| v | .eor => s.gpr n ^^^ v)) := rfl
+      | .orr => s.gpr n ||| v | .eor => s.gpr n ^^^ v | .bic => s.gpr n &&& ~~~v)) := rfl
 
 theorem cmp_exec (s : State) (n : Reg) (o : Op2) :
     exec (.cmp n o) s = (o.eval s).map (fun v => subFlags s (s.gpr n) v) := rfl

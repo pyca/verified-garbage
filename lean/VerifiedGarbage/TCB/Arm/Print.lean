@@ -29,11 +29,12 @@ def Op2.str : Op2 → String
   | .shifted r sh n => s!"{r.name}, {sh.name} #{n}"
 
 def DpOp.name : DpOp → String
-  | .add => "add" | .sub => "sub" | .and => "and" | .orr => "orr" | .eor => "eor"
+  | .add => "add" | .sub => "sub" | .and => "and" | .orr => "orr" | .eor => "eor" | .bic => "bic"
 
 def Instr.asm : Instr → List String
   | .mov d (.shifted m sh n) => [s!"{sh.name} {d.name}, {m.name}, #{n}"]
   | .mov d op2 => [s!"mov {d.name}, {op2.str}"]
+  | .mvn d op2 => [s!"mvn {d.name}, {op2.str}"]
   | .dp op d n op2 => [s!"{op.name} {d.name}, {n.name}, {op2.str}"]
   | .adds d n op2 => [s!"adds {d.name}, {n.name}, {op2.str}"]
   | .adc d n op2 => [s!"adc {d.name}, {n.name}, {op2.str}"]

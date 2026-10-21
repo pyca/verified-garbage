@@ -64,7 +64,7 @@ theorem sound {τ τ' : VG.Arm.Taint.T} {i : Instr}
     (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ VG.Arm.Taint.Agree τ' s₁' s₂' := by
   cases i with
-  | mov | dp | adds | adc | subs | cmp | movw | movt | adrSym | rev | mul | mla | ldr | str | ldrb | strb | ldrSp | addSp | alloc | free | push | pop =>
+  | mov | mvn | dp | adds | adc | subs | cmp | movw | movt | adrSym | rev | mul | mla | ldr | str | ldrb | strb | ldrSp | addSp | alloc | free | push | pop =>
     exact base_step_sound ha hs e₁ e₂
   | umaal => exact umaal_step_sound ha hs e₁ e₂
 

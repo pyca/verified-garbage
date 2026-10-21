@@ -80,7 +80,7 @@ theorem dp_run (op : DpOp) (d n r : Reg) (s : State) :
     ∃ s', runBlock isa [.dp op d n (.reg r)] s = some s' ∧
       s'.gpr d = (match op with
         | .add => s.gpr n + s.gpr r | .sub => s.gpr n - s.gpr r | .and => s.gpr n &&& s.gpr r
-        | .orr => s.gpr n ||| s.gpr r | .eor => s.gpr n ^^^ s.gpr r) ∧
+        | .orr => s.gpr n ||| s.gpr r | .eor => s.gpr n ^^^ s.gpr r | .bic => s.gpr n &&& ~~~(s.gpr r)) ∧
       Keep [d] s s' := by
   cases op <;>
   simp only [runBlock_cons, runStep_some, runBlock_nil, isa, exec, Op2.eval, Option.map_some,

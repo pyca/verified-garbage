@@ -120,6 +120,7 @@ def storeStep (τ : T) (n : Reg) (off w : Nat) (p : Bool) : Option T :=
 /-- `Arm.Taint.stepKM`. -/
 def step (τ : T) : Instr → Option T
   | .mov d op2 => some { τ with regs := set τ d (op2Pub τ op2), bases := movBases τ d op2 }
+  | .mvn d op2 => some { τ with regs := set τ d (op2Pub τ op2), bases := kill τ d }
   | .dp _ d n op2 => some { τ with regs := set τ d (pub τ n && op2Pub τ op2), bases := kill τ d }
   | .adds d n op2 | .subs d n op2 =>
     let p := pub τ n && op2Pub τ op2
