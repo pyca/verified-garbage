@@ -607,12 +607,51 @@ def replaceInv : Prog isa → Prog isa
  | .frame a b c => if a = .alloc 16 then IsaBatchInverseProto.code else .frame a (replaceInv b) c
  | a => a
 
+namespace StaticCombaProto
+open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont.X86.Rt
+
+def accum : List Instr := [.alu .add .esi (.reg .eax),.alu .adc .ebx (.reg .edx),.alu .adc .ecx (.imm 0)]
+def aprod (i j : Nat) : List Instr :=
+ [.mov .eax (.mem (at_ .edi (4*i))),.mov .edx (.mem (at_ .edi (4*j))),.mul .edx] ++ accum
+def qprod (i j : Nat) : List Instr :=
+ [.mov .eax (.mem (at_ .edi (52+4*j))),.mov .edx (.mem (at_ .ebp (4*i))),.mul .edx] ++ accum
+
+def column (N k : Nat) : List Instr :=
+ [.mov .esi (.imm 0),.mov .ebx (.imm 0),.mov .ecx (.imm 0)] ++
+ (if k<2*N-1 then
+   ptr .edi argA .eax ++
+   ((List.range N).filter fun i => i<k-i && i≤k && k-i<N).flatMap (fun i => aprod i (k-i)) ++
+   [.alu .add .esi (.reg .esi),.alu .adc .ebx (.reg .ebx),.alu .adc .ecx (.reg .ecx)] ++
+   (if k%2=0 then aprod (k/2) (k/2) else []) else []) ++
+ ptr .edi argS .eax ++ ptr .ebp argM .eax ++
+ [.alu .add .esi (.mem (at_ .edi 8)),.alu .adc .ebx (.mem (at_ .edi 12)),.alu .adc .ecx (.imm 0)] ++
+ ((List.range N).filter fun j => j<k && k-j<N).flatMap (fun j => qprod (k-j) j) ++
+ (if k<N then [
+  .mov .eax (.reg .esi),.mov .edx (.mem (at_ .edi 16)),.mul .edx,.store (at_ .edi (52+4*k)) .eax,
+  .mov .edx (.mem (at_ .ebp 0)),.mul .edx] ++ accum else [.store (at_ .edi (52+4*k)) .esi]) ++
+ [.store (at_ .edi 8) .ebx,.store (at_ .edi 12) .ecx]
+
+def square (N : Nat) : Prog isa := VG.Impl.Rsa.X86.Keys.seqs [
+ .block (save ++ ptr .edx argInv .eax ++ [.mov .eax (.mem (at_ .edx 0)),.store (at_ .edi 16) .eax,
+  .mov .eax (.imm 0),.store (at_ .edi 8) .eax,.store (at_ .edi 12) .eax]),
+ .block ((List.range (2*N)).flatMap (column N)),
+ .block [.mov .ebp (.reg .edi),.alu .add .ebp (.imm (BitVec.ofNat 32 (52+8*N))),
+  .mov .eax (.mem (at_ .edi 8)),.store (at_ .ebp 0) .eax,
+  .mov .eax (.mem (at_ .edi 12)),.store (at_ .ebp 4) .eax,.alu .sub .ebp (.imm (BitVec.ofNat 32 (4*N)))],
+ subM,.block mask,select,.block restoreRegs]
+
+def dispatch : Prog isa := .seq
+ (.block [.mov .eax (.mem argA),.mov .edx (.mem argB),.alu .cmp .eax (.reg .edx)])
+ (.ite .e (.seq (.block [.mov .eax (.mem argN),.alu .cmp .eax (.imm 32)])
+  (.ite .e (square 64) (ScalarCombaProto.square 4))) VG.Impl.Mont.X86.Rt.scalarBody)
+end StaticCombaProto
+
 def main : IO Unit := do
  let modes := [VG.Impl.Mont.X86.Rt.body, NextMont.tune 2 VG.Impl.Mont.X86.Rt.body,
    NextMont.tune 4 VG.Impl.Mont.X86.Rt.body, NextMont.tune 8 VG.Impl.Mont.X86.Rt.body,
    NextMont.combined 4, NextMont.combined 8,
    ScalarCombaProto.dispatch 2, ScalarCombaProto.dispatch 4, ScalarCombaProto.dispatch 8, ScalarCombaProto.dispatch 16,
-   StackCombaProto.dispatch 2, StackCombaProto.dispatch 4, StackCombaProto.dispatch 8, StackCombaProto.dispatch 16]
+   StackCombaProto.dispatch 2, StackCombaProto.dispatch 4, StackCombaProto.dispatch 8, StackCombaProto.dispatch 16, StaticCombaProto.dispatch]
  let codes := (modes.zipIdx).map fun (p,i) =>
    NextMont.printFn ("proto_mont"++toString i) p ++
    (if i<10 then NextMont.printFn ("proto_recover"++toString i) VG.Impl.Rsa.X86.RecoverRt.code ("proto_mont"++toString i) else "")
@@ -633,10 +672,12 @@ def main : IO Unit := do
    NextMont.printFn "proto_recover24" (replaceGcd FastR2Proto.windowCode) "proto_mont8" ++
    NextMont.printFn "proto_recover25" (FastDoubleProto.tune (replaceGcd FastR2Proto.code)) "proto_mont3" ++
    NextMont.printFn "proto_recover26" (FastDoubleProto.tune (replaceGcd FastR2Proto.code)) "proto_mont0" ++
+   NextMont.printFn "proto_recover27" (FastDoubleProto.tune (replaceGcd FastR2Proto.code)) "proto_mont14" ++
    NextMont.printFn "proto_check0" (VG.Impl.Rsa.X86.KeyCheckRt.code false) ++
    NextMont.printFn "proto_check1" (KeyCheckMontProto.code false) ++
    NextMont.printFn "proto_crt0" VG.Impl.Rsa.X86.CrtValuesRt.code ++
    NextMont.printFn "proto_crt2" BatchCrtProto.code "proto_inv_C" ++
    NextMont.printFn "proto_crt3" BatchCrtProto.code "proto_inv_active_C" ++
    NextMont.printFn "proto_crt4" (replaceInv BatchCrtProto.code) ++
+   NextMont.printFn "proto_inv_test" (VG.Impl.Rsa.X86.Keys.seqs [.block VG.Impl.Rsa.X86.CrtValues.entry,IsaBatchInverseProto.code,.block VG.Impl.Bignum.X86.PublicFn.restore]) ++
    ".section .note.GNU-stack,\"\",@progbits\n")
