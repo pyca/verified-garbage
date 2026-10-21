@@ -62,6 +62,55 @@ theorem gok_frame {s₀ : State} (hp : Pre P (enL P) s₀) (hk : Stk128 P (enL P
     · exact mb_bW3 hp hk r hr
     · rw [List.mem_singleton.mp hr]; exact sdisj hp (by lom) (by lom) (by lom)
 
+/-- **`G`** after the pairs hashing `ek`: the key, `r` and `m`, and the paired
+matrix's invariant from the memory `G` leaves. -/
+theorem gStep_ok (hash : FixedHash.HashFn)
+    (hG : FixedHash.HashCorrect hash .x28 KEM.ST KEM.WK 72 6 [⟨.x28,KEM.MB,32⟩,⟨.x28,KEM.HB,32⟩]
+      [⟨.x26,0,32⟩,⟨.x28,KEM.RB,32⟩]) {s₀ u : State} (hp : Pre P (enL P) s₀) (hk : Stk128 P (enL P) s₀)
+    (ho : HashOk P (Impl.MlKem.AArch64.Hybrid.ekSrc P)) (tables : Tables s₀) {mA : Mem} {ρ : List Byte}
+    (hmA : bytesAt mA (sA (enL P) s₀ MB) 32 = mE s₀)
+    (hu : HInvW true P (enL P) (ekM P) s₀ mA ρ (ekE P s₀)
+      (2 * Impl.MlKem.AArch64.Hybrid.hashPairs (ekM P).S) (Impl.MlKem.AArch64.Hybrid.hashPairs (ekM P).S) u)
+    (mu : MT3 P (enL P) s₀ u) (su : u.syms = s₀.syms) :
+    WP isa (Impl.MlKem.AArch64.Kem16P.gAt hash) u fun v => GOk P s₀ v.mem ∧
+      PInvW true P (enL P) s₀ v.mem ρ (2 * Impl.MlKem.AArch64.Hybrid.hashPairs (ekM P).S) 0 v ∧
+      MT3 P (enL P) s₀ v := by
+  have hw := hp.wf
+  have hm : bytesAt u.mem (sA (enL P) s₀ MB) 32 = mE s₀ := by
+    rw [bytesAt_frame hu.fr (mb_bW3 hp hk) (by decide)]; exact hmA
+  have hst := hu.hash
+  rw [Hybrid.hstate_done (by
+    have h3 : (P.ekLen / 136 + 1) % 3 = 0 := ho.three
+    have : (ekE P s₀).length = P.ekLen := bytesAt_length _ _ _
+    simp only [Impl.MlKem.AArch64.Hybrid.hashPairs, Impl.MlKem.AArch64.Hybrid.blocks, ekM,
+      Impl.MlKem.AArch64.Hybrid.ekSrc]
+    omega)] at hst
+  refine WP.mono_syms (tailHN_ok hash hG hp (by
+      have := ho.pairs
+      simp only [ekM]; omega) hu.b hm hst) fun v ⟨hv, fv⟩ sv => ?_
+  -- The rejection table is apart from what `G` writes.
+  have key : (Region.mk (u.syms "VG_MLKEM_REJ_SHUFFLE") 4096).Disjoint
+      ⟨kA s₀ ((enL P).slot 1) + BitVec.ofNat 64 0, 32⟩ := by
+    rw [su]
+    refine apart_of_covers tables.shuffleApart ?_
+    have c := cov_w hp hu.b.kb (b := 2) (o := 0) (l := 32) ⟨by enk, by enk⟩ (by enk)
+    rw [hu.b.kb.wr] at c
+    exact c
+  have art : Rej8.TableArtifact v.mem (u.syms "VG_MLKEM_REJ_SHUFFLE") :=
+    mu.t.artifact.frame fv fun r hr => by
+      rcases List.mem_append.mp hr with hr | hr
+      · rw [List.mem_singleton.mp hr]
+        exact mu.t.apart.sub_right (scratch_sub hp (o := HB) (l := 32) (by lom))
+      · rcases mem5 hr with rfl | rfl | rfl | rfl | rfl
+        · exact mu.t.apart.sub_right (scratch_sub hp (o := KEM.ST) (l := 200) (by lom))
+        · exact mu.t.apart.sub_right (scratch_sub hp (o := WK) (l := 640) (by lom))
+        · exact mu.stk.sub_right (below_sub (by decide) (by decide))
+        · exact key
+        · exact mu.t.apart.sub_right (scratch_sub hp (o := RB) (l := 32) (by lom))
+  exact ⟨⟨hv.key, hv.r, hv.m⟩, ⟨hv.b, Frame.refl _ _, fun N hN => absurd hN (Nat.not_lt_zero _)⟩,
+    ⟨by rw [sv]; exact art, by rw [sv, hv.b.kb.rd, hv.b.kb.wr, ← hu.b.kb.rd, ← hu.b.kb.wr]; exact mu.t.readable,
+      by rw [sv]; exact mu.t.apart⟩, by rw [sv]; exact mu.stk⟩
+
 /-- **The encapsulation computing PRF outputs in the matrix is correct.** -/
 theorem using_correctP (hash : FixedHash.HashFn) (valid : PrfValidW P (enL P) prf)
     (hG : FixedHash.HashCorrect hash .x28 KEM.ST KEM.WK 72 6 [⟨.x28,KEM.MB,32⟩,⟨.x28,KEM.HB,32⟩]
@@ -87,48 +136,8 @@ theorem using_correctP (hash : FixedHash.HashFn) (valid : PrfValidW P (enL P) pr
     ⟨BInvW.zero hA.kb hA.x24 hA.rho, Frame.refl _ _, by rw [Hybrid.hstate_zero]; exact hA.zero,
       by rw [ekM_base]; exact hA.kb.ro 0 (show 0 < 2 by decide)⟩
   -- The matrix, with `G` after the pairs hashing `ek`.
-  have between : ∀ u, HInvW true P (enL P) (ekM P) s₀ uA.mem (rhoE P s₀) (ekE P s₀)
-      (2 * Impl.MlKem.AArch64.Hybrid.hashPairs (ekM P).S) (Impl.MlKem.AArch64.Hybrid.hashPairs (ekM P).S) u →
-      MT3 P (enL P) s₀ u → u.syms = uA.syms →
-      WP isa (Impl.MlKem.AArch64.Kem16P.gAt hash) u fun v => GOk P s₀ v.mem ∧
-        PInvW true P (enL P) s₀ v.mem (rhoE P s₀) (2 * Impl.MlKem.AArch64.Hybrid.hashPairs (ekM P).S) 0 v ∧
-        MT3 P (enL P) s₀ v := by
-    intro u hu mu su
-    have hm : bytesAt u.mem (sA (enL P) s₀ MB) 32 = mE s₀ := by
-      rw [bytesAt_frame hu.fr (mb_bW3 hp hk) (by decide)]; exact hA.m
-    have hst := hu.hash
-    rw [Hybrid.hstate_done (by
-      have h3 : (P.ekLen / 136 + 1) % 3 = 0 := ho.three
-      have : (ekE P s₀).length = P.ekLen := bytesAt_length _ _ _
-      simp only [Impl.MlKem.AArch64.Hybrid.hashPairs, Impl.MlKem.AArch64.Hybrid.blocks, ekM,
-        Impl.MlKem.AArch64.Hybrid.ekSrc]
-      omega)] at hst
-    refine WP.mono_syms (tailHN_ok hash hG hp (by
-        have := ho.pairs
-        simp only [ekM]; omega) hu.b hm hst) fun v ⟨hv, fv⟩ sv => ?_
-    -- The rejection table is apart from what `G` writes.
-    have key : (Region.mk (u.syms "VG_MLKEM_REJ_SHUFFLE") 4096).Disjoint
-        ⟨kA s₀ ((enL P).slot 1) + BitVec.ofNat 64 0, 32⟩ := by
-      rw [su, syA]
-      refine apart_of_covers tables.shuffleApart ?_
-      have c := cov_w hp hu.b.kb (b := 2) (o := 0) (l := 32) ⟨by enk, by enk⟩ (by enk)
-      rw [hu.b.kb.wr] at c
-      exact c
-    have art : Rej8.TableArtifact v.mem (u.syms "VG_MLKEM_REJ_SHUFFLE") :=
-      mu.t.artifact.frame fv fun r hr => by
-        rcases List.mem_append.mp hr with hr | hr
-        · rw [List.mem_singleton.mp hr]
-          exact mu.t.apart.sub_right (scratch_sub hp (o := HB) (l := 32) (by lom))
-        · rcases mem5 hr with rfl | rfl | rfl | rfl | rfl
-          · exact mu.t.apart.sub_right (scratch_sub hp (o := KEM.ST) (l := 200) (by lom))
-          · exact mu.t.apart.sub_right (scratch_sub hp (o := WK) (l := 640) (by lom))
-          · exact mu.stk.sub_right (below_sub (by decide) (by decide))
-          · exact key
-          · exact mu.t.apart.sub_right (scratch_sub hp (o := RB) (l := 32) (by lom))
-    exact ⟨⟨hv.key, hv.r, hv.m⟩, ⟨hv.b, Frame.refl _ _, fun N hN => absurd hN (Nat.not_lt_zero _)⟩,
-      ⟨by rw [sv]; exact art, by rw [sv, hv.b.kb.rd, hv.b.kb.wr, ← hu.b.kb.rd, ← hu.b.kb.wr]; exact mu.t.readable,
-        by rw [sv]; exact mu.t.apart⟩, by rw [sv]; exact mu.stk⟩
-  refine WP.seq (WP.mono_syms (WP.tables128 (matrixP_ok (M := ekM P) hp hk (ekM_ok hp hk hs) ho h0 mt between)
+  refine WP.seq (WP.mono_syms (WP.tables128 (matrixP_ok (M := ekM P) hp hk (ekM_ok hp hk hs) ho h0 mt
+    fun u hu mu su => gStep_ok hash hG hp hk ho tables hA.m hu mu (su.trans syA))
     ta tsA depthM) fun uB ⟨⟨mG, gG, hB, _⟩, tb⟩ _ => ?_)
   -- The noise, `u`, `v` and the epilogue.
   have gB : GOk P s₀ uB.mem := gok_frame hp hk gG hB.fr
