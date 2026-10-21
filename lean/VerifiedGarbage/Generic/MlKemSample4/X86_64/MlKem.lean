@@ -55,10 +55,24 @@ def encapsNotes (v : Sample4Impl) (kpke : String) : List String :=
   | some (n, _), some _ => notes16 v [kpke] ++ [hashNote n]
   | _, _ => notes v ++ ["It computes `H(ek)` with the sponge functions of SHA3-256 first."]
 
+/-- What an instance of ML-KEM-768's key generation calls, and how it computes
+`H(ek)`: hashing `ek` in the rows if `v` has the fragments for it
+(`Callee4.batchHM16`). -/
+def keyGenNotes (v : Sample4Impl) : List String :=
+  match v.callee.s16, v.callee.batchHM16 with
+  | some (n, _), some _ => ["The function saves its caller's callee-saved registers in `scratch`; its calls use the \
+      32 bytes of stack below its return address. It computes the outputs of `PRF` " ++ v.prfsDoc ++ ".",
+    "Its polynomials are 16-bit words: it samples the noise with `vg_mlkem16_cbd2_avx2`, and computes the rest of \
+      K-PKE with `vg_mlkem768_kpke_keygen_ntt` and `vg_mlkem768_kpke_keygen_row`, a row of `t̂` at a time.",
+    "It computes `H(ek)` while it samples the matrix: it samples a row of the matrix at a time with the code of `" ++
+      n ++ "` inlined, whose fourth Keccak state absorbs the blocks of the padded key that the rows before it \
+      wrote, 136 bytes at a time."]
+  | _, _ => notes16 v ["vg_mlkem768_kpke_keygen"]
+
 def artifacts (v : Sample4Impl) : List Artifact := [
   Spec.MlKem.keyGenApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := notes16 v ["vg_mlkem768_kpke_keygen"]
+    notes := keyGenNotes v
     code := Impl.MlKem.X86_64.keyGen v.callee
     stack := 32
     verified := Proof.MlKem.X86_64.keyGen_verified v

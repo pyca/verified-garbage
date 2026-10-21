@@ -122,8 +122,6 @@ def kem768w : Kem16 where
   oW := 12288
   oPR := 20480
 
-/-- `vg_mlkem768_keygen`. -/
-abbrev keyGen (c : Callee4) : Prog isa := kemKeyGenSel kem768w c
 /-- `vg_mlkem768_encaps_h`. -/
 abbrev encapsH (c : Callee4) : Prog isa := kemEncapsHSel kem768w c
 

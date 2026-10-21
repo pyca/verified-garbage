@@ -12,6 +12,11 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgH16Sel
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KgH16Sel
+import VerifiedGarbage.Proof.MlKem.X86_64.KgNttV
+import VerifiedGarbage.Proof.MlKem.X86_64.KgRowV
+import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 meta import VerifiedGarbage.Spec.MlKem.EncapsH
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFusedCT16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Dc16Dec
@@ -126,10 +131,37 @@ theorem keyGenImp768 : (keyGenK kem768).Implies (Spec.MlKem.keyGenContract X86_6
       sat := by sig_implies_sat [Spec.MlKem.keyGenContract, Spec.MlKem.keyGenSig, keyGenK, X86_64.abi, VG.X86_64.argRegs, kem768, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem768] [keyGenSat]
         using keyGenSat }
 
+/-- The halves of K-PKE key generation of ML-KEM-768, safe to call. -/
+theorem kgRows768 : KgRowsOk kem768w.L where
+  ntt := ⟨kgNtt768_correct, kgNtt768_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
+    Code.all_of_allInstrs (by lit_decide)⟩
+  row := ⟨kgRow768_correct, kgRow768_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
+    Code.all_of_allInstrs (by lit_decide)⟩
+
+theorem kgH16Wf768 : KeyGenH.KgH16Wf kem768w :=
+  { kgWf768.toKgWfB with
+    k3 := by decide, ek := by decide, pr := by decide +kernel, se := by decide +kernel, nt := by decide +kernel,
+    hz := by decide +kernel, cp := by decide +kernel, sd := by decide +kernel, sm := by decide +kernel,
+    rw := by decide +kernel, flg := by decide +kernel, tS := by decide +kernel, tC := by decide +kernel,
+    tH := by decide +kernel }
+
+/-- The taint checks of the pieces of key generation hashing `ek` in the rows. -/
+theorem kgH16T768 : KeyGenH.KgH16T kem768w where
+  zT := ⟨_, by taint_decide⟩
+  cT := by
+    intro i hi h0
+    have : i = 1 ∨ i = 2 := by
+      rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+      · exact absurd rfl h0
+      · exact .inl rfl
+      · exact .inr rfl
+    rcases this with rfl | rfl <;> exact ⟨_, by taint_decide⟩
+  sT := ⟨_, by taint_decide⟩
+
 theorem keyGen_verified (v : Sample4Impl) :
     Verified X86_64.target (Impl.MlKem.X86_64.keyGen v.callee) (Spec.MlKem.keyGenContract X86_64.abi 32) :=
-  keyGenSel_verified (n := kem768.scr) (Nat.le_refl _) kpke768 v kg16Wf768 kgWf768 keyGenImp768
-    (fun _ c S => by s16_ctl v c S kpke768) (by s4_ctl v)
+  keyGenHSel_verified kgRows768 v kgH16Wf768 kgH16T768 kpke768 kg16Wf768 kgWf768 keyGenImp768
+    (fun b B => by kgh_ctl v b B kgRows768) (fun _ c S => by s16_ctl v c S kpke768) (by s4_ctl v)
 
 /-- The shared contract of `encapsH`, from the contract its proofs are written against. -/
 theorem encapsHImp768 : (encapsK kem768).Implies (Spec.MlKem.encapsHContract X86_64.abi 32) :=
