@@ -14,9 +14,9 @@
 //! blocks at a time, and encryption, in which each block needs the one
 //! before, one block at a time (in a batch of sixteen, so about sixteen
 //! times ECB's cost). On x86, both take one block at a time, in a batch of
-//! eight (about eight times ECB's cost). On ARMv7, both call the verified ECB
-//! function once per block (a batch of eight, so about eight times ECB's
-//! cost). This module checks the lengths and holds the key schedule.
+//! eight (about eight times ECB's cost). On ARMv7, encryption prepares the round keys
+//! once per call and processes the serial feedback chain; decryption calls
+//! the verified ECB function once per block. This module checks the lengths and holds the key schedule.
 
 #![cfg(any(
     target_arch = "x86",
