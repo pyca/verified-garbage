@@ -1,0 +1,89 @@
+module
+
+public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialLoopFrom
+import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialValue
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialStart
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialLoop
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialOctets
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialMath
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialFlag
+import VerifiedGarbage.Proof.Framework.Omega
+
+/-! Seed the RSA reducer with s-1 to test p-1 without materializing a second modulus. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.X25519.Arm
+
+private def trialRegs : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7]
+
+private theorem offsetInit_ok (s : State) {divisor : Nat}
+    (value : s.gpr .r3=BitVec.ofNat 32 divisor) (positive : 3≤divisor) :
+    WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.trialOffsetInit) s fun t =>
+      t.gpr .r2=BitVec.ofNat 32 (divisor-1) ∧ t.mem=s.mem ∧ Rest [.r2] s t := by
+  unfold VG.Impl.Ffdh.Arm.ParameterCandidate.trialOffsetInit
+  refine wp_dp (op2_imm (by decide)) fun t h => WP.block_nil ⟨?_,h.mem,h.rest (by simp)⟩
+  rw [h.gpr,dpVal,value]
+  exact BitVec.ofNat_sub_ofNat_of_le divisor 1 (by decide) (by omega)
+
+theorem trialOffset_value_ok (s : State) (dst : BitVec 32) {n prime : Nat}
+    (positive : 0 < n) (fits : n < 2 ^ 32) (bufferFits : dst.toNat + n ≤ 2 ^ 32)
+    (primeBound : prime < 1024)
+    (divisor : s.gpr .r7 = BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry prime))
+    (readOut : InRegions (s.rd ++ s.wr) (State.addr (s.sp + 4)) 4)
+    (readWidth : InRegions (s.rd ++ s.wr) (State.addr (s.sp + 12)) 4)
+    (out : s.mem.readW (State.addr (s.sp + 4)) 32 = dst)
+    (width : s.mem.readW (State.addr (s.sp + 12)) 32 = BitVec.ofNat 32 n)
+    (read : TrialReadable s (dst + BitVec.ofNat 32 n) n) :
+    WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.trialOffset s fun t =>
+      ∃ next steps, next < 2 * VG.Impl.RsaKeyGen.tabEntry prime ∧ t.gpr .r2 = BitVec.ofNat 32 next ∧
+        next * 2 ^ (16 * steps) % VG.Impl.RsaKeyGen.tabEntry prime =
+          (VG.Impl.RsaKeyGen.tabEntry prime-1+Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr dst) n)) % VG.Impl.RsaKeyGen.tabEntry prime ∧
+      t.z = decide ((VG.Impl.RsaKeyGen.tabEntry prime-1+Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr dst) n)) %
+        VG.Impl.RsaKeyGen.tabEntry prime = 0) ∧ t.mem = s.mem ∧
+        Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7] s t := by
+  have facts := VG.Proof.RsaKeyGen.tabEntry_facts primeBound
+  unfold VG.Impl.Ffdh.Arm.ParameterCandidate.trialOffset VG.Impl.Ffdh.Arm.ParameterCandidate.seqs
+  refine WP.seq (WP.mono (trialStart_ok s dst n readOut readWidth out width) ?_)
+  rintro u ⟨⟨ptr, cnt, _zero, div, inverse, mem⟩, rest⟩
+  refine WP.seq (WP.mono (offsetInit_ok u (div.trans divisor) facts.2.1) ?_)
+  rintro w ⟨acc, memW, restW⟩
+  have ptr : w.gpr .r0=dst+BitVec.ofNat 32 n := (restW.gpr .r0 (by simp)).trans ptr
+  have cnt : w.gpr .r1=BitVec.ofNat 32 n := (restW.gpr .r1 (by simp)).trans cnt
+  have div : w.gpr .r3=s.gpr .r7 := (restW.gpr .r3 (by simp)).trans div
+  have inverse : w.gpr .r4=VG.Proof.RsaKeyGen.ninv (s.gpr .r7) := (restW.gpr .r4 (by simp)).trans inverse
+  have mem : w.mem=s.mem := memW.trans mem
+  have rest := rest.trans (restW.mono (by simp))
+  have readable : TrialReadable w (w.gpr .r0) n := by
+    rw [ptr]
+    intro i hi
+    rw [rest.rd, rest.wr]
+    exact read i hi
+  have inv : (w.gpr .r4).toNat =
+      (VG.Proof.RsaKeyGen.ninv (BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry prime))).toNat := by
+    rw [inverse, divisor]
+  refine WP.seq (WP.mono (trialLoop_from_ok w positive fits cnt readable acc (by omega : VG.Impl.RsaKeyGen.tabEntry prime-1<2*VG.Impl.RsaKeyGen.tabEntry prime) (div.trans divisor)
+    facts.2 inv (VG.Proof.RsaKeyGen.ninv_tab primeBound)) ?_)
+  rintro v ⟨next, steps, bound, value, congruence, _, memory, keep⟩
+  have inputValue : trialValue w.mem (w.gpr .r0) n =
+      Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr dst) n) := by
+    rw [mem, ptr, trialValue_octets, trialBytes_at _ _ fits bufferFits]
+  rw [inputValue] at congruence
+  have divides := trialDigit_divides facts.1 bound congruence
+  have divV : v.gpr .r3 = BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry prime) :=
+    (keep.gpr .r3 (by simp)).trans (div.trans divisor)
+  have preserved : Rest trialRegs s v := (rest.mono (by simp [trialRegs])).trans (keep.mono (by simp [trialRegs]))
+  refine WP.seq (WP.mono (trialFlag_ok v) ?_)
+  rintro t ⟨flag, memT, restT⟩
+  refine WP.block_nil ⟨next, steps, bound, (restT.gpr .r2 (by simp)).trans value, congruence,
+    ?_, memT.trans (memory.trans mem), preserved.trans (restT.mono (by simp))⟩
+  rw [flag, value, divV, ofNat_beq_zero (by omega : next < 2 ^ 32),
+    ofNat_beq_eq (by omega : next < 2 ^ 32) (by omega : VG.Impl.RsaKeyGen.tabEntry prime < 2 ^ 32),
+    ← Bool.decide_or]
+  apply Bool.eq_iff_iff.mpr
+  simpa only [decide_eq_true_eq] using divides.symm
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate

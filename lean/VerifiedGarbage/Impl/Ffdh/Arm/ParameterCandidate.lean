@@ -140,12 +140,22 @@ The final accumulator is below twice the prime, so zero or the prime
 means divisibility. Z reports that result; r10/r11 remain the sieve cursor. -/
 def trialSmall : Prog isa := seqs [.block trialStart, .loop trialStep .ne, trialFlag]
 
+/-- Test p-1 with the same reducer, seeding its carry with the divisor minus one. -/
+def trialOffsetInit : List Instr := [.dp .sub .r2 .r3 (.imm 1)]
+
+def trialOffset : Prog isa := seqs [.block trialStart, .block trialOffsetInit,
+  .loop trialStep .ne, trialFlag]
+
 /-- Short public residue comparisons, unrolled by the emitter. -/
 def residueEquals : List Nat → Prog isa
   | [] => .block []
   | [v] => .block [.cmp .r2 (.imm (BitVec.ofNat 32 v))]
   | v :: rest => .seq (.block [.cmp .r2 (.imm (BitVec.ofNat 32 v))])
       (.ite .eq (.block []) (residueEquals rest))
+
+/-- For odd p, Z iff q=(p-1)/2 is odd. Reject even q before any trial division. -/
+def qOdd : List Instr := [.ldrSp .r4 4, .ldrSp .r5 12, .dp .add .r4 .r4 (.reg .r5),
+  .dp .sub .r4 .r4 (.imm 1), .ldrb .r2 .r4 0, .dp .and .r2 .r2 (.imm 3), .cmp .r2 (.imm 3)]
 
 def residueLow : List Instr := [.ldrSp .r4 4, .ldrSp .r5 12, .dp .add .r4 .r4 (.reg .r5),
   .dp .sub .r4 .r4 (.imm 1), .ldrb .r2 .r4 0, .dp .and .r2 .r2 (.imm 7), .cmp .r2 (.imm 3)]
@@ -191,6 +201,17 @@ def sieveSkip : List Instr :=
 def sieveStep : Prog isa := .seq (.block sieveFinish) (.ite .eq sieveActiveStep (.block sieveSkip))
 
 def sieve : Prog isa := seqs [sieveInit, .loop sieveStep .ne, .block sieveFinish]
+
+def pairEntry : List Instr := [.ldr .r7 .r10 0]
+def pairAdvance : List Instr := [.dp .add .r10 .r10 (.imm 4)]
+
+/-- Test p and q against each prime before advancing the public table cursor. -/
+def pairTrials : Prog isa := seqs [.block pairEntry, trialSmall,
+  .ite .eq (.block []) (.seq (.block pairEntry) trialOffset)]
+
+def pairActiveStep : Prog isa := seqs [pairTrials, sieveFlag, .block (pairAdvance ++ sieveCount)]
+def pairStep : Prog isa := .seq (.block sieveFinish) (.ite .eq pairActiveStep (.block sieveSkip))
+def pairSieve : Prog isa := seqs [sieveInit, .loop pairStep .ne, .block sieveFinish]
 
 def halfByte : List Instr :=
   [.ldrb .r3 .r0 0, .mov .r1 (.shifted .r3 .lsr 1), .dp .orr .r1 .r1 (.reg .r2),
@@ -353,8 +374,11 @@ def tests (name : String) (body : Prog isa) : Prog isa := screenedTests name bod
 def screenQ (name : String) (body : Prog isa) : Prog isa := seqs [halveQ,
   .ite .eq finRejected (seqs [sieve, .ite .eq (tests name body) finRejected])]
 
-def screenP (name : String) (body : Prog isa) : Prog isa := seqs [.block tableWrite, sieve,
-  .ite .eq (screenQ name body) finRejected]
+def screenPair (name : String) (body : Prog isa) : Prog isa := seqs [.block tableWrite, pairSieve,
+  .ite .eq (tests name body) finRejected]
+
+def screenP (name : String) (body : Prog isa) : Prog isa := seqs [.block qOdd,
+  .ite .eq (screenPair name body) finRejected]
 
 def main (name : String) (body : Prog isa) : Prog isa := seqs [
   .block ([.ldrSp .r1 12] ++ save .r1 40), shapeP, residue,

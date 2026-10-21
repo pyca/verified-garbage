@@ -65,20 +65,17 @@ private theorem candidate_code_stack (name : String) (body : Prog isa) :
           (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.result)) 0))) = _
     rw [shapeP_stack, limitedStack true, qStack, result_stack]
     simp only [Nat.zero_max, Nat.max_zero, Nat.max_self]
-  have screenQStack : FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.screenQ name body) = FrameStack.armStack body := by
-    change max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.halveQ)
-      (max (max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.finRejected)
-        (max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.sieve)
-          (max (max (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.tests name body))
-            (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.finRejected)) 0))) 0) = _
-    rw [halveQ_stack, finRejected_stack, sieve_stack, testsStack]
-    simp only [Nat.zero_max, Nat.max_zero]
-  have screenPStack : FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.screenP name body) = FrameStack.armStack body := by
-    change max 0 (max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.sieve)
-      (max (max (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.screenQ name body))
+  have screenPairStack : FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.screenPair name body) = FrameStack.armStack body := by
+    change max 0 (max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.pairSieve)
+      (max (max (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.tests name body))
         (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.finRejected)) 0)) = _
-    rw [sieve_stack, screenQStack, finRejected_stack]
-    simp only [Nat.zero_max, Nat.max_zero]
+    rw [pairSieve_stack,testsStack,finRejected_stack]
+    simp only [Nat.zero_max,Nat.max_zero]
+  have screenPStack : FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.screenP name body) = FrameStack.armStack body := by
+    change max 0 (max (max (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.screenPair name body))
+      (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.finRejected)) 0) = _
+    rw [screenPairStack,finRejected_stack]
+    simp only [Nat.zero_max,Nat.max_zero]
   have mainStack : FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.main name body) = FrameStack.armStack body := by
     change max 0 (max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.shapeP)
       (max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.residue)

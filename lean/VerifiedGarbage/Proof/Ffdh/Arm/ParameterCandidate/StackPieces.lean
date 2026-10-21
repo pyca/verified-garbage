@@ -11,6 +11,7 @@ open VG VG.Arm VG.Impl.Ffdh.Arm.ParameterCandidate
 
 theorem shapeP_stack : FrameStack.armStack shapeP = 0 := by decide +kernel
 theorem residue_stack : FrameStack.armStack residue = 0 := by decide +kernel
+theorem pairSieve_stack : FrameStack.armStack pairSieve = 0 := by decide +kernel
 theorem sieve_stack : FrameStack.armStack sieve = 0 := by decide +kernel
 theorem halveQ_stack : FrameStack.armStack halveQ = 0 := by decide +kernel
 theorem finNone_stack : FrameStack.armStack finNone = 0 := by decide +kernel

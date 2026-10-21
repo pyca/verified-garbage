@@ -1,17 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialValue
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialMath
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialLoopFrom
 import VerifiedGarbage.Proof.Framework.Omega
 
-/-! Trial division consumes all byte pairs, preserving the candidate's
-congruence and terminating even for a single leading octet. -/
+/-! The original zero-carry trial loop delegates to the shared bounded-carry proof. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.X25519.Arm
-
-private def loopRegs : List Reg := [.r0, .r1, .r2, .r5, .r6, .r7]
 
 theorem trialLoop_ok (s : State) {n divisor inverse : Nat}
     (positive : 0 < n) (fits : n < 2 ^ 32)
@@ -23,45 +20,7 @@ theorem trialLoop_ok (s : State) {n divisor inverse : Nat}
       ∃ next j, next < 2 * divisor ∧ t.gpr .r2 = BitVec.ofNat 32 next ∧
         next * 2 ^ (16 * j) % divisor = trialValue s.mem (s.gpr .r0) n % divisor ∧
         t.gpr .r1 = 0 ∧ t.mem = s.mem ∧ Rest [.r0, .r1, .r2, .r5, .r6, .r7] s t := by
-  let original := trialValue s.mem (s.gpr .r0) n
-  let inv := fun k t => ∃ j a, 0 < k ∧ k < 2 ^ 32 ∧
-    TrialReadable t (t.gpr .r0) k ∧ t.gpr .r1 = BitVec.ofNat 32 k ∧
-    a < 2 * divisor ∧ t.gpr .r2 = BitVec.ofNat 32 a ∧
-    (a + trialValue t.mem (t.gpr .r0) k) * 2 ^ (16 * j) % divisor = original % divisor ∧
-    t.mem = s.mem ∧ Rest loopRegs s t
-  refine WP.loop (M := isa) inv ?_ n s ?_
-  · intro k u h
-    obtain ⟨j, a, kp, kfit, readable, cnt, ab, av, cong, memory, rest⟩ := h
-    refine WP.mono (trialStep_ok u kp kfit cnt (readable.low kp) (fun h => readable.high h)
-      av ab ((rest.gpr .r3 (by simp [loopRegs])).trans divValue) divBound
-      (by rw [rest.gpr .r4 (by simp [loopRegs])]; exact invValue) invCorrect) ?_
-    rintro t ⟨b, bb, step, bv, ptr, cnt', flag, mem, keep⟩
-    have congruence : (b + trialValue t.mem (t.gpr .r0) (k - min 2 k)) *
-        2 ^ (16 * (j + 1)) % divisor = original % divisor := by
-      rw [trialValue_step u.mem (u.gpr .r0) kp] at cong
-      rw [mem, ptr]
-      exact trialRemaining_congruence step cong
-    have nextRead : TrialReadable t (t.gpr .r0) (k - min 2 k) := by
-      rw [ptr]
-      exact readable.advance keep (Nat.min_le_right 2 k)
-    have kept : Rest loopRegs s t := rest.trans keep
-    by_cases last : k ≤ 2
-    · have remZero : k - min 2 k = 0 := by omega
-      left
-      refine ⟨?_, b, j + 1, bb, bv, ?_, ?_, mem.trans memory, kept⟩
-      · change some (!t.z) = some false
-        simp only [flag, last, decide_true, Bool.not_true]
-      · simpa only [remZero, trialValue, Nat.add_zero] using congruence
-      · rw [cnt', remZero]
-        rfl
-    · right
-      refine ⟨?_, k - min 2 k, by omega, j + 1, b, by omega, by omega,
-        nextRead, cnt', bb, bv, congruence, mem.trans memory, kept⟩
-      change some (!t.z) = some true
-      simp only [flag, last, decide_false, Bool.not_false]
-  · refine ⟨0, 0, positive, fits, read, count, by omega, ?_, ?_, rfl, Rest.refl _ _⟩
-    · simpa using acc
-    · simp only [Nat.zero_add, Nat.mul_zero, Nat.pow_zero, Nat.mul_one]
-      rfl
+  simpa only [Nat.zero_add] using trialLoop_from_ok s (initial:=0) positive fits count read
+    (by simpa using acc) (by have := divBound.1; omega) divValue divBound invValue invCorrect
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
