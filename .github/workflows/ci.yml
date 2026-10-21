@@ -703,6 +703,9 @@ jobs:
           mkdir -p "$logs"
           names=()
           keys=()
+          # Bash's clock avoids spawning a process for each timestamp. Local
+          # records are printed with the logs; no upload or extra job is needed.
+          timing_origin=${EPOCHREALTIME/./}
           while IFS='|' read -r -u 3 features tests; do
             keys+=("$features")
             [ "$features" = - ] && features=
@@ -710,10 +713,13 @@ jobs:
             log=$logs/${#names[@]}
             (
               status=0
+              started=${EPOCHREALTIME/./}
               TIMEFORMAT='%U %S'
               export VG_CPU_FEATURES=$features
               { time run_line "$tests" > "$log" 2>&1 || status=$?; } 2> "$log.time"
+              ended=${EPOCHREALTIME/./}
               echo "$status" > "$log.status"
+              echo "$started $ended" > "$log.wall"
             ) &
             names+=("VG_CPU_FEATURES=$features: $tests")
           done 3<<< "$lines"
@@ -724,6 +730,7 @@ jobs:
             cat "$logs/$i"
             echo "::endgroup::"
             echo "${names[$i]}: $(cat "$logs/$i.time") s of CPU (user, system)"
+            echo "CI_FEATURE_TIME_V1 $i $(cat "$logs/$i.wall") $timing_origin $(cat "$logs/$i.status")"
             printf '%s\t%s\n' "${keys[$i]}" "$(cat "$logs/$i.time")" >> "$logs/times"
             [ "$(cat "$logs/$i.status")" = 0 ] || failed+=("${names[$i]}")
           done

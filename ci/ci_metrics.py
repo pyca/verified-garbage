@@ -15,6 +15,7 @@ plan and the shards' outputs, which last a day):
 * each Lean job: the build it restored (a failed or older restore rebuilds
   everything it imports) and, for each step, every module it built and how
   long that took, with native compilation/linking facets recorded separately;
+* Rust timed test observations and per-feature-line CPU/wall times from logs;
 * missing logs/plan artifacts explicitly, and the collector's own fallback
   assembly from its local log when CI_METRICS_ASSEMBLY_LOG is set.
 
@@ -45,8 +46,10 @@ import re
 import subprocess
 import sys
 import zipfile
+import time
 
-VERSION = 2
+VERSION = 3
+COLLECT_DEADLINE = None
 PLAN_JOB = "Lean: plan and build"
 SHARD = re.compile(r"Lean: shard \((\d+)\)")
 SHARD_BUILD = "Check the shard's proofs"
@@ -81,6 +84,7 @@ def seconds(start, end):
 def job(j):
     return {
         "id": j.get("id"),
+        "status": j.get("status"),
         "url": j.get("html_url"),
         "name": j["name"],
         "conclusion": j.get("conclusion"),
@@ -150,14 +154,62 @@ def phases(j):
     return out
 
 
+# libtest --report-time output (optional until all jobs enable it). Keep
+# repeated names: binaries, feature lines and steps may run the same test.
+ANSI = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+TEST_TIME = re.compile(r"^test (.+?) \.\.\. (ok|FAILED|ignored) <(\d+(?:\.\d+)?)s>$")
+CPU_TIME = re.compile(r"^VG_CPU_FEATURES=(.*?): (.*): (\d+(?:\.\d+)?) (\d+(?:\.\d+)?) s of CPU \(user, system\)$")
+FEATURE_WALL = re.compile(r"^CI_FEATURE_TIME_V1 (\d+) (\d+) (\d+) (-?\d+) (\d+)$")
+
+
+def rust_metrics(j, log):
+    tests, runs = [], []
+    feature_line, binary = None, None
+    spans = [(s["name"], parse_time(s["started_at"]), parse_time(s["completed_at"]) + datetime.timedelta(seconds=1))
+             for s in j["steps"] if s.get("started_at") and s.get("completed_at")
+             and s.get("conclusion") != "skipped"]
+    spans.sort(key=lambda s: s[1], reverse=True)
+    current_step = None
+    for stamp, text in LINE.findall(ANSI.sub("", log)):
+        t = parse_time(stamp)
+        step = next((name for name, a, b in spans if a <= t < b), None)
+        if step != current_step:
+            feature_line, binary = None, None
+            current_step = step
+        if text.startswith(("::group::VG_CPU_FEATURES=", "##[group]VG_CPU_FEATURES=")):
+            feature_line = text.removeprefix("::group::").removeprefix("##[group]")
+            binary = None
+        elif text in ("::endgroup::", "##[endgroup]"):
+            feature_line, binary = None, None
+        if re.match(r"^\s*(?:Running (?:unittests |tests[/\\])|Doc-tests )", text):
+            binary = text.strip()
+        m = TEST_TIME.fullmatch(text.strip())
+        if m:
+            tests.append({"name": m[1], "outcome": m[2], "elapsed_s": float(m[3]),
+                          "binary": binary, "feature_line": feature_line, "step": step})
+        m = CPU_TIME.fullmatch(text)
+        if m:
+            runs.append({"features": m[1], "groups": m[2].split(), "user_s": float(m[3]),
+                         "system_s": float(m[4]), "start_offset_s": None, "wall_s": None,
+                         "exit_code": None})
+        m = FEATURE_WALL.fullmatch(text)
+        if m and runs:
+            # Records are printed immediately after the corresponding CPU line.
+            index, start, end, origin, status = map(int, m.groups())
+            if index == len(runs) - 1 and end >= start >= origin:
+                runs[-1].update(start_offset_s=(start - origin) / 1000000,
+                                wall_s=(end - start) / 1000000, exit_code=status)
+    return {"job_id": j["id"], "name": j["name"], "tests": tests, "feature_runs": runs}
+
+
 def collect(run, jobs, logs, planning=None):
     """The metrics of a run: its jobs (the API's), and the logs of its Lean
-    jobs by name."""
+    and Rust jobs by name."""
     jobs = [job(j) for j in jobs]
     plan = plan_of(logs.get(PLAN_JOB, ""))
     lean_jobs = []
     for j in jobs:
-        if j["name"] not in logs:
+        if not j["name"].startswith("Lean:") or j["name"] not in logs:
             continue
         log = logs[j["name"]]
         restored = RESTORED.findall(log)
@@ -185,6 +237,20 @@ def collect(run, jobs, logs, planning=None):
         "run": {k: run.get(k) for k in (
             "id", "run_attempt", "event", "head_branch", "head_sha", "created_at", "run_started_at", "base_ref")},
         "jobs": jobs,
+        "collection": {
+            "collected_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "jobs_complete": all(j["completed_at"] is not None for j in jobs),
+            "unfinished_job_ids": [j["id"] for j in jobs if not j["completed_at"]],
+            "finished_runner_s": sum(j["duration_s"] for j in jobs
+                                     if j["duration_s"] is not None and j["conclusion"] != "skipped"),
+            "missing_log_job_ids": [j["id"] for j in jobs
+                                    if j["name"].startswith(("Lean:", "Rust ("))
+                                    and (not j["name"].startswith("Rust (") or run.get("event") != "push")
+                                    and j["completed_at"] and j["conclusion"] != "skipped"
+                                    and j["name"] not in logs],
+        },
+        "rust": {"jobs": [rust_metrics(j, logs[j["name"]]) for j in jobs
+                          if j["name"].startswith("Rust (") and j["name"] in logs]},
         "lean": {
             "plan": plan,
             "planning": planning or {"status": "not_collected"},
@@ -261,11 +327,27 @@ def summary(m):
         out += ["", "## Slowest jobs", "", "| Job | Queued | Ran |", "|---|---|---|"]
         for j in sorted(jobs, key=lambda j: -j["duration_s"])[:10]:
             out.append(f"| {j['name']} | {fmt(j['queued_s'])} | {fmt(j['duration_s'])} |")
+    rust = m.get("rust", {}).get("jobs", [])
+    if rust:
+        out += ["", "## Rust timings", "",
+                "| Job | Timed test observations | Feature lines | Feature CPU time |",
+                "|---|---|---|---|"]
+        for j in rust:
+            cpu = sum(r["user_s"] + r["system_s"] for r in j["feature_runs"])
+            out.append(f"| {j['name']} | {len(j['tests'])} | {len(j['feature_runs'])} | {fmt(cpu)} |")
+        out += ["", "Test observations include only elapsed times present in logs; absent timings are unknown."]
+    if "collection" in m:
+        c = m["collection"]
+        out += ["", f"Finished jobs used {fmt(c['finished_runner_s'])} of runner time (not billed time). "
+                "This snapshot excludes unfinished jobs, including this collector's final duration."]
+        if c["missing_log_job_ids"]:
+            out.append("Missing logs for job IDs: " + ", ".join(map(str, c["missing_log_job_ids"])) + ".")
     return "\n".join(out) + "\n"
 
 
 def gh(path, *args):
-    return subprocess.run(["gh", "api", *args, path], check=True, capture_output=True).stdout
+    timeout = None if COLLECT_DEADLINE is None else max(0.001, min(5, COLLECT_DEADLINE - time.monotonic()))
+    return subprocess.run(["gh", "api", *args, path], check=True, capture_output=True, timeout=timeout).stdout
 
 
 def fetch_plan(repo, run_id, attempt):
@@ -286,7 +368,7 @@ def fetch_plan(repo, run_id, attempt):
         else:
             status = "available"
         return {"status": status, "artifact_id": artifact["id"], "plan": plan}
-    except (subprocess.CalledProcessError, ValueError, KeyError, zipfile.BadZipFile) as e:
+    except (subprocess.CalledProcessError, ValueError, KeyError, zipfile.BadZipFile, subprocess.TimeoutExpired) as e:
         print(f"No full Lean plan: {e}", file=sys.stderr)
         return {"status": "unavailable", "error": type(e).__name__}
 
@@ -301,13 +383,26 @@ def local_assembly(path):
 
 
 def collect_this_run():
+    # Leave headroom inside ci.yml's unchanged 30-second timeout to serialize
+    # and upload a partial observation even when individual log requests stall.
+    global COLLECT_DEADLINE
+    COLLECT_DEADLINE = time.monotonic() + 22
+    try:
+        return _collect_this_run()
+    finally:
+        COLLECT_DEADLINE = None
+
+
+def _collect_this_run():
     repo, run_id, attempt = os.environ["GH_REPO"], os.environ["GITHUB_RUN_ID"], os.environ["GITHUB_RUN_ATTEMPT"]
     run = json.loads(gh(f"repos/{repo}/actions/runs/{run_id}")) | {"base_ref": os.environ.get("BASE_REF") or None}
     jobs = [json.loads(line) for line in gh(f"repos/{repo}/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100",
                                             "--paginate", "--jq", ".jobs[] | tojson").splitlines()]
     # A skipped job has no log.
-    lean = [j for j in jobs if j["name"].startswith("Lean:") and j["status"] == "completed"
-            and j.get("conclusion") != "skipped"]
+    finished = [j for j in jobs
+                if (j["name"].startswith("Lean:")
+                    or (j["name"].startswith("Rust (") and run.get("event") != "push"))
+                and j["status"] == "completed" and j.get("conclusion") != "skipped"]
 
     def log(j):
         path = f"repos/{repo}/actions/jobs/{j['id']}/logs"
@@ -320,15 +415,18 @@ def collect_this_run():
                 if b"--allow-escape-sequences" not in e.stderr:
                     raise
                 return gh(path, "--allow-escape-sequences").decode(errors="replace")
+        except subprocess.TimeoutExpired:
+            print(f"No log for {j['name']}: collection deadline/request timeout", file=sys.stderr)
+            return None
         except subprocess.CalledProcessError as e:
             # One job's log missing leaves the rest.
             print(f"No log for {j['name']}: {e.stderr.decode(errors='replace').strip()}", file=sys.stderr)
             return None
 
-    # A few MB in all; requests one at a time would wait on each other.
+    # Reuse one bounded pool for Lean and Rust; requests share the deadline.
     with concurrent.futures.ThreadPoolExecutor(8) as pool:
         planning = pool.submit(fetch_plan, repo, run_id, attempt)
-        logs = {j["name"]: t for j, t in zip(lean, pool.map(log, lean)) if t is not None}
+        logs = {j["name"]: t for j, t in zip(finished, pool.map(log, finished)) if t is not None}
     metrics = collect(run, jobs, logs, planning.result())
     assembly = os.environ.get("CI_METRICS_ASSEMBLY_LOG")
     if assembly and pathlib.Path(assembly).is_file():

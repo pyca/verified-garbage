@@ -115,6 +115,106 @@ class Collect(unittest.TestCase):
         self.assertIn("No plan", ci_metrics.summary(m))
 
 
+class RustTimings(unittest.TestCase):
+    def test_tests_keep_step_binary_feature_context_and_repeated_names(self):
+        j = api_job("Rust (sde -icx)", "00:00", "01:00",
+                    [step("Test the implementations", "00:00", "00:40"),
+                     step("Other tests", "00:40", "01:00")])
+        j["id"] = 42
+        log = (line("00:01", "##[group]VG_CPU_FEATURES=avx: rsa")
+               + line("00:02", "     Running unittests src/lib.rs (target/debug/deps/vg-abc)")
+               + line("00:03", "test rsa::sign ... \x1b[32mok\x1b[0m <0.123s>")
+               + line("00:04", "test rsa::untimed ... ok")
+               + line("00:05", "     Running tests/main.rs (target/debug/deps/tests-def)")
+               + line("00:06", "test rsa::sign ... FAILED <1.234s>")
+               + line("00:07", "##[endgroup]")
+               + line("00:08", "VG_CPU_FEATURES=avx: rsa: 2.100 0.200 s of CPU (user, system)")
+               + line("00:09", "CI_FEATURE_TIME_V1 0 2000000 5500000 1000000 1")
+               + line("00:41", "test rsa::sign ... ok <0.003s>"))
+        m = ci_metrics.collect({}, [j], {j["name"]: log})
+        r = m["rust"]["jobs"][0]
+        self.assertEqual(r["job_id"], 42)
+        self.assertEqual(len(r["tests"]), 3)
+        self.assertEqual([t["elapsed_s"] for t in r["tests"]], [0.123, 1.234, 0.003])
+        self.assertEqual(r["tests"][0]["feature_line"], "VG_CPU_FEATURES=avx: rsa")
+        self.assertIn("tests/main.rs", r["tests"][1]["binary"])
+        self.assertEqual(r["tests"][1]["outcome"], "FAILED")
+        self.assertIsNone(r["tests"][2]["feature_line"])
+        self.assertIsNone(r["tests"][2]["binary"])
+        self.assertEqual(r["feature_runs"], [{"features": "avx", "groups": ["rsa"],
+                         "user_s": 2.1, "system_s": 0.2, "start_offset_s": 1.0,
+                         "wall_s": 3.5, "exit_code": 1}])
+        self.assertEqual(m["lean"]["jobs"], [])
+        self.assertIn("## Rust timings", ci_metrics.summary(m))
+
+    def test_old_logs_and_invalid_wall_record_do_not_imply_zero(self):
+        j = ci_metrics.job(api_job("Rust (native)", "00:00", "01:00"))
+        cpu = line("00:01", "VG_CPU_FEATURES=: all: 1.000 0.000 s of CPU (user, system)")
+        for record in ("", "CI_FEATURE_TIME_V1 0 4 3 1 0", "CI_FEATURE_TIME_V1 5 2 3 1 0"):
+            r = ci_metrics.rust_metrics(j, cpu + line("00:02", record))
+            self.assertEqual(r["tests"], [])
+            self.assertIsNone(r["feature_runs"][0]["wall_s"])
+            self.assertEqual(r["feature_runs"][0]["groups"], ["all"])
+
+    def test_collection_is_explicitly_incomplete_and_excludes_skipped_durations(self):
+        done = dict(api_job("Rust (native)", "00:00", "01:00"), id=1)
+        skipped = dict(api_job("Lean: shard", "00:01", "00:00"), id=2, conclusion="skipped")
+        active = dict(api_job("all-green", "01:00", None), id=3)
+        c = ci_metrics.collect({}, [done, skipped, active], {})["collection"]
+        self.assertEqual(c["finished_runner_s"], 60)
+        self.assertFalse(c["jobs_complete"])
+        self.assertEqual(c["unfinished_job_ids"], [3])
+        self.assertEqual(c["missing_log_job_ids"], [1])
+
+    def test_legacy_summary_still_works(self):
+        m = ci_metrics.collect({}, [], {})
+        del m["rust"], m["collection"]
+        self.assertIn("No plan", ci_metrics.summary(m))
+
+    def test_requests_share_deadline(self):
+        with mock.patch.object(ci_metrics, "COLLECT_DEADLINE", 100), \
+                mock.patch.object(ci_metrics.time, "monotonic", return_value=98), \
+                mock.patch.object(ci_metrics.subprocess, "run") as run:
+            ci_metrics.gh("repos/o/r")
+        self.assertEqual(run.call_args.kwargs["timeout"], 2)
+
+    def test_main_push_does_not_fetch_rust_logs(self):
+        j = dict(api_job("Rust (native)", "00:00", "01:00"), id=1, status="completed")
+        def gh(path, *args):
+            self.assertNotIn("/logs", path)
+            if "/jobs?" in path:
+                return json.dumps(j).encode()
+            if "/artifacts?" in path:
+                return b'{"artifacts": []}'
+            return b'{"id": 7, "event": "push"}'
+        env = {"GH_REPO": "o/r", "GITHUB_RUN_ID": "7", "GITHUB_RUN_ATTEMPT": "1"}
+        with mock.patch.object(ci_metrics, "gh", gh), mock.patch.dict(os.environ, env):
+            m = ci_metrics.collect_this_run()
+        self.assertEqual(m["rust"]["jobs"], [])
+        self.assertEqual(m["collection"]["missing_log_job_ids"], [])
+
+    def test_missing_rust_log_does_not_discard_other_observations(self):
+        jobs = [dict(api_job("Rust (native)", "00:00", "01:00"), id=1, status="completed"),
+                dict(api_job("Rust (other)", "00:00", "01:00"), id=2, status="completed")]
+        def gh(path, *args):
+            if "/jobs/1/logs" in path:
+                return line("00:01", "test a ... ok <0.005s>").encode()
+            if "/jobs/2/logs" in path:
+                raise subprocess.TimeoutExpired("gh", 5)
+            if "/jobs?" in path:
+                return "\n".join(map(json.dumps, jobs)).encode()
+            if "/artifacts?" in path:
+                return b'{"artifacts": []}'
+            return b'{"id": 7}'
+        env = {"GH_REPO": "o/r", "GITHUB_RUN_ID": "7", "GITHUB_RUN_ATTEMPT": "1"}
+        with mock.patch.object(ci_metrics, "gh", gh), mock.patch.dict(os.environ, env), \
+                mock.patch("sys.stderr"):
+            m = ci_metrics.collect_this_run()
+        self.assertEqual(m["rust"]["jobs"][0]["tests"][0]["elapsed_s"], 0.005)
+        self.assertEqual(m["collection"]["missing_log_job_ids"], [2])
+        self.assertIsNone(ci_metrics.COLLECT_DEADLINE)
+
+
 class Standalone(unittest.TestCase):
     def test_built_is_lean_shards(self):
         # CI fetches ci_metrics.py alone: it keeps its own copy.
