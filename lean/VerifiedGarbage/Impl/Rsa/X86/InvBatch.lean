@@ -1,0 +1,96 @@
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.Inv
+public import VerifiedGarbage.Impl.Weierstrass.X86.InvMemory
+public import VerifiedGarbage.Impl.Rsa.X86.GcdBatch
+
+/-! # Batched RSA CRT inversion at the public prime width
+
+Thirty low-word divsteps produce a matrix, then signed full-width rows
+update f and g and Montgomery-reduced rows update the coefficients.
+The public modulus and prime lengths select balanced 2048/3072/4096-bit
+layouts; other inputs retain the general inverse. The working arrays and
+header word at byte 100 are the existing inverse's mutable bank.
+-/
+
+@[expose] public section
+namespace VG.Impl.Rsa.X86.InvBatch
+open VG VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86
+open VG.Impl.Weierstrass.X86.Inv
+open VG.Impl.Rsa.X86.KeyRt
+
+def offset (w j : Nat) := 160+j*(4*w+8)
+def seqs := VG.Impl.Rsa.X86.Keys.seqs
+def config (w n : Nat) : Mod := {n:=n/2,mo:=offset w 2,tmp:=offset w 12,minv:=0}
+def quo (acc tmp iv : Nat) : List Instr :=
+ [.mov .eax (.mem (sc acc)),.mov .ecx (.mem (sc iv)),.mul .ecx,.store (sc tmp) .eax]
+def redSum (acc modulus tmp iv n : Nat) : List Instr :=
+ maskOf (acc+4*n) ++ [.mov .esi (.reg .ecx)] ++ zeros (acc+4*(n+1)) 1 ++
+ quo acc tmp iv ++ rowAdd tmp acc modulus n ++ addSignWord (acc+4*(n+1))
+
+def reduceLoaded (M : Mod) (acc tmp out iv : Nat) : List Instr :=
+ redSum acc M.mo tmp iv (words M) ++ addIfNeg (acc+4) M.mo tmp (words M) ++ csub M (acc+4) out
+
+def reduce (w n out : Nat) : List Instr :=
+ reduceLoaded (config w n) (offset w 11) (offset w 12) out (offset w 3+28)
+
+def init (w n : Nat) : List Instr :=
+ let M:=offset w 2; let F:=offset w 4; let G:=offset w 5; let A:=offset w 6; let B:=offset w 7; let U:=offset w 12; let W:=offset w 3
+ VG.Impl.Weierstrass.X86.copy n M (offset w 8) ++
+ [.mov .eax (.mem (sc M)),.alu .xor .eax (.imm 1)] ++
+ (List.range (n-1)).map (fun j => .alu .or .eax (.mem (sc (M+4*(j+1))))) ++
+ [.mov .edx (.imm 0),.alu .sub .edx (.reg .eax),.alu .or .eax (.reg .edx),.shift .shr .eax 31,
+  .alu .xor .eax (.imm 1),.alu .add .eax (.reg .eax),.mov .ecx (.mem (sc M)),.alu .or .ecx (.reg .eax),.store (sc M) .ecx] ++
+ VG.Impl.Weierstrass.X86.copy n F M ++ zeros (F+4*n) 1 ++
+ VG.Impl.Weierstrass.X86.copy n G (offset w 0) ++ zeros (G+4*n) 1 ++
+ [.mov .ecx (.mem (sc G)),.alu .and .ecx (.imm 1),.alu .sub .ecx (.imm 1)] ++
+ maskCopy n U M ++ zeros (U+4*n) 1 ++ addInPlace G U (n+1) ++
+ zeros A (n+1) ++ zeros B (n+1) ++
+ [.mov .eax (.imm 1),.store (sc B) .eax,.store (sc W) .eax,
+ .mov .ebx (.mem (sc M))] ++ Dynamic.inverse ++ [.store (sc (W+28)) .eax,
+ .mov .eax (.imm (BitVec.ofNat 32 (3*(n+1)))),.store (sc 100) .eax]
+
+def start (w : Nat) : List Instr :=
+ let W:=offset w 3
+ VG.Impl.Weierstrass.X86.copy 1 (W+4) (offset w 4) ++ VG.Impl.Weierstrass.X86.copy 1 (W+8) (offset w 5) ++
+ setConst 2 (W+12) (1+2^96)
+
+def update (w n : Nat) : List Instr :=
+ let F:=offset w 4; let G:=offset w 5; let A:=offset w 6; let B:=offset w 7; let T:=offset w 11; let U:=offset w 12; let W:=offset w 3
+ linear (W+12) (W+16) T F G U (n+1) (n-1) ++ shr30 (offset w 0) T (n+1) ++
+ linear (W+20) (W+24) T F G U (n+1) (n-1) ++ shr30 (offset w 1) T (n+1) ++
+ linear (W+12) (W+16) T A B U n (n-1) ++ reduce w n (offset w 13) ++
+ linear (W+20) (W+24) T A B U n (n-1) ++ reduce w n (offset w 14) ++
+ VG.Impl.Weierstrass.X86.copy (n+1) F (offset w 0) ++ VG.Impl.Weierstrass.X86.copy (n+1) G (offset w 1) ++
+ VG.Impl.Weierstrass.X86.copy n A (offset w 13) ++ VG.Impl.Weierstrass.X86.copy n B (offset w 14)
+
+def normalize (w n : Nat) : List Instr :=
+ let F:=offset w 4; let A:=offset w 6; let U:=offset w 12
+ VG.Impl.Weierstrass.X86.copy n U (offset w 2) ++ subInPlace U A n ++ maskOf (F+4*n) ++
+ VG.Impl.Weierstrass.X86.sel n A A U ++ csub (config w n) A A
+
+def twice (w n : Nat) : List Instr :=
+ let A:=offset w 6
+ addInPlace A A (n+1) ++ csub (config w n) A A ++ zeros (A+4*n) 1
+
+def finish (w n : Nat) : List Instr :=
+ let F:=offset w 4; let O:=offset w 1
+ zeros O w ++ subInPlace O F n ++ maskOf (F+4*n) ++ VG.Impl.Weierstrass.X86.sel n O F O ++
+ zeros (offset w 3) w ++ VG.Impl.Weierstrass.X86.copy n (offset w 3) (offset w 6)
+
+def body (w n : Nat) : Prog isa := seqs [
+ .block (init w n),
+ .loop (seqs [.block (start w),wordSteps (offset w 3) 30,.block (update w n),
+   .block [.mov .esi (.mem (sc 100)),decCounter,.store (sc 100) .esi,testCounter]]) .ne,
+ .block (normalize w n ++ [.mov .esi (.imm (BitVec.ofNat 32 (6*(n+1))))]),
+ .loop (.block (twice w n ++ [decCounter,testCounter])) .ne,
+ .block (finish w n)]
+
+def choose (len w n : Nat) (fallback : Prog isa) : Prog isa :=
+ .seq (.block [.mov .eax (.mem (argOp 7)),.alu .cmp .eax (.imm (BitVec.ofNat 32 len))])
+ (.ite .e (.seq (.block [.mov .eax (.mem (argOp 9)),.alu .cmp .eax (.imm (BitVec.ofNat 32 (4*n+1)))])
+   (.ite .b (.seq (.block [.mov .eax (.mem (argOp 11)),.alu .cmp .eax (.imm (BitVec.ofNat 32 (4*n+1)))])
+     (.ite .b (body w n) fallback)) fallback)) fallback)
+def dispatch (fallback : Prog isa) : Prog isa :=
+ choose 256 64 32 (choose 384 96 48 (choose 512 128 64 fallback))
+end VG.Impl.Rsa.X86.InvBatch
