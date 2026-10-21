@@ -120,9 +120,11 @@ theorem eInvZ (hn : NPre M s₀ N) {P : Nat → Nat → Block} {e : Nat} (he : n
   exact {
     a := {
       le := by rw [nb_nState hN]; omega
-      ctr := fun l hl' => by rw [hl, cb_nState hp]; exact hA.ctr l hl'
+      slot := by
+        rw [show pp (nState s₀ N) = pp s₀ from hg .r11 (by decide) (by decide), cb_nState hp, hm]
+        exact hA.slot
       msk := fun l hl' => by rw [hl]; exact hA.msk l hl'
-      inc := fun l hl' => by rw [hl]; exact hA.inc l hl'
+      r11 := by rw [g .r11 (by decide) (by decide), hA.r11]; exact (hg .r11 (by decide) (by decide)).symm
       rdi := by rw [g .rdi (by decide) (by decide), hA.rdi]; exact (hg .rdi (by decide) (by decide)).symm
       rsi := by rw [g .rsi (by decide) (by decide), hA.rsi, hg .rsi (by decide) (by decide)]
       r10 := by

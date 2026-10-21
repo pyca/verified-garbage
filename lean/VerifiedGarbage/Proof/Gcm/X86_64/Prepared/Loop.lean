@@ -30,7 +30,7 @@ open VG.Proof.Aes.X86_64.VaesZ (zmm_lane)
 open VG.Impl.Gcm.X86_64.Pclmul (poly)
 open VG.Impl.Gcm.X86_64.StitchZ (tab)
 open VG.Impl.Gcm.X86_64.StitchZR (powPair powP48 bigP bigDP)
-open VG.Proof.Gcm.X86_64.StitchZP (hInvF WP.block_and keepAt st_zlane frame_sub frame_pR)
+open VG.Proof.Gcm.X86_64.StitchZP (hInvF WP.block_and keepAt st_zlane frame_sub frame_pR frame_p1k)
 open VG.Spec.Gcm (Block blockAt)
 
 /-- A block of the key context is kept by writes to the working space. -/
@@ -130,7 +130,7 @@ theorem powP48_ok {s₀ : State} (hp : SPrePrepared s₀) {s : State} (hdi : s.g
         hInvF (Spec.Gcm.hpow (Spec.Gcm.ctxH s.mem (kp s₀)) (48 - 16 * g - 4 * k - l))) ∧
       (∀ l < 4, s'.mem.readW (pp s₀ + BitVec.ofNat 64 (832 + 16 * l)) 128 = poly) ∧
       (∀ o, o + 16 ≤ 256 → s'.mem.readW (pp s₀ + BitVec.ofNat 64 o) 128 = s.mem.readW (pp s₀ + BitVec.ofNat 64 o) 128) ∧
-      Frame [pR s₀] s.mem s'.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      Frame [⟨pp s₀, 1024⟩] s.mem s'.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r, r ≠ .xmm7 → r ≠ .xmm8 → r ≠ .xmm9 → r ≠ .xmm10 → r ≠ .xmm12 → ∀ l < 4, s'.zlane r l = s.zlane r l) := by
   have hwp := hp.base.wrap_p
   rw [powP48, List.append_assoc, WP.block_append_iff]
@@ -172,7 +172,7 @@ theorem powP48_ok {s₀ : State} (hp : SPrePrepared s₀) {s : State} (hdi : s.g
   · rw [State.setMem_mem, k₅ _ (by omega), keepAt f₃ (by simp only [tab]; omega) (by simp only [tab]; omega) (by omega),
       keepAt f₂ (by simp only [tab]; omega) (by simp only [tab]; omega) (by omega)]
   · rw [State.setMem_mem]
-    exact ((frame_pR (by simp only [tab]; omega) f₂).trans (frame_pR (by simp only [tab]; omega) f₃)).writeW
+    exact ((frame_p1k (by simp only [tab]; omega) f₂).trans (frame_p1k (by simp only [tab]; omega) f₃)).writeW
       (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by decide))
 
 /-- The key context, with its powers, is kept by the loops, which write only
