@@ -22,10 +22,11 @@ and the sums `AddSubW.addW`, and keys are encoded and decoded by
 `Codec12W`. Compression still reads 32-bit coefficients: each row of `u` and
 `v` is widened (`Widen16.widen`) into `PP` first, and `v` adds the decoded
 message there with `vg_mlkem_add`. Decapsulation's decryption stays 32-bit.
-Key generation (`keyGenH`) computes each row of `t̂` as soon as the matrix
-has sampled it, and absorbs `ek` into the third state of the matrix's
-`vg_keccak_f1600_x3_sha3` calls as the rows encode it, so that `H(ek)` takes
-single-state permutations only for the blocks of the last rows.
+The pieces of key generation (`Kem16P.keyGen`): each row of `t̂` (`kgRow`)
+as soon as the matrix has sampled it, the pairs absorbing `ek` into the third
+state of the matrix's `vg_keccak_f1600_x3_sha3` calls as the rows encode it
+(`kgPair`), and the single-state permutations for the blocks of the last
+rows (`kgTail`).
 -/
 
 @[expose] public section
@@ -116,12 +117,6 @@ def kgPair (L : KemLay) (p : Nat) : Prog isa :=
 /-- Rows `a` to `b - 1` of `t̂`. -/
 def kgRows (L : KemLay) (a b : Nat) : List (Prog isa) := (List.range' a (b - a)).map (kgRow L)
 
-/-- The matrix, each row of `t̂` as soon as its entries are sampled. -/
-def kgMatrixRows (L : KemLay) : List (Prog isa) :=
-  ((List.range (L.k * L.k / 2)).flatMap fun p => kgPair L p :: kgRows L (rowsBy L p) (rowsBy L (p + 1))) ++
-    (if L.k * L.k % 2 = 1 then Paired.lastSample L true true :: kgRows L (rowsBy L (L.k * L.k / 2)) L.k
-      else [])
-
 /-- The single-state permutation of the third state, at `ST`, with its working space at `WK`. -/
 def kgPerm (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
   .seq (.block (ptrTo .x0 .x28 KG.ST ++ ptrTo .x1 .x28 KG.WK)) (.call c.name c.code)
@@ -136,16 +131,5 @@ def kgTail (c : Impl.Sha3.AArch64.Callee) (L : KemLay) : Prog isa :=
       [mov .x0 .x24, .ldr .x .x30 .x28 (KG.SV L + 40), .ldr .x .x24 .x28 (KG.SV L),
         .ldr .x .x25 .x28 (KG.SV L + 8), .ldr .x .x26 .x28 (KG.SV L + 16),
         .ldr .x .x27 .x28 (KG.SV L + 24), .ldr .x .x28 .x28 (KG.SV L + 32)])])
-
-/-- The noise, `ŝ` into `dk`, and the all-zero third state. -/
-def kgPre (L : KemLay) : Prog isa :=
-  seqs ([noiseAllWith nttAtWithW L true] ++ ((List.range L.k).map fun j => enc12WAt (KG.sOff L j) .x27 (384 * j)) ++
-    [.block (zeroState .x28 KG.ST)])
-
-/-- The key generation, hashing `ek` during the matrix: `G`, the noise, `ŝ` into `dk`,
-the all-zero third state, the matrix with each row of `t̂` after its entries
-(`kgMatrixRows`), and the rest of `H(ek)` (`kgTail`). -/
-def keyGenH (hash : FixedHashCallers.HashFn) (c : Impl.Sha3.AArch64.Callee) (L : KemLay) : Prog isa :=
-  seqs [FixedHashCallers.kgAUsing hash L, kgPre L, seqs (kgMatrixRows L), kgTail c L]
 
 end VG.Impl.MlKem.AArch64.Kem16

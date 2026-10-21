@@ -38,7 +38,7 @@ def PRel (P : KemLay) (L : Layout) (σ τ : State) (ρ : List Byte) (e c : Nat) 
 
 /-- The singleton's memory. -/
 theorem layB_of {s₀ s : State} (hp : Pre P L s₀) {N₀ : Nat} (hN : N₀ + 3 ≤ 12) (h : KB P L s₀ s) :
-    LayB (sA L s₀ SS) (sA L s₀ RB) (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff P N₀)) s := by
+    LayB (sA L s₀ SS) (sA L s₀ RB) (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N₀)) s := by
   have hw := hp.wf
   have bR := bufR_eq (L := L) (P := P) s₀ N₀
   exact ⟨cov_s hp h (o := SS) (l := 2048) (by lom), cov_sr hp h (o := RB) (l := 32) (by lom),
@@ -49,7 +49,7 @@ theorem layB_of {s₀ s : State} (hp : Pre P L s₀) {N₀ : Nat} (hN : N₀ + 3
 /-- The singleton's buffers, apart from the rest of its memory. -/
 theorem apart_of {s₀ s : State} (hp : Pre P L s₀) {N₀ : Nat} (hN : N₀ + 3 ≤ 12) (tb : MT3 P L s₀ s) :
     BufApart (sA L s₀ SS) (sA L s₀ SB) (aP L s₀ (P.k * P.k - 1)) (s.syms "VG_MLKEM_REJ_SHUFFLE")
-      (sA L s₀ RB) (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff P N₀)) := by
+      (sA L s₀ RB) (sA L s₀ (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N₀)) := by
   have hw := hp.wf
   have hf := hw.facts
   have hkk : P.k * P.k ≤ 16 := hf.2.2.1
@@ -64,14 +64,14 @@ theorem apart_of {s₀ s : State} (hp : Pre P L s₀) {N₀ : Nat} (hN : N₀ + 
 theorem prfPair_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
     (hk : Stk128 P L σ) (hk' : Stk128 P L τ) (sm : Same L M σ τ) {ρ : List Byte} {i N₀ m : Nat}
     (he : 2 * i + 1 < P.k * P.k) (hN : N₀ + 3 ≤ 12) (hm : m ≤ 3) :
-    RelCT isa (PRel P L σ τ ρ (2 * i) N₀) (Impl.MlKem.AArch64.Kem16P.pairP P (2 * i) N₀ m)
+    RelCT isa (PRel P L σ τ ρ (2 * i) N₀) (Impl.MlKem.AArch64.Kem16P.pairP SB SS AH RB (TP P) P (2 * i) N₀ m)
       (PRel P L σ τ ρ (2 * i + 2) (N₀ + m)) := by
   intro s u tr ur t v h et eu
   obtain ⟨⟨mσ, h₁⟩, ⟨mτ, h₂⟩, t₁, t₂, sh⟩ := h
   have hw := hp.wf
-  have hbo : Impl.MlKem.AArch64.Kem16P.bufOff P (N₀ + 2) < 65536 := by
+  have hbo : Impl.MlKem.AArch64.Kem16P.bufOff (TP P) (N₀ + 2) < 65536 := by
     simp only [Impl.MlKem.AArch64.Kem16P.bufOff]; lom
-  have h4 : 4096 ≤ Impl.MlKem.AArch64.Kem16P.bufOff P N₀ := by
+  have h4 : 4096 ≤ Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N₀ := by
     simp only [Impl.MlKem.AArch64.Kem16P.bufOff]; lom
   have hf := hw.facts
   have hkk : P.k * P.k ≤ 16 := hf.2.2.1
@@ -84,15 +84,15 @@ theorem prfPair_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : P
   have ba : ∀ o, sA L σ o = sA L τ o := fun o => congrArg (fun b => b + BitVec.ofNat 64 o) sm.base
   have aa : ∀ i, aP L σ i = aP L τ i := fun i => ba _
   rw [← ba SS, ← ba SB, ← aa (2 * i), ← aa (2 * i + 1), ← sh] at pu
-  rw [← aa (2 * i), ← aa (2 * i + 1), ← ba SS, ← ba RB, ← ba (Impl.MlKem.AArch64.Kem16P.bufOff P N₀), ← sh,
+  rw [← aa (2 * i), ← aa (2 * i + 1), ← ba SS, ← ba RB, ← ba (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N₀), ← sh,
     ← sm.base] at hu
   have seeds : ∀ j, Paired.seedState s.mem (sA L σ SB) j P.k = Paired.seedState u.mem (sA L σ SB) j P.k := by
     intro j
     rw [Paired.seedState_eq _ _ (by lom) (by lom), Paired.seedState_eq _ _ (by lom) (by lom)]
     unfold Paired.seedBytes
     rw [h₁.b.rho, ba SB, h₂.b.rho]
-  have ct := pairPCode_relCT (w16 := true) P (a := 2 * i) (m := m) (by omega) hbo h4 (by decide) (by decide)
-    (by decide) hoa hob ps hs pu hu rfl rfl (by rw [h₁.b.kb.sp, h₂.b.kb.sp, sm.sp]) (seeds _) (seeds _)
+  have ct := pairPCode_relCT (w16 := true) P RB (TP P) (a := 2 * i) (m := m) (by omega) hbo h4 (by decide) (by decide)
+    (by decide) hoa hob ps hs pu hu rfl (by decide) (by decide) rfl (by rw [h₁.b.kb.sp, h₂.b.kb.sp, sm.sp]) (seeds _) (seeds _)
   have ht := exec_post (paired_stepP hp hk he hN hm h₁ t₁) et
   have hv := exec_post (paired_stepP hq hk' he hN hm h₂ t₂) eu
   exact ⟨(ct _ _ _ _ _ _ ⟨rfl, rfl⟩ (pairP_exec et) (pairP_exec eu)).1, ⟨_, ht.1⟩, ⟨_, hv.1⟩, ht.2, hv.2,
@@ -164,9 +164,9 @@ theorem lastPP_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : Pr
   have hn : 0 < P.k * P.k := Nat.mul_pos hk1 hk1
   have he : P.k * P.k - 1 < P.k * P.k := by omega
   have hoff : AH + 1024 * (P.k * P.k - 1) < 65536 := by simp only [KEM.AH]; omega_using [hkk]
-  have hbo : Impl.MlKem.AArch64.Kem16P.bufOff P N₀ < 65536 := by
+  have hbo : Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N₀ < 65536 := by
     simp only [Impl.MlKem.AArch64.Kem16P.bufOff]; lom
-  have h4 : 4096 ≤ Impl.MlKem.AArch64.Kem16P.bufOff P N₀ := by
+  have h4 : 4096 ≤ Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N₀ := by
     simp only [Impl.MlKem.AArch64.Kem16P.bufOff]; lom
   have ps := last_input hp he h₁.b.kb t₁.t
   have pu := last_input hq he h₂.b.kb t₂.t
@@ -175,7 +175,7 @@ theorem lastPP_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : Pr
   have ba : ∀ o, sA L σ o = sA L τ o := fun o => congrArg (fun b => b + BitVec.ofNat 64 o) sm.base
   have aa : ∀ i, aP L σ i = aP L τ i := fun i => ba _
   rw [← ba SS, ← ba SB, ← aa (P.k * P.k - 1), ← sh] at pu
-  rw [← ba SS, ← ba RB, ← ba (Impl.MlKem.AArch64.Kem16P.bufOff P N₀)] at lu
+  rw [← ba SS, ← ba RB, ← ba (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N₀)] at lu
   have seed : Paired.seedBytes s.mem (sA L σ SB) (P.k * P.k - 1) P.k =
       Paired.seedBytes u.mem (sA L σ SB) (P.k * P.k - 1) P.k := by
     unfold Paired.seedBytes
@@ -241,7 +241,7 @@ theorem matrixP_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : P
   · have r := RelCTs.range (n := Impl.MlKem.AArch64.Kem16P.pairs P - H)
       (I := fun j => PRel P L σ τ ρ (2 * (j + H)) (min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * j)))
       (f := (fun i => if Impl.MlKem.AArch64.Kem16P.pairCount P H i = 0 then Paired.pair P false (2 * i) true
-        else Impl.MlKem.AArch64.Kem16P.pairP P (2 * i) (3 * (i - H)) (Impl.MlKem.AArch64.Kem16P.pairCount P H i)) ∘
+        else Impl.MlKem.AArch64.Kem16P.pairP SB SS AH RB (TP P) P (2 * i) (3 * (i - H)) (Impl.MlKem.AArch64.Kem16P.pairCount P H i)) ∘
           (· + H))
       fun j hj => by
         have he : 2 * (j + H) + 1 < P.k * P.k := by omega

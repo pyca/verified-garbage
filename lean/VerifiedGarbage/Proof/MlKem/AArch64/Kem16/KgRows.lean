@@ -48,7 +48,7 @@ import VerifiedGarbage.Proof.Framework.Block
 As `Optimized/KeyGen*.lean`, with 16 bits: the noise, the encodings of `ŝ`
 (`encode_okW`), and a row of `t̂` (`row_readyW`, `fused_row_readyW`: the
 fused dot product, the sum with `ê` and the encodings), which
-`KgH/` composes into `Kem16.keyGenH`. -/
+`KgH/` composes into `Kem16P.keyGen`. -/
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.KeyGen

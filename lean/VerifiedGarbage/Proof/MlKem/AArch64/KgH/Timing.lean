@@ -15,15 +15,19 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.State
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Inv
 import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Pair
 import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Row
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.First
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.PairTiming
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The matrix with the rows of `t̂` between its pairs leaks only public data
 
 `matrixRows_relCT`: two runs with the same pointers, stack pointer, `ρ` and
-constant tables, through `Kem16.kgMatrixRows`, leak the same: each hashing pair
+constant tables, through `Kem16P.kgMatrixRows`, leak the same: each hashing pair
 by `Hybrid.pairMCode_relCT` (its timing depends on `ρ` alone; the blocks of
 `ek` it absorbs by the taint analysis, `habs`), the final entry by
 `Paired.lastCode_relCT`, and each row of `t̂` by the taint analysis, from the
-pointers and the symbols (`hrow`). -/
+pointers and the symbols (`hrow`). `firstK_relCT`: so do the first two pairs,
+computing PRF outputs, by `Kem16P.pairPCode_relCT`. -/
 
 @[expose] public section
 
@@ -31,7 +35,7 @@ namespace VG.Proof.MlKem.AArch64.KeyGen
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KG VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Optimized
-open VG.Impl.MlKem.AArch64.Kem16 (rowsBy hashedBy kgRows kgPair kgMatrixRows)
+open VG.Impl.MlKem.AArch64.Kem16 (rowsBy hashedBy kgRows kgPair)
 open VG.Spec.Sha3 (bytesAt stateAt)
 
 variable {P : KemLay}
@@ -166,58 +170,134 @@ theorem rows_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ) (hr : Noise.R
       (Nat.le_trans (Nat.mul_le_mul_left _ (by omega)) hn) (hrow a (by omega)),
       rows_relCT hp hq hr sm hrow d (a + 1) b (by omega) (by omega) hbk hn⟩
 
-/-- **The matrix and the rows of `t̂`** leak only the pointers and `ρ`. -/
-theorem matrixRows_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ) (hk : Stk128K P σ) (hk' : Stk128K P τ)
+/-- Pair `p` of the matrix and the rows of `t̂` it completes leak only the pointers and `ρ`. -/
+theorem pairRows_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ) (hk : Stk128K P σ) (hk' : Stk128K P τ)
     (hr : Noise.Room P) (sm : SameK P σ τ)
     (habs : ∀ blk, 136 * blk < (Kem16.kgSrc P).len → ∃ h, (taint.check (Taint.ofRegs [(Kem16.kgSrc P).r, .x28])
       (.block (Hybrid.absorbBlock (Kem16.kgSrc P) blk)) h).isSome = true)
     (hrow : ∀ i < P.k, ∃ h, ((VectorSymbols.analysis restSymbols).check
-      (VectorTaint.ofRegs [.x25,.x26,.x27,.x28]) (Kem16.kgRow P i) h).isSome = true) :
-    RelCTs (KR P σ τ 0 0 0) (kgMatrixRows P) (KR P σ τ (P.k * P.k) P.k (hashedBy P (P.k * P.k / 2))) := by
+      (VectorTaint.ofRegs [.x25,.x26,.x27,.x28]) (Kem16.kgRow P i) h).isSome = true)
+    {p : Nat} (hp' : p < P.k * P.k / 2) :
+    RelCTs (KR P σ τ (2 * p) (rowsBy P p) (hashedBy P p)) (kgPair P p :: kgRows P (rowsBy P p) (rowsBy P (p + 1)))
+      (KR P σ τ (2 * (p + 1)) (rowsBy P (p + 1)) (hashedBy P (p + 1))) := by
   have hw := hp.wf
   have hf := hw.facts
   have hek : 384 * P.k < P.ekLen := by simp only [KemLay.ekLen]; omega
-  have pairs := relcts_flatMap_range (n := P.k * P.k / 2)
-    (I := fun p => KR P σ τ (2 * p) (rowsBy P p) (hashedBy P p))
-    (f := fun p => kgPair P p :: kgRows P (rowsBy P p) (rowsBy P (p + 1)))
-    (fun p hp' => by
-      have hmono := rowsBy_mono P p
-      have hle := rowsBy_le P (p + 1)
-      have hrk := rowsBy_le P p
-      have pc := pairH_relCT hp hq hk hk' hr sm (p := p) (r := rowsBy P p) (h := hashedBy P p)
-        (m := hashedBy P (p + 1) - hashedBy P p) (by omega)
-        (by simp only [hashedBy]; omega) (fun k hk' => by
-          have := Nat.mul_le_mul_left 384 hrk
-          have h3 := hashed_le P (p + 1)
-          simp only [hashedBy] at h3 hk' ⊢
-          have : 136 * (384 * rowsBy P p / 136) ≤ 384 * rowsBy P p := Nat.mul_div_le _ _
-          omega) (by
-          rw [← hashed_succ]
-          have hA : hashedBy P p ≤ 384 * rowsBy P p / 136 :=
-            (Nat.le_div_iff_mul_le (by decide)).2 (by have := hashed_le P p; omega)
-          have hB : 136 * (384 * rowsBy P p / 136) ≤ 384 * rowsBy P p := Nat.mul_div_le _ _
-          simp only [hashedBy]
-          have := Nat.min_le_right 3 (384 * rowsBy P p / 136 - hashedBy P p)
-          omega) habs
-      rw [← hashed_succ] at pc
-      exact ⟨_, pc, rows_relCT hp hq hr sm hrow (rowsBy P (p + 1) - rowsBy P p) (rowsBy P p) (rowsBy P (p + 1))
-        rfl hmono hle (Nat.le_trans (rowsBy_mul P (p + 1)) (by omega))⟩)
-  rw [show rowsBy P 0 = 0 by simp [rowsBy], show hashedBy P 0 = 0 from rfl, Nat.mul_zero] at pairs
-  rw [kgMatrixRows]
-  refine RelCTs.append pairs ?_
+  have hmono := rowsBy_mono P p
+  have hle := rowsBy_le P (p + 1)
+  have hrk := rowsBy_le P p
+  have pc := pairH_relCT hp hq hk hk' hr sm (p := p) (r := rowsBy P p) (h := hashedBy P p)
+    (m := hashedBy P (p + 1) - hashedBy P p) (by omega)
+    (by simp only [hashedBy]; omega) (fun k hk' => by
+      have := Nat.mul_le_mul_left 384 hrk
+      have h3 := hashed_le P (p + 1)
+      simp only [hashedBy] at h3 hk' ⊢
+      have : 136 * (384 * rowsBy P p / 136) ≤ 384 * rowsBy P p := Nat.mul_div_le _ _
+      omega) (by
+      rw [← hashed_succ]
+      have hA : hashedBy P p ≤ 384 * rowsBy P p / 136 :=
+        (Nat.le_div_iff_mul_le (by decide)).2 (by have := hashed_le P p; omega)
+      have hB : 136 * (384 * rowsBy P p / 136) ≤ 384 * rowsBy P p := Nat.mul_div_le _ _
+      simp only [hashedBy]
+      have := Nat.min_le_right 3 (384 * rowsBy P p / 136 - hashedBy P p)
+      omega) habs
+  rw [← hashed_succ] at pc
+  exact ⟨_, pc, rows_relCT hp hq hr sm hrow (rowsBy P (p + 1) - rowsBy P p) (rowsBy P p) (rowsBy P (p + 1))
+    rfl hmono hle (Nat.le_trans (rowsBy_mul P (p + 1)) (by omega))⟩
+
+/-- **The matrix after its first two pairs, and the rows of `t̂`,** leak only the pointers and `ρ`. -/
+theorem matrixRows_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ) (hk : Stk128K P σ) (hk' : Stk128K P τ)
+    (hr : Noise.Room P) (sm : SameK P σ τ) (hk3 : 3 ≤ P.k)
+    (habs : ∀ blk, 136 * blk < (Kem16.kgSrc P).len → ∃ h, (taint.check (Taint.ofRegs [(Kem16.kgSrc P).r, .x28])
+      (.block (Hybrid.absorbBlock (Kem16.kgSrc P) blk)) h).isSome = true)
+    (hrow : ∀ i < P.k, ∃ h, ((VectorSymbols.analysis restSymbols).check
+      (VectorTaint.ofRegs [.x25,.x26,.x27,.x28]) (Kem16.kgRow P i) h).isSome = true) :
+    RelCTs (KR P σ τ 4 0 0) (Impl.MlKem.AArch64.Kem16P.kgMatrixRows P)
+      (KR P σ τ (P.k * P.k) P.k (hashedBy P (P.k * P.k / 2))) := by
+  have hw := hp.wf
+  have hf := hw.facts
+  have hkk := Nat.mul_le_mul hk3 hk3
+  have h2 := (rowsBy_two (P := P) hk3).2
+  have first := rows_relCT hp hq hr sm hrow (n := 4) (h := 0) (rowsBy P 2) 0 (rowsBy P 2) (by omega)
+    (Nat.zero_le _) (rowsBy_le P 2) (rowsBy_mul P 2)
+  have pairs := relcts_flatMap_range (n := P.k * P.k / 2 - 2)
+    (I := fun q => KR P σ τ (2 * (q + 2)) (rowsBy P (q + 2)) (hashedBy P (q + 2)))
+    (f := fun q => kgPair P (q + 2) :: kgRows P (rowsBy P (q + 2)) (rowsBy P (q + 3)))
+    (fun q hq' => pairRows_relCT hp hq hk hk' hr sm habs hrow (p := q + 2) (by omega))
+  have e2 : P.k * P.k / 2 - 2 + 2 = P.k * P.k / 2 := by omega
+  simp only [e2] at pairs
+  rw [show 2 * (0 + 2) = 4 from rfl, show (0 : Nat) + 2 = 2 from rfl, h2] at pairs
+  unfold Impl.MlKem.AArch64.Kem16P.kgMatrixRows Impl.MlKem.AArch64.Kem16P.pairs
+    Impl.MlKem.AArch64.Kem16P.single
+  refine RelCTs.append (RelCTs.append first pairs) ?_
   have hle := rowsBy_le P (P.k * P.k / 2)
   by_cases ho : P.k * P.k % 2 = 1
-  · rw [ite_eq_left ho]
+  · rw [show decide (P.k * P.k % 2 = 1) = true from decide_eq_true ho, ite_eq_left rfl]
     have e : 2 * (P.k * P.k / 2) = P.k * P.k - 1 := by omega
     refine ⟨KR P σ τ (P.k * P.k) (rowsBy P (P.k * P.k / 2)) (hashedBy P (P.k * P.k / 2)), ?_,
       rows_relCT hp hq hr sm hrow _ _ P.k rfl hle (Nat.le_refl _) (Nat.le_refl _)⟩
     rw [e]
     exact lastH_relCT hp hq hr sm ho
-  · rw [ite_eq_right ho]
+  · rw [show decide (P.k * P.k % 2 = 1) = false from decide_eq_false ho, ite_eq_right Bool.false_ne_true]
     have e : 2 * (P.k * P.k / 2) = P.k * P.k := by omega
     have er : rowsBy P (P.k * P.k / 2) = P.k := by
       simp only [rowsBy, e, Nat.mul_div_cancel_left _ (show 0 < P.k by omega), Nat.min_self]
     intro s u h
     rwa [e, er] at h
+
+/-! ## The first two pairs -/
+
+/-- Both runs after `G`, `n` entries of `Â` and the first `c` PRF outputs, with the same symbols. -/
+def KF (P : KemLay) (σ τ : State) (n c : Nat) (s u : State) : Prop :=
+  FInv P σ n c s ∧ FInv P τ n c u ∧ s.syms "VG_MLKEM_REJ_SHUFFLE" = u.syms "VG_MLKEM_REJ_SHUFFLE" ∧
+    ∀ name ∈ restSymbols, s.syms name = u.syms name
+
+/-- **Pair `p < 2`** computing PRF outputs leaks only the pointers and `ρ`. -/
+theorem firstK_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ) (hk : Stk128K P σ) (hk' : Stk128K P τ)
+    (sm : SameK P σ τ) (hk3 : 3 ≤ P.k) {p : Nat} (hp2 : p < 2) :
+    RelCT isa (KF P σ τ (2 * p) (3 * p)) (Impl.MlKem.AArch64.Kem16P.kgPairP P p)
+      (KF P σ τ (2 * p + 2) (3 * p + 3)) := by
+  intro s u tr ur t v H et eu
+  have hw := hp.wf
+  have hf := hw.facts
+  have hkk : P.k * P.k ≤ 16 := hf.2.2.1
+  have he : 2 * p + 1 < P.k * P.k := by
+    have := Nat.mul_le_mul hk3 hk3; omega
+  have hN : 3 * p + 3 ≤ 6 := by omega
+  have hoa : AH + 1024 * (2 * p) < 65536 := by simp only [KG.AH]; omega
+  have hob : AH + 1024 * (2 * p + 1) < 65536 := by simp only [KG.AH]; omega
+  have h3 := kL_le hw 3
+  have hsv := hp.sv
+  have sv : SV P = TP P + 2048 := rfl
+  have tp : TP P = AH + 1024 * (P.k * P.k) + 1024 * P.k + 1024 := rfl
+  have cA : 4096 ≤ AH := by decide
+  have hbo : Impl.MlKem.AArch64.Kem16P.bufOff (TP P) (3 * p + 2) < 65536 := by
+    simp only [Impl.MlKem.AArch64.Kem16P.bufOff]; omega_using [h3, hsv, sv, hp2]
+  have h4 : 4096 ≤ Impl.MlKem.AArch64.Kem16P.bufOff (TP P) (3 * p) := by
+    simp only [Impl.MlKem.AArch64.Kem16P.bufOff]; omega_using [tp, cA]
+  have ks := H.1.b.kb
+  have ku := H.2.1.b.kb
+  have ms := matrixTable_of hp ks H.1.tables
+  have mu := matrixTable_of hq ku H.2.1.tables
+  have ps := pair_input hp he ks ms
+  have pu := pair_input hq he ku mu
+  have hs := prf_inputK hp hk he hN ks H.1.tstk ms
+  have hu := prf_inputK hq hk' he hN ku H.2.1.tstk mu
+  rw [← sm.ptr 3, ← H.2.2.1] at pu hu
+  have seeds : ∀ j, Paired.seedState s.mem (kA σ 3 + BitVec.ofNat 64 SB) j P.k =
+      Paired.seedState u.mem (kA σ 3 + BitVec.ofNat 64 SB) j P.k := by
+    intro j
+    rw [Paired.seedState_eq _ _ (by lom) (by lom), Paired.seedState_eq _ _ (by lom) (by lom)]
+    unfold Paired.seedBytes
+    rw [H.1.b.rho, sm.ptr 3, H.2.1.b.rho, sm.rho]
+  have ct := Kem16P.pairPCode_relCT (w16 := true) P SG (TP P) (a := 2 * p) (N₀ := 3 * p) (m := 3) (by omega)
+    hbo h4 (by decide) (by decide) (by decide) hoa hob ps hs pu hu rfl (by decide) (by decide) rfl
+    (by rw [ks.sp, ku.sp, sm.sp]) (seeds _) (seeds _)
+  have ht := Paired.exec_post (first_step hp hk hp2 hk3 H.1) et
+  have hv := Paired.exec_post (first_step hq hk' hp2 hk3 H.2.1) eu
+  unfold Impl.MlKem.AArch64.Kem16P.kgPairP at et eu
+  exact ⟨(ct _ _ _ _ _ _ ⟨rfl, rfl⟩ (Kem16P.pairP_exec et) (Kem16P.pairP_exec eu)).1, ht, hv,
+    by rw [Exec.syms et, Exec.syms eu]; exact H.2.2.1,
+    fun name hn => by rw [Exec.syms et, Exec.syms eu]; exact H.2.2.2 name hn⟩
 
 end VG.Proof.MlKem.AArch64.KeyGen

@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 
 /-! # Key generation hashing `ek` during the matrix: its invariant
 
-`Kem16.keyGenH` samples `Â` pair by pair and computes each row of `t̂` as soon
+`Kem16P.keyGen` samples `Â` pair by pair and computes each row of `t̂` as soon
 as its entries are sampled, while the third state of the `x3` calls absorbs the
 blocks of `ek` the rows before have encoded. `IL n r h`: after `n` entries of
 `Â`, `r` rows of `t̂` (encoded into both keys, over `Â` as memory holds it) and
