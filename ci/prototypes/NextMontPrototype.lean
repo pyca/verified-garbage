@@ -146,6 +146,38 @@ def code (full : Bool) : Prog isa := VG.Impl.Rsa.X86.Keys.seqs [
  .block VG.Impl.Bignum.X86.PublicFn.restore]
 end KeyCheckMontProto
 
+namespace BatchCrtProto
+open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Rsa.X86.Keys VG.Impl.Rsa.X86.KeyRt
+open VG.Impl.Rsa.X86.CrtValues (sPodd sE1 sE2 sE3 sMask aOne aQ aP aDQ aDR aDD aDT aDR2 aDR3 aD)
+
+def batchCall : Prog isa :=
+ let L := VG.Impl.Rsa.X86.CrtValuesRt.lay
+ let F : Lay := { L with len := L.len+4, ws := L.ws+4 }
+ .frame (.alloc 16) (.seq (.block (
+   [.store (at_ .esp 0) .edi] ++ bytesB F .eax ++ [.shift .shr .eax 2, .store (at_ .esp 4) .eax,
+    .mov .eax (.mem (argOp 13)), .store (at_ .esp 8) .eax,
+    .mov .eax (.mem (argOp 15)), .store (at_ .esp 12) .eax]))
+   (.call "proto_inv_C" (.block []))) (.free 16)
+
+def checks : Prog isa :=
+ let L := VG.Impl.Rsa.X86.CrtValuesRt.lay
+ VG.Impl.Rsa.X86.Keys.seqs ([
+  eqS L sE1 aDQ aQ aT1, eqS L sE2 aDR aZero aT1] ++ VG.Impl.Rsa.X86.CrtValuesRt.invSetup ++ [
+  batchCall, eqS L sE3 1 aOne aT1,
+  .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
+  copy L aDQ aD, copy L aDD aP, .block (clrLow L aDD)])
+
+def code : Prog isa := VG.Impl.Rsa.X86.Keys.seqs [
+ .block VG.Impl.Rsa.X86.CrtValues.entry,
+ .seq (.block (VG.Impl.Rsa.X86.CrtValues.inputArgs 6))
+  (.seq (.block modulusCheck) (.ite .e
+   (VG.Impl.Rsa.X86.Keys.seqs [VG.Impl.Rsa.X86.CrtValuesRt.loads,
+    VG.Impl.Rsa.X86.CrtValuesRt.firstDiv, checks,
+    VG.Impl.Rsa.X86.CrtValuesRt.div aDR2, VG.Impl.Rsa.X86.CrtValuesRt.divQ,
+    VG.Impl.Rsa.X86.CrtValuesRt.stores]) VG.Impl.Rsa.X86.CrtValues.failure)),
+ .block VG.Impl.Bignum.X86.PublicFn.restore]
+end BatchCrtProto
+
 def main : IO Unit := do
  let modes := [VG.Impl.Mont.X86.Rt.body, NextMont.tune 2 VG.Impl.Mont.X86.Rt.body,
    NextMont.tune 4 VG.Impl.Mont.X86.Rt.body, NextMont.tune 8 VG.Impl.Mont.X86.Rt.body,
@@ -158,4 +190,6 @@ def main : IO Unit := do
    NextMont.printFn "proto_check0" (VG.Impl.Rsa.X86.KeyCheckRt.code false) ++
    NextMont.printFn "proto_check1" (KeyCheckMontProto.code false) ++
    NextMont.printFn "proto_crt0" VG.Impl.Rsa.X86.CrtValuesRt.code ++
+   NextMont.printFn "proto_crt2" BatchCrtProto.code "proto_inv_C" ++
+   NextMont.printFn "proto_crt3" BatchCrtProto.code "proto_inv_active_C" ++
    ".section .note.GNU-stack,\"\",@progbits\n")
