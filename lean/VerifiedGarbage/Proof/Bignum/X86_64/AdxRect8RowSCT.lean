@@ -61,12 +61,12 @@ theorem pinsH (ps : List (Nat × Nat)) (a b : Nat) (k : RowLayout → Nat) :
 
 theorem setupH_fw {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
     (L : RowLayout) (s : State)
-    (h : (RowState ps L 0 s ∧ word s.mem L.B carryOffset = 0) ∧ (word s.mem L.B handOffset).toNat ≤ 2) :
+    (h : RowStart ps L s ∧ (word s.mem L.B handOffset).toNat ≤ 2) :
     WP isa (.block (AdxRect8.setup ca cb)) s
       (fun t => RowBases ps a b L t ∧ (word t.mem L.B handOffset).toNat ≤ 2) := by
-  obtain ⟨⟨⟨mi,hg,hv,hI,hJ⟩,hc⟩,hh⟩ := h
+  obtain ⟨⟨⟨mi,hg,hv,hI,hJ⟩,hc,hRa,hRd⟩,hh⟩ := h
   simp only [Nat.mul_zero,Nat.add_zero] at hJ
-  refine WP.mono (setup_ok hg.scr hg.rdi hg.hdr L.hZ hv pa pb hI hJ) fun t ⟨ca,cb,co,mt,kt⟩ => ?_
+  refine WP.mono (setup_ok hg.scr hg.rdi hg.hdr L.hZ hv pa pb hRa hRd) fun t ⟨ca,cb,co,mt,kt⟩ => ?_
   exact ⟨⟨⟨mi,hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,mt ▸ hg.hdr⟩,mt ▸ hv,mt ▸ hI,mt ▸ hJ,
     mt ▸ hc,ca,cb,co⟩,mt ▸ hh⟩
 
@@ -135,15 +135,12 @@ theorem rowS_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps)
     (ha : a < 8) (hb : b < 8)
     (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp) (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp)
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca cb)) hint).isSome = true) :
-    RelCT isa (Two fun L s => (RowState ps L 0 s ∧ word s.mem L.B carryOffset = 0) ∧
-        (word s.mem L.B handOffset).toNat ≤ 2) (AdxRect8.rowS ca cb)
+    (hS : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup ca cb)) hint).isSome = true) :
+    RelCT isa (Two fun L s => RowStart ps L s ∧ (word s.mem L.B handOffset).toNat ≤ 2) (AdxRect8.rowS ca cb)
       (Two fun L s => RowState ps L L.n s) := by
   unfold AdxRect8.rowS
-  refine RelCT.seq (two_piece [.rdi] ?_ hS (setupH_fw pa pb)) ?_
-  · rintro L s t ⟨⟨⟨mi,hs,_⟩,_⟩,_⟩ ⟨⟨⟨mj,ht,_⟩,_⟩,_⟩ r hr
-    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    subst r; exact hs.rdi.trans ht.rdi.symm
+  refine RelCT.seq (two_piece [.rdi,.rax,.rdx] (fun L s t hs ht => start_pins ps L s t hs.1 ht.1) hS
+    (setupH_fw pa pb)) ?_
   refine RelCT.seq (two_piece [.rsi] ?_ (by taint_decide) loadH_fw) ?_
   · rintro L s t ⟨⟨_,_,_,_,_,_,_,hs⟩,_⟩ ⟨⟨_,_,_,_,_,_,_,ht⟩,_⟩ r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr

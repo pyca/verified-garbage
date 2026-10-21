@@ -49,22 +49,24 @@ theorem rowInit_ok {s : State} {B : Addr} {Z w : Nat}
     (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hZ : slot w 8 ≤ Z) :
     WP isa (.block AdxTiledProduct.rowInit) s fun t =>
       word t.mem B carryOffset = 0 ∧ word t.mem B (8*sFn 13) = 0 ∧
-      Outside B (8*sFn 13) 16 s.mem t.mem ∧ Keep [.rax] s t := by
+      Outside B (8*sFn 13) 16 s.mem t.mem ∧ t.gpr .rdx = 0 ∧ Keep [.rdx] s t := by
   have hn := hs.nowrap
   have cZ : carryOffset+8 ≤ Z := by
     have := hdr_lt_slot w 8 (show sFn 14 < 32 by decide); unfold carryOffset; omega
   have jZ : 8*sFn 13+8 ≤ Z := by
     have := hdr_lt_slot w 8 (show sFn 13 < 32 by decide); omega
   have body : WP isa (.block AdxTiledProduct.rowInit) s fun t =>
-      t.mem = (s.mem.writeW (off B carryOffset) (0 : BitVec 64)).writeW (off B (8*sFn 13)) (0 : BitVec 64) ∧ Keep [.rax] s t := by
-    apply WP.keep [.rax] (Q := fun t => t.mem = (s.mem.writeW (off B carryOffset) (0 : BitVec 64)).writeW (off B (8*sFn 13)) (0 : BitVec 64)) _ rfl
+      (t.mem = (s.mem.writeW (off B carryOffset) (0 : BitVec 64)).writeW (off B (8*sFn 13)) (0 : BitVec 64) ∧
+        t.gpr .rdx = 0) ∧ Keep [.rdx] s t := by
+    apply WP.keep [.rdx] (Q := fun t => t.mem = (s.mem.writeW (off B carryOffset) (0 : BitVec 64)).writeW (off B (8*sFn 13)) (0 : BitVec 64) ∧
+      t.gpr .rdx = 0) _ rfl
     unfold AdxTiledProduct.rowInit
     xrun [State.ea,hdr,hd,hdrOff,carryOffset,hs.st (show 8*sFn 14+8 ≤ Z from cZ),hs.st jZ]
     rfl
-  refine WP.mono body fun t ⟨mt,kt⟩ => ?_
+  refine WP.mono body fun t ⟨⟨mt,rt⟩,kt⟩ => ?_
   have c := writeW_outside s.mem B (0 : BitVec 64) (by omega : carryOffset+8 ≤ 2^64)
   have j := writeW_outside (s.mem.writeW (off B carryOffset) (0 : BitVec 64)) B (0 : BitVec 64) (by omega : 8*sFn 13+8 ≤ 2^64)
-  refine ⟨?_,?_,?_,kt⟩
+  refine ⟨?_,?_,?_,rt,kt⟩
   · rw [mt,j.word (by unfold carryOffset sFn; omega) (by omega),word_writeW_self]
   · rw [mt,word_writeW_self]
   · rw [mt]

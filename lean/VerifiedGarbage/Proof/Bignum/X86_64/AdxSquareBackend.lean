@@ -61,7 +61,7 @@ theorem raw_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha :
     (ha2 : a≠aTmp)
     {h₁ h₂ h₃ : VG.Taint.Hint VG.X86_64.Taint.T}
     (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.setup ca)) h₁).isSome=true)
-    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca ca)) h₂).isSome=true)
+    (hR : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup ca ca)) h₂).isSome=true)
     (hT : (taint.check (Taint.ofRegs [.rdi,.rax]) (.block (AdxTri8.setup ca)) h₃).isSome=true) :
     RelCT isa (Two (GoodV ps)) (AdxTiledSquare.rawSquare ca) (fun _ _ => True) := by
   unfold AdxTiledSquare.rawSquare AdxTiledSquare.diagonal
@@ -96,7 +96,7 @@ theorem rawBare_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (
     (ha2 : a≠aTmp)
     {h₁ h₂ h₃ : VG.Taint.Hint VG.X86_64.Taint.T}
     (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.setup ca)) h₁).isSome=true)
-    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca ca)) h₂).isSome=true)
+    (hR : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup ca ca)) h₂).isSome=true)
     (hT : (taint.check (Taint.ofRegs [.rdi,.rax]) (.block (AdxTri8.setup ca)) h₃).isSome=true) :
     RelCT isa (Two (GoodV ps)) (AdxTiledSquare.rawSquareBare ca) (fun _ _ => True) := by
   unfold AdxTiledSquare.rawSquareBare AdxTiledSquare.diagonal
@@ -135,7 +135,7 @@ theorem montSquare_ct {ps : List (Nat × Nat)} {co ca o a : Nat} (po : (co, o) �
     (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp)
     {h₁ h₂ h₃ h₄ : VG.Taint.Hint VG.X86_64.Taint.T}
     (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.setup ca)) h₁).isSome=true)
-    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca ca)) h₂).isSome=true)
+    (hR : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup ca ca)) h₂).isSome=true)
     (hF : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.finishBases co)) h₃).isSome=true)
     (hT : (taint.check (Taint.ofRegs [.rdi,.rax]) (.block (AdxTri8.setup ca)) h₄).isSome=true) :
     RelCT isa (Two (GoodV ps)) (AdxTiledSquare.montSquare co ca) (fun _ _ => True) :=
@@ -156,7 +156,7 @@ open VG.Proof.Bignum.X86_64
 theorem aligned_ct {o a : Nat} (ho : o<8) (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp)
     {h₁ h₂ h₃ h₄ : VG.Taint.Hint VG.X86_64.Taint.T}
     (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (setup a)) h₁).isSome=true)
-    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup a a)) h₂).isSome=true)
+    (hR : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup a a)) h₂).isSome=true)
     (hF : (taint.check (Taint.ofRegs [.rdi]) (.block (finishBases o)) h₃).isSome=true)
     (hT : (taint.check (Taint.ofRegs [.rdi,.rax]) (.block (AdxTri8.setup a)) h₄).isSome=true) :
     RelCT isa (Two fun L s => AdxSquare.GW L s ∧ L.w%8=0)
@@ -171,7 +171,7 @@ theorem aligned_ct {o a : Nat} (ho : o<8) (ha : a<8) (ha1 : a≠aAcc) (ha2 : a�
 theorem alignedChoice_ct {o a : Nat} (ho : o<8) (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp)
     {h₁ h₂ h₃ h₄ : VG.Taint.Hint VG.X86_64.Taint.T}
     (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (setup a)) h₁).isSome=true)
-    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup a a)) h₂).isSome=true)
+    (hR : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup a a)) h₂).isSome=true)
     (hF : (taint.check (Taint.ofRegs [.rdi]) (.block (finishBases o)) h₃).isSome=true)
     (hT : (taint.check (Taint.ofRegs [.rdi,.rax]) (.block (AdxTri8.setup a)) h₄).isSome=true) :
     RelCT isa (Two AdxSquare.GW) (AdxTiledSquare.alignedChoice o a) (fun _ _ => True) := by
@@ -192,7 +192,7 @@ theorem choice_ct {o a : Nat} (ho : o<8) (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠
     (hM : (taint.check (Taint.ofRegs [.rdi]) (.block (bases o a a aN aAcc aTmp)) h₀).isSome=true)
     (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (setup a)) h₁).isSome=true)
     (hF : (taint.check (Taint.ofRegs [.rdi]) (.block (finishBases o)) h₃).isSome=true)
-    (hT : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup a a)) h₄).isSome=true)
+    (hT : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup a a)) h₄).isSome=true)
     (hTri : (taint.check (Taint.ofRegs [.rdi,.rax]) (.block (AdxTri8.setup a)) h₅).isSome=true) :
     RelCT isa (Two GoodW) (AdxTiledSquare.choice o a) (fun _ _ => True) := by
   unfold AdxTiledSquare.choice
@@ -306,7 +306,7 @@ theorem tiledDispatch_ct {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8)
     (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (rowBase a)) hc₂).isSome = true)
     (hF : (taint.check (Taint.ofRegs [.rdi]) (.block (finishBases o)) hc₃).isSome = true)
     (hA : (taint.check (Taint.ofRegs [.rdi]) (.block (setup a)) hc₄).isSome = true)
-    (hT : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup a b)) hc₅).isSome = true)
+    (hT : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup a b)) hc₅).isSome = true)
     (hTri : (taint.check (Taint.ofRegs [.rdi,.rax]) (.block (AdxTri8.setup a)) hc₆).isSome = true) :
     RelCT isa (Two GoodW) (AdxTiledSquare.dispatch o a b) (fun _ _ => True) := by
   unfold AdxTiledSquare.dispatch

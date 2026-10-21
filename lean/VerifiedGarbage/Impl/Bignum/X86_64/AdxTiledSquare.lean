@@ -10,9 +10,11 @@ public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledProduct
 namespace VG.Impl.Bignum.X86_64.AdxTiledSquare
 open VG.X86_64
 
+/-- A row's start, from its index in `rax`: the column index one block above
+it into `rdx` and slot 29, a zero carry into slot 30. -/
 def rowInit : List Instr :=
-  [.mov32 .rax (.imm 0),.store (hdr (sFn 14)) .rax,
-   .mov .rax (.mem (hdr (sFn 12))),.alu .add .rax (.imm 8),.store (hdr (sFn 13)) .rax]
+  [.mov .rdx (.reg .rax),.alu .add .rdx (.imm 8),.store (hdr (sFn 13)) .rdx,
+   .mov32 .rcx (.imm 0),.store (hdr (sFn 14)) .rcx]
 
 def nextRow : List Instr :=
   [.mov .rax (.mem (hdr (sFn 12))),.alu .add .rax (.imm 8),.store (hdr (sFn 12)) .rax,

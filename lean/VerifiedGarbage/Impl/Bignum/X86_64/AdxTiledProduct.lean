@@ -24,8 +24,10 @@ def tailSetup : List Instr :=
 def tail : Prog isa := .seq (.block tailTest)
   (.ite .e (.block []) (.seq (.block tailSetup) AdxCarry8.propagate))
 
+/-- A row's start: a zero column index in `rdx` and slot 29 and a zero carry
+in slot 30 (its index stays in `rax`). -/
 def rowInit : List Instr :=
-  [.mov32 .rax (.imm 0), .store (hdr (sFn 14)) .rax, .store (hdr (sFn 13)) .rax]
+  [.mov32 .rdx (.imm 0), .store (hdr (sFn 14)) .rdx, .store (hdr (sFn 13)) .rdx]
 
 def nextRow : List Instr :=
   [.mov .rax (.mem (hdr (sFn 12))), .alu .add .rax (.imm 8),

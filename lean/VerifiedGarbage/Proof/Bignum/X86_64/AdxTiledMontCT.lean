@@ -99,7 +99,7 @@ theorem montMul_ct {ps : List (Nat × Nat)} {co ca cb o a b : Nat} (po : (co, o)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hb1 : b≠aAcc) (hb2 : b≠aTmp)
     {h₁ h₂ h₃ : VG.Taint.Hint VG.X86_64.Taint.T}
     (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.setup cb)) h₁).isSome=true)
-    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca cb)) h₂).isSome=true)
+    (hR : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup ca cb)) h₂).isSome=true)
     (hF : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.finishBases co)) h₃).isSome=true) :
     RelCT isa (Two (GoodV ps)) (AdxTiledProduct.montMul co ca cb) (fun _ _ => True) :=
   RelCT.seq (two_post (raw_ct pa pb ha hb ha1 ha2 hb1 hb2 hS hR) (raw_fw pa pb ha hb ha1 ha2 hb1 hb2))

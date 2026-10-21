@@ -85,7 +85,7 @@ theorem raw_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) 
     (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hb1 : b≠aAcc) (hb2 : b≠aTmp)
     {h₁ h₂ : VG.Taint.Hint VG.X86_64.Taint.T}
     (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.setup cb)) h₁).isSome=true)
-    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca cb)) h₂).isSome=true) :
+    (hR : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup ca cb)) h₂).isSome=true) :
     RelCT isa (Two (GoodV ps)) (AdxTiledProduct.rawProduct ca cb) (fun _ _ => True) := by
   unfold AdxTiledProduct.rawProduct
   refine RelCT.seq (two_piece [.rdi] (pins_goodV ps) hS (setup_fw pb)) ?_
@@ -106,7 +106,7 @@ theorem rawBare_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ 
     (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hb1 : b≠aAcc) (hb2 : b≠aTmp)
     {h₁ h₂ : VG.Taint.Hint VG.X86_64.Taint.T}
     (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.setup cb)) h₁).isSome=true)
-    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca cb)) h₂).isSome=true) :
+    (hR : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup ca cb)) h₂).isSome=true) :
     RelCT isa (Two (GoodV ps)) (AdxTiledProduct.rawProductBare ca cb) (fun _ _ => True) := by
   unfold AdxTiledProduct.rawProductBare
   refine RelCT.seq (two_piece [.rdi] (pins_goodV ps) hS (setup_fw pb)) ?_

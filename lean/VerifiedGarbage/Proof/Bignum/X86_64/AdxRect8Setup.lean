@@ -187,8 +187,8 @@ theorem setup_ok {s : State} {B : Addr} {Z w i j : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
     (hZ : slot w 8 ≤ Z) {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca cb a b : Nat}
     (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
-    (hi : word s.mem B (8*sFn 12) = BitVec.ofNat 64 i)
-    (hj : word s.mem B (8*sFn 13) = BitVec.ofNat 64 j) :
+    (hi : s.gpr .rax = BitVec.ofNat 64 i)
+    (hj : s.gpr .rdx = BitVec.ofNat 64 j) :
     WP isa (.block (AdxRect8.setup ca cb)) s fun t =>
       t.gpr .rcx = off B (slot w a+8*i) ∧
       t.gpr .rbp = off B (slot w b+8*j) ∧
@@ -202,7 +202,7 @@ theorem setup_ok {s : State} {B : Addr} {Z w i j : Nat} {mi : BitVec 64}
     t.gpr .rsi = off B (slot w aAcc+16+8*(i+j)) ∧ t.mem = s.mem) ?_ rfl)
     fun t ⟨⟨hc,hp,ho,hm⟩,k⟩ => ⟨hc,hp,ho,hm,k⟩
   unfold AdxRect8.setup
-  xrun [State.ea,hdr,hd,hdrOff,hl (sFn 12) (by decide),hl (sFn 13) (by decide),
+  xrun [State.ea,hdr,hd,hdrOff,
     hl (sArr ca) (by have := hv.lt pa; unfold sArr; omega),hl (sArr cb) (by have := hv.lt pb; unfold sArr; omega),
     hl (sArr aAcc) (by decide),hi,hj,show word s.mem B (8*sArr ca) = _ from hv.at pa,
     show word s.mem B (8*sArr cb) = _ from hv.at pb,hh.harr aAcc (by decide),

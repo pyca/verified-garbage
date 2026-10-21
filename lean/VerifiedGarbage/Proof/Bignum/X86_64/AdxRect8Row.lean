@@ -416,10 +416,11 @@ theorem row_ok {s : State} {B : Addr} {Z w a b i j₀ n : Nat} {mi : BitVec 64}
     (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp) (hwN : w = j₀+8*n) (hn : 0 < n)
     (hidx : word s.mem B (8*sFn 12) = BitVec.ofNat 64 i)
     (hjdx : word s.mem B (8*sFn 13) = BitVec.ofNat 64 j₀)
+    (hRax : s.gpr .rax = BitVec.ofNat 64 i) (hRdx : s.gpr .rdx = BitVec.ofNat 64 j₀)
     (hc : (word s.mem B carryOffset).toNat = 0) :
     WP isa (AdxRect8.row ca cb) s (RowInv s B Z w a b i j₀ n mi 0 2) := by
   unfold AdxRect8.row
-  refine WP.seq (WP.mono (setup_ok hs hd hh hZ hv pa pb hidx hjdx) fun u ⟨ua,ub,uo,um,ku⟩ => ?_)
+  refine WP.seq (WP.mono (setup_ok hs hd hh hZ hv pa pb hRax hRdx) fun u ⟨ua,ub,uo,um,ku⟩ => ?_)
   refine WP.seq (WP.mono (rowLoad_ok (s₀ := s) (hs.congr ku.2.2) ((ku.gpr (by decide)).trans hd) (um ▸ hh) hZ hi
     (by omega_using [hwN, hn]) (um ▸ hidx) (um ▸ hjdx) (um ▸ hc) ua ub uo um (ku.mono (by decide))) fun v hv0 => ?_)
   exact WP.seq (WP.mono (wp_upto (a := 0) (N := n) (Q := StreamInv s B Z w a b i j₀ n mi 0 2) hn

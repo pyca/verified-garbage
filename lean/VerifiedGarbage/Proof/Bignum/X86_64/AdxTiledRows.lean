@@ -19,6 +19,7 @@ structure Inv (s₀ : State) (B : Addr) (Z w a b k : Nat) (mi : BitVec 64) (s : 
   hdr : Hdr s.mem B w mi
   rdi : s.gpr .rdi = B
   indexI : word s.mem B (8*sFn 12) = BitVec.ofNat 64 (8*k)
+  raxI : s.gpr .rax = BitVec.ofNat 64 (8*k)
   keep : Keep mmRegs s₀ s
   frame : Frm B (ranges w) s₀.mem s.mem
   val : wv s.mem B (rawBase w) (2*w) = wv s₀.mem B (slot w a) (8*k)*wv s₀.mem B (slot w b) w
@@ -43,8 +44,8 @@ theorem row_inv {s₀ s : State} {B : Addr} {Z w a b k n : Nat} {mi : BitVec 64}
   have nowrap := h.scr.nowrap
   have Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega
   refine WP.mono (row_ok h.scr h.rdi h.hdr (frame_ops hv h.frame) pa pb hZ hw hwN (by omega)
-    (by omega : w=8*k+8+8*(n-k-1)) ha hb ha1 ha2 hb1 hb2 h.indexI)
-    fun t ⟨zt,it,⟨c,eq⟩,ht,ft,kt⟩ => ?_
+    (by omega : w=8*k+8+8*(n-k-1)) ha hb ha1 ha2 hb1 hb2 h.indexI h.raxI)
+    fun t ⟨zt,it,rt,⟨c,eq⟩,ht,ft,kt⟩ => ?_
   have va := input_preserved ha ha1 ha2 (by omega : 8*k+8 ≤ w) Z64 h.frame
   have vb := input_preserved hb hb1 hb2 (by omega : 0+w ≤ w) Z64 h.frame
   simp only [Nat.mul_zero,Nat.add_zero] at vb
@@ -58,10 +59,11 @@ theorem row_inv {s₀ s : State} {B : Addr} {Z w a b k n : Nat} {mi : BitVec 64}
     Nat.lt_of_lt_of_le (wv_lt _ _ _ _) (Nat.pow_le_pow_right (by decide) (by omega))
   have bound := Nat.mul_lt_mul'' boundA (wv_lt s₀.mem B (slot w b) w)
   rw [← Nat.pow_add,show 64*w+64*w=128*w by omega] at bound
-  refine ⟨?_,⟨h.scr.congr kt.2.2,ht,(kt.gpr (by decide)).trans h.rdi,?_,
+  refine ⟨?_,⟨h.scr.congr kt.2.2,ht,(kt.gpr (by decide)).trans h.rdi,?_,?_,
     (h.keep.trans kt).mono (by decide),h.frame.trans ft,drop_carry val bound⟩⟩
   · rw [zt]; exact congrArg some (decide_eq_decide.mpr (by omega))
   · simpa only [show 8*(k+1)=8*k+8 by omega] using it
+  · simpa only [show 8*(k+1)=8*k+8 by omega] using rt
 
 theorem rows_ok {s : State} {B : Addr} {Z w a b n : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
@@ -77,19 +79,20 @@ theorem rows_ok {s : State} {B : Addr} {Z w a b n : Nat} {mi : BitVec 64}
   have iZ : 8*sFn 12+8 ≤ Z := by
     have := hdr_lt_slot w 8 (show sFn 12 < 32 by decide); omega
   have init : WP isa (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax]) s fun t =>
-      t.mem=s.mem.writeW (off B (8*sFn 12)) (0 : BitVec 64) ∧ Keep [.rax] s t := by
-    apply WP.keep [.rax] (Q := fun t => t.mem=s.mem.writeW (off B (8*sFn 12)) (0 : BitVec 64)) _ rfl
+      (t.mem=s.mem.writeW (off B (8*sFn 12)) (0 : BitVec 64) ∧ t.gpr .rax = 0) ∧ Keep [.rax] s t := by
+    apply WP.keep [.rax] (Q := fun t => t.mem=s.mem.writeW (off B (8*sFn 12)) (0 : BitVec 64) ∧
+      t.gpr .rax = 0) _ rfl
     xrun [State.ea,hdr,hd,hdrOff,hs.st iZ]
     rfl
   unfold AdxTiledProduct.rows
-  refine WP.seq (WP.mono init fun u ⟨mu,ku⟩ => ?_)
+  refine WP.seq (WP.mono init fun u ⟨⟨mu,ru⟩,ku⟩ => ?_)
   have ou : Outside B (8*sFn 12) 8 s.mem u.mem := by rw [mu]; exact writeW_outside _ _ _ (by decide)
   have fu : Frm B (ranges w) s.mem u.mem := by
     intro x hx
     apply ou x
     have := hx (8*sFn 12,32) (by simp [ranges]); omega
   have h0 : Inv s B Z w a b 0 mi u :=
-    ⟨hs.congr ku.2.2,frame_hdr hh fu,(ku.gpr (by decide)).trans hd,by rw [mu,word_writeW_self]; rfl,
+    ⟨hs.congr ku.2.2,frame_hdr hh fu,(ku.gpr (by decide)).trans hd,by rw [mu,word_writeW_self]; rfl,ru,
       ku.mono (by decide),fu,by
         rw [ou.wv (by unfold rawBase slot hdrBytes sFn; omega) (by unfold rawBase slot aAcc at *; omega)]
         simpa only [Nat.mul_zero,wv,Nat.zero_mul] using hz⟩

@@ -14,11 +14,13 @@ def carryOffset : Nat := 8 * sFn 14
 def upper : List Instr :=
   [.mov .rdx (.mem (hdr (sFn 14))), .alu .add .rsi (.imm 64)]
 
-/-- Address a tile using the two public word indices in slots 28 and 29. -/
+/-- Address a tile using the two public word indices, which its caller leaves
+in `rax` and `rdx` as well as in slots 28 and 29 (not reloaded: it has just
+stored them). -/
 def setup (a b : Nat) : List Instr :=
-  [.mov .rax (.mem (hdr (sFn 12))), .shift .shl .rax 3,
+  [.shift .shl .rax 3,
    .mov .rcx (.mem (hdr (sArr a))), .alu .add .rcx (.reg .rax),
-   .mov .rdx (.mem (hdr (sFn 13))), .shift .shl .rdx 3,
+   .shift .shl .rdx 3,
    .mov .rbp (.mem (hdr (sArr b))), .alu .add .rbp (.reg .rdx),
    .alu .add .rax (.reg .rdx), .mov .rsi (.mem (hdr (sArr Public.aAcc))),
    .alu .add .rsi (.reg .rax), .alu .add .rsi (.imm 16)]

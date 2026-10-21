@@ -33,16 +33,16 @@ open VG.Proof.MlKem.X86_64 (Keep)
 
 def RowStart (ps : List (Nat × Nat)) (L : RowLayout) (s : State) : Prop :=
   (∃ q, L.w=L.i+8+8*q) ∧ L.j₀=L.i+8 ∧ (∃ mi, Good s L.B L.Z L.w mi) ∧ Ops s.mem L.B L.w ps ∧
-    word s.mem L.B (8*sFn 12)=BitVec.ofNat 64 L.i ∧ (word s.mem L.B handOffset).toNat ≤ 2
+    word s.mem L.B (8*sFn 12)=BitVec.ofNat 64 L.i ∧ (word s.mem L.B handOffset).toNat ≤ 2 ∧
+    s.gpr .rax=BitVec.ofNat 64 L.i
 
 def RowReady (ps : List (Nat × Nat)) (L : RowLayout) (s : State) : Prop :=
-  (∃ q, L.w=L.i+8+8*q) ∧ L.j₀=L.i+8 ∧ RowState ps L 0 s ∧ word s.mem L.B carryOffset=0 ∧
-    (word s.mem L.B handOffset).toNat ≤ 2
+  (∃ q, L.w=L.i+8+8*q) ∧ L.j₀=L.i+8 ∧ AdxRect8.RowStart ps L s ∧ (word s.mem L.B handOffset).toNat ≤ 2
 
 theorem init_fw {ps : List (Nat × Nat)} (L : RowLayout) (s : State) (h : RowStart ps L s) :
     WP isa (.block AdxTiledSquare.rowInit) s (RowReady ps L) := by
-  obtain ⟨tail,j0,⟨mi,hg⟩,hv,idx,hh⟩ := h
-  refine WP.mono (rowInit_ok hg.scr hg.rdi L.hZ idx) fun t ⟨c,j,o,k⟩ => ?_
+  obtain ⟨tail,j0,⟨mi,hg⟩,hv,idx,hh,rax⟩ := h
+  refine WP.mono (rowInit_ok hg.scr hg.rdi L.hZ rax) fun t ⟨c,j,o,d,k⟩ => ?_
   have f : Frm L.B (ranges L.w) s.mem t.mem := by
     intro x hx
     apply o x
@@ -50,17 +50,17 @@ theorem init_fw {ps : List (Nat × Nat)} (L : RowLayout) (s : State) (h : RowSta
     simp only [sFn] at *; omega
   have it : word t.mem L.B (8*sFn 12)=BitVec.ofNat 64 L.i := by
     rw [o.word (by decide) (by decide)]; exact idx
-  exact ⟨tail,j0,⟨mi,⟨hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,frame_hdr hg.hdr f⟩,frame_ops hv f,it,
-    by rw [j0]; exact j⟩,c,by rw [o.word (by unfold handOffset sFn; omega) (by unfold handOffset sFn; omega)]; exact hh⟩
+  exact ⟨tail,j0,⟨⟨mi,⟨hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,frame_hdr hg.hdr f⟩,frame_ops hv f,it,
+    by rw [j0]; exact j⟩,c,(k.gpr (by decide)).trans rax,by rw [j0]; exact d⟩,by rw [o.word (by unfold handOffset sFn; omega) (by unfold handOffset sFn; omega)]; exact hh⟩
 
 theorem inner_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp)
     (L : RowLayout) (s : State) (h : RowReady ps L s) :
     WP isa (AdxRect8.rowS ca ca) s (fun t => TailReady L t ∧ ∃ q, L.w=L.i+8+8*q) := by
-  obtain ⟨tail,j0,⟨mi,hg,hv,idx,jdx⟩,carry,hh⟩ := h
+  obtain ⟨tail,j0,⟨⟨mi,hg,hv,idx,jdx⟩,carry,rax,rdx⟩,hh⟩ := h
   simp only [Nat.mul_zero,Nat.add_zero] at jdx
   refine WP.mono (AdxRect8.rowS_ok hg.scr hg.rdi hg.hdr hv pa pa L.hZ L.hw L.hi ha ha ha1 ha2 ha1 ha2
-    L.hwN L.hn idx jdx (by rw [carry]; rfl) rfl hh) fun t ht => ?_
+    L.hwN L.hn idx jdx rax rdx (by rw [carry]; rfl) rfl hh) fun t ht => ?_
   have ptr := ht.endPtr.resolve_left (by have := L.hn; omega)
   have wn := L.hwN
   exact ⟨⟨⟨mi,ht.scr,ht.rdi,ht.hdr⟩,ht.indexI,by simpa only [show L.i+L.j₀+8*L.n=L.i+L.w by omega] using ptr⟩,tail⟩
@@ -108,14 +108,14 @@ theorem tailS_fw (L : RowLayout) (s : State) (h : TailReadyS L s) :
 theorem row_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp)
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca ca)) hint).isSome=true) :
+    (hS : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup ca ca)) hint).isSome=true) :
     RelCT isa (Two (RowStart ps)) (AdxTiledSquare.row ca) (fun _ _ => True) := by
   unfold AdxTiledSquare.row
   refine RelCT.seq (two_piece [.rdi] ?_ (by taint_decide) init_fw) ?_
   · rintro L s t ⟨_,_,⟨mi,hs⟩,_,_⟩ ⟨_,_,⟨mj,ht⟩,_,_⟩ r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     subst r; exact hs.rdi.trans ht.rdi.symm
-  refine RelCT.seq (two_post (two_map id (fun _ _ h => ⟨⟨h.2.2.1,h.2.2.2.1⟩,h.2.2.2.2⟩)
+  refine RelCT.seq (two_post (two_map id (fun _ _ h => h.2.2)
     ((AdxRect8.rowS_ct pa pa ha ha ha1 ha2 ha1 ha2 hS).mono (fun _ _ h => h) (fun _ _ _ => True.intro)))
     (inner_fw pa ha ha1 ha2)) ?_
   refine RelCT.seq (two_post tailS_ct (Ψ := fun L s => s.gpr .rdi=L.B) tailS_fw)
@@ -147,16 +147,16 @@ def LoopStateQ (ps : List (Nat × Nat)) (L : Layout) (k : Nat) (s : State) : Pro
 theorem row_loop_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp)
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca ca)) hint).isSome=true) :
+    (hS : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup ca ca)) hint).isSome=true) :
     RelCT isa (Two fun p : Layout × Nat => fun s => p.2<p.1.n-1 ∧ LoopStateQ ps p.1 p.2 s)
       (AdxTiledSquare.row ca) (fun _ _ => True) := by
-  intro s t ts tt s' t' ⟨⟨L,k⟩,⟨hk,⟨mi,gs,vs,is⟩,hs⟩,⟨_,⟨mj,gt,vt,it⟩,ht⟩⟩ es et
+  intro s t ts tt s' t' ⟨⟨L,k⟩,⟨hk,⟨mi,gs,vs,is,rs⟩,hs⟩,⟨_,⟨mj,gt,vt,it,rt⟩,ht⟩⟩ es et
   dsimp only at hk
   have wn := L.hwN
   let R : AdxRect8.RowLayout := ⟨L.B,L.Z,L.w,8*k,8*k+8,L.n-k-1,L.hZ,L.hw,by omega,by omega,by omega⟩
   apply row_ct pa ha ha1 ha2 hS s t ts tt s' t' ?_ es et
-  exact ⟨R,⟨⟨L.n-k-1,by dsimp [R]; omega⟩,rfl,⟨mi,gs⟩,vs,is,hs⟩,
-    ⟨L.n-k-1,by dsimp [R]; omega⟩,rfl,⟨mj,gt⟩,vt,it,ht⟩
+  exact ⟨R,⟨⟨L.n-k-1,by dsimp [R]; omega⟩,rfl,⟨mi,gs⟩,vs,is,hs,rs⟩,
+    ⟨L.n-k-1,by dsimp [R]; omega⟩,rfl,⟨mj,gt⟩,vt,it,ht,rt⟩
 
 theorem row_loop_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp)
@@ -164,14 +164,14 @@ theorem row_loop_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) 
     WP isa (AdxTiledSquare.row ca) s fun t =>
       isa.eval .ne t=some (decide (k+1<L.n-1)) ∧
       (k+1<L.n-1 → LoopStateQ ps L (k+1) t) ∧ (k+1=L.n-1 → GoodV ps L t) := by
-  obtain ⟨⟨mi,hg,hv,idx⟩,hh⟩ := h
+  obtain ⟨⟨mi,hg,hv,idx,rax⟩,hh⟩ := h
   have wn := L.hwN
   refine WP.mono (row_ok hg.scr hg.rdi hg.hdr hv pa L.hZ L.hw
-    (by omega : L.w=8*k+8+8*(L.n-k-1)) (by omega) ha ha1 ha2 idx rfl hh)
-    fun t ⟨zt,it,σt,_,ht,ft,kt⟩ => ?_
+    (by omega : L.w=8*k+8+8*(L.n-k-1)) (by omega) ha ha1 ha2 idx rax rfl hh)
+    fun t ⟨zt,it,rt,σt,_,ht,ft,kt⟩ => ?_
   have good : Good t L.B L.Z L.w mi := ⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,ht⟩
   have vt := frame_ops hv ft
-  refine ⟨?_,fun _ => ⟨⟨mi,good,vt,?_⟩,σt⟩,fun _ => ⟨⟨mi,good⟩,vt⟩⟩
+  refine ⟨?_,fun _ => ⟨⟨mi,good,vt,?_,?_⟩,σt⟩,fun _ => ⟨⟨mi,good⟩,vt⟩⟩
   · simp only [eval,zt,Option.map_some]
     by_cases he : k+1=L.n-1
     · simp only [show 8*k+8=L.w-8 by omega,decide_true,Bool.not_true,
@@ -179,6 +179,7 @@ theorem row_loop_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) 
     · simp only [show ¬(8*k+8=L.w-8) by omega,decide_false,Bool.not_false,
         show k+1<L.n-1 by omega,decide_true]
   · simpa only [show 8*(k+1)=8*k+8 by omega] using it
+  · simpa only [show 8*(k+1)=8*k+8 by omega] using rt
 
 theorem rows_init_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : StartGood ps L s) :
     WP isa (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax,.store (hdr (sFn 15)) .rax]) s
@@ -191,7 +192,7 @@ theorem rows_init_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : Star
     have := hdr_lt_slot L.w 8 (show sFn 15<32 by decide); omega
   have nowrap := hg.scr.nowrap
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem=(s.mem.writeW (off L.B (8*sFn 12)) (0 : BitVec 64)).writeW
-    (off L.B (8*sFn 15)) (0 : BitVec 64)) ?_ rfl) fun t ⟨mt,kt⟩ => ?_
+    (off L.B (8*sFn 15)) (0 : BitVec 64) ∧ t.gpr .rax=0) ?_ rfl) fun t ⟨⟨mt,rt⟩,kt⟩ => ?_
   · xrun [State.ea,hdr,hg.rdi,hdrOff,hg.scr.st iZ,hg.scr.st i15]; rfl
   have o1 : Outside L.B (8*sFn 12) 8 s.mem (s.mem.writeW (off L.B (8*sFn 12)) (0 : BitVec 64)) :=
     writeW_outside _ _ _ (by decide)
@@ -202,14 +203,14 @@ theorem rows_init_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : Star
     have := hx (8*sFn 12,32) (by simp [ranges])
     exact (o2 x (by simp only [sFn] at *; omega)).trans (o1 x (by simp only [sFn] at *; omega))
   refine ⟨by omega,⟨mi,⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,frame_hdr hg.hdr ft⟩,
-    frame_ops hv ft,?_⟩,?_⟩
+    frame_ops hv ft,?_,rt⟩,?_⟩
   · rw [o2.word (by decide) (by decide),word_writeW_self]; rfl
   · rw [mt,show AdxRect8.handOffset = 8*sFn 15 from rfl,word_writeW_self]; decide
 
 theorem rows_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp)
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca ca)) hint).isSome=true) :
+    (hS : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup ca ca)) hint).isSome=true) :
     RelCT isa (Two (StartGood ps)) (AdxTiledSquare.rows ca) (Two (GoodV ps)) := by
   unfold AdxTiledSquare.rows
   refine RelCT.seq (two_piece [.rdi] ?_ (by taint_decide) rows_init_fw)
@@ -236,15 +237,15 @@ open VG.Proof.Bignum.X86_64.AdxTiledProduct (ranges frame_hdr frame_ops TailRead
 
 def RowStart1 (ps : List (Nat × Nat)) (L : RowLayout) (s : State) : Prop :=
   (∃ q, L.w=L.i+8+8*q) ∧ L.j₀=L.i+8 ∧ (∃ mi, Good s L.B L.Z L.w mi) ∧ Ops s.mem L.B L.w ps ∧
-    word s.mem L.B (8*sFn 12)=BitVec.ofNat 64 L.i
+    word s.mem L.B (8*sFn 12)=BitVec.ofNat 64 L.i ∧ s.gpr .rax=BitVec.ofNat 64 L.i
 
 def RowReady1 (ps : List (Nat × Nat)) (L : RowLayout) (s : State) : Prop :=
-  (∃ q, L.w=L.i+8+8*q) ∧ L.j₀=L.i+8 ∧ RowState ps L 0 s ∧ word s.mem L.B carryOffset=0
+  (∃ q, L.w=L.i+8+8*q) ∧ L.j₀=L.i+8 ∧ AdxRect8.RowStart ps L s
 
 theorem init1_fw {ps : List (Nat × Nat)} (L : RowLayout) (s : State) (h : RowStart1 ps L s) :
     WP isa (.block AdxTiledSquare.rowInit) s (RowReady1 ps L) := by
-  obtain ⟨tail,j0,⟨mi,hg⟩,hv,idx⟩ := h
-  refine WP.mono (rowInit_ok hg.scr hg.rdi L.hZ idx) fun t ⟨c,j,o,k⟩ => ?_
+  obtain ⟨tail,j0,⟨mi,hg⟩,hv,idx,rax⟩ := h
+  refine WP.mono (rowInit_ok hg.scr hg.rdi L.hZ rax) fun t ⟨c,j,o,d,k⟩ => ?_
   have f : Frm L.B (ranges L.w) s.mem t.mem := by
     intro x hx
     apply o x
@@ -254,16 +255,16 @@ theorem init1_fw {ps : List (Nat × Nat)} (L : RowLayout) (s : State) (h : RowSt
   have it : word t.mem L.B (8*sFn 12)=BitVec.ofNat 64 L.i := by
     rw [o.word (by decide) (by decide)]; exact idx
   exact ⟨tail,j0,⟨mi,⟨hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,hh⟩,frame_ops hv f,it,
-    by rw [j0]; exact j⟩,c⟩
+    by rw [j0]; exact j⟩,c,(k.gpr (by decide)).trans rax,by rw [j0]; exact d⟩
 
 theorem inner1_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp)
     (L : RowLayout) (s : State) (h : RowReady1 ps L s) :
     WP isa (AdxRect8.row ca ca) s (fun t => TailReady L t ∧ ∃ q, L.w=L.i+8+8*q) := by
-  obtain ⟨tail,j0,⟨mi,hg,hv,idx,jdx⟩,carry⟩ := h
+  obtain ⟨tail,j0,⟨mi,hg,hv,idx,jdx⟩,carry,rax,rdx⟩ := h
   simp only [Nat.mul_zero,Nat.add_zero] at jdx
   refine WP.mono (AdxRect8.row_ok hg.scr hg.rdi hg.hdr hv pa pa L.hZ L.hw L.hi ha ha ha1 ha2 ha1 ha2
-    L.hwN L.hn idx jdx (by rw [carry]; rfl)) fun t ht => ?_
+    L.hwN L.hn idx jdx rax rdx (by rw [carry]; rfl)) fun t ht => ?_
   have ptr := ht.endPtr.resolve_left (by have := L.hn; omega)
   have wn := L.hwN
   exact ⟨⟨⟨mi,ht.scr,ht.rdi,ht.hdr⟩,ht.indexI,by simpa only [show L.i+L.j₀+8*L.n=L.i+L.w by omega] using ptr⟩,tail⟩
@@ -271,14 +272,14 @@ theorem inner1_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (h
 theorem row1_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp)
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca ca)) hint).isSome=true) :
+    (hS : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup ca ca)) hint).isSome=true) :
     RelCT isa (Two (RowStart1 ps)) (AdxTiledSquare.row1 ca) (fun _ _ => True) := by
   unfold AdxTiledSquare.row1
   refine RelCT.seq (two_piece [.rdi] ?_ (by taint_decide) init1_fw) ?_
   · rintro L s t ⟨_,_,⟨mi,hs⟩,_,_⟩ ⟨_,_,⟨mj,ht⟩,_,_⟩ r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     subst r; exact hs.rdi.trans ht.rdi.symm
-  refine RelCT.seq (two_post (two_map id (fun _ _ h => ⟨h.2.2.1,h.2.2.2⟩)
+  refine RelCT.seq (two_post (two_map id (fun _ _ h => h.2.2)
     ((AdxRect8.row_ct pa pa ha ha ha1 ha2 ha1 ha2 hS).mono (fun _ _ h => h) (fun _ _ _ => True.intro)))
     (inner1_fw pa ha ha1 ha2)) ?_
   refine RelCT.seq (two_post (two_map id (fun _ _ h => h.1) tail_ct)
@@ -308,16 +309,16 @@ open VG.Proof.Bignum.X86_64.AdxTiledProduct (Layout LoopState GoodV frame_ops)
 theorem row1_loop_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp)
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca ca)) hint).isSome=true) :
+    (hS : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup ca ca)) hint).isSome=true) :
     RelCT isa (Two fun p : Layout × Nat => fun s => p.2<p.1.n-1 ∧ LoopState ps p.1 p.2 s)
       (AdxTiledSquare.row1 ca) (fun _ _ => True) := by
-  intro s t ts tt s' t' ⟨⟨L,k⟩,⟨hk,mi,gs,vs,is⟩,⟨_,mj,gt,vt,it⟩⟩ es et
+  intro s t ts tt s' t' ⟨⟨L,k⟩,⟨hk,mi,gs,vs,is,rs⟩,⟨_,mj,gt,vt,it,rt⟩⟩ es et
   dsimp only at hk
   have wn := L.hwN
   let R : AdxRect8.RowLayout := ⟨L.B,L.Z,L.w,8*k,8*k+8,L.n-k-1,L.hZ,L.hw,by omega,by omega,by omega⟩
   apply row1_ct pa ha ha1 ha2 hS s t ts tt s' t' ?_ es et
-  exact ⟨R,⟨⟨L.n-k-1,by dsimp [R]; omega⟩,rfl,⟨mi,gs⟩,vs,is⟩,
-    ⟨L.n-k-1,by dsimp [R]; omega⟩,rfl,⟨mj,gt⟩,vt,it⟩
+  exact ⟨R,⟨⟨L.n-k-1,by dsimp [R]; omega⟩,rfl,⟨mi,gs⟩,vs,is,rs⟩,
+    ⟨L.n-k-1,by dsimp [R]; omega⟩,rfl,⟨mj,gt⟩,vt,it,rt⟩
 
 theorem row1_loop_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp)
@@ -325,14 +326,14 @@ theorem row1_loop_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps)
     WP isa (AdxTiledSquare.row1 ca) s fun t =>
       isa.eval .ne t=some (decide (k+1<L.n-1)) ∧
       (k+1<L.n-1 → LoopState ps L (k+1) t) ∧ (k+1=L.n-1 → GoodV ps L t) := by
-  obtain ⟨mi,hg,hv,idx⟩ := h
+  obtain ⟨mi,hg,hv,idx,rax⟩ := h
   have wn := L.hwN
   refine WP.mono (row1_ok hg.scr hg.rdi hg.hdr hv pa L.hZ L.hw
-    (by omega : L.w=8*k+8+8*(L.n-k-1)) (by omega) ha ha1 ha2 idx)
-    fun t ⟨zt,it,_,ht,ft,kt⟩ => ?_
+    (by omega : L.w=8*k+8+8*(L.n-k-1)) (by omega) ha ha1 ha2 idx rax)
+    fun t ⟨zt,it,rt,_,ht,ft,kt⟩ => ?_
   have good : Good t L.B L.Z L.w mi := ⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,ht⟩
   have vt := frame_ops hv ft
-  refine ⟨?_,fun _ => ⟨mi,good,vt,?_⟩,fun _ => ⟨⟨mi,good⟩,vt⟩⟩
+  refine ⟨?_,fun _ => ⟨mi,good,vt,?_,?_⟩,fun _ => ⟨⟨mi,good⟩,vt⟩⟩
   · simp only [eval,zt,Option.map_some]
     by_cases he : k+1=L.n-1
     · simp only [show 8*k+8=L.w-8 by omega,decide_true,Bool.not_true,
@@ -340,6 +341,7 @@ theorem row1_loop_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps)
     · simp only [show ¬(8*k+8=L.w-8) by omega,decide_false,Bool.not_false,
         show k+1<L.n-1 by omega,decide_true]
   · simpa only [show 8*(k+1)=8*k+8 by omega] using it
+  · simpa only [show 8*(k+1)=8*k+8 by omega] using rt
 
 theorem rows1_init_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : StartGood ps L s) :
     WP isa (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax]) s
@@ -349,7 +351,7 @@ theorem rows1_init_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : Sta
 theorem rows1_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp)
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca ca)) hint).isSome=true) :
+    (hS : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup ca ca)) hint).isSome=true) :
     RelCT isa (Two (StartGood ps)) (AdxTiledSquare.rows1 ca) (Two (GoodV ps)) := by
   unfold AdxTiledSquare.rows1
   refine RelCT.seq (two_piece [.rdi] ?_ (by taint_decide) rows1_init_fw)

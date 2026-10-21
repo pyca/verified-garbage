@@ -59,14 +59,27 @@ def RowBases (ps : List (Nat × Nat)) (a b : Nat) (L : RowLayout) (s : State) : 
     s.gpr .rbp = off L.B (slot L.w b+8*L.j₀) ∧
     s.gpr .rsi = off L.B (slot L.w aAcc+16+8*(L.i+L.j₀))
 
+/-- A row's start: its indices in `rax` and `rdx` too, and no carry. -/
+def RowStart (ps : List (Nat × Nat)) (L : RowLayout) (s : State) : Prop :=
+  RowState ps L 0 s ∧ word s.mem L.B carryOffset = 0 ∧
+    s.gpr .rax = BitVec.ofNat 64 L.i ∧ s.gpr .rdx = BitVec.ofNat 64 L.j₀
+
+theorem start_pins (ps : List (Nat × Nat)) : Pins (RowStart ps) [.rdi,.rax,.rdx] := by
+  rintro L s t ⟨⟨mi,hs,_⟩,_,as,ds⟩ ⟨⟨mj,ht,_⟩,_,at₁,dt⟩ r hr
+  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact hs.rdi.trans ht.rdi.symm
+  · exact as.trans at₁.symm
+  · exact ds.trans dt.symm
+
 def RowRdi (p : RowLayout × Nat) (s : State) : Prop := s.gpr .rdi = p.1.B
 
 theorem setup_fw {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
-    (L : RowLayout) (s : State) (h : RowState ps L 0 s ∧ word s.mem L.B carryOffset = 0) :
+    (L : RowLayout) (s : State) (h : RowStart ps L s) :
     WP isa (.block (AdxRect8.setup ca cb)) s (RowBases ps a b L) := by
-  obtain ⟨⟨mi,hg,hv,hI,hJ⟩,hc⟩ := h
+  obtain ⟨⟨mi,hg,hv,hI,hJ⟩,hc,hRa,hRd⟩ := h
   simp only [Nat.mul_zero,Nat.add_zero] at hJ
-  refine WP.mono (setup_ok hg.scr hg.rdi hg.hdr L.hZ hv pa pb hI hJ)
+  refine WP.mono (setup_ok hg.scr hg.rdi hg.hdr L.hZ hv pa pb hRa hRd)
     fun t ⟨ca,cb,co,mt,kt⟩ => ?_
   exact ⟨⟨mi,hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,mt ▸ hg.hdr⟩,mt ▸ hv,mt ▸ hI,mt ▸ hJ,
     mt ▸ hc,ca,cb,co⟩
@@ -141,14 +154,11 @@ theorem row_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) 
     (ha : a < 8) (hb : b < 8)
     (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp) (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp)
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca cb)) hint).isSome = true) :
-    RelCT isa (Two fun L s => RowState ps L 0 s ∧ word s.mem L.B carryOffset = 0) (AdxRect8.row ca cb)
+    (hS : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup ca cb)) hint).isSome = true) :
+    RelCT isa (Two (RowStart ps)) (AdxRect8.row ca cb)
       (Two fun L s => RowState ps L L.n s) := by
   unfold AdxRect8.row
-  refine RelCT.seq (two_piece [.rdi] ?_ hS (setup_fw pa pb)) ?_
-  · rintro L s t ⟨⟨mi,hs,_⟩,_⟩ ⟨⟨mj,ht,_⟩,_⟩ r hr
-    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    subst r; exact hs.rdi.trans ht.rdi.symm
+  refine RelCT.seq (two_piece [.rdi,.rax,.rdx] (start_pins ps) hS (setup_fw pa pb)) ?_
   refine RelCT.seq (two_piece [.rsi] ?_ (by taint_decide) load_fw) ?_
   · rintro L s t ⟨_,_,_,_,_,_,_,hs⟩ ⟨_,_,_,_,_,_,_,ht⟩ r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr

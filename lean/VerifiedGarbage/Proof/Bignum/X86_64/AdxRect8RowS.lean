@@ -158,6 +158,7 @@ theorem rowS_ok {s : State} {B : Addr} {Z w a b i j₀ n σ : Nat} {mi : BitVec 
     (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp) (hwN : w = j₀+8*n) (hn : 0 < n)
     (hidx : word s.mem B (8*sFn 12) = BitVec.ofNat 64 i)
     (hjdx : word s.mem B (8*sFn 13) = BitVec.ofNat 64 j₀)
+    (hRax : s.gpr .rax = BitVec.ofNat 64 i) (hRdx : s.gpr .rdx = BitVec.ofNat 64 j₀)
     (hc : (word s.mem B carryOffset).toNat = 0)
     (hσ : (word s.mem B handOffset).toNat = σ) (hσ2 : σ ≤ 2) :
     WP isa (AdxRect8.rowS ca cb) s (RowInv s B Z w a b i j₀ n mi ((2 : Nat)^(64*(i+w)) * σ) 2) := by
@@ -173,7 +174,7 @@ theorem rowS_ok {s : State} {B : Addr} {Z w a b i j₀ n σ : Nat} {mi : BitVec 
     · exact Or.inr (by unfold carryOffset handOffset sFn; omega)
     · exact Or.inr (by unfold handOffset sFn; omega)
   unfold AdxRect8.rowS
-  refine WP.seq (WP.mono (setup_ok hs hd hh hZ hv pa pb hidx hjdx) fun u ⟨ua,ub,uo,um,ku⟩ => ?_)
+  refine WP.seq (WP.mono (setup_ok hs hd hh hZ hv pa pb hRax hRdx) fun u ⟨ua,ub,uo,um,ku⟩ => ?_)
   refine WP.seq (WP.mono (rowLoad_ok (s₀ := s) (hs.congr ku.2.2) ((ku.gpr (by decide)).trans hd) (um ▸ hh) hZ hi
     (by omega) (um ▸ hidx) (um ▸ hjdx) (um ▸ hc) ua ub uo um (ku.mono (by decide))) fun v hv0 => ?_)
   -- the blocks but the last

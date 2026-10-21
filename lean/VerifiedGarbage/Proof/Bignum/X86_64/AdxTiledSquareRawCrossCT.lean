@@ -327,19 +327,17 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Proof.Bignum.X86_64
 open VG.Proof.Bignum.X86_64.AdxTiledProduct (Layout LoopState GoodV)
 
-/-- The blocks' loop state: `LoopState`, with the index in `rax` too. -/
-def TriState (ps : List (Nat × Nat)) (L : Layout) (k : Nat) (s : State) : Prop :=
-  LoopState ps L k s ∧ s.gpr .rax=BitVec.ofNat 64 (8*k)
+def AtBlock (ps : List (Nat × Nat)) (p : Layout × Nat) (s : State) : Prop := p.2<p.1.n ∧ LoopState ps p.1 p.2 s
 
-def AtBlock (ps : List (Nat × Nat)) (p : Layout × Nat) (s : State) : Prop := p.2<p.1.n ∧ TriState ps p.1 p.2 s
-
-/-- After a block, which overwrites `rax`. -/
-def AfterBlock (ps : List (Nat × Nat)) (p : Layout × Nat) (s : State) : Prop := p.2<p.1.n ∧ LoopState ps p.1 p.2 s
+/-- After a block, which overwrites `rax`: `LoopState` but for it. -/
+def AfterBlock (ps : List (Nat × Nat)) (p : Layout × Nat) (s : State) : Prop :=
+  p.2<p.1.n ∧ ∃ mi, Good s p.1.B p.1.Z p.1.w mi ∧ Ops s.mem p.1.B p.1.w ps ∧
+    word s.mem p.1.B (8*sFn 12)=BitVec.ofNat 64 (8*p.2)
 
 theorem block_loop_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8) (ha1 : a≠aAcc)
     (ha2 : a≠aTmp) (p : Layout × Nat) (s : State) (h : AtBlock ps p s) :
     WP isa (AdxTri8.block ca) s (AfterBlock ps p) := by
-  obtain ⟨hk,⟨mi,hg,hv,hI⟩,hR⟩ := h
+  obtain ⟨hk,mi,hg,hv,hI,hR⟩ := h
   have wn := p.1.hwN
   refine WP.mono (block_ok hg.scr hg.rdi hg.hdr p.1.hZ hv pa ha ha1 ha2 (by omega) hR)
     fun t ⟨_,ot,kt⟩ => ?_
@@ -352,7 +350,7 @@ theorem block_loop_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
     (hS : (taint.check (Taint.ofRegs [.rdi,.rax]) (.block (AdxTri8.setup ca)) hint).isSome=true) :
     RelCT isa (Two (AtBlock ps)) (AdxTri8.block ca) (fun _ _ => True) := by
-  intro s t ts tt s' t' ⟨⟨L,k⟩,⟨hk,⟨mi,gs,vs,is⟩,rs⟩,⟨_,⟨mj,gt,vt,it⟩,rt⟩⟩ es et
+  intro s t ts tt s' t' ⟨⟨L,k⟩,⟨hk,mi,gs,vs,is,rs⟩,⟨_,mj,gt,vt,it,rt⟩⟩ es et
   dsimp only at hk
   have wn := L.hwN
   have sa := slot_le (w := L.w) ha
@@ -373,10 +371,10 @@ theorem step_loop_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps)
   subst r; exact hs.rdi.trans ht.rdi.symm
 
 theorem step_loop_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8) (ha1 : a≠aAcc)
-    (ha2 : a≠aTmp) (L : Layout) (k : Nat) (s : State) (hk : k<L.n) (h : TriState ps L k s) :
+    (ha2 : a≠aTmp) (L : Layout) (k : Nat) (s : State) (hk : k<L.n) (h : LoopState ps L k s) :
     WP isa (.seq (AdxTri8.block ca) (.block AdxTri8.nextBlock)) s fun t =>
       isa.eval .ne t=some (decide (k+1<L.n)) ∧
-      (k+1<L.n → TriState ps L (k+1) t) ∧ (k+1=L.n → GoodV ps L t) := by
+      (k+1<L.n → LoopState ps L (k+1) t) ∧ (k+1=L.n → GoodV ps L t) := by
   refine WP.seq (WP.mono (block_loop_fw pa ha ha1 ha2 (L,k) s ⟨hk,h⟩) fun u ⟨_,mi,hg,hv,hI⟩ => ?_)
   dsimp only at hg hI
   have wn := L.hwN
@@ -392,23 +390,12 @@ theorem step_loop_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps)
   have gt : Good t L.B L.Z L.w mi :=
     ⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,AdxTiledProduct.frame_hdr hg.hdr ft⟩
   have vt := AdxTiledProduct.frame_ops hv ft
-  refine ⟨?_,fun _ => ⟨⟨mi,gt,vt,?_⟩,by rw [rt,show 8*(k+1)=8*k+8 by omega]⟩,fun _ => ⟨⟨mi,gt⟩,vt⟩⟩
+  refine ⟨?_,fun _ => ⟨mi,gt,vt,?_,by rw [rt,show 8*(k+1)=8*k+8 by omega]⟩,fun _ => ⟨⟨mi,gt⟩,vt⟩⟩
   · simp only [eval,zt,Option.map_some]
     by_cases he : k+1=L.n
     · simp only [show 8*k+8=L.w by omega,decide_true,Bool.not_true,show ¬(k+1<L.n) by omega,decide_false]
     · simp only [show ¬(8*k+8=L.w) by omega,decide_false,Bool.not_false,show k+1<L.n by omega,decide_true]
   · rw [mt,word_writeW_self,show 8*(k+1)=8*k+8 by omega]
-
-/-- `blocks`' first instructions: the index zeroed in `sFn 12` and in `rax`. -/
-theorem tri_init_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : GoodV ps L s) :
-    WP isa (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax]) s
-      (fun t => 0<L.n ∧ TriState ps L 0 t) := by
-  have r : WP isa (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax]) s (fun t => t.gpr .rax=0) := by
-    obtain ⟨⟨mi,hg⟩,_⟩ := h
-    have iZ : 8*sFn 12+8 ≤ L.Z := by
-      have := hdr_lt_slot L.w 8 (show sFn 12<32 by decide); have := L.hZ; omega
-    xrun [State.ea,hdr,hg.rdi,hdrOff,hg.scr.st iZ]
-  exact WP.mono (WP.and (AdxTiledProduct.rows_init_fw L s h) r) fun t ⟨⟨hn,hl⟩,hr⟩ => ⟨hn,hl,by rw [hr]; rfl⟩
 
 theorem blocks_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8) (ha1 : a≠aAcc)
     (ha2 : a≠aTmp)
@@ -416,7 +403,7 @@ theorem blocks_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (h
     (hS : (taint.check (Taint.ofRegs [.rdi,.rax]) (.block (AdxTri8.setup ca)) hint).isSome=true) :
     RelCT isa (Two (GoodV ps)) (AdxTri8.blocks ca) (Two (GoodV ps)) := by
   unfold AdxTri8.blocks
-  refine RelCT.seq (two_piece [.rdi] ?_ (by taint_decide) tri_init_fw)
+  refine RelCT.seq (two_piece [.rdi] ?_ (by taint_decide) AdxTiledProduct.rows_init_fw)
     (two_loop (fun L : Layout => L.n) (step_loop_ct pa ha ha1 ha2 hS) (step_loop_fw pa ha ha1 ha2))
   rintro L s t ⟨⟨mi,hs⟩,_⟩ ⟨⟨mj,ht⟩,_⟩ r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -439,7 +426,7 @@ theorem rawCross_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) 
     (ha1 : a≠aAcc) (ha2 : a≠aTmp)
     {h₁ h₂ h₃ : VG.Taint.Hint VG.X86_64.Taint.T}
     (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.setup ca)) h₁).isSome=true)
-    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca ca)) h₂).isSome=true)
+    (hR : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup ca ca)) h₂).isSome=true)
     (hT : (taint.check (Taint.ofRegs [.rdi,.rax]) (.block (AdxTri8.setup ca)) h₃).isSome=true) :
     RelCT isa (Two (GoodV ps)) (AdxTiledSquare.rawCross ca) (fun _ _ => True) := by
   unfold AdxTiledSquare.rawCross
@@ -455,7 +442,7 @@ theorem rawCrossBare_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ 
     (ha1 : a≠aAcc) (ha2 : a≠aTmp)
     {h₁ h₂ h₃ : VG.Taint.Hint VG.X86_64.Taint.T}
     (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.setup ca)) h₁).isSome=true)
-    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca ca)) h₂).isSome=true)
+    (hR : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup ca ca)) h₂).isSome=true)
     (hT : (taint.check (Taint.ofRegs [.rdi,.rax]) (.block (AdxTri8.setup ca)) h₃).isSome=true) :
     RelCT isa (Two (GoodV ps)) (AdxTiledSquare.rawCrossBare ca) (fun _ _ => True) := by
   unfold AdxTiledSquare.rawCrossBare

@@ -25,7 +25,7 @@ open VG.Proof.Bignum.X86_64.AdxTiledProduct (Layout GoodV)
 theorem rowsChoice_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8) (ha1 : a≠aAcc)
     (ha2 : a≠aTmp)
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca ca)) hint).isSome=true) :
+    (hS : (taint.check (Taint.ofRegs [.rdi,.rax,.rdx]) (.block (AdxRect8.setup ca ca)) hint).isSome=true) :
     RelCT isa (Two (GoodV ps)) (AdxTiledSquare.rowsChoice ca) (Two (GoodV ps)) := by
   unfold AdxTiledSquare.rowsChoice
   refine RelCT.seq (two_piece (Ψ := fun L s => GoodV ps L s ∧ s.zf=some (decide (L.w=8)))
