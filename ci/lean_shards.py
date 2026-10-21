@@ -202,7 +202,33 @@ def imported_by(text: str, mods) -> list[str]:
 
 def import_kinds(text: str, mods) -> list[tuple[bool, bool, str]]:
     """Project imports, with their public/all visibility, in source order."""
-    return [(bool(p), bool(a), i) for p, a, i in IMPORT_KIND.findall(text) if i in mods]
+    # Every match starts on a line containing one of these keywords.
+    # Literal searches skip proof bodies much faster than trying an
+    # anchored regex at every line. Keep regex validation and nonoverlap
+    # semantics, including public/meta imports split across multiple lines.
+    starts = set()
+    for word in ("import", "public", "meta"):
+        pos = text.find(word)
+        while pos >= 0:
+            starts.add(text.rfind("\n", 0, pos) + 1)
+            # One candidate per line suffices, even in long generated
+            # strings containing the keyword many times.
+            newline = text.find("\n", pos)
+            if newline < 0:
+                break
+            pos = text.find(word, newline + 1)
+    kinds = []
+    end = 0
+    for start in sorted(starts):
+        if start < end:
+            continue
+        match = IMPORT_KIND.match(text, start)
+        if match:
+            end = match.end()
+            p, a, i = match.groups()
+            if i in mods:
+                kinds.append((bool(p), bool(a), i))
+    return kinds
 
 
 def imports(mods: dict[str, pathlib.Path]) -> dict[str, list[str]]:
@@ -213,8 +239,13 @@ def imports(mods: dict[str, pathlib.Path]) -> dict[str, list[str]]:
 def is_module(text: str) -> bool:
     """Whether the source `text` starts with `module`, after any comments."""
     comment = False
-    for line in text.split("\n"):
-        s = line.strip()
+    pos = 0
+    while pos < len(text):
+        end = text.find("\n", pos)
+        if end < 0:
+            end = len(text)
+        s = text[pos:end].strip()
+        pos = end + 1
         if comment:
             comment = not s.endswith("-/")
         elif s.startswith("/-") and not s.startswith("/-!"):
@@ -254,7 +285,9 @@ def source_info(mods):
     for m, path in mods.items():
         data = path.read_bytes()
         hashes[m] = hashlib.sha256(data).hexdigest()
-        text = data.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
+        text = data.decode("utf-8")
+        if "\r" in text:
+            text = text.replace("\r\n", "\n").replace("\r", "\n")
         kinds = import_kinds(text, mods)
         imps[m] = [i for _, _, i in kinds]
         vis[m] = ([i for p, _, i in kinds if p], [i for _, a, i in kinds if a]) if is_module(text) else None
@@ -620,10 +653,14 @@ def schedule(
 def plan(manifest: dict) -> dict:
     mods = modules()
     imps, vis, hashes = source_info(mods)
-    closure = closures(imps)
     now = inputs()
     then = manifest.get("inputs", {})
     sources = manifest.get("sources", {})
+    if sources and sources == hashes and now == then:
+        # No module, library membership, or other build input changed.
+        # Neither invalidation closures nor candidate schedules are needed.
+        return {"stale": 0, "work": 0, "loads": [], "targets": [], "owner": {}, "edited": []}
+    closure = closures(imps)
     if {k: v for k, v in then.items() if k != "libraries"} == {k: v for k, v in now.items() if k != "libraries"}:
         changed = {m for m in mods if sources.get(m) != hashes[m]}
         # Modules a library gained or lost.

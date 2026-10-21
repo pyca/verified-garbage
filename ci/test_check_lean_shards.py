@@ -101,6 +101,20 @@ class Project(unittest.TestCase):
 
 
 class SourceInfo(Project):
+    def test_literal_search_matches_full_regex_scanning(self):
+        import random
+        rng = random.Random(51)
+        fragments = ["public", "meta", "import", "all", "A", "B", "Unknown",
+                     "-- import A", "important", "metadata", "def x := 1", "/-", "-/"]
+        spaces = [" ", "\t", "\n", "\n\n", "\u2003"]
+        mods = {"A", "B", "public", "meta", "import"}
+        for _ in range(300):
+            text = "".join(rng.choice(fragments) + rng.choice(spaces) for _ in range(40))
+            expected = [(bool(p), bool(a), i) for p, a, i in shards.IMPORT_KIND.findall(text) if i in mods]
+            self.assertEqual(shards.import_kinds(text, mods), expected)
+        text = 'def x := "' + "import public meta " * 1000 + '"\nimport A\n'
+        self.assertEqual(shards.import_kinds(text, mods), [(False, False, "A")])
+
     def test_parse_normalized_newlines_but_hash_original_bytes(self):
         raw = ("module\r\n\r\n\tpublic meta import all VerifiedGarbage.Spec.B\r\n"
                "import VerifiedGarbage.Other\r\n-- π\r\n").encode("utf-8")
@@ -132,6 +146,11 @@ class Plan(Project):
 
     def test_unchanged(self):
         self.assertEqual(self.stale(), 0)
+
+    def test_unchanged_does_not_construct_closures(self):
+        with mock.patch.object(shards, "closures", side_effect=AssertionError("unnecessary graph")):
+            self.assertEqual(shards.plan(self.manifest),
+                             {"stale": 0, "work": 0, "loads": [], "targets": [], "owner": {}, "edited": []})
 
     def test_adding_a_module_to_a_library(self):
         # Spec.B moves to NativeSpec: it, and what imports it, rebuild.
