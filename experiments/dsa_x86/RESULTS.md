@@ -2,6 +2,10 @@
 
 No proof or production-readiness claim. Verified branch: `dsa-x86-generation` at `784473529`.
 
+**Current result:** shared-comb keygen beats OpenSSL by 19–24% on EPYC 7763.
+The smaller four-word stack is the preferred proof candidate. Random 1024-bit
+parameter generation remains slower than OpenSSL; no production PR yet.
+
 ## Sweep 1
 
 Run: https://github.com/pyca/verified-garbage/actions/runs/39511238676
@@ -157,3 +161,61 @@ uses `BN_check_prime` with the same 64/128 minimum round policy. Reducing the
 round count is not a valid optimization of our existing contract. Witness
 sampling and trial-division work still differ and need separate profiling;
 the source comparison does not prove that SSE2 accounts for the entire gap.
+
+## Shared keygen comb: first consistent win on the older AMD runner
+
+Run [39521854499](https://github.com/pyca/verified-garbage/actions/runs/39521854499),
+commit `787e52f76`, native i686 AMD EPYC 7763. All candidates passed their
+DSA tests; comb candidates include the algebraic reuse/ABI check. Three
+alternating keygen rounds, 25 samples each. No random-parameter rerun here:
+comb reuse changes keygen only.
+
+| Candidate | 1024/160 ms | 2048/160 | 2048/224 | 2048/256 | 3072/256 | DSA bytes |
+|---|---:|---:|---:|---:|---:|---:|
+| Verified baseline | 2.2692 | 8.7063 | 11.4494 | 12.8271 | 28.5781 | 524288 |
+| OpenSSL | .6267 | 2.4047 | 3.2016 | 3.6350 | 8.1409 | — |
+| Previous chunk-4 stack | .7338 | 2.7216 | 3.6573 | 4.1210 | 9.0718 | 747456 |
+| Shared comb, chunk 4 | .5097 | 1.8802 | 2.5038 | 2.8359 | 6.2184 | 832128 |
+| Shared comb, chunk 8 | .5042 | 1.8550 | 2.4712 | 2.7960 | 6.1517 | 932352 |
+
+The fastest stack beats OpenSSL keygen by 19.5–24.4% on the CPU where earlier
+stacks were slower. The shared table cuts 30.5–31.6% from the corresponding
+chunk-4 prototype and gives 4.5–4.6x verified-baseline throughput. Prefer
+chunk 4 for promotion: chunk 8 gains only 1.1–1.4% while adding 100,224 bytes.
+This measures the complete keygen API, including validation and precomputation;
+it does not assume a cached table from a prior API call.
+
+Fixed-search parameter timings are unchanged within noise, as expected.
+The random 1024-bit parameter deficit from sweeps 6/7 remains unresolved;
+this keygen result alone does not satisfy the all-workload PR gate.
+
+## Controlled OpenSSL SSE2 dispatch diagnostic
+
+Run [39522670146](https://github.com/pyca/verified-garbage/actions/runs/39522670146),
+commit `4e4e89a7e`, AMD EPYC 7763, same OpenSSL binary for both configurations.
+Only the first capability word's SSE2 bit 26 is masked; the remaining four
+64-bit capability vectors are preserved (`~0x4000000:~0x0:~0x0:~0x0:~0x0`).
+Default uses no capability override. This changes dispatch, not the binary's
+baseline ISA. It is diagnostic, not the submission baseline.
+
+| Workload | Normal OpenSSL ms | SSE2 dispatch disabled ms | Slowdown |
+|---|---:|---:|---:|
+| Keygen 1024/160 | .6276 | .7889 | 25.7% |
+| Keygen 2048/160 | 2.3925 | 3.0963 | 29.4% |
+| Keygen 2048/224 | 3.2026 | 4.1304 | 29.0% |
+| Keygen 2048/256 | 3.6354 | 4.6976 | 29.2% |
+| Keygen 3072/256 | 8.1566 | 10.5027 | 28.8% |
+| Parameters 1024 | 184.1914 | 246.1156 | 33.6% |
+
+Keygen has 25 samples per case; parameters have 100. Parameter median 95% CIs
+are 160.728–206.692 ms and 212.322–268.630 ms. The two parameter searches use
+independent random inputs, so the exact percentage remains noisy. The
+keygen result provides a much tighter hardware-path comparison.
+
+The next high-value prototype is a shared SSE2 Montgomery kernel for RSA
+and DSA, with the necessary timing mitigation. This experiment supports a
+substantial vector-path contribution but does not establish that it explains
+the whole parameter gap: our chunk-4 parameter median in sweep 7 was 303.840
+ms (different random workload/run). Witness handling and trial division
+remain profiling targets. Do not reduce primality rounds or present the
+masked OpenSSL result as the acceptance comparison.

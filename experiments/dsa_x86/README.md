@@ -111,3 +111,10 @@ padded domains, rejection/replay and ABI checks). An additional focused run
 on the eight-word stack compares dense full-width exponents against the
 ordinary power helper, covering every comb column and the padded high-bit
 boundary. These are correctness checks, not performance measurements.
+
+The optional `openssl_scalar` workflow input measures the same OpenSSL binary
+with its normal capabilities and with only CPUID SSE2 bit 26 cleared.
+The override preserves the other capability vectors. This is diagnostic only:
+the submission comparison remains against normal, fully enabled OpenSSL.
+The diagnostic includes all key widths and the selected parameter width,
+and saves estimates in `diagnostic.json` in the workflow artifact.
