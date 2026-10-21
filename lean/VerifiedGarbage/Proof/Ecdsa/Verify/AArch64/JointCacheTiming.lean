@@ -78,8 +78,8 @@ theorem jointCache_relCT {C : Curve} {base T : Addr} {P Q : Point C} {u v : Nat}
     RelCT isa (fun s t =>
       FieldPair cfg.K.M base 8192 C.p (·∈jointSlots cfg) (nafLive cfg.K) E s t ∧
       NafStable cfg.K C base Q (FastNaf.byte 5 v) s ∧ NafStable cfg.K C base Q (FastNaf.byte 5 v) t ∧
-      (∀ j<257,s.mem (off base (cfg.gBits+j))=FastNaf.byte 7 u j) ∧
-      (∀ j<257,t.mem (off base (cfg.gBits+j))=FastNaf.byte 7 u j) ∧
+      (∀ j<jointGLen cfg,s.mem (off base (cfg.gBits+j))=jointGByte cfg u j) ∧
+      (∀ j<jointGLen cfg,t.mem (off base (cfg.gBits+j))=jointGByte cfg u j) ∧
       tmv C cfg.K.M.n base s cfg.onep=1 ∧ tmv C cfg.K.M.n base t cfg.onep=1 ∧
       JointGenerator cfg C base 8192 P T s ∧ JointGenerator cfg C base 8192 P T t)
       (CachedJac.cache cfg.K) (JointCachePair C base T P Q u v) := by

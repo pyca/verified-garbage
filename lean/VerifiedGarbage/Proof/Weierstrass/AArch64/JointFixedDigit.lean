@@ -58,28 +58,31 @@ theorem jointFixedDigit_ok (certs : Forward.Arithmetic.Cases)
     WP isa (Joint.fixedDigit c (Joint.mixedAdd c.K c.K.R c.K.E c.K.D)) s fun t =>
       ProgKeep c.K.M base (jointWork c) s t ∧
       JointCore c C base size Q u v (JointGenerator c C base size G T)
-        (add A (FastNaf.point C G 7 u j)) t := by
-  have hbytes : c.gBits+j<size := by
-    have := hL.layout.stableBounds (c.gBits,257) (by simp [jointStableRanges]); dsimp only at this; omega
+        (add A (FastNaf.point C G c.gw u j)) t := by
+  have hgl := hL.layout.stableBounds (c.gBits,jointGLen c) (by simp [jointStableRanges])
   have wsl : ∀ x∈jointWork c,x∈jointSlots c := by jslots
   have workBound : ∀ x∈jointWork c,x+8*c.K.M.n≤size := fun x hx => hL.layout.lay.le x (wsl x hx)
   rw [Joint.fixedDigit]
   apply WP.seq
-  refine WP.mono_syms (nafRead_ok (K:=c.G) h.field.scr hL.gBits hbytes h19 (h.stable.generator j hj) .x2)
-    fun a ⟨a2,ka⟩ sa => ?_
+  refine WP.mono_syms (jointFixedRead_ok h.field.scr hL.gBits hj hgl h19
+    h.stable.generator) fun a ⟨a2,_,a3,ka⟩ sa => ?_
   have kp : ProgKeep c.K.M base (jointWork c) s a := keeps_prog ka (by
     intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl | rfl <;> simp [clob])
+    rcases hr with rfl | rfl | rfl <;> simp [clob])
   have ea := h.external.keep kp sa workBound h.field.mod.tmp
   have ca := h.of_keeps ka (by decide) ea
   have a19 := (ka.gpr .x19 (by decide)).trans h19
-  refine WP.ite (decide (FastNaf.magnitude 7 u j≠0)) (by
+  refine WP.ite (decide (FastNaf.magnitude c.gw u j≠0)) (by
     change some (a.read .x .x2 != 0)=_
-    rw [read_x,a2,jointByteTest]
-    exact congrArg some (congrArg (fun n => decide (n≠0)) (FastNaf.byte_magnitude 7 u j)))
+    rw [read_x,a2]
+    congr 1
+    have hz := jointGCell_zero_iff hL.layout.gw u j
+    by_cases h0 : FastNaf.magnitude c.gw u j=0
+    · rw [hz.mpr h0,h0]; rfl
+    · rw [bne_iff_ne.mpr (fun he => h0 (hz.mp he)),decide_eq_true h0])
     (fun hn => ?_) (fun hz => ?_)
   · apply WP.seq
-    refine WP.mono (jointEntry_generator_ok hL hm ca hj a2 a19 (of_decide_eq_true hn))
+    refine WP.mono (jointEntry_generator_ok hL hm ca hj a2 a3 a19 (of_decide_eq_true hn))
       fun b ⟨kb,cb,ib,jb,zb⟩ => ?_
     apply WP.seq
     have sl : ∀ x∈rcbW c.K.S c.K.D++rcbR c.K.S c.K.R c.K.E,x∈jointSlots c := by
@@ -87,7 +90,7 @@ theorem jointFixedDigit_ok (certs : Forward.Arithmetic.Cases)
     have vr : ∀ x∈rcbR c.K.S c.K.R c.K.E,x∈[c.K.E.x,c.K.E.y,c.K.E.z]++jointLive c := by
       jslots
     refine WP.mono_syms (jointMixedAdd_ok certs hL.layout.lay hL.layout.aligned (callOf_small (Nat.le_of_eq hL.layout.n)) hm hsize hC ha hL.addApart sl
-      ib vr hOne hA (FastNaf.onCurve_point hC hG 7 u j) cb.point jb zb)
+      ib vr hOne hA (FastNaf.onCurve_point hC hG c.gw u j) cb.point jb zb)
       fun d ⟨Ed,kd,id,jd⟩ sd => ?_
     have wd : ∀ x∈rcbW c.K.S c.K.D,x∈jointWork c := by jslots
     have slcopy : ∀ x∈rcbW c.K.S c.K.R++rcbR c.K.S c.K.D c.K.D,x∈jointSlots c := by
@@ -101,15 +104,15 @@ theorem jointFixedDigit_ok (certs : Forward.Arithmetic.Cases)
     have kdt := (kd.mono wd).trans (kt.mono wt)
     have et := cb.external.keep kdt (st.trans sd) workBound cb.field.mod.tmp
     have jt : InvJ C (Et c.K.R.x) (Et c.K.R.y) (Et c.K.R.z)
-        (add A (FastNaf.point C G 7 u j)) := by
+        (add A (FastNaf.point C G c.gw u j)) := by
       simp only [Prod.mk.injEq] at eq
       rw [eq.1,eq.2.1,eq.2.2]; exact jd
     have live : ∀ x∈jointLive c,x∈[c.K.R.x,c.K.R.y,c.K.R.z]++
         ([c.K.D.x,c.K.D.y,c.K.D.z]++([c.K.E.x,c.K.E.y,c.K.E.z]++jointLive c)) := by
       intro x hx; simp [hx]
     exact ⟨kp.trans (kb.trans kdt),cb.next hL.layout kdt (it.sub live) jt et⟩
-  · have hm0 : FastNaf.magnitude 7 u j=0 := by simpa only [ne_eq,not_not] using of_decide_eq_false hz
-    have hp : FastNaf.point C G 7 u j=.infinity := by
+  · have hm0 : FastNaf.magnitude c.gw u j=0 := by simpa only [ne_eq,not_not] using of_decide_eq_false hz
+    have hp : FastNaf.point C G c.gw u j=.infinity := by
       rw [FastNaf.point,hm0]
       have h0 : mul 0 G=.infinity := by rw [Spec.Weierstrass.mul]; rfl
       rw [h0]; split <;> rfl

@@ -33,7 +33,7 @@ structure AllocatedJointOpsOk (c : Joint.Cfg) (o : Joint.Ops) (C : Curve) (base 
       AllocatedFrame rs base W s t ∧ Core (add A (FastNaf.point C Q 5 v j)) t
   generator : ∀ A j s, j<257 → onCurve C A=true → Core A s →
     s.gpr .x19=BitVec.ofNat 64 j → WP isa (Joint.fixedDigit c o.mixedAdd) s fun t =>
-      AllocatedFrame rs base W s t ∧ Core (add A (FastNaf.point C P 7 u j)) t
+      AllocatedFrame rs base W s t ∧ Core (add A (FastNaf.point C P c.gw u j)) t
 
 theorem allocatedJointDigits_ok {c : Joint.Cfg} {o : Joint.Ops} {C : Curve} {base : Addr}
     {rs : List Reg} {W : List (Nat × Nat)} {Core : Point C → State → Prop} {P Q : Point C} {u v j : Nat}
@@ -41,7 +41,7 @@ theorem allocatedJointDigits_ok {c : Joint.Cfg} {o : Joint.Ops} {C : Curve} {bas
     {A : Point C} (hA : onCurve C A=true) {s : State} (hs : Core A s)
     (hj : j<257) (h19 : s.gpr .x19=BitVec.ofNat 64 j) :
     WP isa (Joint.digits c o) s fun t => AllocatedFrame rs base W s t ∧
-      Core (add (add A (FastNaf.point C Q 5 v j)) (FastNaf.point C P 7 u j)) t := by
+      Core (add (add A (FastNaf.point C Q 5 v j)) (FastNaf.point C P c.gw u j)) t := by
   rw [Joint.digits]
   apply WP.seq
   refine WP.mono (hops.peer A j s hj hA hs h19) fun a ⟨ka,ca⟩ => ?_
@@ -53,22 +53,22 @@ theorem allocatedJointStep_ok {c : Joint.Cfg} {o : Joint.Ops} {C : Curve} {base 
     {rs : List Reg} {W : List (Nat × Nat)} {Core : Point C → State → Prop} {P Q : Point C} {u v j : Nat}
     (hC : Law C) (hP : onCurve C P=true) (hQ : onCurve C Q=true)
     (hops : AllocatedJointOpsOk c o C base rs W Core P Q u v) (hj : j<256)
-    {s : State} (hs : Core (jointPoint P Q u v (j+1)) s)
+    {s : State} (hs : Core (jointPoint P Q u v (j+1) c.gw) s)
     (h19 : s.gpr .x19=BitVec.ofNat 64 (j+1)) :
     WP isa (Joint.step c o) s fun t => AllocatedFrame (.x19::rs) base W s t ∧
-      Core (jointPoint P Q u v j) t ∧ t.gpr .x19=BitVec.ofNat 64 j := by
+      Core (jointPoint P Q u v j c.gw) t ∧ t.gpr .x19=BitVec.ofNat 64 j := by
   rw [Joint.step]
   apply WP.seq
   refine WP.mono_syms (decCounter_ok s (by omega) (by omega) h19) fun a ⟨a19,ka⟩ hsym => ?_
   have ca := hops.keep _ s a ka hsym hs
   apply WP.seq
-  refine WP.mono (hops.double _ a (jointPoint_curve hC hP hQ u v (j+1)) ca) fun b ⟨kb,cb⟩ => ?_
+  refine WP.mono (hops.double _ a (jointPoint_curve hC hP hQ u v (j+1) c.gw) ca) fun b ⟨kb,cb⟩ => ?_
   have b19 : b.gpr .x19=BitVec.ofNat 64 j := by
     rw [kb.regs.gpr _ hops.counter,a19,Nat.add_sub_cancel]
   refine WP.mono (allocatedJointDigits_ok hC hQ hops
-    (hC.onCurve_add (jointPoint_curve hC hP hQ u v (j+1)) (jointPoint_curve hC hP hQ u v (j+1)))
+    (hC.onCurve_add (jointPoint_curve hC hP hQ u v (j+1) c.gw) (jointPoint_curve hC hP hQ u v (j+1) c.gw))
     cb (by omega) b19) fun t ⟨kt,ct⟩ => ?_
-  rw [jointPoint_step hC hP hQ] at ct
+  rw [jointPoint_step hC hP hQ (gw:=c.gw)] at ct
   have kp := kb.trans kt
   refine ⟨⟨(Keeps.regs ka).mono (by simp) |>.trans
     (kp.regs.mono (fun _ hr => List.mem_cons_of_mem _ hr)),?_⟩,ct,?_⟩
@@ -79,11 +79,11 @@ theorem allocatedJointLoop_ok {c : Joint.Cfg} {o : Joint.Ops} {C : Curve} {base 
     {rs : List Reg} {W : List (Nat × Nat)} {Core : Point C → State → Prop} {P Q : Point C} {u v : Nat}
     (hC : Law C) (hP : onCurve C P=true) (hQ : onCurve C Q=true)
     (hops : AllocatedJointOpsOk c o C base rs W Core P Q u v)
-    {s : State} (hs : Core (jointPoint P Q u v 256) s) (h19 : s.gpr .x19=256) :
+    {s : State} (hs : Core (jointPoint P Q u v 256 c.gw) s) (h19 : s.gpr .x19=256) :
     WP isa (.loop (Joint.step c o) (.nonzero .x .x19)) s fun t =>
       AllocatedFrame (.x19::rs) base W s t ∧ Core (add (mul u P) (mul v Q)) t ∧ t.gpr .x19=0 := by
   let I := fun j t => AllocatedFrame (.x19::rs) base W s t ∧
-    Core (jointPoint P Q u v j) t ∧ t.gpr .x19=BitVec.ofNat 64 j
+    Core (jointPoint P Q u v j c.gw) t ∧ t.gpr .x19=BitVec.ofNat 64 j
   apply countLoop_ok (Inv:=I) (n:=256) (by decide)
   · intro j a hj1 hj256 hi
     obtain ⟨ka,ca,a19⟩ := hi
@@ -92,7 +92,7 @@ theorem allocatedJointLoop_ok {c : Joint.Cfg} {o : Joint.Ops} {C : Curve} {base 
       fun t ⟨kt,ct,t19⟩ => ⟨⟨ka.trans kt,ct,t19⟩,t19⟩
   · intro t ht
     obtain ⟨kt,ct,t19⟩ := ht
-    rw [jointPoint_zero] at ct
+    rw [jointPoint_zero (gw:=c.gw)] at ct
     exact ⟨kt,ct,t19⟩
   · decide
   · exact ⟨AllocatedFrame.refl _ _ _ _,hs,h19⟩
@@ -109,10 +109,10 @@ theorem allocatedJointRun_ok {c : Joint.Cfg} {o : Joint.Ops} {C : Curve} {base :
   apply WP.seq
   refine WP.mono (allocatedJointDigits_ok hC hQ hops (A:=.infinity) rfl hs (by decide) h19)
     fun a ⟨ka,ca⟩ => ?_
-  have he := jointPoint_step hC hP hQ u v 256
-  rw [jointPoint_top P Q hu hv] at he
+  have he := jointPoint_step hC hP hQ u v 256 c.gw
+  rw [jointPoint_top P Q hu hv c.gw] at he
   change add (add .infinity (FastNaf.point C Q 5 v 256))
-    (FastNaf.point C P 7 u 256)=jointPoint P Q u v 256 at he
+    (FastNaf.point C P c.gw u 256)=jointPoint P Q u v 256 c.gw at he
   rw [he] at ca
   refine WP.mono (allocatedJointLoop_ok hC hP hQ hops ca
     ((ka.regs.gpr _ hops.counter).trans h19)) fun t ⟨kt,ct,t19⟩ =>

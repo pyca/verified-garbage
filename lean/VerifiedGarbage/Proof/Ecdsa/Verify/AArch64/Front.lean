@@ -37,18 +37,21 @@ open VG.Impl.Ecdh.AArch64 (QY R2P BP QXM QYM W0 W1 W2 W3 PX PY)
 variable {c : Cfg}
 
 /-- The arguments: `public = x0` (`1 + 2 len` bytes), `digest = x1`
-(`len` bytes), `sig = x2` (`2 len` bytes) and `scratch = x3`, and the comb's
-tables at the static `c.tsym` (`Artifact.consts`), readable and writable as
-the contract says and apart from `scratch`. -/
-structure VPre (c : Cfg) (s : State) : Prop where
+(`len` bytes), `sig = x2` (`2 len` bytes) and `scratch = x3`, and a table of
+constants `ws` at the static `tsym` (`Artifact.consts`), readable and writable
+as the contract says and apart from `scratch`. -/
+structure VPreT (c : Cfg) (tsym : String) (ws : List (BitVec 64)) (s : State) : Prop where
   rd : s.rd = [⟨s.gpr .x0, 1 + 2 * c.C.len⟩, ⟨s.gpr .x1, c.C.len⟩, ⟨s.gpr .x2, 2 * c.C.len⟩,
-    ⟨s.syms c.tsym, 8 * c.combWords.length⟩]
+    ⟨s.syms tsym, 8 * ws.length⟩]
   wr : s.wr = [⟨s.gpr .x3, size⟩]
   pk_sc : Region.Disjoint ⟨s.gpr .x0, 1 + 2 * c.C.len⟩ ⟨s.gpr .x3, size⟩
   dg_sc : Region.Disjoint ⟨s.gpr .x1, c.C.len⟩ ⟨s.gpr .x3, size⟩
   sig_sc : Region.Disjoint ⟨s.gpr .x2, 2 * c.C.len⟩ ⟨s.gpr .x3, size⟩
   sc_fit : (s.gpr .x3).toNat + size ≤ 2 ^ 64
-  tbl : TblPre c s (s.syms c.tsym) (s.gpr .x3)
+  tbl : TblPreW ws s (s.syms tsym) (s.gpr .x3)
+
+/-- `VPreT` with the comb's tables at `c.tsym`. -/
+abbrev VPre (c : Cfg) := VPreT c c.tsym c.combWords
 
 /-- The verification frontend only needs the argument regions; the point
 multiplier decides whether constant tables are required. -/
@@ -61,9 +64,12 @@ structure FrontPre (c : Cfg) (s : State) : Prop where
   sig_sc : Region.Disjoint ⟨s.gpr .x2, 2 * c.C.len⟩ ⟨s.gpr .x3, size⟩
   sc_fit : (s.gpr .x3).toNat + size ≤ 2 ^ 64
 
-instance {c : Cfg} {s : State} : Coe (VPre c s) (FrontPre c s) :=
-  ⟨fun h => ⟨⟨[⟨s.syms c.tsym, 8 * c.combWords.length⟩], h.rd⟩,
-    h.wr, h.pk_sc, h.dg_sc, h.sig_sc, h.sc_fit⟩⟩
+/-- The argument regions of `VPreT`, whatever its table. -/
+theorem VPreT.front {c : Cfg} {tsym : String} {ws : List (BitVec 64)} {s : State}
+    (h : VPreT c tsym ws s) : FrontPre c s :=
+  ⟨⟨[⟨s.syms tsym, 8 * ws.length⟩], h.rd⟩, h.wr, h.pk_sc, h.dg_sc, h.sig_sc, h.sc_fit⟩
+
+instance {c : Cfg} {s : State} : Coe (VPre c s) (FrontPre c s) := ⟨VPreT.front⟩
 
 /-- The key's `x` and `y`, the hash, and the signature's `r` and `s`. -/
 abbrev keyX (c : Cfg) (s₀ : State) : Nat :=

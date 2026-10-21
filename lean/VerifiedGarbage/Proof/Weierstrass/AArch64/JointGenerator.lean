@@ -13,18 +13,22 @@ namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 open VG.Proof.Mont VG.Proof.Mont.AArch64 Spec.Weierstrass
 
-/-- Only odd entries of the existing first generator row are read by width-seven NAF. -/
+/-- The odd multiples `2 a - 1` of the generator the digits read: `a ≤ 32` for width seven, from
+the comb's first row, `a ≤ 128` for width nine. -/
+def jointGRows (c : Joint.Cfg) : Nat := if c.gw=9 then 128 else 32
+
+/-- Only odd entries of the generator's table are read by the NAF digits. -/
 structure JointGenerator (c : Joint.Cfg) (C : Curve) (base : Addr) (size : Nat)
     (G : Point C) (T : Addr) (s : State) : Prop where
   symbol : s.syms c.tsym=T
-  read : ∀ a,1≤a → a≤32 → ∀ i<8,InRegions (s.rd++s.wr)
+  read : ∀ a,1≤a → a≤jointGRows c → ∀ i<8,InRegions (s.rd++s.wr)
     (T+BitVec.ofNat 64 (128*(a-1))+BitVec.ofNat 64 (8*i)) 8
-  outside : ∀ a,1≤a → a≤32 → ∀ i<8,∀ b<8,size≤ofs base
+  outside : ∀ a,1≤a → a≤jointGRows c → ∀ i<8,∀ b<8,size≤ofs base
     (T+BitVec.ofNat 64 (128*(a-1))+BitVec.ofNat 64 (8*i)+BitVec.ofNat 64 b)
-  bounds : ∀ a,1≤a → a≤32 →
+  bounds : ∀ a,1≤a → a≤jointGRows c →
     wordsVal s.mem (T+BitVec.ofNat 64 (128*(a-1))) 0 4<C.p ∧
     wordsVal s.mem (T+BitVec.ofNat 64 (128*(a-1))) 32 4<C.p
-  point : ∀ a,1≤a → a≤32 →InvJ C
+  point : ∀ a,1≤a → a≤jointGRows c →InvJ C
     (toM C.p (2^256) (wordsVal s.mem (T+BitVec.ofNat 64 (128*(a-1))) 0 4))
     (toM C.p (2^256) (wordsVal s.mem (T+BitVec.ofNat 64 (128*(a-1))) 32 4)) 1 (mul (2*a-1) G)
 
@@ -33,7 +37,7 @@ theorem JointGenerator.keep {c : Joint.Cfg} {C : Curve} {base T : Addr} {size : 
     (hk : ProgKeep c.K.M base W s t) (hsym : t.syms=s.syms)
     (hw : ∀ w∈W,w+8*c.K.M.n≤size) (htmp : c.K.M.tmp+8*c.K.M.n≤size) :
     JointGenerator c C base size G T t := by
-  have wordeq (a i : Nat) (ha : 1≤a) (ha32 : a≤32) (hi : i<8) :
+  have wordeq (a i : Nat) (ha : 1≤a) (ha32 : a≤jointGRows c) (hi : i<8) :
       word t.mem (T+BitVec.ofNat 64 (128*(a-1))) (8*i)=
       word s.mem (T+BitVec.ofNat 64 (128*(a-1))) (8*i) := by
     apply Mem.readW_congr
@@ -42,7 +46,7 @@ theorem JointGenerator.keep {c : Joint.Cfg} {C : Curve} {base T : Addr} {size : 
     apply hk.mem
     · intro w hm; have := hw w hm; dsimp only [off]; exact Or.inr (by omega)
     · dsimp only [off]; exact Or.inr (by omega)
-  have val (a o : Nat) (ha : 1≤a) (ha32 : a≤32) (ho : o=0 ∨ o=32) :
+  have val (a o : Nat) (ha : 1≤a) (ha32 : a≤jointGRows c) (ho : o=0 ∨ o=32) :
       wordsVal t.mem (T+BitVec.ofNat 64 (128*(a-1))) o 4=
       wordsVal s.mem (T+BitVec.ofNat 64 (128*(a-1))) o 4 := by
     apply wordsVal_of_words₂

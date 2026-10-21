@@ -115,13 +115,26 @@ theorem fastShift7_value (a b c d e : BitVec 64) :
   simp only [nafVal5,extr,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow]
   omega
 
-theorem fastShift_value (w : Nat) (hw : w=1 ∨ w=5 ∨ w=7) (a b c d e : BitVec 64) :
+/-- Five adjacent extract-right instructions implement a whole-number shift. -/
+theorem fastShift9_value (a b c d e : BitVec 64) :
+    nafVal5 ((b++a).extractLsb' 9 64) ((c++b).extractLsb' 9 64)
+      ((d++c).extractLsb' 9 64) ((e++d).extractLsb' 9 64) (e>>>9) = nafVal5 a b c d e/512 := by
+  have extr (hi lo : BitVec 64) : ((hi++lo).extractLsb' 9 64).toNat = lo.toNat/512+2^55*(hi.toNat%512) := by
+    rw [BitVec.extractLsb'_toNat,BitVec.toNat_append,←Nat.shiftLeft_add_eq_or_of_lt lo.isLt,
+      Nat.shiftLeft_eq,Nat.shiftRight_eq_div_pow]
+    have := hi.isLt; have := lo.isLt
+    omega
+  simp only [nafVal5,extr,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow]
+  omega
+
+theorem fastShift_value (w : Nat) (hw : w=1 ∨ w=5 ∨ w=7 ∨ w=9) (a b c d e : BitVec 64) :
     nafVal5 ((b++a).extractLsb' w 64) ((c++b).extractLsb' w 64)
       ((d++c).extractLsb' w 64) ((e++d).extractLsb' w 64) (e>>>w) = nafVal5 a b c d e/2^w := by
-  rcases hw with rfl | rfl | rfl
+  rcases hw with rfl | rfl | rfl | rfl
   · exact nafShift5_value ..
   · exact fastShift5_value ..
   · exact fastShift7_value ..
+  · exact fastShift9_value ..
 
 
 end VG.Proof.Weierstrass.AArch64

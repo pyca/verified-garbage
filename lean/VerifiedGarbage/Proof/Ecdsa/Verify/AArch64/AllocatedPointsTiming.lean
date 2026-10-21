@@ -107,12 +107,14 @@ theorem jointPrep_trace {base : Addr} :
   intro s t ts tt s' t' ⟨hs,ht,hsp,hu,hv⟩ es et
   cases es with | seq gs qs =>
     cases et with | seq gt qt =>
-      have hg := (fastPrep_relCT P256Joint.cfg.G (Or.inr rfl)
+      have e9 : Joint.gPrep P256Joint.cfg (p256.sl U)=FastNaf.prep9 P256Joint.cfg.G (p256.sl U) := rfl
+      rw [e9] at gs gt
+      have hg := (fastPrep9_relCT P256Joint.cfg.G
         (by decide) (by decide) (by decide) (by decide) (by decide) jointGPrep_checks
         _ _ _ _ _ _ ⟨hs,ht,hsp,hu⟩ gs gt).1
-      obtain ⟨_,_,xs,ps,ks,os⟩ := fastPrep_ok P256Joint.cfg.G (Or.inr rfl) hs
+      obtain ⟨_,_,xs,ps,ks,os⟩ := fastPrep9_ok P256Joint.cfg.G hs
         (src:=p256.sl U) (by decide) (by decide) (by decide) (by decide) (by decide)
-      obtain ⟨_,_,xt,pt,kt,ot⟩ := fastPrep_ok P256Joint.cfg.G (Or.inr rfl) ht
+      obtain ⟨_,_,xt,pt,kt,ot⟩ := fastPrep9_ok P256Joint.cfg.G ht
         (src:=p256.sl U) (by decide) (by decide) (by decide) (by decide) (by decide)
       obtain ⟨_,rfl⟩ := Exec.det gs xs
       obtain ⟨_,rfl⟩ := Exec.det gt xt
@@ -197,7 +199,7 @@ theorem jointGenerator_unch {c : Joint.Cfg} {C : Curve} {base T : Addr} {size : 
     (hu : Unch base W s.mem t.mem) (hrd : t.rd=s.rd) (hwr : t.wr=s.wr)
     (hsym : t.syms=s.syms) (hw : ∀ w∈W,w.1+w.2≤size) :
     JointGenerator c C base size G T t := by
-  have wordeq (a i : Nat) (ha : 1≤a) (ha32 : a≤32) (hi : i<8) :
+  have wordeq (a i : Nat) (ha : 1≤a) (ha32 : a≤jointGRows c) (hi : i<8) :
       word t.mem (T+BitVec.ofNat 64 (128*(a-1))) (8*i)=
       word s.mem (T+BitVec.ofNat 64 (128*(a-1))) (8*i) := by
     apply Mem.readW_congr
@@ -205,7 +207,7 @@ theorem jointGenerator_unch {c : Joint.Cfg} {C : Curve} {base T : Addr} {size : 
     have ho := h.outside a ha ha32 i hi b (by omega)
     apply hu
     intro w hm; have := hw w hm; dsimp only [off]; exact Or.inr (by omega)
-  have val (a o : Nat) (ha : 1≤a) (ha32 : a≤32) (ho : o=0 ∨ o=32) :
+  have val (a o : Nat) (ha : 1≤a) (ha32 : a≤jointGRows c) (ho : o=0 ∨ o=32) :
       wordsVal t.mem (T+BitVec.ofNat 64 (128*(a-1))) o 4=
       wordsVal s.mem (T+BitVec.ofNat 64 (128*(a-1))) o 4 := by
     apply wordsVal_of_words₂
@@ -250,11 +252,11 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 Spec.Weierstrass
 
 /-- Both original table preconditions refer to the same public static table. -/
 theorem jointBoundary_generators (hc : CfgOk p256) (hC : Law p256.C)
-    (hT : CombOkW p256.C 7 37 p256.tbl p256.start)
-    {s₀ t₀ s t : State} (ps : VPre p256 s₀) (pt : VPre p256 t₀)
-    (hb : JointBoundary p256 s₀ t₀ s t) :
-    JointGenerator P256Joint.cfg p256.C (s₀.gpr .x3) 8192 (G p256.C) (s₀.syms p256.tsym) s ∧
-    JointGenerator P256Joint.cfg p256.C (s₀.gpr .x3) 8192 (G p256.C) (s₀.syms p256.tsym) t := by
+    (hT : CombOkW p256.C 9 1 P256Joint.p256v.tbl P256Joint.p256v.start)
+    {s₀ t₀ s t : State} (ps : VPreG s₀) (pt : VPreG t₀)
+    (hb : JointBoundaryG s₀ t₀ s t) :
+    JointGenerator P256Joint.cfg p256.C (s₀.gpr .x3) 8192 (G p256.C) (s₀.syms P256Joint.p256v.tsym) s ∧
+    JointGenerator P256Joint.cfg p256.C (s₀.gpr .x3) 8192 (G p256.C) (s₀.syms P256Joint.p256v.tsym) t := by
   obtain ⟨pub,⟨gs,ms⟩,⟨gt,mt⟩,_⟩ := hb
   have bs : s₀.gpr .x3=t₀.gpr .x3 := pub.ptrs.2 .x3 (by decide)
   have ls := JointGenerator.of_pre hc hC hT ps.tbl rfl
@@ -278,7 +280,7 @@ open VG.Proof.Ecdh.AArch64 Spec.Weierstrass
 
 /-- The original public verifier relation determines both joint scalars and the peer. -/
 theorem jointBoundary_input (hc : CfgOk p256) (hC : Law p256.C)
-    {s₀ t₀ s t : State} (h : JointBoundary p256 s₀ t₀ s t) :
+    {s₀ t₀ s t : State} (h : JointBoundaryG s₀ t₀ s t) :
     JacWinPublic p256 (s₀.gpr .x3)
       (peerPt p256 (s₀.mem (s₀.gpr .x0)=4) (keyX p256 s₀) (keyY p256 s₀))
       (publicV p256 s₀) s t ∧
@@ -348,9 +350,9 @@ theorem jointPoints_inputCT (hc : CfgOk p256) (hC : Law p256.C)
 
 /-- The complete joint points stage depends only on the original public inputs. -/
 theorem jointPoints_relCT (hc : CfgOk p256) (hC : Law p256.C)
-    (hT : CombOkW p256.C 7 37 p256.tbl p256.start)
-    {s₀ t₀ : State} (ps : VPre p256 s₀) (pt : VPre p256 t₀) :
-    RelCT isa (JointBoundary p256 s₀ t₀) P256Joint.points
+    (hT : CombOkW p256.C 9 1 P256Joint.p256v.tbl P256Joint.p256v.start)
+    {s₀ t₀ : State} (ps : VPreG s₀) (pt : VPreG t₀) :
+    RelCT isa (JointBoundaryG s₀ t₀) P256Joint.points
       (AArch64.Taint.Agree (Taint.ofRegs [.x0])) := by
   intro s t ts tt s' t' hb es et
   obtain ⟨hp,us,ut⟩ := jointBoundary_input hc hC hb
@@ -481,9 +483,9 @@ theorem allocatedPoints_inputCT (raw : RawCorrect) (hc : CfgOk p256) (hC : Law p
 
 theorem allocatedPointsBody_relCT (raw : RawCorrect) (hc : CfgOk p256) (hC : Law p256.C)
     (hO : PrimeOrder p256.C)
-    (hT : CombOkW p256.C 7 37 p256.tbl p256.start)
-    {s₀ t₀ : State} (ps : VPre p256 s₀) (pt : VPre p256 t₀) :
-    RelCT isa (JointBoundary p256 s₀ t₀) (Joint.points cfg P256Allocated.ops (p256.sl U) (p256.sl V))
+    (hT : CombOkW p256.C 9 1 P256Joint.p256v.tbl P256Joint.p256v.start)
+    {s₀ t₀ : State} (ps : VPreG s₀) (pt : VPreG t₀) :
+    RelCT isa (JointBoundaryG s₀ t₀) (Joint.points cfg P256Allocated.ops (p256.sl U) (p256.sl V))
       (AArch64.Taint.Agree (Taint.ofRegs [.x0])) := by
   intro s t ts tt s' t' hb es et
   obtain ⟨hp,us,ut⟩ := jointBoundary_input hc hC hb
@@ -499,8 +501,8 @@ theorem allocatedPointsBody_relCT (raw : RawCorrect) (hc : CfgOk p256) (hC : Law
 
 
 private theorem saveBoundary_relCT {s₀ t₀ : State} :
-    RelCT isa (JointBoundary p256 s₀ t₀) (.block P256Allocated.saveExtra)
-      (JointBoundary p256 s₀ t₀) := by
+    RelCT isa (JointBoundaryG s₀ t₀) (.block P256Allocated.saveExtra)
+      (JointBoundaryG s₀ t₀) := by
   intro s t ts tt s' t' ⟨pub,⟨gs,ms⟩,⟨gt,mt⟩,sp⟩ es et
   obtain ⟨_,_,xs,ks,us,_⟩ := allocatedSave_ok ms.scr (by decide)
   obtain ⟨_,_,xt,kt,ut,_⟩ := allocatedSave_ok mt.scr (by decide)
@@ -530,9 +532,9 @@ private theorem restorePublic_relCT :
 /-- The allocated points stage preserves the original public-input timing contract,
 including the save and restore of its extra working registers. -/
 theorem allocatedPoints_relCT (raw : RawCorrect) (hc : CfgOk p256) (hC : Law p256.C)
-    (hO : PrimeOrder p256.C) (hT : CombOkW p256.C 7 37 p256.tbl p256.start)
-    {s₀ t₀ : State} (ps : VPre p256 s₀) (pt : VPre p256 t₀) :
-    RelCT isa (JointBoundary p256 s₀ t₀) P256Allocated.points
+    (hO : PrimeOrder p256.C) (hT : CombOkW p256.C 9 1 P256Joint.p256v.tbl P256Joint.p256v.start)
+    {s₀ t₀ : State} (ps : VPreG s₀) (pt : VPreG t₀) :
+    RelCT isa (JointBoundaryG s₀ t₀) P256Allocated.points
       (AArch64.Taint.Agree (Taint.ofRegs [.x0])) := by
   rw [P256Allocated.points]
   exact RelCT.seq saveBoundary_relCT

@@ -26,13 +26,29 @@ def jointWork (c : Joint.Cfg) : List Nat := winOther c.K ++ [5400,5432]
 def jointStableFields (c : Joint.Cfg) : List Nat :=
   [c.K.zero,c.onep] ++ jacTreeSlots c.K 9 ++ jointCacheSlots
 
+/-- The bytes of the generator's 257 digits: one each, or two for width nine. -/
+def jointGLen (c : Joint.Cfg) : Nat := if c.gw=9 then 514 else 257
+
+/-- The bytes the generator's recoder writes. -/
+def jointGSpan (c : Joint.Cfg) : Nat := if c.gw=9 then 520 else 264
+
+/-- Byte `i` of the generator's digits. -/
+def jointGByte (c : Joint.Cfg) (u i : Nat) : BitVec 8 :=
+  if c.gw=9 then FastNaf.wbyte u i else FastNaf.byte 7 u i
+
+/-- The largest magnitude of the generator's digits. -/
+def jointGTop (c : Joint.Cfg) : Nat := if c.gw=9 then 255 else 63
+
+theorem jointGLen_le_span (c : Joint.Cfg) : jointGLen c≤jointGSpan c := by
+  unfold jointGLen jointGSpan; split <;> omega
+
 def jointStableRanges (c : Joint.Cfg) : List (Nat × Nat) :=
-  (jointStableFields c).map (·,8*c.K.M.n) ++ [(c.K.bits,257),(c.gBits,257)]
+  (jointStableFields c).map (·,8*c.K.M.n) ++ [(c.K.bits,257),(c.gBits,jointGLen c)]
 
 structure JointStable (c : Joint.Cfg) (C : Curve) (base : Addr)
     (Q : Point C) (u v : Nat) (s : State) : Prop where
   peer : NafStable c.K C base Q (FastNaf.byte 5 v) s
-  generator : ∀ j<257,s.mem (off base (c.gBits+j))=FastNaf.byte 7 u j
+  generator : ∀ j<jointGLen c,s.mem (off base (c.gBits+j))=jointGByte c u j
   one : tmv C c.K.M.n base s c.onep=1
   cache2 : ∀ i<8,tmv C c.K.M.n base s (VG.Impl.Weierstrass.CachedJac.tableZ2 i)=
     tmv C c.K.M.n base s (Jacobian.tablePt c.K (i+1)).z *
@@ -87,7 +103,7 @@ theorem JointStable.keep {c : Joint.Cfg} {C : Curve} {base : Addr} {Q : Point C}
   have hf (x : Nat) (hx : x∈jointStableFields c) :
       tmv C c.K.M.n base t x=tmv C c.K.M.n base s x := by
     unfold tmv; rw [hw x hx]
-  have hbits (d : Nat) (ho : (d,257)∈jointStableRanges c) (j : Nat) (hj : j<257) :
+  have hbits (d l : Nat) (ho : (d,l)∈jointStableRanges c) (j : Nat) (hj : j<l) :
       t.mem (off base (d+j))=s.mem (off base (d+j)) := by
     apply hk.unch.byte
     · intro w hw
@@ -102,10 +118,10 @@ theorem JointStable.keep {c : Joint.Cfg} {C : Curve} {base : Addr} {Q : Point C}
       hf _ (jointStable_table c ha (by omega) (by simp))]
     exact h.peer.table a ha hb
   · intro j hj
-    rw [hbits c.K.bits (by simp [jointStableRanges]) j hj]
+    rw [hbits c.K.bits _ (by simp [jointStableRanges]) j hj]
     exact h.peer.bits j hj
   · intro j hj
-    rw [hbits c.gBits (by simp [jointStableRanges]) j hj]
+    rw [hbits c.gBits _ (by simp [jointStableRanges]) j hj]
     exact h.generator j hj
   · rw [hf c.onep (by simp [jointStableFields]),h.one]
   · intro i hi
@@ -148,6 +164,7 @@ structure JointLayout (c : Joint.Cfg) (size : Nat) : Prop where
   stableBounds : ∀ r∈jointStableRanges c,r.1+r.2≤size
   stableSep : ∀ r∈jointStableRanges c,∀ w∈(jointWork c).map (·,8*c.K.M.n)++[(c.K.M.tmp,8*c.K.M.n)],
     r.1+r.2≤w.1 ∨ w.1+w.2≤r.1
+  gw : c.gw=7 ∨ c.gw=9
 
 theorem jointLive_R (c : Joint.Cfg) : ∀ x∈[c.K.R.x,c.K.R.y,c.K.R.z],x∈jointLive c :=
   fun x hx => List.mem_append_left _ (nafLive_R c.K x hx)

@@ -57,7 +57,7 @@ theorem fastOdd_ok {s : State} {base : Addr} {size bits w k j : Nat}
     (by rw [kb.gpr _ List.not_mem_nil,ka.gpr _ (by decide),hI.zero])
     (by rw [kb.gpr _ List.not_mem_nil]; exact da) vb hv) fun c ⟨vc,kc⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (fastShift_ok c w (Or.inr hw)) fun d ⟨vd,kd⟩ => ?_
+  refine WP.mono (fastShift_ok c w (Or.inr hw.wide)) fun d ⟨vd,kd⟩ => ?_
   have pd : d.gpr .x20=off base (bits+j) := by
     rw [kd.gpr _ (by decide),kc.gpr _ (by decide),kb.gpr _ List.not_mem_nil,pa]
   refine WP.mono (fastAdvance_ok d (by rcases hw with rfl | rfl <;> decide) pd) fun t ⟨pt,kt⟩ => ?_

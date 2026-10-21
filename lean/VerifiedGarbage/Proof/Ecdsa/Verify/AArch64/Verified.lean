@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafMain
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.GContract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Contract
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit
@@ -64,11 +65,11 @@ theorem jointVerify_untouched : KeepsUntouched P256Joint.verify := by lit_decide
 theorem jointVerify_keepsV : P256Joint.verify.allInstrs keepsV=true := by lit_decide
 
 theorem jointVerify_a64_of_wp
-    (correct : ∀ s,VPre p256 s → WP isa P256Joint.verify s fun t =>
+    (correct : ∀ s,VPreG s → WP isa P256Joint.verify s fun t =>
       (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p256 s t)
-    (s : State) (hs : verifyAArch64.pre s) :
-    ∃ t s',Exec isa P256Joint.verify s t s' ∧ abiPreserved s s' ∧ verifyAArch64.post s s' := by
-  obtain ⟨t,s',he,hsv,hpost⟩ := correct s (jacPre_of hs)
+    (s : State) (hs : verifyGAArch64.pre s) :
+    ∃ t s',Exec isa P256Joint.verify s t s' ∧ abiPreserved s s' ∧ verifyGAArch64.post s s' := by
+  obtain ⟨t,s',he,hsv,hpost⟩ := correct s (vpreG_of hs)
   exact ⟨t,s',he,abiPreserved_of he jointVerify_callsKeep jointVerify_untouched jointVerify_keepsV hsv,hpost⟩
 
 end VG.Proof.Ecdsa.Verify.AArch64
@@ -134,12 +135,12 @@ theorem allocated_abiPreserved_of {s t : State} {tr : List Leak}
 
 /-- Compose the two restored arithmetic stages with the unchanged surrounding code. -/
 theorem allocatedVerify_extra_preserved (hc : CfgOk p256)
-    (hprefix : ∀ s,VPre p256 s → WP isa allocatedPrefix s fun t => ∃ g,Mid p256 s (s.gpr .x3) g t)
+    (hprefix : ∀ s,VPreG s → WP isa allocatedPrefix s fun t => ∃ g,Mid p256 s (s.gpr .x3) g t)
     (hinverse : ∀ s₀ s,InverseInput p256 s₀ (s₀.gpr .x3) s →
       WP isa P256Allocated.inverse s fun t => ∀ r∈untouched,t.gpr r=s.gpr r)
-    (hpoints : ∀ s₀ g s,VPre p256 s₀ → Mid p256 s₀ (s₀.gpr .x3) g s →
+    (hpoints : ∀ s₀ g s,VPreG s₀ → Mid p256 s₀ (s₀.gpr .x3) g s →
       WP isa P256Allocated.points s fun t => ∀ r∈untouched,t.gpr r=s.gpr r)
-    {s s' : State} {tr : List Leak} (hp : VPre p256 s)
+    {s s' : State} {tr : List Leak} (hp : VPreG s)
     (he : Exec isa P256Allocated.verify s tr s') : ∀ r∈untouched,s'.gpr r=s.gpr r := by
   obtain ⟨a,b,tp,tq,tt,ep,eq,et,_⟩ := allocatedVerify_cut he
   obtain ⟨i,j,ti,tj,tu,ei,ej,eu,_⟩ := allocatedPrefix_cut ep
@@ -156,13 +157,13 @@ theorem allocatedVerify_extra_preserved (hc : CfgOk p256)
     ((ki r hr).trans (before_safe.keeps ei r hr))))
 
  theorem allocatedVerify_a64_of_wp
-    (correct : ∀ s,VPre p256 s → WP isa P256Allocated.verify s fun t =>
+    (correct : ∀ s,VPreG s → WP isa P256Allocated.verify s fun t =>
       (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p256 s t)
-    (restored : ∀ {s t : State} {tr : List Leak},VPre p256 s →
+    (restored : ∀ {s t : State} {tr : List Leak},VPreG s →
       Exec isa P256Allocated.verify s tr t → ∀ r∈untouched,t.gpr r=s.gpr r)
-    (s : State) (hs : verifyAArch64.pre s) :
-    ∃ tr t,Exec isa P256Allocated.verify s tr t ∧ abiPreserved s t ∧ verifyAArch64.post s t := by
-  have hp := jacPre_of hs
+    (s : State) (hs : verifyGAArch64.pre s) :
+    ∃ tr t,Exec isa P256Allocated.verify s tr t ∧ abiPreserved s t ∧ verifyGAArch64.post s t := by
+  have hp := vpreG_of hs
   obtain ⟨tr,t,he,hsv,hpost⟩ := correct s hp
   exact ⟨tr,t,he,allocated_abiPreserved_of he hsv (restored hp he),hpost⟩
 
@@ -179,8 +180,8 @@ open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
 open VG.Proof.Ecdsa.AArch64
 
 theorem jointVerify_ok (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds)
-    (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
-    {s : State} (h : VPre p256 s) :
+    (hT : Weierstrass.CombOkW Spec.P256.curve 9 1 Impl.P256.p256G9 Impl.P256.p256G9Start)
+    {s : State} (h : VPreG s) :
     WP isa P256Joint.verify s fun t =>
       (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p256 s t :=
   verify_of_joint (p256_ok hI) hL P256Joint.points P256Joint.verify rfl
@@ -189,9 +190,9 @@ theorem jointVerify_ok (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.
       exact jointPoints_ok (p256_ok hI) hL hT hm ht hp hr) h
 
 theorem jointVerify_a64 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds)
-    (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
-    (s : State) (hs : verifyAArch64.pre s) :
-    ∃ t s',Exec isa P256Joint.verify s t s' ∧ abiPreserved s s' ∧ verifyAArch64.post s s' :=
+    (hT : Weierstrass.CombOkW Spec.P256.curve 9 1 Impl.P256.p256G9 Impl.P256.p256G9Start)
+    (s : State) (hs : verifyGAArch64.pre s) :
+    ∃ t s',Exec isa P256Joint.verify s t s' ∧ abiPreserved s s' ∧ verifyGAArch64.post s s' :=
   jointVerify_a64_of_wp (fun _ hp => jointVerify_ok hL hI hT hp) s hs
 
 end VG.Proof.Ecdsa.Verify.AArch64
@@ -208,18 +209,18 @@ open VG.Proof.Ecdsa.AArch64
 
 /-- Joint verification satisfies the existing correctness, ABI, and public-input contract. -/
 theorem jointVerify_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds)
-    (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
+    (hT : Weierstrass.CombOkW Spec.P256.curve 9 1 Impl.P256.p256G9 Impl.P256.p256G9Start)
     :
     Verified AArch64.target P256Joint.verify
-      (Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts p256.combConsts)) := by
-  refine ⟨fun s hs => ?_,?_,implies.sat⟩
-  · obtain ⟨t,s',he,ha,hp⟩ := jointVerify_a64 hL hI hT s (implies.pre _ hs)
-    exact ⟨t,s',he,ha,implies.post s s' hs hp⟩
+      (Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts P256Joint.p256v.combConsts)) := by
+  refine ⟨fun s hs => ?_,?_,impliesG.sat⟩
+  · obtain ⟨t,s',he,ha,hp⟩ := jointVerify_a64 hL hI hT s (impliesG.pre _ hs)
+    exact ⟨t,s',he,ha,impliesG.post s s' hs hp⟩
   · intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
     exact jointVerify_ct_of_points (p256_ok hI) jointPrefix_ct
       (fun _ _ ps pt => jointPoints_relCT (p256_ok hI) hL hT ps pt) jointTail_ct
-      _ _ _ _ _ _ (jacPre_of (implies.pre _ pre₁)) (jacPre_of (implies.pre _ pre₂))
-      (jacPublic_of_spec pub) e₁ e₂
+      _ _ _ _ _ _ (vpreG_of (impliesG.pre _ pre₁)) (vpreG_of (impliesG.pre _ pre₂))
+      (jacPublicG_of_spec pub) e₁ e₂
 
 end VG.Proof.Ecdsa.Verify.AArch64
 
