@@ -14,8 +14,14 @@ def powerAt (op : Nat → Nat → Nat → Prog isa) (bs es ec : Nat) : Prog isa 
   .seq (.block (powerArgs bs es ec))
     (.seq VG.Impl.Ffdh.Arm.powerImport (SharedWindow.phase op))
 
+/-- The supplied exponent is public; retain only its nonzero suffix. -/
+def publicPowerAt (op : Nat → Nat → Nat → Prog isa) (bs es ec : Nat) : Prog isa :=
+  .seq (.block (powerArgs bs es ec))
+    (.seq VG.Impl.Ffdh.Arm.PublicScan.code
+      (.seq VG.Impl.Ffdh.Arm.powerImport (SharedWindow.phase op)))
+
 def subgroup (op : Nat → Nat → Nat → Prog isa) (bs : Nat) : Prog isa :=
-  .seq (powerAt op bs 60 32) (VG.Impl.Ffdh.Arm.isOne 6)
+  .seq (publicPowerAt op bs 60 32) (VG.Impl.Ffdh.Arm.isOne 6)
 
 def tail (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
   withQ (.seq (subgroup op 36) finishFlag) (ret 1)

@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.SubgroupCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.DomainCallMemory
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Impl.Ffdh.Arm.SharedCheckPublic
-import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPowerCT
-import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPower
+import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPublicPowerCT
+import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPublicPower
 import VerifiedGarbage.Proof.Ffdh.Arm.ValueChecksCT
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpSharedCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
@@ -58,10 +58,10 @@ theorem sharedCheckPublicSubgroup_ct (backend : MontBackend) {p : Inputs} {slots
         exact (initial.1.1.context.qBytes hasQ).separate
       · have eq := List.mem_singleton.mp hr; subst r
         exact below s initial.1
-    have powers := sharedCheckPublicPowerAt_ct K timing stable hb h60 h32 h32
-      baseLength positive fits count rfl odd separate
+    have powers := sharedCheckPublicPublicPower_ct K timing stable hb h60 h32 h32
+      baseLength positive fits count odd separate
     have wp (s : State) (h : SubgroupInput p slots slot bb s ∧ DomainCallMemory p s ∧ s.sp = sp0) :=
-      WP.mono (sharedCheckPublicPower_ok backend s slot 60 32 h.1.context h.2.1 stable hb h60 h32 h32
+      WP.mono (sharedCheckPublicPublicPower_ok backend s slot 60 32 h.1.context h.2.1 stable hb h60 h32 h32
         h.1.ready h.1.modulus odd h.1.r2 h.1.source baseLength (h.1.context.qBytes hasQ)
         positive fits count (by rw [h.2.2]; exact below s h)) fun _ j => j.2.1
     exact (relCT_chain (powers.mono (fun _ _ h =>

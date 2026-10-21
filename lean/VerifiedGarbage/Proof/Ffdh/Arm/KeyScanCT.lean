@@ -84,7 +84,7 @@ theorem keyScanStep_ct {base src : BitVec 32} {len : Nat} {bs : List Byte}
       exact (keyScanCount_ct bs.length positive fits).mono (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ h => h)
     · intro _
       exact keyScanStop_ct.mono (fun _ _ _ => trivial) (fun _ _ h => h)
-  unfold VG.Impl.Ffdh.Arm.Domain.GenerateKey.scanStep
+  unfold VG.Impl.Ffdh.Arm.Domain.GenerateKey.scanStep VG.Impl.Ffdh.Arm.PublicScan.step
   exact relCT_chain head wp wp branch
 
 theorem keyScanTail {base src : BitVec 32} {len : Nat} {bs : List Byte} {s t : State}

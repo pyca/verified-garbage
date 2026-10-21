@@ -63,10 +63,10 @@ theorem scanStop_ok (s : State) : WP isa VG.Impl.Ffdh.Arm.Domain.GenerateKey.sto
     (t.z = true ∧ t.mem = s.mem) ∧ Rest [.r11] s t := by
   refine withRest [.r11] ?_ (by
     intro r hr i hi
-    simp only [instrs, VG.Impl.Ffdh.Arm.Domain.GenerateKey.stop, List.mem_cons, List.not_mem_nil, or_false] at hi
+    simp only [instrs, VG.Impl.Ffdh.Arm.Domain.GenerateKey.stop, VG.Impl.Ffdh.Arm.PublicScan.stop, List.mem_cons, List.not_mem_nil, or_false] at hi
     have ne : r ≠ .r11 := by simpa only [List.mem_singleton] using hr
     rcases hi with rfl | rfl <;> simp [clobbers, dstOf, Ne.symm ne]) (by rfl)
-  unfold VG.Impl.Ffdh.Arm.Domain.GenerateKey.stop
+  unfold VG.Impl.Ffdh.Arm.Domain.GenerateKey.stop VG.Impl.Ffdh.Arm.PublicScan.stop
   ffrun []
 
 theorem scanAdvance_ok (s : State) {n : Nat} (positive : 0 < n)
@@ -81,7 +81,7 @@ theorem scanAdvance_ok (s : State) {n : Nat} (positive : 0 < n)
       all_goals exact False.elim (hr (by decide))
     have f := List.all_eq_true.mp checked i hi
     cases hc : clobbers i r <;> simp_all) (by rfl)
-  unfold VG.Impl.Ffdh.Arm.Domain.GenerateKey.advance
+  unfold VG.Impl.Ffdh.Arm.Domain.GenerateKey.advance VG.Impl.Ffdh.Arm.PublicScan.advance
   ffrun [count]
   exact Offset.ofNat_sub_ofNat (by omega : 1 ≤ n)
 

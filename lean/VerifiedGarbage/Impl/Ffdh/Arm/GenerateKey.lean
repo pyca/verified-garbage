@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Impl.Ffdh.Arm.PublicScan
 
 /-! One native FFDH key-generation attempt: public-bound scanning, entropy
 masking, private/public checks and output clearing all execute on ARMv7. -/
@@ -9,14 +10,11 @@ masking, private/public checks and output clearing all execute on ARMv7. -/
 namespace VG.Impl.Ffdh.Arm.Domain.GenerateKey
 open VG VG.Arm VG.Impl.Bignum.Arm
 
-/-- The loop continues only when a public leading zero was skipped. -/
-def advance : Prog isa := .block [
-  .dp .add .r4 .r4 (.imm 1), .dp .sub .r6 .r6 (.imm 1),
-  .mov .r11 (.imm 1), .cmp .r11 (.imm 0)]
-def stop : Prog isa := .block [.mov .r11 (.imm 0), .cmp .r11 (.imm 0)]
-def scanStep : Prog isa := .seq (.block [.ldrb .r3 .r4 0, .cmp .r3 (.imm 0)])
-  (.ite .eq (.seq (.block [.cmp .r6 (.imm 1)]) (.ite .ne advance stop)) stop)
-def scan : Prog isa := .loop scanStep .ne
+/-- Key generation and subgroup validation use the same public-byte scanner. -/
+def advance : Prog isa := VG.Impl.Ffdh.Arm.PublicScan.advance
+def stop : Prog isa := VG.Impl.Ffdh.Arm.PublicScan.stop
+def scanStep : Prog isa := VG.Impl.Ffdh.Arm.PublicScan.step
+def scan : Prog isa := VG.Impl.Ffdh.Arm.PublicScan.scan
 
 def smear : List Instr := [
   .mov .r12 (.shifted .r3 .lsr 1), .dp .orr .r3 .r3 (.reg .r12),
