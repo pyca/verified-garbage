@@ -84,6 +84,7 @@ crate::mlkem_common::ml_kem! {
     encaps_avx512: (crate::arch::mlkem768::vg_mlkem768_encaps_avx512, crate::arch::mlkem768::VG_MLKEM768_ENCAPS_AVX512_FEATURES),
     decaps_avx2: (crate::arch::mlkem768::vg_mlkem768_decaps_avx2, crate::arch::mlkem768::VG_MLKEM768_DECAPS_AVX2_FEATURES),
     decaps_avx512: (crate::arch::mlkem768::vg_mlkem768_decaps_avx512, crate::arch::mlkem768::VG_MLKEM768_DECAPS_AVX512_FEATURES),
+    check_ek_avx2: (crate::arch::mlkem768::vg_mlkem768_check_ek_avx2, crate::arch::mlkem768::VG_MLKEM768_CHECK_EK_AVX2_FEATURES),
     ek: 1184,
     dk: 2400,
     ct: 1088,

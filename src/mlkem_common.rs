@@ -138,6 +138,7 @@ macro_rules! ml_kem {
         encaps_avx512: ($encaps_avx512:path, $encaps_avx512_features:path),
         decaps_avx2: ($decaps_avx2:path, $decaps_avx2_features:path),
         decaps_avx512: ($decaps_avx512:path, $decaps_avx512_features:path),
+        check_ek_avx2: ($check_ek_avx2:path, $check_ek_avx2_features:path),
         ek: $ek:literal,
         dk: $dk:literal,
         ct: $ct:literal,
@@ -158,12 +159,14 @@ macro_rules! ml_kem {
         #[cfg(target_arch = "x86_64")]
         const AVX2: &[$crate::cpu::Features] = &[
             $keygen_avx2_features, $encaps_h_avx2_features, $encaps_avx2_features, $decaps_avx2_features,
+            $check_ek_avx2_features,
         ];
         #[cfg(not(target_arch = "x86_64"))]
         const AVX2: &[$crate::cpu::Features] = &[];
         #[cfg(target_arch = "x86_64")]
         const AVX512: &[$crate::cpu::Features] = &[
             $keygen_avx512_features, $encaps_h_avx512_features, $encaps_avx512_features, $decaps_avx512_features,
+            $check_ek_avx2_features,
         ];
         #[cfg(not(target_arch = "x86_64"))]
         const AVX512: &[$crate::cpu::Features] = &[];
@@ -253,8 +256,19 @@ macro_rules! ml_kem {
             pub fn from_bytes(bytes: &[u8; $ek]) -> Result<Self, Error> {
                 // SAFETY: `bytes` is valid for reads of its size, and a Rust
                 // object, so it does not overlap the stack or wrap around the
-                // end of the address space.
-                if unsafe { $check_ek(bytes) } == 1 {
+                // end of the address space. The CPU has the features of
+                // `backend()`, which include those of `$check_ek_avx2`.
+                #[cfg(target_arch = "x86_64")]
+                let r = unsafe {
+                    match backend() {
+                        Backend::Scalar => $check_ek(bytes),
+                        Backend::Avx2 | Backend::Avx512 => $check_ek_avx2(bytes),
+                    }
+                };
+                // SAFETY: as above.
+                #[cfg(not(target_arch = "x86_64"))]
+                let r = unsafe { $check_ek(bytes) };
+                if r == 1 {
                     Ok($EncapsulationKey {
                         bytes: *bytes,
                         #[cfg(target_arch = "x86_64")]
