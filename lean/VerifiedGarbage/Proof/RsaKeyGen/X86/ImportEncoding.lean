@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportContext
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Bignum.ReverseEncoding
-import VerifiedGarbage.TCB.X86.Isa
 
 /-! # Whole-word reversal imports the exact big-endian candidate or witness -/
 
