@@ -1738,7 +1738,7 @@ theorem sealS_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) :
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
   have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
-  have ha := padRest_xdepth (dataCopy v.poly) v.poly 1
+  have ha := padSite_xdepth (dataCopy v.poly) v.poly .rbx .rbp
   simp only [sealStitched, prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks,
     padRest, padCopy, padTail, cryptS, wipeL_xdepth, preS, cryptPre, absorbLengths, finalizeTag, finalizeWith, Code.x86_64Depth, xorBuf_xdepth,
     foldM_xdepth, init_xdepth, finalize_xdepth, bigS_xdepth, bulkP_xdepth, tailP_xdepth, Nat.max_le] at hc ha ⊢
@@ -4902,7 +4902,7 @@ theorem openS_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) :
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
   have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
-  have ha := padRest_xdepth (dataCopy v.poly) v.poly 1
+  have ha := padSite_xdepth (dataCopy v.poly) v.poly .rbx .rbp
   simp only [openStitched, prologueX, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks,
     padRest, padCopy, padTail, cryptO, decRest, xorTail, absorbLengths, finalizeTo, finalizeWith, Code.x86_64Depth, xorBuf_xdepth,
     xorTail_xdepth, foldM_xdepth, wipeL_xdepth, init_xdepth,
