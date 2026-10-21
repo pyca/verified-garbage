@@ -31,9 +31,9 @@ theorem PcBuffers.congr {base dst src : BitVec 32} {len k : Nat} {s t : State} {
     by rw [rest.rd, rest.wr]; exact h.readable,
     h.sourceSeparate, h.outputFits, by rw [rest.wr]; exact h.writable, h.outputSeparate⟩
 
-theorem pcPrepare_ready (s : State) {base dst src : BitVec 32} {len k : Nat}
+theorem pcPrepare_frame_ready (s : State) {base dst src : BitVec 32} {len k : Nat}
     (h : PcValidInput base dst src len k s) :
-    WP isa (.seq (.block PcFn.head) (.seq setup (.block PcFn.inputs))) s (PcPrepared base dst src len k) := by
+    WP isa (.seq (.block PcFn.head) (.seq setup (.block PcFn.inputs))) s (fun t => PcPrepared base dst src len k t ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem) := by
   obtain ⟨hw, hw', fits, bytesFit, _⟩ := pc_dimensions h.minLength h.maxLength h.space
   obtain ⟨odd, large, _⟩ := VG.Proof.Bignum.valid_facts h.valid h.minLength
   rw [WP.seq_iff]
@@ -52,6 +52,7 @@ theorem pcPrepare_ready (s : State) {base dst src : BitVec 32} {len k : Nat}
   have stackZ := h.stack.after_workspace frameZ rz
   have inputZ := rsa_bytes_frame frameZ (by have := h.maxLength; omega : k < 2 ^ 64)
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.sourceSeparate)
+  refine ⟨?_, frameZ⟩
   refine ⟨⟨⟨h.workspace.congr rz.wr, ?_, ?_, ?_, ?_, ?_, stackZ.savedBase⟩,
     by have := h.minLength; omega, bytesFit, h.sourceFits, ?_, h.sourceSeparate, sourceZ, countZ, ?_, ?_⟩,
     h.toPcBuffers.congr rz, stackZ⟩
@@ -63,5 +64,19 @@ theorem pcPrepare_ready (s : State) {base dst src : BitVec 32} {len k : Nat}
   · rw [rz.rd, rz.wr]; exact h.readable
   · rw [inputZ]; exact large
   · rw [inputZ]; exact odd
+
+theorem pcPrepare_ready (s : State) {base dst src : BitVec 32} {len k : Nat}
+    (h : PcValidInput base dst src len k s) :
+    WP isa (.seq (.block PcFn.head) (.seq setup (.block PcFn.inputs))) s (PcPrepared base dst src len k) :=
+  WP.mono (pcPrepare_frame_ready s h) (fun _ j => j.1)
+
+theorem pcPrepare_public_ready (s : State) {base dst src : BitVec 32} {len k : Nat} {nb : List Byte}
+    (h : PcValidInput base dst src len k s) (bytes : Spec.Rsa.bytesAt s.mem (State.addr src) k = nb) :
+    WP isa (.seq (.block PcFn.head) (.seq setup (.block PcFn.inputs))) s fun t =>
+      PcPrepared base dst src len k t ∧ Spec.Rsa.bytesAt t.mem (State.addr src) k = nb := by
+  refine WP.mono (pcPrepare_frame_ready s h) ?_
+  rintro t ⟨prepared, frame⟩
+  exact ⟨prepared, (rsa_bytes_frame frame (by have := h.maxLength; omega : k < 2 ^ 64)
+    (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.sourceSeparate)).trans bytes⟩
 
 end VG.Proof.Bignum.Arm

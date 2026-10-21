@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicPrecomputeKernel
+
 import VerifiedGarbage.Proof.Bignum.Arm.PcContract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import Batteries.Logic
@@ -39,7 +41,8 @@ theorem pc_contract_sat : ∃ s, (Spec.Rsa.publicPrecomputeContract abi 56).pre 
     [pcSatState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid,
       Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords, Spec.Rsa.scratchWords] using pcSatState
 
-theorem precompute_verified : Verified target PcFn.code (Spec.Rsa.publicPrecomputeContract abi 56) :=
-  ⟨pc_contract_correct, pc_contract_ct, pc_contract_sat⟩
+theorem precompute_verified
+    (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : Verified target (PcFn.codeWith kernel.code) (Spec.Rsa.publicPrecomputeContract abi 56) :=
+  ⟨pc_contract_correct (kernel := kernel), pc_contract_ct (kernel := kernel), pc_contract_sat⟩
 
 end VG.Proof.Bignum.Arm

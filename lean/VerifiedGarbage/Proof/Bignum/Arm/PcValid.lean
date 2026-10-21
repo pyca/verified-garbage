@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicPrecomputeKernel
+
 import VerifiedGarbage.Proof.Bignum.Arm.PcHead
 public import VerifiedGarbage.Proof.Bignum.Arm.PcStack
 public import VerifiedGarbage.Spec.Rsa.Contract
@@ -29,8 +31,8 @@ theorem pcValid_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
     (write : InRegions s.wr (State.addr dst) (16 * Spec.Rsa.modulusWords k))
     (dstSep : Region.Disjoint ⟨State.addr base, 8 * len⟩ ⟨State.addr dst, 16 * Spec.Rsa.modulusWords k⟩)
     (ptr : s.gpr .r0 = base) (count : s.gpr .r6 = BitVec.ofNat 32 k)
-    (valid : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k)) k = true) :
-    WP isa PcFn.valid s fun t =>
+    (valid : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k)) k = true)
+    (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : WP isa (PcFn.validWith kernel.code) s fun t =>
       t.gpr .r0 = 1 ∧ Spec.Rsa.wordsAt t.mem (State.addr dst) (2 * Spec.Rsa.modulusWords k) =
         Spec.Rsa.toWords (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k)) (Spec.Rsa.modulusWords k) ++
         Spec.Rsa.toWords (2 ^ (128 * Spec.Rsa.modulusWords k) %
@@ -39,7 +41,7 @@ theorem pcValid_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
       Rest roundClobbers s t := by
   obtain ⟨hw, hw', fits, bytesFit, countFit⟩ := pc_dimensions hk hk' space
   obtain ⟨odd, large, _⟩ := VG.Proof.Bignum.valid_facts valid hk
-  rw [PcFn.valid, WP.seq_iff]
+  rw [PcFn.validWith, WP.seq_iff]
   refine WP.mono (pcHead_ok s hk' count) ?_
   rintro u ⟨limbs, zero, memU, restU⟩
   rw [WP.seq_iff]
@@ -61,7 +63,7 @@ theorem pcValid_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
     simpa only [VG.Proof.Mont.off, BitVec.add_zero] using stackZ.read (d := 0) (by decide)
   have stackSepZ := stackZ.separate.sub_left (Region.sub_prefix (show 4 ≤ 16 by decide))
   rw [WP.seq_iff]
-  refine WP.mono (precompute_ok z (ws.congr rz.wr) (by rw [memZ]; exact layoutV)
+  refine WP.mono (kernel.correct z (ws.congr rz.wr) (by rw [memZ]; exact layoutV)
     (by rw [memZ]; exact widthV) (by omega) bytesFit srcFit
     (by rw [rz.rd, rz.wr]; exact read) srcSep ((restZ.gpr .r0 (by simp)).trans ptrV)
     sourceZ countZ stackReadZ stackSepZ stackZ.savedBase

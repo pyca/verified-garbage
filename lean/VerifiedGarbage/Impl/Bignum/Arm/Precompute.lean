@@ -18,6 +18,8 @@ open VG VG.Arm
 def importModulus : Prog isa := .seq (.block [.mov .r2 (.imm 0)]) loadBEFn
 def inverseArgs : List Instr := [.mov .r12 (.reg .r0), .ldr .r0 .r0 64]
 def precomputeInverse : Prog isa := .seq (.block inverseArgs) initInverse
-def precompute : Prog isa := .seq importModulus (.seq precomputeInverse r2)
+def precomputeWith (phase : Prog isa) : Prog isa := .seq importModulus (.seq precomputeInverse phase)
+
+def precompute : Prog isa := precomputeWith r2
 
 end VG.Impl.Bignum.Arm

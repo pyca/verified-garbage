@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicPrecomputeKernel
 public import VerifiedGarbage.Proof.Bignum.Arm.PcInput
 
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntryReady
@@ -14,19 +16,19 @@ namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
 
 theorem pcFn_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
-    (h : PcFnInput base dst src len k s) :
-    WP isa PcFn.code s fun t => abiPreserved s t ∧
+    (h : PcFnInput base dst src len k s)
+    (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : WP isa (PcFn.codeWith kernel.code) s fun t => abiPreserved s t ∧
       (match Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (State.addr src) k) with
       | some words => t.gpr .r0 = 1 ∧ Spec.Rsa.wordsAt t.mem (State.addr dst) (2 * Spec.Rsa.modulusWords k) = words
       | none => t.gpr .r0 = 0 ∧ Spec.Rsa.wordsAt t.mem (State.addr dst) (2 * Spec.Rsa.modulusWords k) =
           List.replicate (2 * Spec.Rsa.modulusWords k) 0) := by
-  unfold PcFn.code
+  unfold PcFn.codeWith
   refine WP.frame (by decide) h.stackFit (by decide) ?_
   rw [WP.seq_iff]
   refine WP.mono (pc_entry_ready s h) ?_
   rintro u ⟨ready, frameU, savedU, restU⟩
   rw [WP.seq_iff]
-  refine WP.mono (pcBody_ok u ready.workspace ready.stack ready.minLength ready.maxLength ready.space
+  refine WP.mono (pcBody_ok (kernel := kernel) u ready.workspace ready.stack ready.minLength ready.maxLength ready.space
     ready.sourceFits ready.readable ready.sourceSeparate ready.outputFits ready.writable ready.outputSeparate
     ready.ptr ready.source ready.count) ?_
   rintro v ⟨result, frameV, restV⟩
