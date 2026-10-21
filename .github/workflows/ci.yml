@@ -976,6 +976,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           BASE_REF: ${{ github.base_ref }}
+          CI_METRICS_ASSEMBLY_LOG: ${{ runner.temp }}/assembly.log
         run: |
           timeout 10 gh api -H "Accept: application/vnd.github.raw" \
             "repos/$GH_REPO/contents/ci/ci_metrics.py?ref=$GITHUB_SHA" > "$RUNNER_TEMP/ci_metrics.py"
@@ -988,3 +989,6 @@ jobs:
         with:
           name: ci-metrics
           path: ${{ runner.temp }}/ci-metrics.json
+          # The metrics embed the complete lean-plan, whose working
+          # artifact lasts one day.
+          retention-days: 30

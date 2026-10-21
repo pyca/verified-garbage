@@ -2,27 +2,28 @@
 """Records what a CI run did and how long it took, for later analysis.
 
 The last steps of every run (`all-green`'s, in ci.yml) collect, into one
-JSON file kept as the run's `ci-metrics` artifact (for the repository's
-default retention, unlike the plan and the shards' outputs, which last a
-day):
+JSON file kept as the run's `ci-metrics` artifact for 30 days (unlike the
+plan and the shards' outputs, which last a day):
 
 * the run: its event, ref, base ref (a pull request stacked on another's
   branch builds against `main`'s cache, and rebuilds what they differ in),
   commit and attempt;
 * every job and step: when it was queued, started and finished, its
   conclusion and its runner;
-* the Lean build's plan: what it found stale, its estimate of the work, and
-  each shard's estimated time;
+* the Lean build's full plan, including its exact historical timings,
+  assignments, candidate scores, model settings and planner fingerprint;
 * each Lean job: the build it restored (a failed or older restore rebuilds
   everything it imports) and, for each step, every module it built and how
-  long that took: a shard's build, and an assembly (which, with every
-  shard's outputs, should build few).
+  long that took, with native compilation/linking facets recorded separately;
+* missing logs/plan artifacts explicitly, and the collector's own fallback
+  assembly from its local log when CI_METRICS_ASSEMBLY_LOG is set.
 
 All of it comes from the API and the finished jobs' logs: the plan's line,
 each restore's `Cache restored from key:` and Lake's `Built` lines, placed
 in their steps by time. It also writes a summary of the Lean build for the
-run's page. (`all-green`'s own log is not finished when it collects: a run
-it assembles in leaves that assembly out.)
+run's page. The short-lived lean-plan artifact is embedded in ci-metrics,
+so that the planning inputs survive with the metrics. Old plans and missing
+artifacts remain readable; collection never requires a successful build.
 
   ci_metrics.py collect           the metrics of this run (GH_REPO,
                                   GITHUB_RUN_ID, GITHUB_RUN_ATTEMPT,
@@ -45,7 +46,7 @@ import subprocess
 import sys
 import zipfile
 
-VERSION = 1
+VERSION = 2
 PLAN_JOB = "Lean: plan and build"
 SHARD = re.compile(r"Lean: shard \((\d+)\)")
 SHARD_BUILD = "Check the shard's proofs"
@@ -79,6 +80,8 @@ def seconds(start, end):
 
 def job(j):
     return {
+        "id": j.get("id"),
+        "url": j.get("html_url"),
         "name": j["name"],
         "conclusion": j.get("conclusion"),
         "runner": j.get("runner_name"),
@@ -97,16 +100,19 @@ def job(j):
     }
 
 
-def built_by_step(log, steps):
+def built_by_step(log, steps, *, facets=False):
     """For each step of a job, the time of each module the job's log says
     the step built: Lake's `Built` lines, each placed in the step whose
     times (whole seconds, from the API) contain the line's."""
     spans = [(s["name"], parse_time(s["started_at"]), parse_time(s["completed_at"]) + datetime.timedelta(seconds=1))
-             for s in steps if s.get("started_at") and s.get("completed_at")]
+             for s in steps if s.get("started_at") and s.get("completed_at") and s.get("conclusion") != "skipped"]
+    # API timestamps round to seconds. If adjacent steps share a boundary,
+    # prefer the step that has just started over the preceding one's grace.
+    spans.sort(key=lambda span: span[1], reverse=True)
     out = {}
     for stamp, text in LINE.findall(log):
         m = BUILT.search(text)
-        if not m or ":" in m.group(1):
+        if not m or (":" in m.group(1)) != facets:
             continue
         t = parse_time(stamp)
         step = next((name for name, a, b in spans if a <= t < b), None)
@@ -130,7 +136,21 @@ def plan_of(log):
     }
 
 
-def collect(run, jobs, logs):
+def phases(j):
+    """Wall times, not summed module CPU work; absent phases stay unknown."""
+    names = {"prepare_s": "Run ./.github/actions/lean-prepare",
+             "proof_s": SHARD_BUILD, "unpack_s": "Unpack the rest of the build",
+             "assemble_s": "Run ./.github/actions/lean-assemble",
+             "planning_s": "Run python3 ci/lean_shards.py plan "}
+    out = {"queued_s": j["queued_s"]}
+    for key, prefix in names.items():
+        durations = [s["duration_s"] for s in j["steps"] if s["name"].startswith(prefix)
+                     and s["conclusion"] != "skipped" and s["duration_s"] is not None]
+        out[key] = sum(durations) if durations else None
+    return out
+
+
+def collect(run, jobs, logs, planning=None):
     """The metrics of a run: its jobs (the API's), and the logs of its Lean
     jobs by name."""
     jobs = [job(j) for j in jobs]
@@ -146,10 +166,13 @@ def collect(run, jobs, logs):
         expected = {k for k in ((plan or {}).get("build"), exact and exact.group(1)) if k}
         lean_jobs.append({
             "name": j["name"],
+            "job_id": j["id"],
+            "phases": phases(j),
             "restored": restored,
             # Whether it restored the plan's build (or the sources' own).
             "restored_planned": (restored in expected) if expected else None,
             "built": built_by_step(log, j["steps"]),
+            "facets": built_by_step(log, j["steps"], facets=True),
         })
     built = {}
     for lj in lean_jobs:
@@ -164,7 +187,11 @@ def collect(run, jobs, logs):
         "jobs": jobs,
         "lean": {
             "plan": plan,
+            "planning": planning or {"status": "not_collected"},
             "jobs": lean_jobs,
+            "missing_logs": [j["name"] for j in jobs if j["name"].startswith("Lean:")
+                             and j["conclusion"] != "skipped" and j["completed_at"]
+                             and j["name"] not in logs],
             # Module time the shards built more than once.
             "duplicate_work": round(sum(sum(ts) - max(ts) for ts in built.values()), 1),
         },
@@ -184,6 +211,19 @@ def summary(m):
     else:
         out.append(f"Plan: {plan['stale']} modules to build, about {plan['work']} s of work, "
                    f"{len(plan['estimates'])} shards.")
+    planning = lean.get("planning", {})
+    details = planning.get("plan", {}).get("diagnostics", {})
+    if details:
+        count = len(details["stale_modules"])
+        out.append(f"Historical timings cover {details['timed_stale_modules']}/{count} stale modules. "
+                   f"Exact planning inputs and candidate scores are retained in ci-metrics.")
+        if planning.get("status") != "available":
+            out.append("Retained plan provenance: " + planning["status"] +
+                       "; it was not verified as a plan computed in this attempt.")
+    elif planning.get("status") == "unavailable":
+        out.append("Full planning inputs unavailable; log-derived estimates only.")
+    if lean.get("missing_logs"):
+        out.append("Missing job logs: " + ", ".join(lean["missing_logs"]) + ".")
     steps = {j["name"]: {s["name"]: s for s in j["steps"]} for j in m["jobs"]}
     rows = []
     order = lambda lj: (int(SHARD.fullmatch(lj["name"]).group(1)) if SHARD.fullmatch(lj["name"]) else 0, lj["name"])
@@ -200,6 +240,22 @@ def summary(m):
         out += ["", "| Job | Step | Estimate | Took | Modules | Work | Restored the plan's build |",
                 "|---|---|---|---|---|---|---|", *rows,
                 "", f"The shards built {lean['duplicate_work']:.0f} s of module time more than once."]
+    phase_rows = []
+    for lj in sorted(lean["jobs"], key=order):
+        p = lj.get("phases")
+        if p:
+            phase_rows.append(f"| {lj['name']} | " + " | ".join(fmt(p[k]) for k in
+                              ("queued_s", "prepare_s", "proof_s", "unpack_s", "assemble_s")) + " |")
+    if phase_rows:
+        out += ["", "### Lean wall time by phase", "",
+                "| Job | Queued | Prepare | Shard proofs | Unpack remainder | Assemble |",
+                "|---|---|---|---|---|---|", *phase_rows,
+                "", "Phase wall times include native work; module/facet durations are recorded separately "
+                "and overlap when builds run in parallel."]
+    if lean.get("fallback_assembly"):
+        a = lean["fallback_assembly"]
+        out += ["", f"Fallback assembly in all-green: {len(a['built'])} modules and "
+                f"{len(a['facets'])} native facets recorded from the local assembly log."]
     jobs = [j for j in m["jobs"] if j["duration_s"] is not None]
     if jobs:
         out += ["", "## Slowest jobs", "", "| Job | Queued | Ran |", "|---|---|---|"]
@@ -210,6 +266,38 @@ def summary(m):
 
 def gh(path, *args):
     return subprocess.run(["gh", "api", *args, path], check=True, capture_output=True).stdout
+
+
+def fetch_plan(repo, run_id, attempt):
+    """Keep the actual plan, not a reconstruction from current sources/cache."""
+    try:
+        arts = json.loads(gh(f"repos/{repo}/actions/runs/{run_id}/artifacts?name=lean-plan"))["artifacts"]
+        arts = [a for a in arts if not a["expired"]]
+        if not arts:
+            return {"status": "unavailable", "error": "No retained lean-plan artifact"}
+        artifact = max(arts, key=lambda a: a["id"])
+        data = zipfile.ZipFile(io.BytesIO(gh(f"repos/{repo}/actions/artifacts/{artifact['id']}/zip")))
+        plan = json.loads(data.read("lean-plan.json"))
+        provenance = plan.get("diagnostics", {})
+        if provenance.get("run_id") != str(run_id) or provenance.get("run_attempt") != str(attempt):
+            # Rerunning only failed jobs can leave a plan from an older attempt.
+            # Retain it, but do not imply that this attempt recomputed it.
+            status = "different_attempt" if provenance.get("run_id") == str(run_id) else "unverified"
+        else:
+            status = "available"
+        return {"status": status, "artifact_id": artifact["id"], "plan": plan}
+    except (subprocess.CalledProcessError, ValueError, KeyError, zipfile.BadZipFile) as e:
+        print(f"No full Lean plan: {e}", file=sys.stderr)
+        return {"status": "unavailable", "error": type(e).__name__}
+
+
+def local_assembly(path):
+    """The collector's running job has no downloadable log yet."""
+    built, facets = {}, {}
+    for m in BUILT.finditer(path.read_text(errors="replace")):
+        target = facets if ":" in m.group(1) else built
+        target[m.group(1)] = float(m.group(2)) / (1000 if m.group(3) == "ms" else 1)
+    return {"built": built, "facets": facets}
 
 
 def collect_this_run():
@@ -239,24 +327,34 @@ def collect_this_run():
 
     # A few MB in all; requests one at a time would wait on each other.
     with concurrent.futures.ThreadPoolExecutor(8) as pool:
+        planning = pool.submit(fetch_plan, repo, run_id, attempt)
         logs = {j["name"]: t for j, t in zip(lean, pool.map(log, lean)) if t is not None}
-    return collect(run, jobs, logs)
+    metrics = collect(run, jobs, logs, planning.result())
+    assembly = os.environ.get("CI_METRICS_ASSEMBLY_LOG")
+    if assembly and pathlib.Path(assembly).is_file():
+        metrics["lean"]["fallback_assembly"] = local_assembly(pathlib.Path(assembly))
+    return metrics
 
 
 def fetch(out, limit, repo="pyca/verified-garbage"):
     out.mkdir(parents=True, exist_ok=True)
-    runs = json.loads(gh(f"repos/{repo}/actions/workflows/ci.yml/runs?per_page={min(limit, 100)}"))
-    for run in runs["workflow_runs"][:limit]:
-        dest = out / f"{run['id']}.json"
-        if dest.exists():
-            continue
-        arts = json.loads(gh(f"repos/{repo}/actions/runs/{run['id']}/artifacts?name=ci-metrics"))["artifacts"]
-        arts = [a for a in arts if not a["expired"]]
-        if not arts:
-            continue
-        data = zipfile.ZipFile(io.BytesIO(gh(f"repos/{repo}/actions/artifacts/{arts[0]['id']}/zip")))
-        dest.write_bytes(data.read("ci-metrics.json"))
-        print(dest, file=sys.stderr)
+    # Keep the page size constant: changing it on the last page changes
+    # GitHub's offset, repeating runs and missing the end of the window.
+    for offset in range(0, limit, 100):
+        runs = json.loads(gh(f"repos/{repo}/actions/workflows/ci.yml/runs?per_page=100&page={offset // 100 + 1}"))
+        for run in runs["workflow_runs"][:min(100, limit - offset)]:
+            dest = out / f"{run['id']}.json"
+            if dest.exists():
+                continue
+            arts = json.loads(gh(f"repos/{repo}/actions/runs/{run['id']}/artifacts?name=ci-metrics"))["artifacts"]
+            arts = [a for a in arts if not a["expired"]]
+            if not arts:
+                continue
+            data = zipfile.ZipFile(io.BytesIO(gh(f"repos/{repo}/actions/artifacts/{arts[0]['id']}/zip")))
+            dest.write_bytes(data.read("ci-metrics.json"))
+            print(dest, file=sys.stderr)
+        if len(runs["workflow_runs"]) < 100:
+            break
 
 
 def main(args):
