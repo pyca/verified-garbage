@@ -109,7 +109,7 @@ structure KgH16Wf : Prop extends KgWfB K.L where
   -- the sponge functions' state, and the rest of `ek` absorbed
   tS : (keepB (kgB K.L) (finW₁ K.L) (hsP K) 200 && keepB (kgB K.L) (finW₂ K.L) (hsP K) 200) = true
   tC : (copyChk (kgB K.L) (kgW K.L) (sc 0) (hsP K) 200 &&
-    keepAll K [(sc 0, 200)] [((.r12, 0), 1184), ((.r13, 0), 2336)]) = true
+    keepAll K [(sc 0, 200)] [((.r12, 0), 1184), ((.r13, 0), 1152), ((.r13, 1152), 1184)]) = true
   tH : hashChk (kgB K.L) (kgW K.L) [((.r12, 680), 504)] 136 (.r13, 384 * K.L.k + K.L.ekLen) 32 = true
 
 variable {K}

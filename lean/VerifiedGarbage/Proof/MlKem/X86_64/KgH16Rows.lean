@@ -7,6 +7,9 @@ import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag
 import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
 import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.MlKem.Bits
+import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
+import VerifiedGarbage.Proof.MlKem.X86_64.KgB
+import VerifiedGarbage.Proof.MlKem.X86_64.FragC
 import Mathlib.Tactic.Conv
 
 /-!
@@ -327,6 +330,131 @@ theorem frag_ok (v : Sample4Impl) {b : Nat → Prog isa} (hb : v.callee.batchHM1
   refine WP.seq (WP.mono s3 fun s₅ i₅ => ?_)
   rw [Top16.aP, k3]
   exact sm_ok W hp v hb hi i₅
+
+end
+
+theorem stateAt_of_bytes {m m' : Mem} {p q : Addr} (h : bytesAt m p 200 = bytesAt m' q 200) :
+    stateAt m p = stateAt m' q :=
+  Proof.Sha3.ext_bytes fun i hi => by
+    rw [Proof.Sha3.byteOf_stateAt _ _ hi, Proof.Sha3.byteOf_stateAt _ _ hi]
+    have := congrArg (fun l => l[i]?) h
+    simpa [bytesAt, List.getElem?_map, List.getElem?_range hi] using this
+
+section
+variable {K : Kem16} (W : KgH16Wf K) {σ : State} (hp : (keyGenK K.L).pre σ)
+include W hp
+
+/-- `ρ` to `ek`, `ek` to `dk`, `H(ek)` from the sponge's state, and `z`. -/
+theorem tail_ok {s : State} (h : KH K σ 3 9 s) (ho : allOk K.L.k (rhoK K.L σ) 9) :
+    WP isa (tail K) s (KFin K.L σ) := by
+  have k3 := W.k3
+  have hek := W.ek
+  have L₀ := h.kc.lay W.toKgWfB hp
+  have Wb := W.toKgWfB
+  have hE : (ekK K.L σ).length = 1184 := by rw [ekK_length, hek]
+  have rows : bytesAt s.mem (pa s (.r12, 0)) (384 * K.L.k) =
+      KPke.catK (fun i => encode12 (KPke.kgT K.L.p (aHat (rhoK K.L σ)) (kgD σ) i)) K.L.k := by
+    rw [k3]; exact bytesAt_catK s.mem s .r12 0 384 _ 3 fun j hj => by
+      rw [Nat.zero_add]; exact (h.ok ho).1 j hj
+  have hs0 : stateAt s.mem (pa s (hsP K)) = HSponge.hstate (ekK K.L σ) 5 := (h.ok ho).2
+  have h15 : s.gpr .r15 = 1 := by rw [h.mat.r15, ifp ho]
+  have tS := W.tS
+  simp only [Bool.and_eq_true] at tS
+  have tC := W.tC
+  simp only [Bool.and_eq_true] at tC
+  obtain ⟨tCK, tCr⟩ := keepAll_spec tC.2
+  obtain ⟨hrate, hk, hps, hsq, hna, hocs⟩ := hashChk_spec W.tH
+  unfold tail
+  -- `ρ` to `ek`.
+  refine WP.seq (WP.mono (copy_okL L₀ (dst := (.r12, 384 * K.L.k)) (src := sc oG) (n := 32) (by decide) Wb.f₁)
+    fun s₁ ⟨hP₁, hb₁⟩ => ?_)
+  have k₁ := h.kc.step Wb hp hP₁.b Wb.f₁K
+  have L₁ := k₁.lay Wb hp
+  have hek₁ : bytesAt s₁.mem (pa s₁ (.r12, 0)) K.L.ekLen = ekK K.L σ := by
+    rw [Kem.ekLen, Params.ekLen, bytesAt_split, show 0 + 384 * K.L.p.k = 384 * K.L.k from Nat.zero_add _,
+      hP₁.pa (p := (.r12, 384 * K.L.k)) r12_cs, hb₁, h.rho, ekK, KPke.ekPKE, L₀.keepBytes hP₁.b Wb.f₁E]
+    exact congrArg (· ++ _) rows
+  have hs₁ : stateAt s₁.mem (pa s₁ (hsP K)) = HSponge.hstate (ekK K.L σ) 5 := by
+    rw [EkF.stateAt_keep L₀ hP₁.b tS.1]; exact hs0
+  -- `ek` to `dk`.
+  refine WP.seq (WP.mono (copy_okL L₁ (dst := (.r13, 384 * K.L.k)) (src := (.r12, 0)) (n := K.L.ekLen) (by decide) Wb.f₂)
+    fun s₂ ⟨hP₂, hb₂⟩ => ?_)
+  have k₂ := k₁.step Wb hp hP₂.b Wb.f₂K
+  have L₂ := k₂.lay Wb hp
+  rw [hek₁] at hb₂
+  have hek₂ : bytesAt s₂.mem (pa s₂ (.r12, 0)) K.L.ekLen = ekK K.L σ := by
+    rw [L₁.keepBytes hP₂.b Wb.f₂E]; exact hek₁
+  have hs₂ : stateAt s₂.mem (pa s₂ (hsP K)) = HSponge.hstate (ekK K.L σ) 5 := by
+    rw [EkF.stateAt_keep L₁ hP₂.b tS.2]; exact hs₁
+  -- the sponge's state to the sponge functions' state
+  refine WP.seq (WP.mono (copy_okL L₂ (dst := sc 0) (src := hsP K) (n := 200) (show Reg.rbx ≠ .rdi by decide) tC.1) fun s₃ ⟨hP₃, hb₃⟩ => ?_)
+  have k₃ := k₂.step Wb hp hP₃.b tCK
+  have L₃ := k₃.lay Wb hp
+  have hR₃ : Spec.Sha3.Repr s₃.mem (pa s₃ (sc 0)) 136 ((ekK K.L σ).take 680) := by
+    show stateAt _ _ = _
+    rw [hP₃.pa rbx_cs, stateAt_of_bytes hb₃, hs₂, HSponge.hstate, ite_eq_left (by rw [hE]; decide)]
+    rfl
+  have ek₃ : bytesAt s₃.mem (pa s₃ (.r12, 0)) 1184 = ekK K.L σ := by
+    rw [L₂.keepBytes hP₃.b (tCr ((.r12, 0), 1184) (by simp)), ← hek]; exact hek₂
+  -- the rest of `ek`, the padding and the squeeze
+  rw [show K.L.ekLen - 136 * hDone = 504 by rw [hek]; rfl, show 136 * hDone = 680 from rfl]
+  refine WP.seq (WP.mono (absAll_ok (kgB_bases K.L) hrate [((.r12, 680), 504)] L₃ 0 _ hps (by decide)
+    (by rw [List.length_take, hE]; rfl) hR₃) fun s₄ ⟨hP₄, hR₄⟩ => ?_)
+  have epc : (ekK K.L σ).take 680 ++ pieces s₃ [((.r12, 680), 504)] = ekK K.L σ := by
+    have := bytesAt_slice s₃.mem (pa s₃ (.r12, 0)) (k := 680) (c := 504) (len := 1184) (by omega)
+    rw [ek₃, pa_add, Nat.zero_add] at this
+    simp only [pieces, List.flatMap_cons, List.flatMap_nil, List.append_nil, ← this,
+      List.take_of_length_le (show (List.drop 680 (ekK K.L σ)).length ≤ 504 by rw [List.length_drop, hE]),
+      List.take_append_drop]
+  rw [epc] at hR₄
+  have L₄ := L₃.post hP₄.b (kgB_bases K.L)
+  refine WP.seq (WP.mono (kpad_ok (show 6 < 256 by decide) (KPadH.of L₄ hk hrate (pos := 504 % 136) (by decide)))
+    fun s₅ ⟨hP₅, hS₅⟩ => ?_)
+  have hP₅' : PPost s₄ s₅ [(sc 0, 200), (sc 200, 640)] := hP₅
+  have L₅ := L₄.post hP₅.b (kgB_bases K.L)
+  have e4 : pa s₄ (sc 0) = pa s₃ (sc 0) := hP₄.pa (by decide)
+  have hS := hS₅ (ekK K.L σ) (by rw [e4]; exact hR₄) (by rw [hE])
+  refine WP.seq (WP.mono (ksqz_ok hna (KSqzH.of L₅ hsq hrate)) fun s₆ ⟨hP₆, ho₆⟩ => ?_)
+  have hP₆' : PPost s₅ s₆ [(sc 0, 200), ((.r13, 384 * K.L.k + K.L.ekLen), 32), (sc 200, 640)] := hP₆
+  have hP₃₆ : PPost s₃ s₆ (finW₃ K.L) :=
+    PPost.trans (PPost.trans hP₄ hP₅' (by decide)
+      (fun w hw => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hw ⊢; rcases hw with h | h <;> simp [h])
+      (fun w hw => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hw ⊢; rcases hw with h | h <;> simp [h]))
+      hP₆' (cs3 (by decide) hocs (by decide)) (fun w hw => hw) sub_acb
+  have k₆ := k₃.step Wb hp hP₃₆.b Wb.f₃K
+  have L₆ := k₆.lay Wb hp
+  have e5 : pa s₅ (sc 0) = pa s₄ (sc 0) := hP₅.pa (by decide)
+  have hH : bytesAt s₆.mem (pa s₃ (.r13, 384 * K.L.k + K.L.ekLen)) 32 = H (ekK K.L σ) := by
+    rw [← hP₄.pa hocs, ← hP₅.pa hocs, ho₆, e5, hS, sha3Suffix6, H_eq]
+  -- `z`
+  refine WP.mono (copy_okL L₆ (dst := (.r13, 384 * K.L.k + K.L.ekLen + 32)) (src := (.rbp, 32)) (n := 32) (by decide)
+    Wb.f₄) fun s₇ ⟨hP₇, hb₇⟩ => ?_
+  have k₇ := k₆.step Wb hp hP₇.b Wb.f₄K
+  rw [k₆.z] at hb₇
+  refine ⟨k₇, ?_, ?_, ?_⟩
+  · rw [hP₇.cs .r15 (by decide), hP₃₆.cs .r15 (by decide), hP₃.cs .r15 (by decide), hP₂.cs .r15 (by decide),
+      hP₁.cs .r15 (by decide), h15]
+  · rw [L₆.keepBytes hP₇.b Wb.f₄E, L₃.keepBytes hP₃₆.b Wb.f₃E, hek]; exact ek₃
+  · have dS := Wb.dkS
+    have dE := Wb.dkE
+    have hP' := PPost.app hP₃₆ hP₇ (by simp [calleeSaved])
+    rw [show K.L.dkLen = 384 * K.L.k + K.L.ekLen + 32 + 32 by
+        simp only [Kem.k, Kem.dkLen, Kem.ekLen, Params.dkLen, Params.ekLen]; omega,
+      bytesAt_split, bytesAt_split, bytesAt_split, Nat.zero_add, Nat.zero_add, Nat.zero_add]
+    rw [hP₇.pa (p := (.r13, 384 * K.L.k + K.L.ekLen + 32)) r13_cs, hb₇,
+      L₆.keepBytes hP₇.b Wb.dkH, hP₃₆.pa (p := (.r13, 384 * K.L.k + K.L.ekLen)) r13_cs, hH,
+      L₃.keepBytes hP'.b dE, L₂.keepBytes hP₃.b (by rw [k3, hek]; exact tCr ((.r13, 1152), 1184) (by simp)),
+      hP₂.pa (p := (.r13, 384 * K.L.k)) r13_cs, hb₂, dkK]
+    rw [L₃.keepBytes hP'.b (keepB_sub dS fun w hw => by
+        rcases List.mem_append.1 hw with h | h
+        exacts [List.mem_append_left _ (List.mem_append_right _ h), List.mem_append_right _ h]),
+      L₂.keepBytes hP₃.b (by rw [k3]; exact tCr ((.r13, 0), 1152) (by simp)),
+      L₁.keepBytes hP₂.b (keepB_sub dS fun w hw =>
+        List.mem_append_left _ (List.mem_append_left _ (List.mem_append_right _ hw))),
+      L₀.keepBytes hP₁.b (keepB_sub dS fun w hw =>
+        List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _ hw)))]
+    have hdk : bytesAt s.mem (pa s (.r13, 0)) (384 * K.L.k) = KPke.dkPKE K.L.p (kgD σ) := by rw [k3]; exact h.dk
+    rw [hdk]
 
 end
 
