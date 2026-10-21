@@ -198,8 +198,11 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
       `v`. A single Jacobian accumulator computes `[u]G + [v]Q` with 384 doublings, adding only \
       nonzero digits. Generator digits directly index odd multiples among the 64 affine entries \
       of the first row of the existing static `VG_P384_COMB`, added by mixed additions; peer \
-      digits index eight odd multiples of `Q` in `scratch`, with cached squares and cubes of \
-      their Z coordinates. The digits' additions are calls of \
+      digits index eight odd multiples of `Q` in `scratch`, with cached \
+      squares and cubes of their Z coordinates, built by co-Z arithmetic (Goundar, Joye, Miyaji, \
+      Rivain and Venelli): DBLU of the affine `Q` gives `2Q` and `Q` at one `Z`, then seven ZADDU \
+      (5 multiplications and 2 squarings each) add `2Q` and leave it at the sum's `Z`; the \
+      operands are never equal or opposite, since `n` is prime. The digits' additions are calls of \
       `vg_p384_jac_add_cached` (the peer's digits) and `vg_p384_jac_add_affine` (the generator's)" ++
       (if adx then ", their `_adx` forms," else "") ++ " which cover infinity, equal points and \
       opposite points; the doubling and the table of odd multiples are inline. Doubling is Jacobian, for \
@@ -223,10 +226,12 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P384.curve) : List
   sign false Impl.Ecdsa.X86_64.signP384
     (Proof.Ecdsa.X86_64.P384.sign_verified h.law (Proof.P384.combOk7 h.law) h.inv),
   verify false Impl.Ecdsa.Verify.X86_64.jointVerifyP384
-    (Proof.Ecdsa.Verify.X86_64.P384.jointVerify_verified h.law (Proof.P384.combOk7 h.law) h.inv),
+    (Proof.Ecdsa.Verify.X86_64.P384.jointVerify_verified h.law (Proof.P384.combOk7 h.law) h.inv
+      h.prime),
   sign true Impl.Ecdsa.X86_64.signP384Adx
     (Proof.Ecdsa.X86_64.P384.sign_verified_adx h.law (Proof.P384.combOk7 h.law) h.inv),
   verify true Impl.Ecdsa.Verify.X86_64.jointVerifyP384Adx
-    (Proof.Ecdsa.Verify.X86_64.P384.jointVerify_verified_adx h.law (Proof.P384.combOk7 h.law) h.inv)]
+    (Proof.Ecdsa.Verify.X86_64.P384.jointVerify_verified_adx h.law (Proof.P384.combOk7 h.law) h.inv
+      h.prime)]
 
 end VG.Generic.P384.X86_64.EcdsaP384

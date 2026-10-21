@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitLayout
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoop
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTable
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableCoZ
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 
 /-! Build the odd peer table and its powers of Z without changing either digit stream. -/
@@ -69,18 +71,25 @@ theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : N
     (hC : Law C) (ha : AM3 C) (hOne : c.K.one<C.p) (hQ : onCurve C Q=true)
     (hi : Inv c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) (tmv C c.K.M.n base s) s)
     (hp : InvJ C (tmv C c.K.M.n base s c.K.P.x) (tmv C c.K.M.n base s c.K.P.y)
-      (tmv C c.K.M.n base s c.K.P.z) Q)
+      (tmv C c.K.M.n base s c.K.P.z) Q) (h1 : tmv C c.K.M.n base s c.K.P.z=1)
+    (hZ : c.coZ=true → PrimeOrder C ∧ 17≤C.n)
     (hz : tmv C c.K.M.n base s c.K.zero=0)
     (hv : ∀ i<64*c.K.M.n+1,s.mem (off base (c.K.bits+i))=FastNaf.byte 5 v i)
     (hu : ∀ i<64*c.K.M.n+1,s.mem (off base (c.gBits+i))=FastNaf.byte 7 u i)
     (he : JointGenerator c C base T size row s) :
-    WP isa (Code.seq (Naf.table c.K) (Joint.cacheCode c)).inline s fun t =>
+    WP isa (Code.seq (Joint.tableCode c) (Joint.cacheCode c)).inline s fun t =>
       JointLoopKeep c.K.M base (jointInitWork c) s t ∧
       Inv c.K.M base size C.p (·∈jointSlots c) (jointLive c) (tmv C c.K.M.n base t) t ∧
       JointStable c C base Q u v t ∧ JointGenerator c C base T size row t := by
+  have tbl : WP isa (Joint.tableCode c).inline s (fun t => NafTableInv c.K C base size Q s t 8) := by
+    unfold Joint.tableCode
+    split
+    · next h =>
+      obtain ⟨hO,hn⟩ := hZ h
+      exact nafTableCoZ_ok hL.naf hL.count hm hC hO hn ha hL.tableSmall hQ hi hp h1
+    · exact nafTable_ok hL.naf hL.count hm hC ha hL.tableSmall hOne hQ hi hp
   apply WP.seq
-  refine WP.mono_syms (nafTable_ok hL.naf hL.count hm hC ha hL.tableSmall hOne hQ hi hp)
-    fun a ia sa => ?_
+  refine WP.mono_syms tbl fun a ia sa => ?_
   have ii : Inv c.K.M base size C.p (·∈jointSlots c) (nafTableLive c.K 8) (tmv C c.K.M.n base a) a :=
     ⟨ia.field.scr,ia.field.mod,fun x hx => List.mem_append_left _ (List.mem_append_left _ (ia.field.sl x hx)),
       ia.field.lt,ia.field.val⟩

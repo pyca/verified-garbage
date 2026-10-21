@@ -27,6 +27,6 @@ theorem jointVerify_p224_ok (hL : Law Spec.P224.curve)
   intro a g hM Q hQ hRep
   exact jointPoints_ok hc hL (p224v_tbls hT) rfl rfl rfl rfl hc.am3 (by decide +kernel)
     joint_add_layout joint_init_layout joint_prep_layout joint_frame_layout (joint_doubler hc hL)
-    hp hM hQ hRep
+    (fun h => absurd h (by decide)) hp hM hQ hRep
 
 end VG.Proof.Ecdsa.Verify.X86_64.P224

@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointCorrect
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Verified
@@ -62,16 +63,18 @@ theorem verify_abi_of_wp {code : Prog isa} {s : State} (hs : verifyX86_64.pre s)
 
 theorem jointVerify_x86 (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
-    (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
+    (hI : Weierstrass.X86_64.InvSounds) (hO : Weierstrass.PrimeOrder Spec.P256.curve)
+    (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s',Exec isa jointVerifyP256.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' :=
-  verify_abi_of_wp hs (jointVerify_p256_ok hL hT hI (pre_of hs))
+  verify_abi_of_wp hs (jointVerify_p256_ok hL hT hI hO (pre_of hs))
     (by rw [Code.allInstrs_inline]; lit_decide) (Code.noCalls_inline (by lit_decide))
 
 theorem jointVerify_x86_adx (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
-    (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
+    (hI : Weierstrass.X86_64.InvSounds) (hO : Weierstrass.PrimeOrder Spec.P256.curve)
+    (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s',Exec isa jointVerifyP256Adx.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' :=
-  verify_abi_of_wp hs (jointVerify_p256_adx_ok hL hT hI (show VPre p256x s from {pre_of hs with}))
+  verify_abi_of_wp hs (jointVerify_p256_adx_ok hL hT hI hO (show VPre p256x s from {pre_of hs with}))
     (by rw [Code.allInstrs_inline]; lit_decide) (Code.noCalls_inline (by lit_decide))
 
 end VG.Proof.Ecdsa.Verify.X86_64

@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitLayout
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitTiming
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMulTiming
@@ -29,7 +31,7 @@ open VG.Impl.Ecdsa.Verify.X86_64 (U V)
 structure JointMulChecks (c : Cfg) (j : Joint.Cfg) : Prop where
   cached : JointCachedChecks j
   fixed : JointFixedChecks j
-  table : NafTableChecks j.K
+  table : JointTableChecks j
   cache : ScratchCT (Joint.cacheCode j).inline
   seed : ScratchCT (.block (Jacobian.infinity j.K j.K.R))
   counter : ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (Joint.top j)))])
@@ -42,7 +44,7 @@ theorem jointPoints_relCT {c : Cfg} {j : Joint.Cfg} {d : CombData} {double : Pro
     (hK : j.K=c.winCfg PX PY BP) (hnp : c.C.n≤c.C.p)
     (hL : JointAddLayout j size) (hInit : JointInitLayout j size)
     (hPrep : JointPrepLayout j size (c.sl U) (c.sl V)) (hD : JointDoubler j c.C size double)
-    (checks : JointMulChecks c j)
+    (checks : JointMulChecks c j) (hZ : j.coZ=true → PrimeOrder c.C ∧ 17≤c.C.n)
     {s₀ t₀ : State} (ps : VPre c s₀) (pt : VPre c t₀) (pub : JointPublic c d s₀ t₀) :
     RelCT isa (fun s t => (∃ g,Mid c s₀ (s₀.gpr .rcx) g s) ∧ (∃ h,Mid c t₀ (t₀.gpr .rcx) h t))
       (Impl.Ecdsa.Verify.X86_64.Cfg.jointPoints c j double).inline
@@ -86,7 +88,7 @@ theorem jointPoints_relCT {c : Cfg} {j : Joint.Cfg} {d : CombData} {double : Pro
     (mid_publicV ht').trans (pub.v.symm.trans (mid_publicV hs).symm)
   have ct := jointMul_relCT (base:=s₀.gpr .rcx) (T:=s₀.syms d.tsym)
     (row:=jointCombRow hc hC hT hcd hw) hL hInit hPrep hm hC hc.am3 hD hone honeval hc.onG hQ
-    point zero (Nat.lt_trans hs.u_lt nlt) (Nat.lt_trans hs.v_lt nlt)
+    point (jointMid_affine hc hK hs) zero hZ (Nat.lt_trans hs.u_lt nlt) (Nat.lt_trans hs.v_lt nlt)
     checks.cached checks.fixed checks.table checks.cache checks.seed checks.counter
     checks.prepG checks.prepQ
   obtain ⟨trace,post⟩ := ct _ _ _ _ _ _

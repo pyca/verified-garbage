@@ -198,7 +198,10 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
       Jacobian accumulator computes `[u]G + [v]Q` with 256 doublings, adding only nonzero digits. \
       Generator digits directly index odd multiples in the first row of the existing static \
       `VG_P256_COMB`; peer digits index eight odd multiples of `Q` in `scratch`, with cached \
-      squares and cubes of their Z coordinates. Complete point operations cover infinity, \
+      squares and cubes of their Z coordinates, built by co-Z arithmetic (Goundar, Joye, Miyaji, \
+      Rivain and Venelli): DBLU of the affine `Q` gives `2Q` and `Q` at one `Z`, then seven ZADDU \
+      (5 multiplications and 2 squarings each) add `2Q` and leave it at the sum's `Z`; the \
+      operands are never equal or opposite, since `n` is prime. Complete point operations cover infinity, \
       equal points and opposite points. Doubling uses in-place field operations and modular \
       halving; the ADX backend forwards stored register values between field operations. \
       The final comparison squares the Jacobian Z coordinate and checks `X = rZ²`, or \
@@ -216,10 +219,11 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P256.curve) : List
   sign false Impl.Ecdsa.X86_64.signP256
     (Proof.Ecdsa.X86_64.sign_verified h.law (Proof.P256.combOk7 h.law) h.inv),
   verify false Impl.Ecdsa.Verify.X86_64.jointVerifyP256
-    (Proof.Ecdsa.Verify.X86_64.jointVerify_verified h.law (Proof.P256.combOk7 h.law) h.inv),
+    (Proof.Ecdsa.Verify.X86_64.jointVerify_verified h.law (Proof.P256.combOk7 h.law) h.inv h.prime),
   sign true Impl.Ecdsa.X86_64.signP256Adx
     (Proof.Ecdsa.X86_64.sign_verified_adx h.law (Proof.P256.combOk7 h.law) h.inv),
   verify true Impl.Ecdsa.Verify.X86_64.jointVerifyP256Adx
-    (Proof.Ecdsa.Verify.X86_64.jointVerify_verified_adx h.law (Proof.P256.combOk7 h.law) h.inv)]
+    (Proof.Ecdsa.Verify.X86_64.jointVerify_verified_adx h.law (Proof.P256.combOk7 h.law) h.inv
+      h.prime)]
 
 end VG.Generic.P256.X86_64.EcdsaP256

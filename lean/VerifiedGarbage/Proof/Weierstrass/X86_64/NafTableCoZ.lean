@@ -139,6 +139,55 @@ theorem coZLive_next (K : WinCfg) (m : Nat) :
       · exact Or.inr (Or.inl rfl)
       · exact Or.inr (Or.inr rfl)
 
+theorem coZLive_R (K : WinCfg) (m : Nat) : ∀ x∈jacCoords K.R,x∈coZLive K m := by
+  intro x hx
+  simp only [jacCoords,List.mem_cons,List.not_mem_nil,or_false] at hx
+  simp only [coZLive,jacCoords,List.mem_append,List.mem_cons,List.not_mem_nil,or_false]
+  grind
+
+theorem coZLive_D (K : WinCfg) (m : Nat) : ∀ x∈jacCoords (Naf.coZD K),x∈coZLive K m := by
+  intro x hx
+  simp only [jacCoords,Naf.coZD,List.mem_cons,List.not_mem_nil,or_false] at hx
+  simp only [coZLive,jacCoords,List.mem_append,List.mem_cons,List.not_mem_nil,or_false]
+  grind
+
+/-- The slots DBLU leaves holding values. -/
+theorem coZLive_dblu (K : WinCfg) : ∀ x∈coZLive K 1,
+    x∈validAfter (CoZ.dblu.map (FOp.rename (Naf.dbluσ K))) (jacCoords (K.tblPt 1)++winRo K) := by
+  have vo (i : Nat) (h : i∈CoZ.dblu.map FOp.out) :=
+    coZ_validAfter_out (σ:=Naf.dbluσ K) (V:=jacCoords (K.tblPt 1)++winRo K) h
+  intro x hx
+  simp only [coZLive,jacCoords,nafTableSlots,List.range_succ,List.range_zero,
+    List.map_append,List.map_cons,List.map_nil,List.nil_append,Nat.mul_one,
+    Nat.mul_zero,Nat.add_zero,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx
+  rcases hx with ((h|h)|h)|h
+  · exact (mem_validAfter _ _).mpr (Or.inl (List.mem_append_right _ h))
+  · rcases h with rfl|rfl
+    · exact vo 8 (by decide)
+    · exact vo 9 (by decide)
+  · rcases h with rfl|rfl|rfl
+    · exact vo 5 (by decide)
+    · exact vo 4 (by decide)
+    · exact vo 10 (by decide)
+  · refine (mem_validAfter _ _).mpr (Or.inl (List.mem_append_left _ ?_))
+    simp only [jacCoords,WinCfg.tblPt,Nat.sub_self,Nat.mul_zero,Nat.add_zero,List.mem_cons,
+      List.not_mem_nil,or_false]
+    have : 8*K.M.n*2=16*K.M.n := by omega
+    rw [this] at h
+    exact or_assoc.mp h
+
+/-- The table's slots, from those the last copy leaves. -/
+theorem coZLive_twice (K : WinCfg) :
+    ∀ x∈nafTableLive K 8,x∈jacCoords (Naf.twice K)++coZLive K 8 := by
+  intro x hx
+  simp only [nafTableLive,List.mem_append] at hx
+  rcases hx with ((h|h)|h)|h
+  · exact List.mem_append_right _ (List.mem_append_left _ (List.mem_append_left _
+      (List.mem_append_left _ h)))
+  · exact List.mem_append_right _ (List.mem_append_left _ (List.mem_append_right _ h))
+  · exact List.mem_append_left _ h
+  · exact List.mem_append_right _ (List.mem_append_right _ h)
+
 /-- A slot apart from what a program writes keeps its value. -/
 theorem ProgKeep.tmv_eq {K : WinCfg} {size : Nat} {C : Curve} {base : Addr} {W : List Nat}
     {s t : State} (hL : NafLay K size) (hs : Scr s base size) (hk : ProgKeep K.M base W s t)
@@ -228,24 +277,7 @@ theorem nafTableCoZ_init_ok {P : Point C} (hP : onCurve C P=true) {s : State}
   have tt := ka'.invJ hL.lay ib.scr (coZ_other_slots K) ts (coZ_tbl_other hL (by decide) (by decide))
     jbb
   refine ⟨?_,dt,?_,zt,?_,?_,?_,?_⟩
-  · refine it.to_tmv.sub fun x hx => ?_
-    simp only [coZLive,jacCoords,nafTableSlots,List.range_succ,List.range_zero,
-      List.map_append,List.map_cons,List.map_nil,List.nil_append,Nat.mul_one,
-      Nat.mul_zero,Nat.add_zero,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,
-      show 8*K.M.n*2=16*K.M.n by omega] at hx
-    rcases hx with ((h|h)|h)|h
-    · exact (mem_validAfter _ _).mpr (Or.inl (List.mem_append_right _ h))
-    · rcases h with rfl|rfl
-      · exact vo 8 (by decide)
-      · exact vo 9 (by decide)
-    · rcases h with rfl|rfl|rfl
-      · exact vo 5 (by decide)
-      · exact vo 4 (by decide)
-      · exact vo 10 (by decide)
-    · refine (mem_validAfter _ _).mpr (Or.inl (List.mem_append_left _ ?_))
-      simp only [jacCoords,WinCfg.tblPt,Nat.sub_self,Nat.mul_zero,Nat.add_zero,List.mem_cons,
-        List.not_mem_nil,or_false]
-      exact or_assoc.mp h
+  · exact it.to_tmv.sub (coZLive_dblu K)
   · rw [show 2*1-1=1 from rfl,mul_one_pt]; exact rt
   · intro a ha ha1
     obtain rfl : a=1 := by omega
@@ -283,16 +315,8 @@ theorem nafTableCoZ_step_ok (ht : K.tbl<2^31) {P : Point C} (hP : onCurve C P=tr
   rw [← eu 10] at jz
   have va : ∀ x∈coZLive K m,x∈validAfter (CoZ.zaddu.map (FOp.rename (Naf.coZσ K))) (coZLive K m) :=
     fun x hx => (mem_validAfter _ _).mpr (Or.inl hx)
-  have rL : ∀ x∈jacCoords K.R,x∈coZLive K m := by
-    intro x hx
-    simp only [jacCoords,List.mem_cons,List.not_mem_nil,or_false] at hx
-    simp only [coZLive,jacCoords,List.mem_append,List.mem_cons,List.not_mem_nil,or_false]
-    grind
-  have dL : ∀ x∈jacCoords (Naf.coZD K),x∈coZLive K m := by
-    intro x hx
-    simp only [jacCoords,Naf.coZD,List.mem_cons,List.not_mem_nil,or_false] at hx
-    simp only [coZLive,jacCoords,List.mem_append,List.mem_cons,List.not_mem_nil,or_false]
-    grind
+  have rL := coZLive_R K m
+  have dL := coZLive_D K m
   have ru := iu.point_tmv (p:=K.R) (fun x hx => va x (rL x hx)) jr
   have du := iu.point_tmv (p:=Naf.coZD K) (fun x hx => va x (dL x hx)) jd
   have zu : tmv C K.M.n base u K.R.z≠0 := fun h0 =>
@@ -350,11 +374,7 @@ theorem nafTableCoZ_twice_ok {P : Point C} {s₀ s : State} (hI : CoZTableInv K 
   have hf := hI.field
   have tS := nafTblPt_mem K (a:=9) (by decide) (by decide)
   have tn := coZ_tbl_other hL (a:=9) (by decide) (by decide)
-  have dL : ∀ x∈jacCoords (Naf.coZD K),x∈coZLive K 8 := by
-    intro x hx
-    simp only [jacCoords,Naf.coZD,List.mem_cons,List.not_mem_nil,or_false] at hx
-    simp only [coZLive,jacCoords,List.mem_append,List.mem_cons,List.not_mem_nil,or_false]
-    grind
+  have dL := coZLive_D K 8
   refine WP.mono (copyPointFields_ok hL.lay (q:=Naf.coZD K) (o:=Naf.twice K)
     (by have := hL.n; simp only [Naf.twice]; simp [jacCoords,WinCfg.tblPt] <;> omega)
     (fun x hx y hy he => tn y hy (he ▸ coZ_D_other K x hx)) tS hf dL)
@@ -365,14 +385,7 @@ theorem nafTableCoZ_twice_ok {P : Point C} {s₀ s : State} (hI : CoZTableInv K 
     simp only [Prod.mk.injEq] at vt
     rw [vt.1,vt.2.1,vt.2.2]; exact hI.twice
   refine ⟨?_,?_,jt,?_,?_,hI.keep.trans (coZ_lift kt),?_⟩
-  · refine it.to_tmv.sub fun x hx => ?_
-    simp only [nafTableLive,List.mem_append] at hx
-    rcases hx with ((h|h)|h)|h
-    · exact List.mem_append_right _ (List.mem_append_left _ (List.mem_append_left _
-        (List.mem_append_left _ h)))
-    · exact List.mem_append_right _ (List.mem_append_left _ (List.mem_append_right _ h))
-    · exact List.mem_append_left _ h
-    · exact List.mem_append_right _ (List.mem_append_right _ h)
+  · exact it.to_tmv.sub (coZLive_twice K)
   · exact kt.invJ hL.lay hf.scr tS (fun x hx => coZ_other_slots K x (coZ_R_other K x hx))
       (fun x hx hy => tn x hy (coZ_R_other K x hx)) hI.point
   · intro a ha1 ha8
