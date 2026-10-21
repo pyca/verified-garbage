@@ -40,7 +40,7 @@ def prepare : Prog isa :=
 
 def crypt : Prog isa :=
   .seq (.block [movR .r0 sb, .mov .r1 (.imm 182)])
-    (.call (Spec.Sm4.Prepared.cryptApi layout).name cryptPrepared)
+    cryptPrepared
 
 /-- Choose the number of useful lanes, in `r11`. -/
 def count : Prog isa :=

@@ -91,32 +91,30 @@ theorem table_kept {m m' : Mem} {B : BitVec 32} {K : Spec.Sm4.Schedule} {d : Spe
     · left; change 384 + i < 1408; omega)]
   exact h (384, 1024) (by rw [layout_table]; simp) i hi
 
-/-- Call the eight-block cipher on its already prepared workspace. -/
-theorem crypt_call_wp {s : State} {B : BitVec 32} {K : Spec.Sm4.Schedule} {d : Spec.Sm4.Direction}
+/-- Inline the eight-block cipher on its already prepared workspace. -/
+theorem crypt_inline_wp {s : State} {B : BitVec 32} {K : Spec.Sm4.Schedule} {d : Spec.Sm4.Direction}
     (h0 : s.gpr .r0 = B) (h1 : s.gpr .r1 = 182)
     (fitB : B.toNat + 4 * slots ≤ 2 ^ 32) (wB : Covers [⟨State.addr B, 4 * slots⟩] s.wr)
     (hH : Holds layout s.mem (State.addr B) K d) :
-    WP isa (.call (Spec.Sm4.Prepared.cryptApi layout).name cryptPrepared) s fun s' =>
+    WP isa cryptPrepared s fun s' =>
       CallInv s B s' ∧ Holds layout s'.mem (State.addr B) K d ∧
       Spec.Sm4.blocksAt s'.mem (State.addr B + BitVec.ofNat 64 layout.buf) layout.blocks =
         Spec.Sm4.ecb K d (Spec.Sm4.blocksAt s.mem (State.addr B + BitVec.ofNat 64 layout.buf) layout.blocks) := by
-  have hp : cryptArm.pre (s.callEntry.withRegions [] [⟨State.addr B, 4 * slots⟩]) := by
+  have hp : cryptArm.pre (s.withRegions [] [⟨State.addr B, 4 * slots⟩]) := by
     simp only [cryptArm, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
-      State.withRegions_mem, State.callEntry_mem, State.callEntry_gpr s (r := .r0) (by decide),
-      State.callEntry_gpr s (r := .r1) (by decide), h0, h1]
+      State.withRegions_mem, h0, h1]
     exact ⟨True.intro, by rw [slots_eq]; rfl,
       by change B.toNat + 4 * slots ≤ 2 ^ 32; exact fitB,
       by rw [prepared_size_eq, slots_eq]; decide, K, d, hH⟩
-  refine WP.call prepared_crypt_correct hp (by simpa only [List.nil_append] using Covers.right wB) wB ?_
-  intro s' rd wr sp frame regs _ post
+  refine WP.inline prepared_crypt_correct hp (by simpa only [List.nil_append] using Covers.right wB) wB ?_
+  intro s' rd wr abi frame _ post
   have post' :
       (∀ k d, Holds layout s.mem (State.addr B) k d →
         Spec.Sm4.blocksAt s'.mem (State.addr B + BitVec.ofNat 64 layout.buf) layout.blocks =
           Spec.Sm4.ecb k d (Spec.Sm4.blocksAt s.mem (State.addr B + BitVec.ofNat 64 layout.buf) layout.blocks)) ∧
       Keeps (State.addr B) 182 layout.cryptScratch s.mem s'.mem := by
-    simpa only [cryptArm, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
-      State.callEntry_gpr s (r := .r0) (by decide), State.callEntry_gpr s (r := .r1) (by decide), h0, h1, show (182 : BitVec 32).toNat = 182 from rfl] using post
-  exact ⟨⟨rd, wr, sp, regs, frame⟩, table_kept hH post'.2, post'.1 K d hH⟩
+    simpa only [cryptArm, State.withRegions_gpr, State.withRegions_mem, h0, h1, show (182 : BitVec 32).toNat = 182 from rfl] using post
+  exact ⟨⟨rd, wr, abi.2, fun r hr _ => abi.1 r hr, frame⟩, table_kept hH post'.2, post'.1 K d hH⟩
 
 def cryptArgs (s : State) : State := (s.setReg .r0 (s.gpr sb)).setReg .r1 182
 
@@ -136,7 +134,7 @@ theorem crypt_wp {s : State} {B : BitVec 32} {K : Spec.Sm4.Schedule} {d : Spec.S
     simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp [cryptArgs, State.setReg, sb]
-  refine WP.mono (crypt_call_wp (by simpa [cryptArgs, State.setReg, sb] using hB)
+  refine WP.mono (crypt_inline_wp (by simpa [cryptArgs, State.setReg, sb] using hB)
     (by simp [cryptArgs, State.setReg]) fitB wB hH) fun s' h => ?_
   exact ⟨⟨h.1.rd, h.1.wr, h.1.sp, fun r hr hlr => (h.1.regs r hr hlr).trans (hg r hr hlr), h.1.frame⟩, h.2⟩
 
