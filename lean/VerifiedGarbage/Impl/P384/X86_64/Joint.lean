@@ -23,10 +23,13 @@ def p384vx : Cfg := { p384x with pubVerify := true }
 
 /-- The joint loop's working space, past the window method's table (from
 `5392`): the cached `Z²`, `Z³` of its eight entries at `5392`, the selected
-pair at `6160`, and the generator's digits at `6400`. -/
+pair at `6160`, and the generator's digits at `6400`. The table of `Q`'s odd
+multiples by co-Z arithmetic (`coZ`): verification 1.3% faster on an Intel
+Xeon (Ice Lake). -/
 def publicJoint : Joint.Cfg :=
-  ⟨p384v.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP,
-    6400,"VG_P384_COMB",5392,6160,some Spec.Weierstrass.PointOps.p384,false,false⟩
+  { K := p384v.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP,
+    gBits := 6400, tsym := "VG_P384_COMB", cache := 5392, selected := 6160,
+    pts := some Spec.Weierstrass.PointOps.p384, coZ := true }
 
 /-- `publicJoint` with BMI2 and ADX. -/
 def publicJointAdx : Joint.Cfg :=

@@ -13,10 +13,12 @@ namespace VG.Impl.P256.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
 
 /-- The top digit peeled: its first iteration in the loop measured 0.25%
-slower on an Intel Xeon 8370C. -/
+slower on an Intel Xeon 8370C. The table of `Q`'s odd multiples by co-Z
+arithmetic (`coZ`): verification 1.6% faster on an Intel Xeon (Ice Lake). -/
 def publicJoint : Joint.Cfg :=
-  ⟨p256.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP,
-    6000,"VG_P256_COMB",4000,5408,none,true,false⟩
+  { K := p256.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP,
+    gBits := 6000, tsym := "VG_P256_COMB", cache := 4000, selected := 5408, peel := true,
+    coZ := true }
 
 def publicJointAdx : Joint.Cfg :=
   {publicJoint with K := p256x.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP}
