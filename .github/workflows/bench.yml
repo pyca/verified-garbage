@@ -34,7 +34,6 @@ jobs:
               pathlib.Path(f'keys/key{bits}.txt').write_text('\n'.join(bytes.fromhex(key[f]).lstrip(b'\0').hex() for f in ['modulus','publicExponent','privateExponent']))
           PY
           gcc -O3 -Wall -Wextra ci/prototypes/rsa_recovery.c -lcrypto -o prototype
-          file prototype
           for round in 1 2 3; do
             echo "ROUND $round"
             ./prototype keys
