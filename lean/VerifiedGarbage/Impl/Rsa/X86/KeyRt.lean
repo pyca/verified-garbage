@@ -146,6 +146,22 @@ def eqS (d a b t : Nat) : Prog isa :=
   .seq (sub3 L t a b) (.seq (.block [.store (sc sT) .ebx]) (.seq (sub3 L t b a)
     (.block [.alu .or .ebx (.mem (sc sT)), .alu .xor .ebx (.imm 1), .store (sc d) .ebx])))
 
+/-- OR the words' XORs into `ecx`, with public pointers and a byte count in `edx`. -/
+def eqLoop : Prog isa :=
+  .loop (.block [.mov .eax (.mem (at_ .ebp 0)), .alu .xor .eax (.mem (at_ .ebx 0)),
+    .alu .or .ecx (.reg .eax), .alu .add .ebp (.imm 4), .alu .add .ebx (.imm 4),
+    .alu .sub .edx (.imm 4)]) .ne
+
+/-- Compare `[a]` and `[b]`, leaving zero in `ecx` exactly when they agree. -/
+def eqArrays (a b : Nat) : Prog isa :=
+  .seq (.block (arrPtr L .ebp a .edx ++ arrPtr L .ebx b .edx ++ bytesB L .edx ++
+    [.mov .ecx (.imm 0)])) eqLoop
+
+/-- The header word `d` one if `[a] = [b]`, else zero, without a scratch array. -/
+def eqSFast (d a b : Nat) : Prog isa :=
+  .seq (eqArrays L a b) (.block [.mov .eax (.imm 0), .alu .sub .eax (.reg .ecx),
+    .alu .or .eax (.reg .ecx), .shift .shr .eax 31, .alu .xor .eax (.imm 1), .store (sc d) .eax])
+
 /-- The first `n` arrays zeroed. -/
 def zeroArrays (n : Nat) : Prog isa :=
   .seq (.block (arrPtr L .ebp 0 .edx ++ [.mov .ecx (.imm 0)] ++ List.replicate n (.alu .add .ecx (.reg .edx)) ++

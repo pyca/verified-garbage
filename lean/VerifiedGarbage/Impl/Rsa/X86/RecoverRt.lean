@@ -24,7 +24,7 @@ and only whether to try candidates and when one succeeds choose branches, as
 namespace VG.Impl.Rsa.X86.RecoverRt
 open VG VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Bignum.X86
 open VG.Impl.Rsa.X86.Keys (aM aNM aZero hdr seqs)
-open VG.Impl.Rsa.X86.KeyRt (Lay Shape arrPtr bytesB sub3 copy sel half bitOf setOne clrLow eqS zeroArrays
+open VG.Impl.Rsa.X86.KeyRt (Lay Shape arrPtr bytesB sub3 copy sel half bitOf setOne clrLow eqSFast zeroArrays
   mulMod inverse div load restoreEdi)
 open VG.Impl.Rsa.X86.Recover (sTc sCand sK sDone sOk sBit sLive sE1 sE2 sCnt sLt sInv sMask sWin sEq mAcc
   mBase mY mR2 mG mXm mX aN aOne aZ aO aNg aW aQ aRm aDv aDt nArr wZ wE wD wM wMod wT wH wR wRc
@@ -178,7 +178,7 @@ def windowNext : Prog isa := seqs [.block windowTop, shiftUp, scan 15]
 def windowBody : Prog isa := seqs [square, square, square, square,
   windowNext, mmul mY mY mXm, .block cntNext]
 
-def eqAt (d a b : Nat) : Prog isa := eqS nar d a b aW
+def eqAt (d a b : Nat) : Prog isa := eqSFast nar d a b
 
 /-- The square's tests and masks, and `mY` kept or replaced by it. -/
 def sqTail : Prog isa := seqs [eqAt sE1 mX aO, eqAt sE2 mX aNg, .block sqMasks,
