@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.KeyInvariant
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Invoke
 public import VerifiedGarbage.Impl.Dsa.X86.CombKey
-import VerifiedGarbage.Proof.Dsa.X86.Comb.Deriving
+import VerifiedGarbage.Proof.Dsa.X86.Comb.InvokeInputs
 import VerifiedGarbage.Proof.Dsa.X86.Comb.GenerationStack
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.AllocatedArgs
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.InlineInvoke
@@ -26,24 +26,8 @@ def deriveInvoke : DeriveInvoke keyInvariant where
     have args (i : Nat) (hi : i<9) : arg v i=callVal s₀ (t.gpr .esp) i := by
       rw [allocated_arg R (by omega)]
       exact C i hi
-    have valid : validParameters v := by
-      unfold validParameters
-      simp only [argumentPointer,args 2 (by decide),args 3 (by decide),args 4 (by decide),
-        args 6 (by decide),callVal]
-      change Spec.Dsa.parametersValid (Spec.Dsa.paramsBytes (arg s₀ 5).toNat (arg s₀ 6).toNat
-        (Spec.Rsa.bytesAt t.mem (argumentPointer s₀ 3) (arg s₀ 4).toNat))
-      rw [callKey A R]
-      unfold KeyRandom.checked Spec.Dsa.checkParametersBytes at checked
-      simp only [Bool.and_eq_true,decide_eq_true_eq] at checked
-      exact checked.2
-    have contextV : deriveContext v v.mem := by
-      unfold deriveContext
-      simp only [argumentPointer,args 2 (by decide),args 3 (by decide),args 4 (by decide),
-        args 6 (by decide),args 7 (by decide),callVal]
-      change parameterContext (argumentPointer s₀ 9) (arg s₀ 5).toNat (arg s₀ 6).toNat
-        (Spec.Rsa.bytesAt t.mem (argumentPointer s₀ 3) (arg s₀ 4).toNat) t.mem
-      rw [callKey A R]
-      exact context.2
+    have valid := derive_allocated_valid A R C checked
+    have contextV := derive_allocated_context A R C context
     have result : Spec.Dsa.deriveKeyBytes (arg v 4).toNat (arg v 6).toNat
         (Spec.Rsa.bytesAt v.mem (argumentPointer v 2) (arg v 3).toNat)
         (Spec.Rsa.bytesAt v.mem (argumentPointer v 5) (arg v 6).toNat)=callResult s₀ t := by

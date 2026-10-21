@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Dsa.X86.CheckingLayout
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 import VerifiedGarbage.Proof.Dsa.X86.CheckingDispatchCT
 import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperation
 
@@ -17,12 +18,17 @@ namespace VG.Proof.Dsa.X86
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86
 
-theorem checkingOperation_agrees {s t : State} (A : CheckingABI s) (B : CheckingABI t)
+theorem checkingOperationWith_agrees {s t : State} (A : CheckingABI s) (B : CheckingABI t)
     (args : ∀ i < 6, arg s i = arg t i) (SP : s.gpr .esp = t.gpr .esp)
     (P : (checkingParams s).p = (checkingParams t).p)
     (Q : (checkingParams s).q = (checkingParams t).q)
+    (sized : Nat → Nat → Prog isa)
+    (sizedCT : RelCT isa (fun u v =>
+      Installed (argumentPointer s 4) ((arg s 5).toNat*8) Generate.checkArguments 0 2 3 s u ∧
+      Installed (argumentPointer t 4) ((arg t 5).toNat*8) Generate.checkArguments 0 2 3 t v)
+      (sized (arg s 2).toNat (arg s 3).toNat) (VG.X86.Taint.Agree (workspaceTaint false)))
     {tr ur : List Leak} {sf tf : State}
-    (E : Exec isa (Generate.checkParameters) s tr sf) (F : Exec isa (Generate.checkParameters) t ur tf) : tr = ur := by
+    (E : Exec isa (Generate.checkParametersWith sized) s tr sf) (F : Exec isa (Generate.checkParametersWith sized) t ur tf) : tr = ur := by
   let L := checkingLayout s A
   have LayoutEq := checkingLayout_eq A B args SP P Q
   have Size := args 5 (by decide)
@@ -48,14 +54,8 @@ theorem checkingOperation_agrees {s t : State} (A : CheckingABI s) (B : Checking
     intro u v H
     refine ⟨congrArg BitVec.toNat (H.1.arguments (3, .qLen) (by decide)), ?_⟩
     simpa only [L, checkingLayout, Base, QL] using congrArg BitVec.toNat (H.2.arguments (3, .qLen) (by decide))
-  have Sized : RelCT isa R (Generate.checkSized L.pLen L.qLen) (VG.X86.Taint.Agree (workspaceTaint false)) := by
-    apply (checkingSized_relCT L (arg s 2).toNat (by simp [L, checkingLayout, checkingInputs])
-      (by simp [L, checkingLayout, checkingInputs]) (by simp [L, checkingLayout, checkingInputs])
-      (checkingInputs_shape _ _) rfl).mono ?_ (fun _ _ h => h)
-    intro u v H
-    refine ⟨checkingInstalled_ready A H.1, ?_⟩
-    simpa only [L, LayoutEq, DL] using checkingInstalled_ready B H.2
-  have Dispatch := checkDispatch_relCT [(128, 20), (256, 28), (256, 32), (384, 32), (256, 20)]
+  have Sized := sizedCT
+  have Dispatch := generationDispatch_relCT sized [(128, 20), (256, 28), (256, 32), (384, 32), (256, 20)]
     L.pLen L.qLen L.base L.size R (VG.X86.Taint.Agree (workspaceTaint false)) Invariant L.saved
     (supportedWidths_member A.lengths) (by decide) hp hq Sized
   have Tail := RelCT.seq restore_relCT (RelCT.block_nil (M := isa) (P := fun _ _ => True) (fun _ _ h => h))
@@ -77,5 +77,27 @@ theorem checkingOperation_agrees {s t : State} (A : CheckingABI s) (B : Checking
           obtain ⟨T2, Public⟩ := Dispatch _ _ _ _ _ _ ⟨I, J⟩ E2 F2
           have T3 := (Tail _ _ _ _ _ _ Public E3 F3).1
           rw [T1, T2, T3]
+
+
+theorem checkingOperation_agrees {s t : State} (A : CheckingABI s) (B : CheckingABI t)
+    (args : ∀ i < 6, arg s i = arg t i) (SP : s.gpr .esp = t.gpr .esp)
+    (P : (checkingParams s).p = (checkingParams t).p)
+    (Q : (checkingParams s).q = (checkingParams t).q)
+    {tr ur : List Leak} {sf tf : State}
+    (E : Exec isa (Generate.checkParameters) s tr sf) (F : Exec isa (Generate.checkParameters) t ur tf) : tr = ur := by
+  let L := checkingLayout s A
+  have LayoutEq := checkingLayout_eq A B args SP P Q
+  have DL := args 2 (by decide)
+  let R := fun u v =>
+    Installed (argumentPointer s 4) ((arg s 5).toNat * 8) Generate.checkArguments 0 2 3 s u ∧
+    Installed (argumentPointer t 4) ((arg t 5).toNat * 8) Generate.checkArguments 0 2 3 t v
+  have Sized : RelCT isa R (Generate.checkSized L.pLen L.qLen) (VG.X86.Taint.Agree (workspaceTaint false)) := by
+    apply (checkingSized_relCT L (arg s 2).toNat (by simp [L, checkingLayout, checkingInputs])
+      (by simp [L, checkingLayout, checkingInputs]) (by simp [L, checkingLayout, checkingInputs])
+      (checkingInputs_shape _ _) rfl).mono ?_ (fun _ _ h => h)
+    intro u v H
+    refine ⟨checkingInstalled_ready A H.1, ?_⟩
+    simpa only [L, LayoutEq, DL] using checkingInstalled_ready B H.2
+  exact checkingOperationWith_agrees A B args SP P Q Generate.checkSized Sized E F
 
 end VG.Proof.Dsa.X86
