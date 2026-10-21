@@ -84,10 +84,11 @@
 //! prepared context once, after it has encrypted or decrypted
 //! `POWERS_AFTER` messages (or streaming updates) long enough to gain from
 //! it, so that one used for a few messages never pays for it. Once it has,
-//! shorter messages use it too, which never count towards it: on the
-//! `_vaes_vpclmul_avx512` backend, whose short path copies its powers from
-//! it, and on the others, whose path for TLS records (a 12-byte nonce and at
-//! most 16 bytes of additional data) is faster at every length.
+//! every message uses it, shorter ones too, which never count towards it:
+//! each `_prepared` instance chooses its path for every length itself (the
+//! `_vaes_vpclmul_avx512` short path copies its powers from the context; the
+//! others have a path for TLS records, a 12-byte nonce and at most 16 bytes
+//! of additional data, or loops that take two blocks or more).
 //!
 //! On AArch64, the `_aes` instances of `seal` and `open` have
 //! `_with_powers` ones (`VG.Spec.Gcm.Powers8Repr`), whose one call of
@@ -826,8 +827,9 @@ impl Powers {
         (!p.is_null()).then(|| (unsafe { &*p }, fns))
     }
 
-    /// Whether messages shorter than `POWERS_MIN_LEN` take the `_prepared`
-    /// instances: once the powers are published (`SHORT_READY`).
+    /// Whether messages shorter than `POWERS_MIN_LEN` take the `_with_powers`
+    /// instances on AArch64: once the powers are published (`SHORT_READY`).
+    #[cfg(any(target_arch = "aarch64", test))]
     #[inline(always)]
     fn short_ready(&self) -> bool {
         self.calls.load(Ordering::Relaxed) == SHORT_READY
@@ -1062,10 +1064,20 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        #[cfg(all(
-            any(target_arch = "x86_64", target_arch = "aarch64"),
-            feature = "alloc"
-        ))]
+        // Every message once the powers are ready, on x86-64: each `_prepared`
+        // instance chooses its path for every length itself; a message long
+        // enough to gain from them counts towards computing them.
+        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+        if let Some((ctx, fns)) = self.powers.ready() {
+            return Ok(self.seal_with(ctx, fns, nonce, aad, data));
+        }
+        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+        if data.len() >= POWERS_MIN_LEN
+            && let Some(tag) = self.seal_prepared(nonce, aad, data)
+        {
+            return Ok(tag);
+        }
+        #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
         if (data.len() >= POWERS_MIN_LEN || self.short(data.len()))
             && let Some(tag) = self.seal_prepared(nonce, aad, data)
         {
@@ -1148,15 +1160,19 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        // Short messages take the prepared instances too once their short path
-        // reads the powers (`short_ready`), as in `encrypt_in_place`. On
-        // AVX-512 that makes 16- to 255-byte opens 6–33% faster (Emerald
-        // Rapids), for one more register move on the long path (within 0.5%
-        // on Zen 3, #2775).
-        #[cfg(all(
-            any(target_arch = "x86_64", target_arch = "aarch64"),
-            feature = "alloc"
-        ))]
+        // As in `encrypt_in_place`. On AVX-512 the prepared instances make
+        // 16- to 255-byte opens 6–33% faster (Emerald Rapids, #2775).
+        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+        if let Some((ctx, fns)) = self.powers.ready() {
+            return self.open_with(ctx, fns, nonce, aad, data, tag);
+        }
+        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+        if data.len() >= POWERS_MIN_LEN
+            && let Some(r) = self.open_prepared(nonce, aad, data, tag)
+        {
+            return r;
+        }
+        #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
         if (data.len() >= POWERS_MIN_LEN || self.short(data.len()))
             && let Some(r) = self.open_prepared(nonce, aad, data, tag)
         {
@@ -1332,20 +1348,13 @@ impl AesGcm {
 ))]
 impl AesGcm {
     /// Whether `encrypt_in_place`, `encrypt` and `open` take the
-    /// `_prepared` instances for a message of `len` bytes, shorter than
+    /// `_with_powers` instances for a message of `len` bytes, shorter than
     /// `POWERS_MIN_LEN`: once the powers are ready (`Powers::short_ready`),
-    /// but on AArch64 for more than `PLAIN_MAX` bytes. On x86-64 each
-    /// `_prepared` instance chooses its path for every length itself.
-    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+    /// for more than `PLAIN_MAX` bytes.
+    #[cfg(target_arch = "aarch64")]
     #[inline(always)]
     fn short(&self, len: usize) -> bool {
-        #[cfg(target_arch = "aarch64")]
-        if len <= PLAIN_MAX {
-            return false;
-        }
-        #[cfg(target_arch = "x86_64")]
-        let _ = len;
-        self.powers.short_ready()
+        len > PLAIN_MAX && self.powers.short_ready()
     }
 
     /// `encrypt_in_place` with the key context with the powers, if
@@ -1463,13 +1472,59 @@ impl AesGcm {
         tag: &[u8],
     ) -> Option<Result<(), Error>> {
         #[cfg(target_arch = "x86_64")]
-        let (ctx, fns) = self.powers.get(&self.ctx)?;
+        {
+            let (ctx, fns) = self.powers.get(&self.ctx)?;
+            Some(self.open_with(ctx, fns, nonce, aad, data, tag))
+        }
         #[cfg(target_arch = "aarch64")]
-        let (ctx, fns) = self.powers.get(store_ok(nonce, aad))?;
+        {
+            let (ctx, fns) = self.powers.get(store_ok(nonce, aad))?;
+            let open = fns.open;
+            // SAFETY: as in `seal_prepared`, with the received tag `tag`
+            // valid for reads of its length.
+            let ok = match ctx {
+                Got::Ready(ctx) => unsafe {
+                    open(
+                        &self.ctx,
+                        self.rounds,
+                        nonce.as_ptr(),
+                        nonce.len(),
+                        aad.as_ptr(),
+                        aad.len(),
+                        data.as_mut_ptr(),
+                        data.len(),
+                        tag.as_ptr(),
+                        tag.len(),
+                        ctx,
+                    )
+                },
+                Got::Store => self.open_store(fns, nonce, aad, data, tag),
+            };
+            // As in `open`.
+            Some(if ok == 1 {
+                Ok(())
+            } else {
+                Err(Error::TagMismatch)
+            })
+        }
+    }
+
+    /// `open` with the key context with the powers `ctx` and the `_prepared`
+    /// instances `fns` that `Powers::get` or `Powers::ready` gave.
+    #[cfg(target_arch = "x86_64")]
+    #[inline(always)]
+    fn open_with(
+        &self,
+        ctx: &Ctx,
+        fns: &Prepared,
+        nonce: &[u8],
+        aad: &[u8],
+        data: &mut [u8],
+        tag: &[u8],
+    ) -> Result<(), Error> {
         let open = fns.open;
-        // SAFETY: as in `seal_prepared`, with the received tag `tag`
-        // valid for reads of its length.
-        #[cfg(target_arch = "x86_64")]
+        // SAFETY: as in `seal_with`, with the received tag `tag` valid for
+        // reads of its length.
         let ok = unsafe {
             open(
                 ctx,
@@ -1484,31 +1539,12 @@ impl AesGcm {
                 tag.len(),
             )
         };
-        #[cfg(target_arch = "aarch64")]
-        let ok = match ctx {
-            Got::Ready(ctx) => unsafe {
-                open(
-                    &self.ctx,
-                    self.rounds,
-                    nonce.as_ptr(),
-                    nonce.len(),
-                    aad.as_ptr(),
-                    aad.len(),
-                    data.as_mut_ptr(),
-                    data.len(),
-                    tag.as_ptr(),
-                    tag.len(),
-                    ctx,
-                )
-            },
-            Got::Store => self.open_store(fns, nonce, aad, data, tag),
-        };
         // As in `open`.
-        Some(if ok == 1 {
+        if ok == 1 {
             Ok(())
         } else {
             Err(Error::TagMismatch)
-        })
+        }
     }
 
     /// `open_prepared`'s call that computes the powers, as `seal_store`
