@@ -18,16 +18,6 @@ more to the loops, as before (`decTailR_ok`, `encTailR_ok`), for which
 
 @[expose] public section
 
-namespace VG.Proof.Gcm.X86_64.Stitch
-
-open VG VG.X86_64
-
-/-- A lower bound on the blocks that the data meets. -/
-theorem SPre.ofLe {s₀ : State} {lo lo' : Nat} (hp : SPre s₀ lo) (h : lo' ≤ nb s₀) : SPre s₀ lo' :=
-  { hp with nb16 := h }
-
-end VG.Proof.Gcm.X86_64.Stitch
-
 namespace VG.Proof.Gcm.X86_64.StitchR
 
 open VG VG.X86_64

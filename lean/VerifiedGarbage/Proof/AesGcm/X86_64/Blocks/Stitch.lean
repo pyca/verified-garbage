@@ -63,9 +63,9 @@ theorem split_ok {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) :
 
 /-- What the interleaved loops need, from the arguments in their registers
 and `r9 = 16 ⌊n / 16⌋`. -/
-theorem spre_of {s₃ : State} {q : Nat} (h16 : 16 ≤ q) (hqn' : q ≤ n s) (h9 : s₃.gpr .r9 = BitVec.ofNat 64 q)
+theorem spre_of {s₃ : State} {q lo : Nat} (h16 : lo ≤ q) (hqn' : q ≤ n s) (h9 : s₃.gpr .r9 = BitVec.ofNat 64 q)
     (hg : ∀ r ∈ argRegs, s₃.gpr r = s.gpr r) (h11 : s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s))) (hrd : s₃.rd = s.rd)
-    (hwr : s₃.wr = s.wr) : Gcm.X86_64.Stitch.SPre s₃ := by
+    (hwr : s₃.wr = s.wr) : Gcm.X86_64.Stitch.SPre s₃ lo := by
   have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
   have hq : (s₃.gpr .r9).toNat = q := by rw [h9, toNat_ofNat_of_lt (by omega)]
   have hqn : 16 * q ≤ n s * 16 := by omega
@@ -98,9 +98,9 @@ theorem spre_of {s₃ : State} {q : Nat} (h16 : 16 ≤ q) (hqn' : q ≤ n s) (h9
 /-- What the interleaved loops need, for a key context of kind `M`: also its
 `M.len` bytes, apart from the data and the working space, and what it holds,
 kept by the entry's writes to `scratch`. -/
-theorem spreM_of {s₃ : State} {q : Nat} (h16 : 16 ≤ q) (hqn' : q ≤ n s) (h9 : s₃.gpr .r9 = BitVec.ofNat 64 q)
+theorem spreM_of {s₃ : State} {q lo : Nat} (h16 : lo ≤ q) (hqn' : q ≤ n s) (h9 : s₃.gpr .r9 = BitVec.ofNat 64 q)
     (hg : ∀ r ∈ argRegs, s₃.gpr r = s.gpr r) (h11 : s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s))) (hrd : s₃.rd = s.rd)
-    (hwr : s₃.wr = s.wr) (hf₃ : Frame [kR' s] s.mem s₃.mem) : Gcm.X86_64.Stitch.SPreM M s₃ := by
+    (hwr : s₃.wr = s.wr) (hf₃ : Frame [kR' s] s.mem s₃.mem) : Gcm.X86_64.Stitch.SPreM M s₃ lo := by
   have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
   have hq : (s₃.gpr .r9).toNat = q := by rw [h9, toNat_ofNat_of_lt (by omega)]
   have hqn : 16 * q ≤ n s * 16 := by omega
@@ -220,6 +220,20 @@ theorem cmp16_ok {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) :
   simp only [imm, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags,
     isa, e16, h9, Option.bind_some, Option.some.injEq, exists_eq_left']
   simp
+
+omit hp in
+/-- `test r9, r9`: whether there are no blocks. -/
+theorem test9_ok {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) :
+    WP isa (.block [.alu .test .r9 (.reg .r9)]) s₁ fun s₂ => s₂.gpr = s₁.gpr ∧ s₂.mem = s₁.mem ∧
+      s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr ∧ s₂.zf = some (decide (n s = 0)) := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags,
+    isa, h9, BitVec.and_self, Option.bind_some, Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, trivial, trivial, trivial, ?_⟩
+  by_cases h : n s = 0
+  · rw [decide_eq_true h, show s.gpr .r9 = 0 from BitVec.eq_of_toNat_eq h]; rfl
+  · rw [decide_eq_false h]
+    exact beq_false_of_ne fun e => h (by rw [show n s = (s.gpr .r9).toNat from rfl, e]; rfl)
 
 /-- The interleaved part and `rest`, from the state after the entry, given
 what the loops leave (`post`) as `Mid` for the blocks hashed `ys q`. -/

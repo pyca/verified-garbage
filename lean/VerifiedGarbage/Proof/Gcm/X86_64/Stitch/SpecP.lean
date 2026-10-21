@@ -102,6 +102,16 @@ def StitchOkM (M : CtxMode) (enc dec : Prog isa) (we wd : Nat := 16) (le ld : Na
   (∀ s₀, SPreM M s₀ le → nb s₀ % we = 0 → WP isa enc s₀ (EPost s₀)) ∧
     (∀ s₀, SPreM M s₀ ld → nb s₀ % wd = 0 → WP isa dec s₀ (DPost s₀))
 
+theorem SPreM.ofLe {M : CtxMode} {s₀ : State} {lo lo' : Nat} (hp : SPreM M s₀ lo) (h : lo' ≤ nb s₀) :
+    SPreM M s₀ lo' :=
+  { hp with base := hp.base.ofLe h }
+
+/-- Loops that take fewer blocks than a group take a group's too. -/
+theorem StitchOkM.weaken {M : CtxMode} {enc dec : Prog isa} {we wd le ld : Nat} (h : StitchOkM M enc dec we wd le ld)
+    (hle : le ≤ 16) (hld : ld ≤ 16) : StitchOkM M enc dec we wd :=
+  ⟨fun s₀ hp hm => h.1 s₀ (hp.ofLe (Nat.le_trans hle hp.base.nb16)) hm,
+    fun s₀ hp hm => h.2 s₀ (hp.ofLe (Nat.le_trans hld hp.base.nb16)) hm⟩
+
 theorem StitchOk.toM {enc dec : Prog isa} (h : StitchOk enc dec) (M : CtxMode) : StitchOkM M enc dec :=
   ⟨fun s₀ hp => h.1 s₀ hp.base, fun s₀ hp => h.2 s₀ hp.base⟩
 

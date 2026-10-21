@@ -48,10 +48,12 @@ theorem scratch_ok (s₁ : State) :
     | simp [AlignedScratch.ptr, gpr_setReg, gpr_arithFlags, mem_arithFlags, mem_setReg,
         rd_arithFlags, rd_setReg, wr_arithFlags, wr_setReg]
 
-/-- With `full`: at least 16 blocks all by `piece`, which leaves `Done`
-(`hpost`), or fewer by `rest` and the calls (`hsmall`). -/
-theorem fullBody_ok {piece first second : Prog isa} {Post : State → State → Prop} {Done : State → Prop}
-    (hpiece : ∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ → WP isa piece s₃ (Post s₃))
+/-- With `full`: at least 16 blocks (or, if `small`, at least 1) all by
+`piece`, which leaves `Done` (`hpost`), or fewer by `rest` and the calls
+(`hsmall`). -/
+theorem fullBody_ok {small : Bool} {piece first second : Prog isa} {Post : State → State → Prop}
+    {Done : State → Prop}
+    (hpiece : ∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ (if small then 1 else 16) → WP isa piece s₃ (Post s₃))
     (hpost : ∀ s₃ s₄, s₃.gpr .r9 = BitVec.ofNat 64 (n s) → (∀ r ∈ argRegs, s₃.gpr r = s.gpr r) →
       (∀ r ∈ calleeSaved, s₃.gpr r = s.gpr r) →
       s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)) → s₃.rd = s.rd →
@@ -59,12 +61,11 @@ theorem fullBody_ok {piece first second : Prog isa} {Post : State → State → 
     (hsmall : n s < 16 → ∀ st, Mid s 0 0 [] st → WP isa (.seq (.block rest) (tail first second)) st Done)
     {s₁ : State} (h11 : s₁.gpr .r11 = S s) (hg : ∀ r, r ≠ .r11 → s₁.gpr r = s.gpr r) (hk : Kept s 0 s₁.mem)
     (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
-    WP isa (fullBody piece first second aligned) s₁ Done := by
-  refine WP.seq (WP.mono (cmp16_ok (hg _ (by decide))) fun s₂ ⟨g₂, m₂, rd₂, wr₂, cf₂⟩ => ?_)
-  refine WP.ite (decide (n s < 16)) (by simp only [eval, cf₂]) (fun h => ?_) (fun h => ?_)
-  · exact hsmall (by simpa using h) _ (mid_entry hp (fun r hr => by rw [g₂]; exact hg r hr) (by rw [m₂]; exact hk)
-      (by rw [m₂]; exact hf) (rd₂.trans hrd) (wr₂.trans hwr))
-  · have h16 : 16 ≤ n s := by simp at h; omega
+    WP isa (fullBody piece first second aligned small) s₁ Done := by
+  -- The piece, from a state with `s₁`'s registers and memory.
+  have pc : (if small then 1 else 16) ≤ n s → ∀ s₂ : State, s₂.gpr = s₁.gpr → s₂.mem = s₁.mem →
+      s₂.rd = s₁.rd → s₂.wr = s₁.wr → WP isa (stitchPart piece aligned true) s₂ Done := by
+    intro hlo s₂ g₂ m₂ rd₂ wr₂
     refine WP.seq (WP.mono (scratch_ok (aligned := aligned) s₂) fun s₄ ⟨h11₄, g₄, m₄, rd₄, wr₄⟩ => ?_)
     have keepR : ∀ r, r ≠ .r11 → s₄.gpr r = s.gpr r := fun r c => by rw [g₄ r c, g₂, hg r c]
     have ga : ∀ r ∈ argRegs, s₄.gpr r = s.gpr r := fun r hr => by
@@ -81,8 +82,24 @@ theorem fullBody_ok {piece first second : Prog isa} {Post : State → State → 
     have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₂, hwr]
     have hk₄ : Kept s 0 s₄.mem := by rw [m₄, m₂]; exact hk
     have hf₄ : Frame [kR' s] s.mem s₄.mem := by rw [m₄, m₂]; exact hf
-    exact WP.mono (hpiece s₄ (spreM_of hp h16 (Nat.le_refl _) h9 ga g11 rd₄' wr₄' hf₄)) fun s₅ hP =>
+    exact WP.mono (hpiece s₄ (spreM_of hp hlo (Nat.le_refl _) h9 ga g11 rd₄' wr₄' hf₄)) fun s₅ hP =>
       hpost s₄ s₅ h9 ga gc g11 rd₄' wr₄' hk₄ hf₄ hP
+  -- The calls, from a state with `s₁`'s registers and memory.
+  have cl : n s < 16 → ∀ s₂ : State, s₂.gpr = s₁.gpr → s₂.mem = s₁.mem → s₂.rd = s₁.rd → s₂.wr = s₁.wr →
+      WP isa (.seq (.block rest) (tail first second)) s₂ Done := fun hlt s₂ g₂ m₂ rd₂ wr₂ =>
+    hsmall hlt _ (mid_entry hp (fun r hr => by rw [g₂]; exact hg r hr) (by rw [m₂]; exact hk)
+      (by rw [m₂]; exact hf) (rd₂.trans hrd) (wr₂.trans hwr))
+  refine WP.seq (WP.mono (cmp16_ok (hg _ (by decide))) fun s₂ ⟨g₂, m₂, rd₂, wr₂, cf₂⟩ => ?_)
+  refine WP.ite (decide (n s < 16)) (by simp only [eval, cf₂]) (fun h => ?_) (fun h => ?_)
+  · have hlt : n s < 16 := by simpa using h
+    cases small with
+    | false => exact cl hlt s₂ g₂ m₂ rd₂ wr₂
+    | true =>
+      refine WP.seq (WP.mono (test9_ok (s := s) (by rw [g₂]; exact hg _ (by decide))) fun s₃ ⟨g₃, m₃, rd₃, wr₃, zf₃⟩ => ?_)
+      refine WP.ite (decide (n s = 0)) (by simp only [eval, zf₃]) (fun h0 => ?_) (fun h0 => ?_)
+      · exact cl hlt s₃ (g₃.trans g₂) (m₃.trans m₂) (rd₃.trans rd₂) (wr₃.trans wr₂)
+      · exact pc (by simp at h0 ⊢; omega) s₃ (g₃.trans g₂) (m₃.trans m₂) (rd₃.trans rd₂) (wr₃.trans wr₂)
+  · exact pc (by simp at h; cases small <;> simp <;> omega) s₂ g₂ m₂ rd₂ wr₂
 
 /-- After a loop that encrypts all the blocks: the blocks hashed are those
 written. -/

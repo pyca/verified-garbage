@@ -82,6 +82,10 @@ structure SPre (s₀ : State) (lo : Nat := 16) : Prop where
   wrap_k : (kp s₀).toNat + 256 ≤ 2 ^ 64
   wrap_p : (pp s₀).toNat + 1024 ≤ 2 ^ 64
 
+/-- A lower bound on the blocks that the data meets. -/
+theorem SPre.ofLe {s₀ : State} {lo lo' : Nat} (hp : SPre s₀ lo) (h : lo' ≤ nb s₀) : SPre s₀ lo' :=
+  { hp with nb16 := h }
+
 /-- What the encryption leaves: the data encrypted, the counter advanced, `Y`
 continued over the ciphertext, nothing else written but the working space. -/
 structure EPost (s₀ s : State) : Prop where
