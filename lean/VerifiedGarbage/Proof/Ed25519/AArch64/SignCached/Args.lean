@@ -24,11 +24,13 @@ structure Lay where
   E : BitVec 64
   /-- The comb's tables (the static `combSym`), which `vg_ed25519_scalar_base` reads. -/
   T : BitVec 64
+  /-- The bytes read at `seed`: the seed (32), or its cached SHA-512 digest (64). -/
+  seedLen : Nat
 
 namespace Lay
 variable (L : Lay)
 abbrev OUT : Region := ⟨L.out, 64⟩
-abbrev SEED : Region := ⟨L.seed, 32⟩
+abbrev SEED : Region := ⟨L.seed, L.seedLen⟩
 abbrev PK : Region := ⟨L.pk, 32⟩
 abbrev MSG : Region := ⟨L.msg, L.len.toNat⟩
 abbrev SCR : Region := ⟨L.scr, 8192⟩
@@ -52,13 +54,14 @@ structure Ok : Prop where
   kc : L.FR.Disjoint L.SCR
   np : L.pk.toNat + 32 ≤ 2 ^ 64
   nm : L.msg.toNat + L.len.toNat ≤ 2 ^ 64
-  ns : L.seed.toNat + 32 ≤ 2 ^ 64
+  ns : L.seed.toNat + L.seedLen ≤ 2 ^ 64
   nc : L.scr.toNat + 8192 ≤ 2 ^ 64
   e16 : 16 ≤ L.E.toNat
   ck : ∀ r ∈ L.inputs, L.CK.Disjoint r
   co : L.CK.Disjoint L.OUT
   cc : L.CK.Disjoint L.SCR
   tbfit : L.T.toNat + 8 * Impl.Ed25519.AArch64.combWords.length ≤ 2 ^ 64
+  sl : 32 ≤ L.seedLen
 end Lay
 
 /-- The disjoint scratch allocation leaves room for the hash's 64-byte prefix. -/

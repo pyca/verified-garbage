@@ -1,15 +1,16 @@
 //! Ed25519 (RFC 8032), deterministic signatures from 32-byte seeds.
 //!
 //! Key derivation, signing, and verification each call one complete verified
-//! assembly operation, including SHA-512 (but for key derivation on x86-64,
-//! below), on every supported architecture. x86-64 and AArch64 variants follow the selected SHA-512 backend. On
+//! assembly operation, including SHA-512 (but for key derivation on x86-64
+//! and AArch64, below), on every supported architecture. x86-64 and AArch64
+//! variants follow the selected SHA-512 backend. On
 //! x86-64 CPUs with BMI2, ADX and AVX2, the `_adx` variants multiply field
 //! elements with `mulx`, `adcx` and `adox` (and select the fixed-base comb's
 //! entries with AVX2), and on those that also have
 //! AVX512F, AVX512_IFMA and AVX512VL, the `_ifma` variants use four-lane
 //! field multiplications for verification's doublings and eight-lane ones
-//! for the fixed-base comb of key derivation and signing. On x86-64,
-//! [`SigningKey`] keeps the seed's SHA-512 digest, computed once in
+//! for the fixed-base comb of key derivation and signing. On x86-64 and
+//! AArch64, [`SigningKey`] keeps the seed's SHA-512 digest, computed once in
 //! [`SigningKey::from_seed`] with the verified SHA-512, and key derivation
 //! (`vg_ed25519_public_key_expanded`) and signing
 //! (`vg_ed25519_sign_expanded`) read it rather than hashing the seed again.
@@ -28,23 +29,22 @@ use crate::arch::ed25519::{
     VG_ED25519_PUBLIC_KEY_EXPANDED_ADX_FEATURES, VG_ED25519_PUBLIC_KEY_EXPANDED_IFMA_FEATURES,
     VG_ED25519_SIGN_EXPANDED_ADX_FEATURES, VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES,
     VG_ED25519_VERIFY_ADX_FEATURES, VG_ED25519_VERIFY_IFMA_FEATURES,
-    vg_ed25519_public_key_expanded, vg_ed25519_public_key_expanded_adx,
-    vg_ed25519_public_key_expanded_ifma, vg_ed25519_sign_expanded, vg_ed25519_sign_expanded_adx,
-    vg_ed25519_sign_expanded_avx2, vg_ed25519_sign_expanded_avx2_adx,
+    vg_ed25519_public_key_expanded_adx, vg_ed25519_public_key_expanded_ifma,
+    vg_ed25519_sign_expanded_adx, vg_ed25519_sign_expanded_avx2, vg_ed25519_sign_expanded_avx2_adx,
     vg_ed25519_sign_expanded_avx2_ifma, vg_ed25519_sign_expanded_ifma,
     vg_ed25519_sign_expanded_shani, vg_ed25519_sign_expanded_shani_adx,
     vg_ed25519_sign_expanded_shani_ifma, vg_ed25519_verify_adx, vg_ed25519_verify_avx2,
     vg_ed25519_verify_avx2_adx, vg_ed25519_verify_avx2_ifma, vg_ed25519_verify_ifma,
     vg_ed25519_verify_shani, vg_ed25519_verify_shani_adx, vg_ed25519_verify_shani_ifma,
 };
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 use crate::arch::ed25519::{vg_ed25519_public_key, vg_ed25519_sign_cached};
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+use crate::arch::ed25519::{vg_ed25519_public_key_expanded, vg_ed25519_sign_expanded};
 #[cfg(target_arch = "aarch64")]
-use crate::arch::ed25519::{
-    vg_ed25519_public_key_sha3, vg_ed25519_sign_cached_sha3, vg_ed25519_verify_sha3,
-};
+use crate::arch::ed25519::{vg_ed25519_sign_expanded_sha3, vg_ed25519_verify_sha3};
 use crate::cpu::{Features, detected};
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 use crate::hashes::sha512::Sha512;
 use crate::hashes::sha512::Sha512Backend;
 use crate::zeroize::{zeroize, zeroize_raw};
@@ -161,9 +161,9 @@ impl VerifyingKey {
 #[derive(Clone)]
 pub struct SigningKey {
     seed: [u8; 32],
-    /// The seed's SHA-512 digest (RFC 8032 §5.1.6, step 1), which x86-64's
-    /// signing reads rather than hashing the seed again.
-    #[cfg(target_arch = "x86_64")]
+    /// The seed's SHA-512 digest (RFC 8032 §5.1.6, step 1), which signing
+    /// on x86-64 and AArch64 reads rather than hashing the seed again.
+    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
     expanded: [u8; 64],
     public: VerifyingKey,
 }
@@ -177,7 +177,7 @@ impl core::fmt::Debug for SigningKey {
 impl Drop for SigningKey {
     fn drop(&mut self) {
         zeroize(&mut self.seed);
-        #[cfg(target_arch = "x86_64")]
+        #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
         zeroize(&mut self.expanded);
     }
 }
@@ -185,7 +185,7 @@ impl Drop for SigningKey {
 impl SigningKey {
     /// Derive a signing key and its public key from an RFC 8032 seed.
     pub fn from_seed(seed: &[u8; 32]) -> Self {
-        #[cfg(target_arch = "x86_64")]
+        #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
         {
             let expanded = Sha512::digest(seed);
             let public = VerifyingKey {
@@ -197,7 +197,7 @@ impl SigningKey {
                 public,
             }
         }
-        #[cfg(not(target_arch = "x86_64"))]
+        #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
         Self {
             seed: *seed,
             public: VerifyingKey {
@@ -224,13 +224,11 @@ impl SigningKey {
 
 /// The public key of `seed` (RFC 8032 §5.1.5), with the verified
 /// `vg_ed25519_public_key` including SHA-512.
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 fn public_key(seed: &[u8; 32]) -> [u8; 32] {
     let f = detected();
     let derive = match (Sha512Backend::select(f), Field::select(f)) {
         (Sha512Backend::Scalar, Field::Baseline) => vg_ed25519_public_key,
-        #[cfg(target_arch = "aarch64")]
-        (Sha512Backend::Sha3, Field::Baseline) => vg_ed25519_public_key_sha3,
     };
     let mut public = [0u8; 32];
     // Uninitialized: each function's contract holds whatever the scratch
@@ -249,11 +247,13 @@ fn public_key(seed: &[u8; 32]) -> [u8; 32] {
 
 /// The public key (RFC 8032 §5.1.5) of the seed whose SHA-512 digest is
 /// `expanded`, with the verified `vg_ed25519_public_key_expanded`.
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 fn public_key_expanded(expanded: &[u8; 64]) -> [u8; 32] {
     let derive = match Field::select(detected()) {
         Field::Baseline => vg_ed25519_public_key_expanded,
+        #[cfg(target_arch = "x86_64")]
         Field::Adx => vg_ed25519_public_key_expanded_adx,
+        #[cfg(target_arch = "x86_64")]
         Field::Ifma => vg_ed25519_public_key_expanded_ifma,
     };
     let mut public = [0u8; 32];
@@ -318,9 +318,9 @@ fn verify_message(pk: &[u8; 32], message: &[u8], signature: &[u8; 64]) -> u32 {
 fn sign_message(key: &SigningKey, message: &[u8]) -> [u8; 64] {
     let f = detected();
     let sign = match (Sha512Backend::select(f), Field::select(f)) {
-        #[cfg(not(target_arch = "x86_64"))]
+        #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
         (Sha512Backend::Scalar, Field::Baseline) => vg_ed25519_sign_cached,
-        #[cfg(target_arch = "x86_64")]
+        #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
         (Sha512Backend::Scalar, Field::Baseline) => vg_ed25519_sign_expanded,
         #[cfg(target_arch = "x86_64")]
         (Sha512Backend::Scalar, Field::Adx) => vg_ed25519_sign_expanded_adx,
@@ -339,21 +339,22 @@ fn sign_message(key: &SigningKey, message: &[u8]) -> [u8; 64] {
         #[cfg(target_arch = "x86_64")]
         (Sha512Backend::Avx2, Field::Ifma) => vg_ed25519_sign_expanded_avx2_ifma,
         #[cfg(target_arch = "aarch64")]
-        (Sha512Backend::Sha3, Field::Baseline) => vg_ed25519_sign_cached_sha3,
+        (Sha512Backend::Sha3, Field::Baseline) => vg_ed25519_sign_expanded_sha3,
     };
     let mut signature = [0u8; 64];
     // Uninitialized: each function's contract holds whatever the scratch
     // holds, so filling it with zeros first would only cost time.
     let mut scratch = MaybeUninit::<[u64; 1024]>::uninit();
-    // x86-64 signs from the seed's SHA-512 digest, the others from the seed.
-    #[cfg(target_arch = "x86_64")]
+    // x86-64 and AArch64 sign from the seed's SHA-512 digest, the others
+    // from the seed.
+    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
     let secret = &key.expanded;
-    #[cfg(not(target_arch = "x86_64"))]
+    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
     let secret = &key.seed;
     // SAFETY: the input references are valid for their declared lengths.
     // Signature and scratch are distinct writable objects, disjoint from the
     // inputs and the call's stack. None wraps the address space. The public
-    // key is the seed's, and on x86-64 `expanded` is the seed's SHA-512
+    // key is the seed's, and on x86-64 and AArch64 `expanded` is the seed's SHA-512
     // digest (`from_seed` computes both, with `Sha512::digest` and the
     // verified `vg_ed25519_public_key_expanded`). The CPU has the features
     // of both backends chosen (SHA-512's and the field's).
@@ -376,8 +377,7 @@ fn sign_message(key: &SigningKey, message: &[u8]) -> [u8; 64] {
 mod tests {
     use super::Sha512Backend;
     use crate::arch::ed25519::{
-        VG_ED25519_PUBLIC_KEY_SHA3_FEATURES, VG_ED25519_SIGN_CACHED_SHA3_FEATURES,
-        VG_ED25519_VERIFY_SHA3_FEATURES,
+        VG_ED25519_SIGN_EXPANDED_SHA3_FEATURES, VG_ED25519_VERIFY_SHA3_FEATURES,
     };
     use crate::cpu::{Features, NAMES};
 
@@ -391,8 +391,7 @@ mod tests {
                 Sha512Backend::Scalar => {}
                 Sha512Backend::Sha3 => {
                     assert!(features.contains(Features::all(&[
-                        VG_ED25519_PUBLIC_KEY_SHA3_FEATURES,
-                        VG_ED25519_SIGN_CACHED_SHA3_FEATURES,
+                        VG_ED25519_SIGN_EXPANDED_SHA3_FEATURES,
                         VG_ED25519_VERIFY_SHA3_FEATURES,
                     ])));
                 }
