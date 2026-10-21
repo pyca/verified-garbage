@@ -7,13 +7,14 @@
 #ifdef OPENSSL_REF
 #include <openssl/bn.h>
 #endif
+#define MODES 10
 #define DECL(i) extern void proto_mont##i(uint64_t*,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned); \
 extern unsigned proto_recover##i(unsigned char*,unsigned,unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,uint64_t*,unsigned)
-DECL(0);DECL(1);DECL(2);DECL(3);DECL(4);DECL(5);
+DECL(0);DECL(1);DECL(2);DECL(3);DECL(4);DECL(5);DECL(6);DECL(7);DECL(8);DECL(9);
 typedef void (*montfn)(uint64_t*,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned,unsigned);
-static montfn ms[]={proto_mont0,proto_mont1,proto_mont2,proto_mont3,proto_mont4,proto_mont5};
+static montfn ms[]={proto_mont0,proto_mont1,proto_mont2,proto_mont3,proto_mont4,proto_mont5,proto_mont6,proto_mont7,proto_mont8,proto_mont9};
 typedef unsigned (*recfn)(unsigned char*,unsigned,unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,const unsigned char*,unsigned,uint64_t*,unsigned);
-static recfn rs[]={proto_recover0,proto_recover1,proto_recover2,proto_recover3,proto_recover4,proto_recover5};
+static recfn rs[]={proto_recover0,proto_recover1,proto_recover2,proto_recover3,proto_recover4,proto_recover5,proto_recover6,proto_recover7,proto_recover8,proto_recover9};
 static double now(void){struct timespec t;clock_gettime(CLOCK_MONOTONIC,&t);return t.tv_sec+t.tv_nsec*1e-9;}
 static uint32_t rng=1;
 static uint32_t rnd(void){rng^=rng<<13;rng^=rng>>17;rng^=rng<<5;return rng;}
@@ -34,7 +35,7 @@ static int differential(void){
    for(unsigned alias=0;alias<5;alias++){
     unsigned dest=alias==1||alias==3?a:alias==4?b:o,op=alias<2?a:b;
     memcpy(ref,w,L);ms[0](ref,wl,n,0,iv,s,dest,a,op);
-    for(unsigned mode=1;mode<6;mode++){
+    for(unsigned mode=1;mode<MODES;mode++){
      memcpy(test,w,L);ms[mode](test,wl,n,0,iv,s,dest,a,op);
      if(memcmp((char*)ref+dest,(char*)test+dest,4*N)){printf("DIFF FAIL n=%u case=%u alias=%u mode=%u\n",n,t,alias,mode);return 1;}cases++;
     }
@@ -53,11 +54,11 @@ static int kernels(void){
    unsigned op=sq?a:b;unsigned char expect[1024];
    if(!BN_mod_mul_montgomery(O,A,sq?A:B,mc,ctx))return 3;BN_bn2lebinpad(O,expect,4*N);
    for(unsigned round=0;round<3;round++){
-    for(unsigned seq=0;seq<7;seq++){
-     unsigned mode=(seq+round)%7;double start=now();unsigned reps=0;
-     do {for(unsigned j=0;j<32;j++){if(mode<6)ms[mode](w,wl,n,0,iv,s,o,a,op);else if(!BN_mod_mul_montgomery(O,A,sq?A:B,mc,ctx))return 3;}reps+=32;}while(now()-start<0.08);
+    for(unsigned seq=0;seq<MODES+1;seq++){
+     unsigned mode=(seq+round)%(MODES+1);double start=now();unsigned reps=0;
+     do {for(unsigned j=0;j<32;j++){if(mode<MODES)ms[mode](w,wl,n,0,iv,s,o,a,op);else if(!BN_mod_mul_montgomery(O,A,sq?A:B,mc,ctx))return 3;}reps+=32;}while(now()-start<0.08);
      double ns=(now()-start)*1e9/reps;
-     if(mode<6&&memcmp(expect,(char*)w+o,4*N)){printf("OPENSSL DIFF bits=%u mode=%u square=%u\n",bits,mode,sq);return 4;}
+     if(mode<MODES&&memcmp(expect,(char*)w+o,4*N)){printf("OPENSSL DIFF bits=%u mode=%u square=%u\n",bits,mode,sq);return 4;}
      printf("kernel,bits=%u,square=%u,round=%u,mode=%u,ns=%.3f,reps=%u\n",bits,sq,round,mode,ns,reps);fflush(stdout);
     }
    }
@@ -70,15 +71,15 @@ static int recoveries(const char*dir){
  unsigned sizes[]={512,1024,2048,3072,4096};
  for(unsigned z=0;z<5;z++){
   unsigned bits=sizes[z];char path[512];snprintf(path,sizeof(path),"%s/key%u.txt",dir,bits);FILE*f=fopen(path,"r");if(!f)return 2;
-  unsigned char nb[1024],eb[1024],db[1024],p[6][1024],q[6][1024];unsigned k=readhex(f,nb),el=readhex(f,eb),dl=readhex(f,db);fclose(f);
+  unsigned char nb[1024],eb[1024],db[1024],p[MODES][1024],q[MODES][1024];unsigned k=readhex(f,nb),el=readhex(f,eb),dl=readhex(f,db);fclose(f);
   unsigned wl=16*k+32;uint64_t*w=calloc(wl,8);
   for(unsigned round=0;round<3;round++){
-   for(unsigned seq=0;seq<6;seq++){
-    unsigned mode=(seq+round)%6;double start=now();unsigned ok=0;
+   for(unsigned seq=0;seq<MODES;seq++){
+    unsigned mode=(seq+round)%MODES;double start=now();unsigned ok=0;
     for(unsigned j=0;j<3;j++)ok=rs[mode](p[mode],k,q[mode],k,nb,k,eb,el,db,dl,w,wl);
     printf("recovery,bits=%u,round=%u,mode=%u,ms=%.4f,ok=%u\n",bits,round,mode,(now()-start)*1000/3,ok);fflush(stdout);if(ok!=1)return 3;
    }
-   for(unsigned mode=1;mode<6;mode++)if(memcmp(p[0],p[mode],k)||memcmp(q[0],q[mode],k)){printf("RECOVERY DIFF bits=%u mode=%u\n",bits,mode);return 4;}
+   for(unsigned mode=1;mode<MODES;mode++)if(memcmp(p[0],p[mode],k)||memcmp(q[0],q[mode],k)){printf("RECOVERY DIFF bits=%u mode=%u\n",bits,mode);return 4;}
   }free(w);
  }return 0;
 }
@@ -202,12 +203,12 @@ static __attribute__((always_inline)) inline int full_apis(const char*dir,int ju
    if(a!=b){printf("CHECK DIFFERENTIAL FAIL bits=%u case=%u base=%u new=%u\n",bits,t,a,b);return 5;}
   }
   printf("check_differential_passed,bits=%u,cases=12\n",bits);fflush(stdout);if(justdiff){free(w);continue;}
-  for(unsigned rr=0;rr<3;rr++)for(unsigned seq=0;seq<7;seq++){
-   unsigned mode=(seq+rr)%7;double start=now();unsigned ok=0;
+  for(unsigned rr=0;rr<3;rr++)for(unsigned seq=0;seq<9;seq++){
+   unsigned mode=(seq+rr)%9;double start=now();unsigned ok=0;
    for(unsigned rep=0;rep<3;rep++){
-    if(mode==6)ok=openssl_import(nb,k,eb,el,db,dl);
-    else{unsigned recmode=(mode==1||mode>=3)?3:0;ok=rs[recmode](pp,k,qq,k,nb,k,eb,el,db,dl,w,wl);if(ok!=1)return 6;p=pp;q=qq;pl=trimlen(&p,k);ql=trimlen(&q,k);
-     ok=mode==4?proto_crt2(dp,pl,dq,ql,qi,pl,nb,k,p,pl,q,ql,db,dl,w,wl):mode==5?proto_crt3(dp,pl,dq,ql,qi,pl,nb,k,p,pl,q,ql,db,dl,w,wl):proto_crt0(dp,pl,dq,ql,qi,pl,nb,k,p,pl,q,ql,db,dl,w,wl);if(ok!=1)return 7;
+    if(mode==8)ok=openssl_import(nb,k,eb,el,db,dl);
+    else{unsigned recmode=mode==6?7:mode==7?8:(mode==1||mode>=3)?3:0;ok=rs[recmode](pp,k,qq,k,nb,k,eb,el,db,dl,w,wl);if(ok!=1)return 6;p=pp;q=qq;pl=trimlen(&p,k);ql=trimlen(&q,k);
+     ok=mode==4?proto_crt2(dp,pl,dq,ql,qi,pl,nb,k,p,pl,q,ql,db,dl,w,wl):mode>=5?proto_crt3(dp,pl,dq,ql,qi,pl,nb,k,p,pl,q,ql,db,dl,w,wl):proto_crt0(dp,pl,dq,ql,qi,pl,nb,k,p,pl,q,ql,db,dl,w,wl);if(ok!=1)return 7;
      checkfn check=mode<2?proto_check0:proto_check1;ok=check(nb,k,eb,el,p,pl,q,ql,dp,pl,dq,ql,qi,pl,w,wl);
     }if(ok!=1)return 8;
    }

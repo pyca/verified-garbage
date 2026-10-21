@@ -83,6 +83,97 @@ def printFn (name : String) (p : Prog isa) (callee : String := "proto_mont0") : 
  | .text s => s | .call _ => "call "++callee | .sym .. => "ERROR")++"\n"
 end NextMont
 
+namespace ScalarCombaProto
+open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont.X86.Rt
+-- ESI:EBX:EDI hold low, middle, high of a 96-bit accumulator.
+-- Public column/end and the incoming carry use the existing scratch header.
+def seqs := VG.Impl.Mont.X86.Rt.Square.seqs
+
+def accum : List Instr := [.alu .add .esi (.reg .eax), .alu .adc .ebx (.reg .edx), .alu .adc .edi (.imm 0)]
+def prodAt (j : Nat) : List Instr := [
+ .mov .eax (.mem (at_ .ecx (4*j))),
+ .mov .edx (.mem (at_ .ebp (if j=0 then 0 else 2^32-4*j))), .mul .edx] ++ accum
+
+def sPtr (d t : Reg) : List Instr := ptr d argS t
+
+def getEnd : List Instr := sPtr .edx .eax ++ [.mov .eax (.mem (at_ .edx 0))]
+
+def crossLoop (u : Nat) : Prog isa := seqs [
+ .block [.mov .eax (.reg .ebp), .alu .sub .eax (.reg .ecx),
+   .alu .cmp .eax (.imm (BitVec.ofNat 32 (8*u)))],
+ .ite .ae (.loop (.block ((List.range u).flatMap prodAt ++ [
+   .alu .add .ecx (.imm (BitVec.ofNat 32 (4*u))), .alu .sub .ebp (.imm (BitVec.ofNat 32 (4*u))),
+   .mov .eax (.reg .ebp), .alu .sub .eax (.reg .ecx),
+   .alu .cmp .eax (.imm (BitVec.ofNat 32 (8*u)))])) .ae) (.block []),
+ .block [.alu .cmp .ecx (.reg .ebp)],
+ .ite .b (.loop (.block (prodAt 0 ++ [.alu .add .ecx (.imm 4), .alu .sub .ebp (.imm 4),
+    .alu .cmp .ecx (.reg .ebp)])) .b) (.block [])]
+
+def redLoop (u : Nat) : Prog isa := seqs [
+ .block (getEnd ++ [.alu .sub .eax (.reg .ecx), .alu .cmp .eax (.imm (BitVec.ofNat 32 (4*u)))]),
+ .ite .ae (.loop (.block ((List.range u).flatMap prodAt ++ [
+   .alu .add .ecx (.imm (BitVec.ofNat 32 (4*u))), .alu .sub .ebp (.imm (BitVec.ofNat 32 (4*u)))] ++
+   getEnd ++ [.alu .sub .eax (.reg .ecx), .alu .cmp .eax (.imm (BitVec.ofNat 32 (4*u)))])) .ae) (.block []),
+ .block (getEnd ++ [.alu .cmp .ecx (.reg .eax)]),
+ .ite .b (.loop (.block (prodAt 0 ++ [.alu .add .ecx (.imm 4), .alu .sub .ebp (.imm 4)] ++
+    getEnd ++ [.alu .cmp .ecx (.reg .eax)])) .b) (.block [])]
+
+def cross (u : Nat) : Prog isa := seqs [
+ .block (sPtr .edi .eax ++ [.mov .esi (.mem (at_ .edi 4))] ++ lenTimes .eax 1 ++
+   [.alu .sub .eax (.imm 4), .alu .cmp .esi (.reg .eax)]),
+ .ite .b (seqs [
+   .block (lenTimes .eax 0 ++ [.mov .edx (.reg .esi), .alu .add .edx (.imm 4), .alu .sub .edx (.reg .eax)]),
+   .ite .b (.block [.mov .edx (.imm 0)]) (.block []),
+   .block ([.mov .ecx (.mem argWs), .mov .eax (.mem argA), .alu .add .ecx (.reg .eax),
+     .mov .ebp (.reg .ecx), .alu .add .ecx (.reg .edx), .alu .add .ebp (.reg .esi), .alu .sub .ebp (.reg .edx),
+     .mov .esi (.imm 0), .mov .ebx (.imm 0), .mov .edi (.imm 0)]),
+   crossLoop u,
+   .block ([.alu .add .esi (.reg .esi), .alu .adc .ebx (.reg .ebx), .alu .adc .edi (.reg .edi)] ++
+     sPtr .edx .eax ++ [.mov .eax (.mem (at_ .edx 4)), .alu .and .eax (.imm 4)]),
+   .ite .e (.block (sPtr .edx .eax ++ [.mov .eax (.mem (at_ .edx 4)), .shift .shr .eax 1,
+     .mov .edx (.mem argWs), .alu .add .eax (.reg .edx), .mov .edx (.mem argA),
+     .alu .add .eax (.reg .edx), .mov .eax (.mem (at_ .eax 0)), .mul .eax] ++ accum)) (.block [])])
+   (.block [.mov .esi (.imm 0), .mov .ebx (.imm 0), .mov .edi (.imm 0)]),
+ .block (sPtr .edx .eax ++ [.alu .add .esi (.mem (at_ .edx 8)),
+   .alu .adc .ebx (.mem (at_ .edx 12)), .alu .adc .edi (.imm 0)])]
+
+def reduce (u : Nat) : Prog isa := seqs [
+ .block (sPtr .ecx .eax ++ [.mov .ebp (.mem (at_ .ecx 4))] ++ lenTimes .eax 0 ++
+   [.mov .edx (.reg .ebp), .alu .add .edx (.imm 4), .alu .sub .edx (.reg .eax)]),
+ .ite .b (.block [.mov .edx (.imm 0)]) (.block []),
+ .block [.alu .cmp .ebp (.reg .eax)],
+ .ite .b (.block [.mov .eax (.reg .ebp)]) (.block []),
+ .block [.alu .add .eax (.reg .ecx), .alu .add .eax (.imm 52), .store (at_ .ecx 0) .eax,
+   .alu .add .ecx (.imm 52), .alu .add .ecx (.reg .edx),
+   .alu .sub .ebp (.reg .edx), .mov .eax (.mem argWs), .alu .add .ebp (.reg .eax),
+   .mov .eax (.mem argM), .alu .add .ebp (.reg .eax)],
+ redLoop u,
+ .block (sPtr .ecx .eax ++ [.mov .ebp (.mem (at_ .ecx 4))] ++ lenTimes .eax 0 ++ [.alu .cmp .ebp (.reg .eax)]),
+ .ite .b (.block [
+   .mov .eax (.reg .esi), .mov .edx (.mem (at_ .ecx 16)), .mul .edx,
+   .mov .edx (.reg .ecx), .alu .add .edx (.imm 52), .alu .add .edx (.reg .ebp), .store (at_ .edx 0) .eax,
+   .mov .ebp (.mem argM), .mov .edx (.mem argWs), .alu .add .ebp (.reg .edx),
+   .mov .edx (.mem (at_ .ebp 0)), .mul .edx,
+   .alu .add .esi (.reg .eax), .alu .adc .ebx (.reg .edx), .alu .adc .edi (.imm 0)])
+   (.block [.mov .edx (.reg .ecx), .alu .add .edx (.imm 52), .alu .add .edx (.reg .ebp), .store (at_ .edx 0) .esi]),
+ .block (sPtr .ecx .eax ++ [.store (at_ .ecx 8) .ebx, .store (at_ .ecx 12) .edi,
+   .mov .eax (.mem (at_ .ecx 4)), .alu .add .eax (.imm 4), .store (at_ .ecx 4) .eax] ++
+   lenTimes .edx 1 ++ [.alu .cmp .eax (.reg .edx)])]
+
+def square (u : Nat) : Prog isa := seqs [
+ .block (save ++ ptr .edx argInv .eax ++ [.mov .eax (.mem (at_ .edx 0)), .store (at_ .edi 16) .eax,
+   .mov .eax (.imm 0), .store (at_ .edi 4) .eax, .store (at_ .edi 8) .eax, .store (at_ .edi 12) .eax]),
+ .loop (.seq (cross u) (reduce u)) .ne,
+ .block (sPtr .edi .eax ++ lenTimes .ebp 1 ++ [.alu .add .ebp (.reg .edi), .alu .add .ebp (.imm 52),
+   .mov .eax (.mem (at_ .edi 8)), .store (at_ .ebp 0) .eax,
+   .mov .eax (.mem (at_ .edi 12)), .store (at_ .ebp 4) .eax] ++ lenTimes .eax 0 ++ [.alu .sub .ebp (.reg .eax)]),
+ subM, .block mask, select, .block restoreRegs]
+
+def dispatch (u : Nat) : Prog isa := .seq
+ (.block [.mov .eax (.mem argA), .mov .edx (.mem argB), .alu .cmp .eax (.reg .edx)])
+ (.ite .e (square u) VG.Impl.Mont.X86.Rt.scalarBody)
+end ScalarCombaProto
+
 namespace KeyCheckMontProto
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86
 open VG.Impl.Rsa.X86.Keys VG.Impl.Rsa.X86.KeyRt
@@ -181,7 +272,8 @@ end BatchCrtProto
 def main : IO Unit := do
  let modes := [VG.Impl.Mont.X86.Rt.body, NextMont.tune 2 VG.Impl.Mont.X86.Rt.body,
    NextMont.tune 4 VG.Impl.Mont.X86.Rt.body, NextMont.tune 8 VG.Impl.Mont.X86.Rt.body,
-   NextMont.combined 4, NextMont.combined 8]
+   NextMont.combined 4, NextMont.combined 8,
+   ScalarCombaProto.dispatch 2, ScalarCombaProto.dispatch 4, ScalarCombaProto.dispatch 8, ScalarCombaProto.dispatch 16]
  let codes := (modes.zipIdx).map fun (p,i) =>
    NextMont.printFn ("proto_mont"++toString i) p ++
    NextMont.printFn ("proto_recover"++toString i) VG.Impl.Rsa.X86.RecoverRt.code ("proto_mont"++toString i)
