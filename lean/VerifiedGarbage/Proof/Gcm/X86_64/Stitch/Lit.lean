@@ -23,10 +23,10 @@ namespace VG
 
 materialize_code Impl.Gcm.X86_64.Stitch.enc
 materialize_code Impl.Gcm.X86_64.Stitch.dec
-materialize_code Impl.Gcm.X86_64.StitchR.enc
+materialize_code Impl.Gcm.X86_64.StitchR.encR
 materialize_code Impl.Gcm.X86_64.StitchR.decR
 materialize_code Impl.Gcm.X86_64.StitchTo.enc
-materialize_code Impl.Gcm.X86_64.StitchR.encTo
+materialize_code Impl.Gcm.X86_64.StitchR.encToR
 materialize_code Impl.Gcm.X86_64.StitchR.encN
 
 end VG

@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
 import VerifiedGarbage.Proof.Gcm.Powers
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Rem
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.RemETo
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.SetupFin
 public import VerifiedGarbage.Proof.Gcm.Poly
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
@@ -12,6 +12,9 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Rem
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Loop
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.RemE
 
 /-!
 # The 256-bit interleaved loops with prepared powers meet their contracts
@@ -29,8 +32,8 @@ namespace VG.Proof.Gcm.X86_64.StitchR
 
 open VG VG.X86_64 VG.Proof.Gcm.Poly
 open VG.Proof.Gcm.X86_64.Stitch (nb SPre SPreM SPreTo SPrePrepared StitchOkM StitchToOkM CtxMode EPost DPost
-  EPostTo hk Ready setupT_ok encTail_ok decTail_ok finE finD)
-open VG.Proof.Gcm.X86_64.StitchTo (ReadyTo encTailTo_ok)
+  EPostTo hk Ready setupT_ok finE finD)
+open VG.Proof.Gcm.X86_64.StitchTo (ReadyTo)
 open VG.Proof.Gcm.X86_64.StitchZP (hInvF)
 open VG.Spec.Gcm (Block hpow ghashFrom)
 open VG.Proof.Gcm.X86_64.Pclmul (Prod φ_reduceB)
@@ -49,18 +52,6 @@ theorem setup_ok {s₀ : State} (hp : SPrePrepared s₀) :
   exact WP.mono (StitchZR.setupGP_ok hp) fun s₁ ⟨l0, l1, pw, g₁, m₁, rd₁, wr₁⟩ =>
     WP.mono (setupT_ok hp.base l0 l1 g₁ m₁ rd₁ wr₁) fun _ hR =>
       ⟨_, hR, fun k hk l hl => by rw [pw k hk l hl]; exact x_φ_hInvF _ _⟩
-
-theorem enc_ok {s₀ : State} (hp : SPrePrepared s₀) (hm : nb s₀ % 16 = 0) :
-    WP isa Impl.Gcm.X86_64.StitchR.enc s₀ (EPost s₀) :=
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => encTail_ok hp.base hm (finE hpw) hR)
-
-theorem dec_ok {s₀ : State} (hp : SPrePrepared s₀) (hm : nb s₀ % 16 = 0) :
-    WP isa Impl.Gcm.X86_64.StitchR.dec s₀ (DPost s₀) :=
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => decTail_ok hp.base hm (finD hpw) hR)
-
-/-- Both in-place loops, for a prepared key context. -/
-theorem stitch_ok : StitchOkM CtxMode.prepared Impl.Gcm.X86_64.StitchR.enc Impl.Gcm.X86_64.StitchR.dec :=
-  ⟨fun _ hp hm => enc_ok hp.toPrepared hm, fun _ hp hm => dec_ok hp.toPrepared hm⟩
 
 /-- The prepared powers, `H'¹⁶⁻ᵐ` at `16 m`: the products of the last `r`
 blocks with `H'ʳ` … `H'`, reduced, add up to `GHASH` over them. -/
@@ -99,11 +90,16 @@ theorem decR_ok {s₀ : State} (hp : SPrePrepared s₀) :
     WP isa Impl.Gcm.X86_64.StitchR.decR s₀ (DPost s₀) :=
   WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => decTailR_ok hp.base (finD hpw) (remLaw hpw) hR)
 
-/-- Both in-place loops, for a prepared key context: encryption of a
-multiple of 16 blocks, decryption of any number from 16 on. -/
+/-- `encR`: the encryption of any number of blocks from 16 on. -/
+theorem encR_ok {s₀ : State} (hp : SPrePrepared s₀) :
+    WP isa Impl.Gcm.X86_64.StitchR.encR s₀ (EPost s₀) :=
+  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => encTailR_ok hp.base (finE hpw) (remLaw hpw) hR)
+
+/-- Both in-place loops, for a prepared key context, for any number of
+blocks from 16 on. -/
 theorem stitchR_ok :
-    StitchOkM CtxMode.prepared Impl.Gcm.X86_64.StitchR.enc Impl.Gcm.X86_64.StitchR.decR 16 1 :=
-  ⟨fun _ hp hm => enc_ok hp.toPrepared hm, fun _ hp _ => decR_ok hp.toPrepared⟩
+    StitchOkM CtxMode.prepared Impl.Gcm.X86_64.StitchR.encR Impl.Gcm.X86_64.StitchR.decR 1 1 :=
+  ⟨fun _ hp _ => encR_ok hp.toPrepared, fun _ hp _ => decR_ok hp.toPrepared⟩
 
 /-- The out-of-place setup, as `StitchTo.setupTo_ok`. -/
 theorem setupTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) :
@@ -114,9 +110,10 @@ theorem setupTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) :
   exact WP.mono (StitchZTo.setupTTo_ok hp l0 l1 g₁ m₁ rd₁ wr₁) fun _ hR =>
     ⟨_, ReadyTo.ofReady2 hR, fun k hk l hl => by rw [pw k hk l hl]; exact x_φ_hInvF _ _⟩
 
-/-- The out-of-place loop, for a prepared key context. -/
-theorem stitchTo_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchR.encTo := fun _ hp hm =>
-  WP.seq (WP.mono (setupTo_ok hp) fun _ ⟨_, hR, hpw⟩ => encTailTo_ok hp hm (finE hpw) hR)
+/-- The out-of-place loop, for a prepared key context, for any number of
+blocks from 16 on. -/
+theorem stitchTo_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchR.encToR 1 := fun _ hp _ =>
+  WP.seq (WP.mono (setupTo_ok hp) fun _ ⟨_, hR, hpw⟩ => encTailRTo_ok hp (finE hpw) (remLaw hpw) hR)
 
 /-- The setup's powers give the products of an encryption body. -/
 theorem setupFin : SetupFin := fun hp =>
