@@ -230,6 +230,12 @@ class StepTests(unittest.TestCase):
         self.assertIn(host, cpu_shards.HOSTS)
         self.assertEqual(sorted(recorded["icx"][host]), ["-"])
         self.assertIn("s of CPU (user, system)", result.stdout)
+        # Exercise the workflow's actual Bash timestamp producer, not a copy.
+        record = next(l for l in result.stdout.splitlines() if l.startswith("CI_FEATURE_TIME_V1 "))
+        index, start, end, origin, status = map(int, record.split()[1:])
+        self.assertEqual((index, status), (0, 0))
+        self.assertGreaterEqual(start, origin)
+        self.assertGreaterEqual(end, start)
 
     def test_a_failing_line_fails_the_step_after_the_others(self):
         result, calls, recorded = self.run_step("")
