@@ -40,6 +40,8 @@ structure BatchPost (s : State) (B D : BitVec 32) (K : Spec.Sm4.Schedule) (g : N
   blocks : ∀ k < g, bytesAt s'.mem (dataAddr D k) 16 =
     Spec.Cbc.xor (bytesAt s.mem (dataAddr D k) 16)
       (Spec.Sm4.cipher K (inputBlock s.mem B D k))
+  keystream : ∀ k < g, bytesAt s'.mem (bufferAddr B k) 16 =
+    Spec.Sm4.cipher K (inputBlock s.mem B D k)
 
 theorem batch_wp {s : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule} {g : Nat}
     (hg : 1 ≤ g) (hg8 : g ≤ 8) (hB : s.gpr sb = B) (hD : s.gpr .r6 = D)
@@ -131,12 +133,16 @@ theorem batch_wp {s : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule} {g : Nat}
     x₃.sp.trans (c₂.sp.trans f₁.sp),
     (f₁batch.trans c₂batch).trans (x₃.frame.mono fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; simp [batchRegions]), table₃,
-    counter₃.trans counter₂, fun k hk => ?_⟩
+    counter₃.trans counter₂, (fun k hk => ?_), (fun k hk => ?_)⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;>
       rw [x₃.regs _ (by decide) (by decide) (by decide) (by decide) (by decide),
         c₂.regs _ (by decide) (by decide), f₁.regs _ (by decide) (by decide)]
   · rw [x₃.blocks k hk, plain₂ k hk, cipher₂ k hk]
+  · rw [bytes_frame x₃.frame (fun r hr => ?_), cipher₂ k hk]
+    simp only [List.mem_singleton] at hr; subst hr
+    exact sep.symm.sub_left (Offset.sub_base _ (by have := hg8; change 256 + 16 * k + 16 ≤ 1512; omega))
+
 
 structure GroupPost (s : State) (B D : BitVec 32) (K : Spec.Sm4.Schedule) (n : Nat) (s' : State) : Prop where
   regs : ∀ r ∈ [.r4, .r5, .r8], s'.gpr r = s.gpr r
