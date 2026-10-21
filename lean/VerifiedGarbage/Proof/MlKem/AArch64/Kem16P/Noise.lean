@@ -3,13 +3,12 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Matrix
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TransformTables
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
-public import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cbd16Call
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Output
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.W.Call
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
 
 /-!
 # The noise from the matrix's PRF outputs

@@ -4,13 +4,17 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.State
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
-public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 public import VerifiedGarbage.Proof.Sha3.AArch64.Hybrid.X3
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-! # The padded block of `PRF₂(r, N)`, written word by word
 

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.MatrixTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.PairTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.LastTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 import VerifiedGarbage.Proof.Framework.AArch64.Syms

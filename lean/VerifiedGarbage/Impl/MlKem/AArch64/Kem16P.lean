@@ -4,8 +4,8 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
 
 /-! # ML-KEM with the noise's PRF outputs in the matrix's idle Keccak lanes
 
-`Kem16.encaps` and `Kem16.decaps`, with the outputs of `PRF₂` (the noise of
-the encryption) computed in Keccak states the matrix leaves idle, rather than
+The 16-bit encapsulation and `Kem16.decaps`, with the outputs of `PRF₂` (the noise
+of the encryption) computed in Keccak states the matrix leaves idle, rather than
 in permutations of their own after it:
 
 * the third state of the `vg_keccak_f1600_x3_sha3` calls of the pairs after

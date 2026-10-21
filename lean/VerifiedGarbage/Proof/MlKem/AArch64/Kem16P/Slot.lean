@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Prf
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Prf
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Step
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Squeeze
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.State
+public import VerifiedGarbage.Proof.Sha3.AArch64.Hybrid.X3
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-! # A main squeeze computing `PRF₂(r, N)` in the third state
 

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Pair
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.SlotTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.SlotTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.PairTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FinishTiming
@@ -30,6 +30,11 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import Std.Tactic.BVDecide.Normalize.Prop
 meta import VerifiedGarbage.TCB.Axioms
+public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Squeeze
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Squeeze
+meta import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
 
 /-!
 # A pair computing PRF outputs leaks only public pointers and the public seed

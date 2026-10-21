@@ -74,14 +74,6 @@ def encryptRest (prf : Nat → Nat → Prog isa) (L : KemLay) (ek : Reg) (eo : N
   .seq (noiseAllWith nttAtWithW L false) (seqs (((List.range L.k).map (uRow L ct co)) ++
     [vRest prf L ek eo m mo ct co]))
 
-/-- Encapsulation after the matrix. -/
-def enRest (prf : Nat → Nat → Prog isa) (L : KemLay) : Prog isa :=
-  .seq (encryptRest prf L .x25 0 .x28 MB .x27 0) (.block L.kemEpilogue)
-
-/-- The encapsulation, hashing `ek` during the matrix (`Hybrid.matrixH`). -/
-def encaps (hash : FixedHashCallers.HashFn) (prf : Nat → Nat → Prog isa) (L : KemLay) : Prog isa :=
-  .seq (Hybrid.startH L) (.seq (Hybrid.matrixH L (Hybrid.ekSrc L) true) (.seq (Hybrid.tailH hash) (enRest prf L)))
-
 /-- Copy the `n` words at `sb + so` to `db + do`. -/
 def copyN (n : Nat) (sb : Reg) (so : Nat) (db : Reg) (dO : Nat) : List Instr :=
   (List.range n).flatMap fun k => [.ldr .x .x9 sb (so + 8 * k), .str .x .x9 db (dO + 8 * k)]

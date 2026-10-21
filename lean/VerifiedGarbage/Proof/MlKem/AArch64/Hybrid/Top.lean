@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 the x3 calls use (rather than 16) apart from the buffers, and
 `entryContractS`: with the constant tables apart from them too. `kemH_relCT`:
 two runs of the first phase, the matrix (by `matrixH_relCT`) and the rest
-(by its taint analysis) leak the same, for `Kem16/EncapsTop.lean`.
+(by its taint analysis) leak the same, for `Hybrid/DecapsTop.lean`.
 -/
 
 @[expose] public section
@@ -85,17 +85,6 @@ theorem entryS_tables {base : Contract isa} {s : State} (h : (entryContractS bas
     Tables s ∧ TStk s :=
   let c := consts16 h.2
   ⟨tables_of_consts c.1, c.2⟩
-
-/-- The first phase, with what the matrix needs. -/
-theorem prefixH {w16 : Bool} {s₀ : State} (hp : Pre P (enL P) s₀) (tables : Tables s₀) (ts : TStk s₀) :
-    WP isa (Impl.MlKem.AArch64.Hybrid.startH P) s₀ fun t =>
-      HInvW w16 P (enL P) (ekM P) s₀ t.mem (rhoE P s₀) (ekE P s₀) 0 0 t ∧ MT3 P (enL P) s₀ t := by
-  refine WP.mono_syms (WP.tablesDepth (startH_ok hp) tables
-    (by unfold Impl.MlKem.AArch64.Hybrid.startH; exact Nat.zero_le _)) fun t ⟨hA, ta⟩ sy => ?_
-  have tsA : TStk t := ts.of sy (by rw [hA.kb.sp])
-  exact ⟨⟨BInvW.zero hA.kb hA.x24 hA.rho, Frame.refl _ _, by rw [hstate_zero]; exact hA.zero,
-      by rw [ekM_base]; exact hA.kb.ro 0 (show 0 < 2 by decide)⟩,
-    matrix_table_of_kb hp hA.kb ta, by rw [← hA.kb.sp]; exact tsA.shuffle⟩
 
 theorem kemH_relCT {w16 : Bool} {L : Layout} {M : Msg} {σ τ : State} {ρ Eσ Eτ : List Byte}
     {start rest : Prog isa}

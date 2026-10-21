@@ -38,6 +38,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 meta import Std.Tactic.BVDecide.Normalize.Prop
 meta import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
 
 /-!
 # The singleton computing PRF outputs leaks only public pointers and the public seed

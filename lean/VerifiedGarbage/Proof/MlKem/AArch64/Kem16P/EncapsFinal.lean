@@ -30,13 +30,15 @@ meta import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
 meta import VerifiedGarbage.Proof.Framework.AArch64.DepthFill
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Encaps
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Encaps
 
 /-!
 # `vg_mlkem768_encaps` and `vg_mlkem1024_encaps` computing PRF outputs in the matrix
 
 The instances of `using_correctP` and `encapsP_ct` for ML-KEM-768 and
 ML-KEM-1024, with the taint analyses of `G` and of the rest of the code
-decided on each, and their contract, as `Kem16/EncapsFinal.lean`.
+decided on each, and their contract (`Hybrid/Final.lean`).
 -/
 
 @[expose] public section
