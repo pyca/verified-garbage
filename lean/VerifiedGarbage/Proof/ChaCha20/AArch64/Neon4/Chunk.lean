@@ -28,11 +28,11 @@ structure ChunkKeep (s s' : State) : Prop where
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
 
-theorem chunk_ok (s : State)
+theorem chunk_ok {sve : Bool} (s : State)
     (hin : ∀ k : Fin 16, InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 (4 * k)) 4)
     (hout : ∀ r j : Fin 4, InRegions s.wr
       (s.gpr .x1 + BitVec.ofNat 64 (64 * j + 16 * r)) 16) :
-    WP isa chunk s fun s' =>
+    WP isa (chunk sve) s fun s' =>
       (∀ k < 256, s'.mem (s.gpr .x1 + BitVec.ofNat 64 k) =
         s.mem (s.gpr .x1 + BitVec.ofNat 64 k) ^^^
         (serialize (block (ctr (stateAt s.mem (s.gpr .x0)) (k / 64)))).getD (k % 64) 0) ∧

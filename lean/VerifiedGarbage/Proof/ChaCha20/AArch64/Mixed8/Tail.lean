@@ -40,8 +40,8 @@ theorem not_tail {s₀ : State} {t k : Nat} (hk : k < 512 * t) (ht : 512 * t ≤
   rw [Offset.sub_toNat' _ (by omega) (by omega)]
   split <;> omega
 
-theorem tail_ok {s₀ : State} (hp : XPre s₀) {t : Nat} {s : State} (h : LInv s₀ t s) (hcs : ∀ r ∈ preserved, s.gpr r = s₀.gpr r) :
-    WP isa Impl.ChaCha20.AArch64.Small.xor s fun s' =>
+theorem tail_ok {sve : Bool} {s₀ : State} (hp : XPre s₀) {t : Nat} {s : State} (h : LInv s₀ t s) (hcs : ∀ r ∈ preserved, s.gpr r = s₀.gpr r) :
+    WP isa (Impl.ChaCha20.AArch64.Small.xor sve) s fun s' =>
       GprAbi s₀ s' ∧ xorAArch64.post s₀ s' ∧
       s'.gpr .x0 = s₀.gpr .x0 ∧ s'.gpr .x1 = s₀.gpr .x3 := by
   have hL := Xor.L_lt s₀
@@ -65,11 +65,11 @@ theorem tail_ok {s₀ : State} (hp : XPre s₀) {t : Nat} {s : State} (h : LInv 
     · exact ⟨stR s₀, by simp, 0, by simp, by simp⟩
     · exact ⟨dR s₀, by simp, 512 * t, rfl, by dsimp; omega⟩
     · exact ⟨bR s₀, by simp, 0, by simp, by simp⟩
-  have hw : WP isa Impl.ChaCha20.AArch64.Small.xor (s.withRegions [] wr) fun u =>
+  have hw : WP isa (Impl.ChaCha20.AArch64.Small.xor sve) (s.withRegions [] wr) fun u =>
       abiPreserved (s.withRegions [] wr) u ∧ xorAArch64.post (s.withRegions [] wr) u ∧
       u.gpr .x0 = s.gpr .x0 ∧ u.gpr .x1 = s.gpr .x3 :=
     VG.Proof.ChaCha20.AArch64.Small.correct _ hs
-  refine WP.narrow hw ?_ hc ?_ VG.Proof.ChaCha20.AArch64.Small.xor_noFrames
+  refine WP.narrow hw ?_ hc ?_ (VG.Proof.ChaCha20.AArch64.Small.xor_noFrames sve)
   · rw [h.rd, hp.rd]; exact hc
   · intro u _ _ hsp hf ⟨ha, hpost, h0, h1⟩
     simp only [State.withRegions_gpr, State.withRegions_sp, abiPreserved] at ha

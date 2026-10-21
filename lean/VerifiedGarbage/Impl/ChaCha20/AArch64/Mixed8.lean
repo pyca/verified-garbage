@@ -82,6 +82,6 @@ def body (sve : Bool) : Prog isa := .seq (chunk sve) (.block next)
 def xor (sve : Bool) : Prog isa := .seq (.block check)
   (.seq (.ite (.nonzero .x .x5) (.block [])
     (.seq (.block enter) (.seq (.loop (body sve) (.zero .x .x5)) (.block leave))))
-    VG.Impl.ChaCha20.AArch64.Small.xor)
+    (VG.Impl.ChaCha20.AArch64.Small.xor sve))
 
 end VG.Impl.ChaCha20.AArch64.Mixed8

@@ -122,9 +122,9 @@ theorem chunkData {s₀ s u : State} {t : Nat} (h : LInv s₀ t s)
     · rw [ite_eq_left hold, ite_eq_left (by omega)]
     · rw [ite_eq_right hold, ite_eq_right (by omega)]
 
-theorem body_ok {s₀ : State} (hp : XPre s₀) {t : Nat}
+theorem body_ok {sve : Bool} {s₀ : State} (hp : XPre s₀) {t : Nat}
     (hge : 256 * t + 256 ≤ L s₀) {s : State} (h : LInv s₀ t s) :
-    WP isa body s fun s' => LInv s₀ (t + 1) s' ∧
+    WP isa (body sve) s fun s' => LInv s₀ (t + 1) s' ∧
       s'.gpr .x5 = BitVec.ofNat 64 ((L s₀ - 256 * (t + 1)) / 256) := by
   have hL := Xor.L_lt s₀
   have hin : ∀ k : Fin 16, InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 (4 * k)) 4 := by
@@ -135,7 +135,7 @@ theorem body_ok {s₀ : State} (hp : XPre s₀) {t : Nat}
     intro r j; rw [h.wr, hp.wr, h.x1, BitVec.add_assoc, ← BitVec.ofNat_add]
     exact ⟨dR s₀, by simp, Offset.contains_base _ (by omega) (by omega)⟩
   apply WP.seq
-  refine (chunk_ok s hin hout).mono fun u ⟨hu, hf, hs⟩ => ?_
+  refine (chunk_ok (sve := sve) s hin hout).mono fun u ⟨hu, hf, hs⟩ => ?_
   have hcnt : stateAt u.mem (st s₀) = ctr (S0 s₀) (4 * t) := by
     rw [← h.cnt]
     apply Xor.stateAt_frame hf
@@ -216,9 +216,9 @@ theorem zero_chunks {s : State} {n : Nat} (hn : n < 2 ^ 64)
   congr 2
   apply propext; omega
 
-theorem bulk_ok {s₀ : State} (hp : XPre s₀) {s : State} (h : LInv s₀ 0 s)
+theorem bulk_ok {sve : Bool} {s₀ : State} (hp : XPre s₀) {s : State} (h : LInv s₀ 0 s)
     (hx5 : s.gpr .x5 = BitVec.ofNat 64 (L s₀ / 256)) :
-    WP isa (.ite (.zero .x .x5) (.block []) (.loop body (.nonzero .x .x5))) s fun s' =>
+    WP isa (.ite (.zero .x .x5) (.block []) (.loop (body sve) (.nonzero .x .x5))) s fun s' =>
       ∃ t, L s₀ - 256 * t < 256 ∧ LInv s₀ t s' := by
   have hL := Xor.L_lt s₀
   apply WP.ite (decide (L s₀ < 256)) (zero_chunks hL hx5)
@@ -231,7 +231,7 @@ theorem bulk_ok {s₀ : State} (hp : XPre s₀) {s : State} (h : LInv s₀ 0 s)
       ∃ t, n = L s₀ - 256 * t ∧ 256 ≤ n ∧ LInv s₀ t s
     refine WP.loop (M := isa) Inv ?_ (L s₀) s ⟨0, by omega, hge, h⟩
     intro n s ⟨t, hn, hge, hi⟩
-    refine (body_ok hp (by omega) hi).mono fun u ⟨hu, h5⟩ => ?_
+    refine (body_ok (sve := sve) hp (by omega) hi).mono fun u ⟨hu, h5⟩ => ?_
     have hc := Xor.eval_nonzero_ofNat u .x5
       (by omega : (L s₀ - 256 * (t + 1)) / 256 < 2 ^ 64) h5
     by_cases he : L s₀ - 256 * (t + 1) < 256
