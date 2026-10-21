@@ -175,17 +175,17 @@ theorem rows_init_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : Good
   exact ⟨L.hn,mi,⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,frame_hdr hg.hdr ft⟩,
     frame_ops hv ft,by rw [mt,word_writeW_self]; rfl,rt⟩
 
-theorem fill_fw {ps : List (Nat × Nat)} (x y : Nat) (L : Layout) (s : State) (h : GoodV ps L s) :
-    WP isa (.block (fill x y)) s (GoodV ps L) := by
+theorem tileFill_fw {ps : List (Nat × Nat)} (x y : Nat) (L : Layout) (s : State) (h : GoodV ps L s) :
+    WP isa (.block (tileFill x y)) s (GoodV ps L) := by
   obtain ⟨⟨mi,hg⟩,hv⟩ := h
-  refine WP.mono (fill_ok s x y) fun t ⟨mt,kt⟩ => ⟨⟨mi,hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,?_⟩,?_⟩
+  refine WP.mono (tileFill_ok s x y) fun t ⟨mt,kt⟩ => ⟨⟨mi,hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,?_⟩,?_⟩
   · rw [mt]; exact hg.hdr
   · rw [mt]; exact hv
 
-theorem fill_ct {ps : List (Nat × Nat)} (x y : Nat) {hint : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hT : (taint.check (Taint.ofRegs []) (.block (fill x y)) hint).isSome = true) :
-    RelCT isa (Two (GoodV ps)) (.block (fill x y)) (Two (GoodV ps)) :=
-  two_piece [] (fun _ _ _ _ _ _ hr => nomatch hr) hT (fill_fw x y)
+theorem tileFill_ct {ps : List (Nat × Nat)} (x y : Nat) {hint : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hT : (taint.check (Taint.ofRegs []) (.block (tileFill x y)) hint).isSome = true) :
+    RelCT isa (Two (GoodV ps)) (.block (tileFill x y)) (Two (GoodV ps)) :=
+  two_piece [] (fun _ _ _ _ _ _ hr => nomatch hr) hT (tileFill_fw x y)
 
 theorem rows_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
     (ha : a<8) (hb : b<8)
@@ -196,7 +196,7 @@ theorem rows_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps)
   unfold AdxTiledProduct.rows
   refine RelCT.seq (two_piece [.rdi] ?_ (by taint_decide) rows_init_fw)
     (RelCT.seq (two_loop (fun L : Layout => L.n) (row_loop_ct pa pb ha hb ha1 ha2 hb1 hb2 hS)
-      (row_loop_fw pa pb ha hb ha1 ha2 hb1 hb2)) (fill_ct 1 1 (by taint_decide)))
+      (row_loop_fw pa pb ha hb ha1 ha2 hb1 hb2)) (tileFill_ct 1 1 (by taint_decide)))
   rintro L s t ⟨⟨mi,hs⟩,_⟩ ⟨⟨mj,ht⟩,_⟩ r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
   subst r; exact hs.rdi.trans ht.rdi.symm

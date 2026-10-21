@@ -99,7 +99,7 @@ theorem rows_ok {s : State} {B : Addr} {Z w a b n : Nat} {mi : BitVec 64}
         simpa only [Nat.mul_zero,wv,Nat.zero_mul] using hz⟩
   refine WP.seq (wp_upto (a := 0) (N := n) hn (Inv s B Z w a b · mi)
     (fun _ _ hk _ h => row_inv hv pa pb hZ hw hwN hk ha hb ha1 ha2 hb1 hb2 h)
-    (fun u (h : Inv s B Z w a b n mi u) => WP.mono (fill_ok u 1 1) fun t ⟨mt,kt⟩ =>
+    (fun u (h : Inv s B Z w a b n mi u) => WP.mono (tileFill_ok u 1 1) fun t ⟨mt,kt⟩ =>
       ⟨by rw [mt]; simpa only [← hwN] using h.val,by rw [mt]; exact h.hdr,by rw [mt]; exact h.frame,
         (h.keep.trans kt).mono (by decide)⟩) h0)
 

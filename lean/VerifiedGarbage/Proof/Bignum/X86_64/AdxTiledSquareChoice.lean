@@ -171,7 +171,7 @@ open VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep)
 open VG.Proof.Bignum.X86_64.AdxRect8 (rawBase)
 
-/-- After the blocks and `fill`: `BlocksInv` at the end but for `rax`. -/
+/-- After the blocks and `tileFill`: `BlocksInv` at the end but for `rax`. -/
 structure BlocksOut (s₀ : State) (B : Addr) (Z w a k : Nat) (mi : BitVec 64) (s : State) : Prop where
   scr : Scr s B Z
   hdr : Hdr s.mem B w mi
@@ -202,7 +202,7 @@ theorem blocks_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
       by rw [ru]; rfl,ku.mono (by decide),fu,rfl⟩
   exact WP.seq (wp_upto (a := 0) (N := n) hn (BlocksInv s B Z w a · mi)
     (fun _ _ hk _ h => blockStep_ok hv pa hZ hw hwN hk ha ha1 ha2 h)
-    (fun u (h : BlocksInv s B Z w a n mi u) => WP.mono (fill_ok u 0 3) fun t ⟨mt,kt⟩ =>
+    (fun u (h : BlocksInv s B Z w a n mi u) => WP.mono (tileFill_ok u 0 3) fun t ⟨mt,kt⟩ =>
       ⟨h.scr.congr kt.2.2,by rw [mt]; exact h.hdr,(kt.gpr (by decide)).trans h.rdi,
         (h.keep.trans kt).mono (by decide),by rw [mt]; exact h.frame,by rw [mt]; exact h.val⟩) h0)
 
@@ -403,7 +403,7 @@ theorem rows_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
         simp⟩
   refine WP.seq (wp_upto (a := 0) (N := n-1) (by omega_arith) (Inv s B Z w a n · mi)
     (fun _ _ hk _ h => step_inv hv pa hZ hw hwN hk ha ha1 ha2 h) (fun u h => ?_) h0)
-  refine WP.mono (fill_ok u 1 2) fun t ⟨mt,kt⟩ => ?_
+  refine WP.mono (tileFill_ok u 1 2) fun t ⟨mt,kt⟩ => ?_
   obtain ⟨c,eq⟩ := h.val
   simp only [show (8*(n-1)+8=w) = True from eq_true (by omega_arith),ite_true,Nat.mul_zero,Nat.add_zero] at eq
   rw [remaining_end s.mem B (slot w a) n (by omega_arith),Nat.add_zero] at eq
@@ -476,7 +476,7 @@ theorem rows1_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
         rw [ou.wv (by unfold rawBase slot hdrBytes sFn; omega_arith) (by unfold rawBase slot aAcc at *; omega_arith),Nat.mul_zero,Nat.add_zero]⟩
   refine WP.seq (wp_upto (a := 0) (N := n-1) (by omega_arith) (Inv1 s B Z w a n · mi)
     (fun _ _ hk _ h => step1_inv hv pa hZ hw hwN hk ha ha1 ha2 h) (fun u h => ?_) h0)
-  refine WP.mono (fill_ok u 1 2) fun t ⟨mt,kt⟩ => ?_
+  refine WP.mono (tileFill_ok u 1 2) fun t ⟨mt,kt⟩ => ?_
   obtain ⟨c,eq⟩ := h.val
   rw [remaining_end s.mem B (slot w a) n (by omega_arith),Nat.add_zero] at eq
   simp only [remaining,Nat.mul_zero,Nat.pow_zero,Nat.one_mul,Nat.zero_add,Nat.sub_zero] at eq

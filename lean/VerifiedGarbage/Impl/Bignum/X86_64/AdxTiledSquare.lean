@@ -33,21 +33,21 @@ def tail : Prog isa := .seq (.block lastTest)
 def row (a : Nat) : Prog isa := .seq (.block rowInit)
   (.seq (AdxRect8.rowS a a) (.seq tail (.block nextRow)))
 
-/-- The rows, then `fill 1 2` for the 18 bytes their counters' registers
+/-- The rows, then `tileFill 1 2` for the 18 bytes their counters' registers
 saved. -/
 def rows (a : Nat) : Prog isa :=
   .seq (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax,.store (hdr (sFn 15)) .rax])
-    (.seq (.loop (row a) .ne) (.block (fill 1 2)))
+    (.seq (.loop (row a) .ne) (.block (tileFill 1 2)))
 
 /-- A row of a square of one row (16 words), which has no carry to hand on:
 its carry through the words above. -/
 def row1 (a : Nat) : Prog isa := .seq (.block rowInit)
   (.seq (AdxRect8.row a a) (.seq AdxTiledProduct.tail (.block nextRow)))
 
-/-- As `rows`, with `fill 1 2` for the same 18 bytes. -/
+/-- As `rows`, with `tileFill 1 2` for the same 18 bytes. -/
 def rows1 (a : Nat) : Prog isa :=
   .seq (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax])
-    (.seq (.loop (row1 a) .ne) (.block (fill 1 2)))
+    (.seq (.loop (row1 a) .ne) (.block (tileFill 1 2)))
 
 /-- No rows for 8 words, the row without hand-off for 16, the rows with it
 otherwise. -/

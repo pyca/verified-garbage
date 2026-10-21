@@ -405,7 +405,7 @@ theorem blocks_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (h
   unfold AdxTri8.blocks
   refine RelCT.seq (two_piece [.rdi] ?_ (by taint_decide) AdxTiledProduct.rows_init_fw)
     (RelCT.seq (two_loop (fun L : Layout => L.n) (step_loop_ct pa ha ha1 ha2 hS) (step_loop_fw pa ha ha1 ha2))
-      (AdxTiledProduct.fill_ct 0 3 (by taint_decide)))
+      (AdxTiledProduct.tileFill_ct 0 3 (by taint_decide)))
   rintro L s t ⟨⟨mi,hs⟩,_⟩ ⟨⟨mj,ht⟩,_⟩ r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
   subst r; exact hs.rdi.trans ht.rdi.symm
