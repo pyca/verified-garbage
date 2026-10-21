@@ -279,6 +279,28 @@ class WallTime(unittest.TestCase):
         self.assertEqual(shards.build_time(imps, cost),
                          shards.build_time(reversed_imps, dict(reversed(list(cost.items())))))
 
+    def test_reused_graph_matches_standalone_simulation_of_closed_subsets(self):
+        import random
+        rng = random.Random(12)
+        imps = {str(i): [str(j) for j in range(i) if rng.random() < .15] for i in range(50)}
+        closure = shards.closures(imps)
+        cost = {m: rng.choice([0.0, .02, 1.0, 3.5, 20.0]) for m in imps}
+        graph = shards._BuildGraph(imps, cost)
+        for _ in range(30):
+            targets = rng.sample(sorted(imps), rng.randrange(1, 6))
+            modules = set().union(*(closure[t] for t in targets))
+            self.assertEqual(graph.time(modules), shards.build_time(imps, {m: cost[m] for m in modules}))
+
+    def test_cached_simulations_respect_parallelism(self):
+        imps = {str(i): [] for i in range(4)}
+        graph = shards._BuildGraph(imps, dict.fromkeys(imps, 10.0))
+        modules = set(imps)
+        self.assertEqual(graph.time(modules), 10.0)
+        self.assertEqual(graph.time(modules), 10.0)
+        with mock.patch.object(shards, "PARALLELISM", 1.0):
+            self.assertEqual(graph.time(modules), 40.0)
+        self.assertEqual(graph.time(modules), 10.0)
+
 
 class RebuildFrontier(unittest.TestCase):
     @mock.patch.object(shards, "PARALLELISM", 2.0)
@@ -445,6 +467,25 @@ class Many(Project):
         # 2000 s of independent work: the old work/800 cutoff allowed only
         # three shards. Seven finish close to eight, using fewer runners.
         self.assertEqual(self.count(50), 7)
+
+    def test_uncompetitive_counts_are_not_simulated(self):
+        imps = {str(i): [] for i in range(40)}
+        simulate = shards._BuildGraph.time
+        parts = []
+
+        def record(graph, modules=None):
+            if modules is not None:
+                parts.append(len(modules))
+            return simulate(graph, modules)
+
+        with mock.patch.object(shards._BuildGraph, "time", record):
+            _, _, (_, targets, _) = shards.schedule(imps, shards.closures(imps), set(imps),
+                                                    dict.fromkeys(imps, 100.0))
+        self.assertEqual(len(targets), 8)
+        # Low counts put too much work on each runner to qualify even at
+        # their lower bound. They are packed, but never simulated.
+        self.assertTrue(parts)
+        self.assertLessEqual(max(parts), 6)
 
     def test_no_shard_that_is_no_faster(self):
         # 16000 s of work would take `MAX_SHARDS`; but each sink takes 400 s

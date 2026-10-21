@@ -44,7 +44,6 @@ single runner's time; among plans within SLACK of the fastest, choose the
 least total module work (counting duplicated imports), then fewer runners.
 Finally, a bounded search moves targets to reuse shared imports without
 exceeding the same finish-time budget.
-See docs/lean-shard-planning.md for historical replay and model limits.
 
   lean_shards.py plan MANIFEST PLAN     write the plan for the sources (with
                                         the manifest's build, which may be
@@ -341,44 +340,88 @@ def build_time(imps: dict[str, list[str]], cost: dict[str, float]) -> float:
     Module durations and effective throughput are empirical estimates,
     not a model of Lake's exact scheduling or the runner's CPU threads.
     """
-    users = {m: [] for m in cost}
-    pending = {m: sum(i in cost for i in imps[m]) for m in cost}
-    for m in sorted(cost):
-        for i in imps[m]:
-            if i in cost:
-                users[i].append(m)
-    roots = [m for m in sorted(cost) if not pending[m]]
-    order = roots.copy()
-    left = pending.copy()
-    for m in order:
-        for u in users[m]:
-            left[u] -= 1
-            if not left[u]:
-                order.append(u)
-    if len(order) != len(cost):
-        raise ValueError("cycle in Lean imports")
-    tail = {}
-    for m in reversed(order):
-        tail[m] = cost[m] + max((tail[u] for u in users[m]), default=0.0)
-    ready = [(-tail[m], m) for m in roots]
-    heapq.heapify(ready)
-    running: list[tuple[float, str]] = []
-    service = elapsed = 0.0
-    while ready or running:
-        while ready and len(running) < math.ceil(PARALLELISM):
-            _, m = heapq.heappop(ready)
-            heapq.heappush(running, (service + cost[m], m))
-        finish = running[0][0]
-        elapsed += (finish - service) * max(1.0, len(running) / PARALLELISM)
-        service = finish
-        # Release simultaneous completions before choosing new work.
-        while running and running[0][0] <= service:
-            _, m = heapq.heappop(running)
-            for u in users[m]:
-                pending[u] -= 1
-                if not pending[u]:
-                    heapq.heappush(ready, (-tail[u], u))
-    return elapsed
+    return _BuildGraph(imps, cost).time()
+
+
+class _BuildGraph:
+    """Reuse integer-indexed dependencies across candidate simulations.
+
+    `time` accepts import-closed subsets of this graph. A standalone
+    `build_time` constructs its graph from exactly the supplied costs,
+    so dependencies without supplied costs are excluded as before.
+    """
+
+    def __init__(self, imps, cost):
+        names = sorted(cost)
+        self.index = {m: i for i, m in enumerate(names)}
+        self.cost = [cost[m] for m in names]
+        self.users = [[] for _ in names]
+        self.pending = [0] * len(names)
+        for m, n in self.index.items():
+            for dep in imps[m]:
+                i = self.index.get(dep)
+                if i is not None:
+                    self.users[i].append(n)
+                    self.pending[n] += 1
+        self.order = [i for i, n in enumerate(self.pending) if not n]
+        left = self.pending.copy()
+        for i in self.order:
+            for u in self.users[i]:
+                left[u] -= 1
+                if not left[u]:
+                    self.order.append(u)
+        if len(self.order) != len(names):
+            raise ValueError("cycle in Lean imports")
+        self.cache = {}
+
+    def time(self, modules=None):
+        key = None if modules is None else (PARALLELISM, frozenset(modules))
+        if key is not None:
+            cached = self.cache.get(key)
+            if cached is not None:
+                return cached
+        size = len(self.cost)
+        selected = bytearray(size)
+        if modules is None:
+            selected[:] = b"\x01" * size
+            order = self.order
+        else:
+            if not modules:
+                return 0.0
+            for m in modules:
+                selected[self.index[m]] = 1
+            order = [i for i in self.order if selected[i]]
+        users, cost = self.users, self.cost
+        tail = [0.0] * size
+        for i in reversed(order):
+            longest = 0.0
+            for u in users[i]:
+                if selected[u] and tail[u] > longest:
+                    longest = tail[u]
+            tail[i] = cost[i] + longest
+        pending = self.pending.copy()
+        ready = [(-tail[i], i) for i in order if not pending[i]]
+        heapq.heapify(ready)
+        running = []
+        service = elapsed = 0.0
+        slots = math.ceil(PARALLELISM)
+        while ready or running:
+            while ready and len(running) < slots:
+                _, i = heapq.heappop(ready)
+                heapq.heappush(running, (service + cost[i], i))
+            finish = running[0][0]
+            elapsed += (finish - service) * max(1.0, len(running) / PARALLELISM)
+            service = finish
+            while running and running[0][0] <= service:
+                _, i = heapq.heappop(running)
+                for u in users[i]:
+                    if selected[u]:
+                        pending[u] -= 1
+                        if not pending[u]:
+                            heapq.heappush(ready, (-tail[u], u))
+        if key is not None:
+            self.cache[key] = elapsed
+        return elapsed
 
 
 def rebuild_targets(stale: set[str], closure: dict[str, frozenset[str]]) -> list[str]:
@@ -412,8 +455,16 @@ def pack(
     loads = [0.0] * count
     longest = [0.0] * count
     targets: list[list[str]] = [[] for _ in range(count)]
+    # A cold manifest assigns the same default duration to every module.
+    # Count those modules instead of looking up and summing every weight
+    # again for every target, shard, and candidate count.
+    unit = next(iter(cost.values()), 0.0)
+    uniform = all(t == unit for t in cost.values())
     for s in sinks:
-        added = [math.fsum(cost[x] for x in closure[s] - shard) for shard in shards]
+        if uniform:
+            added = [unit * len(closure[s] - shard) for shard in shards]
+        else:
+            added = [math.fsum(map(cost.__getitem__, closure[s] - shard)) for shard in shards]
         # The work a sink adds counts on its own too, not only through the
         # estimate: a shard whose chain hides it would otherwise take sinks
         # whose imports another shard builds already, and build them again.
@@ -428,7 +479,7 @@ def pack(
     return [estimate(w, p) for w, p in zip(loads, longest)], targets, shards
 
 
-def refine(imps, closure, cost, path, packed, limit):
+def refine(imps, closure, cost, path, packed, limit, simulator=None):
     """Move targets to reuse imports, within the chosen latency budget.
 
     Greedy packing cannot reconsider an early assignment. Rank moves by
@@ -437,10 +488,13 @@ def refine(imps, closure, cost, path, packed, limit):
     moves and three accepted moves, independently of project size.
     """
     loads, targets, built = packed
+    if simulator is None:
+        simulator = _BuildGraph(imps, cost)
     attempts = 0
     for _ in range(3):
         moves = []
-        work = [math.fsum(cost[m] for m in part) for part in built]
+        work = [math.fsum(map(cost.__getitem__, part)) for part in built]
+        longest = [max((path[t] for t in ts), default=0.0) for ts in targets]
         for src, ts in enumerate(targets):
             if len(ts) < 2:
                 continue
@@ -450,15 +504,14 @@ def refine(imps, closure, cost, path, packed, limit):
                     uses[m] = uses.get(m, 0) + 1
             for t in ts:
                 removed = {m for m in closure[t] if uses[m] == 1}
-                saved = math.fsum(cost[m] for m in removed)
+                saved = math.fsum(map(cost.__getitem__, removed))
                 for dst, part in enumerate(built):
                     if src == dst:
                         continue
-                    added = math.fsum(cost[m] for m in closure[t] - part)
+                    added = math.fsum(map(cost.__getitem__, closure[t] - part))
                     if saved <= added + 1e-9:
                         continue
-                    longest = max(path[x] for x in [*targets[dst], t])
-                    if estimate(work[dst] + added, longest) <= limit:
+                    if estimate(work[dst] + added, max(longest[dst], path[t])) <= limit:
                         moves.append((added - saved, src, dst, t, removed))
         accepted = False
         for _, src, dst, t, removed in sorted(moves, key=lambda m: m[:4]):
@@ -466,7 +519,7 @@ def refine(imps, closure, cost, path, packed, limit):
                 return loads, targets, built
             attempts += 1
             parts = {src: built[src] - removed, dst: built[dst] | closure[t]}
-            times = {i: build_time(imps, {m: cost[m] for m in part}) for i, part in parts.items()}
+            times = {i: simulator.time(part) for i, part in parts.items()}
             if max(times.values()) > limit + 1e-9:
                 continue
             for i in parts:
@@ -499,29 +552,42 @@ def schedule(
     sinks = sorted(total, key=lambda m: (-total[m], m))
     needed = set().union(*(closure[m] for m in sinks))
     # Include the same cached imports in the solo estimate as in the shards.
-    solo = build_time(imps, {m: cost[m] for m in needed})
+    simulator = _BuildGraph(imps, {m: cost[m] for m in needed})
+    solo = simulator.time()
     if solo <= SHARD_OVERHEAD or len(sinks) < 2:
         return work, path, ([], [], [])
     # Score all useful counts, rather than imposing a work-per-shard cutoff.
     # Include solo in the same latency tolerance: a marginal saving should
     # not buy many runners or repeat most of the build.
     candidates = [(solo, math.fsum(cost[m] for m in needed), 0, ([], [], []))]
-    for n in range(2, min(MAX_SHARDS, len(sinks)) + 1):
-        _, targets, built = pack(n, sinks, closure, cost, path)
+    fastest = solo
+    # Start with more shards to establish a tight finish-time bound early.
+    # A lower bound already outside the tolerance cannot become competitive
+    # as the fastest time decreases, so it need not be simulated.
+    for n in range(min(MAX_SHARDS, len(sinks)), 1, -1):
+        bounds, targets, built = pack(n, sinks, closure, cost, path)
         if any(not ts for ts in targets):
             # An empty target list would invoke an unscoped `lake build`.
             continue
-        loads = [build_time(imps, {m: cost[m] for m in part}) for part in built]
+        if max(bounds) + SHARD_OVERHEAD > fastest * (1 + SLACK):
+            continue
+        loads = []
+        for part in built:
+            loads.append(simulator.time(part))
+            if loads[-1] + SHARD_OVERHEAD > fastest * (1 + SLACK):
+                break
+        if len(loads) != len(built) or max(loads) + SHARD_OVERHEAD > fastest * (1 + SLACK):
+            continue
         repeated = math.fsum(cost[m] for part in built for m in part)
         candidates.append((max(loads) + SHARD_OVERHEAD, repeated, n, (loads, targets, built)))
-    fastest = min(c[0] for c in candidates)
+        fastest = min(fastest, max(loads) + SHARD_OVERHEAD)
     # Work counts shared dependencies again on each runner. Within the
     # latency tolerance, prefer less work, then fewer runners, then latency.
     chosen = min((c for c in candidates if c[0] <= fastest * (1 + SLACK)),
                  key=lambda c: (c[1], c[2], c[0]))
     packed = chosen[3]
     if chosen[2]:
-        packed = refine(imps, closure, cost, path, packed, fastest * (1 + SLACK) - SHARD_OVERHEAD)
+        packed = refine(imps, closure, cost, path, packed, fastest * (1 + SLACK) - SHARD_OVERHEAD, simulator)
     return work, path, packed
 
 
