@@ -319,9 +319,16 @@ namespace VG.Proof.Md5.X86_64
   `ci/trim_lean_imports.py` (`-m`, `--base REV` or `--all`) does the same
   for every import of those modules, in rounds until nothing is left: it
   never edits registrations or variants, keeps what it found by Lake's hash
-  of each module's build, and does not retry what it undid
-  (`lean/.lake/trim-imports.json`). `--batch` bounds the memory `lake shake`
-  takes, about 3 GB per 1,000 modules.
+  of each module's build, and avoids retrying unchanged rejected trials
+  (`lean/.lake/trim-imports.json`); relevant context changes or
+  `--retry-rejected` reopen them. For fast iteration, use `--capture` once
+  and `--replay` while changing Python planning logic, then verify a small
+  scope with `--max-affected` and `--verify-batch`. Replays remain unverified;
+  changing the Lean reader requires a fresh capture. `--discover --no-shake`
+  generates independent hypotheses without shake. `--batch` bounds shake's
+  memory (about 3 GB per 1,000 modules), and `--read-batch` separately bounds
+  declaration-reader roots. See [Iterating on import narrowing](lean/README.md#iterating-on-import-narrowing)
+  and [the evidence and verification guide](ci/IMPORT_NARROWING.md).
 * A file that only defines tactics, elaborators or commands is a
   `public meta section`, and imports each module both ways
   (`public import X` and `public meta import X`; `Lean` only as

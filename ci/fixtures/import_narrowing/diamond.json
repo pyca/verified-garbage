@@ -1,0 +1,129 @@
+{
+  "analyzer": "synthetic regression fixture",
+  "independent": false,
+  "library": [
+    "VerifiedGarbage.A",
+    "VerifiedGarbage.B",
+    "VerifiedGarbage.C",
+    "VerifiedGarbage.D"
+  ],
+  "modules": {
+    "Init": false,
+    "VerifiedGarbage.A": true,
+    "VerifiedGarbage.B": true,
+    "VerifiedGarbage.C": true,
+    "VerifiedGarbage.D": true
+  },
+  "profile": {
+    "VerifiedGarbage.A": 1.0,
+    "VerifiedGarbage.C": 2.0,
+    "VerifiedGarbage.D": 4.0
+  },
+  "schema": 1,
+  "selected": [
+    "VerifiedGarbage.A",
+    "VerifiedGarbage.C"
+  ],
+  "shake": {
+    "VerifiedGarbage.A": [
+      [
+        "public import VerifiedGarbage.B"
+      ],
+      []
+    ],
+    "VerifiedGarbage.C": [
+      [
+        "public import VerifiedGarbage.B"
+      ],
+      []
+    ]
+  },
+  "sources": {
+    "Init": {
+      "project": false,
+      "text": "module\nprelude\n"
+    },
+    "VerifiedGarbage.A": {
+      "project": true,
+      "text": "module\npublic import VerifiedGarbage.B\n"
+    },
+    "VerifiedGarbage.B": {
+      "project": true,
+      "text": "module\n"
+    },
+    "VerifiedGarbage.C": {
+      "project": true,
+      "text": "module\npublic import VerifiedGarbage.B\n"
+    },
+    "VerifiedGarbage.D": {
+      "project": true,
+      "text": "module\npublic import VerifiedGarbage.A\npublic import VerifiedGarbage.C\n"
+    }
+  },
+  "users": {
+    "VerifiedGarbage.A": [
+      "VerifiedGarbage.D"
+    ],
+    "VerifiedGarbage.B": [
+      "VerifiedGarbage.A",
+      "VerifiedGarbage.C"
+    ],
+    "VerifiedGarbage.C": [
+      "VerifiedGarbage.D"
+    ]
+  },
+  "uses": {
+    "meta_private": {
+      "VerifiedGarbage.A": [],
+      "VerifiedGarbage.C": [],
+      "VerifiedGarbage.D": []
+    },
+    "meta_public": {
+      "VerifiedGarbage.A": [],
+      "VerifiedGarbage.C": [],
+      "VerifiedGarbage.D": []
+    },
+    "names": {
+      "VerifiedGarbage.B": [
+        "VG.B.value"
+      ]
+    },
+    "namespaces": {
+      "VerifiedGarbage.A": [],
+      "VerifiedGarbage.B": [
+        "VG",
+        "VG.B"
+      ],
+      "VerifiedGarbage.C": []
+    },
+    "private": {
+      "VerifiedGarbage.A": [
+        "VerifiedGarbage.B"
+      ],
+      "VerifiedGarbage.C": [
+        "VerifiedGarbage.B"
+      ],
+      "VerifiedGarbage.D": [
+        "VerifiedGarbage.B"
+      ]
+    },
+    "public": {
+      "VerifiedGarbage.A": [],
+      "VerifiedGarbage.C": [],
+      "VerifiedGarbage.D": [
+        "VerifiedGarbage.B"
+      ]
+    },
+    "references": {
+      "VerifiedGarbage.D": [
+        "VerifiedGarbage.B"
+      ]
+    },
+    "effects": {
+      "VerifiedGarbage.A": [],
+      "VerifiedGarbage.B": [],
+      "VerifiedGarbage.C": [],
+      "VerifiedGarbage.D": []
+    }
+  }
+}

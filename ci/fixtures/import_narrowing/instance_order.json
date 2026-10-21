@@ -1,0 +1,118 @@
+{
+  "analyzer": "6f6b466c29f5fa888f11f1bf3a6d0c6289b32c11bf68acb78ea8419ad4210626",
+  "independent": true,
+  "library": [
+    "VerifiedGarbage.A",
+    "VerifiedGarbage.B",
+    "VerifiedGarbage.C",
+    "VerifiedGarbage.D",
+    "VerifiedGarbage.E"
+  ],
+  "max_affected": null,
+  "modules": {
+    "Init": null,
+    "VerifiedGarbage.A": true,
+    "VerifiedGarbage.B": true,
+    "VerifiedGarbage.C": true,
+    "VerifiedGarbage.D": true,
+    "VerifiedGarbage.E": true
+  },
+  "profile": {},
+  "provenance": {
+    "baseline_value": 2,
+    "description": "Captured from compiled Lean 4.35.0 fixture; old removal changed #eval chosenValue from 2 to 1 despite successful compilation",
+    "fixed_value": 2,
+    "regression": "test_public_narrowing_keeps_a_private_initialization_anchor"
+  },
+  "schema": 1,
+  "selected": [
+    "VerifiedGarbage.A"
+  ],
+  "shake": {
+    "VerifiedGarbage.A": [
+      [],
+      []
+    ]
+  },
+  "sources": {
+    "Init": {
+      "project": false,
+      "text": ""
+    },
+    "VerifiedGarbage.A": {
+      "project": true,
+      "text": "module\n\npublic import VerifiedGarbage.B\npublic import VerifiedGarbage.D\nmeta import VerifiedGarbage.B\nmeta import VerifiedGarbage.D\n@[expose] public def chosenValue : Nat := chosen\n#eval chosenValue\n"
+    },
+    "VerifiedGarbage.B": {
+      "project": true,
+      "text": "module\n\npublic import VerifiedGarbage.C\n"
+    },
+    "VerifiedGarbage.C": {
+      "project": true,
+      "text": "module\n\npublic import VerifiedGarbage.E\npublic instance choiceC : Chosen := \u27e81\u27e9\n"
+    },
+    "VerifiedGarbage.D": {
+      "project": true,
+      "text": "module\n\npublic import VerifiedGarbage.E\npublic instance choiceD : Chosen := \u27e82\u27e9\n"
+    },
+    "VerifiedGarbage.E": {
+      "project": true,
+      "text": "module\n\n@[expose] public section\nclass Chosen where\n  value : Nat\ndef chosen [Chosen] : Nat := Chosen.value\n"
+    }
+  },
+  "users": {
+    "VerifiedGarbage.B": [
+      "VerifiedGarbage.A"
+    ],
+    "VerifiedGarbage.C": [
+      "VerifiedGarbage.B"
+    ],
+    "VerifiedGarbage.D": [
+      "VerifiedGarbage.A"
+    ],
+    "VerifiedGarbage.E": [
+      "VerifiedGarbage.C",
+      "VerifiedGarbage.D"
+    ]
+  },
+  "uses": {
+    "effects": {
+      "VerifiedGarbage.B": [
+        "Lean.deprecatedModuleExt",
+        "_private.Lean.Compiler.ModPkgExt.0.Lean.modPkgExt"
+      ]
+    },
+    "meta_private": {
+      "VerifiedGarbage.A": []
+    },
+    "meta_public": {
+      "VerifiedGarbage.A": []
+    },
+    "namespaces": {
+      "VerifiedGarbage.B": [],
+      "VerifiedGarbage.C": [],
+      "VerifiedGarbage.D": [],
+      "VerifiedGarbage.E": []
+    },
+    "private": {
+      "VerifiedGarbage.A": [
+        "Init.Prelude",
+        "VerifiedGarbage.D",
+        "VerifiedGarbage.E"
+      ]
+    },
+    "public": {
+      "VerifiedGarbage.A": [
+        "Init.Prelude",
+        "VerifiedGarbage.D",
+        "VerifiedGarbage.E"
+      ]
+    },
+    "references": {
+      "VerifiedGarbage.A": [
+        "Init.Prelude",
+        "VerifiedGarbage.E"
+      ]
+    }
+  }
+}

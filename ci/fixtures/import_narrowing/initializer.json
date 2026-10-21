@@ -1,0 +1,61 @@
+{
+  "analyzer": "96841cd5ec5c30b92e1550e4e474941eab70307515bda20ed1ab90939992ae4b",
+  "independent": true,
+  "library": [
+    "VerifiedGarbage.A"
+  ],
+  "max_affected": null,
+  "modules": {
+    "VerifiedGarbage.A": true,
+    "VerifiedGarbage.C": true,
+    "VerifiedGarbage.E": true
+  },
+  "profile": {},
+  "provenance": {
+    "baseline_value": 1,
+    "description": "Compiled Lean 4.35.0 macro-generated runtime initializer; former meta-import removal compiled but changed #eval counter.get from 1 to 0. IR extension metadata protects the provider.",
+    "fixed_value": 1,
+    "regression": "test_macro_generated_runtime_initializer_is_detected_in_ir"
+  },
+  "schema": 1,
+  "selected": [
+    "VerifiedGarbage.A"
+  ],
+  "shake": {
+    "VerifiedGarbage.A": [
+      [],
+      []
+    ]
+  },
+  "sources": {
+    "VerifiedGarbage.A": {
+      "project": true,
+      "text": "module\n\nimport VerifiedGarbage.E\nimport VerifiedGarbage.C\nmeta import VerifiedGarbage.E\nmeta import VerifiedGarbage.C\n#eval counter.get\n"
+    },
+    "VerifiedGarbage.C": {
+      "project": true,
+      "text": "module\n\nimport VerifiedGarbage.D\nbump_counter\n"
+    },
+    "VerifiedGarbage.E": {
+      "project": true,
+      "text": "module\n\npublic initialize counter : IO.Ref Nat \u2190 IO.mkRef 0\n"
+    }
+  },
+  "users": {},
+  "uses": {
+    "effects": {
+      "VerifiedGarbage.C": [
+        "Lean.IR.declMapExt",
+        "Lean.deprecatedModuleExt",
+        "Lean.regularInitAttr",
+        "_private.Lean.Compiler.ModPkgExt.0.Lean.modPkgExt"
+      ]
+    },
+    "private": {
+      "VerifiedGarbage.A": []
+    },
+    "public": {
+      "VerifiedGarbage.A": []
+    }
+  }
+}
