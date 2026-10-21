@@ -17,7 +17,7 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: 1043b94af
+          ref: 1043b94af7ee892919f5aaf9020956698bb6455f
           path: base
           persist-credentials: false
       - name: Measure real Rust API, paired with merged 2987 and OpenSSL
