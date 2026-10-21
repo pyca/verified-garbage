@@ -438,7 +438,7 @@ theorem matrixP_ok {M : Hybrid.Msg} {s₀ s : State} (hp : Pre P L s₀) (hk : S
     {mA : Mem} {ρ E : List Byte}
     (h : Hybrid.HInvW true P L M s₀ mA ρ E 0 0 s) (tb : MT3 P L s₀ s)
     (hb : ∀ u, Hybrid.HInvW true P L M s₀ mA ρ E (2 * Impl.MlKem.AArch64.Hybrid.hashPairs M.S)
-        (Impl.MlKem.AArch64.Hybrid.hashPairs M.S) u → MT3 P L s₀ u →
+        (Impl.MlKem.AArch64.Hybrid.hashPairs M.S) u → MT3 P L s₀ u → u.syms = s.syms →
       WP isa between u fun v => Gp v.mem ∧
         PInvW true P L s₀ v.mem ρ (2 * Impl.MlKem.AArch64.Hybrid.hashPairs M.S) 0 v ∧ MT3 P L s₀ v) :
     WP isa (Impl.MlKem.AArch64.Kem16P.matrixP P M.S between) s fun t => ∃ mG, Gp mG ∧
@@ -457,18 +457,19 @@ theorem matrixP_ok {M : Hybrid.Msg} {s₀ s : State} (hp : Pre P L s₀) (hk : S
   apply WPs.seqs (by simp)
   refine WPs.append (WPs.append (WPs.append ?_))
   -- The pairs hashing the message.
-  refine WPs.mono (WPs.range (I := fun i t => Hybrid.HInvW true P L M s₀ mA ρ E (2 * i) i t ∧ MT3 P L s₀ t)
-    (fun i hi t ht => ?_) ⟨h, tb⟩) fun t ht => ?_
+  refine WPs.mono (WPs.range (I := fun i t => Hybrid.HInvW true P L M s₀ mA ρ E (2 * i) i t ∧ MT3 P L s₀ t ∧
+      t.syms = s.syms)
+    (fun i hi t ht => ?_) ⟨h, tb, rfl⟩) fun t ht => ?_
   · have hb' : 136 * (3 * i + 2) < M.S.len := by
       have := ho.part; have := ho.three
       rw [← hH] at hi
       simp only [Impl.MlKem.AArch64.Hybrid.hashPairs, Impl.MlKem.AArch64.Hybrid.blocks] at hi
       omega
-    refine WP.mono (Hybrid.paired_step3 hp hk hM (by omega) hb' ht.1 ht.2) fun u hu => ?_
+    refine WP.mono_syms (Hybrid.paired_step3 hp hk hM (by omega) hb' ht.1 ht.2.1) fun u hu su => ?_
     rw [show 2 * (i + 1) = 2 * i + 2 by omega]
-    exact hu
+    exact ⟨hu.1, hu.2, su.trans ht.2.2⟩
   -- `G`.
-  refine WPs.single (WP.mono (hb t ht.1 ht.2) fun u ⟨gu, pu, mu⟩ => ?_)
+  refine WPs.single (WP.mono (hb t ht.1 ht.2.1 ht.2.2) fun u ⟨gu, pu, mu⟩ => ?_)
   -- The pairs computing PRF outputs.
   refine WPs.mono (WPs.range (I := fun j t => PInvW true P L s₀ u.mem ρ (2 * (j + H))
       (min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * j)) t ∧ MT3 P L s₀ t)
