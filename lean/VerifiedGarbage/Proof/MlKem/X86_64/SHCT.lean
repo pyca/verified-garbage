@@ -103,16 +103,19 @@ theorem hsave_ct : RelCT isa (S4.R4W w16 fun σ s => SqY w16 σ (hst σ 3) 0 3 s
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.1.env h₂.1.env) (by taint_decide))
 
-theorem tabY_ct : RelCT isa (S4.R4W w16 fun σ s => SqY w16 σ (hst σ 3) 0 3 s ∧ HS σ (hst σ 3) s.mem) (.block tabAddr)
-    (S4.R4W w16 fun σ s => Q1 w16 σ (hst σ 3) (hst σ 3) 0 s) :=
+section
+variable {Y Hf : State → Spec.Sha3.State}
+
+theorem tabY_ct : RelCT isa (S4.R4W w16 fun σ s => SqY w16 σ (Y σ) 0 3 s ∧ HS σ (Hf σ) s.mem) (.block tabAddr)
+    (S4.R4W w16 fun σ s => Q1 w16 σ (Y σ) (Hf σ) 0 s) :=
   relInv (fun σ s _ h => tabY_ok h.1 h.2)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.1.env h₂.1.env) (by taint_decide))
 
 theorem run1Y_ct {K : Nat} (hK : K < 3) {h₂ : VG.Taint.Hint X86_64.Taint.T}
     (c₂ : (taint.check (X86_64.Taint.ofRegs [.rbx]) (.block [.store (at_ .rbx (oCnt + 8 * K)) .rdi]) h₂).isSome = true) :
-    RelCT isa (S4.R4W w16 fun σ s => Q1 w16 σ (hst σ 3) (hst σ 3) K s) (run1 K w16)
-      (S4.R4W w16 fun σ s => Q1 w16 σ (hst σ 3) (hst σ 3) (K + 1) s) := by
+    RelCT isa (S4.R4W w16 fun σ s => Q1 w16 σ (Y σ) (Hf σ) K s) (run1 K w16)
+      (S4.R4W w16 fun σ s => Q1 w16 σ (Y σ) (Hf σ) (K + 1) s) := by
   obtain ⟨⟨_, c₁⟩, _⟩ := setup_taint (by omega : K < 4) w16
   exact run_ct (N := 21) (by omega) (by decide) (by decide) (by decide)
     (fun σ s hp h => ⟨h.sq.env, setup_ok (preW_of hp) (by omega) (lbY1 hK h)⟩)
@@ -120,8 +123,8 @@ theorem run1Y_ct {K : Nat} (hK : K < 3) {h₂ : VG.Taint.Hint X86_64.Taint.T}
 
 theorem run2Y_ct {K : Nat} (hK : K < 3) {h₂ : VG.Taint.Hint X86_64.Taint.T}
     (c₂ : (taint.check (X86_64.Taint.ofRegs [.rbx]) (.block [.store (at_ .rbx (oCnt + 8 * K)) .rdi]) h₂).isSome = true) :
-    RelCT isa (S4.R4W w16 fun σ s => Q2 w16 σ (hst σ 3) (hst σ 3) K s) (run2 K w16)
-      (S4.R4W w16 fun σ s => Q2 w16 σ (hst σ 3) (hst σ 3) (K + 1) s) := by
+    RelCT isa (S4.R4W w16 fun σ s => Q2 w16 σ (Y σ) (Hf σ) K s) (run2 K w16)
+      (S4.R4W w16 fun σ s => Q2 w16 σ (Y σ) (Hf σ) (K + 1) s) := by
   obtain ⟨_, ⟨_, c₁⟩⟩ := setup_taint (by omega : K < 4) w16
   exact run_ct (N := 14) (by omega) (by decide) (by decide) (by decide)
     (fun σ s hp h => ⟨h.sq.env, contSetup_ok (preW_of hp) (by omega) (lbY2 hK h)
@@ -133,14 +136,14 @@ theorem pub_allFull3 {σ₁ σ₂ : State} (hq : sample4K.pub σ₁ σ₂) (t : 
     Bool.and_true, Bool.true_and]
   rw [pub_Lt hq (K := 0) (by decide), pub_Lt hq (K := 1) (by decide), pub_Lt hq (K := 2) (by decide)]
 
-theorem check3_ct : RelCT isa (S4.R4W w16 fun σ s => Q1 w16 σ (hst σ 3) (hst σ 3) 3 s)
-    (.block (cntFlags3 ++ ([.alu32 .cmp .r14 (.imm 0)] : List Instr))) (S4.R4W w16 fun σ s => Checked3 w16 σ (hst σ 3) (hst σ 3) s) :=
+theorem check3_ct : RelCT isa (S4.R4W w16 fun σ s => Q1 w16 σ (Y σ) (Hf σ) 3 s)
+    (.block (cntFlags3 ++ ([.alu32 .cmp .r14 (.imm 0)] : List Instr))) (S4.R4W w16 fun σ s => Checked3 w16 σ (Y σ) (Hf σ) s) :=
   relInv (fun σ s hp h => check3_ok (preW_of hp) h)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.sq.env h₂.sq.env) (by taint_decide))
 
-theorem more3_ct {fast : Bool} : RelCT isa (S4.R4W w16 fun σ s => Checked3 w16 σ (hst σ 3) (hst σ 3) s) (more3 fast w16)
-    (S4.R4W w16 fun σ s => Done3 w16 σ (hst σ 3) s) := by
+theorem more3_ct {fast : Bool} : RelCT isa (S4.R4W w16 fun σ s => Checked3 w16 σ (Y σ) (Hf σ) s) (more3 fast w16)
+    (S4.R4W w16 fun σ s => Done3 w16 σ (Hf σ) s) := by
   unfold more3
   refine RelCT.seq (relInv (fun σ s _ h => reset3_ok h) (taintRel [] SampleNtt.nil_regs (by taint_decide))) ?_
   have hsq : ∃ hc : VG.Taint.Hint X86_64.Taint.T,
@@ -162,29 +165,32 @@ theorem more3_ct {fast : Bool} : RelCT isa (S4.R4W w16 fun σ s => Checked3 w16 
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.sq.env h₂.sq.env) (by taint_decide))
 
-theorem branch3_ct {fast : Bool} : RelCT isa (S4.R4W w16 fun σ s => Checked3 w16 σ (hst σ 3) (hst σ 3) s)
-    (.ite .e (more3 fast w16) (.block [])) (S4.R4W w16 fun σ s => Done3 w16 σ (hst σ 3) s) := by
+theorem branch3_ct {fast : Bool} : RelCT isa (S4.R4W w16 fun σ s => Checked3 w16 σ (Y σ) (Hf σ) s)
+    (.ite .e (more3 fast w16) (.block [])) (S4.R4W w16 fun σ s => Done3 w16 σ (Hf σ) s) := by
   refine RelCT.ite (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ => by
     show x.zf = y.zf; rw [h₁.zf, h₂.zf, pub_allFull3 hq])
     (RelCT.mono more3_ct (fun _ _ h => h.1) (fun _ _ h => h)) ?_
-  have empty : RelCT isa (S4.R4W w16 fun σ s => Checked3 w16 σ (hst σ 3) (hst σ 3) s ∧ allFull3 σ 168 = true) (.block [])
-      (S4.R4W w16 fun σ s => Done3 w16 σ (hst σ 3) s) :=
+  have empty : RelCT isa (S4.R4W w16 fun σ s => Checked3 w16 σ (Y σ) (Hf σ) s ∧ allFull3 σ 168 = true) (.block [])
+      (S4.R4W w16 fun σ s => Done3 w16 σ (Hf σ) s) :=
     relInv (fun σ s _ ⟨h, hf⟩ => WP.block_nil (Done3.of_full h hf)) (taintRel [] SampleNtt.nil_regs (by taint_decide))
   refine RelCT.mono empty (fun x y ⟨⟨σ₁, σ₂, p₁, p₂, hq, h₁, h₂⟩, hb⟩ => ?_) (fun _ _ h => h)
   have hz : x.zf = some false := hb
   have hf : allFull3 σ₁ 168 = true := by rw [h₁.zf] at hz; simpa using hz
   exact ⟨σ₁, σ₂, p₁, p₂, hq, ⟨h₁, hf⟩, ⟨h₂, by rw [← pub_allFull3 hq]; exact hf⟩⟩
 
-theorem tail3_ct {fast : Bool} : RelCT isa (S4.R4W w16 fun σ s => Q1 w16 σ (hst σ 3) (hst σ 3) 3 s) (tail3 fast w16)
+theorem tail3_ct {fast : Bool} : RelCT isa (S4.R4W w16 fun σ s => Q1 w16 σ (Y σ) (Hf σ) 3 s) (tail3 fast w16)
     (fun _ _ => True) := by
   unfold tail3
   exact RelCT.seq check3_ct (RelCT.seq branch3_ct
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.env h₂.env) (by taint_decide)))
 
+end
+
 theorem ctW {fast : Bool} : ConstantTime isa (sampleHKW w16).pre (sampleHKW w16).pub (sampleH fast w16) := by
   refine relStart (Q := fun _ _ => True) (RelCT.seq startH_ct (RelCT.seq hload_ct
-    (RelCT.seq (squeezesH_ct (fast := fast)) (RelCT.seq hsave_ct (RelCT.seq tabY_ct ?_)))))
+    (RelCT.seq (squeezesH_ct (fast := fast)) (RelCT.seq hsave_ct
+      (RelCT.seq (tabY_ct (Y := fun σ => hst σ 3) (Hf := fun σ => hst σ 3)) ?_)))))
   refine RelCT.seq (run1Y_ct (K := 0) (by decide) (by taint_decide)) ?_
   refine RelCT.seq (run1Y_ct (K := 1) (by decide) (by taint_decide)) ?_
   refine RelCT.seq (run1Y_ct (K := 2) (by decide) (by taint_decide)) ?_
