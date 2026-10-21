@@ -98,8 +98,8 @@
 //! message of at least `POWERS_MIN_LEN` (128) bytes, or the first one after
 //! it with a 12-byte nonce and at most 16 bytes of additional data (a TLS
 //! record): its `_store_powers` instance stores them while it hashes the
-//! text. Once it has, every message uses them, shorter ones too, which
-//! never count towards them:
+//! text. Once it has, every message uses them, shorter ones too (but opens
+//! of at most `PLAIN_MAX` bytes), which never count towards them:
 //! `vg_ghash_with_powers_aes` loads `H · x⁻¹` rather than computing it,
 //! and `encrypt` copies its pieces with `memcpy` rather than
 //! `vg_aes_gcm_seal_gather`'s 16-byte steps and single bytes.
@@ -695,6 +695,13 @@ const POWERS_AFTER: u32 = 2;
 ))]
 const SHORT_READY: u32 = u32::MAX;
 
+/// On AArch64, `open` takes the plain instance for a message of at most this
+/// many bytes even once the powers are published: measured on Neoverse N2,
+/// `vg_aes_gcm_open_with_powers` costs 2–3% more there (#2865, and again
+/// without this rule).
+#[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+const PLAIN_MAX: usize = 16;
+
 /// What `Powers::get` gives a call on AArch64 with the `_with_powers`
 /// instances: the powers, or that the call computes them.
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
@@ -722,10 +729,9 @@ struct Powers {
     /// The calls that could have read the powers, before they were ready
     /// (counted without a read-modify-write: one lost to a race only
     /// delays the powers); once they are published, `SHORT_READY`, so that
-    /// `open` takes the `_prepared` instances for messages shorter than
-    /// `POWERS_MIN_LEN` too. That test comes after the length's, so longer
-    /// messages pay nothing for it, and such messages never count
-    /// (`Powers::get` finds the powers ready).
+    /// messages shorter than `POWERS_MIN_LEN` take the `_prepared`
+    /// instances too, and such messages never count (`Powers::get` finds the
+    /// powers ready).
     calls: AtomicU32,
     /// Null, or the key context, from `Box::into_raw`: written before it is
     /// published here (with release ordering), never written again while it
@@ -813,8 +819,8 @@ impl Powers {
         (!p.is_null()).then(|| (unsafe { &*p }, fns))
     }
 
-    /// Whether `open` takes the `_prepared` instances for messages shorter
-    /// than `POWERS_MIN_LEN`: once the powers are published (`SHORT_READY`).
+    /// Whether messages shorter than `POWERS_MIN_LEN` take the `_prepared`
+    /// instances: once the powers are published (`SHORT_READY`).
     #[inline(always)]
     fn short_ready(&self) -> bool {
         self.calls.load(Ordering::Relaxed) == SHORT_READY
@@ -1049,15 +1055,18 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        // Every message once the powers are ready: each `_prepared` (or
-        // `_with_powers`) instance chooses its path for every length itself;
-        // before, a message long enough to gain from them counts towards
-        // computing them.
+        // Every message once the powers are ready, called inline: each
+        // `_prepared` (or `_with_powers`) instance chooses its path for every
+        // length itself. Before, a message long enough to gain from them
+        // counts towards computing them. A key without them pays one load
+        // (`short_ready`), as before.
         #[cfg(all(
             any(target_arch = "x86_64", target_arch = "aarch64"),
             feature = "alloc"
         ))]
-        if let Some((ctx, fns)) = self.powers.ready() {
+        if self.powers.short_ready()
+            && let Some((ctx, fns)) = self.powers.ready()
+        {
             #[cfg(target_arch = "aarch64")]
             let ctx = Got::Ready(ctx);
             return Ok(self.seal_with(ctx, fns, nonce, aad, data));
@@ -1148,15 +1157,20 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        // Every message once the powers are ready, as in `encrypt_in_place`,
-        // but tested after the length (`short_ready`), which costs longer
-        // messages less here than `Powers::ready` first: measured on Emerald
-        // Rapids, the latter made every open about 5 ns slower.
+        // Every message once the powers are ready, as in `encrypt_in_place`
+        // (but for at most `PLAIN_MAX` bytes on AArch64), tested after the
+        // length, through `open_prepared`: measured on Emerald Rapids, an
+        // inline call as in `encrypt_in_place` made every open about 5 ns
+        // slower.
         #[cfg(all(
             any(target_arch = "x86_64", target_arch = "aarch64"),
             feature = "alloc"
         ))]
-        if (data.len() >= POWERS_MIN_LEN || self.powers.short_ready())
+        #[cfg(target_arch = "x86_64")]
+        let short = self.powers.short_ready();
+        #[cfg(target_arch = "aarch64")]
+        let short = data.len() > PLAIN_MAX && self.powers.short_ready();
+        if (data.len() >= POWERS_MIN_LEN || short)
             && let Some(r) = self.open_prepared(nonce, aad, data, tag)
         {
             return r;
@@ -1222,7 +1236,9 @@ impl AesGcm {
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
-        if let Some((ctx, fns)) = self.powers.ready() {
+        if self.powers.short_ready()
+            && let Some((ctx, fns)) = self.powers.ready()
+        {
             return Ok(self.seal_pieces_with(Got::Ready(ctx), fns, nonce, aad, plaintext, out));
         }
         #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
@@ -2767,9 +2783,10 @@ mod tests {
                 let mut out = [0u8; 700];
                 let tag = k.encrypt(&nonce, &aad, &[&msg[..1], &msg[1..]], &mut out);
                 assert_eq!((out, tag), (want, Ok(want_tag)));
-                // Shorter messages take the powers too, in place and out of
-                // place, sealing and opening, and do not count; either way
-                // they match.
+                // Shorter messages take the powers too (but opens of at most
+                // `PLAIN_MAX` bytes on AArch64), in place and out of place,
+                // sealing and opening, and do not count; either way they
+                // match.
                 assert!(k.powers.short_ready());
                 for len in [0, 1, 15, 16, 17, 63, 64, POWERS_MIN_LEN - 1] {
                     let mut want = msg;
